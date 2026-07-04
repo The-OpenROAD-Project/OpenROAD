@@ -170,6 +170,13 @@ class frNet : public frBlockObject
   // connections (per-net override of router_cfg_->AUTO_TAPER_NDR_NETS).
   void setDisableAutoTaper(bool in) { disable_auto_taper_ = in; }
   bool isAutoTaperDisabled() const { return disable_auto_taper_; }
+  // True when this is an NDR (wide) net whose auto-taper is suppressed, either
+  // globally (!auto_taper_enabled) or per-net (disable flag). Such nets keep
+  // their full NDR width all the way to the pin instead of being tapered.
+  bool isAutoTaperSuppressed(bool auto_taper_enabled) const
+  {
+    return hasNDR() && (!auto_taper_enabled || isAutoTaperDisabled());
+  }
 
  protected:
   frString name_;

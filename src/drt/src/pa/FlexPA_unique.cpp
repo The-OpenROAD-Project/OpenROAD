@@ -174,8 +174,7 @@ bool UniqueInsts::isNoAutoTaperNDRInst(frInst* inst) const
   // globally (!AUTO_TAPER_NDR_NETS) or per-net (disable_auto_taper).
   for (const auto& a : inst->getInstTerms()) {
     auto* net = a->getNet();
-    if (net && net->getNondefaultRule()
-        && (!router_cfg_->AUTO_TAPER_NDR_NETS || net->isAutoTaperDisabled())) {
+    if (net && net->isAutoTaperSuppressed(router_cfg_->AUTO_TAPER_NDR_NETS)) {
       return true;
     }
   }
