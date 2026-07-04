@@ -358,12 +358,12 @@ odb::dbTechVia* Design::chooseViaForPair(odb::dbTechLayer* lower_tl,
   // Select the via whose footprint best approximates what drt will place.
   // odb::dbBlock::getDefaultVias fabricates a default from the first via in db
   // order when no OR_DEFAULT is set, which is arbitrary; instead rank all vias
-  // connecting the pair: prefer an OR_DEFAULT via, then a LEF-default one, then
-  // fewest cuts, then the smallest metal enclosure (mimicking drt's priority in
-  // io_parser_helper.cpp).
+  // connecting the pair. drt's initDefaultVias always takes the single-cut
+  // group first, so order by: OR_DEFAULT, then fewest cuts, then the
+  // LEF-default flag, then the smallest metal enclosure.
   odb::dbTechLayer* cut_tl = lower_tl->getUpperLayer();
   odb::dbTechVia* best = nullptr;
-  std::tuple<bool, bool, int, int64_t> best_key;
+  std::tuple<bool, int, bool, int64_t> best_key;
   for (odb::dbTechVia* via : tech_->getVias()) {
     if (via->getBottomLayer() != lower_tl || via->getTopLayer() != upper_tl) {
       continue;
@@ -380,8 +380,8 @@ odb::dbTechVia* Design::chooseViaForPair(odb::dbTechLayer* lower_tl,
     }
     const bool or_default
         = odb::dbStringProperty::find(via, "OR_DEFAULT") != nullptr;
-    const std::tuple<bool, bool, int, int64_t> key{
-        !or_default, !via->isDefault(), cuts, enc_area};
+    const std::tuple<bool, int, bool, int64_t> key{
+        !or_default, cuts, !via->isDefault(), enc_area};
     if (best == nullptr || key < best_key) {
       best = via;
       best_key = key;

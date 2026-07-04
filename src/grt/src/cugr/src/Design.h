@@ -100,7 +100,7 @@ class Design
   // Fill via_demand_length_{lower,upper}_ from the tech's default vias.
   void computeViaDemandLengths();
   // Pick the via connecting two routing layers, ranked to approximate drt:
-  // OR_DEFAULT, then LEF-default, then fewest cuts, then smallest enclosure.
+  // OR_DEFAULT, then fewest cuts, then LEF-default, then smallest enclosure.
   odb::dbTechVia* chooseViaForPair(odb::dbTechLayer* lower_tl,
                                    odb::dbTechLayer* upper_tl) const;
   // Effective demand length of a via pad on one layer: its enclosure extent
