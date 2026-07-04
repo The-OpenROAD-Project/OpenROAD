@@ -34,8 +34,10 @@ ALLOWED_TOOLS=(
 TOOLBOX=$(mktemp -d "${TMPDIR:-/tmp}/bazel-hermetic.XXXXXX")
 trap 'rm -rf "${TOOLBOX}"' EXIT
 
+# type -P forces a PATH search: command -v would return bare builtin names
+# (pwd, test, true, ...) and create self-referential symlinks.
 for tool in "${ALLOWED_TOOLS[@]}"; do
-  if path=$(command -v -- "${tool}" 2>/dev/null); then
+  if path=$(type -P -- "${tool}" 2>/dev/null); then
     ln -s "${path}" "${TOOLBOX}/${tool}" 2>/dev/null || true
   fi
 done
@@ -45,7 +47,10 @@ done
 # binary it manages (~/.cache/bazelisk) instead of symlinking the wrapper.
 BAZEL=$(command -v bazelisk || command -v bazel) ||
   { echo >&2 "bazel-hermetic: no bazel or bazelisk on PATH"; exit 1; }
-if [[ $(head -c 4 "$(readlink -f "${BAZEL}")") != $'\x7fELF' ]]; then
+# Wrapper detection: the bazelisk launcher by name, or any script shebang
+# (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
+# are symlinked directly.
+if [[ ${BAZEL} == *bazelisk* || $(head -c 2 "$(readlink -f "${BAZEL}")") == '#!' ]]; then
   version=$("${BAZEL}" --version | awk '{print $2}')
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   arch=$(uname -m | sed 's/aarch64/arm64/')
@@ -100,19 +105,22 @@ case "${command}" in
     ;;
 esac
 
-# Network and cache configuration is not toolchain leakage: keep proxy
-# settings (downloads must work behind corporate proxies) and cache
-# location preferences.
+# Network, auth, TLS and cache/tmp configuration is not toolchain leakage:
+# downloads must work behind corporate proxies, custom CAs, and git-over-ssh
+# overrides, and users may relocate caches and tmp.
 preserved_env=()
-for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY XDG_CACHE_HOME; do
+for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
+  SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR; do
   if [[ -n ${!var:-} ]]; then
     preserved_env+=("${var}=${!var}")
   fi
 done
 
+# No exec: the shell must survive to run the EXIT trap that removes the
+# toolbox directory. set -e propagates bazel's exit status.
 # --nosystem_rc/--nohome_rc: only the workspace .bazelrc applies, so host-
 # specific configuration (e.g. remote caches) cannot mask missing hermeticity.
-exec env -i \
+env -i \
   HOME="${HOME}" \
   USER="${USER:-$(id -un)}" \
   LOGNAME="${LOGNAME:-$(id -un)}" \
