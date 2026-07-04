@@ -245,6 +245,7 @@ osx.frameworks(names = [
     "IOSurface",
     "ImageIO",
     "Metal",
+    "MetalKit",
     "OpenGL",
     # PrintCore is inside the ApplicationServices umbrella, but must be
     # named for the SDK subset to keep usr/include/cups (its ObjC headers
