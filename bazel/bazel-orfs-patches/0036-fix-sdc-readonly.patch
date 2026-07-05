@@ -1,0 +1,8 @@
+--- a/flow/scripts/synth_odb.tcl.orig	2026-07-05 16:03:40.847972593 +0200
++++ b/flow/scripts/synth_odb.tcl	2026-07-05 16:03:40.850477641 +0200
+@@ -30,4 +30,5 @@
+ # the user could have dependencies, such as sourcing util.tcl,
+ # which are read in here and a canonicalized version is written
+ # out by OpenSTA that has no dependencies.
++catch {exec chmod +w $::env(RESULTS_DIR)/1_synth.sdc}
+ orfs_write_sdc $::env(RESULTS_DIR)/1_synth.sdc

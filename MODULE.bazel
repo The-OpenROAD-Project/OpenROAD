@@ -151,6 +151,7 @@ archive_override(
     patch_strip = 1,
     patches = [
         "//bazel/bazel-orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
+        "//bazel/bazel-orfs-patches:0036-fix-sdc-readonly.patch",
     ],
     sha256 = "8325c6755215857a87a84db078d47dfbb2dfcbef70eaf0dd376fe5a7a363cd58",
     strip_prefix = "OpenROAD-flow-scripts-" + ORFS_COMMIT,
