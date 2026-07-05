@@ -35,14 +35,39 @@ ALLOWED_TOOLS=(
   gh                 # optional; used by some developer workflows
 )
 
-TOOLBOX=$(mktemp -d "${TMPDIR:-/tmp}/bazel-hermetic.XXXXXX")
-trap 'rm -rf "${TOOLBOX}"' EXIT
+# A fixed per-checkout toolbox: its path feeds --repo_env=PATH below,
+# which is part of bazel's analysis cache key, so it must be
+# byte-identical across runs — a random mktemp path forced a full
+# re-analysis and repository refetch on every invocation. It lives under
+# the workspace tmp/ (gitignored): per-user and per-checkout by
+# construction (no /tmp cross-user collisions) and not on a RAM-backed
+# tmpfs as /tmp commonly is.
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+TOOLBOX="${ROOT}/tmp/bazel-toolbox"
+mkdir -p "${TOOLBOX}"
+
+# Entries not in the allowlist (edited allowlist, older wrapper) are
+# pruned so the toolbox never offers more than the contract above.
+for entry in "${TOOLBOX}"/*; do
+  [[ -e ${entry} || -L ${entry} ]] || continue
+  name=$(basename "${entry}")
+  keep=0
+  [[ ${name} == bazel ]] && keep=1
+  for tool in "${ALLOWED_TOOLS[@]}"; do
+    [[ ${name} == "${tool}" ]] && { keep=1; break; }
+  done
+  [[ ${keep} -eq 1 ]] || rm -f "${entry}"
+done
 
 # type -P forces a PATH search: command -v would return bare builtin names
-# (pwd, test, true, ...) and create self-referential symlinks.
+# (pwd, test, true, ...) and create self-referential symlinks. ln -sfn
+# replaces atomically, so a concurrent invocation never sees a missing
+# tool; a tool that vanished from the host PATH is dropped.
 for tool in "${ALLOWED_TOOLS[@]}"; do
   if path=$(type -P -- "${tool}" 2>/dev/null); then
-    ln -s "${path}" "${TOOLBOX}/${tool}" 2>/dev/null || true
+    ln -sfn "${path}" "${TOOLBOX}/${tool}" 2>/dev/null || true
+  else
+    rm -f "${TOOLBOX}/${tool}"
   fi
 done
 
@@ -79,7 +104,7 @@ if [[ ${BAZEL} == *bazelisk* || $(head -c 2 "$(readlink -f "${BAZEL}")") == '#!'
     { echo >&2 "bazel-hermetic: ${BAZEL} is a wrapper and no real bazel-${version} found under ${bazelisk_home}"; exit 1; }
   BAZEL=${real}
 fi
-ln -s "${BAZEL}" "${TOOLBOX}/bazel"
+ln -sfn "${BAZEL}" "${TOOLBOX}/bazel"
 
 # Leading --flags are bazel startup options (e.g. --output_base=...).
 # A flags-only invocation (e.g. `bazel --version`) is valid: no command.
@@ -99,8 +124,8 @@ case "${command}" in
       # Repository rules see only the allowlisted tools. Actions keep
       # bazel's strict default PATH (/bin:/usr/bin): the test harness
       # still uses host python3/tee/file (see the PR cleanup list), and
-      # an --action_env PATH carrying this per-run directory would
-      # fragment action cache keys across runs and machines.
+      # an --action_env PATH carrying this checkout-specific directory
+      # would fragment action cache keys across machines.
       # BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN lives in .bazelrc so it
       # applies to unwrapped invocations too.
       "--repo_env=PATH=${TOOLBOX}"
@@ -120,8 +145,6 @@ for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
   fi
 done
 
-# No exec: the shell must survive to run the EXIT trap that removes the
-# toolbox directory. set -e propagates bazel's exit status.
 # --nosystem_rc/--nohome_rc: only the workspace .bazelrc applies, so host-
 # specific configuration (e.g. remote caches) cannot mask missing hermeticity.
 bazel_argv=(--nosystem_rc --nohome_rc "${startup_flags[@]}")
@@ -134,7 +157,7 @@ if [[ -z ${command} ]]; then
   bazel_argv=("${startup_flags[@]}")
 fi
 
-env -i \
+exec env -i \
   HOME="${HOME}" \
   USER="${USER:-$(id -un)}" \
   LOGNAME="${LOGNAME:-$(id -un)}" \
