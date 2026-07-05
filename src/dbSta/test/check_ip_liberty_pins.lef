@@ -1,0 +1,115 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+LAYER M1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.200 ;
+  WIDTH 0.100 ;
+  AREA 0.020 ;
+END M1
+
+MACRO lef_lib_pins_match
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lef_lib_pins_match
+
+MACRO lef_lib_pin_missing
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lef_lib_pin_missing
+
+MACRO lef_lib_cell_missing
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lef_lib_cell_missing
+
+END LIBRARY

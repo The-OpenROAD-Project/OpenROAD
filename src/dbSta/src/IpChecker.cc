@@ -9,15 +9,19 @@
 #include <cstdint>
 #include <cstdlib>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -121,6 +125,7 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
   checkPinGeometryPresence(master);            // LEF-CHK-009
   checkPinMinDimensions(master);               // LEF-CHK-010a
   checkPinMinArea(master);                     // LEF-CHK-010b
+  checkLibertyPinPresence(master);             // LEF/LIB-CHK-012
 }
 
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
@@ -689,6 +694,50 @@ void IpChecker::checkPinMinArea(odb::dbMaster* master)
           warning_count_++;
         }
       }
+    }
+  }
+}
+
+// LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty.
+void IpChecker::checkLibertyPinPresence(odb::dbMaster* master)
+{
+  if (sta_ == nullptr) {
+    return;
+  }
+
+  dbNetwork* network = sta_->getDbNetwork();
+  if (network == nullptr) {
+    return;
+  }
+
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{
+      network->libertyLibraryIterator()};
+  if (!lib_iter->hasNext()) {
+    return;
+  }
+
+  const std::string master_name = master->getName();
+  LibertyCell* liberty_cell = network->findLibertyCell(master_name);
+  if (liberty_cell == nullptr) {
+    logger_->warn(
+        utl::CHK, 120, "LEF macro {} missing Liberty cell", master_name);
+    warning_count_++;
+    return;
+  }
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (liberty_cell->findLibertyPort(mterm->getName()) == nullptr) {
+      logger_->warn(utl::CHK,
+                    121,
+                    "Pin {}/{} missing from Liberty cell {}",
+                    master_name,
+                    mterm->getName(),
+                    liberty_cell->name());
+      warning_count_++;
     }
   }
 }

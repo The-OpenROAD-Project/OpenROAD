@@ -30,6 +30,7 @@ namespace sta {
 // LEF-CHK-009: Pin geometry presence
 // LEF-CHK-010a: Pin minimum width (perpendicular to routing direction)
 // LEF-CHK-010b: Pin minimum area
+// LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty
 
 class IpChecker
 {
@@ -87,6 +88,9 @@ class IpChecker
 
   // LEF-CHK-010b: Pin minimum area
   void checkPinMinArea(odb::dbMaster* master);
+
+  // LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty
+  void checkLibertyPinPresence(odb::dbMaster* master);
 
   // Helper: Check if a pin shape has at least one accessible edge
   bool hasAccessibleEdge(odb::dbMaster* master,
