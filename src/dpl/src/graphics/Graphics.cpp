@@ -20,6 +20,7 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace dpl {
 
@@ -288,6 +289,39 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
       const auto& [init_win, curr_win] = it->second;
 
+      // Report the window bounds once per selection change (drawObjects runs
+      // on every repaint, so gate on the last-logged instance to avoid spam).
+      if (inst != last_logged_search_window_inst_) {
+        last_logged_search_window_inst_ = inst;
+        odb::dbBlock* block = inst->getBlock();
+        const double inst_area_um2
+            = block->dbuAreaToMicrons(inst->getBBox()->getBox().area());
+        dp_->logger_->report(
+            "Window for {}: ll ({}, {}) ur ({}, {}) dbu, {:.3f} x {:.3f} um, "
+            "area {:.3f} um^2 (instance area {:.3f} um^2).",
+            inst->getName(),
+            init_win.xMin(),
+            init_win.yMin(),
+            init_win.xMax(),
+            init_win.yMax(),
+            block->dbuToMicrons(init_win.dx()),
+            block->dbuToMicrons(init_win.dy()),
+            block->dbuAreaToMicrons(init_win.area()),
+            inst_area_um2);
+        if (!curr_win.isInverted() && curr_win.area() > 0) {
+          dp_->logger_->report(
+              "  current-position window ll ({}, {}) ur ({}, {}) dbu, "
+              "{:.3f} x {:.3f} um, area {:.3f} um^2.",
+              curr_win.xMin(),
+              curr_win.yMin(),
+              curr_win.xMax(),
+              curr_win.yMax(),
+              block->dbuToMicrons(curr_win.dx()),
+              block->dbuToMicrons(curr_win.dy()),
+              block->dbuAreaToMicrons(curr_win.area()));
+        }
+      }
+
       // Init-position search window
       auto init_color = gui::Painter::kCyan;
       painter.setPen(init_color, /* cosmetic */ true);
@@ -341,6 +375,9 @@ void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
 void Graphics::clearNegotiationSearchWindows()
 {
   negotiation_search_windows_.clear();
+  // Force the next drawObjects() call to re-log the window size, since a new
+  // iteration means the window for the selected instance may have changed.
+  last_logged_search_window_inst_ = nullptr;
 }
 
 void Graphics::addNegotiationViolationsPoint(int iter,

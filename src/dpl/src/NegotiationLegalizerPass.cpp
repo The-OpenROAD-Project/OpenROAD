@@ -808,22 +808,38 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
     debug_observer_->setNegotiationSearchWindow(
         cell.db_inst, init_win, curr_win);
-  }
 
-  if (opendp_->deep_iterative_debug_ && debug_observer_
-      && iter >= opendp_->negotiation_debug_start_) {
-    const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
-    if (cell.db_inst == debug_inst) {
+    if (opendp_->deep_iterative_debug_
+        && iter >= opendp_->negotiation_debug_start_
+        && cell.db_inst == debug_observer_->getDebugInstance()) {
       const DbuX site_width = opendp_->grid_->getSiteWidth();
+      odb::dbBlock* block = cell.db_inst->getBlock();
+      const double inst_area_um2
+          = block->dbuAreaToMicrons(cell.db_inst->getBBox()->getBox().area());
       logger_->report(
-          "  Search window for {}: init {} sites x {} rows{}.",
+          "  Search window for {}: ll ({}, {}) ur ({}, {}) dbu, {:.3f} x "
+          "{:.3f} um, area {:.3f} um^2 (instance area {:.3f} um^2).",
           cell.db_inst->getName(),
-          init_window.dx_hi - init_window.dx_lo + 1,
-          init_window.rows.size(),
-          displaced ? fmt::format(", current-position {} sites x {} rows",
-                                  curr_window.dx_hi - curr_window.dx_lo + 1,
-                                  curr_window.rows.size())
-                    : "");
+          init_win.xMin(),
+          init_win.yMin(),
+          init_win.xMax(),
+          init_win.yMax(),
+          block->dbuToMicrons(init_win.dx()),
+          block->dbuToMicrons(init_win.dy()),
+          block->dbuAreaToMicrons(init_win.area()),
+          inst_area_um2);
+      if (displaced) {
+        logger_->report(
+            "  current-position window ll ({}, {}) ur ({}, {}) dbu, {:.3f} "
+            "x {:.3f} um, area {:.3f} um^2.",
+            curr_win.xMin(),
+            curr_win.yMin(),
+            curr_win.xMax(),
+            curr_win.yMax(),
+            block->dbuToMicrons(curr_win.dx()),
+            block->dbuToMicrons(curr_win.dy()),
+            block->dbuAreaToMicrons(curr_win.area()));
+      }
       logger_->report("  Best location for {} is ({}, {}) with cost {}.",
                       cell.db_inst->getName(),
                       gridToDbu(GridX{best_x}, site_width).v,
