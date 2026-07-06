@@ -280,6 +280,24 @@ transceivers, OpenPower-based Microwatt etc.
 To build OpenROAD tools locally on your machine, follow steps
 from [here](docs/user/Build.md).
 
+### CMake build with Bazel-provided dependencies
+
+On Linux x86_64, all CMake dependencies — compiler included — can be
+materialized into a local `deps/` folder from the pinned Bazel module
+graph, instead of running `etc/DependencyInstaller.sh`. The only host
+requirements are `bazelisk`, `cmake`, `ninja` (or `make`), `git` and
+`bash`; no `sudo`, and nothing is installed outside the workspace:
+
+``` shell
+bazelisk run //:cmake
+cmake -DCMAKE_TOOLCHAIN_FILE=deps/toolchain.cmake -B build .
+cmake --build build -j$(nproc)
+```
+
+The developer workflow after that is plain CMake. See
+[docs/user/Build.md](docs/user/Build.md#dependencies-from-bazel-no-dependencyinstallersh)
+for details and runtime environment variables.
+
 ### Third-party dependencies: submodules vs. Bazel BCR
 
 OpenROAD ships two build systems, and they source third-party code

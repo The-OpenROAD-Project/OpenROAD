@@ -95,6 +95,40 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 ```
 
+### Dependencies from Bazel (no DependencyInstaller.sh)
+
+On Linux x86_64, the pinned dependency set of the Bazel build can be
+materialized into a local `deps/` folder and used for a plain CMake
+build — no `sudo`, no distro packages beyond `cmake`, `ninja` (or
+`make`), `git` and `bash`, and no compiler: `deps/` includes the same
+hermetic clang/libc++ toolchain the Bazel build uses.
+
+``` shell
+bazelisk run //:cmake
+cmake -DCMAKE_TOOLCHAIN_FILE=deps/toolchain.cmake -B build .
+cmake --build build -j$(nproc)
+```
+
+The resulting binary uses the bundled Tcl and Python runtimes:
+
+``` shell
+export TCL_LIBRARY=$PWD/deps/lib/tcl9.0
+export PYTHONHOME=$PWD/deps/python
+./build/src/openroad
+```
+
+Notes:
+
+- `deps/` is about 1 GB and is fully regenerated on every
+  `bazelisk run //:cmake`; dependency versions follow `MODULE.bazel`.
+- The dependency archives are libc++ builds; `deps/toolchain.cmake`
+  selects the bundled clang. A host GCC/libstdc++ toolchain cannot link
+  them.
+- The GUI is not part of the prefix (host Qt5 is a libstdc++ build);
+  the build degrades to CLI, like a host without Qt.
+- The existing `DependencyInstaller.sh`/`Build.sh` flow is unaffected;
+  this is an alternative, not a replacement.
+
 ### Only for macOS Setup
 
 On macOS, it is recommended to use a Python virtual environment to isolate dependencies and avoid system conflicts.

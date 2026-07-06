@@ -514,6 +514,15 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+# `bazelisk run //:cmake` materializes <workspace>/deps, a dependency
+# prefix (headers, static libs, tools, hermetic clang toolchain) for
+# building OpenROAD with plain CMake. See docs/user/Build.md.
+alias(
+    name = "cmake",
+    actual = "//cmake-deps:cmake",
+    visibility = ["//visibility:public"],
+)
+
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks

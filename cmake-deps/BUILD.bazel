@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load(":defs.bzl", "cmake_deps_bundle")
+
+py_binary(
+    name = "assemble_bundle",
+    srcs = ["assemble_bundle.py"],
+    visibility = ["//visibility:private"],
+)
+
+# The dependency prefix for plain-CMake builds of OpenROAD. The dep list
+# is the union of everything OpenROAD's CMake files find_package() or
+# find_library(): headers land in include/, static archives in lib/pool/.
+# Header-only modules (most of boost, eigen, spdlog) contribute headers
+# through their transitive compilation contexts.
+cmake_deps_bundle(
+    name = "bundle",
+    deps = [
+        "@abseil-cpp//absl/hash",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.algorithm",
+        "@boost.asio",
+        "@boost.beast",
+        "@boost.bind",
+        "@boost.config",
+        "@boost.container",
+        "@boost.container_hash",
+        "@boost.format",
+        "@boost.fusion",
+        "@boost.geometry",
+        "@boost.graph",
+        "@boost.heap",
+        "@boost.icl",
+        "@boost.integer",
+        "@boost.io",
+        "@boost.iostreams",
+        "@boost.iterator",
+        "@boost.json",
+        "@boost.lambda",
+        "@boost.lexical_cast",
+        "@boost.multi_array",
+        "@boost.optional",
+        "@boost.phoenix",
+        "@boost.polygon",
+        "@boost.property_tree",
+        "@boost.random",
+        "@boost.range",
+        "@boost.regex",
+        "@boost.serialization",
+        "@boost.smart_ptr",
+        "@boost.spirit",
+        "@boost.stacktrace",
+        "@boost.system",
+        "@boost.thread//:thread_posix",
+        "@boost.tokenizer",
+        "@boost.unordered",
+        "@boost.utility",
+        "@coin-or-lemon//:lemon",
+        "@cudd",
+        "@eigen",
+        "@fmt",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@openmp",
+        "@or-tools//ortools/linear_solver",
+        "@or-tools//ortools/sat:cp_model",
+        "@or-tools//ortools/util:sorted_interval_list",
+        # Provides FlexLexer.h for flex C++ scanners (sta).
+        "@rules_flex//flex:current_flex_toolchain",
+        "@spdlog",
+        "@tcl_lang//:tcl",
+        "@yaml-cpp",
+        "@zlib",
+    ],
+    exclude_from_pool = ["googletest"],
+    include_overrides = {
+        # cudd's util.h etc. would collide in a flat include/; FindCUDD
+        # searches the include/cudd suffix.
+        "cudd": "cudd",
+    },
+    lib_name_overrides = {
+        # FindZLIB and FindCUDD search by library name under <pkg>_ROOT;
+        # the clang driver resolves -lomp during FindOpenMP's checks.
+        "cudd": "cudd",
+        "openmp": "omp",
+        "zlib": "z",
+    },
+    python_headers = "@rules_python//python/cc:current_py_cc_headers",
+    python_libs = "@rules_python//python/cc:current_py_cc_libs",
+    shims = glob(["shims/*.cmake"]),
+    swig = "@swig",
+    swig_lib = [
+        "@swig//:lib_python",
+        "@swig//:lib_tcl",
+        "@swig//:swig_swg",
+    ],
+    tcl_library = "@tcl_lang//:tcl_core",
+    toolchain_template = "toolchain.cmake.in",
+    versions_src = "//:MODULE.bazel",
+    visibility = ["//visibility:private"],
+)
+
+# `bazelisk run //:cmake` (alias of this target) copies :bundle into
+# <workspace>/deps so OpenROAD can be built with plain CMake.
+sh_binary(
+    name = "cmake",
+    srcs = ["materialize.sh"],
+    data = [":bundle"],
+    visibility = ["//visibility:public"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
