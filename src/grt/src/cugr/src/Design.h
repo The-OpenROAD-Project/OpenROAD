@@ -58,8 +58,7 @@ class Design
   {
     return layers_[layer_index];
   }
-  // Effective via demand length (enclosure_along * tracks_blocked) for the via
-  // between routing layers i and i+1, charged to the lower/upper layer.
+  // Effective via demand length charged to the lower / upper layer of via i.
   double getViaDemandLengthLower(int i) const
   {
     return via_demand_length_lower_[i];
@@ -97,15 +96,12 @@ class Design
   void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
-  // Fill via_demand_length_{lower,upper}_ from the tech's default vias.
+  // Fill via_demand_length_{lower,upper}_ from each pair's via geometry.
   void computeViaDemandLengths();
-  // Pick the via connecting two routing layers, ranked to approximate drt:
-  // OR_DEFAULT, then fewest cuts, then LEF-default, then smallest enclosure.
+  // Pick the via for a layer pair, ranked to approximate drt's choice.
   odb::dbTechVia* chooseViaForPair(odb::dbTechLayer* lower_tl,
                                    odb::dbTechLayer* upper_tl) const;
-  // Effective demand length of a via pad on one layer: its enclosure extent
-  // along the routing direction scaled by the number of tracks it blocks
-  // across.
+  // Via pad demand length: extent along routing dir x tracks blocked across.
   double viaDemandLength(const MetalLayer& layer, int dx, int dy) const;
 
   // debug functions
@@ -115,9 +111,7 @@ class Design
   int lib_dbu_;
   BoxT die_region_;
   std::vector<MetalLayer> layers_;
-  // Indexed by the via's lower routing-layer; lower_ is charged to layer i,
-  // upper_ to layer i+1. Falls back to min_length * via_multiplier when the
-  // tech exposes no default via for the pair.
+  // Effective via demand length per lower layer i (lower_ = i, upper_ = i+1).
   std::vector<double> via_demand_length_lower_;
   std::vector<double> via_demand_length_upper_;
   std::vector<CUGRNet> nets_;

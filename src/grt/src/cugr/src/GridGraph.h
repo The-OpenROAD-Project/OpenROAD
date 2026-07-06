@@ -354,8 +354,7 @@ class GridGraph
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
                   const std::vector<double>& net_costs = {});
-  // Per-via demand on layer `l` (lower or upper role) of the via at
-  // `layer_index`, spread over its two flanking edges (`edge_sum`).
+  // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
   CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
 
   utl::Logger* logger_;

@@ -355,12 +355,8 @@ void Design::setUnitCosts()
 odb::dbTechVia* Design::chooseViaForPair(odb::dbTechLayer* lower_tl,
                                          odb::dbTechLayer* upper_tl) const
 {
-  // Select the via whose footprint best approximates what drt will place.
-  // odb::dbBlock::getDefaultVias fabricates a default from the first via in db
-  // order when no OR_DEFAULT is set, which is arbitrary; instead rank all vias
-  // connecting the pair. drt's initDefaultVias always takes the single-cut
-  // group first, so order by: OR_DEFAULT, then fewest cuts, then the
-  // LEF-default flag, then the smallest metal enclosure.
+  // Rank vias connecting the pair by a drt-like priority: OR_DEFAULT, then
+  // fewest cuts, then LEF-default, then smallest enclosure.
   odb::dbTechLayer* cut_tl = lower_tl->getUpperLayer();
   odb::dbTechVia* best = nullptr;
   std::tuple<bool, int, bool, int64_t> best_key;
@@ -393,8 +389,7 @@ odb::dbTechVia* Design::chooseViaForPair(odb::dbTechLayer* lower_tl,
 void Design::computeViaDemandLengths()
 {
   const int num_layers = getNumLayers();
-  // Legacy proxy: min-area stub length inflated by the flat via_multiplier.
-  // Used as the fallback when the tech has no default via for a layer pair.
+  // Fallback proxy (min-area stub x via_multiplier) for pairs with no via.
   via_demand_length_lower_.assign(num_layers, 0.0);
   via_demand_length_upper_.assign(num_layers, 0.0);
 
@@ -412,8 +407,7 @@ void Design::computeViaDemandLengths()
 
     double num_lower = lower.getMinLength() * constants_.via_multiplier;
     double num_upper = upper.getMinLength() * constants_.via_multiplier;
-    // Union all boxes on each routing layer: a via may have several rects on a
-    // layer, and the footprint is their combined extent, not the last one.
+    // Union the boxes on each layer; a via may have several rects per layer.
     odb::Rect lo_box, up_box;
     lo_box.mergeInit();
     up_box.mergeInit();
@@ -436,8 +430,7 @@ void Design::computeViaDemandLengths()
     via_demand_length_upper_[i] = num_upper;
 
     if (debug) {
-      // Enclosure sizes are the via pad extents (x*y DBU); demand is the
-      // per-via fraction of one track for a uniform gcell.
+      // Report enclosures, lengths, and per-track demand for each pair.
       const int gcell = default_gridline_spacing_;
       const std::string via_src
           = via != nullptr ? via->getName() : std::string("min_area-fallback");
@@ -475,15 +468,13 @@ double Design::viaDemandLength(const MetalLayer& layer,
                                const int dy) const
 {
   const int pitch = layer.getPitch();
-  // getSpacing() is 0 on techs that give spacing only via a parallel table;
-  // fall back to the table-derived default so the spacing term is not lost.
+  // getSpacing() is 0 on parallel-table-only techs; use default spacing then.
   const int spacing
       = layer.getSpacing() > 0 ? layer.getSpacing() : layer.getDefaultSpacing();
   // Split the pad into extent along the routing direction and across tracks.
   const int along = (layer.getDirection() == MetalLayer::H) ? dx : dy;
   const int perp = (layer.getDirection() == MetalLayer::H) ? dy : dx;
-  // A via blocks whole tracks perpendicular to the routing direction; round the
-  // keep-out (via metal + spacing on both sides) up to an integer track count.
+  // A via blocks whole tracks; ceil the keep-out to an integer track count.
   const double tracks_blocked
       = pitch > 0 ? std::ceil(static_cast<double>(perp + 2 * spacing) / pitch)
                   : 1.0;

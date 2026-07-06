@@ -297,9 +297,7 @@ CapacityT GridGraph::viaDemand(const int layer_index,
                                const int l,
                                const int edge_sum) const
 {
-  // Design digested the via geometry into an effective length per layer role;
-  // spread it over the two flanking edges (lower role for the via's lower
-  // layer, upper role for the upper layer).
+  // Spread the layer's precomputed via demand length over its two edges.
   const double via_num = (l == layer_index)
                              ? design_->getViaDemandLengthLower(layer_index)
                              : design_->getViaDemandLengthUpper(layer_index);
