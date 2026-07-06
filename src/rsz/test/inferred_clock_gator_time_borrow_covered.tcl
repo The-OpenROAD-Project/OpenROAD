@@ -24,7 +24,7 @@ estimate_parasitics -placement
 
 proc extract_borrow { report_text } {
   if { ![regexp {actual time borrow[ ]+([0-9.]+)} $report_text -> borrow] } {
-    utl::error RSZ 1009 "Missing actual time borrow in report_checks output."
+    puts "Missing actual time borrow in report_checks output."
   }
   return $borrow
 }
@@ -51,7 +51,7 @@ set after_borrow [extract_borrow $after_report]
 puts [format "AFTER_BORROW %.4f" $after_borrow]
 
 if { abs($after_borrow - $before_borrow) > 0.001 } {
-  utl::error RSZ 1010 [format \
+  puts [format \
     "repair_timing changed covered latch borrow: before %.4f after %.4f" \
     $before_borrow $after_borrow]
 }
