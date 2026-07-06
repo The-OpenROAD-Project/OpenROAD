@@ -692,7 +692,7 @@ void TritModel::encodeInstance(const Instance* inst)
   } else if (inst->is<Target>()) {
     auto* op = inst->as<Target>();
     sta::LibertyCell* cell = op->cell();
-    if (!cell->hasSequentials()) {
+    if (!cell->isSequential()) {
       // Build port→index map for inputs, collect output ports.
       std::vector<sta::LibertyPort*> in_ports;
       std::vector<sta::LibertyPort*> out_ports;

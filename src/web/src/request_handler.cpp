@@ -1263,7 +1263,7 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
     return result;
   }
   sta::LibertyCell* cell = network->libertyCell(inst);
-  if (cell == nullptr || cell->hasSequentials() || cell->isClockGate()
+  if (cell == nullptr || cell->isSequential() || cell->isClockGate()
       || cell->isMacro()) {
     return result;
   }
