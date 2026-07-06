@@ -502,8 +502,8 @@
     "https://bcr.bazel.build/modules/opencensus-cpp/0.0.0-20230502-50eb5de/source.json": "f50efc07822f5425bd1d3e40e977484f9c0142463052717d40ec85cd6744243e",
     "https://bcr.bazel.build/modules/opencensus-proto/0.4.1/MODULE.bazel": "4a2e8b4d0b544002502474d611a5a183aa282251e14f6a01afe841c0c1b10372",
     "https://bcr.bazel.build/modules/opencensus-proto/0.4.1/source.json": "a7d956700a85b833c43fc61455c0e111ab75bab40768ed17a206ee18a2bbe38f",
-    "https://bcr.bazel.build/modules/openmp/21.1.5.bcr.1/MODULE.bazel": "5b4dbed137e1246386367cc89b93342cf3ab5c8ca8da8e164769191a4f1c7888",
-    "https://bcr.bazel.build/modules/openmp/21.1.5.bcr.1/source.json": "99c3a8c83da59d685157171188b74005625f7c4e861c56e0cc650d4d5c142396",
+    "https://bcr.bazel.build/modules/openmp/21.1.5.bcr.2/MODULE.bazel": "25501564e1a9e2deae3deacb9c441e5ae5d1ff8f325c2ac7a140ed7a3cc1ea82",
+    "https://bcr.bazel.build/modules/openmp/21.1.5.bcr.2/source.json": "23a9a5ec88bca0013c66ee0d075634f129fc3fc8908ac54953dbf2f5b0b68d8b",
     "https://bcr.bazel.build/modules/openssl/3.3.1.bcr.1/MODULE.bazel": "49c0c07e8fb87b480bccb842cfee1b32617f11dac590f732573c69058699a3d1",
     "https://bcr.bazel.build/modules/openssl/3.3.1.bcr.9/MODULE.bazel": "bf9dd8479c65bfec1c82773a5cc6ae06eda4c663c2731cfcfcb8b6b46ac8d365",
     "https://bcr.bazel.build/modules/openssl/3.5.4.bcr.0/MODULE.bazel": "0f6b8f20b192b9ff0781406256150bcd46f19e66d807dcb0c540548439d6fc35",
@@ -826,8 +826,6 @@
     "https://bcr.bazel.build/modules/xorgproto/2024.1.bcr.1/source.json": "2da7b346f94c7d5bb890d8a964110b38b439bd254ad14ec3d37022a7ac9356d8",
     "https://bcr.bazel.build/modules/yaml-cpp/0.9.0/MODULE.bazel": "d0841e12e92973d7e4c97557198335788890dafa9487d6dc0f9b852053a6c5c0",
     "https://bcr.bazel.build/modules/yaml-cpp/0.9.0/source.json": "07a9973d6cee81c8bdb1902e8f90064a0ef9aa2262bffc4df2ed577956c08e1b",
-    "https://bcr.bazel.build/modules/yosys-slang/0.0.0/MODULE.bazel": "a0c2d49792cb5e49db7871aef6b1c022188fbda6023450da1d7a040ce6e02b9e",
-    "https://bcr.bazel.build/modules/yosys-slang/0.0.0/source.json": "9de60d310212a28c1fdc5a2b4260466a0fa697b79ecf2505aa1389a8cd06c30d",
     "https://bcr.bazel.build/modules/yosys/0.62.bcr.2/MODULE.bazel": "2297c50983665b308449febf965616d11c28ce70ef04829f7a4de97d5d537726",
     "https://bcr.bazel.build/modules/yosys/0.62.bcr.2/source.json": "72bf96ef1d9c881889e8e31e9a2af5f3bbbe5c18d83712e5ece7899f1d87655f",
     "https://bcr.bazel.build/modules/yq.bzl/0.1.1/MODULE.bazel": "9039681f9bcb8958ee2c87ffc74bdafba9f4369096a2b5634b88abc0eaefa072",
@@ -2447,7 +2445,7 @@
     "@@yosys-slang+//:dependency_support/slang_ext.bzl%vendored_slang_extension": {
       "general": {
         "bzlTransitiveDigest": "5QIB1e5+v5Cj2rslpyAj2M5L+l6B1BFByldLM+ewKMA=",
-        "usagesDigest": "bNfWY5+YI9i3FTlUQx6/VFcWZJN2hVi9BG7IvG4OGf4=",
+        "usagesDigest": "i6tCm4G6czTrDX7zkosKiwqamw1Y9s/ogPY7nwt3S9o=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
