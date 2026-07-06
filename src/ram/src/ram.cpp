@@ -39,6 +39,7 @@
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
 #include "sta/StringUtil.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 namespace ram {
@@ -2074,37 +2075,30 @@ void RamGen::reportTimingAndPower()
 
   sta::SceneSeq scenes = sta_->makeSceneSeq(sta_->cmdScene());
 
-  if (scenes.empty()) {
-    logger_->warn(RAM,
-                  47,
-                  "No Liberty libraries loaded. Please run read_liberty before "
-                  "generate_ram to enable timing and power report.");
-    return;
-  }
-
   sta::StringSeq group_names;
 
   // Find worst unconstrained setup path delay/longest path
-  sta::PathEndSeq setup_ends = sta_->findPathEnds(nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  true,
-                                                  scenes,
-                                                  sta::MinMaxAll::max(),
-                                                  1,
-                                                  1,
-                                                  false,
-                                                  false,
-                                                  -sta::INF,
-                                                  sta::INF,
-                                                  true,
-                                                  group_names,
-                                                  true,
-                                                  false,
-                                                  false,
-                                                  false,
-                                                  false,
-                                                  false);
+  sta::PathEndSeq setup_ends
+      = sta_->findPathEnds(nullptr,               /* from */
+                           nullptr,               /* thrus */
+                           nullptr,               /* to */
+                           true,                  /* unconstrained */
+                           scenes,                /* scenes */
+                           sta::MinMaxAll::max(), /* min_max */
+                           1,                     /* group_path_count */
+                           1,                     /* endpoint_path_count */
+                           false,                 /* unique_pins */
+                           false,                 /* unique_edges */
+                           -sta::INF,             /* slack_min */
+                           sta::INF,              /* slack_max */
+                           true,                  /* sort_by_slack */
+                           group_names,           /* group_names */
+                           true,                  /* setup */
+                           false,                 /* hold */
+                           false,                 /* recovery */
+                           false,                 /* removal */
+                           false,                 /* clk_gating_setup */
+                           false);                /* clk_gating_hold */
 
   float setup_delay
       = setup_ends.empty()
@@ -2112,43 +2106,55 @@ void RamGen::reportTimingAndPower()
             : static_cast<float>(setup_ends[0]->dataArrivalTime(sta_));
 
   // Find worst unconstrained hold path delay/shortest path
-  sta::PathEndSeq hold_ends = sta_->findPathEnds(nullptr,
-                                                 nullptr,
-                                                 nullptr,
-                                                 true,
-                                                 scenes,
-                                                 sta::MinMaxAll::min(),
-                                                 1,
-                                                 1,
-                                                 false,
-                                                 false,
-                                                 -sta::INF,
-                                                 sta::INF,
-                                                 true,
-                                                 group_names,
-                                                 false,
-                                                 true,
-                                                 false,
-                                                 false,
-                                                 false,
-                                                 false);
+  sta::PathEndSeq hold_ends
+      = sta_->findPathEnds(nullptr,               /* from */
+                           nullptr,               /* thrus */
+                           nullptr,               /* to */
+                           true,                  /* unconstrained */
+                           scenes,                /* scenes */
+                           sta::MinMaxAll::min(), /* min_max */
+                           1,                     /* group_path_count */
+                           1,                     /* endpoint_path_count */
+                           false,                 /* unique_pins */
+                           false,                 /* unique_edges */
+                           -sta::INF,             /* slack_min */
+                           sta::INF,              /* slack_max */
+                           true,                  /* sort_by_slack */
+                           group_names,           /* group_names */
+                           false,                 /* setup */
+                           true,                  /* hold */
+                           false,                 /* recovery */
+                           false,                 /* removal */
+                           false,                 /* clk_gating_setup */
+                           false);                /* clk_gating_hold */
 
   float hold_delay
       = hold_ends.empty()
             ? 0.0
             : static_cast<float>(hold_ends[0]->dataArrivalTime(sta_));
 
-  logger_->info(
-      RAM, 44, "RAM worst setup path delay: {:.6f} ns", setup_delay * 1e9);
-  logger_->info(
-      RAM, 45, "RAM worst hold path delay: {:.6f} ns", hold_delay * 1e9);
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+  logger_->info(RAM,
+                44,
+                "RAM maximum path delay: {} {}",
+                time_unit->asString(setup_delay),
+                time_unit->scaleAbbrevSuffix());
+  logger_->info(RAM,
+                45,
+                "RAM minimum path delay: {} {}",
+                time_unit->asString(hold_delay),
+                time_unit->scaleAbbrevSuffix());
 
-  // Power without activity factor/leakage power
+  // Estimated power (STA applies a default activity when none is set)
   sta::PowerResult total, sequential, combinational, clock, macro, pad;
   sta_->power(
       sta_->cmdScene(), total, sequential, combinational, clock, macro, pad);
-  logger_->info(
-      RAM, 46, "RAM total power (no activity): {:.6f} W", total.total());
+  sta::Unit* power_unit = sta_->units()->powerUnit();
+  logger_->info(RAM,
+                46,
+                "RAM estimated power: {} {}",
+                power_unit->asString(total.total()),
+                power_unit->scaleAbbrevSuffix());
 }
 
 }  // namespace ram
