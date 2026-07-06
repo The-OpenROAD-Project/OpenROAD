@@ -292,7 +292,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
   }
   add_if_true(props, "Dont Use", cell->dontUse());
   props.push_back({"Filename", cell->filename()});
-  add_if_true(props, "Has Sequentials", cell->hasSequentials());
+  add_if_true(props, "Has Sequentials", cell->isSequential());
   add_if_true(props, "Is Always On", cell->alwaysOn());
   add_if_true(props, "Is Buffer", cell->isBuffer());
   add_if_true(props, "Is Clock Cell", cell->isClockCell());
