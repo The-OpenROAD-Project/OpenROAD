@@ -76,6 +76,17 @@ bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
+
+# gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Its vendored
+# gnulib headers deliberately shadow libc headers; under toolchains that
+# inject libc headers as leading -isystem entries (hermetic-llvm, #10812)
+# the shadowing breaks and gawk fails to compile (BCR #7642).
+# 5.3.2.bcr.7 carries the upstream BCR fix (BCR #7989).
+single_version_override(
+    module_name = "gawk",
+    version = "5.3.2.bcr.7",
+)
+
 bazel_dep(name = "git", version = "2.54.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
