@@ -2237,6 +2237,18 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
     }
   }
 
+  // Adjust halo orientation for fixed macros here, since those
+  // are skipped during orientation improve and thus never adjuted
+  if (inst->getPlacementStatus().isFixed()) {
+    auto orient = inst->getOrient();
+    if (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180) {
+      std::swap(halo.bottom, halo.top);
+    }
+    if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
+      std::swap(halo.left, halo.right);
+    }
+  }
+
   return halo;
 }
 
