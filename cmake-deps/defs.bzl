@@ -331,6 +331,15 @@ def _cmake_deps_bundle_impl(ctx):
             roots[root] = None
     sorted_roots = sorted(roots.keys(), key = len, reverse = True)
 
+    # Propagated defines are collected across all deps and injected
+    # globally by the compiler wrappers. This mirrors bazel, where these
+    # defines reach every target that (transitively) depends on the
+    # dependency — for openroad, all of them. Per-package attribution via
+    # INTERFACE_COMPILE_DEFINITIONS on the shims cannot cover the
+    # dependencies CMake consumes without an imported target (Tcl and
+    # zlib are plain cache-variable paths), and a header compiled with a
+    # different define set than its archive (e.g. _FILE_OFFSET_BITS=64)
+    # is an ABI break.
     all_defines = {}
     pool = {}  # ordered set: dest -> None
     alwayslink_pool = {}
