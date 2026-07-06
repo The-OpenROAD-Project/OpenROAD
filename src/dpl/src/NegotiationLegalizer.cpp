@@ -1117,17 +1117,19 @@ std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
   // opposite (open) side by the shortfall so the same number of candidate rows
   // is still explored. The open side is allowed to walk past max_scan (capped
   // at 2 * max_scan) to find the extra rows.
+  const int extended_step_cap
+      = std::min(2 * max_scan, opendp_->max_displacement_y_);
   const int below_deficit
       = below_wall ? count_per_side - static_cast<int>(below.size()) : 0;
   const int above_deficit
       = above_wall ? count_per_side - static_cast<int>(above.size()) : 0;
   if (above_deficit > 0 && !below_wall) {
     bool dummy = false;
-    below = scan(+1, count_per_side + above_deficit, 2 * max_scan, dummy);
+    below = scan(+1, count_per_side + above_deficit, extended_step_cap, dummy);
   }
   if (below_deficit > 0 && !above_wall) {
     bool dummy = false;
-    above = scan(-1, count_per_side + below_deficit, 2 * max_scan, dummy);
+    above = scan(-1, count_per_side + below_deficit, extended_step_cap, dummy);
   }
 
   std::vector<int> rows;

@@ -609,7 +609,7 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
   // A "wall" is a macro/fixed-cell blockage (capacity == 0) or the core
   // boundary (off-die). Once the cell footprint anchored at target_x hits a
   // wall, nothing further in that direction is reachable.
-  auto isCellBlocked = [&](int target_x) {
+  auto hitsWall = [&](int target_x) {
     if (!inDie(target_x, target_y, cell.width, cell.height)) {
       return true;
     }
@@ -625,14 +625,14 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
 
   int left_avail = 0;
   for (int d = 1; d <= site_window; ++d) {
-    if (isCellBlocked(base_x - d)) {
+    if (hitsWall(base_x - d)) {
       break;
     }
     ++left_avail;
   }
   int right_avail = 0;
   for (int d = 1; d <= site_window; ++d) {
-    if (isCellBlocked(base_x + d)) {
+    if (hitsWall(base_x + d)) {
       break;
     }
     ++right_avail;
@@ -641,7 +641,13 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
   // Reach lost on one side (cut short by a wall) is added to the other side.
   const int left_deficit = site_window - left_avail;
   const int right_deficit = site_window - right_avail;
-  return {-(site_window + right_deficit), site_window + left_deficit};
+  int dx_lo = -(site_window + right_deficit);
+  int dx_hi = site_window + left_deficit;
+
+  //Hard cap limit
+  dx_lo = std::max(dx_lo, -opendp_->max_displacement_x_);
+  dx_hi = std::min(dx_hi, opendp_->max_displacement_x_);
+  return {dx_lo, dx_hi};
 }
 
 NegotiationLegalizer::SearchWindow NegotiationLegalizer::buildSearchWindow(
@@ -809,6 +815,15 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (cell.db_inst == debug_inst) {
       const DbuX site_width = opendp_->grid_->getSiteWidth();
+      logger_->report(
+          "  Search window for {}: init {} sites x {} rows{}.",
+          cell.db_inst->getName(),
+          init_window.dx_hi - init_window.dx_lo + 1,
+          init_window.rows.size(),
+          displaced ? fmt::format(", current-position {} sites x {} rows",
+                                  curr_window.dx_hi - curr_window.dx_lo + 1,
+                                  curr_window.rows.size())
+                    : "");
       logger_->report("  Best location for {} is ({}, {}) with cost {}.",
                       cell.db_inst->getName(),
                       gridToDbu(GridX{best_x}, site_width).v,
