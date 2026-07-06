@@ -928,7 +928,7 @@ std::vector<const sta::Pin*> RepairTargetCollector::latchOutputPins(
 
           output_pin = network_->findPin(inst, port);
           if (output_pin != nullptr
-              && std::find(output_pins.begin(), output_pins.end(), output_pin)
+              && std::ranges::find(output_pins, output_pin)
                      == output_pins.end()) {
             output_pins.push_back(output_pin);
           }
