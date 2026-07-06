@@ -103,9 +103,18 @@ def _shell_quote(arg):
     """Double-quote for bash, keeping ${R} expandable.
 
     Toolchain flags contain literal quotes (-D__DATE__="redacted") that
-    must survive into the macro value.
+    must survive into the macro value. Any other literal $ is escaped so
+    bash does not expand it; only the ${R} placeholder stays live.
     """
-    return '"' + arg.replace("\\", "\\\\").replace('"', '\\"').replace("`", "\\`") + '"'
+    escaped = (
+        arg
+            .replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("`", "\\`")
+            .replace("$", "\\$")
+            .replace("\\${R}", "${R}")
+    )
+    return '"' + escaped + '"'
 
 def _module_name(workspace_name):
     """Bazel module name of a canonical repository name.
