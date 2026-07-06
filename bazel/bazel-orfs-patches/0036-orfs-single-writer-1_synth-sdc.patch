@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=98yvind=20Harboe?= <oyvind.harboe@zylin.com>
+Date: Mon, 6 Jul 2026 11:17:45 +0200
+Subject: [PATCH] synth: single writer for 1_synth.sdc
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Variant of ORFS PR #4333 against the ORFS_COMMIT pinned here
+(no synth_syn.tcl at this commit), plus the flow/BUILD.bazel
+exports_files(scripts/synth.tcl) that newer bazel-orfs needs for
+its _synth_tcl attr (already on ORFS master). Drop this patch at
+the next ORFS bump once #4333 lands.
+
+Signed-off-by: Øyvind Harboe <oyvind.harboe@zylin.com>
+---
+ flow/BUILD.bazel                | 9 +++++++++
+ flow/scripts/synth.tcl          | 4 ----
+ flow/scripts/synth_odb.tcl      | 9 ++++++---
+ flow/scripts/synth_preamble.tcl | 1 -
+ 4 files changed, 15 insertions(+), 8 deletions(-)
+
+diff --git a/flow/BUILD.bazel b/flow/BUILD.bazel
+index 62e012594..41add0830 100644
+--- a/flow/BUILD.bazel
++++ b/flow/BUILD.bazel
+@@ -5,6 +5,15 @@ exports_files(
+     visibility = ["//visibility:public"],
+ )
+ 
++# Expose synth.tcl as an addressable source label so bazel-orfs can
++# point its `_synth_tcl` attr default at `@orfs//flow:scripts/synth.tcl`
++# instead of vendoring its own (drifting) copy at the bazel-orfs repo
++# root. See bazel-orfs `private/rules.bzl`.
++exports_files(
++    ["scripts/synth.tcl"],
++    visibility = ["//visibility:public"],
++)
++
+ # files shared between scripts/synth.sh and scripts/flow.sh steps
+ MAKEFILE_SHARED = [
+     "scripts/variables.json",
+diff --git a/flow/scripts/synth.tcl b/flow/scripts/synth.tcl
+index 1c9e548c5..25a0728fd 100644
+--- a/flow/scripts/synth.tcl
++++ b/flow/scripts/synth.tcl
+@@ -273,7 +273,3 @@ if {
+ 
+ # Write synthesized design
+ write_verilog -nohex -nodec $::env(RESULTS_DIR)/1_2_yosys.v
+-# One day a more sophisticated synthesis will write out a modified
+-# .sdc file after synthesis. For now, just copy the input .sdc file,
+-# making synthesis more consistent with other stages.
+-log_cmd exec cp $::env(SDC_FILE) $::env(RESULTS_DIR)/1_synth.sdc
+diff --git a/flow/scripts/synth_odb.tcl b/flow/scripts/synth_odb.tcl
+index d6f53cda3..d0abab512 100644
+--- a/flow/scripts/synth_odb.tcl
++++ b/flow/scripts/synth_odb.tcl
+@@ -25,9 +25,12 @@ source_step_tcl PRE SYNTH
+ log_cmd eliminate_dead_logic
+ 
+ source_step_tcl POST SYNTH
+-orfs_write_db $::env(RESULTS_DIR)/1_synth.odb
++# Producing 1_synth.odb/.sdc is this step's contract:
++# unconditional, no WRITE_ODB_AND_SDC_EACH_STAGE.
++log_cmd write_db $::env(RESULTS_DIR)/1_synth.odb
+ # Canonicalize 1_synth.sdc. The original SDC_FILE provided by
+ # the user could have dependencies, such as sourcing util.tcl,
+ # which are read in here and a canonicalized version is written
+-# out by OpenSTA that has no dependencies.
+-orfs_write_sdc $::env(RESULTS_DIR)/1_synth.sdc
++# out by OpenSTA that has no dependencies. Sole writer of
++# 1_synth.sdc.
++log_cmd write_sdc -no_timestamp $::env(RESULTS_DIR)/1_synth.sdc
+diff --git a/flow/scripts/synth_preamble.tcl b/flow/scripts/synth_preamble.tcl
+index af43512c0..58c016a7a 100644
+--- a/flow/scripts/synth_preamble.tcl
++++ b/flow/scripts/synth_preamble.tcl
+@@ -14,7 +14,6 @@ if { [env_var_exists_and_non_empty SYNTH_NETLIST_FILES] } {
+     # keep things simple we just use the creation date
+     log_cmd exec cat {*}$::env(SYNTH_NETLIST_FILES) > $::env(RESULTS_DIR)/1_2_yosys.v
+   }
+-  log_cmd exec cp -p $::env(SDC_FILE) $::env(RESULTS_DIR)/1_synth.sdc
+   if { [env_var_exists_and_non_empty CACHED_REPORTS] } {
+     log_cmd exec cp -p {*}$::env(CACHED_REPORTS) $::env(REPORTS_DIR)/.
+   }
