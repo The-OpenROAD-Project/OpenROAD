@@ -129,7 +129,7 @@ cc_library(
         "src/ta/FlexTA.h",
     ],
     includes = ["src"],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/drt/test:__pkg__"],
     deps = [
         ":base_types",
         ":db_hdrs",
