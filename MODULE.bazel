@@ -34,6 +34,20 @@ bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
+# bison is transitive (rules_bison -> bison). Same gnulib libc-header
+# shadowing class as sed/gawk/m4 under hermetic-llvm (BCR #7642).
+# 3.8.2.bcr.7 fixes lib/ but src/ still picks up raw libc headers; the
+# patch restores gnulib wrapper-header precedence via -I (to be proposed
+# upstream as 3.8.2.bcr.8, then drop).
+single_version_override(
+    module_name = "bison",
+    patch_strip = 1,
+    patches = [
+        "//bazel/bison-patches:0001-gnulib-wrapper-headers-use-I-not-isystem.patch",
+    ],
+    version = "3.8.2.bcr.7",
+)
+
 BOOST_VERSION = "1.89.0.bcr.2"
 
 # boost::icl's exclusive_less_than comparator violates strict weak ordering
@@ -89,10 +103,37 @@ bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
+
+# gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
+# libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
+# hermetic-llvm's explicit libc -isystem entries (BCR #7642). 5.3.2.bcr.7
+# carries the upstream fix (BCR #7989).
+single_version_override(
+    module_name = "gawk",
+    version = "5.3.2.bcr.7",
+)
+
 bazel_dep(name = "git", version = "2.54.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+# m4 is transitive (rules_bison/rules_flex -> m4). Same gnulib libc-header
+# shadowing class as sed/gawk under hermetic-llvm (BCR #7642).
+single_version_override(
+    module_name = "m4",
+    version = "1.4.21.bcr.4",
+)
+
 bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
 bazel_dep(name = "or-tools", version = "9.15")
+
+# sed is transitive (abc -> ncurses -> sed). Its vendored gnulib headers
+# deliberately shadow libc headers (stdio.h, error.h); hermetic-llvm's
+# explicit libc -isystem entries outrank them and sed@4.9.bcr.3 fails to
+# compile (BCR #7642). 4.9.bcr.5 carries the upstream fix (BCR #7915).
+single_version_override(
+    module_name = "sed",
+    version = "4.9.bcr.5",
+)
+
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.1")
@@ -133,19 +174,6 @@ git_override(
 ## libxml2 or /usr/include involved, and it runs unmodified on distros
 ## without FHS paths (e.g. NixOS).
 bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
-
-# hermetic-llvm injects kernel/glibc headers as the first -isystem entries,
-# outranking libraries that deliberately shadow libc headers (gnulib's
-# stdio.h in BCR sed; tcl's vendored minizip crypt.h). Host sysroots are
-# searched last; -idirafter restores that precedence. Drop when fixed
-# upstream.
-single_version_override(
-    module_name = "llvm",
-    patch_strip = 1,
-    patches = [
-        "//bazel/hermetic-llvm-patches:0001-libc-headers-idirafter-precedence.patch",
-    ],
-)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
