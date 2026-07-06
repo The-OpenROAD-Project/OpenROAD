@@ -644,7 +644,7 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
   int dx_lo = -(site_window + right_deficit);
   int dx_hi = site_window + left_deficit;
 
-  //Hard cap limit
+  // Hard cap limit
   dx_lo = std::max(dx_lo, -opendp_->max_displacement_x_);
   dx_hi = std::min(dx_hi, opendp_->max_displacement_x_);
   return {dx_lo, dx_hi};
