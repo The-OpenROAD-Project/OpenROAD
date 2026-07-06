@@ -1,46 +1,154 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-"""Bazel rule that invokes docs/Makefile to produce cat/ and html/ man pages.
+"""Bazel rule that produces cat/ and html/ man pages.
 
 The output filenames aren't known at analysis time (they depend on which
-modules exist under src/*/), so outputs are declared as TreeArtifacts and
-the real work is delegated to the `bazel-manpages` Makefile target.
+modules exist under src/*/), so outputs are declared as TreeArtifacts.
 
-Host requirements: pandoc, nroff (groff), col (bsdextrautils), python3>=3.10.
+Host requirements: pandoc, nroff (groff), and col (bsdextrautils).
 """
 
+def _shquote(value):
+    return "'" + value.replace("'", "'\\''") + "'"
+
 def _man_pages_resource_set(_os, _num_inputs):
-    # The 'cat web' make below fans out with -j$(nproc), so this action uses
-    # the whole host. Reserve all local CPUs to keep Bazel from co-scheduling
-    # other heavy actions alongside it and oversubscribing the machine. Bazel
-    # clamps the request to the cores actually available, so this is safe on
-    # small CI hosts too.
+    # The action fans out converters across the host, so keep Bazel from
+    # scheduling another CPU-heavy action alongside it.
     return {"cpu": 512.0}
 
 def _man_pages_impl(ctx):
     cat_dir = ctx.actions.declare_directory("cat")
     html_dir = ctx.actions.declare_directory("html")
 
+    python = ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.interpreter
+
+    copy_commands = []
+    for src in ctx.files.docs_srcs + ctx.files.scripts:
+        copy_commands.append("mkdir -p \"$(dirname \"$WORK/{dst}\")\" && cp -f {src} \"$WORK/{dst}\"".format(
+            dst = src.short_path,
+            src = _shquote(src.path),
+        ))
+    for src in ctx.files.messages:
+        dst = src.short_path
+        copy_commands.append("mkdir -p \"$(dirname \"$WORK/{dst}\")\" && cp -f {src} \"$WORK/{dst}\"".format(
+            dst = dst,
+            src = _shquote(src.path),
+        ))
+    for src in ctx.files.readmes:
+        module = src.short_path.split("/")[-2]
+        copy_commands.append("mkdir -p \"$WORK/docs/md/man2\" && cp -f {src} \"$WORK/docs/md/man2/{module}.md\"".format(
+            module = module,
+            src = _shquote(src.path),
+        ))
+    readme_modules = [
+        src.short_path.split("/")[-2]
+        for src in ctx.files.readmes
+    ]
+
+    # OpenSTA documentation does not use the format translated below.
+    if "sta" not in readme_modules:
+        readme_modules.append("sta")
+    readme_modules = "|".join(sorted(readme_modules))
+
     command = """
 set -euo pipefail
-CAT_OUT="$PWD/{cat_out}"
-HTML_OUT="$PWD/{html_out}"
-# Two phases: 'preprocess' (serial) generates the md/man*/*.md sources, then
-# 'cat web' fan out pandoc/nroff in parallel. They cannot share one -j make
-# invocation: cat/web read the md files preprocess produces, and a parallel
-# build has no dependency edge forcing preprocess to finish first. Running
-# 'cat web' as a second invocation also re-parses the Makefile so its
-# $(wildcard md/man*/*.md) picks up the freshly generated sources.
-# nproc is GNU coreutils (absent on stock macOS); fall back to sysctl, then 4.
+EXEC_ROOT="$PWD"
+WORK="$(mktemp -d /tmp/openroad_man_pages.XXXXXX)"
+trap 'rm -rf "$WORK"' EXIT
+CAT_OUT="$EXEC_ROOT"/{cat_out}
+HTML_OUT="$EXEC_ROOT"/{html_out}
+PYTHON="$EXEC_ROOT"/{python}
+PANDOC={pandoc}
+NROFF={nroff}
+COL={col}
 JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
-make --no-print-directory -C docs -f Makefile preprocess \\
-    CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
-make --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
-    CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
+UTF8_LOCALE="$(locale -a 2>/dev/null     | grep -iE '^(C|en_US)\\.(UTF-8|utf8)$' | head -1 || true)"
+if [[ -n "$UTF8_LOCALE" ]]; then
+    export LC_ALL="$UTF8_LOCALE"
+fi
+
+rm -rf "$CAT_OUT" "$HTML_OUT"
+mkdir -p "$WORK/docs/md/man1" "$WORK/docs/md/man2" "$WORK/docs/md/man3"
+mkdir -p "$CAT_OUT" "$HTML_OUT"
+
+{copy_commands}
+
+cd "$WORK/docs"
+"$PYTHON" src/scripts/md_roff_compat.py
+
+MAN_ROOT="$PWD/man"
+mkdir -p "$MAN_ROOT"/man1 "$MAN_ROOT"/man2 "$MAN_ROOT"/man3
+mkdir -p "$HTML_OUT"/html1 "$HTML_OUT"/html2 "$HTML_OUT"/html3
+mkdir -p "$CAT_OUT"/cat1 "$CAT_OUT"/cat2 "$CAT_OUT"/cat3
+export MAN_ROOT HTML_OUT CAT_OUT PANDOC NROFF COL
+
+is_module_readme() {{
+    case "$1" in
+        {readme_modules})
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}}
+
+convert_manpage() {{
+    src="$1"
+    section="$2"
+    html_subdir="$3"
+    cat_subdir="$4"
+    base="$(basename "$src" .md)"
+    man_file="$MAN_ROOT/man$section/$base.$section"
+    html_file="$HTML_OUT/$html_subdir/$base.html"
+    cat_file="$CAT_OUT/$cat_subdir/$base.$section"
+
+    "$PANDOC" -s -t man "$src" -o "$man_file" --quiet
+    "$PANDOC" -s -f man -t html "$man_file" -o "$html_file" --quiet
+    "$NROFF" -Tutf8 -man "$man_file" | "$COL" -b > "$cat_file"
+}}
+
+convert_group() {{
+    section="$1"
+    html_subdir="$2"
+    cat_subdir="$3"
+    shift 3
+
+    if (( "$#" == 0 )); then
+        return
+    fi
+
+    printf '%s\\0' "$@" | xargs -0 -n1 -P "$JOBS"         bash -c 'convert_manpage "$4" "$1" "$2" "$3"' _         "$section" "$html_subdir" "$cat_subdir"
+}}
+
+export -f convert_manpage
+shopt -s nullglob
+
+man1=(md/man1/*.md)
+convert_group 1 html1 cat1 "${{man1[@]}}"
+
+man2=()
+for src in md/man2/*.md; do
+    base="$(basename "$src" .md)"
+    if is_module_readme "$base"; then
+        continue
+    fi
+    man2+=("$src")
+done
+convert_group 2 html2 cat2 "${{man2[@]}}"
+
+man3=(md/man3/*.md)
+convert_group 3 html3 cat3 "${{man3[@]}}"
 """.format(
-        cat_out = cat_dir.path,
-        html_out = html_dir.path,
+        cat_out = _shquote(cat_dir.path),
+        col = _shquote(ctx.attr.col),
+        copy_commands = "\n".join(copy_commands),
+        html_out = _shquote(html_dir.path),
+        nroff = _shquote(ctx.attr.nroff),
+        pandoc = _shquote(ctx.attr.pandoc),
+        python = _shquote(python.path),
+        readme_modules = readme_modules,
     )
 
     ctx.actions.run_shell(
@@ -50,8 +158,7 @@ make --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
         command = command,
         mnemonic = "ManPages",
         progress_message = "Generating man pages (cat + html)",
-        use_default_shell_env = True,
-        execution_requirements = {"no-sandbox": "1"},
+        tools = [python],
     )
 
     return [DefaultInfo(
@@ -62,13 +169,25 @@ make --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
 man_pages = rule(
     implementation = _man_pages_impl,
     attrs = {
+        "col": attr.string(
+            default = "col",
+            doc = "Executable used to remove nroff backspace formatting.",
+        ),
         "docs_srcs": attr.label_list(
-            doc = "All source files under docs/ needed by the Makefile.",
+            doc = "All source files under docs/ needed to generate man pages.",
             allow_files = True,
         ),
         "messages": attr.label_list(
             doc = "Module messages.txt files needed for man3 page generation.",
             allow_files = [".txt"],
+        ),
+        "nroff": attr.string(
+            default = "nroff",
+            doc = "Executable used to render cat man pages.",
+        ),
+        "pandoc": attr.string(
+            default = "pandoc",
+            doc = "Executable used to convert Markdown and roff man pages.",
         ),
         "readmes": attr.label_list(
             doc = "Module README.md files (src/*/README.md).",
@@ -79,4 +198,5 @@ man_pages = rule(
             allow_files = True,
         ),
     },
+    toolchains = ["@rules_python//python:toolchain_type"],
 )
