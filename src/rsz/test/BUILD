@@ -252,6 +252,8 @@ TESTS = [
     "global_sizing_presize",
     "inferred_clock_gator_time_borrow",
     "inferred_clock_gator_time_borrow_covered",
+    "inferred_clock_gator_time_borrow_repair_pin",
+    "inferred_clock_gator_time_borrow_tns",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS

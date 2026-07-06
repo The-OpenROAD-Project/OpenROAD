@@ -129,7 +129,8 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
     }
 
     const sta::Pin* endpoint_pin = endpoint->pin();
-    sta::Slack endpoint_slack = sta_->slack(endpoint, max_);
+    sta::Slack endpoint_slack
+        = target_collector_->getCurrentEndpointOriginalSlack();
     if (sta::fuzzyGreaterEqual(endpoint_slack, setup_slack_margin)) {
       continue;
     }
@@ -189,7 +190,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
       estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
 
-      endpoint_slack = sta_->slack(endpoint, max_);
+      endpoint_slack = target_collector_->getEndpointEffectiveSlack(endpoint);
       sta::Slack global_wns = 0.0;
       sta::Vertex* global_wns_vertex = nullptr;
       sta_->worstSlack(max_, global_wns, global_wns_vertex);

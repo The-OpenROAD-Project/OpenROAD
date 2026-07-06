@@ -88,6 +88,7 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
   }
 
   initializeSetupServices();
+  target_collector_->init(config_.setup_slack_margin);
   setup_context_.max_repairs_per_pass = 1;
 
   sta::Vertex* end_vertex = graph_->pinLoadVertex(end_pin);

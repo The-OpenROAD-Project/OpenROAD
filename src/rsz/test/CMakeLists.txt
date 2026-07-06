@@ -240,6 +240,8 @@ or_integration_tests(
     global_sizing_presize
     inferred_clock_gator_time_borrow
     inferred_clock_gator_time_borrow_covered
+    inferred_clock_gator_time_borrow_repair_pin
+    inferred_clock_gator_time_borrow_tns
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1
