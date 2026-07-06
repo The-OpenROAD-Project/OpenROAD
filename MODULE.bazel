@@ -34,6 +34,17 @@ bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
+# bison is transitive (rules_bison -> bison). Its vendored gnulib headers
+# deliberately shadow libc headers; under toolchains that inject libc
+# headers as leading -isystem entries (hermetic-llvm, #10812) the shadowing
+# breaks and bison@3.8.2.bcr.5 fails to compile (O_BINARY, BCR #7642).
+# 3.8.2.bcr.7 fixes most of it (a small remainder is patched in #10812
+# pending a proposed 3.8.2.bcr.8).
+single_version_override(
+    module_name = "bison",
+    version = "3.8.2.bcr.7",
+)
+
 BOOST_VERSION = "1.89.0.bcr.2"
 
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
