@@ -37,7 +37,7 @@
 #include <map>
 #include <string_view>
 
-#include <spdlog/fmt/fmt.h>
+#include "spdlog/fmt/fmt.h"
 
 namespace lorina
 {
