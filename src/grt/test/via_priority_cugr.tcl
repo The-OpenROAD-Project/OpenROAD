@@ -13,3 +13,7 @@ set_routing_layers -signal metal1-metal2
 set_debug_level GRT via_geom 1
 
 global_route -use_cugr
+
+set guide_file [make_result_file via_priority_cugr.guide]
+write_guides $guide_file
+diff_file via_priority_cugr.guideok $guide_file

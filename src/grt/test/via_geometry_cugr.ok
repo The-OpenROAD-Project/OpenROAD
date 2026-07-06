@@ -15,3 +15,4 @@
 [DEBUG GRT-via_geom] via M4->M5 [VIA45]: encl lower=46x24 upper=24x46 -> len lower=92.0 upper=92.0 -> demand lower=0.1614 upper=0.1614
 [DEBUG GRT-via_geom] via M5->M6 [VIA56]: encl lower=24x54 upper=46x32 -> len lower=108.0 upper=92.0 -> demand lower=0.1895 upper=0.1614
 [DEBUG GRT-via_geom] via M6->M7 [VIA67]: encl lower=54x32 upper=32x54 -> len lower=108.0 upper=108.0 -> demand lower=0.1895 upper=0.1895
+No differences found.
