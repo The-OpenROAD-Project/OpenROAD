@@ -490,6 +490,25 @@ add_3dblox_alignment_marker_rule
 | `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
 | `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
 
+### Set Extraction Rules File
+
+Sets the path to the parasitics extraction rules file. For a design in which
+multiple technologies are used, the user must specify the technology for which
+they want to set the rules path.
+
+```tcl
+set_extraction_rules_file
+    [-tech tech_name]
+    rules_file
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-tech` | Technology for which to set the extraction rules path. |
+| `rules_file` | Path to the extraction rules file. |
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 

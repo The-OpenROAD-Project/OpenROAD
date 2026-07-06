@@ -217,6 +217,8 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
     }
     cugr_->setCriticalNetsPercentage(0);
   }
+  // Set before init so Design::read() gates its statistics on verbosity.
+  cugr_->setVerbose(verbose_);
   cugr_->init(min_routing_layer, max_routing_layer, clock_nets);
   return nets;
 }
@@ -6341,6 +6343,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   if (use_cugr_) {
+    cugr_->setVerbose(false);
     for (odb::dbNet* net : dirty_nets_) {
       cugr_->updateNet(net);
     }

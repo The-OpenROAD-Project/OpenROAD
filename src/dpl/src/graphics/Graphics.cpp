@@ -7,6 +7,7 @@
 #include <any>
 #include <cstdlib>
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -32,6 +33,17 @@ Graphics::Graphics(Opendp* dp,
       paint_negotiation_pixels_(paint_negotiation_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
+
+  gui::Gui* gui = gui::Gui::get();
+  if (violations_chart_ == nullptr) {
+    violations_chart_
+        = gui->addChart("DPL Negotiation",
+                        "Iteration",
+                        {"Violations", "Illegal Cells", "Illegal Sites"});
+    violations_chart_->setXAxisFormat("%d");
+    violations_chart_->setYAxisFormats({"%.0f", "%.0f", "%.0f"});
+    violations_chart_->setYAxisMin({0.0, 0.0, 0.0});
+  }
 }
 
 void Graphics::startPlacement(odb::dbBlock* block)
@@ -129,7 +141,6 @@ void Graphics::drawObjects(gui::Painter& painter)
     int dy = final_location.y() - initial_location.y();
     gui::Painter::Color line_color;
 
-    // Check if the instance is selected
     if (selected_insts.contains(cell->getDbInst())) {
       line_color = gui::Painter::kYellow;
 
@@ -142,7 +153,6 @@ void Graphics::drawObjects(gui::Painter& painter)
                             final_location.x() + width,
                             final_location.y() + height);
       auto outline_color = gui::Painter::kCyan;
-      // outline_color.a = 150;
       painter.setPen(outline_color, /* cosmetic */ true);
       painter.setBrush(gui::Painter::kTransparent);
       painter.drawRect(target_bbox);
@@ -155,10 +165,17 @@ void Graphics::drawObjects(gui::Painter& painter)
                        target_bbox.yMin(),
                        target_bbox.xMin(),
                        target_bbox.yMin() + tag_size * 2);
-    } else if (std::abs(dx) > std::abs(dy)) {
-      line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
+    } else if (current_iter_movers_.empty()
+               || current_iter_movers_.contains(cell->getDbInst())) {
+      // Moved in the current iteration (or no iteration info yet).
+      if (std::abs(dx) > std::abs(dy)) {
+        line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
+      } else {
+        line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+      }
     } else {
-      line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+      // Moved in a previous iteration.
+      line_color = gui::Painter::kGray;
     }
 
     painter.setPen(line_color, /* cosmetic */ true);
@@ -324,6 +341,32 @@ void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
 void Graphics::clearNegotiationSearchWindows()
 {
   negotiation_search_windows_.clear();
+}
+
+void Graphics::addNegotiationViolationsPoint(int iter,
+                                             int violations,
+                                             int illegal_count,
+                                             int illegal_site_count)
+{
+  if (violations_chart_) {
+    violations_chart_->addPoint(iter,
+                                {static_cast<double>(violations),
+                                 static_cast<double>(illegal_count),
+                                 static_cast<double>(illegal_site_count)});
+  }
+}
+
+void Graphics::addNegotiationPhase2Marker(int iter)
+{
+  if (violations_chart_) {
+    violations_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  }
+}
+
+void Graphics::setCurrentIterMovers(
+    const std::unordered_set<odb::dbInst*>& movers)
+{
+  current_iter_movers_ = movers;
 }
 
 /* static */
