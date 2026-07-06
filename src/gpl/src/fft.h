@@ -3,15 +3,27 @@
 
 #pragma once
 
+#include <memory>
 #include <utility>
 #include <vector>
 
+#include "fftBackend.h"
+
 namespace gpl {
 
+class RegionDensityField;
+
+// FFT — the density-grid context for the Poisson solve. Owns the staging grids
+// and backend-agnostic accessors; the solve is delegated to an FftBackend (CPU
+// Ooura DCT or GPU Kokkos) chosen by makeFftBackend() at construction.
 class FFT
 {
  public:
-  FFT(int bin_cnt_x, int bin_cnt_y, float bin_size_x, float bin_size_y);
+  FFT(int bin_cnt_x,
+      int bin_cnt_y,
+      float bin_size_x,
+      float bin_size_y,
+      RegionDensityField* region_field = nullptr);
   ~FFT();
 
   // input func
@@ -24,34 +36,23 @@ class FFT
   std::pair<float, float> getElectroField(int x, int y) const;
   float getElectroPhi(int x, int y) const;
 
+  // Diagnostic label of the backend chosen at construction (e.g. "CPU").
+  const char* getBackendName() const;
+
  private:
-  // 2D array; width: binCntX_, height: binCntY_;
-  // No hope to use Vector at this moment...
-  float** bin_density_ = nullptr;
-  float** electro_phi_ = nullptr;
-  float** electro_field_x_ = nullptr;
-  float** electro_field_y_ = nullptr;
+  // Row-major flat buffers, layout [x * bin_cnt_y_ + y]. The backend takes a
+  // BinGridSpan over each; the CPU Ooura backend re-wraps as float** locally
+  // because ddct2d() takes that legacy shape.
+  std::vector<float> bin_density_;
+  std::vector<float> electro_phi_;
+  std::vector<float> electro_field_x_;
+  std::vector<float> electro_field_y_;
 
-  // cos/sin table (prev: w_2d)
-  // length:  max(binCntX, binCntY) * 3 / 2
-  std::vector<float> cs_table_;
-
-  // wx. length:  binCntX_
-  std::vector<float> wx_;
-  std::vector<float> wx_square_;
-
-  // wy. length:  binCntY_
-  std::vector<float> wy_;
-  std::vector<float> wy_square_;
-
-  // work area for bit reversal (prev: ip)
-  // length: round(sqrt( max(binCntX_, binCntY_) )) + 2
-  std::vector<int> work_area_;
-
-  int bin_cnt_X_ = 0;
+  int bin_cnt_x_ = 0;
   int bin_cnt_y_ = 0;
-  float bin_size_x_ = 0;
-  float bin_size_y_ = 0;
+
+  // Poisson solve backend (CPU Ooura or GPU Kokkos), chosen in the ctor.
+  std::unique_ptr<FftBackend> backend_;
 };
 
 //

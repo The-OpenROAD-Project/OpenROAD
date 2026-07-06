@@ -10,6 +10,14 @@ the real work is delegated to the `bazel-manpages` Makefile target.
 Host requirements: pandoc, nroff (groff), col (bsdextrautils), python3>=3.10.
 """
 
+def _man_pages_resource_set(_os, _num_inputs):
+    # The 'cat web' make below fans out with -j$(nproc), so this action uses
+    # the whole host. Reserve all local CPUs to keep Bazel from co-scheduling
+    # other heavy actions alongside it and oversubscribing the machine. Bazel
+    # clamps the request to the cores actually available, so this is safe on
+    # small CI hosts too.
+    return {"cpu": 512.0}
+
 def _man_pages_impl(ctx):
     cat_dir = ctx.actions.declare_directory("cat")
     html_dir = ctx.actions.declare_directory("html")
@@ -18,7 +26,17 @@ def _man_pages_impl(ctx):
 set -euo pipefail
 CAT_OUT="$PWD/{cat_out}"
 HTML_OUT="$PWD/{html_out}"
-make --no-print-directory -C docs -f Makefile bazel-manpages \\
+# Two phases: 'preprocess' (serial) generates the md/man*/*.md sources, then
+# 'cat web' fan out pandoc/nroff in parallel. They cannot share one -j make
+# invocation: cat/web read the md files preprocess produces, and a parallel
+# build has no dependency edge forcing preprocess to finish first. Running
+# 'cat web' as a second invocation also re-parses the Makefile so its
+# $(wildcard md/man*/*.md) picks up the freshly generated sources.
+# nproc is GNU coreutils (absent on stock macOS); fall back to sysctl, then 4.
+JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
+make --no-print-directory -C docs -f Makefile preprocess \\
+    CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
+make --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
     CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
 """.format(
         cat_out = cat_dir.path,
@@ -26,6 +44,7 @@ make --no-print-directory -C docs -f Makefile bazel-manpages \\
     )
 
     ctx.actions.run_shell(
+        resource_set = _man_pages_resource_set,
         outputs = [cat_dir, html_dir],
         inputs = ctx.files.docs_srcs + ctx.files.scripts + ctx.files.readmes + ctx.files.messages,
         command = command,
