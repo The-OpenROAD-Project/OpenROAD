@@ -18,6 +18,34 @@ py_binary(
 # through their transitive compilation contexts.
 cmake_deps_bundle(
     name = "bundle",
+    exclude_from_pool = ["googletest"],
+    include_overrides = {
+        # cudd's util.h etc. would collide in a flat include/; FindCUDD
+        # searches the include/cudd suffix.
+        "cudd": "cudd",
+    },
+    lib_name_overrides = {
+        # FindZLIB and FindCUDD search by library name under <pkg>_ROOT;
+        # the clang driver resolves -lomp during FindOpenMP's checks.
+        "cudd": "cudd",
+        "openmp": "omp",
+        "zlib": "z",
+    },
+    python_headers = "@rules_python//python/cc:current_py_cc_headers",
+    python_libs = "@rules_python//python/cc:current_py_cc_libs",
+    shims = glob(["shims/*.cmake"]),
+    # GTestConfig.cmake references these archives by stable lib/ paths.
+    stable_lib_modules = ["googletest"],
+    swig = "@swig",
+    swig_lib = [
+        "@swig//:lib_python",
+        "@swig//:lib_tcl",
+        "@swig//:swig_swg",
+    ],
+    tcl_library = "@tcl_lang//:tcl_core",
+    toolchain_template = "toolchain.cmake.in",
+    versions_src = "//:MODULE.bazel",
+    visibility = ["//visibility:private"],
     deps = [
         "@abseil-cpp//absl/hash",
         "@abseil-cpp//absl/strings",
@@ -76,34 +104,6 @@ cmake_deps_bundle(
         "@yaml-cpp",
         "@zlib",
     ],
-    exclude_from_pool = ["googletest"],
-    include_overrides = {
-        # cudd's util.h etc. would collide in a flat include/; FindCUDD
-        # searches the include/cudd suffix.
-        "cudd": "cudd",
-    },
-    lib_name_overrides = {
-        # FindZLIB and FindCUDD search by library name under <pkg>_ROOT;
-        # the clang driver resolves -lomp during FindOpenMP's checks.
-        "cudd": "cudd",
-        "openmp": "omp",
-        "zlib": "z",
-    },
-    python_headers = "@rules_python//python/cc:current_py_cc_headers",
-    # GTestConfig.cmake references these archives by stable lib/ paths.
-    stable_lib_modules = ["googletest"],
-    python_libs = "@rules_python//python/cc:current_py_cc_libs",
-    shims = glob(["shims/*.cmake"]),
-    swig = "@swig",
-    swig_lib = [
-        "@swig//:lib_python",
-        "@swig//:lib_tcl",
-        "@swig//:swig_swg",
-    ],
-    tcl_library = "@tcl_lang//:tcl_core",
-    toolchain_template = "toolchain.cmake.in",
-    versions_src = "//:MODULE.bazel",
-    visibility = ["//visibility:private"],
 )
 
 # `bazelisk run //:cmake` (alias of this target) copies :bundle into

@@ -26,6 +26,8 @@ what bazel itself uses when the `llvm` module is bumped.
 
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 # Flags owned by the CMake build type, not by the toolchain. Everything else
 # extracted from the bazel toolchain is kept verbatim.
@@ -434,9 +436,9 @@ def _cmake_deps_bundle_impl(ctx):
         for f in info.all_files.to_list():
             copies["tools/" + _map_exec_path(f.path)] = f.path
         runfiles_dir = "{}.runfiles/{}".format(tool.path, tool.owner.workspace_name)
-        source_form = "$R/tools/external/" + tool.owner.workspace_name
+        source_form = "$R/tools/external/" + tool.owner.workspace_name  # buildifier: disable=external-path
         binary_form = "$R/tools/" + _map_exec_path(
-            "{}/external/{}".format(tool.root.path, tool.owner.workspace_name),
+            "{}/external/{}".format(tool.root.path, tool.owner.workspace_name),  # buildifier: disable=external-path
         )
         for key, value in env.items():
             form = source_form if key == "BISON_PKGDATADIR" else binary_form
@@ -540,9 +542,9 @@ def _cmake_deps_bundle_impl(ctx):
         template_dest = "toolchain.cmake",
         substitutions = {
             "@ARCHIVER@": "${_OR_DEPS}/llvm/" + _map_exec_path(toolchain.archiver),
-            "@TCL_ARCHIVE@": "${_OR_DEPS}/" + single_archive("tcl_lang"),
             "@OMP_ARCHIVE@": "${_OR_DEPS}/" + single_archive("openmp"),
             "@PYTHON_VERSION@": python_version,
+            "@TCL_ARCHIVE@": "${_OR_DEPS}/" + single_archive("tcl_lang"),
         },
     )
     inputs.append(depset([ctx.file.versions_src, ctx.file.toolchain_template]))
@@ -594,15 +596,15 @@ cmake_deps_bundle = rule(
             mandatory = True,
             doc = "libpython (rules_python current_py_cc_libs).",
         ),
-        "stable_lib_modules": attr.string_list(
-            doc = "Module names whose archives are also copied to " +
-                  "lib/<basename>, giving the static config shims paths " +
-                  "free of bzlmod canonical repository names.",
-        ),
         "shims": attr.label_list(
             allow_files = [".cmake"],
             doc = "CMake package config shims, staged by basename into " +
                   "lib/cmake/<Package>/.",
+        ),
+        "stable_lib_modules": attr.string_list(
+            doc = "Module names whose archives are also copied to " +
+                  "lib/<basename>, giving the static config shims paths " +
+                  "free of bzlmod canonical repository names.",
         ),
         "swig": attr.label(
             executable = True,
