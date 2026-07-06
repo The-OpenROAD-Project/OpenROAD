@@ -163,6 +163,19 @@ archive_override(
 bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
 bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
 
+# BCR's yosys-slang 0.0.0 source.json points at the GitHub tarball of
+# povik/yosys-slang@6760afa2; after the repo's rename GitHub regenerated
+# that tarball (new bytes, top-level dir now sv-elab-<sha>), so fresh
+# fetches fail BCR's integrity check. Same commit, content verified
+# identical to the git tree; only integrity and strip_prefix corrected.
+# Drop once BCR publishes a fixed yosys-slang entry.
+archive_override(
+    module_name = "yosys-slang",
+    integrity = "sha256-NBmPLtey0xdcPOPJ+xxskfKNvP5THZe5HWsSxIQxve8=",
+    strip_prefix = "sv-elab-6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20",
+    urls = ["https://github.com/povik/yosys-slang/archive/6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20.tar.gz"],
+)
+
 # --- Extensions ---
 
 llvm = use_extension(
@@ -278,7 +291,9 @@ single_version_override(
 single_version_override(
     module_name = "sed",
     patch_cmds = [
-        "sed -i 's|^#ifdef _LIBC$|#if 1|' lib/memchr.c",
+        # -i.bak (not bare -i) so BSD sed on macOS accepts it too.
+        "sed -i.bak 's|^#ifdef _LIBC$|#if 1|' lib/memchr.c",
+        "rm lib/memchr.c.bak",
     ],
     version = "4.9.bcr.5",
 )
