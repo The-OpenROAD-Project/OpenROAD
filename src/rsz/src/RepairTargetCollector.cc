@@ -435,6 +435,13 @@ sta::Slack RepairTargetCollector::getPathSlackByIndex(
     const sta::Pin* endpoint_pin,
     int path_index)
 {
+  // Worst path only: pure read via vertexWorstSlackPath, no findPathEnds /
+  // ExceptionTo. All shipping callers pass 0; findPathEnds path below is k>1.
+  if (path_index == 0) {
+    sta::Path* path = worstSlackPathForPin(endpoint_pin);
+    return path ? path->slack(search_) : static_cast<sta::Slack>(sta::INF);
+  }
+
   // Create ExceptionTo for this endpoint
   sta::PinSet* to_pins = new sta::PinSet(network_);
   to_pins->insert(endpoint_pin);
@@ -878,6 +885,13 @@ sta::Path* RepairTargetCollector::findWorstSlackPath(
   return sta_->vertexWorstSlackPath(endpoint, max_);
 }
 
+sta::Path* RepairTargetCollector::worstSlackPathForPin(
+    const sta::Pin* endpoint_pin) const
+{
+  sta::Vertex* endpoint = graph_->pinLoadVertex(endpoint_pin);
+  return endpoint ? findWorstSlackPath(endpoint) : nullptr;
+}
+
 std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
     sta::Path* path,
     const sta::Slack path_slack) const
@@ -1096,41 +1110,28 @@ set<const sta::Pin*> RepairTargetCollector::collectPinsByPathEndpoint(
   // Create a set to remove duplciates
   set<const sta::Pin*> viol_pins;
 
-  // This uses the old method for a single path at a time
-  /*if (paths_per_endpoint == 1) {
-    Vertex* end = graph_->pinDrvrVertex(endpoint_pin);
-    Path* end_path = sta_->vertexWorstSlackPath(end, max_);
-    PathExpanded expanded(end_path, sta_);
-    if (expanded.size() > 1) {
-      const int path_length = expanded.size();
-      const int start_index = expanded.startIndex();
-      for (int i = start_index; i < path_length; i++) {
-        const Path* path = expanded.path(i);
-        const Pin* path_pin = path->pin(sta_);
-        Vertex* path_vertex = path->vertex(sta_);
-        if (!path_vertex->isDriver(network_)
-            || network_->isTopLevelPort(path_pin)) {
-          continue;
-        }
-        viol_pins.insert(path_pin);
-        debugPrint(logger_,
-                   RSZ,
-                   "violator_collector",
-                   3,
-                   "  - Pin: {}",
-                   network_->pathName(path_pin));
-      }
+  // Worst path only: pure read via vertexWorstSlackPath, no findPathEnds /
+  // ExceptionTo. All shipping callers pass 1; findPathEnds path below is k>1.
+  if (paths_per_endpoint == 1) {
+    sta::Path* path = worstSlackPathForPin(endpoint_pin);
+    if (path == nullptr || path->slack(search_) > 0.0) {
       return viol_pins;
     }
-  } else {
-    // FIXME later
+    sta::PathExpanded expanded(path, sta_);
+    for (size_t i = 0; i < expanded.size(); i++) {
+      const sta::Pin* pin = expanded.path(i)->pin(graph_);
+      if (!network_->direction(pin)->isOutput() || network_->isTopLevelPort(pin)
+          || sta_->isClock(pin, sta_->cmdMode())) {
+        continue;
+      }
+      viol_pins.insert(pin);
+    }
     return viol_pins;
   }
-    */
 
-  // This code does not behave properly for single path case. At some points it
-  // does not match the above vertexWorstSlackPath method. It seems to be
-  // related to the use of the ExceptionTo object.
+  // The k>1 path below does not behave properly for the single path case: at
+  // some points it does not match the vertexWorstSlackPath fast path above. It
+  // seems to be related to the use of the ExceptionTo object.
   // 1. Define the single endpoint for the path search.
   sta::PinSet* to_pins = new sta::PinSet(network_);
   to_pins->insert(endpoint_pin);
