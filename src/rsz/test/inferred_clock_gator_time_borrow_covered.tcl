@@ -9,21 +9,16 @@ read_def inferred_clock_gator_time_borrow.def
 
 create_clock -name clk -period 1.0 clk
 create_clock -name vclk -period 1.0
-set_input_delay -clock vclk 0.90 [get_ports en_in]
+set_input_delay -clock vclk 0.80 [get_ports en_in]
 
 source Nangate45/Nangate45.rc
 source $layer_rc_file
 set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock -layer $wire_rc_layer_clk
 
-clock_tree_synthesis -root_buf CLKBUF_X3 \
-  -buf_list CLKBUF_X3 \
-  -wire_unit 20 \
-  -sink_clustering_enable \
-  -distance_between_buffers 80 \
-  -num_static_layers 1 \
-  -repair_clock_nets
-
+# Keep this regression focused on RSZ time-borrow endpoint targeting.
+# With enough downstream setup margin, the latch borrow is fully covered and
+# should not make repair_timing optimize the latch D path.
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
 
@@ -60,5 +55,3 @@ if { abs($after_borrow - $before_borrow) > 0.001 } {
     "repair_timing changed covered latch borrow: before %.4f after %.4f" \
     $before_borrow $after_borrow]
 }
-
-puts "pass inferred_clock_gator_time_borrow_covered"

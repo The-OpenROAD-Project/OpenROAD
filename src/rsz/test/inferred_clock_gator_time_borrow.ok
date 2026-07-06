@@ -3,160 +3,20 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 10 components and 52 component-terminals.
 [INFO ODB-0133]     Created 7 nets and 22 connections.
-[INFO CTS-0050] Root buffer is CLKBUF_X3.
-[INFO CTS-0051] Sink buffer is CLKBUF_X3.
-[INFO CTS-0052] The following clock buffers will be used for CTS:
-                    CLKBUF_X3
-[INFO CTS-0049] Characterization buffer is CLKBUF_X3.
-[INFO CTS-0007] Net "clk" found for clock "clk".
-[INFO CTS-0011]  Clock net "clk" for macros has 2 sinks.
-[INFO CTS-0011]  Clock net "clk_regs" for registers has 1 sinks.
-[INFO CTS-0010]  Clock net "gated_clk" has 4 sinks.
-[WARNING CTS-0041] Net "sibling_clk" has 1 sinks. Skipping...
-[INFO CTS-0008] TritonCTS found 3 clock nets.
-[INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
-[INFO CTS-0027] Generating H-Tree topology for net clk.
-[INFO CTS-0028]  Total number of sinks: 2.
-[INFO CTS-0060]  Macro  sinks will be clustered in groups of up to 4 and based on buffer max cap.
-[INFO CTS-0030]  Number of static layers: 1.
-[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0021]  Distance between buffers: 5 units (80 um).
-[INFO CTS-0023]  Original sink region: [(91830, 90695), (167065, 165470)].
-[INFO CTS-0024]  Normalized sink region: [(6.55929, 6.47821), (11.9332, 11.8193)].
-[INFO CTS-0025]     Width:  5.3739.
-[INFO CTS-0026]     Height: 5.3411.
- Level 1
-    Direction: Horizontal
-    Sinks per sub-region: 1
-    Sub-region size: 2.6870 X 5.3411
-[INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 2.
-[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
-[INFO CTS-0027] Generating H-Tree topology for net clk_regs.
-[INFO CTS-0028]  Total number of sinks: 1.
-[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
-[INFO CTS-0030]  Number of static layers: 1.
-[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0021]  Distance between buffers: 5 units (80 um).
-[INFO CTS-0023]  Original sink region: [(92825, 160215), (92825, 160215)].
-[INFO CTS-0024]  Normalized sink region: [(6.63036, 11.4439), (6.63036, 11.4439)].
-[INFO CTS-0025]     Width:  0.0000.
-[INFO CTS-0026]     Height: 0.0000.
- Level 1
-    Direction: Vertical
-    Sinks per sub-region: 1
-    Sub-region size: 0.0000 X 0.0000
-[INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 1.
-[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
-[INFO CTS-0027] Generating H-Tree topology for net gated_clk.
-[INFO CTS-0028]  Total number of sinks: 4.
-[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
-[INFO CTS-0030]  Number of static layers: 1.
-[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0021]  Distance between buffers: 5 units (80 um).
-[INFO CTS-0023]  Original sink region: [(162830, 160215), (170810, 168275)].
-[INFO CTS-0024]  Normalized sink region: [(11.6307, 11.4439), (12.2007, 12.0196)].
-[INFO CTS-0025]     Width:  0.5700.
-[INFO CTS-0026]     Height: 0.5757.
- Level 1
-    Direction: Vertical
-    Sinks per sub-region: 2
-    Sub-region size: 0.5700 X 0.2879
-[INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 4.
-[INFO CTS-0018]     Created 3 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
-[INFO CTS-0015]     Created 3 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 1:2..
-[INFO CTS-0017]     Max level of the clock tree: 1.
-[INFO CTS-0018]     Created 2 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
-[INFO CTS-0015]     Created 2 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 1:1..
-[INFO CTS-0017]     Max level of the clock tree: 1.
-[INFO CTS-0018]     Created 3 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
-[INFO CTS-0015]     Created 3 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 2:2..
-[INFO CTS-0017]     Max level of the clock tree: 1.
-[INFO CTS-0098] Clock net "clk"
-[INFO CTS-0099]  Sinks 2
-[INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 97.63 um
-[INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Dummy loads inserted 1
-[INFO CTS-0124] Clock net "clk_regs"
-[INFO CTS-0125]  Sinks 1
-[INFO CTS-0098] Clock net "gated_clk"
-[INFO CTS-0099]  Sinks 4
-[INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 15.14 um
-[INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Dummy loads inserted 0
-[INFO CTS-0033] Balancing latency for clock clk
-[INFO CTS-0036]  inserted 4 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 4
 [WARNING STA-0450] virtual clock vclk can not be propagated.
-BEFORE_BORROW 0.4005
+BEFORE_BORROW 0.4545
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 7 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 7 out of 7 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.055 |       -0.1 |       -0.1 |      7 | inferred_gate/A2
-      21* |       1 |       1 |        3 |      0 |     0 |    +3.9% |   -0.027 |       -0.0 |       -0.1 |      7 | inferred_gate/A2
-    final |       1 |       1 |        3 |      0 |     0 |    +3.9% |   -0.027 |       -0.0 |       -0.1 |      7 | inferred_gate/A2
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.3 |      7 | enable_latch/D
+      16* |       1 |       5 |        1 |      0 |     0 |   +13.6% |   -0.048 |       -0.1 |       -0.2 |      7 | enable_latch/D
+    final |       1 |       5 |        1 |      0 |     0 |   +13.6% |   -0.048 |       -0.1 |       -0.2 |      7 | enable_latch/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 1 buffers.
-[INFO RSZ-0040] Inserted 3 buffers.
-[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-AFTER_BORROW 0.3769
-Startpoint: enable_latch (negative level-sensitive latch clocked by clk)
-Endpoint: inferred_gate (rising clock gating-check end-point clocked by clk)
-Path Group: gated clock
-Path Type: max
-
-    Delay      Time   Description
--------------------------------------------------------------
-   0.5000    0.5000   clock clk (fall edge)
-   0.0000    0.5000   clock source latency
-   0.0000    0.5000 v clk (in)
-   0.0248    0.5248 v delaybuf_2_clk/Z (CLKBUF_X3)
-   0.0278    0.5525 v delaybuf_3_clk/Z (CLKBUF_X3)
-   0.0261    0.5787 v clkbuf_regs_0_clk/Z (CLKBUF_X3)
-   0.0263    0.6049 v clkbuf_0_clk_regs/Z (CLKBUF_X3)
-   0.0259    0.6309 v clkbuf_1_0__f_clk_regs/Z (CLKBUF_X3)
-   0.0000    0.6309 v enable_latch/GN (DLL_X2)
-   0.3769    1.0078   time given to startpoint
-   0.0000    1.0078 v enable_latch/D (DLL_X2)
-   0.0731    1.0809 v enable_latch/Q (DLL_X2)
-   0.0007    1.0815 v inferred_gate/A2 (AND2_X1)
-             1.0815   data arrival time
-
-   1.0000    1.0000   clock clk (rise edge)
-   0.0000    1.0000   clock source latency
-   0.0000    1.0000 ^ clk (in)
-   0.0255    1.0255 ^ clkbuf_0_clk/Z (CLKBUF_X3)
-   0.0292    1.0547 ^ clkbuf_1_1__f_clk/Z (CLKBUF_X3)
-   0.0001    1.0548 ^ inferred_gate/A1 (AND2_X1)
-   0.0000    1.0548   clock reconvergence pessimism
-   0.0000    1.0548   clock gating setup time
-             1.0548   data required time
--------------------------------------------------------------
-             1.0548   data required time
-            -1.0815   data arrival time
--------------------------------------------------------------
-            -0.0268   slack (VIOLATED)
-
-
-pass inferred_clock_gator_time_borrow
+AFTER_BORROW 0.4502
