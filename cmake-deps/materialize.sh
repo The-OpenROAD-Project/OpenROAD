@@ -31,7 +31,10 @@ if [ -z "$BUNDLE" ] || [ ! -d "$BUNDLE" ]; then
     exit 1
 fi
 
-DEST="${1:-${BUILD_WORKSPACE_DIRECTORY}/deps}"
+# :? guards against BUILD_WORKSPACE_DIRECTORY being unset or empty (e.g.
+# the script run directly instead of via bazel run), where the default
+# would otherwise resolve to /deps.
+DEST="${1:-${BUILD_WORKSPACE_DIRECTORY:?not set; run this via: bazelisk run //:cmake}/deps}"
 STAMP="$DEST/.openroad-deps-stamp"
 
 if [ -e "$DEST" ] && [ ! -e "$STAMP" ]; then
