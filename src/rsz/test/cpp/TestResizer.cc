@@ -272,14 +272,14 @@ TEST_F(TestResizer, UncoveredBorrowReducesEffectiveSlack)
   EXPECT_LT(slack.effective_slack, slack.reported_slack - one_ps);
 }
 
-// A smaller virtual-clock input delay (0.80) leaves enough downstream setup
+// A smaller virtual-clock input delay (0.65) leaves enough downstream setup
 // margin to fully cover the latch borrow (covered borrow).
 // getEndpointEffectiveSlack() must then leave the reported slack unchanged, so
 // that repair_timing does not spuriously optimize the already-covered latch D
 // endpoint.
 TEST_F(TestResizer, CoveredBorrowKeepsReportedSlack)
 {
-  const SlackPair slack = latchDataSlack(0.80);
+  const SlackPair slack = latchDataSlack(0.65);
   const float one_ps = staTime(0.001);
 
   EXPECT_NEAR(slack.reported_slack, 0.0, one_ps);

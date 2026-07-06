@@ -9,7 +9,7 @@ read_def inferred_clock_gator_time_borrow.def
 
 create_clock -name clk -period 1.0 clk
 create_clock -name vclk -period 1.0
-set_input_delay -clock vclk 0.80 [get_ports en_in]
+set_input_delay -clock vclk 0.65 [get_ports en_in]
 
 source Nangate45/Nangate45.rc
 source $layer_rc_file

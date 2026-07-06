@@ -963,35 +963,10 @@ sta::Slack RepairTargetCollector::latchOutputWorstSlack(
   sta::Slack worst_slack = sta::INF;
 
   for (const sta::Pin* output_pin : output_pins) {
-    sta::PinSet* from_pins = new sta::PinSet(network_);
-    from_pins->insert(output_pin);
-    sta::ExceptionFrom* from = sdc_->makeExceptionFrom(
-        from_pins, nullptr, nullptr, sta::RiseFallBoth::riseFall());
-
-    sta::StringSeq group_names;
-    sta::PathEndSeq path_ends = search_->findPathEnds(from,
-                                                      nullptr,
-                                                      nullptr,
-                                                      false,
-                                                      sta_->scenes(),
-                                                      sta::MinMaxAll::max(),
-                                                      1,
-                                                      1,
-                                                      false,
-                                                      false,
-                                                      -sta::INF,
-                                                      sta::INF,
-                                                      true,
-                                                      group_names,
-                                                      true,
-                                                      false,
-                                                      true,
-                                                      true,
-                                                      true,
-                                                      true);
-
-    for (sta::PathEnd* path_end : path_ends) {
-      worst_slack = std::min(worst_slack, path_end->slack(search_));
+    sta::Vertex* output_vertex = graph_->pinDrvrVertex(output_pin);
+    const sta::Slack output_slack = sta_->slack(output_vertex, max_);
+    if (sta::delayLess(output_slack, worst_slack, sta_)) {
+      worst_slack = output_slack;
     }
   }
 
