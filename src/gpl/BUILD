@@ -7,6 +7,8 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
+load("//bazel/gpu:defs.bzl", "GPU_ONLY")
 load("//test:regression.bzl", "messages_txt")
 
 package(
@@ -38,6 +40,82 @@ cc_library(
     ],
 )
 
+# The Kokkos/CUDA backends plus fft.cpp. fft.cpp itself includes only
+# Kokkos-free PIMPL headers, but it is compiled as CUDA here to mirror
+# the CMake flow's set_source_files_properties(... LANGUAGE CUDA) list in
+# src/gpl/CMakeLists.txt, keeping the two builds behaviorally identical.
+# hpwl.cpp stays a plain C++ TU in :gpl, also mirroring CMake.
+cc_library(
+    name = "gpl_kokkos",
+    srcs = [
+        "include/gpl/Replace.h",
+        "src/backendContext.h",
+        "src/densityGradientBackend.h",
+        "src/fft.cpp",
+        "src/fft.h",
+        "src/fftBackend.h",
+        "src/gpu/cellHandleHelpers.h",
+        "src/gpu/dct.cpp",
+        "src/gpu/dct.h",
+        "src/gpu/densityOp.cpp",
+        "src/gpu/densityOp.h",
+        "src/gpu/deviceState.cpp",
+        "src/gpu/deviceState.h",
+        "src/gpu/deviceState_kokkos.h",
+        "src/gpu/gpuDensityGradientBackend.cpp",
+        "src/gpu/gpuDensityGradientBackend.h",
+        "src/gpu/gpuFftBackend.cpp",
+        "src/gpu/gpuFftBackend.h",
+        "src/gpu/gpuHpwlBackend.cpp",
+        "src/gpu/gpuHpwlBackend.h",
+        "src/gpu/gpuRuntime.cpp",
+        "src/gpu/gpuRuntime.h",
+        "src/gpu/gpuWirelengthGradientBackend.cpp",
+        "src/gpu/gpuWirelengthGradientBackend.h",
+        "src/gpu/kokkosUtil.h",
+        "src/gpu/nesterovDeviceContext.cpp",
+        "src/gpu/nesterovDeviceContext.h",
+        "src/gpu/nesterovDeviceState.h",
+        "src/gpu/nesterovOp.cpp",
+        "src/gpu/nesterovOp.h",
+        "src/gpu/poissonSolver.cpp",
+        "src/gpu/poissonSolver.h",
+        "src/gpu/regionDensityField.cpp",
+        "src/gpu/regionDensityField.h",
+        "src/gpu/regionDensityField_kokkos.h",
+        "src/gpu/wirelengthOp.cpp",
+        "src/gpu/wirelengthOp.h",
+        "src/hpwlBackend.h",
+        "src/wirelengthGradientBackend.h",
+    ],
+    additional_compiler_inputs = ["@cuda_local//:compiler_inputs"],
+    copts = CUDA_COPTS,
+    # Kokkos/CUDA headers have no module maps, and clang's CUDA mode does
+    # not support header parsing/modules.
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+    includes = ["include"],
+    local_defines = ["ENABLE_GPU"],
+    # Keep wildcard builds (bazel build //...) CPU-clean; this target is
+    # only reachable through :gpl under --//:gpu=cuda.
+    tags = ["manual"],
+    target_compatible_with = GPU_ONLY,
+    # Package-private except for the GPU unit tests, which link the
+    # kernel launchers directly.
+    visibility = ["//src/gpl/test:__pkg__"],
+    deps = [
+        ":gpl_private_hdrs",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.unordered",
+        "@kokkos",
+        "@kokkos_fft",
+        "@openmp",
+    ],
+)
+
 cc_library(
     name = "gpl",
     srcs = [
@@ -47,7 +125,7 @@ cc_library(
         "src/clockBase.h",
         "src/densityGradient.cpp",
         "src/densityGradientBackend.h",
-        "src/fft.cpp",
+        "src/fft.h",
         "src/fftBackend.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
@@ -71,7 +149,22 @@ cc_library(
         "src/timingBase.h",
         "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
-    ],
+    ] + select({
+        "//:gpu_cuda": [
+            # Kokkos-free GPU backend headers included by the factory TUs
+            # (densityGradient.cpp, hpwl.cpp, wirelengthGradient.cpp,
+            # nesterovBase.cpp) under #ifdef ENABLE_GPU.
+            "src/gpu/gpuDensityGradientBackend.h",
+            "src/gpu/gpuHpwlBackend.h",
+            "src/gpu/gpuRuntime.h",
+            "src/gpu/gpuWirelengthGradientBackend.h",
+        ],
+        "//conditions:default": [
+            # On the GPU build fft.cpp moves to :gpl_kokkos, where it is
+            # compiled as CUDA; on the CPU build it is a plain C++ TU here.
+            "src/fft.cpp",
+        ],
+    }),
     hdrs = [
         "include/gpl/Replace.h",
         "src/AbstractGraphics.h",
@@ -84,6 +177,10 @@ cc_library(
     includes = [
         "include",
     ],
+    local_defines = select({
+        "//:gpu_cuda": ["ENABLE_GPU"],
+        "//conditions:default": [],
+    }),
     deps = [
         ":gpl_private_hdrs",
         "//src/dbSta",
@@ -103,7 +200,10 @@ cc_library(
         "@or-tools//ortools/linear_solver:linear_solver_base",
         "@or-tools//ortools/sat:cp_model",
         "@or-tools//ortools/util:sorted_interval_list",
-    ],
+    ] + select({
+        "//:gpu_cuda": [":gpl_kokkos"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_library(
@@ -225,6 +325,19 @@ filegroup(
 )
 
 messages_txt(
+    # The default patterns are not recursive, but find_messages.py -d (as
+    # run by CMake/CI) walks src/ recursively — include src/gpu explicitly
+    # so a numbered message added to a GPU backend cannot silently
+    # diverge between the two builds' messages.txt.
+    src_patterns = [
+        "src/*.cc",
+        "src/*.cpp",
+        "src/*.h",
+        "src/*.hh",
+        "src/*.tcl",
+        "src/gpu/*.cpp",
+        "src/gpu/*.h",
+    ],
     visibility = [
         "//docs:__pkg__",
         "//src/gpl/test:__pkg__",

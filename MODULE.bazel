@@ -386,6 +386,39 @@ alias(
     path = "bazel/slang-compat",
 )
 
+# --- GPU build (opt-in, non-hermetic) ---
+#
+# System-installed Kokkos / KokkosFFT / CUDA toolkit for the opt-in GPU
+# build (--config=gpu), mirroring the CMake ENABLE_GPU flow. On machines
+# without the installs these repos degrade to empty stubs, so the default
+# CPU build and CI are unaffected. Install prefixes come from the client
+# environment via --repo_env (see build:gpu in .bazelrc): KOKKOS_ROOT,
+# KOKKOS_FFT_ROOT, OPENROAD_CUDA_PATH; the target arch via
+# OPENROAD_CUDA_ARCH. Registered non-dev because //src/gpl/BUILD loads
+# @cuda_local//:defs.bzl unconditionally (via bazel/gpu/copts.bzl).
+system_prefix_repo = use_repo_rule("//bazel/gpu:system_gpu.bzl", "system_prefix_repo")
+
+system_prefix_repo(
+    name = "kokkos",
+    default_path = "/usr/local/kokkos-libcxx",
+    env_var = "KOKKOS_ROOT",
+    flavor = "kokkos",
+)
+
+system_prefix_repo(
+    name = "kokkos_fft",
+    default_path = "/usr/local/kokkos-fft-libcxx",
+    env_var = "KOKKOS_FFT_ROOT",
+    flavor = "kokkos_fft",
+)
+
+system_prefix_repo(
+    name = "cuda_local",
+    default_path = "/usr/local/cuda-12.8",
+    env_var = "OPENROAD_CUDA_PATH",
+    flavor = "cuda_local",
+)
+
 # --- Overrides ---
 
 single_version_override(
