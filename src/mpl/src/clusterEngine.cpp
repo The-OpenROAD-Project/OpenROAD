@@ -2065,7 +2065,7 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
 void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
-  int minimum_spacing = getMinimumSpacing();
+  const int minimum_spacing = getMinimumSpacing();
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isBlock()) {
@@ -2206,7 +2206,10 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
 
         auto& candidate = dist_to_boundary[0];
         auto& second_candidate = dist_to_boundary[1];
-        // The two closest boundaries are in different directions
+
+        // When a pin equally distant from two or more edges (i.e. in the
+        // corner) we use the pin's layer direction is used to choose between
+        // candidates
         if (isEquidistantDifferentDirections(candidate, second_candidate)) {
           auto direction
               = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
