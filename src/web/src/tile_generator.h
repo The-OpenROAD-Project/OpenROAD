@@ -181,7 +181,10 @@ struct TileVisibility
   bool pins = true;               // BTerm (IO pin) shapes on tech layers
   bool pin_markers = true;        // BTerm direction markers on _pins layer
   bool pin_names = true;          // BTerm name labels on _pins layer
-  bool blockages = true;
+
+  // Shapes — other per-layer geometry (not routing sub-types)
+  bool blockages = true;  // master obstructions (LEF OBS)
+  bool fills = false;     // dbFill metal fill (off by default, GUI parity)
 
   // Instance sub-shapes
   bool inst_names = true;      // Instance name labels on _instances layer
