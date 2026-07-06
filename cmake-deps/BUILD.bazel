@@ -90,6 +90,8 @@ cmake_deps_bundle(
         "zlib": "z",
     },
     python_headers = "@rules_python//python/cc:current_py_cc_headers",
+    # GTestConfig.cmake references these archives by stable lib/ paths.
+    stable_lib_modules = ["googletest"],
     python_libs = "@rules_python//python/cc:current_py_cc_libs",
     shims = glob(["shims/*.cmake"]),
     swig = "@swig",

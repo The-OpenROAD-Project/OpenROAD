@@ -378,6 +378,17 @@ def _cmake_deps_bundle_impl(ctx):
             ))
         copies["lib/lib{}.a".format(name)] = copies[archives[0]]
 
+    # Modules whose archives the static shims reference by path: copy them
+    # to lib/<basename> so the shims need no bzlmod canonical repository
+    # names (lib/pool/ paths embed e.g. "googletest+", which is not stable
+    # across bazel versions).
+    for module in ctx.attr.stable_lib_modules:
+        for dest in module_archives.get(module, []):
+            basename = dest.split("/")[-1]
+            if copies.get("lib/" + basename, copies[dest]) != copies[dest]:
+                fail("stable_lib_modules: lib/{} already taken".format(basename))
+            copies["lib/" + basename] = copies[dest]
+
     def single_archive(module):
         archives = module_archives.get(module)
         if not archives or len(archives) != 1:
@@ -573,6 +584,11 @@ cmake_deps_bundle = rule(
             providers = [CcInfo],
             mandatory = True,
             doc = "libpython (rules_python current_py_cc_libs).",
+        ),
+        "stable_lib_modules": attr.string_list(
+            doc = "Module names whose archives are also copied to " +
+                  "lib/<basename>, giving the static config shims paths " +
+                  "free of bzlmod canonical repository names.",
         ),
         "shims": attr.label_list(
             allow_files = [".cmake"],
