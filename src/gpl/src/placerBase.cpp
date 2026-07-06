@@ -795,6 +795,11 @@ void PlacerBaseCommon::init()
              block->dbuToMicrons(die_.coreUx()),
              block->dbuToMicrons(die_.coreUy()));
 
+  log_->info(GPL,
+             16,
+             "Core area:                  {:10.3f} um^2",
+             block->dbuAreaToMicrons(die_.coreArea()));
+
   // insts fill with real instances
   dbSet<dbInst> db_insts = block->getInsts();
   instStor_.reserve(db_insts.size());
