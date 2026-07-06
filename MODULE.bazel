@@ -115,6 +115,7 @@ single_version_override(
 
 bazel_dep(name = "git", version = "2.54.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+
 # m4 is transitive (rules_bison/rules_flex -> m4). Same gnulib libc-header
 # shadowing class as sed/gawk under hermetic-llvm (BCR #7642).
 single_version_override(
