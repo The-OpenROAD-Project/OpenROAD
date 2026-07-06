@@ -883,9 +883,35 @@ _install_bazel() {
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
         if _command_exists "apt-get"; then
+            # Ubuntu 26.04 ships the libxml2 runtime with soname
+            # libxml2.so.16, but the prebuilt LLVM toolchain (lld) pulled in
+            # by the Bazel build is linked against the old libxml2.so.2.
+            # Pull in libxml2-dev there (and add a compatibility symlink
+            # below); older Ubuntu still provides .so.2 via libxml2.
+            local ubuntu_version=""
+            if [[ -f /etc/os-release ]]; then
+                ubuntu_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+            fi
+            local libxml2_pkg="libxml2"
+            if [[ -n "${ubuntu_version}" ]] && _version_compare "${ubuntu_version}" -ge "26.04"; then
+                libxml2_pkg="libxml2-dev"
+            fi
             _execute "Installing bazel required libraries..." \
                 apt-get -y install --no-install-recommends \
-                libc6-dev libxml2 libtinfo6 zlib1g libstdc++6
+                libc6-dev "${libxml2_pkg}" libtinfo6 zlib1g libstdc++6
+            # lld only uses libxml2 for Windows COFF manifests, never during a
+            # Linux link, so the .so.16 -> .so.2 compatibility symlink is safe.
+            # Gated to 26.04+ only.
+            if [[ -n "${ubuntu_version}" ]] && _version_compare "${ubuntu_version}" -ge "26.04"; then
+                local libdir="/usr/lib/$(uname -m)-linux-gnu"
+                local libxml2_so
+                libxml2_so=$(ls "${libdir}"/libxml2.so.* 2>/dev/null \
+                    | grep -v 'libxml2.so.2$' | head -n1)
+                if [[ ! -e "${libdir}/libxml2.so.2" && -n "${libxml2_so}" ]]; then
+                    _execute "Adding libxml2.so.2 compatibility symlink for prebuilt LLVM lld..." \
+                        ln -sf "$(basename "${libxml2_so}")" "${libdir}/libxml2.so.2"
+                fi
+            fi
         elif _command_exists "yum"; then
             _execute "Installing bazel required libraries..." \
                 yum install -y \
