@@ -76,7 +76,8 @@ class Assembler:
 
 def parse_versions(module_bazel_path):
     """Dependency versions from MODULE.bazel, .bcr suffixes stripped."""
-    text = open(module_bazel_path).read()
+    with open(module_bazel_path, encoding="utf-8") as f:
+        text = f.read()
     versions = {}
     variables = dict(re.findall(r'^(\w+) = "([^"]+)"', text, re.MULTILINE))
     for name, version in re.findall(
@@ -124,7 +125,8 @@ def main():
         executable=False,
     )
 
-    template = open(manifest["template_src"]).read()
+    with open(manifest["template_src"], encoding="utf-8") as f:
+        template = f.read()
     for key, value in manifest["substitutions"].items():
         template = template.replace(key, value)
     unresolved = re.findall(r"@[A-Z_]+@", template)
