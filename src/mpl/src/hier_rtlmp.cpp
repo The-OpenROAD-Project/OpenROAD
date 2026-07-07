@@ -2348,7 +2348,7 @@ void HierRTLMP::adjustRealMacroOrientation(HardMacro* macro,
 
   if (new_wirelength > original_wirelength) {
     flipRealMacro(macro, is_vertical_flip);
-    }
+  }
 }
 
 void HierRTLMP::correctMacroOrientationSingle()
