@@ -297,6 +297,5 @@ proc generate_ram { args } {
   ram::ram_filler $filler_cells
 
   ram::ram_routing
-
-  ram::ram_report_timing_power 
+  ram::ram_report_timing_power
 }

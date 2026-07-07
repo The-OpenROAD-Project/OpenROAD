@@ -1920,7 +1920,6 @@ void RamGen::generate(const int mask_size,
                          rw_ports,
                          r_ports,
                          w_ports);
-
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)

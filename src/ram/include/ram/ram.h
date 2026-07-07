@@ -133,7 +133,7 @@ class RamGen
                               int rw_ports,
                               int r_ports,
                               int w_ports);
-  
+
   void reportTimingAndPower();
 
  private:
