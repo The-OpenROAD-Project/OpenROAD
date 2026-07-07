@@ -91,8 +91,10 @@ if [[ -z ${BAZEL} ]]; then
 fi
 # Wrapper detection: the bazelisk launcher by name, or any script shebang
 # (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
-# are symlinked directly.
-if [[ ${BAZEL} == *bazelisk* || $(head -c 2 "$(realpath "${BAZEL}")") == '#!' ]]; then
+# are symlinked directly. Read via redirection: open() follows the
+# symlink for us, so no realpath/readlink -f is needed (neither is
+# reliably present on macOS).
+if [[ ${BAZEL} == *bazelisk* || $(head -c 2 < "${BAZEL}") == '#!' ]]; then
   version=$(BAZELISK_SKIP_WRAPPER=1 "${BAZEL}" --version | awk '{print $2}')
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   arch=$(uname -m | sed 's/aarch64/arm64/')
@@ -196,13 +198,21 @@ if [[ -z ${command} ]]; then
   bazel_argv=(${startup_flags[@]+"${startup_flags[@]}"})
 fi
 
+# macOS has no C.UTF-8 locale, so forcing it there makes programs print
+# "cannot change locale" warnings; use en_US.UTF-8 on Darwin. Both give
+# UTF-8 byte handling.
+case "$(uname -s)" in
+  Darwin) lang=en_US.UTF-8 ;;
+  *) lang=C.UTF-8 ;;
+esac
+
 # HOME:-  and the array guards: same set -u / bash 3.2 safety as above.
 exec env -i \
   HOME="${HOME:-}" \
   USER="${USER:-$(id -un)}" \
   LOGNAME="${LOGNAME:-$(id -un)}" \
   TERM="${TERM:-dumb}" \
-  LANG=C.UTF-8 \
+  LANG="${lang}" \
   PATH="${TOOLBOX}" \
   ${preserved_env[@]+"${preserved_env[@]}"} \
   "${TOOLBOX}/bazel" ${bazel_argv[@]+"${bazel_argv[@]}"}
