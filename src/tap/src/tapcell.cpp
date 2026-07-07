@@ -1255,15 +1255,23 @@ int Tapcell::fillEndcapEdge(odb::dbRow* row,
                             const EdgeType edge_type,
                             const std::string& prefix)
 {
-  auto pick_next_master = [x_end, &masters](int x) -> odb::dbMaster* {
+  // Consider only masters that can be legally placed in this row's
+  // orientation. masters is sorted widest first, so the last valid one is the
+  // narrowest, used as a fallback when none divides the span evenly.
+  auto pick_next_master
+      = [this, x_end, &masters, row](int x) -> odb::dbMaster* {
     const int remaining = x_end - x;
+    odb::dbMaster* fallback = nullptr;
     for (auto* master : masters) {
+      if (!checkSymmetry(master, row->getOrient())) {
+        continue;
+      }
+      fallback = master;
       if (remaining % master->getWidth() == 0) {
         return master;
       }
     }
-    // pick smallest if none will divide evenly
-    return masters[masters.size() - 1];
+    return fallback;
   };
 
   const int row_lly = row->getBBox().yMin();
@@ -1272,19 +1280,9 @@ int Tapcell::fillEndcapEdge(odb::dbRow* row,
   while (x < x_end) {
     auto* master = pick_next_master(x);
 
-    debugPrint(logger_,
-               utl::TAP,
-               "Endcap",
-               3,
-               "From {} -> {}: picked {}",
-               x,
-               x_end,
-               master->getName());
-
-    // The master must be symmetric for this row and fit in the remaining
-    // space; otherwise the boundary cannot be filled without a gap.
-    if (!checkSymmetry(master, row->getOrient())
-        || x + master->getWidth() > x_end) {
+    // No symmetric master fits the remaining space: the boundary cannot be
+    // filled without leaving a gap.
+    if (master == nullptr || x + master->getWidth() > x_end) {
       const double dbus = row->getBlock()->getDbUnitsPerMicron();
       logger_->error(
           utl::TAP,
@@ -1295,6 +1293,15 @@ int Tapcell::fillEndcapEdge(odb::dbRow* row,
           x / dbus,
           x_end / dbus);
     }
+
+    debugPrint(logger_,
+               utl::TAP,
+               "Endcap",
+               3,
+               "From {} -> {}: picked {}",
+               x,
+               x_end,
+               master->getName());
 
     makeInstance(
         db_->getChip()->getBlock(),
