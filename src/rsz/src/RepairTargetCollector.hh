@@ -23,6 +23,10 @@
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 
+namespace sta {
+class PathExpanded;
+}
+
 namespace rsz {
 
 using std::pair;
@@ -290,6 +294,13 @@ class RepairTargetCollector
   void sortByHeuristic(float load_delay_threshold = 0.0);
   std::map<const sta::Pin*, sta::Delay> getLocalTns() const;
   sta::Delay getLocalPinTns(const sta::Pin* pin) const;
+  const sta::Path* latchDataPath(const sta::PathExpanded& expanded) const;
+  void collectExpandedPathDriverTargets(const sta::Path* endpoint_path,
+                                        const sta::PathExpanded& expanded,
+                                        sta::Slack path_slack,
+                                        std::vector<Target>& targets) const;
+  void collectExpandedPathDriverPins(const sta::PathExpanded& expanded,
+                                     set<const sta::Pin*>& pins) const;
   std::vector<const sta::Pin*> latchOutputPins(sta::Vertex* endpoint) const;
   sta::Slack latchOutputWorstSlack(
       const std::vector<const sta::Pin*>& output_pins) const;

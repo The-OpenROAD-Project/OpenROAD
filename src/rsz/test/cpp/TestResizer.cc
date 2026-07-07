@@ -157,17 +157,17 @@ class TestResizer : public tst::IntegratedFixture
     sta_->updateTiming(true);
   }
 
-  sta::Vertex* latchDataEndpoint() const
+  sta::Vertex* loadVertex(const char* pin_name) const
   {
-    sta::Pin* latch_d = db_network_->findPin("enable_latch/D");
-    if (latch_d == nullptr) {
-      ADD_FAILURE() << "missing latch D pin";
+    sta::Pin* pin = db_network_->findPin(pin_name);
+    if (pin == nullptr) {
+      ADD_FAILURE() << "missing pin " << pin_name;
       return nullptr;
     }
 
-    sta::Vertex* endpoint = sta_->graph()->pinLoadVertex(latch_d);
+    sta::Vertex* endpoint = sta_->graph()->pinLoadVertex(pin);
     if (endpoint == nullptr) {
-      ADD_FAILURE() << "missing latch D load vertex";
+      ADD_FAILURE() << "missing load vertex " << pin_name;
       return nullptr;
     }
     return endpoint;
@@ -186,7 +186,7 @@ class TestResizer : public tst::IntegratedFixture
     RepairTargetCollector collector(&resizer_);
     collector.init(0.0f);
 
-    sta::Vertex* endpoint = latchDataEndpoint();
+    sta::Vertex* endpoint = loadVertex("enable_latch/D");
     if (endpoint == nullptr) {
       return {0.0f, 0.0f};
     }
@@ -195,6 +195,19 @@ class TestResizer : public tst::IntegratedFixture
     const sta::Slack effective_slack
         = collector.getEndpointEffectiveSlack(endpoint);
     return {reported_slack, effective_slack};
+  }
+
+  bool hasTargetPin(const std::vector<Target>& targets,
+                    const char* pin_name) const
+  {
+    for (const Target& target : targets) {
+      if (target.driver_pin != nullptr
+          && std::string(db_network_->pathName(target.driver_pin))
+                 == pin_name) {
+        return true;
+      }
+    }
+    return false;
   }
 
   sta::LibertyPort* findLibertyPort(sta::Instance* inst, const char* port_name)
@@ -284,6 +297,26 @@ TEST_F(TestResizer, CoveredBorrowKeepsReportedSlack)
 
   EXPECT_NEAR(slack.reported_slack, 0.0, one_ps);
   EXPECT_NEAR(slack.effective_slack, slack.reported_slack, one_ps);
+}
+
+TEST_F(TestResizer, LatchThroughPathCollectsLatchDataFaninTargets)
+{
+  setupTimeBorrowTiming(0.98);
+
+  RepairTargetCollector collector(&resizer_);
+  collector.init(0.0f);
+
+  sta::Vertex* endpoint = loadVertex("gated_ff0/D");
+  ASSERT_NE(endpoint, nullptr);
+
+  sta::Path* path = sta_->vertexWorstSlackPath(endpoint, sta::MinMax::max());
+  ASSERT_NE(path, nullptr);
+
+  const std::vector<Target> targets
+      = collector.collectPathDriverTargets(path, path->slack(sta_.get()));
+
+  EXPECT_TRUE(hasTargetPin(targets, "enable_buf0/Z"));
+  EXPECT_TRUE(hasTargetPin(targets, "enable_buf1/Z"));
 }
 
 }  // namespace rsz

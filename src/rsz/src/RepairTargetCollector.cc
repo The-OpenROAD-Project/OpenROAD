@@ -1018,6 +1018,57 @@ sta::Path* RepairTargetCollector::findWorstSlackPath(
   return sta_->vertexWorstSlackPath(endpoint, max_);
 }
 
+const sta::Path* RepairTargetCollector::latchDataPath(
+    const sta::PathExpanded& expanded) const
+{
+  const sta::Path* d_path = nullptr;
+  const sta::Path* q_path = nullptr;
+  sta::Edge* d_q_edge = nullptr;
+  expanded.latchPaths(d_path, q_path, d_q_edge);
+  return d_path;
+}
+
+void RepairTargetCollector::collectExpandedPathDriverTargets(
+    const sta::Path* endpoint_path,
+    const sta::PathExpanded& expanded,
+    const sta::Slack path_slack,
+    std::vector<Target>& targets) const
+{
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
+  for (int index = start_index; index < path_count; ++index) {
+    const sta::Path* driver_path = expanded.path(index);
+    sta::Vertex* vertex = driver_path->vertex(sta_);
+    sta::Pin* pin = driver_path->pin(sta_);
+    if (vertex == nullptr || pin == nullptr || !vertex->isDriver(network_)
+        || network_->isTopLevelPort(pin)) {
+      continue;
+    }
+
+    targets.push_back(makePathDriverTarget(
+        endpoint_path, expanded, index, path_slack, *resizer_));
+  }
+}
+
+void RepairTargetCollector::collectExpandedPathDriverPins(
+    const sta::PathExpanded& expanded,
+    set<const sta::Pin*>& pins) const
+{
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
+  for (int index = start_index; index < path_count; ++index) {
+    const sta::Path* driver_path = expanded.path(index);
+    sta::Vertex* vertex = driver_path->vertex(sta_);
+    const sta::Pin* pin = driver_path->pin(sta_);
+    if (vertex == nullptr || pin == nullptr || !vertex->isDriver(network_)
+        || network_->isTopLevelPort(pin)
+        || sta_->isClock(pin, sta_->cmdMode())) {
+      continue;
+    }
+    pins.insert(pin);
+  }
+}
+
 std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
     sta::Path* path,
     const sta::Slack path_slack) const
@@ -1029,17 +1080,15 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
 
   sta::PathExpanded expanded(path, sta_);
   targets.reserve(expanded.size());
-  for (int index = expanded.startIndex(); index < expanded.size(); ++index) {
-    const sta::Path* driver_path = expanded.path(index);
-    sta::Vertex* vertex = driver_path->vertex(sta_);
-    sta::Pin* pin = driver_path->pin(sta_);
-    if (vertex == nullptr || pin == nullptr || !vertex->isDriver(network_)
-        || network_->isTopLevelPort(pin)) {
-      continue;
-    }
+  collectExpandedPathDriverTargets(path, expanded, path_slack, targets);
 
-    targets.push_back(
-        makePathDriverTarget(path, expanded, index, path_slack, *resizer_));
+  // A latch-through path starts at latch Q in OpenSTA, with the latch D path
+  // stored as side context.  Expand that D path separately so repair_timing can
+  // optimize the logic that consumed the borrowed time.
+  const sta::Path* d_path = latchDataPath(expanded);
+  if (d_path != nullptr) {
+    sta::PathExpanded d_expanded(d_path, sta_);
+    collectExpandedPathDriverTargets(d_path, d_expanded, path_slack, targets);
   }
 
   return targets;
@@ -1358,6 +1407,19 @@ set<const sta::Pin*> RepairTargetCollector::collectPinsByPathEndpoint(
           viol_pins.insert(pin);
         }
       }
+    }
+
+    const sta::Path* d_path = latchDataPath(expanded);
+    if (d_path != nullptr) {
+      sta::PathExpanded d_expanded(d_path, sta_);
+      const size_t old_size = viol_pins.size();
+      collectExpandedPathDriverPins(d_expanded, viol_pins);
+      debugPrint(logger_,
+                 RSZ,
+                 "violator_collector",
+                 4,
+                 "Added {} latch D fanin pins from latch-through path",
+                 viol_pins.size() - old_size);
     }
     debugPrint(logger_, RSZ, "violator_collector", 5, "\n");
   }

@@ -53,6 +53,19 @@ using std::vector;
 
 using utl::RSZ;
 
+namespace {
+
+const sta::Path* latchDataPath(const sta::PathExpanded& expanded)
+{
+  const sta::Path* d_path = nullptr;
+  const sta::Path* q_path = nullptr;
+  sta::Edge* d_q_edge = nullptr;
+  expanded.latchPaths(d_path, q_path, d_q_edge);
+  return d_path;
+}
+
+}  // namespace
+
 SetupLegacyBase::SetupLegacyBase(Resizer& resizer,
                                  MoveCommitter& committer,
                                  RepairSetupContext& setup_context,
@@ -455,7 +468,34 @@ bool SetupLegacyBase::makePinTargetOnPath(const sta::Pin* pin,
   }
 
   sta::PathExpanded expanded(path, sta_);
-  for (int index = expanded.startIndex(); index < expanded.size(); index++) {
+  if (makePinTargetInExpandedPath(pin, path, expanded, focus_slack, target)) {
+    return true;
+  }
+
+  const sta::Path* d_path = latchDataPath(expanded);
+  if (d_path == nullptr) {
+    return false;
+  }
+
+  sta::PathExpanded d_expanded(d_path, sta_);
+  return makePinTargetInExpandedPath(
+      pin, d_path, d_expanded, focus_slack, target);
+}
+
+bool SetupLegacyBase::makePinTargetInExpandedPath(const sta::Pin* pin,
+                                                  const sta::Path* path,
+                                                  sta::PathExpanded& expanded,
+                                                  const sta::Slack focus_slack,
+                                                  Target& target) const
+{
+  sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
+  if (vertex == nullptr) {
+    return false;
+  }
+
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
+  for (int index = start_index; index < path_count; index++) {
     const sta::Path* driver_path = expanded.path(index);
     sta::Vertex* path_vertex = driver_path->vertex(sta_);
     const sta::Pin* path_pin = driver_path->pin(sta_);
@@ -737,7 +777,7 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
     return false;
   }
 
-  const auto load_delays
+  const std::vector<std::pair<int, sta::Delay>> load_delays
       = rankPathDrivers(expanded, corner, corner->libertyIndex(resizer_.max_));
   const int repairs_per_pass = repairBudget(path_slack, force_single_repair);
 
@@ -751,13 +791,40 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
              load_delays.size());
 
   // Construct target vector
-  std::vector<Target> targets;
-  targets.reserve(load_delays.size());
-  for (const auto& [drvr_index, ignored] : load_delays) {
-    static_cast<void>(ignored);
+  std::vector<std::pair<Target, sta::Delay>> ranked_targets;
+  ranked_targets.reserve(load_delays.size());
+  for (const std::pair<int, sta::Delay>& load_delay : load_delays) {
     Target target;
-    makePathDriverTarget(path, expanded, drvr_index, path_slack, target);
-    targets.push_back(std::move(target));
+    makePathDriverTarget(path, expanded, load_delay.first, path_slack, target);
+    ranked_targets.emplace_back(std::move(target), load_delay.second);
+  }
+
+  const sta::Path* d_path = latchDataPath(expanded);
+  if (d_path != nullptr) {
+    sta::PathExpanded d_expanded(d_path, sta_);
+    const sta::Scene* d_corner = d_path->scene(sta_);
+    const std::vector<std::pair<int, sta::Delay>> d_load_delays
+        = rankPathDrivers(
+            d_expanded, d_corner, d_corner->libertyIndex(resizer_.max_));
+    ranked_targets.reserve(ranked_targets.size() + d_load_delays.size());
+    for (const std::pair<int, sta::Delay>& load_delay : d_load_delays) {
+      Target target;
+      makePathDriverTarget(
+          d_path, d_expanded, load_delay.first, path_slack, target);
+      ranked_targets.emplace_back(std::move(target), load_delay.second);
+    }
+  }
+
+  std::ranges::stable_sort(ranked_targets,
+                           [](const std::pair<Target, sta::Delay>& lhs,
+                              const std::pair<Target, sta::Delay>& rhs) {
+                             return lhs.second > rhs.second;
+                           });
+
+  std::vector<Target> targets;
+  targets.reserve(ranked_targets.size());
+  for (std::pair<Target, sta::Delay>& ranked_target : ranked_targets) {
+    targets.push_back(std::move(ranked_target.first));
   }
 
   // Prewarm for legacy MT policy
