@@ -7,7 +7,7 @@ read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 
-set behavioral_file [make_result_file make_8x8_1rw1r_behavioral.v]
+set behavioral_file [make_result_file make_8x8_2rw1r_behavioral.v]
 
 generate_ram \
   -mask_size 8 \
