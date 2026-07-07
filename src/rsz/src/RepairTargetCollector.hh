@@ -173,10 +173,6 @@ class RepairTargetCollector
 
   // Public endpoint collection for TNS Phase
   void collectViolatingEndpoints();
-  // Effective slack includes hidden setup debt from latch time borrowing.
-  // A latch endpoint only pays the part of its borrow that is not covered by
-  // slack on the latch output path.
-  sta::Slack getEndpointEffectiveSlack(sta::Vertex* endpoint) const;
   sta::Slack getPathSlackByIndex(const sta::Pin* endpoint_pin, int path_index);
   const vector<std::pair<const sta::Pin*, sta::Slack>>& getViolatingEndpoints()
       const
@@ -301,9 +297,6 @@ class RepairTargetCollector
                                         std::vector<Target>& targets) const;
   void collectExpandedPathDriverPins(const sta::PathExpanded& expanded,
                                      set<const sta::Pin*>& pins) const;
-  std::vector<const sta::Pin*> latchOutputPins(sta::Vertex* endpoint) const;
-  sta::Slack latchOutputWorstSlack(
-      const std::vector<const sta::Pin*>& output_pins) const;
 
   // === Cone traversal helpers ==============================================
   // Helper functions for cone-based collection

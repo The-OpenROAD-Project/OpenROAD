@@ -190,7 +190,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
       estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
 
-      endpoint_slack = target_collector_->getEndpointEffectiveSlack(endpoint);
+      endpoint_slack = sta_->slack(endpoint, max_);
       sta::Slack global_wns = 0.0;
       sta::Vertex* global_wns_vertex = nullptr;
       sta_->worstSlack(max_, global_wns, global_wns_vertex);

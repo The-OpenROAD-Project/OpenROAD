@@ -23,7 +23,6 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
-#include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
@@ -39,12 +38,10 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
-#include "sta/Sequential.hh"
 #include "sta/Sta.hh"
 #include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
-#include "sta/VisitPathEnds.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -815,9 +812,9 @@ void RepairTargetCollector::collectViolatingEndpoints()
 
   const sta::VertexSet& endpoints = sta_->endpoints();
   for (sta::Vertex* endpoint : endpoints) {
-    const sta::Slack effective_slack = getEndpointEffectiveSlack(endpoint);
-    if (sta::fuzzyLess(effective_slack, slack_margin_)) {
-      violating_endpoints_.emplace_back(endpoint->pin(), effective_slack);
+    const sta::Slack slack = sta_->slack(endpoint, max_);
+    if (sta::fuzzyLess(slack, slack_margin_)) {
+      violating_endpoints_.emplace_back(endpoint->pin(), slack);
     }
   }
 
@@ -833,144 +830,6 @@ void RepairTargetCollector::collectViolatingEndpoints()
              sta_->endpoints().size(),
              int(violating_endpoints_.size() / double(sta_->endpoints().size())
                  * 100));
-}
-
-namespace {
-
-// Track the worst-slack constrained max path end at a vertex and record its
-// latch time borrow. Non-latch path ends report zero borrow.
-class WorstPathEndBorrowVisitor : public sta::PathEndVisitor
-{
- public:
-  WorstPathEndBorrowVisitor(const sta::MinMax* min_max,
-                            const sta::StaState* sta)
-      : min_max_(min_max), sta_(sta)
-  {
-  }
-  sta::PathEndVisitor* copy() const override
-  {
-    return new WorstPathEndBorrowVisitor(*this);
-  }
-  void visit(sta::PathEnd* path_end) override
-  {
-    if (path_end->isUnconstrained() || path_end->minMax(sta_) != min_max_) {
-      return;
-    }
-    const sta::Slack end_slack = path_end->slack(sta_);
-    if (sta::delayLess(end_slack, worst_slack_, sta_)) {
-      worst_slack_ = end_slack;
-      borrow_ = path_end->borrow(sta_);
-    }
-  }
-  sta::Arrival borrow() const { return borrow_; }
-
- private:
-  const sta::MinMax* min_max_;
-  const sta::StaState* sta_;
-  sta::Slack worst_slack_ = sta::INF;
-  sta::Arrival borrow_ = 0.0;
-};
-
-}  // namespace
-
-sta::Slack RepairTargetCollector::getEndpointEffectiveSlack(
-    sta::Vertex* endpoint) const
-{
-  const sta::Slack reported_slack = sta_->slack(endpoint, max_);
-  if (sta::fuzzyGreater(reported_slack, slack_margin_)) {
-    return reported_slack;
-  }
-
-  // Visit the path ends stored at this endpoint and read the time borrow of
-  // the worst-slack one. This avoids the heavyweight findPathEnds() machinery
-  // (exception filter, path group construction, sorting) per endpoint.
-  sta::VisitPathEnds visit_ends(sta_);
-  WorstPathEndBorrowVisitor borrow_visitor(max_, sta_);
-  visit_ends.visitPathEnds(endpoint, &borrow_visitor);
-
-  const sta::Arrival borrow = borrow_visitor.borrow();
-  if (sta::fuzzyLessEqual(borrow, 0.0f)) {
-    return reported_slack;
-  }
-
-  const std::vector<const sta::Pin*> output_pins = latchOutputPins(endpoint);
-  const sta::Slack output_slack = latchOutputWorstSlack(output_pins);
-  const sta::Slack uncovered_borrow
-      = std::max<float>(borrow - std::max<float>(output_slack, 0.0f), 0.0f);
-  return reported_slack - uncovered_borrow;
-}
-
-std::vector<const sta::Pin*> RepairTargetCollector::latchOutputPins(
-    sta::Vertex* endpoint) const
-{
-  std::vector<const sta::Pin*> output_pins;
-  const std::function<void(
-      sta::Instance*, sta::LibertyCell*, sta::LibertyPort*)>
-      add_output_pin = [this, &output_pins](sta::Instance* inst,
-                                            sta::LibertyCell* cell,
-                                            sta::LibertyPort* state_port) {
-        const sta::Pin* output_pin = network_->findPin(inst, state_port);
-        if (output_pin != nullptr) {
-          output_pins.push_back(output_pin);
-          return;
-        }
-
-        // Some libraries declare latch state as an internal port and expose it
-        // through an output pin function, for example Q = IQ.
-        sta::LibertyCellPortIterator port_iter(cell);
-        while (port_iter.hasNext()) {
-          sta::LibertyPort* port = port_iter.next();
-          sta::FuncExpr* func = port->function();
-          if (!port->direction()->isAnyOutput() || func == nullptr
-              || !func->hasPort(state_port)) {
-            continue;
-          }
-
-          output_pin = network_->findPin(inst, port);
-          if (output_pin != nullptr
-              && std::ranges::find(output_pins, output_pin)
-                     == output_pins.end()) {
-            output_pins.push_back(output_pin);
-          }
-        }
-      };
-
-  const sta::Pin* endpoint_pin = endpoint->pin();
-  sta::LibertyPort* data_port = network_->libertyPort(endpoint_pin);
-  sta::LibertyCell* cell = data_port->libertyCell();
-  sta::Instance* inst = network_->instance(endpoint_pin);
-
-  for (const sta::Sequential& seq : cell->sequentials()) {
-    if (!seq.isLatch() || seq.data() == nullptr
-        || !seq.data()->hasPort(data_port)) {
-      continue;
-    }
-
-    if (seq.output() != nullptr) {
-      add_output_pin(inst, cell, seq.output());
-    }
-    if (seq.outputInv() != nullptr) {
-      add_output_pin(inst, cell, seq.outputInv());
-    }
-  }
-
-  return output_pins;
-}
-
-sta::Slack RepairTargetCollector::latchOutputWorstSlack(
-    const std::vector<const sta::Pin*>& output_pins) const
-{
-  sta::Slack worst_slack = sta::INF;
-
-  for (const sta::Pin* output_pin : output_pins) {
-    sta::Vertex* output_vertex = graph_->pinDrvrVertex(output_pin);
-    const sta::Slack output_slack = sta_->slack(output_vertex, max_);
-    if (sta::delayLess(output_slack, worst_slack, sta_)) {
-      worst_slack = output_slack;
-    }
-  }
-
-  return worst_slack;
 }
 
 void RepairTargetCollector::collectViolatingStartpoints()

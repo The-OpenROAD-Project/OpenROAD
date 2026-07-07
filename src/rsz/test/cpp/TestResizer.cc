@@ -173,30 +173,6 @@ class TestResizer : public tst::IntegratedFixture
     return endpoint;
   }
 
-  struct SlackPair
-  {
-    sta::Slack reported_slack;
-    sta::Slack effective_slack;
-  };
-
-  SlackPair latchDataSlack(const float input_delay)
-  {
-    setupTimeBorrowTiming(input_delay);
-
-    RepairTargetCollector collector(&resizer_);
-    collector.init(0.0f);
-
-    sta::Vertex* endpoint = loadVertex("enable_latch/D");
-    if (endpoint == nullptr) {
-      return {0.0f, 0.0f};
-    }
-
-    const sta::Slack reported_slack = sta_->slack(endpoint, sta::MinMax::max());
-    const sta::Slack effective_slack
-        = collector.getEndpointEffectiveSlack(endpoint);
-    return {reported_slack, effective_slack};
-  }
-
   bool hasTargetPin(const std::vector<Target>& targets,
                     const char* pin_name) const
   {
@@ -269,34 +245,6 @@ TEST_F(TestResizer, SwapPinsFeedthroughModNet)
   EXPECT_EQ(modNetName(findITerm(probe, "A")), "src_net");
 
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
-}
-
-// A large virtual-clock input delay (0.98) forces the enable latch to borrow
-// more time than the downstream logic can absorb (uncovered borrow). In that
-// case getEndpointEffectiveSlack() must subtract the uncovered borrow, yielding
-// an effective slack strictly worse than the reported slack so that
-// repair_timing targets the latch D endpoint.
-TEST_F(TestResizer, UncoveredBorrowReducesEffectiveSlack)
-{
-  const SlackPair slack = latchDataSlack(0.98);
-  const float one_ps = staTime(0.001);
-
-  EXPECT_LE(slack.reported_slack, 0.0);
-  EXPECT_LT(slack.effective_slack, slack.reported_slack - one_ps);
-}
-
-// A smaller virtual-clock input delay (0.65) leaves enough downstream setup
-// margin to fully cover the latch borrow (covered borrow).
-// getEndpointEffectiveSlack() must then leave the reported slack unchanged, so
-// that repair_timing does not spuriously optimize the already-covered latch D
-// endpoint.
-TEST_F(TestResizer, CoveredBorrowKeepsReportedSlack)
-{
-  const SlackPair slack = latchDataSlack(0.65);
-  const float one_ps = staTime(0.001);
-
-  EXPECT_NEAR(slack.reported_slack, 0.0, one_ps);
-  EXPECT_NEAR(slack.effective_slack, slack.reported_slack, one_ps);
 }
 
 TEST_F(TestResizer, LatchThroughPathCollectsLatchDataFaninTargets)
