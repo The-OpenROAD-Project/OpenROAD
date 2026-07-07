@@ -21,13 +21,13 @@ proc detailed_placement { args } {
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
-      sta::check_positive_integer "-max_displacement" $max_displacement
+      sta::check_positive_float "-max_displacement" $max_displacement
       set max_displacement_x $max_displacement
       set max_displacement_y $max_displacement
     } elseif { [llength $max_displacement] == 2 } {
       lassign $max_displacement max_displacement_x max_displacement_y
-      sta::check_positive_integer "-max_displacement" $max_displacement_x
-      sta::check_positive_integer "-max_displacement" $max_displacement_y
+      sta::check_positive_float "-max_displacement" $max_displacement_x
+      sta::check_positive_float "-max_displacement" $max_displacement_y
     } else {
       sta::error DPL 31 "-max_displacement disp|{disp_x disp_y}"
     }
@@ -150,22 +150,22 @@ proc improve_eco_legalization { args } {
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
-      sta::check_positive_integer "-max_displacement" $max_displacement
+      sta::check_positive_float "-max_displacement" $max_displacement
       set max_displacement_x $max_displacement
       set max_displacement_y $max_displacement
     } elseif { [llength $max_displacement] == 2 } {
       lassign $max_displacement max_displacement_x max_displacement_y
-      sta::check_positive_integer "-max_displacement" $max_displacement_x
-      sta::check_positive_integer "-max_displacement" $max_displacement_y
+      sta::check_positive_float "-max_displacement" $max_displacement_x
+      sta::check_positive_float "-max_displacement" $max_displacement_y
     } else {
       utl::error DPL 1122 "-max_displacement disp|{disp_x disp_y}"
     }
     set site [dpl::get_row_site]
     set max_displacement_x [expr {
-      [ord::microns_to_dbu $max_displacement_x] / [$site getWidth]
+      max(1, [ord::microns_to_dbu $max_displacement_x] / [$site getWidth])
     }]
     set max_displacement_y [expr {
-      [ord::microns_to_dbu $max_displacement_y] / [$site getHeight]
+      max(1, [ord::microns_to_dbu $max_displacement_y] / [$site getHeight])
     }]
   }
 
@@ -303,13 +303,13 @@ proc improve_placement { args } {
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
-      sta::check_positive_integer "-max_displacement" $max_displacement
+      sta::check_positive_float "-max_displacement" $max_displacement
       set max_displacement_x $max_displacement
       set max_displacement_y $max_displacement
     } elseif { [llength $max_displacement] == 2 } {
       lassign $max_displacement max_displacement_x max_displacement_y
-      sta::check_positive_integer "-max_displacement" $max_displacement_x
-      sta::check_positive_integer "-max_displacement" $max_displacement_y
+      sta::check_positive_float "-max_displacement" $max_displacement_x
+      sta::check_positive_float "-max_displacement" $max_displacement_y
     } else {
       sta::error DPL 344 "-max_displacement disp|{disp_x disp_y}"
     }

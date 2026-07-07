@@ -717,6 +717,12 @@ proc repair_hold_eco { args } {
   # slack re-evaluation; a real regression is far larger than this epsilon.
   set setup_eps 1e-12
   if { $setup_wns_after < [expr { $setup_wns_before - $setup_eps }] } {
+    # Roll back the hold-repair changes so a caught error leaves the design in
+    # its pre-repair state rather than degraded with the ECO journal still open.
+    # Refresh parasitics so any post-catch slack query reflects the restored
+    # netlist (mirrors the closure-loop revert).
+    odb::dbDatabase_undoEco $block
+    catch { estimate_parasitics -placement }
     utl::error RSZ 245 \
       [format "hold repair degraded setup WNS from %.4g to %.4g; aborting." \
         $setup_wns_before $setup_wns_after]
@@ -962,10 +968,16 @@ proc repair_timing_closure { args } {
     $setup_wns_final $setup_tns_final $hold_wns_final $hold_tns_final \
     $iters_run $max_iters $stop_reason
 
-  # Optionally persist the exact change set captured over the whole loop.
+  # Persist the change set captured over the whole loop, unless the loop
+  # reverted everything to baseline -- in that case the journal was already
+  # undone (dbDatabase_undoEco), so there is nothing meaningful to write.
   if { $eco_file ne "" } {
-    write_eco $eco_file
-    utl::report "ECO change set written ([file tail $eco_file])"
+    if { $stop_reason eq "setup_regression_reverted" } {
+      utl::report "ECO reverted to baseline; no ECO file written."
+    } else {
+      write_eco $eco_file
+      utl::report "ECO change set written ([file tail $eco_file])"
+    }
   }
 
   # POST-CONDITION assertion: setup must not be worse than the loop baseline.
