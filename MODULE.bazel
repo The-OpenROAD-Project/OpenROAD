@@ -100,6 +100,17 @@ single_version_override(
 
 bazel_dep(name = "git", version = "2.54.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+
+# m4 is transitive (rules_bison/rules_flex -> m4). Its vendored gnulib
+# headers deliberately shadow libc headers; under toolchains that inject
+# libc headers as leading -isystem entries (hermetic-llvm, #10812) the
+# shadowing breaks and m4@1.4.21 fails to compile (O_SEARCH, BCR #7642).
+# 1.4.21.bcr.4 carries the upstream fix.
+single_version_override(
+    module_name = "m4",
+    version = "1.4.21.bcr.4",
+)
+
 bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
 bazel_dep(name = "spdlog", version = "1.15.1")
