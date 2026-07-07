@@ -1662,7 +1662,7 @@ TEST_F(MoireArrayTest, ResolvedArrayStaysSharp)
       << "resolved grid was over-blurred into a flat tint";
 }
 
-TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsFaithfulTintNotSheet)
+TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsCulled)
 {
   // Mark the small master as a bump so classifyInstance() returns kPhysBump
   // (the fixture has no STA, so it falls back to the COVER_BUMP master type).
@@ -1671,7 +1671,7 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsFaithfulTintNotSheet)
   m->setType(odb::dbMasterType::COVER_BUMP);
 
   buildArray(
-      /*n=*/128);  // bumps render ~1 px at z=0 → below the LOD threshold
+      /*n=*/128);  // bumps render ~1 px at z=0 → below the cull threshold
   makeTileGen();
   unsigned w = 0;
   unsigned h = 0;
@@ -1679,13 +1679,13 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsFaithfulTintNotSheet)
   const int iw = static_cast<int>(w);
   const int ih = static_cast<int>(h);
 
-  // The sub-resolution array is NOT collapsed into one opaque slab over the
-  // gaps (the rejected "merged sheet").  Each bump becomes a discrete
-  // coverage mark, so the central interior is a FAITHFUL FAINT tint: its mean
-  // alpha reflects the real ~25% fill (pitch = 2x cell) and stays well below
-  // the opaque layer color, while still being non-transparent (bumps
-  // present). The supersample + Lanczos low-pass keeps the beat band empty
-  // (DenseArraySubPixelHasNoBeat); here we guard against the opaque sheet.
+  // Sub-resolution geometry (a dense bump array whose cells render ~1 px) is
+  // culled at the RTree level by searchInsts(size_limit_dbu), matching the Qt
+  // GUI: below the viewable threshold it is dropped entirely rather than drawn
+  // as a faint coverage tint or a merged opaque sheet.  So the central
+  // interior stays fully transparent — no tint, no sheet, no beat.  The
+  // above-threshold and resolved-zoom regimes are guarded by
+  // BandRendersDiscreteBumpsNotSlab / ResolvedArrayStaysSharp.
   const int x0 = iw / 4;
   const int x1 = 3 * iw / 4;
   const int y0 = ih / 4;
@@ -1699,11 +1699,9 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsFaithfulTintNotSheet)
     }
   }
   const double mean_alpha = alpha_sum / n_px;
-  // _instances overview tints at gray alpha=160; a solid sheet would average
-  // ~160.  Faithful ~25% coverage averages far lower.
-  EXPECT_GT(mean_alpha, 5.0) << "sub-resolution bumps vanished (no coverage)";
-  EXPECT_LT(mean_alpha, 100.0)
-      << "sub-resolution bump array collapsed into an opaque merged sheet";
+  EXPECT_EQ(mean_alpha, 0.0)
+      << "sub-resolution bump array was not culled (Qt parity: it must vanish "
+         "at zoom-out, not render a coverage tint or an opaque sheet)";
 }
 
 TEST_F(MoireArrayTest, BandRendersDiscreteBumpsNotSlab)
@@ -1742,12 +1740,13 @@ TEST_F(MoireArrayTest, BandRendersDiscreteBumpsNotSlab)
       << "bumps are not drawn solid (expected discrete near-opaque marks)";
 }
 
-TEST_F(MoireArrayTest, BumpArrayContinuesAcrossTileSeam)
+TEST_F(MoireArrayTest, BumpArrayBelowThresholdCulledUniformlyAcrossTileSeam)
 {
-  // Removing the global edge-snap must not reintroduce a black seam: a bump
-  // whose footprint straddles the tile boundary is clamped to the edge, so
-  // the array texture continues across adjacent tiles with no dead
-  // transparent band wider than the normal inter-bump gap.
+  // The sub-resolution cull must apply uniformly across tile boundaries: a
+  // below-threshold bump array is dropped in every tile, so neither the tile
+  // interior nor the shared-seam neighborhood shows partial coverage.  Guards
+  // against a boundary-only rendering artifact (e.g. a stray black/edge seam)
+  // once the global edge-snap was removed in favor of the Qt-parity cull.
   odb::dbMaster* m = lib_->findMaster("INV_X1");
   ASSERT_NE(m, nullptr);
   m->setType(odb::dbMasterType::COVER_BUMP);
@@ -1776,8 +1775,10 @@ TEST_F(MoireArrayTest, BumpArrayContinuesAcrossTileSeam)
     return tot > 0 ? static_cast<double>(nz) / tot : 0.0;
   };
 
-  // Interior coverage (reference) vs the seam neighborhood: a few columns on
-  // each side of the shared edge.  No systematic dropout at the boundary.
+  // Interior coverage vs the seam neighborhood: a few columns on each side of
+  // the shared edge.  Under the sub-resolution cull both must be empty — the
+  // array is dropped consistently, with no partial coverage leaking at the
+  // boundary.
   const double interior = coverage(left, iw / 4, 3 * iw / 4);
   int seam_nz = 0;
   int seam_tot = 0;
@@ -1796,9 +1797,11 @@ TEST_F(MoireArrayTest, BumpArrayContinuesAcrossTileSeam)
     }
   }
   const double seam = static_cast<double>(seam_nz) / seam_tot;
-  ASSERT_GT(interior, 0.0);
-  EXPECT_GT(seam, 0.3 * interior)
-      << "transparent band at the tile boundary → black seam between tiles";
+  EXPECT_EQ(interior, 0.0)
+      << "sub-resolution bump array was not culled in the tile interior";
+  EXPECT_EQ(seam, 0.0)
+      << "partial coverage leaked at the tile seam (cull not uniform across "
+         "adjacent tiles)";
 }
 
 TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
