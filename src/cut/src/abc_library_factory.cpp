@@ -74,6 +74,16 @@ abc::Mio_Library_t* AbcLibrary::mio_library()
   return mio_library_.release();
 }
 
+static bool IsCombinational(sta::LibertyCell* cell)
+{
+  if (!cell) {
+    return false;
+  }
+  return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
+          && !cell->isSequential() && !cell->isLevelShifter()
+          && !cell->isIsolationCell() && !cell->isMemory());
+}
+
 static int CountOutputPins(sta::LibertyCell* cell)
 {
   sta::LibertyCellPortIterator cell_port_iterator(cell);

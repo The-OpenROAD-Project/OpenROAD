@@ -165,7 +165,7 @@ static int inputPortPosition(sta::LibertyCell* cell, sta::LibertyPort* target)
 
 static bool detectCell(sta::LibertyCell* cell, MapTarget& result)
 {
-  if (!cell->hasSequentials()) {
+  if (!cell->isSequential()) {
     return false;
   }
   auto& seqs = cell->sequentials();
