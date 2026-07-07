@@ -109,10 +109,21 @@ if [[ ${BAZEL} == *bazelisk* || $(head -c 2 < "${BAZEL}") == '#!' ]]; then
     bazelisk_home=${HOME}/.cache/bazelisk
   fi
   meta="${bazelisk_home}/downloads/metadata/bazelbuild/bazel-${version}-${os}-${arch}"
-  real="${bazelisk_home}/downloads/sha256/$(cat "${meta}" 2>/dev/null)/bin/bazel"
-  [[ -x ${real} ]] ||
-    { echo >&2 "bazel-hermetic: ${BAZEL} is a wrapper and no real bazel-${version} found under ${bazelisk_home}"; exit 1; }
-  BAZEL=${real}
+  # || true: a missing metadata file (non-bazelisk wrapper) must fall
+  # through to the check below, not abort the assignment under set -e.
+  real="${bazelisk_home}/downloads/sha256/$(cat "${meta}" 2>/dev/null || true)/bin/bazel"
+  if [[ -x ${real} ]]; then
+    BAZEL=${real}
+  else
+    # A wrapper we can't resolve to a bazelisk-managed binary — e.g. a
+    # custom (non-bazelisk) bazel wrapper. Use it directly rather than
+    # refusing to run: if its interpreter isn't on the pruned PATH the
+    # launch fails loudly on its own, which is better than blocking every
+    # non-bazelisk wrapper up front.
+    echo >&2 "etc/bazel-hermetic: ${BAZEL} looks like a wrapper but no" \
+             "bazelisk-managed bazel-${version} was found under" \
+             "${bazelisk_home}; using it directly"
+  fi
 fi
 ln -sfn "${BAZEL}" "${TOOLBOX}/bazel"
 
@@ -172,12 +183,12 @@ preserved_env=()
 for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
   SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR \
   DISPLAY WAYLAND_DISPLAY XAUTHORITY; do
-  # printenv, not ${!var} or -v: these run before the pruned exec, so keep
-  # them portable to the bash 3.2 that macOS ships as /bin/bash. -v needs
-  # bash 4.2, and indirect expansion composed with a modifier (${!var:-})
-  # is unreliable on 3.2. All of these are exported environment variables,
-  # so printenv reads them directly and set -u never sees an unset name.
-  value=$(printenv "${var}" || true)
+  # Pure-bash lookup via eval: no subprocess (vs printenv, which also
+  # silently drops everything if it isn't on PATH), and no ${!var}/-v,
+  # which are unreliable on the bash 3.2 macOS ships. The names come from
+  # the fixed list above, never from input, so the eval is not an
+  # injection surface. ${var:-} keeps set -u quiet when the var is unset.
+  eval "value=\${${var}:-}"
   if [[ -n ${value} ]]; then
     preserved_env+=("${var}=${value}")
   fi
@@ -206,9 +217,11 @@ case "$(uname -s)" in
   *) lang=C.UTF-8 ;;
 esac
 
-# HOME:-  and the array guards: same set -u / bash 3.2 safety as above.
+# HOME:? fails early with a clear message if HOME is unset/empty (bazel
+# needs it for its caches and user bazelrc) instead of silently passing
+# an empty HOME; the array guards give the set -u / bash 3.2 safety.
 exec env -i \
-  HOME="${HOME:-}" \
+  HOME="${HOME:?etc/bazel-hermetic: HOME must be set}" \
   USER="${USER:-$(id -un)}" \
   LOGNAME="${LOGNAME:-$(id -un)}" \
   TERM="${TERM:-dumb}" \
