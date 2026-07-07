@@ -666,6 +666,7 @@ sh_binary(
         "$(rootpath @buildifier_prebuilt//:buildifier)",
         "$(rootpath //bazel:bzl_lint_test.sh)",
         "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
     ],
     data = [
         "MODULE.bazel",
@@ -677,5 +678,6 @@ sh_binary(
         "//bazel:tclfmt",
         "//bazel:tclint",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
 )

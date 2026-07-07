@@ -5603,7 +5603,7 @@ bool dbNetwork::isValidFlop(odb::dbInst* FF) const
     return false;
   }
   const LibertyCell* lib_cell = testCell(cell);
-  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
+  if (lib_cell == nullptr || !lib_cell->isSequential()) {
     return false;
   }
 
