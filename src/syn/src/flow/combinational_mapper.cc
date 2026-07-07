@@ -190,7 +190,7 @@ static void buildIndex(sta::Network* network,
     sta::LibertyCellIterator cell_iter(lib);
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
-      if (cell->hasSequentials()) {
+      if (cell->isSequential()) {
         debugPrint(logger,
                    utl::SYN,
                    "cm",
@@ -330,7 +330,7 @@ static void buildIndex(sta::Network* network,
       }
 
       // Register all NPN representatives
-      npn_semiclass_allrepr(
+      npnSemiclassAllRepr(
           func, inputs.size(), [&](const Truth6 repr, const NPN& npn) {
             index.classes[{(int) inputs.size(), repr}].push_back(
                 MapTarget{.cell = cell, .via = npn.inv()});
@@ -338,15 +338,15 @@ static void buildIndex(sta::Network* network,
     }
   }
 
-  // Prune targets: keep smallest cell per c_fingerprint
+  // Prune targets: keep smallest cell per cFingerprint
   for (auto& [key, targets] : index.classes) {
     std::ranges::sort(targets, [](const MapTarget& a, const MapTarget& b) {
-      return std::make_pair(a.via.c_fingerprint(), a.cell->area())
-             < std::make_pair(b.via.c_fingerprint(), b.cell->area());
+      return std::make_pair(a.via.cFingerprint(), a.cell->area())
+             < std::make_pair(b.via.cFingerprint(), b.cell->area());
     });
     auto unique_range = std::ranges::unique(
         targets, [](const MapTarget& a, const MapTarget& b) {
-          return a.via.c_fingerprint() == b.via.c_fingerprint();
+          return a.via.cFingerprint() == b.via.cFingerprint();
         });
     targets.erase(unique_range.begin(), targets.end());
   }
@@ -764,7 +764,7 @@ void Mapping::prepareMatches(const int npriority_cuts,
 
         // Try to match against library
         NPN npn;
-        Truth6 sc = npn_semiclass(cutFunction, reducedLen, npn);
+        Truth6 sc = npnSemiclass(cutFunction, reducedLen, npn);
         if (subject_.target_index->classes.contains({reducedLen, sc})) {
           if (matchSlot < nmatches_max) {
             ClassMatch& m = matchBuf[matchSlot];

@@ -2,7 +2,7 @@
 source "helpers.tcl"
 source "hi_fanout.tcl"
 
-set def_filename [make_result_file "repair_fanout7.def"]
+set def_filename [make_result_file "clone_flat.def"]
 # Gates we want to eventually NAND2_X4, NAND3_X4, NAND4_X4
 
 write_clone_test_def $def_filename NAND2_X4 150
