@@ -92,7 +92,7 @@ fi
 # Wrapper detection: the bazelisk launcher by name, or any script shebang
 # (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
 # are symlinked directly.
-if [[ ${BAZEL} == *bazelisk* || $(head -c 2 "$(readlink -f "${BAZEL}")") == '#!' ]]; then
+if [[ ${BAZEL} == *bazelisk* || $(head -c 2 "$(realpath "${BAZEL}")") == '#!' ]]; then
   version=$(BAZELISK_SKIP_WRAPPER=1 "${BAZEL}" --version | awk '{print $2}')
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   arch=$(uname -m | sed 's/aarch64/arm64/')
@@ -170,8 +170,14 @@ preserved_env=()
 for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
   SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR \
   DISPLAY WAYLAND_DISPLAY XAUTHORITY; do
-  if [[ -n ${!var:-} ]]; then
-    preserved_env+=("${var}=${!var}")
+  # printenv, not ${!var} or -v: these run before the pruned exec, so keep
+  # them portable to the bash 3.2 that macOS ships as /bin/bash. -v needs
+  # bash 4.2, and indirect expansion composed with a modifier (${!var:-})
+  # is unreliable on 3.2. All of these are exported environment variables,
+  # so printenv reads them directly and set -u never sees an unset name.
+  value=$(printenv "${var}" || true)
+  if [[ -n ${value} ]]; then
+    preserved_env+=("${var}=${value}")
   fi
 done
 
