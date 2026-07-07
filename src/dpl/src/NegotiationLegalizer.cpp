@@ -95,6 +95,16 @@ void NegotiationLegalizer::legalize()
              1,
              "NegotiationLegalizer: starting legalization.");
 
+  logger_->info(utl::DPL,
+                1103,
+                "NegotiationLegalizer search window: +/-{} sites horizontally, "
+                "+/-{} rows vertically.",
+                site_search_window_,
+                row_search_window_);
+
+  logger_->info(
+      utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
+
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
       orient_s{0};
@@ -114,7 +124,6 @@ void NegotiationLegalizer::legalize()
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
-    debugPause("Pause after initFromDb.");
   }
 
   {
@@ -136,6 +145,8 @@ void NegotiationLegalizer::legalize()
                             "initFenceRegions: {}");
     initFenceRegions();
   }
+
+  debugPause("Pause after initialization.");
 
   debugPrint(logger_,
              utl::DPL,
@@ -225,12 +236,17 @@ void NegotiationLegalizer::legalize()
   }
 
   if (debug_observer_) {
-    setDplPositions();
+    commitNegotiationPosToDpl();
     // this flush may imply functional changes. It hides initial movements for
     // clean debugging negotiation phase.
-    flushToDb();
+    logger_->report(
+        "Committing post-init positions to odb; debug move line drawings will "
+        "exclude gpl-to-init displacement.");
+    commitNegotiationPosToOdb();
     pushNegotiationPixels();
-    logger_->report("Pause after Abacus pass.");
+    logger_->report(run_abacus_
+                        ? "Pause after initialization: Abacus executed."
+                        : "Pause after initialization: Abacus skipped.");
     debug_observer_->redrawAndPause();
   }
 
@@ -303,12 +319,6 @@ void NegotiationLegalizer::legalize()
       nViol);
 
   {
-    utl::DebugScopedTimer t(
-        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "flushToDb: {}");
-    flushToDb();
-  }
-
-  {
     utl::DebugScopedTimer t(orient_s,
                             logger_,
                             utl::DPL,
@@ -348,7 +358,7 @@ void NegotiationLegalizer::legalize()
              "negotiation {:.1f}ms ({:.0f}%), "
              "postNegSync {:.1f}ms ({:.0f}%), "
              "metrics {:.1f}ms ({:.0f}%), "
-             "flushToDb {:.1f}ms ({:.0f}%), "
+             "commitNegotiationPosToOdb {:.1f}ms ({:.0f}%), "
              "orientUpdate {:.1f}ms ({:.0f}%)",
              to_ms(total_s),
              to_ms(init_from_db_s),
@@ -369,13 +379,16 @@ void NegotiationLegalizer::legalize()
              pct(flush_s),
              to_ms(orient_s),
              pct(orient_s));
+
+  debugPause("Pause after legalization complete.");
 }
 
 // ===========================================================================
-// flushToDb – write current cell positions to ODB so the GUI reflects them
+// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI
+// reflects them
 // ===========================================================================
 
-void NegotiationLegalizer::flushToDb()
+void NegotiationLegalizer::commitNegotiationPosToOdb()
 {
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
@@ -454,17 +467,18 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
   if (!debug_observer_) {
     return;
   }
-  setDplPositions();
+  commitNegotiationPosToDpl();
   pushNegotiationPixels();
   logger_->report("{}", msg);
   debug_observer_->redrawAndPause();
 }
 
 // ===========================================================================
-// setDplPositions – pass the positions to the DPL original structure (Node)
+// commitNegotiationPosToDpl – pass the positions to the DPL original structure
+// (Node)
 // ===========================================================================
 
-void NegotiationLegalizer::setDplPositions()
+void NegotiationLegalizer::commitNegotiationPosToDpl()
 {
   if (!network_) {
     return;

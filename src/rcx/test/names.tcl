@@ -33,7 +33,8 @@ detailed_route -verbose 0
 
 # Extract
 define_process_corner -ext_model_index 0 X
-extract_parasitics -ext_model_file $rcx_rules_file
+set_extraction_rules_file $rcx_rules_file
+extract_parasitics
 
 set spef_file [make_result_file names.spef]
 write_spef $spef_file

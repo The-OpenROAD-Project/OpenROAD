@@ -78,7 +78,7 @@ bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 bazel_dep(name = "git", version = "2.54.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
-bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
+bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
@@ -159,6 +159,12 @@ archive_override(
 
 bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
 bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
+archive_override(
+    module_name = "yosys-slang",
+    sha256 = "34198f2ed7b2d3175c3ce3c9fb1c6c91f28dbcfe531d97b91d6b12c48431bdef",
+    strip_prefix = "sv-elab-6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20",
+    urls = ["https://github.com/povik/yosys-slang/archive/6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20.tar.gz"],
+)
 
 # --- Extensions ---
 
@@ -244,7 +250,7 @@ alias(
     visibility = ["//visibility:public"],
 )
 """,
-    path = "bazel",
+    path = "bazel/slang-compat",
 )
 
 # --- Overrides ---

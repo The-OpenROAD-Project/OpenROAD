@@ -748,7 +748,7 @@ void RamGen::findMasters()
             return false;
           }
           auto cell = port->libertyCell();
-          if (!cell->hasSequentials()) {
+          if (!cell->isSequential()) {
             return false;
           }
           bool has_latch_data = false;
