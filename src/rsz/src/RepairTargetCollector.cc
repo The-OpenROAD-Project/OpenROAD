@@ -91,7 +91,8 @@ const char* RepairTargetCollector::getEnumString(ViolatorSortType sort_type)
 void RepairTargetCollector::printViolators(int numPrint = 0) const
 {
   if (violating_pins_.empty()) {
-    logger_->info(RSZ, 8, "No violating pins found.");
+    debugPrint(
+        logger_, RSZ, "violator_collector", 1, "No violating pins found.");
     return;
   }
 
