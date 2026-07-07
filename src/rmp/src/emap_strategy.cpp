@@ -287,7 +287,7 @@ void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
       sta::Instance* inst = db_network->instance(pin);
       sta::LibertyCell* cell = db_network->libertyCell(inst);
       if (!primary_input_or_output_nets.contains(connected_net)
-          && (!cell || cell->hasSequentials())) {
+          && (!cell || cell->isSequential())) {
         db_network->deleteNet(connected_net);
       }
     }

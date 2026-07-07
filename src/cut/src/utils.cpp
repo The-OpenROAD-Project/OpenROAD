@@ -13,7 +13,7 @@ bool IsCombinational(sta::LibertyCell* cell)
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials() && !cell->isLevelShifter()
+          && !cell->isSequential() && !cell->isLevelShifter()
           && !cell->isIsolationCell() && !cell->isMemory());
 }
 
