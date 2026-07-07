@@ -133,6 +133,8 @@ class RamGen
                               int rw_ports,
                               int r_ports,
                               int w_ports);
+  
+  void reportTimingAndPower();
 
  private:
   void findMasters();
@@ -198,8 +200,6 @@ class RamGen
                         int num_rows,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
                         const std::vector<odb::dbNet*>& select_nets);
-
-  void reportTimingAndPower();
 
   std::unique_ptr<Layout> makeInverterColumn(
       int num_rows,

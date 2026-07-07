@@ -8,9 +8,6 @@
 [INFO RAM-0016] Selected buffer cell sky130_fd_sc_hd__buf_1
 [INFO RAM-0016] Selected aoi22 cell sky130_fd_sc_hd__a22oi_1
 [INFO RAM-0024] Behavioral Verilog written for RAM8x8
-[INFO RAM-0044] RAM maximum path delay: 0.879 ns
-[INFO RAM-0045] RAM minimum path delay: 0.000 ns
-[INFO RAM-0046] RAM estimated power: 232520.859 nW
 [INFO PDN-0001] Inserting grid: ram_grid
 [INFO PPL-0067] Restrict pins [ clk we[0] D[0] Q[0] D[1] ... ] to region 0.00u-110.40u at the TOP edge.
 [INFO PPL-0067] Restrict pins [ addr_rw[0] addr_rw[1] addr_rw[2] ] to region 0.00u-24.48u at the RIGHT edge.
@@ -70,6 +67,9 @@
 [INFO DRT-0036] via4 guide region query size = 0.
 [INFO DRT-0036] met5 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
+[INFO RAM-0044] RAM maximum path delay: 0.879 ns
+[INFO RAM-0045] RAM minimum path delay: 0.000 ns
+[INFO RAM-0046] RAM estimated power: 232520.859 nW
 No differences found.
 No differences found.
 No differences found.

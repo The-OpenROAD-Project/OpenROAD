@@ -1921,7 +1921,6 @@ void RamGen::generate(const int mask_size,
                          r_ports,
                          w_ports);
 
-  reportTimingAndPower();
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)

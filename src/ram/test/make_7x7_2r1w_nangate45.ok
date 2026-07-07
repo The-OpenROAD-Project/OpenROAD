@@ -28,9 +28,6 @@
 [INFO RAM-0016] Selected buffer cell BUF_X1
 [INFO RAM-0016] Selected aoi22 cell AOI22_X1
 [INFO RAM-0024] Behavioral Verilog written for RAM7x7
-[INFO RAM-0044] RAM maximum path delay: 0.265 ns
-[INFO RAM-0045] RAM minimum path delay: 0.000 ns
-[INFO RAM-0046] RAM estimated power: 79128.938 nW
 [INFO PDN-0001] Inserting grid: ram_grid
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (4.5000 um, 4.0000 um) for VDD
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (9.0000 um, 8.0000 um) for VSS
@@ -116,6 +113,9 @@
 [INFO DRT-0036] via9 guide region query size = 0.
 [INFO DRT-0036] metal10 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
+[INFO RAM-0044] RAM maximum path delay: 0.265 ns
+[INFO RAM-0045] RAM minimum path delay: 0.000 ns
+[INFO RAM-0046] RAM estimated power: 79128.938 nW
 No differences found.
 No differences found.
 No differences found.
