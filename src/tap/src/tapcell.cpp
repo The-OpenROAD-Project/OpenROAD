@@ -1281,13 +1281,10 @@ int Tapcell::fillEndcapEdge(odb::dbRow* row,
                x_end,
                master->getName());
 
-    // Stop if the master is not symmetric for this row: retrying the same
-    // position (as the old continue did) would loop forever since x is fixed.
-    if (!checkSymmetry(master, row->getOrient())) {
-      break;
-    }
-
-    if (x + master->getWidth() > x_end) {
+    // The master must be symmetric for this row and fit in the remaining
+    // space; otherwise the boundary cannot be filled without a gap.
+    if (!checkSymmetry(master, row->getOrient())
+        || x + master->getWidth() > x_end) {
       const double dbus = row->getBlock()->getDbUnitsPerMicron();
       logger_->error(
           utl::TAP,
