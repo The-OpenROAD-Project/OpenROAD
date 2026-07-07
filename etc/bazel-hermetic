@@ -124,7 +124,14 @@ done
 command=${1:-}
 [[ $# -gt 0 ]] && shift
 
-# Flags only exist on build-ish commands; startup flags go before the command.
+# Classify the command. The set is exhaustive on purpose: a bazel startup
+# option can take its value as a separate word (`--output_base /tmp/x`),
+# and the loop above stops at the first non---flag, so that value would be
+# mistaken for the command. If we silently treated an unrecognized token
+# as a no-repo_env command, a build invoked that way would run repository
+# rules with the unpruned host PATH — exactly the leak this tool exists to
+# catch. So fail loud instead: an unknown command is an error, not a
+# silent bypass.
 extra_flags=()
 case "${command}" in
   build|test|run|cquery|aquery|coverage|fetch|vendor|sync|mod)
@@ -138,6 +145,21 @@ case "${command}" in
       # applies to unwrapped invocations too.
       "--repo_env=PATH=${TOOLBOX}"
     )
+    ;;
+  # Commands that never fetch/analyze external repositories: no pruning
+  # needed, pass through untouched.
+  query|info|clean|version|help|shutdown|dump|license|\
+  canonicalize-flags|print_action|analyze-profile|config|mobile-install)
+    ;;
+  '')
+    # Flags-only invocation (e.g. `--version`); handled below.
+    ;;
+  *)
+    echo >&2 "etc/bazel-hermetic: unrecognized command '${command}'."
+    echo >&2 "If this was a startup option value, join it to the flag" \
+             "(--flag=value, one word) so the command is parsed correctly" \
+             "and the hermetic PATH is not silently bypassed."
+    exit 1
     ;;
 esac
 
