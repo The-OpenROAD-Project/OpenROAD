@@ -91,10 +91,12 @@ if [[ -z ${BAZEL} ]]; then
 fi
 # Wrapper detection: the bazelisk launcher by name, or any script shebang
 # (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
-# are symlinked directly. Read via redirection: open() follows the
-# symlink for us, so no realpath/readlink -f is needed (neither is
-# reliably present on macOS).
-if [[ ${BAZEL} == *bazelisk* || $(head -c 2 < "${BAZEL}") == '#!' ]]; then
+# are symlinked directly. Read the first two bytes with the `read`
+# builtin (no head subprocess); the redirection's open() follows the
+# symlink for us, so no realpath/readlink -f is needed either.
+sig=""
+read -r -n 2 sig < "${BAZEL}" 2>/dev/null || true
+if [[ ${BAZEL} == *bazelisk* || ${sig} == '#!' ]]; then
   version=$(BAZELISK_SKIP_WRAPPER=1 "${BAZEL}" --version | awk '{print $2}')
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   arch=$(uname -m | sed 's/aarch64/arm64/')
@@ -186,14 +188,14 @@ for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
   SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR \
   DISPLAY WAYLAND_DISPLAY XAUTHORITY \
   BAZELISK_HOME BAZELISK_BASE_URL BAZELISK_GITHUB_TOKEN GITHUB_TOKEN; do
-  # Pure-bash lookup via eval: no subprocess (vs printenv, which also
-  # silently drops everything if it isn't on PATH), and no ${!var}/-v,
-  # which are unreliable on the bash 3.2 macOS ships. The names come from
-  # the fixed list above, never from input, so the eval is not an
-  # injection surface. ${var:-} keeps set -u quiet when the var is unset.
-  eval "value=\${${var}:-}"
-  if [[ -n ${value} ]]; then
-    preserved_env+=("${var}=${value}")
+  # Pure-bash indirect lookup, no subprocess and no eval: ${!var+x} tests
+  # whether the variable named by $var is set (set -u-safe), then ${!var}
+  # reads its value.
+  if [[ -n ${!var+x} ]]; then
+    value=${!var}
+    if [[ -n ${value} ]]; then
+      preserved_env+=("${var}=${value}")
+    fi
   fi
 done
 
