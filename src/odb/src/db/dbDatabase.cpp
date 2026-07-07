@@ -1212,7 +1212,6 @@ void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
   for (dbDatabaseObserver* observer : db->observers_) {
     observer->postRead3Dbx(chip);
   }
-  constructUnfoldedModel();
 }
 
 void dbDatabase::triggerPostReadDb()
