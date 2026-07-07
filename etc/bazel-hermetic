@@ -178,11 +178,14 @@ esac
 
 # Network, auth, TLS and cache/tmp configuration is not toolchain leakage:
 # downloads must work behind corporate proxies, custom CAs, and git-over-ssh
-# overrides, and users may relocate caches and tmp.
+# overrides, and users may relocate caches and tmp. The BAZELISK_* / token
+# vars matter when the resolved bazel is a bazelisk wrapper used directly
+# (custom cache location, enterprise mirror, GitHub rate limits).
 preserved_env=()
 for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
   SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR \
-  DISPLAY WAYLAND_DISPLAY XAUTHORITY; do
+  DISPLAY WAYLAND_DISPLAY XAUTHORITY \
+  BAZELISK_HOME BAZELISK_BASE_URL BAZELISK_GITHUB_TOKEN GITHUB_TOKEN; do
   # Pure-bash lookup via eval: no subprocess (vs printenv, which also
   # silently drops everything if it isn't on PATH), and no ${!var}/-v,
   # which are unreliable on the bash 3.2 macOS ships. The names come from
@@ -222,8 +225,8 @@ esac
 # an empty HOME; the array guards give the set -u / bash 3.2 safety.
 exec env -i \
   HOME="${HOME:?etc/bazel-hermetic: HOME must be set}" \
-  USER="${USER:-$(id -un)}" \
-  LOGNAME="${LOGNAME:-$(id -un)}" \
+  USER="${USER:-$(id -un 2>/dev/null || echo nobody)}" \
+  LOGNAME="${LOGNAME:-$(id -un 2>/dev/null || echo nobody)}" \
   TERM="${TERM:-dumb}" \
   LANG="${lang}" \
   PATH="${TOOLBOX}" \
