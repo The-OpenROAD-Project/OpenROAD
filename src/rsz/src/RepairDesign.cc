@@ -306,6 +306,7 @@ void RepairDesign::repairDesign(
   repaired_net_count = 0;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
+  rerouted_nets_ = 0;
   resizer_->resized_multi_output_insts_.clear();
 
   sta_->checkSlewsPreamble();
@@ -1178,6 +1179,7 @@ void RepairDesign::repairNet(sta::Net* net,
           // rerouting will reduce how many buffers are needed.
           slew_violation = true;
           if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
+            rerouted_nets_++;
             estimate_parasitics_->updateParasitics();
             sta_->findDelays(drvr);
             debugPrint(logger_,

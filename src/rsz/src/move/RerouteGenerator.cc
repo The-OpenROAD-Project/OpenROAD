@@ -23,8 +23,6 @@ using utl::RSZ;
 
 namespace {
 
-constexpr float kMinResistanceReduction = 0.70f;
-
 }  // namespace
 
 RerouteGenerator::RerouteGenerator(const GeneratorContext& context)
@@ -120,7 +118,7 @@ std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
   if (resistance > 0.0f) {
     reduction_ratio = (resistance - estimated_resistance) / resistance;
   }
-  if (reduction_ratio < kMinResistanceReduction) {
+  if (reduction_ratio < resizer_.getRerouteResistanceReduction()) {
     debugPrint(resizer_.logger(),
                RSZ,
                "reroute_move",
@@ -129,7 +127,7 @@ std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
                "below threshold {:.1f}% ({} -> {} estimated)",
                resizer_.network()->pathName(driver_pin),
                100.0f * reduction_ratio,
-               100.0f * kMinResistanceReduction,
+               100.0f * resizer_.getRerouteResistanceReduction(),
                resistance,
                estimated_resistance);
     return candidates;

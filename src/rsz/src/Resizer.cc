@@ -4834,8 +4834,14 @@ int Resizer::repairDesignBufferCount() const
   return repair_design_->insertedBufferCount();
 }
 
+float Resizer::getRerouteResistanceReduction()
+{
+  return kMinResistanceReduction;
+}
+
 bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
 {
+  // Res-aware rerouting only makes sense with global-routing parasitics.
   if (estimate_parasitics_->getParasiticsSrc()
       != est::ParasiticsSrc::kGlobalRouting) {
     return false;
@@ -4851,10 +4857,39 @@ bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
     return false;
   }
 
+  // Already scheduled for res-aware routing in a prior iteration.
   if (global_router_->isNetResAware(db_net)) {
     return false;
   }
 
+  // Unconstrained nets have no timing path; res-aware routing will waste
+  // valuable resources.
+  const sta::Slack slack = sta_->slack(graph_->pinDrvrVertex(drvr_pin), max_);
+  if (slack == sta::INF) {
+    return false;
+  }
+
+  // Short nets (<=3 gcells) have negligible resistance; skip the reroute.
+  const int kShortNetGCellThreshold = 3;
+  const int tile_size = global_router_->getTileSize();
+  if (tile_size > 0) {
+    const grt::NetRouteMap& routes = global_router_->getRoutes();
+    auto it = routes.find(db_net);
+    if (it != routes.end()) {
+      int gcell_length = 0;
+      for (const grt::GSegment& seg : it->second) {
+        if (!seg.isVia()) {
+          gcell_length += seg.length() / tile_size;
+        }
+      }
+      if (gcell_length <= kShortNetGCellThreshold) {
+        return false;
+      }
+    }
+  }
+
+  // Only reroute if moving to the lowest-resistance layer saves enough
+  // resistance to justify the disruption.
   const float resistance = global_router_->getFRNetResistance(db_net);
   const float estimated_resistance
       = global_router_->getFRNetResistanceOnMinResistanceLayer(db_net);
@@ -4863,7 +4898,6 @@ bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
     reduction_ratio = (resistance - estimated_resistance) / resistance;
   }
 
-  constexpr float kMinResistanceReduction = 0.70f;
   if (reduction_ratio < kMinResistanceReduction) {
     return false;
   }

@@ -767,6 +767,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      // Return values.
                      sta::Delay& delay,
                      sta::Slew& slew);
+  float getRerouteResistanceReduction();
 
  protected:
   void makeWireParasitic(sta::Net* net,
@@ -1054,6 +1055,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       vt_hash_map_;  // maps hash value to unique int
 
   std::shared_ptr<ResizerObserver> graphics_;
+
+  // Reroute
+  const float kMinResistanceReduction = 0.50f;
 
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
