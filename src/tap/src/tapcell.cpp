@@ -249,13 +249,17 @@ static std::vector<std::pair<int, int>> computeOpenSpans(
   std::vector<std::pair<int, int>> open_spans;
   int cursor = start;
   for (const auto& [b_start, b_end] : blockers) {
-    if (b_end <= cursor || b_start >= end) {
+    // blockers are sorted by start, so none of the rest can open a span
+    if (b_start >= end) {
+      break;
+    }
+    if (b_end <= cursor) {
       continue;
     }
     if (b_start > cursor) {
       open_spans.emplace_back(cursor, b_start);
     }
-    cursor = std::max(cursor, b_end);
+    cursor = b_end;
   }
   if (cursor < end) {
     open_spans.emplace_back(cursor, end);
@@ -1084,9 +1088,7 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
     const odb::Rect cell(
         ll.getX(), ll.getY(), ll.getX() + width, ll.getY() + height);
     for (auto* other : placed->second) {
-      const odb::Rect obb = other->getBBox()->getBox();
-      if (cell.xMax() > obb.xMin() && cell.xMin() < obb.xMax()
-          && cell.yMax() > obb.yMin() && cell.yMin() < obb.yMax()) {
+      if (cell.overlaps(other->getBBox()->getBox())) {
         return {};
       }
     }
@@ -1279,6 +1281,8 @@ int Tapcell::fillEndcapEdge(odb::dbRow* row,
                x_end,
                master->getName());
 
+    // Stop if the master is not symmetric for this row: retrying the same
+    // position (as the old continue did) would loop forever since x is fixed.
     if (!checkSymmetry(master, row->getOrient())) {
       break;
     }
