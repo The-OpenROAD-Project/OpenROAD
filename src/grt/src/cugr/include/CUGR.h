@@ -96,6 +96,11 @@ class CUGR
   // Route for a single net, so incremental updates patch only the dirty nets
   // instead of rebuilding the whole map.
   GRoute getNetRoute(odb::dbNet* db_net);
+  // Dirty nets rerouted in the last incremental pass (skipped nets excluded).
+  const std::vector<odb::dbNet*>& getReroutedNets() const
+  {
+    return rerouted_db_nets_;
+  }
   void updateDbCongestion();
   void getITermsAccessPoints(
       odb::dbNet* net,
@@ -270,6 +275,10 @@ class CUGR
 
   // Suppresses the global parasitics re-estimate during incremental routing.
   bool incremental_routing_ = false;
+  // Dirty-net set for the current incremental pass; scopes congestion checks.
+  std::vector<int> incremental_candidates_;
+  // Backing store for getReroutedNets().
+  std::vector<odb::dbNet*> rerouted_db_nets_;
 
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).

@@ -6380,15 +6380,24 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       // Rebuild the pin set from the netlist; positions are synced below.
       Net* net = getNet(db_net);
       updateNetPins(net);
+      // Reroute a dirty net only if needed: res-aware, no route yet (new or
+      // journal-restored), or a pin changed gcell; otherwise keep its route.
+      const auto route_it = routes_.find(db_net);
+      const bool has_route
+          = (route_it != routes_.end() && !route_it->second.empty());
+      const bool reroute
+          = net->isResAware() || !has_route || pinPositionsChanged(net);
       net->setDirtyNet(false);
       net->clearLastPinPositions();
-      cugr_->updateNet(db_net);
+      if (reroute) {
+        cugr_->updateNet(db_net);
+      }
     }
     dirty_nets_.clear();
     cugr_->routeIncremental();
-    // Patch only the rerouted nets into routes_ instead of rebuilding the whole
-    // map, and sync pin access points for the same nets (full route does all).
-    for (odb::dbNet* db_net : dirty_nets) {
+    // Patch only the rerouted nets into routes_ and sync their pin access.
+    const std::vector<odb::dbNet*>& rerouted = cugr_->getReroutedNets();
+    for (odb::dbNet* db_net : rerouted) {
       GRoute route = cugr_->getNetRoute(db_net);
       if (route.empty()) {
         routes_.erase(db_net);
