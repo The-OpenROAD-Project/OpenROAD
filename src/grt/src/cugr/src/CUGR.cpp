@@ -477,9 +477,11 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
                               gr_nets_[net_index]->getNdrCosts());
   }
 
-  // Narrow to the congested set (dirty-scoped when incremental) for later
-  // stages.
-  updateCongestedNets(net_indices);
+  // Full route narrows to the congested set for later stages; incremental keeps
+  // the full dirty set so every dirty net is re-optimized each stage.
+  if (!incremental_routing_) {
+    updateCongestedNets(net_indices);
+  }
 }
 
 void CUGR::patternRouteResAware(std::vector<int>& net_indices)
@@ -583,7 +585,9 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
 
-  updateCongestedNets(net_indices);
+  if (!incremental_routing_) {
+    updateCongestedNets(net_indices);
+  }
 }
 
 void CUGR::mazeRoute(std::vector<int>& net_indices)
@@ -646,9 +650,10 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid.step();
   }
 
-  // Narrow to the congested set (dirty-scoped when incremental) for iterative
-  // RRR.
-  updateCongestedNets(net_indices);
+  // Narrow to the congested set for iterative RRR (full route only).
+  if (!incremental_routing_) {
+    updateCongestedNets(net_indices);
+  }
 }
 
 void CUGR::route(bool incremental)
@@ -674,36 +679,21 @@ void CUGR::route(bool incremental)
     }
   }
 
+  // Incremental re-optimizes every dirty net each stage: the stages skip their
+  // congested-set narrowing when incremental_routing_, so net_indices stays the
+  // full dirty set; congestion checks still scope via incremental_candidates_.
+  incremental_routing_ = incremental;
   if (incremental) {
-    // Run the full funnel (pattern, detours, maze, RRR) on the dirty nets;
-    // congestion checks stay scoped to them via incremental_candidates_.
-    incremental_routing_ = true;
     incremental_candidates_ = net_indices;
-    patternRoute(net_indices);
-    net_indices = incremental_candidates_;
-    patternRouteWithDetours(net_indices);
-    net_indices = incremental_candidates_;
-    mazeRoute(net_indices);
-    net_indices = incremental_candidates_;
-    iterativeRRR(net_indices);
-    // Report the rerouted nets so the caller patches only their routes.
-    rerouted_db_nets_.clear();
-    for (const int index : incremental_candidates_) {
-      if (gr_nets_[index] != nullptr) {
-        rerouted_db_nets_.push_back(gr_nets_[index]->getDbNet());
-      }
-    }
-    incremental_routing_ = false;
-    incremental_candidates_.clear();
-    printStatistics();
-    return;
   }
 
   patternRoute(net_indices);
 
-  // Stage 2: resistance-aware re-route of the critical nets (always runs,
+  // Stage 2: resistance-aware re-route of the critical nets (full route only,
   // not congestion-gated).
-  patternRouteResAware(net_indices);
+  if (!incremental) {
+    patternRouteResAware(net_indices);
+  }
 
   patternRouteWithDetours(net_indices);
 
@@ -714,7 +704,24 @@ void CUGR::route(bool incremental)
 
   iterativeRRR(net_indices);
 
+  if (incremental) {
+    // Report the rerouted nets so the caller patches only their routes.
+    rerouted_db_nets_.clear();
+    for (const int index : incremental_candidates_) {
+      if (gr_nets_[index] != nullptr) {
+        rerouted_db_nets_.push_back(gr_nets_[index]->getDbNet());
+      }
+    }
+    incremental_routing_ = false;
+    incremental_candidates_.clear();
+  }
+
   printStatistics();
+
+  if (incremental) {
+    return;
+  }
+
   debugCongestion2D();
   if (constants_.write_heatmap) {
     grid_graph_->write();
