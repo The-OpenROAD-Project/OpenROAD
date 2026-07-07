@@ -677,7 +677,7 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                       && sta::fuzzyLess(setup_slack_after, setup_slack_before)
                       && setup_slack_after < setup_margin)) {
                 resizer_->journalRestore();
-                inserted_buffer_count_ = 0;
+                inserted_buffer_count_--;
               } else {
                 resizer_->journalEnd();
               }
