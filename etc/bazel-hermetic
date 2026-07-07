@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
-# Launch bazel in a pruned environment so that toolchains and tools the
-# build is supposed to provide hermetically cannot be picked up from the
-# host. This is a ratchet, not a proof: it removes host compilers,
+# LOCAL DEVELOPER DIAGNOSTIC — opt-in, not part of the normal build.
+# Nothing auto-invokes this; you never need it to build or test OpenROAD.
+# (Authored with Claude to catch host-toolchain leaks during the
+# hermetic-llvm bring-up.)
+#
+# It launches bazel in a pruned environment so that toolchains and tools
+# the build is supposed to provide hermetically cannot be picked up from
+# the host. This is a ratchet, not a proof: it removes host compilers,
 # linkers and interpreters from PATH. The C++ toolchain (hermetic-llvm)
 # is zero-sysroot, so no host headers or libraries are involved; the
 # remaining host surface is the bazel binary itself and the allowlisted
 # shell tools below.
 #
-# Opt-in developer tool; invoke directly:
-#    etc/bazel [startup flags] <command> [args...]
-# (Deliberately not named tools/bazel: bazelisk would auto-invoke that
-# for every command, and repository rules of some dependencies still
-# expect host tools this wrapper prunes, e.g. GNU Make's configure
-# probing for ld in bazel-orfs's gnumake rule.)
+# Invoke it explicitly when you want the check:
+#    etc/bazel-hermetic [startup flags] <command> [args...]
+# Deliberately named etc/bazel-hermetic, NOT tools/bazel: bazelisk
+# auto-invokes a tools/bazel wrapper for every command, which would force
+# the pruned environment on everyone — but repository rules of some
+# dependencies legitimately expect host tools this wrapper prunes (e.g.
+# GNU Make's configure probing for ld in bazel-orfs's gnumake rule), so
+# forcing it would break ordinary builds. Keeping it opt-in and
+# out-of-the-way is intentional.
 #
 # The allowlist below is the contract for what the build may use from the
 # host. Grow it only with a comment stating which repository rule or
@@ -79,7 +87,7 @@ done
 BAZEL=${BAZEL_REAL:-}
 if [[ -z ${BAZEL} ]]; then
   BAZEL=$(command -v bazelisk || command -v bazel) ||
-    { echo >&2 "tools/bazel: no bazel or bazelisk on PATH"; exit 1; }
+    { echo >&2 "etc/bazel-hermetic: no bazel or bazelisk on PATH"; exit 1; }
 fi
 # Wrapper detection: the bazelisk launcher by name, or any script shebang
 # (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
