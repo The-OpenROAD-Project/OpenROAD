@@ -37,8 +37,8 @@ diff --git a/BUILD.bazel b/BUILD.bazel
 +# listed as both -I and -isystem stays -isystem, so the -isystem form must
 +# go entirely). This restores autotools' AM_CPPFLAGS = -I./lib ordering.
 +BISON_COPTS = [
-+    "-Iexternal/bison+/lib",
-+    "-I$(BINDIR)/external/bison+/lib",
++    "-Iexternal/" + repo_name() + "/lib",
++    "-I$(BINDIR)/external/" + repo_name() + "/lib",
 +] + select({
      "@rules_cc//cc/compiler:clang": [
          "-w",
