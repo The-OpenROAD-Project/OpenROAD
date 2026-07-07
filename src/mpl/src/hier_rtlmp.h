@@ -233,10 +233,14 @@ class HierRTLMP
   void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
 
   void correctAllMacrosOrientation();
+  void correctMacroOrientationSingle();
   void correctMacroOrientationByCluster();
   float calculateRealMacroWirelength(odb::dbInst* macro);
-  void adjustRealMacroOrientation(const bool& is_vertical_flip);
-  void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
+  void adjustRealMacroOrientation(HardMacro* macro,
+                                  const bool& is_vertical_flip);
+  void adjustRealMacroOrientation(const std::vector<HardMacro*>& macros,
+                                  const bool& is_vertical_flip);
+  void flipRealMacro(HardMacro* macro, const bool& is_vertical_flip);
 
   template <typename Macro>
   void createFixedTerminal(Cluster* cluster,

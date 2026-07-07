@@ -2312,66 +2312,97 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
   return wirelength;
 }
 
-void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
+void HierRTLMP::flipRealMacro(HardMacro* macro, const bool& is_vertical_flip)
 {
-  odb::dbOrientType orient = is_vertical_flip ? macro->getOrient().flipY()
-                                              : macro->getOrient().flipX();
-  macro->setOrient(orient);
-  tree_->maps.inst_to_hard[macro]->setOrientation(orient);
+  odb::dbInst* inst = macro->getInst();
+  odb::dbOrientType orient = is_vertical_flip ? inst->getOrient().flipY()
+                                              : inst->getOrient().flipX();
+  inst->setOrient(orient);
+  macro->setOrientation(orient);
+
+  odb::Point loc = macro->getRealLocation();
+  inst->setLocation(loc.getX(), loc.getY());
 }
 
-void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
+void HierRTLMP::adjustRealMacroOrientation(HardMacro* macro,
+                                           const bool& is_vertical_flip)
 {
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isBlock() || inst->isFixed()) {
-      continue;
+  const float original_wirelength
+      = calculateRealMacroWirelength(macro->getInst());
+
+  // Flipping is done by mirroring the macro about the "Y" or "X" axis,
+  // so, after flipping, we must manually set the location (lower-left corner)
+  // again to move the macro back to the the position choosen by mpl.
+  flipRealMacro(macro, is_vertical_flip);
+  const float new_wirelength = calculateRealMacroWirelength(macro->getInst());
+
+  debugPrint(logger_,
+             MPL,
+             "flipping",
+             1,
+             "Inst {} flip {} orig_WL {} new_WL {}",
+             macro->getName(),
+             is_vertical_flip ? "V" : "H",
+             original_wirelength,
+             new_wirelength);
+
+  if (new_wirelength > original_wirelength) {
+    flipRealMacro(macro, is_vertical_flip);
     }
+}
 
-    const float original_wirelength = calculateRealMacroWirelength(inst);
-
-    // Flipping is done by mirroring the macro about the "Y" or "X" axis,
-    // so, after flipping, we must manually set the location (lower-left corner)
-    // again to move the macro back to the the position choosen by mpl.
-    flipRealMacro(inst, is_vertical_flip);
-    // The real location shifts differently with uneven halos when flipping
-    // and it requires us to handle the location in MPL
-    odb::Point macro_location
-        = tree_->maps.inst_to_hard[inst]->getRealLocation();
-
-    inst->setLocation(macro_location.getX(), macro_location.getY());
-    const float new_wirelength = calculateRealMacroWirelength(inst);
-
-    debugPrint(logger_,
-               MPL,
-               "flipping",
-               1,
-               "Inst {} flip {} orig_WL {} new_WL {}",
-               inst->getName(),
-               is_vertical_flip ? "V" : "H",
-               original_wirelength,
-               new_wirelength);
-
-    if (new_wirelength > original_wirelength) {
-      flipRealMacro(inst, is_vertical_flip);
-      macro_location = tree_->maps.inst_to_hard[inst]->getRealLocation();
-      inst->setLocation(macro_location.getX(), macro_location.getY());
+void HierRTLMP::correctMacroOrientationSingle()
+{
+  std::vector<HardMacro*> macros;
+  for (auto& [inst, macro] : tree_->maps.inst_to_hard) {
+    if (!macro->isFixed()) {
+      macros.push_back(macro.get());
     }
+  }
+
+  for (HardMacro* macro : macros) {
+    adjustRealMacroOrientation(macro, true);
+  }
+
+  for (HardMacro* macro : macros) {
+    adjustRealMacroOrientation(macro, false);
   }
 }
 
-void HierRTLMP::correctAllMacrosOrientation()
+void HierRTLMP::adjustRealMacroOrientation(
+    const std::vector<HardMacro*>& macros,
+    const bool& is_vertical_flip)
 {
-  if (!use_full_halo_) {
-    // With pin-aware halos, restrict flips to column and row wise since
-    // flipping macros alone could lead to unaccesible regions inside
-    // a cluster
-    correctMacroOrientationByCluster();
-  } else {
-    // Apply vertical flip if necessary
-    adjustRealMacroOrientation(true);
+  float original_wirelength = 0;
+  float new_wirelength = 0;
 
-    // Apply horizontal flip if necessary
-    adjustRealMacroOrientation(false);
+  for (HardMacro* macro : macros) {
+    original_wirelength += calculateRealMacroWirelength(macro->getInst());
+  }
+
+  for (HardMacro* macro : macros) {
+    flipRealMacro(macro, is_vertical_flip);
+  }
+
+  for (HardMacro* macro : macros) {
+    new_wirelength += calculateRealMacroWirelength(macro->getInst());
+  }
+
+  debugPrint(logger_,
+             MPL,
+             "flipping",
+             1,
+             "Cluster {} {} flip at {} orig_WL {} new_WL {}",
+             macros.front()->getCluster()->getName(),
+             is_vertical_flip ? "column-wise (V)" : "row-wise (H)",
+             is_vertical_flip ? macros.front()->getX() : macros.front()->getY(),
+             original_wirelength,
+             new_wirelength);
+
+  if (new_wirelength > original_wirelength) {
+    for (HardMacro* macro : macros) {
+      flipRealMacro(macro, is_vertical_flip);
+    }
   }
 }
 
@@ -2392,83 +2423,25 @@ void HierRTLMP::correctMacroOrientationByCluster()
       rows[macro->getRealY()].push_back(macro);
     }
 
-    for (auto& [x, macros] : cols) {
-      float pre_wirelength = 0;
-      float new_wirelength = 0;
-
-      for (HardMacro* macro : macros) {
-        pre_wirelength += calculateRealMacroWirelength(macro->getInst());
-      }
-
-      for (HardMacro* macro : macros) {
-        odb::dbInst* inst = macro->getInst();
-        flipRealMacro(inst, true);
-        odb::Point loc = macro->getRealLocation();
-        inst->setLocation(loc.getX(), loc.getY());
-      }
-
-      for (HardMacro* macro : macros) {
-        new_wirelength += calculateRealMacroWirelength(macro->getInst());
-      }
-
-      debugPrint(logger_,
-                 MPL,
-                 "flipping",
-                 1,
-                 "Cluster {} column-wise flip (V) at {} orig_WL {} new_WL {}",
-                 cluster->getName(),
-                 x,
-                 pre_wirelength,
-                 new_wirelength);
-
-      if (new_wirelength > pre_wirelength) {
-        for (HardMacro* macro : macros) {
-          odb::dbInst* inst = macro->getInst();
-          flipRealMacro(inst, true);
-          odb::Point loc = macro->getRealLocation();
-          inst->setLocation(loc.getX(), loc.getY());
-        }
-      }
+    for (auto& [_, macros] : cols) {
+      adjustRealMacroOrientation(macros, true);
     }
 
-    for (auto& [y, macros] : rows) {
-      float pre_wirelength = 0;
-      float new_wirelength = 0;
-
-      for (HardMacro* macro : macros) {
-        pre_wirelength += calculateRealMacroWirelength(macro->getInst());
-      }
-
-      for (HardMacro* macro : macros) {
-        odb::dbInst* inst = macro->getInst();
-        flipRealMacro(inst, false);
-        odb::Point loc = macro->getRealLocation();
-        inst->setLocation(loc.getX(), loc.getY());
-      }
-
-      for (HardMacro* macro : macros) {
-        new_wirelength += calculateRealMacroWirelength(macro->getInst());
-      }
-
-      debugPrint(logger_,
-                 MPL,
-                 "flipping",
-                 1,
-                 "Cluster {} row-wise flip (H) at {} orig_WL {} new_WL {}",
-                 cluster->getName(),
-                 y,
-                 pre_wirelength,
-                 new_wirelength);
-
-      if (new_wirelength > pre_wirelength) {
-        for (HardMacro* macro : macros) {
-          odb::dbInst* inst = macro->getInst();
-          flipRealMacro(inst, false);
-          odb::Point loc = macro->getRealLocation();
-          inst->setLocation(loc.getX(), loc.getY());
-        }
-      }
+    for (auto& [_, macros] : rows) {
+      adjustRealMacroOrientation(macros, false);
     }
+  }
+}
+
+void HierRTLMP::correctAllMacrosOrientation()
+{
+  if (!use_full_halo_) {
+    // With pin-aware halos, restrict flips to column and row wise since
+    // flipping single macros could lead to unaccesible regions inside
+    // a cluster
+    correctMacroOrientationByCluster();
+  } else {
+    correctMacroOrientationSingle();
   }
 }
 
