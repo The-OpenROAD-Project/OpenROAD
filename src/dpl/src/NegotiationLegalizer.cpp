@@ -97,10 +97,15 @@ void NegotiationLegalizer::legalize()
 
   logger_->info(utl::DPL,
                 1103,
-                "NegotiationLegalizer search window: +/-{} sites horizontally, "
-                "+/-{} rows vertically.",
+                "Negotiation base search window: +/-{} sites horizontally, "
+                "+/-{} rows vertically (extendable up to the max "
+                "displacement cap of +/-{} sites, +/-{} rows near walls).",
                 site_search_window_,
-                row_search_window_);
+                row_search_window_,
+                opendp_->max_displacement_x_,
+                opendp_->max_displacement_y_);
+  logger_->report("\tAutomatic search window extension {}.",
+                  disable_window_extension_ ? "disabled" : "enabled");
 
   logger_->info(
       utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
@@ -1120,9 +1125,13 @@ std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
   const int extended_step_cap
       = std::min(2 * max_scan, opendp_->max_displacement_y_);
   const int below_deficit
-      = below_wall ? count_per_side - static_cast<int>(below.size()) : 0;
+      = (below_wall && !disable_window_extension_)
+            ? count_per_side - static_cast<int>(below.size())
+            : 0;
   const int above_deficit
-      = above_wall ? count_per_side - static_cast<int>(above.size()) : 0;
+      = (above_wall && !disable_window_extension_)
+            ? count_per_side - static_cast<int>(above.size())
+            : 0;
   if (above_deficit > 0 && !below_wall) {
     bool dummy = false;
     below = scan(+1, count_per_side + above_deficit, extended_step_cap, dummy);

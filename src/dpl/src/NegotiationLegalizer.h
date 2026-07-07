@@ -142,6 +142,13 @@ class NegotiationLegalizer
   void setRowSearchWindow(int w) { row_search_window_ = w; }
   void setDrcPenalty(double p) { drc_penalty_ = p; }
   void setNumThreads(int n) { num_threads_ = n; }
+  // When set, disables the wall-deficit search-window extension in
+  // horizontalWindowBounds/verticalWindowRows: a cell blocked short on one
+  // side no longer gets that lost reach shifted onto the open side.
+  void setDisableWindowExtension(bool disable)
+  {
+    disable_window_extension_ = disable;
+  }
 
   // Metrics (valid after legalize())
   [[nodiscard]] double avgDisplacement() const;
@@ -324,6 +331,7 @@ class NegotiationLegalizer
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool run_abacus_{false};
+  bool disable_window_extension_{false};
 
   // Mutable profiling accumulators for findBestLocation breakdown (seconds).
   mutable double prof_init_search_s_{0};

@@ -638,9 +638,12 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
     ++right_avail;
   }
 
-  // Reach lost on one side (cut short by a wall) is added to the other side.
-  const int left_deficit = site_window - left_avail;
-  const int right_deficit = site_window - right_avail;
+  // Reach lost on one side (cut short by a wall) is added to the other side,
+  // unless the user disabled this extension.
+  const int left_deficit
+      = disable_window_extension_ ? 0 : site_window - left_avail;
+  const int right_deficit
+      = disable_window_extension_ ? 0 : site_window - right_avail;
   int dx_lo = -(site_window + right_deficit);
   int dx_hi = site_window + left_deficit;
 
