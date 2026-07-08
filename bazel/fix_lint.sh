@@ -17,13 +17,12 @@ BZL_LINT_BUILDIFIER="$8"
 GIT="$9"
 
 export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
-
 # TCL: auto-format then lint
-"${TCL_TIDY_SH}" "${TCLFMT}"
+"${TCL_TIDY_SH}" "${TCLFMT}" "${GIT}"
 "${TCL_LINT_SH}" "${TCLINT}" "${GIT}" || rc=$?
 
 # Bazel: auto-format then lint
-"${BZL_TIDY_SH}" "${BZL_FMT_BUILDIFIER}"
+"${BZL_TIDY_SH}" "${BZL_FMT_BUILDIFIER}" "${GIT}"
 "${BZL_LINT_SH}" "${BZL_LINT_BUILDIFIER}" "${GIT}" || rc=$?
 
 "${GIT}" -C "$BUILD_WORKSPACE_DIRECTORY" status

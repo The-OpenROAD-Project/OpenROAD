@@ -202,7 +202,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       const odb::Rect core = grid->getCore();
       const DbuX site_width = grid->getSiteWidth();
 
-      auto color = gui::Painter::kWhite;
+      auto color = gui::Painter::kOrange;
       color.a = 100;
       painter.setPen(color);
       painter.setBrush(color);
