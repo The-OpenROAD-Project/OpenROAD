@@ -584,10 +584,14 @@ sh_test(
 sh_binary(
     name = "tidy_tcl",
     srcs = ["//bazel:tcl_tidy.sh"],
-    args = ["$(rootpath //bazel:tclfmt)"],
+    args = [
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath @git)",
+    ],
     data = [
         "tclint.toml",
         "//bazel:tclfmt",
+        "@git",
     ],
 )
 
@@ -633,9 +637,13 @@ sh_test(
 sh_binary(
     name = "tidy_bzl",
     srcs = ["//bazel:bzl_tidy.sh"],
-    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    args = [
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
+    ],
     data = [
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
 )
 

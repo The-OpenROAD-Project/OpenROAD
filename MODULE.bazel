@@ -363,7 +363,7 @@ alias(
     visibility = ["//visibility:public"],
 )
 """,
-    path = "bazel",
+    path = "bazel/slang-compat",
 )
 
 # --- Overrides ---

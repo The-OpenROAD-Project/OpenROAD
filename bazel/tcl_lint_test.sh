@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-TOOL="$(realpath "$1")"
+TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 GIT="$(realpath "$2")"
 
 # With rules_python's script bootstrap (bootstrap_impl=script), a py_binary
