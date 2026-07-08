@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0128] Design: single_row_macros
+[INFO ODB-0131]     Created 2 components and 64 component-terminals.
+[INFO ODB-0303] The initial 81 rows (31023 sites) were cut with 2 shapes for a total of 161 rows (8383 sites).
+[INFO TAP-0003] Inserted 10 endcap corners.
+[INFO TAP-0004] Inserted 789 endcaps.
+[INFO TAP-0005] Inserted 0 tapcells.
+No differences found.
