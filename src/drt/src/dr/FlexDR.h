@@ -59,6 +59,7 @@ namespace drt {
 
 class TritonRoute;
 class frConstraint;
+class frMarker;
 struct SearchRepairArgs;
 
 struct FlexDRViaData
@@ -203,6 +204,7 @@ class FlexDR
       int& version,
       IterationProgress& iter_prog);
   odb::Rect getDRVBBox(const odb::Rect& drv_rect) const;
+  std::vector<odb::Rect> getOffGuideWorkerBoxes(frMarker* marker) const;
   void stubbornTilesFlow(const SearchRepairArgs& args,
                          IterationProgress& iter_prog);
   void guideTilesFlow(const SearchRepairArgs& args,

@@ -24,14 +24,16 @@ Design::Design(odb::dbDatabase* db,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,
-               const odb::PtrSet<odb::dbNet>& clock_nets)
+               const odb::PtrSet<odb::dbNet>& clock_nets,
+               const bool verbose)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),
       constants_(constants),
       min_routing_layer_(min_routing_layer),
       max_routing_layer_(max_routing_layer),
-      clock_nets_(clock_nets)
+      clock_nets_(clock_nets),
+      verbose_(verbose)
 {
   read();
   setUnitCosts();
@@ -55,10 +57,12 @@ void Design::read()
 
   computeGrid();
 
-  logger_->report("Design statistics");
-  logger_->report("Nets:                {}", nets_.size());
-  logger_->report("Special nets:        {}", num_special_nets);
-  logger_->report("Routing layers:      {}", getNumLayers());
+  if (verbose_) {
+    logger_->report("Design statistics");
+    logger_->report("Nets:                {}", nets_.size());
+    logger_->report("Special nets:        {}", num_special_nets);
+    logger_->report("Routing layers:      {}", getNumLayers());
+  }
 }
 
 void Design::readLayers()

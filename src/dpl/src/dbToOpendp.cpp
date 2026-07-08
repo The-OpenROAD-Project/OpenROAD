@@ -187,6 +187,22 @@ void Opendp::importDb()
   createNetwork();
   createArchitecture();
   setUpPlacementGroups();
+
+  if (logger_->debugCheck(utl::DPL, "hybrid", 1)) {
+    std::map<int, int> height_counts;
+    for (const auto& node : network_->getNodes()) {
+      if (node->getType() != Node::CELL) {
+        continue;
+      }
+      height_counts[node->getHeight().v]++;
+    }
+    logger_->report("Cell height distribution ({} unique micron height(s)):",
+                    height_counts.size());
+    for (const auto& [height, count] : height_counts) {
+      logger_->report(
+          "  height {:.3f} um: {} cells", block_->dbuToMicrons(height), count);
+    }
+  }
 }
 
 void Opendp::importClear()

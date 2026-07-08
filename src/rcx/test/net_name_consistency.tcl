@@ -30,7 +30,8 @@ read_def -floorplan_initialize $test_name.def
 
 # Extract RC from the routed DEF fixture.
 define_process_corner -ext_model_index 0 X
-extract_parasitics -ext_model_file $rcx_rules_file
+set_extraction_rules_file $rcx_rules_file
+extract_parasitics
 
 # Write Verilog
 set verilog_file [make_result_file $test_name.v]
