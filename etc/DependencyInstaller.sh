@@ -45,7 +45,7 @@ fi
 # ------------------------------------------------------------------------------
 # Dependency Versions and Checksums
 # ------------------------------------------------------------------------------
-YOSYS_VERSION="v0.58"
+YOSYS_VERSION="v0.64"
 CMAKE_VERSION_BIG="3.31"
 CMAKE_VERSION_SMALL="${CMAKE_VERSION_BIG}.9"
 CMAKE_CHECKSUM_AARCH64="8d426361ce8c54494c0a041a0e3bcc5c"
@@ -162,10 +162,11 @@ _verify_checksum() {
 # Yosys
 # ------------------------------------------------------------------------------
 # Note: yosys's compile-time readline dependency (libreadline-dev /
-# readline-devel / readline brew formula) is installed in the per-platform
-# -base package functions below. It used to live in a separate helper invoked
-# from here, but that put a root-only apt-get inside the unprivileged -common
-# phase (see ORFS issue #4266).
+# readline-devel / readline brew formula) and the python click module that
+# eqy/sby need at runtime (python3-click / pip click) are installed in the
+# per-platform -base package functions below. They used to live in a separate
+# helper invoked from here, but that put a root-only apt-get inside the
+# unprivileged -common phase (see ORFS issue #4266).
 _install_yosys() {
     local yosys_prefix=${PREFIX:-"/usr/local"}
     local yosys_bin=${yosys_prefix}/bin/yosys
@@ -1046,7 +1047,7 @@ _install_ubuntu_packages() {
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
         libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
-        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
+        pkg-config python3-click python3-dev qt5-image-formats-plugins tcl tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     local packages=()
@@ -1088,7 +1089,7 @@ _install_rhel_packages() {
         autoconf automake clang clang-devel gcc gcc-c++ gdb git glibc-devel \
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
-        python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
+        python3-click python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
         qt5-qtimageformats readline-devel tcl-devel \
         tcl-thread-devel tcllib wget yaml-cpp-devel \
         zlib-devel tzdata redhat-rpm-config rpm-build
@@ -1126,7 +1127,7 @@ _install_opensuse_packages() {
         binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
-        pcre2-devel pkg-config python3-devel python3-pip readline-devel tcl \
+        pcre2-devel pkg-config python3-click python3-devel python3-pip readline-devel tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
     _execute "Setting gcc alternatives..." update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -1175,7 +1176,7 @@ _install_debian_packages() {
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
         libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
-        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev \
+        pandoc pkg-config python3-click python3-dev qt5-image-formats-plugins tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     if [[ "${debian_version}" == "10" ]]; then
