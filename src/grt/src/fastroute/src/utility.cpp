@@ -3018,10 +3018,11 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     treenodes[d].lID = BIG_INT;
     treenodes[d].status = 0;
 
-    // Pack the int16_t grid coordinates into a single 32-bit key.
-    const int32_t key
-        = (static_cast<int32_t>(static_cast<uint16_t>(treenodes[d].x)) << 16)
-          | static_cast<int32_t>(static_cast<uint16_t>(treenodes[d].y));
+    // Pack the int16_t grid coordinates into a single unsigned 32-bit key.
+    // Unsigned avoids undefined behavior from shifting into the sign bit.
+    const uint32_t key
+        = (static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].x)) << 16)
+          | static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].y));
 
     if (d < num_terminals) {
       const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
