@@ -51,6 +51,7 @@ or_integration_tests(
     core_grid_strap_outside_core
     core_grid_via_snap
     core_grid_with_multiple_bterms
+    core_grid_with_no_grid
     core_grid_with_M6_min_area
     core_grid_with_M6_min_area_rule
     core_grid_with_M7_pins
@@ -91,6 +92,7 @@ or_integration_tests(
     macros_cells_via_failure
     macros_different_nets
     macros_grid_check
+    macros_grid_not_used
     macros_grid_through
     macros_grid_through_without_middle
     macros_narrow_channel
@@ -111,6 +113,7 @@ or_integration_tests(
     pads_black_parrot_flipchip_connect_overpads
     pads_black_parrot_grid_define
     pads_black_parrot_limit_connect
+    pads_black_parrot_macro_grid
     pads_black_parrot_max_width
     pads_black_parrot_no_connect
     pads_black_parrot_offset
@@ -135,6 +138,7 @@ or_integration_tests(
     reset
     ripup
     sky130_spm_floating_bpin
+    sky130_spm_halo_too_big
     sroute_test
     widthtable
 )

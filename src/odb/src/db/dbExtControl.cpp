@@ -10,7 +10,6 @@ namespace odb {
 
 dbExtControl::dbExtControl()
 {
-  _independentExtCorners = false;
   _wireStamped = false;
   _foreign = false;
   _rsegCoord = false;
@@ -39,7 +38,6 @@ dbOStream& operator<<(dbOStream& stream, const dbExtControl& extControl)
   if (!extControl._extracted) {
     return stream;
   }
-  stream << extControl._independentExtCorners;
   stream << extControl._wireStamped;
   stream << extControl._foreign;
   stream << extControl._rsegCoord;
@@ -72,7 +70,10 @@ dbIStream& operator>>(dbIStream& stream, dbExtControl& extControl)
 
   _dbDatabase* db = stream.getDatabase();
 
-  stream >> extControl._independentExtCorners;
+  if (!db->isSchema(kSchemaRemovePerCornerBlock)) {
+    bool obsolete_independent_ext_corners;
+    stream >> obsolete_independent_ext_corners;
+  }
   stream >> extControl._wireStamped;
   stream >> extControl._foreign;
   stream >> extControl._rsegCoord;

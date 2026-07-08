@@ -755,6 +755,8 @@ class FastRouteCore
   bool en_estimate_parasitics_ = false;
   bool resistance_aware_ = false;
   bool enable_resistance_aware_ = false;
+  // Dump the res-aware priority list (debug GRT resAware) only once per run.
+  bool res_aware_logged_ = false;
   bool is_3d_step_ = false;
   bool is_incremental_grt_ = false;
   float worst_slack_ = std::numeric_limits<float>::max();
@@ -806,6 +808,11 @@ class FastRouteCore
   std::vector<int> xcor_;
   std::vector<int> ycor_;
   std::vector<int> dcor_;
+  // Scratch map for setTreeNodesVariables() coordinate deduplication.
+  // Maps a packed (x,y) grid position to the dcor index of the first node
+  // inserted at that position, replacing an O(numpoints^2) linear scan with
+  // O(1) average lookups. Reused across calls to avoid per-call allocation.
+  std::unordered_map<uint32_t, int> tree_node_coord_dedup_;
 
   std::vector<FrNet*> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_id_map_;  // db net -> net id

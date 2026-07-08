@@ -9,6 +9,15 @@ set -euo pipefail
 TOOL="$(realpath "$1")"
 GIT="$(realpath "$2")"
 
+# With rules_python's script bootstrap (bootstrap_impl=script), a py_binary
+# invoked via its realpath cannot locate its runfiles once we cd away.
+# Export the runfiles root (the .runfiles directory) so nested tools
+# resolve it from the environment instead. We start in the workspace
+# subdirectory of it (<target>.runfiles/<workspace>); strip the last path
+# component rather than a hardcoded workspace name so this also holds when
+# the workspace is not "_main" (e.g. consumed as a dependency).
+export RUNFILES_DIR="${RUNFILES_DIR:-${PWD%/*}}"
+
 # MODULE.bazel must be in the sh_test `data` deps so it appears as a
 # runfiles symlink pointing at the real workspace. `readlink` (no -f,
 # for macOS portability) resolves the absolute path Bazel wrote.
