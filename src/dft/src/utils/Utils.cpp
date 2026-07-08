@@ -54,7 +54,7 @@ bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
   odb::dbMaster* master = instance->getMaster();
   sta::Cell* master_cell = db_network->dbToSta(master);
   sta::LibertyCell* liberty_cell = db_network->libertyCell(master_cell);
-  return liberty_cell->hasSequentials();
+  return liberty_cell->isSequential();
 }
 
 odb::dbInst* ReplaceCell(
