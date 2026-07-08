@@ -142,9 +142,8 @@ class NegotiationLegalizer
   void setRowSearchWindow(int w) { row_search_window_ = w; }
   void setDrcPenalty(double p) { drc_penalty_ = p; }
   void setNumThreads(int n) { num_threads_ = n; }
-  // When set, disables the wall-deficit search-window extension in
-  // horizontalWindowBounds/verticalWindowRows: a cell blocked short on one
-  // side no longer gets that lost reach shifted onto the open side.
+  // When set, site_search_window_/row_search_window_ are used as hard
+  // ranges: disables both window extensions.
   void setDisableWindowExtension(bool disable)
   {
     disable_window_extension_ = disable;

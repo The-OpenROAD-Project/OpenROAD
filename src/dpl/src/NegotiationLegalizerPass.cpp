@@ -590,12 +590,18 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
 
 int NegotiationLegalizer::effectiveSiteWindow(const NegCell& cell) const
 {
+  if (disable_window_extension_ || site_search_window_ == 0) {
+    return std::min(site_search_window_, opendp_->max_displacement_x_);
+  }
   return std::min(std::max(site_search_window_, cell.width),
                   opendp_->max_displacement_x_);
 }
 
 int NegotiationLegalizer::effectiveRowCap(const NegCell& cell) const
 {
+  if (disable_window_extension_) {
+    return std::min(row_search_window_, opendp_->max_displacement_y_);
+  }
   return std::min(cell.height * row_search_window_,
                   opendp_->max_displacement_y_);
 }
