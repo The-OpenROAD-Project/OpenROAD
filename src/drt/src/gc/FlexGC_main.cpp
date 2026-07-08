@@ -268,6 +268,9 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
     if (rect1->getNet()->getDesignRuleWidth() != -1) {
       width1 = rect1->getNet()->getDesignRuleWidth();
     }
+    if (rect1->getNet()->getMinSpacing() != -1) {
+      return rect1->getNet()->getMinSpacing();
+    }
   }
   if (rect2->getNet()->isBlockage()) {
     isObs = true;
@@ -276,6 +279,9 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
     }
     if (rect2->getNet()->getDesignRuleWidth() != -1) {
       width2 = rect2->getNet()->getDesignRuleWidth();
+    }
+    if (rect2->getNet()->getMinSpacing() != -1) {
+      return rect2->getNet()->getMinSpacing();
     }
   }
   // check if width is a result of route shape

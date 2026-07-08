@@ -101,6 +101,7 @@ class _dbBox : public _dbObject
   uint32_t owner_;
   dbId<_dbBox> next_box_;
   int design_rule_width_;
+  int min_spacing_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBox& box);
