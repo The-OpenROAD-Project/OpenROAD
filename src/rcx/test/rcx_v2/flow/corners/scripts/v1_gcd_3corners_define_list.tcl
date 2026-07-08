@@ -13,7 +13,8 @@ source $test_dir/sky130hs/sky130hs.rc
 get_model_corners -ext_model_file $model_v1
 define_rcx_corners -corner_list "min typ max"
 
-extract_parasitics -ext_model_file $model_v1 -max_res 0 \
+set_extraction_rules_file $model_v1
+extract_parasitics -max_res 0 \
   -coupling_threshold 0.001 -skip_over_cell
 
 write_spef $test_case.spef

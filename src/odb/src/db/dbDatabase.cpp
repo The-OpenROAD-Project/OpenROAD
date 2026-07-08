@@ -923,6 +923,17 @@ bool dbDatabase::hasHierarchy() const
   return db->hierarchy_;
 }
 
+bool dbDatabase::hasHierarchicalChip() const
+{
+  for (dbChip* chip : getChips()) {
+    if (chip->getChipType() == dbChip::ChipType::HIER) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void dbDatabase::read(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
@@ -1201,7 +1212,6 @@ void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
   for (dbDatabaseObserver* observer : db->observers_) {
     observer->postRead3Dbx(chip);
   }
-  constructUnfoldedModel();
 }
 
 void dbDatabase::triggerPostReadDb()

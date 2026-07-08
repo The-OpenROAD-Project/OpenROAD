@@ -96,9 +96,13 @@ common --enable_platform_specific_config
 # macOS: boost.stacktrace needs this since backtrace() doesn't require GNU source
 build:macos --copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 build:macos --host_copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
-# Aligned allocation/deallocation for abseil is only available since 10.13
-build:macos --macos_minimum_os=10.13
-build:macos --host_macos_minimum_os=10.13
+# Floating-point std::to_chars (behind std::format, used by OpenSTA)
+# needs macOS 13.3; std::filesystem (src/tcl_readline_setup.cc) needs
+# 10.15; abseil's aligned allocation needs 10.13. The historical 10.13
+# floor was never enforced: toolchains_llvm ignored it and compiled
+# against the host SDK's default. hermetic-llvm honors it.
+build:macos --macos_minimum_os=13.3
+build:macos --host_macos_minimum_os=13.3
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
@@ -123,6 +127,9 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 # Improve hermeticity by disallowing user envars and network access
 build --incompatible_strict_action_env
 build --nosandbox_default_allow_network
+# Refuse to autodetect a local C++ toolchain (/usr/bin/gcc); the hermetic
+# toolchain must win resolution, with or without the etc/bazel-hermetic wrapper.
+common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 test --build_tests_only
 
@@ -141,6 +148,11 @@ build:ci --remote_upload_local_results=true
 build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
+
+# Launch py_binary via a shell stub instead of rules_python's legacy python
+# stub, whose '#!/usr/bin/env python3' shebang needs a host python3 before
+# the hermetic interpreter takes over (found by etc/bazel-hermetic).
+common --@rules_python//python/config_settings:bootstrap_impl=script
 
 # Setup remote cache
 # Anon: HTTPS read-only cache

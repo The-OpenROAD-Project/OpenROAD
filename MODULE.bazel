@@ -34,7 +34,34 @@ bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
+# bison is transitive (rules_bison -> bison). Same gnulib libc-header
+# shadowing class as sed/gawk/m4 under hermetic-llvm (BCR #7642).
+# 3.8.2.bcr.7 fixes lib/ but src/ still picks up raw libc headers; the
+# patch restores gnulib wrapper-header precedence via -I (to be proposed
+# upstream as 3.8.2.bcr.8, then drop).
+single_version_override(
+    module_name = "bison",
+    patch_strip = 1,
+    patches = [
+        "//bazel/bison-patches:0001-gnulib-wrapper-headers-use-I-not-isystem.patch",
+    ],
+    version = "3.8.2.bcr.7",
+)
+
 BOOST_VERSION = "1.89.0.bcr.2"
+
+# boost::icl's exclusive_less_than comparator violates strict weak ordering
+# (boostorg/icl#51); libc++'s std::map exposes it, leaving phantom intervals
+# after interval_set subtraction (boostorg/icl#55) — pad IO fillers were
+# placed on top of pads. Upstream fix boostorg/icl@7de3f55655 (#54), merged
+# after boost 1.90. Drop when a boost.icl release containing it lands in BCR.
+single_version_override(
+    module_name = "boost.icl",
+    patch_strip = 1,
+    patches = [
+        "//bazel/boost-icl-patches:0001-refactor-interval-lookup-operations-icl-54.patch",
+    ],
+)
 
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
 bazel_dep(name = "boost.asio", version = BOOST_VERSION)
@@ -76,13 +103,54 @@ bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
+
+# gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
+# libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
+# hermetic-llvm's explicit libc -isystem entries (BCR #7642). 5.3.2.bcr.7
+# carries the upstream fix (BCR #7989).
+single_version_override(
+    module_name = "gawk",
+    version = "5.3.2.bcr.7",
+)
+
 bazel_dep(name = "git", version = "2.54.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
-bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
+
+# m4 is transitive (rules_bison/rules_flex -> m4). Same gnulib libc-header
+# shadowing class as sed/gawk under hermetic-llvm (BCR #7642).
+single_version_override(
+    module_name = "m4",
+    version = "1.4.21.bcr.4",
+)
+
+bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
+
+# sed is transitive (abc -> ncurses -> sed). Its vendored gnulib headers
+# deliberately shadow libc headers (stdio.h, error.h); hermetic-llvm's
+# explicit libc -isystem entries outrank them and sed@4.9.bcr.3 fails to
+# compile (BCR #7642). 4.9.bcr.5 carries the upstream fix (BCR #7915).
+single_version_override(
+    module_name = "sed",
+    version = "4.9.bcr.5",
+)
+
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.1")
+
+# tclZipfs.c's '#include "crypt.h"' picks up glibc's crypt.h instead of the
+# vendored minizip one when glibc headers are explicit -isystem directories
+# (hermetic-llvm zero-sysroot toolchain). Drop when fixed in a tcl_lang
+# BCR release.
+single_version_override(
+    module_name = "tcl_lang",
+    patch_strip = 1,
+    patches = [
+        "//bazel/tcl-patches:0001-tclZipfs-include-vendored-minizip-crypt.h-by-path.patch",
+    ],
+)
+
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
@@ -101,7 +169,12 @@ git_override(
 
 ## Lock the compiler version and avoid any local compiler.
 ## Downstream consumers must configure their own C++ toolchain.
-bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
+##
+## hermetic-llvm (BCR module "llvm") provides statically linked LLVM
+## binaries and a zero-sysroot cc_toolchain: no host compiler, linker,
+## libxml2 or /usr/include involved, and it runs unmodified on distros
+## without FHS paths (e.g. NixOS).
+bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
@@ -159,25 +232,71 @@ archive_override(
 
 bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
 bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
+archive_override(
+    module_name = "yosys-slang",
+    sha256 = "34198f2ed7b2d3175c3ce3c9fb1c6c91f28dbcfe531d97b91d6b12c48431bdef",
+    strip_prefix = "sv-elab-6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20",
+    urls = ["https://github.com/povik/yosys-slang/archive/6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20.tar.gz"],
+)
 
 # --- Extensions ---
 
-llvm = use_extension(
-    "@toolchains_llvm//toolchain/extensions:llvm.bzl",
-    "llvm",
-    dev_dependency = True,
-)
-llvm.toolchain(
-    llvm_version = "20.1.8",
-)
-use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
-
-# FYI: Comment out @llvm_toolchain//:all on NixOS and use the local clang toolchain instead.
 register_toolchains(
-    "@llvm_toolchain//:all",
+    "@llvm//toolchain:all",
     "@rules_verilator//verilator:verilator_toolchain",
     dev_dependency = True,
 )
+
+# hermetic-llvm ships a minimal macOS SDK subset (frameworks are opt-in).
+# Qt (qt-bazel) needs the desktop frameworks; the first six entries are
+# hermetic-llvm's defaults, which listing any framework replaces.
+osx = use_extension("@llvm//extensions:osx.bzl", "osx", dev_dependency = True)
+osx.frameworks(names = [
+    "CoreFoundation",
+    "Foundation",
+    "Kernel",
+    "OSLog",
+    "Security",
+    "SystemConfiguration",
+    "AppKit",
+    "ApplicationServices",
+    "CFNetwork",
+    "Carbon",
+    "Cocoa",
+    "ColorSync",
+    "CoreData",
+    "CoreGraphics",
+    "CoreImage",
+    "CoreServices",
+    "CoreText",
+    "CoreVideo",
+    "DiskArbitration",
+    # ATS (inside the ApplicationServices umbrella) has .tbd symlinks into
+    # the FontServices private framework; without it they dangle and bazel
+    # rejects the sysroot ("file type is not supported").
+    "FontServices",
+    "GSS",
+    "IOKit",
+    "IOSurface",
+    "ImageIO",
+    "Metal",
+    # MetalKit's MTKModel.h includes ModelIO/ModelIO.h.
+    "MetalKit",
+    "ModelIO",
+    "OpenGL",
+    # PrintCore is inside the ApplicationServices umbrella, but must be
+    # named for the SDK subset to keep usr/include/cups (its ObjC headers
+    # import <cups/ppd.h>).
+    "PrintCore",
+    "QuartzCore",
+    # AppKit reaches these on macOS: NSImageView.h includes Symbols
+    # unconditionally; NSText*.h take the non-UIKit branch into the
+    # UIFoundation private framework; NSSharingService pulls CloudKit.
+    "CloudKit",
+    "Symbols",
+    "UIFoundation",
+    "UniformTypeIdentifiers",
+])
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
@@ -244,7 +363,7 @@ alias(
     visibility = ["//visibility:public"],
 )
 """,
-    path = "bazel",
+    path = "bazel/slang-compat",
 )
 
 # --- Overrides ---

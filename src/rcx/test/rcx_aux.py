@@ -28,9 +28,21 @@ def extract_parasitics(
     dbg=0
 ):
 
+    if ext_model_file is not None:
+        utl.warn(
+            utl.RCX,
+            514,
+            "The ext_model_file option is deprecated. Use "
+            "set_extraction_rules_file command instead.",
+        )
+
+        # We may have multiple technologies loaded, so use the current block's
+        # tech to prevent an error resolving an ambiguous default tech.
+        db_tech = design.getBlock().getTech()
+        db_tech.setExtractionRulesFile(ext_model_file)
+
     opts = rcx.ExtractOptions()
 
-    opts.ext_model_file = ext_model_file
     opts.corner_cnt = corner_cnt
     opts.corner = corner
     opts.max_res = max_res
