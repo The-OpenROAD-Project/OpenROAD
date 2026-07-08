@@ -244,7 +244,7 @@ void TritonCTS::setupCharacterization()
 
   double maxWlMicrons
       = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
-  if(maxWlMicrons > 0) {
+  if (maxWlMicrons > 0) {
     options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
   }
 
