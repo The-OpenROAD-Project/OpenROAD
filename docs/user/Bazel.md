@@ -108,18 +108,18 @@ git_override(
 
 ### Suggested: pin the C++ toolchain for reproducibility
 
-OpenROAD uses `toolchains_llvm` internally to lock the compiler version
-and ensure reproducible builds across developers and CI. Downstream
-consumers can use any C++20-capable compiler, but pinning the same
-toolchain is recommended to avoid compiler-specific issues:
+OpenROAD uses [hermetic-llvm](https://github.com/hermeticbuild/hermetic-llvm)
+(BCR module `llvm`) internally to lock the compiler version and ensure
+reproducible builds across developers and CI: statically linked LLVM
+binaries and a zero-sysroot cc_toolchain, so no host compiler, headers
+or libraries are involved. Downstream consumers can use any
+C++20-capable compiler, but pinning the same toolchain is recommended
+to avoid compiler-specific issues:
 
 ```starlark
-bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+bazel_dep(name = "llvm", version = "0.8.11")
 
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(llvm_version = "20.1.8")
-use_repo(llvm, "llvm_toolchain")
-register_toolchains("@llvm_toolchain//:all")
+register_toolchains("@llvm//toolchain:all")
 ```
 
 ### Dev dependencies not leaked to consumers
@@ -129,7 +129,7 @@ on downstream projects via MVS:
 
 - rules_pkg — only needed for //:install
 - `rules_verilator`, `verilator` — only needed for test/orfs simulation
-- `toolchains_llvm` extension and toolchain registration
+- `llvm` (hermetic-llvm) toolchain registration
 
 The downstream test at `test/downstream/` verifies these invariants.
 
