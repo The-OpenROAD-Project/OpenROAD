@@ -37,6 +37,7 @@ TESTS = [
     "gain_buffering1",
     "gain_buffering1_hier",
     "gain_buffering2",
+    "gain_buffering3",
     "gcd_resize",
     "insert_buffer",
     "insert_buffer_hier",

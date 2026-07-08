@@ -72,3 +72,4 @@ puts "d7/A net:     [get_full_name [get_nets -of_objects [get_pins d7/A]]]"
 set test_name "gain_buffering3"
 set verilog_file [make_result_file "${test_name}.v"]
 write_verilog $verilog_file
+diff_files ${test_name}.vok $verilog_file
