@@ -88,7 +88,9 @@ class RepairDesign : sta::dbStaState
   bool getCin(const sta::Pin* drvr_pin, float& cin);
   bool getLargestSizeCin(const sta::Pin* drvr_pin, float& cin);
   void findBufferSizes();
-  bool performGainBuffering(sta::Net* net, sta::Vertex* drvr, int max_fanout);
+  bool performGainBuffering(sta::Net* net,
+                            const sta::Pin* drvr_pin,
+                            int max_fanout);
   void performEarlySizingRound(int& repaired_net_count);
 
   void checkDriverArcSlew(const sta::Scene* corner,

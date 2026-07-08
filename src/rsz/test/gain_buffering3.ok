@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +1.1% |       0 |       1 |             2 |        53
+    final |     +1.1% |       0 |       1 |             2 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0038] Inserted 1 buffers in 2 nets.
+Startpoint: f_src (rising edge-triggered flip-flop clocked by clk)
+Endpoint: fd7 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+Fanout   Delay    Time   Description
+---------------------------------------------------------------
+          0.00    0.00   clock clk (rise edge)
+          0.00    0.00   clock network delay (ideal)
+          0.00    0.00 ^ f_src/CLK (sky130_fd_sc_hd__dfxtp_1)
+     1    0.27    0.27 v f_src/Q (sky130_fd_sc_hd__dfxtp_1)
+     2    0.05    0.32 ^ GB/Y (sky130_fd_sc_hd__inv_1)
+     8    0.21    0.53 ^ gain1/X (sky130_fd_sc_hd__buf_1)
+     1    0.06    0.59 v d7/Y (sky130_fd_sc_hd__inv_1)
+     1    0.05    0.64 ^ c7_0/Y (sky130_fd_sc_hd__inv_1)
+     1    0.03    0.67 v c7_1/Y (sky130_fd_sc_hd__inv_1)
+     1    0.03    0.70 ^ c7_2/Y (sky130_fd_sc_hd__inv_1)
+     1    0.03    0.73 v c7_3/Y (sky130_fd_sc_hd__inv_1)
+          0.00    0.73 v fd7/D (sky130_fd_sc_hd__dfxtp_1)
+                  0.73   data arrival time
+
+          1.00    1.00   clock clk (rise edge)
+          0.00    1.00   clock network delay (ideal)
+          0.00    1.00   clock reconvergence pessimism
+                  1.00 ^ fd7/CLK (sky130_fd_sc_hd__dfxtp_1)
+         -0.11    0.89   library setup time
+                  0.89   data required time
+---------------------------------------------------------------
+                  0.89   data required time
+                 -0.73   data arrival time
+---------------------------------------------------------------
+                  0.16   slack (MET)
+
+
+Error: gain_buffering3.tcl, 57 couldn't open "gain_buffering3.vok": no such file or directory
