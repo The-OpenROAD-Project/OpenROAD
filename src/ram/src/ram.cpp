@@ -37,6 +37,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Scene.hh"
+#include "sta/SdcClass.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
 #include "sta/StringUtil.hh"
