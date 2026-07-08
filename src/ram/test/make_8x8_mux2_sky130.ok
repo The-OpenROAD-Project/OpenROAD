@@ -68,7 +68,7 @@
 [INFO DRT-0036] met5 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
 [INFO RAM-0044] RAM maximum path delay: 1.046 ns
-[INFO RAM-0045] RAM minimum path delay: 0.000 ns
+[INFO RAM-0045] RAM minimum path delay: 0.069 ns
 [INFO RAM-0046] RAM estimated power: 237089.828 nW
 No differences found.
 No differences found.

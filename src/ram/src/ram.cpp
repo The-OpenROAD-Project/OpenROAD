@@ -32,6 +32,7 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
 #include "sta/PowerClass.hh"
@@ -39,6 +40,7 @@
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
 #include "sta/StringUtil.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -2075,11 +2077,44 @@ void RamGen::reportTimingAndPower()
 
   sta::StringSeq group_names;
 
+  // restrict path searches to the RAM's data endpoints (storage/latch
+  // D pins and primary Q outputs) since unconstrained searches
+  // also land on register and clock-gate CLK pins, which will
+  // report a misleading zero value for min path delay
+  // since no clock is defined for this automated test
+  auto collect_data_endpoints = [&]() -> sta::PinSet* {
+    auto* pins = new sta::PinSet(network_);
+    odb::dbMaster* seq_cell = use_latch_ ? latch_cell_ : storage_cell_;
+    const auto& seq_ports = use_latch_ ? latch_ports_ : storage_ports_;
+    const std::string& data_in_mterm = seq_ports.at({PortRoleType::DataIn, 0});
+    auto* mterm = seq_cell->findMTerm(data_in_mterm.c_str());
+    for (auto* inst : block_->getInsts()) {
+      if (inst->getMaster() == seq_cell) {
+        auto* iterm = inst->getITerm(mterm);
+        pins->insert(network_->dbToSta(iterm));
+      }
+    }
+    for (auto& port_outputs : q_outputs_) {
+      for (auto* bterm : port_outputs) {
+        pins->insert(network_->dbToSta(bterm));
+      }
+    }
+    return pins;
+  };
+
   // Find worst unconstrained setup path delay/longest path
+  sta::ExceptionTo* setup_to
+      = sta_->makeExceptionTo(collect_data_endpoints(),
+                              nullptr,
+                              nullptr,
+                              sta::RiseFallBoth::riseFall(),
+                              sta::RiseFallBoth::riseFall(),
+                              sta_->cmdSdc());
+
   sta::PathEndSeq setup_ends
       = sta_->findPathEnds(nullptr,               /* from */
                            nullptr,               /* thrus */
-                           nullptr,               /* to */
+                           setup_to,              /* to */
                            true,                  /* unconstrained */
                            scenes,                /* scenes */
                            sta::MinMaxAll::max(), /* min_max */
@@ -2104,10 +2139,17 @@ void RamGen::reportTimingAndPower()
             : static_cast<float>(setup_ends[0]->dataArrivalTime(sta_));
 
   // Find worst unconstrained hold path delay/shortest path
+  sta::ExceptionTo* hold_to
+      = sta_->makeExceptionTo(collect_data_endpoints(),
+                              nullptr,
+                              nullptr,
+                              sta::RiseFallBoth::riseFall(),
+                              sta::RiseFallBoth::riseFall(),
+                              sta_->cmdSdc());
   sta::PathEndSeq hold_ends
       = sta_->findPathEnds(nullptr,               /* from */
                            nullptr,               /* thrus */
-                           nullptr,               /* to */
+                           hold_to,               /* to */
                            true,                  /* unconstrained */
                            scenes,                /* scenes */
                            sta::MinMaxAll::min(), /* min_max */
