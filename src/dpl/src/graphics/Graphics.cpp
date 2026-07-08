@@ -63,6 +63,10 @@ void Graphics::drawSelected(odb::dbInst* instance, bool force)
 
   auto selected = gui->makeSelected(instance);
   gui->setSelected(selected);
+  odb::Rect bbox = instance->getBBox()->getBox();
+  odb::Rect view;
+  bbox.bloat(std::max(bbox.dx(), bbox.dy()), view);
+  gui->zoomTo(view);
   gui->redraw();
   gui->pause();
 }
@@ -296,9 +300,20 @@ void Graphics::drawObjects(gui::Painter& painter)
         odb::dbBlock* block = inst->getBlock();
         const double inst_area_um2
             = block->dbuAreaToMicrons(inst->getBBox()->getBox().area());
+        const Grid* grid = dp_->grid_.get();
+        const odb::Rect core = grid->getCore();
+        auto windowSites = [&](const odb::Rect& win) {
+          return win.dx() / grid->getSiteWidth().v;
+        };
+        auto windowRows = [&](const odb::Rect& win) {
+          return (grid->gridRoundY(DbuY{win.yMax() - core.yMin()})
+                  - grid->gridRoundY(DbuY{win.yMin() - core.yMin()}))
+              .v;
+        };
         dp_->logger_->report(
-            "Window for {}: ll ({}, {}) ur ({}, {}) dbu, {:.3f} x {:.3f} um, "
-            "area {:.3f} um^2 (instance area {:.3f} um^2).",
+            "Window for {}: ll ({}, {}) ur ({}, {}) dbu, {:.3f} x {:.3f} um "
+            "({} sites x {} rows), area {:.3f} um^2 (instance area {:.3f} "
+            "um^2).",
             inst->getName(),
             init_win.xMin(),
             init_win.yMin(),
@@ -306,18 +321,22 @@ void Graphics::drawObjects(gui::Painter& painter)
             init_win.yMax(),
             block->dbuToMicrons(init_win.dx()),
             block->dbuToMicrons(init_win.dy()),
+            windowSites(init_win),
+            windowRows(init_win),
             block->dbuAreaToMicrons(init_win.area()),
             inst_area_um2);
         if (!curr_win.isInverted() && curr_win.area() > 0) {
           dp_->logger_->report(
               "  current-position window ll ({}, {}) ur ({}, {}) dbu, "
-              "{:.3f} x {:.3f} um, area {:.3f} um^2.",
+              "{:.3f} x {:.3f} um ({} sites x {} rows), area {:.3f} um^2.",
               curr_win.xMin(),
               curr_win.yMin(),
               curr_win.xMax(),
               curr_win.yMax(),
               block->dbuToMicrons(curr_win.dx()),
               block->dbuToMicrons(curr_win.dy()),
+              windowSites(curr_win),
+              windowRows(curr_win),
               block->dbuAreaToMicrons(curr_win.area()));
         }
       }
