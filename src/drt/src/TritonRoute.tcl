@@ -498,4 +498,59 @@ proc fix_max_spacing { args } {
   sta::check_argc_eq0 "fix_max_spacing" $args
   drt::fix_max_spacing_cmd
 }
+
+sta::define_cmd_args "check_mask_drc" {
+    [-box box]
+    [-output_file filename]
+}
+# Mask-aware DRC audit. Reads routed-shape mask colors from odb and reports
+# same-mask spacing violations on multi-mask (NUMMASKS>1) routing layers.
+# Requires mask-aware checking to be enabled first via
+# set_mask_aware_routing -enable. Returns the violation count.
+proc check_mask_drc { args } {
+  sta::parse_key_args "check_mask_drc" args \
+    keys { -box -output_file } \
+    flags {}
+  sta::check_argc_eq0 "check_mask_drc" $args
+  set box { 0 0 0 0 }
+  if { [info exists keys(-box)] } {
+    set box $keys(-box)
+    if { [llength $box] != 4 } {
+      utl::error DRT 634 "-box is a list of 4 coordinates."
+    }
+  }
+  lassign $box x1 y1 x2 y2
+  set output_file ""
+  if { [info exists keys(-output_file)] } {
+    set output_file $keys(-output_file)
+  }
+  return [drt::check_mask_drc_cmd $output_file $x1 $y1 $x2 $y2]
+}
+}
+
+sta::define_cmd_args "set_mask_aware_routing" {
+    [-enable]
+    [-disable]
+}
+# Enable/disable multi-patterning mask awareness in the detailed router.
+# Default is disabled: when disabled, routing/DRC behavior is identical to
+# a build without this feature. Currently this gate controls the
+# check_mask_drc audit; it is the safety switch for future in-checker
+# mask-aware spacing.
+proc set_mask_aware_routing { args } {
+  sta::parse_key_args "set_mask_aware_routing" args \
+    keys {} \
+    flags { -enable -disable }
+  sta::check_argc_eq0 "set_mask_aware_routing" $args
+  set enable [info exists flags(-enable)]
+  set disable [info exists flags(-disable)]
+  if { $enable && $disable } {
+    utl::error DRT 635 "-enable and -disable are mutually exclusive."
+  }
+  if { $disable } {
+    drt::set_mask_aware_drc_cmd false
+  } else {
+    # default action of the command is to enable
+    drt::set_mask_aware_drc_cmd true
+  }
 }

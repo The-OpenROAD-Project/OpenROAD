@@ -825,6 +825,7 @@ void RouterConfiguration::serialize(Archive& ar, const unsigned int /*version*/)
   (ar) & GC_IGNORE_PDN_LAYER_NUM;
 
   (ar) & unidirectional_layer_names_;
+  (ar) & MASK_AWARE_DRC;
 }
 
 }  // namespace drt

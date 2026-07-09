@@ -180,6 +180,12 @@ class TritonRoute : public PinAccessService
                 int y2,
                 const std::string& marker_name,
                 int num_threads);
+  // Mask-aware DRC audit. Reads routed-shape mask colors from odb and
+  // reports same-mask spacing violations on multi-mask layers. Gated by
+  // RouterConfiguration::MASK_AWARE_DRC (default off): if the flag is not
+  // set, this routine refuses to run. Returns the number of violations.
+  int checkMaskDRC(const char* filename, int x1, int y1, int x2, int y2);
+  void setMaskAwareDrc(bool enable);
   bool initGuide();
   void prep();
   odb::dbDatabase* getDb() const { return db_; }

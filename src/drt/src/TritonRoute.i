@@ -218,6 +218,18 @@ void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2, const c
   router->checkDRC(drc_file, x1, y1, x2, y2, marker_name, num_threads);
 }
 
+void set_mask_aware_drc_cmd(bool enable)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setMaskAwareDrc(enable);
+}
+
+int check_mask_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  return router->checkMaskDRC(drc_file, x1, y1, x2, y2);
+}
+
 std::vector<int>
 route_layer_lengths(odb::dbWire* db_wire)
 {

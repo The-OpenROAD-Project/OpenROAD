@@ -15,6 +15,7 @@ COMPULSORY_TESTS = [
     "drc_test",
     "ispd18_sample",
     "ispd18_sample_incr",
+    "mask_drc",
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",

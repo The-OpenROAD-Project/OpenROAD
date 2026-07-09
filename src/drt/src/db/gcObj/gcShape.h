@@ -321,6 +321,14 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
 
   void setTapered(bool t) { tapered_ = t; }
 
+  // Multi-patterning mask / color of this shape.
+  // 0 == uncolored / any mask (the default for single-patterned layers and
+  // for shapes whose color is unknown). This is groundwork for mask-aware
+  // DRC; it is inert unless mask-aware checking is explicitly enabled.
+  int getMask() const { return mask_; }
+
+  void setMask(int mask) { mask_ = mask; }
+
   bool intersects(const odb::Rect& bx)
   {
     return gtl::xl(*this) <= bx.xMax() && gtl::xh(*this) >= bx.xMin()
@@ -333,6 +341,7 @@ class gcRect : public gtl::rectangle_data<frCoord>, public gcShape
   gcNet* net_{nullptr};
   bool fixed_{false};
   bool tapered_{false};
+  int mask_{0};
 };
 
 class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,

@@ -50,6 +50,7 @@
 #include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
@@ -1258,6 +1259,259 @@ void TritonRoute::checkDRC(const char* filename,
   frList<std::unique_ptr<frMarker>> markers;
   getDRCMarkers(markers, requiredDrcBox);
   reportDRC(filename, markers, marker_name, requiredDrcBox);
+}
+
+void TritonRoute::setMaskAwareDrc(bool enable)
+{
+  router_cfg_->MASK_AWARE_DRC = enable;
+}
+
+namespace {
+
+// A routed metal rectangle on a multi-mask layer, tagged with its mask
+// color and owning net, used only by the mask-aware DRC audit.
+struct MaskShape
+{
+  odb::Rect rect;
+  int mask{0};
+  odb::dbNet* net{nullptr};
+};
+
+// Order dbTechLayer pointers deterministically by layer number. odb
+// deliberately deletes std::less for raw db pointers to avoid
+// nondeterministic ordering, so containers keyed on layers need an
+// explicit comparator.
+struct TechLayerByNumber
+{
+  bool operator()(odb::dbTechLayer* a, odb::dbTechLayer* b) const
+  {
+    return a->getNumber() < b->getNumber();
+  }
+};
+
+// Decode a net's wire and append every routed metal path-segment rectangle
+// on a multi-mask layer to per-layer buckets, tagged with its mask color.
+// Mask color 0 means "uncolored" (no color assigned on the wire).
+void collectMaskShapes(
+    odb::dbNet* net,
+    const std::set<odb::dbTechLayer*, TechLayerByNumber>& multi_mask_layers,
+    std::map<odb::dbTechLayer*, std::vector<MaskShape>, TechLayerByNumber>&
+        shapes_by_layer)
+{
+  odb::dbWire* wire = net->getWire();
+  if (wire == nullptr) {
+    return;
+  }
+  odb::dbWireDecoder decoder;
+  decoder.begin(wire);
+  odb::dbWireDecoder::OpCode opcode = decoder.next();
+  odb::dbTechLayer* layer = nullptr;
+  bool has_prev = false;
+  int prev_x = 0, prev_y = 0;
+  int cur_color = 0;  // 0 == uncolored
+  while (opcode != odb::dbWireDecoder::END_DECODE) {
+    switch (opcode) {
+      case odb::dbWireDecoder::PATH:
+      case odb::dbWireDecoder::JUNCTION:
+      case odb::dbWireDecoder::SHORT:
+      case odb::dbWireDecoder::VWIRE:
+        layer = decoder.getLayer();
+        has_prev = false;
+        cur_color = decoder.getColor().value_or(0);
+        break;
+      case odb::dbWireDecoder::POINT:
+      case odb::dbWireDecoder::POINT_EXT: {
+        int x, y, ext = 0;
+        if (opcode == odb::dbWireDecoder::POINT) {
+          decoder.getPoint(x, y);
+        } else {
+          decoder.getPoint(x, y, ext);
+        }
+        // refresh color in case it changed mid-path
+        cur_color = decoder.getColor().value_or(0);
+        if (has_prev && layer != nullptr
+            && multi_mask_layers.count(layer) != 0) {
+          const int half_w = static_cast<int>(layer->getWidth()) / 2;
+          const int xl = std::min(prev_x, x) - half_w;
+          const int yl = std::min(prev_y, y) - half_w;
+          const int xh = std::max(prev_x, x) + half_w;
+          const int yh = std::max(prev_y, y) + half_w;
+          shapes_by_layer[layer].push_back(
+              MaskShape{odb::Rect(xl, yl, xh, yh), cur_color, net});
+        }
+        prev_x = x;
+        prev_y = y;
+        has_prev = true;
+        break;
+      }
+      case odb::dbWireDecoder::VIA:
+      case odb::dbWireDecoder::TECH_VIA:
+        // Vias change the active layer; the next PATH/POINT re-establishes
+        // geometry. Cut/landing-pad coloring is out of scope for slice 1.
+        has_prev = false;
+        break;
+      default:
+        break;
+    }
+    opcode = decoder.next();
+  }
+}
+
+}  // namespace
+
+int TritonRoute::checkMaskDRC(const char* filename,
+                              int x1,
+                              int y1,
+                              int x2,
+                              int y2)
+{
+  if (!router_cfg_->MASK_AWARE_DRC) {
+    logger_->error(DRT,
+                   630,
+                   "check_mask_drc requires mask-aware checking to be "
+                   "enabled (set_mask_aware_routing -enable).");
+  }
+  odb::dbChip* chip = db_->getChip();
+  if (chip == nullptr || chip->getBlock() == nullptr) {
+    logger_->error(DRT, 631, "No design loaded for check_mask_drc.");
+  }
+  odb::dbBlock* block = chip->getBlock();
+  odb::dbTech* tech = db_->getTech();
+
+  // Identify multi-mask routing layers.
+  std::set<odb::dbTechLayer*, TechLayerByNumber> multi_mask_layers;
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::ROUTING
+        && layer->getNumMasks() > 1) {
+      multi_mask_layers.insert(layer);
+    }
+  }
+  if (multi_mask_layers.empty()) {
+    logger_->warn(DRT,
+                  632,
+                  "check_mask_drc: no multi-mask (NUMMASKS>1) routing "
+                  "layers found; nothing to check.");
+  }
+
+  // Collect routed shapes per multi-mask layer, tagged with mask color.
+  std::map<odb::dbTechLayer*, std::vector<MaskShape>, TechLayerByNumber>
+      shapes_by_layer;
+  for (odb::dbNet* net : block->getNets()) {
+    collectMaskShapes(net, multi_mask_layers, shapes_by_layer);
+  }
+
+  const odb::Rect query_box(x1, y1, x2, y2);
+  const bool has_query_box = query_box.area() != 0;
+
+  using value_t = std::pair<odb::Rect, int>;  // (rect, index)
+  using rtree_t
+      = boost::geometry::index::rtree<value_t,
+                                      boost::geometry::index::quadratic<16>>;
+
+  odb::dbMarkerCategory* category
+      = odb::dbMarkerCategory::createOrReplace(block, "Mask DRC");
+  category->setSource("DRT");
+
+  int total_violations = 0;
+  std::ofstream report;
+  if (filename != nullptr && filename[0] != '\0') {
+    report.open(filename);
+  }
+
+  for (odb::dbTechLayer* layer : multi_mask_layers) {
+    auto it = shapes_by_layer.find(layer);
+    if (it == shapes_by_layer.end()) {
+      continue;
+    }
+    const std::vector<MaskShape>& shapes = it->second;
+    // Same-mask required spacing = the layer minimum spacing. Different-mask
+    // pairs are allowed to be closer (relaxed spacing) and are not flagged.
+    const int same_mask_spc = layer->getSpacing();
+    if (same_mask_spc <= 0) {
+      continue;
+    }
+    // Build one R-tree over all shapes on this layer.
+    rtree_t rtree;
+    for (int i = 0; i < (int) shapes.size(); i++) {
+      rtree.insert({shapes[i].rect, i});
+    }
+    for (int i = 0; i < (int) shapes.size(); i++) {
+      const MaskShape& a = shapes[i];
+      if (has_query_box && !query_box.intersects(a.rect)) {
+        continue;
+      }
+      // Query a box bloated by the same-mask spacing.
+      odb::Rect bloated = a.rect;
+      bloated.set_xlo(bloated.xMin() - same_mask_spc);
+      bloated.set_ylo(bloated.yMin() - same_mask_spc);
+      bloated.set_xhi(bloated.xMax() + same_mask_spc);
+      bloated.set_yhi(bloated.yMax() + same_mask_spc);
+      std::vector<value_t> hits;
+      rtree.query(boost::geometry::index::intersects(bloated),
+                  std::back_inserter(hits));
+      for (const value_t& hit : hits) {
+        const int j = hit.second;
+        if (j <= i) {
+          continue;  // unordered pairs, avoid double counting and self
+        }
+        const MaskShape& b = shapes[j];
+        // Touching/overlapping shapes of the same net are connected, skip.
+        if (a.net == b.net && a.rect.overlaps(b.rect)) {
+          continue;
+        }
+        // Only same-mask, colored (non-zero) pairs are mask violations.
+        if (a.mask == 0 || b.mask == 0 || a.mask != b.mask) {
+          continue;
+        }
+        // Compute the edge-to-edge gap. Negative/zero means overlap, which
+        // is a short rather than a spacing violation; skip (handled by
+        // ordinary DRC).
+        const int dx = std::max(
+            {a.rect.xMin() - b.rect.xMax(), b.rect.xMin() - a.rect.xMax(), 0});
+        const int dy = std::max(
+            {a.rect.yMin() - b.rect.yMax(), b.rect.yMin() - a.rect.yMax(), 0});
+        if (dx == 0 && dy == 0) {
+          continue;  // overlap / short
+        }
+        const int64_t gap2 = (int64_t) dx * dx + (int64_t) dy * dy;
+        if (gap2 >= (int64_t) same_mask_spc * same_mask_spc) {
+          continue;  // spacing satisfied
+        }
+        // Same-mask spacing violation.
+        total_violations++;
+        odb::Rect viol = a.rect;
+        viol.merge(b.rect);
+        if (report.is_open()) {
+          report << "violation type: Mask Spacing\n";
+          report << "\tsrcs: " << a.net->getName() << " " << b.net->getName()
+                 << "\n";
+          report << "\tmask: " << a.mask << "\n";
+          report << "\tbbox = (" << viol.xMin() << ", " << viol.yMin()
+                 << ") - (" << viol.xMax() << ", " << viol.yMax()
+                 << ") on Layer " << layer->getName() << "\n";
+        }
+        odb::dbMarkerCategory* layer_cat = odb::dbMarkerCategory::createOrGet(
+            category, layer->getName().c_str());
+        odb::dbMarker* marker = odb::dbMarker::create(layer_cat);
+        if (marker != nullptr) {
+          marker->setTechLayer(layer);
+          marker->addShape(viol);
+          marker->addSource(a.net);
+          marker->addSource(b.net);
+        }
+      }
+    }
+  }
+  if (report.is_open()) {
+    report.close();
+  }
+  logger_->info(DRT,
+                633,
+                "check_mask_drc: found {} same-mask spacing violation(s) "
+                "across {} multi-mask layer(s).",
+                total_violations,
+                multi_mask_layers.size());
+  return total_violations;
 }
 
 void TritonRoute::addUserSelectedVia(const std::string& viaName)

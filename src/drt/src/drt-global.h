@@ -51,6 +51,13 @@ struct RouterConfiguration
   bool SINGLE_STEP_DR = false;
   bool SAVE_GUIDE_UPDATES = false;
 
+  // Multi-patterning / mask-coloring awareness. Default OFF: with this
+  // false, behavior is exactly as before (no mask logic is active and the
+  // check_mask_drc audit refuses to run). Only when true does the
+  // mask-aware DRC audit engage. This is the safety gate that guarantees
+  // default routing/DRC results are unchanged.
+  bool MASK_AWARE_DRC = false;
+
   std::string VIAINPIN_BOTTOMLAYER_NAME;
   std::string VIAINPIN_TOPLAYER_NAME;
   frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();

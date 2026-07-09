@@ -1,0 +1,4 @@
+violation type: Mask Spacing
+	srcs: na nb
+	mask: 2
+	bbox = (930, 1930) - (4070, 2310) on Layer met1
