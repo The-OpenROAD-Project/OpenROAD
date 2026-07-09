@@ -335,6 +335,44 @@ proc report_mcmm_slack { args } {
   sta::report_mcmm_slack_cmd $max_endpoints $min_max
 }
 
+define_cmd_args "report_closure" {[-max_paths count] [-setup] [-hold] [-all]}
+
+# Unified pessimism-recovery closure report (additive, report-only). The
+# capstone of the PBA + CPPR closure surfaces: for every endpoint failing
+# under the most pessimistic (pre-CPPR, pre-PBA) baseline, applies BOTH the
+# CPPR common-path credit AND the PBA gate-slew recovery and classifies it:
+#   * GENUINE  -- still failing after BOTH recoveries (the real violation),
+#   * artifact -- cleared by pessimism recovery, labeled with WHICH mechanism
+#                 cleared it (CPPR / PBA / BOTH).
+# It COMPOSES the existing report_pba_closure and report_cppr_closure
+# computations (it does not reimplement PBA or CPPR). Reports the combined
+# recovered slack per endpoint plus a verdict summary (total / raw-failing /
+# cleared-by-CPPR / cleared-by-PBA / cleared-by-both / genuine). By default
+# only the genuine violations are listed; use -all to also list the cleared
+# artifacts with their mechanism label. Does NOT change report_checks / GBA
+# results and does NOT mutate the timing graph. -setup (default) analyzes max
+# (setup) checks; -hold analyzes min (hold) checks.
+proc report_closure { args } {
+  parse_key_args "report_closure" args \
+    keys {-max_paths} flags {-setup -hold -all}
+
+  check_argc_eq0 "report_closure" $args
+
+  set max_paths 10
+  if { [info exists keys(-max_paths)] } {
+    set max_paths $keys(-max_paths)
+    sta::check_positive_integer "-max_paths" $max_paths
+  }
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 2107 "report_closure: -setup and -hold are mutually exclusive."
+  }
+  set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+  set only_violations [expr { [info exists flags(-all)] ? false : true }]
+
+  sta::report_closure_cmd $max_paths $min_max $only_violations
+}
+
 define_cmd_args "report_incremental_sta" \
   {-cells inst_list [-setup] [-hold]}
 

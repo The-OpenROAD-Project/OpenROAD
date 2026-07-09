@@ -21,6 +21,7 @@
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/CpprReport.hh"
 #include "db_sta/McmmReport.hh"
+#include "db_sta/ClosureReport.hh"
 #include "db_sta/IncrementalStaReport.hh"
 #include "ord/OpenRoad.hh"
 #include "sta/Graph.hh"
@@ -673,6 +674,78 @@ incremental_sta_report_lines(StringSeq seed_insts,
     lines.push_back(buf);
   }
   return lines;
+}
+
+// Unified pessimism-recovery closure report (additive, report-only). For the
+// top max_paths critical endpoints, COMPOSES the existing PBA gate-slew
+// recovery and CPPR common-path credit and classifies each raw-failing
+// endpoint as a genuine post-recovery violation or an artifact cleared by
+// CPPR / PBA / both. Does NOT change report_checks / GBA results and does
+// NOT mutate the timing graph.
+void
+report_closure_cmd(int max_paths,
+                   const MinMax *min_max,
+                   bool only_violations)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportClosure(sta, max_paths, min_max, only_violations);
+}
+
+// Machine-readable endpoint variant for testing. One string per endpoint:
+//   "<endpoint> <raw_slack> <gba_slack> <recovered_slack> <cppr_credit> \
+//    <pba_recovered> <raw_viol> <genuine> <cleared_by>"
+// with slacks in seconds (STA internal units); raw_viol/genuine are 0/1 and
+// cleared_by is one of "-"/"CPPR"/"PBA"/"BOTH".
+StringSeq
+closure_report_lines(int max_paths,
+                     const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::ClosureEndpointResult> results =
+      sta::computeClosure(sta, max_paths, min_max);
+  StringSeq lines;
+  for (const sta::ClosureEndpointResult &e : results) {
+    char buf[1024];
+    std::snprintf(buf, sizeof(buf), "%s %.6e %.6e %.6e %.6e %.6e %d %d %s",
+                  e.endpoint.c_str(),
+                  e.raw_slack,
+                  e.gba_slack,
+                  e.recovered_slack,
+                  e.cppr_credit,
+                  e.pba_recovered,
+                  e.raw_violated ? 1 : 0,
+                  e.genuine ? 1 : 0,
+                  sta::clearedByLabel(e.cleared_by));
+    lines.push_back(buf);
+  }
+  return lines;
+}
+
+// Machine-readable closure summary for testing. Returns six counters:
+//   "<endpoints> <raw_failing> <cleared_by_cppr> <cleared_by_pba> \
+//    <cleared_by_both> <genuine>"
+const char *
+closure_summary(int max_paths,
+                const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::ClosureEndpointResult> results =
+      sta::computeClosure(sta, max_paths, min_max);
+  sta::ClosureSummary s = sta::summarizeClosure(results);
+  static std::string out;
+  out = std::to_string(s.endpoints) + " "
+        + std::to_string(s.raw_failing) + " "
+        + std::to_string(s.cleared_by_cppr) + " "
+        + std::to_string(s.cleared_by_pba) + " "
+        + std::to_string(s.cleared_by_both) + " "
+        + std::to_string(s.genuine);
+  return out.c_str();
 }
 
 } // namespace sta

@@ -63,6 +63,7 @@ ALL_TESTS = [
     "report_cppr",
     "report_cppr_closure",
     "report_mcmm_slack",
+    "report_closure",
     "report_incremental_sta",
     "report_incremental_sta2",
     "report_timing_histogram",
@@ -232,6 +233,9 @@ filegroup(
             ],
             "report_mcmm_slack": [
                 "cppr.def",
+            ],
+            "report_closure": [
+                "closure.def",
             ],
             "report_incremental_sta": [
                 "cppr.def",

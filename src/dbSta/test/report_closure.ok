@@ -1,0 +1,23 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: closure_unified
+[INFO ODB-0130]     Created 5 pins.
+[INFO ODB-0131]     Created 20 components and 94 component-terminals.
+[INFO ODB-0133]     Created 23 nets and 50 connections.
+report header: Unified pessimism-recovery closure -- setup (max)
+column header: Endpoint                            Raw slack    Recovered     CPPR cr.  PBA rec.   Verdict
+endpoints found == 4: 1
+all cppr credits non-negative: 1
+all pba recovery non-negative: 1
+recovered == raw + cppr + pba on all endpoints: 1
+closure summary: 4 3 1 1 0 1
+closure: 3 raw-failing endpoints: 1
+closure: exactly 1 cleared by CPPR: 1
+closure: exactly 1 cleared by PBA: 1
+closure: 0 cleared by CPPR+PBA: 1
+closure: exactly 1 genuine violation: 1
+closure: cleared + genuine == raw-failing:  1
+reg2/D is a CPPR artifact (raw-failing, not genuine, cleared by CPPR): 1
+reg3/D is a PBA artifact (raw-failing, not genuine, cleared by PBA): 1
+out1 is a genuine violation (raw-failing and still genuine): 1
+reg1/D is not raw-failing (positive-slack control): 1
+gba report_checks unchanged: 1
