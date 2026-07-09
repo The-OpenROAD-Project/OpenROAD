@@ -594,7 +594,7 @@ proc report_si_windows { args } {
 
 define_cmd_args "set_xtalk_delay_factor" \
   {[-enable] [-disable] [-k factor] [-guardband seconds] [-max_nets count]\
-   [-corner index] [-direction] [-iterations count]}
+   [-corner index] [-direction] [-iterations count] [-hold]}
 
 # Enable/disable the crosstalk-aware effective-C delay adjustment. When enabled,
 # each in-window CC segment of the top-N coupled victims has its stored coupling
@@ -612,12 +612,20 @@ define_cmd_args "set_xtalk_delay_factor" \
 #                      active treated same-direction, factor 1+k).
 #   -iterations count  run a small fixed number of bounded re-convergence
 #                      passes (default 1 == slice-1 single pass) so aggressor
-#                      windows settle as victim delays degrade. Per-pass setup
-#                      TNS movement is reported.
+#                      windows settle as victim delays degrade. Per-pass TNS
+#                      movement is reported.
+#
+# OpenROAD-fork: si-hold (default OFF -> byte-identical to the setup engine):
+#   -hold              target the HOLD (min/early) path instead of setup. A
+#                      same-direction aggressor switching with the victim
+#                      REDUCES the effective coupling cap ((1-k) not (1+k)),
+#                      speeding the victim and eroding hold slack; the
+#                      adjustment is applied to the MIN parasitics. Off (the
+#                      default) is the unchanged setup/max engine.
 proc set_xtalk_delay_factor { args } {
   parse_key_args "set_xtalk_delay_factor" args \
     keys {-k -guardband -max_nets -corner -iterations} \
-    flags {-enable -disable -direction}
+    flags {-enable -disable -direction -hold}
   check_argc_eq0 "set_xtalk_delay_factor" $args
 
   set enable 1
@@ -670,13 +678,19 @@ proc set_xtalk_delay_factor { args } {
     sta::check_positive_integer "-iterations" $iterations
   }
 
+  # OpenROAD-fork: si-hold. Default 0 -> setup engine (byte-identical).
+  set hold 0
+  if { [info exists flags(-hold)] } {
+    set hold 1
+  }
+
   sta::set_xtalk_delay_factor_cmd $enable $k $guardband $max_nets $corner \
-    $direction $iterations
+    $direction $iterations $hold
 }
 
 define_cmd_args "report_xtalk_delay" \
   {[-k factor] [-guardband seconds] [-max_nets count] [-corner index]\
-   [-direction]}
+   [-direction] [-hold]}
 
 # Report, per victim: total Cc, in-window (active) Cc, the added effective cap
 # dC = k*Cc_active, the victim driver resistance, the implied stage-delay delta
@@ -688,7 +702,7 @@ define_cmd_args "report_xtalk_delay" \
 # enabled, the configured direction setting is used instead).
 proc report_xtalk_delay { args } {
   parse_key_args "report_xtalk_delay" args \
-    keys {-k -guardband -max_nets -corner} flags {-direction}
+    keys {-k -guardband -max_nets -corner} flags {-direction -hold}
   check_argc_eq0 "report_xtalk_delay" $args
 
   set k 1.0
@@ -724,7 +738,13 @@ proc report_xtalk_delay { args } {
     set direction 1
   }
 
-  sta::report_xtalk_delay_cmd $k $guardband $max_nets $corner $direction
+  # OpenROAD-fork: si-hold what-if. Default 0 -> setup report.
+  set hold 0
+  if { [info exists flags(-hold)] } {
+    set hold 1
+  }
+
+  sta::report_xtalk_delay_cmd $k $guardband $max_nets $corner $direction $hold
 }
 
 # Depth-based (AOCV-style) OCV derate -- first slice (report-only).

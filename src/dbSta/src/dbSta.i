@@ -1674,6 +1674,13 @@ struct XtalkDelayState
   int max_nets = 0;                     // top-N victims; <=0 == all
   bool direction = false;               // slice-2: per-edge direction tracking
   int iterations = 1;                   // slice-2: bounded re-convergence passes
+  // OpenROAD-fork: si-hold -- hold/min-path slice. When false (default) the
+  // engine targets setup (max) exactly as before -> byte-identical baseline.
+  // When true it targets the early-arrival (hold) case: a same-direction
+  // aggressor switching with the victim REDUCES the effective coupling cap
+  // ((1-k) instead of (1+k)), speeding the victim and hurting hold, and the
+  // mutation/re-reduction is applied to the MIN parasitics.
+  bool hold = false;
   std::vector<SiCcSnapshot> snapshots;  // for byte-identical restore
 };
 
@@ -1726,6 +1733,14 @@ struct XtalkDelayResult
 //   both fall) aggravate -> factor (1+k); opposite-polarity edges (one rise,
 //   one fall) decouple (Miller) -> factor (1-k). The signed dCap accumulates
 //   per segment accordingly.
+//
+// OpenROAD-fork: si-hold -- hold=false (default) is the unchanged setup/max
+// engine above (byte-identical baseline). hold=true targets the early-arrival
+// (hold/min) case: the effective-cap factor for a same-direction aggressor is
+// (1-k) (the coupling node tracks the victim, less charge transfer -> smaller
+// effective Cc -> the victim arrives EARLIER, hurting hold). Opposite-direction
+// becomes (1+k). The mutation and re-reduction target the MIN parasitics so
+// report_checks -path_delay min sees the degraded (earlier) arrival.
 static std::vector<XtalkDelayResult>
 xtalk_delay_apply(sta::dbSta *sta,
                   sta::dbNetwork *db_network,
@@ -1735,7 +1750,8 @@ xtalk_delay_apply(sta::dbSta *sta,
                   double guardband,
                   int max_nets,
                   bool direction,
-                  bool mutate)
+                  bool mutate,
+                  bool hold)
 {
   std::vector<XtalkDelayResult> results;
   XtalkDelayState &st = xtalkDelayState();
@@ -1851,9 +1867,18 @@ xtalk_delay_apply(sta::dbSta *sta,
                        float orig; float factor; };
     std::vector<ActiveCap> active_caps;
     for (sta::Scene *scene : sta->scenes()) {
-      sta::Parasitics *pars[2]
-          = {scene->parasitics(sta::MinMax::max()),
-             scene->parasitics(sta::MinMax::min())};
+      // OpenROAD-fork: si-hold -- setup (hold=false) walks {max, min} exactly
+      // as before (unchanged, byte-identical). Hold targets ONLY the min
+      // parasitics so the early-arrival degradation lands on the min/hold
+      // timing and never perturbs the max/setup path with the wrong sign.
+      sta::Parasitics *pars[2];
+      if (hold) {
+        pars[0] = scene->parasitics(sta::MinMax::min());
+        pars[1] = nullptr;
+      } else {
+        pars[0] = scene->parasitics(sta::MinMax::max());
+        pars[1] = scene->parasitics(sta::MinMax::min());
+      }
       sta::Parasitics *seen_prev = nullptr;
       for (sta::Parasitics *par : pars) {
         if (par == nullptr || par == seen_prev) {
@@ -1893,15 +1918,23 @@ xtalk_delay_apply(sta::dbSta *sta,
             //     -> (1 - k) (Miller decoupling).
             cc_active_f += cc;
             r.aggr_active++;
-            double seg_factor = 1.0 + k;
+            // OpenROAD-fork: si-hold -- the same-direction effective-cap factor
+            // is (1+k) for setup (Miller aggravation slows the victim) but
+            // (1-k) for hold (the coupling node tracks the victim, the
+            // effective Cc shrinks and the victim arrives earlier). The
+            // opposite-direction factor is the mirror image. hold=false keeps
+            // the original setup signs exactly.
+            const double same_factor = hold ? (1.0 - k) : (1.0 + k);
+            const double opp_factor = hold ? (1.0 + k) : (1.0 - k);
+            double seg_factor = same_factor;
             if (direction) {
               const bool same = classify_same_dir(victim_db, aggr_db);
               if (same) {
-                seg_factor = 1.0 + k;
+                seg_factor = same_factor;
                 r.aggr_same++;
                 cc_same_f += cc;
               } else {
-                seg_factor = 1.0 - k;
+                seg_factor = opp_factor;
                 r.aggr_opp++;
                 cc_opp_f += cc;
               }
@@ -2010,20 +2043,24 @@ xtalk_delay_converge(sta::dbSta *sta,
                      int max_nets,
                      bool direction,
                      int iterations,
+                     bool hold,
                      std::vector<double> *tns_out)
 {
   const int passes = (iterations < 1) ? 1 : iterations;
+  // OpenROAD-fork: si-hold -- trace/converge on the corner that the mode
+  // targets: setup TNS for the max path, hold TNS for the min path.
+  const sta::MinMax *trace_mm = hold ? sta::MinMax::min() : sta::MinMax::max();
   std::vector<XtalkDelayResult> results;
   for (int p = 0; p < passes; p++) {
     results = xtalk_delay_apply(sta, db_network, block, corner, k, guardband,
-                                max_nets, direction, /* mutate */ true);
+                                max_nets, direction, /* mutate */ true, hold);
     xtalk_delay_rereduce(sta, db_network, results);
     sta->delaysInvalid();
     if (tns_out != nullptr) {
       // Force timing update so the recorded TNS reflects this pass and the
       // next pass's windows see the degraded delays.
       const double tns
-          = sta::delayAsFloat(sta->totalNegativeSlack(sta::MinMax::max()));
+          = sta::delayAsFloat(sta->totalNegativeSlack(trace_mm));
       tns_out->push_back(tns);
     }
   }
@@ -2040,7 +2077,7 @@ xtalk_delay_converge(sta::dbSta *sta,
 void
 set_xtalk_delay_factor_cmd(bool enable, double k, double guardband,
                            int max_nets, int corner, bool direction,
-                           int iterations)
+                           int iterations, bool hold)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
@@ -2094,33 +2131,35 @@ set_xtalk_delay_factor_cmd(bool enable, double k, double guardband,
   st.max_nets = max_nets;
   st.direction = direction;
   st.iterations = (iterations < 1) ? 1 : iterations;
+  st.hold = hold;  // OpenROAD-fork: si-hold
 
   // Apply the adjustment with bounded re-convergence. iterations==1 is exactly
   // the slice-1 single pass; >1 lets aggressor windows settle as victim delays
-  // degrade. Per-pass setup TNS is reported so the user can see convergence.
-  // For the slice-1-equivalent path (single pass, direction off) we pass no
-  // tns sink so the engine behaves byte-identically to slice-1 (no extra
-  // timing query is forced).
-  const bool want_trace = (st.iterations > 1) || direction;
+  // degrade. Per-pass TNS is reported so the user can see convergence.
+  // For the slice-1-equivalent path (single pass, direction off, setup) we
+  // pass no tns sink so the engine behaves byte-identically to slice-1 (no
+  // extra timing query is forced).
+  const bool want_trace = (st.iterations > 1) || direction || hold;
   std::vector<double> tns_trace;
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_converge(
       sta, db_network, block, corner, k, guardband, max_nets, direction,
-      st.iterations, want_trace ? &tns_trace : nullptr);
+      st.iterations, hold, want_trace ? &tns_trace : nullptr);
 
   if (want_trace) {
     sta::Report *report = sta->report();
+    const char *corner_label = hold ? "hold" : "setup";
     report->report(
-        "Crosstalk-aware delay: {} pass(es), direction tracking {}.",
-        st.iterations, direction ? "ON" : "off");
+        "Crosstalk-aware delay ({}): {} pass(es), direction tracking {}.",
+        corner_label, st.iterations, direction ? "ON" : "off");
     double prev = 0.0;
     for (size_t p = 0; p < tns_trace.size(); p++) {
       const double tns = tns_trace[p];
       if (p == 0) {
-        report->report("  pass {}: setup TNS = {:.6e}",
-                       static_cast<int>(p + 1), tns);
+        report->report("  pass {}: {} TNS = {:.6e}",
+                       static_cast<int>(p + 1), corner_label, tns);
       } else {
-        report->report("  pass {}: setup TNS = {:.6e}  (moved {:.3e})",
-                       static_cast<int>(p + 1), tns, tns - prev);
+        report->report("  pass {}: {} TNS = {:.6e}  (moved {:.3e})",
+                       static_cast<int>(p + 1), corner_label, tns, tns - prev);
       }
       prev = tns;
     }
@@ -2134,7 +2173,7 @@ set_xtalk_delay_factor_cmd(bool enable, double k, double guardband,
 // disabled it is a pure read-only what-if using the supplied k/guardband.
 void
 report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner,
-                       bool direction)
+                       bool direction, bool hold)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
@@ -2166,9 +2205,11 @@ report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner,
   const double use_gb = st.enabled ? st.guardband : guardband;
   const int use_mn = st.enabled ? st.max_nets : max_nets;
   const bool use_dir = st.enabled ? st.direction : direction;
+  const bool use_hold = st.enabled ? st.hold : hold;  // OpenROAD-fork: si-hold
 
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
-      sta, db_network, block, corner, use_k, use_gb, use_mn, use_dir, mutate);
+      sta, db_network, block, corner, use_k, use_gb, use_mn, use_dir, mutate,
+      use_hold);
 
   if (mutate) {
     sta::xtalk_delay_rereduce(sta, db_network, results);
@@ -2177,9 +2218,10 @@ report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner,
 
   sta::Report *report = sta->report();
   report->report(
-      "Crosstalk-aware delay report (corner {}, xtalk-delay {}, k={:.3f}, "
-      "guardband={:.3e}, direction {})",
+      "Crosstalk-aware delay report (corner {}, mode {}, xtalk-delay {}, "
+      "k={:.3f}, guardband={:.3e}, direction {})",
       corner,
+      use_hold ? "hold/min" : "setup/max",
       st.enabled ? "ENABLED" : "disabled(what-if)",
       use_k,
       use_gb,
@@ -2242,7 +2284,7 @@ xtalk_delay_ddelay_for_net_cmd(const char *net_name, double k,
   // Direction tracking off => slice-1 behavior (used by the slice-1 test).
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
       sta, db_network, block, corner, k, guardband, /* max_nets */ 0,
-      /* direction */ false, /* mutate */ false);
+      /* direction */ false, /* mutate */ false, /* hold */ false);
   for (const sta::XtalkDelayResult &r : results) {
     if (r.victim == net) {
       return r.ddelay;
@@ -2274,7 +2316,7 @@ xtalk_delay_ddelay_dir_for_net_cmd(const char *net_name, double k,
   }
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
       sta, db_network, block, corner, k, guardband, /* max_nets */ 0,
-      /* direction */ true, /* mutate */ false);
+      /* direction */ true, /* mutate */ false, /* hold */ false);
   for (const sta::XtalkDelayResult &r : results) {
     if (r.victim == net) {
       return r.ddelay;
@@ -2304,7 +2346,7 @@ xtalk_delay_dir_count_for_net_cmd(const char *net_name, int kind,
   }
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
       sta, db_network, block, corner, /* k */ 1.0, guardband,
-      /* max_nets */ 0, /* direction */ true, /* mutate */ false);
+      /* max_nets */ 0, /* direction */ true, /* mutate */ false, /* hold */ false);
   for (const sta::XtalkDelayResult &r : results) {
     if (r.victim == net) {
       return (kind == 0) ? r.aggr_same : r.aggr_opp;
@@ -2335,7 +2377,7 @@ xtalk_delay_dir_cc_for_net_cmd(const char *net_name, int kind,
   }
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
       sta, db_network, block, corner, /* k */ 1.0, guardband,
-      /* max_nets */ 0, /* direction */ true, /* mutate */ false);
+      /* max_nets */ 0, /* direction */ true, /* mutate */ false, /* hold */ false);
   for (const sta::XtalkDelayResult &r : results) {
     if (r.victim == net) {
       return (kind == 0) ? r.cc_same : r.cc_opp;
@@ -2365,13 +2407,48 @@ xtalk_delay_active_cc_for_net_cmd(const char *net_name, double guardband,
   }
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
       sta, db_network, block, corner, /* k */ 1.0, guardband,
-      /* max_nets */ 0, /* direction */ false, /* mutate */ false);
+      /* max_nets */ 0, /* direction */ false, /* mutate */ false, /* hold */ false);
   for (const sta::XtalkDelayResult &r : results) {
     if (r.victim == net) {
       return r.cc_active;
     }
   }
   return -1.0;
+}
+
+// OpenROAD-fork: si-hold -- read-only implied HOLD-path crosstalk stage-delay
+// delta (seconds) for a named net. With direction OFF every in-window
+// aggressor is treated same-direction, so the hold effective-cap factor is
+// (1-k): the effective coupling cap SHRINKS, the victim arrives EARLIER, and
+// the delta is NEGATIVE (a speed-up that erodes hold slack). This is the exact
+// sign mirror of xtalk_delay_ddelay_for_net_cmd (setup), so a test can assert
+// hold_ddelay == -setup_ddelay for the same net/k. Sentinel < -1e30 if the net
+// is not found. Never mutates the graph.
+double
+xtalk_delay_hold_ddelay_for_net_cmd(const char *net_name, double k,
+                                    double guardband, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1e30;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1e30;
+  }
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, k, guardband, /* max_nets */ 0,
+      /* direction */ false, /* mutate */ false, /* hold */ true);
+  for (const sta::XtalkDelayResult &r : results) {
+    if (r.victim == net) {
+      return r.ddelay;
+    }
+  }
+  return -1e30;
 }
 
 %} // inline
