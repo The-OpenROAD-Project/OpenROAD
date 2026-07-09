@@ -71,8 +71,6 @@ filegroup(
         "gcd_nangate45.route_guide",
         "gcd_nangate45.tcl",
         "gcd_nangate45_distributed.tcl",
-        "distributed_worker.tcl",
-        "distributed_balancer.tcl",
         "gcd_nangate45_dump_worker.tcl",
         "gcd_nangate45_preroute.def",
         "gcd_nangate45_test_worker.tcl",

@@ -122,7 +122,7 @@ read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef
 read_def $DIST_PREROUTE_DEF
 read_guides $DIST_GUIDE
-set_thread_count [expr { [cpu_count] / 4 }]
+set_thread_count [expr { max(1, [cpu_count] / 4) }]
 
 set dist_start [clock milliseconds]
 if { [catch {

@@ -123,7 +123,7 @@ read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef
 read_def gcd_nangate45_preroute.def
 read_guides gcd_nangate45.route_guide
-set_thread_count [expr { [cpu_count] / 4 }]
+set_thread_count [expr { max(1, [cpu_count] / 4) }]
 
 if { [catch {
   detailed_route -output_drc [make_result_file gcd_nangate45_dist.output.drc.rpt] \
