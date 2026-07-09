@@ -23,6 +23,12 @@
 #include "sta/Parasitics.hh"
 #include "sta/Scene.hh"
 #include "sta/MinMax.hh"
+#include "sta/Transition.hh"
+#include "sta/Delay.hh"
+#include <cmath>
+#include <limits>
+#include <unordered_map>
+
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -284,6 +290,16 @@ replace_hier_module_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 
 
 namespace sta {
+
+// Snapshot of one parasitic coupling capacitor's original value so we can
+// restore it exactly (disable / reset == byte-identical baseline).
+struct SiCcSnapshot
+{
+  sta::Parasitics *parasitics;
+  sta::ParasiticCapacitor *capacitor;
+  float orig_value;
+};
+
 
 void
 report_levelized_drvr_vertices(int max_count)
@@ -667,6 +683,463 @@ report_coupling_si_cmd(int max_nets, int corner)
   report->report("Reported {} of {} coupled signal nets.",
                  n,
                  static_cast<int>(ranked.size()));
+}
+
+////////////////////////////////////////////////////////////////
+//
+// Crosstalk / signal-integrity (SI) aware timing -- SECOND slice:
+// timing-window aware coupling derate.
+//
+// The slice-1 Miller factor is a *blanket* worst-case derate: every coupling
+// cap on every net is scaled, assuming every aggressor switches in the worst
+// direction at the worst time.  This slice makes the derate window-aware: a
+// victim net only keeps the worst-case coupling contribution from an aggressor
+// whose switching window actually overlaps the victim's.  Aggressors whose
+// windows do not overlap are gated out (their coupling cap is scaled back
+// toward nominal), recovering the pessimism of the blanket factor.
+//
+// Mechanism (see SI_WINDOW_INVESTIGATION.md):
+//   * A net's switching window is its driver pin's arrival interval
+//     [arrival(min), arrival(max)] over both edges.
+//   * For each victim's CC segments we find the aggressor net (the other net
+//     on the seg) and its window.  Non-overlapping segs get their stored Cc
+//     scaled by 1/mf_setup so that, after the blanket Miller factor is applied
+//     during pi/Arnoldi reduction, the net contribution is nominal Cc.
+//   * Original Cc is snapshotted so the feature is perfectly reversible
+//     (disable / reset == byte-identical baseline).
+//
+// Default OFF reproduces slice-1 / baseline behavior exactly.
+//
+////////////////////////////////////////////////////////////////
+
+namespace sta {
+
+// A net's switching window: [lo, hi] arrival interval of its driver pin.
+struct SiWindow
+{
+  bool valid = false;   // false => unknown (no driver / no timing); treated
+                        // conservatively as "always overlaps".
+  float lo = 0.0f;
+  float hi = 0.0f;
+};
+
+
+// Process-global SI-window state.
+struct SiWindowState
+{
+  bool enabled = false;
+  double guardband = 0.0;          // seconds added to each side of aggressor
+  int max_nets = 0;                // top-N victims to filter; <=0 == all
+  std::vector<SiCcSnapshot> snapshots;  // for restore
+};
+
+static SiWindowState &
+siWindowState()
+{
+  static SiWindowState state;
+  return state;
+}
+
+// Restore every coupling cap we scaled back to its original value. Idempotent.
+static void
+si_window_restore_caps()
+{
+  SiWindowState &st = siWindowState();
+  for (const SiCcSnapshot &s : st.snapshots) {
+    s.parasitics->setCapacitorValue(s.capacitor, s.orig_value);
+  }
+  st.snapshots.clear();
+}
+
+// Compute the switching window of a net from its driver pin arrival interval.
+static SiWindow
+si_net_window(sta::dbSta *sta, sta::dbNetwork *db_network, odb::dbNet *db_net)
+{
+  SiWindow w;
+  if (db_net == nullptr) {
+    return w;
+  }
+  sta::Net *net = db_network->dbToSta(db_net);
+  if (net == nullptr) {
+    return w;
+  }
+  sta::PinSet *drvrs = db_network->drivers(net);
+  if (drvrs == nullptr || drvrs->empty()) {
+    return w;  // undriven / constant -> unknown window
+  }
+  // Use the timing graph vertex directly and guard against pins that have no
+  // vertex (hierarchical pins, pins not in the graph) -- calling the pin-based
+  // Sta::arrival on such a pin dereferences a null vertex.
+  sta::Graph *graph = sta->ensureGraph();
+  if (graph == nullptr) {
+    return w;
+  }
+  float lo = std::numeric_limits<float>::infinity();
+  float hi = -std::numeric_limits<float>::infinity();
+  bool any = false;
+  for (const sta::Pin *pin : *drvrs) {
+    sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+    if (vertex == nullptr) {
+      continue;
+    }
+    const sta::Arrival a_min = sta->arrival(
+        vertex, sta::RiseFallBoth::riseFall(), sta->scenes(), sta::MinMax::min());
+    const sta::Arrival a_max = sta->arrival(
+        vertex, sta::RiseFallBoth::riseFall(), sta->scenes(), sta::MinMax::max());
+    const float fmin = static_cast<float>(sta::delayAsFloat(a_min));
+    const float fmax = static_cast<float>(sta::delayAsFloat(a_max));
+    if (std::isfinite(fmin) && fmin < lo) {
+      lo = fmin;
+    }
+    if (std::isfinite(fmax) && fmax > hi) {
+      hi = fmax;
+    }
+    if (std::isfinite(fmin) || std::isfinite(fmax)) {
+      any = true;
+    }
+  }
+  if (any && lo <= hi) {
+    w.valid = true;
+    w.lo = lo;
+    w.hi = hi;
+  }
+  return w;
+}
+
+// Two windows overlap iff aggressor (widened by guardband g) intersects victim.
+// Unknown (invalid) windows are conservatively treated as overlapping so we
+// never make timing more optimistic than the blanket factor.
+static bool
+si_windows_overlap(const SiWindow &victim, const SiWindow &aggr, double g)
+{
+  if (!victim.valid || !aggr.valid) {
+    return true;
+  }
+  return (aggr.lo - g) <= victim.hi && victim.lo <= (aggr.hi + g);
+}
+
+// Per-victim window-filter result, for reporting.
+struct SiVictimResult
+{
+  odb::dbNet *net;
+  double total_cc;     // fF (all aggressors)
+  double filtered_cc;  // fF (overlapping aggressors at worst case + gated at
+                       // nominal, expressed as effective Cc after applying
+                       // the scaling that reduction will see)
+  int aggr_total;
+  int aggr_gated;
+};
+
+// Core engine.  Recomputes window-filtered Cc for the top-N victims and scales
+// non-overlapping CC segs by 1/mf_setup so the blanket Miller factor nets out
+// to nominal on those segs.  Returns per-victim results (sorted by total Cc).
+// Always restores previous scaling first so repeated calls are stable.
+static std::vector<SiVictimResult>
+si_window_apply(sta::dbSta *sta,
+                sta::dbNetwork *db_network,
+                odb::dbBlock *block,
+                int corner,
+                float mf_setup,
+                double guardband,
+                int max_nets,
+                bool mutate)
+{
+  std::vector<SiVictimResult> results;
+  SiWindowState &st = siWindowState();
+
+  // Undo any previous scaling so we start from the true stored Cc.
+  if (mutate) {
+    si_window_restore_caps();
+  }
+
+  // The scale applied to a gated-out (non-overlapping) seg.  After the blanket
+  // Miller factor mf_setup is applied during reduction, the effective
+  // contribution becomes mf_setup * (1/mf_setup) * Cc = Cc (nominal).  If no
+  // blanket factor is set (mf_setup <= 1) there is nothing to recover.
+  const double gate_scale = (mf_setup > 1.0f) ? (1.0 / mf_setup) : 1.0;
+
+  // Rank candidate victims by total coupling cap (same ordering as the SI
+  // hotspot report) so top-N selects the highest-risk nets.
+  struct Cand { odb::dbNet *net; double cc; };
+  std::vector<Cand> cands;
+  for (odb::dbNet *net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    const double cc = net->getTotalCouplingCap(corner);
+    if (cc <= 0.0) {
+      continue;
+    }
+    cands.push_back({net, cc});
+  }
+  std::sort(cands.begin(), cands.end(),
+            [](const Cand &a, const Cand &b) { return a.cc > b.cc; });
+
+  const int n = (max_nets <= 0)
+                    ? static_cast<int>(cands.size())
+                    : std::min<int>(max_nets, cands.size());
+
+  // Cache windows per net to avoid recomputing.
+  std::unordered_map<odb::dbNet *, SiWindow> window_cache;
+  auto get_window = [&](odb::dbNet *dn) -> const SiWindow & {
+    auto it = window_cache.find(dn);
+    if (it != window_cache.end()) {
+      return it->second;
+    }
+    SiWindow w = si_net_window(sta, db_network, dn);
+    return window_cache.emplace(dn, w).first->second;
+  };
+
+  for (int i = 0; i < n; i++) {
+    odb::dbNet *victim_db = cands[i].net;
+    sta::Net *victim = db_network->dbToSta(victim_db);
+    if (victim == nullptr) {
+      continue;
+    }
+    const SiWindow &vw = get_window(victim_db);
+
+    double total_cc = 0.0;
+    double filtered_cc = 0.0;
+    int aggr_total = 0;
+    int aggr_gated = 0;
+
+    // Walk the coupling capacitors of this victim's parasitic network in every
+    // parasitics object (min/max of every scene). A coupling cap is one whose
+    // two nodes lie on different nets; the aggressor is the net of the node
+    // that is not the victim.
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *pars[2]
+          = {scene->parasitics(sta::MinMax::max()),
+             scene->parasitics(sta::MinMax::min())};
+      sta::Parasitics *seen_prev = nullptr;
+      for (sta::Parasitics *par : pars) {
+        if (par == nullptr || par == seen_prev) {
+          continue;  // skip null and shared min==max object (count once)
+        }
+        seen_prev = par;
+        sta::Parasitic *pnet = par->findParasiticNetwork(victim);
+        if (pnet == nullptr) {
+          continue;
+        }
+        for (sta::ParasiticCapacitor *cap : par->capacitors(pnet)) {
+          sta::ParasiticNode *n1 = par->node1(cap);
+          sta::ParasiticNode *n2 = par->node2(cap);
+          const sta::Net *net1 = par->net(n1, db_network);
+          const sta::Net *net2 = par->net(n2, db_network);
+          // Coupling cap: nodes on two different nets.
+          const sta::Net *aggr_net = nullptr;
+          if (net1 == victim && net2 != nullptr && net2 != victim) {
+            aggr_net = net2;
+          } else if (net2 == victim && net1 != nullptr && net1 != victim) {
+            aggr_net = net1;
+          } else {
+            continue;  // grounded cap or not a victim coupling cap
+          }
+
+          const double cc = par->value(cap);          // Farads (internal)
+          const double cc_ff = cc * 1e15;              // fF for reporting
+          total_cc += cc_ff;
+          aggr_total++;
+
+          odb::dbNet *aggr_db = db_network->staToDb(aggr_net);
+          const SiWindow &aw = get_window(aggr_db);
+
+          if (si_windows_overlap(vw, aw, guardband)) {
+            filtered_cc += cc_ff;  // overlap: keep worst case
+          } else {
+            // No overlap: gate out. Effective Cc -> nominal after the blanket
+            // Miller factor re-multiplies during reduction.
+            filtered_cc += cc_ff * gate_scale;
+            aggr_gated++;
+            if (mutate && gate_scale != 1.0) {
+              st.snapshots.push_back(
+                  {par, cap, static_cast<float>(cc)});
+              par->setCapacitorValue(cap,
+                                     static_cast<float>(cc * gate_scale));
+            }
+          }
+        }
+      }
+    }
+
+    results.push_back({victim_db, total_cc, filtered_cc, aggr_total,
+                       aggr_gated});
+  }
+
+  return results;
+}
+
+}  // namespace sta
+
+// Enable/disable window-aware coupling filtering.  enable=false (default)
+// reproduces slice-1 / baseline behavior exactly: any previously applied
+// scaling is undone and timing is invalidated so the next query is baseline.
+void
+set_si_timing_window_cmd(bool enable, double guardband, int max_nets)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::SiWindowState &st = sta::siWindowState();
+
+  if (!enable) {
+    sta::si_window_restore_caps();
+    st.enabled = false;
+    // Drop cached reductions so timing returns to baseline coupling.
+    sta::dbNetwork *db_network = openroad->getDbNetwork();
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+      sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+      odb::dbChip *chip = openroad->getDb()->getChip();
+      odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+      if (block != nullptr) {
+        for (odb::dbNet *db_net : block->getNets()) {
+          sta::Net *net = db_network->dbToSta(db_net);
+          if (net == nullptr) {
+            continue;
+          }
+          if (par_max != nullptr) {
+            par_max->deleteReducedParasitics(net);
+          }
+          if (par_min != nullptr && par_min != par_max) {
+            par_min->deleteReducedParasitics(net);
+          }
+        }
+      }
+    }
+    sta->delaysInvalid();
+    return;
+  }
+
+  st.enabled = true;
+  st.guardband = guardband;
+  st.max_nets = max_nets;
+}
+
+// Run the window filter and (optionally) mutate Cc, then report per victim:
+// total Cc, window-filtered effective Cc, # aggressors gated, recovered Cc.
+void
+report_si_windows_cmd(int max_nets, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  utl::Logger *logger = openroad->getLogger();
+  odb::dbDatabase *db = openroad->getDb();
+
+  odb::dbChip *chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(utl::STA, 910, "No chip loaded.");
+  }
+  odb::dbBlock *block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(utl::STA, 911, "No block loaded.");
+  }
+  // A SPEF-only flow (no define_process_corner) reports cornerCount()==0 but
+  // still exposes a single implicit corner 0 for the per-corner Cc accessors.
+  // Treat corner 0 as valid in that case.
+  const int corner_count = block->getCornerCount();
+  const int valid_count = (corner_count == 0) ? 1 : corner_count;
+  if (corner < 0 || corner >= valid_count) {
+    logger->error(utl::STA, 912, "corner {} out of range [0, {}).", corner,
+                  valid_count);
+  }
+
+  sta::SiWindowState &st = sta::siWindowState();
+  float mf_setup = 1.0f, mf_hold = 1.0f;
+  get_coupling_miller_factors(sta, &mf_setup, &mf_hold);
+
+  // Only mutate stored Cc when the feature is enabled; otherwise this is a
+  // pure read-only what-if report (no timing impact).
+  const bool mutate = st.enabled;
+  const double guardband = st.enabled ? st.guardband : 0.0;
+  std::vector<sta::SiVictimResult> results = sta::si_window_apply(
+      sta, db_network, block, corner, mf_setup, guardband, max_nets, mutate);
+
+  if (mutate) {
+    // Drop cached reductions for touched victims so re-reduction sees the
+    // window-filtered Cc, then invalidate delays.
+    for (const sta::SiVictimResult &r : results) {
+      sta::Net *net = db_network->dbToSta(r.net);
+      if (net == nullptr) {
+        continue;
+      }
+      for (sta::Scene *scene : sta->scenes()) {
+        sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+        sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+        if (par_max != nullptr) {
+          par_max->deleteReducedParasitics(net);
+        }
+        if (par_min != nullptr && par_min != par_max) {
+          par_min->deleteReducedParasitics(net);
+        }
+      }
+    }
+    sta->delaysInvalid();
+  }
+
+  sta::Report *report = sta->report();
+  report->report(
+      "SI timing-window coupling report (corner {}, window {}, Miller "
+      "setup={:.3f} guardband={:.4g})",
+      corner,
+      st.enabled ? "ENABLED" : "disabled(what-if)",
+      mf_setup,
+      guardband);
+  report->report("{:<36} {:>12} {:>12} {:>8} {:>8}",
+                 "Victim net", "Cc(fF)", "Cc_win(fF)", "#aggr", "#gated");
+  report->report(
+      "------------------------------------------------------------"
+      "--------------------");
+  for (const sta::SiVictimResult &r : results) {
+    report->report("{:<36} {:>12.4f} {:>12.4f} {:>8d} {:>8d}",
+                   r.net->getConstName(),
+                   r.total_cc,
+                   r.filtered_cc,
+                   r.aggr_total,
+                   r.aggr_gated);
+  }
+  int total_gated = 0;
+  double total_cc = 0.0, total_filtered = 0.0;
+  for (const sta::SiVictimResult &r : results) {
+    total_gated += r.aggr_gated;
+    total_cc += r.total_cc;
+    total_filtered += r.filtered_cc;
+  }
+  report->report(
+      "Processed {} victim nets, gated {} non-overlapping aggressor segments; "
+      "total Cc {:.4f} fF -> window-filtered {:.4f} fF.",
+      static_cast<int>(results.size()),
+      total_gated,
+      total_cc,
+      total_filtered);
+}
+
+// Return the number of aggressor CC segments that WOULD be gated out (windows
+// non-overlapping) for the given corner, using the currently configured
+// window state (guardband / max_nets). Read-only what-if (no Cc mutation, no
+// timing change); used by tests to assert gating behavior deterministically.
+int
+si_window_gated_count_cmd(int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return 0;
+  }
+  sta::SiWindowState &st = sta::siWindowState();
+  float mf_setup = 1.0f, mf_hold = 1.0f;
+  get_coupling_miller_factors(sta, &mf_setup, &mf_hold);
+  std::vector<sta::SiVictimResult> results
+      = sta::si_window_apply(sta, db_network, block, corner, mf_setup,
+                             st.guardband, st.max_nets, /* mutate */ false);
+  int gated = 0;
+  for (const sta::SiVictimResult &r : results) {
+    gated += r.aggr_gated;
+  }
+  return gated;
 }
 
 %} // inline

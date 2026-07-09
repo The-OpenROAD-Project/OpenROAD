@@ -257,6 +257,79 @@ proc report_coupling_si { args } {
 }
 
 ################################################################
+#
+# Crosstalk / SI -- SECOND slice: timing-window aware coupling derate.
+# See SI_WINDOW_INVESTIGATION.md.
+#
+################################################################
+
+define_cmd_args "set_si_timing_window" \
+  {[-enable] [-disable] [-guardband seconds] [-max_nets count]}
+
+# Turn window-aware coupling filtering on/off. When enabled, report_si_windows
+# gates out aggressors whose switching window does not overlap the victim's,
+# recovering the pessimism of the blanket Miller factor. Default (disabled, or
+# never called) reproduces slice-1 / baseline timing exactly. -guardband widens
+# each aggressor window by N seconds (more conservative); -max_nets limits the
+# filter to the top-N highest-Cc victims (<=0 == all).
+proc set_si_timing_window { args } {
+  parse_key_args "set_si_timing_window" args \
+    keys {-guardband -max_nets} flags {-enable -disable}
+  check_argc_eq0 "set_si_timing_window" $args
+
+  set enable 1
+  if { [info exists flags(-disable)] } {
+    set enable 0
+  }
+  if { [info exists flags(-enable)] && [info exists flags(-disable)] } {
+    sta_error 913 "set_si_timing_window: -enable and -disable are mutually\
+                   exclusive."
+  }
+
+  set guardband 0.0
+  if { [info exists keys(-guardband)] } {
+    set guardband $keys(-guardband)
+    if { ![string is double -strict $guardband] || $guardband < 0.0 } {
+      sta_error 914 "-guardband must be a non-negative float (seconds)."
+    }
+  }
+
+  set max_nets 0
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+
+  sta::set_si_timing_window_cmd $enable $guardband $max_nets
+}
+
+define_cmd_args "report_si_windows" {[-max_nets count] [-corner index]}
+
+# Report, per victim net: total coupling cap, window-filtered effective
+# coupling cap, total aggressor segments, and # gated out (non-overlapping).
+# When set_si_timing_window -enable is active this also applies the
+# window-filtered coupling to the timing engine (scaling non-overlapping CC
+# segs back toward nominal). When disabled it is a pure read-only what-if.
+proc report_si_windows { args } {
+  parse_key_args "report_si_windows" args \
+    keys {-max_nets -corner} flags {}
+  check_argc_eq0 "report_si_windows" $args
+
+  set max_nets 20
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+  set corner 0
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
+  }
+
+  sta::report_si_windows_cmd $max_nets $corner
+}
+
+################################################################
 # Depth-based (AOCV-style) OCV derate -- first slice (report-only).
 # See AOCV_INVESTIGATION.md for design and limitations.
 

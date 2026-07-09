@@ -26,6 +26,7 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
+    "coupling_si_window",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -93,6 +94,10 @@ filegroup(
             ],
         ) + {
             "coupling_si_miller": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_si_window": [
                 "gcd.def",
                 "ext_pattern.rules",
             ],

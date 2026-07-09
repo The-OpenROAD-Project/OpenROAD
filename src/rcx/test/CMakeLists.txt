@@ -13,6 +13,7 @@ or_integration_tests(
     short_resover
   PASSFAIL_TESTS
     rcx_unit_test
+    coupling_si_window
 )
 
 #generate_rules
