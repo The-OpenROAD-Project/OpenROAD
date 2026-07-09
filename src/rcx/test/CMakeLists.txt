@@ -15,6 +15,7 @@ or_integration_tests(
     rcx_unit_test
     coupling_si_window
     coupling_xtalk_delay
+    coupling_xtalk_direction
 )
 
 #generate_rules

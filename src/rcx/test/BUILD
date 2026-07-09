@@ -28,6 +28,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     "coupling_si_window",
     "coupling_xtalk_delay",
+    "coupling_xtalk_direction",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -103,6 +104,10 @@ filegroup(
                 "ext_pattern.rules",
             ],
             "coupling_xtalk_delay": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_xtalk_direction": [
                 "gcd.def",
                 "ext_pattern.rules",
             ],

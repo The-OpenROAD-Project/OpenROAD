@@ -404,7 +404,7 @@ proc report_si_windows { args } {
 
 define_cmd_args "set_xtalk_delay_factor" \
   {[-enable] [-disable] [-k factor] [-guardband seconds] [-max_nets count]\
-   [-corner index]}
+   [-corner index] [-direction] [-iterations count]}
 
 # Enable/disable the crosstalk-aware effective-C delay adjustment. When enabled,
 # each in-window CC segment of the top-N coupled victims has its stored coupling
@@ -414,9 +414,20 @@ define_cmd_args "set_xtalk_delay_factor" \
 # same-direction aggressor); -1 < k < 0 models a net-decoupling bound. k == 0
 # is an explicit no-op. -guardband widens each aggressor window (more segments
 # count as active); -max_nets limits to the top-N highest-Cc victims (<=0 all).
+#
+# Slice 2 (both default OFF -> byte-identical to slice 1):
+#   -direction         classify each aggressor/victim pair by switching edge:
+#                      same-direction -> effective-C up (1+k), opposite -> down
+#                      (1-k, Miller decoupling). Off => slice-1 worst case (all
+#                      active treated same-direction, factor 1+k).
+#   -iterations count  run a small fixed number of bounded re-convergence
+#                      passes (default 1 == slice-1 single pass) so aggressor
+#                      windows settle as victim delays degrade. Per-pass setup
+#                      TNS movement is reported.
 proc set_xtalk_delay_factor { args } {
   parse_key_args "set_xtalk_delay_factor" args \
-    keys {-k -guardband -max_nets -corner} flags {-enable -disable}
+    keys {-k -guardband -max_nets -corner -iterations} \
+    flags {-enable -disable -direction}
   check_argc_eq0 "set_xtalk_delay_factor" $args
 
   set enable 1
@@ -457,21 +468,37 @@ proc set_xtalk_delay_factor { args } {
     sta::check_positive_integer "-corner" $corner
   }
 
-  sta::set_xtalk_delay_factor_cmd $enable $k $guardband $max_nets $corner
+  # Slice-2 knobs; defaults reproduce slice-1 exactly.
+  set direction 0
+  if { [info exists flags(-direction)] } {
+    set direction 1
+  }
+
+  set iterations 1
+  if { [info exists keys(-iterations)] } {
+    set iterations $keys(-iterations)
+    sta::check_positive_integer "-iterations" $iterations
+  }
+
+  sta::set_xtalk_delay_factor_cmd $enable $k $guardband $max_nets $corner \
+    $direction $iterations
 }
 
 define_cmd_args "report_xtalk_delay" \
-  {[-k factor] [-guardband seconds] [-max_nets count] [-corner index]}
+  {[-k factor] [-guardband seconds] [-max_nets count] [-corner index]\
+   [-direction]}
 
 # Report, per victim: total Cc, in-window (active) Cc, the added effective cap
 # dC = k*Cc_active, the victim driver resistance, the implied stage-delay delta
-# (Rdrv*dC), the # of active aggressors, and whether it was applied. When
-# set_xtalk_delay_factor -enable is active this re-applies the adjustment using
-# the configured knobs; when disabled it is a read-only what-if using the knobs
-# passed here (-k defaults to 1.0).
+# (Rdrv*dC), the # of active aggressors, the same/opposite-direction split, and
+# whether it was applied. When set_xtalk_delay_factor -enable is active this
+# re-applies the adjustment using the configured knobs; when disabled it is a
+# read-only what-if using the knobs passed here (-k defaults to 1.0).
+# -direction turns on per-edge direction classification for the what-if (when
+# enabled, the configured direction setting is used instead).
 proc report_xtalk_delay { args } {
   parse_key_args "report_xtalk_delay" args \
-    keys {-k -guardband -max_nets -corner} flags {}
+    keys {-k -guardband -max_nets -corner} flags {-direction}
   check_argc_eq0 "report_xtalk_delay" $args
 
   set k 1.0
@@ -502,7 +529,12 @@ proc report_xtalk_delay { args } {
     sta::check_positive_integer "-corner" $corner
   }
 
-  sta::report_xtalk_delay_cmd $k $guardband $max_nets $corner
+  set direction 0
+  if { [info exists flags(-direction)] } {
+    set direction 1
+  }
+
+  sta::report_xtalk_delay_cmd $k $guardband $max_nets $corner $direction
 }
 
 # Depth-based (AOCV-style) OCV derate -- first slice (report-only).

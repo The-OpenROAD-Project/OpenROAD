@@ -907,6 +907,84 @@ si_windows_overlap(const SiWindow &victim, const SiWindow &aggr, double g)
   return (aggr.lo - g) <= victim.hi && victim.lo <= (aggr.hi + g);
 }
 
+// Per-edge switching window of a net: the arrival interval of its driver pin
+// restricted to a single transition polarity (rise OR fall). Used by the
+// crosstalk-delay slice-2 direction classifier to decide whether an aggressor
+// switches in the SAME or OPPOSITE direction as the victim during overlap.
+// Mirrors si_net_window() but queries one RiseFall edge instead of riseFall().
+static SiWindow
+si_net_edge_window(sta::dbSta *sta,
+                   sta::dbNetwork *db_network,
+                   odb::dbNet *db_net,
+                   const sta::RiseFall *rf)
+{
+  SiWindow w;
+  if (db_net == nullptr) {
+    return w;
+  }
+  sta::Net *net = db_network->dbToSta(db_net);
+  if (net == nullptr) {
+    return w;
+  }
+  sta::PinSet *drvrs = db_network->drivers(net);
+  if (drvrs == nullptr || drvrs->empty()) {
+    return w;
+  }
+  sta::Graph *graph = sta->ensureGraph();
+  if (graph == nullptr) {
+    return w;
+  }
+  const sta::RiseFallBoth *rfb
+      = (rf == sta::RiseFall::rise()) ? sta::RiseFallBoth::rise()
+                                      : sta::RiseFallBoth::fall();
+  float lo = std::numeric_limits<float>::infinity();
+  float hi = -std::numeric_limits<float>::infinity();
+  bool any = false;
+  for (const sta::Pin *pin : *drvrs) {
+    sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+    if (vertex == nullptr) {
+      continue;
+    }
+    const sta::Arrival a_min
+        = sta->arrival(vertex, rfb, sta->scenes(), sta::MinMax::min());
+    const sta::Arrival a_max
+        = sta->arrival(vertex, rfb, sta->scenes(), sta::MinMax::max());
+    const float fmin = static_cast<float>(sta::delayAsFloat(a_min));
+    const float fmax = static_cast<float>(sta::delayAsFloat(a_max));
+    if (std::isfinite(fmin) && fmin < lo) {
+      lo = fmin;
+    }
+    if (std::isfinite(fmax) && fmax > hi) {
+      hi = fmax;
+    }
+    if (std::isfinite(fmin) || std::isfinite(fmax)) {
+      any = true;
+    }
+  }
+  if (any && lo <= hi) {
+    w.valid = true;
+    w.lo = lo;
+    w.hi = hi;
+  }
+  return w;
+}
+
+// Temporal overlap length (seconds) between a victim window and an aggressor
+// window widened by guardband g. Negative/zero means no overlap. Invalid
+// windows return -1 (caller treats as "unknown"). Used by the slice-2
+// direction classifier to pick the dominant edge pairing.
+static double
+si_window_overlap_amount(const SiWindow &victim, const SiWindow &aggr,
+                         double g)
+{
+  if (!victim.valid || !aggr.valid) {
+    return -1.0;
+  }
+  const double lo = std::max<double>(victim.lo, aggr.lo - g);
+  const double hi = std::min<double>(victim.hi, aggr.hi + g);
+  return hi - lo;  // > 0 iff they overlap
+}
+
 // Per-victim window-filter result, for reporting.
 struct SiVictimResult
 {
@@ -1268,12 +1346,19 @@ si_window_gated_count_cmd(int corner)
 namespace sta {
 
 // Process-global crosstalk-delay state. enabled=false (default) == baseline.
+//
+// Slice 2 adds two flag-gated knobs; their defaults reproduce slice-1 exactly:
+//   * direction=false  -> every active segment uses factor (1+k) (slice-1
+//                         worst-case same-direction assumption).
+//   * iterations=1     -> a single apply pass (slice-1 single-pass behavior).
 struct XtalkDelayState
 {
   bool enabled = false;
   double k = 1.0;                       // user switching factor (Ceff += k*Cc)
   double guardband = 0.0;               // s, widens aggressor window (overlap)
   int max_nets = 0;                     // top-N victims; <=0 == all
+  bool direction = false;               // slice-2: per-edge direction tracking
+  int iterations = 1;                   // slice-2: bounded re-convergence passes
   std::vector<SiCcSnapshot> snapshots;  // for byte-identical restore
 };
 
@@ -1301,19 +1386,31 @@ struct XtalkDelayResult
   odb::dbNet *victim = nullptr;
   double cc_total = 0.0;     // fF -- total coupling cap (all aggressors)
   double cc_active = 0.0;    // fF -- coupling cap of in-window aggressors
+  double cc_same = 0.0;      // slice-2: fF of same-direction active segments
+  double cc_opp = 0.0;       // slice-2: fF of opposite-direction active segs
   double dcap = 0.0;         // fF -- added effective cap = k * cc_active
   double rdrv = 0.0;         // ohm -- victim driver on-resistance
   double ddelay = 0.0;       // s  -- implied stage-delay delta = Rdrv * dC
   int aggr_total = 0;        // CC segments seen
   int aggr_active = 0;       // CC segments with overlapping (active) window
+  int aggr_same = 0;         // slice-2: active segments classified same-dir
+  int aggr_opp = 0;          // slice-2: active segments classified opposite-dir
   bool applied = false;      // true if the bloat was applied to the graph
 };
 
 // Core engine. For the top-N coupled victims, scale every in-window CC segment
-// by (1 + k) so the effective coupling capacitance reflects same-direction
-// aggressor switching; out-of-window segments are left at nominal. mutate=true
-// applies the bloat (snapshotting originals); mutate=false is a pure read-only
-// what-if. Always restores prior bloat first so repeated calls are stable.
+// so the effective coupling capacitance reflects aggressor switching;
+// out-of-window segments are left at nominal. mutate=true applies the bloat
+// (snapshotting originals); mutate=false is a pure read-only what-if. Always
+// restores prior bloat first so repeated calls are stable.
+//
+// direction=false (slice-1 behavior): every active segment uses factor (1+k),
+//   the worst-case same-direction (Miller aggravation) assumption.
+// direction=true (slice-2): each active victim/aggressor pair is classified by
+//   the dominant overlapping edge pairing. Same-polarity edges (both rise or
+//   both fall) aggravate -> factor (1+k); opposite-polarity edges (one rise,
+//   one fall) decouple (Miller) -> factor (1-k). The signed dCap accumulates
+//   per segment accordingly.
 static std::vector<XtalkDelayResult>
 xtalk_delay_apply(sta::dbSta *sta,
                   sta::dbNetwork *db_network,
@@ -1322,6 +1419,7 @@ xtalk_delay_apply(sta::dbSta *sta,
                   double k,
                   double guardband,
                   int max_nets,
+                  bool direction,
                   bool mutate)
 {
   std::vector<XtalkDelayResult> results;
@@ -1331,10 +1429,11 @@ xtalk_delay_apply(sta::dbSta *sta,
     xtalk_delay_restore_caps();
   }
 
-  // The bloat factor applied to an active (in-window) CC segment. k == 0 is a
-  // no-op (factor 1.0) so the feature degrades gracefully to baseline. k > -1
-  // keeps the effective cap non-negative.
-  const double active_factor = 1.0 + k;
+  // Per-segment effective-cap factors are computed in the segment loop below:
+  // (1+k) for same-direction (slice-1 worst case / direction off) and (1-k)
+  // for opposite-direction when direction tracking is on. k == 0 is a no-op
+  // (factor 1.0) so the feature degrades gracefully to baseline; k > -1 keeps
+  // the same-direction effective cap non-negative.
 
   // Rank candidate victims by total coupling cap (same ordering as the SI
   // hotspot / window reports) so top-N selects the highest-risk nets.
@@ -1367,6 +1466,48 @@ xtalk_delay_apply(sta::dbSta *sta,
     return window_cache.emplace(dn, w).first->second;
   };
 
+  // Per-edge (rise/fall) window caches for the slice-2 direction classifier.
+  // Only populated/queried when direction tracking is on, so direction=false
+  // is byte-identical to slice-1 (these never run).
+  std::unordered_map<odb::dbNet *, SiWindow> rise_cache, fall_cache;
+  auto get_edge_window
+      = [&](odb::dbNet *dn, const sta::RiseFall *rf) -> const SiWindow & {
+    auto &cache = (rf == sta::RiseFall::rise()) ? rise_cache : fall_cache;
+    auto it = cache.find(dn);
+    if (it != cache.end()) {
+      return it->second;
+    }
+    SiWindow w = si_net_edge_window(sta, db_network, dn, rf);
+    return cache.emplace(dn, w).first->second;
+  };
+
+  // Classify an active victim/aggressor pair as same-direction (true) or
+  // opposite-direction (false). We score the four edge pairings (victim
+  // rise/fall x aggressor rise/fall) by their temporal overlap and pick the
+  // dominant one; same-polarity pairings (RR, FF) aggravate, cross pairings
+  // (RF, FR) decouple. Ties and unknown windows fall back to same-direction
+  // (the conservative slice-1 worst case), so direction tracking never makes
+  // timing more optimistic than slice-1 unless an opposite pairing strictly
+  // dominates.
+  auto classify_same_dir
+      = [&](odb::dbNet *victim_db, odb::dbNet *aggr_db) -> bool {
+    const SiWindow &vr = get_edge_window(victim_db, sta::RiseFall::rise());
+    const SiWindow &vf = get_edge_window(victim_db, sta::RiseFall::fall());
+    const SiWindow &ar = get_edge_window(aggr_db, sta::RiseFall::rise());
+    const SiWindow &af = get_edge_window(aggr_db, sta::RiseFall::fall());
+    const double rr = si_window_overlap_amount(vr, ar, guardband);  // same
+    const double ff = si_window_overlap_amount(vf, af, guardband);  // same
+    const double rf = si_window_overlap_amount(vr, af, guardband);  // opp
+    const double fr = si_window_overlap_amount(vf, ar, guardband);  // opp
+    const double same = std::max(rr, ff);
+    const double opp = std::max(rf, fr);
+    // If neither pairing is known to overlap (all invalid/non-overlapping),
+    // keep the conservative same-direction assumption.
+    if (opp > same) {
+      return false;  // opposite direction strictly dominates -> decouple
+    }
+    return true;
+  };
   for (int i = 0; i < n; i++) {
     odb::dbNet *victim_db = cands[i].net;
     sta::Net *victim = db_network->dbToSta(victim_db);
@@ -1380,12 +1521,19 @@ xtalk_delay_apply(sta::dbSta *sta,
 
     double cc_total_f = 0.0;   // Farads
     double cc_active_f = 0.0;  // Farads
+    double cc_same_f = 0.0;    // Farads (same-direction active segments)
+    double cc_opp_f = 0.0;     // Farads (opposite-direction active segments)
+    // Signed added effective cap (Farads): sum over active segments of
+    // (factor - 1) * Cc, where factor is (1+k) for same-direction and (1-k)
+    // for opposite-direction (only when direction tracking is on). With
+    // direction off this collapses to k * cc_active_f (slice-1).
+    double dcap_f = 0.0;
 
     // Walk the victim's coupling capacitors in every parasitics object (min/max
     // of every scene). A coupling cap has its two nodes on different nets; the
     // aggressor is the net of the node that is not the victim.
     struct ActiveCap { sta::Parasitics *par; sta::ParasiticCapacitor *cap;
-                       float orig; };
+                       float orig; float factor; };
     std::vector<ActiveCap> active_caps;
     for (sta::Scene *scene : sta->scenes()) {
       sta::Parasitics *pars[2]
@@ -1422,11 +1570,34 @@ xtalk_delay_apply(sta::dbSta *sta,
           odb::dbNet *aggr_db = db_network->staToDb(aggr_net);
           const SiWindow &aw = get_window(aggr_db);
           if (si_windows_overlap(vw, aw, guardband)) {
-            // Aggressor switches in-window: this segment is "active" and gets
-            // the switching-factor effective-cap bloat.
+            // Aggressor switches in-window: this segment is "active". The
+            // effective-cap factor depends on the switching direction:
+            //   direction OFF (slice-1): always (1 + k) -- worst-case Miller
+            //     aggravation, same for every active segment.
+            //   direction ON (slice-2): same-direction -> (1 + k); opposite
+            //     -> (1 - k) (Miller decoupling).
             cc_active_f += cc;
             r.aggr_active++;
-            active_caps.push_back({par, cap, static_cast<float>(cc)});
+            double seg_factor = 1.0 + k;
+            if (direction) {
+              const bool same = classify_same_dir(victim_db, aggr_db);
+              if (same) {
+                seg_factor = 1.0 + k;
+                r.aggr_same++;
+                cc_same_f += cc;
+              } else {
+                seg_factor = 1.0 - k;
+                r.aggr_opp++;
+                cc_opp_f += cc;
+              }
+            } else {
+              r.aggr_same++;  // slice-1: all active treated same-direction
+              cc_same_f += cc;
+            }
+            dcap_f += (seg_factor - 1.0) * cc;
+            active_caps.push_back(
+                {par, cap, static_cast<float>(cc),
+                 static_cast<float>(seg_factor)});
           }
           // Out-of-window aggressor: left at nominal Cc (no adjustment).
         }
@@ -1435,8 +1606,9 @@ xtalk_delay_apply(sta::dbSta *sta,
 
     r.cc_total = cc_total_f * 1e15;            // fF
     r.cc_active = cc_active_f * 1e15;          // fF
-    const double dcap_f = k * cc_active_f;     // Farads (signed by k)
-    r.dcap = dcap_f * 1e15;                    // fF
+    r.cc_same = cc_same_f * 1e15;              // fF
+    r.cc_opp = cc_opp_f * 1e15;                // fF
+    r.dcap = dcap_f * 1e15;                    // fF (signed)
 
     // Implied stage-delay delta from the added load: d(delay) ~= Rdrv * dC.
     const double rdrv
@@ -1446,9 +1618,11 @@ xtalk_delay_apply(sta::dbSta *sta,
 
     if (mutate && k != 0.0 && !active_caps.empty()) {
       for (const ActiveCap &ac : active_caps) {
+        // factor==1 (k cancels, e.g. opposite-dir with k that nets to nominal)
+        // would be a no-op; still snapshot so restore is symmetric and exact.
         st.snapshots.push_back({ac.par, ac.cap, ac.orig});
         ac.par->setCapacitorValue(
-            ac.cap, static_cast<float>(ac.orig * active_factor));
+            ac.cap, static_cast<float>(ac.orig * ac.factor));
       }
       r.applied = true;
     }
@@ -1466,6 +1640,81 @@ xtalk_delay_apply(sta::dbSta *sta,
   return results;
 }
 
+// Drop the cached pi/Arnoldi reduction of every applied victim so the next
+// timing query re-reduces with the updated (bloated) coupling caps. Shared by
+// the apply/report/converge paths.
+static void
+xtalk_delay_rereduce(sta::dbSta *sta,
+                     sta::dbNetwork *db_network,
+                     const std::vector<XtalkDelayResult> &results)
+{
+  for (const XtalkDelayResult &r : results) {
+    if (!r.applied) {
+      continue;
+    }
+    sta::Net *net = db_network->dbToSta(r.victim);
+    if (net == nullptr) {
+      continue;
+    }
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+      sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+      if (par_max != nullptr) {
+        par_max->deleteReducedParasitics(net);
+      }
+      if (par_min != nullptr && par_min != par_max) {
+        par_min->deleteReducedParasitics(net);
+      }
+    }
+  }
+}
+
+// Bounded iterative re-convergence. A victim's delay depends on aggressor
+// arrival windows, which themselves depend on the aggressors' (now degraded)
+// delays. We therefore re-run the apply pass a small, fixed number of times so
+// the windows settle:
+//
+//   pass 1: windows from baseline delays            (== slice-1 single pass)
+//   pass p: windows from the delays produced by pass p-1
+//
+// Each pass fully restores prior bloat first (apply does this when mutate), so
+// passes are not cumulative -- they re-decide which segments are active and in
+// which direction using the latest windows. Between passes we re-reduce the
+// touched victims and invalidate delays so the next window query sees the new
+// timing. iterations<=1 runs exactly one pass == slice-1 behavior.
+//
+// Reports per-pass setup TNS and the movement vs the previous pass so the user
+// can see convergence. tns_out (if non-null) receives the TNS after each pass.
+static std::vector<XtalkDelayResult>
+xtalk_delay_converge(sta::dbSta *sta,
+                     sta::dbNetwork *db_network,
+                     odb::dbBlock *block,
+                     int corner,
+                     double k,
+                     double guardband,
+                     int max_nets,
+                     bool direction,
+                     int iterations,
+                     std::vector<double> *tns_out)
+{
+  const int passes = (iterations < 1) ? 1 : iterations;
+  std::vector<XtalkDelayResult> results;
+  for (int p = 0; p < passes; p++) {
+    results = xtalk_delay_apply(sta, db_network, block, corner, k, guardband,
+                                max_nets, direction, /* mutate */ true);
+    xtalk_delay_rereduce(sta, db_network, results);
+    sta->delaysInvalid();
+    if (tns_out != nullptr) {
+      // Force timing update so the recorded TNS reflects this pass and the
+      // next pass's windows see the degraded delays.
+      const double tns
+          = sta::delayAsFloat(sta->totalNegativeSlack(sta::MinMax::max()));
+      tns_out->push_back(tns);
+    }
+  }
+  return results;
+}
+
 } // namespace sta
 
 // Enable/disable the crosstalk-aware effective-C stage-delay adjustment.
@@ -1475,7 +1724,8 @@ xtalk_delay_apply(sta::dbSta *sta,
 // top-N victims by (1 + k) and forces re-reduction of the touched victims.
 void
 set_xtalk_delay_factor_cmd(bool enable, double k, double guardband,
-                           int max_nets, int corner)
+                           int max_nets, int corner, bool direction,
+                           int iterations)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
@@ -1527,31 +1777,39 @@ set_xtalk_delay_factor_cmd(bool enable, double k, double guardband,
   st.k = k;
   st.guardband = guardband;
   st.max_nets = max_nets;
+  st.direction = direction;
+  st.iterations = (iterations < 1) ? 1 : iterations;
 
-  // Apply the adjustment now and force re-reduction of touched victims.
-  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
-      sta, db_network, block, corner, k, guardband, max_nets,
-      /* mutate */ true);
-  for (const sta::XtalkDelayResult &r : results) {
-    if (!r.applied) {
-      continue;
-    }
-    sta::Net *net = db_network->dbToSta(r.victim);
-    if (net == nullptr) {
-      continue;
-    }
-    for (sta::Scene *scene : sta->scenes()) {
-      sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
-      sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
-      if (par_max != nullptr) {
-        par_max->deleteReducedParasitics(net);
+  // Apply the adjustment with bounded re-convergence. iterations==1 is exactly
+  // the slice-1 single pass; >1 lets aggressor windows settle as victim delays
+  // degrade. Per-pass setup TNS is reported so the user can see convergence.
+  // For the slice-1-equivalent path (single pass, direction off) we pass no
+  // tns sink so the engine behaves byte-identically to slice-1 (no extra
+  // timing query is forced).
+  const bool want_trace = (st.iterations > 1) || direction;
+  std::vector<double> tns_trace;
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_converge(
+      sta, db_network, block, corner, k, guardband, max_nets, direction,
+      st.iterations, want_trace ? &tns_trace : nullptr);
+
+  if (want_trace) {
+    sta::Report *report = sta->report();
+    report->report(
+        "Crosstalk-aware delay: {} pass(es), direction tracking {}.",
+        st.iterations, direction ? "ON" : "off");
+    double prev = 0.0;
+    for (size_t p = 0; p < tns_trace.size(); p++) {
+      const double tns = tns_trace[p];
+      if (p == 0) {
+        report->report("  pass {}: setup TNS = {:.6e}",
+                       static_cast<int>(p + 1), tns);
+      } else {
+        report->report("  pass {}: setup TNS = {:.6e}  (moved {:.3e})",
+                       static_cast<int>(p + 1), tns, tns - prev);
       }
-      if (par_min != nullptr && par_min != par_max) {
-        par_min->deleteReducedParasitics(net);
-      }
+      prev = tns;
     }
   }
-  sta->delaysInvalid();
 }
 
 // Report, per victim: total Cc, in-window (active) Cc, the added effective cap
@@ -1560,7 +1818,8 @@ set_xtalk_delay_factor_cmd(bool enable, double k, double guardband,
 // feature is enabled this re-applies the adjustment (timing reflects it); when
 // disabled it is a pure read-only what-if using the supplied k/guardband.
 void
-report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner)
+report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner,
+                       bool direction)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
@@ -1591,54 +1850,40 @@ report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner)
   const double use_k = st.enabled ? st.k : k;
   const double use_gb = st.enabled ? st.guardband : guardband;
   const int use_mn = st.enabled ? st.max_nets : max_nets;
+  const bool use_dir = st.enabled ? st.direction : direction;
 
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
-      sta, db_network, block, corner, use_k, use_gb, use_mn, mutate);
+      sta, db_network, block, corner, use_k, use_gb, use_mn, use_dir, mutate);
 
   if (mutate) {
-    for (const sta::XtalkDelayResult &r : results) {
-      if (!r.applied) {
-        continue;
-      }
-      sta::Net *net = db_network->dbToSta(r.victim);
-      if (net == nullptr) {
-        continue;
-      }
-      for (sta::Scene *scene : sta->scenes()) {
-        sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
-        sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
-        if (par_max != nullptr) {
-          par_max->deleteReducedParasitics(net);
-        }
-        if (par_min != nullptr && par_min != par_max) {
-          par_min->deleteReducedParasitics(net);
-        }
-      }
-    }
+    sta::xtalk_delay_rereduce(sta, db_network, results);
     sta->delaysInvalid();
   }
 
   sta::Report *report = sta->report();
   report->report(
       "Crosstalk-aware delay report (corner {}, xtalk-delay {}, k={:.3f}, "
-      "guardband={:.3e})",
+      "guardband={:.3e}, direction {})",
       corner,
       st.enabled ? "ENABLED" : "disabled(what-if)",
       use_k,
-      use_gb);
-  report->report("{:<28} {:>10} {:>11} {:>11} {:>11} {:>11} {:>7} {:>7}",
-                 "Victim net", "Cc(fF)", "CcActive(fF)", "dCap(fF)",
-                 "Rdrv(ohm)", "dDelay(s)", "Active", "Applied");
+      use_gb,
+      use_dir ? "ON" : "off");
+  report->report(
+      "{:<28} {:>10} {:>11} {:>11} {:>11} {:>11} {:>7} {:>5} {:>5} {:>7}",
+      "Victim net", "Cc(fF)", "CcActive(fF)", "dCap(fF)", "Rdrv(ohm)",
+      "dDelay(s)", "Active", "Same", "Opp", "Applied");
   report->report(
       "--------------------------------------------------------------------"
-      "------------------------------------");
+      "--------------------------------------------");
   int n_applied = 0;
   for (const sta::XtalkDelayResult &r : results) {
     if (r.applied) {
       n_applied++;
     }
     report->report(
-        "{:<28} {:>10.4f} {:>11.4f} {:>11.4f} {:>11.2f} {:>11.4e} {:>7} {:>7}",
+        "{:<28} {:>10.4f} {:>11.4f} {:>11.4f} {:>11.2f} {:>11.4e} {:>7} {:>5} "
+        "{:>5} {:>7}",
         r.victim->getConstName(),
         r.cc_total,
         r.cc_active,
@@ -1646,6 +1891,8 @@ report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner)
         r.rdrv,
         r.ddelay,
         r.aggr_active,
+        r.aggr_same,
+        r.aggr_opp,
         r.applied ? "yes" : "no");
   }
   report->report(
@@ -1677,15 +1924,109 @@ xtalk_delay_ddelay_for_net_cmd(const char *net_name, double k,
     return -1e30;
   }
   // Read-only what-if over just this victim (max_nets large so it is included).
+  // Direction tracking off => slice-1 behavior (used by the slice-1 test).
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
       sta, db_network, block, corner, k, guardband, /* max_nets */ 0,
-      /* mutate */ false);
+      /* direction */ false, /* mutate */ false);
   for (const sta::XtalkDelayResult &r : results) {
     if (r.victim == net) {
       return r.ddelay;
     }
   }
   return -1e30;
+}
+
+// Slice-2: read-only implied crosstalk stage-delay delta (seconds) for a named
+// net WITH per-edge direction classification. Same-direction aggressors push
+// the delta positive (effective cap up), opposite-direction aggressors push it
+// negative (Miller decoupling). Sentinel < -1e30 if the net is not found.
+// Used by the slice-2 test to assert the signs of the delta differ.
+double
+xtalk_delay_ddelay_dir_for_net_cmd(const char *net_name, double k,
+                                   double guardband, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1e30;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1e30;
+  }
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, k, guardband, /* max_nets */ 0,
+      /* direction */ true, /* mutate */ false);
+  for (const sta::XtalkDelayResult &r : results) {
+    if (r.victim == net) {
+      return r.ddelay;
+    }
+  }
+  return -1e30;
+}
+
+// Slice-2: number of active aggressor segments of a named net classified as
+// same-direction (kind=0) or opposite-direction (kind=1) with per-edge
+// direction tracking on. Returns -1 if the net is not found. Read-only.
+int
+xtalk_delay_dir_count_for_net_cmd(const char *net_name, int kind,
+                                  double guardband, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1;
+  }
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, /* k */ 1.0, guardband,
+      /* max_nets */ 0, /* direction */ true, /* mutate */ false);
+  for (const sta::XtalkDelayResult &r : results) {
+    if (r.victim == net) {
+      return (kind == 0) ? r.aggr_same : r.aggr_opp;
+    }
+  }
+  return -1;
+}
+
+// Slice-2: same-direction (kind=0) or opposite-direction (kind=1) active
+// coupling cap (fF) for a named net with per-edge direction tracking on.
+// Returns < 0 if the net is not found. Read-only. Lets the test assert the
+// hand calculation dDelay = Rdrv * k * (CcSame - CcOpp) * 1e-15.
+double
+xtalk_delay_dir_cc_for_net_cmd(const char *net_name, int kind,
+                               double guardband, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1.0;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1.0;
+  }
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, /* k */ 1.0, guardband,
+      /* max_nets */ 0, /* direction */ true, /* mutate */ false);
+  for (const sta::XtalkDelayResult &r : results) {
+    if (r.victim == net) {
+      return (kind == 0) ? r.cc_same : r.cc_opp;
+    }
+  }
+  return -1.0;
 }
 
 // Return the in-window (active) coupling cap (fF) for a single named net, or
@@ -1709,7 +2050,7 @@ xtalk_delay_active_cc_for_net_cmd(const char *net_name, double guardband,
   }
   std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
       sta, db_network, block, corner, /* k */ 1.0, guardband,
-      /* max_nets */ 0, /* mutate */ false);
+      /* max_nets */ 0, /* direction */ false, /* mutate */ false);
   for (const sta::XtalkDelayResult &r : results) {
     if (r.victim == net) {
       return r.cc_active;
