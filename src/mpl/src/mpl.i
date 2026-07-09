@@ -173,6 +173,12 @@ block_macro_channels()
   getMacroPlacer()->blockMacroChannels();
 }
 
+void
+report_macro_placement()
+{
+  getMacroPlacer()->reportMacroPlacement();
+}
+
 } // namespace
 
 %} // inline

@@ -168,6 +168,33 @@ For each macro, the halo used is resolved by this priority:
 block_macro_channels
 ```
 
+### Report Macro Placement
+
+Reports post-placement quality-of-result (QoR) metrics for the macros in the
+current block. This is a read-only analysis command: it inspects the final
+placement and does not modify the database, so it is safe to run at any point
+after macros have been placed.
+
+The report includes:
+
+- Number of placed macros and their total area.
+- The macro bounding-box (envelope) area, the dead space within it, and the
+  resulting packing efficiency.
+- Total design half-perimeter wirelength (HPWL) and the HPWL contribution of
+  the nets connected to macros.
+- Minimum and average spacing from macros to the core boundary.
+- The minimum macro-to-macro channel gap (and a count of overlapping macro
+  pairs, if any).
+- A per-macro table with location, orientation and area.
+
+It also emits metrics (`macro_place__num_macros`, `macro_place__macro_area_um2`,
+`macro_place__packing_efficiency`, `macro_place__macro_net_hpwl_um`,
+`macro_place__min_boundary_spacing_um`) for downstream tooling.
+
+```tcl
+report_macro_placement
+```
+
 ## Example scripts
 
 Example of a script demonstrating how to run `mpl` on a sample design of `bp_fe_top` as follows:

@@ -353,6 +353,20 @@ proc block_macro_channels { args } {
   mpl::block_macro_channels
 }
 
+sta::define_cmd_args "report_macro_placement" {}
+proc report_macro_placement { args } {
+  sta::parse_key_args "report_macro_placement" args \
+    keys {} flags {}
+
+  sta::check_argc_eq0 "report_macro_placement" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error MPL 81 "Could not report macro placement. No block found."
+  }
+
+  mpl::report_macro_placement
+}
+
 namespace eval mpl {
 proc parse_halo { halo } {
   set length [llength $halo]

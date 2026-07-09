@@ -81,6 +81,7 @@ cc_library(
         "src/clusterEngine.cpp",
         "src/hier_rtlmp.cpp",
         "src/hier_rtlmp.h",
+        "src/report.cpp",
         "src/rtl_mp.cpp",
     ],
     hdrs = [
