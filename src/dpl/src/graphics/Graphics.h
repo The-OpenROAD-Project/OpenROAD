@@ -4,6 +4,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -53,6 +54,14 @@ class Graphics : public gui::Renderer, public DplObserver
                                   const odb::Rect& curr_window) override;
   void clearNegotiationSearchWindows() override;
 
+  void addNegotiationViolationsPoint(int iter,
+                                     int violations,
+                                     int illegal_count,
+                                     int illegal_site_count) override;
+  void addNegotiationPhase2Marker(int iter) override;
+  void setCurrentIterMovers(
+      const std::unordered_set<odb::dbInst*>& movers) override;
+
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
 
@@ -80,6 +89,13 @@ class Graphics : public gui::Renderer, public DplObserver
   // can look up whichever instance the user has selected in the GUI.
   std::unordered_map<odb::dbInst*, std::pair<odb::Rect, odb::Rect>>
       negotiation_search_windows_;
+
+  // Cells that moved during the most recent negotiation iteration.
+  // Empty means "no iteration info available" — all movers use directional
+  // colors.
+  std::unordered_set<odb::dbInst*> current_iter_movers_;
+
+  gui::Chart* violations_chart_ = nullptr;
 };
 
 }  // namespace dpl
