@@ -16,6 +16,7 @@ or_integration_tests(
     coupling_si_window
     coupling_xtalk_delay
     coupling_xtalk_direction
+    coupling_xtalk_hold
 )
 
 #generate_rules
