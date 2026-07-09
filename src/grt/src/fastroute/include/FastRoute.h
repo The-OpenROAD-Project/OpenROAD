@@ -875,6 +875,11 @@ class FastRouteCore
   multi_array<int, 3> d1_3D_;
   multi_array<int, 3> d2_3D_;
   multi_array<int, 3> path_len_3D_;
+  // Reusable BFS scratch for addNeighborPoints (3D). Mirrors the maze2D
+  // visited_2D_/queue_2D_ reuse pattern: allocate once, reset the used region
+  // each call instead of reallocating per call.
+  std::vector<bool> visited_3D_;
+  std::vector<int> queue_3D_;
   double snapshot_batch_sync_time_ = 0.0;
   double snapshot_batch_route_time_ = 0.0;
   double snapshot_batch_apply_time_ = 0.0;

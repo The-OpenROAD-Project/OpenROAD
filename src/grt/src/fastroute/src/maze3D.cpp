@@ -101,8 +101,13 @@ void FastRouteCore::addNeighborPoints(const int netID,
   const int y1 = treenodes[n1].y;
 
   const int numNodes = sttrees_[netID].num_nodes();
-  std::vector<bool> heapVisited(numNodes, false);
-  std::vector<int> heapQueue(numNodes);
+  // Reuse member scratch buffers instead of allocating per call (mirrors the
+  // maze2D visited_2D_/queue_2D_ pattern). heapVisited must start all-false;
+  // heapQueue is written before read so only its size matters.
+  visited_3D_.assign(numNodes, false);
+  queue_3D_.resize(numNodes);
+  std::vector<bool>& heapVisited = visited_3D_;
+  std::vector<int>& heapQueue = queue_3D_;
 
   int queuehead = 0;
   int queuetail = 0;
