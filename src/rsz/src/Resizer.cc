@@ -4963,7 +4963,7 @@ class ClkArrivalSearchPred : public sta::EvalPred
 
 sta::InstanceSeq Resizer::findClkInverters()
 {
-  sta::InstanceSeq clk_inverters;
+  std::vector<std::pair<sta::Level, sta::Instance*>> inverters;
   ClkArrivalSearchPred srch_pred(this);
   std::vector<sta::Vertex*> seeds;
   for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
@@ -4982,7 +4982,7 @@ sta::InstanceSeq Resizer::findClkInverters()
         sta::Instance* inst = network_->instance(pin);
         sta::LibertyCell* lib_cell = network_->libertyCell(inst);
         if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
-          clk_inverters.emplace_back(inst);
+          inverters.emplace_back(vertex->level(), inst);
           debugPrint(logger_,
                      RSZ,
                      "repair_clk_inverters",
@@ -4992,6 +4992,19 @@ sta::InstanceSeq Resizer::findClkInverters()
         }
         return !vertex->isRegClk();
       });
+  // cloneClkInverter moves an inverter's loads onto its input net, so an
+  // upstream inverter must be cloned before the inverters it drives or it
+  // gets cloned once per downstream clone instead of once per load.
+  std::stable_sort(inverters.begin(),
+                   inverters.end(),
+                   [](const std::pair<sta::Level, sta::Instance*>& lhs,
+                      const std::pair<sta::Level, sta::Instance*>& rhs) {
+                     return lhs.first < rhs.first;
+                   });
+  sta::InstanceSeq clk_inverters;
+  for (const auto& [level, inst] : inverters) {
+    clk_inverters.emplace_back(inst);
+  }
   return clk_inverters;
 }
 
