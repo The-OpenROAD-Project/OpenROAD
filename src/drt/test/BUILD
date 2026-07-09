@@ -29,6 +29,7 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
+    "gcd_nangate45_distributed_multiworker",
 ]
 
 # Single-host distributed detailed-route test. It spawns a leader + 2 worker
@@ -45,6 +46,7 @@ ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 BIG_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
+    "gcd_nangate45_distributed_multiworker",
 ]
 
 PY_TESTS = [
@@ -63,6 +65,9 @@ filegroup(
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "drt_aux.py",
+        "distributed_balancer.tcl",
+        "distributed_multiworker_harness.tcl",
+        "distributed_worker.tcl",
         "gcd_nangate45.route_guide",
         "gcd_nangate45.tcl",
         "gcd_nangate45_distributed.tcl",
