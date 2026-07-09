@@ -34,6 +34,9 @@ ALL_TESTS = [
     "modnet_port_alias",
     "network_edit1",
     "power1",
+    "pocv_baseline",
+    "pocv_derate",
+    "pocv_propagate",
     "read_def_bus_port",
     "read_liberty1",
     "read_vcd",
@@ -110,6 +113,18 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "pocv_baseline": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
+            ],
+            "pocv_derate": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
+            ],
+            "pocv_propagate": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
+            ],
             "block_sta1": [
                 "example1_typ.lib",
                 "example1.def",

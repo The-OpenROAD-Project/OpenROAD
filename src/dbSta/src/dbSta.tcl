@@ -203,17 +203,27 @@ proc check_ip { args } {
 define_cmd_args "set_pocv_sigma" { \
   [-sigma per_stage_fraction] \
   [-n_sigma sigma_multiple] \
+  [-propagate] \
   [-reset] }
 
 # Configure parametric POCV used by report_checks_pocv. -sigma is the per-stage
 # fractional delay sigma (k), e.g. 0.05 for 5% 1-sigma per stage. -n_sigma is
 # the sign-off sigma multiple (e.g. 3 for 3-sigma); defaults to 3 if omitted.
-# -reset returns to inactive (POCV slack == flat slack). POCV is report-only and
-# NEVER changes propagation/worst-slack timing (the forward search is untouched).
+# -reset returns to inactive (POCV slack == flat slack).
+#
+# By default POCV is REPORT-ONLY and never changes propagation/worst-slack
+# timing (the forward search is untouched). With -propagate, POCV becomes a
+# PROPAGATION-TIME statistical derate: a synthetic per-stage variance (k*d_i)^2
+# is injected into combinational data-path arcs during the forward search,
+# accumulated in quadrature by the native statistical delay-ops, and read out as
+# arrival +/- n_sigma*sqrt(variance) at every setup/hold check. This makes
+# report_checks / report_wns / report_tns reflect the statistical (sqrt(N))
+# pessimism directly. -reset (or -propagate off via a plain set/reset) returns
+# the timer to scalar delay-ops, i.e. byte-identical baseline timing.
 proc set_pocv_sigma { args } {
   parse_key_args "set_pocv_sigma" args \
     keys {-sigma -n_sigma} \
-    flags {-reset}
+    flags {-reset -propagate}
 
   check_argc_eq0 "set_pocv_sigma" $args
 
@@ -234,7 +244,11 @@ proc set_pocv_sigma { args } {
     set n_sigma $keys(-n_sigma)
     sta::check_positive_float "-n_sigma" $n_sigma
   }
-  sta::pocv_sigma_set $sigma $n_sigma
+  if { [info exists flags(-propagate)] } {
+    sta::pocv_sigma_set_propagate $sigma $n_sigma
+  } else {
+    sta::pocv_sigma_set $sigma $n_sigma
+  }
 }
 
 define_cmd_args "report_checks_pocv" { \

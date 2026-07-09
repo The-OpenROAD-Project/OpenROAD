@@ -10,6 +10,7 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/PocvDerate.hh"
+#include "sta/PocvMode.hh"  // OpenROAD-fork: LVF -- PocvMode for propagation
 #include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
@@ -355,11 +356,44 @@ pocv_sigma_set(float per_stage,
   pocvSyncState();
 }
 
+// OpenROAD-fork: LVF -- enable PROPAGATION-TIME POCV. In addition to the
+// report-only state, this flips the timer into statistical (normal) delay-ops
+// with the sign-off quantile = n_sigma, so the synthetic per-stage variance
+// injected in Search::deratedDelayData accumulates in quadrature through the
+// forward search and is read out as mean +/- n_sigma*sqrt(var) at the checks.
+// Switching the mode invalidates arrivals (handled by Sta::setPocvMode).
+void
+pocv_sigma_set_propagate(float per_stage,
+                         float n_sigma)
+{
+  Search::PocvSigma &s = pocvSigmaState();
+  s.enabled = true;
+  s.per_stage = per_stage;
+  s.n_sigma = n_sigma;
+  s.propagate = true;
+  pocvSyncState();
+
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  // n_sigma is the sign-off quantile used by DelayOpsNormal::asFloat.
+  sta->setPocvQuantile(n_sigma);
+  // Statistical readout of the accumulated variance.
+  sta->setPocvMode(sta::PocvMode::normal);
+}
+
 void
 pocv_sigma_clear()
 {
+  const bool was_propagate = pocvSigmaState().propagate;
   pocvSigmaState() = Search::PocvSigma();  // back to inactive default
   pocvSyncState();
+  // OpenROAD-fork: LVF -- if propagation mode had been enabled, return the
+  // timer to scalar delay-ops so timing is byte-identical to baseline again.
+  if (was_propagate) {
+    ord::OpenRoad *openroad = ord::getOpenRoad();
+    sta::dbSta *sta = openroad->getSta();
+    sta->setPocvMode(sta::PocvMode::scalar);
+  }
 }
 
 bool
@@ -392,6 +426,42 @@ pocv_adjust_path_end(PathEnd *path_end)
   out.push_back(fmt(time_unit->staToUser(r.flat_sigma)));
   out.push_back(fmt(time_unit->staToUser(r.rss_sigma)));
   out.push_back(fmt(r.n_sigma));
+  return out;
+}
+
+// OpenROAD-fork: LVF -- read the PROPAGATION-TIME statistical slack of a path
+// end. During propagation-mode POCV the path's arrival carries an accumulated
+// variance (sum of (k*d_i)^2). The Tcl `slack`/`arrival` properties expose only
+// the MEAN (delayAsFloat single-arg), so this accessor exposes the full
+// statistical picture for testing/reporting. Returns a Tcl list:
+//   {mean_slack slack_std_dev stat_slack n_sigma}
+// where stat_slack = mean_slack - n_sigma*slack_std_dev (worst-case readout:
+// the slack std-dev combines arrival+required variance, and the statistical
+// worst slack subtracts the sigma margin). With POCV inactive / propagate off,
+// slack_std_dev == 0 so stat_slack == mean_slack (baseline-safe).
+StringSeq
+pocv_path_end_stat_slack(PathEnd *path_end)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  const sta::Slack slack = path_end->slack(sta);
+  const float mean = slack.mean();
+  const float std_dev = slack.stdDev();
+  const float n_sigma = pocvSigmaState().n_sigma;
+  // Worst-case statistical slack: pull the slack down by n_sigma sigmas.
+  const float stat = mean - n_sigma * std_dev;
+  sta::Unit *time_unit = sta->units()->timeUnit();
+  auto fmt = [](double v) {
+    std::ostringstream ss;
+    ss.setf(std::ios::fixed);
+    ss << std::setprecision(9) << v;
+    return ss.str();
+  };
+  StringSeq out;
+  out.push_back(fmt(time_unit->staToUser(mean)));
+  out.push_back(fmt(time_unit->staToUser(std_dev)));
+  out.push_back(fmt(time_unit->staToUser(stat)));
+  out.push_back(fmt(n_sigma));
   return out;
 }
 

@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     pocv_derate
     pocv_baseline
+    pocv_propagate
     block_sta1
     check_axioms
     clock_pin
