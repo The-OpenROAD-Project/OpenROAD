@@ -17,10 +17,18 @@ or_integration_tests(
     via_access_layer
   PASSFAIL_TESTS
     cpp_tests
+    gcd_nangate45_distributed_local
 )
 
 set_tests_properties(
   drt.ndr_vias1.tcl
   drt.ndr_vias2.tcl
+  PROPERTIES TIMEOUT 900
+)
+
+# The single-host distributed-route test spawns a leader + 2 worker processes
+# + a balancer and routes gcd twice (baseline + distributed); give it headroom.
+set_tests_properties(
+  drt.gcd_nangate45_distributed_local.tcl
   PROPERTIES TIMEOUT 900
 )

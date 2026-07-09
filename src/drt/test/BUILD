@@ -31,6 +31,15 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
 ]
 
+# Single-host distributed detailed-route test. It spawns a leader + 2 worker
+# processes + a balancer (binding localhost sockets on dynamically-allocated
+# ports) and asserts the distributed routed DEF equals the non-distributed
+# baseline. Registered and verified under CMake/ctest; tagged "manual" +
+# "requires-network" for Bazel because the sandbox may forbid opening sockets.
+DISTRIBUTED_TESTS = [
+    "gcd_nangate45_distributed_local",
+]
+
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 BIG_TESTS = [
@@ -57,6 +66,8 @@ filegroup(
         "gcd_nangate45.route_guide",
         "gcd_nangate45.tcl",
         "gcd_nangate45_distributed.tcl",
+        "distributed_worker.tcl",
+        "distributed_balancer.tcl",
         "gcd_nangate45_dump_worker.tcl",
         "gcd_nangate45_preroute.def",
         "gcd_nangate45_test_worker.tcl",
@@ -124,6 +135,29 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+# Single-host distributed detailed-route regression. The harness re-execs the
+# OpenROAD binary (argv0) to launch local workers + a balancer, so it needs the
+# baseline + worker + balancer scripts as runfiles. Tagged "manual" and
+# "requires-network" because the Bazel sandbox commonly forbids opening
+# sockets; it is the CMake/ctest path that gates this test in CI. Run with:
+#   bazel test //src/drt/test:gcd_nangate45_distributed_local --test_tag_filters=
+filegroup(
+    name = "gcd_nangate45_distributed_local_resources",
+    srcs = [":regression_resources"] + glob(["gcd_nangate45_distributed_local.*"]),
+)
+
+regression_test(
+    name = "gcd_nangate45_distributed_local",
+    size = "large",
+    check_passfail = True,
+    data = [":gcd_nangate45_distributed_local_resources"],
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+    visibility = ["//visibility:public"],
+)
 
 py_library(
     name = "helpers",
