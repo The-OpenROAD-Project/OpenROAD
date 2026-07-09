@@ -182,6 +182,42 @@ proc report_pba_slack { args } {
   sta::report_pba_slack_cmd $max_paths max
 }
 
+define_cmd_args "report_cppr" {[-max_paths count] [-setup] [-hold]}
+
+# CPPR / CRPR -- Clock Reconvergence Pessimism Removal report (additive,
+# report-only diagnostic). For the top -max_paths critical checks, reports:
+#   * Raw slack    -- common clock-path pessimism still DOUBLE-COUNTED
+#                     (PathEnd::slackNoCrpr); the conservative slack.
+#   * CPPR slack   -- common-path credit applied (PathEnd::slack); this is
+#                     the default GBA result reported by report_checks.
+#   * Credit       -- pessimism credited back (CPPR slack - Raw slack >= 0).
+#   * Common pin   -- the deepest shared clock pin (the branch point) the
+#                     credit is attributed to.
+# OpenSTA already implements CRPR and enables it by default under OCV
+# analysis; this command SURFACES the raw-vs-adjusted split per check using
+# the engine's own numbers. It does NOT change report_checks / GBA results
+# and does NOT mutate the timing graph. -setup (default) analyzes max
+# (setup) checks; -hold analyzes min (hold) checks.
+proc report_cppr { args } {
+  parse_key_args "report_cppr" args \
+    keys {-max_paths} flags {-setup -hold}
+
+  check_argc_eq0 "report_cppr" $args
+
+  set max_paths 10
+  if { [info exists keys(-max_paths)] } {
+    set max_paths $keys(-max_paths)
+    sta::check_positive_integer "-max_paths" $max_paths
+  }
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 2104 "report_cppr: -setup and -hold are mutually exclusive."
+  }
+  set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+
+  sta::report_cppr_cmd $max_paths $min_max
+}
+
 proc endpoint_path_count { } {
   return [endpoint_count]
 }

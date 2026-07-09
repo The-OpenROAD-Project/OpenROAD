@@ -19,6 +19,7 @@
 #include "db_sta/AocvDerate.hh"
 #include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
+#include "db_sta/CpprReport.hh"
 #include "ord/OpenRoad.hh"
 #include "sta/Graph.hh"
 #include "sta/Network.hh"
@@ -383,6 +384,50 @@ pba_slack_report_lines(int max_paths,
                   r.pba_slack,
                   r.recovered,
                   r.gate_stages);
+    lines.push_back(buf);
+  }
+  return lines;
+}
+
+// CPPR / CRPR -- Clock Reconvergence Pessimism Removal report (additive,
+// report-only diagnostic). For the top max_paths critical checks, reports
+// the raw slack (common-path pessimism still double-counted), the CPPR
+// slack (common-path credit applied -- the default GBA result) and the
+// credited pessimism, plus the deepest shared clock pin. The credit is the
+// engine's own (slack - slackNoCrpr); this does NOT change report_checks /
+// GBA results and does NOT mutate the timing graph.
+void
+report_cppr_cmd(int max_paths,
+                const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportCppr(sta, max_paths, min_max);
+}
+
+// Machine-readable variant for testing. Returns one string per check:
+//   "<endpoint> <raw_slack> <cppr_slack> <credit> <common_pin>"
+// with times in seconds (STA internal units). common_pin is "(none)" when
+// no shared clock pin was identified.
+StringSeq
+cppr_report_lines(int max_paths,
+                  const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::CpprPathResult> results =
+      sta::computeCpprSlack(sta, max_paths, min_max);
+  StringSeq lines;
+  for (const sta::CpprPathResult &r : results) {
+    char buf[1024];
+    std::snprintf(buf, sizeof(buf), "%s %.6e %.6e %.6e %s",
+                  r.endpoint.c_str(),
+                  r.raw_slack,
+                  r.cppr_slack,
+                  r.credit,
+                  r.common_pin.empty() ? "(none)" : r.common_pin.c_str());
     lines.push_back(buf);
   }
   return lines;

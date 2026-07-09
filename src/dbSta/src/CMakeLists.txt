@@ -12,6 +12,7 @@ add_library(dbSta_lib
   SpefWriter.cc
   IpChecker.cc
   PbaReport.cc
+  CpprReport.cc
   AocvDerate.cc
 )
 
