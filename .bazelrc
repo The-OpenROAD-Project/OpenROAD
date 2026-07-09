@@ -111,6 +111,9 @@ build:asan --copt=-DADDRESS_SANITIZER
 build:asan --copt=-O1
 build:asan --copt=-g
 build:asan --copt=-fno-omit-frame-pointer
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:asan --copt=-gz=zlib
+build:asan --linkopt=-gz=zlib
 build:asan --linkopt=-fsanitize=address
 # TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
 # dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
@@ -123,6 +126,9 @@ build:profile --strip=never
 build:profile --copt -g --host_copt -g
 build:profile --copt -gmlt --host_copt -gmlt
 build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:profile --copt=-gz=zlib --host_copt=-gz=zlib
+build:profile --linkopt=-gz=zlib
 
 # Improve hermeticity by disallowing user envars and network access
 build --incompatible_strict_action_env
