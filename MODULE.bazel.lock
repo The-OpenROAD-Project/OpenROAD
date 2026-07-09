@@ -827,7 +827,8 @@
     "https://bcr.bazel.build/modules/yaml-cpp/0.9.0/MODULE.bazel": "d0841e12e92973d7e4c97557198335788890dafa9487d6dc0f9b852053a6c5c0",
     "https://bcr.bazel.build/modules/yaml-cpp/0.9.0/source.json": "07a9973d6cee81c8bdb1902e8f90064a0ef9aa2262bffc4df2ed577956c08e1b",
     "https://bcr.bazel.build/modules/yosys/0.62.bcr.2/MODULE.bazel": "2297c50983665b308449febf965616d11c28ce70ef04829f7a4de97d5d537726",
-    "https://bcr.bazel.build/modules/yosys/0.62.bcr.2/source.json": "72bf96ef1d9c881889e8e31e9a2af5f3bbbe5c18d83712e5ece7899f1d87655f",
+    "https://bcr.bazel.build/modules/yosys/0.64/MODULE.bazel": "9a15b6f9fc337d3d6b071977a7610365ea4646bc16bb7c6c82c8191806306862",
+    "https://bcr.bazel.build/modules/yosys/0.64/source.json": "dc88b5cc527c8fd2b8200e4043804e9a8c91428a07e8a3d2d5c08334101a075a",
     "https://bcr.bazel.build/modules/yq.bzl/0.1.1/MODULE.bazel": "9039681f9bcb8958ee2c87ffc74bdafba9f4369096a2b5634b88abc0eaefa072",
     "https://bcr.bazel.build/modules/yq.bzl/0.3.2/MODULE.bazel": "0384efa70e8033d842ea73aa4b7199fa099709e236a7264345c03937166670b6",
     "https://bcr.bazel.build/modules/yq.bzl/0.3.2/source.json": "c4ec3e192477e154f08769e29d69e8fd36e8a4f0f623997f3e1f6f7d328f7d7d",
@@ -1022,8 +1023,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "n442YWYaiLaZmB140K7YjK80SbojjoPPnbiBKSmFuSk=",
-        "usagesDigest": "3/2frkS50u3iPaTVPzc49SDaZmcRsNFg/KHB0xlzlBw=",
+        "bzlTransitiveDigest": "X5NaA0e6oQ7Hig3mXh+lSNazwiBL0KxOTjoyMoGECi8=",
+        "usagesDigest": "Sl+5vEs5VjMbQNJiXLSWEN8kU1mJ91JssQdyYFIh1TA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1044,6 +1045,7 @@
               "makefile": "@@orfs+//flow:makefile",
               "makefile_yosys": "@@orfs+//flow:makefile_yosys",
               "openroad": "@@//:openroad",
+              "openroad_qt": "@@//:openroad-qt",
               "opensta": "@@//src/sta:opensta",
               "pdk": "@@orfs+//flow:asap7",
               "yosys": "@@yosys+//:yosys",
