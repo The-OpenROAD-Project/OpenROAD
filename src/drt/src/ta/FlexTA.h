@@ -308,6 +308,13 @@ class FlexTAWorker
   frUInt4 assignIroute_getNextIrouteDirCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getPinCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc);
+  // Mask-aware track-choice bias (multi-patterning). Returns 0 unless
+  // router_cfg_->MASK_AWARE_DRC is set AND the iroute's layer is a multi-mask
+  // routing layer; otherwise it penalizes placing this segment on a track
+  // whose track-parity mask color matches a nearby different-net neighbor
+  // within the same-mask spacing, biasing TA toward a legal MP coloring.
+  // With the flag OFF this is a strict 0 -> cost is byte-identical to base.
+  frUInt4 assignIroute_getMaskCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost_helper(taPin* iroute,
                                          odb::Rect& box,

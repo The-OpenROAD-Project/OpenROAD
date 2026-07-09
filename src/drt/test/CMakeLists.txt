@@ -18,6 +18,7 @@ or_integration_tests(
     via_access_layer
   PASSFAIL_TESTS
     cpp_tests
+    mask_ta
 )
 
 set_tests_properties(

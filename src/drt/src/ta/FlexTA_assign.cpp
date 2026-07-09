@@ -620,6 +620,155 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   }
 }
 
+namespace {
+// Multi-patterning mask color of a track-assigned wire, computed purely from
+// its perpendicular track coordinate. This mirrors EXACTLY the track-parity
+// policy used when colors are written to the output DEF
+// (io::maskColorForPathSeg) and read back by the live FlexGC checker
+// (gcRectMask): color is a deterministic function of the track coordinate, so
+// the color TA reasons about here is identical to the color slice-2 assigns
+// to the same wire and slice-1's audit verifies.
+//
+// `perp` is the X coordinate for a VERTICAL layer (wires run in Y) and the Y
+// coordinate for a HORIZONTAL layer. Returns 0 ("uncolored / unknown") when
+// the layer is single-mask or has no usable pitch.
+int taTrackMask(odb::dbTechLayer* db_layer, frCoord perp)
+{
+  if (db_layer == nullptr) {
+    return 0;
+  }
+  const uint32_t num_masks = db_layer->getNumMasks();
+  if (num_masks <= 1) {
+    return 0;
+  }
+  int pitch;
+  int offset;
+  if (db_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    pitch = db_layer->getPitchX() != 0 ? db_layer->getPitchX()
+                                       : db_layer->getPitch();
+    offset = db_layer->getOffsetX();
+  } else {
+    pitch = db_layer->getPitchY() != 0 ? db_layer->getPitchY()
+                                       : db_layer->getPitch();
+    offset = db_layer->getOffsetY();
+  }
+  if (pitch <= 0) {
+    return 0;
+  }
+  const long double t_real = (static_cast<long double>(perp) - offset) / pitch;
+  long long t = llroundl(t_real);
+  long long parity = t % static_cast<long long>(num_masks);
+  if (parity < 0) {
+    parity += num_masks;
+  }
+  return static_cast<int>(parity + 1);
+}
+}  // namespace
+
+// Mask-aware track-choice bias for multi-patterning. With the flag OFF (the
+// default) this returns 0 immediately, so assignIroute_getCost is
+// arithmetically identical to baseline and TA picks identical tracks.
+//
+// When mask-aware mode is ON and the iroute's layer is a multi-mask routing
+// layer, this penalizes placing the segment on a track whose track-parity
+// mask color matches a nearby DIFFERENT-NET neighbor that is closer than the
+// same-mask spacing. Different-color neighbors add nothing (they may legally
+// pack closer at the relaxed different-mask spacing). The penalty biases
+// assignIroute_bestTrack toward a track whose color avoids same-mask
+// conflicts -- i.e. an actively-chosen legal MP coloring. It is a soft cost
+// only: it never forbids a track, so TA can never fail to find a track it
+// would otherwise have used.
+frUInt4 FlexTAWorker::assignIroute_getMaskCost(taPin* iroute, frCoord trackLoc)
+{
+  // Flag gate: inert unless mask-aware routing is explicitly enabled.
+  if (!router_cfg_->MASK_AWARE_DRC) {
+    return 0;
+  }
+  const frLayerNum lNum = iroute->getGuide()->getLayerNum();
+  auto* layer = getTech()->getLayer(lNum);
+  if (layer->getType() != dbTechLayerType::ROUTING
+      || layer->getNumMasks() <= 1) {
+    return 0;
+  }
+  odb::dbTechLayer* db_layer = layer->getDbLayer();
+  // This iroute's candidate color is fixed by the track it would sit on.
+  const int myMask = taTrackMask(db_layer, trackLoc);
+  if (myMask <= 0) {
+    return 0;
+  }
+  const bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
+  const frCoord width = layer->getWidth();
+  const frCoord halfwidth = width / 2;
+  // Same-mask spacing (the full min spacing for this layer/width).
+  const frCoord sameMaskSpc
+      = layer->getMinSpacingValue(width, width, width, false);
+  const frCoord pitch = layer->getPitch();
+  auto& workerRegionQuery = getWorkerRegionQuery();
+
+  frUInt4 cost = 0;
+  for (auto& uPinFig : iroute->getFigs()) {
+    if (uPinFig->typeId() != tacPathSeg) {
+      continue;
+    }
+    auto* obj = static_cast<taPathSeg*>(uPinFig.get());
+    auto [bp, ep] = obj->getPoints();
+    // Place the segment on the candidate track.
+    if (isH) {
+      bp = {bp.x(), trackLoc};
+      ep = {ep.x(), trackLoc};
+    } else {
+      bp = {trackLoc, bp.y()};
+      ep = {trackLoc, ep.y()};
+    }
+    // Bloat by half-width on each side plus the same-mask spacing window to
+    // find neighbors that could violate same-mask spacing.
+    odb::Rect qbox(bp, ep);
+    qbox.bloat(halfwidth + sameMaskSpc, qbox);
+
+    frOrderedIdSet<taPin*> neighbors;
+    workerRegionQuery.query(qbox, lNum, neighbors);
+    for (auto* nbr : neighbors) {
+      if (nbr == iroute) {
+        continue;
+      }
+      // Same net: connected, not a spacing pair.
+      if (nbr->getGuide()->getNet() == iroute->getGuide()->getNet()) {
+        continue;
+      }
+      for (auto& nUPinFig : nbr->getFigs()) {
+        if (nUPinFig->typeId() != tacPathSeg) {
+          continue;
+        }
+        auto* nObj = static_cast<taPathSeg*>(nUPinFig.get());
+        auto [nbp, nep] = nObj->getPoints();
+        const frCoord nbrTrack = isH ? nbp.y() : nbp.x();
+        // Different-color neighbor: may pack closer, no same-mask penalty.
+        if (taTrackMask(db_layer, nbrTrack) != myMask) {
+          continue;
+        }
+        // Same color: penalize only when the edge-to-edge perpendicular gap
+        // is below the same-mask spacing (i.e. a same-mask spacing risk) and
+        // the segments overlap along the track direction.
+        odb::Rect nbox(nbp, nep);
+        nbox.bloat(halfwidth, nbox);
+        odb::Rect mybox(bp, ep);
+        mybox.bloat(halfwidth, mybox);
+        frCoord dx, dy;
+        box2boxDistSquare(mybox, nbox, dx, dy);
+        const frCoord perpGap = isH ? dy : dx;
+        const frCoord paraGap = isH ? dx : dy;
+        if (paraGap > 0) {
+          continue;  // no parallel-run overlap
+        }
+        if (perpGap > 0 && perpGap < sameMaskSpc) {
+          cost += pitch;  // one pitch per same-mask conflict
+        }
+      }
+    }
+  }
+  return cost;
+}
+
 // This adds a cost based on the connected iroutes. For a vertical iroute if
 // there are more connected iroutes to the right, we should force this iroute
 // towards the right of the gcell (and vice versa). The cost is scaled based on
@@ -937,7 +1086,12 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
       = (tmpAlignCost == 0)
             ? 0
             : router_cfg_->TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
-  return std::max(drcCost + nextIrouteDirCost + pinCost - alignCost, 0);
+  // Multi-patterning track-choice bias (0 unless mask-aware mode is ON and
+  // the layer is multi-mask -> with the flag OFF this term is identically 0
+  // and the cost is byte-identical to baseline).
+  int maskCost = assignIroute_getMaskCost(iroute, trackLoc);
+  return std::max(drcCost + nextIrouteDirCost + pinCost - alignCost + maskCost,
+                  0);
 }
 
 void FlexTAWorker::assignIroute_bestTrack_helper(taPin* iroute,
