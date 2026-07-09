@@ -594,7 +594,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
     gcRect* rect1,
     gcRect* rect2,
     const gtl::rectangle_data<frCoord>& markerRect,
-    const bool rects_abute)
+    const bool rects_abut)
 {
   if (rect1->isFixed() && rect2->isFixed()) {
     return;
@@ -604,7 +604,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
   if (isRect1Obs && isRect2Obs) {
     return;
   }
-  if (rects_abute) {
+  if (rects_abut) {
     bool isSpcRange = false;
     auto reqSpcVal
         = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, 0, isSpcRange);
@@ -826,7 +826,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect1,
     // Zero width markers are not well handled by boost polygon as they
     // tend to disappear in boolean operations.  Give them a bit of extent
     // to avoid this.
-    const bool rects_abute = (prlX == 0 || prlY == 0);
+    const bool rects_abut = (prlX == 0 || prlY == 0);
     if (prlX == 0) {
       gtl::bloat(markerRect, gtl::HORIZONTAL, 1);
     }
@@ -834,7 +834,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect1,
       gtl::bloat(markerRect, gtl::VERTICAL, 1);
     }
     if (rect1->getNet()->isBlockage() || rect2->getNet()->isBlockage()) {
-      checkMetalSpacing_short_obs(rect1, rect2, markerRect, rects_abute);
+      checkMetalSpacing_short_obs(rect1, rect2, markerRect, rects_abut);
     } else {
       checkMetalSpacing_short(rect1, rect2, markerRect);
     }

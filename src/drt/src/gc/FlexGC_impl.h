@@ -257,7 +257,7 @@ class FlexGCWorker::Impl
       gcRect* rect1,
       gcRect* rect2,
       const gtl::rectangle_data<frCoord>& markerRect,
-      const bool rects_abute);
+      const bool rects_abut);
   frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
                                              gcRect* rect2,
                                              frCoord prl,
