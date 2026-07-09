@@ -322,6 +322,9 @@ proc report_checks_pocv { args } {
     $w "RssSigma" $w "Recovered" "Nsigma"]
   foreach path_end $path_ends {
     set row [sta::pocv_adjust_path_end $path_end]
+    if { [llength $row] == 0 } {
+      continue
+    }
     lassign $row endpoint depth flat pocv lin_sigma rss_sigma n_sigma
     set recovered [expr { $pocv - $flat }]
     utl::report [format "%-32s %5d %*.*f %*.*f %*.*f %*.*f %*.*f %7.2f" \
