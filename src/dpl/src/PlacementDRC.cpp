@@ -194,8 +194,6 @@ bool PlacementDRC::checkDRC(const Node* cell,
                             const GridY y,
                             const odb::dbOrientType& orient) const
 {
-  const std::string cell_name = cell->name();
-
   const bool edge_ok = checkEdgeSpacing(cell, x, y, orient);
   const bool padding_ok = checkPadding(cell, x, y);
   const bool blocked_ok = checkBlockedLayers(cell, x, y);
@@ -210,7 +208,7 @@ bool PlacementDRC::checkDRC(const Node* cell,
         "checkDRC",
         1,
         "cell {} at ({}, {}): ok?={} edge={} padding={} blocked={} gap={}",
-        cell_name,
+        cell->name(),
         x.v,
         y.v,
         all_ok ? 1 : 0,
