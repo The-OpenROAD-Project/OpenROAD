@@ -365,6 +365,10 @@ void Node::addUsedLayer(int layer)
 {
   used_layers_ |= 1 << layer;
 }
+void Node::orUsedLayers(uint8_t mask)
+{
+  used_layers_ |= mask;
+}
 bool Node::adjustCurrOrient(const odb::dbOrientType& newOri)
 {
   using odb::dbOrientType;
