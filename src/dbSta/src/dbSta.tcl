@@ -260,6 +260,40 @@ proc report_cppr { args } {
   sta::report_cppr_cmd $max_paths $min_max
 }
 
+define_cmd_args "report_mcmm_slack" {[-max_endpoints count] [-setup] [-hold]}
+
+# MCMM -- Multi-Corner Multi-Mode cross-corner worst-slack report (additive,
+# report-only diagnostic). For the top -max_endpoints critical endpoints,
+# reports for each endpoint:
+#   * the worst slack in EACH active corner (one column per corner),
+#   * the WORST slack across all active corners, and
+#   * the LIMITING corner name (the corner that produced the worst slack).
+# Declare corners up front with `define_corners c1 c2 ...` and associate a
+# liberty per corner with `read_liberty -corner <c> <file>`. OpenSTA already
+# computes the cross-corner minimum; this command SURFACES it per endpoint in
+# one auditable table using the engine's own numbers. It does NOT change
+# report_checks / GBA results and does NOT mutate the timing graph. -setup
+# (default) analyzes max (setup) checks; -hold analyzes min (hold) checks.
+proc report_mcmm_slack { args } {
+  parse_key_args "report_mcmm_slack" args \
+    keys {-max_endpoints} flags {-setup -hold}
+
+  check_argc_eq0 "report_mcmm_slack" $args
+
+  set max_endpoints 10
+  if { [info exists keys(-max_endpoints)] } {
+    set max_endpoints $keys(-max_endpoints)
+    sta::check_positive_integer "-max_endpoints" $max_endpoints
+  }
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 2106 "report_mcmm_slack: -setup and -hold are mutually exclusive."
+  }
+  set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+
+  sta::report_mcmm_slack_cmd $max_endpoints $min_max
+}
+
 proc endpoint_path_count { } {
   return [endpoint_count]
 }

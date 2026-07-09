@@ -51,6 +51,7 @@ or_integration_tests(
     report_pba_slack
     report_pba_hold
     report_cppr
+    report_mcmm_slack
     report_timing_histogram
     report_logic_depth_histogram
     sdc_get1

@@ -20,6 +20,7 @@
 #include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/CpprReport.hh"
+#include "db_sta/McmmReport.hh"
 #include "ord/OpenRoad.hh"
 #include "sta/Graph.hh"
 #include "sta/Network.hh"
@@ -501,6 +502,56 @@ pba_closure_summary(int max_paths,
         + std::to_string(s.recovered_endpoints) + " "
         + std::to_string(s.pba_violations);
   return out.c_str();
+}
+
+// MCMM -- Multi-Corner Multi-Mode cross-corner worst-slack report (additive,
+// report-only). For the top max_endpoints critical endpoints, reports the
+// per-corner worst slack, the worst slack across all active corners and the
+// limiting corner name. Uses OpenSTA's own cross-corner minimum; does NOT
+// change report_checks / GBA results and does NOT mutate the timing graph.
+void
+report_mcmm_slack_cmd(int max_endpoints,
+                      const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportMcmmSlack(sta, max_endpoints, min_max);
+}
+
+// Machine-readable variant for testing. Returns one string per endpoint:
+//   "<endpoint> <worst_slack> <worst_corner> <c0name>=<c0slack|NA> ..."
+// with slacks in seconds (STA internal units). Per-corner entries are listed
+// in scene-index order; a corner with no constrained path for the endpoint
+// is reported as "<name>=NA".
+StringSeq
+mcmm_report_lines(int max_endpoints,
+                  const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::McmmEndpointResult> results =
+      sta::computeMcmmSlack(sta, max_endpoints, min_max);
+  StringSeq lines;
+  for (const sta::McmmEndpointResult &r : results) {
+    std::string line = r.endpoint;
+    char buf[256];
+    std::snprintf(buf, sizeof(buf), " %.6e %s",
+                  r.worst_slack, r.worst_corner.c_str());
+    line += buf;
+    for (const sta::McmmCornerSlack &col : r.corners) {
+      if (col.valid) {
+        std::snprintf(buf, sizeof(buf), " %s=%.6e",
+                      col.corner.c_str(), col.slack);
+      } else {
+        std::snprintf(buf, sizeof(buf), " %s=NA", col.corner.c_str());
+      }
+      line += buf;
+    }
+    lines.push_back(line);
+  }
+  return lines;
 }
 
 } // namespace sta

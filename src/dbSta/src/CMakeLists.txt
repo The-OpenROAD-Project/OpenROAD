@@ -13,6 +13,7 @@ add_library(dbSta_lib
   IpChecker.cc
   PbaReport.cc
   CpprReport.cc
+  McmmReport.cc
   AocvDerate.cc
 )
 

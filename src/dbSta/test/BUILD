@@ -61,6 +61,7 @@ ALL_TESTS = [
     "report_pba_slack",
     "report_pba_hold",
     "report_cppr",
+    "report_mcmm_slack",
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
@@ -220,6 +221,9 @@ filegroup(
                 "pba_gcd.def",
             ],
             "report_cppr": [
+                "cppr.def",
+            ],
+            "report_mcmm_slack": [
                 "cppr.def",
             ],
             "report_timing_histogram": [

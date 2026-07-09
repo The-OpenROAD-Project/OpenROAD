@@ -1,0 +1,17 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: search_crpr
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 7 components and 33 component-terminals.
+[INFO ODB-0133]     Created 10 nets and 17 connections.
+active corners listed (fast+slow): 1
+setup endpoints > 0: 1
+setup worst == min across corners: 1
+setup limiting corner correct: 1
+setup limited by slow corner: 1
+hold endpoints > 0: 1
+hold worst == min across corners: 1
+hold limiting corner correct: 1
+hold limited by fast corner: 1
+slow column min == OpenSTA per-scene worst (slow):  1
+worst column min == OpenSTA cross-corner worst:  1
+gba report_checks unchanged: 1
