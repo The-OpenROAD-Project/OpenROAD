@@ -9,6 +9,7 @@
 #include "odb/PtrSetMap.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/PocvDerate.hh"
 #include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
@@ -312,6 +313,86 @@ void check_axioms_cmd()
 bool parasitics_annotated(Pin *pin, Scene *scene) {
   auto parasitics = scene->parasitics(sta::MinMax::max());
   return parasitics->findParasiticNetwork(pin) != nullptr;
+}
+
+// Parametric statistical OCV (POCV / LVF) derate, first slice (report-only).
+// See POCV_INVESTIGATION.md. Variation combines in QUADRATURE (root-sum-square)
+// along the path, so this is intentionally a report-only recompute on already
+// found paths, NOT a forward-search propagation hook.
+
+// Process-global POCV sigma state, mirrored into Search::PocvSigma. Default
+// (enabled=false, per_stage=0, n_sigma=0) == feature inactive == baseline.
+static Search::PocvSigma &
+pocvSigmaState()
+{
+  static Search::PocvSigma sigma;
+  return sigma;
+}
+
+// OpenROAD-fork: POCV -- push the current sigma state onto Search. This only
+// updates a default-OFF state holder that NO propagation-path code reads, so it
+// never changes timing; it exists so the state lives with the timer and the
+// report can read it back. No arrival invalidation is needed (search unchanged).
+static void
+pocvSyncState()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->search()->setPocvSigma(pocvSigmaState());
+}
+
+// Set the per-stage fractional sigma (k) and the sign-off sigma multiple
+// (n_sigma) and enable POCV. With k==0 or n_sigma==0 the feature stays inactive
+// (POCV slack == flat slack).
+void
+pocv_sigma_set(float per_stage,
+               float n_sigma)
+{
+  Search::PocvSigma &s = pocvSigmaState();
+  s.enabled = true;
+  s.per_stage = per_stage;
+  s.n_sigma = n_sigma;
+  pocvSyncState();
+}
+
+void
+pocv_sigma_clear()
+{
+  pocvSigmaState() = Search::PocvSigma();  // back to inactive default
+  pocvSyncState();
+}
+
+bool
+pocv_sigma_active()
+{
+  return pocvSigmaState().active();
+}
+
+// Recompute the POCV statistical slack for one path end and return a Tcl list:
+//   {endpoint logic_depth flat_slack pocv_slack flat_sigma rss_sigma n_sigma}
+// Slacks and sigmas are converted to the user time unit.
+StringSeq
+pocv_adjust_path_end(PathEnd *path_end)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  PocvPathResult r = pocvAdjustPathEnd(sta, path_end, pocvSigmaState());
+  sta::Unit *time_unit = sta->units()->timeUnit();
+  auto fmt = [](double v) {
+    std::ostringstream ss;
+    ss.setf(std::ios::fixed);
+    ss << std::setprecision(9) << v;
+    return ss.str();
+  };
+  StringSeq out;
+  out.push_back(r.endpoint);
+  out.push_back(std::to_string(r.logic_depth));
+  out.push_back(fmt(time_unit->staToUser(r.flat_slack)));
+  out.push_back(fmt(time_unit->staToUser(r.pocv_slack)));
+  out.push_back(fmt(time_unit->staToUser(r.flat_sigma)));
+  out.push_back(fmt(time_unit->staToUser(r.rss_sigma)));
+  out.push_back(fmt(r.n_sigma));
+  return out;
 }
 
 } // namespace sta

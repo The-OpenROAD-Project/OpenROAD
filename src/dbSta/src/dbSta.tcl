@@ -197,5 +197,102 @@ proc check_ip { args } {
   return [sta::check_ip_cmd $master_name $check_all $max_polygons $verbose]
 }
 
+# Parametric statistical OCV (POCV / LVF) derate -- first slice (report-only).
+# See POCV_INVESTIGATION.md for design, math, and limitations.
+
+define_cmd_args "set_pocv_sigma" { \
+  [-sigma per_stage_fraction] \
+  [-n_sigma sigma_multiple] \
+  [-reset] }
+
+# Configure parametric POCV used by report_checks_pocv. -sigma is the per-stage
+# fractional delay sigma (k), e.g. 0.05 for 5% 1-sigma per stage. -n_sigma is
+# the sign-off sigma multiple (e.g. 3 for 3-sigma); defaults to 3 if omitted.
+# -reset returns to inactive (POCV slack == flat slack). POCV is report-only and
+# NEVER changes propagation/worst-slack timing (the forward search is untouched).
+proc set_pocv_sigma { args } {
+  parse_key_args "set_pocv_sigma" args \
+    keys {-sigma -n_sigma} \
+    flags {-reset}
+
+  check_argc_eq0 "set_pocv_sigma" $args
+
+  if { [info exists flags(-reset)] } {
+    sta::pocv_sigma_clear
+    return
+  }
+
+  if { ![info exists keys(-sigma)] } {
+    utl::error STA 8010 "set_pocv_sigma: specify -sigma (per-stage fractional\
+ sigma) or -reset."
+  }
+  set sigma $keys(-sigma)
+  sta::check_positive_float "-sigma" $sigma
+
+  set n_sigma 3.0
+  if { [info exists keys(-n_sigma)] } {
+    set n_sigma $keys(-n_sigma)
+    sta::check_positive_float "-n_sigma" $n_sigma
+  }
+  sta::pocv_sigma_set $sigma $n_sigma
+}
+
+define_cmd_args "report_checks_pocv" { \
+  [-path_count count] \
+  [-digits digits] \
+  [find_timing_paths options] }
+
+# Report, for the worst setup paths, the logic depth, the flat-OCV slack, the
+# POCV statistical (root-sum-square) slack, the linear vs RSS path sigma, and the
+# pessimism recovered. The RSS path sigma grows as sqrt(depth) while the linear
+# sigma grows as depth, so deeper paths recover proportionally more pessimism --
+# the whole point of parametric POCV. With no sigma set, POCV slack == flat slack.
+proc report_checks_pocv { args } {
+  parse_key_args "report_checks_pocv" args \
+    keys {-path_count -digits} \
+    flags {} 0
+
+  set digits 3
+  if { [info exists keys(-digits)] } {
+    set digits $keys(-digits)
+    sta::check_positive_integer "-digits" $digits
+  }
+
+  set fp_args $args
+  if { [info exists keys(-path_count)] } {
+    sta::check_positive_integer "-path_count" $keys(-path_count)
+    lappend fp_args -group_path_count $keys(-path_count)
+  }
+
+  set path_ends [eval find_timing_paths $fp_args]
+  if { $path_ends == {} } {
+    utl::report "No paths found."
+    return
+  }
+
+  if { ![sta::pocv_sigma_active] } {
+    utl::report "Note: no POCV sigma set (use set_pocv_sigma);\
+ POCV slack == flat slack."
+  }
+
+  set w 12
+  utl::report [format "%-32s %5s %*s %*s %*s %*s %*s %7s" \
+    "Endpoint" "Depth" $w "FlatSlack" $w "PocvSlack" $w "LinSigma" \
+    $w "RssSigma" $w "Recovered" "Nsigma"]
+  foreach path_end $path_ends {
+    set row [sta::pocv_adjust_path_end $path_end]
+    lassign $row endpoint depth flat pocv lin_sigma rss_sigma n_sigma
+    set recovered [expr { $pocv - $flat }]
+    utl::report [format "%-32s %5d %*.*f %*.*f %*.*f %*.*f %*.*f %7.2f" \
+      $endpoint $depth \
+      $w $digits $flat \
+      $w $digits $pocv \
+      $w $digits $lin_sigma \
+      $w $digits $rss_sigma \
+      $w $digits $recovered \
+      $n_sigma]
+  }
+}
+
 # namespace
 }
