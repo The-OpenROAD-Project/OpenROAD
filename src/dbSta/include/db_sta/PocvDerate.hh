@@ -8,8 +8,7 @@
 // already-found critical paths. It does NOT modify the OpenSTA forward search:
 // parametric-POCV variation combines in quadrature, which does not compose with
 // the additive arrival sum the search propagates, so a per-arc propagation hook
-// (like AOCV) is not the right place for it. See POCV_INVESTIGATION.md for the
-// rationale, the quadrature-vs-linear math, and the documented scope.
+// (like AOCV) is not the right place for it.
 
 #pragma once
 

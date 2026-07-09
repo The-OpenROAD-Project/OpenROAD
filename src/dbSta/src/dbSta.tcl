@@ -198,7 +198,7 @@ proc check_ip { args } {
 }
 
 # Parametric statistical OCV (POCV / LVF) derate -- first slice (report-only).
-# See POCV_INVESTIGATION.md for design, math, and limitations.
+# POCV/LVF: parametric statistical OCV (quadrature per-stage variation).
 
 define_cmd_args "set_pocv_sigma" { \
   [-sigma per_stage_fraction] \

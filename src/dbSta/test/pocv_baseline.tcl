@@ -1,7 +1,7 @@
 # POCV must NEVER change propagation timing (worst_slack / WNS / TNS), because
 # parametric POCV is report-only: the OpenSTA forward search is untouched.
 # This proves the #1 correctness gate: flag-on or flag-off, the timer's own
-# numbers are byte-identical. See POCV_INVESTIGATION.md.
+# numbers are byte-identical.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

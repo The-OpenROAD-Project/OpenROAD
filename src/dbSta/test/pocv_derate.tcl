@@ -1,5 +1,5 @@
 # Parametric statistical OCV (POCV / LVF) derate, dbSta first slice
-# (report-only, root-sum-square / quadrature). See POCV_INVESTIGATION.md.
+# (report-only, root-sum-square / quadrature).
 #
 # Verifies the task correctness gates:
 #  (a) Feature inactive (no set_pocv_sigma) -> POCV slack == flat slack exactly

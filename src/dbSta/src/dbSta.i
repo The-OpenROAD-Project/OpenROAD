@@ -320,7 +320,7 @@ bool parasitics_annotated(Pin *pin, Scene *scene) {
 }
 
 // Parametric statistical OCV (POCV / LVF) derate, first slice (report-only).
-// See POCV_INVESTIGATION.md. Variation combines in QUADRATURE (root-sum-square)
+// Variation combines in QUADRATURE (root-sum-square)
 // along the path, so this is intentionally a report-only recompute on already
 // found paths, NOT a forward-search propagation hook.
 
