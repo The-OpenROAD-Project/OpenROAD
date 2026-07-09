@@ -63,6 +63,8 @@ ALL_TESTS = [
     "report_cppr",
     "report_cppr_closure",
     "report_mcmm_slack",
+    "report_incremental_sta",
+    "report_incremental_sta2",
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
@@ -104,6 +106,7 @@ filegroup(
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
         "helpers.tcl",
+        "incremental_sta_helpers.tcl",
         "liberty1.lef",
         "liberty1.lib",
     ],
@@ -229,6 +232,13 @@ filegroup(
             ],
             "report_mcmm_slack": [
                 "cppr.def",
+            ],
+            "report_incremental_sta": [
+                "cppr.def",
+            ],
+            "report_incremental_sta2": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
             ],
             "report_timing_histogram": [
                 "example1_slow.lib",

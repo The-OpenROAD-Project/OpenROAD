@@ -21,6 +21,7 @@
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/CpprReport.hh"
 #include "db_sta/McmmReport.hh"
+#include "db_sta/IncrementalStaReport.hh"
 #include "ord/OpenRoad.hh"
 #include "sta/Graph.hh"
 #include "sta/Network.hh"
@@ -627,6 +628,51 @@ cppr_closure_summary(int max_paths,
         + std::to_string(s.recovered_endpoints) + " "
         + std::to_string(s.cppr_violations);
   return out.c_str();
+}
+
+// Incremental STA -- after a bounded ECO edit (resize / cell swap / buffer
+// insert), report the affected fanout cone and the post-edit slacks taken
+// from OpenSTA's incremental query API. Additive / report-only: it does NOT
+// invalidate timing or change the full-STA / report_checks path.
+void
+report_incremental_sta_cmd(StringSeq seed_insts,
+                           const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<std::string> seeds(seed_insts.begin(), seed_insts.end());
+  sta::reportIncrementalSta(sta, seeds, min_max);
+}
+
+// Machine-readable variant for testing. The first line is a summary:
+//   "SUMMARY <affected_vertices> <affected_endpoints> <total_endpoints> \
+//    <wns> <tns>"
+// Each subsequent line is one endpoint (sorted worst-first):
+//   "<endpoint> <slack> <in_cone:1|0>"
+// Slacks are in seconds (STA internal units).
+StringSeq
+incremental_sta_report_lines(StringSeq seed_insts,
+                             const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<std::string> seeds(seed_insts.begin(), seed_insts.end());
+  sta::IncrementalStaResult r =
+      sta::computeIncrementalSta(sta, seeds, min_max);
+  StringSeq lines;
+  char buf[512];
+  std::snprintf(buf, sizeof(buf), "SUMMARY %d %d %d %.12e %.12e",
+                r.affected_vertices, r.affected_endpoints,
+                r.total_endpoints, r.wns, r.tns);
+  lines.push_back(buf);
+  for (const sta::IncrementalEndpointSlack &ep : r.endpoints) {
+    std::snprintf(buf, sizeof(buf), "%s %.12e %d",
+                  ep.endpoint.c_str(), ep.slack, ep.in_cone ? 1 : 0);
+    lines.push_back(buf);
+  }
+  return lines;
 }
 
 } // namespace sta

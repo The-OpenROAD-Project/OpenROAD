@@ -14,6 +14,7 @@ add_library(dbSta_lib
   PbaReport.cc
   CpprReport.cc
   McmmReport.cc
+  IncrementalStaReport.cc
   AocvDerate.cc
 )
 

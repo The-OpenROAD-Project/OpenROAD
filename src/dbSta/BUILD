@@ -17,6 +17,7 @@ cc_library(
         "src/PbaReport.cc",
         "src/CpprReport.cc",
         "src/McmmReport.cc",
+        "src/IncrementalStaReport.cc",
         "src/dbSta.cc",
     ],
     hdrs = [
@@ -24,6 +25,7 @@ cc_library(
         "include/db_sta/PbaReport.hh",
         "include/db_sta/CpprReport.hh",
         "include/db_sta/McmmReport.hh",
+        "include/db_sta/IncrementalStaReport.hh",
         "include/db_sta/dbSta.hh",
     ],
     includes = [
@@ -143,6 +145,7 @@ cc_library(
         "include/db_sta/PbaReport.hh",
         "include/db_sta/CpprReport.hh",
         "include/db_sta/McmmReport.hh",
+        "include/db_sta/IncrementalStaReport.hh",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",

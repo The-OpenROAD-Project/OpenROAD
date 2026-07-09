@@ -335,6 +335,41 @@ proc report_mcmm_slack { args } {
   sta::report_mcmm_slack_cmd $max_endpoints $min_max
 }
 
+define_cmd_args "report_incremental_sta" \
+  {-cells inst_list [-setup] [-hold]}
+
+# Incremental STA -- prove that after a bounded ECO edit only the affected
+# fanout cone needs re-evaluation, and surface the post-edit slacks.
+#
+# OpenSTA ALREADY recomputes timing incrementally after a netlist edit
+# (resize / replace_cell / connect / disconnect): the dbSta ODB callbacks call
+# the Sta edit hooks which mark only the affected vertices invalid, and the
+# next timing query runs a levelized BFS that touches only the changed cone.
+# This command is ADDITIVE and report-only: it does NOT invalidate timing and
+# does NOT change report_checks / the full-STA path. It (a) identifies the
+# affected fanout cone of the edited cells by walking the timing graph, (b)
+# reports how many endpoints are in that cone vs. the full count, and (c)
+# reports WNS/TNS and per-endpoint slacks from OpenSTA's own incremental query
+# API -- which are identical to a full from-scratch re-run after the same
+# edits. Apply the edits FIRST (e.g. with replace_cell), then run this.
+# -setup (default) analyzes max (setup); -hold analyzes min (hold).
+proc report_incremental_sta { args } {
+  parse_key_args "report_incremental_sta" args \
+    keys {-cells} flags {-setup -hold}
+
+  check_argc_eq0 "report_incremental_sta" $args
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 2108 "report_incremental_sta: -setup and -hold are mutually exclusive."
+  }
+  if { ![info exists keys(-cells)] } {
+    utl::error STA 2109 "report_incremental_sta: -cells <inst_list> is required."
+  }
+  set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+
+  sta::report_incremental_sta_cmd $keys(-cells) $min_max
+}
+
 proc endpoint_path_count { } {
   return [endpoint_count]
 }

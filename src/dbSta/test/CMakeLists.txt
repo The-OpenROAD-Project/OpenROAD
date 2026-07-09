@@ -53,6 +53,8 @@ or_integration_tests(
     report_cppr
     report_cppr_closure
     report_mcmm_slack
+    report_incremental_sta
+    report_incremental_sta2
     report_timing_histogram
     report_logic_depth_histogram
     sdc_get1
