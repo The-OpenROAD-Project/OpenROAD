@@ -38,6 +38,7 @@ or_integration_tests(
     max_cap
     no_clocks
     no_sinks
+    report_clock_tree
     num_max_leaf_sinks
     num_max_leaf_sinks_default
     post_cts_opt

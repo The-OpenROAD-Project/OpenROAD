@@ -131,6 +131,29 @@ report_cts
 | ----- | ----- |
 | `-out_file` | The file to save `cts` reports. If this parameter is omitted, the report is streamed to `stdout` and not saved. |
 
+### Report Clock Tree
+
+This command reports clock-tree quality-of-results (QoR) metrics after a
+successful `clock_tree_synthesis` run. It is read-only and does not modify the
+design. For each synthesized clock (and a combined total when there is more
+than one), it reports:
+- Number of sinks, clock buffers, clock nets and tree levels
+- Total clock-net wire length (microns)
+- Achieved insertion delay / clock latency (min, max, average) from STA
+- Achieved clock skew (max latency - min latency)
+- An estimate of clock switching power (with `-power`)
+
+```tcl
+report_clock_tree
+    [-power]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-power` | Also report an estimate of the clock-tree dynamic switching power. The estimate uses `P = C_load * Vdd^2 * f_clk`, where the load capacitance combines input-pin capacitance and an HPWL-based wire-cap proxy, `Vdd` is taken from the operating conditions, and `f_clk` is derived from the SDC clock period. |
+
 ### Set CTS configuration
 
 This command is used to set the configuration of CTS.

@@ -614,6 +614,18 @@ proc report_cts { args } {
   cts::report_cts_metrics
 }
 
+sta::define_cmd_args "report_clock_tree" {[-power]}
+
+proc report_clock_tree { args } {
+  sta::parse_key_args "report_clock_tree" args \
+    keys {} flags {-power}
+
+  sta::check_argc_eq0 "report_clock_tree" $args
+
+  set report_power [info exists flags(-power)]
+  cts::report_clock_tree $report_power
+}
+
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \

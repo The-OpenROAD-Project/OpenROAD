@@ -22,6 +22,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -47,12 +48,16 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PathEnd.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Sdc.hh"
+#include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
@@ -623,6 +628,375 @@ void TritonCTS::reportCtsMetrics()
         logger_->report("  {}: {}", master->getName(), count);
       }
     }
+  }
+}
+
+//----------------------------------------------------------------------------
+// report_clock_tree: additive, read-only post-CTS QoR analysis.
+//
+// Operates entirely on the OpenDB clock network and OpenSTA timing graph.  It
+// does NOT use the in-memory builders_ (which are cleared after
+// runTritonCts()), nor does it modify the database, so it can be invoked any
+// time after clock_tree_synthesis (or on a restored .odb).
+//----------------------------------------------------------------------------
+
+// Find the rising/max clock arrival at a sink input pin, restricted to paths
+// whose clock network originates at root_net.  Same technique as
+// LatencyBalancer::getVertexClkArrival, but tolerant of missing paths.
+float TritonCTS::getSinkClkArrival(odb::dbITerm* sink_iterm,
+                                   odb::dbNet* root_net)
+{
+  sta::Pin* pin = network_->dbToSta(sink_iterm);
+  if (pin == nullptr) {
+    return std::numeric_limits<float>::quiet_NaN();
+  }
+  sta::Graph* graph = openSta_->ensureGraph();
+  sta::Vertex* vertex = graph->pinDrvrVertex(pin);
+  if (vertex == nullptr) {
+    return std::numeric_limits<float>::quiet_NaN();
+  }
+
+  sta::VertexPathIterator path_iter(vertex, openSta_);
+  while (path_iter.hasNext()) {
+    sta::Path* path = path_iter.next();
+    const sta::ClockEdge* clock_edge = path->clkEdge(openSta_);
+    if (clock_edge == nullptr) {
+      continue;
+    }
+    if (clock_edge->transition() != sta::RiseFall::rise()) {
+      continue;
+    }
+    if (path->minMax(openSta_) != sta::MinMax::max()) {
+      continue;
+    }
+    if (path->clock(openSta_) == nullptr) {
+      continue;
+    }
+    sta::PathExpanded expand(path, openSta_);
+    const sta::Path* start = expand.startPath();
+    if (start == nullptr) {
+      continue;
+    }
+    odb::dbITerm* term = nullptr;
+    odb::dbBTerm* port = nullptr;
+    odb::dbModITerm* modIterm = nullptr;
+    network_->staToDb(start->pin(openSta_), term, port, modIterm);
+    odb::dbNet* start_net = nullptr;
+    if (term) {
+      start_net = term->getNet();
+    } else if (port) {
+      start_net = port->getNet();
+    }
+    if (start_net == root_net) {
+      return path->arrival();
+    }
+  }
+  return std::numeric_limits<float>::quiet_NaN();
+}
+
+// Walk the clock network rooted at root_net, accumulating structural and
+// timing metrics.  Buffers are clock instances with an output that drives
+// another clock net; sinks are clock instances whose input is a leaf (no clock
+// output) -- the same notion used by countSinksPostDbWrite.
+void TritonCTS::collectClockTreeReport(odb::dbNet* root_net,
+                                       const std::string& clock_name,
+                                       float clock_period,
+                                       ClockTreeReport& report)
+{
+  report.clock_name = clock_name;
+  report.root_net = root_net;
+  report.clock_period = clock_period;
+
+  const double dbu = block_ ? block_->getDbUnitsPerMicron()
+                            : db_->getChip()->getBlock()->getDbUnitsPerMicron();
+
+  // Capacitance per dbu of clock wire (farads/dbu) for wire-cap estimate.
+  double cap_per_dbu = 0.0;
+  sta::Scene* corner = openSta_->cmdScene();
+  if (corner != nullptr && estimate_parasitics_ != nullptr) {
+    cap_per_dbu = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6 / dbu;
+  }
+
+  std::unordered_set<odb::dbNet*> visited;
+  std::vector<odb::dbNet*> stack;
+  stack.push_back(root_net);
+  std::unordered_set<odb::dbInst*> counted_buffers;
+
+  // BFS/DFS over the clock-signal nets.  level is tracked per net.
+  std::unordered_map<odb::dbNet*, int> net_level;
+  net_level[root_net] = 0;
+
+  while (!stack.empty()) {
+    odb::dbNet* net = stack.back();
+    stack.pop_back();
+    if (net == nullptr || !visited.insert(net).second) {
+      continue;
+    }
+    if (net->getSigType() != odb::dbSigType::CLOCK) {
+      continue;
+    }
+    report.num_clock_nets++;
+    const int level = net_level[net];
+    report.max_level = std::max(report.max_level, level);
+
+    // Wire length of this clock net (HPWL of its pins, in um) as a wire-length
+    // and wire-cap proxy.  (CTS does not route, so HPWL is the standard proxy.)
+    int min_x = std::numeric_limits<int>::max();
+    int min_y = std::numeric_limits<int>::max();
+    int max_x = std::numeric_limits<int>::lowest();
+    int max_y = std::numeric_limits<int>::lowest();
+    bool has_pin = false;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      int x, y;
+      iterm->getAvgXY(&x, &y);
+      min_x = std::min(min_x, x);
+      min_y = std::min(min_y, y);
+      max_x = std::max(max_x, x);
+      max_y = std::max(max_y, y);
+      has_pin = true;
+    }
+    double net_wl_dbu = 0.0;
+    if (has_pin) {
+      net_wl_dbu = (max_x - min_x) + (max_y - min_y);
+      report.wire_length_um += net_wl_dbu / dbu;
+    }
+    report.total_load_cap += net_wl_dbu * cap_per_dbu;
+
+    // Classify each input pin on this net.
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (iterm->getIoType() != odb::dbIoType::INPUT) {
+        continue;
+      }
+      odb::dbInst* inst = iterm->getInst();
+      odb::dbITerm* out = inst->getFirstOutput();
+      odb::dbNet* out_net = out ? out->getNet() : nullptr;
+      const bool drives_clock
+          = out_net != nullptr && out_net != net
+            && out_net->getSigType() == odb::dbSigType::CLOCK;
+
+      // Accumulate input-pin capacitance into the driving net's load.
+      report.total_load_cap += getInputPinCap(iterm);
+
+      if (drives_clock) {
+        // This is a clock-tree buffer/inverter: descend.
+        if (counted_buffers.insert(inst).second) {
+          report.num_buffers++;
+        }
+        if (visited.find(out_net) == visited.end()) {
+          net_level[out_net] = level + 1;
+          stack.push_back(out_net);
+        }
+      } else {
+        // Leaf sink pin.
+        report.num_sinks++;
+        const float arrival = getSinkClkArrival(iterm, root_net);
+        if (!std::isnan(arrival)) {
+          report.has_latency = true;
+          report.min_latency = std::min(report.min_latency, arrival);
+          report.max_latency = std::max(report.max_latency, arrival);
+          report.sum_latency += arrival;
+          report.latency_samples++;
+        }
+      }
+    }
+  }
+}
+
+// Operating Vdd for the clock switching-power estimate: SDC operating
+// conditions if set, else the liberty default / nominal voltage. 0 if unknown.
+double TritonCTS::clockOperatingVoltage()
+{
+  const sta::Pvt* pvt
+      = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
+  double vdd = (pvt != nullptr) ? pvt->voltage() : 0.0;
+  if (vdd <= 0.0) {
+    sta::LibertyLibrary* lib = network_->defaultLibertyLibrary();
+    if (lib != nullptr) {
+      sta::OperatingConditions* op = lib->defaultOperatingConditions();
+      if (op != nullptr && op->voltage() > 0.0) {
+        vdd = op->voltage();
+      } else if (lib->nominalVoltage() > 0.0) {
+        vdd = lib->nominalVoltage();
+      }
+    }
+  }
+  return vdd;
+}
+
+// Dynamic clock switching power P = C_load * Vdd^2 * f_clk for one clock tree.
+// A clock node toggles every cycle, so per-cycle energy is C*Vdd^2. This is an
+// ESTIMATE (C_load combines pin cap and an HPWL wire-cap proxy). <0 if inputs
+// are unavailable.
+double TritonCTS::clockSwitchingPower(const ClockTreeReport& report, double vdd)
+{
+  if (vdd > 0.0 && report.clock_period > 0.0 && report.total_load_cap > 0.0) {
+    return report.total_load_cap * vdd * vdd / report.clock_period;
+  }
+  return -1.0;
+}
+
+void TritonCTS::emitClockTreeReport(const ClockTreeReport& report,
+                                    bool report_power)
+{
+  const sta::Unit* time_unit = openSta_->units()->timeUnit();
+  // scaleSuffix() yields e.g. "1ns"; drop the leading scale digit so we print
+  // a conventional "0.056 ns" rather than "0.056 1ns".
+  auto unit_suffix = [](const sta::Unit* unit) {
+    std::string s = unit->scaleSuffix();
+    if (!s.empty() && s[0] == '1') {
+      s.erase(0, 1);
+    }
+    return s;
+  };
+  const std::string time_suffix = unit_suffix(time_unit);
+  auto fmt_time = [&](double t) {
+    return time_unit->asString(static_cast<float>(t), 3) + " " + time_suffix;
+  };
+
+  if (report.root_net != nullptr) {
+    logger_->report("Clock tree report for \"{}\" (net {})",
+                    report.clock_name,
+                    report.root_net->getName());
+  } else {
+    logger_->report("Clock tree report for \"{}\"", report.clock_name);
+  }
+  logger_->report("  Sinks:              {}", report.num_sinks);
+  logger_->report("  Clock buffers:      {}", report.num_buffers);
+  logger_->report("  Clock nets:         {}", report.num_clock_nets);
+  logger_->report("  Tree levels:        {}", report.max_level);
+  logger_->report("  Clock wire length:  {:.2f} um", report.wire_length_um);
+
+  if (report.has_latency && report.latency_samples > 0) {
+    const double avg = report.sum_latency / report.latency_samples;
+    const double skew = report.max_latency - report.min_latency;
+    logger_->report("  Insertion delay (latency):");
+    logger_->report("    min: {}", fmt_time(report.min_latency));
+    logger_->report("    max: {}", fmt_time(report.max_latency));
+    logger_->report("    avg: {}", fmt_time(avg));
+    logger_->report("  Clock skew (max-min): {}", fmt_time(skew));
+  } else {
+    logger_->report(
+        "  Insertion delay / skew: not available (run a timing-aware flow"
+        " with clock defined; STA found no clock paths to the sinks).");
+  }
+
+  if (report_power) {
+    const sta::Unit* power_unit = openSta_->units()->powerUnit();
+    if (report.switching_power >= 0.0) {
+      // Multi-clock totals: sum of each clock's own P = C_i * Vdd^2 * f_i,
+      // so clocks at different frequencies are accounted for correctly (a
+      // single aggregate frequency would misestimate the total).
+      logger_->report(
+          "  Estimated clock switching power: {} {} (sum over clocks, "
+          "Cload={:.4g} pF)",
+          power_unit->asString(static_cast<float>(report.switching_power), 3),
+          unit_suffix(power_unit),
+          report.total_load_cap * 1e12);
+    } else {
+      const double vdd = clockOperatingVoltage();
+      const double power = clockSwitchingPower(report, vdd);
+      if (power >= 0.0) {
+        const double freq = 1.0 / report.clock_period;  // Hz
+        logger_->report(
+            "  Estimated clock switching power: {} {} (Vdd={:.3f} V, "
+            "f={:.3f} GHz, Cload={:.4g} pF)",
+            power_unit->asString(static_cast<float>(power), 3),
+            unit_suffix(power_unit),
+            vdd,
+            freq / 1e9,
+            report.total_load_cap * 1e12);
+      } else {
+        logger_->report(
+            "  Estimated clock switching power: not available (need clock"
+            " period from SDC, Vdd from operating conditions, and load cap).");
+      }
+    }
+  }
+}
+
+void TritonCTS::reportClockTree(bool report_power)
+{
+  odb::dbChip* chip = db_->getChip();
+  if (chip == nullptr) {
+    logger_->error(CTS, 253, "No design loaded for report_clock_tree.");
+  }
+  block_ = chip->getBlock();
+  if (block_ == nullptr) {
+    logger_->error(CTS, 250, "No design loaded for report_clock_tree.");
+  }
+
+  // Ensure the timing graph and clock network are built and arrivals are
+  // current, so the clock-arrival queries below have data to read.  This is
+  // read-only with respect to the design (it only updates STA's internal
+  // timing state), mirroring LatencyBalancer::initSta().
+  openSta_->ensureGraph();
+  for (auto mode : openSta_->modes()) {
+    openSta_->ensureClkNetwork(mode);
+  }
+  openSta_->updateTiming(false);
+
+  // Build a map of clock root net -> (sdc clock name, period) from the SDC.
+  sta::Sdc* sdc = openSta_->cmdMode()->sdc();
+  std::vector<odb::dbNet*> skip_nets = options_->getSkipNets();
+
+  unsigned reported = 0;
+  ClockTreeReport totals;
+  totals.clock_name = "ALL CLOCKS";
+
+  for (sta::Clock* clk : sdc->clocks()) {
+    odb::PtrSet<odb::dbNet> clock_nets;
+    findClockRoots(clk, clock_nets);
+    for (odb::dbNet* root_net : clock_nets) {
+      if (root_net == nullptr) {
+        continue;
+      }
+      if (std::ranges::find(skip_nets, root_net) != skip_nets.end()) {
+        continue;
+      }
+      ClockTreeReport report;
+      collectClockTreeReport(root_net, clk->name(), clk->period(), report);
+      if (report.num_sinks == 0 && report.num_buffers == 0) {
+        continue;
+      }
+      emitClockTreeReport(report, report_power);
+      reported++;
+
+      // Accumulate into totals.
+      totals.num_sinks += report.num_sinks;
+      totals.num_buffers += report.num_buffers;
+      totals.num_clock_nets += report.num_clock_nets;
+      totals.max_level = std::max(totals.max_level, report.max_level);
+      totals.wire_length_um += report.wire_length_um;
+      totals.total_load_cap += report.total_load_cap;
+      if (report.has_latency) {
+        totals.has_latency = true;
+        totals.min_latency = std::min(totals.min_latency, report.min_latency);
+        totals.max_latency = std::max(totals.max_latency, report.max_latency);
+        totals.sum_latency += report.sum_latency;
+        totals.latency_samples += report.latency_samples;
+      }
+      totals.clock_period = std::max(totals.clock_period, report.clock_period);
+      // Sum each clock's own switching power (correct across mixed frequencies).
+      const double clk_power
+          = clockSwitchingPower(report, clockOperatingVoltage());
+      if (clk_power >= 0.0) {
+        totals.switching_power
+            = (totals.switching_power < 0.0 ? 0.0 : totals.switching_power)
+              + clk_power;
+      }
+    }
+  }
+
+  if (reported == 0) {
+    logger_->warn(CTS,
+                  251,
+                  "report_clock_tree found no synthesized clock tree. Run "
+                  "clock_tree_synthesis first.");
+    return;
+  }
+
+  if (reported > 1) {
+    emitClockTreeReport(totals, report_power);
   }
 }
 

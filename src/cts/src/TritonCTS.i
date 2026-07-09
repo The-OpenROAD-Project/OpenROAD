@@ -131,6 +131,12 @@ report_cts_metrics()
 }
 
 void
+report_clock_tree(bool report_power)
+{
+  getTritonCts()->reportClockTree(report_power);
+}
+
+void
 set_tree_buf(const char* buffer)
 {
   getTritonCts()->getParms()->setTreeBuffer(buffer);
