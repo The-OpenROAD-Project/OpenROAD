@@ -1,0 +1,249 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+Startpoint: _893_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _869_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _893_/CK (DFF_X1)
+   0.08    0.08 ^ _893_/Q (DFF_X1)
+   0.04    0.13 ^ _734_/Z (BUF_X1)
+   0.05    0.18 ^ _486_/ZN (XNOR2_X1)
+   0.02    0.20 v _487_/ZN (INV_X1)
+   0.08    0.28 ^ _488_/ZN (NOR3_X1)
+   0.04    0.31 v _493_/ZN (NAND4_X1)
+   0.06    0.37 ^ _496_/ZN (NOR3_X1)
+   0.02    0.39 v _542_/ZN (AOI21_X2)
+   0.07    0.46 ^ _543_/ZN (NOR2_X1)
+   0.05    0.52 ^ _544_/Z (BUF_X2)
+   0.03    0.55 v _584_/ZN (NAND3_X1)
+   0.03    0.57 ^ _585_/ZN (OAI211_X2)
+   0.04    0.61 ^ _586_/Z (MUX2_X1)
+   0.02    0.63 ^ _781_/Z (BUF_X1)
+   0.00    0.63 ^ _869_/D (DFF_X1)
+           0.63   data arrival time
+
+   2.00    2.00   clock core_clock (rise edge)
+   0.00    2.00   clock network delay (ideal)
+   0.00    2.00   clock reconvergence pessimism
+           2.00 ^ _869_/CK (DFF_X1)
+  -0.03    1.97   library setup time
+           1.97   data required time
+---------------------------------------------------------
+           1.97   data required time
+          -0.63   data arrival time
+---------------------------------------------------------
+           1.34   slack (MET)
+
+
+===============================================
+QoR Summary
+===============================================
+Design
+  Instances:         571
+  Nets:              533
+  Pins:              2608
+  IO ports:          54
+  Area (um^2):       669.788
+  Utilization (%):   10.468
+Timing
+  Setup:             WNS 0.000  TNS 0.000  WS 1.338
+  Hold:              WNS 0.000  TNS 0.000  WS 0.145
+  Failing endpts:    setup 0  hold 0  (of 69 endpoints)
+Power
+  Internal:          0.000
+  Switching:         0.000
+  Leakage:           0.000
+  Total:             0.001
+Clock
+  Worst skew:        setup 0.000  hold 0.000
+DRC
+  n/a (no markers; design not routed/checked)
+===============================================
+Startpoint: _893_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _869_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _893_/CK (DFF_X1)
+   0.08    0.08 ^ _893_/Q (DFF_X1)
+   0.04    0.13 ^ _734_/Z (BUF_X1)
+   0.05    0.18 ^ _486_/ZN (XNOR2_X1)
+   0.02    0.20 v _487_/ZN (INV_X1)
+   0.08    0.28 ^ _488_/ZN (NOR3_X1)
+   0.04    0.31 v _493_/ZN (NAND4_X1)
+   0.06    0.37 ^ _496_/ZN (NOR3_X1)
+   0.02    0.39 v _542_/ZN (AOI21_X2)
+   0.07    0.46 ^ _543_/ZN (NOR2_X1)
+   0.05    0.52 ^ _544_/Z (BUF_X2)
+   0.03    0.55 v _584_/ZN (NAND3_X1)
+   0.03    0.57 ^ _585_/ZN (OAI211_X2)
+   0.04    0.61 ^ _586_/Z (MUX2_X1)
+   0.02    0.63 ^ _781_/Z (BUF_X1)
+   0.00    0.63 ^ _869_/D (DFF_X1)
+           0.63   data arrival time
+
+   2.00    2.00   clock core_clock (rise edge)
+   0.00    2.00   clock network delay (ideal)
+   0.00    2.00   clock reconvergence pessimism
+           2.00 ^ _869_/CK (DFF_X1)
+  -0.03    1.97   library setup time
+           1.97   data required time
+---------------------------------------------------------
+           1.97   data required time
+          -0.63   data arrival time
+---------------------------------------------------------
+           1.34   slack (MET)
+
+
+timing_unchanged=1
+report_checks_identical=1
+===============================================
+QoR Summary
+===============================================
+Design
+  Instances:         571
+  Nets:              533
+  Pins:              2608
+  IO ports:          54
+  Area (um^2):       669.788
+  Utilization (%):   10.468
+Timing
+  Setup:             WNS 0.000  TNS 0.000  WS 1.338
+  Hold:              WNS 0.000  TNS 0.000  WS 0.145
+  Failing endpts:    setup 0  hold 0  (of 69 endpoints)
+Power
+  Internal:          0.000
+  Switching:         0.000
+  Leakage:           0.000
+  Total:             0.001
+Clock
+  Worst skew:        setup 0.000  hold 0.000
+DRC
+  n/a (no markers; design not routed/checked)
+===============================================
+has_design=1
+has_timing=1
+has_power=1
+has_clock=1
+instances_nonzero=1
+nets_nonzero=1
+area_positive=1
+util_positive=1
+worst_slack_finite=1
+timing_not_na=1
+power_total_finite=1
+power_not_na=1
+{
+  "design": {
+    "instances": 571,
+    "nets": 533,
+    "pins": 2608,
+    "area_um2": 669.788,
+    "utilization_pct": 10.468
+  },
+  "timing": {
+    "setup_wns": 0.000,
+    "setup_tns": 0.000,
+    "setup_ws": 1.338,
+    "hold_wns": 0.000,
+    "hold_tns": 0.000,
+    "hold_ws": 0.145,
+    "setup_failing_endpoints": 0,
+    "hold_failing_endpoints": 0,
+    "endpoints": 69
+  },
+  "power": {
+    "internal": 0.000,
+    "switching": 0.000,
+    "leakage": 0.000,
+    "total": 0.001
+  },
+  "clock": {
+    "worst_skew_setup": 0.000,
+    "worst_skew_hold": 0.000
+  },
+  "drc_violations": null
+}
+json_has_design=1
+json_has_timing_obj=1
+json_has_power_obj=1
+json_timing_not_null=1
+json_power_not_null=1
+json_instances_match=1
+{
+  "design": {
+    "instances": 571,
+    "nets": 533,
+    "pins": 2608,
+    "area_um2": 669.788,
+    "utilization_pct": 10.468
+  },
+  "timing": {
+    "setup_wns": 0.000,
+    "setup_tns": 0.000,
+    "setup_ws": 1.338,
+    "hold_wns": 0.000,
+    "hold_tns": 0.000,
+    "hold_ws": 0.145,
+    "setup_failing_endpoints": 0,
+    "hold_failing_endpoints": 0,
+    "endpoints": 69
+  },
+  "power": {
+    "internal": 0.000,
+    "switching": 0.000,
+    "leakage": 0.000,
+    "total": 0.001
+  },
+  "clock": {
+    "worst_skew_setup": 0.000,
+    "worst_skew_hold": 0.000
+  },
+  "drc_violations": null
+}
+{
+  "design": {
+    "instances": 571,
+    "nets": 533,
+    "pins": 2608,
+    "area_um2": 669.79,
+    "utilization_pct": 10.47
+  },
+  "timing": {
+    "setup_wns": 0.00,
+    "setup_tns": 0.00,
+    "setup_ws": 1.34,
+    "hold_wns": 0.00,
+    "hold_tns": 0.00,
+    "hold_ws": 0.15,
+    "setup_failing_endpoints": 0,
+    "hold_failing_endpoints": 0,
+    "endpoints": 69
+  },
+  "power": {
+    "internal": 0.00,
+    "switching": 0.00,
+    "leakage": 0.00,
+    "total": 0.00
+  },
+  "clock": {
+    "worst_skew_setup": 0.00,
+    "worst_skew_hold": 0.00
+  },
+  "drc_violations": null
+}
+json_digits_default3=1
+json_digits_ok=1

@@ -1,0 +1,69 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+===============================================
+QoR Summary
+===============================================
+Design
+  Instances:         571
+  Nets:              533
+  Pins:              2608
+  IO ports:          54
+  Area (um^2):       669.788
+  Utilization (%):   10.468
+Timing
+  n/a (no clock defined)
+Power
+  n/a (no liberty libraries)
+Clock
+  n/a (no clock defined)
+DRC
+  n/a (no markers; design not routed/checked)
+===============================================
+report_qor_no_error=1
+===============================================
+QoR Summary
+===============================================
+Design
+  Instances:         571
+  Nets:              533
+  Pins:              2608
+  IO ports:          54
+  Area (um^2):       669.788
+  Utilization (%):   10.468
+Timing
+  n/a (no clock defined)
+Power
+  n/a (no liberty libraries)
+Clock
+  n/a (no clock defined)
+DRC
+  n/a (no markers; design not routed/checked)
+===============================================
+instances_nonzero=1
+timing_na=1
+power_na=1
+drc_na=1
+{
+  "design": {
+    "instances": 571,
+    "nets": 533,
+    "pins": 2608,
+    "area_um2": 669.788,
+    "utilization_pct": 10.468
+  },
+  "timing": null,
+  "power": null,
+  "clock": {
+    "worst_skew_setup": null,
+    "worst_skew_hold": null
+  },
+  "drc_violations": null
+}
+json_no_error=1
+json_timing_null=1
+json_power_null=1
+json_drc_null=1
