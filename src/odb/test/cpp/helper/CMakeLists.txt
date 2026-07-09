@@ -5,8 +5,8 @@ add_library(odb_test_helper helper.cpp)
 
 
 target_link_libraries(odb_test_helper
-  PRIVATE
-    odb
+  PUBLIC
+    db
     tst
 )
 
