@@ -115,6 +115,19 @@ gtest_discover_tests(TestSnap
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+add_executable(TestSaveDisplayControls TestSaveDisplayControls.cpp)
+
+target_link_libraries(TestSaveDisplayControls ${TEST_LIBS})
+
+target_include_directories(TestSaveDisplayControls
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestSaveDisplayControls
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 add_dependencies(build_and_test
   TestTileGenerator
   TestRequestHandler
@@ -124,4 +137,5 @@ add_dependencies(build_and_test
   TestClockTreeReport
   TestSaveImage
   TestSnap
+  TestSaveDisplayControls
 )

@@ -59,6 +59,20 @@ save_report_cmd(const char* filename,
   server->saveReport(filename, max_setup, max_hold);
 }
 
+void
+save_display_controls_cmd(const char* filename)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->saveDisplayControls(filename);
+}
+
+void
+restore_display_controls_cmd(const char* filename)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->restoreDisplayControls(filename);
+}
+
 } // namespace web
 
 %} // inline

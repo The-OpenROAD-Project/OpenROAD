@@ -159,3 +159,23 @@ proc web_save_report { args } {
 
   web::save_report_cmd $path $max_setup $max_hold
 }
+
+sta::define_cmd_args "save_display_controls" { filename }
+
+proc save_display_controls { args } {
+  sta::parse_key_args "save_display_controls" args keys {} flags {}
+  sta::check_argc_eq1 "save_display_controls" $args
+  set path [lindex $args 0]
+
+  web::save_display_controls_cmd $path
+}
+
+sta::define_cmd_args "restore_display_controls" { filename }
+
+proc restore_display_controls { args } {
+  sta::parse_key_args "restore_display_controls" args keys {} flags {}
+  sta::check_argc_eq1 "restore_display_controls" $args
+  set path [lindex $args 0]
+
+  web::restore_display_controls_cmd $path
+}

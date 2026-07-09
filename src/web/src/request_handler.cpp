@@ -2343,78 +2343,105 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
 WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                                  SessionState& state)
 {
-  // When debug renderers are active, instance positions change between
-  // frames.  Re-derive highlight shapes from the current inspected
-  // object so the selection tracks the moving instance.
-  const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
-  if (debug_renderers) {
-    std::lock_guard<std::mutex> lock(state.selection_mutex);
-    if (state.current_inspected) {
-      collectHighlightShapes(state.current_inspected,
-                             state.highlight_rects,
-                             state.highlight_polys);
-    }
-  }
-
-  // Snapshot current highlight state
-  std::vector<odb::Rect> rects;
-  std::vector<odb::Polygon> polys;
-  std::vector<ColoredRect> colored;
-  std::vector<FlightLine> lines;
-  {
-    std::lock_guard<std::mutex> lock(state.selection_mutex);
-    rects = state.highlight_rects;
-    rects.insert(
-        rects.end(), state.hover_rects.begin(), state.hover_rects.end());
-    polys = state.highlight_polys;
-    colored = state.timing_rects;
-    lines = state.timing_lines;
-  }
-
-  // Merge DRC overlay shapes
-  {
-    std::lock_guard<std::mutex> lock(state.drc_mutex);
-    colored.insert(
-        colored.end(), state.drc_rects.begin(), state.drc_rects.end());
-    lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
-  }
-
-  // Snapshot route guide nets
-  std::set<uint32_t> route_guides;
-  {
-    std::lock_guard<std::mutex> lock(state.route_guides_mutex);
-    route_guides = state.route_guide_net_ids;
-  }
-  const std::set<uint32_t>* route_guide_ptr
-      = route_guides.empty() ? nullptr : &route_guides;
-
-  // Parse visible layers so route guides respect layer visibility.
-  // has_vis_layers=true means the field was present (even if empty,
-  // which means "all layers hidden" — matching pin-marker semantics).
-  bool has_vis_layers = false;
-  std::set<std::string> vis_layers;
-  if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
-    has_vis_layers = true;
-    const auto& arr = it->value().as_array();
-    for (const auto& elem : arr) {
-      vis_layers.emplace(elem.as_string());
-    }
-  }
-
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = WebSocketResponse::kPng;
-  resp.payload
-      = gen_->generateOverlayTile(static_cast<int>(req.json.at("z").as_int64()),
-                                  static_cast<int>(req.json.at("x").as_int64()),
-                                  static_cast<int>(req.json.at("y").as_int64()),
-                                  rects,
-                                  polys,
-                                  colored,
-                                  lines,
-                                  route_guide_ptr,
-                                  has_vis_layers,
-                                  vis_layers);
+  // Overlay requests run on a bare io_context thread with no dispatcher-level
+  // try/catch, so convert malformed-request exceptions (e.g. a non-bool
+  // toggle flag) into an error response instead of terminating the server.
+  try {
+    // When debug renderers are active, instance positions change between
+    // frames.  Re-derive highlight shapes from the current inspected
+    // object so the selection tracks the moving instance.
+    const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
+    if (debug_renderers) {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (state.current_inspected) {
+        collectHighlightShapes(state.current_inspected,
+                               state.highlight_rects,
+                               state.highlight_polys);
+      }
+    }
+
+    // Snapshot current highlight state
+    // "Highlight selected" toggle (Misc, default on — Qt parity): gates only
+    // the current-selection highlight.  Hover is a separate state and is
+    // always drawn; the selection stays active server-side regardless.
+    const bool highlight_selected
+        = jsonOr(req.json, "highlight_selected", true);
+    std::vector<odb::Rect> rects;
+    std::vector<odb::Polygon> polys;
+    std::vector<ColoredRect> colored;
+    std::vector<FlightLine> lines;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (highlight_selected) {
+        rects = state.highlight_rects;
+        polys = state.highlight_polys;
+      }
+      rects.insert(
+          rects.end(), state.hover_rects.begin(), state.hover_rects.end());
+      colored = state.timing_rects;
+      lines = state.timing_lines;
+    }
+
+    // Merge DRC overlay shapes
+    {
+      std::lock_guard<std::mutex> lock(state.drc_mutex);
+      colored.insert(
+          colored.end(), state.drc_rects.begin(), state.drc_rects.end());
+      lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
+    }
+
+    // Snapshot the nets whose route guides should be drawn.  Always include
+    // the per-net selections (inspector "Show route guides", a web-only
+    // finer control).  When the global "Focused nets guides" toggle is on,
+    // also include every focused net — mirroring the Qt GUI toggle, which
+    // draws the guides of all focused nets at once.
+    const bool focused_nets_guides
+        = jsonOr(req.json, "focused_nets_guides", false);
+    std::set<uint32_t> route_guides;
+    {
+      std::lock_guard<std::mutex> lock(state.route_guides_mutex);
+      route_guides = state.route_guide_net_ids;
+    }
+    if (focused_nets_guides) {
+      std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+      route_guides.insert(state.focus_net_ids.begin(),
+                          state.focus_net_ids.end());
+    }
+    const std::set<uint32_t>* route_guide_ptr
+        = route_guides.empty() ? nullptr : &route_guides;
+
+    // Parse visible layers so route guides respect layer visibility.
+    // has_vis_layers=true means the field was present (even if empty,
+    // which means "all layers hidden" — matching pin-marker semantics).
+    bool has_vis_layers = false;
+    std::set<std::string> vis_layers;
+    if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
+      has_vis_layers = true;
+      const auto& arr = it->value().as_array();
+      for (const auto& elem : arr) {
+        vis_layers.emplace(elem.as_string());
+      }
+    }
+
+    resp.type = WebSocketResponse::kPng;
+    resp.payload = gen_->generateOverlayTile(
+        static_cast<int>(req.json.at("z").as_int64()),
+        static_cast<int>(req.json.at("x").as_int64()),
+        static_cast<int>(req.json.at("y").as_int64()),
+        rects,
+        polys,
+        colored,
+        lines,
+        route_guide_ptr,
+        has_vis_layers,
+        vis_layers);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
   return resp;
 }
 

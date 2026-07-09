@@ -5,7 +5,9 @@
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree } from './vis-tree.js';
-import { getCookie, setCookie } from './theme.js';
+import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor }
+    from './theme.js';
+import { isValidHexColor } from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -919,6 +921,8 @@ export function populateDisplayControls(app, visibility, selectability,
         ]},
         { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
+        { key: 'focused_nets_guides', label: 'Focused nets guides' },
+        { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
     visTree.add({ key: 'debug', label: 'Debug tiles' });
@@ -930,6 +934,41 @@ export function populateDisplayControls(app, visibility, selectability,
         ],
     });
     visTree.render(app.displayControlsEl);
+
+    // Background color control (Qt GUI "Background" parity): a swatch that
+    // opens the native color picker + a reset-to-theme link.  The layout
+    // background is the CSS var --bg-map on the Leaflet container, so this
+    // is purely client-side (tiles are transparent).
+    // Mirrors the CSS default (--bg-map: #111) in the "#rrggbb" form an
+    // <input type="color"> requires.
+    const DEFAULT_BG_COLOR = '#111111';
+    const bgRow = document.createElement('div');
+    bgRow.className = 'bg-color-row';
+    const bgLabel = document.createElement('span');
+    bgLabel.textContent = 'Background';
+    const bgInput = document.createElement('input');
+    bgInput.type = 'color';
+    bgInput.className = 'bg-color-input';
+    bgInput.title = 'Layout background color';
+    const savedBg = getCookie('or_bg_color');
+    bgInput.value = isValidHexColor(savedBg) ? savedBg : DEFAULT_BG_COLOR;
+    bgInput.addEventListener('input', () => {
+        setBackgroundColor(bgInput.value, app);
+        app.syncDisplayState();
+    });
+    const bgReset = document.createElement('button');
+    bgReset.className = 'bg-color-reset';
+    bgReset.textContent = 'Reset';
+    bgReset.title = 'Reset background to the theme default';
+    bgReset.addEventListener('click', () => {
+        resetBackgroundColor(app);
+        bgInput.value = DEFAULT_BG_COLOR;
+        app.syncDisplayState();
+    });
+    bgRow.appendChild(bgLabel);
+    bgRow.appendChild(bgInput);
+    bgRow.appendChild(bgReset);
+    app.displayControlsEl.appendChild(bgRow);
 
     if (!app.heatMapLayer) {
         app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {

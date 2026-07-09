@@ -545,28 +545,48 @@ html, body {
     pointer-events: none;
 }
 
-/* Scale bar (bottom-left, above coord bar) */
+/* Scale bar (bottom-left, above coord bar).  Content is an inline SVG
+   (bracket + ticks + 0/total labels) rebuilt by updateScaleBar. */
 #scale-bar {
     position: absolute;
     bottom: 26px;
     left: 4px;
     z-index: 900;
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
+    background: var(--bg-status);
+    color: var(--fg-secondary);  /* SVG strokes use currentColor */
+    border-radius: 3px;
+    padding: 1px 4px;
+    line-height: 0;  /* wrap the inline SVG snugly */
     pointer-events: none;
 }
-.scale-bar-line {
-    height: 8px;
-    min-width: 20px;
-    border: 2px solid white;
-    border-top: none;
-}
-.scale-bar-label {
-    color: white;
+/* Tick/label text drawn inside the scale-bar SVG. */
+.scale-bar-text {
+    fill: currentColor;
     font: 11px monospace;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-    line-height: 1;
+}
+
+/* Background color control in the Display Controls panel. */
+.bg-color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+.bg-color-row span {
+    flex: 1;
+}
+.bg-color-input {
+    width: 24px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--fg-muted);
+    background: none;
+    cursor: pointer;
+}
+.bg-color-reset {
+    font-size: 11px;
+    cursor: pointer;
 }
 
 /* Loading overlay */

@@ -122,6 +122,22 @@ class WebServer
                  double dbu_per_pixel,
                  const std::string& vis_json);
 
+  // Persist the connected client's current display-controls state (as
+  // synced via the "set_display_state" request) to a JSON file.  The cache
+  // holds a single snapshot: with several clients connected, the state of
+  // whichever client synced last is the one saved.
+  void saveDisplayControls(const std::string& filename);
+
+  // Read a display-controls JSON file and broadcast it to every connected
+  // client so they re-apply the saved state.
+  void restoreDisplayControls(const std::string& filename);
+
+  // Cache a display-controls snapshot (forwarded to the viewer hook).
+  // No-op if the server was never initialized.  The live
+  // "set_display_state" request writes to the hook directly; this entry
+  // point exists for tests and embedders.
+  void setDisplayState(std::string json);
+
   // Tears down the I/O threads and cleans up hooks.  Safe to call multiple
   // times and from any thread; after it returns, isRunning() is false and
   // serve() may be called again to restart the server.

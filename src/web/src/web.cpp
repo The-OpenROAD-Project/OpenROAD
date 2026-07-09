@@ -14,6 +14,7 @@
 #include <fstream>
 #include <functional>
 #include <ios>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -31,6 +32,7 @@
 #include "boost/beast/websocket.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
+#include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
@@ -337,6 +339,27 @@ WebSocketSession::WebSocketSession(
         root["charts"] = std::move(charts);
         std::string s = boost::json::serialize(root);
         resp.payload.assign(s.begin(), s.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  // Client continuously syncs its full display-controls state here so the
+  // Tcl save_display_controls command can persist it to a file.  Runs
+  // inline (no net::post) — it only touches the mutex-guarded cache.
+  dispatcher_.add(
+      "set_display_state",
+      WebSocketRequest::kSetDisplayState,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        if (viewer_hook_ != nullptr) {
+          if (auto* state = req.json.if_contains("state")) {
+            viewer_hook_->setDisplayState(boost::json::serialize(*state));
+          }
+        }
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = R"({"ok":1})";
+        resp.payload.assign(json.begin(), json.end());
         return resp;
       },
       /*run_inline=*/true);
@@ -1318,6 +1341,67 @@ void WebServer::saveImage(const std::string& filename,
     }
   }
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+}
+
+void WebServer::saveDisplayControls(const std::string& filename)
+{
+  if (!viewer_hook_) {
+    logger_->error(utl::WEB, 51, "Web server is not running.");
+    return;
+  }
+  const std::string state = viewer_hook_->getDisplayState();
+  if (state.empty()) {
+    logger_->warn(utl::WEB,
+                  44,
+                  "No display state has been received from a client yet; "
+                  "open the web viewer before saving.");
+    return;
+  }
+  std::ofstream out(filename);
+  if (!out) {
+    logger_->error(utl::WEB, 45, "Cannot open {} for writing.", filename);
+    return;
+  }
+  out << state;
+  logger_->info(utl::WEB, 46, "Saved display controls to {}.", filename);
+}
+
+void WebServer::restoreDisplayControls(const std::string& filename)
+{
+  if (!viewer_hook_) {
+    logger_->error(utl::WEB, 47, "Web server is not running.");
+    return;
+  }
+  std::ifstream in(filename);
+  if (!in) {
+    logger_->error(utl::WEB, 48, "Cannot open {}.", filename);
+    return;
+  }
+  const std::string state((std::istreambuf_iterator<char>(in)),
+                          std::istreambuf_iterator<char>());
+  boost::json::value parsed;
+  try {
+    parsed = boost::json::parse(state);
+  } catch (const std::exception& e) {
+    logger_->error(utl::WEB,
+                   49,
+                   "Invalid display-controls JSON in {}: {}",
+                   filename,
+                   e.what());
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "restore_display_state";
+  msg["state"] = std::move(parsed);
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+  logger_->info(utl::WEB, 50, "Restored display controls from {}.", filename);
+}
+
+void WebServer::setDisplayState(std::string json)
+{
+  if (viewer_hook_) {
+    viewer_hook_->setDisplayState(std::move(json));
+  }
 }
 
 ListenerHandle createAndRunListener(

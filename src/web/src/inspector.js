@@ -370,11 +370,18 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     function highlightBBox(x1, y1, x2, y2) {
         if (app.highlightRect) {
             app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
         }
         const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY);
+        // Always build the outline; only attach it while the "Highlight
+        // selected" toggle (Misc) is on, so toggling it back on can
+        // re-attach the current selection's outline (redrawAllLayers).
         app.highlightRect = L.rectangle(bounds, {
             color: '#ff0', weight: 2, fill: false, dashArray: '6,4',
-        }).addTo(app.map);
+        });
+        if (!(app.visibility && app.visibility.highlight_selected === false)) {
+            app.highlightRect.addTo(app.map);
+        }
     }
 
     // Briefly pulse the object's bbox so the user can see which object
@@ -384,9 +391,15 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     let pulseLayer = null;
     function pulseHighlight(bbox) {
         if (!bbox || !app.map || !app.designScale) return;
+        // Clear any pulse in flight before honoring the toggle, so a call
+        // while highlighting is off doesn't leave a stale pulse behind.
         if (pulseLayer) {
             app.map.removeLayer(pulseLayer);
             pulseLayer = null;
+        }
+        // Honor the "Highlight selected" toggle (Misc).
+        if (app.visibility && app.visibility.highlight_selected === false) {
+            return;
         }
         const [x1, y1, x2, y2] = bbox;
         const bounds = dbuRectToBounds(
@@ -414,6 +427,15 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             }
         }, 1100);
     }
+
+    // Let redrawAllLayers cancel an in-flight pulse when the "Highlight
+    // selected" toggle is turned off (pulseLayer is private to this closure).
+    app.clearSelectionPulse = function() {
+        if (pulseLayer) {
+            app.map.removeLayer(pulseLayer);
+            pulseLayer = null;
+        }
+    };
 
     function renderProperty(prop, data) {
         // Group with children (PropertyList or SelectionSet)
