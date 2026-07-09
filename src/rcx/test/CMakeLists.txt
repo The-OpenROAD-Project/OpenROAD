@@ -14,6 +14,7 @@ or_integration_tests(
   PASSFAIL_TESTS
     rcx_unit_test
     coupling_si_window
+    coupling_si_noise
     coupling_xtalk_delay
     coupling_xtalk_direction
     coupling_xtalk_hold

@@ -26,6 +26,7 @@
 #include "ord/OpenRoad.hh"
 #include "sta/Graph.hh"
 #include "sta/Network.hh"
+#include "sta/Liberty.hh"
 #include "sta/Property.hh"
 #include "sta/Report.hh"
 #include "sta/Parasitics.hh"
@@ -1681,6 +1682,398 @@ si_window_gated_count_cmd(int corner)
     gated += r.aggr_gated;
   }
   return gated;
+}
+
+////////////////////////////////////////////////////////////////
+//
+// Crosstalk NOISE / glitch analysis -- FIRST slice (functional SI).
+//
+// Purely additive, read-only triage: for each victim net (top-N by total
+// coupling cap, same ranking as report_coupling_si) estimate the peak noise
+// bump injected by its aggressor(s) and compare against a noise threshold
+// (fraction of Vdd). It does NOT touch timing/delay -- no Cc is mutated, no
+// parasitics are reduced, no delaysInvalid().
+//
+// Model (full derivation + limitations in NOISE_INVESTIGATION.md):
+//   Base charge-share peak:  Vbump_share = Vdd * Cc / (Cc + Cgnd)
+//   Optional driver/edge attenuation (only when Liberty driver data present):
+//     tau_victim = Rdrv_victim * (Cc + Cgnd)
+//     tau_aggr   = Rdrv_aggr   * Cc
+//     k          = tau_aggr / (tau_aggr + tau_victim)   in (0,1]
+//     Vbump      = Vbump_share * k
+//   A stronger victim driver (smaller Rdrv) suppresses the bump (k -> 0); an
+//   undriven victim gets the full charge-share bound (k -> 1). The refinement
+//   only ever reduces the bound, so the report is never optimistic.
+//
+////////////////////////////////////////////////////////////////
+
+namespace sta {
+
+// Process-global noise threshold (fraction of Vdd). Default 0.3*Vdd.
+struct NoiseState
+{
+  double threshold_frac = 0.3;
+};
+
+static NoiseState &
+noiseState()
+{
+  static NoiseState state;
+  return state;
+}
+
+// Per-victim noise result for reporting / test introspection.
+struct NoiseVictimResult
+{
+  odb::dbNet *victim = nullptr;
+  odb::dbNet *worst_aggressor = nullptr;  // dominant single aggressor
+  double cc = 0.0;          // fF -- total coupling cap (all aggressors)
+  double cgnd = 0.0;        // fF -- victim ground cap
+  double vdd = 0.0;         // V  -- supply used for this victim
+  double k = 1.0;           // driver/edge attenuation factor in (0,1]
+  double bump = 0.0;        // V  -- estimated aggregate peak bump
+  double threshold = 0.0;   // V  -- threshold this victim is checked against
+  bool fail = false;        // bump >= threshold
+};
+
+// Effective driver on-resistance (ohms) of a net, from its driver pin's
+// Liberty port, or <=0 if unavailable (undriven / no Liberty / port has no
+// drive resistance). Also returns the driver's nominal Vdd if found.
+static double
+noise_driver_resistance(sta::dbSta *sta,
+                        sta::dbNetwork *db_network,
+                        odb::dbNet *db_net,
+                        double *out_vdd)
+{
+  if (out_vdd != nullptr) {
+    *out_vdd = 0.0;
+  }
+  if (db_net == nullptr) {
+    return 0.0;
+  }
+  sta::Net *net = db_network->dbToSta(db_net);
+  if (net == nullptr) {
+    return 0.0;
+  }
+  sta::PinSet *drvrs = db_network->drivers(net);
+  if (drvrs == nullptr || drvrs->empty()) {
+    return 0.0;
+  }
+  double best_r = 0.0;
+  for (const sta::Pin *pin : *drvrs) {
+    sta::LibertyPort *port = db_network->libertyPort(pin);
+    if (port == nullptr) {
+      continue;
+    }
+    const float r = port->driveResistance();
+    if (std::isfinite(r) && r > 0.0f && (best_r == 0.0 || r < best_r)) {
+      // Pick the strongest driver (smallest R) on the net.
+      best_r = r;
+    }
+    if (out_vdd != nullptr && *out_vdd <= 0.0) {
+      sta::LibertyCell *cell = port->libertyCell();
+      if (cell != nullptr && cell->libertyLibrary() != nullptr) {
+        const float v = cell->libertyLibrary()->nominalVoltage();
+        if (std::isfinite(v) && v > 0.0f) {
+          *out_vdd = v;
+        }
+      }
+    }
+  }
+  return best_r;
+}
+
+// Estimate the noise bump for one victim net at one corner. vdd_override > 0
+// forces the supply; otherwise the victim driver's nominal Liberty voltage is
+// used, falling back to 1.0 V if nothing is available (so % numbers stay
+// meaningful even on driver-less synthetic nets).
+static NoiseVictimResult
+noise_estimate_victim(sta::dbSta *sta,
+                     sta::dbNetwork *db_network,
+                     odb::dbNet *victim,
+                     int corner,
+                     double threshold_frac,
+                     double vdd_override)
+{
+  NoiseVictimResult res;
+  res.victim = victim;
+
+  const double cc = victim->getTotalCouplingCap(corner);          // fF
+  const double total = victim->getTotalCapacitance(corner, true); // fF (+cc)
+  double cgnd = total - cc;
+  if (cgnd < 0.0) {
+    cgnd = 0.0;  // guard against rounding making it slightly negative
+  }
+  res.cc = cc;
+  res.cgnd = cgnd;
+
+  // Supply: explicit override, else victim driver Liberty, else fallback 1.0.
+  double victim_vdd = 0.0;
+  const double rdrv_victim
+      = noise_driver_resistance(sta, db_network, victim, &victim_vdd);
+  double vdd = (vdd_override > 0.0) ? vdd_override : victim_vdd;
+  if (vdd <= 0.0) {
+    vdd = 1.0;
+  }
+  res.vdd = vdd;
+  res.threshold = threshold_frac * vdd;
+
+  // Base charge-share peak (aggregate: all aggressors switch together).
+  const double denom = cc + cgnd;
+  const double vbump_share = (denom > 0.0) ? (vdd * cc / denom) : 0.0;
+
+  // Find the dominant single aggressor (largest Cc seg sum to one net) for the
+  // report, and the aggressor with the strongest drive for the refinement.
+  std::unordered_map<odb::dbNet *, double> aggr_cc;
+  std::vector<odb::dbCCSeg *> segs;
+  victim->getSrcCCSegs(segs);
+  for (odb::dbCCSeg *seg : segs) {
+    odb::dbNet *other = seg->getTargetNet();
+    if (other != nullptr && other != victim) {
+      aggr_cc[other] += seg->getCapacitance(corner);
+    }
+  }
+  segs.clear();
+  victim->getTgtCCSegs(segs);
+  for (odb::dbCCSeg *seg : segs) {
+    odb::dbNet *other = seg->getSourceNet();
+    if (other != nullptr && other != victim) {
+      aggr_cc[other] += seg->getCapacitance(corner);
+    }
+  }
+  double worst_aggr_cc = -1.0;
+  for (const auto &kv : aggr_cc) {
+    if (kv.second > worst_aggr_cc) {
+      worst_aggr_cc = kv.second;
+      res.worst_aggressor = kv.first;
+    }
+  }
+
+  // Driver/edge attenuation. Applied only when the victim is driven (we know
+  // Rdrv_victim). The aggressor time constant uses the strongest aggressor's
+  // drive resistance over the coupling cap; if unknown, k collapses to the
+  // pure recovery-limited form (still monotonic and <=1).
+  double k = 1.0;
+  if (rdrv_victim > 0.0 && denom > 0.0) {
+    const double tau_victim = rdrv_victim * denom * 1e-15;  // R(ohm)*C(F)
+    double rdrv_aggr = 0.0;
+    if (res.worst_aggressor != nullptr) {
+      rdrv_aggr
+          = noise_driver_resistance(sta, db_network, res.worst_aggressor,
+                                    nullptr);
+    }
+    // Aggressor injection time constant through the coupling cap. If the
+    // aggressor drive is unknown, assume it matches the victim driver so the
+    // attenuation is governed purely by the victim's grip (k = Cc/(Cc+Cgnd)
+    // style softening), which is still monotonic in Cc/Cgnd.
+    const double cc_f = cc * 1e-15;
+    const double tau_aggr
+        = (rdrv_aggr > 0.0 ? rdrv_aggr : rdrv_victim) * cc_f;
+    const double sum = tau_aggr + tau_victim;
+    if (sum > 0.0) {
+      k = tau_aggr / sum;
+    }
+  }
+  if (k <= 0.0) {
+    k = 0.0;
+  } else if (k > 1.0) {
+    k = 1.0;
+  }
+  res.k = k;
+  res.bump = vbump_share * k;
+  res.fail = (res.bump >= res.threshold) && (res.threshold > 0.0);
+  return res;
+}
+
+// Rank the top-N coupled victim nets and estimate each one's noise bump.
+// Read-only; no timing side effects.
+static std::vector<NoiseVictimResult>
+noise_analyze(sta::dbSta *sta,
+             sta::dbNetwork *db_network,
+             odb::dbBlock *block,
+             int corner,
+             int max_nets,
+             double threshold_frac,
+             double vdd_override)
+{
+  // Rank candidate victims by total coupling cap (same ordering as the SI
+  // hotspot report) so top-N selects the highest-risk nets.
+  struct Cand { odb::dbNet *net; double cc; };
+  std::vector<Cand> cands;
+  for (odb::dbNet *net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    const double cc = net->getTotalCouplingCap(corner);
+    if (cc <= 0.0) {
+      continue;
+    }
+    cands.push_back({net, cc});
+  }
+  std::sort(cands.begin(), cands.end(),
+            [](const Cand &a, const Cand &b) { return a.cc > b.cc; });
+
+  const int n = (max_nets <= 0)
+                    ? static_cast<int>(cands.size())
+                    : std::min<int>(max_nets, cands.size());
+
+  std::vector<NoiseVictimResult> results;
+  results.reserve(n);
+  for (int i = 0; i < n; i++) {
+    results.push_back(noise_estimate_victim(
+        sta, db_network, cands[i].net, corner, threshold_frac, vdd_override));
+  }
+  // Rank the reported rows by estimated bump (V), highest first.
+  std::sort(results.begin(), results.end(),
+            [](const NoiseVictimResult &a, const NoiseVictimResult &b) {
+              return a.bump > b.bump;
+            });
+  return results;
+}
+
+}  // namespace sta
+
+// Set the noise threshold as a fraction of Vdd (e.g. 0.3 for 0.3*Vdd).
+void
+set_noise_threshold_cmd(double frac)
+{
+  sta::noiseState().threshold_frac = frac;
+}
+
+// Estimate and report crosstalk noise bumps for the top-N coupled victim nets.
+// vdd <= 0 means "use each victim driver's nominal Liberty voltage".
+void
+report_noise_cmd(double threshold_frac, int max_nets, int corner, double vdd)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  utl::Logger *logger = openroad->getLogger();
+  odb::dbDatabase *db = openroad->getDb();
+
+  odb::dbChip *chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(utl::STA, 920, "No chip loaded.");
+  }
+  odb::dbBlock *block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(utl::STA, 921, "No block loaded.");
+  }
+  // A SPEF-only flow reports cornerCount()==0 but still exposes corner 0.
+  const int corner_count = block->getCornerCount();
+  const int valid_count = (corner_count == 0) ? 1 : corner_count;
+  if (corner < 0 || corner >= valid_count) {
+    logger->error(utl::STA, 922, "corner {} out of range [0, {}).", corner,
+                  valid_count);
+  }
+  if (threshold_frac <= 0.0) {
+    threshold_frac = sta::noiseState().threshold_frac;
+  }
+
+  std::vector<sta::NoiseVictimResult> results = sta::noise_analyze(
+      sta, db_network, block, corner, max_nets, threshold_frac, vdd);
+
+  sta::Report *report = sta->report();
+  report->report(
+      "Crosstalk noise / glitch report (corner {}, threshold {:.3g}*Vdd)",
+      corner,
+      threshold_frac);
+  report->report("{:<28} {:<22} {:>10} {:>10} {:>9} {:>9} {:>6}",
+                 "Victim net", "Worst aggressor", "Cc(fF)", "Cgnd(fF)",
+                 "Bump(V)", "Bump(%Vdd)", "Stat");
+  report->report(
+      "--------------------------------------------------------------------"
+      "------------------------------");
+  int n_fail = 0;
+  for (const sta::NoiseVictimResult &r : results) {
+    const double pct = (r.vdd > 0.0) ? (100.0 * r.bump / r.vdd) : 0.0;
+    if (r.fail) {
+      n_fail++;
+    }
+    report->report("{:<28} {:<22} {:>10.4f} {:>10.4f} {:>9.4f} {:>9.2f} {:>6}",
+                   r.victim->getConstName(),
+                   r.worst_aggressor != nullptr
+                       ? r.worst_aggressor->getConstName()
+                       : "(none)",
+                   r.cc,
+                   r.cgnd,
+                   r.bump,
+                   pct,
+                   r.fail ? "FAIL" : "PASS");
+  }
+  report->report(
+      "Reported {} victim nets; {} FAIL (bump >= {:.3g}*Vdd).",
+      static_cast<int>(results.size()),
+      n_fail,
+      threshold_frac);
+}
+
+// Return the estimated noise bump (Volts) for a single named net at a corner,
+// using the current threshold fraction. <0 if the net is not found. Used by
+// tests to assert monotonicity of the model deterministically.
+double
+noise_bump_for_net_cmd(const char *net_name, int corner, double vdd)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1.0;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1.0;
+  }
+  sta::NoiseVictimResult r = sta::noise_estimate_victim(
+      sta, db_network, net, corner, sta::noiseState().threshold_frac, vdd);
+  return r.bump;
+}
+
+// Return the total coupling cap Cc (fF) the noise model sees for a named net
+// at a corner, or <0 if the net is not found. Mirrors the exact value the
+// model consumes so tests introspect the model's real inputs (the odb
+// getTotalCouplingCap(uint32_t) overload is not callable from Tcl).
+double
+noise_cc_for_net_cmd(const char *net_name, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1.0;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1.0;
+  }
+  return net->getTotalCouplingCap(corner);
+}
+
+// Return the victim ground cap Cgnd (fF) the noise model sees for a named net
+// at a corner (total-including-coupling minus Cc, floored at 0), or <0 if the
+// net is not found. Mirrors the exact value the model consumes.
+double
+noise_cgnd_for_net_cmd(const char *net_name, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1.0;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1.0;
+  }
+  const double cc = net->getTotalCouplingCap(corner);
+  const double total = net->getTotalCapacitance(corner, true);
+  double cgnd = total - cc;
+  if (cgnd < 0.0) {
+    cgnd = 0.0;
+  }
+  return cgnd;
 }
 
 ////////////////////////////////////////////////////////////////

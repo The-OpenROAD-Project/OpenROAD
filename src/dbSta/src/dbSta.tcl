@@ -587,6 +587,77 @@ proc report_si_windows { args } {
 }
 
 ################################################################
+#
+# Crosstalk NOISE / glitch analysis -- FIRST slice (functional SI).
+# See NOISE_INVESTIGATION.md for the bump model and limitations.
+#
+# Purely additive and read-only: estimates the peak noise bump injected on
+# each victim net by its aggressor(s) via coupling caps, and reports
+# PASS/FAIL against a noise threshold (fraction of Vdd). Does NOT touch any
+# timing/delay result.
+#
+################################################################
+
+define_cmd_args "set_noise_threshold" {frac}
+
+# Set the noise threshold as a fraction of Vdd (e.g. 0.3 for 0.3*Vdd). A
+# victim whose estimated bump reaches this fraction of Vdd is flagged FAIL.
+proc set_noise_threshold { frac } {
+  if { ![string is double -strict $frac] || $frac <= 0.0 } {
+    sta_error 920 "set_noise_threshold: frac must be a positive float\
+                   (fraction of Vdd)."
+  }
+  sta::set_noise_threshold_cmd $frac
+}
+
+define_cmd_args "report_noise" \
+  {[-threshold frac] [-max_nets count] [-corner index] [-vdd volts]}
+
+# Estimate and report the crosstalk noise bump for the top-N coupled victim
+# nets. Per victim: dominant aggressor, coupling cap Cc, ground cap Cgnd,
+# estimated peak bump (V and %Vdd), and PASS/FAIL vs the threshold. -threshold
+# overrides the configured fraction-of-Vdd for this run; -vdd forces the
+# supply (otherwise the victim driver's nominal Liberty voltage is used).
+proc report_noise { args } {
+  parse_key_args "report_noise" args \
+    keys {-threshold -max_nets -corner -vdd} flags {}
+  check_argc_eq0 "report_noise" $args
+
+  # threshold <= 0 tells the C++ side to use the configured/default fraction.
+  set threshold 0.0
+  if { [info exists keys(-threshold)] } {
+    set threshold $keys(-threshold)
+    if { ![string is double -strict $threshold] || $threshold <= 0.0 } {
+      sta_error 921 "-threshold must be a positive float (fraction of Vdd)."
+    }
+  }
+
+  set max_nets 20
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+
+  set corner 0
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
+  }
+
+  # vdd <= 0 means "use each victim driver's nominal Liberty voltage".
+  set vdd 0.0
+  if { [info exists keys(-vdd)] } {
+    set vdd $keys(-vdd)
+    if { ![string is double -strict $vdd] || $vdd <= 0.0 } {
+      sta_error 922 "-vdd must be a positive float (volts)."
+    }
+  }
+
+  sta::report_noise_cmd $threshold $max_nets $corner $vdd
+}
+
+
+################################################################
 ################################################################
 #
 # Crosstalk-aware TIMING -- coupling-cap effective-C stage-delay adjustment.
