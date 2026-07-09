@@ -1,0 +1,13 @@
+[INFO ODB-0227] LEF file: lvf_lib.lef, created 2 layers, 3 library cells
+has_lvf: 1
+means_equal: 1
+hi_mean_unchanged: 1
+lo_mean_unchanged: 1
+hi_sigma_gt_lo_sigma: 1
+hi_stat_less_optimistic: 1
+stat_below_mean: 1
+hi_sigma_quadrature: 1
+lo_sigma_quadrature: 1
+sigma_ratio_10x: 1
+reset_hi_baseline: 1
+reset_lo_baseline: 1

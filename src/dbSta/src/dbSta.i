@@ -11,6 +11,9 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/PocvDerate.hh"
 #include "sta/PocvMode.hh"  // OpenROAD-fork: LVF -- PocvMode for propagation
+#include "sta/TableModel.hh"   // OpenROAD-fork: LVF-lib -- LVF sigma table detect
+#include "sta/TimingArc.hh"    // OpenROAD-fork: LVF-lib -- arc -> gate model
+#include "sta/TimingRole.hh"   // OpenROAD-fork: LVF-lib -- combinational filter
 #include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
@@ -378,6 +381,80 @@ pocv_sigma_set_propagate(float per_stage,
   // n_sigma is the sign-off quantile used by DelayOpsNormal::asFloat.
   sta->setPocvQuantile(n_sigma);
   // Statistical readout of the accumulated variance.
+  sta->setPocvMode(sta::PocvMode::normal);
+}
+
+// OpenROAD-fork: LVF-lib -- does ANY loaded liberty library carry real LVF
+// (ocv_sigma_*) delay-sigma tables? Walks libraries -> cells -> combinational
+// timing arcs and asks the GateTableModel for a delay sigma table. Used to warn
+// the user when -from_liberty is requested but the libs have no LVF data (in
+// which case library-driven POCV yields zero variance == baseline).
+static bool
+anyLibraryHasLvf()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  LibertyLibraryIterator *lib_iter = sta->network()->libertyLibraryIterator();
+  bool found = false;
+  while (lib_iter->hasNext() && !found) {
+    LibertyLibrary *lib = lib_iter->next();
+    LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext() && !found) {
+      LibertyCell *cell = cell_iter.next();
+      for (TimingArcSet *arc_set : cell->timingArcSets()) {
+        if (arc_set->role() != TimingRole::combinational())
+          continue;
+        for (TimingArc *arc : arc_set->arcs()) {
+          const TimingModel *model = arc->model();
+          const GateTableModel *gate
+              = dynamic_cast<const GateTableModel *>(model);
+          if (gate && gate->delayModels()) {
+            const TableModels *dm = gate->delayModels();
+            if (dm->sigma(MinMax::max()) || dm->sigma(MinMax::min())
+                || dm->stdDev()) {
+              found = true;
+              break;
+            }
+          }
+        }
+        if (found)
+          break;
+      }
+    }
+  }
+  delete lib_iter;
+  return found;
+}
+
+// OpenROAD-fork: LVF-lib -- true if at least one loaded library has LVF tables.
+bool
+pocv_liberty_has_lvf()
+{
+  return anyLibraryHasLvf();
+}
+
+// OpenROAD-fork: LVF-lib -- enable LIBRARY-DRIVEN POCV. The per-stage delay
+// sigma comes from the real Liberty LVF ocv_sigma_* tables via the NATIVE
+// statistical delay calc (GateTableModel::gateDelayPocv under PocvMode::normal),
+// so sigma varies per cell / per arc -- the sign-off-accurate source -- instead
+// of one global hand-set number. The synthetic per-stage injection in
+// Search::deratedDelayData is suppressed in this mode (PocvSigma::from_liberty)
+// so it cannot overwrite the library-derived stdDev. n_sigma is the sign-off
+// quantile. Switching the mode invalidates arrivals (Sta::setPocvMode).
+void
+pocv_sigma_set_from_liberty(float n_sigma)
+{
+  Search::PocvSigma &s = pocvSigmaState();
+  s.enabled = true;
+  s.per_stage = 0.0f;     // unused in library mode (sigma is per-cell from LVF)
+  s.n_sigma = n_sigma;
+  s.propagate = true;     // library variance still flows through propagation
+  s.from_liberty = true;  // ... but via native LVF, not synthetic injection
+  pocvSyncState();
+
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->setPocvQuantile(n_sigma);
   sta->setPocvMode(sta::PocvMode::normal);
 }
 

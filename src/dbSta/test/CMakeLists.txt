@@ -4,6 +4,8 @@ or_integration_tests(
     pocv_derate
     pocv_baseline
     pocv_propagate
+    lvf_sigma
+    lvf_flagoff
     block_sta1
     check_axioms
     clock_pin

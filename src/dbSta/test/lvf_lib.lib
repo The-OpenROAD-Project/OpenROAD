@@ -1,0 +1,304 @@
+/* SYNTHETIC LVF-annotated Liberty for the library-driven POCV regression.
+ *
+ * This is NOT a real sign-off library. It is a minimal, hand-written Liberty
+ * derived from src/dbSta/test/liberty1.lib whose sole purpose is to exercise
+ * the `set_pocv_sigma -from_liberty` path with deterministic, easy-to-reason
+ * LVF (ocv_sigma_*) tables. Production POCV needs a real LVF-characterized
+ * library; Nangate45 ships none (grep ocv_sigma Nangate45/*.lib => empty).
+ *
+ * Two buffer cells share IDENTICAL mean delay/transition tables (so nominal
+ * timing is the same) but carry DIFFERENT delay-sigma magnitudes:
+ *   snl_bufhi : large  ocv_sigma_cell_rise/fall  (high variation cell)
+ *   snl_buflo : small  ocv_sigma_cell_rise/fall  (low  variation cell)
+ * A path through snl_bufhi must accumulate a larger arrival sigma -- and thus
+ * a less optimistic (lower) statistical slack -- than a path through snl_buflo,
+ * with the SAME mean slack. The sigma tables are scalar (no axes) constants in
+ * library time units (ns), read natively by GateTableModel::gateDelayPocv under
+ * PocvMode::normal.
+ */
+library (lvf_lib) {
+  comment                        : "synthetic LVF test library -- not for sign-off";
+  delay_model                    : table_lookup;
+  simulation                     : false;
+  capacitive_load_unit (1,pf);
+  leakage_power_unit             : 1pW;
+  current_unit                   : "1A";
+  pulling_resistance_unit        : "1kohm";
+  time_unit                      : "1ns";
+  voltage_unit                   : "1V";
+  library_features(report_delay_calculation);
+
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_derate_from_library : 1.0;
+  slew_lower_threshold_pct_fall : 20;
+  slew_lower_threshold_pct_rise : 20;
+  slew_upper_threshold_pct_fall : 80;
+  slew_upper_threshold_pct_rise : 80;
+
+  default_max_fanout             : 40;
+  default_max_transition         : 2.00;
+  default_cell_leakage_power     : 100;
+  default_fanout_load            : 1.0;
+  default_inout_pin_cap          : 0.0;
+  default_input_pin_cap          : 0.0;
+  default_output_pin_cap         : 0.0;
+
+  nom_process                    : 1.0;
+  nom_temperature                : 125.00;
+  nom_voltage                    : 1.62;
+
+  operating_conditions(worst_case_industrial) {
+    process  :  1.0;
+    temperature  :  125.00;
+    voltage  :  1.62;
+    tree_type  :  "worst_case_tree" ;
+  }
+  default_operating_conditions : worst_case_industrial ;
+  default_wire_load_mode : enclosed;
+
+  lu_table_template(drive1_rise){
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("0.149, 0.276, 0.654, 1.572, 3.879");
+    index_2 ("0.000, 0.017, 0.040, 0.092, 0.215, 0.500");
+  }
+  lu_table_template(drive1_fall){
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("0.127, 0.213, 0.478, 1.136, 2.799");
+    index_2 ("0.000, 0.017, 0.040, 0.092, 0.215, 0.500");
+  }
+  lu_table_template(setup_rise_rise){
+    variable_1 : related_pin_transition;
+    index_1 ("0.098, 0.533, 1.615");
+    variable_2 : constrained_pin_transition;
+    index_2 ("0.225, 0.533, 1.075, 3.103");
+  }
+  lu_table_template(setup_rise_fall){
+    variable_1 : related_pin_transition;
+    index_1 ("0.098, 0.533, 1.615");
+    variable_2 : constrained_pin_transition;
+    index_2 ("0.226, 0.533, 1.076, 3.102");
+  }
+  lu_table_template(hold_rise_rise){
+    variable_1 : related_pin_transition;
+    index_1 ("0.098, 0.533, 1.615");
+    variable_2 : constrained_pin_transition;
+    index_2 ("0.225, 0.533, 1.075, 3.103");
+  }
+  lu_table_template(hold_rise_fall){
+    variable_1 : related_pin_transition;
+    index_1 ("0.098, 0.533, 1.615");
+    variable_2 : constrained_pin_transition;
+    index_2 ("0.226, 0.533, 1.076, 3.102");
+  }
+  /* scalar (axis-less) LVF sigma template: one constant value. */
+  lu_table_template(lvf_scalar){
+    variable_1 : input_net_transition;
+    index_1 ("0.0");
+  }
+
+  /* ---- HIGH-sigma buffer ---------------------------------------------- */
+  cell (snl_bufhi) {
+    area : 5.000 ;
+    cell_footprint : "snl_buf" ;
+    pin(Z){
+      function : "A" ;
+      direction : output ;
+      max_transition : 1.50 ;
+      max_capacitance : 0.500 ;
+      timing(){
+	related_pin : "A" ;
+	timing_sense : positive_unate ;
+	cell_rise(drive1_rise){
+	  values("0.1180,0.1669,0.2212,0.3412,0.6250,1.2814",\
+		   "0.1390,0.1906,0.2456,0.3660,0.6498,1.3060",\
+		   "0.1736,0.2292,0.2857,0.4057,0.6888,1.3447",\
+		   "0.2219,0.2821,0.3421,0.4624,0.7448,1.4003",\
+		   "0.2695,0.3408,0.4089,0.5351,0.8184,1.4739");
+	}
+	cell_fall(drive1_fall){
+	  values("0.1232,0.1650,0.2073,0.2933,0.4917,0.9503",\
+		   "0.1439,0.1887,0.2320,0.3182,0.5163,0.9749",\
+		   "0.1942,0.2373,0.2831,0.3706,0.5683,1.0264",\
+		   "0.2641,0.3213,0.3699,0.4599,0.6583,1.1166",\
+		   "0.4136,0.4733,0.5265,0.6209,0.8211,1.2791");
+	}
+	rise_transition(drive1_rise){
+	  values("0.0610,0.1344,0.2434,0.4961,1.0983,2.5032",\
+		   "0.0705,0.1441,0.2441,0.4956,1.0978,2.5034",\
+		   "0.0903,0.1596,0.2578,0.5027,1.0992,2.5034",\
+		   "0.1023,0.1850,0.2784,0.5101,1.1043,2.5051",\
+		   "0.1573,0.2215,0.3200,0.5469,1.1223,2.5117");
+	}
+	fall_transition(drive1_fall){
+	  values("0.0460,0.1000,0.1653,0.3181,0.6925,1.5643",\
+		   "0.0552,0.1108,0.1706,0.3218,0.6906,1.5635",\
+		   "0.0868,0.1304,0.1941,0.3353,0.6953,1.5638",\
+		   "0.0989,0.1563,0.2142,0.3451,0.7026,1.5663",\
+		   "0.1374,0.1780,0.2364,0.3714,0.7192,1.5738");
+	}
+	/* LVF: large delay sigma (ns). early==late for this synthetic cell. */
+	ocv_sigma_cell_rise(lvf_scalar){
+	  sigma_type : "early_and_late";
+	  values("0.0500");
+	}
+	ocv_sigma_cell_fall(lvf_scalar){
+	  sigma_type : "early_and_late";
+	  values("0.0500");
+	}
+      }
+    }
+    pin(A){
+      direction : input ;
+      capacitance : 0.0034 ;
+    }
+  } /* snl_bufhi */
+
+  /* ---- LOW-sigma buffer (identical means, small sigma) ---------------- */
+  cell (snl_buflo) {
+    area : 5.000 ;
+    cell_footprint : "snl_buf" ;
+    pin(Z){
+      function : "A" ;
+      direction : output ;
+      max_transition : 1.50 ;
+      max_capacitance : 0.500 ;
+      timing(){
+	related_pin : "A" ;
+	timing_sense : positive_unate ;
+	cell_rise(drive1_rise){
+	  values("0.1180,0.1669,0.2212,0.3412,0.6250,1.2814",\
+		   "0.1390,0.1906,0.2456,0.3660,0.6498,1.3060",\
+		   "0.1736,0.2292,0.2857,0.4057,0.6888,1.3447",\
+		   "0.2219,0.2821,0.3421,0.4624,0.7448,1.4003",\
+		   "0.2695,0.3408,0.4089,0.5351,0.8184,1.4739");
+	}
+	cell_fall(drive1_fall){
+	  values("0.1232,0.1650,0.2073,0.2933,0.4917,0.9503",\
+		   "0.1439,0.1887,0.2320,0.3182,0.5163,0.9749",\
+		   "0.1942,0.2373,0.2831,0.3706,0.5683,1.0264",\
+		   "0.2641,0.3213,0.3699,0.4599,0.6583,1.1166",\
+		   "0.4136,0.4733,0.5265,0.6209,0.8211,1.2791");
+	}
+	rise_transition(drive1_rise){
+	  values("0.0610,0.1344,0.2434,0.4961,1.0983,2.5032",\
+		   "0.0705,0.1441,0.2441,0.4956,1.0978,2.5034",\
+		   "0.0903,0.1596,0.2578,0.5027,1.0992,2.5034",\
+		   "0.1023,0.1850,0.2784,0.5101,1.1043,2.5051",\
+		   "0.1573,0.2215,0.3200,0.5469,1.1223,2.5117");
+	}
+	fall_transition(drive1_fall){
+	  values("0.0460,0.1000,0.1653,0.3181,0.6925,1.5643",\
+		   "0.0552,0.1108,0.1706,0.3218,0.6906,1.5635",\
+		   "0.0868,0.1304,0.1941,0.3353,0.6953,1.5638",\
+		   "0.0989,0.1563,0.2142,0.3451,0.7026,1.5663",\
+		   "0.1374,0.1780,0.2364,0.3714,0.7192,1.5738");
+	}
+	/* LVF: small delay sigma -- 10x smaller than snl_bufhi. */
+	ocv_sigma_cell_rise(lvf_scalar){
+	  sigma_type : "early_and_late";
+	  values("0.0050");
+	}
+	ocv_sigma_cell_fall(lvf_scalar){
+	  sigma_type : "early_and_late";
+	  values("0.0050");
+	}
+      }
+    }
+    pin(A){
+      direction : input ;
+      capacitance : 0.0034 ;
+    }
+  } /* snl_buflo */
+
+  cell (snl_ffqx1) {
+    area : 15.000 ;
+    cell_footprint : "snl_ffq" ;
+    ff ("IQ", "IQN") {
+      clocked_on : "CP";
+      next_state : "D";
+    }
+    pin(Q) {
+      max_transition : 1.50 ;
+      max_capacitance : 0.500 ;
+      function : "IQ" ;
+      direction : output ;
+      timing () {
+	related_pin : "CP" ;
+	timing_type : rising_edge ;
+	cell_rise(drive1_rise){
+	  values("0.1282,0.1977,0.2738,0.4362,0.8181,1.7016",\
+		   "0.1455,0.2159,0.2926,0.4560,0.8378,1.7214",\
+		   "0.1690,0.2411,0.3181,0.4819,0.8640,1.7476",\
+		   "0.1733,0.2494,0.3274,0.4900,0.8721,1.7563",\
+		   "0.0937,0.1840,0.2670,0.4309,0.8136,1.6983");
+	}
+	cell_fall(drive1_rise){
+	  values("0.2570,0.3541,0.4478,0.6204,0.9803,1.7872",\
+		   "0.2961,0.3912,0.4843,0.6567,1.0166,1.8236",\
+		   "0.3413,0.4348,0.5274,0.6985,1.0574,1.8641",\
+		   "0.3989,0.4919,0.5844,0.7556,1.1135,1.9186",\
+		   "0.4475,0.5408,0.6336,0.8053,1.1644,1.9693");
+	}
+	rise_transition(drive1_rise){
+	  values("0.0784,0.1892,0.3338,0.6685,1.4786,3.3677",\
+		   "0.0864,0.1915,0.3350,0.6716,1.4795,3.3683",\
+		   "0.1075,0.2028,0.3422,0.6760,1.4817,3.3693",\
+		   "0.1243,0.2318,0.3578,0.6845,1.4854,3.3712",\
+		   "0.1604,0.2684,0.3922,0.7027,1.4944,3.3771");
+	}
+	fall_transition(drive1_rise){
+	  values("0.1431,0.2466,0.3647,0.6298,1.2618,2.7724",\
+		   "0.1418,0.2451,0.3679,0.6299,1.2600,2.7719",\
+		   "0.1414,0.2416,0.3673,0.6274,1.2590,2.7706",\
+		   "0.1380,0.2486,0.3716,0.6284,1.2570,2.7679",\
+		   "0.1423,0.2498,0.3738,0.6303,1.2593,2.7674");
+	}
+      }
+    }
+    pin(D) {
+      direction : input ;
+      capacitance : 0.0035 ;
+      timing () {
+	related_pin : "CP" ;
+	timing_type : setup_rising ;
+	rise_constraint(setup_rise_rise){
+	  values("0.1441,0.2077,0.2350,0.2459",\
+		   "0.2039,0.3069,0.3106,0.2344",\
+		   "0.2764,0.4289,0.5128,0.4441");
+	}
+	fall_constraint(setup_rise_fall){
+	  values("0.1594,0.2916,0.4751,0.8825",\
+		   "0.1086,0.2573,0.4403,0.8291",\
+		   "0.0971,0.2344,0.4289,0.9130");
+	}
+      }
+      timing () {
+	related_pin : "CP" ;
+	timing_type : hold_rising ;
+	rise_constraint(hold_rise_rise){
+	  values("-0.0634,-0.0914,-0.1034,-0.1082",\
+		   "-0.0897,-0.1350,-0.1367,-0.1031",\
+		   "-0.1216,-0.1887,-0.2256,-0.1954");
+	}
+	fall_constraint(hold_rise_fall){
+	  values("-0.0701,-0.1283,-0.2091,-0.3883",\
+		   "-0.0478,-0.1132,-0.1937,-0.3648",\
+		   "-0.0427,-0.1031,-0.1887,-0.4017");
+	}
+      }
+    }
+    pin(CP) {
+      min_pulse_width_low : 0.600;
+      min_pulse_width_high : 0.600;
+      min_period  : 0.500 ;
+      direction : input;
+      clock : true ;
+      capacitance : 0.0103 ;
+    }
+  }
+}

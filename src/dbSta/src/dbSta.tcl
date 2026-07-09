@@ -203,6 +203,7 @@ proc check_ip { args } {
 define_cmd_args "set_pocv_sigma" { \
   [-sigma per_stage_fraction] \
   [-n_sigma sigma_multiple] \
+  [-from_liberty] \
   [-propagate] \
   [-reset] }
 
@@ -220,10 +221,18 @@ define_cmd_args "set_pocv_sigma" { \
 # report_checks / report_wns / report_tns reflect the statistical (sqrt(N))
 # pessimism directly. -reset (or -propagate off via a plain set/reset) returns
 # the timer to scalar delay-ops, i.e. byte-identical baseline timing.
+#
+# With -from_liberty the per-stage sigma comes from the REAL Liberty LVF
+# (ocv_sigma_cell_rise/fall, ocv_sigma_rise/fall_transition) tables of the loaded
+# libraries -- the sign-off-accurate source -- instead of one global -sigma. This
+# uses OpenSTA's native statistical delay calc (PocvMode normal), so sigma varies
+# per cell type / per arc. -from_liberty and -sigma are mutually exclusive.
+# Requires libraries that actually carry LVF tables; if none do, a warning is
+# issued and the result is the baseline (zero variance).
 proc set_pocv_sigma { args } {
   parse_key_args "set_pocv_sigma" args \
     keys {-sigma -n_sigma} \
-    flags {-reset -propagate}
+    flags {-reset -propagate -from_liberty}
 
   check_argc_eq0 "set_pocv_sigma" $args
 
@@ -232,18 +241,36 @@ proc set_pocv_sigma { args } {
     return
   }
 
-  if { ![info exists keys(-sigma)] } {
-    utl::error STA 8010 "set_pocv_sigma: specify -sigma (per-stage fractional\
- sigma) or -reset."
-  }
-  set sigma $keys(-sigma)
-  sta::check_positive_float "-sigma" $sigma
+  set from_liberty [info exists flags(-from_liberty)]
 
+  # n_sigma defaults to 3-sigma sign-off for every mode.
   set n_sigma 3.0
   if { [info exists keys(-n_sigma)] } {
     set n_sigma $keys(-n_sigma)
     sta::check_positive_float "-n_sigma" $n_sigma
   }
+
+  if { $from_liberty } {
+    if { [info exists keys(-sigma)] } {
+      utl::error STA 8011 "set_pocv_sigma: -from_liberty (library LVF) and\
+ -sigma (global) are mutually exclusive."
+    }
+    if { ![sta::pocv_liberty_has_lvf] } {
+      utl::warn STA 8012 "set_pocv_sigma -from_liberty: no loaded liberty\
+ library has LVF (ocv_sigma_*) tables; statistical slack will equal the\
+ baseline (zero variation). Load an LVF-annotated library for sign-off POCV."
+    }
+    sta::pocv_sigma_set_from_liberty $n_sigma
+    return
+  }
+
+  if { ![info exists keys(-sigma)] } {
+    utl::error STA 8010 "set_pocv_sigma: specify -sigma (per-stage fractional\
+ sigma), -from_liberty (library LVF), or -reset."
+  }
+  set sigma $keys(-sigma)
+  sta::check_positive_float "-sigma" $sigma
+
   if { [info exists flags(-propagate)] } {
     sta::pocv_sigma_set_propagate $sigma $n_sigma
   } else {
