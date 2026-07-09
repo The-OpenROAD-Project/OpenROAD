@@ -206,15 +206,14 @@ class NegotiationLegalizer
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
-  // Collect up to `count_per_side` rail-/site-compatible rows on each side of
-  // `seed_y`, plus `seed_y` itself when valid. Walks outward one row at a time
-  // and stops a side after `max_scan` steps or at an off-core wall. When one
-  // side is walled short of its quota, the open side is extended (past
-  // `max_scan`) by the shortfall. Lets the Y search adapt to cell height: for
-  // tall cells, valid rows are sparser, so the effective Y reach grows.
+  // Collect up to `count_per_side` rows on each side of `seed_y`
+  // that can host the cell somewhere in [x_lo, x_hi]. A side
+  // stops after `max_scan` steps or at an off-core wall; quota it could not
+  // fill extends the other side.
   [[nodiscard]] std::vector<int> verticalWindowRows(const NegCell& cell,
                                                     int seed_y,
-                                                    int probe_x,
+                                                    int x_lo,
+                                                    int x_hi,
                                                     int count_per_side,
                                                     int max_scan) const;
   [[nodiscard]] bool respectsFence(int cell_idx, int x, int y) const;

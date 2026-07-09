@@ -1065,18 +1065,13 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
 
 std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
                                                           int seed_y,
-                                                          int probe_x,
+                                                          int x_lo,
+                                                          int x_hi,
                                                           int count_per_side,
                                                           int max_scan) const
 {
   // A "wall" in the Y direction is off-core: the die edge, or a band of rows
   // with no placement sites at all (e.g. a full-width macro/blockage row).
-  //
-  // Note we deliberately do NOT treat a macro that merely overlaps the probe
-  // column (capacity == 0 at probe_x) as a vertical wall.  probe_x is the
-  // cell's global-placement x, which may sit on top of a macro horizontally;
-  // that horizontal obstruction is resolved by the X-axis window extension, so
-  // it must not collapse the vertical row search.
   auto hardWall = [&](int r) {
     if (r < 0 || r + cell.height > grid_h_) {
       return true;
@@ -1089,65 +1084,89 @@ std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
     return false;
   };
 
-  // Collect up to `target_valid` valid rows on one side, walking outward until
-  // it has enough, hits a macro/off-core wall, or exceeds `step_cap` steps.
-  // `step_cap` may exceed `max_scan` so the open side can reach further when
-  // the opposite side is walled.
-  auto scan = [&](int dir, int target_valid, int step_cap, bool& hit_wall) {
-    std::vector<int> found;
-    hit_wall = false;
-    for (int step = 1;
-         step <= step_cap && std::cmp_less(found.size(), target_valid);
-         ++step) {
-      const int r = seed_y + dir * step;
-      if (hardWall(r)) {
-        hit_wall = true;
-        break;
-      }
-      if (isValidRow(r, cell, probe_x)) {
-        found.push_back(r);
+  // A row counts toward the quota only when it can host the cell somewhere
+  // inside the horizontal span: probing a single column would declare rows
+  // beside a macro usable (or dead) based on one pixel.
+  const int probe_lo = std::max(0, x_lo);
+  const int probe_hi = std::min(grid_w_ - cell.width, x_hi);
+  auto rowUsable = [&](int r) {
+    if (r < 0 || r + cell.height > grid_h_) {
+      return false;
+    }
+    for (int x = probe_lo; x <= probe_hi; ++x) {
+      if (gridAt(x, r).capacity > 0 && isValidRow(r, cell, x)) {
+        return true;
       }
     }
-    return found;
+    return false;
   };
 
-  // First pass: the nominal symmetric window — up to count_per_side valid rows
-  // on each side, within the max_scan step budget.
-  bool below_wall = false;
-  bool above_wall = false;
-  std::vector<int> below = scan(+1, count_per_side, max_scan, below_wall);
-  std::vector<int> above = scan(-1, count_per_side, max_scan, above_wall);
+  // Each side walks outward collecting usable rows against its own quota
+  // (`count_per_side`) and distance cap (`max_scan`). A side closes when it
+  // hits a macro/off-core wall, exhausts its distance cap, or fills its
+  // quota. Whatever quota a closing side could not fill — whether it was cut
+  // short by a wall or ran out of steps over unusable rows (e.g. rows
+  // fully covered by a macro inside the span, fences, power mismatch) — is
+  // handed to the other side along with a longer distance cap
+  // (`extended_cap`) to spend it in. A side that merely filled its quota is
+  // reopened by a donation; a walled side cannot take one. If both sides
+  // are walled short, the unspent quota is simply never used.
+  const int extended_cap = std::min(2 * max_scan, opendp_->max_displacement_y_);
+  struct Side
+  {
+    int dir;
+    int step;
+    int quota;
+    int cap;
+    bool closed;
+    bool walled;  // closed at a wall or distance cap: cannot take donations
+    std::vector<int> found;
+  };
+  Side below{+1, 0, count_per_side, max_scan, false, false, {}};
+  Side above{-1, 0, count_per_side, max_scan, false, false, {}};
 
-  // When a macro/off-core wall cuts one side short of its quota, extend the
-  // opposite (open) side by the shortfall so the same number of candidate rows
-  // is still explored. The open side is allowed to walk past max_scan (capped
-  // at 2 * max_scan) to find the extra rows.
-  const int extended_step_cap
-      = std::min(2 * max_scan, opendp_->max_displacement_y_);
-  const int below_deficit
-      = (below_wall && !disable_window_extension_)
-            ? count_per_side - static_cast<int>(below.size())
-            : 0;
-  const int above_deficit
-      = (above_wall && !disable_window_extension_)
-            ? count_per_side - static_cast<int>(above.size())
-            : 0;
-  if (above_deficit > 0 && !below_wall) {
-    bool dummy = false;
-    below = scan(+1, count_per_side + above_deficit, extended_step_cap, dummy);
-  }
-  if (below_deficit > 0 && !above_wall) {
-    bool dummy = false;
-    above = scan(-1, count_per_side + below_deficit, extended_step_cap, dummy);
+  auto close = [&](Side& self, Side& other) {
+    self.closed = true;
+    self.walled = true;
+    if (!disable_window_extension_ && self.quota > 0 && !other.walled) {
+      other.quota += self.quota;
+      other.cap = extended_cap;
+      other.closed = false;  // reopen if it had merely filled its quota
+      self.quota = 0;
+    }
+  };
+  auto stepSide = [&](Side& self, Side& other) {
+    if (self.closed) {
+      return;
+    }
+    if (self.quota == 0) {
+      self.closed = true;  // quota filled; a later donation may reopen us
+      return;
+    }
+    if (self.step >= self.cap
+        || hardWall(seed_y + self.dir * (self.step + 1))) {
+      close(self, other);
+      return;
+    }
+    const int r = seed_y + self.dir * ++self.step;
+    if (rowUsable(r)) {
+      self.found.push_back(r);
+      --self.quota;
+    }
+  };
+
+  while (!below.closed || !above.closed) {
+    stepSide(below, above);
+    stepSide(above, below);
   }
 
   std::vector<int> rows;
-  rows.reserve(below.size() + above.size() + 1);
-  if (isValidRow(seed_y, cell, probe_x)) {
+  rows.reserve(below.found.size() + above.found.size() + 1);
+  if (rowUsable(seed_y)) {
     rows.push_back(seed_y);
   }
-  rows.insert(rows.end(), below.begin(), below.end());
-  rows.insert(rows.end(), above.begin(), above.end());
+  rows.insert(rows.end(), below.found.begin(), below.found.end());
+  rows.insert(rows.end(), above.found.begin(), above.found.end());
   return rows;
 }
 

@@ -242,7 +242,7 @@ void Graphics::drawObjects(gui::Painter& painter)
         gui::Painter::Color c;
         switch (state) {
           case NegotiationPixelState::kNoRow:
-            c = gui::Painter::kDarkGray;
+            c = gui::Painter::kBrown;
             c.a = 60;
             break;
           case NegotiationPixelState::kFree:

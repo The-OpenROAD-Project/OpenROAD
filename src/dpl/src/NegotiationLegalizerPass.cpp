@@ -612,46 +612,64 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
     int target_y,
     int site_window) const
 {
-  // A "wall" is a macro/fixed-cell blockage (capacity == 0) or the core
-  // boundary (off-die). Once the cell footprint anchored at target_x hits a
-  // wall, nothing further in that direction is reachable.
-  auto hitsWall = [&](int target_x) {
-    if (!inDie(target_x, target_y, cell.width, cell.height)) {
-      return true;
-    }
+  // Only the core boundary (off-die) is a hard stop for the window walk.
+  auto offDie = [&](int target_x) {
+    return !inDie(target_x, target_y, cell.width, cell.height);
+  };
+  // True when the cell footprint at target_x is free of blockage (fixed
+  // cells, macros and row-less gaps all have capacity == 0).
+  auto openAt = [&](int target_x) {
     for (int dy = 0; dy < cell.height; ++dy) {
-      for (int gx = target_x; gx < target_x + cell.width; ++gx) {
-        if (gridAt(gx, target_y + dy).capacity == 0) {
-          return true;
+      for (int dx = 0; dx < cell.width; ++dx) {
+        if (gridAt(target_x + dx, target_y + dy).capacity == 0) {
+          return false;
         }
       }
     }
-    return false;
+    return true;
   };
 
-  int left_avail = 0;
-  for (int d = 1; d <= site_window; ++d) {
-    if (hitsWall(base_x - d)) {
-      break;
-    }
-    ++left_avail;
-  }
-  int right_avail = 0;
-  for (int d = 1; d <= site_window; ++d) {
-    if (hitsWall(base_x + d)) {
-      break;
-    }
-    ++right_avail;
-  }
+  int dx_lo = -site_window;
+  int dx_hi = site_window;
 
-  // Reach lost on one side (cut short by a wall) is added to the other side,
-  // unless the user disabled this extension.
-  const int left_deficit
-      = disable_window_extension_ ? 0 : site_window - left_avail;
-  const int right_deficit
-      = disable_window_extension_ ? 0 : site_window - right_avail;
-  int dx_lo = -(site_window + right_deficit);
-  int dx_hi = site_window + left_deficit;
+  if (!disable_window_extension_) {
+    // Both sides walk outward, sharing one budget of 2 * site_window open
+    // positions. Blocked positions cost nothing, so a side keeps looking
+    // past a fixed instance; it stops at the die edge or after step_cap
+    // steps. Budget one side cannot spend is left for the other.
+    const int step_cap
+        = std::min(4 * site_window, opendp_->max_displacement_x_);
+    int budget = 2 * site_window;
+    int left = 0;
+    int right = 0;
+    int left_reach = 0;
+    int right_reach = 0;
+    bool left_open = true;
+    bool right_open = true;
+    while (budget > 0 && (left_open || right_open)) {
+      if (left_open) {
+        if (left >= step_cap || offDie(base_x - (left + 1))) {
+          left_open = false;
+        } else if (openAt(base_x - ++left)) {
+          left_reach = left;
+          --budget;
+        }
+      }
+      if (right_open && budget > 0) {
+        if (right >= step_cap || offDie(base_x + (right + 1))) {
+          right_open = false;
+        } else if (openAt(base_x + ++right)) {
+          right_reach = right;
+          --budget;
+        }
+      }
+    }
+    // Clip each side to its furthest open position (a walk that dies
+    // mid-macro must not drag the window over blocked sites), but never
+    // below the base window.
+    dx_lo = -std::max(site_window, left_reach);
+    dx_hi = std::max(site_window, right_reach);
+  }
 
   // Hard cap limit
   dx_lo = std::max(dx_lo, -opendp_->max_displacement_x_);
@@ -665,14 +683,19 @@ NegotiationLegalizer::SearchWindow NegotiationLegalizer::buildSearchWindow(
     int anchor_y) const
 {
   SearchWindow window;
-  // Vertical reach: nearest valid rows around the anchor, extended past an
-  // off-core wall onto the open side.
-  window.rows = verticalWindowRows(
-      cell, anchor_y, anchor_x, row_search_window_, effectiveRowCap(cell));
-  // Horizontal reach: computed once at the anchor row, shifted away from any
-  // macro/off-core wall onto the open side.
+  // Horizontal reach first: computed once at the anchor row, shifted away
+  // from any macro/off-core wall onto the open side.
   std::tie(window.dx_lo, window.dx_hi) = horizontalWindowBounds(
       cell, anchor_x, anchor_y, effectiveSiteWindow(cell));
+  // Vertical reach: nearest rows around the anchor that can host the cell
+  // somewhere inside the horizontal span, extended past an off-core wall or
+  // a macro onto the open side.
+  window.rows = verticalWindowRows(cell,
+                                   anchor_y,
+                                   anchor_x + window.dx_lo,
+                                   anchor_x + window.dx_hi,
+                                   row_search_window_,
+                                   effectiveRowCap(cell));
   return window;
 }
 
@@ -1182,8 +1205,13 @@ void NegotiationLegalizer::greedyImprove(int passes)
       };
 
       const int site_window = effectiveSiteWindow(cell);
-      const std::vector<int> rows = verticalWindowRows(
-          cell, cell.y, cell.init_x, row_search_window_, effectiveRowCap(cell));
+      const std::vector<int> rows
+          = verticalWindowRows(cell,
+                               cell.y,
+                               cell.init_x - site_window,
+                               cell.init_x + site_window,
+                               row_search_window_,
+                               effectiveRowCap(cell));
       for (int target_y : rows) {
         for (int dx = -site_window; dx <= site_window; ++dx) {
           tryLoc(cell.init_x + dx, target_y);
