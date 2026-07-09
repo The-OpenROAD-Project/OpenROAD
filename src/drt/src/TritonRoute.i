@@ -224,6 +224,12 @@ void set_mask_aware_drc_cmd(bool enable)
   router->setMaskAwareDrc(enable);
 }
 
+void set_mask_different_spacing_cmd(int spacing)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setMaskDifferentSpacing(spacing);
+}
+
 int check_mask_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();

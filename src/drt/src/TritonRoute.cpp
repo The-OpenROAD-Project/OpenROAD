@@ -1266,6 +1266,11 @@ void TritonRoute::setMaskAwareDrc(bool enable)
   router_cfg_->MASK_AWARE_DRC = enable;
 }
 
+void TritonRoute::setMaskDifferentSpacing(int spacing)
+{
+  router_cfg_->MASK_DIFFERENT_SPACING = spacing;
+}
+
 namespace {
 
 // A routed metal rectangle on a multi-mask layer, tagged with its mask
@@ -1425,11 +1430,17 @@ int TritonRoute::checkMaskDRC(const char* filename,
     }
     const std::vector<MaskShape>& shapes = it->second;
     // Same-mask required spacing = the layer minimum spacing. Different-mask
-    // pairs are allowed to be closer (relaxed spacing) and are not flagged.
+    // pairs use the relaxed different-mask spacing (MASK_DIFFERENT_SPACING,
+    // default 0 = always legal down to a short).
     const int same_mask_spc = layer->getSpacing();
     if (same_mask_spc <= 0) {
       continue;
     }
+    const int diff_mask_spc = router_cfg_->MASK_DIFFERENT_SPACING;
+    // Neighbors must be queried out to the largest spacing that can produce a
+    // violation, so the relaxed different-mask spacing widens the bloat when
+    // it is larger than the same-mask spacing (it normally is not).
+    const int query_spc = std::max(same_mask_spc, diff_mask_spc);
     // Build one R-tree over all shapes on this layer.
     rtree_t rtree;
     for (int i = 0; i < (int) shapes.size(); i++) {
@@ -1440,12 +1451,12 @@ int TritonRoute::checkMaskDRC(const char* filename,
       if (has_query_box && !query_box.intersects(a.rect)) {
         continue;
       }
-      // Query a box bloated by the same-mask spacing.
+      // Query a box bloated by the (max) required spacing.
       odb::Rect bloated = a.rect;
-      bloated.set_xlo(bloated.xMin() - same_mask_spc);
-      bloated.set_ylo(bloated.yMin() - same_mask_spc);
-      bloated.set_xhi(bloated.xMax() + same_mask_spc);
-      bloated.set_yhi(bloated.yMax() + same_mask_spc);
+      bloated.set_xlo(bloated.xMin() - query_spc);
+      bloated.set_ylo(bloated.yMin() - query_spc);
+      bloated.set_xhi(bloated.xMax() + query_spc);
+      bloated.set_yhi(bloated.yMax() + query_spc);
       std::vector<value_t> hits;
       rtree.query(boost::geometry::index::intersects(bloated),
                   std::back_inserter(hits));
@@ -1459,9 +1470,17 @@ int TritonRoute::checkMaskDRC(const char* filename,
         if (a.net == b.net && a.rect.overlaps(b.rect)) {
           continue;
         }
-        // Only same-mask, colored (non-zero) pairs are mask violations.
-        if (a.mask == 0 || b.mask == 0 || a.mask != b.mask) {
+        // Both shapes must be colored to make a mask-based spacing decision.
+        if (a.mask == 0 || b.mask == 0) {
           continue;
+        }
+        // Pick the required spacing by mask relationship: same color needs the
+        // full same-mask spacing; different colors only need the relaxed
+        // different-mask spacing (which may be 0 = always legal).
+        const bool same_mask = (a.mask == b.mask);
+        const int req_spc = same_mask ? same_mask_spc : diff_mask_spc;
+        if (req_spc <= 0) {
+          continue;  // no constraint (e.g. relaxed diff-mask spacing == 0)
         }
         // Compute the edge-to-edge gap. Negative/zero means overlap, which
         // is a short rather than a spacing violation; skip (handled by
@@ -1474,10 +1493,11 @@ int TritonRoute::checkMaskDRC(const char* filename,
           continue;  // overlap / short
         }
         const int64_t gap2 = (int64_t) dx * dx + (int64_t) dy * dy;
-        if (gap2 >= (int64_t) same_mask_spc * same_mask_spc) {
+        if (gap2 >= (int64_t) req_spc * req_spc) {
           continue;  // spacing satisfied
         }
-        // Same-mask spacing violation.
+        // Mask spacing violation (same-mask gap < same-mask spacing, or
+        // different-mask gap < relaxed different-mask spacing).
         total_violations++;
         odb::Rect viol = a.rect;
         viol.merge(b.rect);
@@ -1485,7 +1505,11 @@ int TritonRoute::checkMaskDRC(const char* filename,
           report << "violation type: Mask Spacing\n";
           report << "\tsrcs: " << a.net->getName() << " " << b.net->getName()
                  << "\n";
-          report << "\tmask: " << a.mask << "\n";
+          if (same_mask) {
+            report << "\tmask: " << a.mask << "\n";
+          } else {
+            report << "\tmask: " << a.mask << " " << b.mask << "\n";
+          }
           report << "\tbbox = (" << viol.xMin() << ", " << viol.yMin()
                  << ") - (" << viol.xMax() << ", " << viol.yMax()
                  << ") on Layer " << layer->getName() << "\n";
@@ -1507,7 +1531,7 @@ int TritonRoute::checkMaskDRC(const char* filename,
   }
   logger_->info(DRT,
                 633,
-                "check_mask_drc: found {} same-mask spacing violation(s) "
+                "check_mask_drc: found {} mask spacing violation(s) "
                 "across {} multi-mask layer(s).",
                 total_violations,
                 multi_mask_layers.size());

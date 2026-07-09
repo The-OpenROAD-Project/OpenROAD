@@ -58,6 +58,13 @@ struct RouterConfiguration
   // default routing/DRC results are unchanged.
   bool MASK_AWARE_DRC = false;
 
+  // Relaxed different-mask spacing (DBU) used by the check_mask_drc audit.
+  // Two shapes of DIFFERENT mask colors on a multi-mask layer are flagged
+  // only when their edge-to-edge gap is below this value. Default 0 means
+  // different-mask pairs are always legal (down to a short), matching the
+  // original audit behavior. Only consulted when MASK_AWARE_DRC is true.
+  int MASK_DIFFERENT_SPACING = 0;
+
   std::string VIAINPIN_BOTTOMLAYER_NAME;
   std::string VIAINPIN_TOPLAYER_NAME;
   frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();

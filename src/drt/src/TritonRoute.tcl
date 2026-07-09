@@ -531,21 +531,33 @@ proc check_mask_drc { args } {
 sta::define_cmd_args "set_mask_aware_routing" {
     [-enable]
     [-disable]
+    [-different_mask_spacing spacing]
 }
 # Enable/disable multi-patterning mask awareness in the detailed router.
 # Default is disabled: when disabled, routing/DRC behavior is identical to
 # a build without this feature. Currently this gate controls the
 # check_mask_drc audit; it is the safety switch for future in-checker
 # mask-aware spacing.
+#
+# -different_mask_spacing <um>: relaxed spacing applied between shapes of
+# DIFFERENT mask colors on a multi-mask layer by the check_mask_drc audit.
+# Default 0 means different-mask pairs are always legal (down to a short),
+# i.e. only same-mask spacing is enforced. Set > 0 to flag different-mask
+# pairs closer than this distance.
 proc set_mask_aware_routing { args } {
   sta::parse_key_args "set_mask_aware_routing" args \
-    keys {} \
+    keys { -different_mask_spacing } \
     flags { -enable -disable }
   sta::check_argc_eq0 "set_mask_aware_routing" $args
   set enable [info exists flags(-enable)]
   set disable [info exists flags(-disable)]
   if { $enable && $disable } {
     utl::error DRT 635 "-enable and -disable are mutually exclusive."
+  }
+  if { [info exists keys(-different_mask_spacing)] } {
+    set spc $keys(-different_mask_spacing)
+    sta::check_positive_float "-different_mask_spacing" $spc
+    drt::set_mask_different_spacing_cmd [ord::microns_to_dbu $spc]
   }
   if { $disable } {
     drt::set_mask_aware_drc_cmd false

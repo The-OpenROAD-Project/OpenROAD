@@ -186,6 +186,7 @@ class TritonRoute : public PinAccessService
   // set, this routine refuses to run. Returns the number of violations.
   int checkMaskDRC(const char* filename, int x1, int y1, int x2, int y2);
   void setMaskAwareDrc(bool enable);
+  void setMaskDifferentSpacing(int spacing);
   bool initGuide();
   void prep();
   odb::dbDatabase* getDb() const { return db_; }

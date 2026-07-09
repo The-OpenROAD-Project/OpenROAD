@@ -6,6 +6,7 @@ or_integration_tests(
     ispd18_sample
     ispd18_sample_incr
     mask_drc
+    mask_drc_diff
     ndr_vias1
     ndr_vias2
     ndr_vias3

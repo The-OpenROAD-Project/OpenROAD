@@ -1,8 +1,9 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_multi_patterned.tlef, created 13 layers, 25 vias
 [INFO ODB-0128] Design: mask_drc
 [INFO ODB-0133]     Created 4 nets and 0 connections.
-[ERROR DRT-0630] check_mask_drc requires mask-aware checking to be enabled (set_mask_aware_routing -enable).
-GATE_OK: disabled by default
+[INFO DRT-0633] check_mask_drc: found 2 mask spacing violation(s) across 3 multi-mask layer(s).
+VIOLATIONS: 2
+DIFF_MASK_OK: both same- and different-mask violations flagged
 [INFO DRT-0633] check_mask_drc: found 1 mask spacing violation(s) across 3 multi-mask layer(s).
-VIOLATIONS: 1
-No differences found.
+VIOLATIONS_DEFAULT: 1
+DEFAULT_OK: different-mask pair legal at same distance
