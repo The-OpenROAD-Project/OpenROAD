@@ -327,6 +327,97 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
   return reqSpcVal;
 }
 
+namespace {
+
+// Multi-patterning mask color of a routed rectangle on a multi-mask routing
+// layer, computed purely from its track position. This mirrors EXACTLY the
+// track-parity policy used when colors are written to the output DEF
+// (io::maskColorForPathSeg): the color is a deterministic function of the
+// shape's perpendicular track coordinate, so computing it here at check time
+// reproduces the same color that slice-2 assigns to the same wire -- no need
+// to plumb a stored color through the boolean polygon merge.
+//
+// Returns 0 ("uncolored / unknown") when the layer is single-mask or has no
+// usable pitch, so callers can fall back to color-blind behavior.
+int gcRectMask(odb::dbTechLayer* db_layer,
+               const gtl::rectangle_data<frCoord>& r)
+{
+  if (db_layer == nullptr) {
+    return 0;
+  }
+  const uint32_t num_masks = db_layer->getNumMasks();
+  if (num_masks <= 1) {
+    return 0;
+  }
+  const odb::dbTechLayerDir dir = db_layer->getDirection();
+  int perp;
+  int pitch;
+  int offset;
+  if (dir == odb::dbTechLayerDir::VERTICAL) {
+    // Vertical wires run in Y; their track is the X coordinate. Use the
+    // perpendicular CENTER of the rect (its width midpoint), which is the
+    // wire centerline that the track-parity color is defined on.
+    perp = (gtl::xl(r) + gtl::xh(r)) / 2;
+    pitch = db_layer->getPitchX() != 0 ? db_layer->getPitchX()
+                                       : db_layer->getPitch();
+    offset = db_layer->getOffsetX();
+  } else {
+    // Horizontal (and any non-vertical) layers: track is the Y coordinate.
+    perp = (gtl::yl(r) + gtl::yh(r)) / 2;
+    pitch = db_layer->getPitchY() != 0 ? db_layer->getPitchY()
+                                       : db_layer->getPitch();
+    offset = db_layer->getOffsetY();
+  }
+  if (pitch <= 0) {
+    return 0;
+  }
+  const long double t_real = (static_cast<long double>(perp) - offset) / pitch;
+  long long t = llroundl(t_real);
+  long long parity = t % static_cast<long long>(num_masks);
+  if (parity < 0) {
+    parity += num_masks;
+  }
+  return static_cast<int>(parity + 1);
+}
+
+}  // namespace
+
+frCoord FlexGCWorker::Impl::checkMetalSpacing_getMaskAdjustedSpc(
+    gcRect* rect1,
+    gcRect* rect2,
+    frCoord reqSpcVal)
+{
+  // Flag gate: with mask-aware mode OFF this is a strict identity function --
+  // no mask lookup, no layer query, behavior is bit-identical to baseline.
+  if (!router_cfg_->MASK_AWARE_DRC) {
+    return reqSpcVal;
+  }
+  auto layerNum = rect1->getLayerNum();
+  auto* layer = getTech()->getLayer(layerNum);
+  // Only multi-mask routing layers can carry a different-mask relaxation.
+  if (layer->getType() != dbTechLayerType::ROUTING
+      || layer->getNumMasks() <= 1) {
+    return reqSpcVal;
+  }
+  odb::dbTechLayer* db_layer = layer->getDbLayer();
+  const int m1 = gcRectMask(db_layer, *rect1);
+  const int m2 = gcRectMask(db_layer, *rect2);
+  // Same mask (or unknown color on either shape): keep the normal same-mask
+  // spacing -- this is the safe default and matches today's behavior.
+  if (m1 <= 0 || m2 <= 0 || m1 == m2) {
+    return reqSpcVal;
+  }
+  // Different mask: shapes may legally sit closer. Apply the configured
+  // relaxed different-mask spacing only when it is set (> 0), and only as a
+  // RELAXATION (never tighten). When unconfigured (0), keep reqSpcVal so the
+  // tech without a separate different-mask rule sees no change/regression.
+  const frCoord diff = router_cfg_->MASK_DIFFERENT_SPACING;
+  if (diff > 0) {
+    return std::min(reqSpcVal, diff);
+  }
+  return reqSpcVal;
+}
+
 // type: 0 -- check H edge only
 // type: 1 -- check V edge only
 // type: 2 -- check both
@@ -452,6 +543,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
     }
     reqSpcVal = std::max({reqSpcVal, ndrSpc1, ndrSpc2});
   }
+
+  // Mask-aware (multi-patterning) relaxation: a different-mask pair may use
+  // the relaxed different-mask spacing. Identity (no-op) unless mask-aware
+  // mode is enabled; see checkMetalSpacing_getMaskAdjustedSpc.
+  reqSpcVal = checkMetalSpacing_getMaskAdjustedSpc(rect1, rect2, reqSpcVal);
 
   // no violation if spacing satisfied
   if (distX * distX + distY * distY >= reqSpcVal * reqSpcVal) {

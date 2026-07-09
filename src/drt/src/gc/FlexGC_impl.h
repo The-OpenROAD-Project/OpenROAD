@@ -261,6 +261,15 @@ class FlexGCWorker::Impl
                                              gcRect* rect2,
                                              frCoord prl,
                                              bool& isSpcRange);
+  // Mask-aware (multi-patterning) spacing adjustment. Returns reqSpcVal
+  // unchanged unless mask-aware mode is enabled AND the two rects sit on a
+  // multi-mask routing layer with DIFFERENT mask colors, in which case it
+  // may relax the requirement to the configured different-mask spacing.
+  // Gated entirely on router_cfg_->MASK_AWARE_DRC; with the flag off this is
+  // an identity function (no mask lookup, no behavior change).
+  frCoord checkMetalSpacing_getMaskAdjustedSpc(gcRect* rect1,
+                                               gcRect* rect2,
+                                               frCoord reqSpcVal);
   bool checkMetalSpacing_prl_hasPolyEdge(
       gcRect* rect1,
       gcRect* rect2,

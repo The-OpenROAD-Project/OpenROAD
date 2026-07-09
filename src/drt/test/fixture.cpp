@@ -286,6 +286,23 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
+void Fixture::makeUniformSpacingConstraint(frLayerNum layer_num,
+                                           const frCoord spacing)
+{
+  // A 1x1 PRL table: any width, any prl -> the same required spacing. This
+  // exercises the frcSpacingTablePrlConstraint branch of
+  // checkMetalSpacing_prl_getReqSpcVal with a constant value, so the test math
+  // is independent of width/prl interpolation.
+  fr2DLookupTbl<frCoord, frCoord, frCoord> tbl(
+      "WIDTH", {0}, "PARALLELRUNLENGTH", {0}, {{spacing}});
+  auto con = std::make_unique<frSpacingTablePrlConstraint>(tbl);
+
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->setMinSpacing(con.get());
+  tech->addUConstraint(std::move(con));
+}
+
 void Fixture::makeSimpleSpacingConstraint(frLayerNum layer_num,
                                           const frCoord spacing_value)
 {

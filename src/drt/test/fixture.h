@@ -76,6 +76,11 @@ class Fixture : public ::testing::Test
 
   void makeSpacingConstraint(frLayerNum layer_num);
 
+  // Installs a single-valued PRL spacing table on the layer so that the
+  // metal-spacing PRL path returns a constant required spacing regardless of
+  // width/prl. Used by the mask-aware spacing test.
+  void makeUniformSpacingConstraint(frLayerNum layer_num, frCoord spacing);
+
   void makeSimpleSpacingConstraint(frLayerNum layer_num, frCoord spacing_value);
 
   void makeMetalWidthViaMap(frLayerNum layer_num,

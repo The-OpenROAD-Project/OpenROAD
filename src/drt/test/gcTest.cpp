@@ -1718,4 +1718,103 @@ INSTANTIATE_TEST_SUITE_P(WidthTblOrthSuite,
                          testing::Combine(testing::Values(40, 50, 60),
                                           testing::Values(40, 50, 60)));
 
+// ---------------------------------------------------------------------------
+// Mask-aware (multi-patterning) spacing in the LIVE FlexGC checker.
+//
+// Layer m1 (layerNum 2) is made multi-mask (NUMMASKS=2), HORIZONTAL, with
+// pitch 140 and offset 0, so the track-parity color (matching the policy that
+// colors routed shapes for the output DEF) is:
+//     mask = round(Y / 140) % 2 + 1
+//   Y=0   -> mask 1     Y=140 -> mask 2 (DIFFERENT)     Y=280 -> mask 1 (SAME)
+//
+// A uniform same-mask required spacing of 350 is installed, large enough that
+// BOTH an adjacent-track pair (gap 40) and a two-track pair (gap 180) would be
+// same-mask violations.
+//
+// Two width-100 horizontal wires overlapping in X form a parallel-run pair, so
+// the spacing decision goes through checkMetalSpacing_prl_getReqSpcVal and the
+// new mask-aware adjustment.
+// ---------------------------------------------------------------------------
+struct MaskSpacingFixture : public GCFixture
+{
+  void setupMaskLayer()
+  {
+    auto* db_layer = db_tech->findLayer("m1");
+    db_layer->setNumMasks(2);
+    db_layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+    db_layer->setPitch(140);
+    db_layer->setOffset(0);
+    makeUniformSpacingConstraint(2, 350);
+  }
+};
+
+// Different-mask pair on adjacent tracks (masks 1 & 2, gap 40 < 350):
+//  - mask-aware OFF: color-blind, flagged (baseline behavior).
+//  - mask-aware ON, no relaxed spacing configured (0): still flagged (no
+//    regression -- a tech without a different-mask rule keeps full spacing).
+//  - mask-aware ON, relaxed different-mask spacing 30 (<= gap 40): LEGAL.
+TEST_F(MaskSpacingFixture, different_mask_relaxed_legal)
+{
+  setupMaskLayer();
+
+  // Baseline (flag OFF): the close different-mask pair is a violation.
+  {
+    router_cfg->MASK_AWARE_DRC = false;
+    router_cfg->MASK_DIFFERENT_SPACING = 0;
+    frNet* n1 = makeNet("n1");
+    frNet* n2 = makeNet("n2");
+    makePathseg(n1, 2, {0, 0}, {500, 0}, 100);      // mask 1
+    makePathseg(n2, 2, {0, 140}, {500, 140}, 100);  // mask 2
+    runGC();
+    EXPECT_EQ(worker.getMarkers().size(), 1)
+        << "flag OFF must be color-blind: close pair is a violation";
+  }
+}
+
+TEST_F(MaskSpacingFixture, different_mask_on_no_relax_still_flagged)
+{
+  setupMaskLayer();
+  router_cfg->MASK_AWARE_DRC = true;
+  router_cfg->MASK_DIFFERENT_SPACING = 0;  // no relaxed rule configured
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  makePathseg(n1, 2, {0, 0}, {500, 0}, 100);      // mask 1
+  makePathseg(n2, 2, {0, 140}, {500, 140}, 100);  // mask 2
+  runGC();
+  EXPECT_EQ(worker.getMarkers().size(), 1)
+      << "no different-mask spacing configured -> no relaxation, still flagged";
+}
+
+TEST_F(MaskSpacingFixture, different_mask_on_relaxed_legal)
+{
+  setupMaskLayer();
+  router_cfg->MASK_AWARE_DRC = true;
+  router_cfg->MASK_DIFFERENT_SPACING = 30;  // relaxed <= gap (40) -> legal
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  makePathseg(n1, 2, {0, 0}, {500, 0}, 100);      // mask 1
+  makePathseg(n2, 2, {0, 140}, {500, 140}, 100);  // mask 2
+  runGC();
+  EXPECT_EQ(worker.getMarkers().size(), 0)
+      << "different-mask pair within relaxed spacing must be LEGAL";
+}
+
+// Same-mask pair two tracks apart (both mask 1, gap 180 < 350) must STILL be
+// flagged even with mask-aware ON and a relaxed different-mask spacing set:
+// the relaxation only applies to DIFFERENT-mask pairs.
+TEST_F(MaskSpacingFixture, same_mask_on_relaxed_still_flagged)
+{
+  setupMaskLayer();
+  router_cfg->MASK_AWARE_DRC = true;
+  router_cfg->MASK_DIFFERENT_SPACING = 50;  // relaxation configured...
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  makePathseg(n1, 2, {0, 0}, {500, 0}, 100);      // mask 1
+  makePathseg(n2, 2, {0, 280}, {500, 280}, 100);  // mask 1 (SAME)
+  runGC();
+  EXPECT_EQ(worker.getMarkers().size(), 1)
+      << "same-mask pair below same-mask spacing must be flagged regardless "
+         "of the different-mask relaxation";
+}
+
 }  // namespace drt
