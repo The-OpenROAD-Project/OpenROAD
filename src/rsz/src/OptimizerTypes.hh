@@ -27,6 +27,7 @@ class Pin;
 class Pvt;
 class RiseFall;
 class Scene;
+class StaState;
 class TimingArc;
 class TimingArcSet;
 class Vertex;
@@ -131,6 +132,10 @@ struct SelectedArc
 
 const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
                                             const sta::TimingArcSet* candidate);
+
+// Return the latch D-side path attached to an expanded latch-through path.
+const sta::Path* latchDataPath(const sta::PathExpanded& expanded,
+                               const sta::StaState* sta);
 
 // One timing arc that can contribute to the driver's output slew merge for the
 // selected output transition.  STA merges output slew across all such arcs

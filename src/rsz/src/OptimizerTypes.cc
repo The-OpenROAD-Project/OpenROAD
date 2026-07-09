@@ -195,6 +195,16 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
       reference, candidate, ArcMatchMode::kExact, nullptr);
 }
 
+const sta::Path* latchDataPath(const sta::PathExpanded& expanded,
+                               const sta::StaState*)
+{
+  const sta::Path* d_path = nullptr;
+  const sta::Path* q_path = nullptr;
+  sta::Edge* d_q_edge = nullptr;
+  expanded.latchPaths(d_path, q_path, d_q_edge);
+  return d_path;
+}
+
 bool Target::canBePathDriver() const
 {
   return (views & kPathDriverView) != 0 && driver_pin != nullptr

@@ -286,7 +286,6 @@ class RepairTargetCollector
   void sortByHeuristic(float load_delay_threshold = 0.0);
   std::map<const sta::Pin*, sta::Delay> getLocalTns() const;
   sta::Delay getLocalPinTns(const sta::Pin* pin) const;
-  const sta::Path* latchDataPath(const sta::PathExpanded& expanded) const;
   void collectExpandedPathDriverTargets(const sta::Path* endpoint_path,
                                         const sta::PathExpanded& expanded,
                                         sta::Slack path_slack,

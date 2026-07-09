@@ -53,19 +53,6 @@ using std::vector;
 
 using utl::RSZ;
 
-namespace {
-
-const sta::Path* latchDataPath(const sta::PathExpanded& expanded)
-{
-  const sta::Path* d_path = nullptr;
-  const sta::Path* q_path = nullptr;
-  sta::Edge* d_q_edge = nullptr;
-  expanded.latchPaths(d_path, q_path, d_q_edge);
-  return d_path;
-}
-
-}  // namespace
-
 SetupLegacyBase::SetupLegacyBase(Resizer& resizer,
                                  MoveCommitter& committer,
                                  RepairSetupContext& setup_context,
@@ -470,7 +457,7 @@ bool SetupLegacyBase::makePinTargetOnPath(const sta::Pin* pin,
     return true;
   }
 
-  const sta::Path* d_path = latchDataPath(expanded);
+  const sta::Path* d_path = latchDataPath(expanded, sta_);
   if (d_path == nullptr) {
     return false;
   }
@@ -797,7 +784,7 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
     ranked_targets.emplace_back(std::move(target), load_delay.second);
   }
 
-  const sta::Path* d_path = latchDataPath(expanded);
+  const sta::Path* d_path = latchDataPath(expanded, sta_);
   if (d_path != nullptr) {
     sta::PathExpanded d_expanded(d_path, sta_);
     const sta::Scene* d_corner = d_path->scene(sta_);

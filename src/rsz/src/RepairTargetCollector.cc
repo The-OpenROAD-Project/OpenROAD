@@ -878,16 +878,6 @@ sta::Path* RepairTargetCollector::findWorstSlackPath(
   return sta_->vertexWorstSlackPath(endpoint, max_);
 }
 
-const sta::Path* RepairTargetCollector::latchDataPath(
-    const sta::PathExpanded& expanded) const
-{
-  const sta::Path* d_path = nullptr;
-  const sta::Path* q_path = nullptr;
-  sta::Edge* d_q_edge = nullptr;
-  expanded.latchPaths(d_path, q_path, d_q_edge);
-  return d_path;
-}
-
 void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* endpoint_path,
     const sta::PathExpanded& expanded,
@@ -945,7 +935,7 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
   // A latch-through path starts at latch Q in OpenSTA, with the latch D path
   // stored as side context.  Expand that D path separately so repair_timing can
   // optimize the logic that consumed the borrowed time.
-  const sta::Path* d_path = latchDataPath(expanded);
+  const sta::Path* d_path = latchDataPath(expanded, sta_);
   if (d_path != nullptr) {
     sta::PathExpanded d_expanded(d_path, sta_);
     collectExpandedPathDriverTargets(d_path, d_expanded, path_slack, targets);
@@ -1269,7 +1259,7 @@ set<const sta::Pin*> RepairTargetCollector::collectPinsByPathEndpoint(
       }
     }
 
-    const sta::Path* d_path = latchDataPath(expanded);
+    const sta::Path* d_path = latchDataPath(expanded, sta_);
     if (d_path != nullptr) {
       sta::PathExpanded d_expanded(d_path, sta_);
       const size_t old_size = viol_pins.size();
