@@ -30,6 +30,9 @@ ALL_TESTS = [
     "hier_highest_connected_net",
     "hier_weird_port",
     "levelize_drvr_vertices1",
+    "lvf_flagoff",
+    "lvf_sigma",
+    "lvf_table",
     "make_port",
     "modnet_port_alias",
     "network_edit1",
@@ -163,6 +166,18 @@ filegroup(
                 "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
                 "asap7/asap7_tech_1x_201209.lef",
                 "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
+            "lvf_flagoff": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
+            ],
+            "lvf_sigma": [
+                "lvf_lib.lib",
+                "lvf_lib.lef",
+            ],
+            "lvf_table": [
+                "lvf_lib.lib",
+                "lvf_lib.lef",
             ],
             "network_edit1": [
                 "reg3.def",
