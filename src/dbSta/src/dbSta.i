@@ -1231,4 +1231,491 @@ si_window_gated_count_cmd(int corner)
   return gated;
 }
 
+////////////////////////////////////////////////////////////////
+//
+// Crosstalk-aware TIMING -- effective-capacitance stage-delay adjustment.
+//
+// This slice turns the coupling-capacitance (CC) segments that rcx already
+// extracts into an actual stage-delay adjustment, not just a report. A
+// victim net's effective capacitance grows when a coupled aggressor switches
+// in the SAME direction within the timing window (the Miller effect roughly
+// doubles the apparent coupling cap), and shrinks when it switches in the
+// OPPOSITE direction (the two terminals move together, so less charge is
+// delivered to the coupling cap).
+//
+// Model (slice 1 -- switching-factor effective-C):
+//   For each top-N victim, for every CC segment to an aggressor:
+//     * If the aggressor's switching window OVERLAPS the victim's (reusing the
+//       si_window infrastructure) the aggressor is "active in-window" and the
+//       segment's effective coupling becomes  Cc_eff = Cc * (1 + k).
+//       (k is the user switching factor; k = 1 reproduces the classic 2x
+//        Miller bound for a simultaneously-opposite-switching aggressor.)
+//     * If it does NOT overlap, the aggressor is quiet/decoupled in the
+//       window and the segment is left at nominal Cc (no adjustment).
+//   The added effective cap  dC = k * Cc_active  is realized by bloating the
+//   stored coupling capacitors of the victim (snapshotting originals), exactly
+//   like the noise-delay slice, so report_checks sees the degraded stage delay
+//   after pi/Arnoldi reduction. The implied stage-delay delta is reported as
+//   d(delay) ~= Rdrv * dC for auditability.
+//
+//   k may be negative to model a net-decoupling (opposite-switching) bound:
+//   Cc_eff = Cc * (1 + k) with -1 < k < 0 shrinks the effective coupling.
+//
+// DEFAULT OFF (never enabled) == byte-identical baseline: nothing is mutated.
+//
+////////////////////////////////////////////////////////////////
+
+namespace sta {
+
+// Process-global crosstalk-delay state. enabled=false (default) == baseline.
+struct XtalkDelayState
+{
+  bool enabled = false;
+  double k = 1.0;                       // user switching factor (Ceff += k*Cc)
+  double guardband = 0.0;               // s, widens aggressor window (overlap)
+  int max_nets = 0;                     // top-N victims; <=0 == all
+  std::vector<SiCcSnapshot> snapshots;  // for byte-identical restore
+};
+
+static XtalkDelayState &
+xtalkDelayState()
+{
+  static XtalkDelayState state;
+  return state;
+}
+
+// Restore every coupling cap the xtalk-delay adjustment bloated. Idempotent.
+static void
+xtalk_delay_restore_caps()
+{
+  XtalkDelayState &st = xtalkDelayState();
+  for (const SiCcSnapshot &s : st.snapshots) {
+    s.parasitics->setCapacitorValue(s.capacitor, s.orig_value);
+  }
+  st.snapshots.clear();
+}
+
+// Per-victim crosstalk-delay result, for reporting / test introspection.
+struct XtalkDelayResult
+{
+  odb::dbNet *victim = nullptr;
+  double cc_total = 0.0;     // fF -- total coupling cap (all aggressors)
+  double cc_active = 0.0;    // fF -- coupling cap of in-window aggressors
+  double dcap = 0.0;         // fF -- added effective cap = k * cc_active
+  double rdrv = 0.0;         // ohm -- victim driver on-resistance
+  double ddelay = 0.0;       // s  -- implied stage-delay delta = Rdrv * dC
+  int aggr_total = 0;        // CC segments seen
+  int aggr_active = 0;       // CC segments with overlapping (active) window
+  bool applied = false;      // true if the bloat was applied to the graph
+};
+
+// Core engine. For the top-N coupled victims, scale every in-window CC segment
+// by (1 + k) so the effective coupling capacitance reflects same-direction
+// aggressor switching; out-of-window segments are left at nominal. mutate=true
+// applies the bloat (snapshotting originals); mutate=false is a pure read-only
+// what-if. Always restores prior bloat first so repeated calls are stable.
+static std::vector<XtalkDelayResult>
+xtalk_delay_apply(sta::dbSta *sta,
+                  sta::dbNetwork *db_network,
+                  odb::dbBlock *block,
+                  int corner,
+                  double k,
+                  double guardband,
+                  int max_nets,
+                  bool mutate)
+{
+  std::vector<XtalkDelayResult> results;
+  XtalkDelayState &st = xtalkDelayState();
+
+  if (mutate) {
+    xtalk_delay_restore_caps();
+  }
+
+  // The bloat factor applied to an active (in-window) CC segment. k == 0 is a
+  // no-op (factor 1.0) so the feature degrades gracefully to baseline. k > -1
+  // keeps the effective cap non-negative.
+  const double active_factor = 1.0 + k;
+
+  // Rank candidate victims by total coupling cap (same ordering as the SI
+  // hotspot / window reports) so top-N selects the highest-risk nets.
+  struct Cand { odb::dbNet *net; double cc; };
+  std::vector<Cand> cands;
+  for (odb::dbNet *net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    const double cc = net->getTotalCouplingCap(corner);
+    if (cc <= 0.0) {
+      continue;
+    }
+    cands.push_back({net, cc});
+  }
+  std::sort(cands.begin(), cands.end(),
+            [](const Cand &a, const Cand &b) { return a.cc > b.cc; });
+  const int n = (max_nets <= 0)
+                    ? static_cast<int>(cands.size())
+                    : std::min<int>(max_nets, cands.size());
+
+  // Cache windows per net to avoid recomputing.
+  std::unordered_map<odb::dbNet *, SiWindow> window_cache;
+  auto get_window = [&](odb::dbNet *dn) -> const SiWindow & {
+    auto it = window_cache.find(dn);
+    if (it != window_cache.end()) {
+      return it->second;
+    }
+    SiWindow w = si_net_window(sta, db_network, dn);
+    return window_cache.emplace(dn, w).first->second;
+  };
+
+  for (int i = 0; i < n; i++) {
+    odb::dbNet *victim_db = cands[i].net;
+    sta::Net *victim = db_network->dbToSta(victim_db);
+    if (victim == nullptr) {
+      continue;
+    }
+    const SiWindow &vw = get_window(victim_db);
+
+    XtalkDelayResult r;
+    r.victim = victim_db;
+
+    double cc_total_f = 0.0;   // Farads
+    double cc_active_f = 0.0;  // Farads
+
+    // Walk the victim's coupling capacitors in every parasitics object (min/max
+    // of every scene). A coupling cap has its two nodes on different nets; the
+    // aggressor is the net of the node that is not the victim.
+    struct ActiveCap { sta::Parasitics *par; sta::ParasiticCapacitor *cap;
+                       float orig; };
+    std::vector<ActiveCap> active_caps;
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *pars[2]
+          = {scene->parasitics(sta::MinMax::max()),
+             scene->parasitics(sta::MinMax::min())};
+      sta::Parasitics *seen_prev = nullptr;
+      for (sta::Parasitics *par : pars) {
+        if (par == nullptr || par == seen_prev) {
+          continue;  // skip null and shared min==max object (count once)
+        }
+        seen_prev = par;
+        sta::Parasitic *pnet = par->findParasiticNetwork(victim);
+        if (pnet == nullptr) {
+          continue;
+        }
+        for (sta::ParasiticCapacitor *cap : par->capacitors(pnet)) {
+          sta::ParasiticNode *nd1 = par->node1(cap);
+          sta::ParasiticNode *nd2 = par->node2(cap);
+          const sta::Net *net1 = par->net(nd1, db_network);
+          const sta::Net *net2 = par->net(nd2, db_network);
+          const sta::Net *aggr_net = nullptr;
+          if (net1 == victim && net2 != nullptr && net2 != victim) {
+            aggr_net = net2;
+          } else if (net2 == victim && net1 != nullptr && net1 != victim) {
+            aggr_net = net1;
+          } else {
+            continue;  // grounded cap or not a victim coupling cap
+          }
+
+          const double cc = par->value(cap);  // Farads (internal)
+          cc_total_f += cc;
+          r.aggr_total++;
+
+          odb::dbNet *aggr_db = db_network->staToDb(aggr_net);
+          const SiWindow &aw = get_window(aggr_db);
+          if (si_windows_overlap(vw, aw, guardband)) {
+            // Aggressor switches in-window: this segment is "active" and gets
+            // the switching-factor effective-cap bloat.
+            cc_active_f += cc;
+            r.aggr_active++;
+            active_caps.push_back({par, cap, static_cast<float>(cc)});
+          }
+          // Out-of-window aggressor: left at nominal Cc (no adjustment).
+        }
+      }
+    }
+
+    r.cc_total = cc_total_f * 1e15;            // fF
+    r.cc_active = cc_active_f * 1e15;          // fF
+    const double dcap_f = k * cc_active_f;     // Farads (signed by k)
+    r.dcap = dcap_f * 1e15;                    // fF
+
+    // Implied stage-delay delta from the added load: d(delay) ~= Rdrv * dC.
+    const double rdrv
+        = noise_driver_resistance(sta, db_network, victim_db, nullptr);
+    r.rdrv = rdrv;
+    r.ddelay = (rdrv > 0.0) ? (rdrv * dcap_f) : 0.0;
+
+    if (mutate && k != 0.0 && !active_caps.empty()) {
+      for (const ActiveCap &ac : active_caps) {
+        st.snapshots.push_back({ac.par, ac.cap, ac.orig});
+        ac.par->setCapacitorValue(
+            ac.cap, static_cast<float>(ac.orig * active_factor));
+      }
+      r.applied = true;
+    }
+
+    results.push_back(r);
+  }
+
+  // Rank reported rows by magnitude of the implied delay delta (largest first).
+  std::sort(results.begin(), results.end(),
+            [](const XtalkDelayResult &a, const XtalkDelayResult &b) {
+              const double aa = (a.ddelay < 0.0) ? -a.ddelay : a.ddelay;
+              const double bb = (b.ddelay < 0.0) ? -b.ddelay : b.ddelay;
+              return aa > bb;
+            });
+  return results;
+}
+
+} // namespace sta
+
+// Enable/disable the crosstalk-aware effective-C stage-delay adjustment.
+// enable=false (default) restores every bloated coupling cap byte-identically,
+// drops cached parasitic reductions, and invalidates delays so the next timing
+// query is exact baseline. enable=true scales in-window CC segments of the
+// top-N victims by (1 + k) and forces re-reduction of the touched victims.
+void
+set_xtalk_delay_factor_cmd(bool enable, double k, double guardband,
+                           int max_nets, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  utl::Logger *logger = openroad->getLogger();
+  odb::dbDatabase *db = openroad->getDb();
+  sta::XtalkDelayState &st = sta::xtalkDelayState();
+
+  odb::dbChip *chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(utl::STA, 940, "No chip loaded.");
+  }
+  odb::dbBlock *block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(utl::STA, 941, "No block loaded.");
+  }
+  const int corner_count = block->getCornerCount();
+  const int valid_count = (corner_count == 0) ? 1 : corner_count;
+  if (corner < 0 || corner >= valid_count) {
+    logger->error(utl::STA, 942, "corner {} out of range [0, {}).", corner,
+                  valid_count);
+  }
+
+  if (!enable) {
+    sta::xtalk_delay_restore_caps();
+    st.enabled = false;
+    // Drop cached reductions so timing returns to baseline coupling.
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+      sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+      for (odb::dbNet *db_net : block->getNets()) {
+        sta::Net *net = db_network->dbToSta(db_net);
+        if (net == nullptr) {
+          continue;
+        }
+        if (par_max != nullptr) {
+          par_max->deleteReducedParasitics(net);
+        }
+        if (par_min != nullptr && par_min != par_max) {
+          par_min->deleteReducedParasitics(net);
+        }
+      }
+    }
+    sta->delaysInvalid();
+    return;
+  }
+
+  st.enabled = true;
+  st.k = k;
+  st.guardband = guardband;
+  st.max_nets = max_nets;
+
+  // Apply the adjustment now and force re-reduction of touched victims.
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, k, guardband, max_nets,
+      /* mutate */ true);
+  for (const sta::XtalkDelayResult &r : results) {
+    if (!r.applied) {
+      continue;
+    }
+    sta::Net *net = db_network->dbToSta(r.victim);
+    if (net == nullptr) {
+      continue;
+    }
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+      sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+      if (par_max != nullptr) {
+        par_max->deleteReducedParasitics(net);
+      }
+      if (par_min != nullptr && par_min != par_max) {
+        par_min->deleteReducedParasitics(net);
+      }
+    }
+  }
+  sta->delaysInvalid();
+}
+
+// Report, per victim: total Cc, in-window (active) Cc, the added effective cap
+// dC = k*Cc_active, the victim driver resistance, the implied stage-delay delta
+// (Rdrv*dC), the # of active aggressors, and whether it was applied. When the
+// feature is enabled this re-applies the adjustment (timing reflects it); when
+// disabled it is a pure read-only what-if using the supplied k/guardband.
+void
+report_xtalk_delay_cmd(double k, double guardband, int max_nets, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  utl::Logger *logger = openroad->getLogger();
+  odb::dbDatabase *db = openroad->getDb();
+  sta::XtalkDelayState &st = sta::xtalkDelayState();
+
+  odb::dbChip *chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(utl::STA, 943, "No chip loaded.");
+  }
+  odb::dbBlock *block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(utl::STA, 944, "No block loaded.");
+  }
+  const int corner_count = block->getCornerCount();
+  const int valid_count = (corner_count == 0) ? 1 : corner_count;
+  if (corner < 0 || corner >= valid_count) {
+    logger->error(utl::STA, 945, "corner {} out of range [0, {}).", corner,
+                  valid_count);
+  }
+
+  // When enabled, report with the configured knobs and re-apply (mutate) so
+  // the reported state matches the timing the engine sees. When disabled, run a
+  // read-only what-if with the knobs passed to the report command.
+  const bool mutate = st.enabled;
+  const double use_k = st.enabled ? st.k : k;
+  const double use_gb = st.enabled ? st.guardband : guardband;
+  const int use_mn = st.enabled ? st.max_nets : max_nets;
+
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, use_k, use_gb, use_mn, mutate);
+
+  if (mutate) {
+    for (const sta::XtalkDelayResult &r : results) {
+      if (!r.applied) {
+        continue;
+      }
+      sta::Net *net = db_network->dbToSta(r.victim);
+      if (net == nullptr) {
+        continue;
+      }
+      for (sta::Scene *scene : sta->scenes()) {
+        sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+        sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+        if (par_max != nullptr) {
+          par_max->deleteReducedParasitics(net);
+        }
+        if (par_min != nullptr && par_min != par_max) {
+          par_min->deleteReducedParasitics(net);
+        }
+      }
+    }
+    sta->delaysInvalid();
+  }
+
+  sta::Report *report = sta->report();
+  report->report(
+      "Crosstalk-aware delay report (corner {}, xtalk-delay {}, k={:.3f}, "
+      "guardband={:.3e})",
+      corner,
+      st.enabled ? "ENABLED" : "disabled(what-if)",
+      use_k,
+      use_gb);
+  report->report("{:<28} {:>10} {:>11} {:>11} {:>11} {:>11} {:>7} {:>7}",
+                 "Victim net", "Cc(fF)", "CcActive(fF)", "dCap(fF)",
+                 "Rdrv(ohm)", "dDelay(s)", "Active", "Applied");
+  report->report(
+      "--------------------------------------------------------------------"
+      "------------------------------------");
+  int n_applied = 0;
+  for (const sta::XtalkDelayResult &r : results) {
+    if (r.applied) {
+      n_applied++;
+    }
+    report->report(
+        "{:<28} {:>10.4f} {:>11.4f} {:>11.4f} {:>11.2f} {:>11.4e} {:>7} {:>7}",
+        r.victim->getConstName(),
+        r.cc_total,
+        r.cc_active,
+        r.dcap,
+        r.rdrv,
+        r.ddelay,
+        r.aggr_active,
+        r.applied ? "yes" : "no");
+  }
+  report->report(
+      "Reported {} victim nets; {} {} an effective-C adjustment.",
+      static_cast<int>(results.size()),
+      n_applied,
+      st.enabled ? "received" : "would receive");
+}
+
+// Return the implied crosstalk stage-delay delta (seconds) for a single named
+// net at a corner using the supplied switching factor k and guardband, or a
+// sentinel < -1e30 if the net is not found. Read-only what-if (never mutates
+// the graph). Used by tests to assert the model deterministically against a
+// hand calculation.
+double
+xtalk_delay_ddelay_for_net_cmd(const char *net_name, double k,
+                               double guardband, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1e30;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1e30;
+  }
+  // Read-only what-if over just this victim (max_nets large so it is included).
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, k, guardband, /* max_nets */ 0,
+      /* mutate */ false);
+  for (const sta::XtalkDelayResult &r : results) {
+    if (r.victim == net) {
+      return r.ddelay;
+    }
+  }
+  return -1e30;
+}
+
+// Return the in-window (active) coupling cap (fF) for a single named net, or
+// a sentinel < 0 if not found. Read-only. Used by tests to assert which
+// aggressors are counted as switching in-window.
+double
+xtalk_delay_active_cc_for_net_cmd(const char *net_name, double guardband,
+                                  int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1.0;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1.0;
+  }
+  std::vector<sta::XtalkDelayResult> results = sta::xtalk_delay_apply(
+      sta, db_network, block, corner, /* k */ 1.0, guardband,
+      /* max_nets */ 0, /* mutate */ false);
+  for (const sta::XtalkDelayResult &r : results) {
+    if (r.victim == net) {
+      return r.cc_active;
+    }
+  }
+  return -1.0;
+}
+
 %} // inline

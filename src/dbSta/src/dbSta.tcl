@@ -389,6 +389,122 @@ proc report_si_windows { args } {
 }
 
 ################################################################
+################################################################
+#
+# Crosstalk-aware TIMING -- coupling-cap effective-C stage-delay adjustment.
+# See XTALK_DELAY_INVESTIGATION.md for the switching-factor model and limits.
+#
+# Turns the CC segments rcx already extracts into an OPTIONAL, flag-gated
+# stage-delay adjustment: each top-N victim's coupling caps to aggressors that
+# switch in the same timing window are bloated by (1 + k), so report_checks
+# reflects the larger effective capacitance. DEFAULT (disabled / never called)
+# == byte-identical baseline.
+#
+################################################################
+
+define_cmd_args "set_xtalk_delay_factor" \
+  {[-enable] [-disable] [-k factor] [-guardband seconds] [-max_nets count]\
+   [-corner index]}
+
+# Enable/disable the crosstalk-aware effective-C delay adjustment. When enabled,
+# each in-window CC segment of the top-N coupled victims has its stored coupling
+# cap scaled by (1 + k); report_checks then sees the degraded stage delay.
+# -disable (the default state) restores every bloated cap byte-identically ->
+# exact baseline. k defaults to 1.0 (the classic ~2x Miller bound for a
+# same-direction aggressor); -1 < k < 0 models a net-decoupling bound. k == 0
+# is an explicit no-op. -guardband widens each aggressor window (more segments
+# count as active); -max_nets limits to the top-N highest-Cc victims (<=0 all).
+proc set_xtalk_delay_factor { args } {
+  parse_key_args "set_xtalk_delay_factor" args \
+    keys {-k -guardband -max_nets -corner} flags {-enable -disable}
+  check_argc_eq0 "set_xtalk_delay_factor" $args
+
+  set enable 1
+  if { [info exists flags(-disable)] } {
+    set enable 0
+  }
+  if { [info exists flags(-enable)] && [info exists flags(-disable)] } {
+    sta_error 940 "set_xtalk_delay_factor: -enable and -disable are mutually\
+                   exclusive."
+  }
+
+  set k 1.0
+  if { [info exists keys(-k)] } {
+    set k $keys(-k)
+    # k must be > -1 so the effective coupling cap (1 + k) stays non-negative.
+    if { ![string is double -strict $k] || $k <= -1.0 } {
+      sta_error 941 "-k must be a float > -1.0."
+    }
+  }
+
+  set guardband 0.0
+  if { [info exists keys(-guardband)] } {
+    set guardband $keys(-guardband)
+    if { ![string is double -strict $guardband] || $guardband < 0.0 } {
+      sta_error 942 "-guardband must be a non-negative float (seconds)."
+    }
+  }
+
+  set max_nets 0
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+
+  set corner 0
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
+  }
+
+  sta::set_xtalk_delay_factor_cmd $enable $k $guardband $max_nets $corner
+}
+
+define_cmd_args "report_xtalk_delay" \
+  {[-k factor] [-guardband seconds] [-max_nets count] [-corner index]}
+
+# Report, per victim: total Cc, in-window (active) Cc, the added effective cap
+# dC = k*Cc_active, the victim driver resistance, the implied stage-delay delta
+# (Rdrv*dC), the # of active aggressors, and whether it was applied. When
+# set_xtalk_delay_factor -enable is active this re-applies the adjustment using
+# the configured knobs; when disabled it is a read-only what-if using the knobs
+# passed here (-k defaults to 1.0).
+proc report_xtalk_delay { args } {
+  parse_key_args "report_xtalk_delay" args \
+    keys {-k -guardband -max_nets -corner} flags {}
+  check_argc_eq0 "report_xtalk_delay" $args
+
+  set k 1.0
+  if { [info exists keys(-k)] } {
+    set k $keys(-k)
+    if { ![string is double -strict $k] || $k <= -1.0 } {
+      sta_error 943 "-k must be a float > -1.0."
+    }
+  }
+
+  set guardband 0.0
+  if { [info exists keys(-guardband)] } {
+    set guardband $keys(-guardband)
+    if { ![string is double -strict $guardband] || $guardband < 0.0 } {
+      sta_error 944 "-guardband must be a non-negative float (seconds)."
+    }
+  }
+
+  set max_nets 20
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+
+  set corner 0
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
+  }
+
+  sta::report_xtalk_delay_cmd $k $guardband $max_nets $corner
+}
+
 # Depth-based (AOCV-style) OCV derate -- first slice (report-only).
 # See AOCV_INVESTIGATION.md for design and limitations.
 

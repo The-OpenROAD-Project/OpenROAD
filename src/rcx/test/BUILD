@@ -27,6 +27,7 @@ COMPULSORY_TESTS = [
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "coupling_si_window",
+    "coupling_xtalk_delay",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -98,6 +99,10 @@ filegroup(
                 "ext_pattern.rules",
             ],
             "coupling_si_window": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_xtalk_delay": [
                 "gcd.def",
                 "ext_pattern.rules",
             ],

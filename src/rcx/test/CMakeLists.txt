@@ -14,6 +14,7 @@ or_integration_tests(
   PASSFAIL_TESTS
     rcx_unit_test
     coupling_si_window
+    coupling_xtalk_delay
 )
 
 #generate_rules
