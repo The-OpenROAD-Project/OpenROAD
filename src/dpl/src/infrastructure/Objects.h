@@ -43,9 +43,15 @@ class Master
   void setTopPowerType(int top_pwr);
   void setDbMaster(odb::dbMaster* db_master);
   odb::dbMaster* getDbMaster() const;
+  // Cached db site (db_master_->getSite()), populated by setDbMaster().  Lets
+  // the per-probe legality checks in diamondSearch avoid repeated odb traversal
+  // (dbInst->getMaster()->getSite()) that dominated profiling on congested
+  // designs.  Returns the identical pointer the odb traversal would.
+  odb::dbSite* getDbSite() const;
 
  private:
   odb::dbMaster* db_master_{nullptr};
+  odb::dbSite* db_site_{nullptr};
   odb::Rect boundary_box_;
   bool is_multi_row_{false};
   std::vector<MasterEdge> edges_;

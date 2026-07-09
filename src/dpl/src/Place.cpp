@@ -1066,7 +1066,14 @@ bool Opendp::checkPixels(const Node* cell,
     return false;
   }
 
-  odb::dbSite* site = cell->getSite();
+  // Hoist cell-invariant master/site lookups out of the per-pixel loop and off
+  // the odb traversal path.  cell->getSite() and cell->getDbInst()->getMaster()
+  // each walk dbInst->dbMaster on every probe; on congested designs
+  // diamondSearch probes enormously, making these the top DB hot spots.  The
+  // dpl Master caches the same odb::dbMaster*/odb::dbSite* pointers, so reading
+  // them here is pointer-identical to the odb traversal but far cheaper.
+  const Master* master = cell->getMaster();
+  odb::dbSite* site = master->getDbSite();
   for (GridY y1 = y; y1 < y_end; y1++) {
     const bool first_row = (y1 == y);
     for (GridX x1 = x; x1 < x_end; x1++) {
@@ -1130,8 +1137,9 @@ bool Opendp::checkPixels(const Node* cell,
 
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
 
-  // Check for symmetry
-  auto* dbMaster = cell->getDbInst()->getMaster();
+  // Check for symmetry.  Use the cached db master (pointer-identical to
+  // cell->getDbInst()->getMaster()) to avoid the odb traversal per probe.
+  auto* dbMaster = master->getDbMaster();
   unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
   if (!checkMasterSym(masterSym, orient)) {
     return false;
@@ -1140,7 +1148,7 @@ bool Opendp::checkPixels(const Node* cell,
   // For multi-row cells, the bottom-row site/orient check above only covers
   // the bottom row; it doesn't ensure the master's power pin stack lines up
   // with the PDN rail stack across the span.  Reject wrong-parity landings.
-  if (cell->getMaster()->isMultiRow() && !checkRowPowerCompatible(cell, y)) {
+  if (master->isMultiRow() && !checkRowPowerCompatible(cell, y)) {
     return false;
   }
 
