@@ -5,6 +5,10 @@
 
 %{
 
+#include <cstdio>
+
+#include "db_sta/PbaReport.hh"
+#include "sta/MinMax.hh"
 #include <iomanip>
 #include <sstream>
 
@@ -342,6 +346,46 @@ void check_axioms_cmd()
 bool parasitics_annotated(Pin *pin, Scene *scene) {
   auto parasitics = scene->parasitics(sta::MinMax::max());
   return parasitics->findParasiticNetwork(pin) != nullptr;
+}
+
+// Path-Based Analysis pessimism-recovery report (additive diagnostic).
+// Reports, for the top max_paths GBA critical paths, the GBA slack, the
+// PBA slack (after re-evaluating gate stages with path-specific slews) and
+// the recovered pessimism. Does NOT change report_checks / GBA results.
+void
+report_pba_slack_cmd(int max_paths,
+                     const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportPbaSlack(sta, max_paths, min_max);
+}
+
+// Machine-readable variant for testing. Returns one string per path:
+//   "<endpoint> <gba_slack> <pba_slack> <recovered> <gate_stages>"
+// with times in seconds (STA internal units).
+StringSeq
+pba_slack_report_lines(int max_paths,
+                       const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::PbaPathResult> results =
+      sta::computePbaSlack(sta, max_paths, min_max);
+  StringSeq lines;
+  for (const sta::PbaPathResult &r : results) {
+    char buf[512];
+    std::snprintf(buf, sizeof(buf), "%s %.6e %.6e %.6e %d",
+                  r.endpoint.c_str(),
+                  r.gba_slack,
+                  r.pba_slack,
+                  r.recovered,
+                  r.gate_stages);
+    lines.push_back(buf);
+  }
+  return lines;
 }
 
 } // namespace sta

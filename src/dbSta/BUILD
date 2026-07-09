@@ -14,10 +14,12 @@ package(
 cc_library(
     name = "dbSta",
     srcs = [
+        "src/PbaReport.cc",
         "src/dbSta.cc",
     ],
     hdrs = [
         "include/db_sta/DelayFmt.hh",
+        "include/db_sta/PbaReport.hh",
         "include/db_sta/dbSta.hh",
     ],
     includes = [
@@ -134,6 +136,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
+        "include/db_sta/PbaReport.hh",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",

@@ -159,6 +159,29 @@ proc check_axioms { args } {
   check_axioms_cmd
 }
 
+define_cmd_args "report_pba_slack" {[-max_paths count]}
+
+# Path-Based Analysis pessimism-recovery report (additive diagnostic).
+# For the top -max_paths GBA SETUP critical paths, reports GBA slack, PBA
+# slack (after re-evaluating gate stages with path-specific slews) and the
+# recovered pessimism (PBA slack - GBA slack, always >= 0). This does NOT
+# change report_checks / GBA results.
+#
+# This first slice supports setup (max) analysis only; see AGENT_REPORT.md.
+proc report_pba_slack { args } {
+  parse_key_args "report_pba_slack" args keys {-max_paths} flags {}
+
+  check_argc_eq0 "report_pba_slack" $args
+
+  set max_paths 10
+  if { [info exists keys(-max_paths)] } {
+    set max_paths $keys(-max_paths)
+    sta::check_positive_integer "-max_paths" $max_paths
+  }
+
+  sta::report_pba_slack_cmd $max_paths max
+}
+
 proc endpoint_path_count { } {
   return [endpoint_count]
 }

@@ -58,6 +58,7 @@ ALL_TESTS = [
     "report_cell_usage_modinsts_metrics",
     "report_cell_usage_physical_only",
     "report_json1",
+    "report_pba_slack",
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
@@ -209,6 +210,9 @@ filegroup(
             ],
             "report_json1": [
                 "reg6.def",
+            ],
+            "report_pba_slack": [
+                "pba_gcd.def",
             ],
             "report_timing_histogram": [
                 "example1_slow.lib",
