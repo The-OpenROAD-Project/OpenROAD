@@ -192,7 +192,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "78f19f25cec73bdec3517a76465dec7ce17ce227"
+BAZEL_ORFS_COMMIT = "60d62021c779e64ef7360a1b08a8faee00183c8d"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -210,27 +210,30 @@ git_override(
     strip_prefix = "verilog",
 )
 
-# bazel-orfs pulls in orfs without a version and patches yosys, relying on
-# overrides that only apply when bazel-orfs is the root module. Mirror them
-# here so OpenROAD-as-root can resolve the module graph.
+# @orfs marks most non-root-only directives (qt-bazel/yosys-slang git_overrides,
+# orfs.default(), toolchain registration) as dev_dependency, so they are no-ops
+# here. But @orfs//flow loads @bazel-orfs//:openroad.bzl, and @orfs marks its
+# bazel-orfs bazel_dep dev_dependency too, which drops @bazel-orfs from @orfs's
+# repo mapping when consumed non-root — so loading @orfs//flow fails. The patch
+# makes that one bazel_dep non-dev.
 #
 # Use archive_override (HTTPS tarball) rather than git_override so the
 # build resolves on networks that block direct git access to github.com.
-ORFS_COMMIT = "10a2baea2171059ec14cda9a5855aa26dd7572c6"
+ORFS_COMMIT = "4b3f2663609fd3f6fd8d862729de1ec5967eb4e6"
 
 bazel_dep(name = "orfs", dev_dependency = True)
 archive_override(
     module_name = "orfs",
     patch_strip = 1,
     patches = [
-        "//bazel/bazel-orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
+        "//bazel/bazel-orfs-patches:0035-orfs-bazel-orfs-visible-non-root.patch",
     ],
-    sha256 = "8325c6755215857a87a84db078d47dfbb2dfcbef70eaf0dd376fe5a7a363cd58",
+    sha256 = "b6e496221b5be5a5ecd54e978a7a8157a212b67374e2ecd6c27f90d35e02b473",
     strip_prefix = "OpenROAD-flow-scripts-" + ORFS_COMMIT,
     urls = ["https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/archive/" + ORFS_COMMIT + ".tar.gz"],
 )
 
-bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
+bazel_dep(name = "yosys", version = "0.64", dev_dependency = True)
 bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
 archive_override(
     module_name = "yosys-slang",
