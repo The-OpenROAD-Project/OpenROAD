@@ -98,10 +98,6 @@ class RepairTargetCollector
   void setToEndpoint(int index);
   sta::Vertex* getCurrentEndpoint() const { return current_endpoint_; }
   sta::Slack getCurrentEndpointSlack() const;
-  sta::Slack getCurrentEndpointOriginalSlack() const
-  {
-    return current_end_original_slack_;
-  }
   int getCurrentEndpointIndex() const { return current_endpoint_index_; }
   int getMaxEndpointCount() const { return violating_endpoints_.size(); }
   int getCurrentPass() const;
@@ -344,7 +340,6 @@ class RepairTargetCollector
   // Current endpoint iteration state
   bool iteration_began_;
   sta::Vertex* current_endpoint_;
-  sta::Slack current_end_original_slack_;
   int current_endpoint_index_;
 
   // === Startpoint iteration state ==========================================

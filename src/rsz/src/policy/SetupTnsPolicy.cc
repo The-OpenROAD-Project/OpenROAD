@@ -129,8 +129,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
     }
 
     const sta::Pin* endpoint_pin = endpoint->pin();
-    sta::Slack endpoint_slack
-        = target_collector_->getCurrentEndpointOriginalSlack();
+    sta::Slack endpoint_slack = target_collector_->getCurrentEndpointSlack();
     if (sta::fuzzyGreaterEqual(endpoint_slack, setup_slack_margin)) {
       continue;
     }

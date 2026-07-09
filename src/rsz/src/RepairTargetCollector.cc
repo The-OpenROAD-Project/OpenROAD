@@ -2269,7 +2269,6 @@ void RepairTargetCollector::setToEndpoint(int index)
   current_endpoint_index_ = index;
   const auto& end_slack_pair = violating_endpoints_[current_endpoint_index_];
   current_endpoint_ = graph_->pinLoadVertex(end_slack_pair.first);
-  current_end_original_slack_ = end_slack_pair.second;
 }
 
 void RepairTargetCollector::setToStartpoint(int index)
@@ -2278,7 +2277,6 @@ void RepairTargetCollector::setToStartpoint(int index)
   const auto& start_slack_pair
       = violating_startpoints_[current_startpoint_index_];
   current_startpoint_ = graph_->pinLoadVertex(start_slack_pair.first);
-  // Note: For startpoints, we don't use current_end_original_slack_
 }
 
 void RepairTargetCollector::advanceToNextEndpoint()
