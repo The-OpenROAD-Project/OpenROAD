@@ -735,7 +735,14 @@ void collectPolygonCorners(
     std::unordered_set<std::pair<frCoord, frCoord>,
                        boost::hash<std::pair<frCoord, frCoord>>>& corners)
 {
-  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+  // Reuse a per-thread scratch buffer across calls instead of allocating a
+  // fresh vector each time. boost::polygon's get() appends to the output
+  // container, so we must clear() first; the buffer is then fully overwritten
+  // on every call, so no stale state leaks between calls (bit-identical).
+  // FlexGC runs one worker per thread, so thread_local keeps per-worker
+  // correctness.
+  thread_local std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+  polygons.clear();
   poly_set.get(polygons);
   for (const auto& polygon : polygons) {
     for (const auto& pt : polygon) {
