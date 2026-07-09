@@ -2078,6 +2078,457 @@ noise_cgnd_for_net_cmd(const char *net_name, int corner)
 
 ////////////////////////////////////////////////////////////////
 //
+// Crosstalk NOISE -> TIMING : optional noise-induced delay push.
+//
+// Turns the read-only report_noise bump (Volts) into an OPTIONAL, flag-gated
+// delay PUSH (seconds) on the victim net, so report_checks reflects the
+// noise-degraded timing when enabled. Default (disabled) == byte-identical
+// baseline timing. See NOISE_TMG_INVESTIGATION.md for the full derivation.
+//
+// Model:
+//   bump (V)        from noise_estimate_victim (charge-share * driver atten.)
+//   delay_push (s)  = scale * bump * slew_victim / Vdd   (linear-ramp threshold
+//                     shift; slew = victim driver-pin transition)
+//   dC (F)          = delay_push / Rdrv_victim           (first-order T=R*C)
+// Apply: bloat the victim's coupling caps by (Cc_net + dC)/Cc_net via
+//   Parasitics::setCapacitorValue (snapshotting originals exactly like the
+//   SI-window slice), then deleteReducedParasitics + delaysInvalid so the next
+//   delay calc re-reduces with the heavier load. Disable restores byte-for-byte.
+//
+////////////////////////////////////////////////////////////////
+
+namespace sta {
+
+// Nominal fallback slew (s) when a victim has no timed driver slew. 100ps is a
+// generic mid-range edge for sky130hs-class cells; only used as a last resort.
+static const double kNoiseDelayFallbackSlew = 100e-12;
+
+// Process-global noise-delay state. enabled=false (default) == baseline.
+struct NoiseDelayState
+{
+  bool enabled = false;
+  double scale = 1.0;                   // user delay-push scale factor
+  std::vector<SiCcSnapshot> snapshots;  // for byte-identical restore
+};
+
+static NoiseDelayState &
+noiseDelayState()
+{
+  static NoiseDelayState state;
+  return state;
+}
+
+// Restore every coupling cap the noise-delay push bloated. Idempotent.
+static void
+noise_delay_restore_caps()
+{
+  NoiseDelayState &st = noiseDelayState();
+  for (const SiCcSnapshot &s : st.snapshots) {
+    s.parasitics->setCapacitorValue(s.capacitor, s.orig_value);
+  }
+  st.snapshots.clear();
+}
+
+// Victim driver-pin slew (s), max transition over both edges, or <=0 if none.
+static double
+noise_victim_slew(sta::dbSta *sta,
+                  sta::dbNetwork *db_network,
+                  odb::dbNet *db_net)
+{
+  if (db_net == nullptr) {
+    return 0.0;
+  }
+  sta::Net *net = db_network->dbToSta(db_net);
+  if (net == nullptr) {
+    return 0.0;
+  }
+  sta::PinSet *drvrs = db_network->drivers(net);
+  if (drvrs == nullptr || drvrs->empty()) {
+    return 0.0;
+  }
+  sta::Graph *graph = sta->ensureGraph();
+  if (graph == nullptr) {
+    return 0.0;
+  }
+  double worst = 0.0;
+  for (const sta::Pin *pin : *drvrs) {
+    sta::Vertex *vertex = graph->pinDrvrVertex(pin);
+    if (vertex == nullptr) {
+      continue;
+    }
+    const sta::Slew s = sta->slew(
+        vertex, sta::RiseFallBoth::riseFall(), sta->scenes(),
+        sta::MinMax::max());
+    const double sf = static_cast<double>(sta::delayAsFloat(s));
+    if (std::isfinite(sf) && sf > worst) {
+      worst = sf;
+    }
+  }
+  return worst;
+}
+
+// Per-victim noise-delay result for reporting / test introspection.
+struct NoiseDelayResult
+{
+  odb::dbNet *victim = nullptr;
+  double cc = 0.0;          // fF -- total coupling cap
+  double bump = 0.0;        // V  -- estimated noise bump
+  double vdd = 0.0;         // V  -- supply used
+  double slew = 0.0;        // s  -- victim slew used (incl. fallback)
+  double delay_push = 0.0;  // s  -- noise-induced delay push
+  double dcap = 0.0;        // fF -- equivalent added load cap
+  bool applied = false;     // true if the push was applied to the graph
+};
+
+// Compute (and optionally apply) the noise-induced delay push for the top-N
+// coupled victims. mutate=true bloats coupling caps (snapshotting originals);
+// mutate=false is a pure read-only what-if. Always restores prior bloat first.
+static std::vector<NoiseDelayResult>
+noise_delay_apply(sta::dbSta *sta,
+                  sta::dbNetwork *db_network,
+                  odb::dbBlock *block,
+                  int corner,
+                  int max_nets,
+                  double scale,
+                  double vdd_override,
+                  bool mutate)
+{
+  std::vector<NoiseDelayResult> results;
+  NoiseDelayState &st = noiseDelayState();
+
+  if (mutate) {
+    noise_delay_restore_caps();
+  }
+
+  // Rank candidate victims by total coupling cap (same ordering as the noise
+  // and SI hotspot reports) so top-N selects the highest-risk nets.
+  struct Cand { odb::dbNet *net; double cc; };
+  std::vector<Cand> cands;
+  for (odb::dbNet *net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    const double cc = net->getTotalCouplingCap(corner);
+    if (cc <= 0.0) {
+      continue;
+    }
+    cands.push_back({net, cc});
+  }
+  std::sort(cands.begin(), cands.end(),
+            [](const Cand &a, const Cand &b) { return a.cc > b.cc; });
+  const int n = (max_nets <= 0)
+                    ? static_cast<int>(cands.size())
+                    : std::min<int>(max_nets, cands.size());
+
+  const double threshold_frac = sta::noiseState().threshold_frac;
+
+  for (int i = 0; i < n; i++) {
+    odb::dbNet *victim_db = cands[i].net;
+
+    // Reuse the exact bump model the report_noise slice uses.
+    sta::NoiseVictimResult nr = sta::noise_estimate_victim(
+        sta, db_network, victim_db, corner, threshold_frac, vdd_override);
+
+    NoiseDelayResult r;
+    r.victim = victim_db;
+    r.cc = nr.cc;
+    r.bump = nr.bump;
+    r.vdd = nr.vdd;
+
+    // bump -> delay push (linear-ramp threshold shift): push = scale*bump*Sv/Vdd.
+    double slew = noise_victim_slew(sta, db_network, victim_db);
+    if (slew <= 0.0) {
+      slew = kNoiseDelayFallbackSlew;
+    }
+    r.slew = slew;
+    const double push = (nr.vdd > 0.0)
+                            ? (scale * nr.bump * slew / nr.vdd)
+                            : 0.0;
+    r.delay_push = (push > 0.0) ? push : 0.0;
+
+    // delay push -> equivalent added load cap: dC = push / Rdrv.
+    const double rdrv
+        = noise_driver_resistance(sta, db_network, victim_db, nullptr);
+    if (r.delay_push > 0.0 && rdrv > 0.0) {
+      const double dcap_f = r.delay_push / rdrv;   // Farads
+      r.dcap = dcap_f * 1e15;                       // fF for reporting
+
+      if (mutate) {
+        // Total network coupling cap (Farads) for this victim, so we can bloat
+        // proportionally to realize the dC delta.
+        sta::Net *victim = db_network->dbToSta(victim_db);
+        if (victim != nullptr) {
+          double cc_net_f = 0.0;
+          struct VCap { sta::Parasitics *par; sta::ParasiticCapacitor *cap;
+                        float orig; };
+          std::vector<VCap> victim_caps;
+          for (sta::Scene *scene : sta->scenes()) {
+            sta::Parasitics *pars[2]
+                = {scene->parasitics(sta::MinMax::max()),
+                   scene->parasitics(sta::MinMax::min())};
+            sta::Parasitics *seen_prev = nullptr;
+            for (sta::Parasitics *par : pars) {
+              if (par == nullptr || par == seen_prev) {
+                continue;
+              }
+              seen_prev = par;
+              sta::Parasitic *pnet = par->findParasiticNetwork(victim);
+              if (pnet == nullptr) {
+                continue;
+              }
+              for (sta::ParasiticCapacitor *cap : par->capacitors(pnet)) {
+                sta::ParasiticNode *nd1 = par->node1(cap);
+                sta::ParasiticNode *nd2 = par->node2(cap);
+                const sta::Net *net1 = par->net(nd1, db_network);
+                const sta::Net *net2 = par->net(nd2, db_network);
+                const bool is_cc
+                    = (net1 == victim && net2 != nullptr && net2 != victim)
+                      || (net2 == victim && net1 != nullptr
+                          && net1 != victim);
+                if (!is_cc) {
+                  continue;  // grounded cap, not a coupling cap
+                }
+                const float v = par->value(cap);
+                cc_net_f += v;
+                victim_caps.push_back({par, cap, v});
+              }
+            }
+          }
+          if (cc_net_f > 0.0) {
+            const double f = (cc_net_f + dcap_f) / cc_net_f;  // bloat factor >1
+            for (const auto &vc : victim_caps) {
+              sta::Parasitics *par = vc.par;
+              sta::ParasiticCapacitor *cap = vc.cap;
+              const float orig = vc.orig;
+              st.snapshots.push_back({par, cap, orig});
+              par->setCapacitorValue(cap, static_cast<float>(orig * f));
+            }
+            r.applied = true;
+          }
+        }
+      } else {
+        // What-if: dC is computable, would be applied if enabled.
+        r.applied = false;
+      }
+    }
+    results.push_back(r);
+  }
+
+  // Rank reported rows by delay push (largest first).
+  std::sort(results.begin(), results.end(),
+            [](const NoiseDelayResult &a, const NoiseDelayResult &b) {
+              return a.delay_push > b.delay_push;
+            });
+  return results;
+}
+
+}  // namespace sta
+
+// Enable/disable the noise-induced delay push. enable=false (default) restores
+// every bloated coupling cap byte-identically, drops cached reductions, and
+// invalidates delays so the next query is exact baseline timing.
+void
+set_noise_delay_cmd(bool enable, double scale, int max_nets, int corner,
+                    double vdd)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  utl::Logger *logger = openroad->getLogger();
+  odb::dbDatabase *db = openroad->getDb();
+  sta::NoiseDelayState &st = sta::noiseDelayState();
+
+  odb::dbChip *chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(utl::STA, 923, "No chip loaded.");
+  }
+  odb::dbBlock *block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(utl::STA, 924, "No block loaded.");
+  }
+  const int corner_count = block->getCornerCount();
+  const int valid_count = (corner_count == 0) ? 1 : corner_count;
+  if (corner < 0 || corner >= valid_count) {
+    logger->error(utl::STA, 925, "corner {} out of range [0, {}).", corner,
+                  valid_count);
+  }
+
+  if (!enable) {
+    sta::noise_delay_restore_caps();
+    st.enabled = false;
+    // Drop cached reductions so timing returns to baseline coupling.
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+      sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+      for (odb::dbNet *db_net : block->getNets()) {
+        sta::Net *net = db_network->dbToSta(db_net);
+        if (net == nullptr) {
+          continue;
+        }
+        if (par_max != nullptr) {
+          par_max->deleteReducedParasitics(net);
+        }
+        if (par_min != nullptr && par_min != par_max) {
+          par_min->deleteReducedParasitics(net);
+        }
+      }
+    }
+    sta->delaysInvalid();
+    return;
+  }
+
+  st.enabled = true;
+  st.scale = scale;
+
+  // Apply the push now and force re-reduction of touched victims.
+  std::vector<sta::NoiseDelayResult> results = sta::noise_delay_apply(
+      sta, db_network, block, corner, max_nets, scale, vdd, /* mutate */ true);
+  for (const sta::NoiseDelayResult &r : results) {
+    if (!r.applied) {
+      continue;
+    }
+    sta::Net *net = db_network->dbToSta(r.victim);
+    if (net == nullptr) {
+      continue;
+    }
+    for (sta::Scene *scene : sta->scenes()) {
+      sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+      sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+      if (par_max != nullptr) {
+        par_max->deleteReducedParasitics(net);
+      }
+      if (par_min != nullptr && par_min != par_max) {
+        par_min->deleteReducedParasitics(net);
+      }
+    }
+  }
+  sta->delaysInvalid();
+}
+
+// Report the per-victim noise-induced delay push. When the feature is ENABLED
+// this re-applies the push (so report_checks reflects it); when DISABLED it is
+// a pure read-only what-if (no graph mutation, baseline timing untouched).
+void
+report_noise_delay_cmd(int max_nets, int corner, double vdd)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  utl::Logger *logger = openroad->getLogger();
+  odb::dbDatabase *db = openroad->getDb();
+  sta::NoiseDelayState &st = sta::noiseDelayState();
+
+  odb::dbChip *chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(utl::STA, 926, "No chip loaded.");
+  }
+  odb::dbBlock *block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(utl::STA, 927, "No block loaded.");
+  }
+  const int corner_count = block->getCornerCount();
+  const int valid_count = (corner_count == 0) ? 1 : corner_count;
+  if (corner < 0 || corner >= valid_count) {
+    logger->error(utl::STA, 928, "corner {} out of range [0, {}).", corner,
+                  valid_count);
+  }
+
+  const bool mutate = st.enabled;
+  std::vector<sta::NoiseDelayResult> results = sta::noise_delay_apply(
+      sta, db_network, block, corner, max_nets, st.scale, vdd, mutate);
+
+  if (mutate) {
+    for (const sta::NoiseDelayResult &r : results) {
+      if (!r.applied) {
+        continue;
+      }
+      sta::Net *net = db_network->dbToSta(r.victim);
+      if (net == nullptr) {
+        continue;
+      }
+      for (sta::Scene *scene : sta->scenes()) {
+        sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+        sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+        if (par_max != nullptr) {
+          par_max->deleteReducedParasitics(net);
+        }
+        if (par_min != nullptr && par_min != par_max) {
+          par_min->deleteReducedParasitics(net);
+        }
+      }
+    }
+    sta->delaysInvalid();
+  }
+
+  sta::Report *report = sta->report();
+  report->report(
+      "Noise-induced delay report (corner {}, noise-delay {}, scale={:.3f})",
+      corner,
+      st.enabled ? "ENABLED" : "disabled(what-if)",
+      st.scale);
+  report->report("{:<28} {:>10} {:>9} {:>11} {:>11} {:>10} {:>7}",
+                 "Victim net", "Cc(fF)", "Bump(V)", "Slew(s)", "Push(s)",
+                 "dCap(fF)", "Applied");
+  report->report(
+      "--------------------------------------------------------------------"
+      "--------------------------");
+  int n_applied = 0;
+  for (const sta::NoiseDelayResult &r : results) {
+    if (r.applied) {
+      n_applied++;
+    }
+    report->report(
+        "{:<28} {:>10.4f} {:>9.4f} {:>11.4e} {:>11.4e} {:>10.4f} {:>7}",
+        r.victim->getConstName(),
+        r.cc,
+        r.bump,
+        r.slew,
+        r.delay_push,
+        r.dcap,
+        r.applied ? "yes" : "no");
+  }
+  report->report(
+      "Reported {} victim nets; {} {} a delay push.",
+      static_cast<int>(results.size()),
+      n_applied,
+      st.enabled ? "received" : "would receive");
+}
+
+// Return the noise-induced delay push (seconds) for a single named net at a
+// corner using the current scale, or <0 if the net is not found. Read-only
+// what-if (never mutates the graph). Used by tests to assert the model
+// deterministically and check direction.
+double
+noise_delay_push_for_net_cmd(const char *net_name, int corner, double vdd)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    return -1.0;
+  }
+  odb::dbNet *net = block->findNet(net_name);
+  if (net == nullptr) {
+    return -1.0;
+  }
+  sta::NoiseDelayState &st = sta::noiseDelayState();
+  sta::NoiseVictimResult nr = sta::noise_estimate_victim(
+      sta, db_network, net, corner, sta::noiseState().threshold_frac, vdd);
+  double slew = sta::noise_victim_slew(sta, db_network, net);
+  if (slew <= 0.0) {
+    slew = sta::kNoiseDelayFallbackSlew;
+  }
+  if (nr.vdd <= 0.0) {
+    return 0.0;
+  }
+  const double push = st.scale * nr.bump * slew / nr.vdd;
+  return (push > 0.0) ? push : 0.0;
+}
+
+////////////////////////////////////////////////////////////////
+//
 // Crosstalk-aware TIMING -- effective-capacitance stage-delay adjustment.
 //
 // This slice turns the coupling-capacitance (CC) segments that rcx already

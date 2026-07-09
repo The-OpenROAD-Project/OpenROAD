@@ -656,6 +656,104 @@ proc report_noise { args } {
   sta::report_noise_cmd $threshold $max_nets $corner $vdd
 }
 
+################################################################
+#
+# Crosstalk NOISE -> TIMING -- optional noise-induced delay push.
+# See NOISE_TMG_INVESTIGATION.md for the bump->delay model and limitations.
+#
+# Turns the read-only report_noise bump into an OPTIONAL, flag-gated delay
+# PUSH on the victim net so report_checks reflects the noise-degraded timing
+# when enabled. DEFAULT (disabled / never called) == byte-identical baseline.
+#
+################################################################
+
+define_cmd_args "set_noise_delay" \
+  {[-enable] [-disable] [-scale k] [-max_nets count] [-corner index] [-vdd volts]}
+
+# Enable/disable the noise-induced delay push. When enabled, each top-N coupled
+# victim's estimated noise bump is converted to a delay push (push = scale *
+# bump * slew / Vdd) and realized as added load by bloating that victim's
+# coupling caps; report_checks then sees the degraded timing. -disable (the
+# default state) restores every bloated cap byte-identically -> exact baseline.
+proc set_noise_delay { args } {
+  parse_key_args "set_noise_delay" args \
+    keys {-scale -max_nets -corner -vdd} flags {-enable -disable}
+  check_argc_eq0 "set_noise_delay" $args
+
+  set enable 1
+  if { [info exists flags(-disable)] } {
+    set enable 0
+  }
+  if { [info exists flags(-enable)] && [info exists flags(-disable)] } {
+    sta_error 930 "set_noise_delay: -enable and -disable are mutually\
+                   exclusive."
+  }
+
+  set scale 1.0
+  if { [info exists keys(-scale)] } {
+    set scale $keys(-scale)
+    sta::check_positive_float "-scale" $scale
+  }
+
+  set max_nets 20
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+
+  set corner 0
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
+  }
+
+  # vdd <= 0 means "use each victim driver's nominal Liberty voltage".
+  set vdd 0.0
+  if { [info exists keys(-vdd)] } {
+    set vdd $keys(-vdd)
+    if { ![string is double -strict $vdd] || $vdd <= 0.0 } {
+      sta_error 931 "-vdd must be a positive float (volts)."
+    }
+  }
+
+  sta::set_noise_delay_cmd $enable $scale $max_nets $corner $vdd
+}
+
+define_cmd_args "report_noise_delay" \
+  {[-max_nets count] [-corner index] [-vdd volts]}
+
+# Report, per victim: Cc, estimated noise bump (V), victim slew (s), the
+# noise-induced delay push (s), the equivalent added load cap (fF), and whether
+# the push was applied. When set_noise_delay -enable is active this re-applies
+# the push (timing reflects it); when disabled it is a pure read-only what-if.
+proc report_noise_delay { args } {
+  parse_key_args "report_noise_delay" args \
+    keys {-max_nets -corner -vdd} flags {}
+  check_argc_eq0 "report_noise_delay" $args
+
+  set max_nets 20
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+
+  set corner 0
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
+  }
+
+  set vdd 0.0
+  if { [info exists keys(-vdd)] } {
+    set vdd $keys(-vdd)
+    if { ![string is double -strict $vdd] || $vdd <= 0.0 } {
+      sta_error 932 "-vdd must be a positive float (volts)."
+    }
+  }
+
+  sta::report_noise_delay_cmd $max_nets $corner $vdd
+}
+
 
 ################################################################
 ################################################################
