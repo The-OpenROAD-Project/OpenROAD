@@ -12,6 +12,7 @@ or_integration_tests(
     blif_writer_sequential
     const_cell_removal
     gcd_restructure
+    gcd_restructure_delay
     aes_asap7
     gcd_asap7
     memory_nangate45
