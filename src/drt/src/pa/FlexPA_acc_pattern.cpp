@@ -463,7 +463,7 @@ int FlexPA::getEdgeCost(
 
   // Edge cached as having a violation
   if (vio_edges[edge_idx] == 1) {
-    return violation_cost;
+    return kViolationCost;
   }
 
   // Violation status of the edge is not cached, has to be calculated
@@ -507,7 +507,7 @@ int FlexPA::getEdgeCost(
     has_vio = !genPatternsGC({target_obj}, objs, Edge);
     vio_edges[edge_idx] = has_vio;
     if (has_vio) {
-      return violation_cost;
+      return kViolationCost;
     }
 
     // check one more back
@@ -533,7 +533,7 @@ int FlexPA::getEdgeCost(
         }
 
         if (!genPatternsGC({target_obj}, objs, Edge)) {
-          return violation_cost;
+          return kViolationCost;
         }
       }
     }
@@ -542,12 +542,12 @@ int FlexPA::getEdgeCost(
   if ((prev_pin_idx == 0 && used_access_points.contains(prev_node->getIdx()))
       || (curr_pin_idx == (int) pins.size() - 1
           && used_access_points.contains(curr_node->getIdx()))) {
-    return repeated_ap_cost;
+    return kRepeatedApCost;
   }
 
   if (viol_access_points.contains(prev_node->getIdx())
       || viol_access_points.contains(curr_node->getIdx())) {
-    return violation_cost;
+    return kViolationCost;
   }
 
   const int prev_node_cost = prev_node->getNodeCost();
