@@ -3,9 +3,11 @@
 
 include("openroad")
 
+# Lightweight fixture: only needs dbSta/odb/sta. Tests that just read a
+# design should depend on this and avoid pulling in the full optimization
+# tool chain.
 add_library(tst
     src/fixture.cpp
-    src/IntegratedFixture.cpp
 )
 
 target_include_directories(tst
@@ -15,6 +17,27 @@ target_include_directories(tst
 
 target_link_libraries(tst
   PUBLIC
+    dbSta_lib
+  PRIVATE
+    utl_lib
+    odb
+    OpenSTA
+)
+
+# IntegratedFixture pulls in the full optimization tool chain (ant, dpl, est,
+# grt, rsz, stt). Kept separate so lightweight tst consumers don't link it.
+add_library(tst_integrated_fixture
+    src/IntegratedFixture.cpp
+)
+
+target_include_directories(tst_integrated_fixture
+  PUBLIC
+    include
+)
+
+target_link_libraries(tst_integrated_fixture
+  PUBLIC
+    tst
     dbSta_lib
     ant_lib
     dpl_lib

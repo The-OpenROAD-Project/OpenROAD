@@ -148,7 +148,7 @@ target_link_libraries(TestSwapMasterUnusedPort
 )
 target_link_libraries(TestWriteReadDbHier
         db
-        tst
+        tst_integrated_fixture
         ${GTEST_LIBS}
 )
 target_link_libraries(TestObjectType
