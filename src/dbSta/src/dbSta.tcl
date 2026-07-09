@@ -301,7 +301,8 @@ proc report_cppr_closure { args } {
   }
 }
 
-define_cmd_args "report_mcmm_slack" {[-max_endpoints count] [-setup] [-hold]}
+define_cmd_args "report_mcmm_slack" {[-max_endpoints count] [-setup] [-hold]\
+                                       [-by_mode]}
 
 # MCMM -- Multi-Corner Multi-Mode cross-corner worst-slack report (additive,
 # report-only diagnostic). For the top -max_endpoints critical endpoints,
@@ -315,9 +316,16 @@ define_cmd_args "report_mcmm_slack" {[-max_endpoints count] [-setup] [-hold]}
 # one auditable table using the engine's own numbers. It does NOT change
 # report_checks / GBA results and does NOT mutate the timing graph. -setup
 # (default) analyzes max (setup) checks; -hold analyzes min (hold) checks.
+#
+# Slice 2 (MODE dimension): with -by_mode, the limiting column also names the
+# limiting MODE -- i.e. the true cross-mode x corner (mode, corner) pair -- and
+# a per-mode breakdown section is printed (worst slack per endpoint within each
+# mode's scenes). Modes/scenes are declared with the existing OpenSTA surface
+# (`set_mode`, `define_scene -mode`, `read_sdc -mode`). Without -by_mode the
+# output is byte-identical to slice 1.
 proc report_mcmm_slack { args } {
   parse_key_args "report_mcmm_slack" args \
-    keys {-max_endpoints} flags {-setup -hold}
+    keys {-max_endpoints} flags {-setup -hold -by_mode}
 
   check_argc_eq0 "report_mcmm_slack" $args
 
@@ -331,8 +339,9 @@ proc report_mcmm_slack { args } {
     utl::error STA 2106 "report_mcmm_slack: -setup and -hold are mutually exclusive."
   }
   set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+  set by_mode [info exists flags(-by_mode)]
 
-  sta::report_mcmm_slack_cmd $max_endpoints $min_max
+  sta::report_mcmm_slack_cmd $max_endpoints $min_max $by_mode
 }
 
 define_cmd_args "report_closure" {[-max_paths count] [-setup] [-hold] [-all]}

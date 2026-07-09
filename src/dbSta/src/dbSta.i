@@ -511,14 +511,18 @@ pba_closure_summary(int max_paths,
 // per-corner worst slack, the worst slack across all active corners and the
 // limiting corner name. Uses OpenSTA's own cross-corner minimum; does NOT
 // change report_checks / GBA results and does NOT mutate the timing graph.
+// Slice 2: when by_mode is true, also prints a per-mode breakdown and the
+// limiting (mode, corner) pair; with by_mode false the output is identical to
+// slice 1.
 void
 report_mcmm_slack_cmd(int max_endpoints,
-                      const MinMax *min_max)
+                      const MinMax *min_max,
+                      bool by_mode)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
-  sta::reportMcmmSlack(sta, max_endpoints, min_max);
+  sta::reportMcmmSlack(sta, max_endpoints, min_max, by_mode);
 }
 
 // Machine-readable variant for testing. Returns one string per endpoint:
@@ -746,6 +750,62 @@ closure_summary(int max_paths,
         + std::to_string(s.cleared_by_both) + " "
         + std::to_string(s.genuine);
   return out.c_str();
+}
+
+// Slice 2 machine-readable variant for testing the MODE dimension. One string
+// per endpoint:
+//   "<endpoint> <worst_slack> <worst_mode> <worst_corner>"
+// with the slack in seconds (STA internal units) and worst_mode/worst_corner
+// the true cross-mode x corner limiting pair.
+StringSeq
+mcmm_mode_report_lines(int max_endpoints,
+                       const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::McmmEndpointResult> results =
+      sta::computeMcmmSlack(sta, max_endpoints, min_max);
+  StringSeq lines;
+  for (const sta::McmmEndpointResult &r : results) {
+    char buf[512];
+    std::snprintf(buf, sizeof(buf), "%s %.6e %s %s",
+                  r.endpoint.c_str(),
+                  r.worst_slack,
+                  r.worst_mode.c_str(),
+                  r.worst_corner.c_str());
+    lines.push_back(buf);
+  }
+  return lines;
+}
+
+// Slice 2 machine-readable per-mode breakdown for testing. One string per
+// (mode, endpoint):
+//   "<mode> <endpoint> <slack> <limiting_corner>"
+// with the slack in seconds (STA internal units). The slack is the worst slack
+// for that endpoint over just that mode's scenes.
+StringSeq
+mcmm_per_mode_lines(int max_endpoints,
+                    const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::McmmModeResult> results =
+      sta::computeMcmmSlackByMode(sta, max_endpoints, min_max);
+  StringSeq lines;
+  for (const sta::McmmModeResult &mr : results) {
+    for (const sta::McmmModeEndpointSlack &es : mr.endpoints) {
+      char buf[512];
+      std::snprintf(buf, sizeof(buf), "%s %s %.6e %s",
+                    mr.mode.c_str(),
+                    es.endpoint.c_str(),
+                    es.slack,
+                    es.worst_corner.c_str());
+      lines.push_back(buf);
+    }
+  }
+  return lines;
 }
 
 } // namespace sta
