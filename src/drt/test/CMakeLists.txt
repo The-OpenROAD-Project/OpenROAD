@@ -23,6 +23,8 @@ or_integration_tests(
     mask_ta
     mask_solve
     mask_solve_oddcycle
+    mask_solve_cut
+    mask_solve_cut_oddcycle
 )
 
 set_tests_properties(

@@ -10,6 +10,7 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
@@ -1282,6 +1283,11 @@ void TritonRoute::setMaskNumColors(int num_colors)
   router_cfg_->MASK_NUM_COLORS = num_colors;
 }
 
+void TritonRoute::setMaskColorSolveCuts(bool enable)
+{
+  router_cfg_->MASK_COLOR_SOLVE_CUTS = enable;
+}
+
 namespace {
 
 // A routed metal rectangle on a multi-mask layer, tagged with its mask
@@ -1305,9 +1311,49 @@ struct TechLayerByNumber
   }
 };
 
+// Translate a via's cut-layer boxes to absolute coordinates at point (px, py).
+// dbVia / dbTechVia store their boxes relative to the via origin, with the
+// origin aligned to the via bbox min corner; getViaXY mirrors odb's own
+// translation (placed rect = box rect shifted so the via bbox min lands at
+// the path point). For wire vias the path point IS the via origin, so the
+// placed cut rect is the box rect moved by (px - bbox.xMin, py - bbox.yMin).
+template <typename ViaT>
+void appendCutBoxes(
+    ViaT* via,
+    int px,
+    int py,
+    const std::set<odb::dbTechLayer*, TechLayerByNumber>& multi_mask_cut_layers,
+    std::vector<std::pair<odb::Rect, odb::dbTechLayer*>>& out)
+{
+  if (via == nullptr) {
+    return;
+  }
+  odb::dbBox* bbox = via->getBBox();
+  if (bbox == nullptr) {
+    return;
+  }
+  const int dx = px - bbox->xMin();
+  const int dy = py - bbox->yMin();
+  for (odb::dbBox* box : via->getBoxes()) {
+    odb::dbTechLayer* blayer = box->getTechLayer();
+    if (blayer == nullptr) {
+      continue;
+    }
+    if (multi_mask_cut_layers.count(blayer) == 0) {
+      continue;
+    }
+    odb::Rect r = box->getBox();
+    r.moveDelta(dx, dy);
+    out.emplace_back(r, blayer);
+  }
+}
+
 // Decode a net's wire and append every routed metal path-segment rectangle
 // on a multi-mask layer to per-layer buckets, tagged with its mask color.
-// Mask color 0 means "uncolored" (no color assigned on the wire).
+// Mask color 0 means "uncolored" (no color assigned on the wire). When a
+// multi-mask CUT layer appears in multi_mask_layers, via cut shapes on that
+// layer are also collected, tagged with the via's cut mask color, so the
+// mask DRC audit can check same-mask cut spacing.
 void collectMaskShapes(
     odb::dbNet* net,
     const std::set<odb::dbTechLayer*, TechLayerByNumber>& multi_mask_layers,
@@ -1325,6 +1371,8 @@ void collectMaskShapes(
   bool has_prev = false;
   int prev_x = 0, prev_y = 0;
   int cur_color = 0;  // 0 == uncolored
+  int cur_x = 0, cur_y = 0;
+  bool has_pt = false;
   while (opcode != odb::dbWireDecoder::END_DECODE) {
     switch (opcode) {
       case odb::dbWireDecoder::PATH:
@@ -1358,14 +1406,38 @@ void collectMaskShapes(
         prev_x = x;
         prev_y = y;
         has_prev = true;
+        cur_x = x;
+        cur_y = y;
+        has_pt = true;
         break;
       }
       case odb::dbWireDecoder::VIA:
-      case odb::dbWireDecoder::TECH_VIA:
+      case odb::dbWireDecoder::TECH_VIA: {
         // Vias change the active layer; the next PATH/POINT re-establishes
-        // geometry. Cut/landing-pad coloring is out of scope for slice 1.
+        // geometry. If a multi-mask CUT layer is being audited, also emit the
+        // via's cut shapes tagged with its cut mask color.
+        if (has_pt) {
+          std::optional<odb::dbWireDecoder::ViaColor> vc
+              = decoder.getViaColor();
+          const int cut_col = vc ? static_cast<int>(vc->cut_color) : 0;
+          std::vector<std::pair<odb::Rect, odb::dbTechLayer*>> cut_boxes;
+          if (opcode == odb::dbWireDecoder::VIA) {
+            appendCutBoxes(
+                decoder.getVia(), cur_x, cur_y, multi_mask_layers, cut_boxes);
+          } else {
+            appendCutBoxes(decoder.getTechVia(),
+                           cur_x,
+                           cur_y,
+                           multi_mask_layers,
+                           cut_boxes);
+          }
+          for (const auto& [rect, clayer] : cut_boxes) {
+            shapes_by_layer[clayer].push_back(MaskShape{rect, cut_col, net});
+          }
+        }
         has_prev = false;
         break;
+      }
       default:
         break;
     }
@@ -1398,6 +1470,16 @@ int TritonRoute::checkMaskDRC(const char* filename,
   std::set<odb::dbTechLayer*, TechLayerByNumber> multi_mask_layers;
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     if (layer->getType() == odb::dbTechLayerType::ROUTING
+        && layer->getNumMasks() > 1) {
+      multi_mask_layers.insert(layer);
+    }
+  }
+  // Also audit multi-mask CUT layers (multi-patterning slice 6). Cut shapes
+  // are gathered from via cuts by collectMaskShapes and checked against the
+  // same same-mask / different-mask spacing logic. A single-patterned design
+  // has no such layers so this is a no-op there.
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::CUT
         && layer->getNumMasks() > 1) {
       multi_mask_layers.insert(layer);
     }
@@ -1562,6 +1644,8 @@ struct ConflictNode
   odb::dbTechLayer* layer{nullptr};
   int seg_ordinal{0};   // index of this path-segment within net's wire decode
   int solved_color{0};  // 0 = unassigned/uncolorable
+  bool is_cut{false};   // true for a CUT-layer (via) node; false for metal
+  int via_ordinal{0};   // index of the via within net's wire decode (cuts)
 };
 
 // Collect conflict-graph nodes from a net's wire: every routed metal
@@ -1637,7 +1721,87 @@ void collectConflictNodes(
   }
 }
 
-// Edge-to-edge gap^2 between two rects (0 if they touch/overlap).
+// Collect conflict-graph nodes from a net's wire for CUT/VIA layers: every
+// via cut shape on a multi-mask CUT layer, in decode order. via_ordinal counts
+// every VIA/TECH_VIA opcode per net (regardless of layer) so the solved cut
+// color can be replayed onto the right via during write-back. A via may drop
+// several cut rects (a multi-cut via) onto the same cut layer; they all share
+// the via's cut color, so they share via_ordinal and are colored together.
+void collectCutConflictNodes(
+    odb::dbNet* net,
+    const std::set<odb::dbTechLayer*, TechLayerByNumber>& multi_mask_cut_layers,
+    std::vector<ConflictNode>& nodes)
+{
+  odb::dbWire* wire = net->getWire();
+  if (wire == nullptr) {
+    return;
+  }
+  odb::dbWireDecoder decoder;
+  decoder.begin(wire);
+  odb::dbWireDecoder::OpCode opcode = decoder.next();
+  bool has_pt = false;
+  int cur_x = 0, cur_y = 0;
+  int via_ordinal = 0;  // counts every via (colored or not)
+  while (opcode != odb::dbWireDecoder::END_DECODE) {
+    switch (opcode) {
+      case odb::dbWireDecoder::PATH:
+      case odb::dbWireDecoder::JUNCTION:
+      case odb::dbWireDecoder::SHORT:
+      case odb::dbWireDecoder::VWIRE:
+        has_pt = false;
+        break;
+      case odb::dbWireDecoder::POINT:
+      case odb::dbWireDecoder::POINT_EXT: {
+        int x, y, ext = 0;
+        if (opcode == odb::dbWireDecoder::POINT) {
+          decoder.getPoint(x, y);
+        } else {
+          decoder.getPoint(x, y, ext);
+        }
+        cur_x = x;
+        cur_y = y;
+        has_pt = true;
+        break;
+      }
+      case odb::dbWireDecoder::VIA:
+      case odb::dbWireDecoder::TECH_VIA: {
+        if (has_pt) {
+          std::vector<std::pair<odb::Rect, odb::dbTechLayer*>> cut_boxes;
+          if (opcode == odb::dbWireDecoder::VIA) {
+            appendCutBoxes(decoder.getVia(),
+                           cur_x,
+                           cur_y,
+                           multi_mask_cut_layers,
+                           cut_boxes);
+          } else {
+            appendCutBoxes(decoder.getTechVia(),
+                           cur_x,
+                           cur_y,
+                           multi_mask_cut_layers,
+                           cut_boxes);
+          }
+          for (const auto& [rect, layer] : cut_boxes) {
+            ConflictNode n;
+            n.rect = rect;
+            n.net = net;
+            n.layer = layer;
+            n.is_cut = true;
+            n.via_ordinal = via_ordinal;
+            nodes.push_back(n);
+          }
+        }
+        // Every via advances the ordinal so the write-back replay stays
+        // aligned with this decode order.
+        via_ordinal++;
+        // The via does not establish a new path point for the next segment.
+        break;
+      }
+      default:
+        break;
+    }
+    opcode = decoder.next();
+  }
+}
 int64_t gapSquared(const odb::Rect& a, const odb::Rect& b)
 {
   const int dx = std::max({a.xMin() - b.xMax(), b.xMin() - a.xMax(), 0});
@@ -1694,10 +1858,18 @@ bool colorComponent(const std::vector<int>& comp,
 }
 
 // Re-encode net's wire faithfully, overriding the mask color of each
-// multi-mask path-segment with seg_color[seg_ordinal] (1..k, or 0 to clear).
-// Returns true if the wire was rewritten; false (and leaves the wire
-// untouched) if it contains opcodes this faithful-copy path does not handle,
-// so the solver never corrupts a wire it cannot reproduce exactly.
+// multi-mask path-segment with seg_color[seg_ordinal] (1..k, or 0 to clear)
+// and the CUT mask color of each via with via_color[via_ordinal] (1..k). The
+// via's bottom/top mask colors are preserved from the original wire; only the
+// cut color is overridden. Returns true if the wire was rewritten; false (and
+// leaves the wire untouched) if it contains opcodes this faithful-copy path
+// does not handle, so the solver never corrupts a wire it cannot reproduce
+// exactly.
+//
+// Byte-identity guarantee: when via_color is empty (cut coloring off), the
+// via opcodes are emitted exactly as before -- no setViaColor/clearViaColor
+// call is made and any pre-existing via color is reproduced verbatim -- so
+// the metal-only write-back path is unchanged.
 //
 // Handled opcodes: PATH/JUNCTION/SHORT/VWIRE (+ optional RULE), POINT,
 // POINT_EXT, VIA, TECH_VIA, ITERM, BTERM. Unhandled (e.g. RECT patch wires)
@@ -1706,7 +1878,8 @@ bool rewriteWireColors(
     odb::dbNet* net,
     odb::dbTech* db_tech,
     const std::set<odb::dbTechLayer*, TechLayerByNumber>& multi_mask_layers,
-    const std::map<int, int>& seg_color)
+    const std::map<int, int>& seg_color,
+    const std::map<int, int>& via_color)
 {
   odb::dbWire* wire = net->getWire();
   if (wire == nullptr) {
@@ -1747,9 +1920,37 @@ bool rewriteWireColors(
 
   odb::dbTechLayer* layer = nullptr;
   int seg_ordinal = 0;
+  int via_ordinal = 0;
   bool path_open = false;
   bool path_has_prev = false;  // a point has already been emitted on this path
   int pending_color = 0;       // color to apply to the next segment we emit
+  // Tracks the via color currently programmed into the encoder so we only
+  // emit setViaColor/clearViaColor when it actually changes (mirrors the
+  // metal pending_color discipline and keeps emission minimal).
+  bool via_color_pending = false;  // a non-default via color is programmed
+  odb::dbWireDecoder::ViaColor pending_via_color{0, 0, 0};
+
+  // Emit the via color statements needed so that the encoder's active via
+  // color matches `want` (or default when has_want is false). Only emits when
+  // the state changes, preserving byte-identity when nothing differs.
+  auto syncViaColor = [&](bool has_want,
+                          const odb::dbWireDecoder::ViaColor& want) {
+    if (has_want) {
+      if (!via_color_pending
+          || pending_via_color.bottom_color != want.bottom_color
+          || pending_via_color.cut_color != want.cut_color
+          || pending_via_color.top_color != want.top_color) {
+        encoder.setViaColor(want.bottom_color, want.cut_color, want.top_color);
+        via_color_pending = true;
+        pending_via_color = want;
+      }
+    } else {
+      if (via_color_pending) {
+        encoder.clearViaColor();
+        via_color_pending = false;
+      }
+    }
+  };
 
   for (odb::dbWireDecoder::OpCode op = decoder.next();
        op != odb::dbWireDecoder::END_DECODE;
@@ -1814,13 +2015,35 @@ bool rewriteWireColors(
         break;
       }
       case odb::dbWireDecoder::VIA:
-        encoder.addVia(decoder.getVia());
+      case odb::dbWireDecoder::TECH_VIA: {
+        // Determine the via color to emit. Start from whatever color the
+        // original wire carried for this via (so bottom/top are preserved and,
+        // critically, an untouched via is reproduced byte-for-byte). If the
+        // solver assigned a cut color for this via, override the cut digit.
+        std::optional<odb::dbWireDecoder::ViaColor> orig
+            = decoder.getViaColor();
+        auto vit = via_color.find(via_ordinal);
+        if (vit != via_color.end()) {
+          odb::dbWireDecoder::ViaColor want{0, 0, 0};
+          if (orig) {
+            want = *orig;
+          }
+          want.cut_color = static_cast<uint8_t>(vit->second);
+          syncViaColor(true, want);
+        } else if (orig) {
+          syncViaColor(true, *orig);
+        } else {
+          syncViaColor(false, pending_via_color);
+        }
+        if (op == odb::dbWireDecoder::VIA) {
+          encoder.addVia(decoder.getVia());
+        } else {
+          encoder.addTechVia(decoder.getTechVia());
+        }
+        via_ordinal++;
         path_has_prev = false;
         break;
-      case odb::dbWireDecoder::TECH_VIA:
-        encoder.addTechVia(decoder.getTechVia());
-        path_has_prev = false;
-        break;
+      }
       case odb::dbWireDecoder::ITERM:
         encoder.addITerm(decoder.getITerm());
         break;
@@ -1872,7 +2095,7 @@ int TritonRoute::solveMaskColoring(const char* filename,
       multi_mask_layers.insert(layer);
     }
   }
-  if (multi_mask_layers.empty()) {
+  if (multi_mask_layers.empty() && !router_cfg_->MASK_COLOR_SOLVE_CUTS) {
     logger_->warn(DRT,
                   638,
                   "solve_mask_coloring: no multi-mask (NUMMASKS>1) routing "
@@ -2053,12 +2276,195 @@ int TritonRoute::solveMaskColoring(const char* filename,
     }
   }
 
+  // ---- CUT/VIA layers (multi-patterning slice 6) ----------------------------
+  // Gated by MASK_COLOR_SOLVE_CUTS (default off). When off, no cut layer is
+  // even identified, no cut node is collected, and net_via_color stays empty,
+  // so the write-back emits zero via MASK tokens -- the metal-only solver
+  // result is byte-identical. Cuts are colored by exactly the same
+  // conflict-graph + k-coloring machinery as metal: nodes are via cut shapes,
+  // an edge is a pair of cuts closer than the cut layer's same-mask spacing
+  // (hence required on different masks), and uncolorable components are
+  // REPORTED, never force-colored.
+  std::map<odb::dbNet*, std::map<int, int>, NetById> net_via_color;
+  std::set<odb::dbTechLayer*, TechLayerByNumber> multi_mask_cut_layers;
+  if (router_cfg_->MASK_COLOR_SOLVE_CUTS) {
+    for (odb::dbTechLayer* layer : tech->getLayers()) {
+      if (layer->getType() == odb::dbTechLayerType::CUT
+          && layer->getNumMasks() > 1) {
+        multi_mask_cut_layers.insert(layer);
+      }
+    }
+    for (odb::dbTechLayer* layer : multi_mask_cut_layers) {
+      const int same_mask_spc = layer->getSpacing();
+      if (same_mask_spc <= 0) {
+        continue;
+      }
+      const int layer_masks = static_cast<int>(layer->getNumMasks());
+      int k = router_cfg_->MASK_NUM_COLORS;
+      if (k < 2) {
+        k = 2;
+      }
+      if (k > layer_masks) {
+        k = layer_masks;
+      }
+
+      // Gather this cut layer's nodes (one per via cut shape on the layer).
+      std::vector<ConflictNode> nodes;
+      for (odb::dbNet* net : block->getNets()) {
+        std::vector<ConflictNode> net_nodes;
+        collectCutConflictNodes(net, multi_mask_cut_layers, net_nodes);
+        for (const ConflictNode& n : net_nodes) {
+          if (n.layer != layer) {
+            continue;
+          }
+          if (has_query_box && !query_box.intersects(n.rect)) {
+            continue;
+          }
+          nodes.push_back(n);
+        }
+      }
+      if (nodes.empty()) {
+        continue;
+      }
+
+      // Build the conflict graph (same rule as metal: edge = cut-to-cut gap
+      // below the same-mask cut spacing). Overlapping same-via cuts are not a
+      // conflict (they belong to one via and share its color).
+      using value_t = std::pair<odb::Rect, int>;
+      using rtree_t = boost::geometry::index::
+          rtree<value_t, boost::geometry::index::quadratic<16>>;
+      rtree_t rtree;
+      for (int i = 0; i < (int) nodes.size(); i++) {
+        rtree.insert({nodes[i].rect, i});
+      }
+      std::vector<std::vector<int>> adj(nodes.size());
+      const int64_t spc2 = (int64_t) same_mask_spc * same_mask_spc;
+      for (int i = 0; i < (int) nodes.size(); i++) {
+        odb::Rect bloated = nodes[i].rect;
+        bloated.set_xlo(bloated.xMin() - same_mask_spc);
+        bloated.set_ylo(bloated.yMin() - same_mask_spc);
+        bloated.set_xhi(bloated.xMax() + same_mask_spc);
+        bloated.set_yhi(bloated.yMax() + same_mask_spc);
+        std::vector<value_t> hits;
+        rtree.query(boost::geometry::index::intersects(bloated),
+                    std::back_inserter(hits));
+        for (const value_t& hit : hits) {
+          const int j = hit.second;
+          if (j <= i) {
+            continue;
+          }
+          // Two cuts that belong to the same via on the same net share the
+          // via's single cut color, so they must never be a conflict edge
+          // (forcing them apart would be unsolvable and meaningless).
+          if (nodes[i].net == nodes[j].net
+              && nodes[i].via_ordinal == nodes[j].via_ordinal) {
+            continue;
+          }
+          const int64_t g2 = gapSquared(nodes[i].rect, nodes[j].rect);
+          if (g2 == 0) {
+            continue;  // overlap/short: ordinary DRC territory, not a mask edge
+          }
+          if (g2 < spc2) {
+            adj[i].push_back(j);
+            adj[j].push_back(i);
+          }
+        }
+      }
+
+      // Connected components via DFS; color each independently.
+      std::vector<int> color(nodes.size(), 0);
+      std::vector<char> visited(nodes.size(), 0);
+      for (int s = 0; s < (int) nodes.size(); s++) {
+        if (visited[s]) {
+          continue;
+        }
+        std::vector<int> comp;
+        std::vector<int> stack = {s};
+        visited[s] = 1;
+        while (!stack.empty()) {
+          const int v = stack.back();
+          stack.pop_back();
+          comp.push_back(v);
+          for (int u : adj[v]) {
+            if (!visited[u]) {
+              visited[u] = 1;
+              stack.push_back(u);
+            }
+          }
+        }
+        std::vector<int> comp_color(nodes.size(), 0);
+        for (int v : comp) {
+          comp_color[v] = color[v];
+        }
+        const bool ok = colorComponent(comp, adj, k, comp_color);
+        if (ok) {
+          for (int v : comp) {
+            color[v] = comp_color[v];
+          }
+        } else {
+          // Uncolorable cut component (e.g. an odd cycle of cuts when k=2):
+          // REPORT it, leave uncolored. This is the honest DFM signal that the
+          // cut layer cannot be legally decomposed at the requested colors.
+          total_uncolorable++;
+          odb::Rect bbox = nodes[comp.front()].rect;
+          for (int v : comp) {
+            bbox.merge(nodes[v].rect);
+          }
+          if (report.is_open()) {
+            report << "uncolorable conflict\n";
+            report << "\tlayer: " << layer->getName() << " (cut)\n";
+            report << "\tcolors: " << k << "\n";
+            report << "\tnodes: " << comp.size() << "\n";
+            report << "\tbbox = (" << bbox.xMin() << ", " << bbox.yMin()
+                   << ") - (" << bbox.xMax() << ", " << bbox.yMax() << ")\n";
+          }
+          logger_->warn(DRT,
+                        643,
+                        "solve_mask_coloring: uncolorable {}-coloring conflict "
+                        "on cut layer {} ({} cut shapes); not emitting an "
+                        "illegal coloring for this component.",
+                        k,
+                        layer->getName(),
+                        comp.size());
+        }
+      }
+
+      // Accumulate solved cut colors, keyed by via ordinal. Multiple cut
+      // shapes of one via map to the same via_ordinal; they were colored
+      // consistently (never edged against each other) so the assignment is
+      // well-defined.
+      for (int i = 0; i < (int) nodes.size(); i++) {
+        if (color[i] != 0) {
+          net_via_color[nodes[i].net][nodes[i].via_ordinal] = color[i];
+          total_colored++;
+        }
+      }
+    }
+  }
+
+  // Union of every net touched on metal or cut layers, so a single faithful
+  // write-back per net applies both its segment and via colors at once.
+  std::set<odb::dbNet*, NetById> dirty_nets;
+  for (auto& [net, seg_color] : net_seg_color) {
+    dirty_nets.insert(net);
+  }
+  for (auto& [net, via_color] : net_via_color) {
+    dirty_nets.insert(net);
+  }
+
   // Single faithful write-back per net, applying solved colors from every
   // layer at once (so a later layer's rewrite never clobbers an earlier
   // layer's colors).
-  for (auto& [net, seg_color] : net_seg_color) {
+  static const std::map<int, int> kEmpty;
+  for (odb::dbNet* net : dirty_nets) {
+    auto sit = net_seg_color.find(net);
+    auto vit = net_via_color.find(net);
+    const std::map<int, int>& seg_color
+        = (sit != net_seg_color.end()) ? sit->second : kEmpty;
+    const std::map<int, int>& via_color
+        = (vit != net_via_color.end()) ? vit->second : kEmpty;
     const bool wrote
-        = rewriteWireColors(net, tech, multi_mask_layers, seg_color);
+        = rewriteWireColors(net, tech, multi_mask_layers, seg_color, via_color);
     if (!wrote) {
       logger_->warn(DRT,
                     640,
@@ -2077,7 +2483,7 @@ int TritonRoute::solveMaskColoring(const char* filename,
                 "conflict(s) across {} multi-mask layer(s).",
                 total_colored,
                 total_uncolorable,
-                multi_mask_layers.size());
+                multi_mask_layers.size() + multi_mask_cut_layers.size());
   return total_uncolorable;
 }
 

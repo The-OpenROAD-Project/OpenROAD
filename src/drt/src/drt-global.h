@@ -78,6 +78,18 @@ struct RouterConfiguration
   // technology does not declare.
   int MASK_NUM_COLORS = 2;
 
+  // Extend the conflict-graph mask-coloring solver to CUT/VIA layers
+  // (multi-patterning slice 6). Default OFF: with this false the solver only
+  // touches multi-mask ROUTING layers, so its behavior -- including the
+  // routed DEF it produces -- is byte-identical to the metal-only solver and
+  // no cut MASK tokens are ever emitted. Only when true does the solver build
+  // a conflict graph over CUT shapes (vias) on multi-mask CUT layers, solve a
+  // legal k-coloring, and write the solved cut MASK colors back to odb.
+  // Independent of MASK_COLOR_SOLVE only in scope: this flag is meaningless
+  // unless MASK_COLOR_SOLVE is also set (the solver gate still guards the
+  // command).
+  bool MASK_COLOR_SOLVE_CUTS = false;
+
   std::string VIAINPIN_BOTTOMLAYER_NAME;
   std::string VIAINPIN_TOPLAYER_NAME;
   frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();

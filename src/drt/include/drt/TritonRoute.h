@@ -200,6 +200,7 @@ class TritonRoute : public PinAccessService
   int solveMaskColoring(const char* filename, int x1, int y1, int x2, int y2);
   void setMaskColorSolve(bool enable);
   void setMaskNumColors(int num_colors);
+  void setMaskColorSolveCuts(bool enable);
   bool initGuide();
   void prep();
   odb::dbDatabase* getDb() const { return db_; }

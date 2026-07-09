@@ -248,6 +248,12 @@ void set_mask_num_colors_cmd(int num_colors)
   router->setMaskNumColors(num_colors);
 }
 
+void set_mask_color_solve_cuts_cmd(bool enable)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setMaskColorSolveCuts(enable);
+}
+
 int solve_mask_coloring_cmd(const char* report_file,
                             int x1,
                             int y1,

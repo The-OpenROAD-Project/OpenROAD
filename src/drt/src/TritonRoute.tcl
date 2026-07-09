@@ -568,6 +568,7 @@ sta::define_cmd_args "set_mask_aware_routing" {
     [-disable]
     [-different_mask_spacing spacing]
     [-solve_coloring]
+    [-solve_cut_coloring]
     [-num_color_masks count]
 }
 # Enable/disable multi-patterning mask awareness in the detailed router.
@@ -586,13 +587,19 @@ sta::define_cmd_args "set_mask_aware_routing" {
 # solve_mask_coloring command may run (default disabled). Independent of the
 # audit; enabling it does not change routing.
 #
+# -solve_cut_coloring: in addition to ROUTING layers, extend the
+# solve_mask_coloring conflict-graph solver to multi-mask CUT/VIA layers
+# (default disabled). Requires -solve_coloring. With this off the solver never
+# touches cut layers and emits no cut MASK tokens, so the routed DEF is
+# byte-identical to the metal-only solver.
+#
 # -num_color_masks <count>: number of mask colors the solver targets
 # (2 = double-patterning, 3 = triple-patterning). Default 2. Clamped per
 # layer to that layer's NUMMASKS.
 proc set_mask_aware_routing { args } {
   sta::parse_key_args "set_mask_aware_routing" args \
     keys { -different_mask_spacing -num_color_masks } \
-    flags { -enable -disable -solve_coloring }
+    flags { -enable -disable -solve_coloring -solve_cut_coloring }
   sta::check_argc_eq0 "set_mask_aware_routing" $args
   set enable [info exists flags(-enable)]
   set disable [info exists flags(-disable)]
@@ -612,14 +619,19 @@ proc set_mask_aware_routing { args } {
   if { [info exists flags(-solve_coloring)] } {
     drt::set_mask_color_solve_cmd true
   }
+  if { [info exists flags(-solve_cut_coloring)] } {
+    drt::set_mask_color_solve_cuts_cmd true
+  }
   if { $disable } {
     drt::set_mask_aware_drc_cmd false
     drt::set_mask_color_solve_cmd false
+    drt::set_mask_color_solve_cuts_cmd false
   } elseif { $enable } {
     drt::set_mask_aware_drc_cmd true
   } elseif { ![info exists keys(-different_mask_spacing)] \
              && ![info exists keys(-num_color_masks)] \
-             && ![info exists flags(-solve_coloring)] } {
+             && ![info exists flags(-solve_coloring)] \
+             && ![info exists flags(-solve_cut_coloring)] } {
     # Bare command (no flags) preserves the original default action: enable
     # the audit gate.
     drt::set_mask_aware_drc_cmd true

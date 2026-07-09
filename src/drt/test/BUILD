@@ -35,6 +35,8 @@ PASSFAIL_TESTS = [
     "mask_ta",
     "mask_solve",
     "mask_solve_oddcycle",
+    "mask_solve_cut",
+    "mask_solve_cut_oddcycle",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -83,6 +85,7 @@ filegroup(
         "sky130hd/sky130hd.tracks",
         "sky130hd/sky130hd.vars",
         "sky130hd/sky130hd_multi_patterned.tlef",
+        "sky130hd/sky130hd_multi_patterned_cut.tlef",
         "sky130hd/sky130hd_std_cell.lef",
         "sky130hd/sky130hd_std_cell_vt.lef",
         "sky130hd/sky130hd_tt.lib",
