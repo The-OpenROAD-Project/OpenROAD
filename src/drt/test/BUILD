@@ -30,6 +30,7 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
+    "mask_route",
     "mask_ta",
 ]
 
@@ -38,6 +39,7 @@ ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 BIG_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
+    "mask_route",
     "mask_ta",
 ]
 

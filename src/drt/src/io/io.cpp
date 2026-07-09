@@ -3787,9 +3787,68 @@ void io::Writer::writeViaDefToODB(odb::dbBlock* block,
   }
 }
 
+namespace {
+
+// Deterministic, rule-consistent mask color for a routed path-segment on a
+// multi-mask layer. Colors are 1-based (1..numMasks); 0 means uncolored.
+//
+// The color is keyed on the segment's perpendicular track index:
+//   t     = round((perp - offset) / pitch)
+//   color = (t mod numMasks) + 1
+// where `perp` is the Y coordinate for a horizontal layer and the X
+// coordinate for a vertical layer (constant along a same-layer pathseg).
+//
+// This guarantees a legal coloring for same-mask spacing whenever the layer
+// satisfies the standard multi-patterning track constraint
+//   numMasks * pitch - width >= same_mask_spacing
+// because two segments sharing a color are >= numMasks tracks apart (>=
+// numMasks*pitch center-to-center). See MASK_ROUTE_INVESTIGATION.md.
+//
+// Returns 0 (uncolored) when the layer is single-mask, has no usable
+// pitch, or the perpendicular axis cannot be determined.
+uint8_t maskColorForPathSeg(odb::dbTechLayer* layer,
+                            const odb::Point& begin,
+                            const odb::Point& end)
+{
+  const uint32_t num_masks = layer->getNumMasks();
+  if (num_masks <= 1) {
+    return 0;
+  }
+  const odb::dbTechLayerDir dir = layer->getDirection();
+  int perp;
+  int pitch;
+  int offset;
+  if (dir == odb::dbTechLayerDir::VERTICAL) {
+    // Vertical wires run in Y; their track is the X coordinate.
+    perp = begin.x();
+    pitch = layer->getPitchX() != 0 ? layer->getPitchX() : layer->getPitch();
+    offset = layer->getOffsetX();
+  } else {
+    // Horizontal (and any non-vertical) layers: track is the Y coordinate.
+    perp = begin.y();
+    pitch = layer->getPitchY() != 0 ? layer->getPitchY() : layer->getPitch();
+    offset = layer->getOffsetY();
+  }
+  (void) end;
+  if (pitch <= 0) {
+    return 0;
+  }
+  // Nearest-track index (handles off-track segments deterministically).
+  const long double t_real = (static_cast<long double>(perp) - offset) / pitch;
+  long long t = llroundl(t_real);
+  long long parity = t % static_cast<long long>(num_masks);
+  if (parity < 0) {
+    parity += num_masks;
+  }
+  return static_cast<uint8_t>(parity + 1);
+}
+
+}  // namespace
+
 void io::Writer::updateDbConn(odb::dbBlock* block,
                               odb::dbTech* db_tech,
-                              bool snapshot)
+                              bool snapshot,
+                              bool mask_aware)
 {
   odb::dbWireEncoder _wire_encoder;
   for (auto net : block->getNets()) {
@@ -3823,6 +3882,18 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
                   net->getNonDefaultRule()->getLayerRule(layer));
             }
             auto [begin, end] = pathSeg->getPoints();
+            // Mask-aware mode only: assign a deterministic track-parity mask
+            // color to routed segments on multi-mask layers, so the output
+            // DEF carries a legal coloring that check_mask_drc verifies.
+            // Default (flag OFF): never touched -> output is byte-identical.
+            if (mask_aware) {
+              const uint8_t color = maskColorForPathSeg(layer, begin, end);
+              if (color != 0) {
+                _wire_encoder.setColor(color);
+              } else {
+                _wire_encoder.clearColor();
+              }
+            }
             frSegStyle segStyle = pathSeg->getStyle();
             if (segStyle.getBeginStyle() == frEndStyle(frcExtendEndStyle)) {
               if (segStyle.getBeginExt() != layer->getWidth() / 2) {
@@ -3862,6 +3933,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
                                  ->getName();
             auto viaName = via->getViaDef()->getName();
             auto layer = db_tech->findLayer(layerName.c_str());
+            // Vias are left uncolored in this slice (cut/landing-pad
+            // coloring is future work). Clear any color carried over from a
+            // preceding path-segment so it cannot leak onto the via.
+            if (mask_aware) {
+              _wire_encoder.clearColor();
+            }
             if (!net->getNonDefaultRule() || via->isTapered()) {
               _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
             } else {
@@ -3887,6 +3964,9 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
             auto layerName
                 = getTech()->getLayer(pwire->getLayerNum())->getName();
             auto layer = db_tech->findLayer(layerName.c_str());
+            if (mask_aware) {
+              _wire_encoder.clearColor();
+            }
             _wire_encoder.newPath(layer, odb::dbWireType("ROUTED"));
             odb::Point origin = pwire->getOrigin();
             odb::Rect offsetBox = pwire->getOffsetBox();
@@ -4133,7 +4213,7 @@ void io::Writer::updateDb(odb::dbDatabase* db,
       }
     }
     fillConnFigs(false, router_cfg->VERBOSE);
-    updateDbConn(block, db_tech, snapshot);
+    updateDbConn(block, db_tech, snapshot, router_cfg->MASK_AWARE_DRC);
     TopLayerBTermHandler(getDesign(), db, logger_, router_cfg)
         .processBTermsAboveTopLayer(true);
   }

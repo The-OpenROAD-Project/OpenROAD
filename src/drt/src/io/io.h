@@ -187,7 +187,10 @@ class Writer
       std::vector<std::vector<
           std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>>>>&
           mergedPathSegs);
-  void updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech, bool snapshot);
+  void updateDbConn(odb::dbBlock* block,
+                    odb::dbTech* db_tech,
+                    bool snapshot,
+                    bool mask_aware);
   void writeViaDefToODB(odb::dbBlock* block,
                         odb::dbTech* db_tech,
                         const frViaDef* via);
