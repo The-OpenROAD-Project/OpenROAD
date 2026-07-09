@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "sta/Search.hh"  // OpenROAD-fork: AOCV -- AocvDepthDerate interface
+
 namespace sta {
 
 class Sta;
@@ -24,7 +26,10 @@ class PathEnd;
 // path. Lookup uses the entry with the largest tabulated depth that is <= the
 // queried depth (i.e. step / hold-last-value), which matches how AOCV tables
 // are typically interpreted. If empty, lookups return 1.0 (inactive).
-class AocvDerateTable
+//
+// OpenROAD-fork: AOCV -- this table also implements the OpenSTA AocvDepthDerate
+// hook so it can be installed on Search for propagation-time depth derating.
+class AocvDerateTable : public AocvDepthDerate
 {
  public:
   void clear();
@@ -34,8 +39,11 @@ class AocvDerateTable
   void setEarly(int depth, float derate) { early_[depth] = derate; }
 
   // Returns 1.0 when no late entries are present (inactive / default).
-  float lateDerate(int depth) const;
-  float earlyDerate(int depth) const;
+  float lateDerate(int depth) const override;
+  float earlyDerate(int depth) const override;
+  // OpenROAD-fork: AOCV -- which sides have explicit table data.
+  bool lateActive() const override { return !late_.empty(); }
+  bool earlyActive() const override { return !early_.empty(); }
 
   // Load a whitespace table file with lines of the form:
   //   depth late_derate [early_derate]

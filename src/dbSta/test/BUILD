@@ -12,6 +12,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
     "aocv_derate",
+    "aocv_propagate",
     "block_sta1",
     "check_axioms",
     "clock_pin",
@@ -111,6 +112,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "aocv_propagate": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
+            ],
             "block_sta1": [
                 "example1_typ.lib",
                 "example1.def",

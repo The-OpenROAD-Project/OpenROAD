@@ -358,16 +358,65 @@ aocvTable()
   return table;
 }
 
+// OpenROAD-fork: AOCV -- when true, the table is installed on Search so the
+// depth derate is applied during forward arrival propagation (not just in the
+// report-only path). Defaults false: propagation is byte-identical to baseline.
+static bool &
+aocvPropagateFlag()
+{
+  static bool propagate = false;
+  return propagate;
+}
+
+// OpenROAD-fork: AOCV -- (re)install or remove the propagation hook on Search to
+// match the current flag + table state. Installing nullptr (flag off) restores
+// byte-identical baseline timing. Any change to the hook OR (when the hook is
+// active) to the table contents requires re-running timing, so we invalidate
+// Search's arrivals. We invalidate whenever propagation is currently enabled
+// because the caller mutated the table or the flag; a pointer-equality guard is
+// insufficient since the table object identity does not change when its rows do.
+static void
+aocvSyncPropagation()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::Search *search = sta->search();
+  const sta::AocvDepthDerate *hook
+      = aocvPropagateFlag() ? &aocvTable() : nullptr;
+  const bool hook_changed = (search->aocvDepthDerate() != hook);
+  search->setAocvDepthDerate(hook);
+  // Recompute arrivals if the hook was installed/removed, or if it is active
+  // (table rows may have just changed under it).
+  if (hook_changed || hook != nullptr) {
+    sta->arrivalsInvalid();
+  }
+}
+
 void
 aocv_derate_clear()
 {
   aocvTable().clear();
+  aocvSyncPropagation();
 }
 
 bool
 aocv_derate_active()
 {
   return !aocvTable().empty();
+}
+
+// OpenROAD-fork: AOCV -- enable/disable propagation-time depth derating.
+void
+aocv_derate_set_propagate(bool enable)
+{
+  aocvPropagateFlag() = enable;
+  aocvSyncPropagation();
+}
+
+bool
+aocv_derate_propagate_enabled()
+{
+  return aocvPropagateFlag();
 }
 
 // Returns "" on success, else an error message.
@@ -378,6 +427,7 @@ aocv_derate_read_file(const char *filename)
   if (!aocvTable().readFile(filename, error)) {
     return error;
   }
+  aocvSyncPropagation();  // OpenROAD-fork: AOCV -- refresh live hook/arrivals
   return "";
 }
 
@@ -388,6 +438,7 @@ aocv_derate_set_entry(int depth,
 {
   aocvTable().setLate(depth, late_derate);
   aocvTable().setEarly(depth, early_derate);
+  aocvSyncPropagation();  // OpenROAD-fork: AOCV -- refresh live hook/arrivals
 }
 
 // Recompute the AOCV-adjusted slack for one path end and return a Tcl list:

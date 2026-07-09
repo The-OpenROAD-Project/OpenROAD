@@ -204,17 +204,35 @@ proc check_ip { args } {
 define_cmd_args "set_aocv_derate" { \
   [-file filename] \
   [-depth depth -late late_derate -early early_derate] \
+  [-propagate] [-no_propagate] \
   [-reset] }
 
 # Load a depth->derate table used by report_checks_aocv. Either supply a table
 # file with -file, or add a single (depth late early) row inline. -reset clears
 # the table (returns to inactive / baseline behavior).
+#
+# OpenROAD-fork: AOCV -- -propagate installs the table on the OpenSTA forward
+# search so the depth derate is applied DURING timing propagation (real per-arc
+# depth-dependent OCV), not just on reported paths. -no_propagate disables it
+# again. Propagation defaults OFF, so without -propagate timing is identical to
+# the baseline and only report_checks_aocv is affected.
 proc set_aocv_derate { args } {
   parse_key_args "set_aocv_derate" args \
     keys {-file -depth -late -early} \
-    flags {-reset}
+    flags {-reset -propagate -no_propagate}
 
   check_argc_eq0 "set_aocv_derate" $args
+
+  if { [info exists flags(-propagate)] && [info exists flags(-no_propagate)] } {
+    utl::error STA 8003 "set_aocv_derate: -propagate and -no_propagate are\
+ mutually exclusive."
+  }
+  if { [info exists flags(-propagate)] } {
+    sta::aocv_derate_set_propagate 1
+  }
+  if { [info exists flags(-no_propagate)] } {
+    sta::aocv_derate_set_propagate 0
+  }
 
   if { [info exists flags(-reset)] } {
     sta::aocv_derate_clear
@@ -244,7 +262,14 @@ proc set_aocv_derate { args } {
     return
   }
 
-  utl::error STA 8002 "set_aocv_derate: specify -file, -reset, or -depth/-late."
+  # Allow `set_aocv_derate -propagate` / `-no_propagate` on their own (toggle
+  # propagation of the already-loaded table) without requiring -file/-depth.
+  if { [info exists flags(-propagate)] || [info exists flags(-no_propagate)] } {
+    return
+  }
+
+  utl::error STA 8002 "set_aocv_derate: specify -file, -reset, -depth/-late,\
+ or -propagate/-no_propagate."
 }
 
 define_cmd_args "report_checks_aocv" { \
