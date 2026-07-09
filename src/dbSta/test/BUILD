@@ -63,6 +63,7 @@ ALL_TESTS = [
     "report_cppr",
     "report_cppr_closure",
     "report_mcmm_slack",
+    "report_mcmm_slack_by_mode",
     "report_closure",
     "report_incremental_sta",
     "report_incremental_sta2",
@@ -232,6 +233,9 @@ filegroup(
                 "cppr.def",
             ],
             "report_mcmm_slack": [
+                "cppr.def",
+            ],
+            "report_mcmm_slack_by_mode": [
                 "cppr.def",
             ],
             "report_closure": [

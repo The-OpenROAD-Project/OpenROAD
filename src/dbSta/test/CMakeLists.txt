@@ -53,6 +53,7 @@ or_integration_tests(
     report_cppr
     report_cppr_closure
     report_mcmm_slack
+    report_mcmm_slack_by_mode
     report_closure
     report_incremental_sta
     report_incremental_sta2
