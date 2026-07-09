@@ -193,6 +193,12 @@ set_num_static_layers(unsigned num)
 }
 
 void
+set_num_max_leaf_sinks(unsigned num)
+{
+  getTritonCts()->getParms()->setNumMaxLeafSinks(num);
+}
+
+void
 set_sink_buffer(const char* buffer)
 {
   getTritonCts()->setSinkBuffer(buffer);
@@ -344,6 +350,12 @@ unsigned
 get_num_static_layers()
 {
   return getTritonCts()->getParms()->getNumStaticLayers();
+}
+
+unsigned
+get_num_max_leaf_sinks()
+{
+  return getTritonCts()->getParms()->getNumMaxLeafSinks();
 }
 
 std::string

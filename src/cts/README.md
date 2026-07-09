@@ -59,6 +59,7 @@ clock_tree_synthesis
     [-balance_levels]
     [-sink_clustering_levels levels]
     [-num_static_layers]
+    [-num_max_leaf_sinks sinks]
     [-sink_clustering_buffer]
     [-obstruction_aware]
     [-apply_ndr strategy]
@@ -90,6 +91,7 @@ clock_tree_synthesis
 | `-balance_levels` | Attempt to keep a similar number of levels in the clock tree across non-register cells (e.g., clock-gate or inverter). The default value is `False`, and the allowed values are bool. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_max_leaf_sinks` | Maximum number of sinks per leaf sub-region used as the H-tree stop criterion. The H-tree keeps adding levels until the number of sinks per sub-region drops below this value. The default value is `15`, and the allowed values are positive integers `[1, MAX_INT]`. Lowering it produces a deeper H-tree with more buffers but tighter skew/latency balance; raising it produces a shallower tree with fewer buffers but looser balance. (A value larger than the root buffer's fanout limit is clamped to that limit.) |
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
 | `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
 | `-apply_ndr` | Applies 2X spacing non-default rule to clock nets except leaf-level nets following some strategy. There are four strategy options: `none, root_only, half, full`. If this is not specified, the default value is `none`. |
