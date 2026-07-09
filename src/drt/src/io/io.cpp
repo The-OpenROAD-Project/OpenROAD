@@ -3802,7 +3802,7 @@ namespace {
 // satisfies the standard multi-patterning track constraint
 //   numMasks * pitch - width >= same_mask_spacing
 // because two segments sharing a color are >= numMasks tracks apart (>=
-// numMasks*pitch center-to-center). See MASK_ROUTE_INVESTIGATION.md.
+// numMasks*pitch center-to-center).
 //
 // Returns 0 (uncolored) when the layer is single-mask, has no usable
 // pitch, or the perpendicular axis cannot be determined.

@@ -7,8 +7,8 @@
 # coloring is LEGAL via check_mask_drc (slice 1): 0 same-mask spacing
 # violations.
 #
-# The flag-OFF path is proven byte-identical to baseline separately (see
-# AGENT_REPORT.md); with the flag off the TA mask-cost term is identically 0.
+# The flag-OFF path is proven byte-identical to baseline separately;
+# with the flag off the TA mask-cost term is identically 0.
 source "helpers.tcl"
 read_lef "sky130hd/sky130hd_multi_patterned.tlef"
 read_lef "sky130hd/sky130hd_std_cell.lef"
