@@ -554,6 +554,81 @@ mcmm_report_lines(int max_endpoints,
   return lines;
 }
 
+// CPPR slice 2 -- endpoint closure decision surface (additive, report-only).
+// Per-endpoint CPPR-adjusted slack aggregation: raw slack, credit applied,
+// CPPR-adjusted slack and the post-CPPR closure status. Does NOT change
+// report_checks / GBA results and does NOT mutate the timing graph.
+void
+report_cppr_endpoints_cmd(int max_paths,
+                          const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportCpprEndpoints(sta, max_paths, min_max);
+}
+
+// CPPR slice 2 -- closure decision surface: classify raw-GBA-failing
+// endpoints into common-path-pessimism artifacts (pass once CPPR removes the
+// double-counted pessimism) vs genuine post-CPPR violations.
+void
+report_cppr_closure_cmd(int max_paths,
+                        const MinMax *min_max,
+                        bool only_violations)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportCpprClosure(sta, max_paths, min_max, only_violations);
+}
+
+// Machine-readable endpoint variant for testing. One string per endpoint:
+//   "<endpoint> <raw_slack> <cppr_slack> <credit> <raw_viol> <cppr_viol>"
+// with times in seconds (STA internal units); the two trailing flags are 0/1.
+StringSeq
+cppr_endpoint_report_lines(int max_paths,
+                           const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::CpprEndpointResult> results =
+      sta::computeCpprEndpoints(sta, max_paths, min_max);
+  StringSeq lines;
+  for (const sta::CpprEndpointResult &e : results) {
+    char buf[512];
+    std::snprintf(buf, sizeof(buf), "%s %.6e %.6e %.6e %d %d",
+                  e.endpoint.c_str(),
+                  e.raw_slack,
+                  e.cppr_slack,
+                  e.credit,
+                  e.raw_violated ? 1 : 0,
+                  e.cppr_violated ? 1 : 0);
+    lines.push_back(buf);
+  }
+  return lines;
+}
+
+// Machine-readable closure summary for testing. Returns four counters:
+//   "<endpoints> <raw_violations> <recovered_endpoints> <cppr_violations>"
+const char *
+cppr_closure_summary(int max_paths,
+                     const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::CpprEndpointResult> results =
+      sta::computeCpprEndpoints(sta, max_paths, min_max);
+  sta::CpprClosureSummary s = sta::summarizeCpprClosure(results);
+  static std::string out;
+  out = std::to_string(s.endpoints) + " "
+        + std::to_string(s.raw_violations) + " "
+        + std::to_string(s.recovered_endpoints) + " "
+        + std::to_string(s.cppr_violations);
+  return out.c_str();
+}
+
 } // namespace sta
 
 bool

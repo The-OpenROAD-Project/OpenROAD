@@ -260,6 +260,47 @@ proc report_cppr { args } {
   sta::report_cppr_cmd $max_paths $min_max
 }
 
+define_cmd_args "report_cppr_closure" {[-max_paths count] [-setup] [-hold]\
+                                         [-endpoints] [-all]}
+
+# CPPR slice 2 -- closure decision surface (additive, report-only). Builds on
+# report_cppr by aggregating the per-endpoint CPPR credit into a closure
+# decision: endpoints failing under RAW GBA slack (common clock-path
+# pessimism still double-counted) are classified into
+#   * artifacts        -- pass once CPPR removes the double-counted pessimism
+#                         (raw slack < 0 but CPPR-adjusted slack >= 0), and
+#   * genuine          -- still fail after CPPR (CPPR-adjusted slack < 0).
+# Mirrors report_pba_closure for cross-command consistency. With -endpoints
+# the full per-endpoint table (raw / CPPR-adjusted slack, credit, status) is
+# printed with a raw->cppr recovery summary; otherwise only the genuine
+# (post-CPPR) violations are listed (-all also lists the cleared artifacts).
+# Does NOT change report_checks / GBA results and does NOT mutate the graph.
+# -setup (default) analyzes max (setup) checks; -hold analyzes min (hold).
+proc report_cppr_closure { args } {
+  parse_key_args "report_cppr_closure" args \
+    keys {-max_paths} flags {-setup -hold -endpoints -all}
+
+  check_argc_eq0 "report_cppr_closure" $args
+
+  set max_paths 10
+  if { [info exists keys(-max_paths)] } {
+    set max_paths $keys(-max_paths)
+    sta::check_positive_integer "-max_paths" $max_paths
+  }
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 2105 "report_cppr_closure: -setup and -hold are mutually exclusive."
+  }
+  set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+
+  if { [info exists flags(-endpoints)] } {
+    sta::report_cppr_endpoints_cmd $max_paths $min_max
+  } else {
+    set only_violations [expr { [info exists flags(-all)] ? false : true }]
+    sta::report_cppr_closure_cmd $max_paths $min_max $only_violations
+  }
+}
+
 define_cmd_args "report_mcmm_slack" {[-max_endpoints count] [-setup] [-hold]}
 
 # MCMM -- Multi-Corner Multi-Mode cross-corner worst-slack report (additive,
