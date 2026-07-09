@@ -433,6 +433,76 @@ cppr_report_lines(int max_paths,
   return lines;
 }
 
+// Per-endpoint PBA report (setup or hold) with negative->positive summary.
+void
+report_pba_endpoints_cmd(int max_paths,
+                         const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportPbaEndpoints(sta, max_paths, min_max);
+}
+
+// PBA closure decision surface: list genuine post-PBA violations.
+void
+report_pba_closure_cmd(int max_paths,
+                       const MinMax *min_max,
+                       bool only_violations)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta::reportPbaClosure(sta, max_paths, min_max, only_violations);
+}
+
+// Machine-readable endpoint variant for testing. One string per endpoint:
+//   "<endpoint> <gba_slack> <pba_slack> <recovered> <gba_viol> <pba_viol>"
+// where the two trailing flags are 0/1.
+StringSeq
+pba_endpoint_report_lines(int max_paths,
+                          const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::PbaEndpointResult> results =
+      sta::computePbaEndpoints(sta, max_paths, min_max);
+  StringSeq lines;
+  for (const sta::PbaEndpointResult &e : results) {
+    char buf[512];
+    std::snprintf(buf, sizeof(buf), "%s %.6e %.6e %.6e %d %d",
+                  e.endpoint.c_str(),
+                  e.gba_slack,
+                  e.pba_slack,
+                  e.recovered,
+                  e.gba_violated ? 1 : 0,
+                  e.pba_violated ? 1 : 0);
+    lines.push_back(buf);
+  }
+  return lines;
+}
+
+// Machine-readable closure summary for testing. Returns four counters:
+//   "<endpoints> <gba_violations> <recovered_endpoints> <pba_violations>"
+const char *
+pba_closure_summary(int max_paths,
+                    const MinMax *min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  std::vector<sta::PbaEndpointResult> results =
+      sta::computePbaEndpoints(sta, max_paths, min_max);
+  sta::PbaClosureSummary s = sta::summarizeClosure(results);
+  static std::string out;
+  out = std::to_string(s.endpoints) + " "
+        + std::to_string(s.gba_violations) + " "
+        + std::to_string(s.recovered_endpoints) + " "
+        + std::to_string(s.pba_violations);
+  return out.c_str();
+}
+
 } // namespace sta
 
 bool

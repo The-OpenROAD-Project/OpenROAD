@@ -49,6 +49,7 @@ or_integration_tests(
     report_cell_usage_physical_only
     report_json1
     report_pba_slack
+    report_pba_hold
     report_cppr
     report_timing_histogram
     report_logic_depth_histogram

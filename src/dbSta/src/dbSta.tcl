@@ -159,17 +159,21 @@ proc check_axioms { args } {
   check_axioms_cmd
 }
 
-define_cmd_args "report_pba_slack" {[-max_paths count]}
+define_cmd_args "report_pba_slack" {[-max_paths count] [-setup] [-hold]\
+                                      [-endpoints]}
 
 # Path-Based Analysis pessimism-recovery report (additive diagnostic).
-# For the top -max_paths GBA SETUP critical paths, reports GBA slack, PBA
-# slack (after re-evaluating gate stages with path-specific slews) and the
+# For the top -max_paths GBA critical paths, reports GBA slack, PBA slack
+# (after re-evaluating gate stages with path-specific slews) and the
 # recovered pessimism (PBA slack - GBA slack, always >= 0). This does NOT
 # change report_checks / GBA results.
 #
-# This first slice supports setup (max) analysis only; see AGENT_REPORT.md.
+# -setup (default) analyzes max (setup) paths; -hold analyzes min (hold)
+# paths. -endpoints switches to the per-endpoint view with a
+# negative->positive recovery summary. See AGENT_REPORT.md.
 proc report_pba_slack { args } {
-  parse_key_args "report_pba_slack" args keys {-max_paths} flags {}
+  parse_key_args "report_pba_slack" args \
+    keys {-max_paths} flags {-setup -hold -endpoints}
 
   check_argc_eq0 "report_pba_slack" $args
 
@@ -179,7 +183,45 @@ proc report_pba_slack { args } {
     sta::check_positive_integer "-max_paths" $max_paths
   }
 
-  sta::report_pba_slack_cmd $max_paths max
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 2102 "report_pba_slack: -setup and -hold are mutually exclusive."
+  }
+  set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+
+  if { [info exists flags(-endpoints)] } {
+    sta::report_pba_endpoints_cmd $max_paths $min_max
+  } else {
+    sta::report_pba_slack_cmd $max_paths $min_max
+  }
+}
+
+define_cmd_args "report_pba_closure" {[-max_paths count] [-setup] [-hold]\
+                                        [-all]}
+
+# PBA closure decision surface (additive diagnostic). Lists the endpoints
+# that are STILL failing after PBA pessimism recovery (the genuine
+# violations) and reports how many GBA-failing endpoints were merely
+# GBA-pessimism artifacts cleared by PBA. Use -all to also list the
+# recovered (artifact) endpoints. Does NOT change report_checks / GBA.
+proc report_pba_closure { args } {
+  parse_key_args "report_pba_closure" args \
+    keys {-max_paths} flags {-setup -hold -all}
+
+  check_argc_eq0 "report_pba_closure" $args
+
+  set max_paths 10
+  if { [info exists keys(-max_paths)] } {
+    set max_paths $keys(-max_paths)
+    sta::check_positive_integer "-max_paths" $max_paths
+  }
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 2103 "report_pba_closure: -setup and -hold are mutually exclusive."
+  }
+  set min_max [expr { [info exists flags(-hold)] ? "min" : "max" }]
+  set only_violations [expr { [info exists flags(-all)] ? false : true }]
+
+  sta::report_pba_closure_cmd $max_paths $min_max $only_violations
 }
 
 define_cmd_args "report_cppr" {[-max_paths count] [-setup] [-hold]}
