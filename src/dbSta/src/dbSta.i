@@ -5,10 +5,14 @@
 
 %{
 
+#include <iomanip>
+#include <sstream>
+
 #include "odb/db.h"
 #include "odb/PtrSetMap.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/AocvDerate.hh"
 #include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
@@ -16,6 +20,8 @@
 #include "sta/Network.hh"
 #include "sta/Property.hh"
 #include "sta/Report.hh"
+#include "sta/StringUtil.hh"
+#include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
 
 namespace ord {
@@ -337,5 +343,78 @@ check_ip_cmd(const char* master_name,
     return checker.checkMaster(master_name);
   }
 }
+
+////////////////////////////////////////////////////////////////
+// Depth-based (AOCV-style) OCV derate, first slice (report-only).
+// See AOCV_INVESTIGATION.md.
+
+namespace sta {
+
+// Process-global table driven from Tcl. Empty == feature inactive.
+static AocvDerateTable &
+aocvTable()
+{
+  static AocvDerateTable table;
+  return table;
+}
+
+void
+aocv_derate_clear()
+{
+  aocvTable().clear();
+}
+
+bool
+aocv_derate_active()
+{
+  return !aocvTable().empty();
+}
+
+// Returns "" on success, else an error message.
+std::string
+aocv_derate_read_file(const char *filename)
+{
+  std::string error;
+  if (!aocvTable().readFile(filename, error)) {
+    return error;
+  }
+  return "";
+}
+
+void
+aocv_derate_set_entry(int depth,
+                      float late_derate,
+                      float early_derate)
+{
+  aocvTable().setLate(depth, late_derate);
+  aocvTable().setEarly(depth, early_derate);
+}
+
+// Recompute the AOCV-adjusted slack for one path end and return a Tcl list:
+//   {endpoint logic_depth flat_slack aocv_slack late_derate}
+// Slacks are converted to the user time unit.
+StringSeq
+aocv_adjust_path_end(PathEnd *path_end)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  AocvPathResult r = aocvAdjustPathEnd(sta, path_end, aocvTable());
+  sta::Unit *time_unit = sta->units()->timeUnit();
+  auto fmt = [](double v) {
+    std::ostringstream ss;
+    ss.setf(std::ios::fixed);
+    ss << std::setprecision(9) << v;
+    return ss.str();
+  };
+  StringSeq out;
+  out.push_back(r.endpoint);
+  out.push_back(std::to_string(r.logic_depth));
+  out.push_back(fmt(time_unit->staToUser(r.flat_slack)));
+  out.push_back(fmt(time_unit->staToUser(r.aocv_slack)));
+  out.push_back(fmt(r.late_derate));
+  return out;
+}
+
+} // namespace sta
 
 %} // inline

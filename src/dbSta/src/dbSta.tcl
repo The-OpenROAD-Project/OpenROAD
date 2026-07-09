@@ -197,5 +197,110 @@ proc check_ip { args } {
   return [sta::check_ip_cmd $master_name $check_all $max_polygons $verbose]
 }
 
+################################################################
+# Depth-based (AOCV-style) OCV derate -- first slice (report-only).
+# See AOCV_INVESTIGATION.md for design and limitations.
+
+define_cmd_args "set_aocv_derate" { \
+  [-file filename] \
+  [-depth depth -late late_derate -early early_derate] \
+  [-reset] }
+
+# Load a depth->derate table used by report_checks_aocv. Either supply a table
+# file with -file, or add a single (depth late early) row inline. -reset clears
+# the table (returns to inactive / baseline behavior).
+proc set_aocv_derate { args } {
+  parse_key_args "set_aocv_derate" args \
+    keys {-file -depth -late -early} \
+    flags {-reset}
+
+  check_argc_eq0 "set_aocv_derate" $args
+
+  if { [info exists flags(-reset)] } {
+    sta::aocv_derate_clear
+    return
+  }
+
+  if { [info exists keys(-file)] } {
+    set err [sta::aocv_derate_read_file $keys(-file)]
+    if { $err ne "" } {
+      utl::error STA 8000 "set_aocv_derate: $err"
+    }
+    return
+  }
+
+  if { [info exists keys(-depth)] } {
+    if { ![info exists keys(-late)] } {
+      utl::error STA 8001 "set_aocv_derate -depth requires -late."
+    }
+    set depth $keys(-depth)
+    sta::check_positive_integer "-depth" $depth
+    set late $keys(-late)
+    set early $late
+    if { [info exists keys(-early)] } {
+      set early $keys(-early)
+    }
+    sta::aocv_derate_set_entry $depth $late $early
+    return
+  }
+
+  utl::error STA 8002 "set_aocv_derate: specify -file, -reset, or -depth/-late."
+}
+
+define_cmd_args "report_checks_aocv" { \
+  [-path_count count] \
+  [-digits digits] \
+  [find_timing_paths options] }
+
+# Report, for the worst setup paths, the logic depth, the flat-OCV slack, the
+# AOCV depth-adjusted slack, and the pessimism recovered. When no AOCV table is
+# loaded the AOCV slack equals the flat slack exactly (feature inactive).
+proc report_checks_aocv { args } {
+  parse_key_args "report_checks_aocv" args \
+    keys {-path_count -digits} \
+    flags {} 0
+
+  set digits 3
+  if { [info exists keys(-digits)] } {
+    set digits $keys(-digits)
+    sta::check_positive_integer "-digits" $digits
+  }
+
+  # Default to worst setup paths; allow -path_count as a convenient alias for
+  # find_timing_paths -group_path_count.
+  set fp_args $args
+  if { [info exists keys(-path_count)] } {
+    sta::check_positive_integer "-path_count" $keys(-path_count)
+    lappend fp_args -group_path_count $keys(-path_count)
+  }
+
+  set path_ends [eval find_timing_paths $fp_args]
+  if { $path_ends == {} } {
+    utl::report "No paths found."
+    return
+  }
+
+  set active [sta::aocv_derate_active]
+  if { !$active } {
+    utl::report "Note: no AOCV table loaded (use set_aocv_derate);\
+ AOCV slack == flat slack."
+  }
+
+  set w 14
+  utl::report [format "%-40s %6s %*s %*s %*s %8s" \
+    "Endpoint" "Depth" $w "FlatSlack" $w "AocvSlack" $w "Recovered" "Derate"]
+  foreach path_end $path_ends {
+    set row [sta::aocv_adjust_path_end $path_end]
+    lassign $row endpoint depth flat aocv derate
+    set recovered [expr { $aocv - $flat }]
+    utl::report [format "%-40s %6d %*.*f %*.*f %*.*f %8.3f" \
+      $endpoint $depth \
+      $w $digits $flat \
+      $w $digits $aocv \
+      $w $digits $recovered \
+      $derate]
+  }
+}
+
 # namespace
 }

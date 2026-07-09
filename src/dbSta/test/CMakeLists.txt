@@ -1,6 +1,7 @@
 or_integration_tests(
   "dbSta"
   TESTS
+    aocv_derate
     block_sta1
     check_axioms
     clock_pin

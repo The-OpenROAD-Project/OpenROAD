@@ -11,6 +11,7 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
+    "aocv_derate",
     "block_sta1",
     "check_axioms",
     "clock_pin",
