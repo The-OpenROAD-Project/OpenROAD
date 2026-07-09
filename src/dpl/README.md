@@ -73,6 +73,9 @@ detailed_placement
     [-report_file_name filename]
     [-use_negotiation]
     [-abacus]
+    [-site_search_window sites]
+    [-row_search_window rows]
+    [-drc_penalty penalty]
 ```
 
 #### Options
@@ -86,6 +89,9 @@ detailed_placement
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_negotiation` | Use the NegotiationLegalizer instead of the default diamond search engine. |
 | `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
+| `-site_search_window` | NegotiationLegalizer: maximum number of sites a cell may be moved left or right of its initial position. Default `20`, `0` allowed (no horizontal movement). |
+| `-row_search_window` | NegotiationLegalizer: maximum number of rows a cell may be moved up or down from its initial position. Default `5`, `0` allowed (no row changes). |
+| `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`, `0` allowed (disables the escalating per-candidate penalty, DRC-violating cells still accrue history cost separately). |
 
 ### Set Placement Padding
 

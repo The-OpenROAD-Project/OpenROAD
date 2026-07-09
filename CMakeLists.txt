@@ -21,12 +21,6 @@ cmake_policy(SET CMP0074 NEW)
 # critical for builds in non-standard environments.
 cmake_policy(SET CMP0144 NEW)
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.27")
-  # Disallows <PACKAGENAME>_ROOT in find_package.
-  # TODO: resolve absl/or-tools issue and switch to NEW
-  cmake_policy(SET CMP0144 OLD)
-endif()
-
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)
 
@@ -47,6 +41,13 @@ option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 
 # Allow disabling tests
 option(ENABLE_TESTS "Enable OpenROAD tests" ON)
+
+# Opt-in GPU acceleration via Kokkos. The actual compute backend (CUDA, HIP,
+# SYCL, or host-only OpenMP/Threads) is determined by the installed Kokkos
+# package; OpenROAD inspects Kokkos_ENABLE_* and turns on the matching CMake
+# language and dependencies automatically. See the per-module CMakeLists for
+# how individual subsystems wire their GPU sources.
+option(ENABLE_GPU "Enable GPU acceleration via Kokkos" OFF)
 
 # Allow enabling address sanitizer
 option(ASAN "Enable Address Sanitizer" OFF)
@@ -92,6 +93,13 @@ message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
+endif()
+
+# GPU backend wiring (opt-in). All Kokkos / CUDA / HIP / SYCL detection,
+# compiler probing, and language enablement live in cmake/KokkosBackend.cmake
+# and are loaded only when the user opts in via ENABLE_GPU=ON.
+if(ENABLE_GPU)
+  include(KokkosBackend)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

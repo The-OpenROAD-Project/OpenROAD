@@ -32,8 +32,8 @@ Truth6 mask6(const int size)
 
 // Returns a canonical representative of m's NPN-equivalence class — the
 // set of functions reachable from m by input permutation, input inversion,
-// and output inversion — and fills `npn` with the transform mapping the
-// repr back to m (so npn(repr) == m, masked to ninputs).
+// and output inversion — and fills `npn` with the transform mapping m to
+// repr.
 //
 // Canonicalization rule:
 //   1. Complement the output if popcount(m) > nbits/2.
@@ -49,8 +49,8 @@ Truth6 mask6(const int size)
 // variables with equal negative-cofactor popcounts whose sort order is
 // undefined. NPN-equivalent functions that resolve these ties differently
 // yield different reprs. For library matching where any such repr could be
-// the lookup key, see npn_semiclass_allrepr, which enumerates them all.
-Truth6 npn_semiclass(Truth6 m, const int ninputs, NPN& npn)
+// the lookup key, see npnSemiclassAllRepr, which enumerates them all.
+Truth6 npnSemiclass(Truth6 m, const int ninputs, NPN& npn)
 {
   npn = NPN{};
 
@@ -124,8 +124,8 @@ Truth6 npn_semiclass(Truth6 m, const int ninputs, NPN& npn)
   return sc;
 }
 
-// Like npn_semiclass, but invokes cb(repr, npn) once per repr that
-// npn_semiclass could produce for any function NPN-equivalent to m. The
+// Like npnSemiclass, but invokes cb(repr, npn) once per repr that
+// npnSemiclass could produce for any function NPN-equivalent to m. The
 // three tie sources are enumerated explicitly:
 //
 //   * Bipolar output (popcount == nbits/2): both output_complement values.
@@ -140,10 +140,10 @@ Truth6 npn_semiclass(Truth6 m, const int ninputs, NPN& npn)
 //     them via the `goto next_round` loop.
 //
 // Used by buildIndex so a library cell is registered under every repr key
-// a cut function might canonicalize to via npn_semiclass.
-void npn_semiclass_allrepr(Truth6 m,
-                           const int ninputs,
-                           const std::function<void(Truth6, NPN&)>& cb)
+// a cut function might canonicalize to via npnSemiclass.
+void npnSemiclassAllRepr(Truth6 m,
+                         const int ninputs,
+                         const std::function<void(Truth6, NPN&)>& cb)
 {
   NPN npn = {};
 

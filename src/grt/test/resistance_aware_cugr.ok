@@ -1,0 +1,73 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1162 components and 5669 component-terminals.
+[INFO ODB-0133]     Created 348 nets and 1021 connections.
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 70
+[INFO GRT-0019] Found 6 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+Design statistics
+Nets:                348
+Special nets:        0
+Routing layers:      6
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      30634          6127          80.00%
+met2       Vertical        25000          5000          80.00%
+met3       Horizontal      16240          3248          80.00%
+met4       Vertical        12480          2496          80.00%
+met5       Horizontal       3600          1640          54.44%
+---------------------------------------------------------------
+
+Stage 1: Pattern routing.
+Stage 2: Resistance-aware re-route of critical nets.
+Stage 3: Pattern routing with detours.
+Stage 4: Maze routing on sparsified graph.
+Stage 5: Iterative rip-up and re-route.
+[INFO GRT-0117] Start extra iteration 1/5
+[INFO GRT-0117] Start extra iteration 2/5
+[INFO GRT-0117] Start extra iteration 3/5
+[INFO GRT-0117] Start extra iteration 4/5
+[INFO GRT-0117] Start extra iteration 5/5
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (58).
+Routing statistics
+Wire length:           48650
+Total via count:       2346
+Total congestion:      57
+Min resource:          -1.0533335169156395
+Bottleneck:            (1, 30, 10)
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1              6127          1105           18.03%             1 /  0 / 36
+met2              5000           961           19.22%             0 /  1 /  9
+met3              3248           441           13.58%             1 /  0 / 13
+met4              2496           317           12.70%             0 /  0 /  0
+met5              1640             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            18511          2824           15.26%             2 /  1 / 58
+
+[INFO GRT-0018] Total wirelength: 24847 um
+[INFO GRT-0014] Routed nets: 348
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
+No differences found.

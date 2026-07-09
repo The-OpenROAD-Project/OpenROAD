@@ -451,7 +451,7 @@ class FlexPA
    * @param inst_term the instance terminal
    * @param aps Vector contaning the access points
    * @param apset Set containing access points data (auxilary)
-   * @param rec Rect limiting where the point can be
+   * @param rect Rect limiting where the point can be
    * @param layer_num access point layer
    * @param x_coords map of access point x coords
    * @param y_coords map of access point y coords

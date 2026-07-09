@@ -520,6 +520,7 @@ void OpenRoad::read3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
+  db_->constructUnfoldedModel();
   db_->triggerPostRead3Dbx(db_->getChip());
   check3DBlox();
 }
@@ -728,6 +729,20 @@ std::string OpenRoad::getExePath() const
 
 std::string OpenRoad::getDocsPath() const
 {
+#ifdef BAZEL_BUILD
+  // When invoked via 'bazel run', BUILD_WORKSPACE_DIRECTORY is set to the
+  // workspace root. Look for generated man pages in bazel-bin/docs/ so that
+  // 'man' works without a full install step.
+  const char* workspace_dir = std::getenv("BUILD_WORKSPACE_DIRECTORY");
+  if (workspace_dir != nullptr) {
+    auto docs_path
+        = std::filesystem::path(workspace_dir) / "bazel-bin" / "docs";
+    if (std::filesystem::is_directory(docs_path)) {
+      return docs_path;
+    }
+  }
+#endif
+
   const std::string exe = getExePath();
 
   if (exe.empty()) {
