@@ -34,6 +34,7 @@ ALL_TESTS = [
     "modnet_port_alias",
     "network_edit1",
     "power1",
+    "report_power_design",
     "read_def_bus_port",
     "read_liberty1",
     "read_vcd",
@@ -151,6 +152,9 @@ filegroup(
             ],
             "network_edit1": [
                 "reg3.def",
+            ],
+            "report_power_design": [
+                "power1.v",
             ],
             "read_vcd": glob(
                 [

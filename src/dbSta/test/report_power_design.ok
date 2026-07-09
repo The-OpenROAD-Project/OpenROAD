@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Group                  Internal  Switching    Leakage      Total
+                          Power      Power      Power      Power (Watts)
+----------------------------------------------------------------
+Sequential            1.366e-06  1.145e-08  2.373e-07  1.615e-06  93.9%
+Combinational         4.582e-08  1.280e-08  4.650e-08  1.051e-07   6.1%
+Clock                 0.000e+00  0.000e+00  0.000e+00  0.000e+00   0.0%
+Macro                 0.000e+00  0.000e+00  0.000e+00  0.000e+00   0.0%
+Pad                   0.000e+00  0.000e+00  0.000e+00  0.000e+00   0.0%
+----------------------------------------------------------------
+Total                 1.412e-06  2.425e-08  2.838e-07  1.720e-06 100.0%
+                          82.1%       1.4%      16.5%

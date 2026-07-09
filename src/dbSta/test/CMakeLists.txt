@@ -24,6 +24,7 @@ or_integration_tests(
     modnet_port_alias
     network_edit1
     power1
+    report_power_design
     read_def_bus_port
     read_liberty1
     read_vcd
