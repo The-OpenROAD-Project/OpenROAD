@@ -15,7 +15,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 #include "PlacementDRC.h"
@@ -81,6 +80,93 @@ struct ReusableHeap
   {
   }
   std::vector<PQ_entry> takeBacking() { return std::move(this->c); }
+};
+
+// Generation-stamped replacement for the per-call
+// `std::unordered_set<GridPt> visited` used by diamondSearch().
+//
+// Instead of a hash set (one malloc/free + hash insert per visited grid point,
+// which dominated allocator cost on congested designs where the diamond
+// expands over many points), this is a flat array of "last-visited generation"
+// stamps indexed by `(y - origin_y) * width + (x - origin_x)`.  A point is
+// "visited" iff its stamp equals the current generation; beginSearch() bumps
+// the generation so no per-call clearing or reallocation is needed.
+//
+// Equivalence to the old set: contains()/insert() behave identically for every
+// (x, y) the search can insert, and the loop logic (which points are enqueued)
+// is left untouched -- only the data structure backing `visited` changes.
+//
+// Sizing/indexing must cover EVERY (x, y) ever passed to contains()/insert():
+//   * the center {x, y}, which is inserted unconditionally and can lie far
+//     OUTSIDE the clipped grid window (the initial cell location may be well
+//     outside the core, e.g. simple03 places a cell 3x beyond the die);
+//   * every neighbor enqueued, i.e. the closed window
+//     [x_min, x_max] x [y_min, y_max]; and
+//   * a ONE-CELL HALO around that, because diamondSearch calls
+//     contains(neighbor) BEFORE the limit test, so neighbors one step outside
+//     the window (x_max+1, x_min-1, y_max+1, y_min-1, and likewise around an
+//     out-of-window center) are probed via contains() even though they are then
+//     rejected for enqueue.
+// The caller therefore sizes/indexes over the bounding box of {center} U window
+// expanded by one cell on every side:
+//   origin = (min(x_min, x_center) - 1, min(y_min, y_center) - 1)
+//   extent = (max(x_max, x_center) + 1, max(y_max, y_center) + 1)
+// Indexing relative to that origin covers all probed/inserted points with no
+// dropped inserts -- exactly matching the unordered_set's behavior -- while
+// never indexing out of range.
+class VisitedStamps
+{
+ public:
+  // Prepare for a new search whose insertable coordinates are bounded by the
+  // inclusive box [lo_x, hi_x] x [lo_y, hi_y].
+  void beginSearch(const int lo_x,
+                   const int lo_y,
+                   const int hi_x,
+                   const int hi_y)
+  {
+    origin_x_ = lo_x;
+    origin_y_ = lo_y;
+    width_ = hi_x - lo_x + 1;
+    const int height = hi_y - lo_y + 1;
+    const size_t needed = static_cast<size_t>(width_) * height;
+    if (stamps_.size() < needed) {
+      // Grow (never shrink) and reset stamps; growing invalidates the old
+      // generation baseline for the new entries, so restart generations.
+      stamps_.assign(needed, 0);
+      generation_ = 0;
+    }
+    // Bump generation; everything stamped with a prior generation is now
+    // implicitly "unvisited".  Handle the (astronomically unlikely) wraparound
+    // by clearing.
+    if (++generation_ == 0) {
+      std::fill(stamps_.begin(), stamps_.end(), 0);
+      generation_ = 1;
+    }
+  }
+
+  bool contains(const GridPt& p) const
+  {
+    return stamps_[index(p)] == generation_;
+  }
+
+  void insert(const GridPt& p) { stamps_[index(p)] = generation_; }
+
+ private:
+  size_t index(const GridPt& p) const
+  {
+    const int local_x = p.x.v - origin_x_;
+    const int local_y = p.y.v - origin_y_;
+    const size_t idx = static_cast<size_t>(local_y) * width_ + local_x;
+    assert(local_x >= 0 && local_x < width_ && local_y >= 0
+           && idx < stamps_.size());
+    return idx;
+  }
+
+  std::vector<uint32_t> stamps_;
+  uint32_t generation_ = 0;
+  int origin_x_ = 0;
+  int origin_y_ = 0;
+  int width_ = 0;
 };
 }  // namespace
 
@@ -921,15 +1007,25 @@ PixelPt Opendp::diamondSearch(const Node* cell,
   // multiple threads; thread_local keeps the reuse data-race free without
   // changing behavior.
   static thread_local std::vector<PQ_entry> heap_backing;
-  static thread_local std::unordered_set<GridPt> visited;
+  static thread_local VisitedStamps visited;
 
   heap_backing.clear();
-  visited.clear();
-  // Reserve a sane capacity once per thread to avoid repeated rehashing.  The
-  // diamond explores at most a (2*max_displacement+1)^2 region.
-  if (visited.bucket_count() < 256) {
-    visited.reserve(256);
-  }
+  // Prepare the generation-stamped visited set.  It must cover every (x, y)
+  // ever passed to visited.contains()/insert(), which behaves exactly like the
+  // old unordered_set.  Two subtleties beyond the obvious search window:
+  //   1. The center {x, y} is inserted unconditionally and may lie outside the
+  //      clipped window (the initial cell location can be far outside the
+  //      core).
+  //   2. contains(neighbor) is evaluated BEFORE the limit test, so neighbors
+  //      one cell OUTSIDE the window (x_max+1, x_min-1, y_max+1, y_min-1) are
+  //      probed via contains() even though they are then rejected for enqueue.
+  // So index over the window-or-center bounding box expanded by a one-cell halo
+  // on every side.  This matches the unordered_set's behavior with no dropped
+  // inserts and no out-of-range index.
+  visited.beginSearch(min(x_min, x).v - 1,
+                      min(y_min, y).v - 1,
+                      max(x_max, x).v + 1,
+                      max(y_max, y).v + 1);
 
   // Construct the heap over the reused backing vector.  Moving the (cleared but
   // capacity-retaining) vector in preserves the allocation; we move it back out
