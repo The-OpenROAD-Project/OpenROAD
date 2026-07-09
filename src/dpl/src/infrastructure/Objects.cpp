@@ -79,6 +79,9 @@ void Master::setTopPowerType(const int top_pwr)
 void Master::setDbMaster(odb::dbMaster* db_master)
 {
   db_master_ = db_master;
+  // Cache the site pointer so hot-path legality checks need not re-traverse
+  // odb.
+  db_site_ = db_master ? db_master->getSite() : nullptr;
 }
 odb::dbMaster* Master::getDbMaster() const
 {
@@ -91,6 +94,10 @@ void Master::addPinShape(const int level, const odb::Rect& rect)
 const std::vector<odb::Rect>& Master::getPinShapes(const int level) const
 {
   return pin_shapes_[level];
+}
+odb::dbSite* Master::getDbSite() const
+{
+  return db_site_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
