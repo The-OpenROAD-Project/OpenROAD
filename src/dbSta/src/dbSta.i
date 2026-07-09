@@ -20,6 +20,14 @@
 #include "sta/Network.hh"
 #include "sta/Property.hh"
 #include "sta/Report.hh"
+#include "sta/Parasitics.hh"
+#include "sta/Scene.hh"
+#include "sta/MinMax.hh"
+#include "sta/Units.hh"
+#include "utl/Logger.h"
+
+#include <algorithm>
+#include <vector>
 #include "sta/StringUtil.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
@@ -467,5 +475,198 @@ aocv_adjust_path_end(PathEnd *path_end)
 }
 
 } // namespace sta
+
+////////////////////////////////////////////////////////////////
+//
+// Crosstalk / signal-integrity (SI) aware timing -- first slice.
+//
+// A bounding "poor-man's SI" Miller-factor coupling derate.  The coupling
+// caps kept in the OpenSTA parasitic network (read_spef
+// -keep_capacitive_coupling) are multiplied by a configurable Miller factor
+// during pi/Arnoldi reduction (see src/sta/parasitics/ReduceParasitics.cc).
+// We surface that existing, tested factor as a first-class OpenROAD command
+// with independent setup/hold control and an auditable report.  A factor of
+// 1.0 (the default) is a true no-op and reproduces baseline timing exactly.
+//
+////////////////////////////////////////////////////////////////
+
+// Apply Miller coupling factors: mf_setup -> max (setup) parasitics,
+// mf_hold -> min (hold) parasitics, for every scene.  When the same
+// parasitics object backs both min and max (the common single read_spef
+// case) the two factors collide; we apply the setup factor and warn.
+void
+set_coupling_miller_factor_cmd(float mf_setup, float mf_hold)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  utl::Logger *logger = openroad->getLogger();
+
+  // Collect the distinct parasitics objects and apply the factor.  The
+  // setup factor goes to the max parasitics, the hold factor to the min.
+  bool shared_warned = false;
+  std::vector<sta::Parasitics *> touched;
+  for (sta::Scene *scene : sta->scenes()) {
+    sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+    sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+    if (par_min == par_max) {
+      // Single shared parasitics object: cannot hold distinct setup/hold
+      // factors.  Honor the setup (max) factor for the bounding run.
+      if (par_max != nullptr) {
+        par_max->setCouplingCapFactor(mf_setup);
+        touched.push_back(par_max);
+      }
+      if (!shared_warned && mf_setup != mf_hold) {
+        logger->warn(utl::STA,
+                     900,
+                     "setup and hold Miller factors differ but min and max "
+                     "share one parasitics object; using the setup factor "
+                     "{:.3f}. Read SPEF separately with -min/-max for "
+                     "independent setup/hold factors.",
+                     mf_setup);
+        shared_warned = true;
+      }
+    } else {
+      if (par_max != nullptr) {
+        par_max->setCouplingCapFactor(mf_setup);
+        touched.push_back(par_max);
+      }
+      if (par_min != nullptr) {
+        par_min->setCouplingCapFactor(mf_hold);
+        touched.push_back(par_min);
+      }
+    }
+  }
+
+  // The pi/Elmore models are reduced from the coupling-cap network and
+  // cached.  Drop those cached reductions so the next delay calc re-reduces
+  // using the new Miller factor.  Without this the factor would only take
+  // effect on a fresh read_spef.
+  odb::dbChip *chip = openroad->getDb()->getChip();
+  odb::dbBlock *block = (chip != nullptr) ? chip->getBlock() : nullptr;
+  if (block != nullptr) {
+    for (odb::dbNet *db_net : block->getNets()) {
+      sta::Net *net = db_network->dbToSta(db_net);
+      if (net == nullptr) {
+        continue;
+      }
+      for (sta::Parasitics *par : touched) {
+        par->deleteReducedParasitics(net);
+      }
+    }
+  }
+
+  // Force delays to be recomputed with the new factor on the next report.
+  sta->delaysInvalid();
+}
+
+// Report the active Miller coupling factors (setup=max, hold=min) from the
+// first scene's parasitics into out_setup/out_hold.  static so SWIG does not
+// wrap it (called only from C++).
+static void
+get_coupling_miller_factors(sta::dbSta *sta, float *out_setup, float *out_hold)
+{
+  *out_setup = 1.0f;
+  *out_hold = 1.0f;
+  const sta::SceneSeq &scenes = sta->scenes();
+  if (!scenes.empty()) {
+    sta::Scene *scene = scenes[0];
+    sta::Parasitics *par_max = scene->parasitics(sta::MinMax::max());
+    sta::Parasitics *par_min = scene->parasitics(sta::MinMax::min());
+    if (par_max != nullptr) {
+      *out_setup = par_max->couplingCapFactor();
+    }
+    if (par_min != nullptr) {
+      *out_hold = par_min->couplingCapFactor();
+    }
+  }
+}
+
+// Rank nets by total coupling capacitance and report coupling cap, ground
+// cap, and coupling/ground ratio for the top max_nets.  Pure read-only SI
+// hotspot triage using the odb coupling-cap API.
+void
+report_coupling_si_cmd(int max_nets, int corner)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  utl::Logger *logger = openroad->getLogger();
+  odb::dbDatabase *db = openroad->getDb();
+
+  odb::dbChip *chip = db->getChip();
+  if (chip == nullptr) {
+    logger->error(utl::STA, 901, "No chip loaded.");
+  }
+  odb::dbBlock *block = chip->getBlock();
+  if (block == nullptr) {
+    logger->error(utl::STA, 902, "No block loaded.");
+  }
+
+  const int corner_count = block->getCornerCount();
+  if (corner < 0 || corner >= corner_count) {
+    logger->error(utl::STA,
+                  903,
+                  "corner {} out of range [0, {}).",
+                  corner,
+                  corner_count);
+  }
+
+  struct NetCoupling
+  {
+    odb::dbNet *net;
+    double coupling_cap;  // fF
+    double total_cap;     // fF
+  };
+  std::vector<NetCoupling> ranked;
+  for (odb::dbNet *net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    const double cc = net->getTotalCouplingCap(corner);
+    if (cc <= 0.0) {
+      continue;
+    }
+    const double total = net->getTotalCapacitance(corner, /* cc */ true);
+    ranked.push_back({net, cc, total});
+  }
+
+  std::sort(ranked.begin(),
+            ranked.end(),
+            [](const NetCoupling &a, const NetCoupling &b) {
+              return a.coupling_cap > b.coupling_cap;
+            });
+
+  float mf_setup = 1.0f, mf_hold = 1.0f;
+  get_coupling_miller_factors(sta, &mf_setup, &mf_hold);
+  sta::Report *report = sta->report();
+  report->report(
+      "Coupling / SI hotspot report (corner {}, Miller factor setup={:.3f} "
+      "hold={:.3f})",
+      corner,
+      mf_setup,
+      mf_hold);
+  report->report("{:<40} {:>12} {:>12} {:>10}", "Net", "Cc(fF)", "Cgnd(fF)",
+                 "Cc/Cgnd");
+  report->report(
+      "------------------------------------------------------------------"
+      "--------------");
+
+  const int n = (max_nets <= 0)
+                    ? static_cast<int>(ranked.size())
+                    : std::min<int>(max_nets, ranked.size());
+  for (int i = 0; i < n; i++) {
+    const NetCoupling &nc = ranked[i];
+    const double cgnd = nc.total_cap - nc.coupling_cap;
+    const double ratio = (cgnd > 0.0) ? (nc.coupling_cap / cgnd) : 0.0;
+    report->report("{:<40} {:>12.4f} {:>12.4f} {:>10.4f}",
+                   nc.net->getConstName(),
+                   nc.coupling_cap,
+                   cgnd,
+                   ratio);
+  }
+  report->report("Reported {} of {} coupled signal nets.",
+                 n,
+                 static_cast<int>(ranked.size()));
+}
 
 %} // inline

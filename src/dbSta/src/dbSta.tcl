@@ -198,6 +198,65 @@ proc check_ip { args } {
 }
 
 ################################################################
+#
+# Crosstalk / signal-integrity (SI) aware timing -- first slice.
+#
+################################################################
+
+define_cmd_args "set_coupling_miller_factor" {[-setup mf_setup] [-hold mf_hold]}
+
+# Apply a worst-case Miller coupling factor ("poor-man's SI") to the
+# coupling caps kept in the parasitic network. -setup scales the max
+# (setup) parasitics; -hold scales the min (hold) parasitics. Both default
+# to 1.0, which reproduces baseline timing exactly. Typical bounding values:
+# -setup 2.0 (worst-case opposite-switching aggressor) and -hold 0.0
+# (best-case, aggressor quiet/same direction).
+proc set_coupling_miller_factor { args } {
+  parse_key_args "set_coupling_miller_factor" args \
+    keys {-setup -hold} flags {}
+  check_argc_eq0 "set_coupling_miller_factor" $args
+
+  set mf_setup 1.0
+  if { [info exists keys(-setup)] } {
+    set mf_setup $keys(-setup)
+    sta::check_positive_float "-setup" $mf_setup
+  }
+  set mf_hold 1.0
+  if { [info exists keys(-hold)] } {
+    set mf_hold $keys(-hold)
+    # Hold may legitimately be 0.0 (best-case), so allow zero.
+    if { ![string is double -strict $mf_hold] || $mf_hold < 0.0 } {
+      sta_error 904 "-hold must be a non-negative float."
+    }
+  }
+
+  sta::set_coupling_miller_factor_cmd $mf_setup $mf_hold
+}
+
+define_cmd_args "report_coupling_si" {[-max_nets count] [-corner index]}
+
+# Rank signal nets by total coupling capacitance and report coupling cap,
+# ground cap and coupling/ground ratio -- the nets most at SI risk.
+proc report_coupling_si { args } {
+  parse_key_args "report_coupling_si" args \
+    keys {-max_nets -corner} flags {}
+  check_argc_eq0 "report_coupling_si" $args
+
+  set max_nets 20
+  if { [info exists keys(-max_nets)] } {
+    set max_nets $keys(-max_nets)
+    sta::check_positive_integer "-max_nets" $max_nets
+  }
+  set corner 0
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+    sta::check_positive_integer "-corner" $corner
+  }
+
+  sta::report_coupling_si_cmd $max_nets $corner
+}
+
+################################################################
 # Depth-based (AOCV-style) OCV derate -- first slice (report-only).
 # See AOCV_INVESTIGATION.md for design and limitations.
 

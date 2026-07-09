@@ -13,6 +13,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "45_gcd",
+    "coupling_si_miller",
     "ext_pattern",
     "gcd",
     "generate_pattern",
@@ -91,6 +92,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "coupling_si_miller": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
             "ext_pattern": ["generate_pattern.defok"],
             "gcd": ["ext_pattern.rules"],
             "no_merging": [

@@ -2,6 +2,7 @@ or_integration_tests(
   "rcx"
   TESTS
     45_gcd
+    coupling_si_miller
     ext_pattern
     gcd
     generate_pattern
