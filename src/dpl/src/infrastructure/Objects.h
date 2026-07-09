@@ -141,6 +141,8 @@ class Node
   void setGroupId(int id);
   void addUsedLayer(int layer);
   void addPinLayer(int layer);
+  // OR a precomputed routing-layer bitmask into this node's used layers.
+  void orUsedLayers(uint8_t mask);
 
   bool adjustCurrOrient(const odb::dbOrientType& newOrient);
 
