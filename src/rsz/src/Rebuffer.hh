@@ -129,7 +129,8 @@ class Rebuffer : public sta::dbStaState
     float margined_max_cap;
     float driver_resistance;
 
-    struct Asymptotics {
+    struct Asymptotics
+    {
       // asymptotic parameters when buffering long wires
       float buffer_spacing;
       float delay_per_meter;
