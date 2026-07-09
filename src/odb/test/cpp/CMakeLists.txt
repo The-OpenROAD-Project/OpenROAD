@@ -44,7 +44,7 @@ target_link_libraries(OdbGTests
 target_link_libraries(TestCallBacks
         db
         odb_test_helper
-        tst
+        tst_base
         spdlog::spdlog
         ${GTEST_LIBS}
 )
@@ -105,7 +105,7 @@ target_link_libraries(TestGDSIn
         db
         gdsin
         gdsout
-        tst
+        tst_base
         utl_lib
         ${GTEST_LIBS}
 )
@@ -118,19 +118,19 @@ target_link_libraries(Test3DBloxParser
         3dblox
         db
         odb_test_helper
-        tst
+        tst_base
         ${GTEST_LIBS}
 )
 target_link_libraries(Test3DBloxChecker
         3dblox
         db
-        tst
+        tst_base
         ${GTEST_LIBS}
 )
 target_link_libraries(Test3DBloxVerilogWriter
         3dblox
         db
-        tst
+        tst_base
         ${GTEST_LIBS}
 )
 target_link_libraries(TestSwapMaster
@@ -153,7 +153,7 @@ target_link_libraries(TestWriteReadDbHier
 )
 target_link_libraries(TestObjectType
         db
-        tst
+        tst_base
         ${GTEST_LIBS}
 )
 

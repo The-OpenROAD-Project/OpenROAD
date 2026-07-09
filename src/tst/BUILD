@@ -33,6 +33,31 @@ cc_library(
 )
 
 cc_library(
+    name = "db_fixture",
+    testonly = 1,
+    srcs = [
+        "src/db_fixture.cpp",
+    ],
+    hdrs = [
+        "include/tst/db_fixture.h",
+    ],
+    defines = [
+        "BAZEL_BUILD",
+    ],
+    includes = [
+        "include",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/utl",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "tst",
     testonly = 1,
     srcs = [
@@ -48,12 +73,12 @@ cc_library(
         "include",
     ],
     deps = [
+        ":db_fixture",
         "//src/dbSta",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
         "@tcl_lang//:tcl",
     ],

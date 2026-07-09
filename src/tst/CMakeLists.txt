@@ -3,9 +3,30 @@
 
 include("openroad")
 
-# Lightweight fixture: only needs dbSta/odb/sta. Tests that just read a
-# design should depend on this and avoid pulling in the full optimization
-# tool chain.
+# DbFixture: odb-only base fixture. Has no dependency on dbSta/OpenSTA, so
+# tests that only manipulate an odb database can link this and avoid the STA
+# libraries entirely.
+add_library(tst_base
+    src/db_fixture.cpp
+)
+
+target_include_directories(tst_base
+  PUBLIC
+    include
+)
+
+target_link_libraries(tst_base
+  PUBLIC
+    db
+    utl_lib
+    GTest::gtest
+  PRIVATE
+    lefin
+)
+
+# Fixture: adds a dbSta/OpenSTA instance on top of DbFixture. Tests that need
+# timing depend on this; it still avoids the full optimization tool chain
+# (see tst_integrated_fixture).
 add_library(tst
     src/fixture.cpp
 )
@@ -17,10 +38,10 @@ target_include_directories(tst
 
 target_link_libraries(tst
   PUBLIC
+    tst_base
     dbSta_lib
   PRIVATE
     utl_lib
-    db
     lefin
     OpenSTA
 )
