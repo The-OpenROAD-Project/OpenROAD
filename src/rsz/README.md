@@ -282,6 +282,36 @@ this option be used with global routing based parasitics.
 | rebuffer | Buffering for setup fixing |
 | split | Split off non-critical loads behind a buffer to reduce load |
 
+### Optimize Power
+
+The `optimize_power` command performs timing-safe **leakage-power recovery**.
+It spends positive timing slack to reduce static (leakage) power by swapping
+logic cells on non-critical paths to their lowest-leakage same-footprint
+threshold-voltage (Vt) variant (e.g. SLVT/LVT &rarr; RVT). A swap is kept only
+if it does not push the swapped cell below the requested slack margin and does
+not worsen the design WNS/TNS; otherwise it is reverted. The command reuses the
+resizer's cell-swap machinery and the STA timing engine for the slack checks.
+`set_dont_touch` and `set_dont_use` are honored. A multi-Vt library is
+required; with a single-Vt library the design is left unchanged.
+
+This command does nothing unless explicitly invoked, so the default flow is
+unchanged.
+
+```tcl
+optimize_power
+    [-leakage]
+    [-slack_margin slack_margin]
+    [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-leakage` | Recover leakage power (the only optimization mode in this slice; it is the default). |
+| `-slack_margin` | Only cells whose worst slack remains at or above this margin after the swap are accepted; only cells with slack above the margin are considered. The default is `0`. |
+| `-verbose` | Enable verbose logging of each accepted swap. |
+
 ### Repair Clock Nets
 
 The `clock_tree_synthesis` command inserts a clock tree in the design

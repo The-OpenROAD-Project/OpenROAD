@@ -40,6 +40,8 @@ cc_library(
         "src/Rebuffer.hh",
         "src/RecoverPower.cc",
         "src/RecoverPower.hh",
+        "src/OptimizePower.cc",
+        "src/OptimizePower.hh",
         "src/RepairDesign.cc",
         "src/RepairDesign.hh",
         "src/RepairHold.cc",

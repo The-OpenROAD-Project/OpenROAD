@@ -39,6 +39,8 @@ or_integration_tests(
     rebuffer1
     rebuffer1_hier
     recover_power_verbose
+    optimize_power_leakage
+    optimize_power_no_vt
     remove_buffers_hier1
     remove_buffers1
     remove_buffers2

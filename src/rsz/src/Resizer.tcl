@@ -399,6 +399,46 @@ proc repair_timing { args } {
 }
 
 ################################################################
+#
+# optimize_power -- timing-safe leakage-power recovery (flag-gated).
+#
+# Spends POSITIVE timing slack to reduce static (leakage) power by swapping
+# logic cells on non-critical paths to their lowest-leakage same-footprint
+# Vt variant.  A swap is kept only if it does not push the swapped cell below
+# the requested slack margin AND does not worsen design WNS/TNS; otherwise it
+# is reverted.  Reuses the resizer's replaceCell + the STA timing engine for
+# the slack checks (timing is NOT reimplemented).  set_dont_touch /
+# set_dont_use are respected.  Requires a multi-Vt library; with a single-Vt
+# library the design is left unchanged.
+#
+# This command does nothing unless explicitly invoked, so the default flow is
+# byte-for-byte unchanged.
+#
+sta::define_cmd_args "optimize_power" {[-leakage]\
+                                         [-slack_margin slack_margin]\
+                                         [-verbose]}
+
+proc optimize_power { args } {
+  sta::parse_key_args "optimize_power" args \
+    keys {-slack_margin} \
+    flags {-leakage -verbose}
+
+  sta::check_argc_eq0 "optimize_power" $args
+
+  # -leakage is the only optimization mode in this slice; it is the default.
+  # (The flag is accepted for forward-compatibility / explicitness.)
+
+  set slack_margin 0.0
+  if { [info exists keys(-slack_margin)] } {
+    set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  }
+  set verbose [info exists flags(-verbose)]
+
+  est::check_parasitics
+  return [rsz::optimize_power_leakage $slack_margin $verbose]
+}
+
+################################################################
 
 sta::define_cmd_args "report_design_area" {}
 

@@ -77,6 +77,7 @@ using PinPtr = const sta::Pin*;
 using PinVector = std::vector<PinPtr>;
 
 class RecoverPower;
+class OptimizePower;
 class RepairDesign;
 class RepairHold;
 class Rebuffer;
@@ -388,6 +389,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool recoverPower(float recover_power_percent,
                     bool match_cell_footprint,
                     bool verbose);
+
+  ////////////////////////////////////////////////////////////////
+  // Leakage-power recovery: swap positive-slack logic cells to their
+  // lowest-leakage same-footprint Vt variant, timing-safe + flag-gated.
+  // Returns true if the design was changed.
+  bool optimizePowerLeakage(float slack_margin, bool verbose);
 
   ////////////////////////////////////////////////////////////////
   void swapArithModules(int path_count,
@@ -933,6 +940,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
+  std::unique_ptr<OptimizePower> optimize_power_;
   std::unique_ptr<RepairDesign> repair_design_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
@@ -1055,6 +1063,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class GateCloner;
   friend class PreChecks;
   friend class RecoverPower;
+  friend class OptimizePower;
   friend class RepairDesign;
   friend class RepairHold;
   friend class SwapArithModules;

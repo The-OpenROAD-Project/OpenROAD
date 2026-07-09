@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[INFO RSZ-0509] optimize_power: 48 leakage-recovery candidates (slack > 0.000e+00s).
+[INFO RSZ-0511] optimize_power: swapped 44 cells. Leakage 1.0578e-06 W -> 1.0225e-06 W (-3.34%). WNS -6.6849e-11 -> -6.6849e-11, TNS -1.7811e-09 -> -1.7811e-09.
+LEAKAGE: decreased (PASS)
+WNS: not degraded (PASS)
+TNS: not degraded (PASS)

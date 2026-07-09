@@ -453,6 +453,15 @@ recover_power(float recover_power_percent, bool match_cell_footprint, bool verbo
 }
 
 ////////////////////////////////////////////////////////////////
+bool
+optimize_power_leakage(float slack_margin, bool verbose)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->optimizePowerLeakage(slack_margin, verbose);
+}
+
+////////////////////////////////////////////////////////////////
 
 // Rebuffer one net (for testing).
 // resizerPreamble() required.

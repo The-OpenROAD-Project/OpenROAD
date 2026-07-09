@@ -316,6 +316,7 @@ suppress_message RSZ 504
 suppress_message RSZ 505
 suppress_message RSZ 506
 suppress_message RSZ 507
+suppress_message RSZ 510
 suppress_message PDN 500
 
 proc get_3dblox_marker_count { category_name } {

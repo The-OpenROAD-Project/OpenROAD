@@ -36,6 +36,7 @@
 #include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
+#include "OptimizePower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairTargetCollector.hh"
@@ -359,6 +360,7 @@ Resizer::Resizer(utl::Logger* logger,
   db_network_->addObserver(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this);
+  optimize_power_ = std::make_unique<OptimizePower>(this);
   repair_design_ = std::make_unique<RepairDesign>(this);
   repair_hold_ = std::make_unique<RepairHold>(this);
   rebuffer_ = std::make_unique<Rebuffer>(this);
@@ -5154,6 +5156,21 @@ bool Resizer::recoverPower(float recover_power_percent,
   }
   bool result = recover_power_->recoverPower(recover_power_percent, verbose);
   logger_->info(RSZ, 507, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
+}
+////////////////////////////////////////////////////////////////
+bool Resizer::optimizePowerLeakage(float slack_margin, bool verbose)
+{
+  utl::Timer timer;
+  resizePreamble();
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::kGlobalRouting
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::kDetailedRouting) {
+    opendp_->initMacrosAndGrid();
+  }
+  bool result = optimize_power_->optimizePower(slack_margin, verbose);
+  logger_->info(RSZ, 510, "Runtime: {:.2f}s", timer.elapsed());
   return result;
 }
 ////////////////////////////////////////////////////////////////
