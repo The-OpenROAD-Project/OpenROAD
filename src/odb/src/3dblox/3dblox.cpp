@@ -488,8 +488,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   chip->setOffset(Point(std::round(chiplet.offset.x * dbu_per_micron),
                         std::round(chiplet.offset.y * dbu_per_micron)));
-  if (chip->getChipType() != dbChip::ChipType::HIER
-      && chip->getBlock() == nullptr) {
+  if (chip->getChipType() != dbChip::ChipType::HIER) {
     // blackbox stage, create block
     auto block = odb::dbBlock::create(chip, chiplet.name.c_str());
     const int x_min = chip->getScribeLineWest() + chip->getSealRingWest();
@@ -514,22 +513,27 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
 void ThreeDBlox::readDefForChip(dbChip* chip, const std::string& def_file)
 {
-  // A chiplet's design DEF only needs to be read once. The DEF may be supplied
-  // by the chiplet definition (3dbv) and/or by a chiplet instance (3dbx); if it
-  // was already read onto this chip, skip it so that DEF data not shared with
-  // the bump map (rows, tracks, ...) is not duplicated.
-  if (chips_with_def_.contains(chip)) {
-    return;
+  // Each chiplet may be given at most one DEF file, either by its definition
+  // (3dbv) or by one of its instances (3dbx). The chip is marked read even if
+  // the read fails so a later DEF cannot silently paper over the error.
+  if (!chips_with_def_.insert(chip).second) {
+    logger_->error(utl::ODB,
+                   547,
+                   "3DBlox Parser Error: a DEF file was already specified for "
+                   "chiplet {}",
+                   chip->getName());
   }
   odb::defin def_reader(db_, logger_, odb::defin::THREE_D_BLOX);
   std::vector<odb::dbLib*> search_libs;
   search_libs.assign(db_->getLibs().begin(), db_->getLibs().end());
-  // No callbacks here as we are going to give one postRead3Dbx later. Mark the
-  // chip only on success so a failed read (e.g. bad path) does not suppress a
-  // later valid DEF for the same chip.
-  if (def_reader.readChip(
+  // No callbacks here as we are going to give one postRead3Dbx later.
+  if (!def_reader.readChip(
           search_libs, def_file.c_str(), chip, /*issue_callback*/ false)) {
-    chips_with_def_.insert(chip);
+    logger_->error(utl::ODB,
+                   550,
+                   "Failed to read DEF file {} for chiplet {}",
+                   def_file,
+                   chip->getName());
   }
 }
 
@@ -717,16 +721,8 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
 
   // Per the 3DBlox standard, the DEF file may be associated with the chiplet
   // instance (ChipletInst.external) rather than the chiplet definition. Read it
-  // onto the referenced master chip's block. The DEF is shared design data, so
-  // two instances of the same chiplet may not each carry their own DEF.
+  // onto the referenced master chip's block.
   if (!chip_inst.external.def_file.empty()) {
-    if (!insts_with_def_.insert(chip).second) {
-      logger_->error(utl::ODB,
-                     547,
-                     "3DBX Parser Error: There can't be 2 instances of the "
-                     "same chiplet {} with a def file each",
-                     chip_inst.reference);
-    }
     readDefForChip(chip, chip_inst.external.def_file);
   }
 }

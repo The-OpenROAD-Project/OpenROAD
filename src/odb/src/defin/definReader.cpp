@@ -967,7 +967,9 @@ int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
   definReader* reader = (definReader*) data;
   CHECKBLOCK
   definPin* pinR = reader->_pinR.get();
-  if (reader->_mode != defin::DEFAULT
+  // THREE_D_BLOX (like DEFAULT) may create pins that do not exist yet; only
+  // the update modes skip unknown pins.
+  if ((reader->_mode == defin::FLOORPLAN || reader->_mode == defin::INCREMENTAL)
       && reader->_block->findBTerm(pin->pinName()) == nullptr) {
     std::string modeStr
         = reader->_mode == defin::FLOORPLAN ? "FLOORPLAN" : "INCREMENTAL";
