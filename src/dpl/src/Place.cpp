@@ -49,6 +49,41 @@ using utl::DPL;
 
 using utl::format_as;  // NOLINT(misc-unused-using-decls)
 
+namespace {
+// Heap entry for diamondSearch().  Defined at file scope (rather than locally
+// inside diamondSearch) so the scratch backing buffers can be declared as
+// reusable static thread_local containers below, avoiding a fresh heap
+// allocation on every call.
+struct PQ_entry
+{
+  int manhattan_distance;
+  GridPt p;
+  int sequence;
+  bool operator>(const PQ_entry& other) const
+  {
+    return std::tie(manhattan_distance, sequence)
+           > std::tie(other.manhattan_distance, other.sequence);
+  }
+};
+
+// priority_queue subclass that exposes its backing container so the (grown
+// once) allocation can be moved back into a reusable thread_local buffer.
+struct ReusableHeap
+    : std::priority_queue<PQ_entry,
+                          std::vector<PQ_entry>,
+                          std::greater<PQ_entry>>
+{
+  explicit ReusableHeap(std::vector<PQ_entry>&& backing)
+      : std::priority_queue<PQ_entry,
+                            std::vector<PQ_entry>,
+                            std::greater<PQ_entry>>(std::greater<PQ_entry>{},
+                                                    std::move(backing))
+  {
+  }
+  std::vector<PQ_entry> takeBacking() { return std::move(this->c); }
+};
+}  // namespace
+
 std::string Opendp::printBgBox(
     const boost::geometry::model::box<bgPoint>& queryBox)
 {
@@ -877,20 +912,29 @@ PixelPt Opendp::diamondSearch(const Node* cell,
              y_min,
              y_max - 1);
 
-  struct PQ_entry
-  {
-    int manhattan_distance;
-    GridPt p;
-    int sequence;
-    bool operator>(const PQ_entry& other) const
-    {
-      return std::tie(manhattan_distance, sequence)
-             > std::tie(other.manhattan_distance, other.sequence);
-    }
-  };
-  std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
-      positionsHeap;
-  std::unordered_set<GridPt> visited;
+  // Reusable scratch buffers.  diamondSearch is called once per placed cell
+  // (hundreds of thousands of times); allocating a fresh priority-queue backing
+  // vector and a visited hash set on every call dominated the allocator cost in
+  // profiling.  These thread_local buffers are cleared and reused instead, so
+  // each thread keeps a single grown-once allocation.  They are thread_local
+  // (not Opendp members) because diamondSearch is const and may be invoked from
+  // multiple threads; thread_local keeps the reuse data-race free without
+  // changing behavior.
+  static thread_local std::vector<PQ_entry> heap_backing;
+  static thread_local std::unordered_set<GridPt> visited;
+
+  heap_backing.clear();
+  visited.clear();
+  // Reserve a sane capacity once per thread to avoid repeated rehashing.  The
+  // diamond explores at most a (2*max_displacement+1)^2 region.
+  if (visited.bucket_count() < 256) {
+    visited.reserve(256);
+  }
+
+  // Construct the heap over the reused backing vector.  Moving the (cleared but
+  // capacity-retaining) vector in preserves the allocation; we move it back out
+  // before returning so the next call reuses it.
+  ReusableHeap positionsHeap(std::move(heap_backing));
   int sequence = 0;
   GridPt center{x, y};
   positionsHeap.push(
@@ -906,8 +950,10 @@ PixelPt Opendp::diamondSearch(const Node* cell,
     positionsHeap.pop();
 
     if (canBePlaced(cell, nearest.x, nearest.y)) {
-      return PixelPt(
+      const PixelPt result(
           grid_->gridPixel(nearest.x, nearest.y), nearest.x, nearest.y);
+      heap_backing = positionsHeap.takeBacking();
+      return result;
     }
 
     // Put neighbors in the queue
@@ -929,6 +975,7 @@ PixelPt Opendp::diamondSearch(const Node* cell,
                           .sequence = sequence++});
     }
   }
+  heap_backing = positionsHeap.takeBacking();
   return PixelPt();
 }
 
