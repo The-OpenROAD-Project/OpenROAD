@@ -170,7 +170,7 @@ define_cmd_args "report_pba_slack" {[-max_paths count] [-setup] [-hold]\
 #
 # -setup (default) analyzes max (setup) paths; -hold analyzes min (hold)
 # paths. -endpoints switches to the per-endpoint view with a
-# negative->positive recovery summary. See AGENT_REPORT.md.
+# negative->positive recovery summary.
 proc report_pba_slack { args } {
   parse_key_args "report_pba_slack" args \
     keys {-max_paths} flags {-setup -hold -endpoints}
@@ -517,7 +517,6 @@ proc report_coupling_si { args } {
 ################################################################
 #
 # Crosstalk / SI -- SECOND slice: timing-window aware coupling derate.
-# See SI_WINDOW_INVESTIGATION.md.
 #
 ################################################################
 
@@ -591,7 +590,6 @@ proc report_si_windows { args } {
 ################################################################
 #
 # Crosstalk-aware TIMING -- coupling-cap effective-C stage-delay adjustment.
-# See XTALK_DELAY_INVESTIGATION.md for the switching-factor model and limits.
 #
 # Turns the CC segments rcx already extracts into an OPTIONAL, flag-gated
 # stage-delay adjustment: each top-N victim's coupling caps to aggressors that
@@ -757,7 +755,6 @@ proc report_xtalk_delay { args } {
 }
 
 # Depth-based (AOCV-style) OCV derate -- first slice (report-only).
-# See AOCV_INVESTIGATION.md for design and limitations.
 
 define_cmd_args "set_aocv_derate" { \
   [-file filename] \

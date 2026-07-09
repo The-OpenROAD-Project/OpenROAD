@@ -5,8 +5,7 @@
 //
 // This is an OpenROAD-side (dbSta) feature that re-uses public OpenSTA APIs to
 // recompute a depth-adjusted setup slack on already-found critical paths. It
-// does NOT modify the OpenSTA forward search; see AOCV_INVESTIGATION.md for the
-// rationale and the documented limitation.
+// does NOT modify the OpenSTA forward search.
 
 #pragma once
 

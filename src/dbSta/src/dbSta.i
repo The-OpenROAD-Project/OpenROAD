@@ -834,7 +834,6 @@ check_ip_cmd(const char* master_name,
 
 ////////////////////////////////////////////////////////////////
 // Depth-based (AOCV-style) OCV derate, first slice (report-only).
-// See AOCV_INVESTIGATION.md.
 
 namespace sta {
 
@@ -1162,7 +1161,7 @@ report_coupling_si_cmd(int max_nets, int corner)
 // windows do not overlap are gated out (their coupling cap is scaled back
 // toward nominal), recovering the pessimism of the blanket factor.
 //
-// Mechanism (see SI_WINDOW_INVESTIGATION.md):
+// Mechanism:
 //   * A net's switching window is its driver pin's arrival interval
 //     [arrival(min), arrival(max)] over both edges.
 //   * For each victim's CC segments we find the aggressor net (the other net

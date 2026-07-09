@@ -24,7 +24,6 @@
 // closure decision surface that separates genuine post-PBA violations from
 // GBA-pessimism artifacts (endpoints that move negative -> positive).
 //
-// See PBA_INVESTIGATION.md for the API trace and the PBA >= GBA argument.
 
 #pragma once
 

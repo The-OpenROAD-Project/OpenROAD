@@ -35,7 +35,7 @@ namespace sta {
 // slews, and the matching GBA gate-delay sum. Returns recovered pessimism
 // (>= 0). gate_stages counts re-evaluated gate stages.
 //
-// Algorithm (see PBA_INVESTIGATION.md):
+// Algorithm:
 //  - We re-evaluate only COMBINATIONAL gate arcs along the data path. Wire
 //    arcs and the launch sequential (clk->Q) / clock arcs are left at their
 //    GBA values (path-independent for our slice).
