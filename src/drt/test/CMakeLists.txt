@@ -21,6 +21,8 @@ or_integration_tests(
     cpp_tests
     mask_route
     mask_ta
+    mask_solve
+    mask_solve_oddcycle
 )
 
 set_tests_properties(

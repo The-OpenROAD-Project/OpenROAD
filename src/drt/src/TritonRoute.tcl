@@ -528,10 +528,47 @@ proc check_mask_drc { args } {
 }
 }
 
+sta::define_cmd_args "solve_mask_coloring" {
+    [-box box]
+    [-output_file filename]
+}
+# Conflict-graph mask-coloring solver (multi-patterning slice 5). Builds a
+# conflict graph over routed shapes on each multi-mask (NUMMASKS>1) routing
+# layer (edge = two shapes closer than the same-mask spacing), solves a legal
+# k-coloring (k from set_mask_aware_routing -num_color_masks, default 2,
+# clamped to the layer's NUMMASKS), and writes the solved MASK colors back to
+# the database. Uncolorable subgraphs (e.g. odd cycles for k=2) are REPORTED,
+# not force-colored. Requires the solver to be enabled first via
+# set_mask_aware_routing -solve_coloring. Returns the number of uncolorable
+# conflicts (0 = a fully legal coloring was solved and written).
+namespace eval drt {
+proc solve_mask_coloring { args } {
+  sta::parse_key_args "solve_mask_coloring" args \
+    keys { -box -output_file } \
+    flags {}
+  sta::check_argc_eq0 "solve_mask_coloring" $args
+  set box { 0 0 0 0 }
+  if { [info exists keys(-box)] } {
+    set box $keys(-box)
+    if { [llength $box] != 4 } {
+      utl::error DRT 642 "-box is a list of 4 coordinates."
+    }
+  }
+  lassign $box x1 y1 x2 y2
+  set output_file ""
+  if { [info exists keys(-output_file)] } {
+    set output_file $keys(-output_file)
+  }
+  return [drt::solve_mask_coloring_cmd $output_file $x1 $y1 $x2 $y2]
+}
+}
+
 sta::define_cmd_args "set_mask_aware_routing" {
     [-enable]
     [-disable]
     [-different_mask_spacing spacing]
+    [-solve_coloring]
+    [-num_color_masks count]
 }
 # Enable/disable multi-patterning mask awareness in the detailed router.
 # Default is disabled: when disabled, routing/DRC behavior is identical to
@@ -544,10 +581,18 @@ sta::define_cmd_args "set_mask_aware_routing" {
 # Default 0 means different-mask pairs are always legal (down to a short),
 # i.e. only same-mask spacing is enforced. Set > 0 to flag different-mask
 # pairs closer than this distance.
+#
+# -solve_coloring: enable the conflict-graph mask-coloring solver gate so the
+# solve_mask_coloring command may run (default disabled). Independent of the
+# audit; enabling it does not change routing.
+#
+# -num_color_masks <count>: number of mask colors the solver targets
+# (2 = double-patterning, 3 = triple-patterning). Default 2. Clamped per
+# layer to that layer's NUMMASKS.
 proc set_mask_aware_routing { args } {
   sta::parse_key_args "set_mask_aware_routing" args \
-    keys { -different_mask_spacing } \
-    flags { -enable -disable }
+    keys { -different_mask_spacing -num_color_masks } \
+    flags { -enable -disable -solve_coloring }
   sta::check_argc_eq0 "set_mask_aware_routing" $args
   set enable [info exists flags(-enable)]
   set disable [info exists flags(-disable)]
@@ -559,10 +604,24 @@ proc set_mask_aware_routing { args } {
     sta::check_positive_float "-different_mask_spacing" $spc
     drt::set_mask_different_spacing_cmd [ord::microns_to_dbu $spc]
   }
+  if { [info exists keys(-num_color_masks)] } {
+    set nc $keys(-num_color_masks)
+    sta::check_cardinal "-num_color_masks" $nc
+    drt::set_mask_num_colors_cmd $nc
+  }
+  if { [info exists flags(-solve_coloring)] } {
+    drt::set_mask_color_solve_cmd true
+  }
   if { $disable } {
     drt::set_mask_aware_drc_cmd false
-  } else {
-    # default action of the command is to enable
+    drt::set_mask_color_solve_cmd false
+  } elseif { $enable } {
+    drt::set_mask_aware_drc_cmd true
+  } elseif { ![info exists keys(-different_mask_spacing)] \
+             && ![info exists keys(-num_color_masks)] \
+             && ![info exists flags(-solve_coloring)] } {
+    # Bare command (no flags) preserves the original default action: enable
+    # the audit gate.
     drt::set_mask_aware_drc_cmd true
   }
 }

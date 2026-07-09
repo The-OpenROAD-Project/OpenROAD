@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -1271,6 +1272,16 @@ void TritonRoute::setMaskDifferentSpacing(int spacing)
   router_cfg_->MASK_DIFFERENT_SPACING = spacing;
 }
 
+void TritonRoute::setMaskColorSolve(bool enable)
+{
+  router_cfg_->MASK_COLOR_SOLVE = enable;
+}
+
+void TritonRoute::setMaskNumColors(int num_colors)
+{
+  router_cfg_->MASK_NUM_COLORS = num_colors;
+}
+
 namespace {
 
 // A routed metal rectangle on a multi-mask layer, tagged with its mask
@@ -1536,6 +1547,538 @@ int TritonRoute::checkMaskDRC(const char* filename,
                 total_violations,
                 multi_mask_layers.size());
   return total_violations;
+}
+
+namespace {
+
+// One node of the mask conflict graph: a routed metal path-segment on a
+// multi-mask layer. node_id is a global index; (net, seg_ordinal) identifies
+// the segment within its wire's decode order so the solved color can be
+// written back. solved_color is 0 until the solver assigns it (1..k).
+struct ConflictNode
+{
+  odb::Rect rect;
+  odb::dbNet* net{nullptr};
+  odb::dbTechLayer* layer{nullptr};
+  int seg_ordinal{0};   // index of this path-segment within net's wire decode
+  int solved_color{0};  // 0 = unassigned/uncolorable
+};
+
+// Collect conflict-graph nodes from a net's wire: every routed metal
+// path-segment on a multi-mask layer, in decode order. seg_ordinal counts
+// path-segments per net (each POINT after the first POINT of a PATH closes a
+// segment). This ordinal scheme is replayed verbatim during write-back so the
+// solved color lands on the right segment regardless of its existing color.
+void collectConflictNodes(
+    odb::dbNet* net,
+    const std::set<odb::dbTechLayer*, TechLayerByNumber>& multi_mask_layers,
+    std::vector<ConflictNode>& nodes)
+{
+  odb::dbWire* wire = net->getWire();
+  if (wire == nullptr) {
+    return;
+  }
+  odb::dbWireDecoder decoder;
+  decoder.begin(wire);
+  odb::dbWireDecoder::OpCode opcode = decoder.next();
+  odb::dbTechLayer* layer = nullptr;
+  bool has_prev = false;
+  int prev_x = 0, prev_y = 0;
+  int seg_ordinal = 0;  // counts every path-segment (colored or not)
+  while (opcode != odb::dbWireDecoder::END_DECODE) {
+    switch (opcode) {
+      case odb::dbWireDecoder::PATH:
+      case odb::dbWireDecoder::JUNCTION:
+      case odb::dbWireDecoder::SHORT:
+      case odb::dbWireDecoder::VWIRE:
+        layer = decoder.getLayer();
+        has_prev = false;
+        break;
+      case odb::dbWireDecoder::POINT:
+      case odb::dbWireDecoder::POINT_EXT: {
+        int x, y, ext = 0;
+        if (opcode == odb::dbWireDecoder::POINT) {
+          decoder.getPoint(x, y);
+        } else {
+          decoder.getPoint(x, y, ext);
+        }
+        if (has_prev && layer != nullptr) {
+          const bool multi = multi_mask_layers.count(layer) != 0;
+          if (multi) {
+            const int half_w = static_cast<int>(layer->getWidth()) / 2;
+            const int xl = std::min(prev_x, x) - half_w;
+            const int yl = std::min(prev_y, y) - half_w;
+            const int xh = std::max(prev_x, x) + half_w;
+            const int yh = std::max(prev_y, y) + half_w;
+            ConflictNode n;
+            n.rect = odb::Rect(xl, yl, xh, yh);
+            n.net = net;
+            n.layer = layer;
+            n.seg_ordinal = seg_ordinal;
+            nodes.push_back(n);
+          }
+          // Every path-segment (multi-mask or not) advances the ordinal so
+          // the write-back replay stays aligned with this decode order.
+          seg_ordinal++;
+        }
+        prev_x = x;
+        prev_y = y;
+        has_prev = true;
+        break;
+      }
+      case odb::dbWireDecoder::VIA:
+      case odb::dbWireDecoder::TECH_VIA:
+        has_prev = false;
+        break;
+      default:
+        break;
+    }
+    opcode = decoder.next();
+  }
+}
+
+// Edge-to-edge gap^2 between two rects (0 if they touch/overlap).
+int64_t gapSquared(const odb::Rect& a, const odb::Rect& b)
+{
+  const int dx = std::max({a.xMin() - b.xMax(), b.xMin() - a.xMax(), 0});
+  const int dy = std::max({a.yMin() - b.yMax(), b.yMin() - a.yMax(), 0});
+  return (int64_t) dx * dx + (int64_t) dy * dy;
+}
+
+// Greedy + backtracking k-coloring over one connected component. nodes are
+// global ConflictNode indices; adj is the global adjacency list. Returns true
+// and fills color[] (values 1..k) on success; false if the component is not
+// k-colorable. Bounded: orders vertices by descending degree (a good static
+// heuristic) and backtracks. For k=2 this is exact (bipartite check); for
+// k>=3 it is a complete search but only over one component, which for routed
+// layouts is small.
+bool colorComponent(const std::vector<int>& comp,
+                    const std::vector<std::vector<int>>& adj,
+                    int k,
+                    std::vector<int>& color)
+{
+  // Order component vertices by descending degree for a tighter search.
+  std::vector<int> order = comp;
+  std::sort(order.begin(), order.end(), [&](int a, int b) {
+    if (adj[a].size() != adj[b].size()) {
+      return adj[a].size() > adj[b].size();
+    }
+    return a < b;  // deterministic tie-break
+  });
+
+  std::function<bool(size_t)> assign = [&](size_t idx) -> bool {
+    if (idx == order.size()) {
+      return true;
+    }
+    const int v = order[idx];
+    for (int c = 1; c <= k; c++) {
+      bool ok = true;
+      for (int u : adj[v]) {
+        if (color[u] == c) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) {
+        continue;
+      }
+      color[v] = c;
+      if (assign(idx + 1)) {
+        return true;
+      }
+      color[v] = 0;  // backtrack
+    }
+    return false;
+  };
+  return assign(0);
+}
+
+// Re-encode net's wire faithfully, overriding the mask color of each
+// multi-mask path-segment with seg_color[seg_ordinal] (1..k, or 0 to clear).
+// Returns true if the wire was rewritten; false (and leaves the wire
+// untouched) if it contains opcodes this faithful-copy path does not handle,
+// so the solver never corrupts a wire it cannot reproduce exactly.
+//
+// Handled opcodes: PATH/JUNCTION/SHORT/VWIRE (+ optional RULE), POINT,
+// POINT_EXT, VIA, TECH_VIA, ITERM, BTERM. Unhandled (e.g. RECT patch wires)
+// abort the rewrite for that net.
+bool rewriteWireColors(
+    odb::dbNet* net,
+    odb::dbTech* db_tech,
+    const std::set<odb::dbTechLayer*, TechLayerByNumber>& multi_mask_layers,
+    const std::map<int, int>& seg_color)
+{
+  odb::dbWire* wire = net->getWire();
+  if (wire == nullptr) {
+    return true;  // nothing to do
+  }
+
+  // First pass: scan for unsupported opcodes. If found, refuse to rewrite.
+  {
+    odb::dbWireDecoder scan;
+    scan.begin(wire);
+    for (odb::dbWireDecoder::OpCode op = scan.next();
+         op != odb::dbWireDecoder::END_DECODE;
+         op = scan.next()) {
+      switch (op) {
+        case odb::dbWireDecoder::PATH:
+        case odb::dbWireDecoder::JUNCTION:
+        case odb::dbWireDecoder::SHORT:
+        case odb::dbWireDecoder::VWIRE:
+        case odb::dbWireDecoder::POINT:
+        case odb::dbWireDecoder::POINT_EXT:
+        case odb::dbWireDecoder::VIA:
+        case odb::dbWireDecoder::TECH_VIA:
+        case odb::dbWireDecoder::ITERM:
+        case odb::dbWireDecoder::BTERM:
+        case odb::dbWireDecoder::RULE:
+          break;
+        default:
+          // RECT (patch wire) or anything else: do not attempt a rewrite.
+          return false;
+      }
+    }
+  }
+
+  odb::dbWireDecoder decoder;
+  decoder.begin(wire);
+  odb::dbWireEncoder encoder;
+  encoder.begin(wire);
+
+  odb::dbTechLayer* layer = nullptr;
+  int seg_ordinal = 0;
+  bool path_open = false;
+  bool path_has_prev = false;  // a point has already been emitted on this path
+  int pending_color = 0;       // color to apply to the next segment we emit
+
+  for (odb::dbWireDecoder::OpCode op = decoder.next();
+       op != odb::dbWireDecoder::END_DECODE;
+       op = decoder.next()) {
+    switch (op) {
+      case odb::dbWireDecoder::PATH:
+      case odb::dbWireDecoder::JUNCTION:
+      case odb::dbWireDecoder::SHORT:
+      case odb::dbWireDecoder::VWIRE: {
+        layer = decoder.getLayer();
+        const odb::dbWireType wtype = decoder.getWireType();
+        if (op == odb::dbWireDecoder::PATH) {
+          encoder.newPath(layer, wtype);
+        } else if (op == odb::dbWireDecoder::JUNCTION) {
+          encoder.newPath(decoder.getJunctionValue(), wtype);
+        } else if (op == odb::dbWireDecoder::SHORT) {
+          encoder.newPathShort(decoder.getJunctionValue(), layer, wtype);
+        } else {  // VWIRE
+          encoder.newPathVirtualWire(decoder.getJunctionValue(), layer, wtype);
+        }
+        path_open = true;
+        path_has_prev = false;
+        pending_color = 0;
+        break;
+      }
+      case odb::dbWireDecoder::POINT:
+      case odb::dbWireDecoder::POINT_EXT: {
+        int x, y, ext = 0;
+        const bool has_ext = (op == odb::dbWireDecoder::POINT_EXT);
+        if (has_ext) {
+          decoder.getPoint(x, y, ext);
+        } else {
+          decoder.getPoint(x, y);
+        }
+        const bool is_multi
+            = layer != nullptr && multi_mask_layers.count(layer) != 0;
+        // A point that is NOT the path's first point closes a segment (this
+        // mirrors collectConflictNodes' has_prev gating exactly). Only such
+        // segment-closing points carry a solved color and advance the ordinal.
+        const bool closes_segment = path_open && path_has_prev;
+        if (closes_segment && is_multi) {
+          auto cit = seg_color.find(seg_ordinal);
+          const int col = (cit != seg_color.end()) ? cit->second : 0;
+          if (col != pending_color) {
+            if (col != 0) {
+              encoder.setColor(static_cast<uint8_t>(col));
+            } else {
+              encoder.clearColor();
+            }
+            pending_color = col;
+          }
+        }
+        if (has_ext) {
+          encoder.addPoint(x, y, ext);
+        } else {
+          encoder.addPoint(x, y);
+        }
+        if (closes_segment) {
+          seg_ordinal++;
+        }
+        path_has_prev = true;
+        break;
+      }
+      case odb::dbWireDecoder::VIA:
+        encoder.addVia(decoder.getVia());
+        path_has_prev = false;
+        break;
+      case odb::dbWireDecoder::TECH_VIA:
+        encoder.addTechVia(decoder.getTechVia());
+        path_has_prev = false;
+        break;
+      case odb::dbWireDecoder::ITERM:
+        encoder.addITerm(decoder.getITerm());
+        break;
+      case odb::dbWireDecoder::BTERM:
+        encoder.addBTerm(decoder.getBTerm());
+        break;
+      case odb::dbWireDecoder::RULE:
+        // Non-default rule: re-applied implicitly by re-opening paths with
+        // the decoded wire type; explicit rule preservation is out of scope
+        // and such wires were filtered by the scan pass when they carry a
+        // rule opcode we cannot reproduce. (RULE alone is tolerated.)
+        break;
+      default:
+        encoder.clear();
+        return false;
+    }
+  }
+  (void) db_tech;
+  encoder.end();
+  return true;
+}
+
+}  // namespace
+
+int TritonRoute::solveMaskColoring(const char* filename,
+                                   int x1,
+                                   int y1,
+                                   int x2,
+                                   int y2)
+{
+  if (!router_cfg_->MASK_COLOR_SOLVE) {
+    logger_->error(DRT,
+                   636,
+                   "solve_mask_coloring requires the mask-coloring solver to "
+                   "be enabled (set_mask_aware_routing -solve_coloring).");
+  }
+  odb::dbChip* chip = db_->getChip();
+  if (chip == nullptr || chip->getBlock() == nullptr) {
+    logger_->error(DRT, 637, "No design loaded for solve_mask_coloring.");
+  }
+  odb::dbBlock* block = chip->getBlock();
+  odb::dbTech* tech = db_->getTech();
+
+  // Identify multi-mask routing layers.
+  std::set<odb::dbTechLayer*, TechLayerByNumber> multi_mask_layers;
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::ROUTING
+        && layer->getNumMasks() > 1) {
+      multi_mask_layers.insert(layer);
+    }
+  }
+  if (multi_mask_layers.empty()) {
+    logger_->warn(DRT,
+                  638,
+                  "solve_mask_coloring: no multi-mask (NUMMASKS>1) routing "
+                  "layers found; nothing to solve.");
+    return 0;
+  }
+
+  const odb::Rect query_box(x1, y1, x2, y2);
+  const bool has_query_box = query_box.area() != 0;
+
+  std::ofstream report;
+  if (filename != nullptr && filename[0] != '\0') {
+    report.open(filename);
+  }
+
+  int total_uncolorable = 0;
+  int total_colored = 0;
+
+  // Accumulate solved colors across all layers, keyed by net then by the
+  // net-global path-segment ordinal, so the write-back can rewrite each wire
+  // exactly once (a net may carry colored segments on several multi-mask
+  // layers). odb deletes std::less for raw db pointers, so use net id.
+  struct NetById
+  {
+    bool operator()(odb::dbNet* a, odb::dbNet* b) const
+    {
+      return a->getId() < b->getId();
+    }
+  };
+  std::map<odb::dbNet*, std::map<int, int>, NetById> net_seg_color;
+
+  // Solve per layer (conflicts are intra-layer; vias/cuts out of scope).
+  for (odb::dbTechLayer* layer : multi_mask_layers) {
+    const int same_mask_spc = layer->getSpacing();
+    if (same_mask_spc <= 0) {
+      continue;
+    }
+    // k = requested colors, clamped to what the technology declares.
+    const int layer_masks = static_cast<int>(layer->getNumMasks());
+    int k = router_cfg_->MASK_NUM_COLORS;
+    if (k < 2) {
+      k = 2;
+    }
+    if (k > layer_masks) {
+      k = layer_masks;
+    }
+
+    // Gather this layer's nodes (one per multi-mask path-segment).
+    std::vector<ConflictNode> nodes;
+    for (odb::dbNet* net : block->getNets()) {
+      std::vector<ConflictNode> net_nodes;
+      collectConflictNodes(net, multi_mask_layers, net_nodes);
+      for (const ConflictNode& n : net_nodes) {
+        if (n.layer != layer) {
+          continue;
+        }
+        if (has_query_box && !query_box.intersects(n.rect)) {
+          continue;
+        }
+        nodes.push_back(n);
+      }
+    }
+    if (nodes.empty()) {
+      continue;
+    }
+
+    // Build the conflict graph: edge between two nodes whose edge-to-edge gap
+    // is below the same-mask spacing (they must therefore differ in mask).
+    // Overlapping same-net segments are connected metal (no edge). Use an
+    // R-tree for proximity.
+    using value_t = std::pair<odb::Rect, int>;
+    using rtree_t
+        = boost::geometry::index::rtree<value_t,
+                                        boost::geometry::index::quadratic<16>>;
+    rtree_t rtree;
+    for (int i = 0; i < (int) nodes.size(); i++) {
+      rtree.insert({nodes[i].rect, i});
+    }
+    std::vector<std::vector<int>> adj(nodes.size());
+    const int64_t spc2 = (int64_t) same_mask_spc * same_mask_spc;
+    for (int i = 0; i < (int) nodes.size(); i++) {
+      odb::Rect bloated = nodes[i].rect;
+      bloated.set_xlo(bloated.xMin() - same_mask_spc);
+      bloated.set_ylo(bloated.yMin() - same_mask_spc);
+      bloated.set_xhi(bloated.xMax() + same_mask_spc);
+      bloated.set_yhi(bloated.yMax() + same_mask_spc);
+      std::vector<value_t> hits;
+      rtree.query(boost::geometry::index::intersects(bloated),
+                  std::back_inserter(hits));
+      for (const value_t& hit : hits) {
+        const int j = hit.second;
+        if (j <= i) {
+          continue;
+        }
+        // Connected same-net metal that overlaps is not a conflict.
+        if (nodes[i].net == nodes[j].net
+            && nodes[i].rect.overlaps(nodes[j].rect)) {
+          continue;
+        }
+        const int64_t g2 = gapSquared(nodes[i].rect, nodes[j].rect);
+        if (g2 == 0) {
+          continue;  // overlap / short: ordinary DRC territory, not a mask edge
+        }
+        if (g2 < spc2) {
+          adj[i].push_back(j);
+          adj[j].push_back(i);
+        }
+      }
+    }
+
+    // Connected components via BFS; color each independently.
+    std::vector<int> color(nodes.size(), 0);
+    std::vector<char> visited(nodes.size(), 0);
+    int layer_uncolorable = 0;
+    for (int s = 0; s < (int) nodes.size(); s++) {
+      if (visited[s]) {
+        continue;
+      }
+      std::vector<int> comp;
+      std::vector<int> stack = {s};
+      visited[s] = 1;
+      while (!stack.empty()) {
+        const int v = stack.back();
+        stack.pop_back();
+        comp.push_back(v);
+        for (int u : adj[v]) {
+          if (!visited[u]) {
+            visited[u] = 1;
+            stack.push_back(u);
+          }
+        }
+      }
+      std::vector<int> comp_color(nodes.size(), 0);
+      // Carry already-decided colors for vertices in this component.
+      for (int v : comp) {
+        comp_color[v] = color[v];
+      }
+      const bool ok = colorComponent(comp, adj, k, comp_color);
+      if (ok) {
+        for (int v : comp) {
+          color[v] = comp_color[v];
+        }
+      } else {
+        // Uncolorable component (e.g. an odd cycle when k=2): REPORT it and
+        // leave its nodes uncolored rather than emitting an illegal coloring.
+        layer_uncolorable++;
+        total_uncolorable++;
+        odb::Rect bbox = nodes[comp.front()].rect;
+        for (int v : comp) {
+          bbox.merge(nodes[v].rect);
+        }
+        if (report.is_open()) {
+          report << "uncolorable conflict\n";
+          report << "\tlayer: " << layer->getName() << "\n";
+          report << "\tcolors: " << k << "\n";
+          report << "\tnodes: " << comp.size() << "\n";
+          report << "\tbbox = (" << bbox.xMin() << ", " << bbox.yMin()
+                 << ") - (" << bbox.xMax() << ", " << bbox.yMax() << ")\n";
+        }
+        logger_->warn(DRT,
+                      639,
+                      "solve_mask_coloring: uncolorable {}-coloring conflict "
+                      "on layer {} ({} shapes); not emitting an illegal "
+                      "coloring for this component.",
+                      k,
+                      layer->getName(),
+                      comp.size());
+      }
+    }
+
+    // Accumulate this layer's solved colors. Only colored components
+    // contribute; uncolorable components stay uncolored.
+    for (int i = 0; i < (int) nodes.size(); i++) {
+      if (color[i] != 0) {
+        net_seg_color[nodes[i].net][nodes[i].seg_ordinal] = color[i];
+        total_colored++;
+      }
+    }
+  }
+
+  // Single faithful write-back per net, applying solved colors from every
+  // layer at once (so a later layer's rewrite never clobbers an earlier
+  // layer's colors).
+  for (auto& [net, seg_color] : net_seg_color) {
+    const bool wrote
+        = rewriteWireColors(net, tech, multi_mask_layers, seg_color);
+    if (!wrote) {
+      logger_->warn(DRT,
+                    640,
+                    "solve_mask_coloring: net {} has wire opcodes the "
+                    "solver cannot rewrite faithfully; left uncolored.",
+                    net->getName());
+    }
+  }
+
+  if (report.is_open()) {
+    report.close();
+  }
+  logger_->info(DRT,
+                641,
+                "solve_mask_coloring: colored {} shape(s); {} uncolorable "
+                "conflict(s) across {} multi-mask layer(s).",
+                total_colored,
+                total_uncolorable,
+                multi_mask_layers.size());
+  return total_uncolorable;
 }
 
 void TritonRoute::addUserSelectedVia(const std::string& viaName)

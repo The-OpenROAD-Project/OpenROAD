@@ -65,6 +65,19 @@ struct RouterConfiguration
   // original audit behavior. Only consulted when MASK_AWARE_DRC is true.
   int MASK_DIFFERENT_SPACING = 0;
 
+  // Conflict-graph mask-coloring solver (multi-patterning slice 5). Default
+  // OFF: with this false the solve_mask_coloring command refuses to run and
+  // no coloring is ever computed or written, so routed output is unchanged.
+  // Only when true does solveMaskColoring build the conflict graph, solve a
+  // legal k-coloring, and write the solved MASK colors back to odb.
+  bool MASK_COLOR_SOLVE = false;
+
+  // Number of mask colors the solver targets (k in k-coloring). 2 =
+  // double-patterning (bipartite), 3 = triple-patterning. Default 2. The
+  // solver clamps to a layer's getNumMasks() so it never emits a color the
+  // technology does not declare.
+  int MASK_NUM_COLORS = 2;
+
   std::string VIAINPIN_BOTTOMLAYER_NAME;
   std::string VIAINPIN_TOPLAYER_NAME;
   frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();

@@ -33,6 +33,8 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     "mask_route",
     "mask_ta",
+    "mask_solve",
+    "mask_solve_oddcycle",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS

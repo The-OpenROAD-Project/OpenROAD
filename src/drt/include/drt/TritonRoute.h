@@ -187,6 +187,19 @@ class TritonRoute : public PinAccessService
   int checkMaskDRC(const char* filename, int x1, int y1, int x2, int y2);
   void setMaskAwareDrc(bool enable);
   void setMaskDifferentSpacing(int spacing);
+  // Conflict-graph mask-coloring solver (multi-patterning slice 5). Builds a
+  // conflict graph over routed shapes on each multi-mask layer (edge = two
+  // shapes closer than the same-mask spacing, hence required to be on
+  // different masks), solves a legal k-coloring (k = MASK_NUM_COLORS, clamped
+  // to the layer's NUMMASKS) via a greedy + backtracking search, and writes
+  // the solved MASK colors back to odb. Uncolorable subgraphs (e.g. odd
+  // cycles for k=2) are REPORTED, not force-colored. Gated by
+  // RouterConfiguration::MASK_COLOR_SOLVE (default off): refuses to run when
+  // the flag is not set. Returns the number of uncolorable conflicts found
+  // (0 = a fully legal coloring was solved and written).
+  int solveMaskColoring(const char* filename, int x1, int y1, int x2, int y2);
+  void setMaskColorSolve(bool enable);
+  void setMaskNumColors(int num_colors);
   bool initGuide();
   void prep();
   odb::dbDatabase* getDb() const { return db_; }

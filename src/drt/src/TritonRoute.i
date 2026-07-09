@@ -236,6 +236,28 @@ int check_mask_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2)
   return router->checkMaskDRC(drc_file, x1, y1, x2, y2);
 }
 
+void set_mask_color_solve_cmd(bool enable)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setMaskColorSolve(enable);
+}
+
+void set_mask_num_colors_cmd(int num_colors)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->setMaskNumColors(num_colors);
+}
+
+int solve_mask_coloring_cmd(const char* report_file,
+                            int x1,
+                            int y1,
+                            int x2,
+                            int y2)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  return router->solveMaskColoring(report_file, x1, y1, x2, y2);
+}
+
 std::vector<int>
 route_layer_lengths(odb::dbWire* db_wire)
 {
