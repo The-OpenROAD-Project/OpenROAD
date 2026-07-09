@@ -94,6 +94,11 @@ or_integration_tests(
     report_wire_length6
     report_wire_length7
     report_wire_length8
+    resistance_aware_asap7_cong_cugr
+    resistance_aware_asap7_cugr
+    resistance_aware_asap7_fr
+    resistance_aware_cugr
+    resistance_aware_highres_cugr
     res_aware_nets_percentage
     set_nets_to_route1
     silence
@@ -101,6 +106,7 @@ or_integration_tests(
     skip_large_fanout1
     soft_ndr_4w_6s
     soft_ndr_4w_6s_cugr
+    soft_ndr_reset_cap
     top_level_term1
     top_level_term2
     top_level_term3
@@ -109,6 +115,9 @@ or_integration_tests(
     tracks3
     unplaced_inst
     upper_layer_net
+    via_geometry_cugr
+    via_multirect_cugr
+    via_priority_cugr
     write_segments1
     write_segments2
   PASSFAIL_TESTS

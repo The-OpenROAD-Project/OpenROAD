@@ -89,10 +89,10 @@ detailed_placement
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_old_diamond` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
-| `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Not effective when `-use_old_diamond` is set. |
-| `-site_search_window` | NegotiationLegalizer: maximum number of sites a cell may be moved left or right of its initial position. Default `20`. |
-| `-row_search_window` | NegotiationLegalizer: maximum number of rows a cell may be moved up or down from its initial position. Default `5`. |
-| `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`. |
+| `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
+| `-site_search_window` | NegotiationLegalizer: maximum number of sites a cell may be moved left or right of its initial position. Default `20`, `0` allowed (no horizontal movement). |
+| `-row_search_window` | NegotiationLegalizer: maximum number of rows a cell may be moved up or down from its initial position. Default `5`, `0` allowed (no row changes). |
+| `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`, `0` allowed (disables the escalating per-candidate penalty, DRC-violating cells still accrue history cost separately). |
 
 ### Set Placement Padding
 

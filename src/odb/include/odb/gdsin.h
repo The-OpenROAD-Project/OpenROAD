@@ -96,7 +96,7 @@ class GDSReader
   /**
    * Parses a GDS Element from the GDS file
    *
-   * @param str The GDS Structure to add the GDS Element to
+   * @param structure The GDS Structure to add the GDS Element to
    */
   bool processElement(dbGDSStructure* structure);
 

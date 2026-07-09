@@ -61,6 +61,7 @@ Opendp::Opendp(odb::dbDatabase* db, utl::Logger* logger)
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
   network_ = std::make_unique<Network>();
+  network_->init(logger);
   arch_ = std::make_unique<Architecture>();
 }
 
@@ -253,13 +254,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                      debug_observer_.get(),
                                      network_.get());
     negotiation.setRunAbacus(run_abacus);
-    if (site_search_window > 0) {
+    if (site_search_window >= 0) {
       negotiation.setSiteSearchWindow(site_search_window);
     }
-    if (row_search_window > 0) {
+    if (row_search_window >= 0) {
       negotiation.setRowSearchWindow(row_search_window);
     }
-    if (drc_penalty > 0.0) {
+    if (drc_penalty >= 0.0) {
       negotiation.setDrcPenalty(drc_penalty);
     }
     negotiation.legalize();

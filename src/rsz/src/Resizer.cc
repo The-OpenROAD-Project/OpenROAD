@@ -202,7 +202,7 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
                                 sta::LibertyPort* input_port,
                                 LibertyPortVec& ports)
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }
@@ -1573,7 +1573,7 @@ bool Resizer::isCombinational(sta::LibertyCell* cell) const
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials());
+          && !cell->isSequential());
 }
 
 std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
@@ -3334,7 +3334,7 @@ bool Resizer::isRegister(sta::Vertex* vertex)
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    return cell && cell->hasSequentials();
+    return cell && cell->isSequential();
   }
   return false;
 }

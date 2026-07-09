@@ -17,6 +17,7 @@
 #include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -266,52 +267,57 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
 // layers) from polluting the rail detection.
 std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
 {
-  odb::Rect bbox;
-  master->getPlacementBoundary(bbox);
-  const int y_bot = bbox.yMin();
-  const int y_top = bbox.yMax();
+  int max_pwr = std::numeric_limits<int>::min();
+  int min_pwr = std::numeric_limits<int>::max();
+  int max_gnd = std::numeric_limits<int>::min();
+  int min_gnd = std::numeric_limits<int>::max();
 
-  bool bot_has_pwr = false;
-  bool bot_has_gnd = false;
-  bool top_has_pwr = false;
-  bool top_has_gnd = false;
+  bool has_pwr = false;
+  bool has_gnd = false;
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     const odb::dbSigType st = mterm->getSigType();
     const bool is_pwr = (st == odb::dbSigType::POWER);
     const bool is_gnd = (st == odb::dbSigType::GROUND);
+
     if (!is_pwr && !is_gnd) {
       continue;
     }
+
     for (odb::dbMPin* mpin : mterm->getMPins()) {
       for (odb::dbBox* box : mpin->getGeometry()) {
         auto* layer = box->getTechLayer();
+        // Skip wells, implants, cuts, and null layers
         if (layer == nullptr
             || layer->getType() != odb::dbTechLayerType::ROUTING) {
-          continue;  // Skip wells/implants/cut layers.
+          continue;
         }
-        const odb::Rect rect = box->getBox();
-        if (rect.yMin() <= y_bot) {
-          (is_pwr ? bot_has_pwr : bot_has_gnd) = true;
-        }
-        if (rect.yMax() >= y_top) {
-          (is_pwr ? top_has_pwr : top_has_gnd) = true;
+
+        const int y = box->getBox().yCenter();
+
+        if (is_pwr) {
+          has_pwr = true;
+          min_pwr = std::min(min_pwr, y);
+          max_pwr = std::max(max_pwr, y);
+        } else {
+          has_gnd = true;
+          min_gnd = std::min(min_gnd, y);
+          max_gnd = std::max(max_gnd, y);
         }
       }
     }
   }
 
-  const auto resolve = [](bool has_pwr, bool has_gnd) {
-    if (has_pwr && !has_gnd) {
-      return Architecture::Row::Power_VDD;
-    }
-    if (has_gnd && !has_pwr) {
-      return Architecture::Row::Power_VSS;
-    }
-    return Architecture::Row::Power_UNK;
-  };
+  int top_pwr = Architecture::Row::Power_UNK;
+  int bot_pwr = Architecture::Row::Power_UNK;
 
-  return {resolve(top_has_pwr, top_has_gnd), resolve(bot_has_pwr, bot_has_gnd)};
+  if (has_pwr && has_gnd) {
+    top_pwr = (max_pwr > max_gnd) ? Architecture::Row::Power_VDD
+                                  : Architecture::Row::Power_VSS;
+    bot_pwr = (min_pwr < min_gnd) ? Architecture::Row::Power_VDD
+                                  : Architecture::Row::Power_VSS;
+  }
+  return {top_pwr, bot_pwr};
 }
 
 }  // namespace
@@ -337,6 +343,32 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   auto master_pwrs = getMasterPwrs(db_master);
   master->setTopPowerType(master_pwrs.first);
   master->setBottomPowerType(master_pwrs.second);
+  debugPrint(logger_,
+             utl::DPL,
+             "rail_align",
+             1,
+             "{}, height: {}, return: top_pwr:{} bot_pwr:{}",
+             db_master->getConstName(),
+             db_master->getHeight(),
+             master_pwrs.first,
+             master_pwrs.second);
+  if (master_pwrs.first == Architecture::Row::Power_UNK
+      || master_pwrs.second == Architecture::Row::Power_UNK) {
+    debugPrint(logger_,
+               utl::DPL,
+               "rail_align",
+               1,
+               "Master {} (type:{}, macro:{}, height:{}, multi-row:{}) has "
+               "an undetermined power rail (top:{} bot:{}); its cells will "
+               "not be power-aligned.",
+               db_master->getConstName(),
+               db_master->getType().getString(),
+               db_master->isBlock(),
+               db_master->getHeight(),
+               master->isMultiRow(),
+               master_pwrs.first,
+               master_pwrs.second);
+  }
   master->clearEdges();
   if (!drc_engine->hasCellEdgeSpacingTable()) {
     return master;

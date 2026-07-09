@@ -908,6 +908,7 @@ export function populateDisplayControls(app, visibility, selectability,
         ]},
         { key: 'pins', label: 'Pins', selectable: true },
         { key: 'pin_names', label: 'Pin Names', disabledBy: 'pins' },
+        { key: 'fills', label: 'Fills' },
     ]});
     visTree.add({ label: 'Misc', children: [
         { label: 'Instances', children: [

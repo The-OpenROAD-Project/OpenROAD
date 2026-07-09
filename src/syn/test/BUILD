@@ -50,6 +50,17 @@ cc_test(
 )
 
 cc_test(
+    name = "npn_test",
+    srcs = ["npn_test.cc"],
+    # No gtest_main: ABC ships its own main() that wins over gtest_main;
+    # the TU defines its own.
+    deps = [
+        "//src/syn",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
     name = "parse_test",
     srcs = ["parse_test.cc"],
     # No gtest_main: ABC (via //src/syn/src/ir → TritModel) ships its own
@@ -115,9 +126,12 @@ cc_test(
         "elab_testcases.h",
         "equivalence_check.h",
     ],
+    data = ["macro_test_cells.lib"],
     deps = [
+        "//src/syn",
         "//src/syn/src/elab",
         "//src/syn/src/ir",
+        "//src/tst",
         "@googletest//:gtest",
     ],
 )

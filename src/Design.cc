@@ -190,7 +190,7 @@ bool Design::isSequential(odb::dbMaster* master)
   if (!lib_cell) {
     return false;
   }
-  return lib_cell->hasSequentials();
+  return lib_cell->isSequential();
 }
 
 bool Design::isInClock(odb::dbInst* inst)

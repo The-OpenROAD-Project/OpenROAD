@@ -73,6 +73,7 @@ class _dbTech : public _dbObject
  public:
   // PERSISTANT-MEMBERS
   std::string name_;
+  std::string extraction_rules_file_;
   int via_cnt_;
   int layer_cnt_;
   int rlayer_cnt_;

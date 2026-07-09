@@ -63,8 +63,9 @@ LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
 GTEST_VERSION="1.17.0"
 GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-ABSL_VERSION="20260107.0"
-ABSL_CHECKSUM="2a7add2ee848dd4591f41b0f6339d624"
+# Match the Abseil version bundled in prebuilt or-tools ${OR_TOOLS_VERSION_BIG}.
+ABSL_VERSION="20250512.0"
+ABSL_CHECKSUM="ecd64c3c38b20335c48e1ede28a8db90"
 BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
@@ -674,20 +675,28 @@ _install_abseil() {
     local absl_prefix_found=""
     local absl_version_file=""
 
-    # Check in default/user-specified prefix first
-    local absl_version_file_default="${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"
-    if [[ -f "${absl_version_file_default}" ]]; then
-        absl_prefix_found="${absl_prefix_install}"
-        absl_version_file="${absl_version_file_default}"
-    fi
+    # Check in default/user-specified prefix first (lib64 on RHEL, lib elsewhere).
+    for absl_version_file_default in \
+        "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+        "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+        if [[ -f "${absl_version_file_default}" ]]; then
+            absl_prefix_found="${absl_prefix_install}"
+            absl_version_file="${absl_version_file_default}"
+            break
+        fi
+    done
 
     # If not found, check in or-tools path
     if [[ -z "${absl_prefix_found}" && -n "${OR_TOOLS_PATH}" ]]; then
-        local absl_version_file_or_tools="${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"
-        if [[ -f "${absl_version_file_or_tools}" ]]; then
-            absl_prefix_found="${OR_TOOLS_PATH}"
-            absl_version_file="${absl_version_file_or_tools}"
-        fi
+        for absl_version_file_or_tools in \
+            "${OR_TOOLS_PATH}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_or_tools}" ]]; then
+                absl_prefix_found="${OR_TOOLS_PATH}"
+                absl_version_file="${absl_version_file_or_tools}"
+                break
+            fi
+        done
     fi
 
     local absl_installed_version="none"
@@ -709,6 +718,14 @@ _install_abseil() {
             _execute "Building and installing Abseil..." "${cmake_bin}" --build build --target install
         )
         absl_prefix_found="${absl_prefix_install}"
+        for absl_version_file_default in \
+            "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_default}" ]]; then
+                absl_version_file="${absl_version_file_default}"
+                break
+            fi
+        done
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=installed")
     else
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=skipped")
@@ -866,9 +883,35 @@ _install_bazel() {
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
         if _command_exists "apt-get"; then
+            # Ubuntu 26.04 ships the libxml2 runtime with soname
+            # libxml2.so.16, but the prebuilt LLVM toolchain (lld) pulled in
+            # by the Bazel build is linked against the old libxml2.so.2.
+            # Pull in libxml2-dev there (and add a compatibility symlink
+            # below); older Ubuntu still provides .so.2 via libxml2.
+            local ubuntu_version=""
+            if [[ -f /etc/os-release ]]; then
+                ubuntu_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
+            fi
+            local libxml2_pkg="libxml2"
+            if [[ -n "${ubuntu_version}" ]] && _version_compare "${ubuntu_version}" -ge "26.04"; then
+                libxml2_pkg="libxml2-dev"
+            fi
             _execute "Installing bazel required libraries..." \
                 apt-get -y install --no-install-recommends \
-                libc6-dev libxml2 libtinfo6 zlib1g libstdc++6
+                libc6-dev "${libxml2_pkg}" libtinfo6 zlib1g libstdc++6
+            # lld only uses libxml2 for Windows COFF manifests, never during a
+            # Linux link, so the .so.16 -> .so.2 compatibility symlink is safe.
+            # Gated to 26.04+ only.
+            if [[ -n "${ubuntu_version}" ]] && _version_compare "${ubuntu_version}" -ge "26.04"; then
+                local libdir="/usr/lib/$(uname -m)-linux-gnu"
+                local libxml2_so
+                libxml2_so=$(ls "${libdir}"/libxml2.so.* 2>/dev/null \
+                    | grep -v 'libxml2.so.2$' | head -n1)
+                if [[ ! -e "${libdir}/libxml2.so.2" && -n "${libxml2_so}" ]]; then
+                    _execute "Adding libxml2.so.2 compatibility symlink for prebuilt LLVM lld..." \
+                        ln -sf "$(basename "${libxml2_so}")" "${libdir}/libxml2.so.2"
+                fi
+            fi
         elif _command_exists "yum"; then
             _execute "Installing bazel required libraries..." \
                 yum install -y \
