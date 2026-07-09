@@ -20,7 +20,8 @@ target_link_libraries(tst
     dbSta_lib
   PRIVATE
     utl_lib
-    odb
+    db
+    lefin
     OpenSTA
 )
 
@@ -47,6 +48,6 @@ target_link_libraries(tst_integrated_fixture
     stt_lib
   PRIVATE
     utl_lib
-    odb
+    db
     OpenSTA
 )
