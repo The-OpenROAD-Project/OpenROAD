@@ -456,7 +456,7 @@ int FlexPA::getEdgeCost(
                                 curr_acc_point_idx,
                                 max_access_point_size);
 
-  // vio_edges caches wether a pair of aps have violations betweem themselves.
+  // vio_edges caches whether a pair of aps have violations between themselves.
   // -1: No cache exists
   // 0: Already cached as no violation
   // 1: Already caches as having a violation
