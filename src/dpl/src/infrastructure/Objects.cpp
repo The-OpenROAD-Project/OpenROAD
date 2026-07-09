@@ -79,10 +79,17 @@ void Master::setTopPowerType(const int top_pwr)
 void Master::setDbMaster(odb::dbMaster* db_master)
 {
   db_master_ = db_master;
+  // Cache the site pointer so hot-path legality checks need not re-traverse
+  // odb.
+  db_site_ = db_master ? db_master->getSite() : nullptr;
 }
 odb::dbMaster* Master::getDbMaster() const
 {
   return db_master_;
+}
+odb::dbSite* Master::getDbSite() const
+{
+  return db_site_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
