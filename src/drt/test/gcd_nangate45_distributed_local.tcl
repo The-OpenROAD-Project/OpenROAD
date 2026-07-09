@@ -87,8 +87,6 @@ set worker2_port [alloc_free_port]
 set balancer_port [alloc_free_port]
 puts "DIST: worker1=$worker1_port worker2=$worker2_port balancer=$balancer_port"
 
-set env(DRT_WORKER1_PORT) $worker1_port
-set env(DRT_WORKER2_PORT) $worker2_port
 set env(DRT_BALANCER_PORT) $balancer_port
 
 # Workers first, then the balancer (the balancer probes workers when added).
@@ -108,6 +106,9 @@ if { ![wait_for_port $worker2_port 30000] } {
   utl::error DRT 9004 "Worker 2 did not come up on port $worker2_port."
 }
 
+# The balancer registers both workers via the comma-separated DRT_WORKER_PORTS
+# contract (shared distributed_balancer.tcl), then listens on DRT_BALANCER_PORT.
+set env(DRT_WORKER_PORTS) "$worker1_port,$worker2_port"
 lappend children [exec $OR -no_init distributed_balancer.tcl \
   > [make_result_file distributed_balancer.log] 2>@1 &]
 if { ![wait_for_port $balancer_port 30000] } {
