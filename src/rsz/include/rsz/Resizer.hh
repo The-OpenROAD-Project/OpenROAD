@@ -552,9 +552,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
   // Compute slew RC factor based on library slew thresholds
-  float getSlewRCFactor() const {
-    return slew_shape_factor_;
-  }
+  float getSlewRCFactor() const { return slew_shape_factor_; }
 
   sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
                                   float load,
