@@ -77,6 +77,7 @@ detailed_placement
     [-site_search_window sites]
     [-row_search_window rows]
     [-drc_penalty penalty]
+    [-disable_window_extension]
 ```
 
 #### Options
@@ -90,8 +91,9 @@ detailed_placement
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_old_diamond` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
 | `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
-| `-site_search_window` | NegotiationLegalizer: maximum number of sites a cell may be moved left or right of its initial position. Default `20`, `0` allowed (no horizontal movement). |
-| `-row_search_window` | NegotiationLegalizer: maximum number of rows a cell may be moved up or down from its initial position. Default `5`, `0` allowed (no row changes). |
+| `-site_search_window` | NegotiationLegalizer: base number of sites a cell may be moved left or right of its initial position, capped by `-max_displacement`. Default `20`, `0` allowed (no horizontal movement). |
+| `-row_search_window` | NegotiationLegalizer: base number of rows a cell may be moved up or down from its initial position, capped by `-max_displacement`. Default `5`, `0` allowed (no row changes). |
+| `-disable_window_extension` | NegotiationLegalizer: disables all search-window extensions, so the window is fixed to the base `-site_search_window`/`-row_search_window` size regardless of cell size or nearby walls. By default, the effective search window can instead grow past base sizing in two ways: (1) it's extended to at least the cell's own width/height, and (2) extended if cut short by a macro or core boundary. |
 | `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`, `0` allowed (disables the escalating per-candidate penalty, DRC-violating cells still accrue history cost separately). |
 
 ### Set Placement Padding

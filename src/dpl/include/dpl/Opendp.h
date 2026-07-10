@@ -116,7 +116,8 @@ class Opendp
                          bool run_abacus = false,
                         int site_search_window = -1,
                          int row_search_window = -1,
-                         double drc_penalty = -1.0);
+                         double drc_penalty = -1.0,
+                         bool disable_window_extension = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
