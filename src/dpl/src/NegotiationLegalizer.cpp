@@ -295,9 +295,9 @@ void NegotiationLegalizer::legalize()
              "negotiation",
              1,
              "NegotiationLegalizer: post-optimisation.");
-  // greedyImprove(5);
-  // cellSwap();
-  // greedyImprove(1);
+  greedyImprove(5);
+  cellSwap();
+  greedyImprove(1);
 
   double avgDisp{0};
   int maxDisp{0}, nViol{0};
