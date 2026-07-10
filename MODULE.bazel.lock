@@ -820,6 +820,38 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//cmake-deps:tools.bzl%cmake_tools": {
+      "general": {
+        "bzlTransitiveDigest": "p8SLUUJx+/BjjdZsiYBzIb7ycWHlbTnCqaSltKafoDY=",
+        "usagesDigest": "gyDMccYrlKAbitA4qkBkvg9+Lzh7samlIYMXM0G+t8w=",
+        "recordedInputs": [
+          "REPO_MAPPING:,bazel_tools bazel_tools"
+        ],
+        "generatedRepoSpecs": {
+          "cmake-linux-x86_64": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "urls": [
+                "https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-x86_64.tar.gz"
+              ],
+              "sha256": "312d78e0b7c5c9b4a97a87a46c3e525aa84895fe8135c238c4616bba73dc9518",
+              "strip_prefix": "cmake-3.31.9-linux-x86_64",
+              "build_file_content": "\nfilegroup(\n    name = \"all_files\",\n    srcs = glob([\"bin/*\", \"share/cmake-*/**\"]),\n    visibility = [\"//visibility:public\"],\n)\n"
+            }
+          },
+          "ninja-linux-x86_64": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "urls": [
+                "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip"
+              ],
+              "sha256": "6f98805688d19672bd699fbbfa2c2cf0fc054ac3df1f0e6a47664d963d530255",
+              "build_file_content": "\nfilegroup(\n    name = \"ninja_bin\",\n    srcs = [\"ninja\"],\n    visibility = [\"//visibility:public\"],\n)\n"
+            }
+          }
+        }
+      }
+    },
     "@@apple_rules_lint+//lint:extensions.bzl%linter": {
       "general": {
         "bzlTransitiveDigest": "g7izj5kLCmsajh8IospHh4ZQ35dyM0FIrA8D4HapAsM=",
