@@ -75,7 +75,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set_property(DIRECTORY PROPERTY TEST_DISCOVERY_TIMEOUT 60)
+# Defer GoogleTest case discovery from build time (POST_BUILD default, which
+# execs each test binary during the build) to ctest time. On a loaded CI host
+# the build-time discovery run can exceed the timeout and fail the whole build.
+set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
 
 # Get version string in OPENROAD_VERSION
 if(NOT OPENROAD_VERSION)

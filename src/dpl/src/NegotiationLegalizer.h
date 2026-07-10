@@ -142,6 +142,12 @@ class NegotiationLegalizer
   void setRowSearchWindow(int w) { row_search_window_ = w; }
   void setDrcPenalty(double p) { drc_penalty_ = p; }
   void setNumThreads(int n) { num_threads_ = n; }
+  // When set, site_search_window_/row_search_window_ are used as hard
+  // ranges: disables both window extensions.
+  void setDisableWindowExtension(bool disable)
+  {
+    disable_window_extension_ = disable;
+  }
 
   // Metrics (valid after legalize())
   [[nodiscard]] double avgDisplacement() const;
@@ -200,8 +206,46 @@ class NegotiationLegalizer
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
+  // Collect up to `count_per_side` rows on each side of `seed_y`
+  // that can host the cell somewhere in [x_lo, x_hi]. A side
+  // stops after `max_scan` steps or at an off-core wall; quota it could not
+  // fill extends the other side.
+  [[nodiscard]] std::vector<int> verticalWindowRows(const NegCell& cell,
+                                                    int seed_y,
+                                                    int x_lo,
+                                                    int x_hi,
+                                                    int count_per_side,
+                                                    int max_scan) const;
   [[nodiscard]] bool respectsFence(int cell_idx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
+  [[nodiscard]] int effectiveSiteWindow(const NegCell& cell) const;
+  [[nodiscard]] int effectiveRowCap(const NegCell& cell) const;
+
+  // The rectangular candidate region findBestLocation scans around an anchor
+  // point. The horizontal reach (dx_lo..dx_hi, inclusive offsets from
+  // anchor_x) is already shifted away from any macro/off-core wall, and `rows`
+  // is the set of valid rows to visit, vertically extended past an off-core
+  // wall. Built once per anchor by buildSearchWindow().
+  struct SearchWindow
+  {
+    int dx_lo{0};
+    int dx_hi{0};
+    std::vector<int> rows;
+  };
+  [[nodiscard]] SearchWindow buildSearchWindow(const NegCell& cell,
+                                               int anchor_x,
+                                               int anchor_y) const;
+
+  // Asymmetric X search bounds around base_x on row target_y. When a macro or
+  // the core boundary cuts one side of the symmetric [-site_window,
+  // +site_window] window short, the lost reach is shifted to the opposite side
+  // so the same number of candidate sites is still explored. Returns the
+  // inclusive (dx_lo, dx_hi) offsets.
+  [[nodiscard]] std::pair<int, int> horizontalWindowBounds(
+      const NegCell& cell,
+      int base_x,
+      int target_y,
+      int site_window) const;
   [[nodiscard]] std::pair<int, int> snapToLegal(int cell_idx,
                                                 int x,
                                                 int y) const;
@@ -267,6 +311,7 @@ class NegotiationLegalizer
   int max_disp_threshold_{kThDefault};      // th on the paper
   int max_iter_neg_{kMaxIterNeg};
   int site_search_window_{kSiteSearchWindow};
+  int row_search_window_{kRowSearchWindow};
   int current_iter_{0};  // updated at the start of each negotiationIter call
 
   // Last-iteration stats, kept so runNegotiation can print the final row.
@@ -281,10 +326,10 @@ class NegotiationLegalizer
   // are rendered in grey while current-iteration movers keep directional
   // colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
-  int row_search_window_{kRowSearchWindow};
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool run_abacus_{false};
+  bool disable_window_extension_{false};
 
   // Mutable profiling accumulators for findBestLocation breakdown (seconds).
   mutable double prof_init_search_s_{0};
