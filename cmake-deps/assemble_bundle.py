@@ -78,10 +78,11 @@ def parse_versions(module_bazel_path):
     """Dependency versions from MODULE.bazel, .bcr suffixes stripped.
 
     Matches each bazel_dep(...) block as a whole, so argument order and
-    buildifier's line wrapping do not matter.
+    buildifier's line wrapping do not matter. Comments are stripped
+    first: a ')' inside a comment would otherwise truncate a block.
     """
     with open(module_bazel_path, encoding="utf-8") as f:
-        text = f.read()
+        text = re.sub(r"#.*", "", f.read())
     versions = {}
     variables = dict(
         re.findall(r'^\s*(\w+)\s*=\s*["\']([^"\']+)["\']', text, re.MULTILINE)
@@ -94,8 +95,13 @@ def parse_versions(module_bazel_path):
         version = version_match.group(1)
         if version[0] in "\"'":
             version = version.strip("\"'")
+        elif version in variables:
+            version = variables[version]
         else:
-            version = variables.get(version, "")
+            raise SystemExit(
+                f"error: variable '{version}' referenced in bazel_dep "
+                f"but not defined in {module_bazel_path}"
+            )
         versions[name_match.group(1)] = version.split(".bcr.")[0]
     for name, version in list(versions.items()):
         if name.startswith("boost."):
