@@ -31,6 +31,14 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 # Flags owned by the CMake build type, not by the toolchain. Everything else
 # extracted from the bazel toolchain is kept verbatim.
+#
+# -D_FORTIFY_SOURCE is stripped here but re-injected by the wrapper with a
+# value keyed to the optimization level: in boost 1.89 defined(_FORTIFY_SOURCE)
+# selects a 128-byte asio ip::detail::endpoint layout the prebuilt archives
+# are compiled with, so the define must be present in every build type or the
+# archive's endpoint ctor overflows the caller's smaller stack object (ABI
+# break). Value 0 under -O0 keeps defined() true while satisfying glibc's
+# "fortify requires optimization" check.
 _FLAG_DENYLIST_PREFIXES = [
     "-O",
     "-g",
@@ -226,10 +234,14 @@ def _wrapper_script(compiler, flags, link_args, defines):
         "set -u",
         'R="$(cd "$(dirname "$0")/.." && pwd)"',
         "link=1",
+        'fortify="-D_FORTIFY_SOURCE=0"',
         'for arg in "$@"; do',
         '  case "$arg" in',
         "    -c|-S|-E|-M|-MM|--version|-v|-dumpversion|-dumpmachine|--help|-print-*)",
         "      link=0",
+        "      ;;",
+        "    -O|-O1|-O2|-O3|-Os|-Oz|-Ofast|-Og)",
+        '      fortify="-D_FORTIFY_SOURCE=1"',
         "      ;;",
         "  esac",
         "done",
@@ -248,7 +260,7 @@ def _wrapper_script(compiler, flags, link_args, defines):
     lines.append(
         'exec "${R}/llvm/' + _map_exec_path(compiler) + '" \\\n  ' +
         " \\\n  ".join(args) +
-        ' \\\n  "$@" ${post[@]+"${post[@]}"}',
+        ' \\\n  "${fortify}" "$@" ${post[@]+"${post[@]}"}',
     )
     return "\n".join(lines) + "\n"
 
