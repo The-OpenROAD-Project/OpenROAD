@@ -14,13 +14,40 @@ EOF
 }
 
 _lcov() {
+    # The binary is built against the bazel-materialized deps/ prefix.
+    if [[ -f "deps/toolchain.cmake" ]]; then
+        export TCL_LIBRARY="${PWD}/deps/lib/tcl9.0"
+        export PYTHONHOME="${PWD}/deps/python"
+    fi
+
     ctest --test-dir build -j $(nproc)
+
+    # clang emits gcov data that GCC's gcov cannot read; funnel lcov
+    # through llvm-cov.
+    local gcov_tool_args=()
+    local llvm_cov=""
+    local candidate
+    for candidate in llvm-cov llvm-cov-22 llvm-cov-21 llvm-cov-20 llvm-cov-19 llvm-cov-18 llvm-cov-17 llvm-cov-16; do
+        if command -v "${candidate}" &> /dev/null; then
+            llvm_cov="$(command -v "${candidate}")"
+            break
+        fi
+    done
+    if [[ -n "${llvm_cov}" ]]; then
+        cat > llvm-gcov.sh <<EOF
+#!/bin/sh
+exec "${llvm_cov}" gcov "\$@"
+EOF
+        chmod +x llvm-gcov.sh
+        gcov_tool_args=(--gcov-tool "${PWD}/llvm-gcov.sh")
+    fi
 
     # sta has a private test suite
     # drt's gr is not in use
     mkdir -p coverage-output
     lcov \
         --capture \
+        "${gcov_tool_args[@]}" \
         --directory ./build \
         --exclude "/usr/include/*" \
         --exclude "/opt/*" \
@@ -42,11 +69,14 @@ _lcov() {
 }
 
 _coverity() {
-    cmakeOptions=""
-    if [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
-        cmakeOptions="$(cat "/etc/openroad_deps_prefixes.txt")"
+    if [[ ! -f "deps/toolchain.cmake" ]]; then
+        bazel_cmd="bazel"
+        if command -v bazelisk &> /dev/null; then
+            bazel_cmd="bazelisk"
+        fi
+        "${bazel_cmd}" run //:cmake
     fi
-    cmake ${cmakeOptions} -B build .
+    cmake -DCMAKE_TOOLCHAIN_FILE="${PWD}/deps/toolchain.cmake" -B build .
     # compile abc before calling cov-build to exclude from analysis.
     # Coverity fails to process abc code due to -fpermissive flag.
     cmake --build build -j $(nproc) --target abc

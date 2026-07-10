@@ -20,7 +20,6 @@ EOF
 fi
 cmakeOptions=()
 cleanBefore=no
-depsPrefixesFile=""
 compiler=gcc
 useBazel=no
 noGui=no
@@ -37,6 +36,9 @@ OPTIONS:
                                                  e.g.: -cmake='-DFLAGS="-a -b"'
   -compiler=COMPILER_NAME                        Compiler name: gcc or clang
                                                  Default: gcc
+                                                 (macOS only; on Linux the
+                                                 bazel-provided clang toolchain
+                                                 is always used)
   -no-warnings
                                                 Compiler warnings are
                                                 considered errors, i.e.,
@@ -56,11 +58,6 @@ OPTIONS:
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
   -bazel                                        Use Bazel instead of CMake to build
-  -deps-prefixes-file=FILE                      File with CMake packages roots,
-                                                 its content extends -cmake argument.
-                                                 By default, "openroad_deps_prefixes.txt"
-                                                 file from OpenROAD's "etc" directory
-                                                 or from system "/etc".
   -local                                        Install OpenROAD in \${HOME}/.local.
   -prefix=DIR                                   Install OpenROAD in a user-specified directory.
 
@@ -118,8 +115,8 @@ while [ "$#" -gt 0 ]; do
             ;;
         -coverage )
             cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
-            cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
-            cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
+            cmakeOptions+=("-DCMAKE_CXX_FLAGS=--coverage")
+            cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=--coverage")
             ;;
         -cmake=*)
             # Use xargs to safely parse the quoted string into array elements without eval
@@ -141,15 +138,7 @@ while [ "$#" -gt 0 ]; do
                 numThreads=${temp}
             fi
             ;;
-        -deps-prefixes-file=*)
-            file="${1#-deps-prefixes-file=}"
-            if [[ ! -f "$file" ]]; then 
-                echo "${file} does not exist" >&2
-                _help
-            fi
-            depsPrefixesFile="$file"
-            ;;
-        -compiler | -cmake | -dir | -threads | -install | -deps-prefixes-file )
+        -compiler | -cmake | -dir | -threads | -install )
             echo "${1} requires an argument" >&2
             _help
             ;;
@@ -167,57 +156,27 @@ while [ "$#" -gt 0 ]; do
     shift 1
 done
 
-if [[ -z "$depsPrefixesFile" ]]; then
-    if [[ -f "$DIR/openroad_deps_prefixes.txt" ]]; then
-        depsPrefixesFile="$DIR/openroad_deps_prefixes.txt"
-    elif [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
-        depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
-    fi
-fi
-if [[ -f "$depsPrefixesFile" ]]; then
-            while IFS= read -r arg; do
-                if [[ -n "$arg" ]]; then
-                    cmakeOptions+=("$arg")
-                fi
-            done < <(xargs printf '%s\n' < "$depsPrefixesFile")
-    echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
-else
-    echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
-fi
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    case "${compiler}" in
+        "gcc" )
+            export CC="$(command -v gcc)"
+            export CXX="$(command -v g++)"
+            ;;
+        "clang" )
+            export CC="$(command -v clang)"
+            export CXX="$(command -v clang++)"
+            ;;
+        *)
+            export CC=""
+            export CXX=""
+    esac
 
-case "${compiler}" in
-    "gcc" )
-        if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
-            # the scl script has unbound variables
-            set +u
-            source /opt/rh/devtoolset-8/enable
-            set -u
-        fi
-        export CC="$(command -v gcc)"
-        export CXX="$(command -v g++)"
-        ;;
-    "clang" )
-        if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
-            # the scl script has unbound variables
-            set +u
-            source /opt/rh/llvm-toolset-7.0/enable
-            set -u
-        fi
-        export CC="$(command -v clang)"
-        export CXX="$(command -v clang++)"
-        ;;
-    "clang-16" )
-        export CC="$(command -v clang-16)"
-        export CXX="$(command -v clang++-16)"
-        ;;
-    *)
-        export CC=""
-        export CXX=""
-esac
-
-if [[ -z "${CC}" || -z "${CXX}" ]]; then
+    if [[ -z "${CC}" || -z "${CXX}" ]]; then
         echo "Compiler $compiler not installed or it is not supported." >&2
         _help 1
+    fi
+elif [[ "${compiler}" != "gcc" ]]; then
+    echo "[WARNING] -compiler is ignored on Linux; the bazel-provided clang toolchain is used."
 fi
 
 if [[ "${cleanBefore}" == "yes" ]]; then
@@ -315,25 +274,25 @@ check_command() {
     fi
 }
 
-# Essential build tools required for OpenROAD
+# Essential build tools required for OpenROAD. On Linux, bison, flex, swig
+# and the compiler come from the bazel-materialized deps/ prefix.
 check_command "cmake"
-check_command "bison"
-check_command "flex"
-check_command "swig"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    check_command "bison"
+    check_command "flex"
+    check_command "swig"
 
-# Compiler check based on user selection
-if [[ "${compiler:-gcc}" == "gcc" ]]; then
-    check_command "gcc"
-    check_command "g++"
-elif [[ "${compiler}" == "clang" ]]; then
-    check_command "clang"
-    check_command "clang++"
-elif [[ "${compiler}" == "clang-16" ]]; then
-    check_command "clang-16"
-    check_command "clang++-16"
-else
-    # Handle unknown compilers gracefully - suggested by gemini-bot
-    echo -e "${YELLOW}[WARNING] Unsupported compiler '${compiler}' specified. Skipping compiler pre-compilation check.${NC}"
+    # Compiler check based on user selection
+    if [[ "${compiler:-gcc}" == "gcc" ]]; then
+        check_command "gcc"
+        check_command "g++"
+    elif [[ "${compiler}" == "clang" ]]; then
+        check_command "clang"
+        check_command "clang++"
+    else
+        # Handle unknown compilers gracefully - suggested by gemini-bot
+        echo -e "${YELLOW}[WARNING] Unsupported compiler '${compiler}' specified. Skipping compiler pre-compilation check.${NC}"
+    fi
 fi
 
 echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
@@ -355,5 +314,40 @@ if [[ "$useBazel" == "yes" ]]; then
     "${bazel_cmd}" build "${bazelArgs[@]}" //:openroad
     exit 0
 fi
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if [[ "$(uname -m)" != "x86_64" ]]; then
+        echo "[ERROR] The bazel-materialized dependency prefix only supports Linux x86_64." >&2
+        exit 1
+    fi
+    # Refresh with: bazelisk run //:cmake
+    if [[ ! -f "deps/toolchain.cmake" ]]; then
+        bazel_cmd="bazel"
+        if command -v bazelisk &> /dev/null; then
+            bazel_cmd="bazelisk"
+        fi
+        echo "[INFO] Materializing CMake dependencies: ${bazel_cmd} run //:cmake"
+        "${bazel_cmd}" run //:cmake
+    fi
+    cmakeOptions+=("-DCMAKE_TOOLCHAIN_FILE=${PWD}/deps/toolchain.cmake")
+fi
 cmake "${cmakeOptions[@]}" -B "${buildDir}" .
 time cmake --build "${buildDir}" -j "${numThreads}"
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Self-locating wrapper: sets up the bundled Tcl/Python runtimes of the
+    # deps/ prefix relative to the tree it sits in, so a stashed/copied
+    # build+deps pair works on any host path. Assumes <root>/<buildDir>/bin.
+    cat > "${buildDir}/bin/openroad-wrapper" <<'EOF'
+#!/bin/sh
+d="$(dirname "$(readlink -f "$0")")"
+root="$d/../.."
+export TCL_LIBRARY="$root/deps/lib/tcl9.0"
+export PYTHONHOME="$root/deps/python"
+export LD_LIBRARY_PATH="$root/deps/python/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+exec "$d/openroad" "$@"
+EOF
+    chmod +x "${buildDir}/bin/openroad-wrapper"
+    echo "[INFO] Runtime environment for the built binary:"
+    echo "[INFO]   export TCL_LIBRARY=${PWD}/deps/lib/tcl9.0"
+    echo "[INFO]   export PYTHONHOME=${PWD}/deps/python"
+    echo "[INFO] or use ${buildDir}/bin/openroad-wrapper"
+fi
