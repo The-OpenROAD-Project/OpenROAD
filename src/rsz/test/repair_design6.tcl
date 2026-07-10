@@ -1,6 +1,7 @@
-# repair_timing -setup with reroute in the move sequence on ASAP7 GCD.
-# RerouteMove is included as a move in the LEGACY repair loop (default);
-# it requires global routing to be present (haveRoutes).
+# repair_design -reroute: slew violations on ASAP7 GCD with sparse placement.
+# Nets routed on lower (high-resistance) metal layers cause slew violations.
+# The -reroute flag tries to move violating nets to lower-resistance upper
+# layers before falling back to buffering/resizing.
 source "helpers.tcl"
 
 suppress_message STA 1212
@@ -37,10 +38,8 @@ set_routing_layers -signal M2-M6 -clock M4-M6
 global_route
 estimate_parasitics -global_routing
 
-report_worst_slack -max
-report_tns -digits 3
+report_check_types -max_slew -max_cap -digits 3
 
-repair_timing -phases "LEGACY" -setup -sequence "reroute" -repair_tns 10
+repair_design -reroute
 
-report_worst_slack -max
-report_tns -digits 3
+report_check_types -max_slew -max_cap -digits 3
