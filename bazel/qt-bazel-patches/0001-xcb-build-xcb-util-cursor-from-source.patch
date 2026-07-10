@@ -1,0 +1,97 @@
+diff --git a/MODULE.bazel b/MODULE.bazel
+index e31e108..68682db 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -11,3 +11,21 @@ bazel_dep(name = "libxcb", version = "1.17.0.bcr.2")
+ bazel_dep(name = "platforms", version = "1.0.0")
+ bazel_dep(name = "rules_cc", version = "0.1.2")
+ bazel_dep(name = "zlib", version = "1.3.1.bcr.6")
++
++# xcb-util-cursor 0.1.5 source — used by interface_libs/xcb to provide
++# a static replacement for the system libxcb-cursor.so.0 so the Qt xcb
++# platform plugin doesn't dlopen it from the host. Fetched from
++# xcb.freedesktop.org with the xorg.freedesktop.org mirror as fallback
++# (identical tarball), verified by sha256.
++http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
++
++http_archive(
++    name = "xcb_util_cursor",
++    build_file = "//interface_libs/xcb:xcb_util_cursor.BUILD",
++    sha256 = "0caf99b0d60970f81ce41c7ba694e5eaaf833227bb2cbcdb2f6dc9666a663c57",
++    strip_prefix = "xcb-util-cursor-0.1.5",
++    urls = [
++        "https://xcb.freedesktop.org/dist/xcb-util-cursor-0.1.5.tar.xz",
++        "https://xorg.freedesktop.org/archive/individual/lib/xcb-util-cursor-0.1.5.tar.xz",
++    ],
++)
+diff --git a/interface_libs/xcb/BUILD.bazel b/interface_libs/xcb/BUILD.bazel
+index c1c5b6b..5dea923 100644
+--- a/interface_libs/xcb/BUILD.bazel
++++ b/interface_libs/xcb/BUILD.bazel
+@@ -67,10 +67,17 @@ cc_import(
+     system_provided = True,
+ )
+ 
+-cc_import(
+-    name = "xcb_cursor_ifso",
+-    interface_library = "libxcb-cursor.ifso",
+-    system_provided = True,
++# Headers consumed by @xcb_util_cursor//:cursor (declared in this module's
++# MODULE.bazel): the xcb-util-image / xcb-util-renderutil headers plus the
++# xcb-proto headers (xcb/render.h, xcb/xproto.h, ...) that xcb-util-cursor
++# #includes. These ship in interface_libs/xcb and aren't on BCR; @libxcb
++# supplies the libxcb link symbols.
++cc_library(
++    name = "xcb_hdrs",
++    hdrs = glob(["xcb/*.h"]),
++    includes = ["."],
++    strip_include_prefix = ".",
++    visibility = ["//visibility:public"],
+ )
+ 
+ cc_import(
+@@ -94,7 +101,7 @@ cc_library(
+     deps = select({
+         "@platforms//cpu:aarch64": [],
+         "//conditions:default": [
+-            ":xcb_cursor_ifso",
++            "@xcb_util_cursor//:cursor",
+             ":xcb_icccm_ifso",
+             ":xcb_ifso",
+             ":xcb_image_ifso",
+diff --git a/interface_libs/xcb/xcb_util_cursor.BUILD b/interface_libs/xcb/xcb_util_cursor.BUILD
+new file mode 100644
+index 0000000..4adf18c
+--- /dev/null
++++ b/interface_libs/xcb/xcb_util_cursor.BUILD
+@@ -0,0 +1,30 @@
++# BUILD overlay for the @xcb_util_cursor http_archive declared in
++# qt-bazel's MODULE.bazel. Builds xcb-util-cursor 0.1.5 as a static
++# cc_library so the Qt xcb platform plugin doesn't dlopen
++# libxcb-cursor.so.0 from the host.
++
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++
++cc_library(
++    name = "cursor",
++    srcs = [
++        "cursor/cursor.c",
++        "cursor/cursor.h",
++        "cursor/load_cursor.c",
++        "cursor/parse_cursor_file.c",
++        "cursor/shape_to_id.c",
++    ],
++    hdrs = ["cursor/xcb_cursor.h"],
++    copts = [
++        # asprintf() is a GNU extension; glibc gates it behind _GNU_SOURCE.
++        "-D_GNU_SOURCE",
++        "-DXCURSORPATH='\"~/.icons:/usr/share/icons:/usr/share/pixmaps:/usr/X11R6/lib/X11/icons\"'",
++    ],
++    include_prefix = "xcb",
++    strip_include_prefix = "cursor",
++    visibility = ["@qt-bazel//interface_libs/xcb:__pkg__"],
++    deps = [
++        "@libxcb",
++        "@qt-bazel//interface_libs/xcb:xcb_hdrs",
++    ],
++)

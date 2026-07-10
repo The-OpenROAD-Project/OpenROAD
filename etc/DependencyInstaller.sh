@@ -926,7 +926,7 @@ _install_bazel() {
                     libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
                     libxcb-xinerama0-dev libxcb-xkb-dev \
                     libx11-xcb1 libx11-6 libsm6 libice6 \
-                    libxcb-cursor0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
+                    libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
                     libdbus-1-3 libfontconfig1 libxkbcommon0 libxkbcommon-x11-0
             elif _command_exists "yum"; then
                 _execute "Installing xcb libraries for GUI support..." \
@@ -934,7 +934,7 @@ _install_bazel() {
                     libxcb-devel xcb-util-devel xcb-util-image-devel \
                     xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel \
                     libX11-xcb libX11 libSM libICE \
-                    xcb-util-cursor libxcb \
+                    libxcb \
                     dbus-libs fontconfig \
                     libxkbcommon libxkbcommon-x11
             fi

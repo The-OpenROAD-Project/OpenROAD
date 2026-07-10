@@ -46,7 +46,6 @@ RUN apt-get -y update \
       libsm6 \
       libice6 \
       libxcb1 \
-      libxcb-cursor0 \
       libxcb-icccm4 \
       libxcb-image0 \
       libxcb-keysyms1 \

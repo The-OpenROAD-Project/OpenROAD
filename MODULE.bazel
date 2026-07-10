@@ -181,6 +181,15 @@ bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
     commit = "886104974c2fd72439f2c33b5deebf0fe4649df7",
+    # Build xcb-util-cursor 0.1.5 from source (fetched hermetically via an
+    # http_archive in qt-bazel's MODULE.bazel) so the Qt xcb platform plugin
+    # doesn't dlopen libxcb-cursor.so.0 from the host, dropping the apt
+    # libxcb-cursor0 dependency. Carries the closed
+    # The-OpenROAD-Project/qt_bazel_prebuilts#11 (0328997a).
+    patch_strip = 1,
+    patches = [
+        "//bazel/qt-bazel-patches:0001-xcb-build-xcb-util-cursor-from-source.patch",
+    ],
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
