@@ -335,15 +335,17 @@ time cmake --build "${buildDir}" -j "${numThreads}"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Self-locating wrapper: sets up the bundled Tcl/Python runtimes of the
     # deps/ prefix relative to the tree it sits in, so a stashed/copied
-    # build+deps pair works on any host path. Assumes <root>/<buildDir>/bin.
-    cat > "${buildDir}/bin/openroad-wrapper" <<'EOF'
+    # build+deps pair works on any host path. The bin -> repo root hop is
+    # computed at generation time so custom -dir build directories work.
+    rel_root="$(realpath --relative-to="${buildDir}/bin" .)"
+    cat > "${buildDir}/bin/openroad-wrapper" <<EOF
 #!/bin/sh
-d="$(dirname "$(readlink -f "$0")")"
-root="$d/../.."
-export TCL_LIBRARY="$root/deps/lib/tcl9.0"
-export PYTHONHOME="$root/deps/python"
-export LD_LIBRARY_PATH="$root/deps/python/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-exec "$d/openroad" "$@"
+d="\$(dirname "\$(readlink -f "\$0")")"
+root="\$d/${rel_root}"
+export TCL_LIBRARY="\$root/deps/lib/tcl9.0"
+export PYTHONHOME="\$root/deps/python"
+export LD_LIBRARY_PATH="\$root/deps/python/lib\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+exec "\$d/openroad" "\$@"
 EOF
     chmod +x "${buildDir}/bin/openroad-wrapper"
     echo "[INFO] Runtime environment for the built binary:"

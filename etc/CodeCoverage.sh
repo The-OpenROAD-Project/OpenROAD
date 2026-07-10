@@ -34,12 +34,12 @@ _lcov() {
         fi
     done
     if [[ -n "${llvm_cov}" ]]; then
-        cat > llvm-gcov.sh <<EOF
+        cat > build/llvm-gcov.sh <<EOF
 #!/bin/sh
 exec "${llvm_cov}" gcov "\$@"
 EOF
-        chmod +x llvm-gcov.sh
-        gcov_tool_args=(--gcov-tool "${PWD}/llvm-gcov.sh")
+        chmod +x build/llvm-gcov.sh
+        gcov_tool_args=(--gcov-tool "${PWD}/build/llvm-gcov.sh")
     fi
 
     # sta has a private test suite
