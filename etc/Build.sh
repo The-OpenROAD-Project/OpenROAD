@@ -115,6 +115,7 @@ while [ "$#" -gt 0 ]; do
             ;;
         -coverage )
             cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
+            cmakeOptions+=("-DCMAKE_C_FLAGS=--coverage")
             cmakeOptions+=("-DCMAKE_CXX_FLAGS=--coverage")
             cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=--coverage")
             ;;
@@ -314,6 +315,11 @@ if [[ "$useBazel" == "yes" ]]; then
     fi
     "${bazel_cmd}" build "${bazelArgs[@]}" //:openroad
     exit 0
+fi
+if [[ "$OSTYPE" == "linux"* && "$OSTYPE" != "linux-gnu"* ]]; then
+    # The deps/ prefix (cmake, ninja, the toolchain) is glibc binaries.
+    echo "[ERROR] Only glibc-based Linux (linux-gnu) is supported; got OSTYPE=$OSTYPE." >&2
+    exit 1
 fi
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if [[ "$(uname -m)" != "x86_64" ]]; then

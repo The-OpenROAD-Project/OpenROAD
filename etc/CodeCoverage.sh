@@ -25,16 +25,25 @@ _lcov() {
     ctest --test-dir build -j $(nproc)
 
     # clang emits gcov data that GCC's gcov cannot read; funnel lcov
-    # through llvm-cov.
+    # through llvm-cov. Prefer one shipped in the deps/ toolchain (matches
+    # the compiler exactly) over host installs.
     local gcov_tool_args=()
     local llvm_cov=""
-    local candidate
-    for candidate in llvm-cov llvm-cov-22 llvm-cov-21 llvm-cov-20 llvm-cov-19 llvm-cov-18 llvm-cov-17 llvm-cov-16; do
-        if command -v "${candidate}" &> /dev/null; then
-            llvm_cov="$(command -v "${candidate}")"
-            break
+    if [[ -d "deps/llvm" ]]; then
+        llvm_cov="$(find deps/llvm -type f,l -name llvm-cov -print -quit 2>/dev/null)"
+        if [[ -n "${llvm_cov}" ]]; then
+            llvm_cov="$(realpath "${llvm_cov}")"
         fi
-    done
+    fi
+    if [[ -z "${llvm_cov}" ]]; then
+        local candidate
+        for candidate in llvm-cov llvm-cov-22 llvm-cov-21 llvm-cov-20 llvm-cov-19 llvm-cov-18 llvm-cov-17 llvm-cov-16; do
+            if command -v "${candidate}" &> /dev/null; then
+                llvm_cov="$(command -v "${candidate}")"
+                break
+            fi
+        done
+    fi
     if [[ -n "${llvm_cov}" ]]; then
         cat > build/llvm-gcov.sh <<EOF
 #!/bin/sh
