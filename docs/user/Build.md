@@ -98,15 +98,16 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 ### Linux Dependencies (from Bazel)
 
 On Linux x86_64, the C++ dependencies of the CMake build come from the
-pinned Bazel module graph, materialized into a local `deps/` folder — no
-`sudo`, no distro packages beyond `cmake`, `ninja` (or `make`), `git`
-and `bash`, and no compiler: `deps/` includes the same hermetic
-clang/libc++ toolchain the Bazel build uses.
+pinned Bazel module graph, materialized into a local `deps/` folder —
+no `sudo` and no distro packages beyond `git` and `bash`: `deps/`
+includes the same hermetic clang/libc++ toolchain the Bazel build
+uses, plus pinned `cmake` and `ninja` release binaries (host cmake is
+traditionally too old for OpenROAD).
 
 ``` shell
 bazelisk run //:cmake
-cmake -DCMAKE_TOOLCHAIN_FILE=deps/toolchain.cmake -B build .
-cmake --build build -j$(nproc)
+deps/bin/cmake -DCMAKE_TOOLCHAIN_FILE=deps/toolchain.cmake -G Ninja -B build .
+deps/bin/cmake --build build -j$(nproc)
 ```
 
 `./etc/Build.sh` runs `bazelisk run //:cmake` automatically when

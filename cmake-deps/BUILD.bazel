@@ -18,6 +18,7 @@ py_binary(
 # through their transitive compilation contexts.
 cmake_deps_bundle(
     name = "bundle",
+    cmake_files = "@cmake-linux-x86_64//:all_files",
     exclude_from_pool = ["googletest"],
     include_overrides = {
         # cudd's util.h etc. would collide in a flat include/; FindCUDD
@@ -31,6 +32,7 @@ cmake_deps_bundle(
         "openmp": "omp",
         "zlib": "z",
     },
+    ninja_binary = "@ninja-linux-x86_64//:ninja_bin",
     python_headers = "@rules_python//python/cc:current_py_cc_headers",
     python_libs = "@rules_python//python/cc:current_py_cc_libs",
     shims = glob(["shims/*.cmake"]),
