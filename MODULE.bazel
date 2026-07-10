@@ -110,14 +110,13 @@ bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 
-# freetype is transitive (qt-bazel -> harfbuzz -> freetype). freetype@2.13.3's
-# BUILD overlay calls the native cc_library rule, which Bazel 9 removed;
-# loading the package fails. 2.13.3.bcr.2 keeps the same 2.13.3 source but its
-# overlay loads cc_library from @rules_cc.
-single_version_override(
-    module_name = "freetype",
-    version = "2.13.3.bcr.2",
-)
+# freetype reaches the build transitively (qt-bazel -> harfbuzz -> freetype).
+# freetype@2.13.3's BUILD overlay calls the native cc_library rule, which
+# Bazel 9 removed, so loading the package fails. 2.13.3.bcr.2 keeps the same
+# 2.13.3 source but its overlay loads cc_library from @rules_cc. This is a
+# direct bazel_dep rather than a single_version_override so the pin propagates
+# to downstream consumers via MVS (overrides only apply in the root module).
+bazel_dep(name = "freetype", version = "2.13.3.bcr.2")
 
 # gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
 # libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
