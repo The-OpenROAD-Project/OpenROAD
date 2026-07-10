@@ -44,6 +44,7 @@
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -202,7 +203,7 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
                                 sta::LibertyPort* input_port,
                                 LibertyPortVec& ports)
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }
@@ -1573,7 +1574,7 @@ bool Resizer::isCombinational(sta::LibertyCell* cell) const
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials());
+          && !cell->isSequential());
 }
 
 std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
@@ -3334,7 +3335,7 @@ bool Resizer::isRegister(sta::Vertex* vertex)
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    return cell && cell->hasSequentials();
+    return cell && cell->isSequential();
   }
   return false;
 }
@@ -4810,6 +4811,7 @@ void Resizer::repairDesign(double max_wire_length,
                            double cap_margin,
                            double buffer_gain,
                            bool match_cell_footprint,
+                           bool reroute,
                            bool verbose)
 {
   utl::Timer timer;
@@ -4822,6 +4824,7 @@ void Resizer::repairDesign(double max_wire_length,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
+  utl::SetAndRestore set_reroute(repair_design_->reroute_, reroute);
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
   logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
@@ -4830,6 +4833,90 @@ void Resizer::repairDesign(double max_wire_length,
 int Resizer::repairDesignBufferCount() const
 {
   return repair_design_->insertedBufferCount();
+}
+
+float Resizer::getRerouteResistanceReduction()
+{
+  return kMinResistanceReduction;
+}
+
+bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
+{
+  // Res-aware rerouting only makes sense with global-routing parasitics.
+  if (estimate_parasitics_->getParasiticsSrc()
+      != est::ParasiticsSrc::kGlobalRouting) {
+    return false;
+  }
+
+  sta::Net* net = network_->net(drvr_pin);
+  if (net == nullptr || dontTouch(drvr_pin)) {
+    return false;
+  }
+
+  odb::dbNet* db_net = db_network_->flatNet(net);
+  if (db_net == nullptr || db_net->isSpecial()) {
+    return false;
+  }
+
+  // Already scheduled for res-aware routing in a prior iteration.
+  if (global_router_->isNetResAware(db_net)) {
+    return false;
+  }
+
+  // Unconstrained nets have no timing path; res-aware routing will waste
+  // valuable resources.
+  const sta::Slack slack = sta_->slack(graph_->pinDrvrVertex(drvr_pin), max_);
+  if (slack == sta::INF) {
+    return false;
+  }
+
+  // Short nets (<=3 gcells) have negligible resistance; skip the reroute.
+  const int kShortNetGCellThreshold = 3;
+  const int tile_size = global_router_->getTileSize();
+  if (tile_size > 0) {
+    const grt::NetRouteMap& routes = global_router_->getRoutes();
+    auto it = routes.find(db_net);
+    if (it != routes.end()) {
+      int gcell_length = 0;
+      for (const grt::GSegment& seg : it->second) {
+        if (!seg.isVia()) {
+          gcell_length += seg.length() / tile_size;
+        }
+      }
+      if (gcell_length <= kShortNetGCellThreshold) {
+        return false;
+      }
+    }
+  }
+
+  // Only reroute if moving to the lowest-resistance layer saves enough
+  // resistance to justify the disruption.
+  const float resistance = global_router_->getFRNetResistance(db_net);
+  const float estimated_resistance
+      = global_router_->getFRNetResistanceOnMinResistanceLayer(db_net);
+  float reduction_ratio = 0.0f;
+  if (resistance > 0.0f) {
+    reduction_ratio = (resistance - estimated_resistance) / resistance;
+  }
+
+  if (reduction_ratio < kMinResistanceReduction) {
+    return false;
+  }
+
+  global_router_->setResistanceAware(true);
+  global_router_->addDirtyNet(db_net);
+  global_router_->setNetIsResAware(db_net, true);
+  estimate_parasitics_->parasiticsInvalid(db_net);
+
+  debugPrint(logger_,
+             utl::RSZ,
+             "reroute",
+             1,
+             "RepairDesign rerouting net {} (resistance {} -> {} estimated)",
+             db_net->getName(),
+             resistance,
+             estimated_resistance);
+  return true;
 }
 
 void Resizer::repairNet(sta::Net* net,

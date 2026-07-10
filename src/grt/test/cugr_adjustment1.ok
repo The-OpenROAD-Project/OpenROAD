@@ -22,6 +22,7 @@
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 Design statistics
 Nets:                579
 Special nets:        0
@@ -46,7 +47,7 @@ metal10    Vertical         2142          1190          44.44%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           36727
-Total via count:       3310
+Total via count:       3319
 Total congestion:      0
 Min resource:          1
 Bottleneck:            (8, 0, 0)
@@ -55,17 +56,17 @@ Bottleneck:            (8, 0, 0)
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            5375           538           10.01%             0 /  0 /  0
-metal3           12240          1260           10.29%             0 /  0 /  0
-metal4            6086           389            6.39%             0 /  0 /  0
-metal5            6120             3            0.05%             0 /  0 /  0
-metal6            6086           255            4.19%             0 /  0 /  0
+metal2            5375           662           12.32%             0 /  0 /  0
+metal3           12240          1401           11.45%             0 /  0 /  0
+metal4            6086           456            7.49%             0 /  0 /  0
+metal5            6120            63            1.03%             0 /  0 /  0
+metal6            6086           335            5.50%             0 /  0 /  0
 metal7            2142             0            0.00%             0 /  0 /  0
 metal8            2142             0            0.00%             0 /  0 /  0
 metal9            1190             0            0.00%             0 /  0 /  0
 metal10           1190             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            42571          2445            5.74%             0 /  0 /  0
+Total            42571          2917            6.85%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563

@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <map>
 #include <queue>
 #include <tuple>
 #include <unordered_map>
@@ -94,6 +95,21 @@ void NegotiationLegalizer::legalize()
              1,
              "NegotiationLegalizer: starting legalization.");
 
+  logger_->info(utl::DPL,
+                1103,
+                "Negotiation base search window: +/-{} sites horizontally, "
+                "+/-{} rows vertically (extendable up to the max "
+                "displacement cap of +/-{} sites, +/-{} rows near walls).",
+                site_search_window_,
+                row_search_window_,
+                opendp_->max_displacement_x_,
+                opendp_->max_displacement_y_);
+  logger_->report("\tAutomatic search window extension {}.",
+                  disable_window_extension_ ? "disabled" : "enabled");
+
+  logger_->info(
+      utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
+
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
       orient_s{0};
@@ -113,7 +129,6 @@ void NegotiationLegalizer::legalize()
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
-    debugPause("Pause after initFromDb.");
   }
 
   {
@@ -135,6 +150,8 @@ void NegotiationLegalizer::legalize()
                             "initFenceRegions: {}");
     initFenceRegions();
   }
+
+  debugPause("Pause after initialization.");
 
   debugPrint(logger_,
              utl::DPL,
@@ -224,12 +241,17 @@ void NegotiationLegalizer::legalize()
   }
 
   if (debug_observer_) {
-    setDplPositions();
+    commitNegotiationPosToDpl();
     // this flush may imply functional changes. It hides initial movements for
     // clean debugging negotiation phase.
-    flushToDb();
+    logger_->report(
+        "Committing post-init positions to odb; debug move line drawings will "
+        "exclude gpl-to-init displacement.");
+    commitNegotiationPosToOdb();
     pushNegotiationPixels();
-    logger_->report("Pause after Abacus pass.");
+    logger_->report(run_abacus_
+                        ? "Pause after initialization: Abacus executed."
+                        : "Pause after initialization: Abacus skipped.");
     debug_observer_->redrawAndPause();
   }
 
@@ -302,12 +324,6 @@ void NegotiationLegalizer::legalize()
       nViol);
 
   {
-    utl::DebugScopedTimer t(
-        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "flushToDb: {}");
-    flushToDb();
-  }
-
-  {
     utl::DebugScopedTimer t(orient_s,
                             logger_,
                             utl::DPL,
@@ -347,7 +363,7 @@ void NegotiationLegalizer::legalize()
              "negotiation {:.1f}ms ({:.0f}%), "
              "postNegSync {:.1f}ms ({:.0f}%), "
              "metrics {:.1f}ms ({:.0f}%), "
-             "flushToDb {:.1f}ms ({:.0f}%), "
+             "commitNegotiationPosToOdb {:.1f}ms ({:.0f}%), "
              "orientUpdate {:.1f}ms ({:.0f}%)",
              to_ms(total_s),
              to_ms(init_from_db_s),
@@ -368,13 +384,16 @@ void NegotiationLegalizer::legalize()
              pct(flush_s),
              to_ms(orient_s),
              pct(orient_s));
+
+  debugPause("Pause after legalization complete.");
 }
 
 // ===========================================================================
-// flushToDb – write current cell positions to ODB so the GUI reflects them
+// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI
+// reflects them
 // ===========================================================================
 
-void NegotiationLegalizer::flushToDb()
+void NegotiationLegalizer::commitNegotiationPosToOdb()
 {
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
@@ -453,17 +472,18 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
   if (!debug_observer_) {
     return;
   }
-  setDplPositions();
+  commitNegotiationPosToDpl();
   pushNegotiationPixels();
   logger_->report("{}", msg);
   debug_observer_->redrawAndPause();
 }
 
 // ===========================================================================
-// setDplPositions – pass the positions to the DPL original structure (Node)
+// commitNegotiationPosToDpl – pass the positions to the DPL original structure
+// (Node)
 // ===========================================================================
 
-void NegotiationLegalizer::setDplPositions()
+void NegotiationLegalizer::commitNegotiationPosToDpl()
 {
   if (!network_) {
     return;
@@ -523,13 +543,8 @@ bool NegotiationLegalizer::initFromDb()
   die_xhi_ = core_area.xMax();
   die_yhi_ = core_area.yMax();
 
-  // Site width from the DPL grid; row height from the first DB row.
   site_width_ = dpl_grid->getSiteWidth().v;
-  for (auto* row : block->getRows()) {
-    row_height_ = row->getSite()->getHeight();
-    break;
-  }
-  assert(site_width_ > 0 && row_height_ > 0);
+  assert(site_width_ > 0);
 
   // Grid dimensions from the DPL grid (accounts for actual DB rows).
   grid_w_ = dpl_grid->getRowSiteCount().v;
@@ -578,10 +593,7 @@ bool NegotiationLegalizer::initFromDb()
         1,
         static_cast<int>(
             std::round(static_cast<double>(master->getWidth()) / site_width_)));
-    cell.height = std::max(
-        1,
-        static_cast<int>(std::round(static_cast<double>(master->getHeight())
-                                    / row_height_)));
+    cell.height = dpl_grid->gridHeight(master).v;
 
     // Clamp to valid grid range – gridRoundY can return grid_h_ when the
     // instance is near the top edge.  Use (grid_w_ - width) so the full
@@ -647,9 +659,9 @@ bool NegotiationLegalizer::initFromDb()
           for (auto* box : odb_region->getBoundaries()) {
             RegionRectInline r;
             r.xlo = (box->xMin() - die_xlo_) / site_width_;
-            r.ylo = (box->yMin() - die_ylo_) / row_height_;
+            r.ylo = dpl_grid->gridEndY(DbuY{box->yMin() - die_ylo_}).v;
             r.xhi = (box->xMax() - die_xlo_) / site_width_;
-            r.yhi = (box->yMax() - die_ylo_) / row_height_;
+            r.yhi = dpl_grid->gridSnapDownY(DbuY{box->yMax() - die_ylo_}).v;
             rects.push_back(r);
           }
           it = region_rect_cache.emplace(odb_region, std::move(rects)).first;
@@ -684,11 +696,12 @@ bool NegotiationLegalizer::initFromDb()
                    db_x,
                    db_y,
                    die_xlo_ + cell.init_x * site_width_,
-                   die_ylo_ + cell.init_y * row_height_);
+                   die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
 
         // Priority queue keyed on physical Manhattan distance (DBU) so the
         // search expands in true physical proximity, not grid-unit proximity.
-        // One step in X = site_width_ DBU; one step in Y = row_height_ DBU.
+        // One step in X = site_width_ DBU; Y distance is computed via the
+        // DPL grid since pixel rows may have non-uniform heights.
         using PQEntry = std::tuple<int, int, int>;  // physDist, gx, gy
         std::
             priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>>
@@ -704,8 +717,10 @@ bool NegotiationLegalizer::initFromDb()
           if (!visited.insert(gy * grid_w_ + gx).second) {
             return;
           }
-          const int dist = std::abs(gx - cell.init_x) * site_width_
-                           + std::abs(gy - cell.init_y) * row_height_;
+          const int dy_dbu = dpl_grid->gridYToDbu(GridY{gy}).v
+                             - dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
+          const int dist
+              = std::abs(gx - cell.init_x) * site_width_ + std::abs(dy_dbu);
           pq.emplace(dist, gx, gy);
         };
 
@@ -743,6 +758,19 @@ bool NegotiationLegalizer::initFromDb()
     }
 
     cells_.push_back(cell);
+  }
+
+  std::map<int, int> neg_height_counts;
+  for (const NegCell& c : cells_) {
+    neg_height_counts[c.height]++;
+  }
+  logger_->info(
+      utl::DPL,
+      392,
+      "Negotiation cell height distribution ({} unique row-count(s)):",
+      neg_height_counts.size());
+  for (const auto& [height, count] : neg_height_counts) {
+    logger_->info(utl::DPL, 393, "  height {} row(s): {} cells", height, count);
   }
 
   return true;
@@ -813,12 +841,13 @@ void NegotiationLegalizer::initFenceRegions()
     FenceRegion fr;
     fr.id = region->getId();
 
+    const Grid* dpl_grid = opendp_->grid_.get();
     for (auto* box : region->getBoundaries()) {
       FenceRect r;
       r.xlo = (box->xMin() - die_xlo_) / site_width_;
-      r.ylo = (box->yMin() - die_ylo_) / row_height_;
+      r.ylo = dpl_grid->gridEndY(DbuY{box->yMin() - die_ylo_}).v;
       r.xhi = (box->xMax() - die_xlo_) / site_width_;
-      r.yhi = (box->yMax() - die_ylo_) / row_height_;
+      r.yhi = dpl_grid->gridSnapDownY(DbuY{box->yMax() - die_ylo_}).v;
       fr.rects.push_back(r);
     }
 
@@ -1002,7 +1031,6 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   if (rowIdx < 0 || rowIdx + cell.height > grid_h_) {
     return false;
   }
-  // Every row the cell spans must have real sites.
   for (int dy = 0; dy < cell.height; ++dy) {
     if (!row_has_sites_[rowIdx + dy]) {
       return false;
@@ -1029,17 +1057,117 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
     Node* node = network_->getNode(cell.db_inst);
     if (node != nullptr && node->getMaster()->isMultiRow()
         && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
-      debugPrint(logger_,
-                 utl::DPL,
-                 "negotiation",
-                 2,
-                 "rowIdx: {}, cell: {}, power incompatible",
-                 rowIdx,
-                 cell.db_inst->getName());
       return false;
     }
   }
   return true;
+}
+
+std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
+                                                          int seed_y,
+                                                          int x_lo,
+                                                          int x_hi,
+                                                          int count_per_side,
+                                                          int max_scan) const
+{
+  // A "wall" in the Y direction is off-core: the die edge, or a band of rows
+  // with no placement sites at all (e.g. a full-width macro/blockage row).
+  auto hardWall = [&](int r) {
+    if (r < 0 || r + cell.height > grid_h_) {
+      return true;
+    }
+    for (int dy = 0; dy < cell.height; ++dy) {
+      if (!row_has_sites_[r + dy]) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // A row counts toward the quota only when it can host the cell somewhere
+  // inside the horizontal span: probing a single column would declare rows
+  // beside a macro usable (or dead) based on one pixel.
+  const int probe_lo = std::max(0, x_lo);
+  const int probe_hi = std::min(grid_w_ - cell.width, x_hi);
+  auto rowUsable = [&](int r) {
+    if (r < 0 || r + cell.height > grid_h_) {
+      return false;
+    }
+    for (int x = probe_lo; x <= probe_hi; ++x) {
+      if (gridAt(x, r).capacity > 0 && isValidRow(r, cell, x)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Each side walks outward collecting usable rows against its own quota
+  // (`count_per_side`) and distance cap (`max_scan`). A side closes when it
+  // hits a macro/off-core wall, exhausts its distance cap, or fills its
+  // quota. Whatever quota a closing side could not fill — whether it was cut
+  // short by a wall or ran out of steps over unusable rows (e.g. rows
+  // fully covered by a macro inside the span, fences, power mismatch) — is
+  // handed to the other side along with a longer distance cap
+  // (`extended_cap`) to spend it in. A side that merely filled its quota is
+  // reopened by a donation; a walled side cannot take one. If both sides
+  // are walled short, the unspent quota is simply never used.
+  const int extended_cap = std::min(2 * max_scan, opendp_->max_displacement_y_);
+  struct Side
+  {
+    int dir;
+    int step;
+    int quota;
+    int cap;
+    bool closed;
+    bool walled;  // closed at a wall or distance cap: cannot take donations
+    std::vector<int> found;
+  };
+  Side below{+1, 0, count_per_side, max_scan, false, false, {}};
+  Side above{-1, 0, count_per_side, max_scan, false, false, {}};
+
+  auto close = [&](Side& self, Side& other) {
+    self.closed = true;
+    self.walled = true;
+    if (!disable_window_extension_ && self.quota > 0 && !other.walled) {
+      other.quota += self.quota;
+      other.cap = extended_cap;
+      other.closed = false;  // reopen if it had merely filled its quota
+      self.quota = 0;
+    }
+  };
+  auto stepSide = [&](Side& self, Side& other) {
+    if (self.closed) {
+      return;
+    }
+    if (self.quota == 0) {
+      self.closed = true;  // quota filled; a later donation may reopen us
+      return;
+    }
+    if (self.step >= self.cap
+        || hardWall(seed_y + self.dir * (self.step + 1))) {
+      close(self, other);
+      return;
+    }
+    const int r = seed_y + self.dir * ++self.step;
+    if (rowUsable(r)) {
+      self.found.push_back(r);
+      --self.quota;
+    }
+  };
+
+  while (!below.closed || !above.closed) {
+    stepSide(below, above);
+    stepSide(above, below);
+  }
+
+  std::vector<int> rows;
+  rows.reserve(below.found.size() + above.found.size() + 1);
+  if (rowUsable(seed_y)) {
+    rows.push_back(seed_y);
+  }
+  rows.insert(rows.end(), below.found.begin(), below.found.end());
+  rows.insert(rows.end(), above.found.begin(), above.found.end());
+  return rows;
 }
 
 bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const

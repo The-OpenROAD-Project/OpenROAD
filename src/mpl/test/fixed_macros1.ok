@@ -7,6 +7,7 @@ Die Area: (0.00, 0.00) (220.02, 221.20),  Floorplan Area: (0.00, 0.00) (220.02, 
 	Number of std cell instances: 150
 	Area of std cell instances: 678.30
 	Number of macros: 2
+	Macros to be placed: 1
 	Area of macros: 20000.00
 	Base halo (L, B, R, T): (0.00, 0.00, 0.00, 0.00)
 	Area of macros with halos: 10000.00

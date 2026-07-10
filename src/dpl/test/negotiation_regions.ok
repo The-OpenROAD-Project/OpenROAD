@@ -6,12 +6,21 @@
 [INFO DPL-0006] Core area: 16.49 um^2, Instances area: 2.93 um^2, Utilization: 17.7%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls).
+	Automatic search window extension enabled.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 5 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement          5.9 u
-average displacement        1.2 u
-max displacement            1.8 u
+total displacement          3.8 u
+average displacement        0.8 u
+max displacement            1.5 u
 original HPWL              63.5 u
 legalized HPWL             63.5 u
 delta HPWL                    0 %

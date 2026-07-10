@@ -13,6 +13,7 @@ COMPULSORY_TESTS = [
     "blockage01",
     "cell_on_block1",
     "cell_on_block2",
+    "centered_floorplan",
     "check1",
     "check2",
     "check3",
@@ -55,6 +56,7 @@ COMPULSORY_TESTS = [
     "multi_height_one_site_gap_disallow",
     "multi_height_rows",
     "negotiation01",
+    "negotiation_multi_height",
     "negotiation_one_site_gap",
     "negotiation_regions",
     "obstruction1",
@@ -253,6 +255,10 @@ filegroup(
             ],
             "negotiation01": [
                 "gcd_replace.def",
+            ],
+            "negotiation_multi_height": [
+                "Nangate45/fake_macros.lef",
+                "multi_height_rows.def",
             ],
             "negotiation_one_site_gap": [
                 "one_site_gap_disallow.def",
