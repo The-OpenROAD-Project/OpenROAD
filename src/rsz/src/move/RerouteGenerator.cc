@@ -23,8 +23,6 @@ using utl::RSZ;
 
 namespace {
 
-constexpr float kMinResistanceReduction = 0.40f;
-
 }  // namespace
 
 RerouteGenerator::RerouteGenerator(const GeneratorContext& context)
@@ -34,9 +32,9 @@ RerouteGenerator::RerouteGenerator(const GeneratorContext& context)
 
 bool RerouteGenerator::isApplicable(const Target& target) const
 {
-  grt::GlobalRouter* global_router = resizer_.globalRouter();
-  return MoveGenerator::isApplicable(target) && global_router != nullptr
-         && resizer_.getEstimateParasitics()->getParasiticsSrc()
+  return MoveGenerator::isApplicable(target)
+         && resizer_.globalRouter() != nullptr
+         && resizer_.estimateParasitics()->getParasiticsSrc()
                 == est::ParasiticsSrc::kGlobalRouting;
 }
 
@@ -81,7 +79,7 @@ std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
     return candidates;
   }
 
-  odb::dbNet* db_net = resizer_.dbNetwork()->staToDb(net);
+  odb::dbNet* db_net = resizer_.dbNetwork()->flatNet(net);
   if (db_net == nullptr) {
     debugPrint(resizer_.logger(),
                RSZ,
@@ -115,12 +113,12 @@ std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
 
   const float resistance = global_router->getFRNetResistance(db_net);
   const float estimated_resistance
-      = global_router->getFRNetResistanceOnMinClockLayer(db_net);
+      = global_router->getFRNetResistanceOnMinResistanceLayer(db_net);
   float reduction_ratio = 0.0f;
   if (resistance > 0.0f) {
     reduction_ratio = (resistance - estimated_resistance) / resistance;
   }
-  if (reduction_ratio < kMinResistanceReduction) {
+  if (reduction_ratio < resizer_.getRerouteResistanceReduction()) {
     debugPrint(resizer_.logger(),
                RSZ,
                "reroute_move",
@@ -129,7 +127,7 @@ std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
                "below threshold {:.1f}% ({} -> {} estimated)",
                resizer_.network()->pathName(driver_pin),
                100.0f * reduction_ratio,
-               100.0f * kMinResistanceReduction,
+               100.0f * resizer_.getRerouteResistanceReduction(),
                resistance,
                estimated_resistance);
     return candidates;
