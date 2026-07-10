@@ -50,14 +50,15 @@ WORKDIR /OpenROAD
 COPY --chown=user:user . .
 RUN <<EOF
 bazelisk run //:cmake
-cmake -B build -S . \
+export PATH="/OpenROAD/deps/bin:$PATH"
+cmake -B build -S . -G Ninja \
     -DCMAKE_TOOLCHAIN_FILE=/OpenROAD/deps/toolchain.cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DOPENROAD_VERSION=${orVersion}
 if [ "$numThreads" = "NotSet" ]; then
     numThreads=$(nproc)
 fi
-cmake --build build -- -j ${numThreads}
+cmake --build build -j ${numThreads}
 EOF
 
 COPY --chmod=775 --chown=user:user etc/docker-entrypoint.sh /usr/local/bin/.

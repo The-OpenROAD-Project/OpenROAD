@@ -14,10 +14,12 @@ EOF
 }
 
 _lcov() {
-    # The binary is built against the bazel-materialized deps/ prefix.
+    # The binary is built against the bazel-materialized deps/ prefix,
+    # which also carries ctest.
     if [[ -f "deps/toolchain.cmake" ]]; then
         export TCL_LIBRARY="${PWD}/deps/lib/tcl9.0"
         export PYTHONHOME="${PWD}/deps/python"
+        export PATH="${PWD}/deps/bin:${PATH}"
     fi
 
     ctest --test-dir build -j $(nproc)
@@ -76,7 +78,8 @@ _coverity() {
         fi
         "${bazel_cmd}" run //:cmake
     fi
-    cmake -DCMAKE_TOOLCHAIN_FILE="${PWD}/deps/toolchain.cmake" -B build .
+    export PATH="${PWD}/deps/bin:${PATH}"
+    cmake -DCMAKE_TOOLCHAIN_FILE="${PWD}/deps/toolchain.cmake" -G Ninja -B build .
     # compile abc before calling cov-build to exclude from analysis.
     # Coverity fails to process abc code due to -fpermissive flag.
     cmake --build build -j $(nproc) --target abc

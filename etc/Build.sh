@@ -274,10 +274,11 @@ check_command() {
     fi
 }
 
-# Essential build tools required for OpenROAD. On Linux, bison, flex, swig
-# and the compiler come from the bazel-materialized deps/ prefix.
-check_command "cmake"
+# Essential build tools required for OpenROAD. On Linux, everything —
+# cmake and ninja included — comes from the bazel-materialized deps/
+# prefix; only macOS uses host tools.
 if [[ "$OSTYPE" == "darwin"* ]]; then
+    check_command "cmake"
     check_command "bison"
     check_command "flex"
     check_command "swig"
@@ -328,7 +329,10 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "[INFO] Materializing CMake dependencies: ${bazel_cmd} run //:cmake"
         "${bazel_cmd}" run //:cmake
     fi
+    # The bundled cmake/ctest/ninja take precedence over host tools.
+    export PATH="${PWD}/deps/bin:${PATH}"
     cmakeOptions+=("-DCMAKE_TOOLCHAIN_FILE=${PWD}/deps/toolchain.cmake")
+    cmakeOptions+=("-G" "Ninja")
 fi
 cmake "${cmakeOptions[@]}" -B "${buildDir}" .
 time cmake --build "${buildDir}" -j "${numThreads}"
