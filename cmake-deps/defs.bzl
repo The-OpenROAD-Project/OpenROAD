@@ -99,11 +99,13 @@ def _rewrite_flag(flag, subtree):
         prefix, found, rest = flag.partition(marker)
 
         # Only rewrite when the marker starts a path: at the start of the
-        # flag, after '=' (--sysroot=external/...), or after a short
-        # option (-Lbazel-out/..., -Bbazel-out/...).
+        # flag, after '=' (--sysroot=external/...), after a comma
+        # (-Wl,-rpath,bazel-out/...), or after a short option
+        # (-Lbazel-out/..., -Bbazel-out/...).
         if found and (
             prefix == "" or
             prefix.endswith("=") or
+            prefix.endswith(",") or
             (prefix.startswith("-") and "/" not in prefix)
         ):
             return prefix + "$R/" + subtree + "/" + _map_exec_path(marker + rest)
@@ -216,9 +218,14 @@ def _header_dest(header, sorted_roots, include_overrides):
     return None
 
 def _archive_dest(library_file):
-    """Destination of a static archive inside lib/pool/."""
+    """Destination of a static archive inside lib/pool/.
+
+    Main-repository archives have no external/ segment; their bazel-out
+    configuration prefix is dropped so the layout stays
+    configuration-independent.
+    """
     _, _, rest = library_file.path.partition("external/")
-    return "lib/pool/" + (rest or library_file.path)
+    return "lib/pool/" + _map_exec_path(rest or library_file.path)
 
 def _wrapper_script(compiler, flags, link_args, defines):
     """A relocatable compiler driver wrapper.
@@ -522,8 +529,8 @@ def _cmake_deps_bundle_impl(ctx):
                 continue
             if copies.get(dest, header.path) != header.path:
                 # Same header staged via several include roots (e.g.
-                # protobuf _virtual_includes); the assembler verifies the
-                # contents are identical.
+                # protobuf _virtual_includes); first one wins at analysis
+                # time, so only one source reaches the assembler.
                 continue
             copies[dest] = header.path
 
