@@ -22,9 +22,7 @@ if(NOT Kokkos_FOUND)
     "  - If not: build and install Kokkos from "
     "https://github.com/kokkos/kokkos with the desired backend "
     "(CUDA / HIP / SYCL / OpenMP) and a target architecture that "
-    "matches the host GPU.\n"
-    "  - A future etc/DependencyInstaller.sh -gpu option will "
-    "automate this step.")
+    "matches the host GPU.")
 endif()
 
 # KokkosFFT — required by the gpl GPU FFT backend (src/gpl/src/gpu/dct.cpp).
@@ -34,9 +32,7 @@ if(NOT KokkosFFT_FOUND)
   message(FATAL_ERROR
     "ENABLE_GPU=ON requires KokkosFFT, which was not found.\n"
     "  - Install KokkosFFT (https://github.com/kokkos/kokkos-fft) against\n"
-    "    your Kokkos build, then re-configure with -DKokkosFFT_ROOT=<prefix>.\n"
-    "  - A future etc/DependencyInstaller.sh -gpu will install Kokkos and\n"
-    "    KokkosFFT together.")
+    "    your Kokkos build, then re-configure with -DKokkosFFT_ROOT=<prefix>.")
 endif()
 
 message(STATUS "OpenROAD: GPU acceleration enabled (Kokkos ${Kokkos_VERSION})")

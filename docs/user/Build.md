@@ -95,13 +95,13 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 ```
 
-### Dependencies from Bazel (no DependencyInstaller.sh)
+### Linux Dependencies (from Bazel)
 
-On Linux x86_64, the pinned dependency set of the Bazel build can be
-materialized into a local `deps/` folder and used for a plain CMake
-build — no `sudo`, no distro packages beyond `cmake`, `ninja` (or
-`make`), `git` and `bash`, and no compiler: `deps/` includes the same
-hermetic clang/libc++ toolchain the Bazel build uses.
+On Linux x86_64, the C++ dependencies of the CMake build come from the
+pinned Bazel module graph, materialized into a local `deps/` folder — no
+`sudo`, no distro packages beyond `cmake`, `ninja` (or `make`), `git`
+and `bash`, and no compiler: `deps/` includes the same hermetic
+clang/libc++ toolchain the Bazel build uses.
 
 ``` shell
 bazelisk run //:cmake
@@ -109,13 +109,18 @@ cmake -DCMAKE_TOOLCHAIN_FILE=deps/toolchain.cmake -B build .
 cmake --build build -j$(nproc)
 ```
 
+`./etc/Build.sh` runs `bazelisk run //:cmake` automatically when
+`deps/toolchain.cmake` is missing.
+
 The resulting binary uses the bundled Tcl and Python runtimes:
 
 ``` shell
 export TCL_LIBRARY=$PWD/deps/lib/tcl9.0
 export PYTHONHOME=$PWD/deps/python
-./build/src/openroad
+./build/bin/openroad
 ```
+
+or use the wrapper `Build.sh` generates at `build/bin/openroad-wrapper`.
 
 Notes:
 
@@ -125,9 +130,8 @@ Notes:
   selects the bundled clang. A host GCC/libstdc++ toolchain cannot link
   them.
 - The GUI is not part of the prefix (host Qt5 is a libstdc++ build);
-  the build degrades to CLI, like a host without Qt.
-- The existing `DependencyInstaller.sh`/`Build.sh` flow is unaffected;
-  this is an alternative, not a replacement.
+  the build degrades to CLI, like a host without Qt. For a GUI build,
+  use Bazel: `bazelisk run --//:platform=gui //:install`.
 
 ### Only for macOS Setup
 
@@ -146,23 +150,18 @@ source .venv/bin/activate
 3. With virtual environment activated, run without `sudo`:
 ``` shell
 ./etc/DependencyInstaller.sh -base
-./etc/DependencyInstaller.sh -common -local
 ```
 
-### Install Dependencies
+### Install System Packages
 
-We recommend using the `setup.sh` script located in the [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) repository to install all dependencies. `setup.sh` encapsulates the calls to `DependencyInstaller.sh` and ensures the entire flow environment is configured correctly.
+On Linux, `etc/DependencyInstaller.sh -base` installs the system
+packages used for development and testing (compilers for Bazel-less
+tools, Qt/GUI runtime libraries, Tcl, Python, pandoc, ...). It is not
+required for the CMake build itself; the C++ dependencies come from
+Bazel as described above.
 
-Alternatively, if you are building OpenROAD standalone, you may use our helper script:
 ``` shell
 sudo ./etc/DependencyInstaller.sh -base
-./etc/DependencyInstaller.sh -common -local
-```
-
-```{warning}
-`sudo ./etc/DependencyInstaller.sh [-all|-common]` defaults to
-installing packages on /usr/local.
-To avoid this bahavior use -local flag or -prefix <PATH> argument.
 ```
 
 ### Build OpenROAD

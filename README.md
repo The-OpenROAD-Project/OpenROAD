@@ -282,11 +282,11 @@ from [here](docs/user/Build.md).
 
 ### CMake build with Bazel-provided dependencies
 
-On Linux x86_64, all CMake dependencies — compiler included — can be
+On Linux x86_64, all CMake dependencies — compiler included — are
 materialized into a local `deps/` folder from the pinned Bazel module
-graph, instead of running `etc/DependencyInstaller.sh`. The only host
-requirements are `bazelisk`, `cmake`, `ninja` (or `make`), `git` and
-`bash`; no `sudo`, and nothing is installed outside the workspace:
+graph. The only host requirements are `bazelisk`, `cmake`, `ninja`
+(or `make`), `git` and `bash`; no `sudo`, and nothing is installed
+outside the workspace:
 
 ``` shell
 bazelisk run //:cmake

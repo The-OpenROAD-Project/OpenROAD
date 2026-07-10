@@ -20,7 +20,9 @@ to partition a hypergraph or a gate-level netlist.
 
 We use Google OR-Tools as our ILP solver. 
 
-Our recommendation is to follow the OpenROAD [DependencyInstaller](../etc/DependencyInstaller.sh) for installation of this requirement.
+OR-Tools comes from the bazel module graph: the Bazel build uses it
+directly, and plain CMake builds get it via `bazelisk run //:cmake`
+(see [Build.md](../../docs/user/Build.md)). On macOS: `brew install or-tools`.
 
 Alternatively, you may also install Google OR-Tools 
 following these [instructions](https://developers.google.com/optimization/install).
