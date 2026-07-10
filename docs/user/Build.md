@@ -99,14 +99,15 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 
 On Linux x86_64, the pinned dependency set of the Bazel build can be
 materialized into a local `deps/` folder and used for a plain CMake
-build — no `sudo`, no distro packages beyond `cmake`, `ninja` (or
-`make`), `git` and `bash`, and no compiler: `deps/` includes the same
-hermetic clang/libc++ toolchain the Bazel build uses.
+build — no `sudo` and no distro packages beyond `git` and `bash`:
+`deps/` includes the same hermetic clang/libc++ toolchain the Bazel
+build uses, plus pinned `cmake` and `ninja` release binaries (host
+cmake is traditionally too old for OpenROAD).
 
 ``` shell
 bazelisk run //:cmake
-cmake -DCMAKE_TOOLCHAIN_FILE=deps/toolchain.cmake -B build .
-cmake --build build -j$(nproc)
+deps/bin/cmake -DCMAKE_TOOLCHAIN_FILE=deps/toolchain.cmake -G Ninja -B build .
+deps/bin/cmake --build build -j$(nproc)
 ```
 
 The resulting binary uses the bundled Tcl and Python runtimes:
@@ -114,7 +115,7 @@ The resulting binary uses the bundled Tcl and Python runtimes:
 ``` shell
 export TCL_LIBRARY=$PWD/deps/lib/tcl9.0
 export PYTHONHOME=$PWD/deps/python
-./build/src/openroad
+./build/bin/openroad
 ```
 
 Notes:

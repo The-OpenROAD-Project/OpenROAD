@@ -651,6 +651,16 @@ def _cmake_deps_bundle_impl(ctx):
     version_info = py_runtime.interpreter_version_info
     python_version = "{}.{}".format(version_info.major, version_info.minor)
 
+    # --- cmake and ninja: pinned official release binaries. ---
+    # cmake resolves its module tree relative to the real binary, so the
+    # whole release layout is staged and bin/ carries wrappers.
+    for f in ctx.files.cmake_files:
+        copies["cmake/" + _repo_relative_path(f)] = f.path
+    inputs.append(depset(ctx.files.cmake_files))
+    ninja = ctx.file.ninja_binary
+    copies["bin/ninja"] = ninja.path
+    inputs.append(depset([ninja]))
+
     # --- CMake package config shims. ---
     for f in ctx.files.shims:
         copies["lib/cmake/{}/{}".format(_shim_package(f.basename), f.basename)] = f.path
@@ -704,6 +714,16 @@ def _cmake_deps_bundle_impl(ctx):
             content = tool_wrappers["flex"],
             executable = True,
         ),
+        struct(
+            dest = "bin/cmake",
+            content = _tool_wrapper_script("$R/cmake/bin/cmake", {}),
+            executable = True,
+        ),
+        struct(
+            dest = "bin/ctest",
+            content = _tool_wrapper_script("$R/cmake/bin/ctest", {}),
+            executable = True,
+        ),
     ] + _shim_writes()
 
     manifest = struct(
@@ -741,6 +761,11 @@ cmake_deps_bundle = rule(
     implementation = _cmake_deps_bundle_impl,
     doc = "Assemble a CMake dependency prefix from bazel-built dependencies.",
     attrs = {
+        "cmake_files": attr.label(
+            allow_files = True,
+            mandatory = True,
+            doc = "The pinned cmake release layout (bin/ and share/).",
+        ),
         "deps": attr.label_list(
             providers = [CcInfo],
             doc = "Dependencies whose headers and archives go into the prefix.",
@@ -758,6 +783,11 @@ cmake_deps_bundle = rule(
             doc = "Module name -> conventional archive name. Creates " +
                   "lib/lib<name>.a copies for CMake Find modules that " +
                   "search by name (FindZLIB: z, FindCUDD: cudd).",
+        ),
+        "ninja_binary": attr.label(
+            allow_single_file = True,
+            mandatory = True,
+            doc = "The pinned ninja binary.",
         ),
         "python_headers": attr.label(
             providers = [CcInfo],

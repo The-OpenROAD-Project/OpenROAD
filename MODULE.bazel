@@ -358,6 +358,10 @@ npm.npm_translate_lock(
 )
 use_repo(npm, "npm")
 
+# Pinned cmake/ninja release binaries for the //:cmake dependency bundle.
+cmake_tools = use_extension("//cmake-deps:tools.bzl", "cmake_tools")
+use_repo(cmake_tools, "cmake-linux-x86_64", "ninja-linux-x86_64")
+
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
 orfs.default(
     # Use OpenROAD of this repo instead of the one bundled with @orfs
