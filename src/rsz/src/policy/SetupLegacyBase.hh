@@ -141,6 +141,7 @@ class SetupLegacyBase : public OptimizationPolicy
                            sta::Slack focus_slack,
                            Target& target) const;
   bool makePinTargetInExpandedPath(const sta::Pin* pin,
+                                   sta::Vertex* vertex,
                                    const sta::Path* path,
                                    sta::PathExpanded& expanded,
                                    sta::Slack focus_slack,

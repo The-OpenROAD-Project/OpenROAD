@@ -135,9 +135,9 @@ class TestResizer : public tst::IntegratedFixture
                         sdc);
   }
 
-  void setupTimeBorrowTiming(const float input_delay)
+  void setupTimeBorrowTiming(const char* def_file, const float input_delay)
   {
-    readDefForTiming("inferred_clock_gator_time_borrow.def");
+    readDefForTiming(def_file);
 
     sta::Pin* clk_pin = findTopPin("clk");
     ASSERT_NE(clk_pin, nullptr);
@@ -249,7 +249,7 @@ TEST_F(TestResizer, SwapPinsFeedthroughModNet)
 
 TEST_F(TestResizer, LatchThroughPathCollectsLatchDataFaninTargets)
 {
-  setupTimeBorrowTiming(0.98);
+  setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def", 0.98);
 
   RepairTargetCollector collector(&resizer_);
   collector.init(0.0f);
@@ -265,6 +265,26 @@ TEST_F(TestResizer, LatchThroughPathCollectsLatchDataFaninTargets)
 
   EXPECT_TRUE(hasTargetPin(targets, "enable_buf0/Z"));
   EXPECT_TRUE(hasTargetPin(targets, "enable_buf1/Z"));
+}
+
+TEST_F(TestResizer, ChainedLatchFaninTargets)
+{
+  setupTimeBorrowTiming("latch_borrow_chain.def", 0.84);
+
+  RepairTargetCollector collector(&resizer_);
+  collector.init(0.0f);
+
+  sta::Vertex* endpoint = loadVertex("gated_ff0/D");
+  ASSERT_NE(endpoint, nullptr);
+
+  sta::Path* path = sta_->vertexWorstSlackPath(endpoint, sta::MinMax::max());
+  ASSERT_NE(path, nullptr);
+
+  const std::vector<Target> targets
+      = collector.collectPathDriverTargets(path, path->slack(sta_.get()));
+
+  EXPECT_TRUE(hasTargetPin(targets, "mid_buf0/Z"));
+  EXPECT_TRUE(hasTargetPin(targets, "deep_buf0/Z"));
 }
 
 }  // namespace rsz

@@ -452,32 +452,26 @@ bool SetupLegacyBase::makePinTargetOnPath(const sta::Pin* pin,
     return false;
   }
 
+  // Search the main path first, then the latch D fanin path of a
+  // latch-through path.
   sta::PathExpanded expanded(path, sta_);
-  if (makePinTargetInExpandedPath(pin, path, expanded, focus_slack, target)) {
-    return true;
-  }
-
-  const sta::Path* d_path = latchDataPath(expanded, sta_);
-  if (d_path == nullptr) {
-    return false;
-  }
-
-  sta::PathExpanded d_expanded(d_path, sta_);
-  return makePinTargetInExpandedPath(
-      pin, d_path, d_expanded, focus_slack, target);
+  return visitPathSegments(
+      path,
+      expanded,
+      sta_,
+      [&](const sta::Path* seg_path, sta::PathExpanded& seg_expanded) {
+        return makePinTargetInExpandedPath(
+            pin, vertex, seg_path, seg_expanded, focus_slack, target);
+      });
 }
 
 bool SetupLegacyBase::makePinTargetInExpandedPath(const sta::Pin* pin,
+                                                  sta::Vertex* vertex,
                                                   const sta::Path* path,
                                                   sta::PathExpanded& expanded,
                                                   const sta::Slack focus_slack,
                                                   Target& target) const
 {
-  sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-  if (vertex == nullptr) {
-    return false;
-  }
-
   const int start_index = static_cast<int>(expanded.startIndex());
   const int path_count = static_cast<int>(expanded.size());
   for (int index = start_index; index < path_count; index++) {
@@ -754,7 +748,6 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
     return false;
   }
 
-  const sta::Scene* corner = path->scene(sta_);
   if (path->minMax(sta_) != resizer_.max_) {
     logger_->error(utl::RSZ,
                    kMsgRepairSetupExpectedMaxPath,
@@ -762,43 +755,39 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
     return false;
   }
 
-  const std::vector<std::pair<int, sta::Delay>> load_delays
-      = rankPathDrivers(expanded, corner, corner->libertyIndex(resizer_.max_));
   const int repairs_per_pass = repairBudget(path_slack, force_single_repair);
+
+  // Rank drivers on the main path and, for latch-through paths, on the latch
+  // D fanin path, then merge both segments into a single ranking.
+  std::vector<std::pair<Target, sta::Delay>> ranked_targets;
+  visitPathSegments(
+      path,
+      expanded,
+      sta_,
+      [&](const sta::Path* seg_path, sta::PathExpanded& seg_expanded) {
+        const sta::Scene* seg_corner = seg_path->scene(sta_);
+        const std::vector<std::pair<int, sta::Delay>> load_delays
+            = rankPathDrivers(seg_expanded,
+                              seg_corner,
+                              seg_corner->libertyIndex(resizer_.max_));
+        ranked_targets.reserve(ranked_targets.size() + load_delays.size());
+        for (const std::pair<int, sta::Delay>& load_delay : load_delays) {
+          Target target;
+          makePathDriverTarget(
+              seg_path, seg_expanded, load_delay.first, path_slack, target);
+          ranked_targets.emplace_back(std::move(target), load_delay.second);
+        }
+        return false;
+      });
 
   debugPrint(logger_,
              RSZ,
              "repair_setup",
              3,
-             "Path slack: {}, repairs: {}, load_delays: {}",
+             "Path slack: {}, repairs: {}, ranked_targets: {}",
              delayAsString(path_slack, 3, sta_),
              repairs_per_pass,
-             load_delays.size());
-
-  // Construct target vector
-  std::vector<std::pair<Target, sta::Delay>> ranked_targets;
-  ranked_targets.reserve(load_delays.size());
-  for (const std::pair<int, sta::Delay>& load_delay : load_delays) {
-    Target target;
-    makePathDriverTarget(path, expanded, load_delay.first, path_slack, target);
-    ranked_targets.emplace_back(std::move(target), load_delay.second);
-  }
-
-  const sta::Path* d_path = latchDataPath(expanded, sta_);
-  if (d_path != nullptr) {
-    sta::PathExpanded d_expanded(d_path, sta_);
-    const sta::Scene* d_corner = d_path->scene(sta_);
-    const std::vector<std::pair<int, sta::Delay>> d_load_delays
-        = rankPathDrivers(
-            d_expanded, d_corner, d_corner->libertyIndex(resizer_.max_));
-    ranked_targets.reserve(ranked_targets.size() + d_load_delays.size());
-    for (const std::pair<int, sta::Delay>& load_delay : d_load_delays) {
-      Target target;
-      makePathDriverTarget(
-          d_path, d_expanded, load_delay.first, path_slack, target);
-      ranked_targets.emplace_back(std::move(target), load_delay.second);
-    }
-  }
+             ranked_targets.size());
 
   std::ranges::stable_sort(ranked_targets,
                            [](const std::pair<Target, sta::Delay>& lhs,

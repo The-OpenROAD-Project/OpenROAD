@@ -932,14 +932,17 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
   targets.reserve(expanded.size());
   collectExpandedPathDriverTargets(path, expanded, path_slack, targets);
 
-  // A latch-through path starts at latch Q in OpenSTA, with the latch D path
-  // stored as side context.  Expand that D path separately so repair_timing can
-  // optimize the logic that consumed the borrowed time.
-  const sta::Path* d_path = latchDataPath(expanded, sta_);
-  if (d_path != nullptr) {
-    sta::PathExpanded d_expanded(d_path, sta_);
-    collectExpandedPathDriverTargets(d_path, d_expanded, path_slack, targets);
-  }
+  // A latch-through path starts at latch Q in OpenSTA, with each latch D path
+  // stored as side context.  Expand those D paths separately so repair_timing
+  // can optimize the logic that consumed the borrowed time.
+  visitLatchFaninSegments(
+      expanded,
+      sta_,
+      [&](const sta::Path* d_path, sta::PathExpanded& d_expanded) {
+        collectExpandedPathDriverTargets(
+            d_path, d_expanded, path_slack, targets);
+        return false;
+      });
 
   return targets;
 }
@@ -1259,11 +1262,13 @@ set<const sta::Pin*> RepairTargetCollector::collectPinsByPathEndpoint(
       }
     }
 
-    const sta::Path* d_path = latchDataPath(expanded, sta_);
-    if (d_path != nullptr) {
-      sta::PathExpanded d_expanded(d_path, sta_);
-      const size_t old_size = viol_pins.size();
-      collectExpandedPathDriverPins(d_expanded, viol_pins);
+    const size_t old_size = viol_pins.size();
+    visitLatchFaninSegments(
+        expanded, sta_, [&](const sta::Path*, sta::PathExpanded& d_expanded) {
+          collectExpandedPathDriverPins(d_expanded, viol_pins);
+          return false;
+        });
+    if (viol_pins.size() > old_size) {
       debugPrint(logger_,
                  RSZ,
                  "violator_collector",
