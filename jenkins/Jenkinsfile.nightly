@@ -25,6 +25,10 @@ node {
         stage('Build OpenROAD') {
             sh label: 'Build script', script: './etc/Build.sh -no-warnings';
             stash name: 'build', includes: "build/**";
+            // Runtime pieces of the bazel-materialized deps/ prefix: the
+            // binary dynamically links libpython and needs the bundled Tcl
+            // and Python homes on the test nodes.
+            stash name: 'deps-runtime', includes: "deps/python/**, deps/lib/tcl9.0/**";
         }
     }
 
@@ -43,11 +47,12 @@ node {
                                 sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                                 checkout scm;
                                 unstash 'build';
+                                unstash 'deps-runtime';
                             }
                             stage("Run ${name}") {
                                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                                     timeout(time: 8, unit: 'HOURS') {
-                                        sh "python3 src/drt/test/run-ispd.py --program ${WORKSPACE}/build/bin/openroad --tests ispd${ispd_year}_test${test_to_run}";
+                                        sh "python3 src/drt/test/run-ispd.py --program ${WORKSPACE}/build/bin/openroad-wrapper --tests ispd${ispd_year}_test${test_to_run}";
                                     }
                                 }
                             }
@@ -67,11 +72,12 @@ node {
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
                         checkout scm;
                         unstash 'build';
+                        unstash 'deps-runtime';
                     }
                     stage('Run GPL Tests') {
                         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                             timeout(time: 2, unit: 'HOURS') {
-                                sh './src/gpl/test/regression-large';
+                                sh "OPENROAD_EXE=${WORKSPACE}/build/bin/openroad-wrapper ./src/gpl/test/regression-large";
                             }
                         }
                     }
