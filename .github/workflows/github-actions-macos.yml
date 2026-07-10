@@ -20,7 +20,7 @@ jobs:
           submodules: 'recursive'
       - name: Install dependencies
         run: |
-          ./etc/DependencyInstaller.sh
+          ./etc/DependencyInstaller.sh -base
       - name: Build OpenROAD
         run: |
           export PATH="$(brew --prefix bison)/bin:$PATH"

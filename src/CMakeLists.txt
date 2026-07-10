@@ -3,12 +3,6 @@
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
-# The location used by etc/DependencyInstaller.sh
-list(APPEND CMAKE_PREFIX_PATH
-  "/opt/or-tools/lib64/cmake"
-  "/opt/or-tools/lib/cmake"
-)
-
 # Link to where ortools was found
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 

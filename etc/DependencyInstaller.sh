@@ -15,12 +15,8 @@ set -euo pipefail
 # Default values for command-line arguments
 PREFIX=""
 CI="no"
-SAVE_DEPS_PREFIXES=""
 NUM_THREADS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
-SKIP_SYSTEM_OR_TOOLS="false"
 BASE_DIR=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
-CMAKE_PACKAGE_ROOT_ARGS=""
-OR_TOOLS_PATH=""
 INSTALL_SUMMARY=()
 VERBOSE_MODE="no"
 OPT_NOCERT=""
@@ -45,33 +41,11 @@ fi
 # ------------------------------------------------------------------------------
 # Dependency Versions and Checksums
 # ------------------------------------------------------------------------------
+# C++ build dependencies (boost, or-tools, swig, bison, flex, eigen, ...)
+# are not installed by this script: they come pinned from the bazel module
+# graph (MODULE.bazel), for both the bazel build and plain CMake builds via
+# `bazelisk run //:cmake` (see docs/user/Build.md).
 YOSYS_VERSION="v0.58"
-CMAKE_VERSION_BIG="3.31"
-CMAKE_VERSION_SMALL="${CMAKE_VERSION_BIG}.9"
-CMAKE_CHECKSUM_AARCH64="8d426361ce8c54494c0a041a0e3bcc5c"
-CMAKE_CHECKSUM_X86_64="64797150473dabe9de95459cb1ce0715"
-PCRE_VERSION="10.42"
-PCRE_CHECKSUM="37d2f77cfd411a3ddf1c64e1d72e43f7"
-SWIG_VERSION="4.3.0"
-SWIG_CHECKSUM="9f74c7f402aa28d9f75e67d1990ee6fb"
-BOOST_VERSION_BIG="1.89"
-BOOST_VERSION_SMALL="${BOOST_VERSION_BIG}.0"
-BOOST_CHECKSUM="187b577ce9f485314fcf17bcba2fb542"
-EIGEN_VERSION="3.4"
-CUDD_VERSION="3.0.0"
-LEMON_VERSION="1.3.1"
-SPDLOG_VERSION="1.15.0"
-GTEST_VERSION="1.17.0"
-GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-# Match the Abseil version bundled in prebuilt or-tools ${OR_TOOLS_VERSION_BIG}.
-ABSL_VERSION="20250512.0"
-ABSL_CHECKSUM="ecd64c3c38b20335c48e1ede28a8db90"
-BISON_VERSION="3.8.2"
-BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
-FLEX_VERSION="2.6.4"
-FLEX_CHECKSUM="2882e3179748cc9f9c23ec593d6adc8d"
-OR_TOOLS_VERSION_BIG="9.14"
-OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
 INSTALL_BAZEL="no"
 INSTALL_BAZEL_DEV="no"
@@ -286,564 +260,6 @@ _execute() {
     fi
 }
 
-# CMake
-# ------------------------------------------------------------------------------
-_install_cmake() {
-    local cmake_prefix=${PREFIX:-"/usr/local"}
-    local cmake_bin=${cmake_prefix}/bin/cmake
-    local cmake_installed_version="none"
-    if [[ -f ${cmake_bin} ]]; then
-        cmake_installed_version=$(${cmake_bin} --version | head -n1 | awk '{print $3}')
-    elif _command_exists "cmake" && [[ -z "${PREFIX}" ]]; then
-        cmake_installed_version=$(cmake --version | head -n1 | awk '{print $3}')
-    fi
-
-    log "Checking CMake (System: ${cmake_installed_version}, Required: ${CMAKE_VERSION_SMALL})"
-    if [[ "${cmake_installed_version}" != "${CMAKE_VERSION_SMALL}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            local arch
-            arch=$(uname -m)
-            local cmake_checksum=""
-            if [[ "${arch}" == "aarch64" ]]; then
-                cmake_checksum=${CMAKE_CHECKSUM_AARCH64}
-            else
-                cmake_checksum=${CMAKE_CHECKSUM_X86_64}
-            fi
-            _execute "Downloading CMake..." wget $OPT_NOCERT "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_SMALL}/cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
-            _verify_checksum "${cmake_checksum}" "cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" || error "CMake checksum failed."
-            chmod +x "cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
-            _execute "Installing CMake..." "./cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" --skip-license --prefix="${cmake_prefix}"
-        )
-        INSTALL_SUMMARY+=("CMake: system=${cmake_installed_version}, required=${CMAKE_VERSION_SMALL}, path=${cmake_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("CMake: system=${cmake_installed_version}, required=${CMAKE_VERSION_SMALL}, path=${cmake_prefix}, status=skipped")
-    fi
-}
-
-# ------------------------------------------------------------------------------
-# Bison
-# ------------------------------------------------------------------------------
-_install_bison() {
-    local bison_prefix=${PREFIX:-"/usr/local"}
-    local bison_bin=${bison_prefix}/bin/bison
-    local bison_installed_version="none"
-    if [[ -f ${bison_bin} ]]; then
-        bison_installed_version=$(${bison_bin} --version | awk 'NR==1 {print $NF}')
-    elif _command_exists "bison" && [[ -z "${PREFIX}" ]]; then
-        bison_installed_version=$(bison --version | awk 'NR==1 {print $NF}')
-        bison_prefix=$(dirname "$(dirname "$(command -v bison)")")
-    fi
-
-    log "Checking Bison (System: ${bison_installed_version}, Required: ${BISON_VERSION})"
-    if [[ "${bison_installed_version}" != "${BISON_VERSION}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            local mirrors=(
-                "https://ftp.gnu.org/gnu/bison"
-                "https://ftpmirror.gnu.org/bison"
-                "https://mirrors.kernel.org/gnu/bison"
-                "https://mirrors.dotsrc.org/gnu/bison"
-            )
-            local success=0
-            for mirror in "${mirrors[@]}"; do
-                local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
-                log "Trying to download bison from: $url"
-                if wget $OPT_NOCERT "$url"; then
-                    success=1
-                    break
-                else
-                    warn "Failed to download from $mirror"
-                fi
-            done
-            if [[ ${success} -ne 1 ]]; then
-                error "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
-            fi
-            _verify_checksum "${BISON_CHECKSUM}" "bison-${BISON_VERSION}.tar.gz" || error "Bison checksum failed."
-            _execute "Extracting Bison..." tar xf "bison-${BISON_VERSION}.tar.gz"
-            cd "bison-${BISON_VERSION}"
-            _execute "Configuring Bison..." ./configure --prefix="${bison_prefix}"
-            _execute "Building and installing Bison..." make -j "${NUM_THREADS}" install
-        )
-        INSTALL_SUMMARY+=("Bison: system=${bison_installed_version}, required=${BISON_VERSION}, path=${bison_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Bison: system=${bison_installed_version}, required=${BISON_VERSION}, path=${bison_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D bison_ROOT=$(realpath "${bison_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# Flex
-# ------------------------------------------------------------------------------
-_install_flex() {
-    local flex_prefix=${PREFIX:-"/usr/local"}
-    local flex_bin=${flex_prefix}/bin/flex
-    local flex_installed_version="none"
-    if [[ -f ${flex_bin} ]]; then
-        flex_installed_version=$(${flex_bin} --version | awk '{print $2}')
-    elif _command_exists "flex" && [[ -z "${PREFIX}" ]]; then
-        flex_installed_version=$(flex --version | awk '{print $2}')
-    fi
-
-    log "Checking Flex (System: ${flex_installed_version}, Required: ${FLEX_VERSION})"
-    if [[ "${flex_installed_version}" != "${FLEX_VERSION}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Downloading Flex..." wget $OPT_NOCERT https://github.com/westes/flex/releases/download/v${FLEX_VERSION}/flex-${FLEX_VERSION}.tar.gz
-            _verify_checksum "${FLEX_CHECKSUM}" "flex-${FLEX_VERSION}.tar.gz" || error "Flex checksum failed."
-            _execute "Extracting Flex..." tar xf "flex-${FLEX_VERSION}.tar.gz"
-            cd "flex-${FLEX_VERSION}"
-            _execute "Configuring Flex..." ./configure --prefix="${flex_prefix}"
-            _execute "Building Flex..." make -j "${NUM_THREADS}"
-            _execute "Installing Flex..." make -j "${NUM_THREADS}" install
-        )
-        INSTALL_SUMMARY+=("Flex: system=${flex_installed_version}, required=${FLEX_VERSION}, path=${flex_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Flex: system=${flex_installed_version}, required=${FLEX_VERSION}, path=${flex_prefix}, status=skipped")
-    fi
-}
-
-# ------------------------------------------------------------------------------
-# SWIG
-# ------------------------------------------------------------------------------
-_install_swig() {
-    local swig_prefix=${PREFIX:-"/usr/local"}
-    local swig_bin=${swig_prefix}/bin/swig
-    local swig_installed_version="none"
-    if [[ -f ${swig_bin} ]]; then
-        swig_installed_version=$(${swig_bin} -version | grep "SWIG Version" | awk '{print $3}')
-    elif _command_exists "swig" && [[ -z "${PREFIX}" ]]; then
-        swig_installed_version=$(swig -version | grep "SWIG Version" | awk '{print $3}')
-    fi
-
-    log "Checking SWIG (System: ${swig_installed_version}, Required: ${SWIG_VERSION})"
-    if [[ "${swig_installed_version}" != "${SWIG_VERSION}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            local tar_name="v${SWIG_VERSION}.tar.gz"
-            _execute "Downloading SWIG..." wget $OPT_NOCERT "https://github.com/swig/swig/archive/${tar_name}"
-            _verify_checksum "${SWIG_CHECKSUM}" "${tar_name}" || error "SWIG checksum failed."
-            _execute "Extracting SWIG..." tar xfz "${tar_name}"
-            cd swig-*
-
-            _install_pcre
-            _execute "Generating SWIG configure script..." ./autogen.sh
-            _execute "Configuring SWIG..." ./configure --prefix="${swig_prefix}"
-            _execute "Building SWIG..." make -j "${NUM_THREADS}"
-            _execute "Installing SWIG..." make -j "${NUM_THREADS}" install
-        )
-        INSTALL_SUMMARY+=("SWIG: system=${swig_installed_version}, required=${SWIG_VERSION}, path=${swig_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("SWIG: system=${swig_installed_version}, required=${SWIG_VERSION}, path=${swig_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D SWIG_ROOT=$(realpath "${swig_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# PCRE
-# ------------------------------------------------------------------------------
-_install_pcre() {
-    local pcre_prefix=${PREFIX:-"/usr/local"}
-    local pcre_config=${pcre_prefix}/bin/pcre2-config
-    local pcre_installed_version="none"
-
-    if [[ -f "${pcre_config}" ]]; then
-        pcre_installed_version=$(${pcre_config} --version)
-    elif _command_exists "pcre2-config" && [[ -z "${PREFIX}" ]]; then
-        pcre_installed_version=$(pcre2-config --version)
-    fi
-
-    log "Checking PCRE (System: ${pcre_installed_version}, Required: ${PCRE_VERSION})"
-    if [[ "${pcre_installed_version}" == "${PCRE_VERSION}" ]]; then
-        INSTALL_SUMMARY+=("PCRE: system=${pcre_installed_version}, required=${PCRE_VERSION}, path=${pcre_prefix}, status=skipped")
-        return
-    fi
-
-    (
-        cd "${BASE_DIR}"
-        local pcre_tar_name="pcre2-${PCRE_VERSION}.tar.gz"
-        _execute "Downloading PCRE..." wget $OPT_NOCERT "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE_VERSION}/${pcre_tar_name}"
-        _verify_checksum "${PCRE_CHECKSUM}" "${pcre_tar_name}" || error "PCRE checksum failed."
-        _execute "Extracting PCRE..." tar xf "${pcre_tar_name}"
-        cd "pcre2-${PCRE_VERSION}"
-        _execute "Configuring PCRE..." ./configure --prefix="${pcre_prefix}"
-        _execute "Building PCRE..." make -j "${NUM_THREADS}"
-        _execute "Installing PCRE..." make -j "${NUM_THREADS}" install
-    )
-    INSTALL_SUMMARY+=("PCRE: system=${pcre_installed_version}, required=${PCRE_VERSION}, path=${pcre_prefix}, status=installed")
-}
-
-
-# ------------------------------------------------------------------------------
-# Boost
-# ------------------------------------------------------------------------------
-_install_boost() {
-    local boost_prefix=${PREFIX:-"/usr/local"}
-    local boost_installed_version="none"
-    if [[ -f "${boost_prefix}/include/boost/version.hpp" ]]; then
-        boost_installed_version=$(grep "^#define BOOST_LIB_VERSION" "${boost_prefix}/include/boost/version.hpp" | sed -e 's/.*"\(.*\)"/\1/' -e 's/_/./g')
-    fi
-    
-    local required_version="${BOOST_VERSION_BIG}"
-    log "Checking Boost (System: ${boost_installed_version}, Required: ${required_version})"
-    if [[ "${boost_installed_version}" != "${required_version}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            local boost_version_underscore=${BOOST_VERSION_SMALL//./_}
-            _execute "Downloading Boost..." wget $OPT_NOCERT "https://archives.boost.io/release/${BOOST_VERSION_SMALL}/source/boost_${boost_version_underscore}.tar.gz"
-            _verify_checksum "${BOOST_CHECKSUM}" "boost_${boost_version_underscore}.tar.gz" || error "Boost checksum failed."
-            _execute "Extracting Boost..." tar -xf "boost_${boost_version_underscore}.tar.gz"
-            cd "boost_${boost_version_underscore}"
-            _execute "Bootstrapping Boost..." ./bootstrap.sh --prefix="${boost_prefix}"
-            _execute "Installing Boost..." ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j "${NUM_THREADS}"
-        )
-        INSTALL_SUMMARY+=("Boost: system=${boost_installed_version}, required=${required_version}, path=${boost_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Boost: system=${boost_installed_version}, required=${required_version}, path=${boost_prefix}, status=skipped")
-    fi
-
-    local boost_cmake_dir=""
-    if [[ -d "${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
-        boost_cmake_dir="${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}"
-    elif [[ -d "${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
-        boost_cmake_dir="${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}"
-    fi
-
-    if [[ -n "${boost_cmake_dir}" ]]; then
-        CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_DIR=$(realpath "${boost_cmake_dir}") "
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath "${boost_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# Eigen
-# ------------------------------------------------------------------------------
-_install_eigen() {
-    local eigen_prefix=${PREFIX:-"/usr/local"}
-    local eigen_version_file="${eigen_prefix}/include/eigen3/Eigen/src/Core/util/Macros.h"
-    local eigen_installed_version="none"
-
-    if [[ -f "${eigen_version_file}" ]]; then
-        local world
-        world=$(grep "#define EIGEN_WORLD_VERSION" "${eigen_version_file}" | awk '{print $3}')
-        local major
-        major=$(grep "#define EIGEN_MAJOR_VERSION" "${eigen_version_file}" | awk '{print $3}')
-        eigen_installed_version="${world}.${major}"
-    fi
-
-    log "Checking Eigen (System: ${eigen_installed_version}, Required: ${EIGEN_VERSION})"
-    if [[ "${eigen_installed_version}" != "${EIGEN_VERSION}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Cloning Eigen..." git clone --depth=1 -b "${EIGEN_VERSION}" https://gitlab.com/libeigen/eigen.git
-            cd eigen
-            local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            _execute "Configuring Eigen..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${eigen_prefix}" -B build .
-            _execute "Building and installing Eigen..." "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
-        )
-        INSTALL_SUMMARY+=("Eigen: system=${eigen_installed_version}, required=${EIGEN_VERSION}, path=${eigen_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Eigen: system=${eigen_installed_version}, required=${EIGEN_VERSION}, path=${eigen_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D Eigen3_ROOT=$(realpath "${eigen_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# CUDD
-# ------------------------------------------------------------------------------
-_install_cudd() {
-    local cudd_prefix=${PREFIX:-"/usr/local"}
-    log "Checking CUDD (Required: ${CUDD_VERSION})"
-    if [[ ! -f ${cudd_prefix}/include/cudd.h ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Cloning CUDD..." git clone --depth=1 -b "${CUDD_VERSION}" https://github.com/The-OpenROAD-Project/cudd.git
-            cd cudd
-            _execute "Generating CUDD configure script..." autoreconf
-            _execute "Configuring CUDD..." ./configure --prefix="${cudd_prefix}"
-            _execute "Building and installing CUDD..." make -j "${NUM_THREADS}" install
-        )
-        INSTALL_SUMMARY+=("CUDD: system=none, required=${CUDD_VERSION}, path=${cudd_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("CUDD: system=found, required=${CUDD_VERSION}, path=${cudd_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D cudd_ROOT=$(realpath "${cudd_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# CUSP
-# ------------------------------------------------------------------------------
-_install_cusp() {
-    local cusp_prefix=${PREFIX:-"/usr/local/include"}
-    log "Checking CUSP"
-    if [[ ! -f ${cusp_prefix}/cusp/version.h ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Cloning CUSP..." git clone --depth=1 -b cuda9 https://github.com/cusplibrary/cusplibrary.git
-            cd cusplibrary
-            _execute "Installing CUSP..." cp -r ./cusp "${cusp_prefix}"
-        )
-        INSTALL_SUMMARY+=("CUSP: system=none, required=any, path=${cusp_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("CUSP: system=found, required=any, path=${cusp_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D cusp_ROOT=$(realpath "${cusp_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# Lemon
-# ------------------------------------------------------------------------------
-_install_lemon() {
-    local lemon_prefix=${PREFIX:-"/usr/local"}
-    local lemon_installed_version="none"
-    if [[ -f "${lemon_prefix}/include/lemon/config.h" ]]; then
-        lemon_installed_version=$(grep "LEMON_VERSION" "${lemon_prefix}/include/lemon/config.h" | awk -F'"' '{print $2}')
-    fi
-
-    log "Checking Lemon (System: ${lemon_installed_version}, Required: ${LEMON_VERSION})"
-    if [[ "${lemon_installed_version}" != "${LEMON_VERSION}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Cloning Lemon..." git clone --depth=1 -b "${LEMON_VERSION}" https://github.com/The-OpenROAD-Project/lemon-graph.git
-            cd lemon-graph
-            local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            _execute "Configuring Lemon..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${lemon_prefix}" -B build .
-            _execute "Building and installing Lemon..." "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
-        )
-        INSTALL_SUMMARY+=("Lemon: system=${lemon_installed_version}, required=${LEMON_VERSION}, path=${lemon_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Lemon: system=${lemon_installed_version}, required=${LEMON_VERSION}, path=${lemon_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D LEMON_ROOT=$(realpath "${lemon_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# spdlog
-# ------------------------------------------------------------------------------
-_install_spdlog() {
-    local spdlog_prefix=${PREFIX:-"/usr/local"}
-    local spdlog_installed_version="none"
-    if [ -d "${spdlog_prefix}/include/spdlog" ]; then
-        spdlog_installed_version=$(grep "#define SPDLOG_VER_" "${spdlog_prefix}/include/spdlog/version.h" | sed 's/.*\s//' | tr '\n' '.' | sed 's/\.$//')
-    fi
-    log "Checking spdlog (System: ${spdlog_installed_version}, Required: ${SPDLOG_VERSION})"
-    if [[ "${spdlog_installed_version}" != "${SPDLOG_VERSION}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Cloning spdlog..." git clone --depth=1 -b "v${SPDLOG_VERSION}" https://github.com/gabime/spdlog.git
-            cd spdlog
-            local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            _execute "Configuring spdlog..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${spdlog_prefix}" -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
-            _execute "Building and installing spdlog..." "${cmake_bin}" --build build -j "${NUM_THREADS}" --target install
-        )
-        INSTALL_SUMMARY+=("spdlog: system=${spdlog_installed_version}, required=${SPDLOG_VERSION}, path=${spdlog_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("spdlog: system=${spdlog_installed_version}, required=${SPDLOG_VERSION}, path=${spdlog_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D spdlog_ROOT=$(realpath "${spdlog_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# gtest
-# ------------------------------------------------------------------------------
-_install_gtest() {
-    local gtest_prefix=${PREFIX:-"/usr/local"}
-    log "Checking gtest (Required: ${GTEST_VERSION})"
-    if [[ ! -d ${gtest_prefix}/include/gtest ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Downloading gtest..." wget $OPT_NOCERT "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip"
-            _verify_checksum "${GTEST_CHECKSUM}" "v${GTEST_VERSION}.zip" || error "gtest checksum failed."
-            _execute "Extracting gtest..." unzip "v${GTEST_VERSION}.zip"
-            cd "googletest-${GTEST_VERSION}"
-            local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            _execute "Configuring gtest..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${gtest_prefix}" -B build .
-            _execute "Building and installing gtest..." "${cmake_bin}" --build build --target install
-        )
-        INSTALL_SUMMARY+=("gtest: system=none, required=${GTEST_VERSION}, path=${gtest_prefix}, status=installed")
-    else
-        INSTALL_SUMMARY+=("gtest: system=found, required=${GTEST_VERSION}, path=${gtest_prefix}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D GTest_ROOT=$(realpath "${gtest_prefix}") "
-}
-
-# ------------------------------------------------------------------------------
-# Abseil
-# ------------------------------------------------------------------------------
-_install_abseil() {
-    local absl_prefix_install=${PREFIX:-"/usr/local"}
-    local absl_prefix_found=""
-    local absl_version_file=""
-
-    # Check in default/user-specified prefix first (lib64 on RHEL, lib elsewhere).
-    for absl_version_file_default in \
-        "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
-        "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
-        if [[ -f "${absl_version_file_default}" ]]; then
-            absl_prefix_found="${absl_prefix_install}"
-            absl_version_file="${absl_version_file_default}"
-            break
-        fi
-    done
-
-    # If not found, check in or-tools path
-    if [[ -z "${absl_prefix_found}" && -n "${OR_TOOLS_PATH}" ]]; then
-        for absl_version_file_or_tools in \
-            "${OR_TOOLS_PATH}/lib64/cmake/absl/abslConfigVersion.cmake" \
-            "${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"; do
-            if [[ -f "${absl_version_file_or_tools}" ]]; then
-                absl_prefix_found="${OR_TOOLS_PATH}"
-                absl_version_file="${absl_version_file_or_tools}"
-                break
-            fi
-        done
-    fi
-
-    local absl_installed_version="none"
-    if [[ -n "${absl_version_file}" ]]; then
-        absl_installed_version=$(grep '^set(PACKAGE_VERSION "' "${absl_version_file}" | head -n 1 | awk -F'"' '{print $2}')
-    fi
-
-    local required_version="${ABSL_VERSION%.*}"
-    log "Checking Abseil (System: ${absl_installed_version}, Required: ${required_version})"
-    if [[ "${absl_installed_version}" != "${required_version}" ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Downloading Abseil..." wget $OPT_NOCERT "https://github.com/abseil/abseil-cpp/releases/download/${ABSL_VERSION}/abseil-cpp-${ABSL_VERSION}.tar.gz"
-            _verify_checksum "${ABSL_CHECKSUM}" "abseil-cpp-${ABSL_VERSION}.tar.gz" || error "Abseil checksum failed."
-            _execute "Extracting Abseil..." tar xf "abseil-cpp-${ABSL_VERSION}.tar.gz"
-            cd "abseil-cpp-${ABSL_VERSION}"
-            local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            _execute "Configuring Abseil..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${absl_prefix_install}" -DCMAKE_CXX_STANDARD=17 -B build .
-            _execute "Building and installing Abseil..." "${cmake_bin}" --build build --target install
-        )
-        absl_prefix_found="${absl_prefix_install}"
-        for absl_version_file_default in \
-            "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
-            "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
-            if [[ -f "${absl_version_file_default}" ]]; then
-                absl_version_file="${absl_version_file_default}"
-                break
-            fi
-        done
-        INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=skipped")
-    fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
-}
-
-# Returns 0 if the given directory looks like a dedicated or-tools install
-# (basename "or-tools" or "ortools"). Used to guard rm -rf so the installer
-# never deletes a shared prefix like ~/.local, /usr, or /usr/local.
-_is_dedicated_or_tools_dir() {
-    local d=$1
-    local base
-    base=$(basename "${d}")
-    [[ "${base}" == "or-tools" || "${base}" == "ortools" ]]
-}
-
-# Surgically remove only the files that or-tools owns inside a shared prefix
-# (e.g. ~/.local, /usr/local). Touches libortools.so*, lib*/cmake/ortools/,
-# include/ortools/, share/ortools/ — never the parent directory or unrelated
-# user files.
-_clean_or_tools_in_shared_prefix() {
-    local prefix=$1
-    # On multiarch systems libortools.so may live at e.g.
-    # /usr/lib/x86_64-linux-gnu/, in which case realpath(dirname(lib)/..) gives
-    # /usr/lib rather than the true prefix /usr. Strip a trailing lib component.
-    if [[ "${prefix}" == */lib || "${prefix}" == */lib64 ]]; then
-        prefix=$(dirname "${prefix}")
-    fi
-    local f
-    # Match libortools.so* both directly under lib/ and one level deeper for
-    # multiarch layouts (e.g. lib/x86_64-linux-gnu/).
-    for f in "${prefix}"/lib/libortools.so*   "${prefix}"/lib/*/libortools.so* \
-             "${prefix}"/lib64/libortools.so* "${prefix}"/lib64/*/libortools.so*; do
-        [[ -e "${f}" || -L "${f}" ]] && rm -f "${f}"
-    done
-    rm -rf "${prefix}/lib/cmake/ortools" "${prefix}/lib64/cmake/ortools"
-    rm -rf "${prefix}/include/ortools"
-    rm -rf "${prefix}/share/ortools"
-}
-
-_install_or_tools() {
-    local os=$1
-    local os_version=$2
-    local arch=$3
-    local skip_system_or_tools=$4
-
-    # Create a temporary directory for downloads
-    local build_dir
-    build_dir=$(mktemp -d)
-
-    local or_tools_installed_version="none"
-    # Check if a system-installed version of OR-Tools is present
-    log "Checking or-tools (System: ${or_tools_installed_version}, Required: ${OR_TOOLS_VERSION_SMALL})"
-    if [[ "${skip_system_or_tools}" == "false" ]]; then
-        # Disable exit on error for 'find' command, as it might return non zero
-        set +euo pipefail
-        local existing_libs
-        local search_paths=""
-        if [[ -n "${PREFIX}" ]]; then
-            # Look in the dedicated subdir first; fall back to the shared PREFIX
-            # to detect legacy installs that landed directly under PREFIX/lib.
-            search_paths="${OR_TOOLS_PATH} ${PREFIX}"
-        else
-            search_paths="/usr/local /usr /opt"
-        fi
-        existing_libs=$(find ${search_paths} -type f -name "libortools.so.*" 2>/dev/null)
-        # Bring back exit on error
-        set -euo pipefail
-        if [[ -n "${existing_libs}" ]]; then
-            local first_lib="${existing_libs%%$'\n'*}"
-            or_tools_installed_version=$(basename "${first_lib}" | sed 's/libortools.so.//')
-            local or_tools_root
-            or_tools_root=$(dirname "${first_lib}")
-            local or_tools_install_dir
-            or_tools_install_dir=$(realpath "${or_tools_root}/..")
-
-            if [[ "${or_tools_installed_version}" == "${OR_TOOLS_VERSION_SMALL}" ]]; then
-                CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=${or_tools_install_dir} "
-                OR_TOOLS_PATH=${or_tools_install_dir}
-                INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, path=${OR_TOOLS_PATH}, status=skipped")
-                return
-            elif _is_dedicated_or_tools_dir "${or_tools_install_dir}"; then
-                log "Found old OR-Tools version ${or_tools_installed_version} at ${or_tools_install_dir}. Removing it."
-                rm -rf "${or_tools_install_dir}"
-            else
-                log "Found old OR-Tools version ${or_tools_installed_version} under a shared prefix: ${or_tools_install_dir}. Removing or-tools files only."
-                _clean_or_tools_in_shared_prefix "${or_tools_install_dir}"
-            fi
-        fi
-    fi
-
-    if [[ "$(uname -m)" == "aarch64" ]]; then
-        (
-            cd "${build_dir}"
-            _execute "Cloning or-tools..." git clone --depth=1 -b "v${OR_TOOLS_VERSION_BIG}" https://github.com/google/or-tools.git
-            cd or-tools
-            local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            _execute "Configuring or-tools..." "${cmake_bin}" -S. -Bbuild -DBUILD_DEPS:BOOL=ON -DBUILD_EXAMPLES:BOOL=OFF -DBUILD_SAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_INSTALL_PREFIX="${OR_TOOLS_PATH}" -DCMAKE_CXX_FLAGS="-w" -DCMAKE_C_FLAGS="-w"
-            _execute "Building and installing or-tools..." "${cmake_bin}" --build build --config Release --target install -v -j "${NUM_THREADS}"
-        )
-    else
-        (
-            cd "${build_dir}"
-            if [[ "${os_version}" == "rodete" ]]; then
-                os_version=11
-            fi
-            local or_tools_file="or-tools_${arch}_${os}-${os_version}_cpp_v${OR_TOOLS_VERSION_SMALL}.tar.gz"
-            _execute "Downloading or-tools..." wget $OPT_NOCERT "https://github.com/google/or-tools/releases/download/v${OR_TOOLS_VERSION_BIG}/${or_tools_file}"
-            mkdir -p "${OR_TOOLS_PATH}"
-            _execute "Extracting or-tools..." tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
-        )
-    fi
-    INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, path=${OR_TOOLS_PATH}, status=installed")
-
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath "${OR_TOOLS_PATH}") "
-    rm -rf "${build_dir}"
-}
 # ==============================================================================
 # Dependency Installation Modules
 # ==============================================================================
@@ -979,47 +395,6 @@ _install_bazel_dev() {
     INSTALL_SUMMARY+=("buildifier: system=none, required=latest, status=installed")
 }
 
-_install_common_dev() {
-    log "Install common development dependencies (-common or -all)"
-    rm -rf "${BASE_DIR}"
-    mkdir -p "${BASE_DIR}"
-    if [[ -n "${PREFIX}" ]]; then
-        mkdir -p "${PREFIX}"
-    fi
-
-    _install_cmake
-    _install_bison
-    _install_flex
-    _install_pcre
-    _install_swig
-    _install_boost
-    _install_eigen
-    _install_cudd
-    _install_cusp
-    _install_lemon
-    _install_spdlog
-    _install_gtest
-
-    if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
-        _install_equivalence_deps
-    fi
-
-    if [[ -n ${PREFIX} ]]; then
-        # Emit an environment setup script
-        cat > "${PREFIX}/env.sh" <<EOF
-if [ -n "\$ZSH_VERSION" ]; then
-  depRoot="\$(dirname \$(readlink -f "\${(%):-%x}"))"
-else
-  depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE}"))"
-fi
-
-PATH=\${depRoot}/bin:\${PATH}
-LD_LIBRARY_PATH=\${depRoot}/lib64:\${depRoot}/lib:\${LD_LIBRARY_PATH}
-EOF
-    fi
-}
-
-
 # ==============================================================================
 # Platform-Specific Logic
 # ==============================================================================
@@ -1043,9 +418,9 @@ _install_ubuntu_packages() {
     export DEBIAN_FRONTEND="noninteractive"
     _execute "Updating package lists..." apt-get -y update
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
-        automake autotools-dev binutils bison build-essential ccache clang \
+        automake autotools-dev binutils bison build-essential ccache clang cmake \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
-        libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
+        libgomp1 libomp-dev libpcre2-dev libreadline-dev ninja-build pandoc \
         pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -1085,7 +460,7 @@ _install_rhel_packages() {
     _execute "Updating packages..." yum -y update
     _execute "Installing EPEL release..." yum -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_version}.noarch.rpm"
     _execute "Installing base packages..." yum -y install \
-        autoconf automake clang clang-devel gcc gcc-c++ gdb git glibc-devel \
+        autoconf automake clang clang-devel cmake gcc gcc-c++ gdb git glibc-devel \
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
@@ -1123,7 +498,7 @@ _install_opensuse_packages() {
     _execute "Updating packages..." zypper -n update
     _execute "Installing development pattern..." zypper -n install -t pattern devel_basis
     _execute "Installing base packages..." zypper -n install \
-        binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
+        binutils clang cmake gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
         pcre2-devel pkg-config python3-devel python3-pip readline-devel tcl \
@@ -1172,9 +547,9 @@ _install_debian_packages() {
         tcl_ver="8.6"
     fi
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
-        automake autotools-dev binutils bison build-essential clang debhelper \
+        automake autotools-dev binutils bison build-essential clang cmake debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
+        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" ninja-build \
         pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -1233,24 +608,24 @@ _help() {
 Usage: $0 [OPTIONS]
 
 Options:
-  -all                        Install all dependencies (base and common). Requires privileged access.
   -base                       Install base dependencies using package managers. Requires privileged access.
-  -common                     Install common dependencies.
   -eqy                        Install equivalence dependencies (yosys, eqy, sby).
   -bazel                      Download and install bazel (via bazelisk).
   -bazel-dev                  Download and install bazel developer tools (buildifier, etc.).
   -no-gui                     Skip GUI-only dependencies (e.g. xcb libraries) when used with -bazel.
-  -prefix=DIR                 Install common dependencies in a user-specified directory.
-  -local                      Install common dependencies in \${HOME}/.local.
+  -prefix=DIR                 Install dependencies in a user-specified directory.
+  -local                      Install dependencies in \${HOME}/.local.
   -ci                         Install dependencies required for CI.
   -nocert                     Disable certificate checks for downloads.
-  -skip-system-or-tools       Skip searching for a system-installed or-tools library.
-  -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
   -constant-build-dir         Use a constant build directory instead of a random one.
   -threads=<N>                Limit the number of compiling threads.
   -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
   -verbose                    Show all output from build commands.
   -h, -help                   Show this help message.
+
+C++ build dependencies (boost, or-tools, swig, ...) are not installed by
+this script; they come from the bazel module graph. For a plain CMake
+build, materialize them with: bazelisk run //:cmake (see docs/user/Build.md).
 
 EOF
     exit "${1:-1}"
@@ -1261,9 +636,10 @@ main() {
     while [ "$#" -gt 0 ]; do
         case "${1}" in
             -h|-help) _help 0 ;;
-            -all) option="all" ;;
+            -all|-common)
+                error "${1} was removed: C++ dependencies come from the bazel module graph. Use 'bazelisk run //:cmake' for plain CMake builds (see docs/user/Build.md)."
+                ;;
             -base) option="base" ;;
-            -common) option="common" ;;
             -eqy) EQUIVALENCE_DEPS="yes" ;;
             -bazel) INSTALL_BAZEL="yes" ;;
             -bazel-dev) INSTALL_BAZEL_DEV="yes" ;;
@@ -1301,8 +677,6 @@ main() {
                 OPT_NOCERT="--no-check-certificate"
                 export GIT_SSL_NO_VERIFY=true
                 ;;
-            -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
-            -save-deps-prefixes=*) SAVE_DEPS_PREFIXES="$(realpath "${1#*=}")" ;;
             -threads=*) NUM_THREADS="${1#*=}" ;;
             -yosys-ver=*) YOSYS_VERSION="${1#*=}" ;;
             *)
@@ -1313,8 +687,9 @@ main() {
         shift 1
     done
 
-    if [[ "${option}" == "none" && "${INSTALL_BAZEL}" == "no" && "${INSTALL_BAZEL_DEV}" == "no" ]]; then
-        error "You must use one of: -all, -base, -common, -bazel, or -bazel-dev."
+    if [[ "${option}" == "none" && "${INSTALL_BAZEL}" == "no" \
+        && "${INSTALL_BAZEL_DEV}" == "no" && "${EQUIVALENCE_DEPS}" == "no" ]]; then
+        error "You must use one of: -base, -eqy, -bazel, or -bazel-dev."
     fi
 
     # -bazel-dev implies -bazel (you need bazelisk to use buildifier)
@@ -1326,25 +701,10 @@ main() {
         _install_bazel_dev
     fi
 
-    if [[ "${option}" == "none" ]]; then
+    if [[ "${option}" == "none" && "${EQUIVALENCE_DEPS}" == "no" ]]; then
         _print_summary
         rm -rf "${BASE_DIR}"
         return
-    fi
-
-    # Always install or-tools into a dedicated subdirectory so the installer
-    # can safely remove an old version with `rm -rf` without touching unrelated
-    # files in the prefix (e.g. ~/.local, /usr).
-    if [[ -n "${PREFIX}" ]]; then
-        OR_TOOLS_PATH="${PREFIX}/or-tools"
-    else
-        OR_TOOLS_PATH="/opt/or-tools"
-    fi
-
-    if [[ -z "${SAVE_DEPS_PREFIXES}" ]]; then
-        local dir
-        dir="$(dirname "$(readlink -f "$0")")"
-        SAVE_DEPS_PREFIXES="${dir}/openroad_deps_prefixes.txt"
     fi
 
     local platform
@@ -1372,27 +732,11 @@ main() {
         "Ubuntu")
             local ubuntu_version
             ubuntu_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ "${option}" == "base" ]]; then
                 _install_ubuntu_packages "${ubuntu_version}"
             fi
             if [[ "${CI}" == "yes" ]]; then
                 _install_ci_packages "${ubuntu_version}"
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                local ubuntu_version_normalized=${ubuntu_version}
-                if _version_compare "${ubuntu_version_normalized}" -ge "25.04"; then
-                    # FIXME make do with or-tools for 24.10 until an official release for 25.04 is available
-                    ubuntu_version_normalized="24.10"
-                elif _version_compare "${ubuntu_version_normalized}" -ge "24.04"; then
-                    ubuntu_version_normalized="24.04"
-                elif _version_compare "${ubuntu_version_normalized}" -ge "22.04"; then
-                    ubuntu_version_normalized="22.04"
-                else
-                    ubuntu_version_normalized="20.04"
-                fi
-                _install_or_tools "ubuntu" "${ubuntu_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
             fi
             ;;
         "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
@@ -1407,57 +751,24 @@ main() {
             if [[ "${rhel_version}" != "8" && "${rhel_version}" != "9" ]]; then
                 error "Unsupported ${rhel_version} version. Versions '8' and '9' are supported."
             fi
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ "${option}" == "base" ]]; then
                 _install_rhel_packages "${rhel_version}"
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                local os_id
-                os_id=$(awk -F= '/^ID/{print $2}' /etc/os-release | sed 's/"//g')
-                local arch
-                arch=$(uname -m)
-                local or_tools_arch=${arch}
-                local or_tools_distro=""
-                local or_tools_version=""
-                if [[ "${rhel_version}" == "8" ]]; then
-                    or_tools_distro="AlmaLinux"
-                    or_tools_version="8.10"
-                    if [[ "${os_id}" != "almalinux" ]]; then
-                        warn "Using AlmaLinux or-tools package for RHEL 8 compatible system."
-                    fi
-                elif [[ "${rhel_version}" == "9" ]]; then
-                    or_tools_version="9"
-                    if [[ "${arch}" == "x86_64" ]]; then
-                        or_tools_arch="amd64"
-                    fi
-                    if [[ "${os_id}" == "almalinux" || "${os_id}" == "rocky" ]]; then
-                        or_tools_distro="${os_id}"
-                    else
-                        or_tools_distro="rockylinux"
-                        warn "Defaulting to rockylinux or-tools package for RHEL 9 compatible system."
-                    fi
-                fi
-                _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${or_tools_arch}" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
             fi
             ;;
         "Darwin")
-            _install_darwin_packages
-            cat <<EOF
+            if [[ "${option}" == "base" ]]; then
+                _install_darwin_packages
+                cat <<EOF
 
 To install or run OpenROAD, update your path with:
     export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk@8)/bin:\${PATH}"
     export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
 EOF
+            fi
             ;;
         "openSUSE Leap")
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ "${option}" == "base" ]]; then
                 _install_opensuse_packages
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                _install_or_tools "opensuse" "leap" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
             fi
             cat <<EOF
 To enable GCC-11 you need to run:
@@ -1471,18 +782,8 @@ EOF
             if [[ -z "${debian_version}" ]]; then
                 debian_version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
             fi
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ "${option}" == "base" ]]; then
                 _install_debian_packages "${debian_version}"
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                local debian_version_normalized=${debian_version}
-                if _version_compare "${debian_version_normalized}" -ge "13"; then
-                    # FIXME use debian-13 once or-tools publishes an official release for it
-                    debian_version_normalized="sid"
-                fi
-                _install_or_tools "debian" "${debian_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
             fi
             ;;
         *)
@@ -1490,12 +791,13 @@ EOF
             ;;
     esac
 
-    if [[ -n "${SAVE_DEPS_PREFIXES}" ]]; then
-        mkdir -p "$(dirname "${SAVE_DEPS_PREFIXES}")"
-        echo "${CMAKE_PACKAGE_ROOT_ARGS}" > "${SAVE_DEPS_PREFIXES}"
-        if [[ $(id -u) == 0 && -n "${SUDO_USER+x}" ]]; then
-            chown "${SUDO_USER}:$(id -gn "${SUDO_USER}")" "${SAVE_DEPS_PREFIXES}" 2>/dev/null || true
+    if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
+        rm -rf "${BASE_DIR}"
+        mkdir -p "${BASE_DIR}"
+        if [[ -n "${PREFIX}" ]]; then
+            mkdir -p "${PREFIX}"
         fi
+        _install_equivalence_deps
     fi
 
     _print_summary
