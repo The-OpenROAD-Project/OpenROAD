@@ -69,7 +69,7 @@ class Assembler:
 
     def write(self, dest, content, executable):
         os.makedirs(os.path.dirname(dest), exist_ok=True)
-        with open(dest, "w") as f:
+        with open(dest, "w", encoding="utf-8") as f:
             f.write(content)
         os.chmod(dest, 0o755 if executable else 0o644)
 
@@ -83,15 +83,17 @@ def parse_versions(module_bazel_path):
     with open(module_bazel_path, encoding="utf-8") as f:
         text = f.read()
     versions = {}
-    variables = dict(re.findall(r'^(\w+) = "([^"]+)"', text, re.MULTILINE))
+    variables = dict(
+        re.findall(r'^\s*(\w+)\s*=\s*["\']([^"\']+)["\']', text, re.MULTILINE)
+    )
     for block in re.findall(r"bazel_dep\s*\(([^)]+)\)", text, re.DOTALL):
-        name_match = re.search(r'name\s*=\s*"([^"]+)"', block)
-        version_match = re.search(r'version\s*=\s*("[^"]+"|\w+)', block)
+        name_match = re.search(r'name\s*=\s*["\']([^"\']+)["\']', block)
+        version_match = re.search(r'version\s*=\s*(["\'][^"\']+["\']|\w+)', block)
         if not name_match or not version_match:
             continue
         version = version_match.group(1)
-        if version.startswith('"'):
-            version = version.strip('"')
+        if version[0] in "\"'":
+            version = version.strip("\"'")
         else:
             version = variables.get(version, "")
         versions[name_match.group(1)] = version.split(".bcr.")[0]
@@ -111,7 +113,7 @@ def versions_cmake(versions):
 
 def main():
     manifest_path, out_root = sys.argv[1], sys.argv[2]
-    with open(manifest_path) as f:
+    with open(manifest_path, encoding="utf-8") as f:
         manifest = json.load(f)
 
     assembler = Assembler(out_root)
