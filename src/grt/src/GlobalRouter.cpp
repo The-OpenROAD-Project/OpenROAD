@@ -4799,6 +4799,10 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
     return;
   }
 
+  // Drop the destroyed net from the dirty set for both routers so
+  // updateDirtyRoutes never dereferences a dangling dbNet.
+  dirty_nets_.erase(db_net);
+
   if (use_cugr_) {
     cugr_->removeNet(db_net);
   } else {
@@ -4858,7 +4862,6 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
     }
     delete deleted_net;
     db_net_map_.erase(db_net);
-    dirty_nets_.erase(db_net);
     routes_.erase(db_net);
   }
 }
