@@ -952,7 +952,13 @@ export function populateDisplayControls(app, visibility, selectability,
     bgInput.title = 'Layout background color';
     const savedBg = getCookie('or_bg_color');
     bgInput.value = isValidHexColor(savedBg) ? savedBg : DEFAULT_BG_COLOR;
+    // 'input' fires on every tick while dragging inside the picker: keep it
+    // to the cheap CSS-var preview.  Persistence (cookie), the 3D-viewer
+    // re-render and the server sync run once, on 'change' (picker closed).
     bgInput.addEventListener('input', () => {
+        document.documentElement.style.setProperty('--bg-map', bgInput.value);
+    });
+    bgInput.addEventListener('change', () => {
         setBackgroundColor(bgInput.value, app);
         app.syncDisplayState();
     });
