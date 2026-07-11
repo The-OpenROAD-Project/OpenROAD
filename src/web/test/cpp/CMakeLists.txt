@@ -115,13 +115,22 @@ gtest_discover_tests(TestSnap
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-add_executable(TestSaveDisplayControls TestSaveDisplayControls.cpp)
+# This test exercises the WebServer lifecycle (initLogger), which pulls in
+# web_serve.cpp.o and its gui::Gui::* references.  Compile the headless gui
+# stub into the test (the Qt gui library would drag in the whole
+# application), mirroring the Bazel target's gui_stub dependency.
+add_executable(TestSaveDisplayControls
+  TestSaveDisplayControls.cpp
+  ${OPENROAD_HOME}/src/gui/src/stub.cpp
+)
 
 target_link_libraries(TestSaveDisplayControls ${TEST_LIBS})
 
 target_include_directories(TestSaveDisplayControls
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+    ${OPENROAD_HOME}/src/gui/src
+    ${TCL_INCLUDE_PATH}
 )
 
 gtest_discover_tests(TestSaveDisplayControls
