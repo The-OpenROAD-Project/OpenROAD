@@ -272,13 +272,7 @@ archive_override(
 )
 
 bazel_dep(name = "yosys", version = "0.64", dev_dependency = True)
-bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
-archive_override(
-    module_name = "yosys-slang",
-    sha256 = "34198f2ed7b2d3175c3ce3c9fb1c6c91f28dbcfe531d97b91d6b12c48431bdef",
-    strip_prefix = "sv-elab-6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20",
-    urls = ["https://github.com/povik/yosys-slang/archive/6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20.tar.gz"],
-)
+bazel_dep(name = "sv-elab", version = "2026-07-07", dev_dependency = True)
 
 # --- Extensions ---
 
@@ -385,7 +379,7 @@ orfs.default(
     openroad = "//:openroad",
     # Expose the yosys-slang plugin via YOSYS_PLUGIN_PATH so
     # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
-    yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
+    yosys_plugins = ["@sv-elab//src/yosys_plugin:slang.so"],
 )
 
 # --- External archives ---
