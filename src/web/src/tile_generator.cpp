@@ -4039,6 +4039,14 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   }
   out["layer_colors"] = std::move(layer_color_arr);
 
+  // The 16 highlight-group colors, straight from the Qt GUI's palette so
+  // the client swatches can never drift from what the overlay renders.
+  boost::json::array highlight_colors;
+  for (const auto& c : gui::Painter::kHighlightColors) {
+    highlight_colors.emplace_back(boost::json::array{c.r, c.g, c.b, c.a});
+  }
+  out["highlight_colors"] = std::move(highlight_colors);
+
   boost::json::array sites;
   for (const auto& name : gen.getSites()) {
     sites.emplace_back(name);

@@ -13,6 +13,12 @@ const DELETE_SVG =
     '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>' +
     '</svg>';
 
+// Highlight group: color palette (Material "palette")
+const HIGHLIGHT_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>' +
+    '</svg>';
+
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
 const ZOOM_TO_SVG =
@@ -172,6 +178,84 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         } finally {
             editInFlight = false;
         }
+    }
+
+    // Put/remove the inspected object in a color-coded highlight group
+    // (Qt GUI parity: 16 fixed groups, palette served by the backend).
+    // The response is a refreshed inspect payload, so the group badge
+    // updates in place.
+    function sendHighlight(msg) {
+        app.websocketManager.request({ ...msg, use_dbu: app.showDbu })
+            .then(data => {
+                if (!data.ok && data.error) showToast(data.error);
+                updateInspector(data);
+                refreshOverlay();
+            })
+            .catch(err => {
+                console.error(msg.type + ' failed:', err);
+            });
+    }
+
+    function closeHighlightPicker() {
+        const el = document.getElementById('highlight-picker');
+        if (el) el.remove();
+    }
+
+    // 4x4 swatch popover anchored to the toolbar button — a one-click
+    // group choice (the Qt GUI opens a modal 16-radio dialog instead).
+    function openHighlightPicker(anchor, data) {
+        closeHighlightPicker();
+        const colors = app.techData?.highlight_colors || [];
+        if (!colors.length) return;
+
+        const picker = document.createElement('div');
+        picker.id = 'highlight-picker';
+        const grid = document.createElement('div');
+        grid.className = 'highlight-swatch-grid';
+        colors.forEach((c, group) => {
+            const swatch = document.createElement('button');
+            swatch.className = 'highlight-swatch';
+            swatch.title = 'Group ' + (group + 1);
+            swatch.style.backgroundColor = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+            if (group === data.highlight_group) {
+                swatch.classList.add('active');
+            }
+            swatch.addEventListener('click', () => {
+                closeHighlightPicker();
+                sendHighlight({ type: 'highlight', group });
+            });
+            grid.appendChild(swatch);
+        });
+        picker.appendChild(grid);
+
+        if (data.highlight_group >= 0) {
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'highlight-remove';
+            removeBtn.textContent = 'Remove highlight';
+            removeBtn.addEventListener('click', () => {
+                closeHighlightPicker();
+                sendHighlight({ type: 'unhighlight' });
+            });
+            picker.appendChild(removeBtn);
+        }
+
+        document.body.appendChild(picker);
+        const rect = anchor.getBoundingClientRect();
+        picker.style.left = rect.left + 'px';
+        picker.style.top = (rect.bottom + 4) + 'px';
+
+        const dismiss = (e) => {
+            if (e.type === 'keydown' && e.key !== 'Escape') return;
+            if (e.type === 'mousedown' && picker.contains(e.target)) return;
+            closeHighlightPicker();
+            document.removeEventListener('mousedown', dismiss, true);
+            document.removeEventListener('keydown', dismiss, true);
+        };
+        // Defer so the opening click doesn't immediately dismiss.
+        setTimeout(() => {
+            document.addEventListener('mousedown', dismiss, true);
+            document.addEventListener('keydown', dismiss, true);
+        }, 0);
     }
 
     function showLoading() {
@@ -729,6 +813,29 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 clearBtn.innerHTML = CLEAR_FOCUS_SVG;
                 clearBtn.addEventListener('click', () => clearFocusNets());
                 toolbar.appendChild(clearBtn);
+            }
+
+            // Highlight-group button (server-backed objects carry a
+            // highlight_group field; client-side panels like the ruler
+            // don't).  The badge shows the current group's color.
+            if (typeof data.highlight_group === 'number' && !isStaticMode(app)
+                && (app.techData?.highlight_colors || []).length) {
+                const hlBtn = document.createElement('button');
+                hlBtn.className = 'inspector-btn inspector-highlight-btn';
+                const group = data.highlight_group;
+                hlBtn.title = group >= 0
+                    ? 'Highlight group ' + (group + 1)
+                    : 'Add to highlight group';
+                hlBtn.innerHTML = HIGHLIGHT_SVG;
+                if (group >= 0) {
+                    const c = app.techData.highlight_colors[group];
+                    hlBtn.style.backgroundColor
+                        = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.45)`;
+                    hlBtn.style.borderColor = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+                }
+                hlBtn.addEventListener('click',
+                                       () => openHighlightPicker(hlBtn, data));
+                toolbar.appendChild(hlBtn);
             }
 
             // Descriptor actions (server-provided, e.g. Delete).

@@ -963,6 +963,50 @@ html, body {
 .or-modal-btn-danger:hover {
     background: #942828;
 }
+#highlight-picker {
+    position: fixed;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 6px;
+    z-index: 3000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.highlight-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 22px);
+    gap: 4px;
+}
+.highlight-swatch {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+}
+.highlight-swatch:hover {
+    outline: 2px solid var(--fg-primary);
+}
+.highlight-swatch.active {
+    outline: 2px solid var(--fg-bright);
+    outline-offset: 1px;
+}
+.highlight-remove {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 3px 6px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    cursor: pointer;
+    font-size: 11px;
+}
+.highlight-remove:hover {
+    background: var(--border);
+}
 #or-toast {
     position: fixed;
     bottom: 40px;

@@ -27,6 +27,16 @@ export function createMenuBar(app) {
               action: () => { if (app.rulerManager) app.rulerManager.toggleRulerMode(); } },
             { label: 'Clear Rulers', shortcut: 'Shift+K',
               action: () => { if (app.rulerManager) app.rulerManager.clearAllRulers(); } },
+            { label: 'Clear Highlights',
+              action: () => {
+                  app.websocketManager.request(
+                      { type: 'clear_highlights', group: -1 })
+                      .then(() => {
+                          if (app.refreshOverlay) app.refreshOverlay();
+                          if (app.refreshInspector) app.refreshInspector();
+                      })
+                      .catch(() => {});
+              } },
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },

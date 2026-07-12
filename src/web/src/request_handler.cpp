@@ -424,6 +424,74 @@ static void runDeselectAction(const gui::Selected& old_sel,
   }
 }
 
+// Returns the highlight group holding `sel`, or -1 when not highlighted.
+// Requires state.selection_mutex to be held.
+static int highlightGroupOfLocked(const SessionState& state,
+                                  const gui::Selected& sel)
+{
+  if (!sel) {
+    return -1;
+  }
+  for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+    const auto& members = state.highlight_groups[group];
+    if (members.find(sel) != members.end()) {
+      return group;
+    }
+  }
+  return -1;
+}
+
+// Rebuild the per-group overlay shapes from the group members.  Colors
+// come from the Qt GUI's palette (gui::Painter::kHighlightColors,
+// translucent fill); filled=true reuses the DRC/timing colored-rect
+// rendering (blend fill + solid outline).  Polygonal highlight shapes
+// fall back to their bounding rects — groups typically hold insts/nets,
+// whose highlight() emits rects.  Requires state.selection_mutex and the
+// STA lock (sel.highlight() calls descriptor code).
+static void rebuildHighlightGroupShapesLocked(SessionState& state)
+{
+  state.highlight_group_rects.clear();
+  for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+    if (state.highlight_groups[group].empty()) {
+      continue;
+    }
+    const auto& qt_color = gui::Painter::kHighlightColors[group];
+    const Color color{.r = static_cast<uint8_t>(qt_color.r),
+                      .g = static_cast<uint8_t>(qt_color.g),
+                      .b = static_cast<uint8_t>(qt_color.b),
+                      .a = static_cast<uint8_t>(qt_color.a)};
+    for (const auto& sel : state.highlight_groups[group]) {
+      if (!sel) {
+        continue;
+      }
+      ShapeCollector collector;
+      sel.highlight(collector);
+      for (const auto& rect : collector.rects) {
+        state.highlight_group_rects.push_back(
+            {.rect = rect, .color = color, .layer = "", .filled = true});
+      }
+      for (const auto& poly : collector.polys) {
+        state.highlight_group_rects.push_back({.rect = poly.getEnclosingRect(),
+                                               .color = color,
+                                               .layer = "",
+                                               .filled = true});
+      }
+    }
+  }
+}
+
+// Erase `sel` from every highlight group.  Returns true if it was a
+// member of any.  Requires state.selection_mutex to be held.
+static bool removeFromHighlightGroupsLocked(SessionState& state,
+                                            const gui::Selected& sel)
+{
+  bool removed = false;
+  for (auto& members : state.highlight_groups) {
+    removed |= members.erase(sel) > 0;
+  }
+  return removed;
+}
+
 bool consumeStaleSelection(SessionState& state)
 {
   if (!state.selection_stale.exchange(false)) {
@@ -438,6 +506,10 @@ bool consumeStaleSelection(SessionState& state)
     state.highlight_rects.clear();
     state.highlight_polys.clear();
     state.hover_rects.clear();
+    for (auto& members : state.highlight_groups) {
+      members.clear();
+    }
+    state.highlight_group_rects.clear();
   }
   {
     std::lock_guard<std::mutex> lock(state.selectables_mutex);
@@ -446,10 +518,14 @@ bool consumeStaleSelection(SessionState& state)
   return true;
 }
 
+// highlight_group is the 0-based color group holding `sel` (-1 = not
+// highlighted), computed by the caller under selection_mutex via
+// highlightGroupOfLocked — this function runs outside that lock.
 static void writeInspectPayload(boost::json::object& o,
                                 const gui::Selected& sel,
                                 std::vector<gui::Selected>& new_selectables,
-                                bool can_navigate_back)
+                                bool can_navigate_back,
+                                int highlight_group = -1)
 {
   o["can_navigate_back"] = can_navigate_back ? 1 : 0;
   if (!sel) {
@@ -460,6 +536,7 @@ static void writeInspectPayload(boost::json::object& o,
   auto props = sel.getProperties();
   o["name"] = sel.getName();
   o["type"] = sel.getTypeName();
+  o["highlight_group"] = highlight_group;
   const gui::Descriptor::Editors editors = sel.getEditors();
   boost::json::array prop_arr;
   prop_arr.reserve(props.size());
@@ -724,6 +801,21 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTriggerAction(req, state);
         });
+  d.add("highlight",
+        WebSocketRequest::kHighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleHighlight(req, state);
+        });
+  d.add("unhighlight",
+        WebSocketRequest::kUnhighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleUnhighlight(req, state);
+        });
+  d.add("clear_highlights",
+        WebSocketRequest::kClearHighlights,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleClearHighlights(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -812,8 +904,16 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         }
       }
       inspected_sel = registry->makeSelected(results[pick].object);
-      writeInspectPayload(
-          root, inspected_sel, new_selectables, /*can_navigate_back=*/false);
+      int hl_group = -1;
+      {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        hl_group = highlightGroupOfLocked(state, inspected_sel);
+      }
+      writeInspectPayload(root,
+                          inspected_sel,
+                          new_selectables,
+                          /*can_navigate_back=*/false,
+                          hl_group);
     } else {
       root["can_navigate_back"] = 0;
     }
@@ -897,6 +997,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     bool can_navigate_back = false;
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
@@ -920,12 +1021,14 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, hl_group);
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
     {
@@ -956,6 +1059,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
@@ -976,12 +1080,14 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, hl_group);
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
     {
@@ -1018,6 +1124,7 @@ static WebSocketResponse handleSelectionCycle(
     ScopedDbuFormat dbu_fmt(block, use_dbu);
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel_count = static_cast<int>(state.selection_set.size());
@@ -1047,13 +1154,15 @@ static WebSocketResponse handleSelectionCycle(
       }
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
     const bool can_navigate_back = false;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, hl_group);
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
     {
@@ -1179,6 +1288,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
     bool can_navigate_back = false;
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (accepted) {
@@ -1191,17 +1301,21 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
           collectHighlightShapes(
               sel, state.highlight_rects, state.highlight_polys);
         }
+        // Group shapes derive from geometry too.
+        rebuildHighlightGroupShapesLocked(state);
       }
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, hl_group);
     root["ok"] = accepted ? 1 : 0;
     if (!accepted) {
       root["error"] = error;
@@ -1290,6 +1404,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     bool can_navigate_back = false;
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (deleted) {
@@ -1305,6 +1420,11 @@ WebSocketResponse SelectHandler::handleTriggerAction(
         state.current_inspected = next;
         collectHighlightShapes(
             next, state.highlight_rects, state.highlight_polys);
+        // Highlight-group members may also reference destroyed objects.
+        for (auto& members : state.highlight_groups) {
+          members.clear();
+        }
+        state.highlight_group_rects.clear();
       } else if (executed && next != sel) {
         runDeselectAction(sel, next);
         if (next) {
@@ -1322,6 +1442,8 @@ WebSocketResponse SelectHandler::handleTriggerAction(
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group
+          = highlightGroupOfLocked(state, (deleted || executed) ? next : sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -1329,7 +1451,8 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     std::vector<gui::Selected> new_selectables;
     // After a destroy, `sel` dangles — the payload must come from `next`.
     const gui::Selected& payload_sel = (deleted || executed) ? next : sel;
-    writeInspectPayload(root, payload_sel, new_selectables, can_navigate_back);
+    writeInspectPayload(
+        root, payload_sel, new_selectables, can_navigate_back, hl_group);
     if (executed && !next) {
       // The action deselected (e.g. Delete): an empty payload with no
       // "error" clears the client inspector.
@@ -1354,6 +1477,208 @@ WebSocketResponse SelectHandler::handleTriggerAction(
   }
   if (executed && broadcast_fn_) {
     broadcast_fn_(R"({"type":"refresh"})");
+  }
+  return resp;
+}
+
+// Put the currently inspected object into color group `group` (0-15),
+// removing it from any other group first — an object lives in at most
+// one group.  Mirrors the Qt GUI's MainWindow::updateHighlightedSet
+// semantics (the Qt add path can leave an object in two groups; the web
+// always enforces uniqueness).  Responds with the refreshed inspect
+// payload so the client updates the group badge in place.
+WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
+                                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const int64_t group = req.json.at("group").as_int64();
+
+    // sel.highlight() (shape collection) runs descriptor code; serialize
+    // with other STA callers.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+
+    std::string error;
+    if (consumeStaleSelection(state)) {
+      error = "selection invalidated by a design change; reselect and retry";
+    }
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    bool ok = false;
+    if (!error.empty()) {
+      // fall through with the staleness error
+    } else if (group < 0 || group >= gui::kNumHighlightSet) {
+      error = "invalid highlight group";
+    } else if (!sel) {
+      error = "nothing is inspected";
+    } else {
+      ok = true;
+    }
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    int hl_group = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (ok) {
+        removeFromHighlightGroupsLocked(state, sel);
+        state.highlight_groups[group].insert(sel);
+        rebuildHighlightGroupShapesLocked(state);
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, hl_group);
+    root["ok"] = ok ? 1 : 0;
+    if (!ok) {
+      root["error"] = error;
+    }
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Remove the currently inspected object from whatever highlight group
+// holds it.  Mirrors Qt's MainWindow::removeHighlighted.
+WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+
+    std::string error;
+    if (consumeStaleSelection(state)) {
+      error = "selection invalidated by a design change; reselect and retry";
+    }
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    bool ok = false;
+    if (error.empty()) {
+      if (!sel) {
+        error = "nothing is inspected";
+      } else {
+        ok = true;
+      }
+    }
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (ok && removeFromHighlightGroupsLocked(state, sel)) {
+        rebuildHighlightGroupShapesLocked(state);
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, /*highlight_group=*/-1);
+    root["ok"] = ok ? 1 : 0;
+    if (!ok) {
+      root["error"] = error;
+    }
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Clear one highlight group (0-15) or all of them (group = -1, the
+// default — Qt's layout "Clear → Highlights" semantics).
+WebSocketResponse SelectHandler::handleClearHighlights(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const auto group = jsonOr<int64_t>(req.json, "group", -1);
+
+    // Rebuilding the remaining groups' shapes runs descriptor code.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    consumeStaleSelection(state);
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    if (group < -1 || group >= gui::kNumHighlightSet) {
+      root["ok"] = 0;
+      root["error"] = "invalid highlight group";
+      writePayload(resp, root);
+      return resp;
+    }
+
+    int64_t cleared = 0;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (group < 0) {
+        for (auto& members : state.highlight_groups) {
+          cleared += static_cast<int64_t>(members.size());
+          members.clear();
+        }
+      } else {
+        cleared = static_cast<int64_t>(state.highlight_groups[group].size());
+        state.highlight_groups[group].clear();
+      }
+      rebuildHighlightGroupShapesLocked(state);
+    }
+
+    root["ok"] = 1;
+    root["cleared"] = cleared;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
   }
   return resp;
 }
@@ -1514,11 +1839,17 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
       }
       gui::Selected first = registry->makeSelected(matched.front());
 
+      int hl_group = -1;
+      {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        hl_group = highlightGroupOfLocked(state, first);
+      }
       std::vector<gui::Selected> new_selectables;
       writeInspectPayload(root,
                           first,
                           new_selectables,
-                          /*can_navigate_back=*/false);
+                          /*can_navigate_back=*/false,
+                          hl_group);
       {
         std::lock_guard<std::mutex> lock(state.selectables_mutex);
         state.selectables = std::move(new_selectables);
@@ -2256,6 +2587,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
     ScopedDbuFormat dbu_fmt(block, use_dbu);
 
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
@@ -2265,12 +2597,13 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       runDeselectAction(state.current_inspected, sel);
       state.current_inspected = sel;
       state.navigation_history.clear();
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
     writeInspectPayload(
-        root, sel, new_selectables, /*can_navigate_back=*/false);
+        root, sel, new_selectables, /*can_navigate_back=*/false, hl_group);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
@@ -2858,6 +3191,14 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     std::lock_guard<std::mutex> lock(state.drc_mutex);
     colored.insert(
         colored.end(), state.drc_rects.begin(), state.drc_rects.end());
+  }
+  {
+    // Highlight groups append last so they paint on top (the Qt GUI
+    // draws drawHighlighted "always last so on top").
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    colored.insert(colored.end(),
+                   state.highlight_group_rects.begin(),
+                   state.highlight_group_rects.end());
     lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
   }
 

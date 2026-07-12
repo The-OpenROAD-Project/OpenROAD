@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <functional>
@@ -122,6 +123,9 @@ struct WebSocketRequest
     kSelectPrev,
     kSetProperty,
     kTriggerAction,
+    kHighlight,
+    kUnhighlight,
+    kClearHighlights,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
@@ -187,6 +191,14 @@ struct SessionState
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
   gui::SelectionSet selection_set;
   gui::SelectionSet::const_iterator selection_itr = selection_set.end();
+
+  // Color-coded highlight groups (mirrors Qt GUI's HighlightSet: 16 fixed
+  // groups colored by gui::Painter::kHighlightColors).  An object lives in
+  // at most one group.  highlight_group_rects is the derived overlay
+  // snapshot, rebuilt on every mutation (not per tile).  Both guarded by
+  // selection_mutex.
+  std::array<gui::SelectionSet, gui::kNumHighlightSet> highlight_groups;
+  std::vector<ColoredRect> highlight_group_rects;
 
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
@@ -270,6 +282,12 @@ class SelectHandler
                                       SessionState& state);
   WebSocketResponse handleTriggerAction(const WebSocketRequest& req,
                                         SessionState& state);
+  WebSocketResponse handleHighlight(const WebSocketRequest& req,
+                                    SessionState& state);
+  WebSocketResponse handleUnhighlight(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleClearHighlights(const WebSocketRequest& req,
+                                          SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);

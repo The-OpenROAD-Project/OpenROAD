@@ -501,6 +501,69 @@ describe('Inspector focus nets', () => {
         });
     });
 
+    describe('highlight groups', () => {
+        const PALETTE = Array.from({ length: 16 }, (_, i) => [i, 2 * i, 3 * i, 100]);
+
+        function hlData(group) {
+            return {
+                type: 'Inst', name: 'buf1', bbox: [0, 0, 100, 100],
+                highlight_group: group,
+                properties: [{ name: 'Name', value: 'buf1' }],
+            };
+        }
+
+        it('shows the button only for server payloads with a group field', () => {
+            app.techData = { highlight_colors: PALETTE };
+            panel.updateInspector(hlData(-1));
+            assert.ok(app.inspectorEl.querySelector('.inspector-highlight-btn'));
+
+            // Client-side panels (ruler) have no highlight_group → no button.
+            panel.updateInspector({
+                type: 'Ruler', name: 'r1',
+                properties: [{ name: 'Name', value: 'r1' }],
+                onPropertyChange: () => {},
+            });
+            assert.equal(
+                app.inspectorEl.querySelector('.inspector-highlight-btn'), null);
+        });
+
+        it('opens a 16-swatch picker and sends highlight with the index', async () => {
+            app.techData = { highlight_colors: PALETTE };
+            panel.updateInspector(hlData(-1));
+            app.inspectorEl.querySelector('.inspector-highlight-btn').click();
+
+            const swatches = document.querySelectorAll(
+                '#highlight-picker .highlight-swatch');
+            assert.equal(swatches.length, 16);
+            assert.equal(document.querySelector(
+                '#highlight-picker .highlight-remove'), null,
+                'no Remove when not highlighted');
+
+            swatches[4].click();
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(app._requests[0].type, 'highlight');
+            assert.equal(app._requests[0].group, 4);
+            assert.equal(document.getElementById('highlight-picker'), null,
+                'picker closes after choosing');
+        });
+
+        it('badges the current group and offers Remove highlight', async () => {
+            app.techData = { highlight_colors: PALETTE };
+            panel.updateInspector(hlData(5));
+            const btn = app.inspectorEl.querySelector('.inspector-highlight-btn');
+            assert.ok(btn.style.borderColor, 'badge shows the group color');
+            btn.click();
+
+            const removeBtn = document.querySelector(
+                '#highlight-picker .highlight-remove');
+            assert.ok(removeBtn, 'Remove offered when already in a group');
+            removeBtn.click();
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(app._requests[0].type, 'unhighlight');
+            assert.equal(document.getElementById('highlight-picker'), null);
+        });
+    });
+
     describe('properties rendering', () => {
         it('renders leaf properties', () => {
             panel.updateInspector({

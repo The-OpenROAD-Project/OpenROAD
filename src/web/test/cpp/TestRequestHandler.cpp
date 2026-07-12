@@ -199,6 +199,25 @@ TEST_F(TileHandlerTest, TechReturnsJson)
   EXPECT_NE(json.find("\"has_liberty\""), std::string::npos);
 }
 
+TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
+{
+  WebSocketRequest req;
+  req.id = 8;
+  req.type = WebSocketRequest::kTech;
+
+  auto resp = handler_->handleTile(req, state_);
+  auto root = parseObj(payloadStr(resp));
+  ASSERT_TRUE(root.if_contains("highlight_colors"));
+  const auto& colors = root.at("highlight_colors").as_array();
+  ASSERT_EQ(colors.size(), static_cast<size_t>(gui::kNumHighlightSet));
+  // Group 0 is kGreen with the Qt highlight alpha (100).
+  const auto& first = colors[0].as_array();
+  EXPECT_EQ(first[0].as_int64(), 0);
+  EXPECT_EQ(first[1].as_int64(), 255);
+  EXPECT_EQ(first[2].as_int64(), 0);
+  EXPECT_EQ(first[3].as_int64(), 100);
+}
+
 TEST_F(TileHandlerTest, TileReturnsPng)
 {
   WebSocketRequest req;
@@ -1624,6 +1643,179 @@ TEST_F(TriggerActionTest, StaleSelectionIsDroppedBeforeUse)
   root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
   EXPECT_TRUE(root.if_contains("error"));
   EXPECT_FALSE(state_.selection_stale.load());
+}
+
+//------------------------------------------------------------------------------
+// Highlight-group tests (16 color-coded groups, Qt GUI parity)
+//------------------------------------------------------------------------------
+
+class HighlightGroupTest : public SelectHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SelectHandlerTest::SetUp();
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+  }
+
+  boost::json::object send(WebSocketRequest::Type type,
+                           const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 90;
+    req.type = type;
+    req.json = parseObj(request_json);
+    WebSocketResponse resp;
+    switch (type) {
+      case WebSocketRequest::kHighlight:
+        resp = handler_->handleHighlight(req, state_);
+        break;
+      case WebSocketRequest::kUnhighlight:
+        resp = handler_->handleUnhighlight(req, state_);
+        break;
+      default:
+        resp = handler_->handleClearHighlights(req, state_);
+        break;
+    }
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+
+  size_t groupSize(int group)
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    return state_.highlight_groups[group].size();
+  }
+};
+
+TEST_F(HighlightGroupTest, HighlightAddsToGroupAndReportsIt)
+{
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 4);
+  EXPECT_EQ(groupSize(4), 1u);
+
+  // Overlay shapes carry group 4's palette color (kRed, alpha 100).
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+  const auto& cr = state_.highlight_group_rects[0];
+  EXPECT_TRUE(cr.filled);
+  EXPECT_EQ(cr.rect, fake_current_.bbox);
+  EXPECT_EQ(cr.color.r, 255);
+  EXPECT_EQ(cr.color.g, 0);
+  EXPECT_EQ(cr.color.b, 0);
+  EXPECT_EQ(cr.color.a, 100);
+}
+
+TEST_F(HighlightGroupTest, HighlightMovesBetweenGroupsUniquely)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":7})");
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 7);
+  EXPECT_EQ(groupSize(2), 0u);
+  EXPECT_EQ(groupSize(7), 1u);
+}
+
+TEST_F(HighlightGroupTest, UnhighlightRemovesFromAnyGroup)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":3})");
+  auto root = send(WebSocketRequest::kUnhighlight, R"({})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("highlight_group").as_int64(), -1);
+  EXPECT_EQ(groupSize(3), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+TEST_F(HighlightGroupTest, InvalidGroupIsRejected)
+{
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":16})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("invalid"),
+            std::string::npos);
+  root = send(WebSocketRequest::kHighlight, R"({"group":-1})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+
+  root = send(WebSocketRequest::kClearHighlights, R"({"group":16})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(HighlightGroupTest, HighlightWithNothingInspectedFails)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":0})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("nothing"),
+            std::string::npos);
+}
+
+TEST_F(HighlightGroupTest, ClearOneGroupOrAll)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  {
+    // A second object in another group, inserted directly.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[5].insert(makeFakeSelected(&fake_previous_));
+  }
+
+  auto root = send(WebSocketRequest::kClearHighlights, R"({"group":2})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("cleared").as_int64(), 1);
+  EXPECT_EQ(groupSize(2), 0u);
+  EXPECT_EQ(groupSize(5), 1u);
+
+  // Default group (-1) clears everything left.
+  root = send(WebSocketRequest::kClearHighlights, R"({})");
+  EXPECT_EQ(root.at("cleared").as_int64(), 1);
+  EXPECT_EQ(groupSize(5), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+TEST_F(HighlightGroupTest, InspectPayloadCarriesHighlightGroup)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":9})");
+
+  WebSocketRequest req;
+  req.id = 91;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 9);
+}
+
+TEST_F(HighlightGroupTest, OverlayRendersGroupShapes)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":0})");
+
+  TileHandler tile_handler(gen_);
+  WebSocketRequest req;
+  req.id = 92;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  auto resp = tile_handler.handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(HighlightGroupTest, StalenessClearsHighlightGroups)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":6})");
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 93;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  handler_->handleInspect(req, state_);
+
+  EXPECT_EQ(groupSize(6), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
 }
 
 //------------------------------------------------------------------------------
