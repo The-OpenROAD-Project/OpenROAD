@@ -963,6 +963,115 @@ html, body {
 .or-modal-btn-danger:hover {
     background: #942828;
 }
+.selection-browser {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 12px;
+    color: var(--fg-primary);
+}
+.sb-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: center;
+}
+.sb-tab {
+    padding: 3px 10px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-secondary);
+    cursor: pointer;
+}
+.sb-tab.active {
+    background: var(--accent);
+    color: #fff;
+}
+.sb-tool {
+    margin-left: auto;
+    padding: 3px 8px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    cursor: pointer;
+}
+.sb-tool + .sb-tool {
+    margin-left: 4px;
+}
+.sb-filter {
+    margin: 4px;
+    padding: 3px 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+}
+.sb-truncated {
+    padding: 2px 6px;
+    color: var(--fg-muted);
+    font-style: italic;
+}
+.sb-table-wrap {
+    flex: 1;
+    overflow: auto;
+}
+.sb-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.sb-table th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-panel);
+    text-align: left;
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--border-strong);
+}
+.sb-table th.sb-sortable {
+    cursor: pointer;
+}
+.sb-table td {
+    padding: 2px 6px;
+    border-bottom: 1px solid var(--border-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+.sb-row {
+    cursor: pointer;
+}
+.sb-row:hover {
+    background: var(--bg-hover, var(--bg-context));
+}
+.sb-chip {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    vertical-align: middle;
+}
+.sb-actions {
+    text-align: right;
+}
+.sb-row-btn {
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    padding: 0 3px;
+}
+.sb-row-btn:hover {
+    color: var(--fg-bright);
+}
+.sb-empty {
+    padding: 12px;
+    color: var(--fg-muted);
+}
 #highlight-picker {
     position: fixed;
     background: var(--bg-panel);

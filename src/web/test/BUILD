@@ -143,6 +143,13 @@ js_test(
 )
 
 js_test(
+    name = "selection_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-selection-browser.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "menu_bar_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-menu-bar.js",

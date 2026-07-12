@@ -816,6 +816,26 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleClearHighlights(req, state);
         });
+  d.add("list_selection",
+        WebSocketRequest::kListSelection,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleListSelection(req, state);
+        });
+  d.add("inspect_selection",
+        WebSocketRequest::kInspectSelection,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleInspectSelection(req, state);
+        });
+  d.add("inspect_group",
+        WebSocketRequest::kInspectGroup,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleInspectGroup(req, state);
+        });
+  d.add("deselect",
+        WebSocketRequest::kDeselect,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDeselect(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -1674,6 +1694,249 @@ WebSocketResponse SelectHandler::handleClearHighlights(
 
     root["ok"] = 1;
     root["cleared"] = cleared;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// One selection-browser row: name, type, and (when available) bbox so the
+// client can zoom without a round-trip.  Runs descriptor code — STA lock.
+static boost::json::object browserRow(const gui::Selected& sel)
+{
+  boost::json::object row;
+  row["name"] = sel.getName();
+  row["type"] = sel.getTypeName();
+  odb::Rect bbox;
+  if (sel.getBBox(bbox)) {
+    row["bbox"] = bboxArray(bbox);
+  }
+  return row;
+}
+
+// List the selection set and the 16 highlight groups for the selection
+// browser (Qt GUI parity: selectHighlightWindow's two tabs).  Read-only:
+// does NOT touch state.selectables, so inspector link ids stay valid.
+// Each set is capped so a huge selection cannot hang the panel (the Qt
+// dock renders everything and freezes).
+WebSocketResponse SelectHandler::handleListSelection(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  constexpr size_t kMaxBrowserRows = 1000;
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    // getName/getTypeName run descriptor (STA-touching) code.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    consumeStaleSelection(state);
+
+    bool truncated = false;
+    boost::json::object root;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+
+      boost::json::array selection;
+      for (const auto& sel : state.selection_set) {
+        if (!sel) {
+          continue;
+        }
+        if (selection.size() >= kMaxBrowserRows) {
+          truncated = true;
+          break;
+        }
+        selection.emplace_back(browserRow(sel));
+      }
+      root["selection"] = std::move(selection);
+
+      boost::json::array groups;
+      for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+        boost::json::array members;
+        for (const auto& sel : state.highlight_groups[group]) {
+          if (!sel) {
+            continue;
+          }
+          if (members.size() >= kMaxBrowserRows) {
+            truncated = true;
+            break;
+          }
+          members.emplace_back(browserRow(sel));
+        }
+        groups.emplace_back(std::move(members));
+      }
+      root["groups"] = std::move(groups);
+    }
+
+    root["ok"] = 1;
+    root["truncated"] = truncated;
+    resp.type = WebSocketResponse::kJson;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Shared body of inspect_selection / inspect_group: make the `index`-th
+// member of `browsing_group` (-1 = the selection set, 0-15 = a highlight
+// group) the inspected object and return the full inspect payload.  Rows
+// resolve by stable index into the ordered set — never through
+// state.selectables, which belongs to the last inspect-style response.
+static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
+                                           SessionState& state,
+                                           int browsing_group,
+                                           std::shared_ptr<TclEvaluator>& tcl,
+                                           odb::dbBlock* block)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const int64_t index = req.json.at("index").as_int64();
+
+    std::lock_guard<std::mutex> sta_lock(tcl->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    consumeStaleSelection(state);
+
+    gui::Selected sel;
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    int hl_group = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      const gui::SelectionSet& set
+          = browsing_group < 0 ? state.selection_set
+                               : state.highlight_groups[browsing_group];
+      if (index < 0 || index >= static_cast<int64_t>(set.size())) {
+        resp.type = WebSocketResponse::kJson;
+        boost::json::object root;
+        root["ok"] = 0;
+        root["error"] = "invalid row index";
+        writePayload(resp, root);
+        return resp;
+      }
+      sel = *std::next(set.begin(), index);
+
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      if (state.current_inspected && state.current_inspected != sel) {
+        state.navigation_history.push_back(state.current_inspected);
+      }
+      runDeselectAction(state.current_inspected, sel);
+      state.current_inspected = sel;
+      state.selection_itr = state.selection_set.find(sel);
+      if (browsing_group < 0) {
+        // Selection rows behave like Next/Previous: keep every selected
+        // object highlighted.
+        collectMultiHighlightShapes(
+            state.selection_set, state.highlight_rects, state.highlight_polys);
+      } else {
+        // Group rows behave like a link inspect: highlight the object
+        // itself (its group color is already visible in the overlay).
+        collectHighlightShapes(
+            sel, state.highlight_rects, state.highlight_polys);
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, hl_group);
+    root["ok"] = 1;
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleInspectSelection(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  return inspectBrowserRow(
+      req, state, /*browsing_group=*/-1, tcl_eval_, gen_->getBlock());
+}
+
+WebSocketResponse SelectHandler::handleInspectGroup(const WebSocketRequest& req,
+                                                    SessionState& state)
+{
+  const int64_t group = req.json.at("group").as_int64();
+  if (group < 0 || group >= gui::kNumHighlightSet) {
+    WebSocketResponse resp;
+    resp.id = req.id;
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    root["ok"] = 0;
+    root["error"] = "invalid highlight group";
+    writePayload(resp, root);
+    return resp;
+  }
+  return inspectBrowserRow(
+      req, state, static_cast<int>(group), tcl_eval_, gen_->getBlock());
+}
+
+// Remove the `index`-th selection-set member (Qt GUI parity:
+// SelectHighlightWindow's "De-Select" → MainWindow::removeFromSelected).
+// The inspected object is kept even when it is the removed one, matching
+// Qt (the inspector keeps showing it until the next selection).
+WebSocketResponse SelectHandler::handleDeselect(const WebSocketRequest& req,
+                                                SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const int64_t index = req.json.at("index").as_int64();
+
+    // collectMultiHighlightShapes runs descriptor code — STA lock.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    consumeStaleSelection(state);
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    int sel_count = 0;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (index < 0
+          || index >= static_cast<int64_t>(state.selection_set.size())) {
+        root["ok"] = 0;
+        root["error"] = "invalid row index";
+        writePayload(resp, root);
+        return resp;
+      }
+      state.selection_set.erase(std::next(state.selection_set.begin(), index));
+      // The erased element may have been the cycling position.
+      state.selection_itr = state.selection_set.begin();
+      collectMultiHighlightShapes(
+          state.selection_set, state.highlight_rects, state.highlight_polys);
+      sel_count = static_cast<int>(state.selection_set.size());
+    }
+
+    root["ok"] = 1;
+    root["selection_count"] = static_cast<int64_t>(sel_count);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;

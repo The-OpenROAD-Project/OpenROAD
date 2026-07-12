@@ -1819,6 +1819,175 @@ TEST_F(HighlightGroupTest, StalenessClearsHighlightGroups)
 }
 
 //------------------------------------------------------------------------------
+// Selection-browser tests (list_selection / inspect_* / deselect)
+//------------------------------------------------------------------------------
+
+class SelectionBrowserTest : public HighlightGroupTest
+{
+ protected:
+  boost::json::object listSelection()
+  {
+    WebSocketRequest req;
+    req.id = 95;
+    req.type = WebSocketRequest::kListSelection;
+    req.json = parseObj(R"({})");
+    auto resp = handler_->handleListSelection(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+};
+
+TEST_F(SelectionBrowserTest, ListEmptyState)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  auto root = listSelection();
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection").as_array().size(), 0u);
+  ASSERT_EQ(root.at("groups").as_array().size(),
+            static_cast<size_t>(gui::kNumHighlightSet));
+  EXPECT_FALSE(root.at("truncated").as_bool());
+}
+
+TEST_F(SelectionBrowserTest, ListSelectionAndGroups)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    // populateSelectionSet points current_inspected at whichever object
+    // sorts first (pointer order); pin it so the highlight is
+    // deterministic.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+  }
+  // fake_current_ into group 4 via the real handler.
+  send(WebSocketRequest::kHighlight, R"({"group":4})");
+
+  auto root = listSelection();
+  const auto& selection = root.at("selection").as_array();
+  ASSERT_EQ(selection.size(), 2u);
+  std::set<std::string> names;
+  std::set<std::string> types;
+  for (const auto& row : selection) {
+    names.emplace(row.as_object().at("name").as_string());
+    types.emplace(row.as_object().at("type").as_string());
+    EXPECT_TRUE(row.as_object().if_contains("bbox"));
+  }
+  EXPECT_EQ(names, (std::set<std::string>{"current", "previous"}));
+  EXPECT_EQ(types, (std::set<std::string>{"FakeCurrent", "FakePrevious"}));
+
+  const auto& groups = root.at("groups").as_array();
+  ASSERT_EQ(groups[4].as_array().size(), 1u);
+  EXPECT_EQ(groups[4].as_array()[0].as_object().at("name").as_string(),
+            "current");
+  EXPECT_EQ(groups[0].as_array().size(), 0u);
+}
+
+TEST_F(SelectionBrowserTest, InspectSelectionRowByIndex)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+
+  WebSocketRequest req;
+  req.id = 96;
+  req.type = WebSocketRequest::kInspectSelection;
+  req.json = parseObj(R"({"index":1})");
+  auto root
+      = parseObj(payloadStr(handler_->handleInspectSelection(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  // Row 1 = second element in set order; verify state followed the payload.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(std::string(root.at("name").as_string()),
+              state_.current_inspected.getName());
+    EXPECT_TRUE(state_.selection_itr != state_.selection_set.end());
+  }
+  EXPECT_EQ(root.at("selection_index").as_int64(), 1);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+
+  req.json = parseObj(R"({"index":7})");
+  root = parseObj(payloadStr(handler_->handleInspectSelection(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("row index"),
+            std::string::npos);
+}
+
+TEST_F(SelectionBrowserTest, InspectGroupRowByIndex)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":9})");
+  {
+    // Move inspection elsewhere so the row click has to switch it back.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_previous_);
+  }
+
+  WebSocketRequest req;
+  req.id = 97;
+  req.type = WebSocketRequest::kInspectGroup;
+  req.json = parseObj(R"({"group":9,"index":0})");
+  auto root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("name").as_string(), "current");
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 9);
+
+  req.json = parseObj(R"({"group":16,"index":0})");
+  root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+
+  req.json = parseObj(R"({"group":9,"index":3})");
+  root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(SelectionBrowserTest, DeselectRemovesRowAndRederivesHighlights)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+
+  WebSocketRequest req;
+  req.id = 98;
+  req.type = WebSocketRequest::kDeselect;
+  req.json = parseObj(R"({"index":0})");
+  auto root = parseObj(payloadStr(handler_->handleDeselect(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.selection_set.size(), 1u);
+    EXPECT_TRUE(state_.selection_itr != state_.selection_set.end());
+    // Multi-highlight shapes re-derived from the remaining member.
+    EXPECT_EQ(state_.highlight_rects.size(), 1u);
+  }
+
+  req.json = parseObj(R"({"index":5})");
+  root = parseObj(payloadStr(handler_->handleDeselect(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(SelectionBrowserTest, StalenessClearsBeforeListing)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  state_.selection_stale = true;
+
+  auto root = listSelection();
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection").as_array().size(), 0u);
+  EXPECT_EQ(root.at("groups").as_array()[2].as_array().size(), 0u);
+}
+
+//------------------------------------------------------------------------------
 // DRCHandler tests
 //------------------------------------------------------------------------------
 

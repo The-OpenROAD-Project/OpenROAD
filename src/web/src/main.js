@@ -10,6 +10,7 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
+import { SelectionBrowser } from './selection-browser.js';
 import { isStaticMode } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -397,6 +398,10 @@ function scheduleRefreshOverlay() {
         _overlayRAF = null;
         refreshOverlay();
     });
+    // Every selection/highlight mutation refreshes the overlay, so this
+    // single hook keeps the selection browser in sync (it debounces and
+    // skips fetches while hidden).
+    if (app.selectionBrowser) app.selectionBrowser.scheduleRefresh();
 }
 
 function redrawAllLayers() {
@@ -722,8 +727,8 @@ function createHelpWidget(container) {
 }
 
 function createSelectHighlight(container) {
-    createStubPanel(container, 'Selection',
-        'Selection and highlight browser.');
+    app.selectionBrowser
+        = new SelectionBrowser(container, app, scheduleRefreshOverlay);
 }
 
 function createSchematicWidget(container) {
@@ -815,6 +820,11 @@ const defaultLayoutConfig = {
                     },
                     {
                         type: 'component',
+                        componentType: 'SelectHighlight',
+                        title: 'Select Highlight',
+                    },
+                    {
+                        type: 'component',
                         componentType: 'ClockWidget',
                         title: 'Clock Tree',
                     },
@@ -853,7 +863,8 @@ app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 3;
+// v4: SelectHighlight (selection browser) added to the default layout.
+const LAYOUT_VERSION = 4;
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)

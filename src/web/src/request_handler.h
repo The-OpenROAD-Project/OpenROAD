@@ -126,6 +126,10 @@ struct WebSocketRequest
     kHighlight,
     kUnhighlight,
     kClearHighlights,
+    kListSelection,
+    kInspectSelection,
+    kInspectGroup,
+    kDeselect,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
@@ -288,6 +292,14 @@ class SelectHandler
                                       SessionState& state);
   WebSocketResponse handleClearHighlights(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleListSelection(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleInspectSelection(const WebSocketRequest& req,
+                                           SessionState& state);
+  WebSocketResponse handleInspectGroup(const WebSocketRequest& req,
+                                       SessionState& state);
+  WebSocketResponse handleDeselect(const WebSocketRequest& req,
+                                   SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
