@@ -5,7 +5,7 @@
 // Cookies are used instead of localStorage because the port changes on
 // every restart (port 0 = OS-assigned) and localStorage is origin-scoped.
 
-import { isValidHexColor } from './ui-utils.js';
+import { cssColorToHex, isValidHexColor } from './ui-utils.js';
 
 export function getCookie(name) {
     const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
@@ -34,7 +34,9 @@ export function applyGLTheme(theme) {
 // Optional per-user override of the layout background color (Qt GUI
 // "Background" parity).  Stored as "#rrggbb"; applied as an inline
 // --bg-map override so it survives dark/light theme toggles.  app is
-// passed so the 3D viewer (which caches --bg-map) can re-render.
+// passed so the 3D viewer (which caches --bg-map) can re-render, and
+// so the saved display state (which includes or_bg_color) is pushed to
+// the server here — callers don't need to remember to sync.
 export function setBackgroundColor(color, app) {
     if (!isValidHexColor(color)) {
         return;
@@ -42,6 +44,7 @@ export function setBackgroundColor(color, app) {
     document.documentElement.style.setProperty('--bg-map', color);
     setCookie('or_bg_color', color);
     refreshBackgroundConsumers(app);
+    app.syncDisplayState();
 }
 
 // Drop the override and fall back to the theme's --bg-map value.
@@ -49,6 +52,17 @@ export function resetBackgroundColor(app) {
     document.documentElement.style.removeProperty('--bg-map');
     deleteCookie('or_bg_color');
     refreshBackgroundConsumers(app);
+    app.syncDisplayState();
+}
+
+// The active theme's own --bg-map value in the "#rrggbb" form an
+// <input type="color"> requires (currently #111 in both themes).
+// Must be read with no inline override active — resetBackgroundColor
+// removes it — otherwise the override value is returned instead.
+export function getThemeDefaultBgColor() {
+    return cssColorToHex(
+        getComputedStyle(document.documentElement)
+            .getPropertyValue('--bg-map')) ?? '#111111';
 }
 
 // The layout container reads --bg-map live via CSS, but the 3D viewer

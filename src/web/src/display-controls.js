@@ -5,7 +5,8 @@
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree } from './vis-tree.js';
-import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor }
+import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor,
+         getThemeDefaultBgColor }
     from './theme.js';
 import { isValidHexColor } from './ui-utils.js';
 
@@ -296,6 +297,10 @@ export function populateDisplayControls(app, visibility, selectability,
         const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));
         setCookie('or_hidden_layers',
                   encodeURIComponent(JSON.stringify(hiddenNodes)));
+        // or_hidden_layers is part of the saved display state; the chiplet
+        // mirror below only reaches the sync (via redrawAllLayers) when the
+        // visible-chiplet set changes, so push explicitly (rAF-coalesced).
+        app.syncDisplayState();
 
         // Mirror chiplet toggles into the Chiplets panel.  Toggling
         // wrapper_1 in the Layers tree must also remove its path from
@@ -350,6 +355,9 @@ export function populateDisplayControls(app, visibility, selectability,
             = techData.layers.filter(n => !app.selectableLayers.has(n));
         setCookie('or_nonselectable_layers',
                   encodeURIComponent(JSON.stringify(nonSel)));
+        // Selectability changes rendering of nothing, so no redraw runs;
+        // push the saved display state explicitly.
+        app.syncDisplayState();
     });
     layerSelModel.addFromSpec(layerSelSpec);
 
@@ -939,9 +947,6 @@ export function populateDisplayControls(app, visibility, selectability,
     // opens the native color picker + a reset-to-theme link.  The layout
     // background is the CSS var --bg-map on the Leaflet container, so this
     // is purely client-side (tiles are transparent).
-    // Mirrors the CSS default (--bg-map: #111) in the "#rrggbb" form an
-    // <input type="color"> requires.
-    const DEFAULT_BG_COLOR = '#111111';
     const bgRow = document.createElement('div');
     bgRow.className = 'bg-color-row';
     const bgLabel = document.createElement('span');
@@ -951,7 +956,7 @@ export function populateDisplayControls(app, visibility, selectability,
     bgInput.className = 'bg-color-input';
     bgInput.title = 'Layout background color';
     const savedBg = getCookie('or_bg_color');
-    bgInput.value = isValidHexColor(savedBg) ? savedBg : DEFAULT_BG_COLOR;
+    bgInput.value = isValidHexColor(savedBg) ? savedBg : getThemeDefaultBgColor();
     // 'input' fires on every tick while dragging inside the picker: keep it
     // to the cheap CSS-var preview.  Persistence (cookie), the 3D-viewer
     // re-render and the server sync run once, on 'change' (picker closed).
@@ -960,16 +965,16 @@ export function populateDisplayControls(app, visibility, selectability,
     });
     bgInput.addEventListener('change', () => {
         setBackgroundColor(bgInput.value, app);
-        app.syncDisplayState();
     });
     const bgReset = document.createElement('button');
     bgReset.className = 'bg-color-reset';
     bgReset.textContent = 'Reset';
     bgReset.title = 'Reset background to the theme default';
     bgReset.addEventListener('click', () => {
+        // resetBackgroundColor removes the inline --bg-map override, so
+        // the default read afterwards is the theme's own value.
         resetBackgroundColor(app);
-        bgInput.value = DEFAULT_BG_COLOR;
-        app.syncDisplayState();
+        bgInput.value = getThemeDefaultBgColor();
     });
     bgRow.appendChild(bgLabel);
     bgRow.appendChild(bgInput);

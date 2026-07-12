@@ -3,7 +3,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeScaleBar, niceRoundParts, isValidHexColor }
+import { computeScaleBar, cssColorToHex, niceRoundParts, isValidHexColor }
     from '../../src/ui-utils.js';
 
 describe('isValidHexColor', () => {
@@ -18,6 +18,24 @@ describe('isValidHexColor', () => {
         assert.equal(isValidHexColor(''), false);
         assert.equal(isValidHexColor(null), false);
         assert.equal(isValidHexColor(undefined), false);
+    });
+});
+
+describe('cssColorToHex', () => {
+    it('normalizes the forms a CSS custom property can hold', () => {
+        assert.equal(cssColorToHex('#111'), '#111111');       // 3-digit hex
+        assert.equal(cssColorToHex('#a1B2c3'), '#a1b2c3');    // 6-digit hex
+        assert.equal(cssColorToHex(' #111 '), '#111111');     // padded
+        assert.equal(cssColorToHex('rgb(17, 17, 17)'), '#111111');
+        assert.equal(cssColorToHex('rgb(255,0,10)'), '#ff000a');
+    });
+    it('returns null for unrecognized values', () => {
+        assert.equal(cssColorToHex(''), null);
+        assert.equal(cssColorToHex('red'), null);
+        assert.equal(cssColorToHex('rgba(1, 2, 3, 0.5)'), null);
+        assert.equal(cssColorToHex('rgb(999, 0, 0)'), null);  // out of range
+        assert.equal(cssColorToHex(null), null);
+        assert.equal(cssColorToHex(undefined), null);
     });
 });
 
@@ -87,5 +105,19 @@ describe('computeScaleBar', () => {
     it('falls back to 1000 dbu/micron when unset', () => {
         const sb = computeScaleBar({ targetPx: 60, pxPerDbu: 0.001 });
         assert.equal(sb.label, '50 µm');
+    });
+
+    it('treats a corrupt dbu/micron like the missing-value fallback', () => {
+        // A negative value would otherwise reach niceRoundParts and yield
+        // NaN geometry (Math.log10 of a negative is NaN).
+        const expected = computeScaleBar({ targetPx: 60, pxPerDbu: 0.001 });
+        assert.deepEqual(
+            computeScaleBar(
+                { targetPx: 60, pxPerDbu: 0.001, dbuPerMicron: -2000 }),
+            expected);
+        assert.deepEqual(
+            computeScaleBar(
+                { targetPx: 60, pxPerDbu: 0.001, dbuPerMicron: NaN }),
+            expected);
     });
 });

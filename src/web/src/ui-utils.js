@@ -15,6 +15,26 @@ export function isValidHexColor(s) {
     return typeof s === 'string' && /^#[0-9a-fA-F]{6}$/.test(s);
 }
 
+// Normalize a CSS color to the "#rrggbb" form an <input type="color">
+// requires, or null when unrecognized.  Handles the forms a CSS custom
+// property can hold: "#rgb", "#rrggbb", and "rgb(r, g, b)".
+export function cssColorToHex(s) {
+    if (typeof s !== 'string') return null;
+    const str = s.trim();
+    if (isValidHexColor(str)) return str.toLowerCase();
+    const short = str.match(/^#([0-9a-fA-F]{3})$/);
+    if (short) {
+        return '#' + short[1].split('').map(c => c + c).join('').toLowerCase();
+    }
+    const rgb = str.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/);
+    if (rgb) {
+        const parts = rgb.slice(1).map(Number);
+        if (parts.some(v => v > 255)) return null;
+        return '#' + parts.map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+    return null;
+}
+
 // Wrap fn in a single-flight requestAnimationFrame scheduler: calls made
 // while a frame is already pending coalesce into one invocation of fn.
 export function rafCoalesce(fn) {
@@ -70,7 +90,11 @@ export function computeScaleBar({ targetPx, pxPerDbu, dbuPerMicron, showDbu }) {
         barPx = Math.round(nice.value * pxPerDbu);
         label = String(Math.round(nice.value));
     } else {
-        const dbuPerUm = dbuPerMicron || 1000;
+        // A corrupt (non-finite/non-positive) DBU-per-micron would send
+        // niceRoundParts a negative value and yield NaN geometry; fall
+        // back to the same default used for a missing value.
+        const dbuPerUm = (Number.isFinite(dbuPerMicron) && dbuPerMicron > 0)
+            ? dbuPerMicron : 1000;
         const pxPerUm = pxPerDbu * dbuPerUm;
         const nice = niceRoundParts(targetPx / pxPerUm);
         digit = nice.digit;

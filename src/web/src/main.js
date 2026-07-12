@@ -490,7 +490,7 @@ function serializeDisplayState() {
 // Push the current display state to the server (coalesced via rAF) so the
 // Tcl save_display_controls command has an up-to-date snapshot to write.
 const scheduleSyncDisplayState = rafCoalesce(() => {
-    if (!app.websocketManager) return;
+    if (!app.websocketManager || isStaticMode(app)) return;
     app.websocketManager.request({
         type: 'set_display_state',
         state: serializeDisplayState(),
@@ -1379,6 +1379,11 @@ app.websocketManager.readyPromise.then(async () => {
         if (hasDesign && !boundsData.shapes_ready) {
             document.getElementById('loading-overlay').style.display = 'flex';
         }
+
+        // Seed the server's display-state cache with the cookie-restored
+        // state, so save_display_controls works before any interaction
+        // (otherwise it would warn or write a previous session's state).
+        scheduleSyncDisplayState();
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }
