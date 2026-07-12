@@ -106,6 +106,11 @@ while [ "$#" -gt 0 ]; do
             fi
             cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${1#*=}")
             installPrefix="${1#*=}"
+            # bazel run //:install resolves its argument from the runfiles dir,
+            # not the workspace, so a relative prefix must be made absolute.
+            if [[ "${installPrefix}" != /* ]]; then
+                installPrefix="${PWD}/${installPrefix}"
+            fi
             INSTALL_PREFIX_SET=1
             ;;
         -no-gui)
@@ -351,7 +356,7 @@ if [[ "$useBazel" == "yes" ]]; then
         echo -e "${GREEN}[OK] Found bazel${NC}"
     else
         echo -e "${RED}[ERROR] Required dependency 'bazelisk' (or 'bazel') is missing!${NC}"
-        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh' before building."
+        echo "Please install it using './etc/DependencyInstaller.sh -bazel' (with sudo on Linux) before building."
         exit 1
     fi
 else
