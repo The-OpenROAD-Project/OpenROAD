@@ -20,10 +20,7 @@ cc_library(
         "src",
     ],
     visibility = ["//visibility:private"],
-    deps = [
-        "//src/odb/src/db",
-        "//src/utl",
-    ],
+    deps = ["//src/odb/src/db"],
 )
 
 cc_library(
