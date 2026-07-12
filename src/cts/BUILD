@@ -39,7 +39,6 @@ cc_library(
     name = "cts",
     srcs = [
         "src/Clock.cpp",
-        "src/Clock.h",
         "src/Clustering.cpp",
         "src/CtsOptions.cpp",
         "src/HTreeBuilder.cpp",

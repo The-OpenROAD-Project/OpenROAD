@@ -52,6 +52,7 @@ or_integration_tests(
     multi_height_power_align
     multi_height_rows
     negotiation01
+    negotiation_multi_height
     negotiation_one_site_gap
     negotiation_regions
     obstruction1

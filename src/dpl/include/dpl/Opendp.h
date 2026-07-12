@@ -116,7 +116,8 @@ class Opendp
                          bool run_abacus = false,
                          int site_search_window = -1,
                          int row_search_window = -1,
-                         double drc_penalty = -1.0);
+                         double drc_penalty = -1.0,
+                         bool disable_window_extension = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -374,8 +375,10 @@ class Opendp
   std::unique_ptr<PlacementDRC> drc_engine_;
   Journal* journal_ = nullptr;
 
+  // DPL-wide displacement budget set via detailedPlacement() and honored
+  // by every DPL pass (diamond search, and negotiation).
   int max_displacement_x_ = 0;  // sites
-  int max_displacement_y_ = 0;  // sites
+  int max_displacement_y_ = 0;  // rows
   bool disallow_one_site_gaps_ = false;
   std::vector<Node*> placement_failures_;
 
