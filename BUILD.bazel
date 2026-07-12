@@ -54,6 +54,27 @@ config_setting(
     },
 )
 
+# Opt-in GPU build (see build:gpu in .bazelrc and bazel/gpu/system_gpu.bzl).
+# A string flag rather than a bool leaves room for a "hip" value, mirroring
+# the backend branches in cmake/KokkosBackend.cmake.
+string_flag(
+    name = "gpu",
+    build_setting_default = "none",
+    values = [
+        "none",
+        "cuda",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "gpu_cuda",
+    flag_values = {
+        ":gpu": "cuda",
+    },
+    visibility = ["//visibility:public"],
+)
+
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
     "//src/ant",

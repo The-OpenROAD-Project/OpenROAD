@@ -135,6 +135,20 @@ build:asan --linkopt=-fsanitize=address
 # ASan intercepts cleanly.
 build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
 
+# Opt-in GPU build: compiles the Kokkos-based gpl GPU backends with clang's
+# native CUDA support against system-installed Kokkos/KokkosFFT/CUDA
+# (non-hermetic; see bazel/gpu/system_gpu.bzl). Install prefixes and the
+# CUDA arch are forwarded from the client environment:
+#   KOKKOS_ROOT         (default /usr/local/kokkos-libcxx)
+#   KOKKOS_FFT_ROOT     (default /usr/local/kokkos-fft-libcxx)
+#   OPENROAD_CUDA_PATH  (default /usr/local/cuda-12.8)
+#   OPENROAD_CUDA_ARCH  (default sm_120)
+# The Kokkos install must be built with clang + libc++ to match the
+# hermetic LLVM toolchain (a CMake-flow nvcc/libstdc++ build won't link).
+build:gpu --//:gpu=cuda
+build:gpu --repo_env=KOKKOS_ROOT --repo_env=KOKKOS_FFT_ROOT
+build:gpu --repo_env=OPENROAD_CUDA_PATH --repo_env=OPENROAD_CUDA_ARCH
+
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
 build:profile --copt -g --host_copt -g
