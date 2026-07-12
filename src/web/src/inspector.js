@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Inspector panel — property tree, hover highlights, bbox display.
+// Inspector panel — property tree, hover highlights, bbox display,
+// property editing (server descriptor editors).
 
 import { dbuRectToBounds } from './coordinates.js';
+import { isStaticMode, showConfirmModal, showToast } from './ui-utils.js';
+
+// Delete: trash can (Material "delete")
+const DELETE_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>' +
+    '</svg>';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -67,7 +75,104 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     let lastInspectData = null;
     let pendingInspectId = null;
     let pendingHoverId = null;
+    let editInFlight = false;
     const kMinHoverBoxPixels = 10;
+
+    // Commit a server-backed property edit.  payload is {value} for
+    // string/number/bool editors or {option_index, option_name} for list
+    // editors (the server passes the indexed option's exact value to the
+    // descriptor callback).  The response always carries the authoritative
+    // inspect payload — re-render from it, and surface the reason when the
+    // edit is rejected (the Qt GUI reverts silently).  A refresh push from
+    // the server redraws the tiles for every client, including this one.
+    function sendSetProperty(name, payload) {
+        if (editInFlight) return Promise.resolve();
+        editInFlight = true;
+        return app.websocketManager.request({
+            type: 'set_property', name, use_dbu: app.showDbu, ...payload,
+        }).then(data => {
+            if (!data.ok && data.error) showToast(data.error);
+            updateInspector(data);
+            if (data.ok && data.bbox) pulseHighlight(data.bbox);
+        }).catch(err => {
+            console.error('set_property failed:', err);
+            showToast('Edit failed: ' + err);
+            if (lastInspectData) updateInspector(lastInspectData);
+        }).finally(() => { editInFlight = false; });
+    }
+
+    // Build the <select> for a list/bool editor.  Bool editors mirror the
+    // Qt delegate's synthesized True/False choices and commit the boolean
+    // itself; list editors commit by option index.
+    function buildEditorSelect(prop, data) {
+        const select = document.createElement('select');
+        select.className = 'inspector-editor-select';
+        const options = prop.editor.type === 'bool'
+            ? ['True', 'False'] : (prop.editor.options || []);
+        for (const name of options) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (name === prop.value) opt.selected = true;
+            select.appendChild(opt);
+        }
+        if (!options.includes(prop.value)) {
+            // Current value is not among the choices (e.g. unset); show it
+            // as a disabled placeholder so the select reflects reality.
+            const opt = document.createElement('option');
+            opt.value = prop.value || '';
+            opt.textContent = prop.value || '';
+            opt.selected = true;
+            opt.disabled = true;
+            select.insertBefore(opt, select.firstChild);
+        }
+        select.addEventListener('change', () => {
+            if (prop.editor.type === 'bool') {
+                data.onPropertyEdit(prop, { value: select.value === 'True' });
+            } else {
+                const idx = (prop.editor.options || []).indexOf(select.value);
+                data.onPropertyEdit(prop, {
+                    option_index: idx, option_name: select.value,
+                });
+            }
+        });
+        return select;
+    }
+
+    // Run a descriptor action (e.g. Delete) on the inspected object.
+    // Destructive actions confirm first — there is no undo.
+    async function triggerAction(name, data) {
+        if (editInFlight) return;
+        if (name === 'Delete') {
+            const confirmed = await showConfirmModal({
+                title: 'Delete ' + (data.type || 'object'),
+                message: 'Delete ' + (data.type || 'object') + ' "'
+                    + (data.name || '') + '"? This cannot be undone.',
+                confirmLabel: 'Delete',
+                danger: true,
+            });
+            if (!confirmed) return;
+        }
+        editInFlight = true;
+        try {
+            const resp = await app.websocketManager.request({
+                type: 'trigger_action', name, use_dbu: app.showDbu,
+            });
+            if (!resp.ok && resp.error) showToast(resp.error);
+            updateInspector(resp.properties ? resp : null);
+            if (resp.deleted && app.highlightRect && app.map) {
+                app.map.removeLayer(app.highlightRect);
+                app.highlightRect = null;
+            }
+            clearClientHoverHighlight();
+            refreshOverlay();
+        } catch (err) {
+            console.error('trigger_action failed:', err);
+            showToast('Action failed: ' + err);
+        } finally {
+            editInFlight = false;
+        }
+    }
 
     function showLoading() {
         if (!app.inspectorEl) return;
@@ -472,15 +577,53 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         row.appendChild(nameEl);
         row.appendChild(valEl);
 
-        // Editable property: make value contentEditable with Enter/Escape keys.
-        if (prop.editable && data && data.onPropertyChange) {
+        // Editable property.  Choice editors (list/bool) render a select;
+        // string/number editors (and the client-side ruler path, which
+        // supplies its own onPropertyChange) make the value contentEditable
+        // with Enter/Escape keys.
+        const isChoice = prop.editable && data && data.onPropertyEdit
+            && prop.editor
+            && (prop.editor.type === 'list' || prop.editor.type === 'bool');
+        if (isChoice && prop.value_select_id === undefined) {
+            row.replaceChild(buildEditorSelect(prop, data), valEl);
+        } else if (isChoice) {
+            // The value doubles as a navigation link (e.g. an instance's
+            // Master); keep it clickable and swap in the choice list only
+            // when the pencil button is pressed.
+            const pencil = document.createElement('button');
+            pencil.className = 'inspector-edit-btn';
+            pencil.title = 'Edit ' + prop.name;
+            pencil.textContent = '✎';
+            pencil.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const select = buildEditorSelect(prop, data);
+                row.replaceChild(select, valEl);
+                pencil.remove();
+                select.focus();
+            });
+            row.appendChild(pencil);
+        } else if (prop.editable && data
+                   && (data.onPropertyChange || data.onPropertyEdit)) {
             valEl.contentEditable = true;
             valEl.classList.add('inspector-editable');
             valEl.addEventListener('blur', () => {
                 const newVal = valEl.textContent;
-                if (newVal !== prop.value) {
+                if (newVal === prop.value) return;
+                if (data.onPropertyChange) {  // client-side (ruler)
                     data.onPropertyChange(prop.name, newVal);
+                    return;
                 }
+                if (prop.editor && prop.editor.type === 'number') {
+                    const num = Number(newVal);
+                    if (newVal.trim() === '' || Number.isNaN(num)) {
+                        showToast('Not a number: ' + newVal);
+                        valEl.textContent = prop.value;
+                        return;
+                    }
+                    data.onPropertyEdit(prop, { value: num });
+                    return;
+                }
+                data.onPropertyEdit(prop, { value: newVal });
             });
             valEl.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') { e.preventDefault(); valEl.blur(); }
@@ -523,6 +666,15 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 '<div class="stub-desc">Select an object in the layout to inspect its properties.</div>';
             app.inspectorEl.appendChild(placeholder);
             return;
+        }
+
+        // Server-backed objects get the set_property edit dispatcher;
+        // client-side panels (ruler) supply their own onPropertyChange
+        // and are left alone.
+        if (!data.onPropertyChange && !data.onPropertyEdit
+            && !isStaticMode(app)) {
+            data.onPropertyEdit
+                = (prop, payload) => sendSetProperty(prop.name, payload);
         }
 
         // Toolbar with action buttons
@@ -577,6 +729,23 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 clearBtn.innerHTML = CLEAR_FOCUS_SVG;
                 clearBtn.addEventListener('click', () => clearFocusNets());
                 toolbar.appendChild(clearBtn);
+            }
+
+            // Descriptor actions (server-provided, e.g. Delete).
+            if (Array.isArray(data.actions) && !isStaticMode(app)) {
+                for (const name of data.actions) {
+                    const btn = document.createElement('button');
+                    btn.className = 'inspector-btn inspector-action-btn';
+                    btn.title = name;
+                    if (name === 'Delete') {
+                        btn.innerHTML = DELETE_SVG;
+                        btn.classList.add('inspector-btn-danger');
+                    } else {
+                        btn.textContent = name;
+                    }
+                    btn.addEventListener('click', () => triggerAction(name, data));
+                    toolbar.appendChild(btn);
+                }
             }
 
             app.inspectorEl.appendChild(toolbar);

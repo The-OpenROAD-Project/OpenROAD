@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <any>
+#include <atomic>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -1186,6 +1187,443 @@ TEST_F(SelectHandlerTest, SelectNextRestoresSelectionSetHighlights)
   }
   EXPECT_TRUE(found_current);
   EXPECT_TRUE(found_previous);
+}
+
+//------------------------------------------------------------------------------
+// set_property tests (descriptor editors)
+//------------------------------------------------------------------------------
+
+// FakeDescriptor with descriptor editors, mirroring the shapes found in
+// dbDescriptors.cpp: a string editor (Name), a bool editor (Dont Touch),
+// a number editor (Weight), an option-list editor (Orientation), and a
+// string editor that exercises Property::convert_string (Location).
+class EditableFakeDescriptor : public FakeDescriptor
+{
+ public:
+  enum class EditMode
+  {
+    kAccept,
+    kReject,
+    kThrow
+  };
+  EditMode edit_mode = EditMode::kAccept;
+  mutable std::any last_value;
+  mutable int edit_calls = 0;
+  mutable int location_dbu = -1;
+  mutable bool location_ok = false;
+
+  Properties getProperties(const std::any& object) const override
+  {
+    auto* fake = std::any_cast<FakeInspectable*>(object);
+    return {{"Name", fake->name},
+            {"Dont Touch", false},
+            {"Weight", 42},
+            {"Orientation", std::string("R0")},
+            {"Location", std::string("0")}};
+  }
+
+  // Action test hooks: "Jump" selects jump_target, "Refresh" keeps the
+  // selection, "Explode" throws, "Delete" simulates an odb destroy by
+  // raising *stale_flag (what the session's inDb*Destroy callback does),
+  // "Insert Buffer" must be suppressed, and "deselect" is the reserved
+  // lifecycle callback.
+  FakeInspectable* jump_target = nullptr;
+  std::atomic<bool>* stale_flag = nullptr;
+  mutable int deselect_calls = 0;
+
+  Actions getActions(const std::any& object) const override
+  {
+    Actions actions;
+    actions.push_back({std::string(gui::Descriptor::kDeselectAction),
+                       [this]() -> gui::Selected {
+                         ++deselect_calls;
+                         return {};
+                       }});
+    actions.push_back({"Jump", [this]() -> gui::Selected {
+                         return gui::Selected(jump_target, this);
+                       }});
+    actions.push_back({"Refresh", [this, object]() -> gui::Selected {
+                         return gui::Selected(object, this);
+                       }});
+    actions.push_back({"Explode", []() -> gui::Selected {
+                         throw std::runtime_error("action exploded");
+                       }});
+    actions.push_back({"Insert Buffer", []() -> gui::Selected { return {}; }});
+    actions.push_back({"Delete", [this]() -> gui::Selected {
+                         if (stale_flag != nullptr) {
+                           *stale_flag = true;
+                         }
+                         return {};
+                       }});
+    return actions;
+  }
+
+  Editors getEditors(const std::any& object) const override
+  {
+    auto* fake = std::any_cast<FakeInspectable*>(object);
+    Editors editors;
+    editors.emplace("Name", makeEditor([this, fake](const std::any& value) {
+                      return commit(value, [&] {
+                        fake->name = std::any_cast<std::string>(value);
+                      });
+                    }));
+    editors.emplace("Dont Touch", makeEditor([this](const std::any& value) {
+                      return commit(value, [&] { std::any_cast<bool>(value); });
+                    }));
+    editors.emplace("Weight", makeEditor([this](const std::any& value) {
+                      return commit(value,
+                                    [&] { std::any_cast<double>(value); });
+                    }));
+    editors.emplace(
+        "Orientation",
+        makeEditor([this](const std::any& value) { return commit(value); },
+                   {{"R0", 0}, {"R90", 90}, {"R180", 180}}));
+    editors.emplace(
+        "Location", makeEditor([this](const std::any& value) {
+          return commit(value, [&] {
+            location_dbu = gui::Descriptor::Property::convert_string(
+                std::any_cast<std::string>(value), &location_ok);
+          });
+        }));
+    return editors;
+  }
+
+ private:
+  bool commit(const std::any& value,
+              const std::function<void()>& apply = nullptr) const
+  {
+    ++edit_calls;
+    last_value = value;
+    if (edit_mode == EditMode::kThrow) {
+      throw std::runtime_error("edit exploded");
+    }
+    if (edit_mode == EditMode::kReject) {
+      return false;
+    }
+    if (apply) {
+      apply();
+    }
+    return true;
+  }
+};
+
+class SetPropertyTest : public SelectHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SelectHandlerTest::SetUp();
+    handler_->setBroadcastFn(
+        [this](const std::string& json) { broadcasts_.push_back(json); });
+    editable_descriptor_.jump_target = &fake_previous_;
+    editable_descriptor_.stale_flag = &state_.selection_stale;
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected
+        = gui::Selected(&fake_current_, &editable_descriptor_);
+  }
+
+  boost::json::object setProperty(const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 77;
+    req.type = WebSocketRequest::kSetProperty;
+    req.json = parseObj(request_json);
+    auto resp = handler_->handleSetProperty(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+
+  EditableFakeDescriptor editable_descriptor_;
+  std::vector<std::string> broadcasts_;
+};
+
+TEST_F(SetPropertyTest, InspectPayloadCarriesEditors)
+{
+  WebSocketRequest req;
+  req.id = 70;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+
+  std::map<std::string, boost::json::object> by_name;
+  for (const auto& p : root.at("properties").as_array()) {
+    const auto& obj = p.as_object();
+    by_name[std::string(obj.at("name").as_string())] = obj;
+  }
+  ASSERT_TRUE(by_name.count("Name"));
+  EXPECT_TRUE(by_name["Name"].at("editable").as_bool());
+  EXPECT_EQ(by_name["Name"].at("editor").as_object().at("type").as_string(),
+            "string");
+  EXPECT_EQ(
+      by_name["Dont Touch"].at("editor").as_object().at("type").as_string(),
+      "bool");
+  EXPECT_EQ(by_name["Weight"].at("editor").as_object().at("type").as_string(),
+            "number");
+  const auto& orient = by_name["Orientation"].at("editor").as_object();
+  EXPECT_EQ(orient.at("type").as_string(), "list");
+  const auto& options = orient.at("options").as_array();
+  ASSERT_EQ(options.size(), 3u);
+  EXPECT_EQ(options[1].as_string(), "R90");
+}
+
+TEST_F(SetPropertyTest, StringEditAcceptedAndBroadcast)
+{
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(fake_current_.name, "renamed");
+  // Payload is rebuilt after the edit, reflecting the new value.
+  EXPECT_EQ(root.at("name").as_string(), "renamed");
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+}
+
+TEST_F(SetPropertyTest, RejectedEditReportsErrorWithoutBroadcast)
+{
+  editable_descriptor_.edit_mode = EditableFakeDescriptor::EditMode::kReject;
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("rejected"),
+            std::string::npos);
+  EXPECT_EQ(fake_current_.name, "current");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(SetPropertyTest, ThrowingEditIsContained)
+{
+  editable_descriptor_.edit_mode = EditableFakeDescriptor::EditMode::kThrow;
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_EQ(root.at("error").as_string(), "edit exploded");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(SetPropertyTest, ListEditCommitsOptionValueByIndex)
+{
+  auto root = setProperty(
+      R"({"name":"Orientation","option_index":1,"option_name":"R90"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  // The callback must receive the option's exact std::any (int 90 here).
+  EXPECT_EQ(std::any_cast<int>(editable_descriptor_.last_value), 90);
+}
+
+TEST_F(SetPropertyTest, ListEditRejectsBadIndexAndStaleName)
+{
+  auto root = setProperty(
+      R"({"name":"Orientation","option_index":7,"option_name":"R270"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("option index"),
+            std::string::npos);
+
+  root = setProperty(
+      R"({"name":"Orientation","option_index":1,"option_name":"R180"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("options changed"),
+            std::string::npos);
+  EXPECT_EQ(editable_descriptor_.edit_calls, 0);
+}
+
+TEST_F(SetPropertyTest, BoolAndNumberMarshalling)
+{
+  setProperty(R"({"name":"Dont Touch","value":true})");
+  EXPECT_TRUE(std::any_cast<bool>(editable_descriptor_.last_value));
+
+  // JSON integers arrive at the callback as double (Qt delegate parity).
+  setProperty(R"({"name":"Weight","value":5})");
+  EXPECT_DOUBLE_EQ(std::any_cast<double>(editable_descriptor_.last_value), 5.0);
+}
+
+TEST_F(SetPropertyTest, UnknownPropertyOrNothingInspected)
+{
+  auto root = setProperty(R"({"name":"Nope","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("not editable"),
+            std::string::npos);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  root = setProperty(R"({"name":"Name","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("nothing"),
+            std::string::npos);
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+// The scoped unit format must install a working Property::convert_string
+// for the duration of the edit: in micron mode "1.5" is 1.5 µm (Nangate45:
+// 2000 DBU/µm → 3000); in DBU mode only integers parse.  The library
+// default (restored afterwards) returns 0 without setting the ok flag.
+TEST_F(SetPropertyTest, ConvertStringInstalledDuringEdit)
+{
+  auto root = setProperty(R"({"name":"Location","value":"1.5"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 3000);
+
+  root = setProperty(
+      R"({"name":"Location","value":"12.34 µm","use_dbu":false})");
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 24680);
+
+  root = setProperty(R"({"name":"Location","value":"1.5","use_dbu":true})");
+  EXPECT_FALSE(editable_descriptor_.location_ok);
+  root = setProperty(R"({"name":"Location","value":"150","use_dbu":true})");
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 150);
+
+  // Restored default after the handler: returns 0, never touches ok.
+  bool ok = false;
+  EXPECT_EQ(gui::Descriptor::Property::convert_string("5", &ok), 0);
+  EXPECT_FALSE(ok);
+}
+
+//------------------------------------------------------------------------------
+// trigger_action tests (descriptor actions)
+//------------------------------------------------------------------------------
+
+class TriggerActionTest : public SetPropertyTest
+{
+ protected:
+  boost::json::object triggerAction(const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 88;
+    req.type = WebSocketRequest::kTriggerAction;
+    req.json = parseObj(request_json);
+    auto resp = handler_->handleTriggerAction(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+};
+
+TEST_F(TriggerActionTest, PayloadFiltersSuppressedAndReservedActions)
+{
+  WebSocketRequest req;
+  req.id = 80;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+
+  ASSERT_TRUE(root.if_contains("actions"));
+  std::set<std::string> names;
+  for (const auto& a : root.at("actions").as_array()) {
+    names.emplace(a.as_string());
+  }
+  EXPECT_EQ(names,
+            (std::set<std::string>{"Jump", "Refresh", "Explode", "Delete"}));
+  // "Insert Buffer" (Qt dialog), "deselect" (reserved), and the universal
+  // "Zoom to" (client-side button exists) must not be offered.
+}
+
+TEST_F(TriggerActionTest, ActionChangingSelectionUpdatesStateAndHistory)
+{
+  auto root = triggerAction(R"({"name":"Jump"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("deleted").as_int64(), 0);
+  EXPECT_EQ(root.at("name").as_string(), "previous");
+  EXPECT_EQ(root.at("can_navigate_back").as_int64(), 1);
+  // The old object's reserved deselect callback ran.
+  EXPECT_EQ(editable_descriptor_.deselect_calls, 1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_TRUE(state_.current_inspected
+                == gui::Selected(&fake_previous_, &editable_descriptor_));
+    ASSERT_EQ(state_.navigation_history.size(), 1u);
+  }
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+}
+
+TEST_F(TriggerActionTest, ActionKeepingSelectionRefreshesPayload)
+{
+  auto root = triggerAction(R"({"name":"Refresh"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("name").as_string(), "current");
+  EXPECT_EQ(editable_descriptor_.deselect_calls, 0);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.current_inspected
+              == gui::Selected(&fake_current_, &editable_descriptor_));
+}
+
+TEST_F(TriggerActionTest, DeleteClearsSelectionStateAndReportsDeleted)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.navigation_history.emplace_back(&fake_previous_,
+                                           &editable_descriptor_);
+    state_.selection_set.insert(state_.current_inspected);
+    state_.selection_itr = state_.selection_set.begin();
+    state_.highlight_rects.push_back(fake_current_.bbox);
+  }
+
+  auto root = triggerAction(R"({"name":"Delete"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("deleted").as_int64(), 1);
+  EXPECT_EQ(root.at("can_navigate_back").as_int64(), 0);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 0);
+  EXPECT_FALSE(root.if_contains("properties"));
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.current_inspected);
+    EXPECT_TRUE(state_.navigation_history.empty());
+    EXPECT_TRUE(state_.selection_set.empty());
+    EXPECT_TRUE(state_.highlight_rects.empty());
+  }
+  EXPECT_FALSE(state_.selection_stale.load());
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+}
+
+TEST_F(TriggerActionTest, ThrowingActionIsContained)
+{
+  auto root = triggerAction(R"({"name":"Explode"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_EQ(root.at("error").as_string(), "action exploded");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(TriggerActionTest, UnknownSuppressedAndReservedNamesAreRefused)
+{
+  auto root = triggerAction(R"({"name":"Nope"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("no longer"),
+            std::string::npos);
+
+  root = triggerAction(R"({"name":"Insert Buffer"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("not available"),
+            std::string::npos);
+
+  root = triggerAction(R"({"name":"deselect"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(TriggerActionTest, StaleSelectionIsDroppedBeforeUse)
+{
+  // Simulate a destroy from another session / a Tcl command.
+  state_.selection_stale = true;
+
+  // set_property refuses with a specific reason.
+  auto root = setProperty(R"({"name":"Name","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("invalidated"),
+            std::string::npos);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.current_inspected);
+  }
+
+  // Inspect of the (now cleared) state degrades to the empty payload.
+  state_.selection_stale = true;
+  WebSocketRequest req;
+  req.id = 81;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+  EXPECT_TRUE(root.if_contains("error"));
+  EXPECT_FALSE(state_.selection_stale.load());
 }
 
 //------------------------------------------------------------------------------

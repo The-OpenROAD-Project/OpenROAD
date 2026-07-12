@@ -9,6 +9,78 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Transient notice near the bottom of the viewport (e.g. why a property
+// edit was rejected).  Repeated calls replace the current message and
+// restart the timer.
+let toastTimer = null;
+export function showToast(message, durationMs = 4000) {
+    let toast = document.getElementById('or-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'or-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('visible');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('visible'), durationMs);
+    return toast;
+}
+
+// Themed confirmation dialog.  Resolves true when confirmed, false when
+// cancelled (button, Escape, or clicking outside the box).  Focus starts
+// on Cancel — the safe choice for destructive confirmations.
+export function showConfirmModal({ title, message, confirmLabel = 'OK',
+                                   danger = false }) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'or-modal-overlay';
+        const box = document.createElement('div');
+        box.className = 'or-modal';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'or-modal-title';
+        titleEl.textContent = title;
+        const msgEl = document.createElement('div');
+        msgEl.className = 'or-modal-message';
+        msgEl.textContent = message;
+
+        const buttons = document.createElement('div');
+        buttons.className = 'or-modal-buttons';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'or-modal-btn';
+        cancelBtn.textContent = 'Cancel';
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'or-modal-btn'
+            + (danger ? ' or-modal-btn-danger' : '');
+        confirmBtn.textContent = confirmLabel;
+
+        const close = (result) => {
+            document.removeEventListener('keydown', onKey, true);
+            overlay.remove();
+            resolve(result);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.stopPropagation(); close(false); }
+        };
+        cancelBtn.addEventListener('click', () => close(false));
+        confirmBtn.addEventListener('click', () => close(true));
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close(false);
+        });
+        document.addEventListener('keydown', onKey, true);
+
+        buttons.appendChild(cancelBtn);
+        buttons.appendChild(confirmBtn);
+        box.appendChild(titleEl);
+        box.appendChild(msgEl);
+        box.appendChild(buttons);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        cancelBtn.focus();
+    });
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

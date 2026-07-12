@@ -278,6 +278,229 @@ describe('Inspector focus nets', () => {
         });
     });
 
+    describe('property editing', () => {
+        function editableData(props) {
+            return {
+                type: 'Inst',
+                name: 'buf1',
+                bbox: [0, 0, 100, 100],
+                properties: props,
+            };
+        }
+
+        function blurWith(el, text) {
+            el.textContent = text;
+            el.dispatchEvent(new dom.window.Event('blur'));
+        }
+
+        it('string editor commits via set_property on blur', async () => {
+            panel.updateInspector(editableData([
+                { name: 'Name', value: 'buf1', editable: true,
+                  editor: { type: 'string' } },
+            ]));
+            const valEl = app.inspectorEl.querySelector('.inspector-editable');
+            assert.ok(valEl, 'value should be contentEditable');
+            blurWith(valEl, 'renamed');
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.equal(app._requests.length, 1);
+            assert.equal(app._requests[0].type, 'set_property');
+            assert.equal(app._requests[0].name, 'Name');
+            assert.equal(app._requests[0].value, 'renamed');
+        });
+
+        it('number editor coerces and rejects non-numbers locally', async () => {
+            panel.updateInspector(editableData([
+                { name: 'Weight', value: '42', editable: true,
+                  editor: { type: 'number' } },
+            ]));
+            const valEl = app.inspectorEl.querySelector('.inspector-editable');
+            blurWith(valEl, 'abc');
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(app._requests.length, 0, 'NaN must not reach the server');
+            assert.equal(valEl.textContent, '42', 'reverts to old value');
+
+            blurWith(valEl, '5');
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(app._requests.length, 1);
+            assert.strictEqual(app._requests[0].value, 5);
+        });
+
+        it('list editor renders a select and commits by option index', async () => {
+            panel.updateInspector(editableData([
+                { name: 'Orientation', value: 'R0', editable: true,
+                  editor: { type: 'list', options: ['R0', 'R90', 'R180'] } },
+            ]));
+            const select = app.inspectorEl.querySelector('.inspector-editor-select');
+            assert.ok(select, 'list editor should render a select');
+            assert.equal(select.value, 'R0');
+            select.value = 'R90';
+            select.dispatchEvent(new dom.window.Event('change'));
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.equal(app._requests[0].type, 'set_property');
+            assert.equal(app._requests[0].option_index, 1);
+            assert.equal(app._requests[0].option_name, 'R90');
+            assert.equal(app._requests[0].value, undefined);
+        });
+
+        it('bool editor renders True/False and commits a boolean', async () => {
+            panel.updateInspector(editableData([
+                { name: 'Dont Touch', value: 'False', editable: true,
+                  editor: { type: 'bool' } },
+            ]));
+            const select = app.inspectorEl.querySelector('.inspector-editor-select');
+            assert.ok(select);
+            select.value = 'True';
+            select.dispatchEvent(new dom.window.Event('change'));
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.strictEqual(app._requests[0].value, true);
+            assert.equal(app._requests[0].option_index, undefined);
+        });
+
+        it('linked editable value keeps the link and offers a pencil', () => {
+            panel.updateInspector(editableData([
+                { name: 'Master', value: 'BUF_X1', value_select_id: 3,
+                  editable: true,
+                  editor: { type: 'list', options: ['BUF_X1', 'BUF_X2'] } },
+            ]));
+            const link = app.inspectorEl.querySelector('.inspector-prop-value');
+            assert.ok(link.classList.contains('inspector-link'),
+                      'value stays navigable');
+            const pencil = app.inspectorEl.querySelector('.inspector-edit-btn');
+            assert.ok(pencil, 'pencil button should be present');
+            pencil.click();
+            const select = app.inspectorEl.querySelector('.inspector-editor-select');
+            assert.ok(select, 'pencil swaps in the select');
+        });
+
+        it('rejected edit shows a toast and re-renders from the response', async () => {
+            app.websocketManager.request = msg => {
+                app._requests.push(msg);
+                const p = Promise.resolve({
+                    ok: 0, error: 'value rejected for property: Name',
+                    ...editableData([
+                        { name: 'Name', value: 'buf1', editable: true,
+                          editor: { type: 'string' } },
+                    ]),
+                });
+                p.requestId = 1;
+                return p;
+            };
+            panel.updateInspector(editableData([
+                { name: 'Name', value: 'buf1', editable: true,
+                  editor: { type: 'string' } },
+            ]));
+            blurWith(app.inspectorEl.querySelector('.inspector-editable'),
+                     'bad name');
+            await new Promise(r => setTimeout(r, 0));
+
+            const toast = document.getElementById('or-toast');
+            assert.ok(toast, 'toast should exist');
+            assert.ok(toast.classList.contains('visible'));
+            assert.ok(toast.textContent.includes('rejected'));
+            const valEl = app.inspectorEl.querySelector('.inspector-editable');
+            assert.equal(valEl.textContent, 'buf1', 'old value restored');
+
+            // Reset the 4s auto-hide timer so the test runner exits promptly.
+            const { showToast } = await import('../../src/ui-utils.js');
+            showToast('', 1);
+        });
+
+        it('client-side editors (ruler) keep their own onPropertyChange', async () => {
+            let changed = null;
+            panel.updateInspector({
+                type: 'Ruler',
+                name: 'r1',
+                properties: [
+                    { name: 'Label', value: 'x', editable: true },
+                ],
+                onPropertyChange: (name, val) => { changed = [name, val]; },
+            });
+            blurWith(app.inspectorEl.querySelector('.inspector-editable'),
+                     'new label');
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.deepEqual(changed, ['Label', 'new label']);
+            assert.equal(app._requests.length, 0, 'no set_property sent');
+        });
+    });
+
+    describe('descriptor actions', () => {
+        function actionData(actions) {
+            return {
+                type: 'Inst',
+                name: 'buf1',
+                bbox: [0, 0, 100, 100],
+                properties: [{ name: 'Name', value: 'buf1' }],
+                actions,
+            };
+        }
+
+        it('renders one toolbar button per action', () => {
+            panel.updateInspector(actionData(['Delete', 'Jump']));
+            const btns = app.inspectorEl.querySelectorAll('.inspector-action-btn');
+            assert.equal(btns.length, 2);
+            assert.equal(btns[0].title, 'Delete');
+            assert.equal(btns[1].textContent, 'Jump');
+        });
+
+        it('Delete asks for confirmation and sends trigger_action', async () => {
+            panel.updateInspector(actionData(['Delete']));
+            const btn = app.inspectorEl.querySelector('.inspector-action-btn');
+            btn.click();
+            await new Promise(r => setTimeout(r, 0));
+
+            const modal = document.querySelector('.or-modal');
+            assert.ok(modal, 'confirmation modal should open');
+            assert.ok(modal.textContent.includes('cannot be undone'));
+            assert.equal(app._requests.length, 0, 'nothing sent before confirm');
+
+            const confirmBtn = modal.querySelector('.or-modal-btn-danger');
+            confirmBtn.click();
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.equal(app._requests.length, 1);
+            assert.equal(app._requests[0].type, 'trigger_action');
+            assert.equal(app._requests[0].name, 'Delete');
+            assert.equal(document.querySelector('.or-modal'), null,
+                         'modal closes');
+        });
+
+        it('cancelling the confirmation sends nothing', async () => {
+            panel.updateInspector(actionData(['Delete']));
+            app.inspectorEl.querySelector('.inspector-action-btn').click();
+            await new Promise(r => setTimeout(r, 0));
+
+            const modal = document.querySelector('.or-modal');
+            const cancelBtn = modal.querySelector('.or-modal-btn');
+            cancelBtn.click();
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.equal(app._requests.length, 0);
+            assert.equal(document.querySelector('.or-modal'), null);
+        });
+
+        it('non-destructive actions send immediately and clear on empty payload', async () => {
+            app.websocketManager.request = msg => {
+                app._requests.push(msg);
+                const p = Promise.resolve({ ok: 1, deleted: 0,
+                                            can_navigate_back: 0 });
+                p.requestId = 1;
+                return p;
+            };
+            panel.updateInspector(actionData(['Jump']));
+            app.inspectorEl.querySelector('.inspector-action-btn').click();
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.equal(app._requests[0].type, 'trigger_action');
+            assert.equal(app._requests[0].name, 'Jump');
+            const stub = app.inspectorEl.querySelector('.stub-panel');
+            assert.ok(stub, 'empty payload clears the inspector');
+        });
+    });
+
     describe('properties rendering', () => {
         it('renders leaf properties', () => {
             panel.updateInspector({

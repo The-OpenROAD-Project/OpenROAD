@@ -133,19 +133,28 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 
 }  // namespace
 
-// RAII helper: temporarily sets Descriptor::Property::convert_dbu to a
-// micron-aware formatter (matching the Qt GUI's default) for the lifetime
-// of the scope.  When `use_dbu` is true the default identity formatter is
-// kept so that raw DBU integers are emitted.  Must be held while the
-// sta_lock mutex is held — the global static is not otherwise thread-safe.
+// RAII helper: temporarily sets Descriptor::Property::convert_dbu /
+// convert_string to micron-aware converters (matching the Qt GUI's
+// defaults) for the lifetime of the scope.  When `use_dbu` is true a
+// raw-DBU identity formatter and integer parser are installed instead.
+// convert_string must always be replaced: the library default returns 0
+// without setting the ok flag, so descriptor editors that parse
+// coordinates (e.g. dbInst X/Y) would silently reject every edit.
+// Must be held while the sta_lock mutex is held — the global statics are
+// not otherwise thread-safe.
 class [[nodiscard]] ScopedDbuFormat
 {
  public:
   ScopedDbuFormat(odb::dbBlock* block, bool use_dbu)
-      : saved_(gui::Descriptor::Property::convert_dbu)
+      : saved_to_string_(gui::Descriptor::Property::convert_dbu),
+        saved_to_dbu_(gui::Descriptor::Property::convert_string)
   {
     if (use_dbu || !block) {
-      return;  // keep default (raw DBU)
+      gui::Descriptor::Property::convert_string
+          = [](const std::string& value, bool* ok) {
+              return parseValue(value, /*dbu_per_micron=*/0.0, ok);
+            };
+      return;  // keep default formatter (raw DBU)
     }
     const double dbu_per_micron = block->getDbUnitsPerMicron();
     const int precision
@@ -159,13 +168,56 @@ class [[nodiscard]] ScopedDbuFormat
             }
             return str;
           };
+    gui::Descriptor::Property::convert_string
+        = [dbu_per_micron](const std::string& value, bool* ok) {
+            return parseValue(value, dbu_per_micron, ok);
+          };
   }
-  ~ScopedDbuFormat() { gui::Descriptor::Property::convert_dbu = saved_; }
+  ~ScopedDbuFormat()
+  {
+    gui::Descriptor::Property::convert_dbu = saved_to_string_;
+    gui::Descriptor::Property::convert_string = saved_to_dbu_;
+  }
   ScopedDbuFormat(const ScopedDbuFormat&) = delete;
   ScopedDbuFormat& operator=(const ScopedDbuFormat&) = delete;
 
  private:
-  gui::DBUToString saved_;
+  // Mirrors MainWindow::convertStringToDBU: strip a trailing unit
+  // (anything after a space, 'u', or UTF-8 'µ'/'μ'), then parse as an
+  // integer DBU count (dbu_per_micron == 0) or a micron double.
+  static int parseValue(const std::string& value,
+                        double dbu_per_micron,
+                        bool* ok)
+  {
+    std::string text = value;
+    for (const std::string_view sep :
+         {std::string_view(" "),
+          std::string_view("u"),
+          std::string_view("\xC2\xB5"),     // µ (micro sign)
+          std::string_view("\xCE\xBC")}) {  // μ (greek mu)
+      if (const auto pos = text.find(sep); pos != std::string::npos) {
+        text = text.substr(0, pos);
+        break;
+      }
+    }
+    try {
+      std::size_t consumed = 0;
+      if (dbu_per_micron <= 0.0) {
+        const int dbu = std::stoi(text, &consumed);
+        *ok = consumed == text.size();
+        return *ok ? dbu : 0;
+      }
+      const double microns = std::stod(text, &consumed);
+      *ok = consumed == text.size();
+      return *ok ? static_cast<int>(std::lround(microns * dbu_per_micron)) : 0;
+    } catch (const std::exception&) {
+      *ok = false;
+      return 0;
+    }
+  }
+
+  gui::DBUToString saved_to_string_;
+  gui::StringToDBU saved_to_dbu_;
 };
 
 // Store a Selected in the clickables vector and return its index.
@@ -196,12 +248,52 @@ static void serializeAnyValue(boost::json::object& out,
   out[field_name] = gui::Descriptor::Property::toString(value);
 }
 
+// Describe a property's editor for the client.  Mirrors the Qt
+// EditorItemDelegate rules: a non-empty options list renders as a combo
+// ("list", committed by option index); a bool value renders as a
+// True/False choice; otherwise the input kind is inferred from the
+// property's current value type (getEditorType).
+static boost::json::object serializeEditor(
+    const gui::Descriptor::Editor& editor,
+    const std::any& value)
+{
+  boost::json::object o;
+  if (!editor.options.empty()) {
+    o["type"] = "list";
+    boost::json::array options;
+    options.reserve(editor.options.size());
+    for (const auto& option : editor.options) {
+      options.emplace_back(option.name);
+    }
+    o["options"] = std::move(options);
+    return o;
+  }
+  if (std::any_cast<bool>(&value) != nullptr) {
+    o["type"] = "bool";
+  } else if (std::any_cast<int>(&value) != nullptr
+             || std::any_cast<unsigned int>(&value) != nullptr
+             || std::any_cast<double>(&value) != nullptr
+             || std::any_cast<float>(&value) != nullptr) {
+    o["type"] = "number";
+  } else {
+    o["type"] = "string";
+  }
+  return o;
+}
+
 static boost::json::object serializeProperty(
     const gui::Descriptor::Property& prop,
-    std::vector<gui::Selected>& selectables)
+    std::vector<gui::Selected>& selectables,
+    const gui::Descriptor::Editors* editors = nullptr)
 {
   boost::json::object o;
   o["name"] = prop.name;
+  if (editors != nullptr) {
+    if (const auto it = editors->find(prop.name); it != editors->end()) {
+      o["editable"] = true;
+      o["editor"] = serializeEditor(it->second, prop.value);
+    }
+  }
 
   if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
     boost::json::array children;
@@ -281,6 +373,79 @@ static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
   }
 }
 
+// Descriptor actions that must not be surfaced in the web client:
+// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (guarded by
+//   ENABLE_QT in dbDescriptors.cpp); in a Qt-enabled binary running in
+//   web mode triggering them would crash — there is no QApplication.
+// - Focus / route-guide / zoom actions call global gui::Gui methods that
+//   are stub no-ops in web builds; the web inspector already provides
+//   per-session equivalents in its toolbar.
+// - Tracks / timing-cone / timing actions have no web renderer yet
+//   (follow-ups); their gui::Gui calls are stub no-ops.
+// Any new descriptor action not listed here appears automatically.
+static const std::set<std::string, std::less<>> kSuppressedActions = {
+    "Insert Buffer",
+    "Copy to layer",
+    "Focus",
+    "De-focus",
+    "Show Route Guides",
+    "Hide Route Guides",
+    "Show Tracks",
+    "Hide Tracks",
+    "Fanin Cone",
+    "Fanout Cone",
+    "Timing",
+    "Zoom to",
+};
+
+// Run the previously inspected object's reserved "deselect" action (a
+// cleanup callback, e.g. tearing down a timing cone) when inspection
+// moves to a different object.  Mirrors Qt's Inspector::inspect().
+// Must be called under the STA lock, before current_inspected is
+// overwritten, and never with a stale (destroyed) old_sel.
+static void runDeselectAction(const gui::Selected& old_sel,
+                              const gui::Selected& new_sel)
+{
+  if (!old_sel || old_sel == new_sel) {
+    return;
+  }
+  try {
+    // getDescriptorActions(): Selected::getActions() lives in the full
+    // gui library (its "Zoom to" needs Gui::get()); the web only links
+    // gui_descriptors and blocklists "Zoom to" anyway.
+    for (const auto& action : old_sel.getDescriptorActions()) {
+      if (action.name == gui::Descriptor::kDeselectAction) {
+        action.callback();
+        return;
+      }
+    }
+  } catch (const std::exception&) {
+    // Cleanup is best-effort; never let it break the request.
+  }
+}
+
+bool consumeStaleSelection(SessionState& state)
+{
+  if (!state.selection_stale.exchange(false)) {
+    return false;
+  }
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    state.current_inspected = gui::Selected();
+    state.navigation_history.clear();
+    state.selection_set.clear();
+    state.selection_itr = state.selection_set.end();
+    state.highlight_rects.clear();
+    state.highlight_polys.clear();
+    state.hover_rects.clear();
+  }
+  {
+    std::lock_guard<std::mutex> lock(state.selectables_mutex);
+    state.selectables.clear();
+  }
+  return true;
+}
+
 static void writeInspectPayload(boost::json::object& o,
                                 const gui::Selected& sel,
                                 std::vector<gui::Selected>& new_selectables,
@@ -295,12 +460,25 @@ static void writeInspectPayload(boost::json::object& o,
   auto props = sel.getProperties();
   o["name"] = sel.getName();
   o["type"] = sel.getTypeName();
+  const gui::Descriptor::Editors editors = sel.getEditors();
   boost::json::array prop_arr;
   prop_arr.reserve(props.size());
   for (const auto& prop : props) {
-    prop_arr.emplace_back(serializeProperty(prop, new_selectables));
+    prop_arr.emplace_back(serializeProperty(prop, new_selectables, &editors));
   }
   o["properties"] = std::move(prop_arr);
+
+  boost::json::array actions;
+  for (const auto& action : sel.getDescriptorActions()) {
+    if (action.name == gui::Descriptor::kDeselectAction
+        || kSuppressedActions.find(action.name) != kSuppressedActions.end()) {
+      continue;
+    }
+    actions.emplace_back(action.name);
+  }
+  if (!actions.empty()) {
+    o["actions"] = std::move(actions);
+  }
 
   odb::Rect bbox;
   if (sel.getBBox(bbox)) {
@@ -536,6 +714,16 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectPrev(req, state);
         });
+  d.add("set_property",
+        WebSocketRequest::kSetProperty,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetProperty(req, state);
+        });
+  d.add("trigger_action",
+        WebSocketRequest::kTriggerAction,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTriggerAction(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -564,6 +752,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     TileVisibility vis;
     vis.parseFromJson(req.json);
     // Leaflet allows fractional zoom (zoomSnap: 0); accept either int or
@@ -657,6 +846,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
       // Highlight all items in the selection set.
       collectMultiHighlightShapes(
           state.selection_set, state.highlight_rects, state.highlight_polys);
+      runDeselectAction(state.current_inspected, inspected_sel);
       state.current_inspected = inspected_sel;
 
       root["selection_count"]
@@ -680,6 +870,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     gui::Selected sel;
     {
       const int select_id
@@ -716,6 +907,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
         if (state.current_inspected && state.current_inspected != sel) {
           state.navigation_history.push_back(state.current_inspected);
         }
+        runDeselectAction(state.current_inspected, sel);
         state.current_inspected = sel;
         // Realign the cycling iterator with the linked target so that
         // selection_index reflects the object actually being rendered, and
@@ -755,6 +947,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     gui::Selected sel;
     bool can_navigate_back = false;
 
@@ -772,6 +965,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
       if (!state.navigation_history.empty()) {
         sel = state.navigation_history.back();
         state.navigation_history.pop_back();
+        runDeselectAction(state.current_inspected, sel);
         state.current_inspected = sel;
       } else {
         sel = state.current_inspected;
@@ -816,6 +1010,7 @@ static WebSocketResponse handleSelectionCycle(
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     gui::Selected sel;
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval->mutex);
@@ -839,6 +1034,7 @@ static WebSocketResponse handleSelectionCycle(
           --state.selection_itr;
         }
         sel = *state.selection_itr;
+        runDeselectAction(state.current_inspected, sel);
         state.current_inspected = sel;
         state.hover_rects.clear();
         state.timing_rects.clear();
@@ -885,12 +1081,290 @@ WebSocketResponse SelectHandler::handleSelectPrev(const WebSocketRequest& req,
   return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getBlock());
 }
 
+// Commit an edit to a property of the currently inspected object via the
+// descriptor's Editor callback (Qt GUI parity: EditorItemDelegate::
+// setModelData).  List editors commit by option index so the exact
+// std::any stored in the option reaches the callback; scalar editors
+// marshal the JSON value per the Qt delegate's rules (numbers always
+// arrive as double).  On success the full inspect payload is rebuilt —
+// the edit may have moved or renamed the object — and a {"type":"refresh"}
+// push is broadcast to every session once the STA lock is released.
+// On rejection the payload carries ok:0 plus the reason; the client
+// re-renders from it (visible revert, unlike Qt's silent one).
+WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  bool accepted = false;
+  try {
+    const std::string name(req.json.at("name").as_string());
+
+    // STA's getProperties() and the editor callbacks (which mutate the
+    // database) are not thread-safe; serialize with other STA callers.
+    // Also blocks edits while a Tcl command runs (Qt's read-only guard).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+
+    std::string error;
+    if (consumeStaleSelection(state)) {
+      error = "selection invalidated by a design change; reselect and retry";
+    }
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    if (!error.empty()) {
+      // fall through with the staleness error
+    } else if (!sel) {
+      error = "nothing is inspected";
+    } else {
+      const gui::Descriptor::Editors editors = sel.getEditors();
+      const auto editor_it = editors.find(name);
+      if (editor_it == editors.end()) {
+        error = "property is not editable: " + name;
+      } else {
+        std::any callback_value;
+        bool value_valid = false;
+        if (const auto* idx_v = req.json.if_contains("option_index")) {
+          const auto idx = idx_v->as_int64();
+          const auto& options = editor_it->second.options;
+          if (idx < 0 || idx >= static_cast<int64_t>(options.size())) {
+            error = "invalid option index";
+          } else if (jsonOr(req.json, "option_name", std::string())
+                     != options[idx].name) {
+            // The option list was re-fetched at commit time and no longer
+            // matches what the client rendered (e.g. the DB changed).
+            error = "options changed; reselect the object and retry";
+          } else {
+            callback_value = options[idx].value;
+            value_valid = true;
+          }
+        } else {
+          const auto& value = req.json.at("value");
+          if (value.is_bool()) {
+            callback_value = value.get_bool();
+            value_valid = true;
+          } else if (value.is_string()) {
+            callback_value = std::string(value.as_string());
+            value_valid = true;
+          } else if (value.is_int64() || value.is_uint64()
+                     || value.is_double()) {
+            callback_value = value.to_number<double>();
+            value_valid = true;
+          } else {
+            error = "unsupported value type";
+          }
+        }
+        if (value_valid) {
+          try {
+            accepted = editor_it->second.callback(callback_value);
+            if (!accepted) {
+              error = "value rejected for property: " + name;
+            }
+          } catch (const std::exception& e) {
+            // utl::Logger::error throws std::runtime_error; a bad_any_cast
+            // would be an editor-contract bug.  Either way: reject with
+            // the reason, never let it escape to the session thread.
+            accepted = false;
+            error = e.what();
+          }
+        }
+      }
+    }
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (accepted) {
+        // Geometry may have changed (e.g. X/Y edit); rebuild highlights.
+        if (state.selection_set.find(sel) != state.selection_set.end()) {
+          collectMultiHighlightShapes(state.selection_set,
+                                      state.highlight_rects,
+                                      state.highlight_polys);
+        } else {
+          collectHighlightShapes(
+              sel, state.highlight_rects, state.highlight_polys);
+        }
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    root["ok"] = accepted ? 1 : 0;
+    if (!accepted) {
+      root["error"] = error;
+    }
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  if (accepted && broadcast_fn_) {
+    broadcast_fn_(R"({"type":"refresh"})");
+  }
+  return resp;
+}
+
+// Run a descriptor action (Qt GUI parity: Inspector::handleAction) on the
+// currently inspected object.  The action is re-resolved by name at
+// trigger time — never by index — and blocklisted/reserved names are
+// refused.  The callback's returned Selected becomes the new inspected
+// object (empty → cleared inspector).  When the action destroys objects
+// (e.g. Delete) the session's own odb destroy callbacks raise
+// selection_stale; the whole selection state is rebuilt from the returned
+// object alone since history/selection-set entries may now dangle.
+WebSocketResponse SelectHandler::handleTriggerAction(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  bool executed = false;
+  try {
+    const std::string name(req.json.at("name").as_string());
+
+    // STA descriptor calls and the action callbacks (which may mutate the
+    // database) are not thread-safe; serialize with other STA callers.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+
+    consumeStaleSelection(state);
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    std::string error;
+    gui::Selected next;
+    if (!sel) {
+      error = "nothing is inspected";
+    } else if (name == gui::Descriptor::kDeselectAction
+               || kSuppressedActions.find(name) != kSuppressedActions.end()) {
+      error = "action is not available: " + name;
+    } else {
+      const gui::Descriptor::Action* action = nullptr;
+      const auto actions = sel.getDescriptorActions();
+      for (const auto& candidate : actions) {
+        if (candidate.name == name) {
+          action = &candidate;
+          break;
+        }
+      }
+      if (action == nullptr) {
+        error = "action no longer available: " + name;
+      } else {
+        try {
+          next = action->callback();
+          executed = true;
+        } catch (const std::exception& e) {
+          error = e.what();
+        }
+      }
+    }
+
+    // A destroy performed by the action raised our own staleness flag;
+    // consume it and note that the previous object is gone.
+    const bool deleted = state.selection_stale.exchange(false);
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (deleted) {
+        // History and selection-set entries may reference destroyed
+        // objects; rebuild from the action's returned object alone.
+        state.navigation_history.clear();
+        state.selection_set.clear();
+        if (next) {
+          state.selection_set.insert(next);
+        }
+        state.selection_itr = state.selection_set.begin();
+        state.hover_rects.clear();
+        state.current_inspected = next;
+        collectHighlightShapes(
+            next, state.highlight_rects, state.highlight_polys);
+      } else if (executed && next != sel) {
+        runDeselectAction(sel, next);
+        if (next) {
+          state.navigation_history.push_back(sel);
+        }
+        state.current_inspected = next;
+        state.selection_itr = state.selection_set.find(next);
+        state.hover_rects.clear();
+        collectHighlightShapes(
+            next, state.highlight_rects, state.highlight_polys);
+      } else if (executed) {
+        next = sel;  // action kept the selection (e.g. a toggle)
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    // After a destroy, `sel` dangles — the payload must come from `next`.
+    const gui::Selected& payload_sel = (deleted || executed) ? next : sel;
+    writeInspectPayload(root, payload_sel, new_selectables, can_navigate_back);
+    if (executed && !next) {
+      // The action deselected (e.g. Delete): an empty payload with no
+      // "error" clears the client inspector.
+      root.erase("error");
+    }
+    root["ok"] = executed ? 1 : 0;
+    if (!executed) {
+      root["error"] = error;
+    }
+    root["deleted"] = deleted ? 1 : 0;
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  if (executed && broadcast_fn_) {
+    broadcast_fn_(R"({"type":"refresh"})");
+  }
+  return resp;
+}
+
 WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
                                              SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     int count = 0;
     std::vector<odb::Rect> hover_rects;
     {
@@ -988,6 +1462,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    consumeStaleSelection(state);
     const int lower = static_cast<int>(req.json.at("lower").as_int64());
     const int upper = static_cast<int>(req.json.at("upper").as_int64());
 
@@ -1063,6 +1538,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
         // Highlight every selected net in the layout.
         collectMultiHighlightShapes(
             state.selection_set, state.highlight_rects, state.highlight_polys);
+        runDeselectAction(state.current_inspected, first);
         state.current_inspected = first;
 
         root["selection_count"]
@@ -1759,6 +2235,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const std::string inst_name
         = std::string(req.json.at("inst_name").as_string());
     odb::dbBlock* block = gen_->getBlock();
@@ -1785,6 +2262,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       state.timing_rects.clear();
       state.timing_lines.clear();
       collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      runDeselectAction(state.current_inspected, sel);
       state.current_inspected = sel;
       state.navigation_history.clear();
     }
@@ -2343,6 +2821,10 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
 WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                                  SessionState& state)
 {
+  // Drop stale highlight/hover shapes (and the dangling Selected objects
+  // behind them) if a destroy invalidated the selection.
+  consumeStaleSelection(state);
+
   // When debug renderers are active, instance positions change between
   // frames.  Re-derive highlight shapes from the current inspected
   // object so the selection tracks the moving instance.
@@ -3269,6 +3751,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
           state.timing_lines.clear();
           collectHighlightShapes(
               sel, state.highlight_rects, state.highlight_polys);
+          runDeselectAction(state.current_inspected, sel);
           state.current_inspected = sel;
           state.navigation_history.clear();
         } else {

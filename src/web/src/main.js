@@ -993,6 +993,19 @@ app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
         redrawAllLayers();
+        // The design may have been edited by another session's
+        // set_property; refresh the inspected object's properties.
+        if (app.refreshInspector) app.refreshInspector();
+    } else if (msg.type === 'selection_invalidated') {
+        // A design object was destroyed (trigger_action or Tcl); the
+        // server dropped this session's selection state.  Clear the
+        // inspector and stale highlights.
+        if (app.updateInspector) app.updateInspector(null);
+        if (app.highlightRect && app.map) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        scheduleRefreshOverlay();
     } else if (msg.type === 'drcUpdated') {
         if (app._drcUpdateTimeout) {
             clearTimeout(app._drcUpdateTimeout);

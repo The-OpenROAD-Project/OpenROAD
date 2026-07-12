@@ -872,10 +872,116 @@ html, body {
     border-bottom: 1px dashed var(--fg-muted);
     padding: 0 2px;
 }
+.inspector-editable:hover::after {
+    content: ' \270E';
+    color: var(--fg-muted);
+    font-size: 10px;
+}
 .inspector-editable:focus {
     outline: none;
     border-bottom: 1px solid var(--fg-primary);
     background: var(--bg-input);
+}
+.inspector-editable:focus::after {
+    content: none;
+}
+.inspector-editor-select {
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    font: inherit;
+    max-width: 100%;
+}
+.inspector-edit-btn {
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.inspector-edit-btn:hover {
+    color: var(--fg-bright);
+}
+.inspector-btn-danger:hover {
+    background: #7a2020;
+    border-color: #a03030;
+    color: #fff;
+}
+.or-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+}
+.or-modal {
+    background: var(--bg-panel);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    min-width: 280px;
+    max-width: 420px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+.or-modal-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.or-modal-message {
+    color: var(--fg-secondary);
+    font-size: 12px;
+    margin-bottom: 14px;
+    word-break: break-all;
+}
+.or-modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.or-modal-btn {
+    padding: 5px 14px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    cursor: pointer;
+}
+.or-modal-btn:hover {
+    background: var(--border);
+}
+.or-modal-btn-danger {
+    background: #7a2020;
+    border-color: #a03030;
+    color: #fff;
+}
+.or-modal-btn-danger:hover {
+    background: #942828;
+}
+#or-toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 60%;
+    padding: 8px 14px;
+    background: var(--bg-status);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+#or-toast.visible {
+    opacity: 1;
 }
 .inspector-group {
     margin: 1px 0;

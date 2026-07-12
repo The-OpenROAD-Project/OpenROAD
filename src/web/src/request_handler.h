@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -119,6 +120,8 @@ struct WebSocketRequest
     kDrcHighlight,
     kSelectNext,
     kSelectPrev,
+    kSetProperty,
+    kTriggerAction,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
@@ -161,6 +164,13 @@ struct WebSocketResponse
 // Handlers receive a reference; WebSocketSession owns the instance.
 struct SessionState
 {
+  // Raised by the session's odb destroy callbacks when any selectable
+  // object type is destroyed (by trigger_action or a Tcl command).  The
+  // Selected wrappers below hold raw odb pointers, so the whole selection
+  // state must be dropped before the next dereference; handlers consume
+  // the flag via consumeStaleSelection() before touching any Selected.
+  std::atomic<bool> selection_stale{false};
+
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;
@@ -215,6 +225,12 @@ T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
   return default_val;
 }
 
+// Drops the entire selection state (selectables, inspected object,
+// history, selection set, highlight/hover shapes) when a destroy callback
+// flagged it stale.  Must be called before dereferencing any stored
+// gui::Selected.  Returns true when the state was cleared.
+bool consumeStaleSelection(SessionState& state);
+
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
 {
@@ -222,6 +238,15 @@ class SelectHandler
   SelectHandler(std::shared_ptr<TileGenerator> gen,
                 std::shared_ptr<TclEvaluator> tcl_eval);
   void registerRequests(RequestDispatcher& dispatcher);
+
+  // Called after a request mutates the database (e.g. an accepted
+  // set_property) so every connected client re-renders.  The session
+  // wires this to SessionRegistry::broadcast; invoked with the STA lock
+  // released.
+  void setBroadcastFn(std::function<void(const std::string&)> fn)
+  {
+    broadcast_fn_ = std::move(fn);
+  }
 
   WebSocketResponse handleSelect(const WebSocketRequest& req,
                                  SessionState& state);
@@ -241,6 +266,10 @@ class SelectHandler
                                      SessionState& state);
   WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
                                      SessionState& state);
+  WebSocketResponse handleSetProperty(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleTriggerAction(const WebSocketRequest& req,
+                                        SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
@@ -251,6 +280,7 @@ class SelectHandler
  private:
   std::shared_ptr<TileGenerator> gen_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::function<void(const std::string&)> broadcast_fn_;
 };
 
 // Handles TCL_EVAL requests.
