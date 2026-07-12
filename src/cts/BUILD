@@ -18,9 +18,11 @@ cc_library(
         "src/Clock.h",
         "src/Clustering.h",
         "src/CtsObserver.h",
+        "src/CtsOptions.h",
         "src/HTreeBuilder.h",
         "src/LatencyBalancer.h",
         "src/SinkClustering.h",
+        "src/TechChar.h",
         "src/TreeBuilder.h",
         "src/Util.h",
     ],
@@ -29,7 +31,13 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/rsz",
         "//src/sta:opensta_lib",
+        "//src/utl",
         "@boost.container_hash",
         "@boost.unordered",
     ],
@@ -50,6 +58,8 @@ cc_library(
     ],
     hdrs = [
         "include/cts/TritonCTS.h",
+        # Also owned by :private_hdrs; re-exported here so consumers that
+        # depend on :cts (e.g. the aggregated swig-py module) can include them.
         "src/CtsOptions.h",
         "src/TechChar.h",
     ],
