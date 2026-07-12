@@ -1288,6 +1288,7 @@ void RamGen::generate(const int mask_size,
     auto in_name = fmt::format("we[{}]", slice);
     write_enable[slice] = makeBTerm(in_name, dbIoType::INPUT);
   }
+  write_enable_ = write_enable;
 
   // When column_mux_ratio > 1:  word_sel_nets[word_idx] is high/active when
   // word_idx is the addressed word within a physical row. Derived from the
@@ -2086,21 +2087,41 @@ void RamGen::reportTimingAndPower()
   sta::SceneSeq scenes = sta_->makeSceneSeq(sta_->cmdScene());
   sta::StringSeq group_names;
 
-  // Exclude clock pins (register and latch CLK, clock-gate CLK).
-  // All other pins remain a valid start and end point for analysis
-  auto collect_non_clock_pins = [&]() -> sta::PinSet* {
+  // Include non clock primary inputs: D, address, write enable pins
+  auto collect_primary_inputs = [&]() -> sta::PinSet* {
+    auto* pins = new sta::PinSet(network_);
+    for (auto* bterm : data_inputs_) {
+      pins->insert(network_->dbToSta(bterm));
+    }
+    for (auto& port_addrs : addr_inputs_) {
+      for (auto* bterm : port_addrs) {
+        pins->insert(network_->dbToSta(bterm));
+      }
+    }
+    for (auto* bterm : write_enable_) {
+      pins->insert(network_->dbToSta(bterm));
+    }
+    return pins;
+  };
+
+  auto collect_all_outputs = [&]() -> sta::PinSet* {
     auto* pins = new sta::PinSet(network_);
     for (auto* inst : block_->getInsts()) {
       for (auto* iterm : inst->getITerms()) {
         auto* pin = network_->dbToSta(iterm);
-        if (pin && !isClockPin(pin, network_)) {
+        if (!pin || isClockPin(pin, network_)) {
+          continue;
+        }
+        auto* lp = network_->libertyPort(pin);
+        if (lp && lp->direction()->isAnyOutput()) {
           pins->insert(pin);
         }
       }
     }
     for (auto* bterm : block_->getBTerms()) {
       auto* pin = network_->dbToSta(bterm);
-      if (pin && !isClockPin(pin, network_)) {
+      if (pin && !isClockPin(pin, network_)
+          && network_->direction(pin)->isOutput()) {
         pins->insert(pin);
       }
     }
@@ -2109,13 +2130,14 @@ void RamGen::reportTimingAndPower()
 
   // Find worst unconstrained setup path delay/longest path
   sta::ExceptionFrom* setup_from
-      = sta_->makeExceptionFrom(collect_non_clock_pins(),
+      = sta_->makeExceptionFrom(collect_primary_inputs(),
                                 nullptr,
                                 nullptr,
                                 sta::RiseFallBoth::riseFall(),
                                 sta_->cmdSdc());
+
   sta::ExceptionTo* setup_to
-      = sta_->makeExceptionTo(collect_non_clock_pins(),
+      = sta_->makeExceptionTo(collect_all_outputs(),
                               nullptr,
                               nullptr,
                               sta::RiseFallBoth::riseFall(),
@@ -2151,13 +2173,14 @@ void RamGen::reportTimingAndPower()
 
   // Find worst unconstrained hold path delay/shortest path
   sta::ExceptionFrom* hold_from
-      = sta_->makeExceptionFrom(collect_non_clock_pins(),
+      = sta_->makeExceptionFrom(collect_primary_inputs(),
                                 nullptr,
                                 nullptr,
                                 sta::RiseFallBoth::riseFall(),
                                 sta_->cmdSdc());
+
   sta::ExceptionTo* hold_to
-      = sta_->makeExceptionTo(collect_non_clock_pins(),
+      = sta_->makeExceptionTo(collect_all_outputs(),
                               nullptr,
                               nullptr,
                               sta::RiseFallBoth::riseFall(),

@@ -250,6 +250,7 @@ class RamGen
 
   std::vector<std::vector<odb::dbBTerm*>> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
+  std::vector<odb::dbBTerm*> write_enable_;
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
   std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
