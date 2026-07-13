@@ -481,7 +481,7 @@ cc_test(
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/odb/src/db",
-        "//src/rsz",  # build_cleaner keep provides the private headers
+        "//src/rsz",  # buildcleaner: keep provides the private headers
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",

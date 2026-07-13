@@ -42,7 +42,7 @@ cc_test(
     # No gtest_main: ABC ships its own main() that wins over gtest_main;
     # the TU defines its own.
     deps = [
-        "//src/syn",  # buildcleaner keep: needs fixing syn layering first.
+        "//src/syn",  # buildcleaner: keep: needs fixing syn layering first.
         "//src/syn/src/ir",
         "//src/utl",
         "@googletest//:gtest",

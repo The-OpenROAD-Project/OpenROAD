@@ -45,7 +45,7 @@ cc_library(
         "//src/utl",
         "@abc",
         "@boost.stacktrace",
-        "@tcl_lang//:tcl",  # build_cleaner keep swig.cc bracket-includes <tcl.h>
+        "@tcl_lang//:tcl",
     ],
 )
 
