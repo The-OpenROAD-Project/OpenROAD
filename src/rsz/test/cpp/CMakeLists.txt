@@ -186,7 +186,7 @@ target_link_libraries(TestSetupLegacyBase
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
