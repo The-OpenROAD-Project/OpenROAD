@@ -213,6 +213,11 @@ git_override(
 ## binaries and a zero-sysroot cc_toolchain: no host compiler, linker,
 ## libxml2 or /usr/include involved, and it runs unmodified on distros
 ## without FHS paths (e.g. NixOS).
+# NOTE when bumping: the LLVM release embedded in this module version is
+# hardcoded in .bazelrc's coverage:coverage --test_env=LLVM_PROFDATA/LLVM_COV
+# paths (external/llvm++llvm_toolchain_minimal+llvm-toolchain-minimal-<ver>-
+# linux-amd64/bin). Update those lines in the same commit, or the nightly
+# coverage job fails on its next run.
 bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
