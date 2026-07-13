@@ -1427,10 +1427,12 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                      frAccessPointEnum::Center,
                      frAccessPointEnum::EncOpt,
                      frAccessPointEnum::NearbyGrid}) {
-    for (auto lower : {frAccessPointEnum::OnGrid,
-                       frAccessPointEnum::HalfGrid,
-                       frAccessPointEnum::Center,
-                       frAccessPointEnum::EncOpt}) {
+    for (auto lower : {
+             frAccessPointEnum::OnGrid,
+             frAccessPointEnum::HalfGrid,
+             frAccessPointEnum::Center,
+             frAccessPointEnum::EncOpt,
+         }) {
       if (upper == frAccessPointEnum::NearbyGrid && !aps.empty()) {
         // Only use NearbyGrid as a last resort (at least until
         // nangate45/aes is resolved).
