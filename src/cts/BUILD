@@ -29,7 +29,11 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
+        # TODO: we use headers provided by :cts, but that reveals cyclic dep
+        #":cts",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/utl",
         "@boost.container_hash",
         "@boost.unordered",
     ],

@@ -39,12 +39,13 @@ cc_library(
         "//:ord",
         "//src/cut",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abc",
         "@boost.stacktrace",
-        "@tcl_lang//:tcl",  # build_cleaner keep swig.cc bracket-includes <tcl.h>
+        "@tcl_lang//:tcl",
     ],
 )
 

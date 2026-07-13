@@ -128,6 +128,21 @@ single_version_override(
 )
 
 bazel_dep(name = "git", version = "2.54.0")
+
+# We enable the external_include_paths feature globally (see .bazelrc), which
+# demotes a repo's own -iquote entries to -isystem. git relies on -iquote
+# precedence for its quoted includes (builtin/get-tar-commit-id.c includes
+# git's own tar.h, which must shadow glibc's <tar.h>); the patch re-adds the
+# repo root as -iquote in GIT_COPTS so those includes keep precedence.
+single_version_override(
+    module_name = "git",
+    patch_strip = 1,
+    patches = [
+        "//bazel/git-patches:0001-iquote-own-headers-over-external_include_paths.patch",
+    ],
+    version = "2.54.0",
+)
+
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 
 # m4 is transitive (rules_bison/rules_flex -> m4). Same gnulib libc-header
@@ -178,9 +193,16 @@ bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
 # allow openroad to link, but will search on the system at runtime for
 # the correct system libs.
 bazel_dep(name = "qt-bazel")
+
+# external_include_paths (see .bazelrc) moves Qt's external-repo include dirs
+# into compilation_context.external_includes. The moc rule at the older pin did
+# not gather those, so moc lost Qt's own header search paths and failed under
+# --config=lint (qtextimagehandler_p.h "Undefined interface", qfilesystemmodel.h
+# "Parse error at QT7_ONLY"). 541ebf6d teaches the moc rule to also collect
+# external_includes.
 git_override(
     module_name = "qt-bazel",
-    commit = "886104974c2fd72439f2c33b5deebf0fe4649df7",
+    commit = "541ebf6df76eef96c4de6343316b1c9d63e296f6",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
@@ -196,7 +218,7 @@ bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
-bazel_dep(name = "bant", version = "0.2.10", dev_dependency = True)
+bazel_dep(name = "bant", version = "0.3.0", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
