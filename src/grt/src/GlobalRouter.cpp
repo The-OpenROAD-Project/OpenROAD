@@ -1096,10 +1096,13 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     return false;
   }
 
-  if (net->areSegmentsRestored()) {
-    updateNetResources(net, true);
-  } else if (!net->isMergedNet()) {
-    fastroute_->clearNetRoute(db_net);
+  // CUGR releases the old routing inside restoreNetRoute.
+  if (!use_cugr_) {
+    if (net->areSegmentsRestored()) {
+      updateNetResources(net, true);
+    } else if (!net->isMergedNet()) {
+      fastroute_->clearNetRoute(db_net);
+    }
   }
 
   routes_[db_net].clear();
@@ -1115,22 +1118,35 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
 
   addImplicitVias(routes_[db_net]);
 
+  // Validate that the restored routing covers every pin; on failure fall back
+  // to a reroute. CUGR checks coverage against its own routing tree inside
+  // restoreNetRoute; the FastRoute path checks directly and names the pins.
   std::string pins_not_covered;
-  if (!updateUncoveredPinsPositions(db_net, pins_not_covered)) {
-    logger_->warn(GRT,
-                  304,
-                  "Fail to restore routing segments from guides for net {}. "
-                  "The following pins are not covered: {}.",
-                  net->getName(),
-                  pins_not_covered);
+  const bool restored
+      = use_cugr_ ? cugr_->restoreNetRoute(db_net, routes_[db_net])
+                  : updateUncoveredPinsPositions(db_net, pins_not_covered);
+  if (!restored) {
+    if (use_cugr_) {
+      routes_[db_net].clear();
+    }
+    logger_->warn(
+        GRT,
+        304,
+        "Fail to restore routing segments from guides for net {}.{}",
+        net->getName(),
+        pins_not_covered.empty()
+            ? std::string()
+            : " The following pins are not covered: " + pins_not_covered + ".");
     return false;
   }
 
   net->setRestoreRouteFromGuides(false);
+  if (use_cugr_) {
+    return true;
+  }
+
   net->setAreSegmentsRestored(true);
-
   makeFastrouteNet(net);
-
   updateNetResources(net, false);
 
   return true;
@@ -6390,31 +6406,40 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   if (use_cugr_) {
-    return updateDirtyRoutesCugr();
+    return updateDirtyRoutesCugr(save_guides);
   }
   return updateDirtyRoutesFastRoute(save_guides);
 }
 
-std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr()
+std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
 {
   cugr_->setVerbose(false);
   std::vector<Net*> dirty_nets;
   dirty_nets.reserve(dirty_nets_.size());
+  std::vector<odb::dbNet*> restored_nets;
   for (odb::dbNet* db_net : dirty_nets_) {
     // Rebuild the pin set from the netlist; positions are synced below.
     Net* net = getNet(db_net);
     updateNetPins(net);
-    // Reroute a dirty net when needed: res-aware, no route, restored guides
-    // (rerouted until restore-from-guides lands), or a pin moved gcell.
+    // Journal-restored nets get their pre-change routing back from the odb
+    // guides instead of a reroute; a failed restore forces the reroute.
+    const bool restore_requested
+        = net->restoreRouteFromGuides() && !net->isResAware();
+    const bool restored = restore_requested && loadRoutingFromDBGuides(db_net);
+    net->setRestoreRouteFromGuides(false);
+    if (restored) {
+      restored_nets.push_back(db_net);
+    }
+    // Reroute a dirty net only if needed: res-aware, no route yet (new or
+    // journal-restored), restore requested but failed, or a pin moved gcell.
     const auto route_it = routes_.find(db_net);
     const bool has_route
         = (route_it != routes_.end() && !route_it->second.empty());
-    const bool reroute = net->isResAware() || !has_route
-                         || net->restoreRouteFromGuides()
-                         || pinPositionsChanged(net);
+    const bool reroute = !restored
+                         && (net->isResAware() || !has_route
+                             || restore_requested || pinPositionsChanged(net));
     net->setDirtyNet(false);
     net->clearLastPinPositions();
-    net->setRestoreRouteFromGuides(false);
     if (reroute) {
       cugr_->updateNet(db_net);
       dirty_nets.push_back(net);
@@ -6436,6 +6461,21 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr()
       routes_[db_net] = std::move(route);
     }
     updatePinAccessPoints(net, db_net);
+  }
+  // Restored nets keep their guide-derived route; sync pins to the access
+  // points restoreNetRoute recorded so later dirty rounds compare cleanly.
+  for (odb::dbNet* db_net : restored_nets) {
+    updatePinAccessPoints(getNet(db_net), db_net);
+  }
+  // Keep odb guides in lockstep with routes_ so an rsz journal restore can
+  // recover the pre-change routing (the guide edits are ECO-journaled).
+  if (save_guides) {
+    std::vector<odb::dbNet*> rerouted;
+    rerouted.reserve(dirty_nets.size());
+    for (Net* net : dirty_nets) {
+      rerouted.push_back(net->getDbNet());
+    }
+    saveGuides(rerouted);
   }
   if (!dirty_nets.empty()) {
     incremental_congestion_report_pending_ = true;
@@ -6654,6 +6694,9 @@ void GRouteDbCbk::inDbNetPostMerge(odb::dbNet* preserved_net,
 void GRouteDbCbk::inDbNetPostGuideRestore(odb::dbNet* net)
 {
   Net* fr_net = grouter_->getNet(net);
+  if (fr_net == nullptr) {
+    return;
+  }
   fr_net->setRestoreRouteFromGuides(true);
   grouter_->addDirtyNet(net);
 }
