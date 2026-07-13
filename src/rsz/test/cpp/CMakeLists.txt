@@ -71,7 +71,7 @@ target_link_libraries(TestBufferRemoval3
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -101,7 +101,7 @@ target_link_libraries(TestResizer
         stt_lib
         odb
         defin
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -128,7 +128,7 @@ target_link_libraries(TestInsertBuffer
         rsz_lib
         odb
         odb_test_helper
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -157,7 +157,7 @@ target_link_libraries(TestNestedJournal
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -184,7 +184,7 @@ target_link_libraries(TestResizerMt
         utl_lib
         rsz_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
