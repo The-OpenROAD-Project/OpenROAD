@@ -1,26 +1,33 @@
 # Detailed Placement
 
-The detailed placement module in OpenROAD (`dpl`) is based on OpenDP, or
-Open-Source Detailed Placement Engine. Its key features are:
+The detailed placement module in OpenROAD (`dpl`) legalizes the result of
+global placement: it moves instances to legal sites on rows while
+minimizing displacement. It is also used to re-legalize the design after
+incremental changes such as resizing and buffer insertion. It originated from OpenDP (Open-Source Detailed
+Placement Engine) and now uses a negotiation-based legalizer (NBLG) by
+default, with the original OpenDP diamond search available as a legacy
+engine. It supports:
 
--   Fence region support
--   Fragmented row support
--   Mixed-cell-height (1x–4x) legalization
--   Two placement engines selectable at runtime
+-   Mixed-cell-height (1x–4x) designs
+-   Fence regions
+-   Fragmented rows
+-   Placement padding and filler insertion
 
 ## Placement Engines
 
-#### Diamond Search
-
-Former engine performs a BFS-style diamond search from each cell's
-global placement position, expanding outward in Manhattan order until a
-legal site is found.
+DPL provides two options for legalization. Negotiation legalizer is the default and is slightly slower, but can handle dense designs. Diamond search is faster (linear runtime), although it is not able to handle dense designs. Diamond search is also used at the end of Negotiation for handling potential failed corner cases.
 
 #### NegotiationLegalizer
 
 The default two-pass legalizer based on the NBLG paper. Used on
 the `detailed_placement` command. The legacy diamond search engine can be
 selected with `-use_old_diamond`.
+
+#### Diamond Search
+
+Former engine performs a BFS-style diamond search from each cell's
+global placement position, expanding outward in Manhattan order until a
+legal site is found.
 
 ```
 Global Placement result
