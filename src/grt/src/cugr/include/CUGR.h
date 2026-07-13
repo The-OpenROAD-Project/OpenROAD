@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -121,6 +122,13 @@ class CUGR
   void setVerbose(bool verbose) { verbose_ = verbose; }
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
+  // Transfer removed net tree ownership to preserved net without removing
+  // its GridGraph usage. Called at inDbNetPostMerge time.
+  void mergeNet(odb::dbNet* preserved_net, odb::dbNet* removed_net);
+  // Returns true if the edge on (layer_index, tile_x, tile_y) has at least
+  // one unit of remaining capacity -- the CUGR analog of
+  // FastRouteCore::hasAvailableResources.
+  bool hasAvailableResources(int layer_index, int tile_x, int tile_y) const;
   void routeIncremental();
 
   const std::vector<int>& getOriginalResources() const;
@@ -252,6 +260,9 @@ class CUGR
   std::vector<int> net_indices_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
   std::unordered_map<odb::dbNet*, GRNet*> db_net_map_;
+  // Nets merged into a survivor; removeNet() must NOT remove their GridGraph
+  // usage.
+  std::unordered_set<odb::dbNet*> merged_nets_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

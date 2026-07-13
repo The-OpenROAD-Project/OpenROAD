@@ -1384,9 +1384,14 @@ void CUGR::removeNet(odb::dbNet* db_net)
   }
 
   GRNet* gr_net = it->second;
-  if (gr_net->getRoutingTree()) {
-    grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                 gr_net->getNdrCosts());
+
+  // If this net was merged into a survivor by mergeNet(), its routing tree
+  // usage was transferred to the preserved net -- do NOT remove it again.
+  if (merged_nets_.erase(db_net) == 0) {
+    if (gr_net->getRoutingTree()) {
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
+                                   gr_net->getNdrCosts());
+    }
   }
 
   int index = gr_net->getIndex();
@@ -1633,6 +1638,57 @@ void CUGR::saveCongestion()
 void CUGR::routeIncremental()
 {
   route(/*incremental=*/true);
+}
+
+void CUGR::mergeNet(odb::dbNet* preserved_net, odb::dbNet* removed_net)
+{
+  if (!design_) {
+    return;
+  }
+
+  auto preserved_it = db_net_map_.find(preserved_net);
+  auto removed_it = db_net_map_.find(removed_net);
+
+  if (preserved_it == db_net_map_.end() || removed_it == db_net_map_.end()) {
+    // One or both nets are not yet in CUGR (e.g. single-pin / not yet routed).
+    // Refresh the survivor's pin list so it picks up the merged terminal set,
+    // and let the normal dirty-net path re-route it.
+    if (preserved_it != db_net_map_.end()) {
+      updateNet(preserved_net);
+    }
+    return;
+  }
+
+  GRNet* preserved_gr = preserved_it->second;
+  GRNet* removed_gr = removed_it->second;
+
+  // Transfer the removed net's routing tree as an additional subtree of the
+  // preserved net. We do NOT touch GridGraph demand -- the removed wires are
+  // still physically present and their usage should continue to be attributed
+  // to the preserved net. Simply attach the subtree root as a child of the
+  // preserved net's root so getRoutes() emits both route segments.
+  const auto& preserved_tree = preserved_gr->getRoutingTree();
+  const auto& removed_tree = removed_gr->getRoutingTree();
+  if (preserved_tree && removed_tree) {
+    preserved_tree->addChild(removed_tree);
+  }
+
+  // Mark the removed net so removeNet() skips removeTreeUsage() for it.
+  merged_nets_.insert(removed_net);
+}
+
+bool CUGR::hasAvailableResources(int layer_index, int tile_x, int tile_y) const
+{
+  if (!grid_graph_) {
+    return false;
+  }
+  // layer_index is 1-based (matching GSegment convention); GridGraph uses
+  // 0-based layer indices.
+  const int layer_0 = layer_index - 1;
+  if (layer_0 < 0) {
+    return false;
+  }
+  return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= 1.0;
 }
 
 }  // namespace grt

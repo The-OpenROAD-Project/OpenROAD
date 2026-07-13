@@ -5618,10 +5618,15 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
 void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   if (use_cugr_) {
-    // TODO: Fully support merging nets in CUGR.
-    // For now, we simply rip up and add the base net to the dirty list
-    // to be completely re-routed from scratch.
-    addDirtyNet(db_net1);
+    // Attempt to stitch the two existing CUGR routes at the former buffer pin
+    // positions. If successful, transfer tree ownership to the preserved net
+    // without re-routing; otherwise fall back to a full dirty-net reroute.
+    if (connectCUGRRouting(db_net1, db_net2)) {
+      cugr_->mergeNet(db_net1, db_net2);
+      saveGuides({db_net1});
+    } else {
+      addDirtyNet(db_net1);
+    }
     return;
   }
   Net* net1 = db_net_map_[db_net1];
@@ -5640,6 +5645,72 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     // segments), so it needs to be re-routed from scratch.
     net1->setDirtyNet(true);
   }
+}
+
+bool GlobalRouter::connectCUGRRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
+{
+  // Stitch two CUGR routes together at the former buffer pin position.
+  // Mirrors connectRouting() but uses the CUGR GridGraph for capacity checks
+  // instead of the FastRoute internal structures.
+  auto it1 = db_net_map_.find(db_net1);
+  auto it2 = db_net_map_.find(db_net2);
+  if (it1 == db_net_map_.end() || it2 == db_net_map_.end()) {
+    return false;
+  }
+  Net* net1 = it1->second;
+  Net* net2 = it2->second;
+
+  odb::Point pin_pos1;
+  odb::Point pin_pos2;
+  findBufferPinPostions(net1, net2, pin_pos1, pin_pos2);
+
+  GRoute& net1_route = routes_[db_net1];
+  GRoute& net2_route = routes_[db_net2];
+
+  auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
+    return (dbu_coord - (is_x ? grid_->getXMin() : grid_->getYMin()))
+           / grid_->getTileSize();
+  };
+
+  if (pin_pos1 != pin_pos2) {
+    const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
+    const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
+    std::vector<GSegment> connection
+        = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
+
+    // Capacity check against CUGR GridGraph.
+    for (const GSegment& seg : connection) {
+      if (!seg.isVia()) {
+        const int x1 = dbu_to_tile(std::min(seg.init_x, seg.final_x), true);
+        const int y1 = dbu_to_tile(std::min(seg.init_y, seg.final_y), false);
+        const int x2 = dbu_to_tile(std::max(seg.init_x, seg.final_x), true);
+        const int y2 = dbu_to_tile(std::max(seg.init_y, seg.final_y), false);
+        // Check every tile on the horizontal or vertical span.
+        if (y1 == y2) {  // horizontal
+          for (int x = x1; x < x2; x++) {
+            if (!cugr_->hasAvailableResources(seg.init_layer, x, y1)) {
+              return false;
+            }
+          }
+        } else {  // vertical
+          for (int y = y1; y < y2; y++) {
+            if (!cugr_->hasAvailableResources(seg.init_layer, x1, y)) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+
+    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+    net1_route.insert(net1_route.end(), connection.begin(), connection.end());
+  } else {
+    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+  }
+
+  updateNetPins(net1);
+  std::string dump;
+  return netIsCovered(db_net1, dump);
 }
 
 bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
