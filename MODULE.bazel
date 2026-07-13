@@ -218,7 +218,7 @@ bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
-bazel_dep(name = "bant", version = "0.2.10", dev_dependency = True)
+bazel_dep(name = "bant", version = "0.3.0", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
