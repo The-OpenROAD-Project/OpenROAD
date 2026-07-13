@@ -34,6 +34,11 @@ cc_library(
 cc_test(
     name = "mockturtle_emap_test",
     srcs = ["test/algorithms/emap.cpp"],
+    # Vendored mockturtle headers narrow ints in braced initializer lists,
+    # which clang treats as an error by default (-Wc++11-narrowing).
+    copts = [
+        "-Wno-c++11-narrowing",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":mockturtle",

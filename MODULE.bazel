@@ -28,6 +28,12 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.18")
 bazel_dep(name = "rules_flex", version = "0.3.1")
+
+# rules_go is transitive (or-tools, gazelle, grpc-java, rules_buf). The
+# MVS-selected 0.53.0 references the top-level CcInfo global that Bazel 9
+# removed (go/private/rules/cgo.bzl), breaking analysis. 0.59.0+ loads
+# CcInfo from @rules_cc; force a Bazel-9-compatible release.
+bazel_dep(name = "rules_go", version = "0.61.1")
 bazel_dep(name = "rules_pkg", version = "1.2.0")
 bazel_dep(name = "rules_pycross", version = "0.8.1")
 bazel_dep(name = "rules_python", version = "1.8.5")
@@ -104,6 +110,14 @@ bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 
+# freetype reaches the build transitively (qt-bazel -> harfbuzz -> freetype).
+# freetype@2.13.3's BUILD overlay calls the native cc_library rule, which
+# Bazel 9 removed, so loading the package fails. 2.13.3.bcr.2 keeps the same
+# 2.13.3 source but its overlay loads cc_library from @rules_cc. This is a
+# direct bazel_dep rather than a single_version_override so the pin propagates
+# to downstream consumers via MVS (overrides only apply in the root module).
+bazel_dep(name = "freetype", version = "2.13.3.bcr.2")
+
 # gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
 # libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
 # hermetic-llvm's explicit libc -isystem entries (BCR #7642). 5.3.2.bcr.7
@@ -114,6 +128,21 @@ single_version_override(
 )
 
 bazel_dep(name = "git", version = "2.54.0")
+
+# We enable the external_include_paths feature globally (see .bazelrc), which
+# demotes a repo's own -iquote entries to -isystem. git relies on -iquote
+# precedence for its quoted includes (builtin/get-tar-commit-id.c includes
+# git's own tar.h, which must shadow glibc's <tar.h>); the patch re-adds the
+# repo root as -iquote in GIT_COPTS so those includes keep precedence.
+single_version_override(
+    module_name = "git",
+    patch_strip = 1,
+    patches = [
+        "//bazel/git-patches:0001-iquote-own-headers-over-external_include_paths.patch",
+    ],
+    version = "2.54.0",
+)
+
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 
 # m4 is transitive (rules_bison/rules_flex -> m4). Same gnulib libc-header
@@ -135,7 +164,10 @@ single_version_override(
     version = "4.9.bcr.5",
 )
 
-bazel_dep(name = "spdlog", version = "1.15.1")
+# spdlog < 1.16.0.bcr.2's BUILD.bazel calls the native cc_test rule, which
+# Bazel 9 removed; loading the package fails. 1.16.0.bcr.2+ loads cc_test
+# from @rules_cc.
+bazel_dep(name = "spdlog", version = "1.17.0")
 bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.1")
 
@@ -161,9 +193,16 @@ bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
 # allow openroad to link, but will search on the system at runtime for
 # the correct system libs.
 bazel_dep(name = "qt-bazel")
+
+# external_include_paths (see .bazelrc) moves Qt's external-repo include dirs
+# into compilation_context.external_includes. The moc rule at the older pin did
+# not gather those, so moc lost Qt's own header search paths and failed under
+# --config=lint (qtextimagehandler_p.h "Undefined interface", qfilesystemmodel.h
+# "Parse error at QT7_ONLY"). 541ebf6d teaches the moc rule to also collect
+# external_includes.
 git_override(
     module_name = "qt-bazel",
-    commit = "886104974c2fd72439f2c33b5deebf0fe4649df7",
+    commit = "541ebf6df76eef96c4de6343316b1c9d63e296f6",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
@@ -179,7 +218,7 @@ bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
-bazel_dep(name = "bant", version = "0.2.10", dev_dependency = True)
+bazel_dep(name = "bant", version = "0.3.0", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
@@ -192,7 +231,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "60d62021c779e64ef7360a1b08a8faee00183c8d"
+BAZEL_ORFS_COMMIT = "551d4c72749411c4b1168c0d12322a9c34817c91"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -380,9 +419,12 @@ single_version_override(
 
 # scip 9.2.3's tinycthread uses bare C11 <threads.h> names. Backport
 # scipopt/scip@cc917e07 (TNY_ prefix) until a fixed release lands in BCR.
+# The .bcr.1 revision keeps the 9.2.3 source (patch still applies) but its
+# overlay BUILD loads cc_library/cc_binary from @rules_cc rather than the
+# native rules Bazel 9 removed.
 single_version_override(
     module_name = "scip",
     patch_strip = 1,
     patches = ["//bazel:scip_tinycthread_tny_prefix.patch"],
-    version = "9.2.3",
+    version = "9.2.3.bcr.1",
 )

@@ -68,6 +68,7 @@ TESTS = [
     "repair_design3_verbose",
     "repair_design4",
     "repair_design5",
+    "repair_design6",
     "repair_design_outside_core",
     "repair_fanout1",
     "repair_fanout1_hier",
@@ -480,7 +481,7 @@ cc_test(
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/odb/src/db",
-        "//src/rsz",  # build_cleaner keep provides the private headers
+        "//src/rsz",  # buildcleaner: keep provides the private headers
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
