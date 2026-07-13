@@ -5667,6 +5667,10 @@ bool GlobalRouter::connectCUGRRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   GRoute& net1_route = routes_[db_net1];
   GRoute& net2_route = routes_[db_net2];
 
+  if (net1_route.empty() || net2_route.empty()) {
+    return false;
+  }
+
   auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
     return (dbu_coord - (is_x ? grid_->getXMin() : grid_->getYMin()))
            / grid_->getTileSize();
@@ -5728,6 +5732,11 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 
   GRoute& net1_route = routes_[db_net1];
   GRoute& net2_route = routes_[db_net2];
+
+  if (net1_route.empty() || net2_route.empty()) {
+    return false;
+  }
+
   if (pin_pos1 != pin_pos2) {
     const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
