@@ -1279,7 +1279,7 @@ void HTreeBuilder::run()
                         "sinks is {}.",
                         options_->getMaxWl() / options_->getWireSegmentUnit(),
                         options_->getMaxFanout() ? options_->getMaxFanout()
-                                                : numMaxLeafSinks_);
+                                                 : numMaxLeafSinks_);
           break;
         }
       } else {
@@ -1287,7 +1287,7 @@ void HTreeBuilder::run()
                       32,
                       " Stop criterion found. Max number of sinks is {}.",
                       options_->getMaxFanout() ? options_->getMaxFanout()
-                                              : numMaxLeafSinks_);
+                                               : numMaxLeafSinks_);
         break;
       }
     }
