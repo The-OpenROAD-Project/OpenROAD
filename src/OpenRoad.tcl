@@ -307,9 +307,9 @@ proc set_routing_auto_taper { args } {
   sta::parse_key_args "set_routing_auto_taper" args \
     keys {-net} flags {-all_clocks -enable -disable}
   if { !([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
-    utl::error ORD 1016 "Either -net or -all_clocks need to be defined."
+    utl::error ORD 1016 "Exactly one of -net or -all_clocks must be specified."
   }
-  if { [info exists flags(-enable)] == [info exists flags(-disable)] } {
+  if { !([info exists flags(-enable)] ^ [info exists flags(-disable)]) } {
     utl::error ORD 1017 "Exactly one of -enable or -disable must be specified."
   }
   set disable [info exists flags(-disable)]
