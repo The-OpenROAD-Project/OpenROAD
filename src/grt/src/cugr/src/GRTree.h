@@ -43,6 +43,16 @@ class GRTreeNode : public GRPoint
     children_.push_back(std::move(child));
   }
 
+  void removeChild(const std::shared_ptr<GRTreeNode>& child)
+  {
+    for (auto it = children_.begin(); it != children_.end(); ++it) {
+      if (*it == child) {
+        children_.erase(it);
+        break;
+      }
+    }
+  }
+
   static void preorder(
       const std::shared_ptr<GRTreeNode>& node,
       const std::function<void(const std::shared_ptr<GRTreeNode>&)>& visit);

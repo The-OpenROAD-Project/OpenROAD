@@ -124,7 +124,7 @@ class CUGR
   void removeNet(odb::dbNet* net);
   // Transfer removed net tree ownership to preserved net without removing
   // its GridGraph usage. Called at inDbNetPostMerge time.
-  void mergeNet(odb::dbNet* preserved_net, odb::dbNet* removed_net);
+  void mergeNet(odb::dbNet* preserved_net, odb::dbNet* removed_net, const std::vector<GSegment>& connection);
   // Returns true if the edge on (layer_index, tile_x, tile_y) has at least
   // one unit of remaining capacity -- the CUGR analog of
   // FastRouteCore::hasAvailableResources.

@@ -5621,8 +5621,9 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     // Attempt to stitch the two existing CUGR routes at the former buffer pin
     // positions. If successful, transfer tree ownership to the preserved net
     // without re-routing; otherwise fall back to a full dirty-net reroute.
-    if (connectCUGRRouting(db_net1, db_net2)) {
-      cugr_->mergeNet(db_net1, db_net2);
+    std::vector<GSegment> connection;
+    if (connectCUGRRouting(db_net1, db_net2, connection)) {
+      cugr_->mergeNet(db_net1, db_net2, connection);
       saveGuides({db_net1});
     } else {
       addDirtyNet(db_net1);
@@ -5647,7 +5648,7 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   }
 }
 
-bool GlobalRouter::connectCUGRRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
+bool GlobalRouter::connectCUGRRouting(odb::dbNet* db_net1, odb::dbNet* db_net2, std::vector<GSegment>& connection_out)
 {
   // Stitch two CUGR routes together at the former buffer pin position.
   // Mirrors connectRouting() but uses the CUGR GridGraph for capacity checks
@@ -5679,11 +5680,10 @@ bool GlobalRouter::connectCUGRRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   if (pin_pos1 != pin_pos2) {
     const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
-    std::vector<GSegment> connection
-        = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
+    connection_out = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
     // Capacity check against CUGR GridGraph.
-    for (const GSegment& seg : connection) {
+    for (const GSegment& seg : connection_out) {
       if (!seg.isVia()) {
         const int x1 = dbu_to_tile(std::min(seg.init_x, seg.final_x), true);
         const int y1 = dbu_to_tile(std::min(seg.init_y, seg.final_y), false);
@@ -5707,7 +5707,7 @@ bool GlobalRouter::connectCUGRRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     }
 
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-    net1_route.insert(net1_route.end(), connection.begin(), connection.end());
+    net1_route.insert(net1_route.end(), connection_out.begin(), connection_out.end());
   } else {
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   }
