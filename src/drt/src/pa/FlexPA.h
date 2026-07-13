@@ -74,6 +74,9 @@ struct frInstLocationComp
 
 using frInstLocationSet = std::set<frInst*, frInstLocationComp>;
 
+inline constexpr int kRepeatedApCost = 1000;
+inline constexpr int kViolationCost = 1000000;
+
 class FlexPinAccessPattern;
 class FlexDPNode;
 class AbstractPAGraphics;
@@ -561,7 +564,7 @@ class FlexPA
    * @param begin_point The begin reference point
    * @param layer_num layer where the point is being created
    * @param dir direction where the point will be created
-   * @param is_block wether the begin_point is from a macro block
+   * @param is_block whether the begin_point is from a macro block
    *
    * @returns the generated end point
    */
