@@ -122,6 +122,7 @@ void TritonCTS::runTritonCts()
   sinkBuffers_.clear();
   regTreeRootBufIndex_ = 0;
   delayBufIndex_ = 0;
+  options_->setMaxWl(0);
   options_->removeOwner();
   logger_->info(CTS, 500, "Runtime: {:.2f}s", timer.elapsed());
 }

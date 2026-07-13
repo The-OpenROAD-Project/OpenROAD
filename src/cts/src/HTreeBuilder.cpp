@@ -1267,28 +1267,29 @@ void HTreeBuilder::run()
 
     computeLevelTopology(level, regionWidth, regionHeight);
 
-    if (options_->getMaxWl()) {
-      double maxHPWL = topologyForEachLevel_.back().getLargestSinkRegionHPWL(
-          wireSegmentUnit_);
-      if (maxHPWL < options_->getMaxWl()
-          && isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
+    if (isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
+      if (options_->getMaxWl()) {
+        double maxHPWL = topologyForEachLevel_.back().getLargestSinkRegionHPWL(
+            wireSegmentUnit_);
+        if (maxHPWL < options_->getMaxWl()) {
+          logger_->info(CTS,
+                        38,
+                        " Stop criterion found. Sink region hpwl "
+                        "is smaller than max wirelength ({}) and max number of "
+                        "sinks is {}.",
+                        options_->getMaxWl() / options_->getWireSegmentUnit(),
+                        options_->getMaxFanout() ? options_->getMaxFanout()
+                                                : numMaxLeafSinks_);
+          break;
+        }
+      } else {
         logger_->info(CTS,
-                      38,
-                      " Stop criterion found. Sink region hpwl "
-                      "is smaller than max wirelength ({}) and max number of "
-                      "sinks is {}.",
-                      options_->getMaxWl() / options_->getWireSegmentUnit(),
+                      32,
+                      " Stop criterion found. Max number of sinks is {}.",
                       options_->getMaxFanout() ? options_->getMaxFanout()
-                                               : numMaxLeafSinks_);
+                                              : numMaxLeafSinks_);
         break;
       }
-    } else if (isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
-      logger_->info(CTS,
-                    32,
-                    " Stop criterion found. Max number of sinks is {}.",
-                    options_->getMaxFanout() ? options_->getMaxFanout()
-                                             : numMaxLeafSinks_);
-      break;
     }
   }
 
@@ -1838,6 +1839,33 @@ void HTreeBuilder::initSecondLevelSinks(
     const Point<double> bufPos(buf.first, buf.second);
     sinkInsts.emplace_back(mapLocationToSink_[bufPos]);
   }
+}
+
+double HTreeBuilder::LevelTopology::getLargestSinkRegionHPWL(
+    const unsigned wireSegmentUnit) const
+{
+  double bestHpwl = 0.0;
+  for (unsigned i = 0; i < branchSinkLocs_.size(); ++i) {
+    const auto& sinks = branchSinkLocs_[i];
+    if (sinks.size() < 2) {
+      continue;
+    }
+    double minX = sinks[0].getX();
+    double maxX = minX;
+    double minY = sinks[0].getY();
+    double maxY = minY;
+    for (unsigned j = 1; j < sinks.size(); ++j) {
+      minX = std::min(minX, sinks[j].getX());
+      maxX = std::max(maxX, sinks[j].getX());
+      minY = std::min(minY, sinks[j].getY());
+      maxY = std::max(maxY, sinks[j].getY());
+    }
+    const double hpwl = ((maxX - minX) + (maxY - minY));
+    if (hpwl > bestHpwl) {
+      bestHpwl = hpwl;
+    }
+  }
+  return bestHpwl * wireSegmentUnit;
 }
 
 void HTreeBuilder::computeBranchSinks(
