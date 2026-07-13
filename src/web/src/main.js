@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import { latLngToDbu } from './coordinates.js';
+import { latLngToDbu, dbuToLatLng } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
@@ -11,7 +11,8 @@ import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, computeBoundsTransforms, boundsEqual }
+    from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -876,6 +877,12 @@ if (staticCache) {
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    // On reconnect the server may have been restarted (possibly with a
+    // different design) — resync the coordinate transforms; a bounds
+    // change here reloads through the boot path.
+    app.websocketManager.onReconnected = () => {
+        resyncBounds(null, { reloadOnChange: true }).catch(() => {});
+    };
 }
 
 // Check initial connection status
@@ -999,10 +1006,74 @@ function ensureDebugContinueButton() {
     return btn;
 }
 
+// ─── Bounds / coordinate-transform sync ─────────────────────────────────────
+// The server's getBounds() is dynamic: DB edits (moving an instance
+// outside the block bbox, deleting an edge instance) change the tile
+// georeference.  The transforms below are applied at boot and re-synced
+// whenever the server reports different bounds — otherwise every later
+// click and highlight lands offset from the re-rendered tiles.
+
+function applyBounds(designBounds) {
+    const t = computeBoundsTransforms(designBounds);
+    if (!t) return false;
+    app.currentBounds = designBounds;
+    app.designScale = t.scale;
+    app.designMaxDXDY = t.maxDXDY;
+    app.designOriginX = t.originX;
+    app.designOriginY = t.originY;
+    app.fitBounds = t.fitBounds;
+    return true;
+}
+
+async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
+    if (isStaticMode(app) || !app.map) return;
+    let designBounds = inlineBounds;
+    if (!designBounds) {
+        try {
+            const data = await app.websocketManager.request({ type: 'bounds' });
+            designBounds = data.bounds;
+        } catch (err) {
+            return;
+        }
+    }
+    if (!designBounds || boundsEqual(app.currentBounds, designBounds)) return;
+
+    if (reloadOnChange) {
+        // After a reconnect, different bounds usually mean a different
+        // design — rebuild everything through the well-tested boot path.
+        window.location.reload();
+        return;
+    }
+
+    // Keep the DBU point at the center of the view where it is.
+    const hadDesign = !!app.designScale;
+    const center = hadDesign
+        ? latLngToDbu(app.map.getCenter().lat, app.map.getCenter().lng,
+                      app.designScale, app.designMaxDXDY,
+                      app.designOriginX, app.designOriginY)
+        : null;
+    if (!applyBounds(designBounds)) return;
+    if (center) {
+        const ll = dbuToLatLng(center.dbuX, center.dbuY, app.designScale,
+                               app.designMaxDXDY, app.designOriginX,
+                               app.designOriginY);
+        app.map.setView(ll, app.map.getZoom(), { animate: false });
+    }
+    // Client-side rectangles hold latlngs from the old transforms.
+    if (app.highlightRect) {
+        app.map.removeLayer(app.highlightRect);
+        app.highlightRect = null;
+    }
+    redrawAllLayers();
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
+        // An edit may have changed the design bounds (and with them the
+        // tile georeference); resync transforms before/along the redraw.
+        resyncBounds(msg.bounds).catch(() => {});
         redrawAllLayers();
         // The design may have been edited by another session's
         // set_property; refresh the inspected object's properties.
@@ -1083,29 +1154,9 @@ app.websocketManager.readyPromise.then(async () => {
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
 
-        const minY = designBounds[0][0];
-        const minX = designBounds[0][1];
-        const maxY = designBounds[1][0];
-        const maxX = designBounds[1][1];
-
-        const designWidth = maxX - minX;
-        const designHeight = maxY - minY;
-
         // No design loaded — skip map setup, let user open a DB via menu.
-        const hasDesign = designWidth > 0 && designHeight > 0;
+        const hasDesign = applyBounds(designBounds);
         if (hasDesign) {
-            const tileSize = 256;
-            const maxDXDY = Math.max(designWidth, designHeight);
-            const scale = tileSize / maxDXDY;
-            app.designScale = scale;
-            app.designMaxDXDY = maxDXDY;
-            app.designOriginX = minX;
-            app.designOriginY = minY;
-
-            app.fitBounds = [
-                [-maxDXDY * scale, 0],
-                [(designHeight - maxDXDY) * scale, designWidth * scale]
-            ];
             app.map.fitBounds(app.fitBounds);
 
             if (staticCache) {

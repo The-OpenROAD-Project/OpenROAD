@@ -17,6 +17,7 @@
 
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
+#include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -1393,7 +1394,28 @@ TEST_F(SetPropertyTest, StringEditAcceptedAndBroadcast)
   // Payload is rebuilt after the edit, reflecting the new value.
   EXPECT_EQ(root.at("name").as_string(), "renamed");
   ASSERT_EQ(broadcasts_.size(), 1u);
-  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+  auto push = parseObj(broadcasts_[0]);
+  EXPECT_EQ(push.at("type").as_string(), "refresh");
+  // Edits can change the design bounds (and with them the tile
+  // georeference); the push carries the current bounds so clients can
+  // resync their coordinate transforms without an extra round-trip.
+  ASSERT_TRUE(push.if_contains("bounds"));
+  const auto expected = serializeBoundsResponse(*gen_, gen_->shapesReady());
+  EXPECT_EQ(boost::json::serialize(push.at("bounds")),
+            boost::json::serialize(expected.at("bounds")));
+}
+
+// Documents the dynamic-bounds behavior the client resync exists for:
+// content added or moved outside the current block bbox changes the
+// served bounds (block bbox + pin-label margin).
+TEST_F(SetPropertyTest, BoundsFollowBlockBBoxChanges)
+{
+  const auto before = boost::json::serialize(
+      serializeBoundsResponse(*gen_, true).at("bounds"));
+  placeInst("BUF_X16", "far_away", -200000, -200000);
+  const auto after = boost::json::serialize(
+      serializeBoundsResponse(*gen_, true).at("bounds"));
+  EXPECT_NE(before, after);
 }
 
 TEST_F(SetPropertyTest, RejectedEditReportsErrorWithoutBroadcast)

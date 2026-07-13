@@ -220,6 +220,24 @@ class [[nodiscard]] ScopedDbuFormat
   gui::StringToDBU saved_to_dbu_;
 };
 
+// Payload for the {"type":"refresh"} broadcast sent after a DB-mutating
+// request.  Carries the CURRENT design bounds: edits can change them
+// (moving an instance outside the block bbox, deleting an edge instance),
+// which shifts the tile georeference — clients must resync their
+// coordinate transforms or every later click/highlight lands offset.
+// Bounds use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
+// response.
+static std::string refreshBroadcastPayload(const TileGenerator& gen)
+{
+  const odb::Rect bounds = gen.getBounds();
+  boost::json::object o;
+  o["type"] = "refresh";
+  o["bounds"]
+      = boost::json::array{boost::json::array{bounds.yMin(), bounds.xMin()},
+                           boost::json::array{bounds.yMax(), bounds.xMax()}};
+  return boost::json::serialize(o);
+}
+
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
                            const gui::Selected& sel)
@@ -1353,7 +1371,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
     resp.payload.assign(err.begin(), err.end());
   }
   if (accepted && broadcast_fn_) {
-    broadcast_fn_(R"({"type":"refresh"})");
+    broadcast_fn_(refreshBroadcastPayload(*gen_));
   }
   return resp;
 }
@@ -1496,7 +1514,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     resp.payload.assign(err.begin(), err.end());
   }
   if (executed && broadcast_fn_) {
-    broadcast_fn_(R"({"type":"refresh"})");
+    broadcast_fn_(refreshBroadcastPayload(*gen_));
   }
   return resp;
 }

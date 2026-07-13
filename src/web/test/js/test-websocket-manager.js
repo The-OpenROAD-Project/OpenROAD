@@ -681,4 +681,20 @@ describe('WebSocketManager.fromCache', () => {
             }
         });
     });
+
+    describe('onReconnected hook', () => {
+        it('fires on reconnect but not on the first connection', async () => {
+            const mgr = new WebSocketManager('ws://fake');
+            let calls = 0;
+            mgr.onReconnected = () => { calls++; };
+            await new Promise(r => setTimeout(r, 0));  // first onopen
+            assert.equal(calls, 0, 'first connection is not a reconnect');
+
+            // Server restart: socket closes, manager reconnects.
+            mgr.reconnectDelay = 0;
+            mgr.socket.onclose();
+            await new Promise(r => setTimeout(r, 5));  // reconnect + onopen
+            assert.equal(calls, 1, 'reconnect fires the hook');
+        });
+    });
 });

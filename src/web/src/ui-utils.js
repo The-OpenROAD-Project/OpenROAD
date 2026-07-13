@@ -81,6 +81,39 @@ export function showConfirmModal({ title, message, confirmLabel = 'OK',
     });
 }
 
+// Coordinate transforms derived from a server bounds response
+// ([[yMin, xMin], [yMax, xMax]], the tile-grid georeference).  Pure so it
+// can be unit-tested; returns null when the design is empty.
+export function computeBoundsTransforms(designBounds, tileSize = 256) {
+    if (!designBounds) return null;
+    const minY = designBounds[0][0];
+    const minX = designBounds[0][1];
+    const maxY = designBounds[1][0];
+    const maxX = designBounds[1][1];
+    const width = maxX - minX;
+    const height = maxY - minY;
+    if (!(width > 0) || !(height > 0)) return null;
+    const maxDXDY = Math.max(width, height);
+    const scale = tileSize / maxDXDY;
+    return {
+        scale,
+        maxDXDY,
+        originX: minX,
+        originY: minY,
+        fitBounds: [
+            [-maxDXDY * scale, 0],
+            [(height - maxDXDY) * scale, width * scale],
+        ],
+    };
+}
+
+// True when two bounds responses describe the same rectangle.
+export function boundsEqual(a, b) {
+    return !!a && !!b
+        && a[0][0] === b[0][0] && a[0][1] === b[0][1]
+        && a[1][0] === b[1][0] && a[1][1] === b[1][1];
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

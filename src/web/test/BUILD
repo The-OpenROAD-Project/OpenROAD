@@ -73,6 +73,13 @@ js_test(
 )
 
 js_test(
+    name = "ui_utils_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-ui-utils.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "websocket_manager_test",
     data = JS_FILES,
     entry_point = "js/test-websocket-manager.js",
