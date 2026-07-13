@@ -26,6 +26,8 @@ cc_library(
         "src/flow/opt_gatefusion.cc",
         "src/flow/opt_gatefusion.h",
         "src/flow/sequential_mapper.cc",
+        "src/flow/target_index.cc",
+        "src/flow/target_index.h",
         "src/synthesis.cpp",
     ],
     hdrs = [
