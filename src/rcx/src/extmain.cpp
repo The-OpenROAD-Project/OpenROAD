@@ -700,7 +700,7 @@ void extMain::measureRC(CoupleOptions& options)
 
       _totCCcnt++;  // TO_TEST
 
-      if (m._rc[_minModelIndex]->coupling_ < _coupleThreshold) {  // TO_TEST
+      if (m._rc[0]->coupling_ < _coupleThreshold) {
         updateTotalCap(rseg1, &m, deltaFr, m._metRCTable.getCnt(), true);
         updateTotalCap(rseg2, &m, deltaFr, m._metRCTable.getCnt(), true);
 
