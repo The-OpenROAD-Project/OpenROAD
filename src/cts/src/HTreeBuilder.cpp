@@ -1275,9 +1275,10 @@ void HTreeBuilder::run()
           logger_->info(CTS,
                         38,
                         " Stop criterion found. Sink region hpwl "
-                        "is smaller than max wirelength ({}) and max number of "
-                        "sinks is {}.",
-                        options_->getMaxWl() / options_->getWireSegmentUnit(),
+                        "is smaller than max wirelength ({:.3f} um) and max "
+                        "number of sinks is {}.",
+                        static_cast<double>(options_->getMaxWl())
+                            / options_->getDbUnits(),
                         options_->getMaxFanout() ? options_->getMaxFanout()
                                                  : numMaxLeafSinks_);
           break;

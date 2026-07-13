@@ -396,7 +396,7 @@ TritonCTS forced slew degradation on these wires.
 [DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
 [DEBUG CTS-tech char] curr wl = 12
 [DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (23) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 120.
 [INFO CTS-0201] 225 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
@@ -623,7 +623,7 @@ TritonCTS forced slew degradation on these wires.
 [DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
 [DEBUG CTS-tech char] curr wl = 12
 [DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (23) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 136.
 [INFO CTS-0018]     Created 641 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 37.

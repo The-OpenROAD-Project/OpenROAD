@@ -34,7 +34,7 @@
     Sinks per sub-region: 2
     Sub-region size: 3.5489 X 3.0879
 [INFO CTS-0034]     Segment length (rounded): 2.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 3.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
@@ -67,7 +67,7 @@
     Sinks per sub-region: 9
     Sub-region size: 3.3521 X 1.4000
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 144.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk1.
@@ -90,7 +90,7 @@
     Sinks per sub-region: 9
     Sub-region size: 3.1757 X 1.0879
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk3.
@@ -113,7 +113,7 @@
     Sinks per sub-region: 9
     Sub-region size: 3.1350 X 1.0879
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk4.
@@ -131,7 +131,7 @@
     Sinks per sub-region: 1
     Sub-region size: 0.0000 X 0.0000
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 1.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk4_regs.
@@ -154,7 +154,7 @@
     Sinks per sub-region: 9
     Sub-region size: 3.1350 X 1.2000
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk2.
@@ -177,7 +177,7 @@
     Sinks per sub-region: 9
     Sub-region size: 3.1757 X 1.2000
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
 [INFO CTS-0018]     Created 3 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
