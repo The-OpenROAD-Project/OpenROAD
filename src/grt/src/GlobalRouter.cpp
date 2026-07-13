@@ -4805,6 +4805,12 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
 
   if (use_cugr_) {
     cugr_->removeNet(db_net);
+    auto it = db_net_map_.find(db_net);
+    if (it != db_net_map_.end()) {
+      delete it->second;
+      db_net_map_.erase(it);
+    }
+    routes_.erase(db_net);
   } else {
     auto it = db_net_map_.find(db_net);
     if (it == db_net_map_.end() || it->second == nullptr) {
