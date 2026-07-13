@@ -1356,6 +1356,10 @@ void CUGR::updateNet(odb::dbNet* db_net)
     const int idx = gr_net->getIndex();
     const CUGRNet& base_net = design_->getAllNets()[idx];
     gr_nets_[idx] = std::make_unique<GRNet>(base_net, grid_graph_.get());
+    // Reapply the NDR cost/width dropped by the fresh GRNet so the reroute
+    // honors the net's rule (matches CUGR::init).
+    gr_nets_[idx]->setNdrCosts(computeNdrCosts(db_net));
+    gr_nets_[idx]->setNdrWidths(computeNdrWidths(db_net));
     db_net_map_[db_net] = gr_nets_[idx].get();
     nets_to_route_.push_back(idx);
   } else {
@@ -1367,6 +1371,8 @@ void CUGR::updateNet(odb::dbNet* db_net)
     }
     gr_nets_.push_back(
         std::make_unique<GRNet>(design_->getAllNets()[idx], grid_graph_.get()));
+    gr_nets_.back()->setNdrCosts(computeNdrCosts(db_net));
+    gr_nets_.back()->setNdrWidths(computeNdrWidths(db_net));
     net_indices_.push_back(idx);
     db_net_map_[db_net] = gr_nets_.back().get();
     nets_to_route_.push_back(idx);
@@ -1508,6 +1514,11 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
     net_indices_.push_back(idx);
     new_net = gr_nets_.back().get();
   }
+  // Restore the NDR cost/width so the restored tree commits the same demand
+  // the net's rule requires (a fresh GRNet defaults to the 1.0 factor); covers
+  // both the still-present and the re-admitted (removed-then-restored) net.
+  new_net->setNdrCosts(computeNdrCosts(db_net));
+  new_net->setNdrWidths(computeNdrWidths(db_net));
   db_net_map_[db_net] = new_net;
 
   // Each pin must land on the restored tree; record the access point it uses so
