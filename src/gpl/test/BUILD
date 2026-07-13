@@ -146,7 +146,7 @@ cc_test(
     srcs = ["fft_test.cc"],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//src/gpl",  # buildcleaner keep: needs fixing gpl layering first.
+        "//src/gpl",  # buildcleaner: keep: needs fixing gpl layering first.
         "//src/gpl:gpl_private_hdrs",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
