@@ -252,6 +252,7 @@ class GlobalRouter
   std::vector<odb::dbNet*> getNetsToRoute();
   void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
   bool connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  bool connectCUGRRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
   void findBufferPinPostions(Net* net1,
                              Net* net2,
                              odb::Point& pin_pos1,
