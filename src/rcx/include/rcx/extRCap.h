@@ -2267,13 +2267,7 @@ class extMain
   void cleanCornerTables();
   int getDbCornerIndex(const char* name);
   int getDbCornerModel(const char* name);
-  void resetState();
-  static std::unique_ptr<extRCModel> parseRules(
-      odb::dbTech* tech,
-      const Array1D<extCorner*>* process_corner_table,
-      bool is_v2,
-      utl::Logger* logger);
-  void registerRulesModel(std::unique_ptr<extRCModel> rules_model);
+  void registerRulesModel(extRCModel* rules_model);
   int getProcessCornerDbIndex(int pcidx);
   void getScaledCornerDbIndex(int pcidx, int& scidx, int& scdbIdx);
   void getScaledRC(int sidx, double& res, double& cap);
@@ -2833,5 +2827,11 @@ class extMain
                              dbCreateNetUtil* db_net_util);  // 061123
   // ---------------------------------------------------------
 };
+
+std::unique_ptr<extRCModel> parseRules(
+    odb::dbTech* tech,
+    const Array1D<extCorner*>* extractor_corner_table,
+    bool is_v2,
+    utl::Logger* logger);
 
 }  // namespace rcx

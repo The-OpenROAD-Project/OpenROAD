@@ -1469,18 +1469,9 @@ void extMain::makeCornerNameMap()
   updatePrevControl();
 }
 
-void extMain::resetState()
-{
-  _modelMap.resetCnt(0);
-  _metRCTable.resetCnt(0);
-  _minModelIndex = 0;
-  _maxModelIndex = 0;
-  _typModelIndex = 0;
-}
-
-std::unique_ptr<extRCModel> extMain::parseRules(
+std::unique_ptr<extRCModel> parseRules(
     odb::dbTech* tech,
-    const Array1D<extCorner*>* process_corner_table,
+    const Array1D<extCorner*>* extractor_corner_table,
     bool is_v2,
     utl::Logger* logger)
 {
@@ -1501,9 +1492,9 @@ std::unique_ptr<extRCModel> extMain::parseRules(
   constexpr int max_corners = 10;
   uint32_t corner_table[max_corners];
   uint32_t corner_count = 0;
-  if (process_corner_table != nullptr) {
-    for (uint32_t ii = 0; ii < process_corner_table->getCnt(); ii++) {
-      extCorner* corner = process_corner_table->get(ii);
+  if (extractor_corner_table) {
+    for (uint32_t ii = 0; ii < extractor_corner_table->getCnt(); ii++) {
+      extCorner* corner = extractor_corner_table->get(ii);
       corner_table[corner_count++] = corner->_model;
     }
   }
@@ -1567,15 +1558,23 @@ std::unique_ptr<extRCModel> extMain::parseRules(
   return model;
 }
 
-void extMain::registerRulesModel(std::unique_ptr<extRCModel> rules_model)
+void extMain::registerRulesModel(extRCModel* rules_model)
 {
+  // Differently from the other corner-related structures, the
+  // list of models is cleared at the end of the extraction flow.
+  _modelTable->add(rules_model);
+
+  // Clear rules data per corner.
+  _metRCTable.resetCnt(0);
+
+  // Clear corner -> model mapping.
+  _modelMap.resetCnt(0);
+
   if (_processCornerTable != nullptr) {
     for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       _modelMap.add(ii);
     }
   }
-
-  _modelTable->add(rules_model.release());
 
   if (_processCornerTable == nullptr) {
     const int modelCnt = getRCmodel(0)->getModelCnt();
@@ -1685,15 +1684,14 @@ void extMain::makeBlockRCsegs()
   _diagFlow = true;
   _usingMetalPlanes = true;
 
-  const bool has_rules_file
-      = !_block->getTech()->getExtractionRulesFile().empty();
+  odb::dbTech* tech = _block->getTech();
+  const bool has_rules_file = !tech->getExtractionRulesFile().empty();
+
   if ((_processCornerTable != nullptr)
       || ((_processCornerTable == nullptr) && has_rules_file)) {
-    resetState();
-
     std::unique_ptr<extRCModel> rules_model
-        = parseRules(_block->getTech(), _processCornerTable, _v2, logger_);
-    registerRulesModel(std::move(rules_model));
+        = parseRules(tech, _processCornerTable, _v2, logger_);
+    registerRulesModel(rules_model.release());
 
     uint32_t scaled_corner_count = 0;
     if (_scaledCornerTable != nullptr) {
