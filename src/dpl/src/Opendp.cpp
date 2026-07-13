@@ -129,7 +129,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
                                bool incremental,
-                               const bool use_old_diamond,
+                               const bool use_diamond_legalizer,
                                const bool run_abacus,
                                const int site_search_window,
                                const int row_search_window,
@@ -138,7 +138,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 {
   utl::Timer timer;
   incremental_ = incremental;
-  use_old_diamond_ |= use_old_diamond;
+  use_diamond_legalizer_ |= use_diamond_legalizer;
   importDb();
   adjustNodesOrient();
   if (!incremental_) {
@@ -217,7 +217,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                 max_displacement_x_,
                 max_displacement_y_);
 
-  if (use_old_diamond_) {
+  if (use_diamond_legalizer_) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
     findDisplacementStats();
