@@ -113,7 +113,6 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
                          bool use_old_diamond = false,
-                         bool run_abacus = false,
                          int site_search_window = -1,
                          int row_search_window = -1,
                          double drc_penalty = -1.0,

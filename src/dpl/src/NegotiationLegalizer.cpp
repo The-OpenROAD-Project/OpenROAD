@@ -9,8 +9,6 @@
 #include <cstddef>
 #include <limits>
 #include <map>
-#include <queue>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -107,7 +105,8 @@ void NegotiationLegalizer::legalize()
   logger_->info(
       utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
 
-  double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
+  double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0},
+      init_state_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
       orient_s{0};
   const utl::Timer total_timer;
@@ -159,83 +158,51 @@ void NegotiationLegalizer::legalize()
              grid_w_,
              grid_h_);
 
-  // --- Part 1: Abacus (handles the majority of cells cheaply) -------------
+  // --- Part 1: initial state (usage, grid sync, legality scan) ------------
   std::vector<int> illegal;
-  if (run_abacus_) {
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation",
-               1,
-               "NegotiationLegalizer: running Abacus pass.");
-    {
-      utl::DebugScopedTimer t(abacus_s,
-                              logger_,
-                              utl::DPL,
-                              "negotiation_runtime",
-                              1,
-                              "runAbacus: {}");
-      illegal = runAbacus();
-    }
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation",
-               1,
-               "NegotiationLegalizer: Abacus done, {} cells still illegal.",
-               illegal.size());
-  } else {
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation",
-               1,
-               "NegotiationLegalizer: skipping Abacus pass.");
-    {
-      utl::DebugScopedTimer t(abacus_s,
-                              logger_,
-                              utl::DPL,
-                              "negotiation_runtime",
-                              1,
-                              "skip-Abacus addUsage: {}");
-      // Populate usage from initial coordinates
-      for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-        if (!cells_[i].fixed) {
-          addUsage(i, 1);
-        }
+  {
+    utl::DebugScopedTimer t(init_state_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "init addUsage: {}");
+    // Populate usage from initial coordinates
+    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+      if (!cells_[i].fixed) {
+        addUsage(i, 1);
       }
     }
-    {
-      utl::DebugScopedTimer t(abacus_s,
-                              logger_,
-                              utl::DPL,
-                              "negotiation_runtime",
-                              1,
-                              "skip-Abacus syncAllCellsToDplGrid: {}");
-      // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
-      // lookups see the correct placement state.
-      syncAllCellsToDplGrid();
-    }
-    {
-      utl::DebugScopedTimer t(abacus_s,
-                              logger_,
-                              utl::DPL,
-                              "negotiation_runtime",
-                              1,
-                              "skip-Abacus isCellLegal scan: {}");
-      for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-        if (!cells_[i].fixed) {
-          cells_[i].legal = isCellLegal(i);
-          if (!cells_[i].legal) {
-            illegal.push_back(i);
-          }
-        }
-      }
-    }
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation",
-               1,
-               "{} illegal cells",
-               illegal.size());
   }
+  {
+    utl::DebugScopedTimer t(init_state_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "init syncAllCellsToDplGrid: {}");
+    // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
+    // lookups see the correct placement state.
+    syncAllCellsToDplGrid();
+  }
+  {
+    utl::DebugScopedTimer t(init_state_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "init isCellLegal scan: {}");
+    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+      if (!cells_[i].fixed) {
+        cells_[i].legal = isCellLegal(i);
+        if (!cells_[i].legal) {
+          illegal.push_back(i);
+        }
+      }
+    }
+  }
+  debugPrint(
+      logger_, utl::DPL, "negotiation", 1, "{} illegal cells", illegal.size());
 
   if (debug_observer_) {
     commitNegotiationPosToDpl();
@@ -246,9 +213,7 @@ void NegotiationLegalizer::legalize()
         "exclude gpl-to-init displacement.");
     commitNegotiationPosToOdb();
     pushNegotiationPixels();
-    logger_->report(run_abacus_
-                        ? "Pause after initialization: Abacus executed."
-                        : "Pause after initialization: Abacus skipped.");
+    logger_->report("Pause after initialization.");
     debug_observer_->redrawAndPause();
   }
 
@@ -356,7 +321,7 @@ void NegotiationLegalizer::legalize()
              "initFromDb {:.1f}ms ({:.0f}%), "
              "buildGrid {:.1f}ms ({:.0f}%), "
              "initFenceRegions {:.1f}ms ({:.0f}%), "
-             "abacus {:.1f}ms ({:.0f}%), "
+             "initState {:.1f}ms ({:.0f}%), "
              "negotiation {:.1f}ms ({:.0f}%), "
              "postNegSync {:.1f}ms ({:.0f}%), "
              "metrics {:.1f}ms ({:.0f}%), "
@@ -369,8 +334,8 @@ void NegotiationLegalizer::legalize()
              pct(build_grid_s),
              to_ms(fence_regions_s),
              pct(fence_regions_s),
-             to_ms(abacus_s),
-             pct(abacus_s),
+             to_ms(init_state_s),
+             pct(init_state_s),
              to_ms(negotiation_s),
              pct(negotiation_s),
              to_ms(post_neg_sync_s),
@@ -1233,234 +1198,6 @@ bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const
     return true;
   }
   return fences_[cell.fence_id].contains(x, y, cell.width, cell.height);
-}
-
-// TODO: remove this function!
-std::pair<int, int> NegotiationLegalizer::snapToLegal(int cell_idx,
-                                                      int x,
-                                                      int y) const
-{
-  const NegCell& cell = cells_[cell_idx];
-  int best_x = std::max(0, std::min(x, grid_w_ - cell.width));
-  int best_y = y;
-  double best_dist_sq = 1e18;
-
-  for (int r = 0; r + cell.height <= grid_h_; ++r) {
-    if (!isValidRow(r, cell, x)) {
-      continue;
-    }
-
-    // Find nearest valid X region in this row.
-    int local_best_x = -1;
-    int local_best_dx = 1e9;
-
-    for (int tx = 0; tx + cell.width <= grid_w_; ++tx) {
-      bool ok = true;
-      for (int dy = 0; dy < cell.height; ++dy) {
-        for (int dx = 0; dx < cell.width; ++dx) {
-          if (gridAt(tx + dx, r + dy).capacity == 0) {
-            ok = false;
-            break;
-          }
-        }
-        if (!ok) {
-          break;
-        }
-      }
-
-      if (ok && respectsFence(cell_idx, tx, r)) {
-        const int dx = std::abs(tx - x);
-        if (dx < local_best_dx) {
-          local_best_dx = dx;
-          local_best_x = tx;
-        }
-      }
-    }
-
-    if (local_best_x != -1) {
-      const double dy = static_cast<double>(r - y);
-      const double dx = static_cast<double>(local_best_dx);
-      const double distSq = dx * dx + dy * dy;
-      if (distSq < best_dist_sq) {
-        best_dist_sq = distSq;
-        best_x = local_best_x;
-        best_y = r;
-      }
-    }
-  }
-
-  return {best_x, best_y};
-}
-
-// ===========================================================================
-// Abacus pass
-// ===========================================================================
-
-std::vector<int> NegotiationLegalizer::runAbacus()
-{
-  // Build sorted order: ascending y then x.
-  std::vector<int> order;
-  order.reserve(cells_.size());
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (!cells_[i].fixed) {
-      order.push_back(i);
-    }
-  }
-  std::ranges::sort(order, [this](int a, int b) {
-    if (cells_[a].y != cells_[b].y) {
-      return cells_[a].y < cells_[b].y;
-    }
-    return cells_[a].x < cells_[b].x;
-  });
-
-  // Remove movable cell usage before replanting.
-  for (int i : order) {
-    addUsage(i, -1);
-  }
-
-  // Snap each cell to a legal row and group by that row.
-  std::vector<std::vector<int>> byRow(grid_h_);
-  for (int i : order) {
-    auto [sx, sy] = snapToLegal(i, cells_[i].x, cells_[i].y);
-    cells_[i].x = sx;
-    cells_[i].y = sy;
-    if (sy >= 0 && sy < grid_h_) {
-      byRow[sy].push_back(i);
-    }
-  }
-
-  // Run the Abacus sweep row by row.
-  for (int r = 0; r < grid_h_; ++r) {
-    if (byRow[r].empty()) {
-      continue;
-    }
-    std::ranges::sort(
-        byRow[r], [this](int a, int b) { return cells_[a].x < cells_[b].x; });
-    abacusRow(r, byRow[r]);
-  }
-
-  // Restore movable cell usage after placement.
-  for (int i : order) {
-    addUsage(i, 1);
-  }
-
-  // Sync to DPL Grid before DRC checks.
-  syncAllCellsToDplGrid();
-
-  // Collect still-illegal cells.
-  std::vector<int> illegal;
-  for (int i : order) {
-    cells_[i].legal = isCellLegal(i);
-    if (!cells_[i].legal) {
-      illegal.push_back(i);
-    }
-  }
-  return illegal;
-}
-
-void NegotiationLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
-{
-  std::vector<AbacusCluster> clusters;
-
-  for (int idx : cellsInRow) {
-    const NegCell& cell = cells_[idx];
-
-    // Skip cells that violate fence or row constraints – negotiation handles
-    // them later.
-    if (!respectsFence(idx, cell.x, rowIdx)
-        || !isValidRow(rowIdx, cell, cell.x)) {
-      continue;
-    }
-
-    AbacusCluster nc;
-    nc.cell_indices.push_back(idx);
-    const int eff_width = cell.width + cell.pad_left + cell.pad_right;
-    // Target the padded-left position so that cell.init_x lands correctly.
-    nc.optimal_x = static_cast<double>(cell.init_x - cell.pad_left);
-    nc.total_weight = 1.0;
-    nc.total_q = nc.optimal_x;
-    nc.total_width = eff_width;
-
-    // Clamp to die boundary (padded width).
-    nc.optimal_x = std::max(
-        0.0, std::min(nc.optimal_x, static_cast<double>(grid_w_ - eff_width)));
-    clusters.push_back(std::move(nc));
-    collapseClusters(clusters, rowIdx);
-  }
-
-  // Write solved positions back to cells_.
-  for (const auto& cluster : clusters) {
-    assignClusterPositions(cluster, rowIdx);
-  }
-}
-
-void NegotiationLegalizer::collapseClusters(
-    std::vector<AbacusCluster>& clusters,
-    int /*rowIdx*/)
-{
-  while (clusters.size() >= 2) {
-    AbacusCluster& last = clusters[clusters.size() - 1];
-    AbacusCluster& prev = clusters[clusters.size() - 2];
-
-    // Solve optimal position for the last cluster.
-    last.optimal_x = last.total_q / last.total_weight;
-    last.optimal_x
-        = std::max(0.0,
-                   std::min(last.optimal_x,
-                            static_cast<double>(grid_w_ - last.total_width)));
-
-    // If the last cluster overlaps the previous one, merge them.
-    if (prev.optimal_x + prev.total_width > last.optimal_x) {
-      prev.total_weight += last.total_weight;
-      prev.total_q += last.total_q;
-      prev.total_width += last.total_width;
-      for (int idx : last.cell_indices) {
-        prev.cell_indices.push_back(idx);
-      }
-      prev.optimal_x = prev.total_q / prev.total_weight;
-      prev.optimal_x
-          = std::max(0.0,
-                     std::min(prev.optimal_x,
-                              static_cast<double>(grid_w_ - prev.total_width)));
-      clusters.pop_back();
-    } else {
-      break;
-    }
-  }
-
-  // Re-solve the top cluster after any merge.
-  if (!clusters.empty()) {
-    AbacusCluster& top = clusters.back();
-    top.optimal_x = top.total_q / top.total_weight;
-    top.optimal_x
-        = std::max(0.0,
-                   std::min(top.optimal_x,
-                            static_cast<double>(grid_w_ - top.total_width)));
-  }
-}
-
-void NegotiationLegalizer::assignClusterPositions(const AbacusCluster& cluster,
-                                                  int rowIdx)
-{
-  // cluster.optimal_x is the padded-left edge of the cluster.
-  int paddedX = static_cast<int>(std::round(cluster.optimal_x));
-  paddedX = std::max(0, std::min(paddedX, grid_w_ - cluster.total_width));
-
-  for (int idx : cluster.cell_indices) {
-    const int eff_width
-        = cells_[idx].width + cells_[idx].pad_left + cells_[idx].pad_right;
-    // Physical left edge = padded-left edge + pad_left of this cell.
-    cells_[idx].x = paddedX + cells_[idx].pad_left;
-    cells_[idx].y = rowIdx;
-    paddedX += eff_width;
-    if (debug_observer_ && cells_[idx].db_inst != nullptr) {
-      debug_observer_->drawSelected(cells_[idx].db_inst, false);
-      if (opendp_->iterative_debug_) {
-        pushNegotiationPixels();
-        debug_observer_->redrawAndPause();
-      }
-    }
-  }
 }
 
 bool NegotiationLegalizer::isCellLegal(int cell_idx) const
