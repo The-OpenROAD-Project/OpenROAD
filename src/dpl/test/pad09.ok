@@ -2,6 +2,4 @@
 [INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
-[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
-[INFO DPL-0389]   height 3.330 um: 2 cells
 No differences found.

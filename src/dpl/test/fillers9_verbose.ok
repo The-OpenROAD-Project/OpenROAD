@@ -1,8 +1,6 @@
 [INFO ODB-0227] LEF file: fillers9.lef, created 5 layers, 14 library cells
 [INFO ODB-0128] Design: fillers9
 [INFO ODB-0131]     Created 8 components and 32 component-terminals.
-[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
-[INFO DPL-0389]   height 1.400 um: 8 cells
 [INFO DPL-0001] Placed 22 filler instances.
 Filler usage:
   FILLCELL_RVT_X1:  1

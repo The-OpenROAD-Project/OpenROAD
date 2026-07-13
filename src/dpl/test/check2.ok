@@ -1,8 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: ten_cells
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
-[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
-[INFO DPL-0389]   height 1.400 um: 2 cells
 [WARNING DPL-0005] Overlap check failed (1).
  _285_ (NOR2_X1) overlaps _284_ (NOR2_X1)
 [WARNING DPL-0011] Padding check failed (1).

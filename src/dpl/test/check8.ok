@@ -4,5 +4,3 @@
 [INFO ODB-0128] Design: single_cell
 [INFO ODB-0131]     Created 6 components and 12 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 12 connections.
-[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
-[INFO DPL-0389]   height 1.400 um: 6 cells
