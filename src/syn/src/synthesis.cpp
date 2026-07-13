@@ -324,13 +324,13 @@ void Synthesis::mapCombinationals()
   syn::mapCombinationals(*graph_, sta_->network(), logger_, *this);
 }
 
-void Synthesis::abcRoundtrip(const std::string& commands)
+void Synthesis::abcRoundtrip(const std::string& commands, int naming_threshold)
 {
   if (!graph_) {
     logger_->error(utl::SYN, 24, "No graph. Run syn::elaborate first.");
     return;
   }
-  syn::abcRoundtrip(*graph_, commands, logger_);
+  syn::abcRoundtrip(*graph_, commands, logger_, naming_threshold);
 }
 
 void Synthesis::gateFuseOpt()

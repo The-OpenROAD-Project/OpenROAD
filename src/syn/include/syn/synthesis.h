@@ -86,7 +86,7 @@ class Synthesis : public sta::dbStaState
   void mapCombinationals();
 
   // Export AIG to ABC, run commands, reimport.
-  void abcRoundtrip(const std::string& commands);
+  void abcRoundtrip(const std::string& commands, int naming_threshold = -1);
 
   // Post-mapping cell fusion optimization.
   void gateFuseOpt();
@@ -126,7 +126,10 @@ void mapCombinationals(Graph& g,
                        sta::Network* network,
                        utl::Logger* logger,
                        const Synthesis& syn);
-void abcRoundtrip(Graph& g, const std::string& commands, utl::Logger* logger);
+void abcRoundtrip(Graph& g,
+                  const std::string& commands,
+                  utl::Logger* logger,
+                  int naming_threshold = -1);
 void livenessOpt(Graph& g,
                  utl::Logger* logger,
                  bool replace_combinational = false);
