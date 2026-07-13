@@ -312,7 +312,7 @@ proc set_routing_auto_taper { args } {
   if { !([info exists flags(-enable)] ^ [info exists flags(-disable)]) } {
     utl::error ORD 1017 "Exactly one of -enable or -disable must be specified."
   }
-  set disable [info exists flags(-disable)]
+  set enable [info exists flags(-enable)]
   set block [ord::get_db_block]
   if { [info exists keys(-net)] } {
     set netName $keys(-net)
@@ -320,10 +320,10 @@ proc set_routing_auto_taper { args } {
     if { $net == "NULL" } {
       utl::error ORD 1018 "No net named ${netName} found."
     }
-    $net setDisableAutoTaper $disable
+    $net setDisableAutoTaper [expr { !$enable }]
   } else {
     foreach net [sta::find_all_clk_nets] {
-      $net setDisableAutoTaper $disable
+      $net setDisableAutoTaper [expr { !$enable }]
     }
   }
 }
