@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -158,42 +159,53 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         = static_cast<int64_t>(core_.dx()) * static_cast<int64_t>(core_.dy());
     int64_t inst_area = 0;
     for (const auto& node : network_->getNodes()) {
-      if (node->getType() == Node::CELL) {
+      if (node->getType() == Node::CELL && !node->isFixed()) {
         inst_area += static_cast<int64_t>(node->getWidth().v)
                      * static_cast<int64_t>(node->getHeight().v);
       }
     }
-    int64_t total_inst_area = 0;
+    // Area of fixed instances (macros, pads, endcaps, ...) clipped to the
+    // core: only the part that overlaps the core blocks placement sites.
+    int64_t fixed_area = 0;
     for (odb::dbInst* inst : block_->getInsts()) {
-      odb::dbMaster* master = inst->getMaster();
-      total_inst_area += static_cast<int64_t>(master->getWidth())
-                         * static_cast<int64_t>(master->getHeight());
+      if (!inst->isFixed()) {
+        continue;
+      }
+      const odb::Rect bbox = inst->getBBox()->getBox();
+      if (!bbox.intersects(core_)) {
+        continue;
+      }
+      const odb::Rect overlap = bbox.intersect(core_);
+      fixed_area += overlap.area();
     }
+    const int64_t free_area = core_area - fixed_area;
     const double utilization = core_area > 0
                                    ? (static_cast<double>(inst_area)
                                       / static_cast<double>(core_area))
                                          * 100.0
                                    : 0.0;
-    const double total_utilization = core_area > 0
-                                         ? (static_cast<double>(total_inst_area)
-                                            / static_cast<double>(core_area))
-                                               * 100.0
-                                         : 0.0;
+    // Movable cell area over the core area left free by fixed instances:
+    // above 100% legalization is impossible.
+    const double effective_utilization
+        = free_area > 0 ? (static_cast<double>(inst_area)
+                           / static_cast<double>(free_area))
+                              * 100.0
+                        : std::numeric_limits<double>::infinity();
     logger_->info(DPL,
                   6,
-                  "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
-                  "Utilization: {:.1f}%",
+                  "Core area: {:.2f} um^2, Movable instances area: {:.2f} "
+                  "um^2, Utilization: {:.1f}%",
                   block_->dbuAreaToMicrons(core_area),
                   block_->dbuAreaToMicrons(inst_area),
                   utilization);
     logger_->info(DPL,
                   7,
-                  "All instances area (incl. macros/pads/fixed): {:.2f} um^2, "
-                  "Utilization: {:.1f}%",
-                  block_->dbuAreaToMicrons(total_inst_area),
-                  total_utilization);
-    logger_->metric("utilization__before__dpl", total_utilization);
-    if (total_utilization > 100.0) {
+                  "Fixed instances area within core: {:.2f} um^2, "
+                  "Effective utilization of free area: {:.1f}%",
+                  block_->dbuAreaToMicrons(fixed_area),
+                  effective_utilization);
+    logger_->metric("utilization__before__dpl", effective_utilization);
+    if (effective_utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
     }
