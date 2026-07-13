@@ -158,6 +158,9 @@ class CUGR
   // Builds a routing tree spanning the segments' gcells; nullptr if the
   // segments are malformed or disconnected.
   std::shared_ptr<GRTreeNode> buildTreeFromRoute(const GRoute& route) const;
+  // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
+  // from every committed tree and report drift from the tracked demand.
+  void verifyDemandConsistency(const char* tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.

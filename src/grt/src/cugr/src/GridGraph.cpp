@@ -898,6 +898,34 @@ void GridGraph::commitVia(const int layer_index,
   }
 }
 
+std::vector<std::vector<std::vector<CapacityT>>> GridGraph::snapshotDemand()
+    const
+{
+  std::vector<std::vector<std::vector<CapacityT>>> snap(graph_edges_.size());
+  for (size_t l = 0; l < graph_edges_.size(); l++) {
+    snap[l].resize(graph_edges_[l].size());
+    for (size_t x = 0; x < graph_edges_[l].size(); x++) {
+      snap[l][x].reserve(graph_edges_[l][x].size());
+      for (const GraphEdge& edge : graph_edges_[l][x]) {
+        snap[l][x].push_back(edge.demand);
+      }
+    }
+  }
+  return snap;
+}
+
+void GridGraph::restoreDemand(
+    const std::vector<std::vector<std::vector<CapacityT>>>& snap)
+{
+  for (size_t l = 0; l < graph_edges_.size(); l++) {
+    for (size_t x = 0; x < graph_edges_[l].size(); x++) {
+      for (size_t y = 0; y < graph_edges_[l][x].size(); y++) {
+        graph_edges_[l][x][y].demand = snap[l][x][y];
+      }
+    }
+  }
+}
+
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool rip_up,
                            const std::vector<double>& net_costs)

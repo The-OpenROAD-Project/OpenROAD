@@ -1811,6 +1811,58 @@ void CUGR::saveCongestion()
 void CUGR::routeIncremental()
 {
   route(/*incremental=*/true);
+  verifyDemandConsistency("incremental");
+}
+
+void CUGR::verifyDemandConsistency(const char* tag)
+{
+  if (!logger_->debugCheck(GRT, "verify_demand", 1)) {
+    return;
+  }
+  // Recompute demand from every committed tree and compare against the
+  // incrementally-maintained demand. A mismatch means an add/remove asymmetry
+  // or a leaked/duplicated commit (e.g. a restore that mis-accounts).
+  const auto live = grid_graph_->snapshotDemand();
+  for (const auto& net : gr_nets_) {
+    if (net && net->getRoutingTree()) {
+      grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+    }
+  }
+  const auto base = grid_graph_->snapshotDemand();
+  for (const auto& net : gr_nets_) {
+    if (net && net->getRoutingTree()) {
+      grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+    }
+  }
+  const auto recomputed = grid_graph_->snapshotDemand();
+  grid_graph_->restoreDemand(live);  // leave the grid exactly as found
+
+  constexpr double tol = 1e-6;
+  double max_diff = 0.0;
+  double min_base = 0.0;
+  int mismatches = 0;
+  for (size_t l = 0; l < live.size(); l++) {
+    for (size_t x = 0; x < live[l].size(); x++) {
+      for (size_t y = 0; y < live[l][x].size(); y++) {
+        const double diff = std::abs(recomputed[l][x][y] - live[l][x][y]);
+        max_diff = std::max(max_diff, diff);
+        min_base = std::min(min_base, base[l][x][y]);
+        if (diff > tol) {
+          mismatches++;
+        }
+      }
+    }
+  }
+  debugPrint(logger_,
+             GRT,
+             "verify_demand",
+             1,
+             "demand round-trip [{}]: max_diff={:.6g} mismatched_edges={} "
+             "min_base_demand={:.6g}",
+             tag,
+             max_diff,
+             mismatches,
+             min_base);
 }
 
 }  // namespace grt
