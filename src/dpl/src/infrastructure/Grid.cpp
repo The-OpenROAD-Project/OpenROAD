@@ -234,9 +234,8 @@ void Grid::initGrid(odb::dbDatabase* db,
   markBlocked(block);
 }
 
-std::pair<odb::dbSite*, odb::dbOrientType> Grid::getShortestSite(
-    GridX grid_x,
-    GridY grid_y) const
+std::pair<odb::dbSite*, odb::dbOrientType> Grid::getShortestSite(GridX grid_x,
+                                                                 GridY grid_y)
 {
   odb::dbSite* selected_site = nullptr;
   odb::dbOrientType selected_orient;

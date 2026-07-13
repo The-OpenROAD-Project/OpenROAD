@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <map>
 #include <memory>
 #include <utility>
@@ -256,15 +257,6 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
   return segment;
 }
 
-// Returns (topPwr, botPwr) for the master's rails. Power_UNK when an edge
-// has no rail, or when POWER and GROUND both touch it.
-//
-// Each MPin rectangle is tested individually, since a single MPin can hold
-// rails on both edges (e.g. double-height cells with VSS at top and bottom)
-// or include internal straps that would pull a per-pin bbox center off the
-// rail. Only ROUTING-layer geometry counts, to ignore NWELL/PWELL implants
-// encoded as POWER/GROUND pins on MASTERSLICE layers.
-// layers) from polluting the rail detection.
 std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
 {
   int max_pwr = std::numeric_limits<int>::min();

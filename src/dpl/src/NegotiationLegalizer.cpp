@@ -128,10 +128,6 @@ void NegotiationLegalizer::legalize()
     }
   }
 
-  if (debug_observer_) {
-    debug_observer_->startPlacement(db_->getChip()->getBlock());
-  }
-
   {
     utl::DebugScopedTimer t(build_grid_s,
                             logger_,
@@ -346,16 +342,6 @@ void NegotiationLegalizer::legalize()
         }
       }
     }
-  }
-
-  {
-    utl::DebugScopedTimer t(flush_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "commitNegotiationPosToOdb: {}");
-    commitNegotiationPosToOdb();
   }
 
   const double total_s = total_timer.elapsed();
@@ -614,15 +600,10 @@ bool NegotiationLegalizer::initFromDb()
     cell.x = cell.init_x;
     cell.y = cell.init_y;
 
-    // gridX() / gridRoundY() are purely arithmetic and don't check whether a
-    // site actually exists at the computed position.  Instances near the chip
-    // boundary or in sparse-row designs can land on invalid (is_valid=false)
-    // pixels.  Fix those with a 4-direction linear search (modeled on
-    // Opendp::moveHopeless).  We only check geometric validity here
-    // (pixel.is_valid covers fragmented-row gaps and hard blockages).
-    // Site-type matching, soft blockages, routing-layer blockages, and
-    // cell-vs-cell overlap are left to the negotiation loop, which re-checks
-    // every candidate via isValidRow.
+    // gridX() / gridRoundY() don't check whether a site actually exists at the
+    // computed position.  Instances near the chip boundary or in sparse-row
+    // designs can land on invalid (is_valid=false) pixels.  Fix those with a
+    // 4-direction linear search (based on Opendp::moveHopeless).
     if (!cell.fixed) {
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
@@ -632,7 +613,7 @@ bool NegotiationLegalizer::initFromDb()
             || pixel_bottom + cell.height > grid_h_) {
           return false;
         }
-        // Site-type matching is enforced by isValidRow inside the negotiation
+        // Site-type matching is checked by isValidRow after, at negotiation
         // loop; the snap only verifies geometric validity below.
         for (int row_offset = 0; row_offset < cell.height; ++row_offset) {
           for (int col_offset = 0; col_offset < cell.width; ++col_offset) {
