@@ -29,39 +29,6 @@ Former engine performs a BFS-style diamond search from each cell's
 global placement position, expanding outward in Manhattan order until a
 legal site is found.
 
-```
-Global Placement result
-        │
-        ▼
-┌───────────────────┐
-│   Abacus Pass     │  Fast DP sweep, row-by-row.
-│   (Skipped)       │  Near-optimal for uncongested cells.
-│                   │  Mixed-cell-height via row assignment.
-│  Handles:         │  Power-rail alignment enforced.
-│  - 1x/2x/3x/4x    │  Fence violations → skipped (→ negotiation).
-│  - Fence regions  │
-└────────┬──────────┘
-         │ illegal cells (overlap / fence violated)
-         ▼
-┌───────────────────┐
-│ Negotiation Pass  │  Iterative rip-up & replace (from NBLG paper).
-│                   │  Illegal cells + spatial neighbors compete for
-│  NBLG components: │  grid resources.  History cost penalises
-│  - Adaptive pf    │  persistent congestion.  Isolation point skips
-│  - Isolation pt   │  already-legal cells in phase 2.
-│  - History cost   │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ Post-optimisation │  Greedy displacement improvement (5 passes).
-│     (Skipped)     │  Cell swap via bipartite matching within groups.
-│                   │  
-└────────┬──────────┘
-         │
-         ▼
-   Legal placement written back to OpenDB
-```
 # Commands
 
 ```{note}
