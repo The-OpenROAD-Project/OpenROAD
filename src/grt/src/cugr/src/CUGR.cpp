@@ -1640,7 +1640,9 @@ void CUGR::routeIncremental()
   route(/*incremental=*/true);
 }
 
-void CUGR::mergeNet(odb::dbNet* preserved_net, odb::dbNet* removed_net, const std::vector<GSegment>& connection)
+void CUGR::mergeNet(odb::dbNet* preserved_net,
+                    odb::dbNet* removed_net,
+                    const std::vector<GSegment>& connection)
 {
   if (!design_) {
     return;
@@ -1675,49 +1677,65 @@ void CUGR::mergeNet(odb::dbNet* preserved_net, odb::dbNet* removed_net, const st
       const int target_layerA = connection.front().init_layer - 1;
       const int target_xA = dbu_to_tile(connection.front().init_x, true);
       const int target_yA = dbu_to_tile(connection.front().init_y, false);
-      
-      GRTreeNode::preorder(preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-        if (!nodeA && n->getLayerIdx() == target_layerA && n->x() == target_xA && n->y() == target_yA) {
-          nodeA = n;
-        }
-      });
-      if (!nodeA) nodeA = preserved_tree;
+
+      GRTreeNode::preorder(
+          preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
+            if (!nodeA && n->getLayerIdx() == target_layerA
+                && n->x() == target_xA && n->y() == target_yA) {
+              nodeA = n;
+            }
+          });
+      if (!nodeA) {
+        nodeA = preserved_tree;
+      }
 
       std::shared_ptr<GRTreeNode> nodeB = nullptr;
       const int target_layerB = connection.back().final_layer - 1;
       const int target_xB = dbu_to_tile(connection.back().final_x, true);
       const int target_yB = dbu_to_tile(connection.back().final_y, false);
-      
-      GRTreeNode::preorder(removed_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-        if (!nodeB && n->getLayerIdx() == target_layerB && n->x() == target_xB && n->y() == target_yB) {
-          nodeB = n;
-        }
-      });
-      if (!nodeB) nodeB = removed_tree;
+
+      GRTreeNode::preorder(
+          removed_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
+            if (!nodeB && n->getLayerIdx() == target_layerB
+                && n->x() == target_xB && n->y() == target_yB) {
+              nodeB = n;
+            }
+          });
+      if (!nodeB) {
+        nodeB = removed_tree;
+      }
 
       // Reroot removed_tree at nodeB
-      std::function<bool(std::shared_ptr<GRTreeNode>, std::vector<std::shared_ptr<GRTreeNode>>&)> findPath;
-      findPath = [&](std::shared_ptr<GRTreeNode> curr, std::vector<std::shared_ptr<GRTreeNode>>& path) -> bool {
-          path.push_back(curr);
-          if (curr == nodeB) return true;
-          for (auto& child : curr->getChildren()) {
-              if (findPath(child, path)) return true;
+      std::function<bool(std::shared_ptr<GRTreeNode>,
+                         std::vector<std::shared_ptr<GRTreeNode>>&)>
+          findPath;
+      findPath = [&](std::shared_ptr<GRTreeNode> curr,
+                     std::vector<std::shared_ptr<GRTreeNode>>& path) -> bool {
+        path.push_back(curr);
+        if (curr == nodeB) {
+          return true;
+        }
+        for (auto& child : curr->getChildren()) {
+          if (findPath(child, path)) {
+            return true;
           }
-          path.pop_back();
-          return false;
+        }
+        path.pop_back();
+        return false;
       };
-      
+
       std::vector<std::shared_ptr<GRTreeNode>> path;
       if (findPath(removed_tree, path)) {
-          for (size_t i = 0; i < path.size() - 1; ++i) {
-              auto parent = path[i];
-              auto child = path[i+1];
-              parent->removeChild(child);
-              child->addChild(parent);
-          }
-          // The removed tree is now physically rerooted at nodeB, but the GRNet
-          // might still hold the old root. For ownership purposes during merge,
-          // it's fine since we attach nodeB to preserved_tree, keeping everything alive.
+        for (size_t i = 0; i < path.size() - 1; ++i) {
+          auto parent = path[i];
+          auto child = path[i + 1];
+          parent->removeChild(child);
+          child->addChild(parent);
+        }
+        // The removed tree is now physically rerooted at nodeB, but the GRNet
+        // might still hold the old root. For ownership purposes during merge,
+        // it's fine since we attach nodeB to preserved_tree, keeping everything
+        // alive.
       }
 
       // Build chain of nodes for connection segments
@@ -1730,7 +1748,7 @@ void CUGR::mergeNet(odb::dbNet* preserved_net, odb::dbNet* removed_net, const st
         curr->addChild(next);
         curr = next;
       }
-      
+
       // Attach the rerooted removed_tree to the end of the connection chain
       curr->addChild(nodeB);
     }
