@@ -2513,15 +2513,14 @@ class dbNet : public dbObject
   void setJumpers(bool has_jumpers);
 
   ///
-  /// When set, the detailed router will not auto-taper this net down to
-  /// minimum width near pin connections.  This is useful for wide/NDR
-  /// (e.g. analog) nets that must keep their full width all the way to
-  /// the pin.  Default is false (auto-taper enabled), matching the
-  /// historical global behavior.
+  /// When enabled (the default), the detailed router may auto-taper this
+  /// net down to minimum width near pin connections.  Disable it for
+  /// wide/NDR (e.g. analog) nets that must keep their full width all the
+  /// way to the pin.
   ///
-  bool disableAutoTaper();
+  bool isAutoTaperEnabled();
 
-  void setDisableAutoTaper(bool disable_auto_taper);
+  void setAutoTaper(bool enable = true);
 
   ///
   /// Return true if the input net is in higher hierarchy than this net

@@ -1053,7 +1053,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   }
   net_in->setHasJumpers(has_jumpers);
   net_in->setIsConnectedByAbutment(is_abuted);
-  net_in->setDisableAutoTaper(db_net->disableAutoTaper());
+  net_in->setDisableAutoTaper(!db_net->isAutoTaperEnabled());
   updateNetRouting(net_in.get(), db_net);
   net_in->setType(db_net->getSigType());
   frNet* raw_net_in = net_in.get();

@@ -2444,23 +2444,22 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
-bool dbNet::disableAutoTaper()
+bool dbNet::isAutoTaperEnabled()
 {
-  bool disable_auto_taper = false;
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
   if (db->isSchema(kSchemaNetDisableAutoTaper)) {
-    disable_auto_taper = net->flags_.disable_auto_taper == 1;
+    return net->flags_.disable_auto_taper == 0;
   }
-  return disable_auto_taper;
+  return true;
 }
 
-void dbNet::setDisableAutoTaper(bool disable_auto_taper)
+void dbNet::setAutoTaper(bool enable)
 {
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
   if (db->isSchema(kSchemaNetDisableAutoTaper)) {
-    net->flags_.disable_auto_taper = disable_auto_taper ? 1 : 0;
+    net->flags_.disable_auto_taper = enable ? 0 : 1;
   }
 }
 

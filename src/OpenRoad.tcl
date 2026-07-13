@@ -320,10 +320,10 @@ proc set_routing_auto_taper { args } {
     if { $net == "NULL" } {
       utl::error ORD 1018 "No net named ${netName} found."
     }
-    $net setDisableAutoTaper [expr { !$enable }]
+    $net setAutoTaper $enable
   } else {
     foreach net [sta::find_all_clk_nets] {
-      $net setDisableAutoTaper [expr { !$enable }]
+      $net setAutoTaper $enable
     }
   }
 }
