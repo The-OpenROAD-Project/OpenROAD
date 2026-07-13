@@ -15,16 +15,16 @@ tns max -133188.516
 [INFO RSZ-0100] Repair move sequence: RerouteMove 
 [INFO RSZ-0094] Found 53 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 5 out of 53 (10.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -3597.437 |  -104190.9 |  -133188.5 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-      53* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2268.006 |   -75454.9 |   -94047.3 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-    final |       0 |     172 |        0 |      0 |    19 |    +1.0% | -1971.653 |   -64118.5 |   -80164.2 |     53 | resp_msg[14]
+      56* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2210.574 |   -75146.6 |   -92242.1 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+    final |       0 |     114 |        0 |      0 |     0 |    +0.0% | -2199.085 |   -71237.3 |   -88940.7 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 172 instances: 26 up, 0 up match, 0 down, 146 VT
-[INFO RSZ-0043] Swapped pins on 19 instances.
-[INFO RSZ-0053] Rerouted 48 nets resistance-aware.
+[INFO RSZ-0051] Resized 114 instances: 0 up, 0 up match, 0 down, 114 VT
+[INFO RSZ-0053] Rerouted 51 nets resistance-aware.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -1971.65
-tns max -80164.242
+worst slack max -2199.08
+tns max -88940.711
