@@ -1489,13 +1489,11 @@ std::unique_ptr<extRCModel> parseRules(
 
   auto model = std::make_unique<extRCModel>("MINTYPMAX", logger);
 
-  constexpr int max_corners = 10;
-  uint32_t corner_table[max_corners];
-  uint32_t corner_count = 0;
+  std::vector<uint32_t> corner_table;
   if (extractor_corner_table) {
     for (uint32_t ii = 0; ii < extractor_corner_table->getCnt(); ii++) {
       extCorner* corner = extractor_corner_table->get(ii);
-      corner_table[corner_count++] = corner->_model;
+      corner_table.push_back(corner->_model);
     }
   }
 
@@ -1527,8 +1525,8 @@ std::unique_ptr<extRCModel> parseRules(
                           true,
                           true,
                           true,
-                          corner_count,
-                          corner_table,
+                          corner_table.size(),
+                          corner_table.data(),
                           rules_to_dbu_scale)) {
       logger->error(
           RCX, 14, "Failed to parse extraction model file {}", rules_file);
@@ -1540,8 +1538,8 @@ std::unique_ptr<extRCModel> parseRules(
                              true,
                              true,
                              true,
-                             corner_count,
-                             corner_table,
+                             corner_table.size(),
+                             corner_table.data(),
                              rules_to_dbu_scale)) {
       logger->error(
           RCX, 15, "Failed to parse extraction model file {}", rules_file);
