@@ -6398,15 +6398,17 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       // Rebuild the pin set from the netlist; positions are synced below.
       Net* net = getNet(db_net);
       updateNetPins(net);
-      // Reroute a dirty net only if needed: res-aware, no route yet (new or
-      // journal-restored), or a pin changed gcell; otherwise keep its route.
+      // Reroute a dirty net when needed: res-aware, no route, restored guides
+      // (rerouted until restore-from-guides lands), or a pin moved gcell.
       const auto route_it = routes_.find(db_net);
       const bool has_route
           = (route_it != routes_.end() && !route_it->second.empty());
-      const bool reroute
-          = net->isResAware() || !has_route || pinPositionsChanged(net);
+      const bool reroute = net->isResAware() || !has_route
+                           || net->restoreRouteFromGuides()
+                           || pinPositionsChanged(net);
       net->setDirtyNet(false);
       net->clearLastPinPositions();
+      net->setRestoreRouteFromGuides(false);
       if (reroute) {
         cugr_->updateNet(db_net);
         dirty_nets.push_back(net);
