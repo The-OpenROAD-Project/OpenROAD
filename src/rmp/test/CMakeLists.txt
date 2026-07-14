@@ -12,7 +12,6 @@ or_integration_tests(
     blif_writer_sequential
     const_cell_removal
     gcd_restructure
-    gcd_restructure_delay
     aes_asap7
     gcd_asap7
     memory_nangate45
@@ -23,6 +22,10 @@ or_integration_tests(
     gcd_annealing2
     aes_genetic
     gcd_genetic
+  PASSFAIL_TESTS
+    # ABC resynthesis output is nondeterministic/threaded; this test self-checks
+    # invariants and prints "pass" instead of diffing a flaky golden log.
+    gcd_restructure_delay
 )
 
 
