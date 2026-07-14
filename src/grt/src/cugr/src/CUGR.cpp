@@ -229,7 +229,7 @@ void CUGR::markResAwareNets(const std::vector<int>& net_indices)
   // eligible candidates (skip short/single-pin/positive-slack, like FastRoute).
   std::vector<int> candidates;
   candidates.reserve(gr_nets_.size());
-  auto collect = [&](GRNet* net) {
+  auto evaluateResAwareNet = [&](GRNet* net) {
     const auto& tree = net->getRoutingTree();
     net->setResistance(
         grid_graph_->getNetResistance(tree, net->getNdrWidths()));
@@ -269,13 +269,13 @@ void CUGR::markResAwareNets(const std::vector<int>& net_indices)
   if (incremental_routing_) {
     for (const int net_index : net_indices) {
       if (gr_nets_[net_index] != nullptr) {
-        collect(gr_nets_[net_index].get());
+        evaluateResAwareNet(gr_nets_[net_index].get());
       }
     }
   } else {
     for (const auto& net : gr_nets_) {
       if (net != nullptr) {
-        collect(net.get());
+        evaluateResAwareNet(net.get());
       }
     }
   }
