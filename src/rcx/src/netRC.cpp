@@ -1081,31 +1081,7 @@ int extMain::setMinTypMax(bool min,
   _modelMap.resetCnt(0);
   _metRCTable.resetCnt(0);
   _currentModel = nullptr;
-  if (extDbCnt > 1) {  // extract first <extDbCnt>
-    _block->setCornerCount(extDbCnt);
-    _extDbCnt = extDbCnt;
-
-    _modelMap.add(_minModelIndex);
-
-    _modelMap.add(_typModelIndex);
-
-    if (extDbCnt > 2) {
-      _modelMap.add(_maxModelIndex);
-    }
-  } else if (min || max || typ) {
-    if (min) {
-      _modelMap.add(_minModelIndex);
-    }
-    if (typ) {
-      _modelMap.add(_typModelIndex);
-    }
-    if (max) {
-      _modelMap.add(_maxModelIndex);
-    }
-    _extDbCnt = _modelMap.getCnt();
-
-    _block->setCornerCount(_extDbCnt);
-  } else if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
+  if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
     if (setMin >= 0) {
       _modelMap.add(setMin);
     }
@@ -1512,9 +1488,6 @@ bool extMain::setCorners(const char* rulesFileName)
     uint32_t cornerTable[10];
     uint32_t extDbCnt = 0;
 
-    _minModelIndex = 0;
-    _maxModelIndex = 0;
-    _typModelIndex = 0;
     if (_processCornerTable != nullptr) {
       for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
         extCorner* s = _processCornerTable->get(ii);

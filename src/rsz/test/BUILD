@@ -496,7 +496,7 @@ cc_test(
         "//src/grt",
         "//src/odb/src/db",
         "//src/odb/src/defin",
-        "//src/rsz",  # build_cleaner keep provides the private headers
+        "//src/rsz",  # buildcleaner: keep provides the private headers
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/tst",
