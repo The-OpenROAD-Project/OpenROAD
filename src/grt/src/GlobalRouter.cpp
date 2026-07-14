@@ -6424,7 +6424,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       } else {
         routes_[db_net] = std::move(route);
       }
-      // Sync pin access points only for the rerouted nets (full route syncs all).
+      // Sync pin access points only for the rerouted nets (full route syncs
+      // all).
       updatePinAccessPoints(getNet(db_net), db_net);
     }
 
