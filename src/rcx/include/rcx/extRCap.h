@@ -2094,7 +2094,6 @@ class extMain
   uint32_t getMultiples(uint32_t cnt, uint32_t base);
   uint32_t getExtLayerCnt(odb::dbTech* tech);
 
-  void setBlockFromChip();
   void setBlock(odb::dbBlock* block);
   odb::dbBlock* getBlock() { return _block; }
   odb::dbTech* getTech() { return _tech; }
