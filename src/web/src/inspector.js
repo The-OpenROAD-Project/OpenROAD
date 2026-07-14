@@ -456,7 +456,11 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                     if (data.type !== 'Inst') {
                         highlightBBox(x1, y1, x2, y2);
                     }
-                    pulseHighlight(data.bbox);
+                    if (data.selection_count > 1) {
+                        animateSelection(data.bbox);
+                    } else {
+                        pulseHighlight(data.bbox);
+                    }
                 }
                 // Redraw tiles to restore selection-set highlights.
                 redrawAllLayers();
@@ -573,6 +577,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     let pulseLayer = null;
     function pulseHighlight(bbox) {
         if (!bbox || !app.map || !app.designScale) return;
+        if (animTimer !== null) stopSelectionAnimation();
         if (pulseLayer) {
             app.map.removeLayer(pulseLayer);
             pulseLayer = null;
@@ -602,6 +607,63 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 pulseLayer = null;
             }
         }, 1100);
+    }
+
+    // Qt-style selection animation (layoutViewer.cpp selectionAnimation):
+    // every tick the outline weight cycles 1→2→3 px with a yellow brush
+    // flash on the weight-1 tick.  Unlike Qt, only this Leaflet path
+    // repaints — the layout tiles are untouched.  repeats=0 animates
+    // until stopSelectionAnimation() or a new animation replaces it.
+    let animLayer = null;
+    let animTimer = null;
+    function stopSelectionAnimation() {
+        if (animTimer !== null) {
+            clearInterval(animTimer);
+            animTimer = null;
+        }
+        if (animLayer) {
+            if (app.map && app.map.hasLayer(animLayer)) {
+                app.map.removeLayer(animLayer);
+            }
+            animLayer = null;
+        }
+    }
+    function animateSelection(bbox, { repeats = 6, intervalMs = 300 } = {}) {
+        if (!bbox || !app.map || !app.designScale) return;
+        stopSelectionAnimation();
+        if (typeof matchMedia === 'function'
+            && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            pulseHighlight(bbox);
+            return;
+        }
+        const [x1, y1, x2, y2] = bbox;
+        const bounds = dbuRectToBounds(
+            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
+        animLayer = L.rectangle(bounds, {
+            color: '#ff0',
+            weight: 1,
+            fill: true,
+            fillColor: '#ff0',
+            fillOpacity: 0.39,  // ≈ Qt kHighlight brush alpha 100/255
+            opacity: 1,
+            interactive: false,
+            pane: app.hoverHighlightPane,
+        }).addTo(app.map);
+        let state = 0;
+        const maxState = repeats > 0 ? repeats * 3 : Infinity;
+        animTimer = setInterval(() => {
+            state += 1;
+            if (state >= maxState) {
+                stopSelectionAnimation();
+                return;
+            }
+            const weight = (state % 3) + 1;
+            animLayer.setStyle({
+                weight,
+                fillOpacity: weight === 1 ? 0.39 : 0,
+            });
+        }, intervalMs);
     }
 
     function renderProperty(prop, data) {
@@ -918,5 +980,5 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         navigateInspector(-1);
     }
 
-    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector, refreshInspector };
+    return { createInspector, updateInspector, highlightBBox, pulseHighlight, animateSelection, stopSelectionAnimation, navigateInspector, refreshInspector };
 }

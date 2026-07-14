@@ -333,6 +333,21 @@ export class SelectionBrowser {
             tr.addEventListener('click', () => this._inspectRow(entry, false));
             tr.addEventListener('dblclick',
                                 () => this._inspectRow(entry, true));
+            // Web equivalent of Qt's selectionFocus: hovering a row
+            // animates the object in the layout until the pointer leaves.
+            if (entry.row.bbox) {
+                tr.addEventListener('mouseenter', () => {
+                    if (this._app.animateSelection) {
+                        this._app.animateSelection(entry.row.bbox,
+                                                   { repeats: 0 });
+                    }
+                });
+                tr.addEventListener('mouseleave', () => {
+                    if (this._app.stopSelectionAnimation) {
+                        this._app.stopSelectionAnimation();
+                    }
+                });
+            }
             tbody.appendChild(tr);
         }
         table.appendChild(tbody);

@@ -147,4 +147,17 @@ describe('SelectionBrowser', () => {
         await settle();
         assert.ok(container.element.querySelector('.sb-truncated'));
     });
+
+    it('row hover starts a continuous animation and mouseleave stops it', () => {
+        const calls = [];
+        app.animateSelection = (bbox, opts) => calls.push(['start', bbox, opts]);
+        app.stopSelectionAnimation = () => calls.push(['stop']);
+
+        const row = container.element.querySelector('tbody tr');
+        row.dispatchEvent(new Event('mouseenter'));
+        assert.deepEqual(calls[0],
+                         ['start', [0, 0, 100, 100], { repeats: 0 }]);
+        row.dispatchEvent(new Event('mouseleave'));
+        assert.deepEqual(calls[1], ['stop']);
+    });
 });

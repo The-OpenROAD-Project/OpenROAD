@@ -182,6 +182,9 @@ struct SessionState
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;
+  // Flight lines emitted by selection highlights (unrouted nets draw
+  // driver→sink lines); rendered in the overlay next to timing lines.
+  std::vector<FlightLine> highlight_lines;
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;

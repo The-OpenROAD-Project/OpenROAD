@@ -11,7 +11,7 @@ import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
-import { isStaticMode, computeBoundsTransforms, boundsEqual }
+import { isStaticMode, computeBoundsTransforms, boundsEqual, showToast }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -686,6 +686,8 @@ const pulseHighlight = inspector.pulseHighlight;
 app.updateInspector = updateInspector;
 app.navigateInspector = inspector.navigateInspector;
 app.refreshInspector = inspector.refreshInspector;
+app.animateSelection = inspector.animateSelection;
+app.stopSelectionAnimation = inspector.stopSelectionAnimation;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -720,6 +722,8 @@ function createHelpWidget(container) {
         '<tr><td><kbd>scroll</kbd></td><td>Zoom in/out</td></tr>' +
         '<tr><td><kbd>drag</kbd></td><td>Pan the view</td></tr>' +
         '<tr><td><kbd>right-drag</kbd></td><td>Rubber-band zoom</td></tr>' +
+        '<tr><td><kbd>Shift+click</kbd></td><td>Add object to selection</td></tr>' +
+        '<tr><td><kbd>Ctrl+click</kbd></td><td>Select object and its connected nets</td></tr>' +
         '<tr><td><kbd>k</kbd></td><td>Toggle ruler mode</td></tr>' +
         '<tr><td><kbd>Shift+K</kbd></td><td>Clear all rulers</td></tr>' +
         '<tr><td><kbd>Escape</kbd></td><td>Cancel ruler (when building)</td></tr>' +
@@ -1219,6 +1223,11 @@ app.websocketManager.readyPromise.then(async () => {
             if (e.originalEvent && e.originalEvent.shiftKey) {
                 selectRequest.add_to_selection = true;
             }
+            // Ctrl+click: Qt parity (selectHighlightConnectedNets) — also
+            // pull the clicked instance's SIGNAL nets into the selection.
+            if (e.originalEvent && e.originalEvent.ctrlKey) {
+                selectRequest.show_connectivity = true;
+            }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
@@ -1241,6 +1250,12 @@ app.websocketManager.readyPromise.then(async () => {
                             highlightBBox(inst.bbox[0], inst.bbox[1],
                                           inst.bbox[2], inst.bbox[3]);
                             pulseHighlight(inst.bbox);
+                        }
+                        if (selectRequest.show_connectivity
+                            && data.connected_added > 0) {
+                            showToast(`Selected ${data.connected_added} `
+                                      + 'connected net'
+                                      + (data.connected_added > 1 ? 's' : ''));
                         }
                     } else if (!selectRequest.add_to_selection) {
                         // Shift+click on empty space preserves the existing

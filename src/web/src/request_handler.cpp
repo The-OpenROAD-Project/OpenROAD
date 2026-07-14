@@ -54,8 +54,11 @@
 namespace web {
 
 //------------------------------------------------------------------------------
-// ShapeCollector — a gui::Painter that collects rectangles from
-// descriptor->highlight() calls for use in tile rendering.
+// ShapeCollector — a gui::Painter that collects rectangles, polygons and
+// lines from descriptor->highlight() calls for use in tile rendering.
+// Lines matter for nets: an unrouted net's highlight (and the Qt GUI's
+// NetWithSink sink path) is drawn as flight lines, which used to be
+// silently dropped here.
 //------------------------------------------------------------------------------
 
 class ShapeCollector : public gui::Painter
@@ -65,6 +68,7 @@ class ShapeCollector : public gui::Painter
 
   std::vector<odb::Rect> rects;
   std::vector<odb::Polygon> polys;
+  std::vector<FlightLine> lines;
 
   void drawRect(const odb::Rect& rect, int, int) override
   {
@@ -75,6 +79,12 @@ class ShapeCollector : public gui::Painter
     polys.push_back(polygon);
   }
   void drawOctagon(const odb::Oct& oct) override { polys.emplace_back(oct); }
+  void drawLine(const odb::Point& p1, const odb::Point& p2) override
+  {
+    // Selection-highlight yellow (matches the rect/poly highlight color).
+    lines.push_back(
+        {.p1 = p1, .p2 = p2, .color = {.r = 255, .g = 255, .b = 0, .a = 255}});
+  }
 
   // No-ops
   Color getPenColor() override { return {}; }
@@ -86,7 +96,6 @@ class ShapeCollector : public gui::Painter
   void setFont(const Font&) override {}
   void saveState() override {}
   void restoreState() override {}
-  void drawLine(const odb::Point&, const odb::Point&) override {}
   void drawCircle(int, int, int) override {}
   void drawX(int, int, int) override {}
   void drawPolygon(const std::vector<odb::Point>&) override {}
@@ -348,10 +357,12 @@ static boost::json::object serializeProperty(
 
 static void collectHighlightShapes(const gui::Selected& sel,
                                    std::vector<odb::Rect>& rects,
-                                   std::vector<odb::Polygon>& polys)
+                                   std::vector<odb::Polygon>& polys,
+                                   std::vector<FlightLine>& lines)
 {
   rects.clear();
   polys.clear();
+  lines.clear();
   if (!sel) {
     return;
   }
@@ -359,6 +370,7 @@ static void collectHighlightShapes(const gui::Selected& sel,
   sel.highlight(collector);
   rects = std::move(collector.rects);
   polys = std::move(collector.polys);
+  lines = std::move(collector.lines);
 }
 
 // Return the 0-based position of the iterator within the selection set,
@@ -376,10 +388,12 @@ static int selectionIteratorPosition(const gui::SelectionSet& set,
 // Accumulate highlight shapes from all items in a selection set.
 static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
                                         std::vector<odb::Rect>& rects,
-                                        std::vector<odb::Polygon>& polys)
+                                        std::vector<odb::Polygon>& polys,
+                                        std::vector<FlightLine>& lines)
 {
   rects.clear();
   polys.clear();
+  lines.clear();
   for (const auto& sel : selections) {
     if (!sel) {
       continue;
@@ -388,7 +402,50 @@ static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
     sel.highlight(collector);
     rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
     polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
+    lines.insert(lines.end(), collector.lines.begin(), collector.lines.end());
   }
+}
+
+// Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
+// Expands the selection with SIGNAL nets attached to the selected
+// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
+// the plain net for input pins too: NetWithSink lives in a gui-private
+// header under CMake, so the driver->sink flight line is a follow-up.
+static int addConnectedNets(gui::SelectionSet& selection_set)
+{
+  // Snapshot the instances first: nets are inserted into the same set,
+  // and odb deletes std::less on db pointers so the selection set itself
+  // (ordered by Selected) is the deduplicator.
+  std::vector<odb::dbInst*> insts;
+  for (const auto& sel : selection_set) {
+    if (!sel || !sel.isInst()) {
+      continue;
+    }
+    const auto* inst_ptr = std::any_cast<odb::dbInst*>(&sel.getObject());
+    if (inst_ptr && *inst_ptr) {
+      insts.push_back(*inst_ptr);
+    }
+  }
+  auto* registry = gui::DescriptorRegistry::instance();
+  int added = 0;
+  for (odb::dbInst* inst : insts) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (!net || net->getSigType() != odb::dbSigType::SIGNAL) {
+        continue;
+      }
+      const auto io = iterm->getIoType();
+      if (io != odb::dbIoType::OUTPUT && io != odb::dbIoType::INPUT
+          && io != odb::dbIoType::INOUT) {
+        continue;
+      }
+      gui::Selected net_sel = registry->makeSelected(net);
+      if (net_sel && selection_set.insert(net_sel).second) {
+        ++added;
+      }
+    }
+  }
+  return added;
 }
 
 // Descriptor actions that must not be surfaced in the web client:
@@ -523,6 +580,7 @@ bool consumeStaleSelection(SessionState& state)
     state.selection_itr = state.selection_set.end();
     state.highlight_rects.clear();
     state.highlight_polys.clear();
+    state.highlight_lines.clear();
     state.hover_rects.clear();
     for (auto& members : state.highlight_groups) {
       members.clear();
@@ -581,8 +639,10 @@ static void writeInspectPayload(boost::json::object& o,
   }
 
   if (sel.isNet()) {
-    auto* net = std::any_cast<odb::dbNet*>(sel.getObject());
-    if (net && !net->getGuides().empty()) {
+    // Pointer-form any_cast: isNet() is also true for wrappers like
+    // NetWithSink whose payload is not a bare dbNet*.
+    const auto* net_ptr = std::any_cast<odb::dbNet*>(&sel.getObject());
+    if (net_ptr && *net_ptr && !(*net_ptr)->getGuides().empty()) {
       o["has_guides"] = 1;
     }
   }
@@ -898,6 +958,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
                          arrayAsStringSet(req.json.at("visible_layers")));
 
     const bool add_to_selection = jsonOr(req.json, "add_to_selection", false);
+    const bool show_connectivity = jsonOr(req.json, "show_connectivity", false);
 
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
@@ -981,9 +1042,17 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         state.selection_itr = state.selection_set.begin();
       }
 
+      if (show_connectivity) {
+        // std::set insertion keeps selection_itr valid.
+        root["connected_added"]
+            = static_cast<int64_t>(addConnectedNets(state.selection_set));
+      }
+
       // Highlight all items in the selection set.
-      collectMultiHighlightShapes(
-          state.selection_set, state.highlight_rects, state.highlight_polys);
+      collectMultiHighlightShapes(state.selection_set,
+                                  state.highlight_rects,
+                                  state.highlight_polys,
+                                  state.highlight_lines);
       runDeselectAction(state.current_inspected, inspected_sel);
       state.current_inspected = inspected_sel;
 
@@ -1041,7 +1110,10 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      collectHighlightShapes(sel,
+                             state.highlight_rects,
+                             state.highlight_polys,
+                             state.highlight_lines);
       if (sel) {
         if (state.current_inspected && state.current_inspected != sel) {
           state.navigation_history.push_back(state.current_inspected);
@@ -1113,7 +1185,10 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
         sel = state.current_inspected;
       }
 
-      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      collectHighlightShapes(sel,
+                             state.highlight_rects,
+                             state.highlight_polys,
+                             state.highlight_lines);
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
@@ -1187,8 +1262,10 @@ static WebSocketResponse handleSelectionCycle(
         state.navigation_history.clear();
         // Restore selection-set highlights (handleInspect may have
         // replaced them with a single linked object's shapes).
-        collectMultiHighlightShapes(
-            state.selection_set, state.highlight_rects, state.highlight_polys);
+        collectMultiHighlightShapes(state.selection_set,
+                                    state.highlight_rects,
+                                    state.highlight_polys,
+                                    state.highlight_lines);
       }
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
@@ -1334,10 +1411,13 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
         if (state.selection_set.find(sel) != state.selection_set.end()) {
           collectMultiHighlightShapes(state.selection_set,
                                       state.highlight_rects,
-                                      state.highlight_polys);
+                                      state.highlight_polys,
+                                      state.highlight_lines);
         } else {
-          collectHighlightShapes(
-              sel, state.highlight_rects, state.highlight_polys);
+          collectHighlightShapes(sel,
+                                 state.highlight_rects,
+                                 state.highlight_polys,
+                                 state.highlight_lines);
         }
         // Group shapes derive from geometry too.
         rebuildHighlightGroupShapesLocked(state);
@@ -1456,8 +1536,10 @@ WebSocketResponse SelectHandler::handleTriggerAction(
         state.selection_itr = state.selection_set.begin();
         state.hover_rects.clear();
         state.current_inspected = next;
-        collectHighlightShapes(
-            next, state.highlight_rects, state.highlight_polys);
+        collectHighlightShapes(next,
+                               state.highlight_rects,
+                               state.highlight_polys,
+                               state.highlight_lines);
         // Highlight-group members may also reference destroyed objects.
         for (auto& members : state.highlight_groups) {
           members.clear();
@@ -1471,8 +1553,10 @@ WebSocketResponse SelectHandler::handleTriggerAction(
         state.current_inspected = next;
         state.selection_itr = state.selection_set.find(next);
         state.hover_rects.clear();
-        collectHighlightShapes(
-            next, state.highlight_rects, state.highlight_polys);
+        collectHighlightShapes(next,
+                               state.highlight_rects,
+                               state.highlight_polys,
+                               state.highlight_lines);
       } else if (executed) {
         next = sel;  // action kept the selection (e.g. a toggle)
       }
@@ -1855,13 +1939,17 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
       if (browsing_group < 0) {
         // Selection rows behave like Next/Previous: keep every selected
         // object highlighted.
-        collectMultiHighlightShapes(
-            state.selection_set, state.highlight_rects, state.highlight_polys);
+        collectMultiHighlightShapes(state.selection_set,
+                                    state.highlight_rects,
+                                    state.highlight_polys,
+                                    state.highlight_lines);
       } else {
         // Group rows behave like a link inspect: highlight the object
         // itself (its group color is already visible in the overlay).
-        collectHighlightShapes(
-            sel, state.highlight_rects, state.highlight_polys);
+        collectHighlightShapes(sel,
+                               state.highlight_rects,
+                               state.highlight_polys,
+                               state.highlight_lines);
       }
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
@@ -1948,8 +2036,10 @@ WebSocketResponse SelectHandler::handleDeselect(const WebSocketRequest& req,
       state.selection_set.erase(std::next(state.selection_set.begin(), index));
       // The erased element may have been the cycling position.
       state.selection_itr = state.selection_set.begin();
-      collectMultiHighlightShapes(
-          state.selection_set, state.highlight_rects, state.highlight_polys);
+      collectMultiHighlightShapes(state.selection_set,
+                                  state.highlight_rects,
+                                  state.highlight_polys,
+                                  state.highlight_lines);
       sel_count = static_cast<int>(state.selection_set.size());
     }
 
@@ -2148,8 +2238,10 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
           state.selection_itr = state.selection_set.begin();
         }
         // Highlight every selected net in the layout.
-        collectMultiHighlightShapes(
-            state.selection_set, state.highlight_rects, state.highlight_polys);
+        collectMultiHighlightShapes(state.selection_set,
+                                    state.highlight_rects,
+                                    state.highlight_polys,
+                                    state.highlight_lines);
         runDeselectAction(state.current_inspected, first);
         state.current_inspected = first;
 
@@ -2874,7 +2966,10 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      collectHighlightShapes(sel,
+                             state.highlight_rects,
+                             state.highlight_polys,
+                             state.highlight_lines);
       runDeselectAction(state.current_inspected, sel);
       state.current_inspected = sel;
       state.navigation_history.clear();
@@ -3113,6 +3208,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       state.timing_lines = std::move(new_lines);
       state.highlight_rects.clear();
       state.highlight_polys.clear();
+      state.highlight_lines.clear();
     }
 
     const std::string json = "{\"ok\": true}";
@@ -3270,6 +3366,7 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     state.highlight_rects.clear();
     state.highlight_polys.clear();
+    state.highlight_lines.clear();
     state.timing_rects.clear();
     state.timing_lines.clear();
 
@@ -3448,7 +3545,8 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     if (state.current_inspected) {
       collectHighlightShapes(state.current_inspected,
                              state.highlight_rects,
-                             state.highlight_polys);
+                             state.highlight_polys,
+                             state.highlight_lines);
     }
   }
 
@@ -3465,6 +3563,9 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     polys = state.highlight_polys;
     colored = state.timing_rects;
     lines = state.timing_lines;
+    lines.insert(lines.end(),
+                 state.highlight_lines.begin(),
+                 state.highlight_lines.end());
   }
 
   // Merge DRC overlay shapes
@@ -4367,12 +4468,15 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
         std::lock_guard<std::mutex> lock(state.selection_mutex);
         state.highlight_rects.clear();
         state.highlight_polys.clear();
+        state.highlight_lines.clear();
         if (sel) {
           state.hover_rects.clear();
           state.timing_rects.clear();
           state.timing_lines.clear();
-          collectHighlightShapes(
-              sel, state.highlight_rects, state.highlight_polys);
+          collectHighlightShapes(sel,
+                                 state.highlight_rects,
+                                 state.highlight_polys,
+                                 state.highlight_lines);
           runDeselectAction(state.current_inspected, sel);
           state.current_inspected = sel;
           state.navigation_history.clear();
@@ -4402,6 +4506,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
         std::lock_guard<std::mutex> lock(state.selection_mutex);
         state.highlight_rects.clear();
         state.highlight_polys.clear();
+        state.highlight_lines.clear();
       }
       root["ok"] = 0;
     }

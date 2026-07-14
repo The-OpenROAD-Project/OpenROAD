@@ -19,6 +19,7 @@
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
+#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -79,6 +80,82 @@ class FakeDescriptor : public gui::Descriptor
   {
     painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
   }
+};
+
+// Highlights with a flight line instead of a rect — exercises
+// ShapeCollector::drawLine (unrouted nets / net-to-sink paths).
+class LineFakeDescriptor : public FakeDescriptor
+{
+ public:
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
+    painter.drawLine(b.ll(), b.ur());
+  }
+};
+
+// Minimal odb descriptors so DescriptorRegistry::makeSelected() works on
+// real dbInst/dbNet objects inside the unit tests — the production set
+// lives in the full gui library, which the web test does not link.
+class TestInstDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbInst*>(object)->getName();
+  }
+  std::string getTypeName() const override { return "Inst"; }
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  {
+    bbox = std::any_cast<odb::dbInst*>(object)->getBBox()->getBox();
+    return true;
+  }
+  bool isInst(const std::any&) const override { return true; }
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+  Properties getProperties(const std::any&) const override { return {}; }
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(std::any_cast<odb::dbInst*>(object), this);
+  }
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbInst*>(l)->getId()
+           < std::any_cast<odb::dbInst*>(r)->getId();
+  }
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
+  }
+};
+
+class TestNetDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbNet*>(object)->getName();
+  }
+  std::string getTypeName() const override { return "Net"; }
+  bool getBBox(const std::any&, odb::Rect&) const override { return false; }
+  bool isNet(const std::any&) const override { return true; }
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+  Properties getProperties(const std::any&) const override { return {}; }
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(std::any_cast<odb::dbNet*>(object), this);
+  }
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbNet*>(l)->getId()
+           < std::any_cast<odb::dbNet*>(r)->getId();
+  }
+  void highlight(const std::any&, gui::Painter&) const override {}
 };
 
 class LazyMetadataHeatMap : public gui::HeatMapDataSource
@@ -459,6 +536,18 @@ class SelectHandlerTest : public tst::Nangate45Fixture
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+    // The registry owns registered descriptors (unique_ptr) — heap-only.
+    auto* registry = gui::DescriptorRegistry::instance();
+    registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
+    registry->registerDescriptor<odb::dbNet*>(new TestNetDescriptor);
+  }
+
+  void TearDown() override
+  {
+    auto* registry = gui::DescriptorRegistry::instance();
+    registry->unregisterDescriptor<odb::dbInst*>();
+    registry->unregisterDescriptor<odb::dbNet*>();
+    tst::Nangate45Fixture::TearDown();
   }
 
   gui::Selected makeFakeSelected(FakeInspectable* object)
@@ -547,6 +636,109 @@ TEST_F(SelectHandlerTest, SelectWithMissingFieldReturnsError)
   auto resp = handler_->handleSelect(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
   EXPECT_NE(payloadStr(resp).find("server error"), std::string::npos);
+}
+
+// Ctrl+click parity (Qt selectHighlightConnectedNets): show_connectivity
+// expands the selection with the SIGNAL nets on the picked instance's
+// ITerms and reports how many were added.
+TEST_F(SelectHandlerTest, SelectWithConnectivityAddsSignalNets)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* in_net = odb::dbNet::create(block_, "n_in");
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_out");
+  ASSERT_NE(inst->findITerm("A"), nullptr);
+  ASSERT_NE(inst->findITerm("Z"), nullptr);
+  inst->findITerm("A")->connect(in_net);
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 20;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[],)"
+                 R"("show_connectivity":true})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  auto root = parseObj(payloadStr(resp));
+  EXPECT_EQ(root.at("connected_added").as_int64(), 2) << payloadStr(resp);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 3);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.selection_set.size(), 3u);
+  }
+}
+
+// Non-SIGNAL nets (power/ground) are never pulled into the selection.
+TEST_F(SelectHandlerTest, SelectConnectivityIgnoresNonSignalNets)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* in_net = odb::dbNet::create(block_, "n_pwr");
+  in_net->setSigType(odb::dbSigType::POWER);
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_sig");
+  inst->findITerm("A")->connect(in_net);
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 21;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[],)"
+                 R"("show_connectivity":true})");
+
+  auto root = parseObj(payloadStr(handler_->handleSelect(req, state_)));
+  EXPECT_EQ(root.at("connected_added").as_int64(), 1)
+      << boost::json::serialize(root);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+}
+
+// Without the flag a plain click never expands the selection, and the
+// response carries no connected_added field.
+TEST_F(SelectHandlerTest, SelectWithoutConnectivityFlagAddsNothing)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_out");
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 22;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[]})");
+
+  auto root = parseObj(payloadStr(handler_->handleSelect(req, state_)));
+  EXPECT_FALSE(root.contains("connected_added"))
+      << boost::json::serialize(root);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+}
+
+// Flight lines emitted by a descriptor's highlight() are collected into
+// the session so the overlay can render them alongside timing lines.
+TEST_F(SelectHandlerTest, InspectCollectsHighlightLines)
+{
+  LineFakeDescriptor line_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {gui::Selected(&fake_current_, &line_descriptor)};
+  }
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    ASSERT_EQ(state_.highlight_lines.size(), 1u);
+    EXPECT_EQ(state_.highlight_lines[0].p1, fake_current_.bbox.ll());
+    EXPECT_EQ(state_.highlight_lines[0].p2, fake_current_.bbox.ur());
+    EXPECT_TRUE(state_.highlight_rects.empty());
+  }
 }
 
 TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)

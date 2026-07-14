@@ -601,3 +601,139 @@ describe('Inspector focus nets', () => {
         });
     });
 });
+
+// ─── Selection animation (Qt selectionAnimation parity) ────────────────────
+
+function makeLeafletMock() {
+    const layers = [];
+    globalThis.L = {
+        rectangle(bounds, opts) {
+            const layer = {
+                bounds,
+                opts: { ...opts },
+                styleHistory: [],
+                addTo(map) { map._layers.add(this); return this; },
+                setStyle(st) {
+                    this.styleHistory.push({ ...st });
+                    Object.assign(this.opts, st);
+                },
+            };
+            layers.push(layer);
+            return layer;
+        },
+    };
+    return layers;
+}
+
+function makeMapMock() {
+    return {
+        _layers: new Set(),
+        hasLayer(l) { return this._layers.has(l); },
+        removeLayer(l) { this._layers.delete(l); },
+        closePopup() {},
+    };
+}
+
+describe('animateSelection', () => {
+    let app, panel, layers, timers, realSetInterval, realClearInterval;
+
+    beforeEach(() => {
+        app = makeApp();
+        app.map = makeMapMock();
+        app.designScale = 1;
+        app.designMaxDXDY = 100000;
+        app.designOriginX = 0;
+        app.designOriginY = 0;
+        app.hoverHighlightPane = 'hoverPane';
+        layers = makeLeafletMock();
+        panel = createInspectorPanel(app, () => {}, () => {});
+
+        // Deterministic timers: capture the interval callback and tick
+        // manually.
+        timers = { cb: null, cleared: 0 };
+        realSetInterval = globalThis.setInterval;
+        realClearInterval = globalThis.clearInterval;
+        globalThis.setInterval = (cb) => { timers.cb = cb; return 42; };
+        globalThis.clearInterval = () => { timers.cleared++; };
+        delete globalThis.matchMedia;
+    });
+
+    function restoreTimers() {
+        globalThis.setInterval = realSetInterval;
+        globalThis.clearInterval = realClearInterval;
+    }
+
+    it('creates the layer and cycles weight 1→2→3 with brush flash on 1', () => {
+        try {
+            panel.animateSelection([0, 0, 100, 100]);
+            assert.equal(layers.length, 1);
+            const layer = layers[0];
+            assert.ok(app.map.hasLayer(layer));
+            assert.equal(layer.opts.weight, 1);
+            assert.ok(Math.abs(layer.opts.fillOpacity - 0.39) < 1e-9);
+
+            timers.cb();  // state 1 → weight 2, no fill
+            assert.equal(layer.opts.weight, 2);
+            assert.equal(layer.opts.fillOpacity, 0);
+            timers.cb();  // state 2 → weight 3
+            assert.equal(layer.opts.weight, 3);
+            timers.cb();  // state 3 → weight 1 + flash again
+            assert.equal(layer.opts.weight, 1);
+            assert.ok(Math.abs(layer.opts.fillOpacity - 0.39) < 1e-9);
+        } finally {
+            restoreTimers();
+        }
+    });
+
+    it('finite repeats stop and remove the layer', () => {
+        try {
+            panel.animateSelection([0, 0, 100, 100], { repeats: 2 });
+            const layer = layers[0];
+            // maxState = repeats*3 = 6: the 6th tick tears down.
+            for (let i = 0; i < 6; i++) timers.cb();
+            assert.equal(app.map.hasLayer(layer), false);
+            assert.ok(timers.cleared >= 1);
+        } finally {
+            restoreTimers();
+        }
+    });
+
+    it('repeats=0 runs until stopSelectionAnimation', () => {
+        try {
+            panel.animateSelection([0, 0, 100, 100], { repeats: 0 });
+            const layer = layers[0];
+            for (let i = 0; i < 50; i++) timers.cb();
+            assert.ok(app.map.hasLayer(layer), 'still animating after 50 ticks');
+            panel.stopSelectionAnimation();
+            assert.equal(app.map.hasLayer(layer), false);
+            assert.ok(timers.cleared >= 1);
+        } finally {
+            restoreTimers();
+        }
+    });
+
+    it('a new animation replaces the previous one', () => {
+        try {
+            panel.animateSelection([0, 0, 100, 100], { repeats: 0 });
+            panel.animateSelection([10, 10, 20, 20], { repeats: 0 });
+            assert.equal(layers.length, 2);
+            assert.equal(app.map.hasLayer(layers[0]), false);
+            assert.ok(app.map.hasLayer(layers[1]));
+        } finally {
+            restoreTimers();
+        }
+    });
+
+    it('prefers-reduced-motion falls back to the one-shot pulse', () => {
+        try {
+            globalThis.matchMedia = () => ({ matches: true });
+            panel.animateSelection([0, 0, 100, 100]);
+            assert.equal(layers.length, 1);
+            assert.equal(layers[0].opts.className, 'selection-pulse');
+            assert.equal(timers.cb, null, 'no interval when reduced motion');
+        } finally {
+            delete globalThis.matchMedia;
+            restoreTimers();
+        }
+    });
+});
