@@ -2447,20 +2447,13 @@ void dbNet::setJumpers(bool has_jumpers)
 bool dbNet::isAutoTaperEnabled()
 {
   _dbNet* net = (_dbNet*) this;
-  _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(kSchemaNetDisableAutoTaper)) {
-    return net->flags_.disable_auto_taper == 0;
-  }
-  return true;
+  return net->flags_.disable_auto_taper == 0;
 }
 
 void dbNet::setAutoTaper(bool enable)
 {
   _dbNet* net = (_dbNet*) this;
-  _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(kSchemaNetDisableAutoTaper)) {
-    net->flags_.disable_auto_taper = enable ? 0 : 1;
-  }
+  net->flags_.disable_auto_taper = enable ? 0 : 1;
 }
 
 void dbNet::checkSanity() const
