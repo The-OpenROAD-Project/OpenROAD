@@ -4,12 +4,15 @@
 [INFO ODB-0130]     Created 65 pins.
 [INFO ODB-0131]     Created 1768 components and 3775 component-terminals.
 [INFO ODB-0133]     Created 130 nets and 195 connections.
-[INFO DPL-0006] Core area: 396162.58 um^2, Movable instances area: 51.87 um^2, Utilization: 0.0%
-[INFO DPL-0007] Fixed instances area within core: 31781.83 um^2, Effective utilization of free area: 0.0%
+[INFO DPL-0006] Core area: 396162.58 um^2
+[INFO DPL-0007] Movable instances area: 51.87 um^2
+[INFO DPL-0008] Fixed instances area within core: 31781.83 um^2
+[INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 1473 sites horizontally, +/- 35 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-1473 sites, +/-35 rows near walls).
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
 	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-1473 sites, +/-35 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 1767 cells

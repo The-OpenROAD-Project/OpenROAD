@@ -144,12 +144,15 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0664
 [INFO GPL-1009]     - For 50% usage of free space: 0.1063
 [INFO GPL-1014] Final placement area: 175.05 (+0.00%)
-[INFO DPL-0006] Core area: 11467.25 um^2, Movable instances area: 158.90 um^2, Utilization: 1.4%
-[INFO DPL-0007] Fixed instances area within core: 0.00 um^2, Effective utilization of free area: 1.4%
+[INFO DPL-0006] Core area: 11467.25 um^2
+[INFO DPL-0007] Movable instances area: 158.90 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 1.4%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls).
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
 	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 22 cells

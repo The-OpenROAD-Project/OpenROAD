@@ -5,12 +5,15 @@
 [INFO ODB-0131]     Created 5 components and 20 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 0 connections.
 [WARNING DPL-0404] Macro block1 is placed but not fixed; treating it as fixed during legalization. Mark it FIXED to silence this warning.
-[INFO DPL-0006] Core area: 9607.92 um^2, Movable instances area: 3.19 um^2, Utilization: 0.0%
-[INFO DPL-0007] Fixed instances area within core: 0.00 um^2, Effective utilization of free area: 0.0%
+[INFO DPL-0006] Core area: 9607.92 um^2
+[INFO DPL-0007] Movable instances area: 3.19 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 0.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls).
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
 	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 4 cells

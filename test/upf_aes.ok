@@ -1304,12 +1304,15 @@ Divergence occured in 2 regions.
 [INFO GPL-1012] Total routability artificial inflation: 6340.52 (+1.51%)
 [INFO GPL-1013] Total timing-driven delta area: -27378.55 (-6.52%)
 [INFO GPL-1014] Final placement area: 398872.97 (-5.01%)
-[INFO DPL-0006] Core area: 878902.94 um^2, Movable instances area: 341436.21 um^2, Utilization: 38.8%
-[INFO DPL-0007] Fixed instances area within core: 0.00 um^2, Effective utilization of free area: 38.8%
+[INFO DPL-0006] Core area: 878902.94 um^2
+[INFO DPL-0007] Movable instances area: 341436.21 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 38.8%
 [INFO DPL-0005] Diamond search max displacement: +/- 1413 sites horizontally, +/- 238 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-1413 sites, +/-238 rows near walls).
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
 	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-1413 sites, +/-238 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 45710 cells
