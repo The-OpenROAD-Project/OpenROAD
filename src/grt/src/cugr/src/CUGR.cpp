@@ -1667,6 +1667,8 @@ void CUGR::saveCongestion()
 
 void CUGR::routeIncremental()
 {
+  // Clear now so a no-op pass doesn't replay a stale, possibly-deleted net.
+  rerouted_db_nets_.clear();
   if (nets_to_route_.empty()) {
     return;
   }
