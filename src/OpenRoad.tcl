@@ -295,39 +295,6 @@ proc assign_ndr { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_auto_taper" \
-  { (-net name | -all_clocks) (-enable | -disable) }
-
-# Per-net control of the detailed router's auto-taper behavior.  By default
-# the detailed router tapers NDR (wide) nets down to minimum width near pin
-# connections.  Some nets (e.g. wide analog/NDR traces) must keep their full
-# width all the way to the pin; use -disable to suppress auto-taper for those
-# nets without recompiling.  Use -enable to restore the default behavior.
-proc set_routing_auto_taper { args } {
-  sta::parse_key_args "set_routing_auto_taper" args \
-    keys {-net} flags {-all_clocks -enable -disable}
-  if { !([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
-    utl::error ORD 1016 "Exactly one of -net or -all_clocks must be specified."
-  }
-  if { !([info exists flags(-enable)] ^ [info exists flags(-disable)]) } {
-    utl::error ORD 1017 "Exactly one of -enable or -disable must be specified."
-  }
-  set enable [info exists flags(-enable)]
-  set block [ord::get_db_block]
-  if { [info exists keys(-net)] } {
-    set netName $keys(-net)
-    set net [$block findNet $netName]
-    if { $net == "NULL" } {
-      utl::error ORD 1018 "No net named ${netName} found."
-    }
-    $net setAutoTaper $enable
-  } else {
-    foreach net [sta::find_all_clk_nets] {
-      $net setAutoTaper $enable
-    }
-  }
-}
-
 sta::define_cmd_args "set_debug_level" { tool group level }
 proc set_debug_level { args } {
   sta::check_argc_eq3 "set_debug_level" $args
