@@ -1060,13 +1060,13 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   design_rule_checker.setDrcBox(ext_box);
   if (inst_term) {
     auto* it_net = inst_term->getNet();
-    if (!it_net
-        || !it_net->isAutoTaperSuppressed(router_cfg_->AUTO_TAPER_NDR_NETS)) {
+    if (!it_net || !it_net->hasNDR()
+        || it_net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
       design_rule_checker.addTargetObj(inst_term->getInst());
     }
   } else {
-    if (!pin_net
-        || !pin_net->isAutoTaperSuppressed(router_cfg_->AUTO_TAPER_NDR_NETS)) {
+    if (!pin_net || !pin_net->hasNDR()
+        || pin_net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
       design_rule_checker.addTargetObj(pin_term);
     }
   }

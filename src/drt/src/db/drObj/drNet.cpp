@@ -109,7 +109,7 @@ bool drNet::hasNDR() const
 
 bool drNet::autoTaperEnabled(bool global_enabled) const
 {
-  return global_enabled && !fNet_->isAutoTaperDisabled();
+  return fNet_->autoTaperEnabled(global_enabled);
 }
 
 bool drNet::isClockNet() const

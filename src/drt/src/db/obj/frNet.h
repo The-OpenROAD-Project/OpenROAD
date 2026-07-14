@@ -166,16 +166,15 @@ class frNet : public frBlockObject
   bool hasJumpers() { return has_jumpers_; }
   void setToBeDeleted(bool to_be_deleted) { to_be_deleted_ = to_be_deleted; }
   bool toBeDeleted() { return to_be_deleted_; }
-  // When true, DRT must not auto-taper this net to minimum width near pin
-  // connections (per-net override of router_cfg_->AUTO_TAPER_NDR_NETS).
-  void setDisableAutoTaper(bool in) { disable_auto_taper_ = in; }
-  bool isAutoTaperDisabled() const { return disable_auto_taper_; }
-  // True when this is an NDR (wide) net whose auto-taper is suppressed, either
-  // globally (!auto_taper_enabled) or per-net (disable flag). Such nets keep
-  // their full NDR width all the way to the pin instead of being tapered.
-  bool isAutoTaperSuppressed(bool auto_taper_enabled) const
+  // Per-net override of the global AUTO_TAPER_NDR_NETS config (on by
+  // default).  When disabled, DRT keeps this net at its full NDR width all
+  // the way to the pin instead of tapering to minimum width near pins.
+  void setAutoTaperEnabled(bool in) { auto_taper_enabled_ = in; }
+  // Effective setting: auto-taper applies only when enabled both globally
+  // and for this net.
+  bool autoTaperEnabled(bool global_enabled) const
   {
-    return hasNDR() && (!auto_taper_enabled || isAutoTaperDisabled());
+    return global_enabled && auto_taper_enabled_;
   }
 
  protected:
@@ -205,8 +204,7 @@ class frNet : public frBlockObject
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
   bool to_be_deleted_{false};
-  // Per-net override: when true, auto-taper to min width near pins is
-  // suppressed for this net even if AUTO_TAPER_NDR_NETS is globally enabled.
-  bool disable_auto_taper_{false};
+  // Per-net auto-taper setting; see setAutoTaperEnabled().
+  bool auto_taper_enabled_{true};
 };
 }  // namespace drt
