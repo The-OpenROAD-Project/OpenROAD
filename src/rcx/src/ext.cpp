@@ -216,7 +216,17 @@ void Ext::extract(ExtractOptions options)
 
   odb::orderWires(logger_, block);
 
-  std::string rules_file = block->getTech()->getExtractionRulesFile();
+  odb::dbTech* tech = block->getTech();
+  if (options.ext_model_file != nullptr && options.ext_model_file[0] != '\0') {
+    logger_->warn(RCX,
+                  514,
+                  "The ext_model_file option is deprecated. Use "
+                  "set_extraction_rules_file command instead.");
+
+    tech->setExtractionRulesFile(options.ext_model_file);
+  }
+
+  std::string rules_file = tech->getExtractionRulesFile();
   if (!rules_file.empty()) {
     options.ext_model_file = rules_file.c_str();
   }
