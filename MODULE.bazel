@@ -249,25 +249,19 @@ git_override(
     strip_prefix = "verilog",
 )
 
-# @orfs marks most non-root-only directives (qt-bazel/yosys-slang git_overrides,
+# @orfs marks non-root-only directives (qt-bazel/yosys-slang git_overrides,
 # orfs.default(), toolchain registration) as dev_dependency, so they are no-ops
-# here. But @orfs//flow loads @bazel-orfs//:openroad.bzl, and @orfs marks its
-# bazel-orfs bazel_dep dev_dependency too, which drops @bazel-orfs from @orfs's
-# repo mapping when consumed non-root — so loading @orfs//flow fails. The patch
-# makes that one bazel_dep non-dev.
+# here; its bazel-orfs bazel_dep is non-dev so @orfs//flow can load
+# @bazel-orfs//:openroad.bzl when consumed non-root.
 #
 # Use archive_override (HTTPS tarball) rather than git_override so the
 # build resolves on networks that block direct git access to github.com.
-ORFS_COMMIT = "4b3f2663609fd3f6fd8d862729de1ec5967eb4e6"
+ORFS_COMMIT = "afad87da8d1ebd6ef1bc94288b4204420975a549"
 
 bazel_dep(name = "orfs", dev_dependency = True)
 archive_override(
     module_name = "orfs",
-    patch_strip = 1,
-    patches = [
-        "//bazel/bazel-orfs-patches:0035-orfs-bazel-orfs-visible-non-root.patch",
-    ],
-    sha256 = "b6e496221b5be5a5ecd54e978a7a8157a212b67374e2ecd6c27f90d35e02b473",
+    sha256 = "3b61b0cb106bb64d5cb453dff404a346b29a16bf3614166532ffa6ef733e1f65",
     strip_prefix = "OpenROAD-flow-scripts-" + ORFS_COMMIT,
     urls = ["https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/archive/" + ORFS_COMMIT + ".tar.gz"],
 )
