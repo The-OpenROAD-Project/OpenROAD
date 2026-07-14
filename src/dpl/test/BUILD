@@ -152,15 +152,6 @@ filegroup(
             "check9": [
                 "extra.lef",
             ],
-            "edge_spacing": [
-                "multi_height_rows.def",
-                "Nangate45/fake_macros.lef",
-            ],
-            "edge_spacing-opt": [
-                "edge_spacing.lef",
-                "multi_height_rows.def",
-                "Nangate45/fake_macros.lef",
-            ],
             "diamond01": [
                 "gcd_replace.def",
             ],
@@ -173,6 +164,15 @@ filegroup(
             ],
             "diamond_regions": [
                 "regions1.def",
+            ],
+            "edge_spacing": [
+                "multi_height_rows.def",
+                "Nangate45/fake_macros.lef",
+            ],
+            "edge_spacing-opt": [
+                "edge_spacing.lef",
+                "multi_height_rows.def",
+                "Nangate45/fake_macros.lef",
             ],
             "fillers1": [
                 "simple01.def",
