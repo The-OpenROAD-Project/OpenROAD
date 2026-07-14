@@ -94,6 +94,13 @@ js_test(
 )
 
 js_test(
+    name = "schematic_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-schematic-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "charts_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-charts-widget.js",

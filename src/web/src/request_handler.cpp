@@ -30,6 +30,8 @@
 #include "cli_completer.h"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -40,6 +42,9 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "request_dispatcher.h"
+#include "sta/FuncExpr.hh"
+#include "sta/Liberty.hh"
+#include "sta/Sequential.hh"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
@@ -838,6 +843,540 @@ static const char* ioTypeToDirection(odb::dbIoType io_type)
   return "inout";
 }
 
+enum class SchematicGateKind
+{
+  kNone,
+  kBuffer,
+  kInverter,
+  kDff,
+  kDffr,
+  kDffs,
+  kAnd,
+  kNand,
+  kOr,
+  kNor,
+  kXnor,
+  kXor
+};
+
+struct SchematicLogicCell
+{
+  SchematicGateKind kind = SchematicGateKind::kNone;
+  std::vector<odb::dbITerm*> inputs;
+  odb::dbITerm* clock = nullptr;
+  odb::dbITerm* clear = nullptr;
+  odb::dbITerm* preset = nullptr;
+  odb::dbITerm* output = nullptr;
+  odb::dbITerm* output_inv = nullptr;
+};
+
+static bool collectGateInputPorts(const sta::FuncExpr* expr,
+                                  const sta::FuncExpr::Op gate_op,
+                                  std::vector<sta::LibertyPort*>& ports)
+{
+  if (!expr) {
+    return false;
+  }
+
+  if (expr->op() == sta::FuncExpr::Op::port) {
+    ports.push_back(expr->port());
+    return true;
+  }
+
+  if (expr->op() == gate_op) {
+    return collectGateInputPorts(expr->left(), gate_op, ports)
+           && collectGateInputPorts(expr->right(), gate_op, ports);
+  }
+
+  return false;
+}
+
+static bool usesAllConnectedInputs(
+    const std::vector<odb::dbITerm*>& connected_inputs,
+    const std::vector<odb::dbITerm*>& symbol_inputs)
+{
+  if (connected_inputs.size() != symbol_inputs.size()) {
+    return false;
+  }
+
+  for (odb::dbITerm* input : connected_inputs) {
+    if (std::find(symbol_inputs.begin(), symbol_inputs.end(), input)
+        == symbol_inputs.end()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static sta::LibertyPort* simplePortExpr(const sta::FuncExpr* expr)
+{
+  if (expr && expr->op() == sta::FuncExpr::Op::port) {
+    return expr->port();
+  }
+  return nullptr;
+}
+
+static sta::LibertyPort* activeLowPortExpr(const sta::FuncExpr* expr)
+{
+  if (expr && expr->op() == sta::FuncExpr::Op::not_) {
+    return simplePortExpr(expr->left());
+  }
+  return nullptr;
+}
+
+static odb::dbITerm* findConnectedItermForPort(
+    const std::vector<odb::dbITerm*>& iterms,
+    const sta::LibertyPort* port,
+    sta::dbNetwork* network)
+{
+  if (!port) {
+    return nullptr;
+  }
+
+  for (odb::dbITerm* iterm : iterms) {
+    if (network->libertyPort(network->dbToSta(iterm)) == port) {
+      return iterm;
+    }
+  }
+  return nullptr;
+}
+
+static sta::Sequential* sequentialForOutputPort(sta::LibertyCell* cell,
+                                                sta::LibertyPort* output_port)
+{
+  const sta::FuncExpr* function
+      = output_port ? output_port->function() : nullptr;
+  if (!function) {
+    return nullptr;
+  }
+
+  for (sta::LibertyPort* function_port : function->ports()) {
+    sta::Sequential* sequential = cell->outputPortSequential(function_port);
+    if (sequential && sequential->isRegister()) {
+      return sequential;
+    }
+  }
+  return nullptr;
+}
+
+static bool outputPortReferencesState(sta::LibertyPort* output_port,
+                                      const sta::LibertyPort* state_port)
+{
+  const sta::FuncExpr* function
+      = output_port ? output_port->function() : nullptr;
+  return state_port && function && function->hasPort(state_port);
+}
+
+static SchematicLogicCell schematicRegisterCell(
+    sta::LibertyCell* cell,
+    const std::vector<odb::dbITerm*>& connected_inputs,
+    const std::vector<odb::dbITerm*>& connected_outputs,
+    sta::dbNetwork* network)
+{
+  SchematicLogicCell schematic_cell;
+  if (!cell->hasSequentials() || cell->sequentials().size() != 1) {
+    return schematic_cell;
+  }
+
+  sta::Sequential* sequential = nullptr;
+  for (odb::dbITerm* output_iterm : connected_outputs) {
+    sta::LibertyPort* output_port
+        = network->libertyPort(network->dbToSta(output_iterm));
+    sta::Sequential* output_seq = sequentialForOutputPort(cell, output_port);
+    if (!output_seq) {
+      continue;
+    }
+    if (sequential && sequential != output_seq) {
+      return {};
+    }
+    sequential = output_seq;
+  }
+
+  if (!sequential) {
+    return {};
+  }
+
+  sta::LibertyPort* data_port = simplePortExpr(sequential->data());
+  sta::LibertyPort* clock_port = simplePortExpr(sequential->clock());
+  odb::dbITerm* data
+      = findConnectedItermForPort(connected_inputs, data_port, network);
+  odb::dbITerm* clock
+      = findConnectedItermForPort(connected_inputs, clock_port, network);
+  if (!data || !clock) {
+    return {};
+  }
+
+  sta::LibertyPort* clear_port = activeLowPortExpr(sequential->clear());
+  sta::LibertyPort* preset_port = activeLowPortExpr(sequential->preset());
+  odb::dbITerm* clear
+      = findConnectedItermForPort(connected_inputs, clear_port, network);
+  odb::dbITerm* preset
+      = findConnectedItermForPort(connected_inputs, preset_port, network);
+  if ((sequential->clear() && (!clear_port || !clear))
+      || (sequential->preset() && (!preset_port || !preset))) {
+    return {};
+  }
+
+  std::vector<odb::dbITerm*> symbol_inputs{data, clock};
+  if (clear) {
+    symbol_inputs.push_back(clear);
+  }
+  if (preset) {
+    symbol_inputs.push_back(preset);
+  }
+  if (!usesAllConnectedInputs(connected_inputs, symbol_inputs)) {
+    return {};
+  }
+
+  odb::dbITerm* output = nullptr;
+  odb::dbITerm* output_inv = nullptr;
+  for (odb::dbITerm* output_iterm : connected_outputs) {
+    sta::LibertyPort* output_port
+        = network->libertyPort(network->dbToSta(output_iterm));
+    if (outputPortReferencesState(output_port, sequential->output())) {
+      output = output_iterm;
+    } else if (outputPortReferencesState(output_port,
+                                         sequential->outputInv())) {
+      output_inv = output_iterm;
+    }
+  }
+  if (!output && !output_inv) {
+    return {};
+  }
+
+  std::vector<odb::dbITerm*> symbol_outputs;
+  if (output) {
+    symbol_outputs.push_back(output);
+  }
+  if (output_inv) {
+    symbol_outputs.push_back(output_inv);
+  }
+  if (!usesAllConnectedInputs(connected_outputs, symbol_outputs)) {
+    return {};
+  }
+
+  if (clear && preset) {
+    return {};
+  }
+
+  schematic_cell.kind = SchematicGateKind::kDff;
+  if (clear) {
+    schematic_cell.kind = SchematicGateKind::kDffr;
+  } else if (preset) {
+    schematic_cell.kind = SchematicGateKind::kDffs;
+  }
+  schematic_cell.inputs.push_back(data);
+  schematic_cell.clock = clock;
+  schematic_cell.clear = clear;
+  schematic_cell.preset = preset;
+  schematic_cell.output = output;
+  schematic_cell.output_inv = output_inv;
+  return schematic_cell;
+}
+
+// Return a connected Liberty cell that can be drawn as a standard logic symbol.
+// The physical master name is deliberately not used for classification: names
+// such as BUF_X1, INV_X1, AND2_X1, NAND2_X1, OR2_X1, NOR2_X1, XOR2_X1, and
+// XNOR2_X1 are library conventions, while Liberty describes the actual logic.
+static SchematicLogicCell schematicLogicCell(odb::dbInst* inst, sta::dbSta* sta)
+{
+  SchematicLogicCell schematic_cell;
+  if (!sta) {
+    return schematic_cell;
+  }
+
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyCell* cell = network->libertyCell(network->dbToSta(inst));
+  if (!cell) {
+    return schematic_cell;
+  }
+
+  std::vector<odb::dbITerm*> connected_inputs;
+  std::vector<odb::dbITerm*> connected_outputs;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (!iterm->getNet()) {
+      continue;
+    }
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      connected_inputs.push_back(iterm);
+    } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      connected_outputs.push_back(iterm);
+    }
+  }
+
+  if (connected_outputs.empty() || connected_inputs.empty()) {
+    return {};
+  }
+
+  SchematicLogicCell register_cell = schematicRegisterCell(
+      cell, connected_inputs, connected_outputs, network);
+  if (register_cell.kind != SchematicGateKind::kNone) {
+    return register_cell;
+  }
+
+  if (connected_outputs.size() != 1) {
+    return {};
+  }
+
+  odb::dbITerm* output = connected_outputs.front();
+  const sta::LibertyPort* output_port
+      = network->libertyPort(network->dbToSta(output));
+  const sta::FuncExpr* function
+      = output_port ? output_port->function() : nullptr;
+
+  std::vector<sta::LibertyPort*> input_ports;
+  if (cell->isBuffer()) {
+    schematic_cell.kind = SchematicGateKind::kBuffer;
+    if (connected_inputs.size() != 1) {
+      return {};
+    }
+    input_ports.push_back(
+        network->libertyPort(network->dbToSta(connected_inputs.front())));
+  } else if (cell->isInverter()) {
+    schematic_cell.kind = SchematicGateKind::kInverter;
+    if (connected_inputs.size() != 1) {
+      return {};
+    }
+    input_ports.push_back(
+        network->libertyPort(network->dbToSta(connected_inputs.front())));
+  } else if (collectGateInputPorts(
+                 function, sta::FuncExpr::Op::and_, input_ports)) {
+    schematic_cell.kind = SchematicGateKind::kAnd;
+  } else if (function && function->op() == sta::FuncExpr::Op::not_
+             && collectGateInputPorts(
+                 function->left(), sta::FuncExpr::Op::and_, input_ports)) {
+    schematic_cell.kind = SchematicGateKind::kNand;
+  } else if (collectGateInputPorts(
+                 function, sta::FuncExpr::Op::or_, input_ports)) {
+    schematic_cell.kind = SchematicGateKind::kOr;
+  } else if (function && function->op() == sta::FuncExpr::Op::not_
+             && collectGateInputPorts(
+                 function->left(), sta::FuncExpr::Op::or_, input_ports)) {
+    schematic_cell.kind = SchematicGateKind::kNor;
+  } else if (function && function->op() == sta::FuncExpr::Op::not_
+             && collectGateInputPorts(
+                 function->left(), sta::FuncExpr::Op::xor_, input_ports)) {
+    schematic_cell.kind = SchematicGateKind::kXnor;
+  } else if (collectGateInputPorts(
+                 function, sta::FuncExpr::Op::xor_, input_ports)) {
+    schematic_cell.kind = SchematicGateKind::kXor;
+  } else {
+    return {};
+  }
+
+  if (input_ports.empty() || input_ports.size() > 4) {
+    return {};
+  }
+
+  for (sta::LibertyPort* input_port : input_ports) {
+    odb::dbITerm* matched_iterm = nullptr;
+    for (odb::dbITerm* iterm : connected_inputs) {
+      if (network->libertyPort(network->dbToSta(iterm)) == input_port) {
+        matched_iterm = iterm;
+        break;
+      }
+    }
+    if (!matched_iterm
+        || std::find(schematic_cell.inputs.begin(),
+                     schematic_cell.inputs.end(),
+                     matched_iterm)
+               != schematic_cell.inputs.end()) {
+      return {};
+    }
+    schematic_cell.inputs.push_back(matched_iterm);
+  }
+
+  if (!usesAllConnectedInputs(connected_inputs, schematic_cell.inputs)) {
+    return {};
+  }
+
+  schematic_cell.output = output;
+  return schematic_cell;
+}
+
+static std::string schematicType(const SchematicLogicCell& cell)
+{
+  switch (cell.kind) {
+    case SchematicGateKind::kBuffer:
+      return "openroad_buffer";
+    case SchematicGateKind::kInverter:
+      return "openroad_inverter";
+    case SchematicGateKind::kDff:
+      return "openroad_dff";
+    case SchematicGateKind::kDffr:
+      return "openroad_dffr";
+    case SchematicGateKind::kDffs:
+      return "openroad_dffs";
+    case SchematicGateKind::kAnd:
+      return "openroad_and" + std::to_string(cell.inputs.size());
+    case SchematicGateKind::kNand:
+      return "openroad_nand" + std::to_string(cell.inputs.size());
+    case SchematicGateKind::kOr:
+      return "openroad_or" + std::to_string(cell.inputs.size());
+    case SchematicGateKind::kNor:
+      return "openroad_nor" + std::to_string(cell.inputs.size());
+    case SchematicGateKind::kXnor:
+      return "openroad_xnor" + std::to_string(cell.inputs.size());
+    case SchematicGateKind::kXor:
+      return "openroad_xor" + std::to_string(cell.inputs.size());
+    case SchematicGateKind::kNone:
+      break;
+  }
+  return {};
+}
+
+static std::string schematicInputPortName(const SchematicLogicCell& cell,
+                                          size_t index)
+{
+  return cell.inputs.size() == 1 ? "A" : "A" + std::to_string(index + 1);
+}
+
+static boost::json::object makeSchematicCell(
+    odb::dbInst* inst,
+    const odb::PtrMap<odb::dbNet, int>& net_to_id,
+    sta::dbSta* sta)
+{
+  boost::json::object cell;
+  cell["hide_name"] = 0;
+  cell["parameters"] = boost::json::object{};
+
+  const std::string master_name = inst->getMaster()
+                                      ? inst->getMaster()->getName()
+                                      : std::string("$unknown");
+  const SchematicLogicCell schematic_cell = schematicLogicCell(inst, sta);
+  if (schematic_cell.kind != SchematicGateKind::kNone) {
+    // The frontend injects stable OpenROAD templates for these cells so
+    // rendering and labels do not depend on which NetlistSVG skin revision is
+    // bundled.
+    cell["type"] = schematicType(schematic_cell);
+
+    if (schematic_cell.kind == SchematicGateKind::kDff
+        || schematic_cell.kind == SchematicGateKind::kDffr
+        || schematic_cell.kind == SchematicGateKind::kDffs) {
+      boost::json::object symbol_port_directions;
+      boost::json::object symbol_connections;
+      symbol_port_directions["D"] = "input";
+      symbol_connections["D"] = boost::json::array{
+          net_to_id.at(schematic_cell.inputs.front()->getNet())};
+      symbol_port_directions["CK"] = "input";
+      symbol_connections["CK"]
+          = boost::json::array{net_to_id.at(schematic_cell.clock->getNet())};
+      if (schematic_cell.clear) {
+        symbol_port_directions["RN"] = "input";
+        symbol_connections["RN"]
+            = boost::json::array{net_to_id.at(schematic_cell.clear->getNet())};
+      }
+      if (schematic_cell.preset) {
+        symbol_port_directions["SN"] = "input";
+        symbol_connections["SN"]
+            = boost::json::array{net_to_id.at(schematic_cell.preset->getNet())};
+      }
+      if (schematic_cell.output) {
+        symbol_port_directions["Q"] = "output";
+        symbol_connections["Q"]
+            = boost::json::array{net_to_id.at(schematic_cell.output->getNet())};
+      }
+      if (schematic_cell.output_inv) {
+        symbol_port_directions["QN"] = "output";
+        symbol_connections["QN"] = boost::json::array{
+            net_to_id.at(schematic_cell.output_inv->getNet())};
+      }
+
+      boost::json::object attributes{
+          {"ref", inst->getName()},
+          {"openroad_symbol_type", schematicType(schematic_cell)},
+          {"openroad_symbol_port_directions",
+           std::move(symbol_port_directions)},
+          {"openroad_symbol_connections", std::move(symbol_connections)},
+          {"openroad_data_port",
+           schematic_cell.inputs.front()->getMTerm()->getName()},
+          {"openroad_clock_port", schematic_cell.clock->getMTerm()->getName()}};
+      if (schematic_cell.clear) {
+        attributes["openroad_clear_port"]
+            = schematic_cell.clear->getMTerm()->getName();
+      }
+      if (schematic_cell.preset) {
+        attributes["openroad_preset_port"]
+            = schematic_cell.preset->getMTerm()->getName();
+      }
+      if (schematic_cell.output) {
+        attributes["openroad_output_port"]
+            = schematic_cell.output->getMTerm()->getName();
+      } else if (schematic_cell.output_inv) {
+        attributes["openroad_output_port"]
+            = schematic_cell.output_inv->getMTerm()->getName();
+      }
+
+      cell["type"] = master_name;
+      cell["attributes"] = std::move(attributes);
+
+      boost::json::object port_directions;
+      boost::json::object connections;
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (!net || !net_to_id.contains(net)) {
+          continue;
+        }
+        const std::string port_name = iterm->getMTerm()->getName();
+        port_directions[port_name] = ioTypeToDirection(iterm->getIoType());
+        connections[port_name] = boost::json::array{net_to_id.at(net)};
+      }
+      cell["port_directions"] = std::move(port_directions);
+      cell["connections"] = std::move(connections);
+      return cell;
+    }
+
+    boost::json::array input_ports;
+    boost::json::object port_directions;
+    boost::json::object connections;
+    for (size_t i = 0; i < schematic_cell.inputs.size(); ++i) {
+      odb::dbITerm* input = schematic_cell.inputs[i];
+      const std::string port_name = schematicInputPortName(schematic_cell, i);
+      input_ports.emplace_back(input->getMTerm()->getName());
+      port_directions[port_name] = "input";
+      connections[port_name]
+          = boost::json::array{net_to_id.at(input->getNet())};
+    }
+    port_directions["Y"] = "output";
+    connections["Y"]
+        = boost::json::array{net_to_id.at(schematic_cell.output->getNet())};
+
+    boost::json::object attributes{
+        {"ref", inst->getName()},
+        {"openroad_master", master_name},
+        {"openroad_input_ports", input_ports},
+        {"openroad_output_port", schematic_cell.output->getMTerm()->getName()}};
+    if (schematic_cell.inputs.size() == 1) {
+      attributes["openroad_input_port"]
+          = schematic_cell.inputs.front()->getMTerm()->getName();
+    }
+
+    cell["attributes"] = std::move(attributes);
+    cell["port_directions"] = std::move(port_directions);
+    cell["connections"] = std::move(connections);
+    return cell;
+  }
+
+  cell["type"] = master_name;
+  cell["attributes"] = boost::json::object{};
+
+  boost::json::object port_directions;
+  boost::json::object connections;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (!net || !net_to_id.contains(net)) {
+      continue;
+    }
+    const std::string port_name = iterm->getMTerm()->getName();
+    port_directions[port_name] = ioTypeToDirection(iterm->getIoType());
+    connections[port_name] = boost::json::array{net_to_id.at(net)};
+  }
+  cell["port_directions"] = std::move(port_directions);
+  cell["connections"] = std::move(connections);
+  return cell;
+}
+
 WebSocketResponse SelectHandler::handleSchematicCone(
     const WebSocketRequest& req)
 {
@@ -979,36 +1518,13 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     top["ports"] = std::move(ports);
 
     boost::json::object cells;
-    for (odb::dbInst* inst : all_insts) {
-      boost::json::object cell;
-      cell["hide_name"] = 0;
-      cell["type"] = inst->getMaster() ? inst->getMaster()->getName()
-                                       : std::string("$unknown");
-      cell["attributes"] = boost::json::object{};
-      cell["parameters"] = boost::json::object{};
-
-      boost::json::object port_directions;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
-          continue;
-        }
-        port_directions[iterm->getMTerm()->getName()]
-            = ioTypeToDirection(iterm->getIoType());
+    // Liberty/network queries share STA state with Tcl and timing requests.
+    {
+      std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+      for (odb::dbInst* inst : all_insts) {
+        cells[inst->getName()]
+            = makeSchematicCell(inst, net_to_id, gen_->getSta());
       }
-      cell["port_directions"] = std::move(port_directions);
-
-      boost::json::object connections;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        odb::dbNet* net = iterm->getNet();
-        if (!net || !net_to_id.contains(net)) {
-          continue;
-        }
-        connections[iterm->getMTerm()->getName()]
-            = boost::json::array{net_to_id[net]};
-      }
-      cell["connections"] = std::move(connections);
-
-      cells[inst->getName()] = std::move(cell);
     }
     top["cells"] = std::move(cells);
 
@@ -1069,36 +1585,12 @@ WebSocketResponse SelectHandler::handleSchematicFull(
     top["ports"] = std::move(ports);
 
     boost::json::object cells;
-    for (odb::dbInst* inst : block->getInsts()) {
-      boost::json::object cell;
-      cell["hide_name"] = 0;
-      cell["type"] = inst->getMaster() ? inst->getMaster()->getName()
-                                       : std::string("$unknown");
-      cell["attributes"] = boost::json::object{};
-      cell["parameters"] = boost::json::object{};
-
-      boost::json::object port_directions;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        if (!iterm->getNet()) {
-          continue;
-        }
-        port_directions[iterm->getMTerm()->getName()]
-            = ioTypeToDirection(iterm->getIoType());
+    {
+      std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+      for (odb::dbInst* inst : block->getInsts()) {
+        cells[inst->getName()]
+            = makeSchematicCell(inst, net_to_id, gen_->getSta());
       }
-      cell["port_directions"] = std::move(port_directions);
-
-      boost::json::object connections;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        odb::dbNet* net = iterm->getNet();
-        if (!net) {
-          continue;
-        }
-        connections[iterm->getMTerm()->getName()]
-            = boost::json::array{net_to_id[net]};
-      }
-      cell["connections"] = std::move(connections);
-
-      cells[inst->getName()] = std::move(cell);
     }
     top["cells"] = std::move(cells);
 
