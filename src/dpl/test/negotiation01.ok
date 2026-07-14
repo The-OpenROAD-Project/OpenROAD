@@ -1,7 +1,0 @@
-[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0128] Design: gcd
-[INFO ODB-0130]     Created 54 pins.
-[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
-[INFO ODB-0133]     Created 364 nets and 1068 connections.
-[ERROR STA-0562] detailed_placement -use_negotiation is not a known keyword or flag.
-Error: negotiation01.tcl, 8 STA-0562
