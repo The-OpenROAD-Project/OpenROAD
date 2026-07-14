@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: inferred_clock_gator_time_borrow
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 10 components and 52 component-terminals.
+[INFO ODB-0133]     Created 7 nets and 22 connections.
+[WARNING STA-0450] virtual clock vclk can not be propagated.
+BEFORE_BORROW 0.4545
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeDownFanoutMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+AFTER_BORROW 0.4540
