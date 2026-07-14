@@ -2682,9 +2682,6 @@ class extMain
   double* _tmpResTable = new double[10];
   double* _tmpSumResTable = new double[10];
   int _sumUpdated;
-  int _minModelIndex;  // TO_TEST
-  int _typModelIndex;  //
-  int _maxModelIndex;  //
 
   odb::dbDatabase* _db = nullptr;
   odb::dbTech* _tech = nullptr;
