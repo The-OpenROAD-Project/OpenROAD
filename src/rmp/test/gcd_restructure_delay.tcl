@@ -37,7 +37,7 @@ if { abs($ws_before - 1.29) > 0.01 } {
 }
 # restructure discards any resynthesis run that is not an improvement, so the
 # worst slack must never regress.
-if { $ws_after < [expr { $ws_before - 0.01 }] } {
+if { $ws_after < $ws_before - 0.01 } {
   error "restructure degraded worst slack: before=$ws_before after=$ws_after"
 }
 
