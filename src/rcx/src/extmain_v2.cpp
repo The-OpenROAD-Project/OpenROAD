@@ -987,10 +987,6 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
   // uint32_t cornerTable[10];
   uint32_t extCornerDbCnt = 0;
 
-  _minModelIndex = 0;
-  _maxModelIndex = 0;
-  _typModelIndex = 0;
-
   if (_processCornerTable != nullptr) {
     // User define process corners using <ext define_process_corner>
     for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {

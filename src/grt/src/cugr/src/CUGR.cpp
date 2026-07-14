@@ -1223,7 +1223,13 @@ void CUGR::getITermsAccessPoints(
     odb::dbNet* net,
     odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points)
 {
-  GRNet* gr_net = db_net_map_.at(net);
+  // Nets absent from the map (e.g. < 2 pins, skipped by updateNet) have no
+  // CUGR access points; leave the output empty.
+  auto it = db_net_map_.find(net);
+  if (it == db_net_map_.end()) {
+    return;
+  }
+  GRNet* gr_net = it->second;
   for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
     const int x = grid_graph_->getGridline(0, ap.point.x());
     const int y = grid_graph_->getGridline(1, ap.point.y());
@@ -1235,7 +1241,11 @@ void CUGR::getBTermsAccessPoints(
     odb::dbNet* net,
     odb::PtrMap<odb::dbBTerm, odb::Point3D>& access_points)
 {
-  GRNet* gr_net = db_net_map_.at(net);
+  auto it = db_net_map_.find(net);
+  if (it == db_net_map_.end()) {
+    return;
+  }
+  GRNet* gr_net = it->second;
   for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
     const int x = grid_graph_->getGridline(0, ap.point.x());
     const int y = grid_graph_->getGridline(1, ap.point.y());

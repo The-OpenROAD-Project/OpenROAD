@@ -67,8 +67,6 @@ cc_library(
     deps = [
         ":syn",
         "//:ord",
-        "//src/dbSta",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

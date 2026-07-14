@@ -22,7 +22,7 @@ target_include_directories(dbSta_lib
 
 target_link_libraries(dbSta_lib
   PUBLIC
-    odb
+    db
     OpenSTA
   PRIVATE
     utl_lib

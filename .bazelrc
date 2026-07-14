@@ -83,6 +83,20 @@ build --cxxopt "-Wno-deprecated-copy-with-user-provided-copy"  --host_cxxopt "-W
 build --per_file_copt=.*external/.*@-w
 build --host_per_file_copt=.*external/.*@-w
 
+# Treat include paths into external/ (bzlmod/BCR deps) as -isystem so clang
+# suppresses ALL warnings from third-party headers pulled into our TUs (boost,
+# Eigen, googletest, ...), regardless of the specific warning. The
+# per_file_copt -w above only covers compiling external *source* files; this
+# covers external *headers* included by our own sources.
+#
+# The feature is global (target and exec config) and also demotes a from-source
+# dep's own -iquote entries to -isystem. Tools that rely on -iquote precedence
+# to shadow libc headers are patched to restore it -- e.g. git's
+# builtin/get-tar-commit-id.c includes git's own tar.h, which must win over
+# glibc's <tar.h>. See the git single_version_override in MODULE.bazel (same
+# class of fix as the bison/sed/gawk/m4 -I-over-isystem overrides).
+build --features=external_include_paths
+
 # This avoid problems with building -c dbg which enables asserts.
 # Without this libstdc++ vs libc++ differences cause link errors.
 build --per_file_copt=.*external/abc.*@-stdlib=libc++
@@ -111,6 +125,9 @@ build:asan --copt=-DADDRESS_SANITIZER
 build:asan --copt=-O1
 build:asan --copt=-g
 build:asan --copt=-fno-omit-frame-pointer
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:asan --copt=-gz=zlib
+build:asan --linkopt=-gz=zlib
 build:asan --linkopt=-fsanitize=address
 # TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
 # dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
@@ -123,6 +140,9 @@ build:profile --strip=never
 build:profile --copt -g --host_copt -g
 build:profile --copt -gmlt --host_copt -gmlt
 build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
+# Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
+build:profile --copt=-gz=zlib --host_copt=-gz=zlib
+build:profile --linkopt=-gz=zlib
 
 # Improve hermeticity by disallowing user envars and network access
 build --incompatible_strict_action_env
