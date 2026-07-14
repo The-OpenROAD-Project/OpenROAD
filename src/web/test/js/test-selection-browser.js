@@ -161,3 +161,42 @@ describe('SelectionBrowser', () => {
         assert.deepEqual(calls[1], ['stop']);
     });
 });
+
+describe('SelectionBrowser lifecycle', () => {
+    // Container that records GoldenLayout handlers so tests can fire them.
+    function makeCapturingContainer() {
+        const handlers = {};
+        return {
+            element: document.createElement('div'),
+            on(evt, cb) { handlers[evt] = cb; },
+            fire(evt) { if (handlers[evt]) handlers[evt](); },
+        };
+    }
+
+    it('skips refresh while hidden', async () => {
+        const app = createMockApp({ list_selection: () => LIST });
+        const container = makeCapturingContainer();
+        const browser = new SelectionBrowser(container, app, () => {});
+        await settle();
+        const before = app._requests.length;
+
+        container.fire('hide');
+        browser.refresh();
+        await settle();
+        assert.equal(app._requests.length, before,
+                     'no list_selection request while hidden');
+    });
+
+    it('clears the pending debounced refresh on destroy', () => {
+        const app = createMockApp({ list_selection: () => LIST });
+        const container = makeCapturingContainer();
+        const browser = new SelectionBrowser(container, app, () => {});
+
+        browser.scheduleRefresh();
+        assert.notEqual(browser._pendingRefresh, null,
+                        'a refresh is pending');
+        container.fire('destroy');
+        assert.equal(browser._pendingRefresh, null,
+                     'destroy cleared the pending timer');
+    });
+});

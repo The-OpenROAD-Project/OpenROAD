@@ -1929,8 +1929,7 @@ TEST_F(HighlightGroupTest, HighlightCollectsGroupFlightLines)
   LineFakeDescriptor line_descriptor;
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected
-        = gui::Selected(&fake_current_, &line_descriptor);
+    state_.current_inspected = gui::Selected(&fake_current_, &line_descriptor);
   }
   auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
   EXPECT_EQ(root.at("ok").as_int64(), 1);

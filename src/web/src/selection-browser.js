@@ -35,6 +35,15 @@ export class SelectionBrowser {
         container.on?.('hide', () => {
             this._visible = false;
         });
+        // Cancel any pending debounced refresh so it can't fire on a
+        // destroyed panel (dangling timer / errors after tab close).
+        container.on?.('destroy', () => {
+            this._visible = false;
+            if (this._pendingRefresh !== null) {
+                clearTimeout(this._pendingRefresh);
+                this._pendingRefresh = null;
+            }
+        });
 
         this._render();
         this.refresh();
@@ -53,7 +62,9 @@ export class SelectionBrowser {
     }
 
     refresh() {
-        if (isStaticMode(this._app) || this._inFlight) return;
+        // Skip network + render work while the panel is hidden; a pending
+        // debounced refresh can also fire after a 'hide'.
+        if (!this._visible || isStaticMode(this._app) || this._inFlight) return;
         this._inFlight = true;
         this._app.websocketManager.request({ type: 'list_selection' })
             .then((data) => {
