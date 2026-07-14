@@ -90,6 +90,10 @@ class Graphics : public gui::Renderer, public DplObserver
   std::unordered_map<odb::dbInst*, std::pair<odb::Rect, odb::Rect>>
       negotiation_search_windows_;
 
+  // Last instance whose search window size was logged, so drawObjects()
+  // (called on every repaint) only reports it once per selection change.
+  odb::dbInst* last_logged_search_window_inst_ = nullptr;
+
   // Cells that moved during the most recent negotiation iteration.
   // Empty means "no iteration info available" — all movers use directional
   // colors.

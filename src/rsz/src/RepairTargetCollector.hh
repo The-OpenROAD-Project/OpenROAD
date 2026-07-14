@@ -23,6 +23,10 @@
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 
+namespace sta {
+class PathExpanded;
+}
+
 namespace rsz {
 
 using std::pair;
@@ -94,10 +98,6 @@ class RepairTargetCollector
   void setToEndpoint(int index);
   sta::Vertex* getCurrentEndpoint() const { return current_endpoint_; }
   sta::Slack getCurrentEndpointSlack() const;
-  sta::Slack getCurrentEndpointOriginalSlack() const
-  {
-    return current_end_original_slack_;
-  }
   int getCurrentEndpointIndex() const { return current_endpoint_index_; }
   int getMaxEndpointCount() const { return violating_endpoints_.size(); }
   int getCurrentPass() const;
@@ -288,6 +288,12 @@ class RepairTargetCollector
   void sortByHeuristic(float load_delay_threshold = 0.0);
   std::map<const sta::Pin*, sta::Delay> getLocalTns() const;
   sta::Delay getLocalPinTns(const sta::Pin* pin) const;
+  void collectExpandedPathDriverTargets(const sta::Path* endpoint_path,
+                                        const sta::PathExpanded& expanded,
+                                        sta::Slack path_slack,
+                                        std::vector<Target>& targets) const;
+  void collectExpandedPathDriverPins(const sta::PathExpanded& expanded,
+                                     set<const sta::Pin*>& pins) const;
 
   // === Cone traversal helpers ==============================================
   // Helper functions for cone-based collection
@@ -335,7 +341,6 @@ class RepairTargetCollector
   // Current endpoint iteration state
   bool iteration_began_;
   sta::Vertex* current_endpoint_;
-  sta::Slack current_end_original_slack_;
   int current_endpoint_index_;
 
   // === Startpoint iteration state ==========================================

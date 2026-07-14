@@ -133,7 +133,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const bool run_abacus,
                                const int site_search_window,
                                const int row_search_window,
-                               const double drc_penalty)
+                               const double drc_penalty,
+                               const bool disable_window_extension)
 {
   utl::Timer timer;
   incremental_ = incremental;
@@ -248,6 +249,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                      debug_observer_.get(),
                                      network_.get());
     negotiation.setRunAbacus(run_abacus);
+    negotiation.setDisableWindowExtension(disable_window_extension);
     if (site_search_window >= 0) {
       negotiation.setSiteSearchWindow(site_search_window);
     }

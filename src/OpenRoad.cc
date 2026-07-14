@@ -215,7 +215,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
   verilog_network_ = new dbVerilogNetwork(sta_);
   ioPlacer_ = new ppl::IOPlacer(db_, logger_);
-  stt_builder_ = new stt::SteinerTreeBuilder(db_, logger_);
+  stt_builder_ = new stt::SteinerTreeBuilder(logger_);
   antenna_checker_ = new ant::AntennaChecker(db_, logger_);
   opendp_ = new dpl::Opendp(db_, logger_);
   global_router_ = new grt::GlobalRouter(logger_,

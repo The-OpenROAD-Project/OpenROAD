@@ -60,6 +60,7 @@ or_integration_tests(
     repair_design3_verbose
     repair_design4
     repair_design5
+    repair_design6
     repair_design_outside_core
     repair_fanout1
     repair_fanout2
@@ -239,6 +240,11 @@ or_integration_tests(
     global_sizing
     global_sizing_threads
     global_sizing_presize
+    inferred_clock_gator_time_borrow
+    inferred_clock_gator_time_borrow_covered
+    inferred_clock_gator_time_borrow_repair_pin
+    inferred_clock_gator_time_borrow_tns
+    latch_borrow_chain
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1

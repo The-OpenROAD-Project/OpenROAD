@@ -1,0 +1,70 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN inferred_clock_gator_time_borrow ;
+UNITS DISTANCE MICRONS 2000 ;
+
+DIEAREA ( 0 0 ) ( 240000 240000 ) ;
+
+COMPONENTS 10 ;
+- enable_buf0 BUF_X1 + PLACED ( 40000 120000 ) N ;
+- enable_buf1 BUF_X1 + PLACED ( 80000 120000 ) N ;
+- enable_latch DLL_X1 + PLACED ( 89540 158990 ) N ;
+- inferred_gate AND2_X1 + PLACED ( 88400 89470 ) N ;
+- sibling_branch CLKBUF_X3 + PLACED ( 91580 89470 ) N ;
+- sibling_ff0 DFF_X1 + PLACED ( 139840 89510 ) N ;
+- gated_ff0 DFF_X1 + PLACED ( 159600 158985 ) N ;
+- gated_ff1 DFF_X1 + PLACED ( 167580 158985 ) N ;
+- gated_ff2 DFF_X1 + PLACED ( 159600 167045 ) N ;
+- gated_ff3 DFF_X1 + PLACED ( 167580 167045 ) N ;
+END COMPONENTS
+
+PINS 2 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 ) + FIXED ( 120000 240000 ) S ;
+- en_in + NET en_in + DIRECTION INPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 ) + FIXED ( 0 120000 ) W ;
+END PINS
+
+NETS 7 ;
+- clk
+  ( PIN clk )
+  ( enable_latch GN )
+  ( inferred_gate A1 )
+  ( sibling_branch A )
+  + USE SIGNAL ;
+- en_in
+  ( PIN en_in )
+  ( enable_buf0 A )
+  + USE SIGNAL ;
+- en_mid0
+  ( enable_buf0 Z )
+  ( enable_buf1 A )
+  + USE SIGNAL ;
+- en_mid1
+  ( enable_buf1 Z )
+  ( enable_latch D )
+  + USE SIGNAL ;
+- en_lat
+  ( enable_latch Q )
+  ( inferred_gate A2 )
+  ( sibling_ff0 D )
+  ( gated_ff0 D )
+  ( gated_ff1 D )
+  ( gated_ff2 D )
+  ( gated_ff3 D )
+  + USE SIGNAL ;
+- sibling_clk
+  ( sibling_branch Z )
+  ( sibling_ff0 CK )
+  + USE SIGNAL ;
+- gated_clk
+  ( inferred_gate ZN )
+  ( gated_ff0 CK )
+  ( gated_ff1 CK )
+  ( gated_ff2 CK )
+  ( gated_ff3 CK )
+  + USE SIGNAL ;
+END NETS
+
+END DESIGN
