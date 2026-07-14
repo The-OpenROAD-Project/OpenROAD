@@ -723,7 +723,7 @@ function createHelpWidget(container) {
         '<tr><td><kbd>drag</kbd></td><td>Pan the view</td></tr>' +
         '<tr><td><kbd>right-drag</kbd></td><td>Rubber-band zoom</td></tr>' +
         '<tr><td><kbd>Shift+click</kbd></td><td>Add object to selection</td></tr>' +
-        '<tr><td><kbd>Ctrl+click</kbd></td><td>Select object and its connected nets</td></tr>' +
+        '<tr><td><kbd>Ctrl/Cmd+click</kbd></td><td>Select object and its connected nets</td></tr>' +
         '<tr><td><kbd>k</kbd></td><td>Toggle ruler mode</td></tr>' +
         '<tr><td><kbd>Shift+K</kbd></td><td>Clear all rulers</td></tr>' +
         '<tr><td><kbd>Escape</kbd></td><td>Cancel ruler (when building)</td></tr>' +
@@ -1030,23 +1030,27 @@ function applyBounds(designBounds) {
 }
 
 async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
-    if (isStaticMode(app) || !app.map) return;
+    // Returns true when it already redrew the layers (bounds changed), so
+    // callers can avoid a second redundant redraw.
+    if (isStaticMode(app) || !app.map) return false;
     let designBounds = inlineBounds;
     if (!designBounds) {
         try {
             const data = await app.websocketManager.request({ type: 'bounds' });
             designBounds = data.bounds;
         } catch (err) {
-            return;
+            return false;
         }
     }
-    if (!designBounds || boundsEqual(app.currentBounds, designBounds)) return;
+    if (!designBounds || boundsEqual(app.currentBounds, designBounds)) {
+        return false;
+    }
 
     if (reloadOnChange) {
         // After a reconnect, different bounds usually mean a different
         // design — rebuild everything through the well-tested boot path.
         window.location.reload();
-        return;
+        return true;
     }
 
     // Keep the DBU point at the center of the view where it is.
@@ -1056,7 +1060,7 @@ async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
                       app.designScale, app.designMaxDXDY,
                       app.designOriginX, app.designOriginY)
         : null;
-    if (!applyBounds(designBounds)) return;
+    if (!applyBounds(designBounds)) return false;
     if (center) {
         const ll = dbuToLatLng(center.dbuX, center.dbuY, app.designScale,
                                app.designMaxDXDY, app.designOriginX,
@@ -1069,6 +1073,7 @@ async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
         app.highlightRect = null;
     }
     redrawAllLayers();
+    return true;
 }
 
 // Handle server-push notifications (e.g. search indices ready)
@@ -1077,8 +1082,11 @@ app.websocketManager.onPush = (msg) => {
         document.getElementById('loading-overlay').style.display = 'none';
         // An edit may have changed the design bounds (and with them the
         // tile georeference); resync transforms before/along the redraw.
-        resyncBounds(msg.bounds).catch(() => {});
-        redrawAllLayers();
+        // resyncBounds already redraws when the bounds changed, so only
+        // redraw here when it didn't (same bounds, edited geometry).
+        resyncBounds(msg.bounds)
+            .then((redrew) => { if (!redrew) redrawAllLayers(); })
+            .catch(() => redrawAllLayers());
         // The design may have been edited by another session's
         // set_property; refresh the inspected object's properties.
         if (app.refreshInspector) app.refreshInspector();
@@ -1087,6 +1095,7 @@ app.websocketManager.onPush = (msg) => {
         // server dropped this session's selection state.  Clear the
         // inspector and stale highlights.
         if (app.updateInspector) app.updateInspector(null);
+        if (app.stopSelectionAnimation) app.stopSelectionAnimation();
         if (app.highlightRect && app.map) {
             app.map.removeLayer(app.highlightRect);
             app.highlightRect = null;
@@ -1225,7 +1234,10 @@ app.websocketManager.readyPromise.then(async () => {
             }
             // Ctrl+click: Qt parity (selectHighlightConnectedNets) — also
             // pull the clicked instance's SIGNAL nets into the selection.
-            if (e.originalEvent && e.originalEvent.ctrlKey) {
+            // Accept Cmd+click too: on macOS Ctrl+click is the context-menu
+            // gesture, so metaKey is the reachable modifier there.
+            if (e.originalEvent
+                && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {
                 selectRequest.show_connectivity = true;
             }
             if (app.visibleChiplets instanceof Set) {

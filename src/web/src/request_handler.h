@@ -206,6 +206,10 @@ struct SessionState
   // selection_mutex.
   std::array<gui::SelectionSet, gui::kNumHighlightSet> highlight_groups;
   std::vector<ColoredRect> highlight_group_rects;
+  // Flight lines emitted by group members whose highlight() draws lines
+  // (e.g. unrouted nets), tinted with the group color.  Guarded by
+  // selection_mutex, rebuilt with highlight_group_rects.
+  std::vector<FlightLine> highlight_group_lines;
 
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color

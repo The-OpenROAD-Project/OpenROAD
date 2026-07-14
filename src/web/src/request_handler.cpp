@@ -526,6 +526,7 @@ static int highlightGroupOfLocked(const SessionState& state,
 static void rebuildHighlightGroupShapesLocked(SessionState& state)
 {
   state.highlight_group_rects.clear();
+  state.highlight_group_lines.clear();
   for (int group = 0; group < gui::kNumHighlightSet; ++group) {
     if (state.highlight_groups[group].empty()) {
       continue;
@@ -550,6 +551,12 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
                                                .color = color,
                                                .layer = "",
                                                .filled = true});
+      }
+      // Members whose highlight() draws lines (e.g. unrouted nets) would
+      // otherwise be invisible in the overlay; tint them with the group.
+      for (const auto& line : collector.lines) {
+        state.highlight_group_lines.push_back(
+            {.p1 = line.p1, .p2 = line.p2, .color = color});
       }
     }
   }
@@ -586,6 +593,7 @@ bool consumeStaleSelection(SessionState& state)
       members.clear();
     }
     state.highlight_group_rects.clear();
+    state.highlight_group_lines.clear();
   }
   {
     std::lock_guard<std::mutex> lock(state.selectables_mutex);
@@ -646,6 +654,26 @@ static void writeInspectPayload(boost::json::object& o,
       o["has_guides"] = 1;
     }
   }
+}
+
+// Shared inspection-response trailer: writes the inspected object's payload
+// plus the selection cursor fields into `root`, and installs the freshly
+// derived selectables under selectables_mutex.  Handlers add their own
+// ok/error/deleted fields around this call.
+static void writeInspectTrailer(boost::json::object& root,
+                                SessionState& state,
+                                const gui::Selected& sel,
+                                bool can_navigate_back,
+                                int hl_group,
+                                int sel_count,
+                                int sel_index)
+{
+  std::vector<gui::Selected> new_selectables;
+  writeInspectPayload(root, sel, new_selectables, can_navigate_back, hl_group);
+  root["selection_count"] = static_cast<int64_t>(sel_count);
+  root["selection_index"] = static_cast<int64_t>(sel_index);
+  std::lock_guard<std::mutex> lock(state.selectables_mutex);
+  state.selectables = std::move(new_selectables);
 }
 
 static boost::json::object serializeHeatMapOption(
@@ -1136,15 +1164,8 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, can_navigate_back, hl_group);
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
+    writeInspectTrailer(
+        root, state, sel, can_navigate_back, hl_group, sel_count, sel_index);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1198,15 +1219,8 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, can_navigate_back, hl_group);
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
+    writeInspectTrailer(
+        root, state, sel, can_navigate_back, hl_group, sel_count, sel_index);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1274,16 +1288,13 @@ static WebSocketResponse handleSelectionCycle(
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    const bool can_navigate_back = false;
-    writeInspectPayload(
-        root, sel, new_selectables, can_navigate_back, hl_group);
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        /*can_navigate_back=*/false,
+                        hl_group,
+                        sel_count,
+                        sel_index);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1321,6 +1332,8 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   bool accepted = false;
+  // Built under sta_lock (getBounds reads odb); broadcast after the lock.
+  std::string broadcast_payload;
   try {
     const std::string name(req.json.at("name").as_string());
 
@@ -1431,18 +1444,16 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, can_navigate_back, hl_group);
+    writeInspectTrailer(
+        root, state, sel, can_navigate_back, hl_group, sel_count, sel_index);
+    // After the trailer so the handler error wins over writeInspectPayload's
+    // "invalid select_id" default when nothing is inspected.
     root["ok"] = accepted ? 1 : 0;
     if (!accepted) {
       root["error"] = error;
     }
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
+    if (accepted) {
+      broadcast_payload = refreshBroadcastPayload(*gen_);
     }
     writePayload(resp, root);
   } catch (const std::exception& e) {
@@ -1451,7 +1462,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
     resp.payload.assign(err.begin(), err.end());
   }
   if (accepted && broadcast_fn_) {
-    broadcast_fn_(refreshBroadcastPayload(*gen_));
+    broadcast_fn_(broadcast_payload);
   }
   return resp;
 }
@@ -1471,6 +1482,8 @@ WebSocketResponse SelectHandler::handleTriggerAction(
   WebSocketResponse resp;
   resp.id = req.id;
   bool executed = false;
+  // Built under sta_lock (getBounds reads odb); broadcast after the lock.
+  std::string broadcast_payload;
   try {
     const std::string name(req.json.at("name").as_string());
 
@@ -1545,6 +1558,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
           members.clear();
         }
         state.highlight_group_rects.clear();
+        state.highlight_group_lines.clear();
       } else if (executed && next != sel) {
         runDeselectAction(sel, next);
         if (next) {
@@ -1570,11 +1584,15 @@ WebSocketResponse SelectHandler::handleTriggerAction(
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
     // After a destroy, `sel` dangles — the payload must come from `next`.
     const gui::Selected& payload_sel = (deleted || executed) ? next : sel;
-    writeInspectPayload(
-        root, payload_sel, new_selectables, can_navigate_back, hl_group);
+    writeInspectTrailer(root,
+                        state,
+                        payload_sel,
+                        can_navigate_back,
+                        hl_group,
+                        sel_count,
+                        sel_index);
     if (executed && !next) {
       // The action deselected (e.g. Delete): an empty payload with no
       // "error" clears the client inspector.
@@ -1585,11 +1603,8 @@ WebSocketResponse SelectHandler::handleTriggerAction(
       root["error"] = error;
     }
     root["deleted"] = deleted ? 1 : 0;
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
+    if (executed) {
+      broadcast_payload = refreshBroadcastPayload(*gen_);
     }
     writePayload(resp, root);
   } catch (const std::exception& e) {
@@ -1598,7 +1613,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     resp.payload.assign(err.begin(), err.end());
   }
   if (executed && broadcast_fn_) {
-    broadcast_fn_(refreshBroadcastPayload(*gen_));
+    broadcast_fn_(broadcast_payload);
   }
   return resp;
 }
@@ -1664,18 +1679,11 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, can_navigate_back, hl_group);
+    writeInspectTrailer(
+        root, state, sel, can_navigate_back, hl_group, sel_count, sel_index);
     root["ok"] = ok ? 1 : 0;
     if (!ok) {
       root["error"] = error;
-    }
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
     }
     writePayload(resp, root);
   } catch (const std::exception& e) {
@@ -1720,6 +1728,7 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
     bool can_navigate_back = false;
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (ok && removeFromHighlightGroupsLocked(state, sel)) {
@@ -1729,22 +1738,18 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      // On success the object left every group (-1); on the error path it
+      // stays put, so report its real group instead of clearing the badge.
+      hl_group = ok ? -1 : highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, can_navigate_back, /*highlight_group=*/-1);
+    writeInspectTrailer(
+        root, state, sel, can_navigate_back, hl_group, sel_count, sel_index);
     root["ok"] = ok ? 1 : 0;
     if (!ok) {
       root["error"] = error;
-    }
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
     }
     writePayload(resp, root);
   } catch (const std::exception& e) {
@@ -1960,16 +1965,9 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, can_navigate_back, hl_group);
     root["ok"] = 1;
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
+    writeInspectTrailer(
+        root, state, sel, can_navigate_back, hl_group, sel_count, sel_index);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -3568,11 +3566,12 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                  state.highlight_lines.end());
   }
 
-  // Merge DRC overlay shapes
+  // Merge DRC overlay shapes (drc_rects and drc_lines share drc_mutex).
   {
     std::lock_guard<std::mutex> lock(state.drc_mutex);
     colored.insert(
         colored.end(), state.drc_rects.begin(), state.drc_rects.end());
+    lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
   }
   {
     // Highlight groups append last so they paint on top (the Qt GUI
@@ -3581,7 +3580,9 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     colored.insert(colored.end(),
                    state.highlight_group_rects.begin(),
                    state.highlight_group_rects.end());
-    lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
+    lines.insert(lines.end(),
+                 state.highlight_group_lines.begin(),
+                 state.highlight_group_lines.end());
   }
 
   // Snapshot route guide nets

@@ -166,6 +166,12 @@ export class SelectionBrowser {
     // ── rendering ───────────────────────────────────────────────────
 
     _render() {
+        // Rebuilding the table detaches the hovered <tr> before its
+        // mouseleave can fire, which would otherwise strand a continuous
+        // hover animation; stop it up front.
+        if (this._app.stopSelectionAnimation) {
+            this._app.stopSelectionAnimation();
+        }
         this._el.innerHTML = '';
 
         const selCount = (this._data.selection || []).length;

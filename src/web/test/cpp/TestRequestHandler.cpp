@@ -1922,6 +1922,31 @@ TEST_F(HighlightGroupTest, HighlightAddsToGroupAndReportsIt)
   EXPECT_EQ(cr.color.a, 100);
 }
 
+TEST_F(HighlightGroupTest, HighlightCollectsGroupFlightLines)
+{
+  // A member whose highlight() draws lines (e.g. an unrouted net) must
+  // still appear in the overlay, tinted with the group color.
+  LineFakeDescriptor line_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected
+        = gui::Selected(&fake_current_, &line_descriptor);
+  }
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+  ASSERT_EQ(state_.highlight_group_lines.size(), 1u);
+  const auto& line = state_.highlight_group_lines[0];
+  EXPECT_EQ(line.p1, fake_current_.bbox.ll());
+  EXPECT_EQ(line.p2, fake_current_.bbox.ur());
+  EXPECT_EQ(line.color.r, 255);
+  EXPECT_EQ(line.color.g, 0);
+  EXPECT_EQ(line.color.b, 0);
+  EXPECT_EQ(line.color.a, 100);
+}
+
 TEST_F(HighlightGroupTest, HighlightMovesBetweenGroupsUniquely)
 {
   send(WebSocketRequest::kHighlight, R"({"group":2})");

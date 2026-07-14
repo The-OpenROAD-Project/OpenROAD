@@ -805,6 +805,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         app.inspectorEl.innerHTML = '';
 
         if (!data || !data.properties || data.properties.length === 0) {
+            // No object inspected: kill any lingering selection animation so
+            // it can't flash over a since-cleared/destroyed object.
+            stopSelectionAnimation();
             const placeholder = document.createElement('div');
             placeholder.className = 'stub-panel';
             placeholder.innerHTML =
