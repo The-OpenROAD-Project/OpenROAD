@@ -8,7 +8,6 @@
 #include <cmath>
 #include <cstdint>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -178,34 +177,26 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       const odb::Rect overlap = bbox.intersect(core_);
       fixed_area += overlap.area();
     }
-    const int64_t free_area = core_area - fixed_area;
+
+    const int64_t used_area = inst_area + fixed_area;
     const double utilization = core_area > 0
-                                   ? (static_cast<double>(inst_area)
+                                   ? (static_cast<double>(used_area)
                                       / static_cast<double>(core_area))
                                          * 100.0
                                    : 0.0;
-    // Movable cell area over the core area left free by fixed instances:
-    // above 100% legalization is impossible.
-    const double effective_utilization
-        = free_area > 0 ? (static_cast<double>(inst_area)
-                           / static_cast<double>(free_area))
-                              * 100.0
-                        : std::numeric_limits<double>::infinity();
-    logger_->info(DPL,
-                  6,
-                  "Core area: {:.2f} um^2, Movable instances area: {:.2f} "
-                  "um^2, Utilization: {:.1f}%",
-                  block_->dbuAreaToMicrons(core_area),
-                  block_->dbuAreaToMicrons(inst_area),
-                  utilization);
+    logger_->info(
+        DPL, 6, "Core area: {:.2f} um^2", block_->dbuAreaToMicrons(core_area));
     logger_->info(DPL,
                   7,
-                  "Fixed instances area within core: {:.2f} um^2, "
-                  "Effective utilization of free area: {:.1f}%",
-                  block_->dbuAreaToMicrons(fixed_area),
-                  effective_utilization);
-    logger_->metric("utilization__before__dpl", effective_utilization);
-    if (effective_utilization > 100.0) {
+                  "Movable instances area: {:.2f} um^2",
+                  block_->dbuAreaToMicrons(inst_area));
+    logger_->info(DPL,
+                  8,
+                  "Fixed instances area within core: {:.2f} um^2",
+                  block_->dbuAreaToMicrons(fixed_area));
+    logger_->info(DPL, 9, "Utilization: {:.1f}%", utilization);
+    logger_->metric("utilization__before__dpl", utilization);
+    if (utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
     }
