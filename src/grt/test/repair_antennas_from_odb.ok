@@ -5,18 +5,15 @@
 [INFO GRT-0012] Found 8 antenna violations.
 [INFO GRT-0302] Inserted 7 jumpers for 7 nets.
 [INFO GRT-0012] Found 2 antenna violations.
-[INFO DPL-0006] Core area: 78411.11 um^2, Instances area: 6246.55 um^2, Utilization: 8.0%
+[INFO DPL-0006] Core area: 78411.11 um^2, Movable instances area: 3842.55 um^2, Utilization: 4.9%
+[INFO DPL-0007] Fixed instances area within core: 2403.99 um^2, Effective utilization of free area: 5.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                     373
-Diamond Move Success:            373 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls).
+	Automatic search window extension enabled.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 1362 cells
 [INFO GRT-0015] Inserted 2 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.

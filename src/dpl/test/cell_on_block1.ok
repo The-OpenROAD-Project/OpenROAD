@@ -4,23 +4,34 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 5 components and 20 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 0 connections.
-[INFO DPL-0006] Core area: 9607.92 um^2, Instances area: 2503.19 um^2, Utilization: 26.1%
+[INFO DPL-0006] Core area: 9607.92 um^2, Movable instances area: 3.19 um^2, Utilization: 0.0%
+[INFO DPL-0007] Fixed instances area within core: 2500.00 um^2, Effective utilization of free area: 0.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       4
-Diamond Move Success:              4 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls).
+	Automatic search window extension enabled.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 4 cells
+[INFO DPL-0393]   height 36 row(s): 1 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |         21 |         3 |         9
+        1 |         21 |         3 |         9
+        2 |         21 |         3 |         9
+        3 |         21 |         3 |         9
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 21 for 3 consecutive iterations.
+Using old diamond search for 3 remaining illegal cells.
+diamond recovery: recovered 3/3 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |          0 |         0 |         0
+Negotiation phase 2 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         62.6 u
-average displacement       12.5 u
-max displacement           16.6 u
+total displacement         64.0 u
+average displacement       12.8 u
+max displacement           17.1 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

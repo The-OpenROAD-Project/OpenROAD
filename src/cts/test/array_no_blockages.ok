@@ -145,25 +145,42 @@
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 58 long wires.
 [INFO RSZ-0048] Inserted 78 buffers in 58 nets.
-[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20262350.11 um^2, Utilization: 83.0%
+[INFO DPL-0006] Core area: 24399648.00 um^2, Movable instances area: 12350.11 um^2, Utilization: 0.1%
+[INFO DPL-0007] Fixed instances area within core: 20250000.00 um^2, Effective utilization of free area: 0.3%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                    3287
-Diamond Move Success:           3287 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls).
+	Automatic search window extension enabled.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 3287 cells
+[INFO DPL-0393]   height 215 row(s): 225 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |       2312 |        54 |      1142
+        1 |       2286 |        50 |      1120
+        2 |       2286 |        50 |      1120
+        3 |       2280 |        48 |      1116
+        4 |       2280 |        48 |      1116
+        5 |       2280 |        48 |      1116
+        6 |       2280 |        48 |      1116
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 2280 for 3 consecutive iterations.
+Using old diamond search for 48 remaining illegal cells.
+diamond recovery: recovered 44/48 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |        220 |         4 |       108
+      403 |        220 |         4 |       108
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 220 for 3 consecutive iterations. Using diamond search for 4 remaining illegal cells.
+diamond recovery: recovered 0/4 stuck cells.
+[WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 4
 Placement Analysis
 ---------------------------------
-total displacement       5956.5 u
-average displacement        1.7 u
-max displacement          144.5 u
+total displacement       7500.3 u
+average displacement        2.1 u
+max displacement          138.7 u
 original HPWL          289884.5 u
-legalized HPWL         290297.7 u
+legalized HPWL         290402.1 u
 delta HPWL                    0 %
 
 Clock clk

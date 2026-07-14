@@ -5,6 +5,39 @@
 [INFO ODB-0131]     Created 32 components and 201 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 384 nets and 137 connections.
-[INFO DPL-0006] Core area: 1851.36 um^2, Instances area: 3069.11 um^2, Utilization: 165.8%
-[ERROR DPL-0038] Utilization greater than 100%, impossible to legalize
-DPL-0038
+[INFO DPL-0006] Core area: 1851.36 um^2, Movable instances area: 57.99 um^2, Utilization: 3.1%
+[INFO DPL-0007] Fixed instances area within core: 459.45 um^2, Effective utilization of free area: 4.2%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls).
+	Automatic search window extension enabled.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 31 cells
+[INFO DPL-0393]   height 40 row(s): 1 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |        467 |        31 |       218
+        1 |        467 |        31 |       218
+        2 |        467 |        31 |       218
+        3 |        467 |        31 |       218
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 467 for 3 consecutive iterations.
+Using old diamond search for 31 remaining illegal cells.
+diamond recovery: recovered 31/31 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |        467 |        31 |       218
+      403 |        467 |        31 |       218
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 467 for 3 consecutive iterations. Using diamond search for 31 remaining illegal cells.
+diamond recovery: recovered 31/31 stuck cells.
+[WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 31
+Placement Analysis
+---------------------------------
+total displacement         84.0 u
+average displacement        2.6 u
+max displacement           13.8 u
+original HPWL             731.0 u
+legalized HPWL            737.5 u
+delta HPWL                    1 %
+
+

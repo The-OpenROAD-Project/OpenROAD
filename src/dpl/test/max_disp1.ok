@@ -4,24 +4,27 @@
 [INFO ODB-0130]     Created 65 pins.
 [INFO ODB-0131]     Created 1768 components and 3775 component-terminals.
 [INFO ODB-0133]     Created 130 nets and 195 connections.
-[INFO DPL-0006] Core area: 396162.58 um^2, Instances area: 504.60 um^2, Utilization: 0.1%
+[INFO DPL-0006] Core area: 396162.58 um^2, Movable instances area: 51.87 um^2, Utilization: 0.0%
+[INFO DPL-0007] Fixed instances area within core: 31781.83 um^2, Effective utilization of free area: 0.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 1473 sites horizontally, +/- 35 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      65
-Diamond Move Success:             65 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically (extendable up to the max displacement cap of +/-1473 sites, +/-35 rows near walls).
+	Automatic search window extension enabled.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 1767 cells
+[INFO DPL-0393]   height 227 row(s): 1 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement       3442.1 u
-average displacement        1.9 u
-max displacement          283.8 u
+total displacement       2667.2 u
+average displacement        1.5 u
+max displacement          283.5 u
 original HPWL           32960.1 u
-legalized HPWL          33197.1 u
-delta HPWL                    1 %
+legalized HPWL          34464.8 u
+delta HPWL                    5 %
 
