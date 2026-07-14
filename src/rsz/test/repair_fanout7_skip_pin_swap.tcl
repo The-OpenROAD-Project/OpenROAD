@@ -3,7 +3,7 @@ source "helpers.tcl"
 source "hi_fanout.tcl"
 
 if { ![info exists def_filename] } {
-  set def_filename [make_result_file "repair_fanout7.def"]
+  set def_filename [make_result_file "repair_fanout7_skip_pin_swap.def"]
 }
 if { ![info exists repair_args] } {
   set repair_args {}
@@ -37,9 +37,9 @@ estimate_parasitics -placement
 
 # Repair the high fanout net hopefully with gate cloning code.
 report_worst_slack -max
-write_verilog_for_eqy repair_fanout7 before "None"
+write_verilog_for_eqy repair_fanout7_skip_pin_swap before "None"
 repair_timing -setup -repair_tns 100 -verbose -skip_pin_swap {*}$repair_args
-run_equivalence_test repair_fanout7 \
+run_equivalence_test repair_fanout7_skip_pin_swap \
   -lib_dir ./Nangate45/work_around_yosys/ \
   -remove_cells "None"
 report_worst_slack -max

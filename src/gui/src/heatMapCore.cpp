@@ -1211,15 +1211,20 @@ void PowerDensityDataSource::combineMapData(bool,
 
 sta::Scene* PowerDensityDataSource::getScene() const
 {
-  if (scene_.empty()) {
+  if (sta_ == nullptr) {
     return nullptr;
   }
-  for (auto* scene : sta_->scenes()) {
-    if (scene->name() == scene_) {
-      return scene;
+  if (!scene_.empty()) {
+    for (auto* scene : sta_->scenes()) {
+      if (scene->name() == scene_) {
+        return scene;
+      }
     }
   }
-  return nullptr;
+  // Fallback: use first available scene when none is explicitly selected
+  // or the named scene no longer exists (e.g. before timing analysis runs).
+  const auto& scenes = sta_->scenes();
+  return scenes.empty() ? nullptr : scenes[0];
 }
 
 HeatMapSourceRegistration::HeatMapSourceRegistration(std::string name,

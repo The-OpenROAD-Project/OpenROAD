@@ -1,48 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// These STL headers are intentionally pre-included before exposing protected
-// STA fields below. Otherwise the access-specifier macro can leak into
-// transitive standard-library includes on some toolchains.
-// NOLINTBEGIN(misc-include-cleaner)
-#include <array>
-#include <functional>
-#include <map>
-#include <optional>
-#include <ostream>
-#include <ranges>
-#include <set>
-#include <sstream>
-#include <string_view>
-#include <type_traits>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-// NOLINTEND(misc-include-cleaner)
-
-#include <cstddef>
-#include <memory>
-
-// Expose STA invalidation sets so the tests can verify the side effect of
-// EstimateParasitics::updateParasitics() without adding production accessors.
-#define private public
-#define protected public
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Search.hh"
-#undef protected
-#undef private
-
 #include "db_sta/dbNetwork.hh"
 #include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
-#include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/SdcClass.hh"
+#include "sta/Search.hh"
 #include "sta/Units.hh"
 #include "tst/IntegratedFixture.h"
 
@@ -127,58 +96,6 @@ class TestEstimateParasitics : public tst::IntegratedFixture
     ASSERT_NE(dff_x2, nullptr);
     ASSERT_TRUE(resizer_.replaceCell(inst, dff_x2));
   }
-
-  void clearTimingInvalidations() const
-  {
-    sta_->graphDelayCalc()->invalid_delays_.clear();
-    sta_->graphDelayCalc()->invalid_check_edges_.clear();
-    sta_->graphDelayCalc()->invalid_latch_edges_.clear();
-    sta_->search()->invalid_arrivals_.clear();
-    sta_->search()->invalid_requireds_.clear();
-    sta_->search()->invalid_tns_.clear();
-  }
-
-  size_t timingInvalidationCount() const
-  {
-    return sta_->graphDelayCalc()->invalid_delays_.size()
-           + sta_->graphDelayCalc()->invalid_check_edges_.size()
-           + sta_->graphDelayCalc()->invalid_latch_edges_.size()
-           + sta_->search()->invalid_arrivals_.size()
-           + sta_->search()->invalid_requireds_.size()
-           + sta_->search()->invalid_tns_.size();
-  }
-
-  void expectNoConnectedPinInvalidated(const sta::Net* net) const
-  {
-    std::unique_ptr<sta::NetConnectedPinIterator> pin_iter{
-        sta_->network()->connectedPinIterator(net)};
-    while (pin_iter->hasNext()) {
-      const sta::Pin* pin = pin_iter->next();
-      sta::Vertex* vertex = nullptr;
-      sta::Vertex* bidirect_drvr_vertex = nullptr;
-      sta_->graph()->pinVertices(pin, vertex, bidirect_drvr_vertex);
-      expectNoVertexInvalidated(vertex, pin);
-      expectNoVertexInvalidated(bidirect_drvr_vertex, pin);
-    }
-  }
-
- private:
-  void expectNoVertexInvalidated(sta::Vertex* vertex, const sta::Pin* pin) const
-  {
-    if (vertex == nullptr) {
-      return;
-    }
-
-    EXPECT_EQ(sta_->graphDelayCalc()->invalid_delays_.find(vertex),
-              sta_->graphDelayCalc()->invalid_delays_.end())
-        << db_network_->pathName(pin);
-    EXPECT_EQ(sta_->search()->invalid_arrivals_.find(vertex),
-              sta_->search()->invalid_arrivals_.end())
-        << db_network_->pathName(pin);
-    EXPECT_EQ(sta_->search()->invalid_requireds_.find(vertex),
-              sta_->search()->invalid_requireds_.end())
-        << db_network_->pathName(pin);
-  }
 };
 
 // Verifies that an ideal clock net can be present in the incremental
@@ -206,8 +123,7 @@ TEST_F(TestEstimateParasitics, IdealClockNetSkipsStaInvalidation)
   // Clear any ordinary resize-related STA invalidation so the assertions below
   // measure only updateParasitics() side effects.
   sta_->updateTiming(true);
-  clearTimingInvalidations();
-  ASSERT_EQ(timingInvalidationCount(), 0U);
+  ASSERT_TRUE(sta_->search()->arrivalsValid());
 
   // Seed the exact condition under test: an ideal clock net is pending in
   // EstimateParasitics' incremental invalidation set.
@@ -220,8 +136,7 @@ TEST_F(TestEstimateParasitics, IdealClockNetSkipsStaInvalidation)
 
   // A regression calls sta_->delaysInvalidFromFanin(clk_net), which invalidates
   // the top clock port and every ideal CK load vertex.
-  EXPECT_EQ(timingInvalidationCount(), 0U);
-  expectNoConnectedPinInvalidated(clk_net);
+  EXPECT_TRUE(sta_->search()->arrivalsValid());
   ep_.setIncrementalParasiticsEnabled(false);
 }
 
@@ -265,8 +180,7 @@ TEST_F(TestEstimateParasitics, ScanClockIdealOnlyInTestMode)
   ASSERT_NE(scan_clk_net, nullptr);
 
   // Isolate the invalidation caused by updateParasitics().
-  clearTimingInvalidations();
-  ASSERT_EQ(timingInvalidationCount(), 0U);
+  ASSERT_TRUE(sta_->search()->arrivalsValid());
 
   // Seed the scan clock net as invalid. A buggy all-modes ideal-clock check
   // treats this net as non-ideal because function mode has no scan clock.
@@ -279,8 +193,7 @@ TEST_F(TestEstimateParasitics, ScanClockIdealOnlyInTestMode)
 
   // If non-clock modes are not ignored, updateParasitics() invalidates the
   // scan clock port and scan_reg/CK through delaysInvalidFromFanin().
-  EXPECT_EQ(timingInvalidationCount(), 0U);
-  expectNoConnectedPinInvalidated(scan_clk_net);
+  EXPECT_TRUE(sta_->search()->arrivalsValid());
   ep_.setIncrementalParasiticsEnabled(false);
 }
 

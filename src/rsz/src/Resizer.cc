@@ -44,6 +44,7 @@
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -89,6 +90,7 @@
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 #include "utl/scope.h"
+#include "utl/timer.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -201,7 +203,7 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
                                 sta::LibertyPort* input_port,
                                 LibertyPortVec& ports)
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }
@@ -327,9 +329,11 @@ using odb::dbBoolProperty;
 using odb::dbBox;
 using odb::dbDoubleProperty;
 using odb::dbInst;
+using odb::dbIntProperty;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSet;
+using odb::dbStringProperty;
 
 Resizer::Resizer(utl::Logger* logger,
                  odb::dbDatabase* db,
@@ -351,7 +355,7 @@ Resizer::Resizer(utl::Logger* logger,
   estimate_parasitics_ = estimate_parasitics;
   db_network_ = sta->getDbNetwork();
   resized_multi_output_insts_ = sta::InstanceSet(db_network_);
-  db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
+  db_cbk_ = std::make_unique<OdbCallBack>(this, db_network_);
 
   db_network_->addObserver(this);
 
@@ -555,6 +559,60 @@ void Resizer::initBlock()
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = false;
+  }
+
+  // Global sizing knobs from `set_global_sizing_config`. Reset to struct
+  // defaults and apply each dbProperty as an override; an absent property
+  // leaves the default in place. GlobalSizingPolicy reads these via
+  // globalSizingConfig().
+  global_sizing_config_ = GlobalSizingConfig{};
+  if (dbStringProperty* p = dbStringProperty::find(block_, "gs_presize_mode")) {
+    const std::string v = p->getValue();
+    if (v == "disabled") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kDisabled;
+    } else if (v == "min_size_max_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMinSizeMaxVt;
+    } else if (v == "max_size_min_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMaxSizeMinVt;
+    } else {
+      logger_->warn(RSZ,
+                    413,
+                    "Ignoring invalid gs_presize_mode value '{}'; expected "
+                    "disabled, min_size_max_vt, or max_size_min_vt.",
+                    v);
+    }
+  }
+  if (dbBoolProperty* p
+      = dbBoolProperty::find(block_, "gs_include_clock_network")) {
+    global_sizing_config_.include_clock_network = p->getValue();
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_setup_slack_margin")) {
+    global_sizing_config_.setup_slack_margin
+        = static_cast<float>(p->getValue());
+  }
+  if (dbIntProperty* p = dbIntProperty::find(block_, "gs_max_iterations")) {
+    global_sizing_config_.max_iterations = p->getValue();
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_beta")) {
+    global_sizing_config_.beta = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_mu_exponent")) {
+    global_sizing_config_.mu_exponent = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_lambda_floor")) {
+    global_sizing_config_.lambda_floor = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_timing_bias")) {
+    global_sizing_config_.timing_bias = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_budget_safety_factor")) {
+    global_sizing_config_.budget_safety_factor
+        = static_cast<float>(p->getValue());
   }
 }
 
@@ -1516,7 +1574,7 @@ bool Resizer::isCombinational(sta::LibertyCell* cell) const
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials());
+          && !cell->isSequential());
 }
 
 std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
@@ -3277,7 +3335,7 @@ bool Resizer::isRegister(sta::Vertex* vertex)
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    return cell && cell->hasSequentials();
+    return cell && cell->isSequential();
   }
   return false;
 }
@@ -4343,6 +4401,19 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          sta::ArcDelay delays[sta::RiseFall::index_count],
                          sta::Slew slews[sta::RiseFall::index_count])
 {
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc_, delays, slews);
+}
+
+void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
+                         const float load_cap,
+                         const sta::Scene* scene,
+                         const sta::MinMax* min_max,
+                         sta::ArcDelayCalc* arc_delay_calc,
+                         // Return values.
+                         sta::ArcDelay delays[sta::RiseFall::index_count],
+                         sta::Slew slews[sta::RiseFall::index_count])
+{
   for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = -sta::INF;
     slews[rf_index] = -sta::INF;
@@ -4365,14 +4436,14 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
         }
         sta::LoadPinIndexMap load_pin_index_map(network_);
         sta::ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slew,
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         scene,
-                                         min_max);
+            = arc_delay_calc->gateDelay(nullptr,
+                                        arc,
+                                        in_slew,
+                                        load_cap,
+                                        nullptr,
+                                        load_pin_index_map,
+                                        scene,
+                                        min_max);
 
         const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
         const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
@@ -4441,9 +4512,19 @@ sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const sta::Scene* scene,
                                  const sta::MinMax* min_max)
 {
+  return gateDelay(drvr_port, load_cap, scene, min_max, arc_delay_calc_);
+}
+
+sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
+                                 const float load_cap,
+                                 const sta::Scene* scene,
+                                 const sta::MinMax* min_max,
+                                 sta::ArcDelayCalc* arc_delay_calc)
+{
   sta::ArcDelay delays[sta::RiseFall::index_count];
   sta::Slew slews[sta::RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, scene, min_max, delays, slews);
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc, delays, slews);
   return max(delays[sta::RiseFall::riseIndex()],
              delays[sta::RiseFall::fallIndex()]);
 }
@@ -4730,8 +4811,10 @@ void Resizer::repairDesign(double max_wire_length,
                            double cap_margin,
                            double buffer_gain,
                            bool match_cell_footprint,
+                           bool reroute,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -4741,13 +4824,99 @@ void Resizer::repairDesign(double max_wire_length,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
+  utl::SetAndRestore set_reroute(repair_design_->reroute_, reroute);
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
+  logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 int Resizer::repairDesignBufferCount() const
 {
   return repair_design_->insertedBufferCount();
+}
+
+float Resizer::getRerouteResistanceReduction()
+{
+  return kMinResistanceReduction;
+}
+
+bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
+{
+  // Res-aware rerouting only makes sense with global-routing parasitics.
+  if (estimate_parasitics_->getParasiticsSrc()
+      != est::ParasiticsSrc::kGlobalRouting) {
+    return false;
+  }
+
+  sta::Net* net = network_->net(drvr_pin);
+  if (net == nullptr || dontTouch(drvr_pin)) {
+    return false;
+  }
+
+  odb::dbNet* db_net = db_network_->flatNet(net);
+  if (db_net == nullptr || db_net->isSpecial()) {
+    return false;
+  }
+
+  // Already scheduled for res-aware routing in a prior iteration.
+  if (global_router_->isNetResAware(db_net)) {
+    return false;
+  }
+
+  // Unconstrained nets have no timing path; res-aware routing will waste
+  // valuable resources.
+  const sta::Slack slack = sta_->slack(graph_->pinDrvrVertex(drvr_pin), max_);
+  if (slack == sta::INF) {
+    return false;
+  }
+
+  // Short nets (<=3 gcells) have negligible resistance; skip the reroute.
+  const int kShortNetGCellThreshold = 3;
+  const int tile_size = global_router_->getTileSize();
+  if (tile_size > 0) {
+    const grt::NetRouteMap& routes = global_router_->getRoutes();
+    auto it = routes.find(db_net);
+    if (it != routes.end()) {
+      int gcell_length = 0;
+      for (const grt::GSegment& seg : it->second) {
+        if (!seg.isVia()) {
+          gcell_length += seg.length() / tile_size;
+        }
+      }
+      if (gcell_length <= kShortNetGCellThreshold) {
+        return false;
+      }
+    }
+  }
+
+  // Only reroute if moving to the lowest-resistance layer saves enough
+  // resistance to justify the disruption.
+  const float resistance = global_router_->getFRNetResistance(db_net);
+  const float estimated_resistance
+      = global_router_->getFRNetResistanceOnMinResistanceLayer(db_net);
+  float reduction_ratio = 0.0f;
+  if (resistance > 0.0f) {
+    reduction_ratio = (resistance - estimated_resistance) / resistance;
+  }
+
+  if (reduction_ratio < kMinResistanceReduction) {
+    return false;
+  }
+
+  global_router_->setResistanceAware(true);
+  global_router_->addDirtyNet(db_net);
+  global_router_->setNetIsResAware(db_net, true);
+  estimate_parasitics_->parasiticsInvalid(db_net);
+
+  debugPrint(logger_,
+             utl::RSZ,
+             "reroute",
+             1,
+             "RepairDesign rerouting net {} (resistance {} -> {} estimated)",
+             db_net->getName(),
+             resistance,
+             estimated_resistance);
+  return true;
 }
 
 void Resizer::repairNet(sta::Net* net,
@@ -4916,6 +5085,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
 {
+  utl::Timer timer;
   OptimizerRunConfig config;
   // Freeze Tcl-facing repair setup knobs before policy dispatch.
   config.setup_slack_margin = setup_margin;
@@ -4938,7 +5108,9 @@ bool Resizer::repairSetup(double setup_margin,
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
-  return optimizer.run();
+  bool result = optimizer.run();
+  logger_->info(RSZ, 505, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::reportSwappablePins()
@@ -4997,6 +5169,7 @@ bool Resizer::repairHold(
     bool match_cell_footprint,
     bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   // Some technologies such as nangate45 don't have delay cells. Hence,
@@ -5015,13 +5188,15 @@ bool Resizer::repairHold(
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return repair_hold_->repairHold(setup_margin,
-                                  hold_margin,
-                                  allow_setup_violations,
-                                  max_buffer_percent,
-                                  max_passes,
-                                  max_iterations,
-                                  verbose);
+  bool result = repair_hold_->repairHold(setup_margin,
+                                         hold_margin,
+                                         allow_setup_violations,
+                                         max_buffer_percent,
+                                         max_passes,
+                                         max_iterations,
+                                         verbose);
+  logger_->info(RSZ, 506, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::repairHold(const sta::Pin* end_pin,
@@ -5054,6 +5229,7 @@ bool Resizer::recoverPower(float recover_power_percent,
                            bool match_cell_footprint,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -5063,7 +5239,9 @@ bool Resizer::recoverPower(float recover_power_percent,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent, verbose);
+  bool result = recover_power_->recoverPower(recover_power_percent, verbose);
+  logger_->info(RSZ, 507, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 ////////////////////////////////////////////////////////////////
 void Resizer::swapArithModules(int path_count,

@@ -28,6 +28,7 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gain_buffering2
+    gain_buffering3
     gcd_resize
     insert_buffer
     insert_buffer_hier
@@ -59,6 +60,7 @@ or_integration_tests(
     repair_design3_verbose
     repair_design4
     repair_design5
+    repair_design6
     repair_design_outside_core
     repair_fanout1
     repair_fanout2
@@ -91,6 +93,7 @@ or_integration_tests(
     repair_setup_clone_high_fanout
     repair_setup_crit_vt_asap7
     repair_setup_default_nangate45
+    repair_setup_dont_touch_sizeup
     repair_setup_endpoint_fanin_only
     repair_setup_gcd
     repair_setup_invalid_phase
@@ -234,6 +237,14 @@ or_integration_tests(
     repair_setup_vt_swap2
     measured_vt_swap
     repair_fanout7_skip_pin_swap
+    global_sizing
+    global_sizing_threads
+    global_sizing_presize
+    inferred_clock_gator_time_borrow
+    inferred_clock_gator_time_borrow_covered
+    inferred_clock_gator_time_borrow_repair_pin
+    inferred_clock_gator_time_borrow_tns
+    latch_borrow_chain
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1

@@ -181,7 +181,10 @@ struct TileVisibility
   bool pins = true;               // BTerm (IO pin) shapes on tech layers
   bool pin_markers = true;        // BTerm direction markers on _pins layer
   bool pin_names = true;          // BTerm name labels on _pins layer
-  bool blockages = true;
+
+  // Shapes — other per-layer geometry (not routing sub-types)
+  bool blockages = true;  // master obstructions (LEF OBS)
+  bool fills = false;     // dbFill metal fill (off by default, GUI parity)
 
   // Instance sub-shapes
   bool inst_names = true;      // Instance name labels on _instances layer
@@ -370,6 +373,22 @@ class TileGenerator
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
+
+  // Render only highlight/overlay shapes (selection, hover, timing, DRC,
+  // route guides, flight lines) on a fully transparent background.  Used
+  // by the overlay tile layer so base tiles can stay cached when only
+  // highlights change.
+  std::vector<unsigned char> generateOverlayTile(
+      int z,
+      int x,
+      int y,
+      const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<odb::Polygon>& highlight_polys = {},
+      const std::vector<ColoredRect>& colored_rects = {},
+      const std::vector<FlightLine>& flight_lines = {},
+      const std::set<uint32_t>* route_guide_net_ids = nullptr,
+      bool has_visible_layers = false,
+      const std::set<std::string>& visible_layers = {}) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,

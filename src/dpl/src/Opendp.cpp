@@ -30,6 +30,7 @@
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace dpl {
 
@@ -60,6 +61,7 @@ Opendp::Opendp(odb::dbDatabase* db, utl::Logger* logger)
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
   network_ = std::make_unique<Network>();
+  network_->init(logger);
   arch_ = std::make_unique<Architecture>();
 }
 
@@ -103,6 +105,16 @@ void Opendp::setDeepIterativePlacement(const bool deep_iterative)
   }
 }
 
+void Opendp::setNegotiationDebugInterval(const int iterative_jump)
+{
+  negotiation_debug_interval_ = std::max(1, iterative_jump);
+}
+
+void Opendp::setNegotiationDebugStart(const int iterative_start)
+{
+  negotiation_debug_start_ = std::max(0, iterative_start);
+}
+
 void Opendp::setJournal(Journal* journal)
 {
   journal_ = journal;
@@ -118,8 +130,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const std::string& report_file_name,
                                bool incremental,
                                const bool use_negotiation,
-                               const bool run_abacus)
+                               const bool run_abacus,
+                               const int site_search_window,
+                               const int row_search_window,
+                               const double drc_penalty,
+                               const bool disable_window_extension)
 {
+  utl::Timer timer;
   incremental_ = incremental;
   use_negotiation_ |= use_negotiation;
   importDb();
@@ -146,11 +163,22 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                      * static_cast<int64_t>(node->getHeight().v);
       }
     }
+    int64_t total_inst_area = 0;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      odb::dbMaster* master = inst->getMaster();
+      total_inst_area += static_cast<int64_t>(master->getWidth())
+                         * static_cast<int64_t>(master->getHeight());
+    }
     const double utilization = core_area > 0
                                    ? (static_cast<double>(inst_area)
                                       / static_cast<double>(core_area))
                                          * 100.0
                                    : 0.0;
+    const double total_utilization = core_area > 0
+                                         ? (static_cast<double>(total_inst_area)
+                                            / static_cast<double>(core_area))
+                                               * 100.0
+                                         : 0.0;
     logger_->info(DPL,
                   6,
                   "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
@@ -158,7 +186,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                   block_->dbuAreaToMicrons(core_area),
                   block_->dbuAreaToMicrons(inst_area),
                   utilization);
-    logger_->metric("utilizatin__before__dpl", utilization);
+    logger_->metric("utilization__before__dpl", total_utilization);
     if (utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
@@ -221,8 +249,18 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                      debug_observer_.get(),
                                      network_.get());
     negotiation.setRunAbacus(run_abacus);
+    negotiation.setDisableWindowExtension(disable_window_extension);
+    if (site_search_window >= 0) {
+      negotiation.setSiteSearchWindow(site_search_window);
+    }
+    if (row_search_window >= 0) {
+      negotiation.setRowSearchWindow(row_search_window);
+    }
+    if (drc_penalty >= 0.0) {
+      negotiation.setDrcPenalty(drc_penalty);
+    }
     negotiation.legalize();
-    negotiation.setDplPositions();
+    negotiation.commitNegotiationPosToDpl();
 
     if (negotiation.numViolations() > 0) {
       logger_->warn(DPL,
@@ -237,6 +275,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     findDisplacementStats();
     updateDbInstLocations();
   }
+  logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void Opendp::updateDbInstLocations()

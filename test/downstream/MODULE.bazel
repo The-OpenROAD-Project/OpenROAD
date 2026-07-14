@@ -20,19 +20,58 @@ git_override(
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-# toolchains_llvm is dev_dependency in OpenROAD, so the root module must
-# configure the C++ toolchain.
-bazel_dep(name = "toolchains_llvm", version = "1.5.0")
-
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(
-    llvm_version = "20.1.8",
-)
-use_repo(llvm, "llvm_toolchain")
+# The C++ toolchain is a dev_dependency in OpenROAD, so the root module
+# must configure its own. hermetic-llvm provides a statically linked,
+# zero-sysroot LLVM toolchain.
+bazel_dep(name = "llvm", version = "0.8.11")
 
 register_toolchains(
-    "@llvm_toolchain//:all",
+    "@llvm//toolchain:all",
 )
+
+# hermetic-llvm ships a minimal macOS SDK subset (frameworks are opt-in).
+# The root MODULE.bazel selects the desktop frameworks Qt needs, but it does
+# so on a dev_dependency extension, which does not apply when OpenROAD is
+# consumed as a dependency -- so a downstream macOS consumer building the Qt
+# GUI must repeat the selection here, just like the qt-bazel git_override
+# above. Keep this list in sync with osx.frameworks(...) in ../../MODULE.bazel.
+osx = use_extension("@llvm//extensions:osx.bzl", "osx")
+osx.frameworks(names = [
+    "CoreFoundation",
+    "Foundation",
+    "Kernel",
+    "OSLog",
+    "Security",
+    "SystemConfiguration",
+    "AppKit",
+    "ApplicationServices",
+    "CFNetwork",
+    "Carbon",
+    "Cocoa",
+    "ColorSync",
+    "CoreData",
+    "CoreGraphics",
+    "CoreImage",
+    "CoreServices",
+    "CoreText",
+    "CoreVideo",
+    "DiskArbitration",
+    "FontServices",
+    "GSS",
+    "IOKit",
+    "IOSurface",
+    "ImageIO",
+    "Metal",
+    "MetalKit",
+    "ModelIO",
+    "OpenGL",
+    "PrintCore",
+    "QuartzCore",
+    "CloudKit",
+    "Symbols",
+    "UIFoundation",
+    "UniformTypeIdentifiers",
+])
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(

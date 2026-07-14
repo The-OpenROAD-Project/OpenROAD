@@ -26,23 +26,23 @@
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0204] A clustering solution was found from clustering size of 4 and clustering diameter of 600.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
-[INFO CTS-0019]  Total number of sinks after clustering: 122.
+[INFO CTS-0019]  Total number of sinks after clustering: 120.
 [INFO CTS-0024]  Normalized sink region: [(1.23857, 44.2857), (661.239, 680.704)].
 [INFO CTS-0025]     Width:  660.0000.
 [INFO CTS-0026]     Height: 636.4186.
  Level 1
     Direction: Horizontal
-    Sinks per sub-region: 61
+    Sinks per sub-region: 60
     Sub-region size: 330.0000 X 636.4186
 [INFO CTS-0034]     Segment length (rounded): 166.
  Level 2
     Direction: Vertical
-    Sinks per sub-region: 31
+    Sinks per sub-region: 30
     Sub-region size: 330.0000 X 318.2093
 [INFO CTS-0034]     Segment length (rounded): 160.
  Level 3
     Direction: Horizontal
-    Sinks per sub-region: 16
+    Sinks per sub-region: 15
     Sub-region size: 165.0000 X 318.2093
 [INFO CTS-0034]     Segment length (rounded): 82.
  Level 4
@@ -50,8 +50,23 @@
     Sinks per sub-region: 8
     Sub-region size: 165.0000 X 159.1046
 [INFO CTS-0034]     Segment length (rounded): 80.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 122.
+ Level 5
+    Direction: Horizontal
+    Sinks per sub-region: 4
+    Sub-region size: 82.5000 X 159.1046
+[INFO CTS-0034]     Segment length (rounded): 42.
+ Level 6
+    Direction: Vertical
+    Sinks per sub-region: 2
+    Sub-region size: 82.5000 X 79.5523
+[INFO CTS-0034]     Segment length (rounded): 40.
+ Level 7
+    Direction: Horizontal
+    Sinks per sub-region: 1
+    Sub-region size: 41.2500 X 79.5523
+[INFO CTS-0034]     Segment length (rounded): 20.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 120.
 [INFO CTS-0201] 225 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
 [INFO CTS-0028]  Total number of sinks: 2250.
@@ -84,45 +99,59 @@
     Sinks per sub-region: 9
     Sub-region size: 117.8572 X 167.0000
 [INFO CTS-0034]     Segment length (rounded): 58.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+ Level 5
+    Direction: Vertical
+    Sinks per sub-region: 5
+    Sub-region size: 117.8572 X 83.5000
+[INFO CTS-0034]     Segment length (rounded): 42.
+ Level 6
+    Direction: Horizontal
+    Sinks per sub-region: 3
+    Sub-region size: 58.9286 X 83.5000
+[INFO CTS-0034]     Segment length (rounded): 30.
+ Level 7
+    Direction: Vertical
+    Sinks per sub-region: 2
+    Sub-region size: 58.9286 X 41.7500
+[INFO CTS-0034]     Segment length (rounded): 20.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 136.
-[INFO CTS-0018]     Created 190 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 16.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 17.
-[INFO CTS-0015]     Created 190 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 2:103, 6:1, 7:6, 8:7, 9:2..
-[INFO CTS-0017]     Max level of the clock tree: 4.
-[INFO CTS-0018]     Created 211 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 15.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 15.
-[INFO CTS-0015]     Created 211 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 4:1, 5:2, 6:3, 7:2, 8:1, 9:5, 10:44, 11:1, 12:3, 20:90..
-[INFO CTS-0017]     Max level of the clock tree: 4.
+[INFO CTS-0018]     Created 453 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 21.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 21.
+[INFO CTS-0015]     Created 453 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:131, 2:107..
+[INFO CTS-0017]     Max level of the clock tree: 7.
+[INFO CTS-0018]     Created 453 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 19.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 19.
+[INFO CTS-0015]     Created 453 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:93, 2:20, 3:1, 5:2, 10:44, 20:90..
+[INFO CTS-0017]     Max level of the clock tree: 7.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 225
-[INFO CTS-0100]  Leaf buffers 103
-[INFO CTS-0101]  Average sink wire length 9413.40 um
-[INFO CTS-0102]  Path depth 16 - 17
-[INFO CTS-0207]  Dummy loads inserted 0
+[INFO CTS-0100]  Leaf buffers 120
+[INFO CTS-0101]  Average sink wire length 9787.62 um
+[INFO CTS-0102]  Path depth 21 - 21
+[INFO CTS-0207]  Dummy loads inserted 12
 [INFO CTS-0098] Clock net "clk_regs"
-[INFO CTS-0099]  Sinks 2296
+[INFO CTS-0099]  Sinks 2290
 [INFO CTS-0100]  Leaf buffers 136
-[INFO CTS-0101]  Average sink wire length 3905.49 um
-[INFO CTS-0102]  Path depth 15 - 15
-[INFO CTS-0207]  Dummy loads inserted 46
+[INFO CTS-0101]  Average sink wire length 4225.23 um
+[INFO CTS-0102]  Path depth 17 - 19
+[INFO CTS-0207]  Dummy loads inserted 40
 [INFO CTS-0033] Balancing latency for clock clk
-[INFO CTS-0036]  inserted 4 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 4
+[INFO CTS-0036]  inserted 0 delay buffers
 [INFO RSZ-0058] Using max wire length 693um.
-[INFO RSZ-0047] Found 36 long wires.
-[INFO RSZ-0048] Inserted 103 buffers in 36 nets.
-[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261543.60 um^2, Utilization: 83.0%
+[INFO RSZ-0047] Found 58 long wires.
+[INFO RSZ-0048] Inserted 78 buffers in 58 nets.
+[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20262350.11 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
-Total cells:                    2805
-Diamond Move Success:           2805 (100.00%)
+Total cells:                    3287
+Diamond Move Success:           3287 (100.00%)
 Diamond Move Failure:              0
 Rip-up and replace Success:        0 (  0.00% of diamond failures)
 Rip-up and replace Failure:        0
@@ -130,17 +159,17 @@ Total Placement Failures:          0
 ---------------------------------------
 Placement Analysis
 ---------------------------------
-total displacement       3467.0 u
-average displacement        1.1 u
-max displacement          135.2 u
-original HPWL          183178.2 u
-legalized HPWL         183919.9 u
+total displacement       5956.5 u
+average displacement        1.7 u
+max displacement          144.5 u
+original HPWL          289884.5 u
+legalized HPWL         290297.7 u
 delta HPWL                    0 %
 
 Clock clk
-   1.25 source latency inst_3_13/clk ^
-  -1.13 target latency inst_5_13/clk ^
+   1.19 source latency inst_12_11/clk ^
+  -1.25 target latency inst_13_11/clk ^
    0.00 CRPR
 --------------
-   0.12 setup skew
+  -0.06 setup skew
 

@@ -117,6 +117,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"blockages",              &TileVisibility::blockages,              true},
     {"placement_blockages",    &TileVisibility::placement_blockages,    true},
     {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
+    {"fills",                  &TileVisibility::fills,                  false},
     {"rows",                   &TileVisibility::rows,                   false},
     {"tracks_pref",            &TileVisibility::tracks_pref,            false},
     {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
@@ -939,9 +940,12 @@ static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
 
   std::mt19937 rng(1);
   auto random_color = [&rng]() {
-    return Color{.r = static_cast<unsigned char>(50 + rng() % 200),
-                 .g = static_cast<unsigned char>(50 + rng() % 200),
-                 .b = static_cast<unsigned char>(50 + rng() % 200),
+    const int blue = 50 + rng() % 200;
+    const int green = 50 + rng() % 200;
+    const int red = 50 + rng() % 200;
+    return Color{.r = static_cast<unsigned char>(red),
+                 .g = static_cast<unsigned char>(green),
+                 .b = static_cast<unsigned char>(blue),
                  .a = 180};
   };
 
@@ -949,17 +953,21 @@ static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
   size_t via = 0;
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     Color c;
-    const odb::dbTechLayerType type = layer->getType();
-    if (type == odb::dbTechLayerType::ROUTING) {
-      c = (metal < kMetalColors.size()) ? kMetalColors[metal++]
-                                        : random_color();
-    } else if (type == odb::dbTechLayerType::CUT) {
-      // GUI: a CUT layer that appears before any ROUTING layer gets a random
-      // color so cuts don't claim the metal palette slots.
-      c = (via < kCutColors.size() && metal != 0) ? kCutColors[via++]
-                                                  : random_color();
-    } else {
+    if (layer->isBackside()) {
       c = random_color();
+    } else {
+      const odb::dbTechLayerType type = layer->getType();
+      if (type == odb::dbTechLayerType::ROUTING) {
+        c = (metal < kMetalColors.size()) ? kMetalColors[metal++]
+                                          : random_color();
+      } else if (type == odb::dbTechLayerType::CUT) {
+        // GUI: a CUT layer that appears before any ROUTING layer gets a random
+        // color so cuts don't claim the metal palette slots.
+        c = (via < kCutColors.size() && metal != 0) ? kCutColors[via++]
+                                                    : random_color();
+      } else {
+        c = random_color();
+      }
     }
     colors[layer] = c;
   }
@@ -1376,6 +1384,95 @@ std::vector<unsigned char> TileGenerator::generateTile(
   return png_data;
 }
 
+std::vector<unsigned char> TileGenerator::generateOverlayTile(
+    const int z,
+    const int x,
+    int y,
+    const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<odb::Polygon>& highlight_polys,
+    const std::vector<ColoredRect>& colored_rects,
+    const std::vector<FlightLine>& flight_lines,
+    const std::set<uint32_t>* route_guide_net_ids,
+    const bool has_visible_layers,
+    const std::set<std::string>& visible_layers) const
+{
+  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image(kBufferSize, 0);  // fully transparent
+
+  if (!getChip()) {
+    // No design — return blank transparent PNG.
+    std::vector<unsigned char> png;
+    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    return png;
+  }
+
+  // Short-circuit: if there's nothing to draw, return a blank tile.
+  if (highlight_rects.empty() && highlight_polys.empty()
+      && colored_rects.empty() && flight_lines.empty()
+      && (!route_guide_net_ids || route_guide_net_ids->empty())) {
+    std::vector<unsigned char> png;
+    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    return png;
+  }
+
+  // Compute tile bounding box in DBU (same math as renderTileBuffer).
+  const double num_tiles_at_zoom = pow(2, z);
+  y = num_tiles_at_zoom - 1 - y;  // flip Y
+  const odb::Rect full_bounds = getBounds();
+  if (full_bounds.maxDXDY() <= 0) {
+    std::vector<unsigned char> png;
+    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    return png;
+  }
+  const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+  const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
+  const int dbu_y_min = full_bounds.yMin() + y * tile_dbu_size;
+  const int dbu_x_max = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+  const int dbu_y_max = full_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
+  const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
+  const double scale = kTileSizeInPixel / tile_dbu_size;
+
+  // Draw highlight shapes onto transparent buffer.
+  if (!highlight_rects.empty() || !highlight_polys.empty()) {
+    drawHighlight(image, highlight_rects, highlight_polys, dbu_tile, scale);
+  }
+  if (!colored_rects.empty()) {
+    // Pass empty layer name so all colored rects are drawn regardless of
+    // their per-layer tag (the overlay sits above all base layers).
+    drawColoredHighlight(image, colored_rects, "", dbu_tile, scale);
+  }
+  if (!flight_lines.empty()) {
+    drawFlightLines(image, flight_lines, dbu_tile, scale);
+  }
+  if (route_guide_net_ids && !route_guide_net_ids->empty()) {
+    // Draw route guides only for visible tech layers.
+    for (odb::dbTech* tech : db_->getTechs()) {
+      const auto& colors = getLayerColorMap(tech);
+      for (odb::dbTechLayer* layer : tech->getLayers()) {
+        // Skip layers the user has hidden in Display Controls.
+        // has_visible_layers=true with an empty set means all hidden.
+        if (has_visible_layers && !visible_layers.contains(layer->getName())) {
+          continue;
+        }
+        const auto it = colors.find(layer);
+        if (it == colors.end()) {
+          continue;
+        }
+        drawRouteGuides(image,
+                        *route_guide_net_ids,
+                        layer->getName(),
+                        it->second,
+                        dbu_tile,
+                        scale);
+      }
+    }
+  }
+
+  std::vector<unsigned char> png;
+  lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+  return png;
+}
+
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
     const int z,
@@ -1571,6 +1668,19 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
       const Color obs_color = color.lighter();
 
+      // Clip a shape's bbox to this tile and paint it as a solid rect.  Shared
+      // by every per-layer shape below (routing wires/vias, special-net vias,
+      // master obstructions, cell-pin boxes, pin-direction boxes, fills): they
+      // all do overlaps -> intersect -> toPixels -> drawFilledRect.
+      auto draw_box_in_tile = [&](const odb::Rect& box, const Color& c) {
+        if (!box.overlaps(dbu_tile)) {
+          return;
+        }
+        drawFilledRect(image_buffer,
+                       toPixels(scale, box.intersect(dbu_tile), dbu_tile),
+                       c);
+      };
+
       // Special "_modules" layer: draw filled module-colored rectangles
       const bool modules_layer
           = (layer == "_modules" && module_colors && !module_colors->empty());
@@ -1759,11 +1869,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
 
               // Draw the box rect itself (same as GUI painter.drawRect).
-              if (box_rect.overlaps(dbu_tile)) {
-                const odb::Rect overlap = box_rect.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-                drawFilledRect(image_buffer, draw, marker_color);
-              }
+              draw_box_in_tile(box_rect, marker_color);
 
               // Draw pin name label when zoomed in enough.
               if (draw_pin_names && vis.pin_names) {
@@ -2011,13 +2117,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 odb::Rect box = obs->getBox();
                 inst->getTransform().apply(box);
-                if (!box.overlaps(dbu_tile)) {
-                  continue;
-                }
-                const odb::Rect overlap = box.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-                drawFilledRect(image_buffer, draw, obs_color);
+                draw_box_in_tile(box, obs_color);
               }
             }
 
@@ -2038,13 +2138,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     }
                     odb::Rect box = geom->getBox();
                     inst->getTransform().apply(box);
-                    if (!box.overlaps(dbu_tile)) {
-                      continue;
-                    }
-                    const odb::Rect overlap = box.intersect(dbu_tile);
-                    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-                    drawFilledRect(image_buffer, draw, color);
+                    draw_box_in_tile(box, color);
                   }
                 }
               }
@@ -2159,13 +2253,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             const odb::Rect& box = std::get<0>(shape);
-            if (!box.overlaps(dbu_tile)) {
-              continue;
-            }
-            const odb::Rect overlap = box.intersect(dbu_tile);
-            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-            drawFilledRect(image_buffer, draw, color);
+            draw_box_in_tile(box, color);
           }
         }
 
@@ -2230,12 +2318,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
               odb::Rect box = vbox->getBox();
               box.moveDelta(origin.x(), origin.y());
-              if (!box.overlaps(dbu_tile)) {
-                continue;
-              }
-              const odb::Rect overlap = box.intersect(dbu_tile);
-              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-              drawFilledRect(image_buffer, draw, color);
+              draw_box_in_tile(box, color);
             }
           }
         }
@@ -2284,12 +2367,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 odb::Rect box = vbox->getBox();
                 box.moveDelta(origin.x(), origin.y());
-                if (!box.overlaps(dbu_tile)) {
-                  continue;
-                }
-                const odb::Rect overlap = box.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-                drawFilledRect(image_buffer, draw, color);
+                draw_box_in_tile(box, color);
               }
             }
           }
@@ -2351,6 +2429,28 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
               }
             }
+          }
+        }
+
+        // Draw metal fill (dbFill) on per-layer tiles.  Mirrors the GUI, which
+        // draws fills in a darker variant of the layer color (lighter(50)).
+        if (!instances_only && tech_layer && vis.fills) {
+          const Color fill_color = color.darken(0.5);
+          // Cull sub-pixel fills at low zoom, mirroring the GUI's shape_limit
+          // (renderThread.cpp passes fineViewableResolution).  scale is
+          // pixels/DBU, so 1/scale is the DBU span of one pixel; 0 at high
+          // zoom leaves searchFills unfiltered.
+          const int min_size = static_cast<int>(1.0 / scale);
+          for (odb::dbFill* fill : search_->searchFills(block,
+                                                        tech_layer,
+                                                        dbu_x_min,
+                                                        dbu_y_min,
+                                                        dbu_x_max,
+                                                        dbu_y_max,
+                                                        min_size)) {
+            odb::Rect box;
+            fill->getRect(box);
+            draw_box_in_tile(box, fill_color);
           }
         }
 
@@ -3511,10 +3611,11 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
                                          const odb::Rect& dbu_tile,
                                          const double scale) const
 {
-  const bool is_instances_layer = (current_layer == "_instances");
+  const bool draw_all = current_layer.empty() || current_layer == "_instances";
   for (const auto& cr : rects) {
-    // Layer filtering: draw on _instances (overview) or matching layer
-    if (!is_instances_layer && !cr.layer.empty() && cr.layer != current_layer) {
+    // Layer filtering: draw on _instances (overview), overlay (empty
+    // current_layer), or matching layer.
+    if (!draw_all && !cr.layer.empty() && cr.layer != current_layer) {
       continue;
     }
     if (!dbu_tile.overlaps(cr.rect)) {
@@ -3852,6 +3953,7 @@ boost::json::object buildLayerHierarchy(
   json_node["path"] = node.path;
 
   boost::json::array layers_arr;
+  boost::json::array backside_layers_arr;
   if (node.chip) {
     if (odb::dbTech* tech = node.chip->getTech()) {
       const auto& layer_colors = gen.getLayerColorMap(tech);
@@ -3868,7 +3970,11 @@ boost::json::object buildLayerHierarchy(
           layer_obj["color"] = boost::json::array{static_cast<int>(c.r),
                                                   static_cast<int>(c.g),
                                                   static_cast<int>(c.b)};
-          layers_arr.emplace_back(std::move(layer_obj));
+          if (layer->isBackside()) {
+            backside_layers_arr.emplace_back(std::move(layer_obj));
+          } else {
+            layers_arr.emplace_back(std::move(layer_obj));
+          }
         }
       }
     }
@@ -3882,6 +3988,14 @@ boost::json::object buildLayerHierarchy(
       instances_arr.emplace_back(
           buildLayerHierarchy(*child, children_by_parent, gen));
     }
+  }
+  if (!backside_layers_arr.empty()) {
+    boost::json::object backside_node;
+    backside_node["name"] = "Backside";
+    backside_node["type"] = "category";
+    backside_node["layers"] = std::move(backside_layers_arr);
+    backside_node["instances"] = boost::json::array{};
+    instances_arr.emplace_back(std::move(backside_node));
   }
   json_node["instances"] = std::move(instances_arr);
 

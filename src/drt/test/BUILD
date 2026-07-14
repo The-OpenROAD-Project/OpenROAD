@@ -162,14 +162,14 @@ cc_test(
         "fixture.h",
         "gcTest.cpp",
     ],
-    features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
         "../src",
     ],
     deps = [
-        "//src/drt",  # build_cleaner: keep for private headers
+        "//src/drt",  # buildcleaner: keep for private headers
         "//src/drt:base_types",
         "//src/drt:db_hdrs",
+        "//src/drt:drt_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -189,14 +189,15 @@ cc_test(
         "fixture.h",
         "taTest.cpp",
     ],
-    features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
         "../src",
     ],
     deps = [
-        "//src/drt",
+        # drt only exports header TritonRoute.h, but we need other symbols
+        "//src/drt",  # buildcleaner: keep
         "//src/drt:base_types",
         "//src/drt:db_hdrs",
+        "//src/drt:drt_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",

@@ -582,7 +582,7 @@ bool LatencyBalancer::propagateClock(odb::dbITerm* input)
     return true;
   }
   // Combinational components
-  if (!libertyCell->hasSequentials()) {
+  if (!libertyCell->isSequential()) {
     return true;
   }
   sta::LibertyPort* inputPort

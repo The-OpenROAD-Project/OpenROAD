@@ -36,6 +36,14 @@ cc_library(
 )
 
 cc_library(
+    name = "route_pt",
+    hdrs = ["include/grt/RoutePt.h"],
+    includes = [
+        "include",
+    ],
+)
+
+cc_library(
     name = "fastroute",
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
@@ -121,17 +129,32 @@ cc_library(
 )
 
 cc_library(
-    name = "grt",
-    srcs = [
+    name = "grt_private_hdrs",
+    hdrs = [
         "src/AbstractGrouteRenderer.h",
         "src/AbstractRoutingCongestionDataSource.h",
+        "src/Net.h",
+        "src/Pin.h",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":groute",
+        ":route_pt",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
+    name = "grt",
+    srcs = [
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
         "src/Net.cpp",
-        "src/Net.h",
         "src/Pin.cpp",
-        "src/Pin.h",
         "src/RepairAntennas.cpp",
         "src/RepairAntennas.h",
         "src/RoutingTracks.h",
@@ -140,7 +163,6 @@ cc_library(
     hdrs = [
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -154,6 +176,8 @@ cc_library(
         ":cugr",
         ":fastroute",
         ":groute",
+        ":grt_private_hdrs",
+        ":route_pt",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -175,13 +199,9 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/AbstractGrouteRenderer.h",
-        "src/AbstractRoutingCongestionDataSource.h",
         "src/GrouteRenderer.cpp",
         "src/GrouteRenderer.h",
         "src/MakeGlobalRouter.cpp",
-        "src/Net.h",
-        "src/Pin.h",
         "src/fastroute/src/FastRouteRenderer.cpp",
         "src/heatMap.cpp",
         "src/heatMap.h",
@@ -207,6 +227,7 @@ cc_library(
         ":fastroute",
         ":groute",
         ":grt",
+        ":grt_private_hdrs",
         "//:ord",
         "//src/gui",
         "//src/odb/src/db",
@@ -269,5 +290,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/grt/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/grt/test:__pkg__",
+    ],
 )

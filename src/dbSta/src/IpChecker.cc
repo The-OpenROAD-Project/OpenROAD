@@ -22,8 +22,8 @@
 
 namespace sta {
 
-IpChecker::IpChecker(odb::dbDatabase* db, dbSta* sta, utl::Logger* logger)
-    : db_(db), sta_(sta), logger_(logger)
+IpChecker::IpChecker(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
 }
 
@@ -660,7 +660,6 @@ void IpChecker::checkPinMinDimensions(odb::dbMaster* master)
 void IpChecker::checkPinMinArea(odb::dbMaster* master)
 {
   std::string master_name = master->getName();
-  int dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     for (odb::dbMPin* mpin : mterm->getMPins()) {
@@ -670,10 +669,8 @@ void IpChecker::checkPinMinArea(odb::dbMaster* master)
           continue;
         }
 
-        // getArea() returns microns^2, convert to DBU^2
-        double min_area_um2 = layer->getArea();
-        int64_t min_area_dbu2 = static_cast<int64_t>(
-            min_area_um2 * dbu_per_micron * dbu_per_micron);
+        // getArea() returns DBU^2
+        const int64_t min_area_dbu2 = layer->getArea();
 
         odb::Rect rect = box->getBox();
         int64_t shape_area

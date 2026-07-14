@@ -70,7 +70,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj.area_;
+  // User Code Begin >>area_
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.area_;
+  } else {
+    int area;
+    stream >> area;
+    obj.area_ = static_cast<int64_t>(area) * 20000;
+  }
+  // User Code End >>area_
   stream >> obj.except_min_width_;
   stream >> obj.except_edge_length_;
   stream >> obj.except_edge_lengths_;
@@ -112,14 +120,14 @@ void _dbTechLayerAreaRule::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerAreaRule::setArea(int area)
+void dbTechLayerAreaRule::setArea(int64_t area)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
   obj->area_ = area;
 }
 
-int dbTechLayerAreaRule::getArea() const
+int64_t dbTechLayerAreaRule::getArea() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
   return obj->area_;
@@ -268,6 +276,9 @@ void dbTechLayerAreaRule::setTrimLayer(dbTechLayer* trim_layer)
 dbTechLayer* dbTechLayerAreaRule::getTrimLayer() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  if (!obj->trim_layer_.isValid()) {
+    return nullptr;
+  }
   odb::dbTech* tech = getDb()->getTech();
   return odb::dbTechLayer::getTechLayer(tech, obj->trim_layer_);
 }

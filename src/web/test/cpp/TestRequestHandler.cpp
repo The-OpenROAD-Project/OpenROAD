@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <any>
+#include <cstdint>
 #include <exception>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <string_view>
+#include <vector>
 
-#include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "gtest/gtest.h"
@@ -227,9 +231,9 @@ TEST_F(TileHandlerTest, EmptyTile)
   EXPECT_FALSE(resp.payload.empty());
 }
 
-TEST_F(TileHandlerTest, UsesHighlightState)
+TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
 {
-  // Put a highlight rect in the state
+  // Put a highlight rect in the state — base tiles should NOT include it.
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
@@ -241,8 +245,46 @@ TEST_F(TileHandlerTest, UsesHighlightState)
   req.json = parseObj(
       R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
 
-  // Should not crash and should return valid PNG
+  // Should not crash and should return valid PNG (without highlights)
   auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(TileHandlerTest, OverlayTileReturnsPng)
+{
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.id, 10u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+  // PNG magic bytes
+  EXPECT_GE(resp.payload.size(), 8u);
+  EXPECT_EQ(resp.payload[0], 0x89);
+  EXPECT_EQ(resp.payload[1], 'P');
+  EXPECT_EQ(resp.payload[2], 'N');
+  EXPECT_EQ(resp.payload[3], 'G');
+}
+
+TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
+{
+  // Put a highlight rect in the state
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
+
+  WebSocketRequest req;
+  req.id = 11;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  // Should not crash and should return valid PNG with highlights
+  auto resp = handler_->handleOverlayTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);
   EXPECT_FALSE(resp.payload.empty());
 }
@@ -439,560 +481,6 @@ TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"selected\""), std::string::npos);
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyInverterSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* inverter = placeInst("INV_X1", "inv1", 1000, 0);
-  odb::dbNet* input_net = odb::dbNet::create(block_, "in");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(inverter->findITerm("A"), nullptr);
-  ASSERT_NE(inverter->findITerm("ZN"), nullptr);
-  inverter->findITerm("A")->connect(input_net);
-  inverter->findITerm("ZN")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 11;
-  req.json
-      = parseObj(R"({"inst_name":"inv1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("inv1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_inverter");
-  EXPECT_EQ(cell.at("attributes").at("ref").as_string(), "inv1");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(), "INV_X1");
-  EXPECT_EQ(cell.at("attributes").at("openroad_input_port").as_string(), "A");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "ZN");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("Y").as_string(),
-            "output");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("ZN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyBufferSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* buffer = block_->findInst("buf1");
-  ASSERT_NE(buffer, nullptr);
-  odb::dbNet* input_net = odb::dbNet::create(block_, "in");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(buffer->findITerm("A"), nullptr);
-  ASSERT_NE(buffer->findITerm("Z"), nullptr);
-  buffer->findITerm("A")->connect(input_net);
-  buffer->findITerm("Z")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 12;
-  req.json
-      = parseObj(R"({"inst_name":"buf1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("buf1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_buffer");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(), "BUF_X16");
-  EXPECT_EQ(cell.at("attributes").at("openroad_input_port").as_string(), "A");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "Z");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("Z"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyDffSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* dff = placeInst("DFF_X1", "dff1", 1000, 0);
-  odb::dbNet* data_net = odb::dbNet::create(block_, "data");
-  odb::dbNet* clock_net = odb::dbNet::create(block_, "clock");
-  odb::dbNet* q_net = odb::dbNet::create(block_, "q");
-  odb::dbNet* qn_net = odb::dbNet::create(block_, "qn");
-  ASSERT_NE(dff->findITerm("D"), nullptr);
-  ASSERT_NE(dff->findITerm("CK"), nullptr);
-  ASSERT_NE(dff->findITerm("Q"), nullptr);
-  ASSERT_NE(dff->findITerm("QN"), nullptr);
-  dff->findITerm("D")->connect(data_net);
-  dff->findITerm("CK")->connect(clock_net);
-  dff->findITerm("Q")->connect(q_net);
-  dff->findITerm("QN")->connect(qn_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 18;
-  req.json
-      = parseObj(R"({"inst_name":"dff1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("dff1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "DFF_X1");
-  const boost::json::object& attributes = cell.at("attributes").as_object();
-  EXPECT_EQ(attributes.at("openroad_symbol_type").as_string(), "openroad_dff");
-  EXPECT_EQ(attributes.at("openroad_data_port").as_string(), "D");
-  EXPECT_EQ(attributes.at("openroad_clock_port").as_string(), "CK");
-
-  const boost::json::object& symbol_port_directions
-      = attributes.at("openroad_symbol_port_directions").as_object();
-  EXPECT_EQ(symbol_port_directions.at("D").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("CK").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("Q").as_string(), "output");
-  EXPECT_EQ(symbol_port_directions.at("QN").as_string(), "output");
-  const boost::json::object& symbol_connections
-      = attributes.at("openroad_symbol_connections").as_object();
-  EXPECT_TRUE(symbol_connections.contains("D"));
-  EXPECT_TRUE(symbol_connections.contains("CK"));
-  EXPECT_TRUE(symbol_connections.contains("Q"));
-  EXPECT_TRUE(symbol_connections.contains("QN"));
-
-  EXPECT_EQ(cell.at("port_directions").as_object().at("D").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("CK").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("Q").as_string(),
-            "output");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("QN").as_string(),
-            "output");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("D"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("CK"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Q"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("QN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyDffResetSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* dff = placeInst("DFFR_X1", "dffr1", 1000, 0);
-  odb::dbNet* data_net = odb::dbNet::create(block_, "data");
-  odb::dbNet* clock_net = odb::dbNet::create(block_, "clock");
-  odb::dbNet* reset_net = odb::dbNet::create(block_, "reset_n");
-  odb::dbNet* q_net = odb::dbNet::create(block_, "q");
-  odb::dbNet* qn_net = odb::dbNet::create(block_, "qn");
-  ASSERT_NE(dff->findITerm("D"), nullptr);
-  ASSERT_NE(dff->findITerm("CK"), nullptr);
-  ASSERT_NE(dff->findITerm("RN"), nullptr);
-  ASSERT_NE(dff->findITerm("Q"), nullptr);
-  ASSERT_NE(dff->findITerm("QN"), nullptr);
-  dff->findITerm("D")->connect(data_net);
-  dff->findITerm("CK")->connect(clock_net);
-  dff->findITerm("RN")->connect(reset_net);
-  dff->findITerm("Q")->connect(q_net);
-  dff->findITerm("QN")->connect(qn_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 19;
-  req.json
-      = parseObj(R"({"inst_name":"dffr1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("dffr1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "DFFR_X1");
-  const boost::json::object& attributes = cell.at("attributes").as_object();
-  EXPECT_EQ(attributes.at("openroad_symbol_type").as_string(), "openroad_dffr");
-  EXPECT_EQ(attributes.at("openroad_data_port").as_string(), "D");
-  EXPECT_EQ(attributes.at("openroad_clock_port").as_string(), "CK");
-  EXPECT_EQ(attributes.at("openroad_clear_port").as_string(), "RN");
-
-  const boost::json::object& symbol_port_directions
-      = attributes.at("openroad_symbol_port_directions").as_object();
-  EXPECT_EQ(symbol_port_directions.at("D").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("CK").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("RN").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("Q").as_string(), "output");
-  EXPECT_EQ(symbol_port_directions.at("QN").as_string(), "output");
-  const boost::json::object& symbol_connections
-      = attributes.at("openroad_symbol_connections").as_object();
-  EXPECT_TRUE(symbol_connections.contains("D"));
-  EXPECT_TRUE(symbol_connections.contains("CK"));
-  EXPECT_TRUE(symbol_connections.contains("RN"));
-  EXPECT_TRUE(symbol_connections.contains("Q"));
-  EXPECT_TRUE(symbol_connections.contains("QN"));
-
-  EXPECT_EQ(cell.at("port_directions").as_object().at("RN").as_string(),
-            "input");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("RN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyDffSetSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* dff = placeInst("DFFS_X1", "dffs1", 1000, 0);
-  odb::dbNet* data_net = odb::dbNet::create(block_, "data");
-  odb::dbNet* clock_net = odb::dbNet::create(block_, "clock");
-  odb::dbNet* set_net = odb::dbNet::create(block_, "set_n");
-  odb::dbNet* q_net = odb::dbNet::create(block_, "q");
-  odb::dbNet* qn_net = odb::dbNet::create(block_, "qn");
-  ASSERT_NE(dff->findITerm("D"), nullptr);
-  ASSERT_NE(dff->findITerm("CK"), nullptr);
-  ASSERT_NE(dff->findITerm("SN"), nullptr);
-  ASSERT_NE(dff->findITerm("Q"), nullptr);
-  ASSERT_NE(dff->findITerm("QN"), nullptr);
-  dff->findITerm("D")->connect(data_net);
-  dff->findITerm("CK")->connect(clock_net);
-  dff->findITerm("SN")->connect(set_net);
-  dff->findITerm("Q")->connect(q_net);
-  dff->findITerm("QN")->connect(qn_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 20;
-  req.json
-      = parseObj(R"({"inst_name":"dffs1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("dffs1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "DFFS_X1");
-  const boost::json::object& attributes = cell.at("attributes").as_object();
-  EXPECT_EQ(attributes.at("openroad_symbol_type").as_string(), "openroad_dffs");
-  EXPECT_EQ(attributes.at("openroad_data_port").as_string(), "D");
-  EXPECT_EQ(attributes.at("openroad_clock_port").as_string(), "CK");
-  EXPECT_EQ(attributes.at("openroad_preset_port").as_string(), "SN");
-
-  const boost::json::object& symbol_port_directions
-      = attributes.at("openroad_symbol_port_directions").as_object();
-  EXPECT_EQ(symbol_port_directions.at("D").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("CK").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("SN").as_string(), "input");
-  EXPECT_EQ(symbol_port_directions.at("Q").as_string(), "output");
-  EXPECT_EQ(symbol_port_directions.at("QN").as_string(), "output");
-  const boost::json::object& symbol_connections
-      = attributes.at("openroad_symbol_connections").as_object();
-  EXPECT_TRUE(symbol_connections.contains("D"));
-  EXPECT_TRUE(symbol_connections.contains("CK"));
-  EXPECT_TRUE(symbol_connections.contains("SN"));
-  EXPECT_TRUE(symbol_connections.contains("Q"));
-  EXPECT_TRUE(symbol_connections.contains("QN"));
-
-  EXPECT_EQ(cell.at("port_directions").as_object().at("SN").as_string(),
-            "input");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("SN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyAndSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* and_gate = placeInst("AND2_X1", "and1", 1000, 0);
-  odb::dbNet* input_net1 = odb::dbNet::create(block_, "in1");
-  odb::dbNet* input_net2 = odb::dbNet::create(block_, "in2");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(and_gate->findITerm("A1"), nullptr);
-  ASSERT_NE(and_gate->findITerm("A2"), nullptr);
-  ASSERT_NE(and_gate->findITerm("ZN"), nullptr);
-  and_gate->findITerm("A1")->connect(input_net1);
-  and_gate->findITerm("A2")->connect(input_net2);
-  and_gate->findITerm("ZN")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 13;
-  req.json
-      = parseObj(R"({"inst_name":"and1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("and1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_and2");
-  EXPECT_EQ(cell.at("attributes").at("ref").as_string(), "and1");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(), "AND2_X1");
-  const boost::json::array& input_ports
-      = cell.at("attributes").at("openroad_input_ports").as_array();
-  ASSERT_EQ(input_ports.size(), 2u);
-  EXPECT_EQ(input_ports[0].as_string(), "A1");
-  EXPECT_EQ(input_ports[1].as_string(), "A2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "ZN");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A1").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A2").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("Y").as_string(),
-            "output");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A1"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A2"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("ZN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyNandSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* nand_gate = placeInst("NAND2_X1", "nand1", 1000, 0);
-  odb::dbNet* input_net1 = odb::dbNet::create(block_, "in1");
-  odb::dbNet* input_net2 = odb::dbNet::create(block_, "in2");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(nand_gate->findITerm("A1"), nullptr);
-  ASSERT_NE(nand_gate->findITerm("A2"), nullptr);
-  ASSERT_NE(nand_gate->findITerm("ZN"), nullptr);
-  nand_gate->findITerm("A1")->connect(input_net1);
-  nand_gate->findITerm("A2")->connect(input_net2);
-  nand_gate->findITerm("ZN")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 14;
-  req.json
-      = parseObj(R"({"inst_name":"nand1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("nand1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_nand2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(),
-            "NAND2_X1");
-  const boost::json::array& input_ports
-      = cell.at("attributes").at("openroad_input_ports").as_array();
-  ASSERT_EQ(input_ports.size(), 2u);
-  EXPECT_EQ(input_ports[0].as_string(), "A1");
-  EXPECT_EQ(input_ports[1].as_string(), "A2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "ZN");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A1"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A2"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("ZN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyOrSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* or_gate = placeInst("OR2_X1", "or1", 1000, 0);
-  odb::dbNet* input_net1 = odb::dbNet::create(block_, "in1");
-  odb::dbNet* input_net2 = odb::dbNet::create(block_, "in2");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(or_gate->findITerm("A1"), nullptr);
-  ASSERT_NE(or_gate->findITerm("A2"), nullptr);
-  ASSERT_NE(or_gate->findITerm("ZN"), nullptr);
-  or_gate->findITerm("A1")->connect(input_net1);
-  or_gate->findITerm("A2")->connect(input_net2);
-  or_gate->findITerm("ZN")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 15;
-  req.json
-      = parseObj(R"({"inst_name":"or1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("or1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_or2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(), "OR2_X1");
-  const boost::json::array& input_ports
-      = cell.at("attributes").at("openroad_input_ports").as_array();
-  ASSERT_EQ(input_ports.size(), 2u);
-  EXPECT_EQ(input_ports[0].as_string(), "A1");
-  EXPECT_EQ(input_ports[1].as_string(), "A2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "ZN");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A1").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A2").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("Y").as_string(),
-            "output");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A1"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A2"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("ZN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyXorSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* xor_gate = placeInst("XOR2_X1", "xor1", 1000, 0);
-  odb::dbNet* input_net1 = odb::dbNet::create(block_, "in1");
-  odb::dbNet* input_net2 = odb::dbNet::create(block_, "in2");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(xor_gate->findITerm("A"), nullptr);
-  ASSERT_NE(xor_gate->findITerm("B"), nullptr);
-  ASSERT_NE(xor_gate->findITerm("Z"), nullptr);
-  xor_gate->findITerm("A")->connect(input_net1);
-  xor_gate->findITerm("B")->connect(input_net2);
-  xor_gate->findITerm("Z")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 16;
-  req.json
-      = parseObj(R"({"inst_name":"xor1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("xor1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_xor2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(), "XOR2_X1");
-  const boost::json::array& input_ports
-      = cell.at("attributes").at("openroad_input_ports").as_array();
-  ASSERT_EQ(input_ports.size(), 2u);
-  EXPECT_EQ(input_ports[0].as_string(), "A");
-  EXPECT_EQ(input_ports[1].as_string(), "B");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "Z");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A1").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A2").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("Y").as_string(),
-            "output");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A1"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A2"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("A"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("B"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("Z"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyXnorSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* xnor_gate = placeInst("XNOR2_X1", "xnor1", 1000, 0);
-  odb::dbNet* input_net1 = odb::dbNet::create(block_, "in1");
-  odb::dbNet* input_net2 = odb::dbNet::create(block_, "in2");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(xnor_gate->findITerm("A"), nullptr);
-  ASSERT_NE(xnor_gate->findITerm("B"), nullptr);
-  ASSERT_NE(xnor_gate->findITerm("ZN"), nullptr);
-  xnor_gate->findITerm("A")->connect(input_net1);
-  xnor_gate->findITerm("B")->connect(input_net2);
-  xnor_gate->findITerm("ZN")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 17;
-  req.json
-      = parseObj(R"({"inst_name":"xnor1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("xnor1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_xnor2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(),
-            "XNOR2_X1");
-  const boost::json::array& input_ports
-      = cell.at("attributes").at("openroad_input_ports").as_array();
-  ASSERT_EQ(input_ports.size(), 2u);
-  EXPECT_EQ(input_ports[0].as_string(), "A");
-  EXPECT_EQ(input_ports[1].as_string(), "B");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "ZN");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A1").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("A2").as_string(),
-            "input");
-  EXPECT_EQ(cell.at("port_directions").as_object().at("Y").as_string(),
-            "output");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A1"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A2"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("A"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("B"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("ZN"));
-}
-
-TEST_F(SelectHandlerTest, SchematicUsesLibertyNorSymbol)
-{
-  readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
-
-  odb::dbInst* nor_gate = placeInst("NOR2_X1", "nor1", 1000, 0);
-  odb::dbNet* input_net1 = odb::dbNet::create(block_, "in1");
-  odb::dbNet* input_net2 = odb::dbNet::create(block_, "in2");
-  odb::dbNet* output_net = odb::dbNet::create(block_, "out");
-  ASSERT_NE(nor_gate->findITerm("A1"), nullptr);
-  ASSERT_NE(nor_gate->findITerm("A2"), nullptr);
-  ASSERT_NE(nor_gate->findITerm("ZN"), nullptr);
-  nor_gate->findITerm("A1")->connect(input_net1);
-  nor_gate->findITerm("A2")->connect(input_net2);
-  nor_gate->findITerm("ZN")->connect(output_net);
-
-  gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
-  handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
-
-  WebSocketRequest req;
-  req.id = 16;
-  req.json
-      = parseObj(R"({"inst_name":"nor1","fanin_depth":0,"fanout_depth":0})");
-  const WebSocketResponse resp = handler_->handleSchematicCone(req);
-
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
-  const boost::json::object root
-      = boost::json::parse(payloadStr(resp)).as_object();
-  const boost::json::object& cell
-      = root.at("modules").at("top").at("cells").at("nor1").as_object();
-  EXPECT_EQ(cell.at("type").as_string(), "openroad_nor2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_master").as_string(), "NOR2_X1");
-  const boost::json::array& input_ports
-      = cell.at("attributes").at("openroad_input_ports").as_array();
-  ASSERT_EQ(input_ports.size(), 2u);
-  EXPECT_EQ(input_ports[0].as_string(), "A1");
-  EXPECT_EQ(input_ports[1].as_string(), "A2");
-  EXPECT_EQ(cell.at("attributes").at("openroad_output_port").as_string(), "ZN");
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A1"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("A2"));
-  EXPECT_TRUE(cell.at("connections").as_object().contains("Y"));
-  EXPECT_FALSE(cell.at("connections").as_object().contains("ZN"));
 }
 
 TEST_F(SelectHandlerTest, SelectAtEmptyAreaReturnsEmptyList)
@@ -1200,6 +688,42 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
   }
 }
 
+TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {block_selected};
+  }
+
+  // 1. inspect with use_dbu: true
+  WebSocketRequest inspect_req_dbu;
+  inspect_req_dbu.id = 21;
+  inspect_req_dbu.type = WebSocketRequest::kInspect;
+  inspect_req_dbu.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  auto resp_dbu = handler_->handleInspect(inspect_req_dbu, state_);
+  EXPECT_EQ(resp_dbu.type, WebSocketResponse::kJson);
+  std::string json_dbu = payloadStr(resp_dbu);
+  EXPECT_NE(json_dbu.find("\"value\":\"(2000, 4000), (6000, 8000)\""),
+            std::string::npos)
+      << json_dbu;
+
+  // 2. inspect with use_dbu: false, using select_id: -1 to re-inspect current
+  WebSocketRequest inspect_req_um;
+  inspect_req_um.id = 22;
+  inspect_req_um.type = WebSocketRequest::kInspect;
+  inspect_req_um.json = parseObj(R"({"select_id":-1,"use_dbu":false})");
+
+  auto resp_um = handler_->handleInspect(inspect_req_um, state_);
+  EXPECT_EQ(resp_um.type, WebSocketResponse::kJson);
+  std::string json_um = payloadStr(resp_um);
+  EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json_um;
+}
+
 //------------------------------------------------------------------------------
 // Focus nets tests
 //------------------------------------------------------------------------------
@@ -1354,6 +878,314 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
   auto resp = tile_handler->handleTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);  // PNG
   EXPECT_FALSE(resp.payload.empty());
+}
+
+//------------------------------------------------------------------------------
+// Multi-selection tests
+//------------------------------------------------------------------------------
+
+// Helper: populate selection_set with two fake objects and point the
+// iterator at whichever position (0 = begin, 1 = second).
+// Because SelectionSet is std::set, iteration order is by operator<
+// (FakeDescriptor::lessThan compares pointer addresses).
+void populateSelectionSet(SessionState& st,
+                          const gui::Selected& a,
+                          const gui::Selected& b,
+                          int itr_pos)
+{
+  std::lock_guard<std::mutex> lock(st.selection_mutex);
+  st.selection_set.insert(a);
+  st.selection_set.insert(b);
+  st.selection_itr = st.selection_set.begin();
+  if (itr_pos > 0) {
+    std::advance(st.selection_itr, itr_pos);
+  }
+  st.current_inspected = *st.selection_itr;
+}
+
+// Verify that a select response always includes selection metadata.
+TEST_F(SelectHandlerTest, SelectResponseIncludesSelectionMetadata)
+{
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[]})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\""), std::string::npos);
+  EXPECT_NE(json.find("\"selection_index\""), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, SelectEmptyAreaClearsSelectionSet)
+{
+  // Pre-populate selection set
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_current_));
+    state_.selection_itr = state_.selection_set.begin();
+  }
+
+  WebSocketRequest req;
+  req.id = 31;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[]})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.selection_set.empty());
+}
+
+// Normal click (no add_to_selection) clears any pre-existing selection set.
+TEST_F(SelectHandlerTest, SelectNormalClickClearsPreviousSelectionSet)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+
+  // Normal click at empty area should clear the set
+  WebSocketRequest req;
+  req.id = 32;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[]})");
+
+  handler_->handleSelect(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.selection_set.empty());
+}
+
+// Shift+click on empty space should preserve the existing selection set.
+TEST_F(SelectHandlerTest, AddToSelectionEmptyHitPreservesSet)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_current_));
+    state_.selection_itr = state_.selection_set.begin();
+  }
+
+  WebSocketRequest req;
+  req.id = 33;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[],"add_to_selection":true})");
+
+  handler_->handleSelect(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+}
+
+// Verify SelectionSet deduplicates (std::set property).
+TEST_F(SelectHandlerTest, SelectionSetDeduplicates)
+{
+  const auto sel = makeFakeSelected(&fake_current_);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(sel);
+    state_.selection_set.insert(sel);  // duplicate
+  }
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+}
+
+TEST_F(SelectHandlerTest, SelectNextCyclesForward)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+
+  WebSocketRequest req;
+  req.id = 37;
+  req.type = WebSocketRequest::kSelectNext;
+
+  auto resp = handler_->handleSelectNext(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"selection_index\":1"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  auto expected = std::next(state_.selection_set.begin());
+  EXPECT_EQ(state_.selection_itr, expected);
+}
+
+TEST_F(SelectHandlerTest, SelectNextWrapsAround)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);  // at the end
+
+  WebSocketRequest req;
+  req.id = 38;
+  req.type = WebSocketRequest::kSelectNext;
+
+  auto resp = handler_->handleSelectNext(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_index\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_itr, state_.selection_set.begin());
+}
+
+TEST_F(SelectHandlerTest, SelectPrevCyclesBackward)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+
+  WebSocketRequest req;
+  req.id = 39;
+  req.type = WebSocketRequest::kSelectPrev;
+
+  auto resp = handler_->handleSelectPrev(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_index\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_itr, state_.selection_set.begin());
+}
+
+TEST_F(SelectHandlerTest, SelectPrevWrapsAround)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);  // at the start
+
+  WebSocketRequest req;
+  req.id = 40;
+  req.type = WebSocketRequest::kSelectPrev;
+
+  auto resp = handler_->handleSelectPrev(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_index\":1"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_itr, std::next(state_.selection_set.begin()));
+}
+
+TEST_F(SelectHandlerTest, SelectNextEmptySetReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 41;
+  req.type = WebSocketRequest::kSelectNext;
+
+  auto resp = handler_->handleSelectNext(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":0"), std::string::npos);
+  EXPECT_NE(json.find("\"error\""), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, SelectNextClearsNavigationHistory)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+  }
+
+  WebSocketRequest req;
+  req.id = 42;
+  req.type = WebSocketRequest::kSelectNext;
+
+  handler_->handleSelectNext(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.navigation_history.empty());
+}
+
+TEST_F(SelectHandlerTest, InspectResponseIncludesSelectionMetadata)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_previous_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"selection_index\":1"), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, InspectBackResponseIncludesSelectionMetadata)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.navigation_history.push_back(makeFakeSelected(&fake_current_));
+  }
+
+  WebSocketRequest req;
+  req.id = 44;
+  req.type = WebSocketRequest::kInspectBack;
+
+  auto resp = handler_->handleInspectBack(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":2"), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, SelectNextRestoresSelectionSetHighlights)
+{
+  const auto sel_a = makeFakeSelected(&fake_current_);
+  const auto sel_b = makeFakeSelected(&fake_previous_);
+
+  populateSelectionSet(state_, sel_a, sel_b, 0);
+
+  const odb::Rect stale_rect(9999, 9999, 10000, 10000);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects = {stale_rect};
+    state_.highlight_polys.clear();
+  }
+
+  WebSocketRequest req;
+  req.id = 50;
+  req.type = WebSocketRequest::kSelectNext;
+  handler_->handleSelectNext(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_rects.size(), 2u);
+  bool found_current = false;
+  bool found_previous = false;
+  for (const auto& r : state_.highlight_rects) {
+    EXPECT_FALSE(r == stale_rect);
+    found_current |= r == fake_current_.bbox;
+    found_previous |= r == fake_previous_.bbox;
+  }
+  EXPECT_TRUE(found_current);
+  EXPECT_TRUE(found_previous);
 }
 
 //------------------------------------------------------------------------------
@@ -1726,6 +1558,281 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
     std::lock_guard<std::mutex> lock(state_.drc_mutex);
     EXPECT_TRUE(state_.drc_rects.empty());
   }
+}
+
+//------------------------------------------------------------------------------
+// Schematic handler tests — verify leaf cells are classified into standard
+// logic-gate schematic symbols (Yosys primitives understood by netlistsvg)
+// instead of anonymous boxes.
+//------------------------------------------------------------------------------
+
+class SchematicHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    sta_->postReadDef(block_);
+    sta_->getDbNetwork()->setBlock(block_);
+
+    gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+  }
+
+  // Instantiate a gate, wiring its named pins to fresh nets so the cell shows
+  // up with connections in the schematic JSON.
+  void makeGate(const char* master_name,
+                const char* inst_name,
+                const std::vector<tst::InstOptions::ITermInfo>& iterms)
+  {
+    odb::dbMaster* master = lib_->findMaster(master_name);
+    ASSERT_NE(master, nullptr) << master_name;
+    tst::InstOptions opts;
+    opts.iterms = iterms;
+    makeInst(block_, master, inst_name, opts);
+  }
+
+  // Returns modules.top.cells from a schematic_full response.
+  boost::json::object fullCells()
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kSchematicFull;
+    req.json = parseObj("{}");
+    auto resp = handler_->handleSchematicFull(req);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return boost::json::parse(payloadStr(resp))
+        .as_object()
+        .at("modules")
+        .as_object()
+        .at("top")
+        .as_object()
+        .at("cells")
+        .as_object();
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<SelectHandler> handler_;
+};
+
+TEST_F(SchematicHandlerTest, LeafGatesGetKindHint)
+{
+  makeGate("BUF_X1", "g_buf", {{"i", "A"}, {"o", "Z"}});
+  makeGate("INV_X1", "g_inv", {{"i", "A"}, {"o", "ZN"}});
+  makeGate("AND2_X1", "g_and", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("OR2_X1", "g_or", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("NAND2_X1", "g_nand", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("NOR2_X1", "g_nor", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("XOR2_X1", "g_xor", {{"a", "A"}, {"b", "B"}, {"o", "Z"}});
+  makeGate("XNOR2_X1", "g_xnor", {{"a", "A"}, {"b", "B"}, {"o", "ZN"}});
+
+  boost::json::object cells = fullCells();
+
+  auto kind = [&](const char* inst) {
+    return std::string(cells.at(inst).as_object().at("gate_kind").as_string());
+  };
+  EXPECT_EQ(kind("g_buf"), "buf");
+  EXPECT_EQ(kind("g_inv"), "not");
+  EXPECT_EQ(kind("g_and"), "and");
+  EXPECT_EQ(kind("g_or"), "or");
+  EXPECT_EQ(kind("g_nand"), "nand");
+  EXPECT_EQ(kind("g_nor"), "nor");
+  EXPECT_EQ(kind("g_xor"), "xor");
+  EXPECT_EQ(kind("g_xnor"), "xnor");
+}
+
+TEST_F(SchematicHandlerTest, MultiInputGatesGetKindHint)
+{
+  // Gates with more than two inputs (a flat AND/OR of ports) classify as the
+  // basic kind; the viewer derives the input count from the ports, so no
+  // gate_terms are emitted (those are only for compound AOI/OAI).
+  makeGate("NAND3_X1",
+           "g_nand3",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"o", "ZN"}});
+  makeGate("NAND4_X1",
+           "g_nand4",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"d", "A4"}, {"o", "ZN"}});
+  makeGate("AND3_X1",
+           "g_and3",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"o", "ZN"}});
+  makeGate("NOR4_X1",
+           "g_nor4",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"d", "A4"}, {"o", "ZN"}});
+
+  boost::json::object cells = fullCells();
+  auto& nand3 = cells.at("g_nand3").as_object();
+  EXPECT_EQ(std::string(nand3.at("gate_kind").as_string()), "nand");
+  EXPECT_FALSE(nand3.contains("gate_terms"));
+  EXPECT_EQ(
+      std::string(cells.at("g_nand4").as_object().at("gate_kind").as_string()),
+      "nand");
+  EXPECT_EQ(
+      std::string(cells.at("g_and3").as_object().at("gate_kind").as_string()),
+      "and");
+  EXPECT_EQ(
+      std::string(cells.at("g_nor4").as_object().at("gate_kind").as_string()),
+      "nor");
+}
+
+TEST_F(SchematicHandlerTest, GateKeepsMasterNameAndRealPins)
+{
+  makeGate("AND2_X1", "g_and", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_and").as_object();
+
+  // The hint must not replace the real type or pin names — netlistsvg still
+  // needs them to draw the instance and port labels.
+  EXPECT_EQ(std::string(cell.at("type").as_string()), "AND2_X1");
+
+  auto& conns = cell.at("connections").as_object();
+  EXPECT_TRUE(conns.contains("A1"));
+  EXPECT_TRUE(conns.contains("A2"));
+  EXPECT_TRUE(conns.contains("ZN"));
+
+  auto& dirs = cell.at("port_directions").as_object();
+  EXPECT_EQ(std::string(dirs.at("A1").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
+}
+
+TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)
+{
+  // AOI/OAI cells classify as compound gates with first-level term sizes.
+  makeGate("AOI21_X1", "g_aoi21", {{"a", "A"}, {"b", "B1"}, {"c", "B2"}});
+  makeGate("AOI22_X1",
+           "g_aoi22",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "B1"}, {"d", "B2"}});
+  makeGate("OAI21_X1", "g_oai21", {{"a", "A"}, {"b", "B1"}, {"c", "B2"}});
+  makeGate("AOI211_X1",
+           "g_aoi211",
+           {{"a", "A"}, {"b", "B"}, {"c", "C1"}, {"d", "C2"}});
+
+  boost::json::object cells = fullCells();
+
+  // gate_terms groups the input pin names by first-level term; check the kind
+  // and the per-term sizes.
+  auto check =
+      [&](const char* inst, const char* kind, std::vector<int> want_sizes) {
+        auto& cell = cells.at(inst).as_object();
+        EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), kind) << inst;
+        auto& terms = cell.at("gate_terms").as_array();
+        std::vector<int> got;
+        for (auto& t : terms) {
+          got.push_back(static_cast<int>(t.as_array().size()));
+        }
+        std::sort(got.begin(), got.end());
+        std::sort(want_sizes.begin(), want_sizes.end());
+        EXPECT_EQ(got, want_sizes) << inst;
+      };
+
+  check("g_aoi21", "aoi", {2, 1});
+  check("g_aoi22", "aoi", {2, 2});
+  check("g_oai21", "oai", {2, 1});
+  check("g_aoi211", "aoi", {2, 1, 1});
+
+  // The groups carry the real input pin names, which the viewer uses to align
+  // each input to its port.  AOI21 = !(A | (B1 & B2)).
+  std::set<std::string> pins;
+  for (auto& t : cells.at("g_aoi21").as_object().at("gate_terms").as_array()) {
+    for (auto& p : t.as_array()) {
+      pins.insert(std::string(p.as_string()));
+    }
+  }
+  EXPECT_EQ(pins, (std::set<std::string>{"A", "B1", "B2"}));
+}
+
+TEST_F(SchematicHandlerTest, AoiGateKeepsMasterNameAndRealPins)
+{
+  makeGate("AOI21_X1", "g_aoi", {{"a", "A"}, {"b", "B1"}, {"c", "B2"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_aoi").as_object();
+  // The hint must not replace the real type or pin names.
+  EXPECT_EQ(std::string(cell.at("type").as_string()), "AOI21_X1");
+  auto& conns = cell.at("connections").as_object();
+  EXPECT_TRUE(conns.contains("A"));
+  EXPECT_TRUE(conns.contains("B1"));
+  EXPECT_TRUE(conns.contains("B2"));
+}
+
+TEST_F(SchematicHandlerTest, NestedInversionStillClassifies)
+{
+  // Higher drive-strength variants can model the output with stacked inverters,
+  // so the Liberty function is nested NOTs, e.g. AOI211_X4 is
+  // !(!(!(((C1 & C2) | B) | A))).  Classification must peel all the inversions
+  // (odd count -> inverting) and still recognise the AOI211, not fall back to a
+  // box like a single-peel would.
+  makeGate("AOI211_X4",
+           "g_aoi211x4",
+           {{"a", "C1"}, {"b", "C2"}, {"c", "B"}, {"d", "A"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_aoi211x4").as_object();
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "aoi");
+
+  std::vector<int> got;
+  for (auto& t : cell.at("gate_terms").as_array()) {
+    got.push_back(static_cast<int>(t.as_array().size()));
+  }
+  std::sort(got.begin(), got.end());
+  EXPECT_EQ(got, (std::vector<int>{1, 1, 2}));
+}
+
+TEST_F(SchematicHandlerTest, DanglingPortsStillEmitted)
+{
+  // An instance whose pins are all unconnected must still emit every port with
+  // a connection bit, so netlistsvg draws the full symbol (with dangling stubs)
+  // instead of collapsing the cell to a bare name label with no shape.  The
+  // synthetic bits stand in for the missing nets and must be distinct.
+  makeGate("AND2_X1", "g_dangling", {});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_dangling").as_object();
+
+  // The gate is still classified from its Liberty function regardless of
+  // connectivity.
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "and");
+
+  auto& dirs = cell.at("port_directions").as_object();
+  EXPECT_EQ(std::string(dirs.at("A1").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("A2").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
+
+  auto& conns = cell.at("connections").as_object();
+  ASSERT_TRUE(conns.contains("A1"));
+  ASSERT_TRUE(conns.contains("A2"));
+  ASSERT_TRUE(conns.contains("ZN"));
+
+  // Power/ground pins must not leak into the schematic as dangling stubs; only
+  // the three signal pins are emitted.
+  EXPECT_FALSE(dirs.contains("VDD"));
+  EXPECT_FALSE(dirs.contains("VSS"));
+  EXPECT_EQ(dirs.size(), 3u);
+  EXPECT_EQ(conns.size(), 3u);
+
+  // Each dangling pin gets its own synthetic bit id (no two pins share a net).
+  std::set<int64_t> bits;
+  for (const char* pin : {"A1", "A2", "ZN"}) {
+    auto& arr = conns.at(pin).as_array();
+    ASSERT_EQ(arr.size(), 1u) << pin;
+    bits.insert(arr.at(0).as_int64());
+  }
+  EXPECT_EQ(bits.size(), 3u);
+}
+
+TEST_F(SchematicHandlerTest, MuxAndUnknownCellsHaveNoKindHint)
+{
+  // A MUX is not an AOI/OAI (its terms contain an inverted select), so it stays
+  // a plain box.
+  makeGate("MUX2_X1", "g_mux", {{"a", "A"}, {"b", "B"}, {"s", "S"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_mux").as_object();
+  EXPECT_EQ(std::string(cell.at("type").as_string()), "MUX2_X1");
+  EXPECT_FALSE(cell.contains("gate_kind"));
 }
 
 }  // namespace

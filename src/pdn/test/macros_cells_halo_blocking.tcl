@@ -25,7 +25,7 @@ add_pdn_connect -layers {metal1 metal2}
 add_pdn_connect -layers {metal2 metal4}
 add_pdn_connect -layers {metal4 metal7}
 
-define_pdn_grid -macro -name "sram" -cells "fakeram45_64x32" -halo {8 8 8 8}
+define_pdn_grid -macro -name "sram" -cells "fakeram45_64x32" -halo {5 5 5 5}
 add_pdn_stripe -grid "sram" -layer metal5 -width 0.93 -pitch 10.0 -offset 2.0
 add_pdn_stripe -grid "sram" -layer metal6 -width 0.93 -pitch 10.0 -offset 2.0
 

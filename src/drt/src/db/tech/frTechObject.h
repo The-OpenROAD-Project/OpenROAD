@@ -18,8 +18,8 @@
 #include "db/tech/frLayer.h"
 #include "db/tech/frViaDef.h"
 #include "db/tech/frViaRuleGenerate.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
-#include "global.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 

@@ -183,6 +183,25 @@ class GridGraph
 
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
+  // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
+  // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
+  CostT getWireResistanceCost(int layer_index,
+                              PointT u,
+                              PointT v,
+                              int wire_width = 0) const;
+
+  // Res-aware via cost for the step lower_layer -> lower_layer+1; 0 when
+  // the tech leaves cut-layer resistance unpopulated.
+  CostT getViaResistanceCost(int lower_layer) const;
+
+  // Total tree resistance (wire + via) for res-aware ordering; ndr_widths gives
+  // the per-layer NDR width (0 => layer default), matching
+  // getWireResistanceCost.
+  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                          const std::vector<int>& ndr_widths) const;
+
+  int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
+
   /**
    * @brief Sets the multiplier applied to the logistic-cost slopes.
    *
@@ -335,13 +354,14 @@ class GridGraph
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
                   const std::vector<double>& net_costs = {});
+  // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
+  CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;
   std::vector<std::vector<int>> grid_centers_;
   std::vector<std::string> layer_names_;
   std::vector<int> layer_directions_;
-  std::vector<int> layer_min_lengths_;
 
   const int lib_dbu_;
   const int m2_pitch_;
@@ -384,6 +404,11 @@ class GridGraph
   const Constants constants_;
   // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
   double cost_multiplier_ = 1.0;
+  // First non-zero sheet/via resistance across layers: the res-aware cost
+  // reference (scanning vs. layer 0 survives techs with undefined bottom-layer
+  // R).
+  double ref_resistance_ = 0.0;
+  double ref_via_resistance_ = 0.0;
 };
 
 template <typename Type>

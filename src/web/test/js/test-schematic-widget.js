@@ -5,13 +5,24 @@ import './setup-dom.js';
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { SchematicWidget } from '../../src/schematic-widget.js';
+import {
+    SchematicWidget, canonicalizeCell, canonicalizeForSkin, scopeCssSelector,
+} from '../../src/schematic-widget.js';
 
 globalThis.CSS = globalThis.CSS || { escape: (value) => String(value) };
 globalThis.requestAnimationFrame = globalThis.requestAnimationFrame
     || ((callback) => callback());
 
 const svgNS = 'http://www.w3.org/2000/svg';
+
+// Helper: a server-style cell object.
+function cell(extra) {
+    return Object.assign({
+        hide_name: 0,
+        attributes: { ref: 'g1' },
+        parameters: {},
+    }, extra);
+}
 
 function rect(left, top, right, bottom) {
     return {
@@ -29,67 +40,6 @@ function makeWidget(appState = {}) {
     document.body.appendChild(container.element);
     const widget = new SchematicWidget(container, appState);
     return { widget, container };
-}
-
-function addPortMarker(group, port, x, y) {
-    const marker = document.createElementNS(svgNS, 'g');
-    marker.setAttribute('s:pid', port);
-    marker.setAttribute('s:x', String(x));
-    marker.setAttribute('s:y', String(y));
-    marker.setAttribute('transform', `translate(${x}, ${y})`);
-    group.appendChild(marker);
-    return marker;
-}
-
-function addPortLabel(group, port, x, y, side, labelX = null) {
-    const marker = addPortMarker(group, port, x, y);
-    const label = document.createElementNS(svgNS, 'text');
-    label.setAttribute('data-openroad-port', port);
-    label.setAttribute('data-openroad-port-side', side);
-    label.setAttribute('x', String(labelX ?? (side === 'left' ? -3 : 4)));
-    label.setAttribute('y', '-4');
-    marker.appendChild(label);
-    return label;
-}
-
-function makeSchematic(widget, addWire) {
-    const svg = document.createElementNS(svgNS, 'svg');
-    const group = document.createElementNS(svgNS, 'g');
-    const symbolPath = document.createElementNS(svgNS, 'path');
-    const label = document.createElementNS(svgNS, 'text');
-
-    group.id = 'cell_u1';
-    group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
-    group.getBoundingClientRect = () => rect(0, 0, 30, 30);
-
-    symbolPath.getBoundingClientRect = () => rect(0, -20, 30, -12);
-    group.appendChild(symbolPath);
-
-    label.setAttribute('data-openroad-label', 'instance');
-    label.setAttribute('data-openroad-label-line-count', '1');
-    label.getBoundingClientRect = () => {
-        const x = parseFloat(label.getAttribute('x') || '0');
-        const y = parseFloat(label.getAttribute('y') || '0');
-        const width = 20;
-        const anchor = label.style.textAnchor || 'middle';
-        const left = anchor === 'middle'
-            ? x - width / 2
-            : (anchor === 'end' ? x - width : x);
-        return rect(left, y - 6, left + width, y - 2);
-    };
-    group.appendChild(label);
-    svg.appendChild(group);
-
-    if (addWire) {
-        const wire = document.createElementNS(svgNS, 'path');
-        wire.getBoundingClientRect = () => rect(0, -20, 30, -12);
-        svg.appendChild(wire);
-    }
-
-    widget.svgContainer.replaceChildren(svg);
-    widget._svgEl = svg;
-
-    return { label };
 }
 
 function makeInteractiveCell(widget, instName) {
@@ -222,6 +172,7 @@ describe('SchematicWidget schematic navigation', () => {
             },
         };
         const appState = {
+            showDbu: false,
             websocketManager: {
                 readyPromise: Promise.resolve(),
                 request: (request) => {
@@ -258,6 +209,7 @@ describe('SchematicWidget schematic navigation', () => {
         assert.deepEqual(requests[0], {
             type: 'schematic_inspect',
             inst_name: 'u2',
+            use_dbu: false,
         });
         assert.deepEqual(requests[1], {
             type: 'schematic_cone',
@@ -438,10 +390,8 @@ describe('SchematicWidget schematic navigation', () => {
 
         assert.equal(didCenter, true);
         assert.equal(appState.selectedInstanceName, 'input24');
-        assert.deepEqual(requests[0], {
-            type: 'schematic_inspect',
-            inst_name: 'input24',
-        });
+        assert.equal(requests[0].type, 'schematic_inspect');
+        assert.equal(requests[0].inst_name, 'input24');
         assert.equal(requests[1].type, 'schematic_cone');
         assert.equal(requests[1].inst_name, 'input24');
         container.element.remove();
@@ -519,179 +469,248 @@ describe('SchematicWidget schematic navigation', () => {
     });
 });
 
-describe('SchematicWidget label placement', () => {
-    it('lowers the three-input NAND input port labels', () => {
-        const { widget, container } = makeWidget();
-        const skin = widget._addOpenRoadSkinSymbols(
-            '<svg xmlns:s="https://github.com/nturley/netlistsvg"></svg>');
-        const nand3Start = skin.indexOf('s:type="openroad_nand3"');
-        const nand3End = skin.indexOf('s:type="openroad_or3"', nand3Start);
-        const nand3 = skin.slice(nand3Start, nand3End);
-
-        assert.match(nand3, /x="-3" y="-2" data-openroad-port="A1"/);
-        assert.match(nand3, /x="-3" y="-2" data-openroad-port="A2"/);
-        assert.match(nand3, /x="-3" y="-2" data-openroad-port="A3"/);
-        container.element.remove();
+describe('canonicalizeCell', () => {
+    it('maps simple gates to skin types and A/B/Y pids', () => {
+        const got = canonicalizeCell(cell({
+            type: 'NOR2_X1', gate_kind: 'nor',
+            port_directions: { A1: 'input', A2: 'input', ZN: 'output' },
+            connections: { A1: [2], A2: [3], ZN: [4] },
+        }));
+        assert.equal(got.type, '$_NOR_');
+        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'Y']);
+        assert.deepEqual(got.connections, { A: [2], B: [3], Y: [4] });
+        assert.deepEqual(got.port_directions, { A: 'input', B: 'input', Y: 'output' });
+        // The real pin names are kept (pid -> name) so the symbol can be labelled.
+        assert.deepEqual(got.port_labels, { A: 'A1', B: 'A2', Y: 'ZN' });
     });
 
-    it('uses original library port names on OpenROAD symbol pin labels', () => {
-        const { widget, container } = makeWidget();
-        const group = document.createElementNS(svgNS, 'g');
-        const input1 = document.createElementNS(svgNS, 'text');
-        const input2 = document.createElementNS(svgNS, 'text');
-        const output = document.createElementNS(svgNS, 'text');
+    it('maps an inverter to $_NOT_ with A/Y', () => {
+        const got = canonicalizeCell(cell({
+            type: 'INV_X1', gate_kind: 'not',
+            port_directions: { A: 'input', ZN: 'output' },
+            connections: { A: [7], ZN: [8] },
+        }));
+        assert.equal(got.type, '$_NOT_');
+        assert.deepEqual(got.connections, { A: [7], Y: [8] });
+    });
 
-        input1.setAttribute('data-openroad-port', 'A1');
-        input2.setAttribute('data-openroad-port', 'A2');
-        output.setAttribute('data-openroad-port', 'Y');
-        group.append(input1, input2, output);
+    it('maps a buffer to $_BUF_', () => {
+        const got = canonicalizeCell(cell({
+            type: 'BUF_X1', gate_kind: 'buf',
+            port_directions: { A: 'input', Z: 'output' },
+            connections: { A: [1], Z: [2] },
+        }));
+        assert.equal(got.type, '$_BUF_');
+        assert.deepEqual(got.connections, { A: [1], Y: [2] });
+    });
 
-        widget._updateOpenRoadPortLabels(group, {
-            attributes: {
-                openroad_input_ports: ['A', 'B'],
-                openroad_output_port: 'ZN',
+    it('maps a 3-input gate to a per-arity symbol (nand3)', () => {
+        const got = canonicalizeCell(cell({
+            type: 'NAND3_X1', gate_kind: 'nand',
+            port_directions: { A1: 'input', A2: 'input', A3: 'input', ZN: 'output' },
+            connections: { A1: [2], A2: [3], A3: [4], ZN: [5] },
+        }));
+        assert.equal(got.type, 'nand3');
+        assert.deepEqual(got.connections, { A: [2], B: [3], C: [4], Y: [5] });
+        assert.deepEqual(got.port_labels, { A: 'A1', B: 'A2', C: 'A3', Y: 'ZN' });
+    });
+
+    it('leaves an unsupported-width gate (>4 inputs) as a box', () => {
+        const orig = cell({
+            type: 'NAND5_X1', gate_kind: 'nand',
+            port_directions: {
+                A1: 'input', A2: 'input', A3: 'input', A4: 'input', A5: 'input',
+                ZN: 'output',
             },
+            connections: { A1: [1], A2: [2], A3: [3], A4: [4], A5: [5], ZN: [6] },
         });
-
-        assert.equal(input1.textContent, 'A');
-        assert.equal(input2.textContent, 'B');
-        assert.equal(output.textContent, 'ZN');
-        assert.equal(output.style.fontSize, '10px');
-        assert.equal(output.style.fontWeight, 'bold');
-        assert.ok(output.style.fontFamily.includes('Courier New'));
-        container.element.remove();
+        const got = canonicalizeCell(orig);
+        assert.equal(got.type, 'NAND5_X1');        // unchanged -> generic box
+        assert.equal(got.port_labels, undefined);
     });
 
-    it('places OpenROAD symbol pin labels from NetlistSVG pin markers', () => {
-        const { widget, container } = makeWidget();
-        const group = document.createElementNS(svgNS, 'g');
-
-        group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 20 });
-        const input = addPortLabel(group, 'A', 0, 10, 'left');
-        const output = addPortLabel(group, 'Y', 30, 10, 'right', 0);
-
-        widget._updateOpenRoadPortLabels(group, {
-            attributes: {
-                openroad_input_port: 'IN',
-                openroad_output_port: 'ZN',
+    it('drops power/ground pins not part of the gate', () => {
+        const got = canonicalizeCell(cell({
+            type: 'NAND2_X1', gate_kind: 'nand',
+            port_directions: {
+                A1: 'input', A2: 'input', ZN: 'output',
+                VDD: 'inout', VSS: 'inout',
             },
-        });
-
-        assert.equal(input.textContent, 'IN');
-        assert.equal(input.getAttribute('x'), '-3');
-        assert.equal(input.getAttribute('y'), '-4');
-        assert.equal(input.style.textAnchor, 'end');
-        assert.equal(output.textContent, 'ZN');
-        assert.equal(output.getAttribute('x'), '0');
-        assert.equal(output.getAttribute('y'), '-4');
-        assert.equal(output.style.textAnchor, 'start');
-        container.element.remove();
+            connections: { A1: [2], A2: [3], ZN: [4], VDD: [5], VSS: [6] },
+        }));
+        assert.equal(got.type, '$_NAND_');
+        assert.deepEqual(Object.keys(got.connections).sort(), ['A', 'B', 'Y']);
     });
 
-    it('preserves generic box input label anchoring from NetlistSVG classes', () => {
-        const { widget, container } = makeWidget();
-        const input = document.createElementNS(svgNS, 'text');
-        const nodeLabel = document.createElementNS(svgNS, 'text');
-
-        input.setAttribute('class', 'inputPortLabel cell_u1');
-        nodeLabel.setAttribute('class', 'nodelabel cell_u1');
-
-        widget._stylePortLabel(input);
-        widget._stylePortLabel(nodeLabel);
-
-        assert.equal(input.style.textAnchor, 'end');
-        assert.equal(input.getAttribute('text-anchor'), 'end');
-        assert.equal(nodeLabel.style.textAnchor, 'middle');
-        assert.equal(nodeLabel.getAttribute('text-anchor'), 'middle');
-        container.element.remove();
+    it('maps AOI21 to its symbol with the literal as A and the AND pair as B,C', () => {
+        const got = canonicalizeCell(cell({
+            type: 'AOI21_X2', gate_kind: 'aoi',
+            gate_terms: [['A'], ['B1', 'B2']],
+            port_directions: { A: 'input', B1: 'input', B2: 'input', ZN: 'output' },
+            connections: { A: [4], B1: [8], B2: [11], ZN: [12] },
+        }));
+        assert.equal(got.type, 'aoi21');
+        // smallest term (literal A) -> pid A; the AND pair -> B, C; output -> Y
+        assert.deepEqual(got.connections, { A: [4], B: [8], C: [11], Y: [12] });
+        // Real pin names preserved per port id for labelling.
+        assert.deepEqual(got.port_labels, { A: 'A', B: 'B1', C: 'B2', Y: 'ZN' });
     });
 
-    it('preserves custom template offsets for bubble output labels', () => {
-        const { widget, container } = makeWidget();
-        const group = document.createElementNS(svgNS, 'g');
-
-        group.getBBox = () => ({ x: 0, y: 0, width: 34, height: 20 });
-        const output = addPortLabel(group, 'Y', 34, 10, 'right', 0);
-
-        widget._updateOpenRoadPortLabels(group, {
-            attributes: {
-                openroad_output_port: 'ZN',
+    it('maps OAI22 to its symbol with four inputs A..D', () => {
+        const got = canonicalizeCell(cell({
+            type: 'OAI22_X1', gate_kind: 'oai',
+            gate_terms: [['A1', 'A2'], ['B1', 'B2']],
+            port_directions: {
+                A1: 'input', A2: 'input', B1: 'input', B2: 'input', ZN: 'output',
             },
-        });
-
-        assert.equal(output.textContent, 'ZN');
-        assert.equal(output.getAttribute('x'), '0');
-        assert.equal(output.getAttribute('y'), '-4');
-        assert.equal(output.style.textAnchor, 'start');
-        container.element.remove();
+            connections: { A1: [1], A2: [2], B1: [3], B2: [4], ZN: [5] },
+        }));
+        assert.equal(got.type, 'oai22');
+        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'C', 'D', 'Y']);
     });
 
-    it('keeps template port side when measured bounds include wires', () => {
-        const { widget, container } = makeWidget();
-        const group = document.createElementNS(svgNS, 'g');
+    it('maps AOI211 (literals A,B; AND pair C,D)', () => {
+        // !((C1 & C2) | B | A): smallest terms first -> the two literals get
+        // pids A,B and the AND pair gets C,D.
+        const got = canonicalizeCell(cell({
+            type: 'AOI211_X1', gate_kind: 'aoi',
+            gate_terms: [['C1', 'C2'], ['B'], ['A']],
+            port_directions: { C1: 'input', C2: 'input', B: 'input', A: 'input', ZN: 'output' },
+            connections: { C1: [3], C2: [4], B: [2], A: [1], ZN: [5] },
+        }));
+        assert.equal(got.type, 'aoi211');
+        assert.deepEqual(got.connections, { A: [2], B: [1], C: [3], D: [4], Y: [5] });
+        assert.deepEqual(got.port_labels, { A: 'B', B: 'A', C: 'C1', D: 'C2', Y: 'ZN' });
+    });
 
-        group.getBBox = () => ({ x: -100, y: 0, width: 130, height: 20 });
-        const input = addPortLabel(group, 'A', 0, 10, 'left');
-
-        widget._updateOpenRoadPortLabels(group, {
-            attributes: {
-                openroad_input_port: 'A',
+    it('maps OAI33 to its symbol with six inputs A..F', () => {
+        const got = canonicalizeCell(cell({
+            type: 'OAI33_X1', gate_kind: 'oai',
+            gate_terms: [['A1', 'A2', 'A3'], ['B1', 'B2', 'B3']],
+            port_directions: {
+                A1: 'input', A2: 'input', A3: 'input',
+                B1: 'input', B2: 'input', B3: 'input', ZN: 'output',
             },
-        });
-
-        assert.equal(input.getAttribute('x'), '-3');
-        assert.equal(input.getAttribute('y'), '-4');
-        assert.equal(input.style.textAnchor, 'end');
-        container.element.remove();
+            connections: { A1: [1], A2: [2], A3: [3], B1: [4], B2: [5], B3: [6], ZN: [7] },
+        }));
+        assert.equal(got.type, 'oai33');
+        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'C', 'D', 'E', 'F', 'Y']);
     });
 
-    it('moves OpenROAD symbol pin labels away from overlapping shapes', () => {
-        const { widget, container } = makeWidget();
-        const group = document.createElementNS(svgNS, 'g');
-        const output = document.createElementNS(svgNS, 'text');
-
-        group.getBBox = () => ({ x: 0, y: 0, width: 10, height: 10 });
-        output.setAttribute('data-openroad-port', 'Y');
-        output.setAttribute('data-openroad-port-side', 'right');
-        output.setAttribute('x', '5');
-        output.setAttribute('y', '5');
-        group.append(output);
-
-        widget._updateOpenRoadPortLabels(group, {
-            attributes: {
-                openroad_output_port: 'ZN',
+    it('leaves unsupported compound arities unchanged (labelled box)', () => {
+        // A four-term AOI (aoi2111) has no skin symbol, so it stays a box.
+        const orig = cell({
+            type: 'AOI2111_X1', gate_kind: 'aoi',
+            gate_terms: [['A'], ['B'], ['C'], ['D1', 'D2']],
+            port_directions: {
+                A: 'input', B: 'input', C: 'input', D1: 'input', D2: 'input', ZN: 'output',
             },
+            connections: { A: [1], B: [2], C: [3], D1: [4], D2: [5], ZN: [6] },
         });
-
-        const bbox = widget._textBBox(output);
-        assert.equal(output.textContent, 'ZN');
-        assert.equal(output.style.fontSize, '10px');
-        assert.equal(output.style.fontWeight, 'bold');
-        assert.ok(bbox.x >= 12);
-        container.element.remove();
+        const got = canonicalizeCell(orig);
+        assert.equal(got.type, 'AOI2111_X1');          // type unchanged
+        assert.ok(got.connections.D1 && got.connections.ZN);  // real pins kept
+        assert.equal(got.port_labels, undefined);      // no remap -> no labels
     });
 
-    it('keeps the instance label above the symbol when no wire blocks it', () => {
-        const { widget, container } = makeWidget();
-        const { label } = makeSchematic(widget, false);
+    it('leaves cells without a gate_kind unchanged', () => {
+        const orig = cell({
+            type: 'DFF_X1',
+            port_directions: { D: 'input', CK: 'input', Q: 'output' },
+            connections: { D: [1], CK: [2], Q: [3] },
+        });
+        assert.strictEqual(canonicalizeCell(orig), orig);
+    });
+});
 
-        widget._layoutInstanceLabels(netlist);
-
-        assert.equal(label.getAttribute('x'), '15');
-        assert.equal(label.getAttribute('y'), '-14');
-        assert.equal(label.style.textAnchor, 'middle');
-        container.element.remove();
+describe('canonicalizeForSkin', () => {
+    it('rewrites recognised cells but preserves instance-name keys', () => {
+        const json = { modules: { top: { cells: {
+            _983_: {
+                type: 'NOR2_X1', gate_kind: 'nor', attributes: { ref: '_983_' },
+                port_directions: { A1: 'input', A2: 'input', ZN: 'output' },
+                connections: { A1: [2], A2: [3], ZN: [4] },
+            },
+            myff: {
+                type: 'DFF_X1', attributes: { ref: 'myff' },
+                port_directions: { D: 'input', Q: 'output' },
+                connections: { D: [4], Q: [5] },
+            },
+        } } } };
+        const out = canonicalizeForSkin(json);
+        const cells = out.modules.top.cells;
+        // Keys (instance names) preserved.
+        assert.deepEqual(Object.keys(cells).sort(), ['_983_', 'myff']);
+        assert.equal(cells._983_.type, '$_NOR_');     // gate rewritten
+        assert.equal(cells.myff.type, 'DFF_X1');       // non-gate untouched
+        // Input is not mutated.
+        assert.equal(json.modules.top.cells._983_.type, 'NOR2_X1');
     });
 
-    it('moves the top-priority label when a wire crosses that slot', () => {
-        const { widget, container } = makeWidget();
-        const { label } = makeSchematic(widget, true);
-
-        widget._layoutInstanceLabels(netlist);
-
-        assert.equal(label.getAttribute('x'), '15');
-        assert.equal(label.getAttribute('y'), '44');
-        assert.equal(label.style.textAnchor, 'middle');
-        container.element.remove();
+    it('returns the input unchanged when there is no top module', () => {
+        const json = { foo: 1 };
+        assert.strictEqual(canonicalizeForSkin(json), json);
     });
+});
+
+// netlistsvg's skin injects a <style> with unscoped element selectors that
+// would otherwise leak document-wide (e.g. `svg { fill:none }` clobbering every
+// inline-SVG icon in the app). scopeCssSelector() prefixes each selector with
+// the widget container so the skin only styles the schematic.
+describe('scopeCssSelector', () => {
+    const SCOPE = '.schematic-widget';
+
+    it('prefixes a bare element selector', () => {
+        assert.equal(scopeCssSelector('svg', SCOPE), '.schematic-widget svg');
+    });
+
+    it('prefixes each selector in a comma list independently', () => {
+        assert.equal(
+            scopeCssSelector('svg, text, .splitjoinBody', SCOPE),
+            '.schematic-widget svg, .schematic-widget text, '
+                + '.schematic-widget .splitjoinBody');
+    });
+
+    it('trims whitespace around list members', () => {
+        assert.equal(
+            scopeCssSelector('  svg ,  text  ', SCOPE),
+            '.schematic-widget svg, .schematic-widget text');
+    });
+
+    it('is idempotent: already-scoped selectors are left untouched', () => {
+        const once = scopeCssSelector('svg, text', SCOPE);
+        assert.equal(scopeCssSelector(once, SCOPE), once);
+    });
+
+    it('does not re-prefix a selector that already starts with the scope', () => {
+        assert.equal(
+            scopeCssSelector('.schematic-widget svg', SCOPE),
+            '.schematic-widget svg');
+        // The scope followed by a combinator or class/pseudo is still scoped.
+        assert.equal(
+            scopeCssSelector('.schematic-widget>svg', SCOPE),
+            '.schematic-widget>svg');
+        assert.equal(
+            scopeCssSelector('.schematic-widget.active', SCOPE),
+            '.schematic-widget.active');
+        assert.equal(
+            scopeCssSelector('.schematic-widget:hover', SCOPE),
+            '.schematic-widget:hover');
+    });
+
+    it('still scopes a different class that shares the scope as a prefix', () => {
+        // `.schematic-widget-foo` is a distinct class, not the scope itself.
+        assert.equal(
+            scopeCssSelector('.schematic-widget-foo', SCOPE),
+            '.schematic-widget .schematic-widget-foo');
+    });
+
+    it('still scopes a selector that merely contains the scope word elsewhere',
+       () => {
+           // The scope only counts as "already applied" at the start, so a
+           // descendant reference to it elsewhere must still be prefixed.
+           assert.equal(
+               scopeCssSelector('div .schematic-widget', SCOPE),
+               '.schematic-widget div .schematic-widget');
+       });
 });

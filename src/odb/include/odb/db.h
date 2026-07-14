@@ -178,6 +178,11 @@ class dbTechLayerTwoWiresForbiddenSpcRule;
 class dbTechLayerVoltageSpacing;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
+class dbUnfoldedChipBumpInst;
+class dbUnfoldedChipConn;
+class dbUnfoldedChipInst;
+class dbUnfoldedChipNet;
+class dbUnfoldedChipRegionInst;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -185,8 +190,6 @@ class dbExtControl;
 
 // Custom iterators
 class dbModuleBusPortModBTermItr;
-
-class UnfoldedModel;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -1024,11 +1027,6 @@ class dbBlock : public dbObject
   int getCornerCount();
 
   ///
-  /// having independent extraction corners ?
-  ///
-  bool extCornersAreIndependent();
-
-  ///
   /// Get the number of corners kept n this block
   ///
   int getCornersPerBlock();
@@ -1067,27 +1065,9 @@ class dbBlock : public dbObject
   void setCornerCount(int cnt);
 
   ///
-  /// Set the number of corners kept in this block
-  ///
-  void setCornersPerBlock(int cornersPerBlock);
-
-  ///
   /// Initialize the parasitics value tables
   ///
   void initParasiticsValueTables();
-
-  ///
-  /// create child block for one extraction corner
-  ///
-  dbBlock* createExtCornerBlock(uint32_t corner);
-  ///
-  /// find child block for one extraction corner
-  ///
-  dbBlock* findExtCornerBlock(uint32_t corner);
-  ///
-  /// get extraction data block for one extraction corner
-  ///
-  dbBlock* getExtCornerBlock(uint32_t corner);
 
   ///
   /// Get the track-grids of this block.
@@ -3189,6 +3169,12 @@ class dbInst : public dbObject
   void setPinAccessIdx(uint32_t idx);
 
   uint32_t getPinAccessIdx() const;
+
+  ///
+  /// Get the chip bump associated with this instance.
+  /// Returns a pointer to the dbChipBump object if present, otherwise nullptr.
+  ///
+  dbChipBump* getChipBump() const;
 
   ///
   /// Create a new instance.
@@ -5499,6 +5485,18 @@ class dbMaster : public dbObject
   void setType(dbMasterType type);
 
   ///
+  /// Marks a cell as physically bridging a front-side power layer to a
+  /// LEF58_BACKSIDE layer (typical use: BSPDN tap cells). Tools that
+  /// trace PG-net connectivity should treat the PG pins of such a
+  /// cell as electrically continuous even when they sit on layers
+  /// that disagree on dbTechLayer::isBackside(). Set by the
+  /// LEF58_BACKSIDE_BRIDGE macro property.
+  ///
+  void setBacksideBridge(bool is_bridge);
+
+  bool isBacksideBridge() const;
+
+  ///
   /// Get the Logical equivalent of this master
   /// Returns nullptr if no equivalent was set.
   ///
@@ -5891,6 +5889,10 @@ class dbTech : public dbObject
   ///
   std::string getName();
 
+  void setExtractionRulesFile(const std::string& path);
+
+  std::string getExtractionRulesFile();
+
   ///
   /// Get the Database units per micron.
   ///
@@ -5919,6 +5921,21 @@ class dbTech : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbTechLayer* findRoutingLayer(int level_number);
+
+  ///
+  /// Find the frontside (non-LEF58_BACKSIDE) routing layer closest to
+  /// the substrate (i.e. the lowest routing-level index that is not
+  /// marked backside). Returns nullptr if there is no such layer.
+  ///
+  dbTechLayer* firstFrontsideRoutingLayer();
+
+  ///
+  /// Find the LEF58_BACKSIDE routing layer closest to the substrate
+  /// (i.e. the highest routing-level index that is marked backside,
+  /// since backside metals are stacked outward from M0 toward BRDL in
+  /// LEF order). Returns nullptr if there is no backside routing layer.
+  ///
+  dbTechLayer* firstBacksideRoutingLayer();
 
   ///
   /// Get the technolgy vias. This includes non-default-rule-vias.
@@ -6507,7 +6524,7 @@ class dbTechLayerSpacingRule : public dbObject
   bool getCutCenterToCenter() const;
   bool getCutSameNet() const;
   bool getCutParallelOverlap() const;
-  uint32_t getCutArea() const;
+  int64_t getCutArea() const;
 
   void setSameNetPgOnly(bool pgonly);
   bool getSameNetPgOnly();
@@ -6528,7 +6545,7 @@ class dbTechLayerSpacingRule : public dbObject
   void setCutCenterToCenter(bool c2c);
   void setCutSameNet(bool same_net);
   void setCutParallelOverlap(bool overlap);
-  void setCutArea(uint32_t area);
+  void setCutArea(int64_t area);
   void setEol(uint32_t width,
               uint32_t within,
               bool parallelEdge,
@@ -6591,8 +6608,8 @@ class dbTechMinCutRule : public dbObject
 class dbTechMinEncRule : public dbObject
 {
  public:
-  bool getEnclosure(uint32_t& area) const;
-  void setEnclosure(uint32_t area);
+  bool getEnclosure(int64_t& area) const;
+  void setEnclosure(int64_t area);
   bool getEnclosureWidth(uint32_t& width) const;
   void setEnclosureWidth(uint32_t width);
 
@@ -7587,10 +7604,22 @@ class dbDatabase : public dbObject
 
   dbSet<dbChipNet> getChipNets() const;
 
+  dbSet<dbUnfoldedChipInst> getUnfoldedChipInsts() const;
+
+  dbSet<dbUnfoldedChipRegionInst> getUnfoldedChipRegionInsts() const;
+
+  dbSet<dbUnfoldedChipBumpInst> getUnfoldedChipBumpInsts() const;
+
+  dbSet<dbUnfoldedChipConn> getUnfoldedChipConns() const;
+
+  dbSet<dbUnfoldedChipNet> getUnfoldedChipNets() const;
+
   // User Code Begin dbDatabase
 
   void setHierarchy(bool value);
   bool hasHierarchy() const;
+
+  bool hasHierarchicalChip() const;
 
   void setTopChip(dbChip* chip);
   ///
@@ -7637,7 +7666,6 @@ class dbDatabase : public dbObject
 
   void constructUnfoldedModel();
 
-  UnfoldedModel* getUnfoldedModel() const;
   ////////////////////////
   /// DEPRECATED
   ////////////////////////
@@ -7767,6 +7795,12 @@ class dbDatabase : public dbObject
   /// Translate a database-id back to a pointer.
   ///
   static dbDatabase* getDatabase(uint32_t oid);
+
+  ///
+  /// Find an unfolded chip by its full path name (slash-joined chip-inst
+  /// names). Returns nullptr if no match.
+  ///
+  dbUnfoldedChipInst* findUnfoldedChip(const std::string& path) const;
   // User Code End dbDatabase
 };
 
@@ -9279,6 +9313,15 @@ class dbTechLayer : public dbObject
   std::string getLef58TypeString() const;
 
   ///
+  /// Backside layers are physically located on the wafer's reverse side,
+  /// typically used for buried-power-rail (BPR) and backside power
+  /// delivery (BSPDN). Set by the LEF58_BACKSIDE property.
+  ///
+  void setBackside(bool is_backside);
+
+  bool isBackside() const;
+
+  ///
   /// Get the layer name.
   ///
   std::string getName() const;
@@ -9437,8 +9480,8 @@ class dbTechLayer : public dbObject
   ///  reasonable default exists.
   ///
   bool hasArea() const;
-  double getArea() const;
-  void setArea(double area);
+  int64_t getArea() const;
+  void setArea(int64_t area);
 
   ///
   ///  Get/set MAXWIDTH parameter.  This interface is used when a
@@ -9576,9 +9619,9 @@ class dbTechLayer : public dbObject
 class dbTechLayerAreaRule : public dbObject
 {
  public:
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setExceptMinWidth(int except_min_width);
 
@@ -10115,9 +10158,9 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   uint32_t getParLength() const;
 
-  void setCutArea(int cut_area);
+  void setCutArea(int64_t cut_area);
 
-  int getCutArea() const;
+  int64_t getCutArea() const;
 
   void setCenterToCenter(bool center_to_center);
 
@@ -10737,9 +10780,9 @@ class dbTechLayerMinCutRule : public dbObject
 
   int getLengthWithinDist() const;
 
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setAreaWithinDist(int area_within_dist);
 
@@ -11348,6 +11391,96 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
       uint32_t dbid);
 
   // User Code End dbTechLayerWrongDirSpacingRule
+};
+
+class dbUnfoldedChipBumpInst : public dbObject
+{
+ public:
+  dbChipBumpInst* getChipBumpInst() const;
+
+  dbUnfoldedChipRegionInst* getParentRegion() const;
+
+  // User Code Begin dbUnfoldedChipBumpInst
+  Point3D getGlobalPosition() const;
+  // User Code End dbUnfoldedChipBumpInst
+};
+
+class dbUnfoldedChipConn : public dbObject
+{
+ public:
+  dbChipConn* getChipConn() const;
+
+  dbUnfoldedChipRegionInst* getTopRegion() const;
+
+  dbUnfoldedChipRegionInst* getBottomRegion() const;
+};
+
+class dbUnfoldedChipInst : public dbObject
+{
+ public:
+  const std::string& getName() const;
+
+  dbTransform getTransform() const;
+
+  // User Code Begin dbUnfoldedChipInst
+  Cuboid getCuboid() const;
+
+  dbSet<dbUnfoldedChipRegionInst> getRegions() const;
+
+  ///
+  /// Return the chip-instance path that uniquely identifies this unfolded
+  /// chip in the folded hierarchy (top-most chip inst first, leaf last).
+  ///
+  std::vector<dbChipInst*> getChipInstPath() const;
+
+  ///
+  /// Find the unfolded region within this chip whose source region instance
+  /// matches `source`. Returns nullptr if no match.
+  ///
+  dbUnfoldedChipRegionInst* findRegion(dbChipRegionInst* source) const;
+  // User Code End dbUnfoldedChipInst
+};
+
+class dbUnfoldedChipNet : public dbObject
+{
+ public:
+  dbChipNet* getChipNet() const;
+
+  // User Code Begin dbUnfoldedChipNet
+  std::vector<dbUnfoldedChipBumpInst*> getConnectedBumps() const;
+  // User Code End dbUnfoldedChipNet
+};
+
+class dbUnfoldedChipRegionInst : public dbObject
+{
+ public:
+  enum class EffectiveSide
+  {
+    TOP,
+    BOTTOM,
+    INTERNAL,
+    INTERNAL_EXT
+  };
+
+  dbChipRegionInst* getChipRegionInst() const;
+
+  dbUnfoldedChipInst* getParentChip() const;
+
+  // User Code Begin dbUnfoldedChipRegionInst
+  Cuboid getCuboid() const;
+
+  EffectiveSide getEffectiveSide() const;
+  void setEffectiveSide(EffectiveSide side);
+
+  bool isTop() const;
+  bool isBottom() const;
+  bool isInternal() const;
+  bool isInternalExt() const;
+
+  int getSurfaceZ() const;
+
+  dbSet<dbUnfoldedChipBumpInst> getBumps() const;
+  // User Code End dbUnfoldedChipRegionInst
 };
 
 // Generator Code End ClassDefinition

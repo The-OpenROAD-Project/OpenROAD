@@ -27,7 +27,8 @@ cc_library(
     includes = ["src"],
     visibility = ["//visibility:private"],
     deps = [
-        # note: cyclic dependency, headers include things provided by :dpl
+        # TODO: we use headers provided by :dpl, but that reveals cyclic dep
+        #":dpl",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.icl",
@@ -200,5 +201,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/dpl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/dpl/test:__pkg__",
+    ],
 )

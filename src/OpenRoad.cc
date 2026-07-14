@@ -215,7 +215,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
   verilog_network_ = new dbVerilogNetwork(sta_);
   ioPlacer_ = new ppl::IOPlacer(db_, logger_);
-  stt_builder_ = new stt::SteinerTreeBuilder(db_, logger_);
+  stt_builder_ = new stt::SteinerTreeBuilder(logger_);
   antenna_checker_ = new ant::AntennaChecker(db_, logger_);
   opendp_ = new dpl::Opendp(db_, logger_);
   global_router_ = new grt::GlobalRouter(logger_,
@@ -273,8 +273,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
-  web_server_
-      = new web::WebServer(db_, sta_, logger_, tcl_interp, getThreadCount());
+  web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -521,6 +520,7 @@ void OpenRoad::read3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
+  db_->constructUnfoldedModel();
   db_->triggerPostRead3Dbx(db_->getChip());
   check3DBlox();
 }
@@ -687,6 +687,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
   if (global_router_ != nullptr) {
     global_router_->setNumThreads(threads_);
   }
+  if (web_server_ != nullptr) {
+    web_server_->setThreadCount(threads_);
+  }
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)
@@ -726,6 +729,20 @@ std::string OpenRoad::getExePath() const
 
 std::string OpenRoad::getDocsPath() const
 {
+#ifdef BAZEL_BUILD
+  // When invoked via 'bazel run', BUILD_WORKSPACE_DIRECTORY is set to the
+  // workspace root. Look for generated man pages in bazel-bin/docs/ so that
+  // 'man' works without a full install step.
+  const char* workspace_dir = std::getenv("BUILD_WORKSPACE_DIRECTORY");
+  if (workspace_dir != nullptr) {
+    auto docs_path
+        = std::filesystem::path(workspace_dir) / "bazel-bin" / "docs";
+    if (std::filesystem::is_directory(docs_path)) {
+      return docs_path;
+    }
+  }
+#endif
+
   const std::string exe = getExePath();
 
   if (exe.empty()) {

@@ -638,4 +638,73 @@ boost::json::object serializeChartFilters(const ChartFilters& f)
   return o;
 }
 
+// ── Net fanout histogram ──
+
+FanoutHistogramResult computeFanoutHistogram(odb::dbBlock* block)
+{
+  FanoutHistogramResult result;
+  if (!block) {
+    return result;
+  }
+
+  std::vector<int> fanouts;
+  int max_fanout = 0;
+  for (odb::dbNet* net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    const int term_count = static_cast<int>(net->getITermCount())
+                           + static_cast<int>(net->getBTermCount());
+    const int fanout = std::max(0, term_count - 1);
+    fanouts.push_back(fanout);
+    max_fanout = std::max(max_fanout, fanout);
+  }
+  result.total_nets = static_cast<int>(fanouts.size());
+  if (fanouts.empty()) {
+    return result;
+  }
+
+  int bin_width;
+  if (max_fanout <= 20) {
+    bin_width = 1;
+  } else {
+    constexpr int kDefaultBuckets = 10;
+    const float exact
+        = static_cast<float>(max_fanout) / static_cast<float>(kDefaultBuckets);
+    bin_width = std::max(1, static_cast<int>(snapBinInterval(exact)));
+  }
+  const int num_bins = std::max(1, max_fanout / bin_width + 1);
+
+  std::vector<int> counts(num_bins, 0);
+  for (int f : fanouts) {
+    int idx = f / bin_width;
+    idx = std::clamp(idx, 0, num_bins - 1);
+    counts[idx]++;
+  }
+  result.bins.reserve(num_bins);
+  for (int i = 0; i < num_bins; i++) {
+    const int lo = i * bin_width;
+    const int hi = lo + bin_width;
+    result.bins.push_back({lo, hi, counts[i]});
+  }
+  return result;
+}
+
+boost::json::object serializeFanoutHistogram(const FanoutHistogramResult& h)
+{
+  boost::json::object o;
+  boost::json::array bins;
+  bins.reserve(h.bins.size());
+  for (const auto& bin : h.bins) {
+    boost::json::object b;
+    b["lower"] = bin.lower;
+    b["upper"] = bin.upper;
+    b["count"] = bin.count;
+    bins.emplace_back(std::move(b));
+  }
+  o["bins"] = std::move(bins);
+  o["total_nets"] = h.total_nets;
+  return o;
+}
+
 }  // namespace web
