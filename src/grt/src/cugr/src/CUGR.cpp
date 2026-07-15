@@ -125,16 +125,21 @@ void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
   }
 }
 
+void CUGR::refreshNetSlacks(const std::vector<int>& net_indices)
+{
+  for (const int net_index : net_indices) {
+    GRNet* net = gr_nets_[net_index].get();
+    if (net != nullptr) {
+      net->setSlack(getNetSlack(net->getDbNet()));
+    }
+  }
+}
+
 void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
 {
   if (incremental_routing_) {
     // Only refresh the rerouted nets; skip the global parasitics re-estimate.
-    for (const int net_index : net_indices) {
-      GRNet* net = gr_nets_[net_index].get();
-      if (net != nullptr) {
-        net->setSlack(getNetSlack(net->getDbNet()));
-      }
-    }
+    refreshNetSlacks(net_indices);
     return;
   }
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
@@ -192,12 +197,7 @@ void CUGR::setInitialNetSlacks(const std::vector<int>& net_indices)
   // marking happens in patternRouteResAware() once real 3D trees exist.
   // During incremental routing only the rerouted nets need refreshing.
   if (incremental_routing_) {
-    for (const int net_index : net_indices) {
-      GRNet* net = gr_nets_[net_index].get();
-      if (net != nullptr) {
-        net->setSlack(getNetSlack(net->getDbNet()));
-      }
-    }
+    refreshNetSlacks(net_indices);
     return;
   }
   for (const auto& net : gr_nets_) {
@@ -476,12 +476,6 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree(),
                               gr_nets_[net_index]->getNdrCosts());
   }
-
-  // Full route narrows to the congested set for later stages; incremental keeps
-  // the full dirty set so every dirty net is re-optimized each stage.
-  if (!incremental_routing_) {
-    updateCongestedNets(net_indices);
-  }
 }
 
 void CUGR::patternRouteResAware(std::vector<int>& net_indices)
@@ -542,10 +536,6 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
-
-  // Refresh the congested set for the downstream stages, like every other
-  // routing stage. (The early returns above leave patternRoute's set as-is.)
-  updateCongestedNets(net_indices);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -583,10 +573,6 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     pattern_route.constructDetours(congestion_view);
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
-  }
-
-  if (!incremental_routing_) {
-    updateCongestedNets(net_indices);
   }
 }
 
@@ -649,15 +635,16 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid_graph_->updateWireCostView(wire_cost_view, net->getRoutingTree());
     grid.step();
   }
-
-  // Narrow to the congested set for iterative RRR (full route only).
-  if (!incremental_routing_) {
-    updateCongestedNets(net_indices);
-  }
 }
 
 void CUGR::route(bool incremental)
 {
+  // The incremental scope comes exclusively from nets_to_route_; without it
+  // the fallback below would treat the whole design as dirty.
+  if (incremental && nets_to_route_.empty()) {
+    return;
+  }
+
   if (resistance_aware_ && critical_nets_percentage_ == 0) {
     logger_->warn(GRT,
                   702,
@@ -679,8 +666,8 @@ void CUGR::route(bool incremental)
     }
   }
 
-  // Incremental re-optimizes every dirty net each stage: the stages skip their
-  // congested-set narrowing when incremental_routing_, so net_indices stays the
+  // Incremental re-optimizes every dirty net each stage: the congested-set
+  // narrowing between the stages below is skipped, so net_indices stays the
   // full dirty set; congestion checks still scope via incremental_candidates_.
   incremental_routing_ = incremental;
   if (incremental) {
@@ -689,36 +676,33 @@ void CUGR::route(bool incremental)
 
   patternRoute(net_indices);
 
-  // Stage 2: resistance-aware re-route of the critical nets (full route only,
-  // not congestion-gated).
   if (!incremental) {
+    // Stage 2: resistance-aware re-route of the critical nets (full route
+    // only, not congestion-gated; it ignores the congested set).
     patternRouteResAware(net_indices);
+    updateCongestedNets(net_indices);
   }
 
   patternRouteWithDetours(net_indices);
+  if (!incremental) {
+    updateCongestedNets(net_indices);
+  }
 
   if (verbose_ && !net_indices.empty()) {
     logger_->report("Stage 4: Maze routing on sparsified graph.");
   }
   mazeRoute(net_indices);
+  if (!incremental) {
+    updateCongestedNets(net_indices);
+  }
 
   iterativeRRR(net_indices);
-
-  if (incremental) {
-    // Report the rerouted nets so the caller patches only their routes.
-    rerouted_db_nets_.clear();
-    for (const int index : incremental_candidates_) {
-      if (gr_nets_[index] != nullptr) {
-        rerouted_db_nets_.push_back(gr_nets_[index]->getDbNet());
-      }
-    }
-    incremental_routing_ = false;
-    incremental_candidates_.clear();
-  }
 
   printStatistics();
 
   if (incremental) {
+    incremental_routing_ = false;
+    incremental_candidates_.clear();
     return;
   }
 
@@ -920,9 +904,9 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
                   soft_ndr_demotions);
   }
 
-  // Final summary: the last mazeRoute already printed "Nets with
-  // congestion" via updateCongestedNets, so just warn (if anything remains)
-  // using the same metric without re-printing the count.
+  // Final summary: the last updateCongestedNets already printed "Nets with
+  // congestion", so just warn (if anything remains) using the same metric
+  // without re-printing the count.
   if (const int residual = totalOverflow(); residual > 0) {
     logger_->warn(GRT,
                   118,
@@ -1356,25 +1340,6 @@ void CUGR::getBTermsAccessPoints(
   }
 }
 
-void CUGR::addDirtyNet(odb::dbNet* net)
-{
-  if (!design_) {
-    return;
-  }
-  auto it = db_net_map_.find(net);
-  if (it != db_net_map_.end()) {
-    GRNet* gr_net = it->second;
-    if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                   gr_net->getNdrCosts());
-    }
-    nets_to_route_.push_back(gr_net->getIndex());
-  } else {
-    logger_->warn(
-        GRT, 600, "Net {} not found in CUGR net map.", net->getConstName());
-  }
-}
-
 void CUGR::updateNet(odb::dbNet* db_net)
 {
   if (!design_) {
@@ -1667,12 +1632,6 @@ void CUGR::saveCongestion()
 
 void CUGR::routeIncremental()
 {
-  // Clear now so a no-op pass doesn't replay a stale, possibly-deleted net.
-  rerouted_db_nets_.clear();
-  if (nets_to_route_.empty()) {
-    return;
-  }
-
   route(/*incremental=*/true);
 }
 

@@ -96,11 +96,6 @@ class CUGR
   // Route for a single net, so incremental updates patch only the dirty nets
   // instead of rebuilding the whole map.
   GRoute getNetRoute(odb::dbNet* db_net);
-  // Dirty nets rerouted in the last incremental pass (skipped nets excluded).
-  const std::vector<odb::dbNet*>& getReroutedNets() const
-  {
-    return rerouted_db_nets_;
-  }
   void updateDbCongestion();
   void getITermsAccessPoints(
       odb::dbNet* net,
@@ -126,7 +121,6 @@ class CUGR
     congestion_iterations_ = iterations;
   }
   void setVerbose(bool verbose) { verbose_ = verbose; }
-  void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
   void routeIncremental();
@@ -148,6 +142,9 @@ class CUGR
   void updateCriticalNets(const std::vector<int>& net_indices);
   // Re-extract parasitics and refresh every net's slack from the routing.
   void updateNetSlacks(const std::vector<int>& net_indices);
+  // Refresh the slack of the given nets from STA, without re-extracting
+  // parasitics (incremental scope).
+  void refreshNetSlacks(const std::vector<int>& net_indices);
   // Slack value at the critical_nets_percentage_ percentile of the nets.
   float criticalSlackThreshold() const;
   // Push nets with slack above the threshold to the back of the default
@@ -277,8 +274,6 @@ class CUGR
   bool incremental_routing_ = false;
   // Dirty-net set for the current incremental pass; scopes congestion checks.
   std::vector<int> incremental_candidates_;
-  // Backing store for getReroutedNets().
-  std::vector<odb::dbNet*> rerouted_db_nets_;
 
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).
