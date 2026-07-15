@@ -16,7 +16,7 @@ if [ -n "${ASAN_PRELOAD:-}" ]; then
 		resolved_preload="${resolved_preload:+${resolved_preload}:}${runtime}"
 	done
 	IFS="${old_ifs}"
-	export LD_PRELOAD="${resolved_preload}${LD_PRELOAD:+:${LD_PRELOAD}}"
+	export ASAN_PRELOAD="${resolved_preload}"
 fi
 if [ -n "${TEST_SRCDIR:-}" ]; then
 	export BAZEL_TEST=1

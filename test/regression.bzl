@@ -11,9 +11,10 @@ and messages_txt for generating messages.txt from source files."""
 load("@rules_python//python:defs.bzl", "py_test")
 
 _ASAN_RUNTIMES = [
+    "@llvm//runtimes/compiler-rt:clang_rt.asan.shared",
+    "@llvm//runtimes/libunwind:libunwind.shared",
     "@llvm//runtimes/libcxx:libcxxabi.shared",
     "@llvm//runtimes/libcxx:libcxx.shared",
-    "@llvm//runtimes/compiler-rt:clang_rt.asan.shared",
 ]
 
 def openroad_py_test(name, data = [], **kwargs):
