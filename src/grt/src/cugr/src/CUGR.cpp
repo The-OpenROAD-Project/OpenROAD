@@ -1766,7 +1766,10 @@ bool CUGR::hasAvailableResources(int layer_index, int tile_x, int tile_y) const
   // 0-based layer indices.
   const int layer_0 = layer_index - 1;
   if (layer_0 < 0) {
-    return false;
+    logger_->error(GRT,
+                   705,
+                   "Invalid layer index {} in hasAvailableResources.",
+                   layer_index);
   }
   return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= 1.0;
 }
