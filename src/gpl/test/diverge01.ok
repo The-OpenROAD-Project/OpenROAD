@@ -39,20 +39,17 @@
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.9475 |  1.889660e+03 |   +0.00% |  9.68e-08 |      
-       10 |   0.2530 |  4.832534e+03 | +155.74% |  1.53e-07 |      
-       20 |   0.2051 |  3.388809e+03 |  -29.88% |  2.25e-07 |      
-       30 |   0.1819 |  3.167805e+03 |   -6.52% |  3.32e-07 |      
-       40 |   0.1471 |  3.089498e+03 |   -2.47% |  4.88e-07 |      
-       50 |   0.1278 |  3.057769e+03 |   -1.03% |  7.19e-07 |      
-       60 |   0.1011 |  3.054761e+03 |   -0.10% |  1.06e-06 |      
-       61 |   0.0985 |  3.055374e+03 |          |  1.15e-06 |      
+        0 |   0.9661 |  1.570853e+03 |   +0.00% |  2.23e-07 |      
+       10 |   0.2169 |  5.687432e+03 | +262.06% |  3.52e-07 |      
+       20 |   0.1615 |  3.640497e+03 |  -35.99% |  5.19e-07 |      
+       30 |   0.1154 |  3.389551e+03 |   -6.89% |  7.64e-07 |      
+       35 |   0.0981 |  3.352142e+03 |          |  9.64e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 61
+[INFO GPL-1001] Global placement finished at iteration 35
 [INFO GPL-1002] Placed Cell Area              619.7347
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6500 (cell_area / free_area)

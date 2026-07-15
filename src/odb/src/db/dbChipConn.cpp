@@ -88,6 +88,10 @@ void _dbChipConn::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["name"].add(name_);
+  info.children["top_region_path"].add(top_region_path_);
+  info.children["bottom_region_path"].add(bottom_region_path_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -96,7 +100,7 @@ void _dbChipConn::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipConn::getName() const
+const std::string& dbChipConn::getName() const
 {
   _dbChipConn* obj = (_dbChipConn*) this;
   return obj->name_;

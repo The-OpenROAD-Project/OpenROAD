@@ -16,6 +16,7 @@
 #include "rcx/extModelGen.h"
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
+#include "rcx/ext_options.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -215,6 +216,21 @@ void Ext::extract(ExtractOptions options)
 
   odb::orderWires(logger_, block);
 
+  odb::dbTech* tech = block->getTech();
+  if (options.ext_model_file != nullptr && options.ext_model_file[0] != '\0') {
+    logger_->warn(RCX,
+                  514,
+                  "The ext_model_file option is deprecated. Use "
+                  "set_extraction_rules_file command instead.");
+
+    tech->setExtractionRulesFile(options.ext_model_file);
+  }
+
+  std::string rules_file = tech->getExtractionRulesFile();
+  if (!rules_file.empty()) {
+    options.ext_model_file = rules_file.c_str();
+  }
+
   _ext->set_debug_nets(options.debug_net);
 
   _ext->_lef_res = options.lef_res;
@@ -229,14 +245,8 @@ void Ext::extract(ExtractOptions options)
   if (_ext->_v2) {
     _ext->makeBlockRCsegs_v2(options.net, options.ext_model_file);
   } else {
-    _ext->makeBlockRCsegs(options.net,
-                          options.cc_up,
-                          options.cc_model,
-                          options.max_res,
-                          !options.no_merge_via_res,
-                          options.coupling_threshold,
-                          options.context_depth,
-                          options.ext_model_file);
+    _ext->setExtractionOptions(options);
+    _ext->makeBlockRCsegs();
   }
 }
 

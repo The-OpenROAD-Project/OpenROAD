@@ -156,11 +156,6 @@ COMPULSORY_TESTS = [
     "create_sboxes",
     "def_dup_net",
     "def_parser",
-    "design_is_routed1",
-    "design_is_routed2",
-    "design_is_routed3",
-    "design_is_routed_fail1",
-    "design_is_routed_fail2",
     "dont_touch",
     "dump_netlists",
     "dump_netlists_withfill",
@@ -178,6 +173,7 @@ COMPULSORY_TESTS = [
     "gcd_def_access",
     "gcd_pdn_def_access",
     "import_package",
+    "lef58_backside_bridge",
     "lef_data_access",
     "lef_mask",
     "multi_tech",
@@ -188,6 +184,7 @@ COMPULSORY_TESTS = [
     "read_3dbx",
     "read_db",
     "read_def",
+    "read_def_virtual",
     "read_def58",
     "read_lef",
     "read_zipped",
@@ -217,7 +214,10 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
+    "read_3dbv_fail",
     "read_3dbx-fail",
+    "read_3dbx_fail",
+    "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
     "test_destroy",
@@ -281,6 +281,8 @@ filegroup(
         "data/example2.bmap",
         "data/example3.bmap",
         "data/example4.bmap",
+        "data/example_no_coords.3dbv",
+        "data/example_polygon.3dbv",
         "data/fail.3dbx",
         "data/fail_def.3dbv",
         "data/floorplan_initialize.def",
@@ -298,6 +300,7 @@ filegroup(
         "data/gscl45nm_ext_macros.lef",
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
+        "data/lef58_celledgespacing_numeric.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",
@@ -306,6 +309,8 @@ filegroup(
         "data/rounding.def",
         "data/sky130_fd_sc_hd__inv_1.gds",
         "data/sky130hd_multi_patterned.def",
+        "data/virtual_route.def",
+        "data/virtual_route_invalid.def",
         "dump_netlists.tcl",
         "dump_netlists_withfill.tcl",
         "fake_macros.def",
@@ -358,9 +363,6 @@ filegroup(
         ) + {
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
-            ],
-            "all_pins_placed2": [
-                "design_is_routed1.def",
             ],
             "create_obstruction": [
                 "create_blockage.def",

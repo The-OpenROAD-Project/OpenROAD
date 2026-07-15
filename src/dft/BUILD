@@ -31,7 +31,7 @@ cc_library(
         "//src/dft/src/replace",
         "//src/dft/src/stitch",
         "//src/dft/src/utils",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.property_tree",
     ],
@@ -40,7 +40,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/dft/Dft.hh",
         "src/MakeDft.cpp",
         ":swig",
         ":tcl",
@@ -55,14 +54,9 @@ cc_library(
     deps = [
         ":dft",
         "//:ord",
-        "//src/dbSta",
         "//src/dft/src/architect",
-        "//src/dft/src/cells",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
-        "//src/dft/src/replace",
-        "//src/dft/src/stitch",
-        "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -105,5 +99,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/dft/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/dft/test:__pkg__",
+    ],
 )

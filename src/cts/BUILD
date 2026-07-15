@@ -24,9 +24,16 @@ cc_library(
         "src/TreeBuilder.h",
         "src/Util.h",
     ],
+    includes = [
+        "src",
+    ],
     visibility = ["//visibility:private"],
     deps = [
+        # TODO: we use headers provided by :cts, but that reveals cyclic dep
+        #":cts",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/utl",
         "@boost.container_hash",
         "@boost.unordered",
     ],
@@ -36,7 +43,6 @@ cc_library(
     name = "cts",
     srcs = [
         "src/Clock.cpp",
-        "src/Clock.h",
         "src/Clustering.cpp",
         "src/CtsOptions.cpp",
         "src/HTreeBuilder.cpp",
@@ -60,7 +66,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
@@ -92,11 +98,8 @@ cc_library(
         ":cts",
         ":private_hdrs",
         "//:ord",
-        "//src/dbSta",
-        "//src/est",
         "//src/gui",
-        "//src/odb",
-        "//src/rsz",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -151,5 +154,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/cts/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/cts/test:__pkg__",
+    ],
 )

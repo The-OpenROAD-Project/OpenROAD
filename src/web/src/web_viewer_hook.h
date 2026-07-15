@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <functional>
@@ -26,11 +27,15 @@ class SessionRegistry
 {
  public:
   using SendFn = std::function<void(const std::string& json)>;
+  // Sends JSON and invokes the callback after the session write completes.
+  using SendAndWaitFn
+      = std::function<void(const std::string& json, std::function<void()>)>;
   using WaitInterruptFn = std::function<bool()>;
 
   // Register a send callback.  Returns a token the caller must pass to
-  // remove() during teardown.
-  std::size_t add(SendFn send);
+  // remove() during teardown.  The optional SendAndWaitFn lets
+  // broadcastAndWait() wait until a write has completed.
+  std::size_t add(SendFn send, SendAndWaitFn send_and_wait = {});
   void remove(std::size_t token);
 
   // True if at least one session is registered.
@@ -47,11 +52,22 @@ class SessionRegistry
   // Deliver the JSON string to every currently-registered session.
   void broadcast(const std::string& json);
 
+  // Like broadcast(), but waits until every fenceable session has completed
+  // the queued write (or timeout expires).
+  bool broadcastAndWait(const std::string& json,
+                        std::chrono::milliseconds timeout);
+
  private:
+  struct SessionCallbacks
+  {
+    SendFn send;
+    SendAndWaitFn send_and_wait;  // may be empty for legacy callers
+  };
+
   mutable std::mutex mutex_;
   mutable std::condition_variable client_cv_;
   std::size_t next_token_ = 1;
-  std::unordered_map<std::size_t, SendFn> senders_;
+  std::unordered_map<std::size_t, SessionCallbacks> senders_;
 };
 
 // The web viewer's bridge to gui::Gui.  Installed as the Gui's
@@ -69,6 +85,9 @@ class WebViewerHook : public gui::HeadlessViewer
   ~WebViewerHook() override;
 
   SessionRegistry& sessions() { return sessions_; }
+
+  // Flush accumulated log output to all connected clients.
+  void drainLogs();
 
   // --- gui::HeadlessViewer ---
   void redraw() override;

@@ -13,6 +13,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -26,6 +27,7 @@
 #include "boost/graph/astar_search.hpp"
 #include "boost/graph/lookup_edge.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
@@ -36,6 +38,44 @@
 #include "utl/Logger.h"
 
 namespace pad {
+
+namespace {
+
+// Order routes by their source terminal id so ripup iteration (and the edge
+// re-add order it drives) is deterministic, not heap-address dependent.
+struct RDLRoutePtrLess
+{
+  bool operator()(const std::shared_ptr<RDLRoute>& lhs,
+                  const std::shared_ptr<RDLRoute>& rhs) const
+  {
+    return lhs->getTerminal()->getId() < rhs->getTerminal()->getId();
+  }
+};
+
+bool compareRouteTargets(const RouteTarget& lhs, const RouteTarget& rhs)
+{
+  if (lhs.center.x() != rhs.center.x()) {
+    return lhs.center.x() < rhs.center.x();
+  }
+  if (lhs.center.y() != rhs.center.y()) {
+    return lhs.center.y() < rhs.center.y();
+  }
+  if (lhs.shape.xMin() != rhs.shape.xMin()) {
+    return lhs.shape.xMin() < rhs.shape.xMin();
+  }
+  if (lhs.shape.yMin() != rhs.shape.yMin()) {
+    return lhs.shape.yMin() < rhs.shape.yMin();
+  }
+  if (lhs.shape.xMax() != rhs.shape.xMax()) {
+    return lhs.shape.xMax() < rhs.shape.xMax();
+  }
+  if (lhs.shape.yMax() != rhs.shape.yMax()) {
+    return lhs.shape.yMax() < rhs.shape.yMax();
+  }
+  return lhs.terminal->getId() < rhs.terminal->getId();
+}
+
+}  // namespace
 
 class RDLRouterDistanceHeuristic
     : public boost::astar_heuristic<GridGraph, int64_t>
@@ -118,17 +158,19 @@ class RDLRouterGoalVisitor : public boost::default_astar_visitor
 
 //////////////////////////////////////////////////////////////
 
-RDLRouter::RDLRouter(utl::Logger* logger,
-                     odb::dbBlock* block,
-                     odb::dbTechLayer* layer,
-                     odb::dbTechVia* bump_via,
-                     odb::dbTechVia* pad_via,
-                     const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map,
-                     int width,
-                     int spacing,
-                     bool allow45,
-                     float turn_penalty,
-                     int max_iterations)
+RDLRouter::RDLRouter(
+    utl::Logger* logger,
+    odb::dbBlock* block,
+    odb::dbTechLayer* layer,
+    odb::dbTechVia* bump_via,
+    odb::dbTechVia* pad_via,
+    const odb::PtrMap<odb::dbITerm, odb::dbITerm*>& routing_map,
+    int width,
+    int spacing,
+    bool allow45,
+    bool fixed,
+    float turn_penalty,
+    int max_iterations)
     : logger_(logger),
       block_(block),
       layer_(layer),
@@ -137,6 +179,7 @@ RDLRouter::RDLRouter(utl::Logger* logger,
       width_(width),
       spacing_(spacing),
       allow45_(allow45),
+      fixed_(fixed),
       turn_penalty_(turn_penalty),
       max_router_iterations_(max_iterations),
       routing_map_(routing_map),
@@ -215,7 +258,7 @@ void RDLRouter::buildIntialRouteSet()
 
 int RDLRouter::getRoutingTermCount() const
 {
-  std::set<odb::dbITerm*> terms;
+  odb::PtrSet<odb::dbITerm> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
       const auto& routed_terminals = route->getRoutedTerminals();
@@ -229,9 +272,9 @@ int RDLRouter::getRoutingTermCount() const
   return terms.size();
 }
 
-std::set<odb::dbITerm*> RDLRouter::getRoutedTerms() const
+odb::PtrSet<odb::dbITerm> RDLRouter::getRoutedTerms() const
 {
-  std::set<odb::dbITerm*> terms;
+  odb::PtrSet<odb::dbITerm> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
       const auto& routed_terminals = route->getRoutedTerminals();
@@ -244,7 +287,7 @@ std::set<odb::dbITerm*> RDLRouter::getRoutedTerms() const
 std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
 {
   // record sucessful
-  std::set<odb::dbITerm*> success_covers;
+  odb::PtrSet<odb::dbITerm> success_covers;
   for (auto& route : routes_) {
     if (route->isRouted()) {
       for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
@@ -272,10 +315,10 @@ std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
 }
 
 int RDLRouter::reportFailedRoutes(
-    const std::map<odb::dbITerm*, odb::dbITerm*>& routed_pairs) const
+    const odb::PtrMap<odb::dbITerm, odb::dbITerm*>& routed_pairs) const
 {
-  std::map<odb::dbNet*, std::set<odb::dbITerm*>> failed;
-  std::map<odb::dbITerm*, RDLRoute*> route_map;
+  odb::PtrMap<odb::dbNet, odb::PtrSet<odb::dbITerm>> failed;
+  odb::PtrMap<odb::dbITerm, RDLRoute*> route_map;
   for (const auto& route : getFailedRoutes()) {
     route_map[route->getTerminal()] = route.get();
     failed[route->getNet()].insert(route->getTerminal());
@@ -349,7 +392,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   makeGraph();
 
   // Determine access points
-  std::unordered_map<odb::Point, std::set<GridGraphEdge>> remove_edges;
+  std::unordered_map<odb::Point, GridGraphEdgeSet> remove_edges;
   for (auto& [net, iterm_targets] : routing_targets_) {
     for (auto& [iterm, targets] : iterm_targets) {
       for (auto& target : targets) {
@@ -386,14 +429,14 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   logger_->info(utl::PAD, 5, "Routing {} nets", nets.size());
 
   // track sets of routes, so we don't route the reverse by accident
-  std::map<odb::dbITerm*, odb::dbITerm*> routed_pairs;
+  odb::PtrMap<odb::dbITerm, odb::dbITerm*> routed_pairs;
   // track cover instances we dont route the same one twice
-  std::set<odb::dbITerm*> routed_covers;
+  odb::PtrSet<odb::dbITerm> routed_covers;
   // track non-cover iterms we dont route the same one twice
-  std::set<odb::dbITerm*> routed_non_covers;
+  odb::PtrSet<odb::dbITerm> routed_non_covers;
   // track iteration information
   int iteration_count = 0;
-  std::set<odb::dbITerm*> last_itr_routed;
+  odb::PtrSet<odb::dbITerm> last_itr_routed;
 
   // add initial queue
   for (const auto& route : routes_) {
@@ -462,7 +505,21 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
         }
 
         std::ranges::stable_sort(targets, [](const auto& lhs, const auto& rhs) {
-          return distance(lhs) < distance(rhs);
+          const auto lhs_dist = distance(lhs);
+          const auto rhs_dist = distance(rhs);
+          if (lhs_dist != rhs_dist) {
+            return lhs_dist < rhs_dist;
+          }
+          if (lhs.target0->center.x() != rhs.target0->center.x()) {
+            return lhs.target0->center.x() < rhs.target0->center.x();
+          }
+          if (lhs.target0->center.y() != rhs.target0->center.y()) {
+            return lhs.target0->center.y() < rhs.target0->center.y();
+          }
+          if (lhs.target1->center.x() != rhs.target1->center.x()) {
+            return lhs.target1->center.x() < rhs.target1->center.x();
+          }
+          return lhs.target1->center.y() < rhs.target1->center.y();
         });
 
         debugPrint(
@@ -603,7 +660,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       }
 
       // find routes to ripup
-      std::set<RDLRoutePtr> ripup;
+      std::set<RDLRoutePtr, RDLRoutePtrLess> ripup;
       for (const auto& failed_route : failed) {
         for (const auto& route : routes_) {
           if (!route->isRouted()) {
@@ -751,7 +808,7 @@ static odb::Point getValidGridPoint(
 }
 
 void RDLRouter::cleanupGraphEdges(
-    const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges)
+    const std::unordered_map<odb::Point, GridGraphEdgeSet>& edges)
 {
   if (edges.empty()) {
     return;
@@ -778,7 +835,7 @@ void RDLRouter::cleanupGraphEdges(
 
 void RDLRouter::populateTerminalAccessPoints(
     RouteTarget& target,
-    std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const
+    std::unordered_map<odb::Point, GridGraphEdgeSet>& edges) const
 {
   // determine new access point in graph
   std::set<odb::Point> snap_pts;
@@ -1135,20 +1192,15 @@ bool RDLRouter::is45DegreeEdge(const odb::Point& pt0,
   return RDLRoute::is45DegreeEdge(pt0, pt1);
 }
 
-std::set<GridGraphEdge> RDLRouter::getVertexEdges(
-    const GridGraphVertex& vertex) const
+GridGraphEdgeSet RDLRouter::getVertexEdges(const GridGraphVertex& vertex) const
 {
-  std::set<GridGraphEdge> edges;
+  GridGraphEdgeSet edges;
 
+  // The graph is undirected, so out_edges already yields every incident edge.
   GridGraph::out_edge_iterator oit, oend;
   std::tie(oit, oend) = boost::out_edges(vertex, graph_);
   for (; oit != oend; oit++) {
     edges.insert(*oit);
-  }
-  GridGraph::in_edge_iterator iit, iend;
-  std::tie(iit, iend) = boost::in_edges(vertex, graph_);
-  for (; iit != iend; iit++) {
-    edges.insert(*iit);
   }
 
   return edges;
@@ -1157,7 +1209,7 @@ std::set<GridGraphEdge> RDLRouter::getVertexEdges(
 std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
     const std::vector<GridGraphVertex>& route)
 {
-  std::set<GridGraphEdge> edges;
+  GridGraphEdgeSet edges;
   for (const auto& v : route) {
     const auto v_edges = getVertexEdges(v);
     edges.insert(v_edges.begin(), v_edges.end());
@@ -1552,7 +1604,9 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
     return false;
   }
 
-  const int64_t weight = edge_weight_scale * distance(point0, point1);
+  const int64_t direction_bias = point0.y() == point1.y() ? 1 : 0;
+  const int64_t weight
+      = edge_weight_scale * distance(point0, point1) + direction_bias;
 
   debugPrint(logger_,
              utl::PAD,
@@ -1683,7 +1737,8 @@ void RDLRouter::writeToDb(odb::dbNet* net,
     return;
   }
 
-  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  odb::dbSWire* swire = odb::dbSWire::create(
+      net, fixed_ ? odb::dbWireType::FIXED : odb::dbWireType::ROUTED);
   for (const odb::Rect& stub : stubs) {
     odb::dbSBox::create(swire,
                         layer_,
@@ -1837,7 +1892,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator-=;
-  std::map<odb::dbMaster*, std::vector<odb::Polygon>> master_obstruction_map;
+  odb::PtrMap<odb::dbMaster, std::vector<odb::Polygon>> master_obstruction_map;
 
   // Get placed instanced obstructions
   for (auto* inst : block_->getInsts()) {
@@ -2024,10 +2079,10 @@ odb::dbTechLayer* RDLRouter::getOtherLayer(odb::dbTechVia* via) const
   return nullptr;
 }
 
-std::map<odb::dbITerm*, std::vector<RouteTarget>>
+odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>>
 RDLRouter::generateRoutingTargets(odb::dbNet* net) const
 {
-  std::map<odb::dbITerm*, std::vector<RouteTarget>> targets;
+  odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>> targets;
   odb::dbTechLayer* bump_pin_layer = getOtherLayer(bump_accessvia_);
   odb::dbTechLayer* pad_pin_layer = getOtherLayer(pad_accessvia_);
 
@@ -2169,6 +2224,10 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
              "{} has {} targets",
              net->getName(),
              targets.size());
+
+  for (auto& [iterm, iterm_targets] : targets) {
+    std::ranges::sort(iterm_targets, compareRouteTargets);
+  }
 
   return targets;
 }

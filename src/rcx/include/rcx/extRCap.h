@@ -1758,6 +1758,7 @@ class extMain
                      uint32_t* cornerTable);
 
   void setExtractionOptions_v2(ExtractOptions options);
+  void setExtractionOptions(const ExtractOptions& options);
   uint32_t makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint32_t resetMapNodes_v2(odb::dbWire* wire);
 
@@ -1826,7 +1827,7 @@ class extMain
                                const char* prefix,
                                const char* postfix,
                                bool v = false);
-  bool modelExists(const char* extRules);
+  bool modelExists();
 
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
@@ -2124,14 +2125,7 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  void makeBlockRCsegs(const char* netNames,
-                       uint32_t cc_up,
-                       uint32_t ccFlag,
-                       double resBound,
-                       bool mergeViaRes,
-                       double ccThres,
-                       int contextDepth,
-                       const char* extRules);
+  void makeBlockRCsegs();
 
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,
@@ -2273,7 +2267,7 @@ class extMain
   void cleanCornerTables();
   int getDbCornerIndex(const char* name);
   int getDbCornerModel(const char* name);
-  bool setCorners(const char* rulesFileName);
+  void registerRulesModel(extRCModel* rules_model);
   int getProcessCornerDbIndex(int pcidx);
   void getScaledCornerDbIndex(int pcidx, int& scidx, int& scdbIdx);
   void getScaledRC(int sidx, double& res, double& cap);
@@ -2282,7 +2276,6 @@ class extMain
   void genScaledExt();
   void makeCornerNameMap();
   void getExtractedCorners();
-  void makeCornerMapFromExtControl();
   bool checkLayerResistance();
 
   uint32_t getNetBbox(odb::dbNet* net, odb::Rect& maxRect);
@@ -2689,9 +2682,6 @@ class extMain
   double* _tmpResTable = new double[10];
   double* _tmpSumResTable = new double[10];
   int _sumUpdated;
-  int _minModelIndex;  // TO_TEST
-  int _typModelIndex;  //
-  int _maxModelIndex;  //
 
   odb::dbDatabase* _db = nullptr;
   odb::dbTech* _tech = nullptr;
@@ -2723,6 +2713,7 @@ class extMain
   int _ccMaxY;
   double _mergeResBound = 0.0;
   bool _mergeViaRes = false;
+  const char* target_nets_names_{nullptr};
   bool _mergeParallelCC = false;
   bool _reportNetNoWire = false;
   int _netNoWireCnt = 0;
@@ -2836,5 +2827,11 @@ class extMain
                              dbCreateNetUtil* db_net_util);  // 061123
   // ---------------------------------------------------------
 };
+
+std::unique_ptr<extRCModel> parseRules(
+    odb::dbTech* tech,
+    const Array1D<extCorner*>* extractor_corner_table,
+    bool is_v2,
+    utl::Logger* logger);
 
 }  // namespace rcx

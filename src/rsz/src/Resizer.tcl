@@ -148,12 +148,13 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-buffer_gain gain] \
                                       [-pre_placement] \
                                       [-match_cell_footprint] \
+                                      [-reroute] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-match_cell_footprint -verbose -pre_placement}
+    flags {-match_cell_footprint -verbose -pre_placement -reroute}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -171,8 +172,9 @@ proc repair_design { args } {
   set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
+  set reroute [info exists flags(-reroute)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
-    $pre_placement $match_cell_footprint $verbose
+    $pre_placement $match_cell_footprint $reroute $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
@@ -260,10 +262,13 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-verbose]}
 
 proc repair_timing { args } {
+  # `-phases` is the public spelling listed in -help / define_cmd_args.
+  # `-policy` and `-policies` are accepted-but-undocumented aliases for the
+  # same phase sequence; only one of the three may be supplied per call.
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
-            -phases \
+            -phases -policy -policies \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
@@ -297,23 +302,32 @@ proc repair_timing { args } {
     set sequence ""
   }
 
-  if { [info exists keys(-phases)] } {
-    set phases $keys(-phases)
-  } else {
-    set phases ""
+  # Resolve -phases / -policy / -policies aliases to a single `phases` value.
+  # All three carry identical semantics; rejecting more than one prevents
+  # silent precedence surprises if the user mixes spellings.
+  set phases ""
+  set phase_alias_count 0
+  foreach alias_key {-phases -policy -policies} {
+    if { [info exists keys($alias_key)] } {
+      incr phase_alias_count
+      set phases $keys($alias_key)
+    }
+  }
+  if { $phase_alias_count > 1 } {
+    utl::error RSZ 222 \
+      "specify at most one of -phases / -policy / -policies"
   }
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   set skip_pin_swap [info exists flags(-skip_pin_swap)]
   set skip_gate_cloning [info exists flags(-skip_gate_cloning)]
-  set skip_size_down [info exists flags(-skip_size_down)]
+  set skip_size_down_fanout [info exists flags(-skip_size_down)]
   set skip_buffering [info exists flags(-skip_buffering)]
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
   set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
-
   set max_buffer_percent 20
   if { [info exists keys(-max_buffer_percent)] } {
     set max_buffer_percent $keys(-max_buffer_percent)
@@ -373,7 +387,7 @@ proc repair_timing { args } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
         $sequence $phases \
-        $skip_pin_swap $skip_gate_cloning $skip_size_down $skip_buffering \
+        $skip_pin_swap $skip_gate_cloning $skip_size_down_fanout $skip_buffering \
         $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
     }
     if { $hold } {
@@ -528,6 +542,58 @@ proc clear_double_prop { name } {
 proc clear_bool_prop { name } {
   set block [get_block]
   set prop [odb::dbBoolProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
+  }
+}
+
+proc set_double_prop { value opt_name prop_name } {
+  sta::check_float $opt_name $value
+  set block [get_block]
+  set prop [odb::dbDoubleProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbDoubleProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc set_positive_int_prop { value opt_name prop_name } {
+  sta::check_positive_integer $opt_name $value
+  set block [get_block]
+  set prop [odb::dbIntProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbIntProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc set_string_prop { value opt_name prop_name allowed } {
+  if { [lsearch -exact $allowed $value] < 0 } {
+    utl::error "RSZ" 417 \
+      "$opt_name argument '$value' is not one of: [join $allowed {, }]"
+  }
+  set block [get_block]
+  set prop [odb::dbStringProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbStringProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc clear_int_prop { name } {
+  set block [get_block]
+  set prop [odb::dbIntProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
+  }
+}
+
+proc clear_string_prop { name } {
+  set block [get_block]
+  set prop [odb::dbStringProperty_find $block $name]
   if { $prop ne "NULL" && $prop ne "" } {
     odb::dbProperty_destroy $prop
   }
@@ -734,6 +800,185 @@ proc report_opt_config { args } {
   puts "*******************************************"
 }
 
+# Global sizing (Lagrangian-Relaxation) configuration. Knobs only affect the
+# `repair_timing -phases GLOBAL_SIZING` policy; values persist as dbProperties
+# on the block (gs_* names on disk).
+sta::define_cmd_args "set_global_sizing_config" { \
+    [-presize_mode mode] \
+    [-include_clock_network bool] \
+    [-setup_slack_margin margin] \
+    [-max_iterations iterations] \
+    [-beta value] \
+    [-mu_exponent value] \
+    [-lambda_floor value] \
+    [-timing_bias value] \
+    [-budget_safety_factor value] }
+
+proc set_global_sizing_config { args } {
+  sta::parse_key_args "set_global_sizing_config" args \
+    keys {-presize_mode -include_clock_network -setup_slack_margin \
+            -max_iterations -beta -mu_exponent -lambda_floor -timing_bias \
+            -budget_safety_factor} flags {}
+
+  if { [info exists keys(-presize_mode)] } {
+    rsz::set_string_prop $keys(-presize_mode) "-presize_mode" \
+      "gs_presize_mode" {disabled min_size_max_vt max_size_min_vt}
+  }
+  if { [info exists keys(-include_clock_network)] } {
+    rsz::set_boolean_prop $keys(-include_clock_network) \
+      "-include_clock_network" "gs_include_clock_network"
+  }
+  if { [info exists keys(-setup_slack_margin)] } {
+    rsz::set_double_prop $keys(-setup_slack_margin) \
+      "-setup_slack_margin" "gs_setup_slack_margin"
+  }
+  if { [info exists keys(-max_iterations)] } {
+    rsz::set_positive_int_prop $keys(-max_iterations) \
+      "-max_iterations" "gs_max_iterations"
+  }
+  if { [info exists keys(-beta)] } {
+    rsz::set_positive_double_prop $keys(-beta) "-beta" "gs_beta"
+  }
+  if { [info exists keys(-mu_exponent)] } {
+    rsz::set_positive_double_prop $keys(-mu_exponent) \
+      "-mu_exponent" "gs_mu_exponent"
+  }
+  if { [info exists keys(-lambda_floor)] } {
+    rsz::set_positive_double_prop $keys(-lambda_floor) \
+      "-lambda_floor" "gs_lambda_floor"
+  }
+  if { [info exists keys(-timing_bias)] } {
+    rsz::set_positive_double_prop $keys(-timing_bias) \
+      "-timing_bias" "gs_timing_bias"
+  }
+  if { [info exists keys(-budget_safety_factor)] } {
+    rsz::set_positive_double_prop $keys(-budget_safety_factor) \
+      "-budget_safety_factor" "gs_budget_safety_factor"
+  }
+}
+
+sta::define_cmd_args "reset_global_sizing_config" { \
+    [-presize_mode] \
+    [-include_clock_network] \
+    [-setup_slack_margin] \
+    [-max_iterations] \
+    [-beta] \
+    [-mu_exponent] \
+    [-lambda_floor] \
+    [-timing_bias] \
+    [-budget_safety_factor] }
+
+proc reset_global_sizing_config { args } {
+  sta::parse_key_args "reset_global_sizing_config" args \
+    keys {} flags {-presize_mode -include_clock_network -setup_slack_margin \
+                     -max_iterations -beta -mu_exponent -lambda_floor \
+                     -timing_bias -budget_safety_factor}
+  set reset_all [expr { [array size flags] == 0 }]
+
+  if { $reset_all || [info exists flags(-presize_mode)] } {
+    rsz::clear_string_prop "gs_presize_mode"
+  }
+  if { $reset_all || [info exists flags(-include_clock_network)] } {
+    rsz::clear_bool_prop "gs_include_clock_network"
+  }
+  if { $reset_all || [info exists flags(-setup_slack_margin)] } {
+    rsz::clear_double_prop "gs_setup_slack_margin"
+  }
+  if { $reset_all || [info exists flags(-max_iterations)] } {
+    rsz::clear_int_prop "gs_max_iterations"
+  }
+  if { $reset_all || [info exists flags(-beta)] } {
+    rsz::clear_double_prop "gs_beta"
+  }
+  if { $reset_all || [info exists flags(-mu_exponent)] } {
+    rsz::clear_double_prop "gs_mu_exponent"
+  }
+  if { $reset_all || [info exists flags(-lambda_floor)] } {
+    rsz::clear_double_prop "gs_lambda_floor"
+  }
+  if { $reset_all || [info exists flags(-timing_bias)] } {
+    rsz::clear_double_prop "gs_timing_bias"
+  }
+  if { $reset_all || [info exists flags(-budget_safety_factor)] } {
+    rsz::clear_double_prop "gs_budget_safety_factor"
+  }
+}
+
+sta::define_cmd_args "report_global_sizing_config" {}
+
+proc report_global_sizing_config { args } {
+  sta::parse_key_args "report_global_sizing_config" args keys {} flags {}
+  set block [rsz::get_block]
+
+  set presize_mode_value "undefined"
+  set prop [odb::dbStringProperty_find $block "gs_presize_mode"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set presize_mode_value [$prop getValue]
+  }
+
+  set include_clock_network_value "undefined"
+  set prop [odb::dbBoolProperty_find $block "gs_include_clock_network"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set v [$prop getValue]
+    set include_clock_network_value [expr { $v ? "true" : "false" }]
+  }
+
+  set setup_slack_margin_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_setup_slack_margin"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set setup_slack_margin_value [$prop getValue]
+  }
+
+  set max_iterations_value "undefined"
+  set prop [odb::dbIntProperty_find $block "gs_max_iterations"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set max_iterations_value [$prop getValue]
+  }
+
+  set beta_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_beta"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set beta_value [$prop getValue]
+  }
+
+  set mu_exponent_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_mu_exponent"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set mu_exponent_value [$prop getValue]
+  }
+
+  set lambda_floor_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_lambda_floor"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set lambda_floor_value [$prop getValue]
+  }
+
+  set timing_bias_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_timing_bias"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set timing_bias_value [$prop getValue]
+  }
+
+  set budget_safety_factor_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_budget_safety_factor"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set budget_safety_factor_value [$prop getValue]
+  }
+
+  puts "*******************************************"
+  puts "Global sizing config:"
+  puts "-presize_mode:           $presize_mode_value"
+  puts "-include_clock_network:  $include_clock_network_value"
+  puts "-setup_slack_margin:     $setup_slack_margin_value"
+  puts "-max_iterations:         $max_iterations_value"
+  puts "-beta:                   $beta_value"
+  puts "-mu_exponent:            $mu_exponent_value"
+  puts "-lambda_floor:           $lambda_floor_value"
+  puts "-timing_bias:            $timing_bias_value"
+  puts "-budget_safety_factor:   $budget_safety_factor_value"
+  puts "*******************************************"
+}
+
 sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint -all -vt }
 
 proc report_equiv_cells { args } {
@@ -785,6 +1030,59 @@ proc report_buffers { args } {
   sta::parse_key_args "report_buffers" args keys {} flags {-filtered}
   set filtered [info exists flags(-filtered)]
   rsz::report_buffers_cmd $filtered
+}
+
+sta::define_cmd_args "report_delay_estimator_accuracy" {\
+  -inst instance \
+  -lib_cell lib_cell \
+  -estimator estimator \
+  [-delay_levels level] }
+
+proc report_delay_estimator_accuracy { args } {
+  sta::parse_key_args "report_delay_estimator_accuracy" args \
+    keys {-inst -lib_cell -estimator -delay_levels} flags {}
+  sta::check_argc_eq0 "report_delay_estimator_accuracy" $args
+
+  foreach required_key {-inst -lib_cell -estimator} {
+    if { ![info exists keys($required_key)] } {
+      utl::error RSZ 3203 "$required_key is required."
+    }
+  }
+
+  set inst [sta::get_instance_error "-inst" $keys(-inst)]
+  set lib_cells [sta::get_lib_cells_arg \
+    "report_delay_estimator_accuracy" $keys(-lib_cell) sta::sta_warn]
+  if { [llength $lib_cells] != 1 } {
+    utl::error RSZ 3204 "-lib_cell must resolve to exactly one liberty cell."
+  }
+  set lib_cell [lindex $lib_cells 0]
+
+  # Estimator name validation is delegated to C++ so that the canonical list
+  # lives in DelayEstimatorReporter::knownEstimatorNames only.
+  set estimator $keys(-estimator)
+  if { ![rsz::is_valid_accuracy_estimator_cmd $estimator] } {
+    utl::error RSZ 3205 \
+      "-estimator must be one of: [rsz::accuracy_estimator_names_cmd]."
+  }
+
+  set delay_levels 0
+  if { [info exists keys(-delay_levels)] } {
+    if { ![string is integer -strict $keys(-delay_levels)] } {
+      utl::error RSZ 3206 "-delay_levels must be an integer."
+    }
+    set delay_levels $keys(-delay_levels)
+    if { $delay_levels < 0 || $delay_levels > 2 } {
+      utl::error RSZ 3207 "-delay_levels must be 0, 1, or 2."
+    }
+    if { $estimator eq "legacy" } {
+      utl::error RSZ 3208 \
+        "-delay_levels is only valid for non-legacy estimators."
+    }
+  }
+
+  est::check_parasitics
+  rsz::report_delay_estimator_accuracy_cmd \
+    $inst $lib_cell $estimator $delay_levels
 }
 
 sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \

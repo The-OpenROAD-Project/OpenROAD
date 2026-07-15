@@ -97,7 +97,7 @@ void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
   srcs_.clear();
   dsts_.clear();
 
-  prevDirs_.resize(capacity * 3, false);
+  prevDirs_.resize(static_cast<std::size_t>(capacity) * 3, false);
   srcs_.resize(capacity, false);
   dsts_.resize(capacity, false);
   guides_.clear();
@@ -471,6 +471,17 @@ void FlexGridGraph::initTracks(
       continue;
     }
     frLayerNum currLayerNum = layer->getLayerNum();
+    // Layers above TOP_ROUTING_LAYER carry no routing edges or access vias
+    // (initEdges and the special-access via loop already cap work at
+    // TOP_ROUTING_LAYER), yet they were still added to the grid here, sizing
+    // nodes_, the per-node arrays, and the maze search bounds across the full
+    // layer stack. Skip them so the grid graph spans only the routing range,
+    // cutting detailed-route memory and runtime when the design's top routing
+    // layer is below the technology top. Default TOP_ROUTING_LAYER is INT_MAX,
+    // so this is a no-op unless the top routing layer is explicitly lowered.
+    if (currLayerNum > router_cfg_->TOP_ROUTING_LAYER) {
+      continue;
+    }
     dbTechLayerDir currPrefRouteDir = layer->getDir();
     for (auto& tp : design->getTopBlock()->getTrackPatterns(currLayerNum)) {
       // allow wrongway if global variable and design rule allow

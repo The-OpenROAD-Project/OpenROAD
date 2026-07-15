@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: run-ghrs
-        uses: jgehrcke/github-repo-stats@v1.4.2
+        uses: jgehrcke/github-repo-stats@306db38ad131cab2aa5f2cd3062bf6f8aa78c1aa  # v1.4.2
         with:
           databranch: repo-stats
           ghtoken: ${{ secrets.GITHUB_TOKEN }}

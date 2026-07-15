@@ -820,6 +820,9 @@ void dbBTerm::destroy(dbBTerm* bterm_)
   if (bterm->net_) {
     bterm->disconnectNet(bterm, block);
   }
+  if (auto bump = (_dbChipBump*) (bterm_->getChipBump())) {
+    bump->bterm_ = 0;
+  }
   for (auto callback : block->callbacks_) {
     callback->inDbBTermDestroy(bterm_);
   }

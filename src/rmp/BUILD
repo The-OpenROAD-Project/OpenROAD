@@ -15,25 +15,64 @@ package(
 )
 
 cc_library(
+    name = "utils",
+    srcs = ["src/utils.cpp"],
+    hdrs = ["src/utils.h"],
+    defines = ["ABC_NAMESPACE=abc"],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abc",
+    ],
+)
+
+cc_library(
+    name = "optimization_strategies",
+    srcs = [
+        "src/delay_optimization_strategy.cpp",
+        "src/zero_slack_strategy.cpp",
+    ],
+    hdrs = [
+        "src/delay_optimization_strategy.h",
+        "src/logic_optimization_strategy.h",
+        "src/resynthesis_strategy.h",
+        "src/zero_slack_strategy.h",
+    ],
+    defines = ["ABC_NAMESPACE=abc"],
+    includes = ["src"],
+    visibility = ["//src/rmp/test:__pkg__"],
+    deps = [
+        ":utils",
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abc",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
+    ],
+)
+
+cc_library(
     name = "rmp",
     srcs = [
         "src/Restructure.cpp",
         "src/annealing_strategy.cpp",
         "src/annealing_strategy.h",
-        "src/delay_optimization_strategy.cpp",
-        "src/delay_optimization_strategy.h",
         "src/genetic_strategy.cpp",
         "src/genetic_strategy.h",
         "src/gia.cpp",
         "src/gia.h",
-        "src/logic_optimization_strategy.h",
-        "src/resynthesis_strategy.h",
         "src/slack_tuning_strategy.cpp",
         "src/slack_tuning_strategy.h",
-        "src/utils.cpp",
-        "src/utils.h",
-        "src/zero_slack_strategy.cpp",
-        "src/zero_slack_strategy.h",
     ],
     hdrs = [
         "include/rmp/Restructure.h",
@@ -44,26 +83,18 @@ cc_library(
         "src",
     ],
     deps = [
-        "//:ord",
+        ":optimization_strategies",
+        ":utils",
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abc",
-        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/hash",
         "@abseil-cpp//absl/random:distributions",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.bind",
-        "@boost.config",
-        "@boost.fusion",
-        "@boost.lambda",
-        "@boost.optional",
-        "@boost.phoenix",
-        "@boost.spirit",
     ],
 )
 
@@ -85,9 +116,7 @@ cc_library(
         ":rmp",
         "//:ord",
         "//src/cut",
-        "//src/dbSta",
-        "//src/odb",
-        "//src/rsz",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
@@ -107,10 +136,10 @@ cc_binary(
     linkshared = True,
     deps = [
         ":rmp",
+        "//:ord",
         "//src/cut",
         "//src/dbSta",
-        "//src/odb",
-        "//src/rsz",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
@@ -185,5 +214,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/rmp/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rmp/test:__pkg__",
+    ],
 )

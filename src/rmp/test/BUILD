@@ -1,4 +1,3 @@
-load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 
@@ -6,6 +5,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -156,23 +156,19 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
-        "//src/rmp",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
 )
 
@@ -187,23 +183,19 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
-        "//src/rmp",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
 )
 

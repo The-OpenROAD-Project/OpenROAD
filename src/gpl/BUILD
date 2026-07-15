@@ -14,40 +14,68 @@ package(
     features = ["layering_check"],
 )
 
+# Headers owned by :gpl but also consumed by :ui and GPL tests. Keep them
+# visible only to //src/gpl and its tests.
+cc_library(
+    name = "gpl_private_hdrs",
+    hdrs = [
+        "src/fft.h",
+        "src/fftBackend.h",
+        "src/nesterovBase.h",
+        "src/nesterovPlace.h",
+        "src/placerBase.h",
+        "src/point.h",
+        "src/routeBase.h",
+    ],
+    includes = ["src"],
+    visibility = [
+        "//src/gpl/test:__pkg__",
+        "//visibility:private",
+    ],
+    deps = [
+        # TODO: we use headers provided by :gpl, but that reveals cyclic dep
+        #":gpl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.random",
+        "@boost.unordered",
+    ],
+)
+
 cc_library(
     name = "gpl",
     srcs = [
         "src/AbstractGraphics.cpp",
-        "src/MakeReplace.cpp",
+        "src/backendContext.h",
+        "src/clockBase.cpp",
+        "src/clockBase.h",
+        "src/densityGradient.cpp",
+        "src/densityGradientBackend.h",
         "src/fft.cpp",
-        "src/fft.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
-        "src/graphicsImpl.cpp",
-        "src/graphicsImpl.h",
+        "src/gpu/deviceState.h",
+        "src/gpu/nesterovDeviceContext.h",
+        "src/gpu/regionDensityField.h",
         "src/graphicsNone.cpp",
+        "src/hpwl.cpp",
+        "src/hpwlBackend.h",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
         "src/mbff.cpp",
         "src/nesterovBase.cpp",
-        "src/nesterovBase.h",
         "src/nesterovPlace.cpp",
-        "src/nesterovPlace.h",
         "src/placerBase.cpp",
-        "src/placerBase.h",
-        "src/point.h",
         "src/replace.cpp",
         "src/routeBase.cpp",
-        "src/routeBase.h",
         "src/solver.cpp",
         "src/solver.h",
         "src/timingBase.cpp",
         "src/timingBase.h",
-        ":swig",
-        ":tcl",
+        "src/wirelengthGradient.cpp",
+        "src/wirelengthGradientBackend.h",
     ],
     hdrs = [
-        "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
         "src/AbstractGraphics.h",
         "src/graphicsNone.h",
@@ -60,24 +88,17 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:ord",
+        ":gpl_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/grt",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@boost.format",
-        "@boost.geometry",
+        "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
-        "@boost.property_tree",
         "@boost.random",
-        "@boost.stacktrace",
-        "@boost.tokenizer",
-        "@boost.unordered",
-        "@boost.utility",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",
@@ -85,6 +106,37 @@ cc_library(
         "@or-tools//ortools/linear_solver:linear_solver_base",
         "@or-tools//ortools/sat:cp_model",
         "@or-tools//ortools/util:sorted_interval_list",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakeReplace.cpp",
+        "src/graphicsImpl.cpp",
+        "src/graphicsImpl.h",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/gpl/MakeReplace.h",
+    ],
+    copts = [
+        "-Wno-missing-braces",  # from TCL swigging
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":gpl",
+        ":gpl_private_hdrs",
+        "//:ord",
+        "//src/gui",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
@@ -102,7 +154,7 @@ cc_binary(
     linkshared = True,
     deps = [
         "//src/gpl",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
@@ -176,5 +228,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/gpl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/gpl/test:__pkg__",
+    ],
 )

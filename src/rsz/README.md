@@ -149,6 +149,7 @@ repair_design
     [-pre_placement]
     [-buffer_gain float_value] (deprecated)
     [-match_cell_footprint]
+    [-reroute]
     [-verbose]
 ```
 
@@ -163,6 +164,7 @@ repair_design
 | `-pre_placement` | Enables performing an initial pre-placement sizing and buffering round. |
 | `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
+| `-reroute` | Enable resistance-aware wire rerouting to fix slew violations post-GRT (experimental). |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 #### Instance Name Prefixes
@@ -223,7 +225,7 @@ repair_timing
     [-phases]
     [-skip_pin_swap]
     [-skip_gate_cloning]
-    [-skip_size_down]
+    [-skip_size_down_fanout]
     [-skip_buffering]
     [-skip_buffer_removal]
     [-skip_last_gasp]
@@ -250,10 +252,10 @@ repair_timing
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
-| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP". |
+| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
-| `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
+| `-skip_size_down_fanout` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
@@ -449,6 +451,74 @@ reset_opt_config
 | `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
+### Setting Global Sizing Configuration
+
+The `set_global_sizing_config` command configures the Lagrangian-Relaxation
+global sizing driver. These options only affect
+`repair_timing -phases GLOBAL_SIZING`; they have no effect on other phases.
+Values persist on the block as dbProperties.
+
+Typical use sets only `-presize_mode` and `-include_clock_network`; the
+remaining options are LR-algorithm tuning hyperparameters that most users
+should leave at their defaults.
+
+```tcl
+set_global_sizing_config
+    [-presize_mode mode]
+    [-include_clock_network boolean_value]
+    [-setup_slack_margin float_value]
+    [-max_iterations int_value]
+    [-beta float_value]
+    [-mu_exponent float_value]
+    [-lambda_floor float_value]
+    [-timing_bias float_value]
+    [-budget_safety_factor float_value]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-presize_mode` | Pre-LR initialization. One of `disabled` (default), `min_size_max_vt` (replace every editable instance with its smallest-leakage equivalent), or `max_size_min_vt` (replace every editable instance with its largest-leakage equivalent). |
+| `-include_clock_network` | If true, allow global sizing to size clock network instances. Default false (clock instances are excluded). |
+| `-setup_slack_margin` | WNS target for the LR convergence check. Default 0.0. |
+| `-max_iterations` | Maximum LR outer-loop iterations. Default 20. |
+| `-beta` | Step size α for the dual-subgradient update on λ. Default 0.6. |
+| `-mu_exponent` | Endpoint seed exponent for μ. Default 2.0. |
+| `-lambda_floor` | Floor on per-edge multipliers so unused arcs can re-enter. Default 1e-12. |
+| `-timing_bias` | Dimensionless balance between timing pressure and leakage cost. Default 64.0. |
+| `-budget_safety_factor` | Safety derate (≤ 1) on the per-gate distributed downsize budget. Default 1.0. |
+
+### Reporting Global Sizing Configuration
+
+The `report_global_sizing_config` command reports the current global sizing
+configuration. Each value shows the configured override or `undefined` when
+the option has not been set (the policy falls back to its built-in default).
+
+```tcl
+report_global_sizing_config
+```
+
+### Resetting Global Sizing Configuration
+
+The `reset_global_sizing_config` command clears global sizing configuration
+that was applied with `set_global_sizing_config`. With no options, all
+global sizing configuration is reset. Cleared options revert to the
+policy's built-in defaults.
+
+```tcl
+reset_global_sizing_config
+    [-presize_mode]
+    [-include_clock_network]
+    [-setup_slack_margin]
+    [-max_iterations]
+    [-beta]
+    [-mu_exponent]
+    [-lambda_floor]
+    [-timing_bias]
+    [-budget_safety_factor]
+```
+
 ### Finding Equivalent Cells
 
 The `report_equiv_cells` command finds all functionally equivalent library cells for a given library cell with relative area and leakage power details.
@@ -486,6 +556,30 @@ report_buffers
 | Switch Name | Description |
 | ----- | ----- |
 | `-filtered` | Report buffers after filtering based on threshold voltage, cell footprint, drive strength and cell site.  Subset of filtered buffers are used for rebuffering. |
+
+### Reporting Delay Estimator Accuracy
+
+The `report_delay_estimator_accuracy` command compares a delay
+estimator's predictions against the reference STA delay for a candidate
+library cell at the given instance.  It is intended as a developer aid
+for evaluating estimator accuracy when sizing.
+
+```tcl
+report_delay_estimator_accuracy
+    -inst instance
+    -lib_cell lib_cell
+    -estimator estimator
+    [-delay_levels level]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inst` | Instance whose driver pin is used as the candidate sizing site. Required. |
+| `-lib_cell` | Liberty cell to evaluate as a replacement for `-inst`. Must resolve to exactly one cell. Required. |
+| `-estimator` | Delay estimator to evaluate. One of `legacy`, `delay_estimator`, `legacy_mt`, `mt`. Required. |
+| `-delay_levels` | Number of downstream stages to include in the accuracy comparison: `0`, `1`, or `2`. Default `0`. Not valid for the `legacy` estimator. |
 
 ### Optimizing Arithmetic Modules
 

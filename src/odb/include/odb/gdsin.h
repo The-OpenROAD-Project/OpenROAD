@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/gdsUtil.h"
@@ -95,7 +96,7 @@ class GDSReader
   /**
    * Parses a GDS Element from the GDS file
    *
-   * @param str The GDS Structure to add the GDS Element to
+   * @param structure The GDS Structure to add the GDS Element to
    */
   bool processElement(dbGDSStructure* structure);
 
@@ -147,7 +148,7 @@ class GDSReader
       reading the gds.  We will make an empty structure but it isn't
       yet defined.  We keep track of defined structures to catch any
       duplicates.*/
-  std::set<dbGDSStructure*> defined_;
+  odb::PtrSet<dbGDSStructure> defined_;
 
   utl::Logger* logger_{nullptr};
 };

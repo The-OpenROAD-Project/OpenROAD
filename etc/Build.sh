@@ -19,10 +19,14 @@ EOF
   numThreads=2
 fi
 cmakeOptions=()
-isNinja=no
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
+compilerSet=no
+useBazel=yes
+bazelLto=no
+noGui=no
+installPrefix=""
 
 _help() {
     cat <<EOF
@@ -46,7 +50,7 @@ OPTIONS:
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
   -no-tests                                     Disable GTest
-  -cpp20                                        Use C++20 standard
+  -cpp20                                        DEPRECATED: no-op, C++20 is the default
   -build-man                                    Build Man Pages (optional)
   -threads=NUM_THREADS                          Number of threads to use during
                                                  compile. Default: \`nproc\` on linux
@@ -54,6 +58,13 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
+  -cmake-build                                  Use CMake instead of Bazel to build.
+                                                 By default OpenROAD is built with Bazel.
+  -lto                                          Bazel only: build with --config=opt to
+                                                 enable link-time optimization (LTO).
+                                                 Off by default because LTO incurs a large
+                                                 link-time penalty; the default build is
+                                                 still compiled with -c opt (from .bazelrc).
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
@@ -86,6 +97,7 @@ while [ "$#" -gt 0 ]; do
                 echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
             fi
             cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${HOME}/.local")
+            installPrefix="${HOME}/.local"
             INSTALL_PREFIX_SET=1
             ;;
         -prefix=*)
@@ -93,28 +105,30 @@ while [ "$#" -gt 0 ]; do
                 echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
             fi
             cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${1#*=}")
+            installPrefix="${1#*=}"
+            # bazel run //:install resolves its argument from the runfiles dir,
+            # not the workspace, so a relative prefix must be made absolute.
+            if [[ "${installPrefix}" != /* ]]; then
+                installPrefix="${PWD}/${installPrefix}"
+            fi
             INSTALL_PREFIX_SET=1
             ;;
         -no-gui)
             cmakeOptions+=("-DBUILD_GUI=OFF")
+            noGui=yes
             ;;
         -no-tests)
             cmakeOptions+=("-DENABLE_TESTS=OFF")
             ;;
-        -ninja)
-            cmakeOptions+=("-DCMAKE_C_COMPILER_LAUNCHER=ccache")
-            cmakeOptions+=("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
-            cmakeOptions+=("-GNinja")
-            isNinja=yes
-            ;;
         -cpp20)
-            cmakeOptions+=("-DCMAKE_CXX_STANDARD=20")
+            echo "[WARNING] -cpp20 is deprecated and ignored: C++20 is already the default." >&2
             ;;
         -build-man)
             cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
             compiler="${1#*=}"
+            compilerSet=yes
             ;;
         -no-warnings )
             cmakeOptions+=("-DALLOW_WARNINGS=OFF")
@@ -125,8 +139,12 @@ while [ "$#" -gt 0 ]; do
             cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
-            read -ra temp_arr <<< "${1#*=}"
-            cmakeOptions+=("${temp_arr[@]}")
+            # Use xargs to safely parse the quoted string into array elements without eval
+            while IFS= read -r arg; do
+                if [[ -n "$arg" ]]; then
+                    cmakeOptions+=("$arg")
+                fi
+            done < <(echo "${1#*=}" | xargs printf '%s\n')
             ;;
         -clean )
             cleanBefore=yes
@@ -155,6 +173,16 @@ while [ "$#" -gt 0 ]; do
         -gpu)
             cmakeOptions+=("-DGPU=ON")
             ;;
+        -cmake-build)
+            useBazel=no
+            ;;
+        -lto)
+            bazelLto=yes
+            ;;
+        -bazel)
+            echo "[WARNING] -bazel is deprecated: Bazel is now the default build system." >&2
+            useBazel=yes
+            ;;
         *)
             echo "unknown option: ${1}" >&2
             _help
@@ -171,46 +199,57 @@ if [[ -z "$depsPrefixesFile" ]]; then
     fi
 fi
 if [[ -f "$depsPrefixesFile" ]]; then
-    read -ra newOpts <<< "$(cat "$depsPrefixesFile")"
-    cmakeOptions+=("${newOpts[@]}")
+            while IFS= read -r arg; do
+                if [[ -n "$arg" ]]; then
+                    cmakeOptions+=("$arg")
+                fi
+            done < <(xargs printf '%s\n' < "$depsPrefixesFile")
     echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
 else
     echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
 fi
 
-case "${compiler}" in
-    "gcc" )
-        if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
-            # the scl script has unbound variables
-            set +u
-            source /opt/rh/devtoolset-8/enable
-            set -u
-        fi
-        export CC="$(command -v gcc)"
-        export CXX="$(command -v g++)"
-        ;;
-    "clang" )
-        if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
-            # the scl script has unbound variables
-            set +u
-            source /opt/rh/llvm-toolset-7.0/enable
-            set -u
-        fi
-        export CC="$(command -v clang)"
-        export CXX="$(command -v clang++)"
-        ;;
-    "clang-16" )
-        export CC="$(command -v clang-16)"
-        export CXX="$(command -v clang++-16)"
-        ;;
-    *)
-        export CC=""
-        export CXX=""
-esac
+# Bazel selects its own compiler toolchain, so the -compiler flag and the
+# CC/CXX resolution below only apply to CMake builds.
+if [[ "$useBazel" == "yes" ]]; then
+    if [[ "$compilerSet" == "yes" ]]; then
+        echo "[WARNING] -compiler is ignored with Bazel: Bazel manages its own toolchain." >&2
+    fi
+else
+    case "${compiler}" in
+        "gcc" )
+            if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
+                # the scl script has unbound variables
+                set +u
+                source /opt/rh/devtoolset-8/enable
+                set -u
+            fi
+            export CC="$(command -v gcc)"
+            export CXX="$(command -v g++)"
+            ;;
+        "clang" )
+            if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
+                # the scl script has unbound variables
+                set +u
+                source /opt/rh/llvm-toolset-7.0/enable
+                set -u
+            fi
+            export CC="$(command -v clang)"
+            export CXX="$(command -v clang++)"
+            ;;
+        "clang-16" )
+            export CC="$(command -v clang-16)"
+            export CXX="$(command -v clang++-16)"
+            ;;
+        *)
+            export CC=""
+            export CXX=""
+    esac
 
-if [[ -z "${CC}" || -z "${CXX}" ]]; then
-        echo "Compiler $compiler not installed or it is not supported." >&2
-        _help 1
+    if [[ -z "${CC}" || -z "${CXX}" ]]; then
+            echo "Compiler $compiler not installed or it is not supported." >&2
+            _help 1
+    fi
 fi
 
 if [[ "${cleanBefore}" == "yes" ]]; then
@@ -220,7 +259,7 @@ fi
 mkdir -p "${buildDir}"
 __logging
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [[ "$OSTYPE" == "darwin"* && "$useBazel" == "no" ]]; then
 
     _bison=$(brew --prefix bison 2>/dev/null || true)
     _flex=$(brew --prefix flex 2>/dev/null || true)
@@ -308,36 +347,76 @@ check_command() {
     fi
 }
 
-# Essential build tools required for OpenROAD
-check_command "cmake"
-check_command "bison"
-check_command "flex"
-check_command "swig"
-
-# Compiler check based on user selection
-if [[ "${compiler:-gcc}" == "gcc" ]]; then
-    check_command "gcc"
-    check_command "g++"
-elif [[ "${compiler}" == "clang" ]]; then
-    check_command "clang"
-    check_command "clang++"
-elif [[ "${compiler}" == "clang-16" ]]; then
-    check_command "clang-16"
-    check_command "clang++-16"
+if [[ "$useBazel" == "yes" ]]; then
+    # Bazel drives its own toolchain and dependencies, so only the launcher
+    # (bazelisk preferred, bazel as fallback) needs to be present.
+    if command -v bazelisk &> /dev/null; then
+        echo -e "${GREEN}[OK] Found bazelisk${NC}"
+    elif command -v bazel &> /dev/null; then
+        echo -e "${GREEN}[OK] Found bazel${NC}"
+    else
+        echo -e "${RED}[ERROR] Required dependency 'bazelisk' (or 'bazel') is missing!${NC}"
+        echo "Please install it using './etc/DependencyInstaller.sh -bazel' (with sudo on Linux) before building."
+        exit 1
+    fi
 else
-    # Handle unknown compilers gracefully - suggested by gemini-bot
-    echo -e "${YELLOW}[WARNING] Unsupported compiler '${compiler}' specified. Skipping compiler pre-compilation check.${NC}"
+    # Essential build tools required for OpenROAD
+    check_command "cmake"
+    check_command "bison"
+    check_command "flex"
+    check_command "swig"
+
+    # Compiler check based on user selection
+    if [[ "${compiler:-gcc}" == "gcc" ]]; then
+        check_command "gcc"
+        check_command "g++"
+    elif [[ "${compiler}" == "clang" ]]; then
+        check_command "clang"
+        check_command "clang++"
+    elif [[ "${compiler}" == "clang-16" ]]; then
+        check_command "clang-16"
+        check_command "clang++-16"
+    else
+        # Handle unknown compilers gracefully - suggested by gemini-bot
+        echo -e "${YELLOW}[WARNING] Unsupported compiler '${compiler}' specified. Skipping compiler pre-compilation check.${NC}"
+    fi
 fi
 
 echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
 # ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
-if [[ "$isNinja" == "yes" ]]; then
-    cmake "${cmakeOptions[@]}" -B "${buildDir}" .
-    cd "${buildDir}"
-    CLICOLOR_FORCE=1 ninja build_and_test
+if [[ "$useBazel" == "yes" ]]; then
+    echo "[INFO] Building with Bazel."
+    bazel_cmd="bazel"
+    if command -v bazelisk &> /dev/null; then
+        bazel_cmd="bazelisk"
+    fi
+    bazelArgs=("--jobs=${numThreads}")
+    if [[ "$bazelLto" == "yes" ]]; then
+        bazelArgs+=("--config=opt")
+    fi
+    if [[ "$noGui" == "yes" ]]; then
+        bazelArgs+=("--//:platform=cli")
+    else
+        bazelArgs+=("--//:platform=gui")
+    fi
+    "${bazel_cmd}" build "${bazelArgs[@]}" //:openroad
+    # Install with the same configuration the binary was built with so the
+    # correct platform (gui/cli) artifacts are shipped. install.sh takes the
+    # prefix as its first argument, falling back to its own default location
+    # when -local/-prefix were not given.
+    if [[ -n "${installPrefix}" ]]; then
+        "${bazel_cmd}" run "${bazelArgs[@]}" //:install -- "${installPrefix}"
+    else
+        "${bazel_cmd}" run "${bazelArgs[@]}" //:install
+    fi
     exit 0
 fi
 cmake "${cmakeOptions[@]}" -B "${buildDir}" .
 time cmake --build "${buildDir}" -j "${numThreads}"
+# Only install when the user asked for a prefix (-local/-prefix); the CMake
+# default prefix (/usr/local) would require root.
+if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+    cmake --install "${buildDir}"
+fi

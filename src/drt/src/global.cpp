@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "global.h"
-
 #include <iostream>
 
 #include "db/drObj/drFig.h"
@@ -14,6 +12,7 @@
 #include "db/obj/frMPin.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frMaster.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 
@@ -200,8 +199,7 @@ std::ostream& operator<<(std::ostream& os, const frPathSeg& p)
 std::ostream& operator<<(std::ostream& os, const frGuide& p)
 {
   os << "frGuide: begin " << p.getBeginPoint() << " end " << p.getEndPoint()
-     << " begin LayerNum " << p.getBeginLayerNum() << " end layerNum "
-     << p.getEndLayerNum();
+     << " layerNum " << p.getLayerNum();
   return os;
 }
 

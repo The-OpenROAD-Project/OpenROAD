@@ -13,48 +13,48 @@ MACRO RAM8x8
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER met3 ;
-        RECT  109.6 1.55 110.4 1.85 ;
+      LAYER met2 ;
+        RECT  94.92 23.995 95.06 24.48 ;
     END
   END clk
   PIN we[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER met3 ;
-        RECT  109.6 2.91 110.4 3.21 ;
+      LAYER met2 ;
+        RECT  99.52 23.995 99.66 24.48 ;
     END
   END we[0]
-  PIN addr[0]
+  PIN addr_rw[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER met3 ;
         RECT  109.6 4.27 110.4 4.57 ;
     END
-  END addr[0]
-  PIN addr[1]
+  END addr_rw[0]
+  PIN addr_rw[1]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER met3 ;
         RECT  109.6 6.99 110.4 7.29 ;
     END
-  END addr[1]
-  PIN addr[2]
+  END addr_rw[1]
+  PIN addr_rw[2]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER met3 ;
-        RECT  109.6 5.63 110.4 5.93 ;
+        RECT  109.6 1.55 110.4 1.85 ;
     END
-  END addr[2]
+  END addr_rw[2]
   PIN D[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  2 23.995 2.14 24.48 ;
+        RECT  1.08 23.995 1.22 24.48 ;
     END
   END D[0]
   PIN Q[0]
@@ -177,31 +177,6 @@ MACRO RAM8x8
         RECT  91.24 23.995 91.38 24.48 ;
     END
   END Q[7]
-  PIN VSS
-    DIRECTION INOUT ;
-    USE GROUND ;
-    PORT
-      LAYER met3 ;
-        RECT  110.1 19.76 110.4 20.24 ;
-        RECT  0 19.76 0.3 20.24 ;
-      LAYER met2 ;
-        RECT  79.76 24.34 80.24 24.48 ;
-        RECT  79.76 0 80.24 0.14 ;
-        RECT  39.76 24.34 40.24 24.48 ;
-        RECT  39.76 0 40.24 0.14 ;
-      LAYER met1 ;
-        RECT  110.26 21.52 110.4 22 ;
-        RECT  0 21.52 0.14 22 ;
-        RECT  110.26 16.08 110.4 16.56 ;
-        RECT  0 16.08 0.14 16.56 ;
-        RECT  110.26 10.64 110.4 11.12 ;
-        RECT  0 10.64 0.14 11.12 ;
-        RECT  110.26 5.2 110.4 5.68 ;
-        RECT  0 5.2 0.14 5.68 ;
-        RECT  110.26 -0.24 110.4 0.24 ;
-        RECT  0 -0.24 0.14 0.24 ;
-    END
-  END VSS
   PIN VDD
     DIRECTION INOUT ;
     USE POWER ;
@@ -229,6 +204,31 @@ MACRO RAM8x8
         RECT  0 2.48 0.14 2.96 ;
     END
   END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met3 ;
+        RECT  110.1 19.76 110.4 20.24 ;
+        RECT  0 19.76 0.3 20.24 ;
+      LAYER met2 ;
+        RECT  79.76 24.34 80.24 24.48 ;
+        RECT  79.76 0 80.24 0.14 ;
+        RECT  39.76 24.34 40.24 24.48 ;
+        RECT  39.76 0 40.24 0.14 ;
+      LAYER met1 ;
+        RECT  110.26 21.52 110.4 22 ;
+        RECT  0 21.52 0.14 22 ;
+        RECT  110.26 16.08 110.4 16.56 ;
+        RECT  0 16.08 0.14 16.56 ;
+        RECT  110.26 10.64 110.4 11.12 ;
+        RECT  0 10.64 0.14 11.12 ;
+        RECT  110.26 5.2 110.4 5.68 ;
+        RECT  0 5.2 0.14 5.68 ;
+        RECT  110.26 -0.24 110.4 0.24 ;
+        RECT  0 -0.24 0.14 0.24 ;
+    END
+  END VSS
   OBS
     LAYER li1 ;
      RECT  0 -0.24 110.4 24.72 ;

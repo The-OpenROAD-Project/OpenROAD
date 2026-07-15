@@ -48,6 +48,7 @@ Checks: >
   -modernize-raw-string-literal,
   -modernize-return-braced-init-list,
   -modernize-use-auto,
+  -modernize-use-constraints,
   -modernize-use-nodiscard,
   -modernize-use-trailing-return-type,
   -modernize-use-transparent-functors,

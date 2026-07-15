@@ -1,15 +1,19 @@
 #include "Design.h"
 
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "CUGR.h"
 #include "GeoTypes.h"
+#include "Layers.h"
 #include "Netlist.h"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -23,14 +27,16 @@ Design::Design(odb::dbDatabase* db,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,
-               const std::set<odb::dbNet*>& clock_nets)
+               const odb::PtrSet<odb::dbNet>& clock_nets,
+               const bool verbose)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),
       constants_(constants),
       min_routing_layer_(min_routing_layer),
       max_routing_layer_(max_routing_layer),
-      clock_nets_(clock_nets)
+      clock_nets_(clock_nets),
+      verbose_(verbose)
 {
   read();
   setUnitCosts();
@@ -54,10 +60,14 @@ void Design::read()
 
   computeGrid();
 
-  logger_->report("Design statistics");
-  logger_->report("Nets:                {}", nets_.size());
-  logger_->report("Special nets:        {}", num_special_nets);
-  logger_->report("Routing layers:      {}", getNumLayers());
+  computeViaDemandLengths();
+
+  if (verbose_) {
+    logger_->report("Design statistics");
+    logger_->report("Nets:                {}", nets_.size());
+    logger_->report("Special nets:        {}", num_special_nets);
+    logger_->report("Routing layers:      {}", getNumLayers());
+  }
 }
 
 void Design::readLayers()
@@ -85,11 +95,11 @@ void Design::readNetlist()
 
     auto pins = makeNetPins(db_net);
 
-    LayerRange layer_range
-        = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
+    LayerRange layer_range = {.min_layer = min_routing_layer_ - 1,
+                              .max_layer = max_routing_layer_ - 1};
     const int min_clk_layer = block_->getMinLayerForClock();
     const int max_clk_layer = block_->getMaxLayerForClock();
-    if (clock_nets_.find(db_net) != clock_nets_.end() && min_clk_layer > 0
+    if (clock_nets_.contains(db_net) && min_clk_layer > 0
         && max_clk_layer > 0) {
       layer_range.min_layer = min_clk_layer - 1;
       layer_range.max_layer = max_clk_layer - 1;
@@ -159,11 +169,13 @@ void Design::updateNet(odb::dbNet* db_net)
 
   auto pins = makeNetPins(db_net);
 
-  LayerRange layer_range
-      = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
-  if (clock_nets_.find(db_net) != clock_nets_.end()) {
-    layer_range.min_layer = block_->getMinLayerForClock() - 1;
-    layer_range.max_layer = block_->getMaxLayerForClock() - 1;
+  LayerRange layer_range = {.min_layer = min_routing_layer_ - 1,
+                            .max_layer = max_routing_layer_ - 1};
+  const int min_clk_layer = block_->getMinLayerForClock();
+  const int max_clk_layer = block_->getMaxLayerForClock();
+  if (clock_nets_.contains(db_net) && min_clk_layer > 0 && max_clk_layer > 0) {
+    layer_range.min_layer = min_clk_layer - 1;
+    layer_range.max_layer = max_clk_layer - 1;
   }
 
   auto it = db_net_to_id_.find(db_net);
@@ -178,6 +190,14 @@ void Design::updateNet(odb::dbNet* db_net)
   }
 }
 
+void Design::removeNet(odb::dbNet* db_net)
+{
+  auto it = db_net_to_id_.find(db_net);
+  if (it != db_net_to_id_.end()) {
+    nets_[it->second].invalidate();
+    db_net_to_id_.erase(it);
+  }
+}
 void Design::readInstanceObstructions()
 {
   for (odb::dbInst* db_inst : block_->getInsts()) {
@@ -332,6 +352,135 @@ void Design::setUnitCosts()
   }
 }
 
+odb::dbTechVia* Design::chooseViaForPair(odb::dbTechLayer* lower_tl,
+                                         odb::dbTechLayer* upper_tl) const
+{
+  // Rank vias connecting the pair by a drt-like priority: OR_DEFAULT, then
+  // fewest cuts, then LEF-default, then smallest enclosure.
+  odb::dbTechLayer* cut_tl = lower_tl->getUpperLayer();
+  odb::dbTechVia* best = nullptr;
+  std::tuple<bool, int, bool, int64_t> best_key;
+  for (odb::dbTechVia* via : tech_->getVias()) {
+    if (via->getBottomLayer() != lower_tl || via->getTopLayer() != upper_tl) {
+      continue;
+    }
+    int cuts = 0;
+    int64_t enc_area = 0;
+    for (odb::dbBox* box : via->getBoxes()) {
+      odb::dbTechLayer* bl = box->getTechLayer();
+      if (bl == cut_tl) {
+        cuts++;
+      } else if (bl == lower_tl || bl == upper_tl) {
+        enc_area += box->getBox().area();
+      }
+    }
+    const bool or_default
+        = odb::dbStringProperty::find(via, "OR_DEFAULT") != nullptr;
+    const std::tuple<bool, int, bool, int64_t> key{
+        !or_default, cuts, !via->isDefault(), enc_area};
+    if (best == nullptr || key < best_key) {
+      best = via;
+      best_key = key;
+    }
+  }
+  return best;
+}
+
+void Design::computeViaDemandLengths()
+{
+  const int num_layers = getNumLayers();
+  // Fallback proxy (min-area stub x via_multiplier) for pairs with no via.
+  via_demand_length_lower_.assign(num_layers, 0.0);
+  via_demand_length_upper_.assign(num_layers, 0.0);
+
+  const bool debug = logger_->debugCheck(utl::GRT, "via_geom", 1);
+  int fallback_pairs = 0;
+  for (int i = 0; i + 1 < num_layers; i++) {
+    const MetalLayer& lower = layers_[i];
+    const MetalLayer& upper = layers_[i + 1];
+    odb::dbTechLayer* lower_tl = lower.getTechLayer();
+    odb::dbTechLayer* upper_tl = upper.getTechLayer();
+    odb::dbTechVia* via = chooseViaForPair(lower_tl, upper_tl);
+    if (via == nullptr) {
+      fallback_pairs++;
+    }
+
+    double num_lower = lower.getMinLength() * constants_.via_multiplier;
+    double num_upper = upper.getMinLength() * constants_.via_multiplier;
+    // Union the boxes on each layer; a via may have several rects per layer.
+    odb::Rect lo_box, up_box;
+    lo_box.mergeInit();
+    up_box.mergeInit();
+    if (via != nullptr) {
+      for (odb::dbBox* box : via->getBoxes()) {
+        if (box->getTechLayer() == lower_tl) {
+          lo_box.merge(box->getBox());
+        } else if (box->getTechLayer() == upper_tl) {
+          up_box.merge(box->getBox());
+        }
+      }
+      if (!lo_box.isInverted() && lo_box.dx() > 0 && lo_box.dy() > 0) {
+        num_lower = viaDemandLength(lower, lo_box.dx(), lo_box.dy());
+      }
+      if (!up_box.isInverted() && up_box.dx() > 0 && up_box.dy() > 0) {
+        num_upper = viaDemandLength(upper, up_box.dx(), up_box.dy());
+      }
+    }
+    via_demand_length_lower_[i] = num_lower;
+    via_demand_length_upper_[i] = num_upper;
+
+    if (debug) {
+      // Report enclosures, lengths, and per-track demand for each pair.
+      const int gcell = default_gridline_spacing_;
+      const std::string via_src
+          = via != nullptr ? via->getName() : std::string("min_area-fallback");
+      debugPrint(
+          logger_,
+          utl::GRT,
+          "via_geom",
+          1,
+          "via {}->{} [{}]: encl lower={}x{} upper={}x{} -> len "
+          "lower={:.1f} upper={:.1f} -> demand lower={:.4f} upper={:.4f}",
+          lower.getName(),
+          upper.getName(),
+          via_src,
+          lo_box.isInverted() ? 0 : lo_box.dx(),
+          lo_box.isInverted() ? 0 : lo_box.dy(),
+          up_box.isInverted() ? 0 : up_box.dx(),
+          up_box.isInverted() ? 0 : up_box.dy(),
+          num_lower,
+          num_upper,
+          gcell > 0 ? num_lower / gcell : 0.0,
+          gcell > 0 ? num_upper / gcell : 0.0);
+    }
+  }
+
+  if (fallback_pairs > 0) {
+    logger_->warn(utl::GRT,
+                  173,
+                  "{} layer pair(s) have no via; using min-area via demand.",
+                  fallback_pairs);
+  }
+}
+
+double Design::viaDemandLength(const MetalLayer& layer,
+                               const int dx,
+                               const int dy) const
+{
+  const int pitch = layer.getPitch();
+  // getSpacing() is 0 on parallel-table-only techs; use default spacing then.
+  const int spacing
+      = layer.getSpacing() > 0 ? layer.getSpacing() : layer.getDefaultSpacing();
+  // Split the pad into extent along the routing direction and across tracks.
+  const int along = (layer.getDirection() == MetalLayer::H) ? dx : dy;
+  const int perp = (layer.getDirection() == MetalLayer::H) ? dy : dx;
+  // A via blocks whole tracks; ceil the keep-out to an integer track count.
+  const double tracks_blocked
+      = pitch > 0 ? std::ceil(static_cast<double>(perp + 2 * spacing) / pitch)
+                  : 1.0;
+  return along * tracks_blocked;
+}
+
 void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
                              const bool skip_m1) const
 {
@@ -347,6 +496,9 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 void Design::printNets() const
 {
   for (const CUGRNet& net : nets_) {
+    if (!net.isValid()) {
+      continue;
+    }
     logger_->report("Net: {}", net.getName());
     for (const auto& pin : net.getPins()) {
       logger_->report("\tPin: {}", pin.getName());

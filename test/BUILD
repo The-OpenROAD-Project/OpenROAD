@@ -83,6 +83,8 @@ filegroup(
     name = "nangate45_data",
     srcs = [
         "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_lvt.lef",
+        "Nangate45/Nangate45_lvt.lib",
         "Nangate45/Nangate45_typ.lib",
         "Nangate45/fakeram45_64x7.lef",
         "Nangate45/fakeram45_64x7.lib",
@@ -140,10 +142,6 @@ COMPULSORY_TESTS = [
     "write_db",
 ] + PASSFAIL_TESTS
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-]
-
 PYTHON_TESTS = [
     "timing_api",
     "timing_api_2",
@@ -193,7 +191,7 @@ BIG_TESTS = [
         check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS + ["upf_aes"] else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS + BIG_TESTS else [],
+        tags = ["manual"] if test_name in BIG_TESTS else [],
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]
@@ -211,5 +209,5 @@ py_test(
 test_suite(
     name = "flow_tests",
     tags = ["manual"],
-    tests = [test_name + "-tcl" for test_name in BIG_TESTS],
+    tests = [test_name + "-tcl_test" for test_name in BIG_TESTS],
 )

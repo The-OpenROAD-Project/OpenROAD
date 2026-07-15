@@ -1,0 +1,51 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: td1
+[INFO ODB-0130]     Created 9 pins.
+[INFO ODB-0131]     Created 4 components and 21 component-terminals.
+[INFO ODB-0133]     Created 11 nets and 13 connections.
+worst slack max -0.04
+[INFO RSZ-0100] Repair move sequence: SwapPinsMove 
+[INFO RSZ-0094] Found 2 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+       5* |       0 |       0 |        0 |      0 |     2 |    +0.0% |   -0.035 |       -0.1 |       -0.0 |      2 | y2
+    final |       0 |       0 |        0 |      0 |     2 |    +0.0% |   -0.035 |       -0.1 |       -0.0 |      2 | y2
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0043] Swapped pins on 2 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.03
+Startpoint: a2 (input port clocked by clk)
+Endpoint: y2 (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.020    0.020 v input external delay
+   0.000    0.020 v a2 (in)
+   0.000    0.020 v U3/A2 (NAND2_X1)
+   0.011    0.031 ^ U3/ZN (NAND2_X1)
+   0.000    0.031 ^ U5/A2 (AND2_X1)
+   0.047    0.077 ^ U5/ZN (AND2_X1)
+   0.000    0.077 ^ U4/A1 (AND4_X1)
+   0.047    0.125 ^ U4/ZN (AND4_X1)
+   0.000    0.125 ^ y2 (out)
+            0.125   data arrival time
+
+   0.100    0.100   clock clk (rise edge)
+   0.000    0.100   clock network delay (ideal)
+   0.000    0.100   clock reconvergence pessimism
+  -0.010    0.090   output external delay
+            0.090   data required time
+-----------------------------------------------------------
+            0.090   data required time
+           -0.125   data arrival time
+-----------------------------------------------------------
+           -0.035   slack (VIOLATED)
+
+

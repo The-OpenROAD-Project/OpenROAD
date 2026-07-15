@@ -2,7 +2,6 @@
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -29,48 +28,6 @@ exports_files(
 filegroup(
     name = "odb_public_headers",
     srcs = glob(["include/odb/*.h"]),
-)
-
-# Umbrella target that aggregates every per-subdirectory odb library.
-# Downstream BUILD files depend on //src/odb:odb to keep working
-# unchanged after the split of the old monolith into per-subdirectory
-# targets.
-cc_library(
-    name = "odb",
-    # The umbrella target republishes the public odb/*.h headers so that
-    # downstream targets that depend on //src/odb (and use
-    # layering_check) continue to see odb/*.h through a direct dep.
-    hdrs = glob(
-        include = ["include/odb/*.h"],
-        exclude = ["include/odb/MakeOdb.h"],
-    ) + [
-        "include/odb/dbCompare.inc",
-        "include/odb/dbMap.inc",
-    ],
-    includes = ["include"],
-    deps = [
-        "//src/odb/src/3dblox",
-        "//src/odb/src/cdl",
-        "//src/odb/src/db",
-        "//src/odb/src/def",
-        "//src/odb/src/def:defzlib",
-        "//src/odb/src/defin",
-        "//src/odb/src/defout",
-        "//src/odb/src/gdsin",
-        "//src/odb/src/gdsout",
-        "//src/odb/src/lef",
-        "//src/odb/src/lef:lefzlib",
-        "//src/odb/src/lefin",
-        "//src/odb/src/lefout",
-        "//src/odb/src/swig:swig_common",
-        "//src/utl",
-        "@abseil-cpp//absl/base:core_headers",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.container",
-        "@boost.geometry",
-        "@boost.multi_array",
-        "@boost.polygon",
-    ],
 )
 
 # ---- SWIG / Python bindings ----
@@ -110,7 +67,7 @@ cc_binary(
     linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
-        ":odb",
+        "//src/odb/src/db",
         "//src/odb/src/swig:swig_common",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
@@ -166,5 +123,8 @@ messages_txt(
     src_patterns = [
         "include/odb/*.h",
     ],
-    visibility = ["//src/odb/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/odb/test:__pkg__",
+    ],
 )

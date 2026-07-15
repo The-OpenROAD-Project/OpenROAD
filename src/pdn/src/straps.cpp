@@ -20,6 +20,7 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -659,10 +660,10 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
              pins_.size());
 }
 
-std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>>
+odb::PtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>>
 PadDirectConnectionStraps::getPinsByLayer() const
 {
-  std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> pins;
+  odb::PtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>> pins;
 
   auto* mterm = iterm_->getMTerm();
   for (auto* pin : mterm->getMPins()) {
@@ -1045,8 +1046,9 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
     return;
   }
 
-  std::set<odb::dbTechLayer*> pin_layers;
-  std::map<odb::dbTechLayer*, std::set<odb::dbTechLayer*>> connectable_layers;
+  odb::PtrSet<odb::dbTechLayer> pin_layers;
+  odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbTechLayer>>
+      connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& shape : shapes) {
       if (isTargetShape(shape.get())) {
@@ -1588,6 +1590,19 @@ bool PadDirectConnectionStraps::refineShape(
 
 bool PadDirectConnectionStraps::isTargetShape(const Shape* shape) const
 {
+  // Pad direct connections run from a pad pin toward the core power grid.  They
+  // must not target shapes that belong to an instance (macro) grid: those
+  // stripes sit inside the core over the macro, and snapping a pad connection
+  // to them drags the connection deep into the core (issue #10490).  Only
+  // shapes owned by core/existing grids are valid landing targets.
+  const auto* component = shape->getGridComponent();
+  if (component != nullptr) {
+    const auto* grid = component->getGrid();
+    if (grid != nullptr && grid->type() == Grid::kInstance) {
+      return false;
+    }
+  }
+
   if (target_shapes_type_) {
     return shape->getType() == target_shapes_type_.value();
   }
@@ -1619,7 +1634,7 @@ RepairChannelStraps::RepairChannelStraps(
     Straps* target,
     odb::dbTechLayer* connect_to,
     const Shape::ObstructionTreeMap& other_shapes,
-    const std::set<odb::dbNet*>& nets,
+    const odb::PtrSet<odb::dbNet>& nets,
     const odb::Rect& area,
     const odb::Rect& available_area,
     const odb::Rect& obs_check_area)
@@ -2053,7 +2068,7 @@ void RepairChannelStraps::report() const
 
 Straps* RepairChannelStraps::getTargetStrap(Grid* grid, odb::dbTechLayer* layer)
 {
-  std::set<odb::dbTechLayer*> connects_to;
+  odb::PtrSet<odb::dbTechLayer> connects_to;
   for (const auto& connect : grid->getConnect()) {
     if (connect->getLowerLayer() == layer) {
       connects_to.insert(connect->getUpperLayer());

@@ -25,15 +25,10 @@
 namespace rsz {
 
 using sta::dbNetwork;
-using sta::InstancePinIterator;
 using sta::Net;
-using sta::NetConnectedPinIterator;
-using sta::Network;
 
-OdbCallBack::OdbCallBack(Resizer* resizer,
-                         Network* network,
-                         dbNetwork* db_network)
-    : resizer_(resizer), network_(network), db_network_(db_network)
+OdbCallBack::OdbCallBack(Resizer* resizer, dbNetwork* db_network)
+    : resizer_(resizer), db_network_(db_network)
 {
 }
 
@@ -46,7 +41,7 @@ void OdbCallBack::inDbNetDestroy(odb::dbNet* net)
              "inDbNetDestroy {}",
              net->getName());
   Net* sta_net = db_network_->dbToSta(net);
-  if (resizer_->net_slack_map_.count(sta_net)) {
+  if (resizer_->net_slack_map_.contains(sta_net)) {
     resizer_->net_slack_map_.erase(sta_net);
   }
 }

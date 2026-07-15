@@ -3,108 +3,107 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021-2025, The OpenROAD Authors
 
+from __future__ import annotations
+
 import argparse
 import json
 import logging
 import re
 import shutil
+import subprocess
 from pathlib import Path
-from subprocess import call
-from typing import Any, Dict, List, Optional, Set
 
 from jinja2 import Environment, FileSystemLoader
 
 from helper import (
-    add_once_to_dict,
     components,
     fnv1a_32,
-    get_class,
     get_functional_name,
-    get_hash_table_type,
     get_plural_name,
-    get_ref_type,
-    get_table_name,
     is_bit_fields,
-    is_hash_table,
-    is_pass_by_ref,
-    is_ref,
-    is_set_by_ref,
     is_template_type,
     get_template_types,
-    std,
 )
+from field_types import ScalarType, make_field_type
 from parser import Parser
-from schema_models import Field, Enum, Struct, Class, Schema
+from schema_models import Field, Enum, Struct, Class, Relation, Schema
 
 # map types to their header if it isn't equal to their name
 STD_TYPE_HDR = {
     "int16_t": "cstdint",
     "uint32_t": "cstdint",
+    "int64_t": "cstdint",
     "pair": "utility",
 }
 
 
-def get_json_files(directory: Path) -> List[Path]:
+def make_environment(templates_dir) -> Environment:
+    """Build the Jinja environment with the generator's custom filters."""
+    env = Environment(loader=FileSystemLoader(str(templates_dir)), trim_blocks=True)
+    # Render Python booleans as C++ literals (e.g. iterator reversible() bodies).
+    env.filters["cpp_bool"] = lambda value: "true" if value else "false"
+    return env
+
+
+def get_json_files(directory: Path) -> list[Path]:
     """Return all json files under directory recursively."""
     return list(directory.rglob("*.json"))
 
 
-def make_parent_field(parent: Class, relation: Dict[str, Any]) -> Field:
+def make_parent_field(parent: Class, relation: Relation) -> Field:
     """Adds a table field to the parent of a relationship."""
     field = Field(
-        name=relation["tbl_name"],
-        type=relation["child"],
+        name=relation.tbl_name,
+        type=relation.child,
         table=True,
         dbSetGetter=True,
-        components=[relation["tbl_name"]],
-        flags=["no-set"] + relation.get("flags", []),
+        components=[relation.tbl_name],
+        flags=["no-set"] + relation.flags,
     )
-    if "page_size" in relation:
-        field.page_size = relation["page_size"]
-    if "schema" in relation:
-        field.schema = relation["schema"]
+    if relation.page_size is not None:
+        field.page_size = relation.page_size
+    if relation.schema is not None:
+        field.schema = relation.schema
 
     parent.fields.append(field)
-    if relation["parent"] != relation["child"]:
-        parent.cpp_includes.extend([f"{relation['child']}.h", "odb/dbSet.h"])
-    logging.debug(f"Add relation field {field.name} to {relation['parent']}")
+    if relation.parent != relation.child:
+        parent.cpp_includes.extend([f"{relation.child}.h", "odb/dbSet.h"])
+    logging.debug(f"Add relation field {field.name} to {relation.parent}")
     return field
 
 
 def make_parent_hash_field(
-    parent: Class, relation: Dict[str, Any], parent_field: Field
+    parent: Class, relation: Relation, parent_field: Field
 ) -> Field:
     """Adds a hash table field to the parent of a hashed relationship."""
-    page_size_part = f", {relation['page_size']}" if "page_size" in relation else ""
+    page_size_part = f", {relation.page_size}" if relation.page_size is not None else ""
     field = Field(
         name=parent_field.name[:-4] + "hash_",
-        type=f"dbHashTable<_{relation['child']}{page_size_part}>",
+        type=f"dbHashTable<_{relation.child}{page_size_part}>",
         components=[parent_field.name[:-4] + "hash_"],
         table_name=parent_field.name,
-        flags=["no-set"] + relation.get("flags", []),
+        flags=["no-set"] + relation.flags,
     )
     parent.fields.append(field)
     if "dbHashTable.h" not in parent.h_includes:
         parent.h_includes.append("dbHashTable.h")
-    logging.debug(f"Add hash field {field.name} to {relation['parent']}")
+    logging.debug(f"Add hash field {field.name} to {relation.parent}")
     return field
 
 
-def make_child_next_field(child: Class, relation: Dict[str, Any]) -> None:
+def make_child_next_field(child: Class, relation: Relation) -> None:
     """Adds a next entry field to the child of a hashed relationship."""
     field = Field(
         name="next_entry_",
-        type=f"dbId<_{relation['child']}>",
-        flags=["private"] + relation.get("flags", []),
+        type=f"dbId<_{relation.child}>",
+        flags=["private"] + relation.flags,
     )
     child.fields.append(field)
-    logging.debug(f"Add hash field {field.name} to {relation['child']}")
+    logging.debug(f"Add hash field {field.name} to {relation.child}")
 
 
-def add_field_attributes(
-    field: Field, klass: Class, flags_struct: Struct, schema: Schema
-) -> int:
-    """Adds various derived attributes to a field."""
+def _normalize_bits(field: Field, klass: Class, flags_struct: Struct) -> int:
+    """Resolve the 'bit' pseudo-type and register bitfields. Returns bit width."""
     flag_num_bits = 0
     if field.type == "bit":
         field.type = "bool"
@@ -115,7 +114,11 @@ def add_field_attributes(
         flag_num_bits = int(field.bits)
 
     field.bitFields = is_bit_fields(field, klass.structs)
+    return flag_num_bits
 
+
+def _add_type_includes(field: Field, klass: Class) -> None:
+    """Add system headers required by the field's std/cstdint type."""
     # Handle types from <cstdint> that are also in the global namespace (eg uint32_t)
     hdr = STD_TYPE_HDR.get(field.type)
     if hdr:
@@ -128,24 +131,9 @@ def add_field_attributes(
             klass.h_sys_includes.append(hdr)
             klass.cpp_sys_includes.append(hdr)
 
-    field.isRef = is_ref(field.type) if field.parent is not None else False
-    field.refType = get_ref_type(field.type)
 
-    # refTable is the table name from which the getter extracts the pointer to dbObject
-    if field.isRef and field.refType:
-        field.refTable = get_table_name(field.refType.replace("*", ""))
-        # checking if there is a defined relation between parent and refType for extracting table name
-        for relation in schema.relations:
-            if relation["parent"] == field.parent and relation[
-                "child"
-            ] == field.refType.replace("*", ""):
-                field.refTable = relation["tbl_name"]
-
-    field.isHashTable = is_hash_table(field.type)
-    field.hashTableType = get_hash_table_type(field.type)
-    field.isPassByRef = is_pass_by_ref(field.type)
-    field.isSetByRef = "set-const-ref" in field.flags or is_set_by_ref(field.type)
-
+def _apply_argument_and_visibility(field: Field) -> None:
+    """Default the setter argument name and expand the 'private' flag."""
     if not field.argument:
         field.argument = field.name.strip("_")
 
@@ -155,13 +143,13 @@ def add_field_attributes(
         if "no-get" not in field.flags:
             field.flags.append("no-get")
 
-    # Check if a class is being used inside a template definition to add
-    # to the list of forward declared classes
+
+def _collect_forward_decls(field: Field, klass: Class) -> None:
+    """Forward-declare db classes that appear as template arguments of this field."""
     if is_template_type(field.type):
         for template_class_name in get_template_types(field.type):
             name_check = (
                 template_class_name not in klass.declared_classes
-                and template_class_name not in std
                 and not template_class_name.isdigit()
                 and template_class_name not in {"true", "false"}
                 and "no-template" not in field.flags
@@ -172,6 +160,9 @@ def add_field_attributes(
             if name_check:
                 klass.declared_classes.append(template_class_name)
 
+
+def _assign_name_and_components(field: Field, klass: Class) -> None:
+    """Derive the functional name and the comparison components for the field."""
     if field.table:
         klass.hasTables = True
         field.functional_name = get_plural_name(
@@ -184,6 +175,17 @@ def add_field_attributes(
         field.functional_name = get_functional_name(field.name)
         field.components = components(klass.structs, field.name, field.type)
 
+    # A field flagged for ordering must resolve to at least one comparison
+    # component; otherwise its operator< term is silently dropped (see the
+    # dbAccessType::Value regression that motivated treating enums as leaves).
+    if "cmpgt" in field.flags and not field.components:
+        raise ValueError(
+            f"{klass.name}.{field.name} ({field.type}) is flagged 'cmpgt' but "
+            f"resolves to no comparison components; its operator< term would be "
+            f"silently dropped. Make the type a comparison leaf in "
+            f"helper.components() (see is_enum/_comparable)."
+        )
+
     if not field.setterFunctionName:
         field.setterFunctionName = f"set{field.functional_name}"
 
@@ -191,33 +193,28 @@ def add_field_attributes(
     if not field.getterFunctionName:
         field.getterFunctionName = f"{getter_prefix}{field.functional_name}"
 
-    if field.isRef:
-        field.setterArgumentType = field.getterReturnType = field.refType
-    elif field.isHashTable:
+
+def _finalize_hash_table(field: Field) -> None:
+    """Make hash-table fields read-only and give them a find()-style getter name.
+
+    The accessor argument/return types come from the field's kind (HashTableType).
+    """
+    if field.isHashTable:
         if "no-set" not in field.flags:
             field.flags.append("no-set")
-        field.setterArgumentType = field.getterReturnType = (
-            field.hashTableType.replace("_", "") if field.hashTableType else ""
-        )
+        # setterArgumentType is e.g. "dbTechLayerCutClassRule*"; [2:-1] drops the
+        # "db" prefix and the "*" suffix to form "findTechLayerCutClassRule".
         field.getterFunctionName = (
             f"find{field.setterArgumentType[2:-1]}" if field.setterArgumentType else ""
         )
-    elif field.bits == 1:
-        field.setterArgumentType = field.getterReturnType = "bool"
-    elif field.isPassByRef:
-        field.setterArgumentType = field.getterReturnType = field.type.replace(
-            "dbVector", "std::vector"
-        )
-    elif field.type == "char *":
-        field.setterArgumentType = field.type
-        field.getterReturnType = "const char *"
-    else:
-        field.setterArgumentType = field.getterReturnType = field.type
 
-    # For fields that we need to free/destroy in the destructor
+
+def _mark_destructor_needs(field: Field, klass: Class) -> None:
+    """Flag the class for a non-default destructor when a field needs freeing."""
+    # Char-pointer name_ fields are freed in the destructor (unless opted out).
     needs_free = (
-        field.name == "name_"
-        and field.type == "char *"
+        field.kind is not None
+        and field.kind.needs_free(field.name)
         and "no-destruct" not in field.flags
     )
 
@@ -226,6 +223,27 @@ def add_field_attributes(
         if needs_free:
             klass.cpp_sys_includes.append("cstdlib")
 
+
+def add_field_attributes(
+    field: Field, klass: Class, flags_struct: Struct, schema: Schema
+) -> int:
+    """Adds various derived attributes to a field.
+
+    The helpers below are ordered: side effects (flag mutation, include and
+    forward-declaration accumulation) and derived values depend on earlier steps,
+    so the call order must be preserved.
+    """
+    flag_num_bits = _normalize_bits(field, klass, flags_struct)
+    # Classify the field into its typed kind; the storage-kind properties on Field
+    # (setterArgumentType, getterReturnType, ...) derive from it. Requires field.bits
+    # resolved by _normalize_bits and reads the table/parent inputs.
+    field.kind = make_field_type(field, schema)
+    _add_type_includes(field, klass)
+    _apply_argument_and_visibility(field)
+    _collect_forward_decls(field, klass)
+    _assign_name_and_components(field, klass)
+    _finalize_hash_table(field)
+    _mark_destructor_needs(field, klass)
     return flag_num_bits
 
 
@@ -246,43 +264,58 @@ def add_bitfield_flags(klass: Class, flag_num_bits: int, flags_struct: Struct) -
             bits=spare_bits,
             flags=["no-cmp", "no-set", "no-get", "no-serial"],
         )
+        # Padding-only member; never accessed or serialized individually.
+        spare_bits_field.kind = ScalarType("uint32_t")
         total_num_bits += spare_bits
         flags_struct.fields.append(spare_bits_field)
 
     if flags_struct.fields:
         flags_struct.in_class_name = "flags_"
         klass.structs.insert(0, flags_struct)
-        klass.fields.insert(
-            0,
-            Field(
-                name="flags_",
-                type=flags_struct.name,
-                components=components(klass.structs, "flags_", flags_struct.name),
-                bitFields=True,
-                numBits=total_num_bits,
-                flags=["no-cmp", "no-set", "no-get", "no-serial"],
-            ),
+        flags_field = Field(
+            name="flags_",
+            type=flags_struct.name,
+            components=components(klass.structs, "flags_", flags_struct.name),
+            bitFields=True,
+            numBits=total_num_bits,
+            flags=["no-cmp", "no-set", "no-get", "no-serial"],
         )
+        # The aggregate flags struct is a plain stored member (no accessors); it is
+        # handled by the bitFields branches in the templates.
+        flags_field.kind = ScalarType(flags_struct.name)
+        klass.fields.insert(0, flags_field)
 
 
 def generate_relations(schema: Schema) -> None:
     """Generate the parent and child fields for all relationships."""
     for relation in schema.relations:
-        if relation["type"] != "1_n":
+        if relation.type != "1_n":
             raise KeyError("relation type is not supported, use 1_n")
 
-        parent = next(c for c in schema.classes if c.name == relation["parent"])
-        child = next(c for c in schema.classes if c.name == relation["child"])
+        parent = next(c for c in schema.classes if c.name == relation.parent)
+        child = next(c for c in schema.classes if c.name == relation.child)
 
         parent_field = make_parent_field(parent, relation)
-        child_type_name = f"_{relation['child']}"
+        child_type_name = f"_{relation.child}"
 
         if child_type_name not in parent.declared_classes:
             parent.declared_classes.append(child_type_name)
 
-        if relation.get("hash", False):
+        if relation.hash:
             make_parent_hash_field(parent, relation, parent_field)
             make_child_next_field(child, relation)
+
+        if relation.create or relation.destroy:
+            child.factory_parent = relation.parent
+            child.factory_table = relation.tbl_name
+            child.gen_create = relation.create
+            child.gen_destroy = relation.destroy
+            # create()/destroy() cast to the parent's internal type.
+            if f"{relation.parent}.h" not in child.cpp_includes:
+                child.cpp_includes.append(f"{relation.parent}.h")
+            # destroy() frees the entry's properties.
+            if relation.destroy and "dbProperty.h" not in child.cpp_includes:
+                child.cpp_includes.append("dbProperty.h")
 
 
 def add_include(
@@ -324,22 +357,19 @@ def preprocess_klass(klass: Class) -> None:
     add_include(klass, "dbObjectType", "odb/dbObject.h", cpp=True)
     add_include(klass, "tuple", "tuple", cpp=True, sys=True)
 
+    # Owned tables are constructed in the class constructor. The member type and
+    # table_base_type come from the field's TableType kind (field.member_decl /
+    # field.table_base_type); here we set the constructor initializer.
     for field in klass.fields:
         if field.table:
-            page_size_part = f", {field.page_size}" if field.page_size else ""
-            this_or_db = "this" if klass.name == "dbDatabase" else "db"
-            field.default = (
-                f"new dbTable<_{field.type}{page_size_part}>({this_or_db}, this, "
-                f"(GetObjTbl_t) &_{klass.name}::getObjectTable, {field.type}Obj)"
-            )
-            field.table_base_type = field.type
-            field.type = f"dbTable<_{field.type}{page_size_part}>*"
+            field.default = field.kind.default_expr(klass.name)
 
 
 class ODBGenerator:
     def __init__(
         self, env: Environment, include_dir: Path, src_dir: Path, keep_empty: bool
     ):
+        """Hold the Jinja env, output directories, and the keep_empty flag."""
         self.env = env
         self.include_dir = include_dir
         self.src_dir = src_dir
@@ -347,22 +377,28 @@ class ODBGenerator:
         self.generated_dir = Path("generated")
 
     def load_schema(self, json_path: Path) -> Schema:
-        with open(json_path, encoding="ascii") as f:
-            data = json.load(f)
+        """Load the top-level schema JSON and every per-class JSON it points to."""
+        data = json.loads(json_path.read_text(encoding="ascii"))
 
         schema = Schema.from_dict(data)
 
         classes_dir = Path(schema.classes_dir)
         for file_path in get_json_files(classes_dir):
-            with open(file_path, encoding="ascii") as f:
-                klass_data = json.load(f)
-                klass = Class.from_dict(klass_data)
-                schema.classes.append(klass)
+            klass_data = json.loads(file_path.read_text(encoding="ascii"))
+            klass = Class.from_dict(klass_data)
+            schema.classes.append(klass)
 
         return schema
 
     def process_schema(self, schema: Schema) -> None:
+        """Derive all generated attributes on the schema's classes and fields."""
         generate_relations(schema)
+
+        # All enum type names (schema-declared + external) used to keep enums
+        # passed by value in is_set_by_ref().
+        schema.enum_type_names = set(schema.extern_enums) | {
+            e.name for klass in schema.classes for e in klass.enums
+        }
 
         hash_dict = {}
         for klass in schema.classes:
@@ -376,6 +412,13 @@ class ODBGenerator:
             )
 
             add_bitfield_flags(klass, flag_num_bits, flags_struct)
+
+            # Struct members (e.g. JSON-defined public structs) also need a kind so
+            # the templates can query it uniformly; they are never tables.
+            for struct in klass.structs:
+                for field in struct.fields:
+                    if field.kind is None:
+                        field.kind = make_field_type(field, schema)
 
             if any(s.public for s in klass.structs):
                 if "odb/db.h" not in klass.h_includes:
@@ -423,7 +466,7 @@ class ODBGenerator:
             else:
                 if "no-cmp" not in field.flags:
                     for comp in field.components:
-                        deref = "*" if field.table else ""
+                        deref = "*" if field.kind.compare_deref() else ""
                         klass.equal_fields.append(
                             {"left": f"{deref}{comp}", "right": f"{deref}rhs.{comp}"}
                         )
@@ -434,6 +477,7 @@ class ODBGenerator:
                         )
 
     def generate(self, schema: Schema) -> None:
+        """Render all class, iterator, and shared files, then merge and format."""
         print("###################Code Generation Begin###################")
         self.process_schema(schema)
 
@@ -466,7 +510,7 @@ class ODBGenerator:
         for itr in schema.iterators:
             for template_base in ["itr.h", "itr.cpp"]:
                 template_file = f"{template_base}.jinja"
-                out_name = f"{itr['name']}.{template_base.split('.')[1]}"
+                out_name = f"{itr.name}.{template_base.split('.')[1]}"
                 self._render_to_file(template_file, out_name, itr=itr, schema=schema)
                 to_be_merged.append(out_name)
 
@@ -483,12 +527,14 @@ class ODBGenerator:
         print("###################Code Generation End###################")
 
     def _render_to_file(self, template_name: str, out_name: str, **kwargs) -> None:
+        """Render a template and write it to out_name in the generated dir."""
         template = self.env.get_template(template_name)
         text = template.render(**kwargs)
-        with open(self.generated_dir / out_name, "w", encoding="ascii") as f:
-            f.write(text)
+        (self.generated_dir / out_name).write_text(text, encoding="ascii")
 
-    def _merge_files(self, file_names: List[str]) -> None:
+    def _merge_files(self, file_names: list[str]) -> None:
+        """Merge generated sections into the target files, preserving user code,
+        then run clang-format."""
         includes = {"db.h", "dbObject.h", "dbCompare.inc"}
         for item in file_names:
             target_dir = self.include_dir if item in includes else self.src_dir
@@ -507,12 +553,16 @@ class ODBGenerator:
                 shutil.copy(gen_path, target_path)
 
             if item != "CMakeLists.txt":
-                if call(["clang-format", "-i", str(target_path)]) != 0:
+                if (
+                    subprocess.run(["clang-format", "-i", str(target_path)]).returncode
+                    != 0
+                ):
                     print(f"Failed to format {target_path}")
             print(f"Generated: {target_path}")
 
 
 def main():
+    """Parse CLI args, load the schema, and run code generation."""
     parser = argparse.ArgumentParser(
         description="Code generator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -535,7 +585,7 @@ def main():
         shutil.rmtree(generated_dir)
     generated_dir.mkdir()
 
-    env = Environment(loader=FileSystemLoader(args.templates), trim_blocks=True)
+    env = make_environment(args.templates)
     generator = ODBGenerator(
         env, Path(args.include_dir), Path(args.src_dir), args.keep_empty
     )

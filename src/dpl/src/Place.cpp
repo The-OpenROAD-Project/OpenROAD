@@ -840,7 +840,7 @@ PixelPt Opendp::diamondSearch(const Node* cell,
                               const GridX x,
                               const GridY y) const
 {
-  // Diamond search limits.
+  // DPL displacement budget.
   GridX x_min = x - max_displacement_x_;
   GridX x_max = x + max_displacement_x_;
   GridY y_min = y - max_displacement_y_;
@@ -1150,9 +1150,8 @@ DbuPt Opendp::legalPt(const Node* cell, const DbuPt& pt) const
   // Align with row site.
   const GridX grid_x{divRound(core_x.v, site_width.v)};
   const DbuX legal_x{gridToDbu(grid_x, site_width)};
-  // Align to row
   const DbuY core_y
-      = std::clamp(pt.y, DbuY{0}, DbuY{core_.yMax()} - cell->getHeight());
+      = std::clamp(pt.y, DbuY{0}, DbuY{core_.dy()} - cell->getHeight());
   const GridY grid_y = grid_->gridRoundY(core_y);
   DbuY legal_y = grid_->gridYToDbu(grid_y);
 
@@ -1211,7 +1210,8 @@ bool Opendp::moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const
   const DbuX site_width = grid_->getSiteWidth();
 
   for (GridX x = grid_x - 1; x >= 0; --x) {  // left
-    if (grid_->pixel(grid_y, x).is_valid) {
+    const Pixel& p = grid_->pixel(grid_y, x);
+    if (p.is_valid && !p.is_hopeless) {
       best_dist = gridToDbu(grid_x - x - 1, site_width).v;
       best_x = x;
       best_y = grid_y;
@@ -1219,7 +1219,8 @@ bool Opendp::moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const
     }
   }
   for (GridX x = grid_x + 1; x < site_count; ++x) {  // right
-    if (grid_->pixel(grid_y, x).is_valid) {
+    const Pixel& p = grid_->pixel(grid_y, x);
+    if (p.is_valid && !p.is_hopeless) {
       const int dist = gridToDbu(x - grid_x, site_width).v - cell->getWidth().v;
       if (dist < best_dist) {
         best_dist = dist;
@@ -1230,7 +1231,8 @@ bool Opendp::moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const
     }
   }
   for (GridY y = grid_y - 1; y >= 0; --y) {  // below
-    if (grid_->pixel(y, grid_x).is_valid) {
+    const Pixel& p = grid_->pixel(y, grid_x);
+    if (p.is_valid && !p.is_hopeless) {
       const int dist = (grid_->gridYToDbu(grid_y) - grid_->gridYToDbu(y)).v;
       if (dist < best_dist) {
         best_dist = dist;
@@ -1241,7 +1243,8 @@ bool Opendp::moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const
     }
   }
   for (GridY y = grid_y + 1; y < row_count; ++y) {  // above
-    if (grid_->pixel(y, grid_x).is_valid) {
+    const Pixel& p = grid_->pixel(y, grid_x);
+    if (p.is_valid && !p.is_hopeless) {
       const int dist = (grid_->gridYToDbu(y) - grid_->gridYToDbu(grid_y)).v;
       if (dist < best_dist) {
         best_dist = dist;
