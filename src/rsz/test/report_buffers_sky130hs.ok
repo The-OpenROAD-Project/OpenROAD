@@ -45,10 +45,10 @@ cell footprint, drive strength and cell site
 Cell                                        Drive Drive    Leak   Site Cell   VT
                                             Res   Res*Cin          Ht Footpt Type
 --------------------------------------------------------------------------------
-sky130_fd_sc_hs__bufbuf_16                  538.6 1.7e-12 3.3e-10 3330 buf     -
 sky130_fd_sc_hs__buf_16                     532.1 8.6e-12 2.1e-10 3330 buf     -
-sky130_fd_sc_hs__bufbuf_8                  1267.8 3.0e-12 3.0e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_16                  538.6 1.7e-12 3.3e-10 3330 buf     -
 sky130_fd_sc_hs__buf_8                     1090.2 9.4e-12 1.5e-10 3330 buf     -
+sky130_fd_sc_hs__bufbuf_8                  1267.8 3.0e-12 3.0e-10 3330 buf     -
 sky130_fd_sc_hs__buf_4                     1981.3 7.4e-12 1.3e-10 3330 buf     -
 sky130_fd_sc_hs__buf_2                     4229.3 1.2e-11 7.5e-11 3330 buf     -
 sky130_fd_sc_hs__buf_1                     6567.8 1.7e-11 1.5e-10 3330 buf     -
