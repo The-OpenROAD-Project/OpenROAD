@@ -8,6 +8,34 @@ Also provides doc_check_test for lightweight Python-only
 documentation tests that do not require the OpenROAD binary,
 and messages_txt for generating messages.txt from source files."""
 
+load("@rules_python//python:defs.bzl", "py_test")
+
+_ASAN_RUNTIMES = [
+    "@llvm//runtimes/libcxx:libcxxabi.shared",
+    "@llvm//runtimes/libcxx:libcxx.shared",
+    "@llvm//runtimes/compiler-rt:clang_rt.asan.shared",
+]
+
+def openroad_py_test(name, data = [], **kwargs):
+    """Define a Python test that can load ASan-instrumented OpenROAD modules."""
+    py_test(
+        name = name,
+        data = data + select({
+            "@llvm//config:asan_enabled": _ASAN_RUNTIMES,
+            "//conditions:default": [],
+        }),
+        env = select({
+            "@llvm//config:asan_enabled": {
+                "LD_PRELOAD": ":".join([
+                    "$(rootpath {})".format(runtime)
+                    for runtime in _ASAN_RUNTIMES
+                ]),
+            },
+            "//conditions:default": {},
+        }),
+        **kwargs
+    )
+
 def _regression_test_impl(ctx):
     # Declare the test script output
     test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
@@ -33,6 +61,7 @@ export TEST_GOLDEN_FILE={TEST_GOLDEN_FILE}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
 export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
 export TEST_EXPECTED_EXIT_CODE={TEST_EXPECTED_EXIT_CODE}
+export ASAN_PRELOAD={ASAN_PRELOAD}
 exec "{bazel_test_sh}" "$@"
 """.format(
             bazel_test_sh = ctx.file.bazel_test_sh.short_path,
@@ -45,6 +74,7 @@ exec "{bazel_test_sh}" "$@"
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
             TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
             TEST_EXPECTED_EXIT_CODE = str(ctx.attr.expected_exit_code),
+            ASAN_PRELOAD = ":".join([runtime.short_path for runtime in ctx.files.asan_runtimes]),
         ),
         is_executable = True,
     )
@@ -61,7 +91,7 @@ exec "{bazel_test_sh}" "$@"
         ctx.file.bazel_test_sh,
         ctx.file.regression_test,
         ctx.executable.openroad,
-    ] + ctx.files.data
+    ] + ctx.files.data + ctx.files.asan_runtimes
     if ctx.file.golden_file:
         runfiles_files.append(ctx.file.golden_file)
 
@@ -75,6 +105,10 @@ exec "{bazel_test_sh}" "$@"
 regression_rule_test = rule(
     implementation = _regression_test_impl,
     attrs = {
+        "asan_runtimes": attr.label_list(
+            doc = "Runtime libraries preloaded for ASan-instrumented Python modules.",
+            allow_files = True,
+        ),
         "bazel_test_sh": attr.label(
             doc = "The Bazel test shell script.",
             allow_single_file = True,
@@ -329,6 +363,7 @@ def regression_test(
     tags = _pop(kwargs, "tags", [])
     for test_file in test_files:
         ext = test_file.split(".")[-1]
+        asan_runtimes = []
 
         test_data = [
             "//test:regression_resources",
@@ -337,6 +372,10 @@ def regression_test(
         if ext == "py" and not effective_test_type:
             effective_test_type = "python"
             test_data += native.glob(["*.py"]) + ["//python/openroad:openroadpy"]
+            asan_runtimes = select({
+                "@llvm//config:asan_enabled": _ASAN_RUNTIMES,
+                "//conditions:default": [],
+            })
         test_data = _dedupe_list(test_data)
 
         regression_rule_test(
@@ -344,6 +383,7 @@ def regression_test(
             test_file = test_file,
             test_name = name,
             test_type = effective_test_type,
+            asan_runtimes = asan_runtimes,
             data = test_data,
             bazel_test_sh = "//test:bazel_test.sh",
             openroad = "//:openroad",
