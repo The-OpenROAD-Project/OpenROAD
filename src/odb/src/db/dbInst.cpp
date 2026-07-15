@@ -398,9 +398,20 @@ bool dbInst::rename(const char* name)
 
   std::string old_name(inst->name_);
   block->inst_hash_.remove(inst);
+
+  _dbModule* module = nullptr;
+  if (inst->getModuleId() != 0) {
+    module = (_dbModule*) dbModule::getModule((dbBlock*) block,
+                                              inst->getModuleId());
+    module->dbinst_hash_.erase(old_name);
+  }
+
   free((void*) inst->name_);
   inst->name_ = safe_strdup(name);
   block->inst_hash_.insert(inst);
+  if (module != nullptr) {
+    module->dbinst_hash_[name] = dbId<_dbInst>(inst->getOID());
+  }
 
   for (dbBlockCallBackObj* cb : block->callbacks_) {
     cb->inDbPostInstRename(this, old_name.c_str());

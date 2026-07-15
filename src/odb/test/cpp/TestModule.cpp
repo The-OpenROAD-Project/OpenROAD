@@ -277,6 +277,22 @@ TEST_F(ModuleFixture, reparent_updates_index_and_fires_callback)
   EXPECT_EQ(top->findDbInst("inst"), inst);
 }
 
+TEST_F(ModuleFixture, rename_updates_module_index)
+{
+  dbModule* top = block_->getTopModule();
+  dbInst* inst = dbInst::create(block_, lib_->findMaster("and2"), "old_name");
+  ASSERT_NE(inst, nullptr);
+  ASSERT_EQ(top->findDbInst("old_name"), inst);
+
+  ASSERT_TRUE(inst->rename("new_name"));
+  EXPECT_EQ(top->findDbInst("old_name"), nullptr);
+  EXPECT_EQ(top->findDbInst("new_name"), inst);
+
+  dbInst::destroy(inst);
+  EXPECT_EQ(top->findDbInst("old_name"), nullptr);
+  EXPECT_EQ(top->findDbInst("new_name"), nullptr);
+}
+
 TEST_F(ModuleFixture, test_default)
 {
   // dbModule::create() Succeed
