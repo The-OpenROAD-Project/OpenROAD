@@ -41,6 +41,26 @@ bool FlexGCWorker::Impl::isCornerOverlap(gcCorner* corner, const odb::Rect& box)
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
   frCoord cornerY = corner->getNextEdge()->low().y();
+  if (corner->getType() == frCornerTypeEnum::CONCAVE) {
+    const bool withinX = box.xMin() <= cornerX && cornerX <= box.xMax();
+    const bool withinY = box.yMin() <= cornerY && cornerY <= box.yMax();
+    switch (corner->getDir()) {
+      case frCornerDirEnum::NE:
+        return (cornerX == box.xMax() && withinY)
+               || (cornerY == box.yMax() && withinX);
+      case frCornerDirEnum::SE:
+        return (cornerX == box.xMax() && withinY)
+               || (cornerY == box.yMin() && withinX);
+      case frCornerDirEnum::SW:
+        return (cornerX == box.xMin() && withinY)
+               || (cornerY == box.yMin() && withinX);
+      case frCornerDirEnum::NW:
+        return (cornerX == box.xMin() && withinY)
+               || (cornerY == box.yMax() && withinX);
+      default:
+        return false;
+    }
+  }
   switch (corner->getDir()) {
     case frCornerDirEnum::NE:
       if (cornerX == box.xMax() && cornerY == box.yMax()) {
