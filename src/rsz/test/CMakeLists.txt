@@ -28,6 +28,7 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gain_buffering2
+    gain_buffering3
     gcd_resize
     insert_buffer
     insert_buffer_hier

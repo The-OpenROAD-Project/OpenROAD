@@ -1108,7 +1108,7 @@ COMPONENTS 1364 ;
     - _333_ sky130_fd_sc_hs__nor4_4 + PLACED ( 102240 149850 ) FS ;
     - _334_ sky130_fd_sc_hs__nor4_4 + PLACED ( 149760 199800 ) N ;
     - _335_ sky130_fd_sc_hs__nand4_2 + PLACED ( 152640 149850 ) FS ;
-    - _338_ sky130_fd_sc_hs__nand2_1 + PLACED ( 208320 133200 ) N ;
+    - _338_ sky130_fd_sc_hs__nand2_1 + PLACED ( 207840 133200 ) N ;
     - _339_ sky130_fd_sc_hs__o2bb2ai_1 + PLACED ( 198720 149850 ) FS ;
     - _340_ sky130_fd_sc_hs__nor2_8 + PLACED ( 207840 143190 ) FS ;
     - _341_ sky130_fd_sc_hs__and2_1 + PLACED ( 208320 169830 ) FS ;
@@ -1471,7 +1471,7 @@ COMPONENTS 1364 ;
     - repeater1 sky130_fd_sc_hs__clkbuf_8 + PLACED ( 180000 219780 ) N ;
     - repeater2 sky130_fd_sc_hs__clkbuf_4 + PLACED ( 151200 129870 ) FS ;
     - repeater3 sky130_fd_sc_hs__buf_8 + PLACED ( 199680 159840 ) N ;
-    - repeater4 sky130_fd_sc_hs__buf_8 + PLACED ( 200640 133200 ) N ;
+    - repeater4 sky130_fd_sc_hs__buf_8 + PLACED ( 200160 139860 ) N ;
 END COMPONENTS
 PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
