@@ -5,6 +5,13 @@
 [INFO ODB-0131]     Created 3 components and 14 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
+[INFO RSZ-0029] Start input port buffering with sky130_fd_sc_hd__buf_1.
+[INFO RSZ-0214] Buffering input port in1.
+[INFO RSZ-0214] Buffering input port in2.
+[INFO RSZ-0027] Inserted 2 sky130_fd_sc_hd__buf_1 input buffers.
+[INFO RSZ-0031] Start output port buffering with sky130_fd_sc_hd__buf_1.
+[INFO RSZ-0215] Buffering output port out1.
+[INFO RSZ-0028] Inserted 1 sky130_fd_sc_hd__buf_1 output buffers.
 ********************************************************************************
 Buffer Report:
 There are 25 buffers that are not marked as dont-use, multi-voltage

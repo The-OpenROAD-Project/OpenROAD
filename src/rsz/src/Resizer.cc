@@ -1182,8 +1182,32 @@ void Resizer::findBuffers()
   if (buffer_cells_.empty()) {
     logger_->error(RSZ, 22, "no buffers found.");
   } else {
-    // find the buffer with the largest drive resistance
+    // Keep the repair candidate unchanged because it is coupled to the
+    // pruned buffer list and timing-repair heuristics.
     buffer_lowest_drive_ = buffer_cells_.back();
+
+    // Select a fast cell from the weakest drive-strength bucket.  Using the
+    // final pruned cell for port buffering can select a delay cell because
+    // pruning scores cells by input RC and does not preserve drive-resistance
+    // order.
+    const size_t weakest_bucket_size
+        = std::max<size_t>(1, static_cast<size_t>(bucket_size));
+    const size_t weakest_bucket_start
+        = new_buffer_list.size() - weakest_bucket_size;
+    port_buffer_ = new_buffer_list[weakest_bucket_start];
+    sta::LibertyPort *input, *output;
+    port_buffer_->bufferPorts(input, output);
+    float lowest_intrinsic_delay = output->intrinsicDelay(sta_);
+
+    for (size_t i = weakest_bucket_start + 1; i < new_buffer_list.size(); i++) {
+      sta::LibertyCell* buffer = new_buffer_list[i];
+      buffer->bufferPorts(input, output);
+      const float intrinsic_delay = output->intrinsicDelay(sta_);
+      if (intrinsic_delay < lowest_intrinsic_delay) {
+        port_buffer_ = buffer;
+        lowest_intrinsic_delay = intrinsic_delay;
+      }
+    }
   }
 }
 
@@ -1223,6 +1247,7 @@ void Resizer::findBuffersNoPruning()
            });
 
       buffer_lowest_drive_ = buffer_cells_[0];
+      port_buffer_ = buffer_lowest_drive_;
     }
   }
 }
@@ -1234,15 +1259,15 @@ sta::LibertyCell* Resizer::selectBufferCell(sta::LibertyCell* user_buffer_cell)
     return user_buffer_cell;
   }
 
-  // Otherwise, find the weakest buffer with the lowest drive resistance.
-  findBuffers();  // updates buffer_lowest_drive_
+  // Otherwise, find a fast buffer from the weakest drive-strength group.
+  findBuffers();  // updates port_buffer_
 
   // No buffer?
-  if (buffer_lowest_drive_ == nullptr) {
+  if (port_buffer_ == nullptr) {
     logger_->error(RSZ, 41, "No buffers found.");
   }
 
-  return buffer_lowest_drive_;
+  return port_buffer_;
 }
 
 bool Resizer::isLinkCell(sta::LibertyCell* cell) const
@@ -3395,6 +3420,7 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
+  port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
 }
 
@@ -3406,6 +3432,7 @@ void Resizer::resetDontUse()
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
+  port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
 
   // recopy in liberty cell dont uses
