@@ -29,7 +29,7 @@
 [INFO GRT-0002] Maximum degree: 36
 [WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 Design statistics
-Nets:                579
+Nets:                563
 Special nets:        0
 Routing layers:      10
 

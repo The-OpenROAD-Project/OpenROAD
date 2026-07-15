@@ -83,7 +83,9 @@ class Design
 
   BoxT getDieRegion() const { return die_region_; }
 
-  void updateNet(odb::dbNet* db_net);
+  // Adds or refreshes a net; returns its net index, or -1 if the net is not
+  // admitted to the routing netlist (special/supply/abutment, or single-pin).
+  int updateNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
 
  private:
