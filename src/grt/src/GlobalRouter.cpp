@@ -450,10 +450,6 @@ void GlobalRouter::endIncremental(bool save_guides)
 
 void GlobalRouter::reportIncrementalCongestion()
 {
-  // CUGR incremental reroutes only dirty nets and does not recover congestion
-  // it induces on neighboring nets, so surface any residual overflow once.
-  // The pending flag keeps overlapping callers (endIncremental and the
-  // IncrementalGRoute destructor) from warning twice for the same session.
   if (!incremental_congestion_report_pending_ || cugr_ == nullptr) {
     return;
   }
@@ -6394,53 +6390,62 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   if (use_cugr_) {
-    cugr_->setVerbose(false);
-    std::vector<Net*> dirty_nets;
-    dirty_nets.reserve(dirty_nets_.size());
-    for (odb::dbNet* db_net : dirty_nets_) {
-      // Rebuild the pin set from the netlist; positions are synced below.
-      Net* net = getNet(db_net);
-      updateNetPins(net);
-      // Reroute a dirty net when needed: res-aware, no route, restored guides
-      // (rerouted until restore-from-guides lands), or a pin moved gcell.
-      const auto route_it = routes_.find(db_net);
-      const bool has_route
-          = (route_it != routes_.end() && !route_it->second.empty());
-      const bool reroute = net->isResAware() || !has_route
-                           || net->restoreRouteFromGuides()
-                           || pinPositionsChanged(net);
-      net->setDirtyNet(false);
-      net->clearLastPinPositions();
-      net->setRestoreRouteFromGuides(false);
-      if (reroute) {
-        cugr_->updateNet(db_net);
-        dirty_nets.push_back(net);
-      }
-    }
+    return updateDirtyRoutesCugr();
+  }
+  return updateDirtyRoutesFastRoute(save_guides);
+}
 
-    dirty_nets_.clear();
-    cugr_->routeIncremental();
-    // Patch only the rerouted nets into routes_ and sync their pin access
-    // points (full route syncs all). Nets CUGR skipped (< 2 pins, local)
-    // yield an empty route and empty access-point maps, clearing any stale
-    // entry.
-    for (Net* net : dirty_nets) {
-      odb::dbNet* db_net = net->getDbNet();
-      GRoute route = cugr_->getNetRoute(db_net);
-      if (route.empty()) {
-        routes_.erase(db_net);
-      } else {
-        routes_[db_net] = std::move(route);
-      }
-      updatePinAccessPoints(net, db_net);
+std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr()
+{
+  cugr_->setVerbose(false);
+  std::vector<Net*> dirty_nets;
+  dirty_nets.reserve(dirty_nets_.size());
+  for (odb::dbNet* db_net : dirty_nets_) {
+    // Rebuild the pin set from the netlist; positions are synced below.
+    Net* net = getNet(db_net);
+    updateNetPins(net);
+    // Reroute a dirty net when needed: res-aware, no route, restored guides
+    // (rerouted until restore-from-guides lands), or a pin moved gcell.
+    const auto route_it = routes_.find(db_net);
+    const bool has_route
+        = (route_it != routes_.end() && !route_it->second.empty());
+    const bool reroute = net->isResAware() || !has_route
+                         || net->restoreRouteFromGuides()
+                         || pinPositionsChanged(net);
+    net->setDirtyNet(false);
+    net->clearLastPinPositions();
+    net->setRestoreRouteFromGuides(false);
+    if (reroute) {
+      cugr_->updateNet(db_net);
+      dirty_nets.push_back(net);
     }
-    if (!dirty_nets.empty()) {
-      incremental_congestion_report_pending_ = true;
-    }
-
-    return dirty_nets;
   }
 
+  dirty_nets_.clear();
+  cugr_->routeIncremental();
+  // Patch only the rerouted nets into routes_ and sync their pin access
+  // points (full route syncs all). Nets CUGR skipped (< 2 pins, local)
+  // yield an empty route and empty access-point maps, clearing any stale
+  // entry.
+  for (Net* net : dirty_nets) {
+    odb::dbNet* db_net = net->getDbNet();
+    GRoute route = cugr_->getNetRoute(db_net);
+    if (route.empty()) {
+      routes_.erase(db_net);
+    } else {
+      routes_[db_net] = std::move(route);
+    }
+    updatePinAccessPoints(net, db_net);
+  }
+  if (!dirty_nets.empty()) {
+    incremental_congestion_report_pending_ = true;
+  }
+
+  return dirty_nets;
+}
+
+std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
+{
   std::vector<Net*> dirty_nets;
 
   fastroute_->setResistanceAware(resistance_aware_);

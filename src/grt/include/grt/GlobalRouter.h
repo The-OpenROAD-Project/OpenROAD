@@ -201,7 +201,6 @@ class GlobalRouter
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void startIncremental();
   void endIncremental(bool save_guides = false);
-  // Warn once, at the end of an incremental session, if CUGR left congestion.
   void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
   void saveCongestion();
@@ -487,6 +486,8 @@ class GlobalRouter
 
   // incremental funcions
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
+  std::vector<Net*> updateDirtyRoutesCugr();
+  std::vector<Net*> updateDirtyRoutesFastRoute(bool save_guides);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
   bool loadRoutingFromDBGuides(odb::dbNet* db_net);
@@ -565,9 +566,6 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
-  // Set while a CUGR incremental session has rerouted nets whose residual
-  // congestion has not been reported yet; consumed by
-  // reportIncrementalCongestion so overlapping callers warn only once.
   bool incremental_congestion_report_pending_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};

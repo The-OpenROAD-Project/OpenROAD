@@ -93,8 +93,6 @@ class CUGR
   void route(bool incremental = false);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
-  // Route for a single net, so incremental updates patch only the dirty nets
-  // instead of rebuilding the whole map.
   GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
   void getITermsAccessPoints(
