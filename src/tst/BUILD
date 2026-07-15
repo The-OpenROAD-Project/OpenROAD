@@ -17,7 +17,10 @@ cc_library(
     ],
     includes = ["include"],
     visibility = ["//visibility:public"],
-    deps = [":tst"],
+    deps = [
+        ":tst",
+        "//src/odb/src/db",
+    ],
 )
 
 cc_library(
@@ -29,7 +32,10 @@ cc_library(
     ],
     includes = ["include"],
     visibility = ["//visibility:public"],
-    deps = [":tst"],
+    deps = [
+        ":tst",
+        "//src/odb/src/db",
+    ],
 )
 
 cc_library(
@@ -79,7 +85,6 @@ cc_library(
         "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@googletest//:gtest",
         "@tcl_lang//:tcl",
     ],
 )

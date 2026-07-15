@@ -43,7 +43,6 @@ void extMain::setExtractionOptions(const ExtractOptions& options)
   _lef_res = options.lef_res;
   _lefRC = options.lef_rc;
   _dbgOption = options._dbg;
-  rules_file_path_ = options.ext_model_file;
   target_nets_names_ = options.net;
 }
 
@@ -700,7 +699,7 @@ void extMain::measureRC(CoupleOptions& options)
 
       _totCCcnt++;  // TO_TEST
 
-      if (m._rc[_minModelIndex]->coupling_ < _coupleThreshold) {  // TO_TEST
+      if (m._rc[0]->coupling_ < _coupleThreshold) {
         updateTotalCap(rseg1, &m, deltaFr, m._metRCTable.getCnt(), true);
         updateTotalCap(rseg2, &m, deltaFr, m._metRCTable.getCnt(), true);
 
