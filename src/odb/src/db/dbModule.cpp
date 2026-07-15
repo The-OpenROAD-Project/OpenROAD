@@ -224,7 +224,7 @@ void dbModule::addInst(dbInst* inst)
         getName());
   }
 
-  if (_inst->module_ == module->getOID()) {
+  if (_inst->getModuleId() == module->getOID()) {
     return;  // already in this module
   }
 
@@ -240,13 +240,12 @@ void dbModule::addInst(dbInst* inst)
   // initial assignment during dbInst::create (module_ is unset). Only
   // the former should fire inDbPostInstParentChange -- otherwise every
   // create would falsely trigger downstream subtree-invalidation paths.
-  const bool is_reparent = (_inst->module_ != 0);
+  const bool is_reparent = (_inst->getModuleId() != 0);
   if (is_reparent) {
-    dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
-    ((_dbModule*) mod)->removeInst(inst);
+    dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->getModuleId());
+    ((_dbModule*) mod)->removeInst(inst, false);
   }
 
-  _inst->module_ = module->getOID();
   module->dbinst_hash_[inst->getName()] = dbId<_dbInst>(_inst->getOID());
 
   if (module->insts_ == 0) {
@@ -260,20 +259,16 @@ void dbModule::addInst(dbInst* inst)
     cur_head->module_prev_ = _inst->getOID();
   }
 
-  if (is_reparent) {
-    for (dbBlockCallBackObj* cb : block->callbacks_) {
-      cb->inDbPostInstParentChange(inst);
-    }
-  }
+  _inst->setModule(module->getOID());
 }
 
-void _dbModule::removeInst(dbInst* inst)
+void _dbModule::removeInst(dbInst* inst, bool clear_module)
 {
   _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
   uint32_t id = _inst->getOID();
 
-  if (_inst->module_ != getOID()) {
+  if (_inst->getModuleId() != getOID()) {
     return;
   }
 
@@ -286,6 +281,7 @@ void _dbModule::removeInst(dbInst* inst)
   }
 
   _dbBlock* block = (_dbBlock*) getOwner();
+  module->dbinst_hash_.erase(inst->getName());
 
   if (module->insts_ == id) {
     module->insts_ = _inst->module_next_;
@@ -305,7 +301,9 @@ void _dbModule::removeInst(dbInst* inst)
       prev->module_next_ = _inst->module_next_;
     }
   }
-  _inst->module_ = 0;
+  if (clear_module) {
+    _inst->setModule(dbId<_dbModule>());
+  }
   _inst->module_next_ = 0;
   _inst->module_prev_ = 0;
 }

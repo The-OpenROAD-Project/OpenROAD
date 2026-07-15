@@ -74,6 +74,24 @@ class sortITerm
   }
 };
 
+void _dbInst::setModule(dbId<_dbModule> module)
+{
+  const dbId<_dbModule> previous = module_;
+  if (previous == module) {
+    return;
+  }
+
+  module_ = module;
+  if (previous == 0 || module == 0) {
+    return;
+  }
+
+  _dbBlock* block = (_dbBlock*) getOwner();
+  for (dbBlockCallBackObj* callback : block->callbacks_) {
+    callback->inDbPostInstParentChange((dbInst*) this);
+  }
+}
+
 void _dbInst::setInstBBox(_dbInst* inst)
 {
   _dbBlock* block = (_dbBlock*) inst->getOwner();
@@ -866,12 +884,12 @@ dbModule* dbInst::getModule()
 {
   _dbInst* inst = (_dbInst*) this;
 
-  if (inst->module_ == 0) {
+  if (inst->getModuleId() == 0) {
     return nullptr;
   }
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  _dbModule* module = block->module_tbl_->getPtr(inst->module_);
+  _dbModule* module = block->module_tbl_->getPtr(inst->getModuleId());
   return (dbModule*) module;
 }
 
@@ -1072,7 +1090,7 @@ bool dbInst::isPhysicalOnly()
 {
   _dbInst* inst = (_dbInst*) this;
 
-  return inst->module_ == 0;
+  return inst->getModuleId() == 0;
 }
 
 dbInst* dbInst::getParent()
@@ -1589,7 +1607,7 @@ void dbInst::destroy(dbInst* inst_)
     block->journal_->pushParam(inst->x_);
     block->journal_->pushParam(inst->y_);
     block->journal_->pushParam(inst->group_);
-    block->journal_->pushParam(inst->module_);
+    block->journal_->pushParam(inst->getModuleId());
     block->journal_->pushParam(inst->region_);
     block->journal_->endAction();
   }
