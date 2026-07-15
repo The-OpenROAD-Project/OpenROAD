@@ -5617,34 +5617,32 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
 
 void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
-  if (use_cugr_) {
-    // Attempt to stitch the two existing CUGR routes at the former buffer pin
-    // positions. If successful, transfer tree ownership to the preserved net
-    // without re-routing; otherwise fall back to a full dirty-net reroute.
-    std::vector<GSegment> connection;
-    if (connectRouting(db_net1, db_net2, &connection)) {
-      cugr_->mergeNet(db_net1, db_net2, connection);
-      saveGuides({db_net1});
-    } else {
-      addDirtyNet(db_net1);
-    }
-    return;
-  }
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
-  // Try to connect the routing of the two nets
-  if (connectRouting(db_net1, db_net2)) {
-    net1->setIsMergedNet(true);
-    net1->setMergedNet(db_net2);
-    net1->setDirtyNet(false);
-    net2->setIsMergedNet(true);
-    net2->setMergedNet(db_net1);
+  // Try to connect the routing of the two nets.
+  // For CUGR, connectRouting also performs the CUGR-specific capacity check
+  // and populates connection_segs so that the CUGR tree can be updated.
+  std::vector<GSegment> connection_segs;
+  if (connectRouting(db_net1, db_net2, &connection_segs)) {
     saveGuides({db_net1});
+    if (use_cugr_) {
+      cugr_->mergeNet(db_net1, db_net2, connection_segs);
+    } else {
+      net1->setIsMergedNet(true);
+      net1->setMergedNet(db_net2);
+      net1->setDirtyNet(false);
+      net2->setIsMergedNet(true);
+      net2->setMergedNet(db_net1);
+    }
   } else {
-    // The survivor net's routing could not be validated as a single connected
-    // component covering all pins (uncovered pins and/or disconnected
-    // segments), so it needs to be re-routed from scratch.
-    net1->setDirtyNet(true);
+    if (use_cugr_) {
+      // Fall back to a full dirty-net reroute on the CUGR path.
+      addDirtyNet(db_net1);
+    } else {
+      // After failing to connect the routing, the survivor net still has
+      // uncovered pins and needs to be re-routed
+      net1->setDirtyNet(true);
+    }
   }
 }
 
