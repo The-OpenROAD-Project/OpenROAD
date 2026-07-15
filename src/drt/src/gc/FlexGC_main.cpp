@@ -37,29 +37,44 @@ namespace drt {
 using polygon_t = bg::model::polygon<point_t>;
 using mpolygon_t = bg::model::multi_polygon<polygon_t>;
 
+namespace {
+bool isConcaveCornerOverlap(gcCorner* corner,
+                            frCoord cornerX,
+                            frCoord cornerY,
+                            frCoord xMin,
+                            frCoord yMin,
+                            frCoord xMax,
+                            frCoord yMax)
+{
+  const bool withinX = xMin <= cornerX && cornerX <= xMax;
+  const bool withinY = yMin <= cornerY && cornerY <= yMax;
+  switch (corner->getDir()) {
+    case frCornerDirEnum::NE:
+      return (cornerX == xMax && withinY) || (cornerY == yMax && withinX);
+    case frCornerDirEnum::SE:
+      return (cornerX == xMax && withinY) || (cornerY == yMin && withinX);
+    case frCornerDirEnum::SW:
+      return (cornerX == xMin && withinY) || (cornerY == yMin && withinX);
+    case frCornerDirEnum::NW:
+      return (cornerX == xMin && withinY) || (cornerY == yMax && withinX);
+    default:
+      return false;
+  }
+}
+}  // namespace
+
 bool FlexGCWorker::Impl::isCornerOverlap(gcCorner* corner, const odb::Rect& box)
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
   frCoord cornerY = corner->getNextEdge()->low().y();
   if (corner->getType() == frCornerTypeEnum::CONCAVE) {
-    const bool withinX = box.xMin() <= cornerX && cornerX <= box.xMax();
-    const bool withinY = box.yMin() <= cornerY && cornerY <= box.yMax();
-    switch (corner->getDir()) {
-      case frCornerDirEnum::NE:
-        return (cornerX == box.xMax() && withinY)
-               || (cornerY == box.yMax() && withinX);
-      case frCornerDirEnum::SE:
-        return (cornerX == box.xMax() && withinY)
-               || (cornerY == box.yMin() && withinX);
-      case frCornerDirEnum::SW:
-        return (cornerX == box.xMin() && withinY)
-               || (cornerY == box.yMin() && withinX);
-      case frCornerDirEnum::NW:
-        return (cornerX == box.xMin() && withinY)
-               || (cornerY == box.yMax() && withinX);
-      default:
-        return false;
-    }
+    return isConcaveCornerOverlap(corner,
+                                  cornerX,
+                                  cornerY,
+                                  box.xMin(),
+                                  box.yMin(),
+                                  box.xMax(),
+                                  box.yMax());
   }
   switch (corner->getDir()) {
     case frCornerDirEnum::NE:
@@ -93,6 +108,15 @@ bool FlexGCWorker::Impl::isCornerOverlap(
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
   frCoord cornerY = corner->getNextEdge()->low().y();
+  if (corner->getType() == frCornerTypeEnum::CONCAVE) {
+    return isConcaveCornerOverlap(corner,
+                                  cornerX,
+                                  cornerY,
+                                  gtl::xl(rect),
+                                  gtl::yl(rect),
+                                  gtl::xh(rect),
+                                  gtl::yh(rect));
+  }
   switch (corner->getDir()) {
     case frCornerDirEnum::NE:
       if (cornerX == gtl::xh(rect) && cornerY == gtl::yh(rect)) {
