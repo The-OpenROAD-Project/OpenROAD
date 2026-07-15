@@ -401,7 +401,7 @@ void extMain::setBlockFromChip(odb::dbChip* chip)
   _block = chip->getBlock();
 
   if (!_block) {
-    logger_->error(RCX, 14, "Could not get the block from the chip.");
+    logger_->error(RCX, 18, "Could not get the block from the chip.");
   }
 
   _blockId = _block->getId();
