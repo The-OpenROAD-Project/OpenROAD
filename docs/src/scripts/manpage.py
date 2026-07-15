@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import io
 import datetime
+import os
+import tempfile
 
 
 # identify key section and stored in ManPage class.
