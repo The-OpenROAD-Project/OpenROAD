@@ -339,26 +339,30 @@ _install_bison() {
     if [[ "${bison_installed_version}" != "${BISON_VERSION}" ]]; then
         (
             cd "${BASE_DIR}"
-            local mirrors=(
-                "https://ftp.gnu.org/gnu/bison"
-                "https://ftpmirror.gnu.org/bison"
-                "https://mirrors.kernel.org/gnu/bison"
-                "https://mirrors.dotsrc.org/gnu/bison"
-            )
-            local success=0
-            for mirror in "${mirrors[@]}"; do
-                local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
-                log "Trying to download bison from: $url"
-                if wget $OPT_NOCERT "$url"; then
-                    success=1
-                    break
-                else
-                    warn "Failed to download from $mirror"
+            _download_bison() {
+                local mirrors=(
+                    "https://ftp.gnu.org/gnu/bison"
+                    "https://ftpmirror.gnu.org/bison"
+                    "https://mirrors.kernel.org/gnu/bison"
+                    "https://mirrors.dotsrc.org/gnu/bison"
+                )
+                local success=0
+                for mirror in "${mirrors[@]}"; do
+                    local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
+                    log "Trying to download bison from: $url"
+                    if wget $OPT_NOCERT "$url"; then
+                        success=1
+                        break
+                    else
+                        warn "Failed to download from $mirror"
+                    fi
+                done
+                if [[ ${success} -ne 1 ]]; then
+                    warn "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
+                    return 1
                 fi
-            done
-            if [[ ${success} -ne 1 ]]; then
-                error "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
-            fi
+            }
+            _execute "Downloading Bison" _download_bison
             _verify_checksum "${BISON_CHECKSUM}" "bison-${BISON_VERSION}.tar.gz" || error "Bison checksum failed."
             _execute "Extracting Bison..." tar xf "bison-${BISON_VERSION}.tar.gz"
             cd "bison-${BISON_VERSION}"
