@@ -4,6 +4,8 @@
 # This code describes the ManPage class, which consists of the data classes
 #  as well as the code needed to write the roff-compatible manpage file.
 
+from __future__ import annotations
+
 import io
 import datetime
 
