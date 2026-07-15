@@ -12,9 +12,9 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
-#include "db/obj/frBTerm.h"
 #include "db/obj/frGuide.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
@@ -40,14 +40,14 @@ bool guideLess(const frGuide* lhs, const frGuide* rhs)
 {
   const auto [lhs_begin, lhs_end] = lhs->getPoints();
   const auto [rhs_begin, rhs_end] = rhs->getPoints();
-  return std::make_tuple(lhs->getNet()->getName(),
+  return std::make_tuple(lhs->getNet()->getId(),
                          lhs->getLayerNum(),
                          lhs_begin.x(),
                          lhs_begin.y(),
                          lhs_end.x(),
                          lhs_end.y(),
                          lhs->getIndexInOwner())
-         < std::make_tuple(rhs->getNet()->getName(),
+         < std::make_tuple(rhs->getNet()->getId(),
                            rhs->getLayerNum(),
                            rhs_begin.x(),
                            rhs_begin.y(),
@@ -64,18 +64,17 @@ bool grPinLess(const frBlockObject* lhs, const frBlockObject* rhs)
   if (lhs->typeId() == frcInstTerm) {
     const auto* lhs_term = static_cast<const frInstTerm*>(lhs);
     const auto* rhs_term = static_cast<const frInstTerm*>(rhs);
-    return std::make_tuple(lhs_term->getInst()->getName(),
-                           lhs_term->getTerm()->getName(),
+    return std::make_tuple(lhs_term->getInst()->getId(),
+                           lhs_term->getTerm()->getId(),
                            lhs_term->getId())
-           < std::make_tuple(rhs_term->getInst()->getName(),
-                             rhs_term->getTerm()->getName(),
+           < std::make_tuple(rhs_term->getInst()->getId(),
+                             rhs_term->getTerm()->getId(),
                              rhs_term->getId());
   }
   if (lhs->typeId() == frcBTerm) {
     const auto* lhs_term = static_cast<const frBTerm*>(lhs);
     const auto* rhs_term = static_cast<const frBTerm*>(rhs);
-    return std::make_tuple(lhs_term->getName(), lhs_term->getId())
-           < std::make_tuple(rhs_term->getName(), rhs_term->getId());
+    return lhs_term->getId() < rhs_term->getId();
   }
   return lhs->getId() < rhs->getId();
 }

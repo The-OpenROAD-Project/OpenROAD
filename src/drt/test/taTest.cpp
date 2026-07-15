@@ -156,8 +156,8 @@ TEST_F(TAFixture, single_horizontal_iroute_assigned)
 
 TEST_F(TAFixture, guide_query_has_canonical_order)
 {
-  frNet* n2 = makeNet("n2");
   frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
   makeGuide(n2, /*layer_num=*/2, {500, 500}, {1500, 500});
   makeGuide(n1, /*layer_num=*/2, {500, 500}, {1500, 500});
 
