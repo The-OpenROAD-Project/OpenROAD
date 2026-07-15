@@ -1102,21 +1102,19 @@ void Resizer::findBuffers()
   // The buffer list is already sorted in ascending order of drive resistance.
   // Divide buffers into 5 buckets based on drive resistance.
   // Each bucket is a proxy for drive strength group.
-  // We want to pick 2 best buffers from each bucket using intrinsic delay plus
-  // drive resistance * c_in.  The lower the delay estimate, the better.
+  // We want to pick 2 best buffers from each bucket using drive resistance *
+  // c_in.  The lower the RC product, the better.
   const int num_buckets = 5;
   const int bucket_size = new_buffer_list.size() / num_buckets;
   const int remainder = new_buffer_list.size() % num_buckets;
 
   sta::LibertyCellSeq final_buffer_list;
-  sta::LibertyCell* weakest_buffer = nullptr;
   for (int bucket = 0; bucket < num_buckets; bucket++) {
     // Calculate bucket boundaries
     int start_idx = bucket * bucket_size + std::min(bucket, remainder);
     int end_idx = start_idx + bucket_size + (bucket < remainder ? 1 : 0);
 
-    // Create a vector for this bucket with intrinsic delay plus drive_res *
-    // input_cap values.
+    // Create a vector for this bucket with drive_res * input_cap values
     std::vector<std::pair<sta::LibertyCell*, float>> bucket_buffers;
     bucket_buffers.reserve(bucket_size);
 
@@ -1124,14 +1122,13 @@ void Resizer::findBuffers()
       sta::LibertyCell* buffer = new_buffer_list[i];
       sta::LibertyPort *input, *output;
       buffer->bufferPorts(input, output);
-      float metric = output->intrinsicDelay(sta_)
-                     + bufferDriveResistance(buffer) * input->capacitance();
+      float metric = bufferDriveResistance(buffer) * input->capacitance();
       bucket_buffers.emplace_back(buffer, metric);
     }
 
-    // Sort this bucket by estimated delay (ascending).
+    // Sort this bucket by drive_res * input_cap (ascending)
     std::ranges::sort(bucket_buffers, [](const auto& a, const auto& b) {
-      return a.second < b.second;
+      return a.second < b.second;  // Compare by R * C
     });
 
     // Select up to 2 best buffers from this bucket
@@ -1141,34 +1138,24 @@ void Resizer::findBuffers()
       for (int i = 0; i < buffers_to_select; i++) {
         final_buffer_list.emplace_back(bucket_buffers[i].first);
         debugRDPrint2(
-            "findBuffers: Buffer {} with delay={:.2e} is selected for bucket "
+            "findBuffers: Buffer {} with RC={:.2e} is selected for bucket "
             "{}",
             bucket_buffers[i].first->name(),
             bucket_buffers[i].second,
             bucket);
       }
-      if (buffers_to_select > 0) {
-        weakest_buffer = bucket_buffers.front().first;
-      }
     } else {
       // Try to choose one for each dominant site
       // It's possible that there are no buffers matching the sites in this
       // bucket
-      sta::LibertyCell* bucket_weakest_buffer = nullptr;
-      float bucket_best_metric = 0.0;
       for (int site_idx = 0; site_idx < 2 && site_idx < site_list.size();
            site_idx++) {
         for (const auto& pair : bucket_buffers) {
           odb::dbMaster* master = db_network_->staToDb(pair.first);
           if (master->getSite() == site_list[site_idx].first) {
             final_buffer_list.emplace_back(pair.first);
-            if (bucket_weakest_buffer == nullptr
-                || pair.second < bucket_best_metric) {
-              bucket_weakest_buffer = pair.first;
-              bucket_best_metric = pair.second;
-            }
             debugRDPrint2(
-                "findBuffers: Buffer {} with delay={:.2e} is selected for "
+                "findBuffers: Buffer {} with RC={:.2e} is selected for "
                 "bucket {} and site "
                 "{}",
                 pair.first->name(),
@@ -1178,9 +1165,6 @@ void Resizer::findBuffers()
             break;
           }
         }
-      }
-      if (bucket_weakest_buffer != nullptr) {
-        weakest_buffer = bucket_weakest_buffer;
       }
     }
   }
@@ -1198,7 +1182,8 @@ void Resizer::findBuffers()
   if (buffer_cells_.empty()) {
     logger_->error(RSZ, 22, "no buffers found.");
   } else {
-    buffer_lowest_drive_ = weakest_buffer;
+    // find the buffer with the largest drive resistance
+    buffer_lowest_drive_ = buffer_cells_.back();
   }
 }
 

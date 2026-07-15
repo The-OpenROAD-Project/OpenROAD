@@ -101,12 +101,12 @@ cell footprint, drive strength and cell site
 Cell                                        Drive Drive    Leak   Site Cell   VT
                                             Res   Res*Cin          Ht Footpt Type
 --------------------------------------------------------------------------------
-BUFx12f_ASAP7_75t_L                         740.6 1.8e-12 4.0e-09 270 N/A     L
-BUFx16f_ASAP7_75t_L                         605.7 1.5e-12 5.0e-09 270 N/A     L
-BUFx6f_ASAP7_75t_L                         1314.4 1.6e-12 2.0e-09 270 N/A     L
+BUFx12_ASAP7_75t_L                          735.8 9.2e-13 3.5e-09 270 N/A     L
+BUFx24_ASAP7_75t_L                          507.0 1.2e-12 7.0e-09 270 N/A     L
+BUFx8_ASAP7_75t_L                          1029.8 9.1e-13 2.3e-09 270 N/A     L
 BUFx10_ASAP7_75t_L                          848.3 1.1e-12 3.0e-09 270 N/A     L
-BUFx4f_ASAP7_75t_L                         1918.3 2.0e-12 1.3e-09 270 N/A     L
 BUFx5_ASAP7_75t_L                          1566.7 1.0e-12 1.5e-09 270 N/A     L
+BUFx4_ASAP7_75t_L                          1935.3 1.1e-12 1.2e-09 270 N/A     L
 BUFx3_ASAP7_75t_L                          2546.9 1.7e-12 1.0e-09 270 N/A     L
 BUFx2_ASAP7_75t_L                          3769.6 2.1e-12 6.7e-10 270 N/A     L
 HB2xp67_ASAP7_75t_L                       11222.2 5.6e-12 2.0e-10 270 N/A     L
@@ -117,16 +117,15 @@ HB4xp67_ASAP7_75t_R is the buffer chosen for hold fixing
 ********************************************************************************
 
 Fast Buffer Report:
-There are 5 fast buffers
+There are 4 fast buffers
 --------------------------------------------------------------------------------
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
 BUFx3_ASAP7_75t_L                             0.1 6.5e-16 1.0e-11  2546.9
-BUFx4f_ASAP7_75t_L                            0.1 1.0e-15 1.0e-11  1918.3
-BUFx6f_ASAP7_75t_L                            0.1 1.2e-15 9.4e-12  1314.4
-BUFx12f_ASAP7_75t_L                           0.3 2.4e-15 9.7e-12   740.6
-BUFx16f_ASAP7_75t_L                           0.3 2.4e-15 1.2e-11   605.7
+BUFx8_ASAP7_75t_L                             0.2 8.8e-16 1.6e-11  1029.8
+BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
+BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
 --------------------------------------------------------------------------------
 [INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
 ********************************************************************************
@@ -257,16 +256,15 @@ HB4xp67_ASAP7_75t_R is the buffer chosen for hold fixing
 ********************************************************************************
 
 Fast Buffer Report:
-There are 5 fast buffers
+There are 4 fast buffers
 --------------------------------------------------------------------------------
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
 BUFx3_ASAP7_75t_L                             0.1 6.5e-16 1.0e-11  2546.9
-BUFx4f_ASAP7_75t_L                            0.1 1.0e-15 1.0e-11  1918.3
-BUFx6f_ASAP7_75t_L                            0.1 1.2e-15 9.4e-12  1314.4
-BUFx12f_ASAP7_75t_L                           0.3 2.4e-15 9.7e-12   740.6
-BUFx16f_ASAP7_75t_L                           0.3 2.4e-15 1.2e-11   605.7
+BUFx8_ASAP7_75t_L                             0.2 8.8e-16 1.6e-11  1029.8
+BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
+BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
 --------------------------------------------------------------------------------
 The following 3 cells are equivalent to BUFx2_ASAP7_75t_R:
 =============================================================================

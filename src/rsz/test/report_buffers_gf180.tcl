@@ -7,8 +7,6 @@ read_verilog jpeg.v
 link_design jpeg_encoder -hier
 read_sdc jpeg.sdc
 
-buffer_ports -inputs -outputs
-
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
 
