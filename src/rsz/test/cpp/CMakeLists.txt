@@ -100,6 +100,7 @@ target_link_libraries(TestResizer
         dpl_lib
         stt_lib
         odb
+        defin
         tst_integrated_fixture
         ${TCL_LIBRARY}
 )

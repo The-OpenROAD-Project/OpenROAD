@@ -188,7 +188,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                2,
                "Annotating slew for driver {}",
                network_->pathName(drvr->pin()));
-    for (auto rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
+    for (auto rf : sta::RiseFall::range()) {
       if (!drvr->slewAnnotated(rf, min_) && !drvr->slewAnnotated(rf, max_)) {
         sta_->setAnnotatedSlew(drvr,
                                resizer_->tgt_slew_corner_,
@@ -271,12 +271,12 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
       }
     }
 
-    for (auto mm : sta::MinMaxAll::all()->range()) {
-      for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
-        if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
-          drvr->setSlewAnnotated(
-              false, rf, resizer_->tgt_slew_corner_->dcalcAnalysisPtIndex(mm));
-        }
+    for (auto rf : sta::RiseFall::range()) {
+      if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
+        sta_->unsetAnnotatedSlew(drvr,
+                                 resizer_->tgt_slew_corner_,
+                                 sta::MinMaxAll::all(),
+                                 rf->asRiseFallBoth());
       }
     }
   }
@@ -428,12 +428,11 @@ void RepairDesign::repairDesign(
     for (auto vertex : annotations_to_clean_up) {
       for (auto corner : sta_->scenes()) {
         for (const sta::RiseFall* rf : sta::RiseFall::range()) {
-          vertex->setSlewAnnotated(
-              false, rf, corner->dcalcAnalysisPtIndex(max_));
+          sta_->unsetAnnotatedSlew(
+              vertex, corner, sta::MinMaxAll::max(), rf->asRiseFallBoth());
         }
       }
     }
-    sta_->delaysInvalid();
   }
 
   printProgress(print_iteration,
