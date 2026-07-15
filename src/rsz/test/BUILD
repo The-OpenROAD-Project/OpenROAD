@@ -37,6 +37,7 @@ TESTS = [
     "gain_buffering1",
     "gain_buffering1_hier",
     "gain_buffering2",
+    "gain_buffering3",
     "gcd_resize",
     "insert_buffer",
     "insert_buffer_hier",
@@ -251,6 +252,11 @@ TESTS = [
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
+    "inferred_clock_gator_time_borrow",
+    "inferred_clock_gator_time_borrow_covered",
+    "inferred_clock_gator_time_borrow_repair_pin",
+    "inferred_clock_gator_time_borrow_tns",
+    "latch_borrow_chain",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
@@ -477,13 +483,26 @@ cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
-    data = glob(["cpp/TestResizer*.v"]),
+    data = glob(["cpp/TestResizer*.v"]) + [
+        "inferred_clock_gator_time_borrow.def",
+        "latch_borrow_chain.def",
+    ],
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
         "//src/odb/src/db",
+        "//src/odb/src/defin",
         "//src/rsz",  # buildcleaner: keep provides the private headers
         "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
         "//src/tst:integrated_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

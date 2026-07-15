@@ -28,7 +28,7 @@ detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
                        const char* report_file_name,
                        bool incremental,
-                       bool use_old_diamond,
+                       bool use_diamond_legalizer,
                        int site_search_window,
                        int row_search_window,
                        double drc_penalty,
@@ -36,7 +36,7 @@ detailed_placement_cmd(int max_displacment_x,
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
-                            incremental, use_old_diamond,
+                            incremental, use_diamond_legalizer,
                             site_search_window, row_search_window,
                             drc_penalty, disable_window_extension);
 }

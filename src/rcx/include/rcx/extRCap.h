@@ -1827,7 +1827,7 @@ class extMain
                                const char* prefix,
                                const char* postfix,
                                bool v = false);
-  bool modelExists(const char* extRules);
+  bool modelExists();
 
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
@@ -2094,8 +2094,7 @@ class extMain
   uint32_t getMultiples(uint32_t cnt, uint32_t base);
   uint32_t getExtLayerCnt(odb::dbTech* tech);
 
-  void setBlockFromChip();
-  void setBlock(odb::dbBlock* block);
+  void setBlockFromChip(odb::dbChip* chip);
   odb::dbBlock* getBlock() { return _block; }
   odb::dbTech* getTech() { return _tech; }
   extRCModel* getRCModel() { return _modelTable->get(0); }
@@ -2267,7 +2266,7 @@ class extMain
   void cleanCornerTables();
   int getDbCornerIndex(const char* name);
   int getDbCornerModel(const char* name);
-  bool setCorners(const char* rulesFileName);
+  void registerRulesModel(extRCModel* rules_model);
   int getProcessCornerDbIndex(int pcidx);
   void getScaledCornerDbIndex(int pcidx, int& scidx, int& scdbIdx);
   void getScaledRC(int sidx, double& res, double& cap);
@@ -2682,9 +2681,6 @@ class extMain
   double* _tmpResTable = new double[10];
   double* _tmpSumResTable = new double[10];
   int _sumUpdated;
-  int _minModelIndex;  // TO_TEST
-  int _typModelIndex;  //
-  int _maxModelIndex;  //
 
   odb::dbDatabase* _db = nullptr;
   odb::dbTech* _tech = nullptr;
@@ -2716,7 +2712,6 @@ class extMain
   int _ccMaxY;
   double _mergeResBound = 0.0;
   bool _mergeViaRes = false;
-  const char* rules_file_path_{nullptr};
   const char* target_nets_names_{nullptr};
   bool _mergeParallelCC = false;
   bool _reportNetNoWire = false;
@@ -2831,5 +2826,11 @@ class extMain
                              dbCreateNetUtil* db_net_util);  // 061123
   // ---------------------------------------------------------
 };
+
+std::unique_ptr<extRCModel> parseRules(
+    odb::dbTech* tech,
+    const Array1D<extCorner*>* extractor_corner_table,
+    bool is_v2,
+    utl::Logger* logger);
 
 }  // namespace rcx

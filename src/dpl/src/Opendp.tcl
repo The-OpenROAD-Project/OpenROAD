@@ -6,7 +6,7 @@ sta::define_cmd_args "detailed_placement" { \
                            [-disallow_one_site_gaps] \
                            [-incremental] \
                            [-report_file_name file_name] \
-                           [-use_old_diamond] \
+                           [-use_diamond_legalizer] \
                            [-site_search_window sites] \
                            [-row_search_window rows] \
                            [-drc_penalty penalty] \
@@ -16,7 +16,7 @@ proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name \
           -site_search_window -row_search_window -drc_penalty} \
-    flags {-disallow_one_site_gaps -incremental -use_old_diamond \
+    flags {-disallow_one_site_gaps -incremental -use_diamond_legalizer \
            -disable_window_extension}
 
   if { [info exists keys(-max_displacement)] } {
@@ -77,7 +77,7 @@ proc detailed_placement { args } {
       / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
       $file_name [info exists flags(-incremental)] \
-      [info exists flags(-use_old_diamond)] \
+      [info exists flags(-use_diamond_legalizer)] \
       $site_search_window $row_search_window $drc_penalty \
       [info exists flags(-disable_window_extension)]
     dpl::report_legalization_stats

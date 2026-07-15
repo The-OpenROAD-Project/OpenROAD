@@ -21,7 +21,7 @@ DPL provides two options for legalization. Negotiation legalizer is the default 
 
 The default two-pass legalizer based on the NBLG paper. Used on
 the `detailed_placement` command. The legacy diamond search engine can be
-selected with `-use_old_diamond`.
+selected with `-use_diamond_legalizer`.
 
 #### Diamond Search
 
@@ -46,7 +46,7 @@ detailed_placement
     [-max_displacement disp|{disp_x disp_y}]
     [-disallow_one_site_gaps]
     [-report_file_name filename]
-    [-use_old_diamond]
+    [-use_diamond_legalizer]
     [-site_search_window sites]
     [-row_search_window rows]
     [-drc_penalty penalty]
@@ -62,7 +62,7 @@ detailed_placement
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
-| `-use_old_diamond` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
+| `-use_diamond_legalizer` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
 | `-site_search_window` | NegotiationLegalizer: base number of sites a cell may be moved left or right of its initial position, capped by `-max_displacement`. Default `20`, `0` allowed (no horizontal movement). |
 | `-row_search_window` | NegotiationLegalizer: base number of rows a cell may be moved up or down from its initial position, capped by `-max_displacement`. Default `5`, `0` allowed (no row changes). |
 | `-disable_window_extension` | NegotiationLegalizer: disables all search-window extensions, so the window is fixed to the base `-site_search_window`/`-row_search_window` size regardless of cell size or nearby walls. By default, the effective search window can instead grow past base sizing in two ways: (1) it's extended to at least the cell's own width/height, and (2) extended if cut short by a macro or core boundary. |

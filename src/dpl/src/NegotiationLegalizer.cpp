@@ -93,14 +93,18 @@ void NegotiationLegalizer::legalize()
   logger_->info(utl::DPL,
                 1103,
                 "Negotiation base search window: +/-{} sites horizontally, "
-                "+/-{} rows vertically (extendable up to the max "
-                "displacement cap of +/-{} sites, +/-{} rows near walls).",
+                "+/-{} rows vertically ",
                 site_search_window_,
-                row_search_window_,
-                opendp_->max_displacement_x_,
-                opendp_->max_displacement_y_);
+                row_search_window_);
   logger_->report("\tAutomatic search window extension {}.",
                   disable_window_extension_ ? "disabled" : "enabled");
+  if (!disable_window_extension_) {
+    logger_->report(
+        "\tSearch window extendable up to the max displacement cap of +/-{} "
+        "sites, +/-{} rows near walls.",
+        opendp_->max_displacement_x_,
+        opendp_->max_displacement_y_);
+  }
 
   logger_->info(
       utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);

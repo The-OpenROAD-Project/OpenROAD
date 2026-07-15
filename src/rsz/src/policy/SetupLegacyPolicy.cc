@@ -238,8 +238,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
     refreshEndpointSlacks(endpoint_state);
 
     // Promote only the passes that improve the tracked objective.
-    const bool better = pathImproved(main_state.end_index,
-                                     endpoint_state.end_slack,
+    const bool better = pathImproved(endpoint_state.end_slack,
                                      endpoint_state.worst_slack,
                                      endpoint_state.prev_end_slack,
                                      endpoint_state.prev_worst_slack);
@@ -394,14 +393,13 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
   }
 }
 
-bool SetupLegacyPolicy::pathImproved(const int end_index,
-                                     const sta::Slack end_slack,
+bool SetupLegacyPolicy::pathImproved(const sta::Slack end_slack,
                                      const sta::Slack worst_slack,
                                      const sta::Slack prev_end_slack,
                                      const sta::Slack prev_worst_slack) const
 {
   return sta::fuzzyGreater(worst_slack, prev_worst_slack)
-         || (end_index != 1 && sta::fuzzyEqual(worst_slack, prev_worst_slack)
+         || (sta::fuzzyEqual(worst_slack, prev_worst_slack)
              && sta::fuzzyGreater(end_slack, prev_end_slack));
 }
 

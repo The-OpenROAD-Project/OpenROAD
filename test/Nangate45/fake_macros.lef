@@ -132,13 +132,6 @@ SITE TripleHeightSite
 END TripleHeightSite
 
 
-SITE QuadHeightSite
-  SYMMETRY Y ;
-  CLASS core ;
-  SIZE 0.19 BY 5.6 ;
-END QuadHeightSite
-
-
 SITE HybridG
  SYMMETRY X Y ;
  CLASS core ;
@@ -264,34 +257,6 @@ MACRO MOCK_TRIPLE
   PIN VSS 
   END VSS
 END MOCK_TRIPLE
-
-MACRO MOCK_QUAD
-  CLASS CORE ;
-  ORIGIN 0 0 ;
-  FOREIGN AND2_X1 0 0 ;
-  SIZE 0.76 BY 5.6 ;
-  SYMMETRY X Y ;
-  SITE QuadHeightSite ;
-  PIN A1
-    PORT
-      LAYER metal1 ;
-        RECT 0 0.1 0.1 0.2  ;
-    END
-  END A1
-  PIN A2
-    DIRECTION INPUT ;
-    PORT
-      LAYER metal1 ;
-        RECT 0 1.8 0.1 1.9  ;
-    END
-  END A2
-  PIN ZN
-  END ZN
-  PIN VDD
-  END VDD
-  PIN VSS
-  END VSS
-END MOCK_QUAD
 
 MACRO MOCK_HYBRID_A
   CLASS CORE ;
