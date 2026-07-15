@@ -81,7 +81,6 @@ jobs:
           done < pr-meta.txt
 
       - name: Synthesize pull_request event payload
-        id: event
         env:
           PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
           HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
@@ -89,12 +88,13 @@ jobs:
           HEAD_REPO: ${{ steps.meta.outputs.head_repo }}
           BASE_REPO: ${{ steps.meta.outputs.base_repo }}
         run: |
-          # Reviewdog's `github-pr-review` reporter reads GITHUB_EVENT_PATH
-          # expecting a pull_request payload. The real event here is
-          # workflow_run, so we synthesize the minimum payload reviewdog
-          # needs and point GITHUB_EVENT_PATH at it for the next step.
-          EVENT_PATH="${RUNNER_TEMP}/pr-event.json"
-          python3 - <<'PY' > "$EVENT_PATH"
+          # reviewdog reads pull_request.number from the event file at
+          # GITHUB_EVENT_PATH; the workflow_run event has none (its
+          # pull_requests[] is empty for fork PRs), so it bails with "this is
+          # not PullRequest build". GITHUB_EVENT_PATH is runner-protected, so
+          # an env: override is silently ignored — overwrite the event file in
+          # place instead. Safe: nothing downstream reads the original event.
+          python3 - <<'PY' > "${GITHUB_EVENT_PATH}"
           import json, os
           payload = {
             "action": "synchronize",
@@ -118,7 +118,6 @@ jobs:
           }
           print(json.dumps(payload))
           PY
-          echo "event_path=${EVENT_PATH}" >> "$GITHUB_OUTPUT"
 
       - name: Set up reviewdog
         uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
@@ -126,49 +125,27 @@ jobs:
           reviewdog_version: latest
 
       - name: Dump reviewdog-visible env and event payload
-        # Gated on debug re-runs. Reviewdog emits "this is not PullRequest
-        # build" and posts nothing for fork PRs even though the synthesized
-        # pull_request payload is well-formed (verified locally against
-        # reviewdog v0.21.0). Suspect: step-level `env:` cannot override
-        # runner-protected GITHUB_EVENT_PATH / GITHUB_EVENT_NAME, so reviewdog
-        # reads the runner's workflow_run event payload instead of our synth.
-        # This step proves what reviewdog actually sees on the next debug
-        # re-run.
+        # Debug-gated: confirm the event file now holds the synthesized
+        # pull_request payload reviewdog will read.
         if: runner.debug == '1'
-        env:
-          GITHUB_EVENT_NAME: pull_request
-          GITHUB_EVENT_PATH: ${{ steps.event.outputs.event_path }}
-          GITHUB_SHA: ${{ steps.meta.outputs.head_sha }}
-          GITHUB_REPOSITORY: ${{ steps.meta.outputs.base_repo }}
         run: |
-          echo "::group::GITHUB_* env visible to next step"
+          echo "::group::GITHUB_* env visible to reviewdog"
           env | grep -E '^(GITHUB_|RUNNER_|REVIEWDOG_)' | sort
           echo "::endgroup::"
-          echo "::group::Synth event file location and content"
-          echo "steps.event.outputs.event_path = ${{ steps.event.outputs.event_path }}"
-          echo "Effective GITHUB_EVENT_PATH    = ${GITHUB_EVENT_PATH}"
+          echo "::group::Effective GITHUB_EVENT_PATH content (should be our synth)"
+          echo "Effective GITHUB_EVENT_PATH = ${GITHUB_EVENT_PATH}"
           if [ -f "${GITHUB_EVENT_PATH}" ]; then
-            echo "--- file exists, content: ---"
             cat "${GITHUB_EVENT_PATH}"
           else
             echo "::warning::GITHUB_EVENT_PATH file does not exist"
           fi
           echo "::endgroup::"
-          echo "::group::Synth file at literal path (should match above)"
-          SYNTH="${{ steps.event.outputs.event_path }}"
-          [ -f "${SYNTH}" ] && cat "${SYNTH}" || echo "missing"
-          echo "::endgroup::"
 
       - name: Run reviewdog
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_EVENT_NAME: pull_request
-          GITHUB_EVENT_PATH: ${{ steps.event.outputs.event_path }}
-          GITHUB_SHA: ${{ steps.meta.outputs.head_sha }}
-          GITHUB_REPOSITORY: ${{ steps.meta.outputs.base_repo }}
         run: |
-          # On debug re-runs add reviewdog's own -log-level=debug so the
-          # cienv detection trace is visible alongside the env dump above.
+          # -log-level=debug on debug re-runs for tracing.
           LOG_FLAGS=()
           if [ "${RUNNER_DEBUG}" = "1" ]; then
             LOG_FLAGS+=(-log-level=debug)

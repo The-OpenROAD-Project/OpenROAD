@@ -929,7 +929,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       debugPrint(logger_,
                  utl::DPL,
                  "negotiation",
-                 1,
+                 2,
                  "Negotiation: best location for cell '{}' at iteration {} "
                  "(size {} rows x {} sites) is its current position.",
                  cell.db_inst->getName(),
@@ -1350,7 +1350,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
       place(idx, cell.x, cell.y);
     }
   }
-  logger_->report("diamondRecovery: recovered {}/{} stuck cells.",
+  logger_->report("diamond recovery: recovered {}/{} stuck cells.",
                   recovered,
                   activeCells.size());
 }
