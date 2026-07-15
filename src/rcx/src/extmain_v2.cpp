@@ -72,7 +72,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   // Model file is required if not option _lefRC is used.
   // _lefRC option requires Resistance and Capacitance values per Layer and
   // Technology to be taken from LEF file.
-  if (!_lefRC && !modelExists(extRules)) {
+  if (!_lefRC && !modelExists()) {
     return;
   }
 
