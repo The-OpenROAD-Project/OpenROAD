@@ -154,6 +154,24 @@ TEST_F(TAFixture, single_horizontal_iroute_assigned)
   EXPECT_EQ(bp.y(), expected_tracks[2]);
 }
 
+TEST_F(TAFixture, guide_query_has_canonical_order)
+{
+  frNet* n2 = makeNet("n2");
+  frNet* n1 = makeNet("n1");
+  makeGuide(n2, /*layer_num=*/2, {500, 500}, {1500, 500});
+  makeGuide(n1, /*layer_num=*/2, {500, 500}, {1500, 500});
+
+  initTAQueries();
+
+  frRegionQuery::Objects<frGuide> result;
+  design->getRegionQuery()->queryGuide(
+      odb::Rect(0, 0, 2000, 2000), /*layerNum=*/2, result);
+
+  ASSERT_EQ(result.size(), 2);
+  EXPECT_EQ(result[0].second->getNet()->getName(), "n1");
+  EXPECT_EQ(result[1].second->getNet()->getName(), "n2");
+}
+
 TEST_F(TAFixture, two_parallel_no_coupling)
 {
   setDieArea(0, 0, 21000, 2000);

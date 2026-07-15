@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iterator>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -13,7 +14,11 @@
 #include "boost/polygon/polygon.hpp"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
+#include "db/obj/frBTerm.h"
+#include "db/obj/frGuide.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frNet.h"
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -28,6 +33,54 @@ class FlexDR;
 
 using utl::enumerate;
 namespace gtl = boost::polygon;
+
+namespace {
+
+bool guideLess(const frGuide* lhs, const frGuide* rhs)
+{
+  const auto [lhs_begin, lhs_end] = lhs->getPoints();
+  const auto [rhs_begin, rhs_end] = rhs->getPoints();
+  return std::make_tuple(lhs->getNet()->getName(),
+                         lhs->getLayerNum(),
+                         lhs_begin.x(),
+                         lhs_begin.y(),
+                         lhs_end.x(),
+                         lhs_end.y(),
+                         lhs->getIndexInOwner())
+         < std::make_tuple(rhs->getNet()->getName(),
+                           rhs->getLayerNum(),
+                           rhs_begin.x(),
+                           rhs_begin.y(),
+                           rhs_end.x(),
+                           rhs_end.y(),
+                           rhs->getIndexInOwner());
+}
+
+bool grPinLess(const frBlockObject* lhs, const frBlockObject* rhs)
+{
+  if (lhs->typeId() != rhs->typeId()) {
+    return lhs->typeId() < rhs->typeId();
+  }
+  if (lhs->typeId() == frcInstTerm) {
+    const auto* lhs_term = static_cast<const frInstTerm*>(lhs);
+    const auto* rhs_term = static_cast<const frInstTerm*>(rhs);
+    return std::make_tuple(lhs_term->getInst()->getName(),
+                           lhs_term->getTerm()->getName(),
+                           lhs_term->getId())
+           < std::make_tuple(rhs_term->getInst()->getName(),
+                             rhs_term->getTerm()->getName(),
+                             rhs_term->getId());
+  }
+  if (lhs->typeId() == frcBTerm) {
+    const auto* lhs_term = static_cast<const frBTerm*>(lhs);
+    const auto* rhs_term = static_cast<const frBTerm*>(rhs);
+    return std::make_tuple(lhs_term->getName(), lhs_term->getId())
+           < std::make_tuple(rhs_term->getName(), rhs_term->getId());
+  }
+  return lhs->getId() < rhs->getId();
+}
+
+}  // namespace
 
 struct frRegionQuery::Impl
 {
@@ -500,7 +553,13 @@ void frRegionQuery::queryGuide(const odb::Rect& box,
                                const frLayerNum layerNum,
                                Objects<frGuide>& result) const
 {
+  const size_t first_result = result.size();
   impl_->guides.at(layerNum).query(bgi::intersects(box), back_inserter(result));
+  std::sort(result.begin() + first_result,
+            result.end(),
+            [](const auto& lhs, const auto& rhs) {
+              return guideLess(lhs.second, rhs.second);
+            });
 }
 
 void frRegionQuery::queryGuide(const odb::Rect& box,
@@ -520,6 +579,9 @@ void frRegionQuery::queryGuide(const odb::Rect& box,
   for (auto& m : impl_->guides) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
+  std::sort(temp.begin(), temp.end(), [](const auto& lhs, const auto& rhs) {
+    return guideLess(lhs.second, rhs.second);
+  });
   std::ranges::transform(
       temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
@@ -535,10 +597,12 @@ void frRegionQuery::queryOrigGuide(const odb::Rect& box,
 void frRegionQuery::queryGRPin(const odb::Rect& box,
                                std::vector<frBlockObject*>& result) const
 {
+  const size_t first_result = result.size();
   Objects<frBlockObject> temp;
   impl_->grPins.query(bgi::intersects(box), back_inserter(temp));
   std::ranges::transform(
       temp, back_inserter(result), [](auto& kv) { return kv.second; });
+  std::sort(result.begin() + first_result, result.end(), grPinLess);
 }
 
 void frRegionQuery::queryDRObj(const box_t& boostb,
