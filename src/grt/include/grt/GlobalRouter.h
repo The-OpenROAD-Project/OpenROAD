@@ -565,6 +565,10 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
+  // Set while a CUGR incremental session has rerouted nets whose residual
+  // congestion has not been reported yet; consumed by
+  // reportIncrementalCongestion so overlapping callers warn only once.
+  bool incremental_congestion_report_pending_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
   bool has_macros_or_pads_{false};

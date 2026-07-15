@@ -906,12 +906,15 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
 
   // Final summary: the last updateCongestedNets already printed "Nets with
   // congestion", so just warn (if anything remains) using the same metric
-  // without re-printing the count.
-  if (const int residual = totalOverflow(); residual > 0) {
-    logger_->warn(GRT,
-                  118,
-                  "Iterative RRR finished with congestion remaining ({}).",
-                  residual);
+  // without re-printing the count. Incremental runs skip it (and the
+  // full-grid scan): GRT-0128 reports once per session.
+  if (!incremental_routing_) {
+    if (const int residual = totalOverflow(); residual > 0) {
+      logger_->warn(GRT,
+                    118,
+                    "Iterative RRR finished with congestion remaining ({}).",
+                    residual);
+    }
   }
 }
 

@@ -452,9 +452,12 @@ void GlobalRouter::reportIncrementalCongestion()
 {
   // CUGR incremental reroutes only dirty nets and does not recover congestion
   // it induces on neighboring nets, so surface any residual overflow once.
-  if (!use_cugr_ || cugr_ == nullptr) {
+  // The pending flag keeps overlapping callers (endIncremental and the
+  // IncrementalGRoute destructor) from warning twice for the same session.
+  if (!incremental_congestion_report_pending_ || cugr_ == nullptr) {
     return;
   }
+  incremental_congestion_report_pending_ = false;
   if (cugr_->totalOverflow() > 0) {
     is_congested_ = true;
     logger_->warn(GRT,
@@ -6430,6 +6433,9 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         routes_[db_net] = std::move(route);
       }
       updatePinAccessPoints(net, db_net);
+    }
+    if (!dirty_nets.empty()) {
+      incremental_congestion_report_pending_ = true;
     }
 
     return dirty_nets;
