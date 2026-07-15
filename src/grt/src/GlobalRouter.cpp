@@ -5622,7 +5622,7 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     // positions. If successful, transfer tree ownership to the preserved net
     // without re-routing; otherwise fall back to a full dirty-net reroute.
     std::vector<GSegment> connection;
-    if (connectCUGRRouting(db_net1, db_net2, connection)) {
+    if (connectRouting(db_net1, db_net2, &connection)) {
       cugr_->mergeNet(db_net1, db_net2, connection);
       saveGuides({db_net1});
     } else {
@@ -5648,80 +5648,9 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   }
 }
 
-bool GlobalRouter::connectCUGRRouting(odb::dbNet* db_net1,
-                                      odb::dbNet* db_net2,
-                                      std::vector<GSegment>& connection_out)
-{
-  // Stitch two CUGR routes together at the former buffer pin position.
-  // Mirrors connectRouting() but uses the CUGR GridGraph for capacity checks
-  // instead of the FastRoute internal structures.
-  auto it1 = db_net_map_.find(db_net1);
-  auto it2 = db_net_map_.find(db_net2);
-  if (it1 == db_net_map_.end() || it2 == db_net_map_.end()) {
-    return false;
-  }
-  Net* net1 = it1->second;
-  Net* net2 = it2->second;
-
-  odb::Point pin_pos1;
-  odb::Point pin_pos2;
-  findBufferPinPostions(net1, net2, pin_pos1, pin_pos2);
-
-  GRoute& net1_route = routes_[db_net1];
-  GRoute& net2_route = routes_[db_net2];
-
-  if (net1_route.empty() || net2_route.empty()) {
-    return false;
-  }
-
-  auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
-    return (dbu_coord - (is_x ? grid_->getXMin() : grid_->getYMin()))
-           / grid_->getTileSize();
-  };
-
-  if (pin_pos1 != pin_pos2) {
-    const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
-    const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
-    connection_out
-        = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
-
-    // Capacity check against CUGR GridGraph.
-    for (const GSegment& seg : connection_out) {
-      if (!seg.isVia()) {
-        const int x1 = dbu_to_tile(std::min(seg.init_x, seg.final_x), true);
-        const int y1 = dbu_to_tile(std::min(seg.init_y, seg.final_y), false);
-        const int x2 = dbu_to_tile(std::max(seg.init_x, seg.final_x), true);
-        const int y2 = dbu_to_tile(std::max(seg.init_y, seg.final_y), false);
-        // Check every tile on the horizontal or vertical span.
-        if (y1 == y2) {  // horizontal
-          for (int x = x1; x < x2; x++) {
-            if (!cugr_->hasAvailableResources(seg.init_layer, x, y1)) {
-              return false;
-            }
-          }
-        } else {  // vertical
-          for (int y = y1; y < y2; y++) {
-            if (!cugr_->hasAvailableResources(seg.init_layer, x1, y)) {
-              return false;
-            }
-          }
-        }
-      }
-    }
-
-    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-    net1_route.insert(
-        net1_route.end(), connection_out.begin(), connection_out.end());
-  } else {
-    net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-  }
-
-  updateNetPins(net1);
-  std::string dump;
-  return netIsCovered(db_net1, dump);
-}
-
-bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
+bool GlobalRouter::connectRouting(odb::dbNet* db_net1,
+                                  odb::dbNet* db_net2,
+                                  std::vector<GSegment>* connection_out)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
@@ -5747,20 +5676,49 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     std::vector<GSegment> connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
-    for (const GSegment& seg : connection) {
-      const int x1 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
-                     / grid_->getTileSize();
-      const int y1 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
-                     / grid_->getTileSize();
-      const int x2 = (std::max(seg.init_x, seg.final_x) - grid_->getXMin())
-                     / grid_->getTileSize();
-      const int y2 = (std::max(seg.init_y, seg.final_y) - grid_->getYMin())
-                     / grid_->getTileSize();
-      const int layer = seg.init_layer;
-      if (!seg.isVia()) {
-        if (!fastroute_->hasAvailableResources(
-                x1, y1, x2, y2, layer, db_net1)) {
-          return false;
+    if (use_cugr_) {
+      // Capacity check using the CUGR GridGraph instead of FastRoute.
+      auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
+        return (dbu_coord - (is_x ? grid_->getXMin() : grid_->getYMin()))
+               / grid_->getTileSize();
+      };
+      for (const GSegment& seg : connection) {
+        if (!seg.isVia()) {
+          const int x1 = dbu_to_tile(std::min(seg.init_x, seg.final_x), true);
+          const int y1 = dbu_to_tile(std::min(seg.init_y, seg.final_y), false);
+          const int x2 = dbu_to_tile(std::max(seg.init_x, seg.final_x), true);
+          const int y2 = dbu_to_tile(std::max(seg.init_y, seg.final_y), false);
+          if (y1 == y2) {  // horizontal
+            for (int x = x1; x < x2; x++) {
+              if (!cugr_->hasAvailableResources(seg.init_layer, x, y1)) {
+                return false;
+              }
+            }
+          } else {  // vertical
+            for (int y = y1; y < y2; y++) {
+              if (!cugr_->hasAvailableResources(seg.init_layer, x1, y)) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (const GSegment& seg : connection) {
+        const int x1 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
+                       / grid_->getTileSize();
+        const int y1 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
+                       / grid_->getTileSize();
+        const int x2 = (std::max(seg.init_x, seg.final_x) - grid_->getXMin())
+                       / grid_->getTileSize();
+        const int y2 = (std::max(seg.init_y, seg.final_y) - grid_->getYMin())
+                       / grid_->getTileSize();
+        const int layer = seg.init_layer;
+        if (!seg.isVia()) {
+          if (!fastroute_->hasAvailableResources(
+                  x1, y1, x2, y2, layer, db_net1)) {
+            return false;
+          }
         }
       }
     }
@@ -5798,6 +5756,9 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
+    if (connection_out != nullptr) {
+      *connection_out = connection;
+    }
   } else {
     // Both pins are in the same gcell, but the two routes may reach it on
     // disjoint layer ranges. Bridge any layer gap with vias.
