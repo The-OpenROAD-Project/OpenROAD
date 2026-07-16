@@ -43,7 +43,7 @@ void Ext::setLogger(Logger* logger)
 }
 void Ext::write_rules(const std::string& name, const std::string& file)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   _ext->writeRules(name.c_str(), file.c_str());
 }
 void Ext::bench_wires(const BenchWiresOptions& bwo)
@@ -148,7 +148,7 @@ void Ext::bench_wires_gen(const PatternOptions& opt)
 
 void Ext::bench_verilog(const std::string& file)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   char* filename = (char*) file.c_str();
   if (!filename || !filename[0]) {
     logger_->error(RCX, 147, "bench_verilog: file is not defined!");
@@ -162,7 +162,7 @@ void Ext::bench_verilog(const std::string& file)
 
 void Ext::define_process_corner(int ext_model_index, const std::string& name)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   char* cornerName = _ext->addRCCorner(name.c_str(), ext_model_index);
 
   if (cornerName != nullptr) {
@@ -211,7 +211,7 @@ void Ext::get_ext_db_corner(int& index, const std::string& name)
 
 void Ext::extract(ExtractOptions options)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   odb::dbBlock* block = _ext->getBlock();
 
   odb::orderWires(logger_, block);
@@ -260,13 +260,13 @@ void Ext::write_spef_nets(odb::dbObject* block,
                           bool parallel,
                           int corner)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   _ext->write_spef_nets(flatten, parallel);
 }
 
 void Ext::write_spef(const SpefOptions& options)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   if (options.end) {
     _ext->writeSPEF(true);
     return;
@@ -309,7 +309,7 @@ void Ext::write_spef(const SpefOptions& options)
 
 void Ext::read_spef(ReadSpefOpts& opt)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
 
   bool stampWire = opt.stamp_wire;
@@ -362,7 +362,7 @@ void Ext::read_spef(ReadSpefOpts& opt)
 
 void Ext::diff_spef(const DiffOptions& opt)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
   std::string filename(opt.file);
   if (filename.empty()) {
     logger_->error(
@@ -440,7 +440,7 @@ bool Ext::gen_rcx_model(const std::string& spef_file_list,
                         const std::string& version,
                         int pattern)
 {
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
 
   if (spef_file_list.empty()) {
     logger_->error(
@@ -484,7 +484,7 @@ bool Ext::define_rcx_corners(const std::string& corner_list)
         RCX, 146, "\nCorner List option -corner_list  is required\n");
   }
 
-  _ext->setBlockFromChip();
+  _ext->setBlockFromChip(_db->getChip());
 
   Parser parser(logger_);
   int n1 = parser.mkWords(corner_list.c_str());
