@@ -116,8 +116,7 @@ void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     double cap)
 {
   if (layer_res_.empty()) {
-    initBlock();
-    int layer_count = block_->getTech()->getLayerCount();
+    int layer_count = layer->getTech()->getLayerCount();
     int corner_count = sta_->scenes().size();
     layer_res_.resize(layer_count);
     layer_cap_.resize(layer_count);
