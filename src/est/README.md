@@ -66,6 +66,12 @@ set_wire_rc
 | `-h_capacitance` | Capacitance per unit length for horizontal wires, units are from the first Liberty file read. |
 | `-v_resistance` | Resistance per unit length for vertical wires, units are from the first Liberty file read. |
 | `-v_capacitance` | Capacitance per unit length for vertical wires, units are from the first Liberty file read. |
+| `-tech` | Apply the values to all chips using this technology (3D designs). Layers given with `-layer`/`-layers` are looked up in this technology. |
+| `-chip` | Apply the values to the named chip only (3D designs). |
+| `-redistribution_layer` | Apply the values to all RDL chips. Warns and does nothing when the design has no RDL chip, so shared scripts work across designs. |
+
+Without `-tech`, `-chip` or `-redistribution_layer` the values are the defaults
+used by every chip that has no chip-specific values.
 
 ### Set Layer RC
 
