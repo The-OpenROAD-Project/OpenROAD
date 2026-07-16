@@ -15,6 +15,7 @@ package(
 cc_library(
     name = "rcx",
     srcs = [
+        "src/interChipModel.cpp",
         "src/dbUtil.cpp",
         "src/ext.cpp",
         "src/extBench.cpp",
@@ -69,6 +70,7 @@ cc_library(
     ],
     hdrs = [
         "include/rcx/array1.h",
+        "include/rcx/interChipModel.h",
         "include/rcx/box.h",
         "include/rcx/dbUtil.h",
         "include/rcx/ext.h",
