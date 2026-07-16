@@ -182,21 +182,7 @@ bool TruthTable::hasDontcares() const
 
 namespace {
 
-using Cost = double;
-constexpr Cost kInfCost = std::numeric_limits<Cost>::max() / 200.0;
-
-constexpr int kMaxBoundVars = 6;
 constexpr int kMaxRecursionDepth = 8;
-
-// Describes a cell matching a given truth table up to a permutation
-// of its inputs
-struct CellMatch
-{
-  sta::LibertyPort* driver = nullptr;
-  std::array<int, 6> perm = {-1, -1, -1, -1, -1, -1};
-  int arity = 0;
-  Cost area = 0;
-};
 
 // Get the output port of a single-output gate
 static sta::LibertyPort* cellOutput(sta::LibertyCell* cell)
@@ -211,17 +197,14 @@ static sta::LibertyPort* cellOutput(sta::LibertyCell* cell)
   return nullptr;
 }
 
-class MatchCache
-{
-  // Max don't-care bits the DC-aware cell matcher will enumerate fills for
-  // (2^n).
-  static const int kMaxDcFill = 8;
+}  // namespace
 
- public:
-  MatchCache(utl::Logger* logger, const cm::TargetIndex& index, int max_arity)
-      : index_(index), min_area_for_width_(max_arity + 1, kInfCost)
-  {
-    nand2_ = nullptr;
+MatchCache::MatchCache(utl::Logger* logger,
+                       const cm::TargetIndex& index,
+                       int max_arity)
+    : index_(index), min_area_for_width_(max_arity + 1, kInfCost)
+{
+  nand2_ = nullptr;
     {
       NPN semiclass_map;
       const Truth6 nand2_canonical = npnSemiclass(0b0111, 2, semiclass_map);
@@ -258,11 +241,10 @@ class MatchCache
     }
   }
 
-  // Finds cell matching `tt` up to a permutation of inputs
-  std::optional<CellMatch> match(Truth6 tt, int arity)
-  {
-    if (arity == 0) {
-      // Constants not supported
+std::optional<CellMatch> MatchCache::match(Truth6 tt, int arity)
+{
+  if (arity == 0) {
+    // Constants not supported
       return std::nullopt;
     }
 
@@ -302,10 +284,12 @@ class MatchCache
     return best;
   }
 
-  // Find a cell matching `care_tt` on `care_mask`
-  std::optional<CellMatch> matchDC(Truth6 care_tt, Truth6 care_mask, int arity)
-  {
-    if (arity == 0) {
+// Find a cell matching `care_tt` on `care_mask`
+std::optional<CellMatch> MatchCache::matchDC(Truth6 care_tt,
+                                             Truth6 care_mask,
+                                             int arity)
+{
+  if (arity == 0) {
       return std::nullopt;
     }
     const Truth6 full = mask6(arity);
@@ -331,27 +315,9 @@ class MatchCache
       }
     }
     return best;
-  }
+}
 
-  Cost minAreaForWidth(int w) const
-  {
-    if (w < 0 || w >= (int) min_area_for_width_.size()) {
-      return kInfCost;
-    }
-    return min_area_for_width_[w];
-  }
-
-  sta::LibertyCell* inverter() const { return index_.inverter; }
-  sta::LibertyCell* nand2() const { return nand2_; }
-
- private:
-  sta::LibertyCell* nand2_;
-  const cm::TargetIndex& index_;
-  std::map<std::pair<Truth6, int>, std::optional<CellMatch>> cache_;
-
-  // Area lower bound among cells of given arity
-  std::vector<Cost> min_area_for_width_;
-};
+namespace {
 
 // Approximate lower bound on the area cost of synthesizing a function
 // of `nvars` inputs
@@ -608,13 +574,6 @@ std::vector<int> symmetryClasses(const TruthTable& f)
   }
   return cls;
 }
-
-struct DelayEstimationParameters
-{
-  float nand_delay;
-  float fixed_slews[2];
-  const sta::Scene* corner;
-};
 
 struct Objective
 {
@@ -1514,24 +1473,15 @@ GateNetwork emitNetworkForSolution(int ninputs, std::unique_ptr<Round> round)
 }
 
 bool synthesize(const SynthesisProblem& problem,
-                const cm::TargetIndex& index,
+                MatchCache& mc,
+                const DelayEstimationParameters& dparams,
                 utl::Logger* logger,
                 GateNetwork& out,
                 double budget,
                 bool allow_lateral,
-                long long* explore_calls,
-                const sta::Scene* corner,
-                const float fixed_slews[2])
+                long long* explore_calls)
 {
   budget = std::numeric_limits<float>::infinity();
-
-  MatchCache mc(logger, index, kMaxBoundVars);
-
-  DelayEstimationParameters dparams;
-  dparams.corner = corner;
-  dparams.nand_delay = findDelayLowerBound(corner, mc.nand2(), fixed_slews);
-  dparams.fixed_slews[0] = fixed_slews[0];
-  dparams.fixed_slews[1] = fixed_slews[1];
 
   Objective objective;
   objective.min_slacks[0] = -std::numeric_limits<float>::infinity();

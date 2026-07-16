@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <map>
 #include <optional>
 #include <span>
 #include <string>
@@ -138,6 +139,65 @@ struct SynthesisProblem
   }
 };
 
+using Cost = double;
+constexpr Cost kInfCost = std::numeric_limits<Cost>::max() / 200.0;
+
+constexpr int kMaxBoundVars = 6;
+
+// Describes a cell matching a given truth table up to a permutation
+// of its inputs
+struct CellMatch
+{
+  sta::LibertyPort* driver = nullptr;
+  std::array<int, 6> perm = {-1, -1, -1, -1, -1, -1};
+  int arity = 0;
+  Cost area = 0;
+};
+
+struct DelayEstimationParameters
+{
+  float nand_delay;
+  float fixed_slews[2];
+  const sta::Scene* corner;
+};
+
+// Cell matches keyed by truth table.  Holding on to one across `synthesize`
+// calls is what saves redoing the NPN work for functions already seen.
+class MatchCache
+{
+ public:
+  MatchCache(utl::Logger* logger, const cm::TargetIndex& index, int max_arity);
+
+  // Finds cell matching `tt` up to a permutation of inputs
+  std::optional<CellMatch> match(Truth6 tt, int arity);
+
+  // As `match`, but free to pick any fill of the don't-care positions
+  std::optional<CellMatch> matchDC(Truth6 care_tt, Truth6 care_mask, int arity);
+
+  Cost minAreaForWidth(int w) const
+  {
+    if (w < 0 || w >= (int) min_area_for_width_.size()) {
+      return kInfCost;
+    }
+    return min_area_for_width_[w];
+  }
+
+  sta::LibertyCell* inverter() const { return index_.inverter; }
+  sta::LibertyCell* nand2() const { return nand2_; }
+
+ private:
+  // Max don't-care bits the DC-aware cell matcher will enumerate fills for
+  // (2^n).
+  static const int kMaxDcFill = 8;
+
+  sta::LibertyCell* nand2_;
+  const cm::TargetIndex& index_;
+  std::map<std::pair<Truth6, int>, std::optional<CellMatch>> cache_;
+
+  // Area lower bound among cells of given arity
+  std::vector<Cost> min_area_for_width_;
+};
+
 struct GateNode
 {
   sta::LibertyPort* driver_port = nullptr;
@@ -154,17 +214,15 @@ struct GateNetwork
   std::vector<std::pair<bool, int>> outs;
 };
 
-// Synthesize `problem.function` into a gate network using cells available
-// in `index`.
+// Synthesize `problem.function` into a gate network
 bool synthesize(const SynthesisProblem& problem,
-                const cm::TargetIndex& index,
+                MatchCache& mc,
+                const DelayEstimationParameters& dparams,
                 utl::Logger* logger,
                 GateNetwork& out,
                 double budget,
                 bool allow_lateral,
-                long long* explore_calls,
-                const sta::Scene* corner,
-                const float fixed_slew[2]);
+                long long* explore_calls);
 
 NodeArrivals outputArrival(const sta::LibertyPort* out_port,
                            const std::vector<NodeArrivals>& input_pin_arrivals,
