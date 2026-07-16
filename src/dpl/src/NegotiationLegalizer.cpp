@@ -133,34 +133,30 @@ void NegotiationLegalizer::legalize()
 
   // --- Part 1: initial state (usage, grid sync, legality scan) ------------
   std::vector<int> illegal;
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation",
-               1,
-               "NegotiationLegalizer: skipping Abacus pass.");
-    // Populate usage from initial coordinates
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (!cells_[i].fixed) {
-        addUsage(i, 1);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
+             "NegotiationLegalizer: skipping Abacus pass.");
+  // Populate usage from initial coordinates
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed) {
+      addUsage(i, 1);
+    }
+  }
+  // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
+  // lookups see the correct placement state.
+  syncAllCellsToDplGrid();
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed) {
+      cells_[i].legal = isCellLegal(i);
+      if (!cells_[i].legal) {
+        illegal.push_back(i);
       }
     }
-    // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
-    // lookups see the correct placement state.
-    syncAllCellsToDplGrid();
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (!cells_[i].fixed) {
-        cells_[i].legal = isCellLegal(i);
-        if (!cells_[i].legal) {
-          illegal.push_back(i);
-        }
-      }
-    }
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation",
-               1,
-               "{} illegal cells",
-               illegal.size());
+  }
+  debugPrint(
+      logger_, utl::DPL, "negotiation", 1, "{} illegal cells", illegal.size());
 
   if (debug_observer_) {
     commitNegotiationPosToDpl();
