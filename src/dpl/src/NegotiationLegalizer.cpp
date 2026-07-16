@@ -108,7 +108,7 @@ void NegotiationLegalizer::legalize()
   logger_->info(
       utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
 
-  if (debug_observer_) {
+  if (debug_observer_ && db_->getChip() && db_->getChip()->getBlock()) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
   }
 
@@ -1166,6 +1166,9 @@ int NegotiationLegalizer::numViolations() const
 std::vector<Node*> NegotiationLegalizer::getIllegalNodes() const
 {
   std::vector<Node*> illegal;
+  if (!network_) {
+    return illegal;
+  }
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed && !isCellLegal(i)) {
       if (Node* node = network_->getNode(cells_[i].db_inst)) {
