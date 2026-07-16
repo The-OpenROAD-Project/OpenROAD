@@ -15,23 +15,25 @@ namespace rsz {
 const sta::LibertyPort* MoveGenerator::findScenePort(
     const sta::LibertyCell* cell,
     const std::string& port_name,
-    const int lib_ap) const
+    const int lib_ap_index) const
 {
   if (cell == nullptr) {
     return nullptr;
   }
 
   const sta::LibertyPort* port = cell->findLibertyPort(port_name);
-  return port != nullptr ? port->scenePort(lib_ap) : nullptr;
+  return port != nullptr ? port->scenePort(lib_ap_index) : nullptr;
 }
 
 bool MoveGenerator::strongerCellFirst(const sta::LibertyCell* lhs,
                                       const sta::LibertyCell* rhs,
                                       const std::string& drvr_port_name,
-                                      const int lib_ap) const
+                                      const int lib_ap_index) const
 {
-  const sta::LibertyPort* lhs_port = findScenePort(lhs, drvr_port_name, lib_ap);
-  const sta::LibertyPort* rhs_port = findScenePort(rhs, drvr_port_name, lib_ap);
+  const sta::LibertyPort* lhs_port
+      = findScenePort(lhs, drvr_port_name, lib_ap_index);
+  const sta::LibertyPort* rhs_port
+      = findScenePort(rhs, drvr_port_name, lib_ap_index);
   if ((lhs_port != nullptr) != (rhs_port != nullptr)) {
     return lhs_port != nullptr;
   }
