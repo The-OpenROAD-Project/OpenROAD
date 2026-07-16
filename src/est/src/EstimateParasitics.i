@@ -130,17 +130,19 @@ set_layer_rc_cmd(odb::dbTechLayer *layer,
 }
 
 void
-add_clk_layer_cmd(odb::dbTechLayer *layer)
+add_clk_layer_cmd(odb::dbChip *chip,
+                  odb::dbTechLayer *layer)
 {
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
-  estimate_parasitics->addClkLayer(layer);
+  estimate_parasitics->addClkLayer(chip, layer);
 }
 
 void
-add_signal_layer_cmd(odb::dbTechLayer *layer)
+add_signal_layer_cmd(odb::dbChip *chip,
+                     odb::dbTechLayer *layer)
 {
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
-  estimate_parasitics->addSignalLayer(layer);
+  estimate_parasitics->addSignalLayer(chip, layer);
 }
 
 double
@@ -164,43 +166,47 @@ layer_capacitance(odb::dbTechLayer *layer,
 }
 
 void
-set_h_wire_signal_rc_cmd(const Scene *corner,
+set_h_wire_signal_rc_cmd(odb::dbChip *chip,
+                         const Scene *corner,
                          float res,
                          float cap)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
-  estimate_parasitics->setHWireSignalRC(corner, res, cap);
+  estimate_parasitics->setHWireSignalRC(chip, corner, res, cap);
 }
 
 void
-set_v_wire_signal_rc_cmd(const Scene *corner,
+set_v_wire_signal_rc_cmd(odb::dbChip *chip,
+                         const Scene *corner,
                          float res,
                          float cap)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
-  estimate_parasitics->setVWireSignalRC(corner, res, cap);
+  estimate_parasitics->setVWireSignalRC(chip, corner, res, cap);
 }
 
 void
-set_h_wire_clk_rc_cmd(const Scene *corner,
+set_h_wire_clk_rc_cmd(odb::dbChip *chip,
+                      const Scene *corner,
                       float res,
                       float cap)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
-  estimate_parasitics->setHWireClkRC(corner, res, cap);
+  estimate_parasitics->setHWireClkRC(chip, corner, res, cap);
 }
 
 void
-set_v_wire_clk_rc_cmd(const Scene *corner,
+set_v_wire_clk_rc_cmd(odb::dbChip *chip,
+                      const Scene *corner,
                       float res,
                       float cap)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
-  estimate_parasitics->setVWireClkRC(corner, res, cap);
+  estimate_parasitics->setVWireClkRC(chip, corner, res, cap);
 }
 
 // ohms/meter

@@ -185,6 +185,80 @@ proc report_layer_rc { args } {
   puts "----------------------------"
 }
 
+namespace eval est {
+# Chips targeted by -chip/-tech/-redistribution_layer; empty with
+# has_selector unset means the default values shared by chips without
+# specific values, empty with has_selector set means nothing to do.
+proc parse_wire_rc_chips { keys_var flags_var selector_var } {
+  upvar 1 $keys_var keys
+  upvar 1 $flags_var flags
+  upvar 1 $selector_var has_selector
+
+  set selector_count [expr {
+    [info exists keys(-tech)] + [info exists keys(-chip)]
+    + [info exists flags(-redistribution_layer)]
+  }]
+  if { $selector_count > 1 } {
+    utl::error EST 28 "Use only one of -tech, -chip or -redistribution_layer."
+  }
+  set has_selector [expr { $selector_count > 0 }]
+
+  set db [ord::get_db]
+  set target_chips {}
+  if { [info exists keys(-chip)] } {
+    set chip [$db findChip $keys(-chip)]
+    if { $chip == "NULL" } {
+      utl::error EST 29 "chip $keys(-chip) not found."
+    }
+    lappend target_chips $chip
+  } elseif { [info exists keys(-tech)] } {
+    foreach chip [$db getChips] {
+      set chip_tech [$chip getTech]
+      if { $chip_tech != "NULL" && [$chip_tech getName] == $keys(-tech) } {
+        lappend target_chips $chip
+      }
+    }
+    if { [llength $target_chips] == 0 } {
+      utl::warn EST 30 "no chip uses technology $keys(-tech); values ignored."
+    }
+  } elseif { [info exists flags(-redistribution_layer)] } {
+    foreach chip [$db getChips] {
+      if { [$chip getChipType] == "RDL" } {
+        lappend target_chips $chip
+      }
+    }
+    if { [llength $target_chips] == 0 } {
+      utl::warn EST 31 "design has no RDL chip; values ignored."
+    }
+  }
+  return $target_chips
+}
+
+# Layer lookups use the targeted chips' technology when one is selected.
+proc wire_rc_tech { chips } {
+  if { [llength $chips] > 0 } {
+    set tech [[lindex $chips 0] getTech]
+    if { $tech != "NULL" } {
+      return $tech
+    }
+  }
+  return [est::get_db_tech_checked]
+}
+
+proc add_wire_rc_layers { chips clk signal layer } {
+  foreach chip $chips {
+    if { $clk || !$signal } {
+      est::add_clk_layer_cmd $chip $layer
+    }
+    if { $signal || !$clk } {
+      est::add_signal_layer_cmd $chip $layer
+    }
+  }
+}
+
+# namespace eval est
+}
+
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-layers layers]\
                                       [-layer layer]\
@@ -194,15 +268,28 @@ sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-v_capacitance v_cap]\
                                       [-resistance res]\
                                       [-capacitance cap]\
-                                      [-corner corner]}
+                                      [-corner corner]\
+                                      [-tech tech]\
+                                      [-chip chip]\
+                                      [-redistribution_layer]}
 
 proc set_wire_rc { args } {
   sta::parse_key_args "set_wire_rc" args \
     keys {-layer -layers -resistance -capacitance -corner \
-          -h_resistance -h_capacitance -v_resistance -v_capacitance} \
-    flags {-clock -signal -data}
+          -h_resistance -h_capacitance -v_resistance -v_capacitance \
+          -tech -chip} \
+    flags {-clock -signal -data -redistribution_layer}
 
   set corner [sta::parse_scene_or_null keys]
+
+  set target_chips [est::parse_wire_rc_chips keys flags has_selector]
+  if { $has_selector && [llength $target_chips] == 0 } {
+    return
+  }
+  set chip_args $target_chips
+  if { [llength $chip_args] == 0 } {
+    set chip_args {NULL}
+  }
 
   set h_wire_res 0.0
   set h_wire_cap 0.0
@@ -230,9 +317,10 @@ proc set_wire_rc { args } {
     set v_layers 0
 
     set layers $keys(-layers)
+    set tech [est::wire_rc_tech $target_chips]
 
     foreach layer_name $layers {
-      set tec_layer [[est::get_db_tech_checked] findLayer $layer_name]
+      set tec_layer [$tech findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error EST 2 "layer $layer_name not found."
       }
@@ -260,18 +348,8 @@ proc set_wire_rc { args } {
         incr v_layers
       }
 
-      if { [info exists flags(-clock)] } {
-        est::add_clk_layer_cmd $tec_layer
-      }
-
-      if { [info exists flags(-signal)] } {
-        est::add_signal_layer_cmd $tec_layer
-      }
-
-      if { ![info exists flags(-clock)] && ![info exists flags(-signal)] } {
-        est::add_clk_layer_cmd $tec_layer
-        est::add_signal_layer_cmd $tec_layer
-      }
+      est::add_wire_rc_layers $chip_args [info exists flags(-clock)] \
+        [info exists flags(-signal)] $tec_layer
     }
     if { $h_layers == 0 } {
       utl::error EST 16 "No horizontal layer specified."
@@ -286,7 +364,7 @@ proc set_wire_rc { args } {
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
-    set tec_layer [[est::get_db_tech_checked] findLayer $layer_name]
+    set tec_layer [[est::wire_rc_tech $target_chips] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
       utl::error EST 15 "layer $tec_layer not found."
     }
@@ -301,18 +379,8 @@ proc set_wire_rc { args } {
       set v_wire_cap [est::layer_capacitance $tec_layer $corner]
     }
 
-    if { [info exists flags(-clock)] } {
-      est::add_clk_layer_cmd $tec_layer
-    }
-
-    if { [info exists flags(-signal)] } {
-      est::add_signal_layer_cmd $tec_layer
-    }
-
-    if { ![info exists flags(-clock)] && ![info exists flags(-signal)] } {
-      est::add_clk_layer_cmd $tec_layer
-      est::add_signal_layer_cmd $tec_layer
-    }
+    est::add_wire_rc_layers $chip_args [info exists flags(-clock)] \
+      [info exists flags(-signal)] $tec_layer
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
@@ -389,13 +457,15 @@ proc set_wire_rc { args } {
     set corners [sta::scenes]
   }
   foreach corner $corners {
-    if { $signal } {
-      est::set_h_wire_signal_rc_cmd $corner $h_wire_res $h_wire_cap
-      est::set_v_wire_signal_rc_cmd $corner $v_wire_res $v_wire_cap
-    }
-    if { $clk } {
-      est::set_h_wire_clk_rc_cmd $corner $h_wire_res $h_wire_cap
-      est::set_v_wire_clk_rc_cmd $corner $v_wire_res $v_wire_cap
+    foreach chip $chip_args {
+      if { $signal } {
+        est::set_h_wire_signal_rc_cmd $chip $corner $h_wire_res $h_wire_cap
+        est::set_v_wire_signal_rc_cmd $chip $corner $v_wire_res $v_wire_cap
+      }
+      if { $clk } {
+        est::set_h_wire_clk_rc_cmd $chip $corner $h_wire_res $h_wire_cap
+        est::set_v_wire_clk_rc_cmd $chip $corner $v_wire_res $v_wire_cap
+      }
     }
   }
 }

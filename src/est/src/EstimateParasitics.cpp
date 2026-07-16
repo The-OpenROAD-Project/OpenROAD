@@ -74,11 +74,7 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
       global_router_(global_router),
       db_network_(sta->getDbNetwork()),
       db_(db),
-      db_cbk_(std::make_unique<OdbCallBack>(this, network_, db_network_)),
-      wire_signal_res_(0.0),
-      wire_signal_cap_(0.0),
-      wire_clk_res_(0.0),
-      wire_clk_cap_(0.0)
+      db_cbk_(std::make_unique<OdbCallBack>(this, network_, db_network_))
 {
   dbStaState::init(sta);
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
@@ -142,14 +138,32 @@ void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
 
 ////////////////////////////////////////////////////////////////
 
-void EstimateParasitics::addClkLayer(odb::dbTechLayer* layer)
+odb::dbChip* EstimateParasitics::currentChip() const
 {
-  clk_layers_.push_back(layer);
+  if (block_ != nullptr) {
+    return block_->getChip();
+  }
+  return db_->getChip();
 }
 
-void EstimateParasitics::addSignalLayer(odb::dbTechLayer* layer)
+const EstimateParasitics::WireRC* EstimateParasitics::findWireRC() const
 {
-  signal_layers_.push_back(layer);
+  auto it = wire_rc_.find(currentChip());
+  if (it == wire_rc_.end()) {
+    it = wire_rc_.find(nullptr);
+  }
+  return it == wire_rc_.end() ? nullptr : &it->second;
+}
+
+void EstimateParasitics::addClkLayer(odb::dbChip* chip, odb::dbTechLayer* layer)
+{
+  wireRC(chip).clk_layers.push_back(layer);
+}
+
+void EstimateParasitics::addSignalLayer(odb::dbChip* chip,
+                                        odb::dbTechLayer* layer)
+{
+  wireRC(chip).signal_layers.push_back(layer);
 }
 
 void EstimateParasitics::sortClkAndSignalLayers()
@@ -158,81 +172,94 @@ void EstimateParasitics::sortClkAndSignalLayers()
     return a->getNumber() < b->getNumber();
   };
 
-  std::ranges::sort(clk_layers_, sort_layers);
-  std::ranges::sort(signal_layers_, sort_layers);
+  for (auto& [chip, wire_rc] : wire_rc_) {
+    std::ranges::sort(wire_rc.clk_layers, sort_layers);
+    std::ranges::sort(wire_rc.signal_layers, sort_layers);
+  }
 }
 
-void EstimateParasitics::setHWireSignalRC(const sta::Scene* scene,
+void EstimateParasitics::setHWireSignalRC(odb::dbChip* chip,
+                                          const sta::Scene* scene,
                                           double res,
                                           double cap)
 {
-  wire_signal_res_.resize(sta_->scenes().size());
-  wire_signal_cap_.resize(sta_->scenes().size());
-  wire_signal_res_[scene->index()].h_res = res;
-  wire_signal_cap_[scene->index()].h_cap = cap;
+  WireRC& wire_rc = wireRC(chip);
+  wire_rc.signal_res.resize(sta_->scenes().size());
+  wire_rc.signal_cap.resize(sta_->scenes().size());
+  wire_rc.signal_res[scene->index()].h_res = res;
+  wire_rc.signal_cap[scene->index()].h_cap = cap;
 }
-void EstimateParasitics::setVWireSignalRC(const sta::Scene* scene,
+
+void EstimateParasitics::setVWireSignalRC(odb::dbChip* chip,
+                                          const sta::Scene* scene,
                                           double res,
                                           double cap)
 {
-  wire_signal_res_.resize(sta_->scenes().size());
-  wire_signal_cap_.resize(sta_->scenes().size());
-  wire_signal_res_[scene->index()].v_res = res;
-  wire_signal_cap_[scene->index()].v_cap = cap;
+  WireRC& wire_rc = wireRC(chip);
+  wire_rc.signal_res.resize(sta_->scenes().size());
+  wire_rc.signal_cap.resize(sta_->scenes().size());
+  wire_rc.signal_res[scene->index()].v_res = res;
+  wire_rc.signal_cap[scene->index()].v_cap = cap;
 }
 
 double EstimateParasitics::wireSignalResistance(const sta::Scene* scene) const
 {
-  if (wire_signal_res_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->signal_res.empty()) {
     return 0.0;
   }
 
-  return (wire_signal_res_[scene->index()].h_res
-          + wire_signal_res_[scene->index()].v_res)
+  return (wire_rc->signal_res[scene->index()].h_res
+          + wire_rc->signal_res[scene->index()].v_res)
          / 2;
 }
 
 double EstimateParasitics::wireSignalHResistance(const sta::Scene* scene) const
 {
-  if (wire_signal_res_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->signal_res.empty()) {
     return 0.0;
   }
-  return wire_signal_res_[scene->index()].h_res;
+  return wire_rc->signal_res[scene->index()].h_res;
 }
 
 double EstimateParasitics::wireSignalVResistance(const sta::Scene* scene) const
 {
-  if (wire_signal_res_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->signal_res.empty()) {
     return 0.0;
   }
-  return wire_signal_res_[scene->index()].v_res;
+  return wire_rc->signal_res[scene->index()].v_res;
 }
 
 double EstimateParasitics::wireSignalCapacitance(const sta::Scene* scene) const
 {
-  if (wire_signal_cap_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->signal_cap.empty()) {
     return 0.0;
   }
 
-  return (wire_signal_cap_[scene->index()].h_cap
-          + wire_signal_cap_[scene->index()].v_cap)
+  return (wire_rc->signal_cap[scene->index()].h_cap
+          + wire_rc->signal_cap[scene->index()].v_cap)
          / 2;
 }
 
 double EstimateParasitics::wireSignalHCapacitance(const sta::Scene* scene) const
 {
-  if (wire_signal_cap_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->signal_cap.empty()) {
     return 0.0;
   }
-  return wire_signal_cap_[scene->index()].h_cap;
+  return wire_rc->signal_cap[scene->index()].h_cap;
 }
 
 double EstimateParasitics::wireSignalVCapacitance(const sta::Scene* scene) const
 {
-  if (wire_signal_cap_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->signal_cap.empty()) {
     return 0.0;
   }
-  return wire_signal_cap_[scene->index()].v_cap;
+  return wire_rc->signal_cap[scene->index()].v_cap;
 }
 
 void EstimateParasitics::wireSignalRC(const sta::Scene* scene,
@@ -240,96 +267,107 @@ void EstimateParasitics::wireSignalRC(const sta::Scene* scene,
                                       double& res,
                                       double& cap) const
 {
-  if (wire_signal_res_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->signal_res.empty()) {
     res = 0.0;
   } else {
-    auto resistance = wire_signal_res_[scene->index()];
+    auto resistance = wire_rc->signal_res[scene->index()];
     res = (resistance.h_res + resistance.v_res) / 2;
   }
-  if (wire_signal_cap_.empty()) {
+  if (wire_rc == nullptr || wire_rc->signal_cap.empty()) {
     cap = 0.0;
   } else {
-    auto capacitance = wire_signal_cap_[scene->index()];
+    auto capacitance = wire_rc->signal_cap[scene->index()];
     cap = (capacitance.h_cap + capacitance.v_cap) / 2;
   }
 }
 
-void EstimateParasitics::setHWireClkRC(const sta::Scene* scene,
+void EstimateParasitics::setHWireClkRC(odb::dbChip* chip,
+                                       const sta::Scene* scene,
                                        double res,
                                        double cap)
 {
-  wire_clk_res_.resize(sta_->scenes().size());
-  wire_clk_cap_.resize(sta_->scenes().size());
-  wire_clk_res_[scene->index()].h_res = res;
-  wire_clk_cap_[scene->index()].h_cap = cap;
+  WireRC& wire_rc = wireRC(chip);
+  wire_rc.clk_res.resize(sta_->scenes().size());
+  wire_rc.clk_cap.resize(sta_->scenes().size());
+  wire_rc.clk_res[scene->index()].h_res = res;
+  wire_rc.clk_cap[scene->index()].h_cap = cap;
 }
 
-void EstimateParasitics::setVWireClkRC(const sta::Scene* scene,
+void EstimateParasitics::setVWireClkRC(odb::dbChip* chip,
+                                       const sta::Scene* scene,
                                        double res,
                                        double cap)
 {
-  wire_clk_res_.resize(sta_->scenes().size());
-  wire_clk_cap_.resize(sta_->scenes().size());
-  wire_clk_res_[scene->index()].v_res = res;
-  wire_clk_cap_[scene->index()].v_cap = cap;
+  WireRC& wire_rc = wireRC(chip);
+  wire_rc.clk_res.resize(sta_->scenes().size());
+  wire_rc.clk_cap.resize(sta_->scenes().size());
+  wire_rc.clk_res[scene->index()].v_res = res;
+  wire_rc.clk_cap[scene->index()].v_cap = cap;
 }
 
 double EstimateParasitics::wireClkResistance(const sta::Scene* scene) const
 {
-  if (wire_clk_res_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->clk_res.empty()) {
     return 0.0;
   }
 
-  return (wire_clk_res_[scene->index()].h_res
-          + wire_clk_res_[scene->index()].v_res)
+  return (wire_rc->clk_res[scene->index()].h_res
+          + wire_rc->clk_res[scene->index()].v_res)
          / 2;
 }
 
 double EstimateParasitics::wireClkHResistance(const sta::Scene* scene) const
 {
-  if (wire_clk_res_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->clk_res.empty()) {
     return 0.0;
   }
 
-  return wire_clk_res_[scene->index()].h_res;
+  return wire_rc->clk_res[scene->index()].h_res;
 }
 
 double EstimateParasitics::wireClkVResistance(const sta::Scene* scene) const
 {
-  if (wire_clk_res_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->clk_res.empty()) {
     return 0.0;
   }
 
-  return wire_clk_res_[scene->index()].v_res;
+  return wire_rc->clk_res[scene->index()].v_res;
 }
 
 double EstimateParasitics::wireClkCapacitance(const sta::Scene* scene) const
 {
-  if (wire_clk_cap_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->clk_cap.empty()) {
     return 0.0;
   }
 
-  return (wire_clk_cap_[scene->index()].h_cap
-          + wire_clk_cap_[scene->index()].v_cap)
+  return (wire_rc->clk_cap[scene->index()].h_cap
+          + wire_rc->clk_cap[scene->index()].v_cap)
          / 2;
 }
 
 double EstimateParasitics::wireClkHCapacitance(const sta::Scene* scene) const
 {
-  if (wire_clk_cap_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->clk_cap.empty()) {
     return 0.0;
   }
 
-  return wire_clk_cap_[scene->index()].h_cap;
+  return wire_rc->clk_cap[scene->index()].h_cap;
 }
 
 double EstimateParasitics::wireClkVCapacitance(const sta::Scene* scene) const
 {
-  if (wire_clk_cap_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc == nullptr || wire_rc->clk_cap.empty()) {
     return 0.0;
   }
 
-  return wire_clk_cap_[scene->index()].v_cap;
+  return wire_rc->clk_cap[scene->index()].v_cap;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -618,7 +656,8 @@ void EstimateParasitics::clearParasitics()
 void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
 {
   initBlock();
-  if (!wire_signal_cap_.empty()) {
+  const WireRC* wire_rc = findWireRC();
+  if (wire_rc != nullptr && !wire_rc->signal_cap.empty()) {
     for (auto mode : sta_->modes()) {
       sta_->ensureClkNetwork(mode);
     }
@@ -976,11 +1015,11 @@ void EstimateParasitics::parasiticNodeConnectPins(
 {
   const sta::PinSeq* pins = tree->pins(pt);
   if (pins) {
-    odb::dbTechLayer* tree_layer;
-    if (is_clk) {
-      tree_layer = clk_layers_.empty() ? nullptr : clk_layers_[0];
-    } else {
-      tree_layer = signal_layers_.empty() ? nullptr : signal_layers_[0];
+    odb::dbTechLayer* tree_layer = nullptr;
+    if (const WireRC* wire_rc = findWireRC()) {
+      const auto& layers
+          = is_clk ? wire_rc->clk_layers : wire_rc->signal_layers;
+      tree_layer = layers.empty() ? nullptr : layers[0];
     }
 
     for (const sta::Pin* pin : *pins) {
