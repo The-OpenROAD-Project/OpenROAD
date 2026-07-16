@@ -55,6 +55,7 @@
 #include "sta/Sdc.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace cts {
 
@@ -85,6 +86,7 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::runTritonCts()
 {
+  utl::Timer timer;
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
   options_->addOwner(block);
@@ -120,7 +122,9 @@ void TritonCTS::runTritonCts()
   sinkBuffers_.clear();
   regTreeRootBufIndex_ = 0;
   delayBufIndex_ = 0;
+  options_->setMaxWl(0);
   options_->removeOwner();
+  logger_->info(CTS, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
@@ -241,7 +245,9 @@ void TritonCTS::setupCharacterization()
 
   double maxWlMicrons
       = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
-  options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
+  if (maxWlMicrons > 0) {
+    options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
+  }
 
   // A new characteriztion is always created.
   techChar_ = std::make_unique<TechChar>(

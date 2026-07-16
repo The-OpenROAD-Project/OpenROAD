@@ -25,10 +25,7 @@ DbvParser::DbvParser(utl::Logger* logger) : BaseParser(logger)
 DbvData DbvParser::parseFile(const std::string& filename)
 {
   current_file_path_ = filename;
-  std::ifstream file(filename);
-  if (!file.is_open()) {
-    logError("Cannot open file");
-  }
+  std::ifstream file = openInputFile();
 
   std::stringstream buffer;
   buffer << file.rdbuf();

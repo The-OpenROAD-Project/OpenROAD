@@ -154,6 +154,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
+  void setResAwareNetsPercentage(float percentage);
   void setSnapshotBatchedWidth(int snapshot_batched_width);
   int getSnapshotBatchedWidth() const;
   int getSnapshotBatchCount() const;
@@ -200,6 +201,7 @@ class GlobalRouter
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void startIncremental();
   void endIncremental(bool save_guides = false);
+  void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
@@ -237,7 +239,6 @@ class GlobalRouter
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
-  void updateCUGRNet(odb::dbNet* net);
   odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
@@ -317,7 +318,7 @@ class GlobalRouter
   float getLayerResistance(int layer, int length, odb::dbNet* net);
   float getViaResistance(int from_layer, int to_layer);
   float getFRNetResistance(odb::dbNet* db_net);
-  float getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net);
+  float getFRNetResistanceOnMinResistanceLayer(odb::dbNet* db_net);
   double dbuToMicrons(int dbu);
   float estimatePathResistance(odb::dbObject* pin1,
                                odb::dbObject* pin2,
@@ -361,6 +362,7 @@ class GlobalRouter
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
+  void mirrorGridToFastRoute(int max_routing_layer);
   void initRoutingLayers(int min_routing_layer, int max_routing_layer);
   void checkAdjacentLayersDirection(int min_routing_layer,
                                     int max_routing_layer);
@@ -375,6 +377,14 @@ class GlobalRouter
                            bool horizontal);
   odb::Rect getGCellRect(int x, int y);
   void initNetlist(std::vector<Net*>& nets, bool incremental = false);
+  void computeNetDegree(const std::vector<Net*>& nets,
+                        int& min_degree,
+                        int& max_degree);
+  void reportNetDegree(const std::vector<Net*>& nets);
+  void reportMacrosAndBlockages();
+  std::vector<Net*> initNets(bool check_pin_placement = true);
+  void initRoutingGrid(int min_routing_layer, int max_routing_layer);
+  std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
@@ -420,6 +430,7 @@ class GlobalRouter
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
   void updatePinAccessPoints();
+  void updatePinAccessPoints(Net* net, odb::dbNet* db_net);
   void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
@@ -475,6 +486,8 @@ class GlobalRouter
 
   // incremental funcions
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
+  std::vector<Net*> updateDirtyRoutesCugr();
+  std::vector<Net*> updateDirtyRoutesFastRoute(bool save_guides);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
   bool loadRoutingFromDBGuides(odb::dbNet* db_net);
@@ -553,6 +566,7 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
+  bool incremental_congestion_report_pending_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
   bool has_macros_or_pads_{false};

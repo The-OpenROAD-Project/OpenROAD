@@ -8,7 +8,6 @@
 [WARNING ODB-1003] (metal8) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.4
 [WARNING ODB-1003] (metal9) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.8
 [WARNING ODB-1003] (metal10) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.8
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
@@ -28,8 +27,9 @@
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 Design statistics
-Nets:                579
+Nets:                563
 Special nets:        0
 Routing layers:      10
 
@@ -50,8 +50,9 @@ metal10    Vertical         2142          1190          44.44%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Stage 2: Pattern routing with detours.
-Stage 3: Maze routing on sparsified graph.
+Stage 3: Pattern routing with detours.
+Stage 4: Maze routing on sparsified graph.
+Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 1/5
 [WARNING GRT-0305] Demoted 4 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
 [INFO GRT-0117] Start extra iteration 2/5
@@ -59,31 +60,31 @@ Stage 3: Maze routing on sparsified graph.
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
 [INFO GRT-0306] Iterative RRR soft-demoted 4 NDR net(s) total.
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (5).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (372).
 Routing statistics
-Wire length:           39172
-Total via count:       4218
-Total congestion:      5
-Min resource:          -0.49999964237213135
-Bottleneck:            (1, 9, 20)
+Wire length:           45705
+Total via count:       4123
+Total congestion:      372
+Min resource:          -1.785964435443545
+Bottleneck:            (2, 12, 13)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            1792           582           32.48%             0 /  0 /  5
-metal3            2448           825           33.70%             0 /  0 /  0
-metal4            1217           298           24.49%             0 /  0 /  0
-metal5            1224           251           20.51%             0 /  0 /  0
-metal6            1217           222           18.24%             0 /  0 /  0
-metal7            1190           209           17.56%             0 /  0 /  0
-metal8            1190           152           12.77%             0 /  0 /  0
-metal9            1190            27            2.27%             0 /  0 /  0
-metal10           1190            42            3.53%             0 /  0 /  0
+metal2            1792           845           47.15%             0 /  1 / 102
+metal3            2448          1115           45.55%             2 /  0 / 100
+metal4            1217           443           36.40%             0 /  1 / 60
+metal5            1224           424           34.64%             0 /  0 / 39
+metal6            1217           405           33.28%             0 /  0 / 23
+metal7            1190           270           22.69%             1 /  0 / 28
+metal8            1190           186           15.63%             0 /  0 / 14
+metal9            1190            41            3.45%             1 /  0 /  5
+metal10           1190            21            1.76%             0 /  0 /  1
 ---------------------------------------------------------------------------------------
-Total            12658          2608           20.60%             0 /  0 /  5
+Total            12658          3750           29.63%             4 /  2 / 372
 
-[INFO GRT-0018] Total wirelength: 10921 um
+[INFO GRT-0018] Total wirelength: 12371 um
 [INFO GRT-0014] Routed nets: 563
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.

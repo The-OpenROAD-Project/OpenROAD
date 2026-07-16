@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -44,6 +45,13 @@ class BaseParser
   std::string extractSinglePathFromList(const YAML::Node& parent,
                                         const std::string& key,
                                         const std::string& context);
+
+  // Opens an input file for reading after validating that the path exists and
+  // refers to a regular, readable file. On any failure this reports a clean
+  // logger error (which is non-returning) BEFORE the caller creates any DB
+  // objects, preventing downstream crashes on invalid/nonexistent paths.
+  // current_file_path_ must be set to the file path before calling.
+  std::ifstream openInputFile();
 
   // Utility methods
   void logError(const std::string& message);

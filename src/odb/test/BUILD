@@ -156,11 +156,6 @@ COMPULSORY_TESTS = [
     "create_sboxes",
     "def_dup_net",
     "def_parser",
-    "design_is_routed1",
-    "design_is_routed2",
-    "design_is_routed3",
-    "design_is_routed_fail1",
-    "design_is_routed_fail2",
     "dont_touch",
     "dump_netlists",
     "dump_netlists_withfill",
@@ -220,6 +215,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     # pass-fail
     "read_3dbv_fail",
+    "read_3dbx_fail",
     "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
@@ -301,6 +297,7 @@ filegroup(
         "data/gscl45nm_ext_macros.lef",
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
+        "data/lef58_celledgespacing_numeric.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",
@@ -363,9 +360,6 @@ filegroup(
         ) + {
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
-            ],
-            "all_pins_placed2": [
-                "design_is_routed1.def",
             ],
             "create_obstruction": [
                 "create_blockage.def",

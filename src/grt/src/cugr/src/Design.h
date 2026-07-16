@@ -17,6 +17,8 @@ class dbDatabase;
 class dbITerm;
 class dbNet;
 class dbTech;
+class dbTechLayer;
+class dbTechVia;
 }  // namespace odb
 
 namespace sta {
@@ -40,7 +42,8 @@ class Design
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,
-         const odb::PtrSet<odb::dbNet>& clock_nets);
+         const odb::PtrSet<odb::dbNet>& clock_nets,
+         bool verbose);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -54,6 +57,15 @@ class Design
   const MetalLayer& getLayer(int layer_index) const
   {
     return layers_[layer_index];
+  }
+  // Effective via demand length charged to the lower / upper layer of via i.
+  double getViaDemandLengthLower(int i) const
+  {
+    return via_demand_length_lower_[i];
+  }
+  double getViaDemandLengthUpper(int i) const
+  {
+    return via_demand_length_upper_[i];
   }
 
   // For global routing
@@ -71,7 +83,9 @@ class Design
 
   BoxT getDieRegion() const { return die_region_; }
 
-  void updateNet(odb::dbNet* db_net);
+  // Adds or refreshes a net; returns its net index, or -1 if the net is not
+  // admitted to the routing netlist (special/supply/abutment, or single-pin).
+  int updateNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
 
  private:
@@ -84,6 +98,13 @@ class Design
   void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
+  // Fill via_demand_length_{lower,upper}_ from each pair's via geometry.
+  void computeViaDemandLengths();
+  // Pick the via for a layer pair, ranked to approximate drt's choice.
+  odb::dbTechVia* chooseViaForPair(odb::dbTechLayer* lower_tl,
+                                   odb::dbTechLayer* upper_tl) const;
+  // Via pad demand length: extent along routing dir x tracks blocked across.
+  double viaDemandLength(const MetalLayer& layer, int dx, int dy) const;
 
   // debug functions
   void printNets() const;
@@ -92,6 +113,9 @@ class Design
   int lib_dbu_;
   BoxT die_region_;
   std::vector<MetalLayer> layers_;
+  // Effective via demand length per lower layer i (lower_ = i, upper_ = i+1).
+  std::vector<double> via_demand_length_lower_;
+  std::vector<double> via_demand_length_upper_;
   std::vector<CUGRNet> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_to_id_;
   std::vector<BoxOnLayer> obstacles_;
@@ -113,6 +137,7 @@ class Design
   const int min_routing_layer_;
   const int max_routing_layer_;
   odb::PtrSet<odb::dbNet> clock_nets_;
+  const bool verbose_;
 };
 
 }  // namespace grt

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "objects.h"
+#include "utl/CFileUtils.h"
 #include "utl/Logger.h"
 #include "yaml-cpp/yaml.h"
 namespace odb {
@@ -205,6 +206,11 @@ void BaseParser::logError(const std::string& message)
 {
   logger_->error(
       utl::ODB, 521, "Parser Error in {}: {}", current_file_path_, message);
+}
+
+std::ifstream BaseParser::openInputFile()
+{
+  return utl::OpenInputStream(current_file_path_, logger_);
 }
 
 std::string BaseParser::trim(const std::string& str)

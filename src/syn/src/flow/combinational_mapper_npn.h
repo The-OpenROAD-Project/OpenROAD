@@ -11,6 +11,10 @@ namespace syn {
 
 using Truth6 = uint64_t;
 
+// Returns the all-ones truth table for a `size`-input function:
+// 2^(2^size) - 1, packed into the low bits of a Truth6.
+Truth6 mask6(int size);
+
 // NPN-equivalence transformation between two Boolean functions.
 //
 // Two functions are NPN-equivalent if one can be obtained from the other by
@@ -40,7 +44,7 @@ struct NPN
     return ret;
   }
 
-  bool is_identity() const
+  bool isIdentity() const
   {
     if (output_complement) {
       return false;
@@ -79,7 +83,10 @@ struct NPN
       }
       ret |= (Truth6) 1 << idx2;
     }
-    return output_complement ? ~ret : ret;
+    if (output_complement) {
+      ret ^= mask6(ninputs());
+    }
+    return ret;
   }
 
   NPN operator*(const NPN& other) const
@@ -105,7 +112,7 @@ struct NPN
     return ret;
   }
 
-  int c_fingerprint() const
+  int cFingerprint() const
   {
     return output_complement | input_complement[0] << 1
            | input_complement[1] << 2 | input_complement[2] << 3
@@ -116,13 +123,9 @@ struct NPN
 
 extern const Truth6 cofactor_masks[6];
 
-// Returns the all-ones truth table for a `size`-input function:
-// 2^(2^size) - 1, packed into the low bits of a Truth6.
-Truth6 mask6(int size);
-
-Truth6 npn_semiclass(Truth6 m, int ninputs, NPN& npn);
-void npn_semiclass_allrepr(Truth6 m,
-                           int ninputs,
-                           const std::function<void(Truth6, NPN&)>& cb);
+Truth6 npnSemiclass(Truth6 m, int ninputs, NPN& npn);
+void npnSemiclassAllRepr(Truth6 m,
+                         int ninputs,
+                         const std::function<void(Truth6, NPN&)>& cb);
 
 }  // namespace syn

@@ -840,7 +840,7 @@ PixelPt Opendp::diamondSearch(const Node* cell,
                               const GridX x,
                               const GridY y) const
 {
-  // Diamond search limits.
+  // DPL displacement budget.
   GridX x_min = x - max_displacement_x_;
   GridX x_max = x + max_displacement_x_;
   GridY y_min = y - max_displacement_y_;
@@ -1150,9 +1150,8 @@ DbuPt Opendp::legalPt(const Node* cell, const DbuPt& pt) const
   // Align with row site.
   const GridX grid_x{divRound(core_x.v, site_width.v)};
   const DbuX legal_x{gridToDbu(grid_x, site_width)};
-  // Align to row
   const DbuY core_y
-      = std::clamp(pt.y, DbuY{0}, DbuY{core_.yMax()} - cell->getHeight());
+      = std::clamp(pt.y, DbuY{0}, DbuY{core_.dy()} - cell->getHeight());
   const GridY grid_y = grid_->gridRoundY(core_y);
   DbuY legal_y = grid_->gridYToDbu(grid_y);
 

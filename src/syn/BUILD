@@ -18,13 +18,10 @@ cc_library(
         "src/flow/bitblast.cc",
         "src/flow/combinational_mapper.cc",
         "src/flow/combinational_mapper_npn.cc",
-        "src/flow/combinational_mapper_npn.h",
         "src/flow/constant_fold.cc",
-        "src/flow/constant_fold.h",
         "src/flow/export.cc",
         "src/flow/export.h",
         "src/flow/import.cc",
-        "src/flow/import.h",
         "src/flow/liveness.cc",
         "src/flow/opt_gatefusion.cc",
         "src/flow/opt_gatefusion.h",
@@ -33,6 +30,9 @@ cc_library(
     ],
     hdrs = [
         "include/syn/synthesis.h",
+        "src/flow/combinational_mapper_npn.h",
+        "src/flow/constant_fold.h",
+        "src/flow/import.h",
     ],
     includes = [
         "include",
@@ -48,7 +48,6 @@ cc_library(
         "//src/syn/src/ir",
         "//src/utl",
         "@abc",
-        "@boost.stacktrace",
     ],
 )
 
@@ -68,8 +67,6 @@ cc_library(
     deps = [
         ":syn",
         "//:ord",
-        "//src/dbSta",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

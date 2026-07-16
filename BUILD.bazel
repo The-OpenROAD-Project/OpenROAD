@@ -61,12 +61,9 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/cgt",
     "//src/cts",
     "//src/cts:ui",
-    "//src/cut",
     "//src/dbSta",
     "//src/dbSta:dbNetwork",
     "//src/dbSta:dbReadVerilog",
-    "//src/dbSta:IpChecker",
-    "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",
     "//src/dft",
     "//src/dft:ui",
@@ -96,7 +93,6 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/odb/src/defout",
     "//src/odb/src/lefin",
     "//src/odb/src/lefout",
-    "//src/odb/src/swig:swig_common",
     "//src/odb:ui",
     "//src/pad",
     "//src/par",
@@ -111,19 +107,16 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/rmp:ui",
     "//src/rsz",
     "//src/rsz:ui",
-    "//src/stt",
     "//src/stt:ui",
     "//src/syn",
     "//src/syn:ui",
     "//src/tap",
     "//src/tap:ui",
-    "//src/upf",
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
     "//src/web",
     "//src/web:ui",
-    "@abc",
     ":ord",
 ]
 
@@ -143,6 +136,7 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
+    "BAZEL_BUILD",
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
@@ -178,7 +172,6 @@ cc_library(
 # headers to consumers, so direct binary deps are what each Main.cc
 # include needs to see.
 OPENROAD_MAIN_DEPS = [
-    ":openroad_version",
     ":ord",
     ":tcl_readline_setup",
     "//bazel:tcl_library_init",
@@ -187,9 +180,7 @@ OPENROAD_MAIN_DEPS = [
     "//src/utl",
     "//src/web",
     "@abseil-cpp//absl/base:no_destructor",
-    "@boost.dll",
     "@boost.stacktrace",
-    "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
     "@tcl_lang//:tcl",
 ]
 
@@ -318,6 +309,7 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//src/sta:opensta_lib",
         "@abseil-cpp//absl/synchronization",
         "@tcl_lang//:tcl",
     ],
@@ -550,10 +542,14 @@ build_test(
 sh_test(
     name = "lint_tcl_test",
     srcs = ["//bazel:tcl_lint_test.sh"],
-    args = ["$(rootpath //bazel:tclint)"],
+    args = [
+        "$(rootpath //bazel:tclint)",
+        "$(rootpath @git)",
+    ],
     data = [
         "tclint.toml",
         "//bazel:tclint",
+        "@git",
     ],
     tags = ["local"],
 )
@@ -564,10 +560,14 @@ sh_test(
 sh_test(
     name = "fmt_tcl_test",
     srcs = ["//bazel:tcl_fmt_test.sh"],
-    args = ["$(rootpath //bazel:tclfmt)"],
+    args = [
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath @git)",
+    ],
     data = [
         "tclint.toml",
         "//bazel:tclfmt",
+        "@git",
     ],
     tags = ["local"],
 )
@@ -578,10 +578,14 @@ sh_test(
 sh_binary(
     name = "tidy_tcl",
     srcs = ["//bazel:tcl_tidy.sh"],
-    args = ["$(rootpath //bazel:tclfmt)"],
+    args = [
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath @git)",
+    ],
     data = [
         "tclint.toml",
         "//bazel:tclfmt",
+        "@git",
     ],
 )
 
@@ -591,10 +595,14 @@ sh_binary(
 sh_test(
     name = "lint_bzl_test",
     srcs = ["//bazel:bzl_lint_test.sh"],
-    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    args = [
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
+    ],
     data = [
         "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
     tags = ["local"],
 )
@@ -605,10 +613,14 @@ sh_test(
 sh_test(
     name = "fmt_bzl_test",
     srcs = ["//bazel:bzl_fmt_test.sh"],
-    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    args = [
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
+    ],
     data = [
         "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
     tags = ["local"],
 )
@@ -619,9 +631,13 @@ sh_test(
 sh_binary(
     name = "tidy_bzl",
     srcs = ["//bazel:bzl_tidy.sh"],
-    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    args = [
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
+    ],
     data = [
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
 )
 
@@ -652,6 +668,7 @@ sh_binary(
         "$(rootpath @buildifier_prebuilt//:buildifier)",
         "$(rootpath //bazel:bzl_lint_test.sh)",
         "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
     ],
     data = [
         "MODULE.bazel",
@@ -663,5 +680,6 @@ sh_binary(
         "//bazel:tclfmt",
         "//bazel:tclint",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
 )
