@@ -3259,12 +3259,12 @@ class SearchPredCombLogic : public sta::SearchPred1
 // visit(vertex) returns true if the search should expand through vertex.
 enum class DfsDirection
 {
-  fanin,
-  fanout
+  kFanin,
+  kFanout
 };
 
 static void dfsSearch(sta::Graph* graph,
-                      sta::SearchPred& pred,
+                      const sta::SearchPred& pred,
                       DfsDirection dir,
                       const std::vector<sta::Vertex*>& seeds,
                       bool visit_seeds,
@@ -3274,7 +3274,7 @@ static void dfsSearch(sta::Graph* graph,
   sta::VertexSet visited(graph);
 
   auto expand = [&](sta::Vertex* vertex) {
-    if (dir == DfsDirection::fanout) {
+    if (dir == DfsDirection::kFanout) {
       if (pred.searchFrom(vertex)) {
         sta::VertexOutEdgeIterator edge_iter(vertex, graph);
         while (edge_iter.hasNext()) {
@@ -3339,7 +3339,7 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
   dfsSearch(
       graph_,
       pred,
-      DfsDirection::fanin,
+      DfsDirection::kFanin,
       seeds,
       /*visit_seeds=*/false,
       [&](sta::Vertex* vertex) {
@@ -3361,7 +3361,7 @@ sta::VertexSet Resizer::findFaninRoots(sta::VertexSet& ends)
   dfsSearch(
       graph_,
       pred,
-      DfsDirection::fanin,
+      DfsDirection::kFanin,
       seeds,
       /*visit_seeds=*/false,
       [&](sta::Vertex* vertex) {
@@ -3395,7 +3395,7 @@ sta::VertexSet Resizer::findFanouts(sta::VertexSet& reg_outs)
   const std::vector<sta::Vertex*> seeds(reg_outs.begin(), reg_outs.end());
   dfsSearch(graph_,
             pred,
-            DfsDirection::fanout,
+            DfsDirection::kFanout,
             seeds,
             /*visit_seeds=*/false,
             [&](sta::Vertex* vertex) {
@@ -5061,7 +5061,7 @@ sta::InstanceSeq Resizer::findClkInverters()
   dfsSearch(
       graph_,
       srch_pred,
-      DfsDirection::fanout,
+      DfsDirection::kFanout,
       seeds,
       /*visit_seeds=*/true,
       [&](sta::Vertex* vertex) {
