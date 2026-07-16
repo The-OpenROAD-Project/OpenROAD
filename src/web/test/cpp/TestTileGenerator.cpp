@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <set>
 #include <string>
@@ -114,8 +115,7 @@ std::set<int> textPixels(const std::vector<unsigned char>& a,
   const size_t num_pixels = std::min(a.size(), b.size()) / 4;
   for (size_t p = 0; p < num_pixels; ++p) {
     const size_t i = p * 4;
-    if (a[i] != b[i] || a[i + 1] != b[i + 1] || a[i + 2] != b[i + 2]
-        || a[i + 3] != b[i + 3]) {
+    if (std::memcmp(&a[i], &b[i], 4) != 0) {
       result.insert(axis == Axis::kColumn ? static_cast<int>(p % kTileSize)
                                           : static_cast<int>(p / kTileSize));
     }
