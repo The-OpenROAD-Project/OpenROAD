@@ -164,9 +164,18 @@ struct SessionState
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;
+  std::vector<FlightLine> highlight_lines;  // selection flywires
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;
+  // Misc > Flywires only: highlight selected nets with straight
+  // driver->sink lines instead of their routed wire/guides (GUI
+  // isFlywireHighlightOnly() parity).
+  bool flywires_only = false;
+  // True while the highlight_* vectors reflect the current selection;
+  // explicit clear paths reset it so a flywires_only flip does not
+  // resurrect highlights the user dismissed.
+  bool highlights_active = false;
 
   std::mutex selectables_mutex;
   std::vector<gui::Selected> selectables;

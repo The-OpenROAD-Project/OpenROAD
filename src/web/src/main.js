@@ -89,6 +89,10 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
+    accessPointsLayer: null,
+    regionsLayer: null,
+    mfgGridLayer: null,
+    gcellGridLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -185,6 +189,17 @@ const visibility = {
     srouting_vias: true,
     pins: true,
     pin_names: true,
+    // Access points (dbAccessPoint X markers) — off by default, matching GUI
+    access_points: false,
+    // Region (dbRegion) boundaries — on by default, matching GUI
+    regions: true,
+    // Manufacturing-grid dots — off by default, matching GUI
+    mfg_grid: false,
+    // GCell grid lines — off by default, matching GUI
+    gcell_grid: false,
+    // Flywires only (selected nets as straight driver->sink lines) —
+    // off by default, matching GUI
+    flywires_only: false,
     blockages: true,
     // Blockages
     placement_blockages: true,
@@ -406,20 +421,21 @@ function redrawAllLayers() {
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
 
-    // Show/hide modules layer based on module_view visibility
-    if (app.modulesLayer) {
-        if (visibility.module_view && !app.map.hasLayer(app.modulesLayer)) {
-            app.modulesLayer.addTo(app.map);
-        } else if (!visibility.module_view && app.map.hasLayer(app.modulesLayer)) {
-            app.map.removeLayer(app.modulesLayer);
-        }
-    }
-    // Show/hide pin markers layer (controlled by Shapes > Pins)
-    if (app.pinsLayer) {
-        if (visibility.pins && !app.map.hasLayer(app.pinsLayer)) {
-            app.pinsLayer.addTo(app.map);
-        } else if (!visibility.pins && app.map.hasLayer(app.pinsLayer)) {
-            app.map.removeLayer(app.pinsLayer);
+    // Show/hide the toggleable pseudo-layer tile layers.
+    const toggleableLayers = [
+        [app.modulesLayer, visibility.module_view],   // Module view
+        [app.pinsLayer, visibility.pins],             // Shapes > Pins
+        [app.accessPointsLayer, visibility.access_points],
+        [app.regionsLayer, visibility.regions],
+        [app.mfgGridLayer, visibility.mfg_grid],
+        [app.gcellGridLayer, visibility.gcell_grid],
+    ];
+    for (const [layer, visible] of toggleableLayers) {
+        if (!layer) continue;
+        if (visible && !app.map.hasLayer(layer)) {
+            layer.addTo(app.map);
+        } else if (!visible && app.map.hasLayer(layer)) {
+            app.map.removeLayer(layer);
         }
     }
     for (const layer of app.allLayers) {

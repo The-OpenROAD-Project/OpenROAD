@@ -72,6 +72,22 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return false;
   }
 
+  // Return true if any visible pixel is NOT the gray die/core outline
+  // ({128,128,128,255}) drawn on the _instances pass.
+  static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
+  {
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i + 3] == 0) {
+        continue;
+      }
+      if (rgba[i] != 128 || rgba[i + 1] != 128 || rgba[i + 2] != 128
+          || rgba[i + 3] != 255) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   odb::dbInst* placeInst(const char* master_name,
                          const char* inst_name,
                          int x,
@@ -120,6 +136,28 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     ASSERT_NE(layer, nullptr);
     odb::dbBox::create(bpin, layer, x, y, x + w, y + h);
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
+  // Create an IO pin (net+bterm+bpin box on metal1) carrying one
+  // dbAccessPoint at (2000,2000) with access granted.  Returns nullptr
+  // if metal1 is missing.
+  odb::dbAccessPoint* makeMetal1AccessPoint()
+  {
+    odb::dbNet* net = odb::dbNet::create(block_, "ap_pin");
+    odb::dbBTerm* bterm = odb::dbBTerm::create(net, "ap_pin");
+    bterm->setIoType(odb::dbIoType::INPUT);
+    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+    odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+    if (!metal1) {
+      return nullptr;
+    }
+    odb::dbBox::create(bpin, metal1, 1900, 1900, 2100, 2100);
+    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbAccessPoint* ap = odb::dbAccessPoint::create(bpin);
+    ap->setPoint(odb::Point(2000, 2000));
+    ap->setLayer(metal1);
+    ap->setAccess(true, odb::dbDirection::EAST);
+    return ap;
   }
 
   std::unique_ptr<TileGenerator> tile_gen_;
@@ -451,7 +489,9 @@ TEST_F(TileGeneratorTest, StdcellVisibilityFilter)
   auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
   unsigned w = 0, h = 0;
   auto pixels = decodePng(png, w, h);
-  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+  // The _instances pass always draws the gray die/core outline (Qt
+  // parity); with stdcells hidden nothing else may be visible.
+  EXPECT_FALSE(hasNonOutlinePixel(pixels));
 }
 
 TEST_F(TileGeneratorTest, IsNetVisibleRespectsSignalType)
@@ -748,6 +788,388 @@ TEST_F(TileGeneratorTest, InstPinNamesRendered)
       << "ITerm labels should not render when inst_pins is false";
 }
 
+//------------------------------------------------------------------------------
+// Access-point overlay tests (_access_points pseudo-layer)
+//------------------------------------------------------------------------------
+
+// One table-driven test for the overlay visibility flags: default value,
+// explicit set, and omitted-key fallback (same table shape as kFields).
+TEST_F(TileGeneratorTest, OverlayFlagsParsedFromJson)
+{
+  struct FlagCase
+  {
+    const char* key;
+    bool TileVisibility::*field;
+    bool default_val;
+  };
+  const FlagCase cases[] = {
+      {"access_points", &TileVisibility::access_points, false},
+      {"regions", &TileVisibility::regions, true},
+      {"mfg_grid", &TileVisibility::mfg_grid, false},
+      {"gcell_grid", &TileVisibility::gcell_grid, false},
+  };
+  for (const auto& c : cases) {
+    TileVisibility vis_default;
+    EXPECT_EQ(vis_default.*c.field, c.default_val) << c.key;
+
+    // Explicitly set to the opposite of the default.
+    TileVisibility vis_set;
+    const std::string json = std::string("{\"") + c.key
+                             + "\":" + (c.default_val ? "false" : "true") + "}";
+    vis_set.parseFromJson(parseObj(json));
+    EXPECT_EQ(vis_set.*c.field, !c.default_val) << c.key;
+
+    // Omitting the key falls back to the default.
+    TileVisibility vis_omitted;
+    vis_omitted.parseFromJson(parseObj(R"({"pins":true})"));
+    EXPECT_EQ(vis_omitted.*c.field, c.default_val) << c.key;
+  }
+}
+
+TEST_F(TileGeneratorTest, AccessPointsOverlayGatedByFlag)
+{
+  // Small die so the fixed 100-DBU marker is well above the sub-pixel LOD.
+  block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
+
+  ASSERT_NE(makeMetal1AccessPoint(), nullptr);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  unsigned w = 0, h = 0;
+
+  // access_points=true → marker rendered.
+  TileVisibility vis_on;
+  vis_on.stdcells = false;
+  vis_on.access_points = true;
+  auto png_on = tile_gen_->generateTile("_access_points", 0, 0, 0, vis_on);
+  auto pixels_on = decodePng(png_on, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_on))
+      << "Access-point marker should render when vis.access_points is true";
+
+  // access_points=false → nothing on the pseudo-layer.
+  TileVisibility vis_off;
+  vis_off.stdcells = false;
+  vis_off.access_points = false;
+  auto png_off = tile_gen_->generateTile("_access_points", 0, 0, 0, vis_off);
+  auto pixels_off = decodePng(png_off, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+      << "Access points should be hidden when vis.access_points is false";
+}
+
+TEST_F(TileGeneratorTest, AccessPointsRespectLayerVisibility)
+{
+  block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
+
+  ASSERT_NE(makeMetal1AccessPoint(), nullptr);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  unsigned w = 0, h = 0;
+
+  // visible_layers = ["metal1"] → the metal1 access point renders.
+  TileVisibility vis_m1;
+  vis_m1.stdcells = false;
+  vis_m1.parseFromJson(
+      parseObj(R"({"access_points":true,"visible_layers":["metal1"]})"));
+  auto png_m1 = tile_gen_->generateTile("_access_points", 0, 0, 0, vis_m1);
+  auto pixels_m1 = decodePng(png_m1, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_m1))
+      << "AP on metal1 should render when metal1 is visible";
+
+  // visible_layers = ["metal5"] → the metal1 access point is hidden.
+  TileVisibility vis_m5;
+  vis_m5.stdcells = false;
+  vis_m5.parseFromJson(
+      parseObj(R"({"access_points":true,"visible_layers":["metal5"]})"));
+  auto png_m5 = tile_gen_->generateTile("_access_points", 0, 0, 0, vis_m5);
+  auto pixels_m5 = decodePng(png_m5, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_m5))
+      << "AP on metal1 should be hidden when only metal5 is visible";
+}
+
+//------------------------------------------------------------------------------
+// Region overlay tests (_regions pseudo-layer)
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, RegionsOverlayGatedByFlag)
+{
+  block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
+  // Anchor the block bbox (getBounds uses content, not the die area).
+  placeInst("BUF_X16", "buf1", 0, 0);
+
+  odb::dbRegion* region = odb::dbRegion::create(block_, "test_dom");
+  ASSERT_NE(region, nullptr);
+  odb::dbBox::create(region, 1000, 1000, 3000, 3000);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  unsigned w = 0, h = 0;
+
+  // regions=true → boundary rendered on the _regions pseudo-layer.
+  TileVisibility vis_on;
+  vis_on.stdcells = false;
+  vis_on.regions = true;
+  auto png_on = tile_gen_->generateTile("_regions", 0, 0, 0, vis_on);
+  auto pixels_on = decodePng(png_on, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_on))
+      << "Region boundary should render when vis.regions is true";
+
+  // regions=false → nothing on the pseudo-layer.
+  TileVisibility vis_off;
+  vis_off.stdcells = false;
+  vis_off.regions = false;
+  auto png_off = tile_gen_->generateTile("_regions", 0, 0, 0, vis_off);
+  auto pixels_off = decodePng(png_off, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+      << "Regions should be hidden when vis.regions is false";
+}
+
+TEST_F(TileGeneratorTest, RegionsSkipZeroAreaBoundaries)
+{
+  block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
+  placeInst("BUF_X16", "buf1", 0, 0);
+
+  // Degenerate boundary (zero width) must be skipped (GUI parity:
+  // drawRegions only draws boundaries with area() > 0).
+  odb::dbRegion* region = odb::dbRegion::create(block_, "empty_dom");
+  ASSERT_NE(region, nullptr);
+  odb::dbBox::create(region, 2000, 1000, 2000, 3000);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.regions = true;
+  auto png = tile_gen_->generateTile("_regions", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels))
+      << "Zero-area region boundaries should not be drawn";
+}
+
+//------------------------------------------------------------------------------
+// Manufacturing-grid overlay tests (_mfg_grid pseudo-layer)
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, MfgGridGatedByFlagAndLod)
+{
+  // Nangate45 fixture LEF has MANUFACTURINGGRID 0.0050 (= 10 DBU).
+  ASSERT_TRUE(getDb()->getTech()->hasManufacturingGrid());
+  placeInst("BUF_X16", "buf1", 0, 0);  // anchor block bbox
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  unsigned w = 0, h = 0;
+
+  // Deep zoom (z=5): grid spacing >= 5 px → dots rendered.
+  TileVisibility vis_on;
+  vis_on.stdcells = false;
+  vis_on.mfg_grid = true;
+  auto png_on = tile_gen_->generateTile("_mfg_grid", 5, 0, 0, vis_on);
+  auto pixels_on = decodePng(png_on, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_on))
+      << "Grid dots should render at deep zoom when vis.mfg_grid is true";
+
+  // Same zoom, flag off → transparent.
+  TileVisibility vis_off;
+  vis_off.stdcells = false;
+  vis_off.mfg_grid = false;
+  auto png_off = tile_gen_->generateTile("_mfg_grid", 5, 0, 0, vis_off);
+  auto pixels_off = decodePng(png_off, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+      << "Grid dots should be hidden when vis.mfg_grid is false";
+}
+
+TEST_F(TileGeneratorTest, MfgGridHiddenBelowLod)
+{
+  ASSERT_TRUE(getDb()->getTech()->hasManufacturingGrid());
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  // z=0: whole design in one tile → grid spacing << 5 px → LOD hides
+  // everything even with the flag enabled (GUI parity).
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.mfg_grid = true;
+  auto png = tile_gen_->generateTile("_mfg_grid", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels))
+      << "Grid dots should be hidden below the 5px-per-point LOD limit";
+}
+
+//------------------------------------------------------------------------------
+// Die / core outline tests (_instances pass, always on — Qt parity)
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, DieAndCoreOutlinesOnInstancesLayer)
+{
+  block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
+  block_->setCoreArea(odb::Rect(500, 500, 3500, 3500));
+  placeInst("BUF_X16", "buf1", 0, 0);  // anchor block bbox
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  // Everything hidden — only the die/core outlines may remain.
+  TileVisibility vis;
+  vis.stdcells = false;
+  auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+
+  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+      << "Die/core outlines should be drawn on the _instances pass";
+  EXPECT_FALSE(hasNonOutlinePixel(pixels))
+      << "Only the gray outline color may be visible";
+
+  // Two nested frames -> some row crosses 4 vertical outline pixels
+  // (die left/right + core left/right).  Find a row with >= 4 gray pixels.
+  int max_gray_in_row = 0;
+  for (unsigned yy = 0; yy < h; ++yy) {
+    int gray = 0;
+    for (unsigned xx = 0; xx < w; ++xx) {
+      const size_t i = 4UL * (yy * w + xx);
+      if (pixels[i] == 128 && pixels[i + 1] == 128 && pixels[i + 2] == 128
+          && pixels[i + 3] == 255) {
+        ++gray;
+      }
+    }
+    max_gray_in_row = std::max(max_gray_in_row, gray);
+  }
+  EXPECT_GE(max_gray_in_row, 4)
+      << "Expected die + core vertical edges crossing the same row";
+}
+
+TEST_F(TileGeneratorTest, NoOutlineOnTechLayerTiles)
+{
+  // Guard against the regression that motivated the original multi-die-only
+  // gating: tech-layer tiles must stay transparent (no gray frame).
+  block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
+  block_->setCoreArea(odb::Rect(500, 500, 3500, 3500));
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.routing = false;
+  vis.special_nets = false;
+  vis.pins = false;
+  vis.inst_pins = false;
+  vis.blockages = false;
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels))
+      << "Tech-layer tiles must not carry the die/core outline";
+}
+
+//------------------------------------------------------------------------------
+// GCell-grid overlay tests (_gcell_grid pseudo-layer)
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, GcellGridGatedByFlag)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);  // anchor block bbox
+
+  // Create a GCell grid the same way grt does (absolute-DBU patterns).
+  odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
+  ASSERT_NE(grid, nullptr);
+  grid->addGridPatternX(0, 5, 1000);
+  grid->addGridPatternY(0, 5, 1000);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  unsigned w = 0, h = 0;
+
+  // No LOD: grid lines render even at z=0 (unlike the mfg grid).
+  TileVisibility vis_on;
+  vis_on.stdcells = false;
+  vis_on.gcell_grid = true;
+  auto png_on = tile_gen_->generateTile("_gcell_grid", 0, 0, 0, vis_on);
+  auto pixels_on = decodePng(png_on, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_on))
+      << "GCell grid lines should render when vis.gcell_grid is true";
+
+  // Flag off → transparent.
+  TileVisibility vis_off;
+  vis_off.stdcells = false;
+  vis_off.gcell_grid = false;
+  auto png_off = tile_gen_->generateTile("_gcell_grid", 0, 0, 0, vis_off);
+  auto pixels_off = decodePng(png_off, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+      << "GCell grid should be hidden when vis.gcell_grid is false";
+}
+
+TEST_F(TileGeneratorTest, GcellGridClosedAtDieBoundary)
+{
+  // The dbGCellGrid stores only the gcell START edges, so the top/right
+  // die edges have no grid line.  The web renderer must close the mesh at
+  // the die boundary (the Qt GUI gets this from its separate die outline).
+  block_->setDieArea(odb::Rect(0, 0, 4000, 4000));
+  placeInst("BUF_X16", "buf1", 0, 0);  // bbox ~7000 DBU wide, die inside tile
+
+  odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
+  ASSERT_NE(grid, nullptr);
+  // Single interior line per axis at 2000 — far from the die top/right.
+  grid->addGridPatternX(2000, 1, 1);
+  grid->addGridPatternY(2000, 1, 1);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.gcell_grid = true;
+  auto png = tile_gen_->generateTile("_gcell_grid", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+
+  // Count rows containing a long horizontal run of white pixels: expect 3
+  // (die bottom edge, interior line at y=2000, die top edge).  Vertical
+  // lines only contribute isolated pixels per row, so a >=20px run filter
+  // isolates the horizontal lines.
+  int rows_with_line = 0;
+  for (unsigned yy = 0; yy < h; ++yy) {
+    int run = 0, best = 0;
+    for (unsigned xx = 0; xx < w; ++xx) {
+      const size_t i = 4UL * (yy * w + xx);
+      const bool white = pixels[i] == 255 && pixels[i + 1] == 255
+                         && pixels[i + 2] == 255 && pixels[i + 3] == 255;
+      run = white ? run + 1 : 0;
+      best = std::max(best, run);
+    }
+    if (best >= 20) {
+      ++rows_with_line;
+    }
+  }
+  EXPECT_EQ(rows_with_line, 3)
+      << "Expected bottom edge + interior line + top edge horizontal lines";
+}
+
+TEST_F(TileGeneratorTest, GcellGridAbsentWithoutGrid)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  // No dbGCellGrid created (pre-global-route design) → nothing to draw.
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.gcell_grid = true;
+  auto png = tile_gen_->generateTile("_gcell_grid", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels))
+      << "GCell grid layer should be empty when the block has no grid";
+}
+
 TEST_F(TileGeneratorTest, InvalidLayerProducesValidPng)
 {
   placeInst("BUF_X16", "buf1", 0, 0);
@@ -1028,7 +1450,8 @@ TEST_F(RowRenderingTest, RowHiddenWhenSiteNotVisible)
   auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
   unsigned w = 0, h = 0;
   auto pixels = decodePng(png, w, h);
-  EXPECT_FALSE(hasNonTransparentPixel(pixels))
+  // Ignore the always-on gray die/core outline (Qt parity).
+  EXPECT_FALSE(hasNonOutlinePixel(pixels))
       << "Row should be hidden when its site is not in the visibility list";
 }
 
