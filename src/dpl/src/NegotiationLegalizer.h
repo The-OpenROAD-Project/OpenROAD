@@ -309,15 +309,6 @@ class NegotiationLegalizer
   int num_threads_{1};
   bool disable_window_extension_{false};
 
-  // Mutable profiling accumulators for findBestLocation breakdown (seconds).
-  mutable double prof_init_search_s_{0};
-  mutable double prof_curr_search_s_{0};
-  mutable double prof_filter_s_{0};
-  mutable double prof_neg_cost_s_{0};
-  mutable double prof_drc_s_{0};
-  mutable int prof_candidates_evaluated_{0};
-  mutable int prof_candidates_filtered_{0};
-
   // Stuck-cell tallies for the current runNegotiation call. Reset at the
   // start of runNegotiation and printed at the end. The per-height maps are
   // keyed by cell.height (row units).

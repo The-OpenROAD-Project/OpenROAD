@@ -25,7 +25,6 @@
 #include "odb/geom.h"
 #include "optimization/detailed_orient.h"
 #include "utl/Logger.h"
-#include "utl/timer.h"
 
 namespace dpl {
 
@@ -109,47 +108,17 @@ void NegotiationLegalizer::legalize()
   logger_->info(
       utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
 
-  double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0},
-      init_state_s{0};
-  double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
-      orient_s{0};
-  const utl::Timer total_timer;
-
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
   }
 
-  {
-    utl::DebugScopedTimer t(init_from_db_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "initFromDb: {}");
-    if (!initFromDb()) {
-      return;
-    }
+  if (!initFromDb()) {
+    return;
   }
 
-  {
-    utl::DebugScopedTimer t(build_grid_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "buildGrid: {}");
-    buildGrid();
-  }
+  buildGrid();
 
-  {
-    utl::DebugScopedTimer t(fence_regions_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "initFenceRegions: {}");
-    initFenceRegions();
-  }
+  initFenceRegions();
 
   debugPause("Pause after initialization.");
 
@@ -164,38 +133,20 @@ void NegotiationLegalizer::legalize()
 
   // --- Part 1: initial state (usage, grid sync, legality scan) ------------
   std::vector<int> illegal;
-  {
-    utl::DebugScopedTimer t(init_state_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "init addUsage: {}");
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "NegotiationLegalizer: skipping Abacus pass.");
     // Populate usage from initial coordinates
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
         addUsage(i, 1);
       }
     }
-  }
-  {
-    utl::DebugScopedTimer t(init_state_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "init syncAllCellsToDplGrid: {}");
     // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
     // lookups see the correct placement state.
     syncAllCellsToDplGrid();
-  }
-  {
-    utl::DebugScopedTimer t(init_state_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "init isCellLegal scan: {}");
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
         cells_[i].legal = isCellLegal(i);
@@ -204,9 +155,12 @@ void NegotiationLegalizer::legalize()
         }
       }
     }
-  }
-  debugPrint(
-      logger_, utl::DPL, "negotiation", 1, "{} illegal cells", illegal.size());
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "{} illegal cells",
+               illegal.size());
 
   if (debug_observer_) {
     commitNegotiationPosToDpl();
@@ -229,12 +183,6 @@ void NegotiationLegalizer::legalize()
                1,
                "NegotiationLegalizer: negotiation pass on {} cells.",
                illegal.size());
-    utl::DebugScopedTimer t(negotiation_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "runNegotiation: {}");
     runNegotiation(illegal);
   }
 
@@ -243,15 +191,7 @@ void NegotiationLegalizer::legalize()
   // up, the other's presence is lost.  A full re-sync ensures every cell
   // is correctly painted so subsequent DRC checks (numViolations, etc.)
   // see the true placement state.
-  {
-    utl::DebugScopedTimer t(post_neg_sync_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "post-negotiation syncAllCellsToDplGrid: {}");
-    syncAllCellsToDplGrid();
-  }
+  syncAllCellsToDplGrid();
 
   debugPause("Pause after negotiation pass");
 
@@ -265,19 +205,9 @@ void NegotiationLegalizer::legalize()
   // cellSwap();
   // greedyImprove(1);
 
-  double avgDisp{0};
-  int maxDisp{0}, nViol{0};
-  {
-    utl::DebugScopedTimer t(metrics_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "metrics (avgDisp/maxDisp/violations): {}");
-    avgDisp = avgDisplacement();
-    maxDisp = maxDisplacement();
-    nViol = numViolations();
-  }
+  const double avgDisp = avgDisplacement();
+  const int maxDisp = maxDisplacement();
+  const int nViol = numViolations();
 
   debugPrint(
       logger_,
@@ -289,67 +219,21 @@ void NegotiationLegalizer::legalize()
       maxDisp,
       nViol);
 
-  {
-    utl::DebugScopedTimer t(orient_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "orientation update: {}");
-    const Grid* dplGrid = opendp_->grid_.get();
-    for (const auto& cell : cells_) {
-      if (cell.fixed || cell.db_inst == nullptr) {
-        continue;
-      }
-      // Set orientation from the row so cells are properly flipped.
-      odb::dbSite* site = cell.db_inst->getMaster()->getSite();
-      if (site != nullptr) {
-        auto orient
-            = dplGrid->getSiteOrientation(GridX{cell.x}, GridY{cell.y}, site);
-        if (orient.has_value()) {
-          cell.db_inst->setOrient(orient.value());
-        }
+  const Grid* dplGrid = opendp_->grid_.get();
+  for (const auto& cell : cells_) {
+    if (cell.fixed || cell.db_inst == nullptr) {
+      continue;
+    }
+    // Set orientation from the row so cells are properly flipped.
+    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
+    if (site != nullptr) {
+      auto orient
+          = dplGrid->getSiteOrientation(GridX{cell.x}, GridY{cell.y}, site);
+      if (orient.has_value()) {
+        cell.db_inst->setOrient(orient.value());
       }
     }
   }
-
-  const double total_s = total_timer.elapsed();
-  auto pct
-      = [total_s](double t) { return total_s > 0 ? 100.0 * t / total_s : 0.0; };
-  auto to_ms = [](double s) { return s * 1e3; };
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "legalize() total {:.1f}ms breakdown: "
-             "initFromDb {:.1f}ms ({:.0f}%), "
-             "buildGrid {:.1f}ms ({:.0f}%), "
-             "initFenceRegions {:.1f}ms ({:.0f}%), "
-             "initState {:.1f}ms ({:.0f}%), "
-             "negotiation {:.1f}ms ({:.0f}%), "
-             "postNegSync {:.1f}ms ({:.0f}%), "
-             "metrics {:.1f}ms ({:.0f}%), "
-             "commitNegotiationPosToOdb {:.1f}ms ({:.0f}%), "
-             "orientUpdate {:.1f}ms ({:.0f}%)",
-             to_ms(total_s),
-             to_ms(init_from_db_s),
-             pct(init_from_db_s),
-             to_ms(build_grid_s),
-             pct(build_grid_s),
-             to_ms(fence_regions_s),
-             pct(fence_regions_s),
-             to_ms(init_state_s),
-             pct(init_state_s),
-             to_ms(negotiation_s),
-             pct(negotiation_s),
-             to_ms(post_neg_sync_s),
-             pct(post_neg_sync_s),
-             to_ms(metrics_s),
-             pct(metrics_s),
-             to_ms(flush_s),
-             pct(flush_s),
-             to_ms(orient_s),
-             pct(orient_s));
 
   debugPause("Pause after legalization complete.");
 }
