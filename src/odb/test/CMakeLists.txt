@@ -67,6 +67,7 @@ or_integration_tests(
     write_lef_polygon
     write_macro_placement
   PASSFAIL_TESTS
+    read_3dbx-fail
     cpp_tests
     read_3dbv_fail
     read_3dbx_fail

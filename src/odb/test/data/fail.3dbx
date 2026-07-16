@@ -1,0 +1,9 @@
+Header:
+  version: "1.0"
+  unit: "micron"
+  precision: 2000
+  include:
+    - nonexistent_include.3dbv
+
+Design:
+  name: "TestDesign"

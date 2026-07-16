@@ -215,6 +215,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     # pass-fail
     "read_3dbv_fail",
+    "read_3dbx-fail",
     "read_3dbx_fail",
     "read_def_virtual_invalid",
     "test_block",
@@ -282,6 +283,8 @@ filegroup(
         "data/example4.bmap",
         "data/example_no_coords.3dbv",
         "data/example_polygon.3dbv",
+        "data/fail.3dbx",
+        "data/fail_def.3dbv",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
