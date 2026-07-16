@@ -12,6 +12,7 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -260,9 +261,11 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 
   std::vector<odb::dbTechLayer*> signal_layers_;
   std::vector<odb::dbTechLayer*> clk_layers_;
-  // Layer RC per wire length indexed by layer->getNumber(), corner->index
-  std::vector<std::vector<double>> layer_res_;  // ohms/meter
-  std::vector<std::vector<double>> layer_cap_;  // Farads/meter
+  // Layer RC per wire length keyed by layer, indexed by corner->index()
+  std::unordered_map<odb::dbTechLayer*, std::vector<double>>
+      layer_res_;  // ohms/meter
+  std::unordered_map<odb::dbTechLayer*, std::vector<double>>
+      layer_cap_;  // Farads/meter
   // Signal wire RC indexed by corner->index
   std::vector<ParasiticsResistance> wire_signal_res_;   // ohms/metre
   std::vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter

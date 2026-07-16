@@ -115,19 +115,13 @@ void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     double res,
                                     double cap)
 {
-  if (layer_res_.empty()) {
-    int layer_count = layer->getTech()->getLayerCount();
-    int corner_count = sta_->scenes().size();
-    layer_res_.resize(layer_count);
-    layer_cap_.resize(layer_count);
-    for (int i = 0; i < layer_count; i++) {
-      layer_res_[i].resize(corner_count);
-      layer_cap_[i].resize(corner_count);
-    }
-  }
-
-  layer_res_[layer->getNumber()][corner->index()] = res;
-  layer_cap_[layer->getNumber()][corner->index()] = cap;
+  const size_t corner_count = sta_->scenes().size();
+  std::vector<double>& layer_res = layer_res_[layer];
+  std::vector<double>& layer_cap = layer_cap_[layer];
+  layer_res.resize(corner_count, 0.0);
+  layer_cap.resize(corner_count, 0.0);
+  layer_res[corner->index()] = res;
+  layer_cap[corner->index()] = cap;
 }
 
 void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
@@ -136,13 +130,13 @@ void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  double& res,
                                  double& cap) const
 {
-  if (layer_res_.empty()) {
+  const auto res_it = layer_res_.find(layer);
+  if (res_it == layer_res_.end()) {
     res = 0.0;
     cap = 0.0;
   } else {
-    const int layer_level = layer->getNumber();
-    res = layer_res_[layer_level][corner->index()];
-    cap = layer_cap_[layer_level][corner->index()];
+    res = res_it->second[corner->index()];
+    cap = layer_cap_.at(layer)[corner->index()];
   }
 }
 
@@ -957,8 +951,9 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
        layer_idx++) {
     odb::dbTechLayer* layer = tech->findLayer(layer_idx);
     if (layer && layer->getType() == odb::dbTechLayerType::CUT) {
-      const float resistance = layer_res_[layer_idx][scene->index()];
-      total_resistance += resistance;
+      double res, cap;
+      layerRC(layer, scene, res, cap);
+      total_resistance += res;
       count++;
     }
   }
@@ -1029,6 +1024,7 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
 {
   sta::ParasiticNode* prev_node = nullptr;
 
+  odb::dbTech* tech = pin_layer->getTech();
   const int pin_layer_idx = pin_layer->getNumber();
   const int tree_layer_idx = tree_layer->getNumber();
   if (std::abs(pin_layer_idx - tree_layer->getNumber()) == 2) {
@@ -1036,8 +1032,12 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
     const int cut_layer_idx = pin_layer_idx < tree_layer_idx
                                   ? pin_layer_idx + 1
                                   : pin_layer_idx - 1;
-    const double cut_res
-        = std::max(layer_res_[cut_layer_idx][corner->index()], 1.0e-3);
+    double res = 0.0;
+    double cap = 0.0;
+    if (odb::dbTechLayer* cut_layer = tech->findLayer(cut_layer_idx)) {
+      layerRC(cut_layer, corner, res, cap);
+    }
+    const double cut_res = std::max(res, 1.0e-3);
     parasitics->makeResistor(parasitic, resistor_id++, cut_res, pin_node, node);
   } else if (pin_layer_idx == tree_layer_idx) {
     // Add a small resistor between the pin node and tree node to keep
@@ -1047,15 +1047,15 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
     const auto [start_idx, end_idx]
         = std::minmax(pin_layer_idx, tree_layer_idx);
     const bool pin_is_below = (pin_layer_idx < tree_layer_idx);
-    odb::dbTech* tech = pin_layer->getTech();
 
     for (int layer_idx = start_idx; layer_idx < end_idx; layer_idx++) {
       odb::dbTechLayer* cut_layer = tech->findLayer(layer_idx);
       if (cut_layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
-      const double cut_res
-          = std::max(layer_res_[layer_idx][corner->index()], 1.0e-3);
+      double res, cap;
+      layerRC(cut_layer, corner, res, cap);
+      const double cut_res = std::max(res, 1.0e-3);
 
       // Resolve from/to endpoints first, so we only allocate a new mid_node
       // when this iteration actually needs one. On the terminal iteration the
