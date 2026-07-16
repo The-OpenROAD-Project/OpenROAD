@@ -104,11 +104,11 @@ class MoveGenerator
   // === Shared Liberty-cell ordering helpers ================================
   const sta::LibertyPort* findScenePort(const sta::LibertyCell* cell,
                                         const std::string& port_name,
-                                        int lib_ap) const;
+                                        int lib_ap_index) const;
   bool strongerCellFirst(const sta::LibertyCell* lhs,
                          const sta::LibertyCell* rhs,
                          const std::string& drvr_port_name,
-                         int lib_ap) const;
+                         int lib_ap_index) const;
 
   // === Shared generator dependencies =======================================
   Resizer& resizer_;
