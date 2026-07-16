@@ -3,10 +3,7 @@ import utl
 import odb
 from collections import defaultdict
 
-try:
-    import pdn
-except ModuleNotFoundError:
-    import openroad as pdn
+import pdn
 
 
 #  In tcl land, this lives in OpenRoad.tcl. However, it seems to be only called
@@ -536,6 +533,7 @@ def add_pdn_connect(
     max_rows=0,
     max_columns=0,
     ongrid=[],  # list of layer names that should be on grid?
+    min_width_layers=[],  # list of pass-through layers to keep at min width
     split_cuts={},  # dictionary of layer name to pitch,
     split_cuts_staggered=False,
     dont_use_vias="",
@@ -568,7 +566,8 @@ def add_pdn_connect(
         if bool(generate_via):
             fixed_generate_vias.append(generate_via)
 
-    ongrid_list = [get_layer(l) for l in ongrid]
+    ongrid_list = [get_layer(design, l) for l in ongrid]
+    min_width_list = [get_layer(design, l) for l in min_width_layers]
 
     split_cuts_layers = [get_layer(l) for l in split_cuts.keys()]
     split_cuts_pitches = [design.micronToDBU(x) for x in split_cuts.values()]
@@ -588,6 +587,7 @@ def add_pdn_connect(
             max_rows,
             max_columns,
             ongrid_list,
+            min_width_list,
             split_cuts_dict,
             dont_use_vias,
         )
@@ -804,16 +804,16 @@ def repair_pdn_vias(design, *, net=None, all=False):
     if not bool(net) and not all:
         utl.error(utl.PDN, 31192, "Must use either 'net' or 'all' arguments.")
 
-    nets = []
+    nets = pdn.net_set()
     if bool(net):
         net = design.getBlock().findNet(net)
         if net is None:
             utl.error(utl.PDN, 31190, f"Unable to find net: {net}")
-        nets.append(net)
+        nets.insert(net)
 
     if all:
         for net in design.getBlock().getNets():
             if net.getSigType() == "POWER" or net.getSigType() == "GROUND":
-                nets.append(net)
+                nets.insert(net)
 
     pdngen.repairVias(nets)

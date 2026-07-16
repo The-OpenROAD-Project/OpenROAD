@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbCCSegSet.h"
 #include "odb/dbShape.h"
@@ -235,7 +236,7 @@ void cutRows(dbBlock* block,
                           return sum + (std::int64_t) row->getSiteCount();
                         });
 
-  std::map<dbRow*, int> placed_row_insts;
+  odb::PtrMap<dbRow, int> placed_row_insts;
   for (dbInst* inst : block->getInsts()) {
     if (!inst->isFixed()) {
       continue;

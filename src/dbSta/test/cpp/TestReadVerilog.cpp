@@ -10,6 +10,21 @@
 
 namespace sta {
 
+namespace {
+
+odb::dbModITerm* findChildModITerm(odb::dbModule* module,
+                                   const char* instance_name,
+                                   const char* port_name)
+{
+  odb::dbModInst* mod_inst = module->findModInst(instance_name);
+  if (mod_inst == nullptr) {
+    return nullptr;
+  }
+  return mod_inst->findModITerm(port_name);
+}
+
+}  // namespace
+
 class TestReadVerilog : public tst::IntegratedFixture
 {
  public:
@@ -124,6 +139,120 @@ TEST_F(TestReadVerilog, FeedThrough)
   // We avoid checkAxioms() here because it triggers ORD-2041 on the
   // intentionally unconnected pins (U1/A, U2/ZN), which terminates the test.
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Regression for the deep-descendant modBTerm false-attach bug in
+// Verilog2db::staToDb. Escaped child instance names may contain '/'
+// characters, so the reader must resolve them as local dbModInst names
+// and connect the child pin to a dbModITerm instead of falling through
+// to a same-named ancestor dbModBTerm.
+TEST_F(TestReadVerilog, DeepDescendantModBTermCollision)
+{
+  const testing::TestInfo* test_info
+      = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbModule* mid = block_->findModule("mid");
+  ASSERT_NE(mid, nullptr);
+
+  // Both clk and txclk modBTerms must exist and remain distinct.
+  odb::dbModBTerm* clk_mbt = mid->findModBTerm("clk");
+  odb::dbModBTerm* txclk_mbt = mid->findModBTerm("txclk");
+  ASSERT_NE(clk_mbt, nullptr);
+  ASSERT_NE(txclk_mbt, nullptr);
+  EXPECT_NE(clk_mbt, txclk_mbt);
+
+  odb::dbModNet* clk_modnet = clk_mbt->getModNet();
+  odb::dbModNet* txclk_modnet = txclk_mbt->getModNet();
+  ASSERT_NE(clk_modnet, nullptr);
+  ASSERT_NE(txclk_modnet, nullptr);
+  EXPECT_NE(clk_modnet, txclk_modnet);
+
+  // The escaped names are local child instance names in module "mid".
+  odb::dbModITerm* child0_clk
+      = findChildModITerm(mid, "iclkdiv\\/gen_phases\\[0\\].iclk", "clk");
+  odb::dbModITerm* child1_clk
+      = findChildModITerm(mid, "iclkdiv\\/gen_phases\\[1\\].iclk", "clk");
+  ASSERT_NE(child0_clk, nullptr);
+  ASSERT_NE(child1_clk, nullptr);
+
+  EXPECT_EQ(child0_clk->getModNet(), clk_modnet);
+  EXPECT_EQ(child1_clk->getModNet(), txclk_modnet);
+  EXPECT_EQ(clk_modnet->getModBTerms().size(), 1u);
+  EXPECT_EQ(txclk_modnet->getModBTerms().size(), 1u);
+}
+
+TEST_F(TestReadVerilog, EscapedBracketScalarNames)
+{
+  const testing::TestInfo* test_info
+      = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbBTerm* raw_bterm = block_->findBTerm("foo[3]");
+  odb::dbBTerm* leading_escape_bterm = block_->findBTerm("\\foo[3]");
+  odb::dbBTerm* escaped_bterm = block_->findBTerm("foo\\[3\\]");
+  EXPECT_EQ(raw_bterm, nullptr);
+  EXPECT_EQ(leading_escape_bterm, nullptr);
+  ASSERT_NE(escaped_bterm, nullptr);
+  EXPECT_STREQ(escaped_bterm->getConstName(), "foo\\[3\\]");
+
+  odb::dbModule* child = block_->findModule("child");
+  ASSERT_NE(child, nullptr);
+
+  EXPECT_EQ(child->findModBTerm("foo[3]"), nullptr);
+  EXPECT_EQ(child->findModBTerm("\\foo[3]"), nullptr);
+  odb::dbModBTerm* escaped_modbterm = child->findModBTerm("foo\\[3\\]");
+  ASSERT_NE(escaped_modbterm, nullptr);
+
+  EXPECT_EQ(child->getModNet("foo[3]"), nullptr);
+  EXPECT_EQ(child->getModNet("\\foo[3]"), nullptr);
+  odb::dbModNet* escaped_modnet = child->getModNet("foo\\[3\\]");
+  ASSERT_NE(escaped_modnet, nullptr);
+  EXPECT_EQ(escaped_modbterm->getModNet(), escaped_modnet);
+}
+
+TEST_F(TestReadVerilog, BusBitAndEscapedScalarAreDistinct)
+{
+  const testing::TestInfo* test_info
+      = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbBTerm* bus_bit_bterm = block_->findBTerm("foo[3]");
+  odb::dbBTerm* leading_escape_bterm = block_->findBTerm("\\foo[3]");
+  odb::dbBTerm* escaped_bterm = block_->findBTerm("foo\\[3\\]");
+  ASSERT_NE(bus_bit_bterm, nullptr);
+  EXPECT_EQ(leading_escape_bterm, nullptr);
+  ASSERT_NE(escaped_bterm, nullptr);
+  EXPECT_NE(bus_bit_bterm, escaped_bterm);
+
+  odb::dbModule* child = block_->findModule("child");
+  ASSERT_NE(child, nullptr);
+
+  odb::dbModBTerm* bus_port = child->findModBTerm("foo");
+  odb::dbModBTerm* bus_bit_port = child->findModBTerm("foo[3]");
+  odb::dbModBTerm* escaped_port = child->findModBTerm("foo\\[3\\]");
+  ASSERT_NE(bus_port, nullptr);
+  ASSERT_NE(bus_bit_port, nullptr);
+  EXPECT_EQ(child->findModBTerm("\\foo[3]"), nullptr);
+  ASSERT_NE(escaped_port, nullptr);
+  EXPECT_NE(bus_bit_port, escaped_port);
+
+  odb::dbModNet* bus_bit_modnet = child->getModNet("foo[3]");
+  odb::dbModNet* escaped_modnet = child->getModNet("foo\\[3\\]");
+  ASSERT_NE(bus_bit_modnet, nullptr);
+  EXPECT_EQ(child->getModNet("\\foo[3]"), nullptr);
+  ASSERT_NE(escaped_modnet, nullptr);
+  EXPECT_NE(bus_bit_modnet, escaped_modnet);
+  EXPECT_EQ(escaped_port->getModNet(), escaped_modnet);
 }
 
 }  // namespace sta

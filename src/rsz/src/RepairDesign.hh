@@ -66,6 +66,7 @@ class RepairDesign : sta::dbStaState
                     int& cap_violations,
                     int& fanout_violations,
                     int& length_violations);
+  bool rerouteEnabled() const;
   int insertedBufferCount() const { return inserted_buffer_count_; }
   void repairNet(sta::Net* net,
                  double max_wire_length,
@@ -216,7 +217,8 @@ class RepairDesign : sta::dbStaState
                     sta::PinSeq& load_pins,
                     float& repeater_cap,
                     float& repeater_fanout,
-                    float& repeater_max_slew);
+                    float& repeater_max_slew,
+                    std::optional<float> load_cap_hint = std::nullopt);
   bool makeRepeater(const char* reason,
                     int x,
                     int y,
@@ -230,7 +232,8 @@ class RepairDesign : sta::dbStaState
                     float& repeater_max_slew,
                     sta::Net*& out_net,
                     sta::Pin*& repeater_in_pin,
-                    sta::Pin*& repeater_out_pin);
+                    sta::Pin*& repeater_out_pin,
+                    std::optional<float> load_cap_hint = std::nullopt);
   sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
   bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
@@ -263,6 +266,9 @@ class RepairDesign : sta::dbStaState
   double slew_margin_ = 0;
   double cap_margin_ = 0;
   const sta::Scene* corner_ = nullptr;
+
+  bool reroute_ = false;
+  int rerouted_nets_ = 0;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

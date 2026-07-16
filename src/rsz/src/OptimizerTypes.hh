@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -27,6 +28,7 @@ class Pin;
 class Pvt;
 class RiseFall;
 class Scene;
+class StaState;
 class TimingArc;
 class TimingArcSet;
 class Vertex;
@@ -131,6 +133,25 @@ struct SelectedArc
 
 const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
                                             const sta::TimingArcSet* candidate);
+
+// Return the latch D-side path attached to an expanded latch-through path.
+const sta::Path* latchDataPath(const sta::PathExpanded& expanded);
+
+// Walk the chained latch D-side fanin segments of an expanded path.  Each
+// visitor PathExpanded reference is valid only during that visitor call.
+// A visitor returns true to stop walking and false to continue.
+bool visitLatchFaninSegments(
+    const sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor);
+
+// Visit the main expanded path and every chained latch D-side fanin segment.
+// A visitor returns true to stop walking and false to continue.
+bool visitPathSegments(
+    const sta::Path* path,
+    sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor);
 
 // One timing arc that can contribute to the driver's output slew merge for the
 // selected output transition.  STA merges output slew across all such arcs
@@ -395,7 +416,7 @@ struct OptimizerRunConfig
   bool verbose{false};
   bool skip_pin_swap{false};
   bool skip_gate_cloning{false};
-  bool skip_size_down{false};
+  bool skip_size_down_fanout{false};
   bool skip_buffering{false};
   bool skip_buffer_removal{false};
   bool skip_last_gasp{false};
@@ -439,8 +460,8 @@ inline const char* moveName(const MoveType move_type)
       return "SizeUpMove";
     case MoveType::kSizeUpMatch:
       return "SizeUpMatchMove";
-    case MoveType::kSizeDown:
-      return "SizeDownMove";
+    case MoveType::kSizeDownFanout:
+      return "SizeDownFanoutMove";
     case MoveType::kSwapPins:
       return "SwapPinsMove";
     case MoveType::kVtSwap:

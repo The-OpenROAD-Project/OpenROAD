@@ -39,7 +39,7 @@ met5       Horizontal       3108          1443          53.57%
 [INFO GRT-0112] Final usage 3D: 751
 
 [INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
 met1              4310            66            1.53%             0 /  0 /  0

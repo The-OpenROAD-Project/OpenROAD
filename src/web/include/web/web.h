@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <spdlog/common.h>
-
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -17,6 +15,7 @@
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/steady_timer.hpp"
 #include "odb/db.h"
+#include "spdlog/common.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 
@@ -61,7 +60,8 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
-    WebViewerHook* viewer_hook);
+    WebViewerHook* viewer_hook,
+    int max_in_flight);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
@@ -73,9 +73,20 @@ class WebServer
   WebServer(odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger,
-            Tcl_Interp* interp,
-            int num_threads);
+            Tcl_Interp* interp);
   ~WebServer();
+
+  // Register the WebLogSink with the Logger so startup output is captured
+  // (and buffered) before any client connects, without opening the network
+  // or installing the headless viewer.  Idempotent and cheap; serve() calls
+  // it too.  Splitting this out lets Main.cc capture read_db/script logs
+  // while deferring serve() until the database is fully loaded, which avoids
+  // the network threads racing the main thread's db construction.
+  void initLogger();
+
+  // Sets the number of thread workers for the server's I/O context.
+  // Must be called before serve() to take effect.
+  void setThreadCount(int num_threads) { num_threads_ = num_threads; }
 
   // Start the web server on the given port.  Launches background
   // I/O threads and returns immediately.  A second call is a no-op if
@@ -157,6 +168,11 @@ class WebServer
 
   // Set by tclExitHandler when `exit` is run on a worker thread.
   bool exit_requested_ = false;
+
+  // True once initLogger() registered the WebLogSink.  Lets serve() and
+  // initLogger() be idempotent and lets stop() know the sink needs removing.
+  // Reset in stop() so a subsequent serve() re-registers the sink.
+  bool logger_initialized_ = false;
 
   // Tcl command override: replaces `exit` while the server is running
   // so a worker-thread `exit` doesn't run Tcl_Exit (which would self-join

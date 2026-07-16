@@ -284,9 +284,12 @@
       "default": 0
     },
     {
-      "type": "int",
+      "type": "int64_t",
       "name": "cut_area_",
-      "default": 0
+      "default": 0,
+      "flags": [
+        "custom-serial"
+      ]
     }
   ],
   "enums": [

@@ -296,9 +296,7 @@ TEST_F(TestPusher, PushRevertedVertical)
 
 // When pushing a macro cluster toward its closest boundaries would cause an
 // overlap with a macro diagonal to the pushed macro, push the macro the bottom
-// The Pusher is biased by the Boundary enum ordering of boundaries (B > L > T >
-// R), the current behaviour results in overlapping macros.
-// TODO: update the overlap code
+// The Pusher is biased by the Boundary enum ordering (B > L > T > R).
 TEST_F(TestPusher, PushRevertedBiased)
 {
   auto root = makeRootWithStdCells();
@@ -316,7 +314,7 @@ TEST_F(TestPusher, PushRevertedBiased)
   pusher.pushMacrosToCoreBoundaries();
 
   // Last push (left) is reverted, bottom push is kept
-  EXPECT_EQ(raw_hard_macro_1->getX(), 0);
+  EXPECT_EQ(raw_hard_macro_1->getX(), 10000);
   EXPECT_EQ(raw_hard_macro_1->getY(), 0);
 }
 

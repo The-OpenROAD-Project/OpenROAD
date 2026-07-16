@@ -10,16 +10,22 @@ namespace drt {
 class frGCellPattern : public frBlockObject
 {
  public:
+  // constructors
+  frGCellPattern(bool horizontal,
+                 frCoord start_coord,
+                 frUInt4 spacing,
+                 frUInt4 count)
+      : horizontal_(horizontal),
+        startCoord_(start_coord),
+        spacing_(spacing),
+        count_(count)
+  {
+  }
   // getters
   bool isHorizontal() const { return horizontal_; }
   frCoord getStartCoord() const { return startCoord_; }
   frUInt4 getSpacing() const { return spacing_; }
   frUInt4 getCount() const { return count_; }
-  // setters
-  void setHorizontal(bool isH) { horizontal_ = isH; }
-  void setStartCoord(frCoord scIn) { startCoord_ = scIn; }
-  void setSpacing(frUInt4 sIn) { spacing_ = sIn; }
-  void setCount(frUInt4 cIn) { count_ = cIn; }
   // others
   frBlockObjectEnum typeId() const override { return frcGCellPattern; }
 

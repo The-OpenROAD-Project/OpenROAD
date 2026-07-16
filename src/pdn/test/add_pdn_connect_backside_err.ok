@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: backside_data/backside.lef, created 4 layers, 2 library cells
+[INFO ODB-0128] Design: backside_top
+[INFO ODB-0131]     Created 5 components and 10 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO PDN-0101] Using vdd as power net for Core domain.
+[INFO PDN-0102] Using vss as ground net for Core domain.
+[ERROR PDN-1200] Connect rule layers (M1, B1) span the front-side/backside boundary. PDN cannot create TSVs or vias across this boundary; the connection must come from a tap/bridge cell that internally stitches the two sides.
+PDN-1200

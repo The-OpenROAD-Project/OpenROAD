@@ -23,6 +23,7 @@
 #include <variant>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbObject.h"
@@ -1303,7 +1304,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
   auto sorted_nets = sortedSet(nets);
 
   // Build map of mterm names and associated nets
-  std::unordered_map<std::string, std::set<dbNet*>> snet_term_map;
+  std::unordered_map<std::string, odb::PtrSet<dbNet>> snet_term_map;
   for (auto* inst : block->getInsts()) {
     for (auto* iterm : inst->getITerms()) {
       snet_term_map[iterm->getMTerm()->getName()].insert(iterm->getNet());
@@ -1367,7 +1368,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
 
 void DefOut::Impl::writeSNet(
     dbNet* net,
-    const std::unordered_map<std::string, std::set<dbNet*>>& snet_term_map)
+    const std::unordered_map<std::string, odb::PtrSet<dbNet>>& snet_term_map)
 {
   std::string nname = net->getName();
   *_out << "    - " << nname;

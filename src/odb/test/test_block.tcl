@@ -22,7 +22,6 @@ proc setUp { } {
   set parentBlock [odb::dbBlock_create [$db getChip] "Parent"]
   set block [create2LevelBlock $db $lib $parentBlock]
   $block setCornerCount 4
-  set extcornerblock [$block createExtCornerBlock 1]
   odb::dbTechNonDefaultRule_create $block "non_default_1"
   set parentRegion [odb::dbRegion_create $block "parentRegion"]
   return [list $db $lib $block $parentBlock]
@@ -52,9 +51,6 @@ proc test_find { } {
   assertStringEq [[$iterm getInst] getName] "i1"
   assertStringEq [[$iterm getMTerm] getName] "o"
   assertObjIsNull [$block findITerm "i1\o"]
-  # extcornerblock
-  assertStringEq [[$block findExtCornerBlock 1] getName] "extCornerBlock__1"
-  assertObjIsNull [$block findExtCornerBlock 0]
   # nondefaultrule
   assertStringEq [[$block findNonDefaultRule "non_default_1"] getName] "non_default_1"
   assertObjIsNull [$block findNonDefaultRule "non_default_2"]

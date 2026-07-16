@@ -7,3 +7,7 @@ third-party/abc/
 tmp
 # standalone workspace for downstream consumer tests
 test/downstream/
+# fmt ships its own BUILD.bazel assuming it is the workspace root; we overlay
+# fmt via new_local_repository(name="fmt"), so hide this nested package from
+# //... discovery (its glob(["include/fmt/*.h"]) matches nothing here).
+third-party/slang-elab/third_party/fmt/support/bazel/

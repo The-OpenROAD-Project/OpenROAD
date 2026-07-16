@@ -6,9 +6,9 @@ sta::define_cmd_args "global_placement" {\
     [-force_center_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
+    [-timing_driven_repair_timing]\
     [-routability_driven]\
-    [-disable_timing_driven]\
-    [-disable_routability_driven]\
+    [-virtual_cts]\
     [-incremental]\
     [-skip_io]\
     [-bin_grid_count grid_count]\
@@ -33,10 +33,14 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]\
     [-enable_routing_congestion]
 }
 
@@ -56,13 +60,19 @@ proc global_placement { args } {
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
+      -timing_driven_repair_tns_end_percent \
       -keep_resize_below_overflow \
+      -virtual_cts_max_skew_fraction \
+      -random_seed \
+      -perturb_dist \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -force_center_initial_place \
       -skip_nesterov_place \
       -timing_driven \
+      -timing_driven_repair_timing \
       -routability_driven \
+      -virtual_cts \
       -routability_use_grt \
       -skip_io \
       -incremental \

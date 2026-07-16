@@ -21,6 +21,7 @@
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "cts/TritonCTS.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -778,7 +779,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     odb::dbInst* lastBuffer = nullptr;
 
     // Use load pins buffering at the end
-    std::set<odb::dbObject*> load_pins;
+    odb::PtrSet<odb::dbObject> load_pins;
     for (odb::dbITerm* sinkInput : sinksInput) {
       load_pins.insert(sinkInput);
     }
@@ -830,7 +831,7 @@ bool LatencyBalancer::propagateClock(odb::dbITerm* input)
     return true;
   }
   // Combinational components
-  if (!libertyCell->hasSequentials()) {
+  if (!libertyCell->isSequential()) {
     return true;
   }
   sta::LibertyPort* inputPort

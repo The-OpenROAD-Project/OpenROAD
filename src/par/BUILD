@@ -55,18 +55,10 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/dbSta:dbReadVerilog",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@boost.format",
-        "@boost.geometry",
-        "@boost.polygon",
-        "@boost.property_tree",
-        "@boost.random",
         "@boost.range",
-        "@boost.tokenizer",
-        "@boost.utility",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
     ],
@@ -150,5 +142,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/par/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/par/test:__pkg__",
+    ],
 )

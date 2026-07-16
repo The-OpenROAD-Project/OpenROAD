@@ -52,7 +52,7 @@ die =  ( 0, 0 )
 
 ```tcl
 initialize_floorplan
-  (-die_area {llx lly urx ury} -core_area {llx lly urx ury}) | (-utilization util -core_space (space | {bottom top left right}) [-aspect_ratio ratio])
+  (-die_area {llx lly urx ury | x1 y1 x2 y2 ...} -core_area {llx lly urx ury | x1 y1 x2 y2 ...}) | (-utilization util -core_space (space | {bottom top left right}) [-aspect_ratio ratio])
   -site site_name
   [-additional_sites site_names]
   [-flip_sites site_names]
@@ -64,9 +64,9 @@ initialize_floorplan
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-core_area` | Core area coordinates in microns. Either a rectangle as `{llx lly urx ury}`, or a rectilinear polygon as a list of vertex coordinates `{x1 y1 x2 y2 ...}`. See [Rectilinear Floorplans](#rectilinear-floorplans). |
 | `-core_space` | Space around the core in microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
-| `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-die_area` | Die area coordinates in microns. Either a rectangle as `{llx lly urx ury}`, or a rectilinear polygon as a list of vertex coordinates `{x1 y1 x2 y2 ...}`. See [Rectilinear Floorplans](#rectilinear-floorplans). |
 | `-site` | Site name. |
 | `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
 | `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
@@ -74,6 +74,38 @@ initialize_floorplan
 | `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
 | `[-gap]` | Space between power domains in microns. The default value is 6 times the minimum site height. |
 | `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
+
+### Rectilinear Floorplans
+
+The `initialize_floorplan` command supports non-rectangular die and core
+outlines (e.g. L-shapes, T-shapes, or arbitrary rectilinear polygons).
+Rectilinear mode is selected automatically when `-die_area` is given more than
+four coordinates. When rectilinear mode is used, `-core_area` must also be
+specified as a polygon (it is not derived from `-utilization`,
+`-aspect_ratio`, or `-core_space`).
+
+Example: an L-shaped die with a matching L-shaped core, with a 20 micron
+margin between them.
+
+<!-- checker: skip -->
+```tcl
+initialize_floorplan \
+  -die_area  {0 0   200 0   200 100   100 100   100 200   0 200} \
+  -core_area {20 20  180 20  180 80   80 80     80 180    20 180} \
+  -site FreePDK45_38x28_10R_NP_162NW_34O
+```
+
+Rows are generated only inside the polygonal core, respecting its rectilinear edges.
+
+#### Polygon Vertex Rules
+
+- Coordinates are in microns, listed as `{x1 y1 x2 y2 ... xN yN}`.
+- The vertex count must be even (each `x` paired with a `y`).
+- Exactly 4 coordinates are interpreted as a rectangle. A polygon must
+  have more than 4 coordinates and at least 4 vertices (8 coordinates).
+- Edges must be axis-aligned (rectilinear): consecutive vertices must
+  share either an `x` or a `y` coordinate.
+- The die polygon must fully contain the core polygon.
 
 ### Make Tracks
 

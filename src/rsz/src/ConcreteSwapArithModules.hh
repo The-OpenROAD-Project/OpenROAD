@@ -7,6 +7,7 @@
 #include <string>
 
 #include "SwapArithModules.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -24,15 +25,16 @@ class ConcreteSwapArithModules : public SwapArithModules
   bool replaceArithModules(int path_count,
                            const std::string& target,
                            float slack_threshold) override;
-  void collectArithInstsOnPath(const sta::Path* path,
-                               std::set<odb::dbModInst*>& arithInsts) override;
+  void collectArithInstsOnPath(
+      const sta::Path* path,
+      odb::PtrSet<odb::dbModInst>& arithInsts) override;
   bool isArithInstance(const sta::Instance* inst,
                        odb::dbModInst*& mod_inst) override;
   bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) override;
   void findCriticalInstances(int path_count,
                              const std::string& target,
                              float slack_threshold,
-                             std::set<odb::dbModInst*>& insts) override;
+                             odb::PtrSet<odb::dbModInst>& insts) override;
 
   ///
   /// Swaps modules in the provided set to match the target.
@@ -41,7 +43,7 @@ class ConcreteSwapArithModules : public SwapArithModules
   /// @param target optimization target (e.g., "setup")
   /// @return true if any instance was swapped
   ///
-  bool doSwapInstances(std::set<odb::dbModInst*>& insts,
+  bool doSwapInstances(odb::PtrSet<odb::dbModInst>& insts,
                        const std::string& target) override;
 
  protected:

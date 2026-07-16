@@ -7,5 +7,6 @@ cc_library(
     name = "lodepng",
     srcs = ["lodepng.cpp"],
     hdrs = ["lodepng.h"],
+    tags = ["no-lint"],
     visibility = ["//visibility:public"],
 )

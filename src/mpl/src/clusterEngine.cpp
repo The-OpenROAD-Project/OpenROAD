@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -20,6 +21,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -84,7 +86,7 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 
 void ClusteringEngine::setHalos(
     const HardMacro::Halo& base_halo,
-    const std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+    const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
 {
   base_halo_ = base_halo;
   macro_to_halo_ = macro_to_halo;
@@ -129,7 +131,7 @@ void ClusteringEngine::init()
 
   tree_->io_pads = getIOPads();
 
-  reportDesignData();
+  reportDesignData(unfixed_macros.size());
 }
 
 bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
@@ -279,7 +281,7 @@ std::vector<odb::dbInst*> ClusteringEngine::getIOPads() const
   return io_pads;
 }
 
-void ClusteringEngine::reportDesignData()
+void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
 {
   const odb::Rect& die = block_->getDieArea();
   logger_->report(
@@ -305,6 +307,7 @@ void ClusteringEngine::reportDesignData()
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
+      "\tMacros to be placed: {}\n"
       "\tArea of macros: {:.2f}\n"
       "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
@@ -316,6 +319,7 @@ void ClusteringEngine::reportDesignData()
       design_metrics_->getNumStdCell(),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
+      num_macros_to_place,
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
       block_->dbuToMicrons(base_halo_.left),
       block_->dbuToMicrons(base_halo_.bottom),
@@ -1118,7 +1122,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   const int num_other_cluster_vertices = vertex_id;
 
   std::vector<odb::dbInst*> insts;
-  std::map<odb::dbInst*, int> inst_vertex_id_map;
+  odb::PtrMap<odb::dbInst, int> inst_vertex_id_map;
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
     vertex_weight.push_back(block_->dbuAreaToMicrons(computeArea(macro)));
@@ -2115,7 +2119,7 @@ void ClusteringEngine::createTempMacroClusters(
     std::vector<HardMacro>& sa_macros,
     UniqueClusterVector& macro_clusters,
     std::map<int, int>& cluster_to_macro,
-    std::set<odb::dbMaster*>& masters)
+    odb::PtrSet<odb::dbMaster>& masters)
 {
   int macro_id = 0;
   std::string cluster_name;

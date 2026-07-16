@@ -15,6 +15,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "sta/Liberty.hh"
@@ -228,7 +229,7 @@ odb::dbMaster* InsertBufferDialog::getSelectedMaster() const
 }
 
 void InsertBufferDialog::getSelection(odb::dbObject*& driver,
-                                      std::set<odb::dbObject*>& loads) const
+                                      odb::PtrSet<odb::dbObject>& loads) const
 {
   driver = nullptr;
   loads.clear();

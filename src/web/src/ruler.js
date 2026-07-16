@@ -71,6 +71,12 @@ export class RulerManager {
         return this._state !== IDLE;
     }
 
+    updateVisibility() {
+        if (this._rulerPane) {
+            this._rulerPane.style.display = this._visibility.rulers ? '' : 'none';
+        }
+    }
+
     toggleRulerMode() {
         if (this._state === IDLE) {
             this._enterFirstPoint();
@@ -246,7 +252,7 @@ export class RulerManager {
                 point_threshold: pointThreshold,
                 horizontal: !!horizontal,
                 vertical: !!vertical,
-                visible_layers: [...app.visibleLayers],
+                visible_layers: [...app.visibleLayerNames],
                 ...vf,
             });
 
@@ -386,6 +392,7 @@ export class RulerManager {
         };
         this._rulers.push(ruler);
         this._renderRuler(ruler);
+        this._selectRuler(id);
         return ruler;
     }
 
@@ -402,8 +409,16 @@ export class RulerManager {
 
         const group = L.layerGroup([], { pane: 'ruler-pane' });
 
+        // Build path points: straight line (euclidian) or L-shape (Manhattan)
+        const joinPt = ruler.euclidian
+            ? null : this._getManhattanJoinPt(ruler.pt0, ruler.pt1);
+        const pJoin = joinPt
+            ? dbuToLatLng(joinPt.x, joinPt.y, scale, maxDXDY, originX, originY)
+            : null;
+        const pathPoints = pJoin ? [p0, pJoin, p1] : [p0, p1];
+
         // Main ruler line
-        const mainLine = L.polyline([p0, p1], {
+        const mainLine = L.polyline(pathPoints, {
             color,
             weight: 2,
             pane: 'ruler-pane',
@@ -415,37 +430,39 @@ export class RulerManager {
         });
         group.addLayer(mainLine);
 
-        // Endcap ticks — short perpendicular lines
-        const dx = ruler.pt1.x - ruler.pt0.x;
-        const dy = ruler.pt1.y - ruler.pt0.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        if (len > 0) {
-            // Tick length in DBU: scale to ~8 pixels at current zoom
-            const zoom = this._app.map.getZoom();
-            const numTiles = Math.pow(2, Math.max(0, zoom));
-            const dbuPerPixel = maxDXDY / (256 * numTiles);
-            const tickLen = 8 * dbuPerPixel;
+        // Endcap ticks — perpendicular to each segment direction
+        const zoom = this._app.map.getZoom();
+        const numTiles = Math.pow(2, Math.max(0, zoom));
+        const dbuPerPixel = maxDXDY / (256 * numTiles);
+        const tickLen = 8 * dbuPerPixel;
 
-            // Unit perpendicular
-            const px = -dy / len;
-            const py = dx / len;
+        const addTick = (pt, segDx, segDy) => {
+            const segLen = Math.sqrt(segDx * segDx + segDy * segDy);
+            if (segLen === 0) return;
+            const px = -segDy / segLen;
+            const py = segDx / segLen;
+            const t0 = dbuToLatLng(pt.x + px * tickLen, pt.y + py * tickLen, scale, maxDXDY, originX, originY);
+            const t1 = dbuToLatLng(pt.x - px * tickLen, pt.y - py * tickLen, scale, maxDXDY, originX, originY);
+            group.addLayer(L.polyline([t0, t1], {
+                color, weight: 2, pane: 'ruler-pane', interactive: false,
+            }));
+        };
 
-            for (const pt of [ruler.pt0, ruler.pt1]) {
-                const t0 = dbuToLatLng(pt.x + px * tickLen, pt.y + py * tickLen, scale, maxDXDY, originX, originY);
-                const t1 = dbuToLatLng(pt.x - px * tickLen, pt.y - py * tickLen, scale, maxDXDY, originX, originY);
-                group.addLayer(L.polyline([t0, t1], {
-                    color,
-                    weight: 2,
-                    pane: 'ruler-pane',
-                    interactive: false,
-                }));
-            }
+        if (joinPt) {
+            // Manhattan: ticks perpendicular to each segment
+            addTick(ruler.pt0, joinPt.x - ruler.pt0.x, joinPt.y - ruler.pt0.y);
+            addTick(ruler.pt1, ruler.pt1.x - joinPt.x, ruler.pt1.y - joinPt.y);
+        } else {
+            const dx = ruler.pt1.x - ruler.pt0.x;
+            const dy = ruler.pt1.y - ruler.pt0.y;
+            addTick(ruler.pt0, dx, dy);
+            addTick(ruler.pt1, dx, dy);
         }
 
-        // Distance label at midpoint
+        // Distance label at midpoint (or join point for Manhattan)
         const dist = this._computeDistance(ruler.pt0, ruler.pt1, ruler.euclidian);
-        const midLat = (p0[0] + p1[0]) / 2;
-        const midLng = (p0[1] + p1[1]) / 2;
+        const midLat = pJoin ? pJoin[0] : (p0[0] + p1[0]) / 2;
+        const midLng = pJoin ? pJoin[1] : (p0[1] + p1[1]) / 2;
         const label = L.marker([midLat, midLng], {
             icon: L.divIcon({
                 className: 'ruler-label',
@@ -484,9 +501,13 @@ export class RulerManager {
             ? Math.sqrt(dx * dx + dy * dy)
             : dx + dy;
 
-        const fmt = (dbu) => {
-            const um = dbu / dbuPerUm;
-            return um.toFixed(3) + ' um';
+        const fmt = (dbu) => this._app.formatDbu(dbu, true);
+
+        const parseDbu = (str) => {
+            const num = parseFloat(str);
+            if (isNaN(num)) return null;
+            if (this._app.showDbu) return Math.round(num);
+            return Math.round(num * dbuPerUm);
         };
 
         const data = {
@@ -499,17 +520,48 @@ export class RulerManager {
                 Math.max(ruler.pt0.y, ruler.pt1.y),
             ],
             properties: [
-                { name: 'Name', value: ruler.name },
-                { name: 'Label', value: ruler.label || '' },
-                { name: 'Point 0 - x', value: fmt(ruler.pt0.x) },
-                { name: 'Point 0 - y', value: fmt(ruler.pt0.y) },
-                { name: 'Point 1 - x', value: fmt(ruler.pt1.x) },
-                { name: 'Point 1 - y', value: fmt(ruler.pt1.y) },
+                { name: 'Name', value: ruler.name, editable: true },
+                { name: 'Label', value: ruler.label || '', editable: true },
+                { name: 'Point 0 - x', value: fmt(ruler.pt0.x), editable: true },
+                { name: 'Point 0 - y', value: fmt(ruler.pt0.y), editable: true },
+                { name: 'Point 1 - x', value: fmt(ruler.pt1.x), editable: true },
+                { name: 'Point 1 - y', value: fmt(ruler.pt1.y), editable: true },
                 { name: 'Delta x', value: fmt(dx) },
                 { name: 'Delta y', value: fmt(dy) },
                 { name: 'Length', value: fmt(length) },
-                { name: 'Euclidian', value: ruler.euclidian ? 'true' : 'false' },
+                { name: 'Euclidian', value: ruler.euclidian ? 'true' : 'false', editable: true },
             ],
+            onPropertyChange: (propName, newValue) => {
+                switch (propName) {
+                    case 'Name': ruler.name = newValue; break;
+                    case 'Label': ruler.label = newValue; break;
+                    case 'Point 0 - x': {
+                        const v = parseDbu(newValue);
+                        if (v !== null) ruler.pt0.x = v;
+                        break;
+                    }
+                    case 'Point 0 - y': {
+                        const v = parseDbu(newValue);
+                        if (v !== null) ruler.pt0.y = v;
+                        break;
+                    }
+                    case 'Point 1 - x': {
+                        const v = parseDbu(newValue);
+                        if (v !== null) ruler.pt1.x = v;
+                        break;
+                    }
+                    case 'Point 1 - y': {
+                        const v = parseDbu(newValue);
+                        if (v !== null) ruler.pt1.y = v;
+                        break;
+                    }
+                    case 'Euclidian':
+                        ruler.euclidian = newValue.trim().toLowerCase() === 'true';
+                        break;
+                }
+                this._rerenderAll();
+                this._selectRuler(ruler.id);
+            },
         };
 
         this._updateInspector(data);
@@ -552,6 +604,12 @@ export class RulerManager {
 
     // ─── Helpers ─────────────────────────────────────────────────────
 
+    // Manhattan join point: corner of the L-shaped path.
+    // Matches Qt GUI's Ruler::getManhattanJoinPt().
+    _getManhattanJoinPt(pt0, pt1) {
+        return { x: pt1.x, y: pt0.y };
+    }
+
     _computeDistance(pt0, pt1, euclidian = true) {
         const dx = Math.abs(pt1.x - pt0.x);
         const dy = Math.abs(pt1.y - pt0.y);
@@ -562,11 +620,7 @@ export class RulerManager {
     }
 
     _formatDistance(dbuLength) {
-        const dbuPerUm = this._app.techData?.dbu_per_micron || 1000;
-        const um = dbuLength / dbuPerUm;
-        if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
-        if (um >= 1) return um.toFixed(3) + ' um';
-        return (um * 1000).toFixed(1) + ' nm';
+        return this._app.formatDistance(dbuLength);
     }
 
     _setCursor(crosshair) {

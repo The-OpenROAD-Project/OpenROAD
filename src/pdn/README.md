@@ -362,6 +362,7 @@ add_pdn_connect
     [-grid grid_name]
     [-max_columns columns]
     [-max_rows rows]
+    [-min_width_layers min_width_layers]
     [-ongrid ongrid_layers]
     [-split_cuts split_cuts_mapping]
     [-split_cuts_staggered]
@@ -378,6 +379,7 @@ add_pdn_connect
 | `[-grid]` | Specifies the name of the grid definition to which this connection will be added (Default: Last grid created by `define_pdn_grid`). |
 | `[-max_columns]` | Maximum number of columns when adding arrays of vias. |
 | `[-max_rows]` | Maximum number of rows when adding arrays of vias. |
+| `[-min_width_layers]` | List of pass-through (intermediate) layers in a via stack to keep at their minimum width. The via array is restricted to a single row/column in the layer's width direction so it does not grow a wide metal patch that blocks adjacent routing tracks; the metal can still extend along the routing direction to meet min-area and to bridge to an on-grid neighbor. |
 | `[-ongrid]` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `[-split_cuts]` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 | `[-split_cuts_staggered]` | Specified if the split cuts should be staggered, ie. the ground vias will appear with an offset of pitch / 2. |

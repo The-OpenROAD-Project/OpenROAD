@@ -157,6 +157,9 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   WebViewerHook* viewer_hook_ = nullptr;
   std::size_t viewer_token_ = 0;
 
+  // In-flight request window announced to the client on connect.
+  int max_in_flight_ = 16;
+
  public:
   WebSocketSession(Tcp::socket&& socket,
                    std::shared_ptr<TileGenerator> generator,
@@ -164,7 +167,8 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    utl::Logger* logger,
-                   WebViewerHook* viewer_hook);
+                   WebViewerHook* viewer_hook,
+                   int max_in_flight);
   ~WebSocketSession();
 
   void run(http::request<http::string_body>&& req);
@@ -223,7 +227,8 @@ WebSocketSession::WebSocketSession(
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
-    WebViewerHook* viewer_hook)
+    WebViewerHook* viewer_hook,
+    int max_in_flight)
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator, tcl_eval),
@@ -234,7 +239,8 @@ WebSocketSession::WebSocketSession(
       drc_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator)),
-      viewer_hook_(viewer_hook)
+      viewer_hook_(viewer_hook),
+      max_in_flight_(max_in_flight)
 {
   if (generator_) {
     odb::dbChip* chip = generator_->getChip();
@@ -431,6 +437,21 @@ void WebSocketSession::on_accept(beast::error_code ec)
     viewer_hook_->drainLogs();
   }
 
+  // Tell the client how many requests to keep in flight at once. This bounds
+  // the client's send rate so a burst of tile requests (rapid pan/zoom) can't
+  // flood the socket send buffer and wedge the connection. The limit is scaled
+  // to the server's I/O worker count (see WebServer::serve). Sent first so the
+  // client has it before requesting any tiles.
+  {
+    WebSocketResponse cfg;
+    cfg.id = 0;
+    cfg.type = WebSocketResponse::kJson;
+    const std::string cfg_json = R"({"type":"config","max_in_flight":)"
+                                 + std::to_string(max_in_flight_) + "}";
+    cfg.payload.assign(cfg_json.begin(), cfg_json.end());
+    queue_response(cfg);
+  }
+
   // Build search indices in the background; tiles render without shapes
   // until ready, then a "refresh" push notification triggers a redraw.
   init_thread_ = std::thread([self = shared_from_this()]() {
@@ -438,7 +459,10 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
-    if (!self->generator_->getBlock()) {
+    // We gate on the dbChip (not dbBlock) so 3DBlox multi-tech designs
+    // — whose top chip is HIER and has no dbBlock — still register the
+    // chip observer and send the refresh notification.
+    if (!self->generator_->getChip()) {
       return;
     }
 
@@ -721,6 +745,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   http::request<http::string_body> req_;
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
+  int max_in_flight_ = 16;
 
  public:
   DetectSession(Tcp::socket&& socket,
@@ -729,7 +754,8 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<ClockTreeReport> clock_report,
                 utl::Logger* logger,
-                WebViewerHook* viewer_hook);
+                WebViewerHook* viewer_hook,
+                int max_in_flight);
 
   void run();
 
@@ -743,14 +769,16 @@ DetectSession::DetectSession(Tcp::socket&& socket,
                              std::shared_ptr<TimingReport> timing_report,
                              std::shared_ptr<ClockTreeReport> clock_report,
                              utl::Logger* logger,
-                             WebViewerHook* viewer_hook)
+                             WebViewerHook* viewer_hook,
+                             int max_in_flight)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
       logger_(logger),
-      viewer_hook_(viewer_hook)
+      viewer_hook_(viewer_hook),
+      max_in_flight_(max_in_flight)
 {
 }
 
@@ -782,7 +810,8 @@ void DetectSession::on_read(beast::error_code ec)
                                              timing_report_,
                                              clock_report_,
                                              logger_,
-                                             viewer_hook_);
+                                             viewer_hook_,
+                                             max_in_flight_);
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
@@ -805,6 +834,7 @@ class Listener : public std::enable_shared_from_this<Listener>
   std::shared_ptr<ClockTreeReport> clock_report_;
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
+  int max_in_flight_ = 16;
 
  public:
   Listener(net::io_context& ioc,
@@ -814,7 +844,8 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TimingReport> timing_report,
            std::shared_ptr<ClockTreeReport> clock_report,
            utl::Logger* logger,
-           WebViewerHook* viewer_hook);
+           WebViewerHook* viewer_hook,
+           int max_in_flight);
 
   void run() { do_accept(); }
 
@@ -842,7 +873,8 @@ Listener::Listener(net::io_context& ioc,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    utl::Logger* logger,
-                   WebViewerHook* viewer_hook)
+                   WebViewerHook* viewer_hook,
+                   int max_in_flight)
     : ioc_(ioc),
       acceptor_(ioc),
       generator_(std::move(generator)),
@@ -850,7 +882,8 @@ Listener::Listener(net::io_context& ioc,
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
       logger_(logger),
-      viewer_hook_(viewer_hook)
+      viewer_hook_(viewer_hook),
+      max_in_flight_(max_in_flight)
 {
   beast::error_code ec;
 
@@ -901,7 +934,8 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
                                     timing_report_,
                                     clock_report_,
                                     logger_,
-                                    viewer_hook_)
+                                    viewer_hook_,
+                                    max_in_flight_)
         ->run();
   }
   do_accept();
@@ -914,13 +948,8 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
-                     Tcl_Interp* interp,
-                     int num_threads)
-    : db_(db),
-      sta_(sta),
-      logger_(logger),
-      interp_(interp),
-      num_threads_(num_threads)
+                     Tcl_Interp* interp)
+    : db_(db), sta_(sta), logger_(logger), interp_(interp), num_threads_(1)
 {
 }
 
@@ -975,6 +1004,16 @@ WebServer::~WebServer()
   // reactor::shutdown() destroys pending async operations whose
   // handlers reference the dying reactor.  The OS reclaims at exit.
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
+  // Remove the WebLogSink from the Logger before leaking viewer_hook_: the
+  // sink holds a raw pointer into the hook and the CLI thread may still emit
+  // log lines.  In the normal path stop() already did this (log_sink_ is
+  // null here); this covers paths where serve()/stop() never ran — e.g.
+  // initLogger() registered the sink but read_db failed and exited.  logger_
+  // outlives us: ~OpenRoad deletes web_server_ before logger_.
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
+  }
   // Also leak viewer_hook_ — it may be referenced by Gui's
   // headless_viewer_ pointer which outlives us (static singleton).
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
@@ -1050,6 +1089,9 @@ void WebServer::saveReport(const std::string& filename,
     hist_hold = hist_setup;
     filters = boost::json::serialize(serializeChartFilters({}));
   }
+  // Net fanout histogram depends only on odb, so it's always populated.
+  const std::string hist_fanout = boost::json::serialize(
+      serializeFanoutHistogram(computeFanoutHistogram(block)));
   const std::string tech_json
       = boost::json::serialize(serializeTechResponse(*generator_));
   const std::string bounds_json
@@ -1183,6 +1225,8 @@ window.__STATIC_CACHE__ = {
       << hist_setup << R"(,
     "slack_histogram:hold": )"
       << hist_hold << R"(,
+    "fanout_histogram": )"
+      << hist_fanout << R"(,
     "chart_filters": )"
       << filters << R"(,
     "module_hierarchy": )"
@@ -1233,6 +1277,7 @@ window.__STATIC_CACHE__ = {
 </script>
 <script type="module">
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import * as THREE from 'https://esm.sh/three@0.160.0';
 )" << kReportJS
       << R"(
 </script>
@@ -1283,7 +1328,8 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
-    WebViewerHook* viewer_hook)
+    WebViewerHook* viewer_hook,
+    int max_in_flight)
 {
   auto listener = std::make_shared<Listener>(ioc,
                                              endpoint,
@@ -1292,7 +1338,8 @@ ListenerHandle createAndRunListener(
                                              std::move(timing_report),
                                              std::move(clock_report),
                                              logger,
-                                             viewer_hook);
+                                             viewer_hook,
+                                             max_in_flight);
   listener->run();
   return {.shutdown = [listener]() { listener->close(); },
           .port = listener->port()};

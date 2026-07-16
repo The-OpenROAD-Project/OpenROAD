@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "MoveCandidate.hh"
+#include "OptimizerTypes.hh"
 #include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"

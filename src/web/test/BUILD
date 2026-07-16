@@ -59,6 +59,13 @@ js_test(
 )
 
 js_test(
+    name = "schematic_widget_test",
+    data = JS_FILES,
+    entry_point = "js/test-schematic-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "vis_tree_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
@@ -170,7 +177,8 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
@@ -187,7 +195,8 @@ cc_test(
     ],
     deps = [
         "//src/gui",
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
@@ -203,7 +212,8 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
@@ -221,7 +231,8 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//third-party/lodepng",
@@ -237,7 +248,8 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
@@ -250,6 +262,7 @@ cc_test(
     name = "glyph_cache_test",
     srcs = ["cpp/TestGlyphCache.cpp"],
     deps = [
+        "//src/gui:gui_stub",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -261,7 +274,8 @@ cc_test(
     srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
         "//src/gui",
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -275,7 +289,8 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",

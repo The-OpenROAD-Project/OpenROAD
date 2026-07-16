@@ -37,6 +37,7 @@
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iterator>
 #include <ranges>
@@ -61,6 +62,15 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.num_masks != rhs.flags_.num_masks) {
+    return false;
+  }
+  if (flags_.type != rhs.flags_.type) {
+    return false;
+  }
+  if (flags_.direction != rhs.flags_.direction) {
+    return false;
+  }
+  if (flags_.minstep_type != rhs.flags_.minstep_type) {
     return false;
   }
   if (flags_.has_max_width != rhs.flags_.has_max_width) {
@@ -99,6 +109,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (flags_.lef58_type != rhs.flags_.lef58_type) {
+    return false;
+  }
+  if (flags_.is_backside != rhs.flags_.is_backside) {
     return false;
   }
   if (wrong_way_width_ != rhs.wrong_way_width_) {
@@ -608,7 +621,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj.wire_extension_;
   stream >> obj.number_;
   stream >> obj.rlevel_;
-  stream >> obj.area_;
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.area_;
+  } else {
+    double area_double;
+    stream >> area_double;
+    obj.area_ = static_cast<int64_t>(std::round(area_double * 20000 * 20000));
+  }
   stream >> obj.thickness_;
   stream >> obj.min_step_;
   stream >> obj.min_step_max_length_;
@@ -796,66 +815,46 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["orth_spacing_tbl"].add(orth_spacing_tbl_);
   cut_class_rules_tbl_->collectMemInfo(info.children["cut_class_rules_tbl_"]);
-
+  info.children["cut_class_rules_hash"].add(cut_class_rules_hash_);
   spacing_eol_rules_tbl_->collectMemInfo(
       info.children["spacing_eol_rules_tbl_"]);
-
   cut_spacing_rules_tbl_->collectMemInfo(
       info.children["cut_spacing_rules_tbl_"]);
-
   minstep_rules_tbl_->collectMemInfo(info.children["minstep_rules_tbl_"]);
-
   corner_spacing_rules_tbl_->collectMemInfo(
       info.children["corner_spacing_rules_tbl_"]);
-
   spacing_table_prl_rules_tbl_->collectMemInfo(
       info.children["spacing_table_prl_rules_tbl_"]);
-
   cut_spacing_table_orth_tbl_->collectMemInfo(
       info.children["cut_spacing_table_orth_tbl_"]);
-
   cut_spacing_table_def_tbl_->collectMemInfo(
       info.children["cut_spacing_table_def_tbl_"]);
-
   cut_enc_rules_tbl_->collectMemInfo(info.children["cut_enc_rules_tbl_"]);
-
   eol_ext_rules_tbl_->collectMemInfo(info.children["eol_ext_rules_tbl_"]);
-
   array_spacing_rules_tbl_->collectMemInfo(
       info.children["array_spacing_rules_tbl_"]);
-
   eol_keep_out_rules_tbl_->collectMemInfo(
       info.children["eol_keep_out_rules_tbl_"]);
-
   max_spacing_rules_tbl_->collectMemInfo(
       info.children["max_spacing_rules_tbl_"]);
-
   width_table_rules_tbl_->collectMemInfo(
       info.children["width_table_rules_tbl_"]);
-
   min_cuts_rules_tbl_->collectMemInfo(info.children["min_cuts_rules_tbl_"]);
-
   area_rules_tbl_->collectMemInfo(info.children["area_rules_tbl_"]);
-
   forbidden_spacing_rules_tbl_->collectMemInfo(
       info.children["forbidden_spacing_rules_tbl_"]);
-
   keepout_zone_rules_tbl_->collectMemInfo(
       info.children["keepout_zone_rules_tbl_"]);
-
   wrongdir_spacing_rules_tbl_->collectMemInfo(
       info.children["wrongdir_spacing_rules_tbl_"]);
-
   two_wires_forbidden_spc_rules_tbl_->collectMemInfo(
       info.children["two_wires_forbidden_spc_rules_tbl_"]);
-
   voltage_spacing_rules_tbl_->collectMemInfo(
       info.children["voltage_spacing_rules_tbl_"]);
 
   // User Code Begin collectMemInfo
-  info.children["orth_spacing"].add(orth_spacing_tbl_);
-  info.children["cut_class_rules_hash"].add(cut_class_rules_hash_);
   info.children["name"].add(name_);
   info.children["alias"].add(alias_);
   spacing_rules_tbl_->collectMemInfo(info.children["spacing_rules_tbl"]);
@@ -1246,6 +1245,18 @@ dbTechLayer::LEF58_TYPE dbTechLayer::getLef58Type() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return (dbTechLayer::LEF58_TYPE) layer->flags_.lef58_type;
+}
+
+void dbTechLayer::setBackside(bool is_backside)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->flags_.is_backside = is_backside;
+}
+
+bool dbTechLayer::isBackside() const
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->flags_.is_backside;
 }
 
 std::string dbTechLayer::getLef58TypeString() const
@@ -1857,18 +1868,17 @@ bool dbTechLayer::hasArea() const
   return (layer->flags_.has_area);
 }
 
-double  // Now denominated in squm
-dbTechLayer::getArea() const
+int64_t dbTechLayer::getArea() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_area) {
     return layer->area_;
   }
 
-  return 0.0;  // Default
+  return 0;  // Default
 }
 
-void dbTechLayer::setArea(double area)
+void dbTechLayer::setArea(int64_t area)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_area = true;

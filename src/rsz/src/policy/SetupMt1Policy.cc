@@ -76,7 +76,7 @@ void SetupMt1Policy::buildMoveGenerators(
       case MoveType::kBuffer:
       case MoveType::kClone:
       case MoveType::kSizeUpMatch:
-      case MoveType::kSizeDown:
+      case MoveType::kSizeDownFanout:
       case MoveType::kSwapPins:
       case MoveType::kUnbuffer:
       case MoveType::kSplitLoad:

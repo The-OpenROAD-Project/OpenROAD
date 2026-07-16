@@ -22,10 +22,10 @@
 #include "db/tech/frLookupTbl.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
@@ -286,6 +286,17 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
+void Fixture::makeSimpleSpacingConstraint(frLayerNum layer_num,
+                                          const frCoord spacing_value)
+{
+  auto con = std::make_unique<frSpacingConstraint>(spacing_value);
+
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->setMinSpacing(con.get());
+  tech->addUConstraint(std::move(con));
+}
+
 void Fixture::makeMinStepConstraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frMinStepConstraint>();
@@ -331,6 +342,33 @@ void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num)
   frLayer* layer = tech->getLayer(layer_num);
   layer->addMinEnclosedAreaConstraint(con.get());
   tech->addUConstraint(std::move(con));
+}
+
+odb::dbTechLayerAreaRule* Fixture::makeLef58AreaConstraint(
+    frLayerNum layer_num,
+    int64_t area,
+    int rect_width,
+    bool except_rectangle)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  odb::dbTechLayer* db_layer = db_tech->findLayer(layer->getName().c_str());
+
+  auto rule = odb::dbTechLayerAreaRule::create(db_layer);
+  rule->setArea(area);
+  if (rect_width > 0) {
+    rule->setRectWidth(rect_width);
+  }
+  rule->setExceptRectangle(except_rectangle);
+
+  auto con = std::make_unique<frLef58AreaConstraint>(rule);
+  if (rule->getRectWidth() > 0) {
+    layer->addLef58AreaConstraintRectWidth(con.get());
+  } else {
+    layer->addLef58AreaConstraint(con.get());
+  }
+  tech->addUConstraint(std::move(con));
+  return rule;
 }
 
 void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,

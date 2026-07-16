@@ -1,59 +1,34 @@
 # Detailed Placement
 
-The detailed placement module in OpenROAD (`dpl`) is based on OpenDP, or
-Open-Source Detailed Placement Engine. Its key features are:
+The detailed placement module in OpenROAD (`dpl`) legalizes the result of
+global placement: it moves instances to legal sites on rows while
+minimizing displacement. It is also used to re-legalize the design after
+incremental changes such as resizing and buffer insertion. It originated from OpenDP (Open-Source Detailed
+Placement Engine) and now uses a negotiation-based legalizer (NBLG) by
+default, with the original OpenDP diamond search available as a legacy
+engine. It supports:
 
--   Fence region support
--   Fragmented row support
--   Mixed-cell-height (1x–4x) legalization
--   Two placement engines selectable at runtime
+-   Mixed-cell-height (1x–4x) designs
+-   Fence regions
+-   Fragmented rows
+-   Placement padding and filler insertion
 
 ## Placement Engines
 
-#### Diamond Search
-
-The default engine performs a BFS-style diamond search from each cell's
-global placement position, expanding outward in Manhattan order until a
-legal site is found.
+DPL provides two options for legalization. Negotiation legalizer is the default and is slightly slower, but can handle dense designs. Diamond search is faster (linear runtime), although it is not able to handle dense designs. Diamond search is also used at the end of Negotiation for handling potential failed corner cases.
 
 #### NegotiationLegalizer
 
-An optional two-pass legalizer based on the NBLG paper. Enabled with
-`-use_negotiation` on the `detailed_placement` command.
+The default two-pass legalizer based on the NBLG paper. Used on
+the `detailed_placement` command. The legacy diamond search engine can be
+selected with `-use_diamond_legalizer`.
 
-```
-Global Placement result
-        │
-        ▼
-┌───────────────────┐
-│   Abacus Pass     │  Fast DP sweep, row-by-row.
-│   (Skipped)       │  Near-optimal for uncongested cells.
-│                   │  Mixed-cell-height via row assignment.
-│  Handles:         │  Power-rail alignment enforced.
-│  - 1x/2x/3x/4x    │  Fence violations → skipped (→ negotiation).
-│  - Fence regions  │
-└────────┬──────────┘
-         │ illegal cells (overlap / fence violated)
-         ▼
-┌───────────────────┐
-│ Negotiation Pass  │  Iterative rip-up & replace (from NBLG paper).
-│                   │  Illegal cells + spatial neighbors compete for
-│  NBLG components: │  grid resources.  History cost penalises
-│  - Adaptive pf    │  persistent congestion.  Isolation point skips
-│  - Isolation pt   │  already-legal cells in phase 2.
-│  - History cost   │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ Post-optimisation │  Greedy displacement improvement (5 passes).
-│     (Skipped)     │  Cell swap via bipartite matching within groups.
-│                   │  
-└────────┬──────────┘
-         │
-         ▼
-   Legal placement written back to OpenDB
-```
+#### Diamond Search
+
+Former engine performs a BFS-style diamond search from each cell's
+global placement position, expanding outward in Manhattan order until a
+legal site is found.
+
 # Commands
 
 ```{note}
@@ -71,8 +46,12 @@ detailed_placement
     [-max_displacement disp|{disp_x disp_y}]
     [-disallow_one_site_gaps]
     [-report_file_name filename]
-    [-use_negotiation]
+    [-use_diamond_legalizer]
     [-abacus]
+    [-site_search_window sites]
+    [-row_search_window rows]
+    [-drc_penalty penalty]
+    [-disable_window_extension]
 ```
 
 #### Options
@@ -84,8 +63,12 @@ detailed_placement
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
-| `-use_negotiation` | Use the NegotiationLegalizer instead of the default diamond search engine. |
+| `-use_diamond_legalizer` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
 | `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
+| `-site_search_window` | NegotiationLegalizer: base number of sites a cell may be moved left or right of its initial position, capped by `-max_displacement`. Default `20`, `0` allowed (no horizontal movement). |
+| `-row_search_window` | NegotiationLegalizer: base number of rows a cell may be moved up or down from its initial position, capped by `-max_displacement`. Default `5`, `0` allowed (no row changes). |
+| `-disable_window_extension` | NegotiationLegalizer: disables all search-window extensions, so the window is fixed to the base `-site_search_window`/`-row_search_window` size regardless of cell size or nearby walls. By default, the effective search window can instead grow past base sizing in two ways: (1) it's extended to at least the cell's own width/height, and (2) extended if cut short by a macro or core boundary. |
+| `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`, `0` allowed (disables the escalating per-candidate penalty, DRC-violating cells still accrue history cost separately). |
 
 ### Set Placement Padding
 
@@ -226,7 +209,7 @@ Simply run the following script:
 
 ## Limitations
 
-The following limitations apply when using the NegotiationLegalizer (`-use_negotiation`):
+The following limitations apply when using the NegotiationLegalizer (default):
 
 1. **Abacus cluster chain**: The current Abacus implementation uses a
    simplified cluster structure. A production version should maintain an

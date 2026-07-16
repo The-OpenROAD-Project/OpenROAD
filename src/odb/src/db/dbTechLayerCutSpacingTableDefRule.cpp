@@ -12,6 +12,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -192,20 +193,18 @@ void _dbTechLayerCutSpacingTableDefRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["prl_for_aligned_cut_tbl_"].add(prl_for_aligned_cut_tbl_);
-  info.children["center_to_center_tbl_"].add(center_to_center_tbl_);
-  info.children["center_and_edge_tbl_"].add(center_and_edge_tbl_);
-  info.children["prl_tbl_"].add(prl_tbl_);
-  info.children["end_extension_tbl_"].add(end_extension_tbl_);
-  info.children["side_extension_tbl_"].add(side_extension_tbl_);
-  info.children["exact_aligned_spacing_tbl_"].add(exact_aligned_spacing_tbl_);
-  info.children["non_opp_enc_spacing_tbl_"].add(non_opp_enc_spacing_tbl_);
-  info.children["opp_enc_spacing_tbl_"].add(opp_enc_spacing_tbl_);
-  info.children["spacing_tbl_"].add(spacing_tbl_);
-  info.children["row_map_"].add(row_map_);
-  info.children["col_map_"].add(col_map_);
-  // User Code End collectMemInfo
+  info.children["prl_for_aligned_cut_tbl"].add(prl_for_aligned_cut_tbl_);
+  info.children["center_to_center_tbl"].add(center_to_center_tbl_);
+  info.children["center_and_edge_tbl"].add(center_and_edge_tbl_);
+  info.children["prl_tbl"].add(prl_tbl_);
+  info.children["end_extension_tbl"].add(end_extension_tbl_);
+  info.children["side_extension_tbl"].add(side_extension_tbl_);
+  info.children["exact_aligned_spacing_tbl"].add(exact_aligned_spacing_tbl_);
+  info.children["non_opp_enc_spacing_tbl"].add(non_opp_enc_spacing_tbl_);
+  info.children["opp_enc_spacing_tbl"].add(opp_enc_spacing_tbl_);
+  info.children["spacing_tbl"].add(spacing_tbl_);
+  info.children["row_map"].add(row_map_);
+  info.children["col_map"].add(col_map_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -649,6 +648,21 @@ bool dbTechLayerCutSpacingTableDefRule::isOppositeEnclosureResizeSpacingValid()
   return obj->flags_.opposite_enclosure_resize_spacing_valid;
 }
 
+dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerCutSpacingTableDefRule*)
+      _parent->cut_spacing_table_def_tbl_->create();
+}
+void dbTechLayerCutSpacingTableDefRule::destroy(
+    dbTechLayerCutSpacingTableDefRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->cut_spacing_table_def_tbl_->destroy(
+      (_dbTechLayerCutSpacingTableDefRule*) obj);
+}
 // User Code Begin dbTechLayerCutSpacingTableDefRulePublicMethods
 void dbTechLayerCutSpacingTableDefRule::addPrlForAlignedCutEntry(
     const std::string& from,
@@ -942,16 +956,6 @@ dbTechLayer* dbTechLayerCutSpacingTableDefRule::getTechLayer() const
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   return (odb::dbTechLayer*) obj->getOwner();
 }
-
-dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
-    dbTechLayer* parent)
-{
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  _dbTechLayerCutSpacingTableDefRule* newrule
-      = _parent->cut_spacing_table_def_tbl_->create();
-  return ((dbTechLayerCutSpacingTableDefRule*) newrule);
-}
-
 dbTechLayerCutSpacingTableDefRule*
 dbTechLayerCutSpacingTableDefRule::getTechLayerCutSpacingTableDefSubRule(
     dbTechLayer* parent,
@@ -961,15 +965,6 @@ dbTechLayerCutSpacingTableDefRule::getTechLayerCutSpacingTableDefSubRule(
   return (dbTechLayerCutSpacingTableDefRule*)
       _parent->cut_spacing_table_def_tbl_->getPtr(dbid);
 }
-void dbTechLayerCutSpacingTableDefRule::destroy(
-    dbTechLayerCutSpacingTableDefRule* rule)
-{
-  _dbTechLayer* _parent = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  _parent->cut_spacing_table_def_tbl_->destroy(
-      (_dbTechLayerCutSpacingTableDefRule*) rule);
-}
-
 // User Code End dbTechLayerCutSpacingTableDefRulePublicMethods
 }  // namespace odb
 // Generator Code End Cpp

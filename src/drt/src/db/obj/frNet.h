@@ -14,8 +14,8 @@
 #include "db/obj/frGuide.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
-#include "global.h"
 #include "odb/dbTypes.h"
 
 namespace drt {

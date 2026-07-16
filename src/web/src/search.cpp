@@ -204,19 +204,35 @@ void Search::setTopChip(odb::dbChip* chip)
   }
   odb::dbBlock* block = chip->getBlock();
   if (top_chip_ != chip) {
-    clear();
+    {
+      // Hold the unique lock for the entire reset+repopulate cycle so
+      // that shapesReady()/getData() callers from other threads see
+      // either the old or the new state, never a partial view.
+      std::unique_lock lock(child_block_data_mutex_);
+      clear();
 
-    if (top_chip_ != nullptr) {
-      removeOwner();
-    }
+      if (top_chip_ != nullptr) {
+        removeOwner();
+      }
 
-    addOwner(block);  // register as a callback object
+      addOwner(block);  // register as a callback object
 
-    // Pre-populate children so we don't have to lock access to
-    // child_block_data_ later
-    if (block) {
-      for (auto child : block->getChildren()) {
-        child_block_data_[child];
+      // Pre-populate children so the common path through getData() is
+      // a lock-free hit.  This covers two distinct hierarchies:
+      //   1. dbBlock children of the top block (intra-chip hierarchy).
+      //   2. Every dbBlock reachable through dbChipInst (3D-IC /
+      //      multi-die hierarchy).  These belong to dbChips other than
+      //      top_chip_, so getData() routes them into
+      //      child_block_data_ as well.
+      if (block) {
+        for (auto child : block->getChildren()) {
+          child_block_data_[child];
+        }
+      }
+      for (const ChipletNode& node : collectChiplets(chip)) {
+        if (node.block && node.block != block) {
+          child_block_data_[node.block];
+        }
       }
     }
   }
@@ -224,6 +240,23 @@ void Search::setTopChip(odb::dbChip* chip)
   top_chip_ = chip;
 
   // emit newChip(chip);
+}
+
+bool Search::shapesReady() const
+{
+  if (top_block_data_.shapes_init.load()) {
+    return true;
+  }
+  // Multi-die designs: check chiplet master blocks too.  Hold the
+  // shared lock for the iteration so a concurrent setTopChip() (which
+  // holds the unique lock) cannot reshape the map under us.
+  std::shared_lock lock(child_block_data_mutex_);
+  for (const auto& [block, data] : child_block_data_) {
+    if (data.shapes_init.load()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Search::announceModified(std::atomic_bool& flag)
@@ -278,6 +311,9 @@ void Search::clearRows()
 
 void Search::eagerInit(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   const auto t0 = std::chrono::steady_clock::now();
 
   CountdownLatch done(6);
@@ -304,12 +340,35 @@ void Search::eagerInit(odb::dbBlock* block)
 
 Search::BlockData& Search::getData(odb::dbBlock* block)
 {
-  return block->getChip() == top_chip_ ? top_block_data_
-                                       : child_block_data_[block];
+  // Defensive: a null block can reach here if a db callback fires during
+  // teardown or before the design is loaded.  Fall back to the top-level
+  // entry rather than dereferencing null in getChip().
+  if (block == nullptr) {
+    return top_block_data_;
+  }
+  if (block->getChip() == top_chip_) {
+    return top_block_data_;
+  }
+  // Common path: setTopChip() pre-populated this entry.  Try a
+  // lock-free find under shared lock first; only escalate to a unique
+  // lock when we actually need to insert (rare — happens for blocks
+  // first touched by a db callback).
+  {
+    std::shared_lock lock(child_block_data_mutex_);
+    auto it = child_block_data_.find(block);
+    if (it != child_block_data_.end()) {
+      return it->second;
+    }
+  }
+  std::unique_lock lock(child_block_data_mutex_);
+  return child_block_data_[block];
 }
 
 void Search::updateShapes(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   if (data.shapes_init) {
@@ -422,6 +481,9 @@ void Search::updateShapes(odb::dbBlock* block)
 
 void Search::updateFills(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.fills_init_mutex);
   if (data.fills_init) {
@@ -463,6 +525,9 @@ void Search::updateFills(odb::dbBlock* block)
 
 void Search::updateInsts(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.insts_init_mutex);
   if (data.insts_init) {
@@ -492,6 +557,9 @@ void Search::updateInsts(odb::dbBlock* block)
 
 void Search::updateBlockages(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.blockages_init_mutex);
   if (data.blockages_init) {
@@ -529,6 +597,9 @@ void Search::updateBlockages(odb::dbBlock* block)
 
 void Search::updateObstructions(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.obstructions_init_mutex);
   if (data.obstructions_init) {
@@ -578,6 +649,9 @@ void Search::updateObstructions(odb::dbBlock* block)
 
 void Search::updateRows(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.rows_init_mutex);
   if (data.rows_init) {

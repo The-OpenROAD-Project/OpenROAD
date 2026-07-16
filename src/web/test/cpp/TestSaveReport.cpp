@@ -85,8 +85,7 @@ class SaveReportTest : public tst::Nangate45Fixture
     WebServer server(getDb(),
                      /*sta=*/nullptr,
                      getLogger(),
-                     /*interp=*/nullptr,
-                     /*num_threads=*/1);
+                     /*interp=*/nullptr);
     server.saveReport(path, max_setup, max_hold);
   }
 

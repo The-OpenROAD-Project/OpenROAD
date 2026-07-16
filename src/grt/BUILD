@@ -32,14 +32,21 @@ cc_library(
     includes = [
         "include",
     ],
-    deps = ["//src/odb"],
+    deps = ["//src/odb/src/db"],
+)
+
+cc_library(
+    name = "route_pt",
+    hdrs = ["include/grt/RoutePt.h"],
+    includes = [
+        "include",
+    ],
 )
 
 cc_library(
     name = "fastroute",
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
-        "src/fastroute/src/FastRouteRenderer.cpp",
         "src/fastroute/src/RSMT.cpp",
         "src/fastroute/src/RipUp.cpp",
         "src/fastroute/src/graph2d.cpp",
@@ -50,7 +57,6 @@ cc_library(
     ],
     hdrs = [
         "src/fastroute/include/FastRoute.h",
-        "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
     ],
     copts = [
@@ -66,8 +72,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est:parasitics_service",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -107,14 +112,16 @@ cc_library(
     ],
     includes = [
         "include",
+        "src",
         "src/cugr/include",
+        "src/cugr/src",
     ],
     deps = [
         ":groute",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est:parasitics_service",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -122,17 +129,32 @@ cc_library(
 )
 
 cc_library(
-    name = "grt",
-    srcs = [
+    name = "grt_private_hdrs",
+    hdrs = [
         "src/AbstractGrouteRenderer.h",
         "src/AbstractRoutingCongestionDataSource.h",
+        "src/Net.h",
+        "src/Pin.h",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":groute",
+        ":route_pt",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
+    name = "grt",
+    srcs = [
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
         "src/Net.cpp",
-        "src/Net.h",
         "src/Pin.cpp",
-        "src/Pin.h",
         "src/RepairAntennas.cpp",
         "src/RepairAntennas.h",
         "src/RoutingTracks.h",
@@ -141,7 +163,6 @@ cc_library(
     hdrs = [
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
-        "include/grt/RoutePt.h",
         "include/grt/Rudy.h",
     ],
     copts = [
@@ -155,13 +176,14 @@ cc_library(
         ":cugr",
         ":fastroute",
         ":groute",
+        ":grt_private_hdrs",
+        ":route_pt",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/drt:pin_access_service",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -177,13 +199,10 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/AbstractGrouteRenderer.h",
-        "src/AbstractRoutingCongestionDataSource.h",
         "src/GrouteRenderer.cpp",
         "src/GrouteRenderer.h",
         "src/MakeGlobalRouter.cpp",
-        "src/Net.h",
-        "src/Pin.h",
+        "src/fastroute/src/FastRouteRenderer.cpp",
         "src/heatMap.cpp",
         "src/heatMap.h",
         "src/heatMapRudy.cpp",
@@ -193,6 +212,7 @@ cc_library(
     ],
     hdrs = [
         "include/grt/MakeGlobalRouter.h",
+        "src/fastroute/include/FastRouteRenderer.h",
     ],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
@@ -203,13 +223,16 @@ cc_library(
         "src",
     ],
     deps = [
+        ":abstract-fastroute",
         ":fastroute",
         ":groute",
         ":grt",
+        ":grt_private_hdrs",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/stt",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -236,6 +259,9 @@ tcl_wrap_cc(
     root_swig_src = "src/GlobalRouter.i",
     swig_includes = [
         "src",
+    ],
+    deps = [
+        "//src/odb:swig",
     ],
 )
 
@@ -264,5 +290,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/grt/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/grt/test:__pkg__",
+    ],
 )

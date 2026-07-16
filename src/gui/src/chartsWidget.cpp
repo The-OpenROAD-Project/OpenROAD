@@ -535,15 +535,14 @@ EndPointSlackMap* ChartsWidget::getData(const std::string& path_group,
       // filter only by path_group
       endpoints_cache_[key] = stagui_->getEndPointToSlackMap(path_group);
     } else {
-      EndPointSlackMap data = fetchSlackHistogramData();
-      if (data.empty()) {
+      endpoints_cache_[key] = fetchSlackHistogramData();
+      if (endpoints_cache_[key].empty()) {
         logger_->warn(
             utl::GUI,
             97,
             "All pins are unconstrained. Cannot plot histogram. Check if "
             "timing data is loaded!");
       }
-      endpoints_cache_[key] = data;
     }
   }
   return &endpoints_cache_[key];
@@ -715,8 +714,8 @@ void HistogramView::populateBins()
     all_histogram_->generateBins(1, -0.1, 0.2);
     for (auto& histogram : histograms_) {
       histogram->generateBins(1, -0.1, 0.2);
-      return;
     }
+    return;
   }
 
   // determine interval

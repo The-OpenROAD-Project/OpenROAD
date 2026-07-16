@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "ppl/Parameters.h"
@@ -37,7 +38,7 @@ struct Section;
 struct Slot;
 
 // A list of pins that will be placed together in the die boundary
-using PinSet = std::set<odb::dbBTerm*>;
+using PinSet = odb::PtrSet<odb::dbBTerm>;
 using PinList = std::vector<odb::dbBTerm*>;
 
 struct PinGroupByIndex

@@ -291,6 +291,39 @@ TEST_F(ModuleFixture, test_find_modinst)
   auto minst2 = odb::dbModInst::create(master1, master2, "minst2");
   EXPECT_EQ(block_->findModInst("minst1/minst2"), minst2);
 }
+
+// makeNewNetName must not hand out a name that already belongs to an
+// instance in the scope: a net/port and an instance cannot share a name in
+// one Verilog scope.  OpenROAD promotes anonymous nets ("_NNNNN_") to
+// module boundary ports, and yosys/ABC name anonymous cells "_NNNNN_" too,
+// so without an instance-name check the promoted port collides with a leaf
+// or hierarchical instance -- illegal Verilog ("Instance has the same name
+// as port").
+TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
+{
+  auto top = block_->getTopModule();
+  ASSERT_NE(top, nullptr);
+
+  // Leaf (dbInst) collision: an instance named "_42_" exists in scope.
+  dbInst::create(block_, lib_->findMaster("and2"), "_42_");
+  std::string leaf = block_->makeNewNetName(
+      top, "_42_", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(leaf.c_str()), "_42_")
+      << "net name must not collide with leaf instance '_42_'";
+
+  // Hierarchical (dbModInst) collision: a module instance named "_99_".
+  auto master = dbModule::create(block_, "anon_master");
+  dbModInst::create(top, master, "_99_");
+  std::string hier = block_->makeNewNetName(
+      top, "_99_", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(hier.c_str()), "_99_")
+      << "net name must not collide with module instance '_99_'";
+
+  // No collision: a fresh name is returned unchanged.
+  std::string fresh = block_->makeNewNetName(
+      top, "no_collision_here", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STREQ(block_->getBaseName(fresh.c_str()), "no_collision_here");
+}
 class DetailedFixture : public SimpleDbFixture
 {
  protected:
