@@ -6698,6 +6698,7 @@ void GRouteDbCbk::inDbNetPostGuideRestore(odb::dbNet* net)
     return;
   }
   fr_net->setRestoreRouteFromGuides(true);
+  fr_net->setIsResAware(false);
   grouter_->addDirtyNet(net);
 }
 
