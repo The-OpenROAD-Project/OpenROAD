@@ -2777,19 +2777,29 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
         = 0.5 * (map_point.rect.xMin() + map_point.rect.xMax());
     const double center_y
         = 0.5 * (map_point.rect.yMin() + map_point.rect.yMax());
-    if (center_x < dbu_tile.xMin() || center_x >= dbu_tile.xMax()
-        || center_y < dbu_tile.yMin() || center_y >= dbu_tile.yMax()) {
-      continue;
-    }
 
     const int pixel_x = std::lround((center_x - dbu_tile.xMin()) * scale);
     const int pixel_y = 255 - std::lround((center_y - dbu_tile.yMin()) * scale);
-    drawText(image_buffer,
-             pixel_x - text_width / 2,
-             pixel_y - text_height / 2,
-             text,
-             heatmap_font,
-             text_color);
+
+    // The label is centered on the bin center and may straddle the boundary
+    // between adjacent tiles.  Skipping when the center falls outside this tile
+    // would drop the half of the text that spills into the neighbor (e.g.
+    // "29.89" rendering as ".89").  Instead skip only when the whole text box
+    // is off-tile; each tile draws its slice and drawText/blendPixel clip
+    // per-pixel, so the slices join seamlessly across the seam.  Note the box
+    // spans the half-open range [min, max), so max <= 0 is fully off-tile.
+    const int text_px_min = pixel_x - text_width / 2;
+    const int text_px_max = text_px_min + text_width;
+    const int text_py_min = pixel_y - text_height / 2;
+    const int text_py_max = text_py_min + text_height;
+
+    if (text_px_max <= 0 || text_px_min >= kTileSizeInPixel || text_py_max <= 0
+        || text_py_min >= kTileSizeInPixel) {
+      continue;
+    }
+
+    drawText(
+        image_buffer, text_px_min, text_py_min, text, heatmap_font, text_color);
   }
 
   std::vector<unsigned char> png_data;
