@@ -39,16 +39,14 @@ bool MoveGenerator::strongerCellFirst(const sta::LibertyCell* lhs,
     return lhs->name() < rhs->name();
   }
 
-  const float lhs_drive = lhs_port->driveResistance();
-  const float rhs_drive = rhs_port->driveResistance();
+  const float lhs_drive_resistance = lhs_port->driveResistance();
+  const float rhs_drive_resistance = rhs_port->driveResistance();
   const sta::ArcDelay lhs_intrinsic
       = lhs_port->intrinsicDelay(resizer_.staState());
   const sta::ArcDelay rhs_intrinsic
       = rhs_port->intrinsicDelay(resizer_.staState());
-  const float lhs_capacitance = lhs_port->capacitance();
-  const float rhs_capacitance = rhs_port->capacitance();
-  return std::tie(lhs_drive, lhs_intrinsic, lhs_capacitance)
-         < std::tie(rhs_drive, rhs_intrinsic, rhs_capacitance);
+  return std::tie(lhs_drive_resistance, lhs_intrinsic)
+         < std::tie(rhs_drive_resistance, rhs_intrinsic);
 }
 
 }  // namespace rsz
