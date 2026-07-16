@@ -194,8 +194,13 @@ bool PlacementDRC::checkDRC(const Node* cell,
                             const GridY y,
                             const odb::dbOrientType& orient) const
 {
-  const std::string cell_name = cell->name();
+  if (!logger_->debugCheck(DPL, "checkDRC", 1)) {
+    // Fast path: bail on the first failing check.
+    return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
+           && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);
+  }
 
+  // Debug path: evaluate every check so the report shows each one.
   const bool edge_ok = checkEdgeSpacing(cell, x, y, orient);
   const bool padding_ok = checkPadding(cell, x, y);
   const bool blocked_ok = checkBlockedLayers(cell, x, y);
@@ -203,7 +208,8 @@ bool PlacementDRC::checkDRC(const Node* cell,
 
   const bool all_ok = edge_ok && padding_ok && blocked_ok && gap_ok;
 
-  if (!all_ok && logger_->debugCheck(DPL, "checkDRC", 1)) {
+  if (!all_ok) {
+    const std::string cell_name = cell->name();
     debugPrint(
         logger_,
         DPL,
