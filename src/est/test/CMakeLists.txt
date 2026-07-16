@@ -10,6 +10,7 @@ or_integration_tests(
     make_parasitics5
     make_parasitics6
     make_parasitics7
+    set_wire_rc_chip
 )
 
 add_executable(TestEstimateParasitics cpp/TestEstimateParasitics.cc)

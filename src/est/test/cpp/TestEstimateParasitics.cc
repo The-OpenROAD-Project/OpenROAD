@@ -197,4 +197,48 @@ TEST_F(TestEstimateParasitics, ScanClockIdealOnlyInTestMode)
   ep_.setIncrementalParasiticsEnabled(false);
 }
 
+// Verifies that wire RC values are stored per chip: chip-specific values take
+// precedence over the defaults, and chips without an entry use the defaults.
+TEST_F(TestEstimateParasitics, WireRcPerChip)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  sta::Scene* scene = sta_->scenes().front();
+  odb::dbChip* chip1 = db_->getChip();
+  ASSERT_NE(chip1, nullptr);
+
+  // A null chip sets the default values used by chips without an entry.
+  ep_.initChip(chip1);
+  ep_.setHWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.setVWireSignalRC(nullptr, scene, 2.0e3, 2.0e-10);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalVCapacitance(scene), 2.0e-10);
+
+  // A second chip on its own technology with chip-specific values.
+  loadTechAndLib(
+      "tech2", "lib2", getFilePath("_main/test/Nangate45/Nangate45.lef"));
+  odb::dbTech* tech2 = db_->findTech("tech2");
+  ASSERT_NE(tech2, nullptr);
+  odb::dbChip* chip2 = odb::dbChip::create(
+      db_.get(), tech2, "chip2", odb::dbChip::ChipType::DIE);
+  ASSERT_NE(chip2, nullptr);
+  odb::dbBlock::create(chip2, "chip2_block");
+  ep_.setHWireSignalRC(chip2, scene, 3.0e3, 3.0e-10);
+  ep_.setVWireSignalRC(chip2, scene, 4.0e3, 4.0e-10);
+
+  // The chip-specific values do not leak into the default-valued chip.
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
+
+  // Rebinding to the second chip resolves its chip-specific values.
+  ep_.initChip(chip2);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 3.0e3);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalVCapacitance(scene), 4.0e-10);
+  EXPECT_DOUBLE_EQ(ep_.wireClkHResistance(scene), 0.0);
+
+  // Rebinding back to a chip without an entry falls back to the defaults.
+  ep_.initChip(chip1);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalVResistance(scene), 2.0e3);
+}
+
 }  // namespace est

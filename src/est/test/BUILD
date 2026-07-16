@@ -14,6 +14,7 @@ TESTS = [
     "make_parasitics5",
     "make_parasitics6",
     "make_parasitics7",
+    "set_wire_rc_chip",
 ]
 
 filegroup(
