@@ -116,7 +116,8 @@ void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     double cap)
 {
   if (layer_res_.empty()) {
-    int layer_count = db_->getTech()->getLayerCount();
+    initBlock();
+    int layer_count = block_->getTech()->getLayerCount();
     int corner_count = sta_->scenes().size();
     layer_res_.resize(layer_count);
     layer_cap_.resize(layer_count);
@@ -364,10 +365,26 @@ void EstimateParasitics::initBlock()
     logger_->error(EST, 163, "Database has no block");
   }
 
-  dbu_ = db_->getTech()->getDbUnitsPerMicron();
+  dbu_ = block_->getTech()->getDbUnitsPerMicron();
   if (!db_cbk_->hasOwner()) {
     db_cbk_->addOwner(block_);
   }
+}
+
+void EstimateParasitics::initChip(odb::dbChip* chip)
+{
+  odb::dbBlock* block = chip ? chip->getBlock() : nullptr;
+  if (block == nullptr) {
+    logger_->error(EST, 167, "Chip has no block to estimate");
+  }
+
+  if (block_ != block) {
+    if (db_cbk_->hasOwner()) {
+      db_cbk_->removeOwner();
+    }
+    block_ = block;
+  }
+  initBlock();
 }
 
 void EstimateParasitics::ensureParasitics()
@@ -556,7 +573,7 @@ void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
   }
 
   MakeWireParasitics builder(
-      logger_, this, sta_, db_->getTech(), block_, global_router_);
+      logger_, this, sta_, block_->getTech(), block_, global_router_);
 
   for (auto& [db_net, route] : global_router_->getRoutes()) {
     if (!route.empty()) {
@@ -568,7 +585,7 @@ void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
 void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
 {
   MakeWireParasitics builder(
-      logger_, this, sta_, db_->getTech(), block_, global_router_);
+      logger_, this, sta_, block_->getTech(), block_, global_router_);
   auto& routes = global_router_->getRoutes();
   auto iter = routes.find(db_net);
   if (iter == routes.end()) {
@@ -585,7 +602,7 @@ void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
 {
   initBlock();
   MakeWireParasitics builder(
-      logger_, this, sta_, db_->getTech(), block_, global_router_);
+      logger_, this, sta_, block_->getTech(), block_, global_router_);
 
   // Check if we are estimating parasitics after layer assignment
   if (route.at(0).is3DRoute()) {
@@ -597,8 +614,9 @@ void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
 
 void EstimateParasitics::clearParasitics()
 {
+  initBlock();
   MakeWireParasitics builder(
-      logger_, this, sta_, db_->getTech(), block_, global_router_);
+      logger_, this, sta_, block_->getTech(), block_, global_router_);
   builder.clearParasitics();
 }
 
@@ -910,6 +928,7 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
   double total_resistance = 0.0;
   int count = 0;
 
+  odb::dbTech* tech = block_->getTech();
   int min_layer = block_->getMinRoutingLayer();
   int max_layer = block_->getMaxRoutingLayer();
 
@@ -920,7 +939,6 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
     // frontside boundary; counting only frontside levels keeps the
     // heuristic on the side that hosts the signal routes whose cut
     // resistance this function averages.
-    odb::dbTech* tech = db_->getTech();
     const int total_levels = tech->getRoutingLayerCount();
     odb::dbTechLayer* first_front = tech->firstFrontsideRoutingLayer();
     if (first_front != nullptr) {
@@ -932,15 +950,13 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
     }
   }
 
-  odb::dbTechLayer* min_tech_layer
-      = db_->getTech()->findRoutingLayer(min_layer);
-  odb::dbTechLayer* max_tech_layer
-      = db_->getTech()->findRoutingLayer(max_layer);
+  odb::dbTechLayer* min_tech_layer = tech->findRoutingLayer(min_layer);
+  odb::dbTechLayer* max_tech_layer = tech->findRoutingLayer(max_layer);
 
   for (int layer_idx = min_tech_layer->getNumber();
        layer_idx <= max_tech_layer->getNumber();
        layer_idx++) {
-    odb::dbTechLayer* layer = db_->getTech()->findLayer(layer_idx);
+    odb::dbTechLayer* layer = tech->findLayer(layer_idx);
     if (layer && layer->getType() == odb::dbTechLayerType::CUT) {
       const float resistance = layer_res_[layer_idx][scene->index()];
       total_resistance += resistance;
@@ -1032,9 +1048,10 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
     const auto [start_idx, end_idx]
         = std::minmax(pin_layer_idx, tree_layer_idx);
     const bool pin_is_below = (pin_layer_idx < tree_layer_idx);
+    odb::dbTech* tech = pin_layer->getTech();
 
     for (int layer_idx = start_idx; layer_idx < end_idx; layer_idx++) {
-      odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_idx);
+      odb::dbTechLayer* cut_layer = tech->findLayer(layer_idx);
       if (cut_layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
