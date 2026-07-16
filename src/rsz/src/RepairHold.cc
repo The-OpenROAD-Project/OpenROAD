@@ -508,7 +508,6 @@ void RepairHold::repairHoldPass(sta::VertexSeq& hold_failures,
       printProgress(pass, false, false);
     }
 
-    estimate_parasitics_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,

@@ -246,7 +246,15 @@ void Ext::extract(ExtractOptions options)
     _ext->makeBlockRCsegs_v2(options.net, options.ext_model_file);
   } else {
     _ext->setExtractionOptions(options);
-    _ext->makeBlockRCsegs();
+
+    if (_ext->modelExists()) {
+      std::unique_ptr<extRCModel> rules_model
+          = parseRules(tech, _ext->getProcessCornerTable(), _ext->_v2, logger_);
+
+      _ext->registerRulesModel(rules_model.release());
+      _ext->setCornerCount();
+      _ext->run();
+    }
   }
 }
 
