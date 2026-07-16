@@ -15,6 +15,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "elab/driver.h"
+#include "flow/acd_resynth.h"
 #include "flow/constant_fold.h"
 #include "flow/export.h"
 #include "flow/import.h"
@@ -33,6 +34,7 @@ Synthesis::Synthesis(odb::dbDatabase* db,
     : db_(db), resizer_(resizer), logger_(logger)
 {
   dbStaState::init(sta);
+  resynthesis_ = std::make_unique<acd::Resynthesis>(this);
 }
 
 Synthesis::~Synthesis() = default;
@@ -340,6 +342,57 @@ void Synthesis::gateFuseOpt()
     return;
   }
   syn::gateFusionOpt(*graph_, sta_->network(), logger_, *this);
+}
+
+void Synthesis::acdResynth(int max_leaves,
+                           int max_intermediate_leaves,
+                           int max_cells,
+                           int max_outerfans,
+                           bool exclude_buffers,
+                           bool allow_lateral,
+                           float effort,
+                           bool apply)
+{
+  // A cut's function is carried in a 64-bit truth table
+  if (max_leaves < 1 || max_leaves > 6) {
+    logger_->error(utl::SYN,
+                   58,
+                   "-max_leaves must be between 1 and 6, not {}.",
+                   max_leaves);
+    return;
+  }
+  if (max_cells < 1) {
+    logger_->error(
+        utl::SYN, 59, "-max_cells must be 1 or more, not {}.", max_cells);
+    return;
+  }
+  // Cuts wider than the search allows would never be reached to evaluate
+  if (max_intermediate_leaves < max_leaves) {
+    logger_->error(utl::SYN,
+                   66,
+                   "-max_intermediate_leaves ({}) must be at least -max_leaves "
+                   "({}).",
+                   max_intermediate_leaves,
+                   max_leaves);
+    return;
+  }
+  // The head is an output of its own cut, so there is always at least one
+  if (max_outerfans < 1) {
+    logger_->error(utl::SYN,
+                   65,
+                   "-max_outerfans must be 1 or more, not {}.",
+                   max_outerfans);
+    return;
+  }
+
+  resynthesis_->resynthesize(max_leaves,
+                             max_intermediate_leaves,
+                             max_cells,
+                             max_outerfans,
+                             exclude_buffers,
+                             allow_lateral,
+                             effort,
+                             apply);
 }
 
 void Synthesis::livenessOpt(bool replace_combinational)

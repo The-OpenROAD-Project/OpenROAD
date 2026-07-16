@@ -205,84 +205,84 @@ MatchCache::MatchCache(utl::Logger* logger,
     : index_(index), min_area_for_width_(max_arity + 1, kInfCost)
 {
   nand2_ = nullptr;
-    {
-      NPN semiclass_map;
-      const Truth6 nand2_canonical = npnSemiclass(0b0111, 2, semiclass_map);
-      auto nand2_class = index.classes.find({2, nand2_canonical});
-      if (nand2_class != index.classes.end()) {
-        for (auto& target : nand2_class->second) {
-          if ((target.via * semiclass_map).isPermutation()) {
-            if (!nand2_ || target.cell->area() < nand2_->area()) {
-              nand2_ = target.cell;
-            }
+  {
+    NPN semiclass_map;
+    const Truth6 nand2_canonical = npnSemiclass(0b0111, 2, semiclass_map);
+    auto nand2_class = index.classes.find({2, nand2_canonical});
+    if (nand2_class != index.classes.end()) {
+      for (auto& target : nand2_class->second) {
+        if ((target.via * semiclass_map).isPermutation()) {
+          if (!nand2_ || target.cell->area() < nand2_->area()) {
+            nand2_ = target.cell;
           }
         }
       }
     }
+  }
 
-    if (!nand2_) {
-      logger->error(utl::SYN,
-                    39,
-                    "ACD remapper requires a NAND2 specimen in the library but "
-                    "none was found");
+  if (!nand2_) {
+    logger->error(utl::SYN,
+                  39,
+                  "ACD remapper requires a NAND2 specimen in the library but "
+                  "none was found");
+  }
+
+  for (const auto& [key, targets] : index.classes) {
+    const auto [arity, repr] = key;
+    if (arity < 0 || arity > max_arity) {
+      continue;
     }
 
-    for (const auto& [key, targets] : index.classes) {
-      const auto [arity, repr] = key;
-      if (arity < 0 || arity > max_arity) {
-        continue;
-      }
-
-      for (const auto& t : targets) {
-        if (t.cell && (Cost) t.cell->area() < min_area_for_width_[arity]) {
-          min_area_for_width_[arity] = (Cost) t.cell->area();
-        }
+    for (const auto& t : targets) {
+      if (t.cell && (Cost) t.cell->area() < min_area_for_width_[arity]) {
+        min_area_for_width_[arity] = (Cost) t.cell->area();
       }
     }
   }
+}
 
 std::optional<CellMatch> MatchCache::match(Truth6 tt, int arity)
 {
   if (arity == 0) {
     // Constants not supported
-      return std::nullopt;
-    }
+    return std::nullopt;
+  }
 
-    const auto key = std::make_pair(tt, arity);
-    auto it = cache_.find(key);
-    if (it != cache_.end()) {
-      return it->second;
-    }
+  const auto key = std::make_pair(tt, arity);
+  auto it = cache_.find(key);
+  if (it != cache_.end()) {
+    return it->second;
+  }
 
-    NPN to_canonical;
-    const Truth6 canonical = npnSemiclass(tt, arity, to_canonical);
+  NPN to_canonical;
+  const Truth6 canonical = npnSemiclass(tt, arity, to_canonical);
 
-    const auto bucket_it = index_.classes.find({arity, canonical});
-    std::optional<CellMatch> best;
-    if (bucket_it != index_.classes.end()) {
-      for (const auto& target : bucket_it->second) {
-        const NPN residual = (target.via * to_canonical).inv();
-        if (residual.isPermutation()) {
-          const Cost area = (Cost) target.cell->area();
-          if (!best || area < best->area) {
-            best = CellMatch{.driver = cellOutput(target.cell),
-                             .perm = {},
-                             .arity = arity,
-                             .area = area};
-            // Cell port j is fed by inputs[residual.permutation[j]].
-            for (int i = 0; i < arity; ++i) {
-              best->perm[i] = residual.permutation[i];
-            }
-            for (int i = arity; i < 6; ++i) {
-              best->perm[i] = -1;
-            }
+  const auto bucket_it = index_.classes.find({arity, canonical});
+  std::optional<CellMatch> best;
+  if (bucket_it != index_.classes.end()) {
+    for (const auto& target : bucket_it->second) {
+      const NPN residual = (target.via * to_canonical).inv();
+      if (residual.isPermutation()) {
+        const Cost area = (Cost) target.cell->area();
+        if (!best || area < best->area) {
+          best = CellMatch{.driver = cellOutput(target.cell),
+                           .perm = {},
+                           .arity = arity,
+                           .area = area};
+          // Cell port j is fed by inputs[residual.permutation[j]].
+          for (int i = 0; i < arity; ++i) {
+            best->perm[i] = residual.permutation[i];
+          }
+          for (int i = arity; i < 6; ++i) {
+            best->perm[i] = -1;
           }
         }
       }
     }
-    cache_.emplace(key, best);
-    return best;
   }
+  cache_.emplace(key, best);
+  return best;
+}
 
 // Find a cell matching `care_tt` on `care_mask`
 std::optional<CellMatch> MatchCache::matchDC(Truth6 care_tt,
@@ -290,31 +290,31 @@ std::optional<CellMatch> MatchCache::matchDC(Truth6 care_tt,
                                              int arity)
 {
   if (arity == 0) {
-      return std::nullopt;
-    }
-    const Truth6 full = mask6(arity);
-    care_mask &= full;
-    care_tt &= care_mask;
-    if (care_mask == full) {
-      return match(care_tt, arity);  // fully specified
-    }
-    const Truth6 dc = full & ~care_mask;
-    if (std::popcount(dc) > kMaxDcFill) {
-      return match(care_tt, arity);
-    }
+    return std::nullopt;
+  }
+  const Truth6 full = mask6(arity);
+  care_mask &= full;
+  care_tt &= care_mask;
+  if (care_mask == full) {
+    return match(care_tt, arity);  // fully specified
+  }
+  const Truth6 dc = full & ~care_mask;
+  if (std::popcount(dc) > kMaxDcFill) {
+    return match(care_tt, arity);
+  }
 
-    std::optional<CellMatch> best;
-    bool first = true;
-    Truth6 fill_mask = ~care_mask & full;
-    Truth6 fill = 0;
-    for (; first || fill != 0;
-         first = false, fill = ((fill | ~fill_mask) + 1) & fill_mask) {
-      if (std::optional<CellMatch> m = match(care_tt | fill, arity);
-          m && (!best || m->area < best->area)) {
-        best = m;
-      }
+  std::optional<CellMatch> best;
+  bool first = true;
+  Truth6 fill_mask = ~care_mask & full;
+  Truth6 fill = 0;
+  for (; first || fill != 0;
+       first = false, fill = ((fill | ~fill_mask) + 1) & fill_mask) {
+    if (std::optional<CellMatch> m = match(care_tt | fill, arity);
+        m && (!best || m->area < best->area)) {
+      best = m;
     }
-    return best;
+  }
+  return best;
 }
 
 namespace {
@@ -1482,17 +1482,16 @@ bool synthesize(const SynthesisProblem& problem,
                 GateNetwork& out,
                 double budget,
                 bool allow_lateral,
-                long long* explore_calls)
+                long long* explore_calls,
+                float effort)
 {
-  budget = std::numeric_limits<float>::infinity();
-
   Objective objective;
   objective.min_slacks[0] = -std::numeric_limits<float>::infinity();
   objective.min_slacks[1] = -std::numeric_limits<float>::infinity();
   objective.slack_cost_factor[0] = 0;
   objective.slack_cost_factor[1] = 0;
   for (int i = 0; i < (int) problem.outputs.size() && i < 2; ++i) {
-    objective.slack_cost_factor[i] = problem.outputs[i].critical ? -8e10 : 0;
+    objective.slack_cost_factor[i] = problem.outputs[i].critical ? -effort : 0;
   }
 
   Search ex(

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cassert>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "flow/acd.h"
@@ -23,11 +25,13 @@ namespace acd {
 
 float& ArrivalSet::atExit(int out, const sta::RiseFall* out_rf)
 {
+  assert((size_t) out * 2 + out_rf->index() < v.size());
   return v[(size_t) out * 2 + out_rf->index()];
 }
 
 float ArrivalSet::atExit(int out, const sta::RiseFall* out_rf) const
 {
+  assert((size_t) out * 2 + out_rf->index() < v.size());
   return v[(size_t) out * 2 + out_rf->index()];
 }
 

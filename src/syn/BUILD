@@ -17,6 +17,8 @@ cc_library(
         "src/flow/abc.cc",
         "src/flow/acd.cc",
         "src/flow/acd.h",
+        "src/flow/acd_resynth.cc",
+        "src/flow/acd_resynth.h",
         "src/flow/acd_timing.cc",
         "src/flow/bitblast.cc",
         "src/flow/combinational_mapper.cc",

@@ -24,6 +24,7 @@ class dbNetwork;
 class Net;
 class Instance;
 class LibertyCell;
+class Pin;
 class RiseFall;
 class Scene;
 class Sta;
@@ -201,6 +202,10 @@ class MatchCache
 struct GateNode
 {
   sta::LibertyPort* driver_port = nullptr;
+  // The pin this gate was read off of, when the network describes existing
+  // logic.  Null for networks `synthesize` produces: those gates have no
+  // counterpart in the netlist (yet).
+  const sta::Pin* driver_pin = nullptr;
   std::vector<std::pair<bool, int>> fanins;
 };
 
@@ -222,7 +227,8 @@ bool synthesize(const SynthesisProblem& problem,
                 GateNetwork& out,
                 double budget,
                 bool allow_lateral,
-                long long* explore_calls);
+                long long* explore_calls,
+                float effort);
 
 NodeArrivals outputArrival(const sta::LibertyPort* out_port,
                            const std::vector<NodeArrivals>& input_pin_arrivals,
