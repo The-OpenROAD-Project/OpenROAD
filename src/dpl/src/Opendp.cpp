@@ -129,7 +129,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
                                bool incremental,
-                               const bool use_negotiation,
+                               const bool use_diamond_legalizer,
                                const bool run_abacus,
                                const int site_search_window,
                                const int row_search_window,
@@ -138,7 +138,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 {
   utl::Timer timer;
   incremental_ = incremental;
-  use_negotiation_ |= use_negotiation;
+  use_diamond_legalizer_ |= use_diamond_legalizer;
   importDb();
   adjustNodesOrient();
   if (!incremental_) {
@@ -158,35 +158,44 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         = static_cast<int64_t>(core_.dx()) * static_cast<int64_t>(core_.dy());
     int64_t inst_area = 0;
     for (const auto& node : network_->getNodes()) {
-      if (node->getType() == Node::CELL) {
+      if (node->getType() == Node::CELL && !node->isFixed()) {
         inst_area += static_cast<int64_t>(node->getWidth().v)
                      * static_cast<int64_t>(node->getHeight().v);
       }
     }
-    int64_t total_inst_area = 0;
+    // Area of fixed instances (macros, pads, endcaps, ...) clipped to the
+    // core: only the part that overlaps the core blocks placement sites.
+    int64_t fixed_area = 0;
     for (odb::dbInst* inst : block_->getInsts()) {
-      odb::dbMaster* master = inst->getMaster();
-      total_inst_area += static_cast<int64_t>(master->getWidth())
-                         * static_cast<int64_t>(master->getHeight());
+      if (!inst->isFixed()) {
+        continue;
+      }
+      const odb::Rect bbox = inst->getBBox()->getBox();
+      if (!bbox.intersects(core_)) {
+        continue;
+      }
+      const odb::Rect overlap = bbox.intersect(core_);
+      fixed_area += overlap.area();
     }
+
+    const int64_t used_area = inst_area + fixed_area;
     const double utilization = core_area > 0
-                                   ? (static_cast<double>(inst_area)
+                                   ? (static_cast<double>(used_area)
                                       / static_cast<double>(core_area))
                                          * 100.0
                                    : 0.0;
-    const double total_utilization = core_area > 0
-                                         ? (static_cast<double>(total_inst_area)
-                                            / static_cast<double>(core_area))
-                                               * 100.0
-                                         : 0.0;
+    logger_->info(
+        DPL, 6, "Core area: {:.2f} um^2", block_->dbuAreaToMicrons(core_area));
     logger_->info(DPL,
-                  6,
-                  "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
-                  "Utilization: {:.1f}%",
-                  block_->dbuAreaToMicrons(core_area),
-                  block_->dbuAreaToMicrons(inst_area),
-                  utilization);
-    logger_->metric("utilization__before__dpl", total_utilization);
+                  7,
+                  "Movable instances area: {:.2f} um^2",
+                  block_->dbuAreaToMicrons(inst_area));
+    logger_->info(DPL,
+                  8,
+                  "Fixed instances area within core: {:.2f} um^2",
+                  block_->dbuAreaToMicrons(fixed_area));
+    logger_->info(DPL, 9, "Utilization: {:.1f}%", utilization);
+    logger_->metric("utilization__before__dpl", utilization);
     if (utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
@@ -211,7 +220,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                 max_displacement_x_,
                 max_displacement_y_);
 
-  if (!use_negotiation_) {
+  if (use_diamond_legalizer_) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
     findDisplacementStats();
@@ -270,6 +279,11 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                     negotiation.numViolations());
       logger_->metric("NL__no__converge__final_violations",
                       negotiation.numViolations());
+      const auto illegal_nodes = negotiation.getIllegalNodes();
+      saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {});
+      if (!report_file_name.empty()) {
+        writeJsonReport(report_file_name);
+      }
     }
 
     findDisplacementStats();
