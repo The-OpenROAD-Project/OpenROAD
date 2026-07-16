@@ -14,11 +14,13 @@ package(
     features = ["layering_check"],
 )
 
-# Headers owned by :gpl but also consumed by :ui. Kept package-private so
-# nothing outside //src/gpl can depend on them.
+# Headers owned by :gpl but also consumed by :ui and GPL tests. Keep them
+# visible only to //src/gpl and its tests.
 cc_library(
     name = "gpl_private_hdrs",
     hdrs = [
+        "src/fft.h",
+        "src/fftBackend.h",
         "src/nesterovBase.h",
         "src/nesterovPlace.h",
         "src/placerBase.h",
@@ -26,10 +28,16 @@ cc_library(
         "src/routeBase.h",
     ],
     includes = ["src"],
-    visibility = ["//visibility:private"],
+    visibility = [
+        "//src/gpl/test:__pkg__",
+        "//visibility:private",
+    ],
     deps = [
+        # TODO: we use headers provided by :gpl, but that reveals cyclic dep
+        #":gpl",
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.random",
         "@boost.unordered",
     ],
 )
@@ -44,8 +52,6 @@ cc_library(
         "src/densityGradient.cpp",
         "src/densityGradientBackend.h",
         "src/fft.cpp",
-        "src/fft.h",
-        "src/fftBackend.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
         "src/gpu/deviceState.h",

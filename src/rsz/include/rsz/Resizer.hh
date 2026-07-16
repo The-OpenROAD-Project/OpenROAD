@@ -427,8 +427,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
       bool match_cell_footprint,
+      bool reroute,
       bool verbose);
   int repairDesignBufferCount() const;
+  // Try to reroute the net driven by drvr_pin to a lower-resistance layer.
+  // Returns true if the reroute was accepted (net marked dirty for incremental
+  // global re-routing and parasitics invalidated).  Returns false if the net
+  // was already rerouted, doesn't exist, or the expected resistance reduction
+  // is below the threshold.
+  bool tryRerouteNet(const sta::Pin* drvr_pin);
   // for debugging
   void repairNet(sta::Net* net,
                  double max_wire_length,  // meters
@@ -760,6 +767,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      // Return values.
                      sta::Delay& delay,
                      sta::Slew& slew);
+  float getRerouteResistanceReduction();
 
  protected:
   void makeWireParasitic(sta::Net* net,
@@ -1047,6 +1055,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       vt_hash_map_;  // maps hash value to unique int
 
   std::shared_ptr<ResizerObserver> graphics_;
+
+  // Reroute
+  const float kMinResistanceReduction = 0.50f;
 
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;

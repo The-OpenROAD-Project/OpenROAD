@@ -30,6 +30,7 @@
 #endif
 #include <cmath>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -1171,8 +1172,32 @@ void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
   heat_maps_.erase(heatmap);
 }
 
+void Gui::syncHeatMapChips()
+{
+  if (hasUI() || db_ == nullptr) {
+    return;
+  }
+
+  // Console and headless sessions do not receive MainWindow::setBlock().
+  auto* chip = db_->getChip();
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getChip() != chip) {
+      heat_map->setChip(chip);
+      heat_map->destroyMap();
+    }
+  }
+}
+
+const std::set<HeatMapDataSource*>& Gui::getHeatMaps()
+{
+  syncHeatMapChips();
+  return heat_maps_;
+}
+
 HeatMapDataSource* Gui::getHeatMap(const std::string& name)
 {
+  syncHeatMapChips();
+
   HeatMapDataSource* source = nullptr;
 
   for (auto* heat_map : heat_maps_) {
