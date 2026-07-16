@@ -105,10 +105,10 @@ class MoveGenerator
   const sta::LibertyPort* findScenePort(const sta::LibertyCell* cell,
                                         const std::string& port_name,
                                         int lib_ap) const;
-  bool strongerCellLess(const sta::LibertyCell* lhs,
-                        const sta::LibertyCell* rhs,
-                        const std::string& drvr_port_name,
-                        int lib_ap) const;
+  bool strongerCellFirst(const sta::LibertyCell* lhs,
+                         const sta::LibertyCell* rhs,
+                         const std::string& drvr_port_name,
+                         int lib_ap) const;
 
   // === Shared generator dependencies =======================================
   Resizer& resizer_;

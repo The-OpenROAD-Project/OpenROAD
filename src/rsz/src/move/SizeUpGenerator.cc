@@ -164,7 +164,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
       swappable_cells.end(),
       [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
                                       const sta::LibertyCell* cell2) {
-        return strongerCellLess(cell1, cell2, drvr_port_name, lib_ap);
+        return strongerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
       });
 
   const sta::LibertyPort* scene_drvr_port

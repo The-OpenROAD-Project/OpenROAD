@@ -5,8 +5,11 @@
 #include <string>
 #include <vector>
 
+#include "MoveCommitter.hh"
+#include "OptimizerTypes.hh"
 #include "RepairTargetCollector.hh"
 #include "gtest/gtest.h"
+#include "move/MoveGenerator.hh"
 #include "odb/db.h"
 #include "odb/defin.h"
 #include "sta/Clock.hh"
@@ -15,6 +18,7 @@
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
 #include "sta/Transition.hh"
@@ -22,6 +26,24 @@
 #include "tst/IntegratedFixture.h"
 
 namespace rsz {
+
+class TestMoveGenerator : public MoveGenerator
+{
+ public:
+  explicit TestMoveGenerator(const GeneratorContext& context)
+      : MoveGenerator(context)
+  {
+  }
+
+  MoveType type() const override { return MoveType::kSizeUp; }
+
+  std::vector<std::unique_ptr<MoveCandidate>> generate(const Target&) override
+  {
+    return {};
+  }
+
+  using MoveGenerator::strongerCellFirst;
+};
 
 class TestResizer : public tst::IntegratedFixture
 {
@@ -200,6 +222,42 @@ class TestResizer : public tst::IntegratedFixture
     return nullptr;
   }
 };
+
+TEST_F(TestResizer, StrongerCellFirstOrdersLowerDriveResistanceFirst)
+{
+  const sta::LibertyCell* weaker_cell
+      = sta_->network()->findLibertyCell("BUF_X1");
+  const sta::LibertyCell* stronger_cell
+      = sta_->network()->findLibertyCell("BUF_X16");
+  ASSERT_NE(weaker_cell, nullptr);
+  ASSERT_NE(stronger_cell, nullptr);
+
+  const int lib_ap = sta_->cmdScene()->libertyIndex(sta::MinMax::max());
+  const sta::LibertyPort* weaker_base_port = weaker_cell->findLibertyPort("Z");
+  const sta::LibertyPort* stronger_base_port
+      = stronger_cell->findLibertyPort("Z");
+  ASSERT_NE(weaker_base_port, nullptr);
+  ASSERT_NE(stronger_base_port, nullptr);
+  const sta::LibertyPort* weaker_port = weaker_base_port->scenePort(lib_ap);
+  const sta::LibertyPort* stronger_port = stronger_base_port->scenePort(lib_ap);
+  ASSERT_NE(weaker_port, nullptr);
+  ASSERT_NE(stronger_port, nullptr);
+  ASSERT_LT(stronger_port->driveResistance(), weaker_port->driveResistance());
+
+  MoveCommitter committer(resizer_);
+  const OptimizerRunConfig run_config;
+  const OptimizationPolicyConfig policy_config;
+  const GeneratorContext context{.resizer = resizer_,
+                                 .committer = committer,
+                                 .run_config = run_config,
+                                 .policy_config = policy_config};
+  const TestMoveGenerator generator(context);
+
+  EXPECT_TRUE(
+      generator.strongerCellFirst(stronger_cell, weaker_cell, "Z", lib_ap));
+  EXPECT_FALSE(
+      generator.strongerCellFirst(weaker_cell, stronger_cell, "Z", lib_ap));
+}
 
 TEST_F(TestResizer, SwapPinsFeedthroughModNet)
 {
