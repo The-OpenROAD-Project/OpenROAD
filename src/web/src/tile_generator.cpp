@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -162,6 +163,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"rows",                   &TileVisibility::rows,                   false},
     {"tracks_pref",            &TileVisibility::tracks_pref,            false},
     {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
+    {"detailed",               &TileVisibility::detailed,               false},
     {"debug",                  &TileVisibility::debug,                  false},
     {"debug_renderers",        &TileVisibility::debug_renderers,        false},
     {"debug_live",             &TileVisibility::debug_live,             false},
@@ -608,12 +610,29 @@ TileGenerator::TileGenerator(odb::dbDatabase* db,
     search_->setTopChip(chip);
   }
   computePinLabelMargin();
+  // Drop the PNG tile cache (and push a client refresh) whenever a design edit
+  // invalidates a spatial index.  eagerInit() suppresses this while it
+  // rebuilds.
+  search_->setOnModified([this] { onDesignChanged(); });
 }
 
 TileGenerator::~TileGenerator() = default;
 
 void TileGenerator::eagerInit()
 {
+  // Reindexing clears every spatial index, which would otherwise fire
+  // onDesignChanged() many times (and risk a refresh push racing the socket
+  // accept).  We already clear the tile cache and drive a refresh explicitly
+  // here / in the session, so suppress the per-index callbacks for the
+  // duration.  A scope guard restores the flag on every exit path, so a future
+  // early return or exception can't leave invalidation permanently disabled.
+  suppress_design_changed_.store(true);
+  struct SuppressGuard
+  {
+    std::atomic_bool& flag;
+    ~SuppressGuard() { flag.store(false); }
+  } suppress_guard{suppress_design_changed_};
+
   // Invalidate the chiplet cache: setTopChip below may swap to a fresh
   // dbChip whose ChipletNode addresses (dbBlock*, dbChip*, etc.) differ
   // from the previous design's.
@@ -653,6 +672,41 @@ void TileGenerator::eagerInit()
     std::lock_guard lock(tile_cache_mutex_);
     tile_cache_lru_.clear();
     tile_cache_index_.clear();
+  }
+  // suppress_guard restores suppress_design_changed_ to false on return.
+}
+
+void TileGenerator::setDesignChangedCallback(std::function<void()> cb)
+{
+  std::lock_guard lock(design_changed_cb_mutex_);
+  design_changed_cb_ = std::move(cb);
+}
+
+void TileGenerator::onDesignChanged()
+{
+  // Suppressed during eagerInit()'s bulk reindex (see eagerInit).
+  if (suppress_design_changed_.load()) {
+    return;
+  }
+
+  // A design edit invalidated a spatial index, so every cached PNG may now be
+  // stale.  Drop the whole cache; tiles re-render lazily on the next request.
+  {
+    std::lock_guard lock(tile_cache_mutex_);
+    tile_cache_lru_.clear();
+    tile_cache_index_.clear();
+  }
+
+  // Tell connected clients to re-request (mirrors Qt's fullRepaint).  The
+  // Search-level debounce (announceModified fires only on a valid→invalid
+  // transition) keeps this from flooding during batch edits.
+  std::function<void()> cb;
+  {
+    std::lock_guard lock(design_changed_cb_mutex_);
+    cb = design_changed_cb_;
+  }
+  if (cb) {
+    cb();
   }
 }
 
@@ -1676,6 +1730,19 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // already large there is nothing sub-resolution to drop.
     const int size_limit_dbu = static_cast<int>(
         std::lround(kMinViewablePx * tile_dbu_size / kTileSizeInPixel));
+    // "Detailed view" (vis.detailed) relaxes the sub-resolution cull so small
+    // features stay visible at zoom-out, mirroring the Qt GUI's Misc/"Detailed
+    // view": instances are not culled at all (limit 0, like
+    // LayoutViewer::instanceSizeLimit() in detailed/module view) and shapes
+    // fall back to a 1 px limit (like shapeSizeLimit()) instead of the default
+    // kMinViewablePx (5 px).  Off by default, so the moiré fix's 5 px cull is
+    // unchanged in the normal view; enabling it knowingly re-admits the dense
+    // sub-pixel geometry (and its moiré) — the same trade-off as the Qt view.
+    const int instance_size_limit_dbu = vis.detailed ? 0 : size_limit_dbu;
+    const int shape_size_limit_dbu
+        = vis.detailed ? static_cast<int>(std::lround(1.0 * tile_dbu_size
+                                                      / kTileSizeInPixel))
+                       : size_limit_dbu;
     // Supersampled render buffer (RGBA, super x super).  The per-chiplet loop
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
@@ -2104,23 +2171,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             std::lround(kItermLabelFontHeight * super_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
 
-        // Draw instances.  size_limit_dbu culls sub-resolution instances at the
-        // RTree level (Qt-parity), so dense bump arrays vanish at zoom-out.
-        for (odb::dbInst* inst : search_->searchInsts(block,
-                                                      dbu_x_min,
-                                                      dbu_y_min,
-                                                      dbu_x_max,
-                                                      dbu_y_max,
-                                                      size_limit_dbu)) {
+        // Draw instances.  instance_size_limit_dbu culls sub-resolution
+        // instances at the RTree level (Qt-parity), so dense bump arrays vanish
+        // at zoom-out — unless "Detailed view" is on, which sets the limit to
+        // 0.
+        for (odb::dbInst* inst :
+             search_->searchInsts(block,
+                                  dbu_x_min,
+                                  dbu_y_min,
+                                  dbu_x_max,
+                                  dbu_y_max,
+                                  instance_size_limit_dbu)) {
           odb::Rect inst_bbox = inst->getBBox()->getBox();
           if (!dbu_tile.overlaps(inst_bbox)) {
             continue;
           }
           odb::dbMaster* master = inst->getMaster();
 
-          // Classify once; reused for the visibility gate and the bump LOD.
-          const InstCategory inst_cat = classifyInstance(inst, sta_);
-          if (!vis.isCategoryVisible(inst_cat)) {
+          if (!vis.isInstVisible(inst, sta_)) {
             continue;
           }
           const int xl = inst_bbox.xMin();
@@ -2405,13 +2473,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // Draw routing shapes (wires, vias) and BTerm shapes on top of
         // instances
         if (!instances_only && tech_layer && (vis.routing || vis.pins)) {
-          for (const auto& shape : search_->searchBoxShapes(block,
-                                                            tech_layer,
-                                                            dbu_x_min,
-                                                            dbu_y_min,
-                                                            dbu_x_max,
-                                                            dbu_y_max,
-                                                            size_limit_dbu)) {
+          for (const auto& shape :
+               search_->searchBoxShapes(block,
+                                        tech_layer,
+                                        dbu_x_min,
+                                        dbu_y_min,
+                                        dbu_x_max,
+                                        dbu_y_max,
+                                        shape_size_limit_dbu)) {
             const auto type = std::get<1>(shape);
             if (type == Search::kBterm && !vis.pins) {
               continue;
@@ -2439,13 +2508,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // Draw special net shapes (power/ground straps) on top of instances
         if (!instances_only && tech_layer && vis.special_nets
             && vis.srouting_segments) {
-          for (const auto& shape : search_->searchSNetShapes(block,
-                                                             tech_layer,
-                                                             dbu_x_min,
-                                                             dbu_y_min,
-                                                             dbu_x_max,
-                                                             dbu_y_max,
-                                                             size_limit_dbu)) {
+          for (const auto& shape :
+               search_->searchSNetShapes(block,
+                                         tech_layer,
+                                         dbu_x_min,
+                                         dbu_y_min,
+                                         dbu_x_max,
+                                         dbu_y_max,
+                                         shape_size_limit_dbu)) {
             odb::dbNet* snet = std::get<2>(shape);
             if (!vis.isNetVisible(snet)) {
               continue;
@@ -2473,7 +2543,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                             dbu_y_min,
                                             dbu_x_max,
                                             dbu_y_max,
-                                            size_limit_dbu)) {
+                                            shape_size_limit_dbu)) {
             odb::dbNet* via_net = std::get<1>(shape);
             if (!vis.isNetVisible(via_net)) {
               continue;
@@ -2526,7 +2596,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                               dbu_y_min,
                                               dbu_x_max,
                                               dbu_y_max,
-                                              size_limit_dbu)) {
+                                              shape_size_limit_dbu)) {
               odb::dbNet* via_net = std::get<1>(shape);
               if (!vis.isNetVisible(via_net)) {
                 continue;
@@ -2572,7 +2642,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                         dbu_y_min,
                                         dbu_x_max,
                                         dbu_y_max,
-                                        size_limit_dbu)) {
+                                        shape_size_limit_dbu)) {
             odb::Rect box = blk->getBBox()->getBox();
             if (!box.overlaps(dbu_tile)) {
               continue;
@@ -2607,7 +2677,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                            dbu_y_min,
                                            dbu_x_max,
                                            dbu_y_max,
-                                           size_limit_dbu)) {
+                                           shape_size_limit_dbu)) {
             odb::Rect box = obs->getBBox()->getBox();
             if (!box.overlaps(dbu_tile)) {
               continue;
@@ -2672,7 +2742,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                    dbu_y_min,
                                    dbu_x_max,
                                    dbu_y_max,
-                                   size_limit_dbu)) {
+                                   shape_size_limit_dbu)) {
             if (!row_rect.overlaps(dbu_tile)) {
               continue;
             }

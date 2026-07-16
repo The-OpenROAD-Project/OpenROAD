@@ -4,6 +4,7 @@
 #pragma once
 
 #include <any>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -206,6 +207,12 @@ struct TileVisibility
   // Tracks (off by default, matching GUI)
   bool tracks_pref = false;
   bool tracks_non_pref = false;
+
+  // Detailed view (off by default, matching the Qt GUI's Misc/"Detailed view").
+  // When on, the sub-resolution cull is relaxed so small features stay visible
+  // at zoom-out: instances are not culled at all and shapes fall back to a 1 px
+  // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
+  bool detailed = false;
 
   // Debug
   bool debug = false;
@@ -451,6 +458,12 @@ class TileGenerator
   bool tileCacheGet(const std::string& key,
                     std::vector<unsigned char>& out) const;
   void tileCachePut(std::string key, std::vector<unsigned char> png) const;
+
+  // Install (or clear with `{}`) a callback invoked after a design edit has
+  // invalidated the tile cache — WebServer wires this to broadcast a
+  // {"type":"refresh"} push so clients re-request tiles (mirrors the Qt GUI's
+  // Search::modified → LayoutViewer::fullRepaint).  Set at serve() startup.
+  void setDesignChangedCallback(std::function<void()> cb);
   size_t tileCacheSize() const;  // for tests
 
  private:
@@ -598,6 +611,17 @@ class TileGenerator
   mutable std::unordered_map<std::string, std::list<TileCacheEntry>::iterator>
       tile_cache_index_;
   static constexpr size_t kTileCacheCap = 512;
+
+  // Design-change → invalidation wiring.  search_ fires on_modified (see
+  // Search::setOnModified) on any geometry edit; onDesignChanged() drops the
+  // PNG tile cache and invokes design_changed_cb_ (installed by WebServer to
+  // broadcast a "refresh" push to clients).  suppress_design_changed_ gates
+  // out the storm of index invalidations during eagerInit()/reload, which
+  // already clears the cache itself and drives its own refresh.
+  void onDesignChanged();
+  std::function<void()> design_changed_cb_;
+  mutable std::mutex design_changed_cb_mutex_;
+  std::atomic_bool suppress_design_changed_{false};
 
   static constexpr int kTileSizeInPixel = 256;
 };

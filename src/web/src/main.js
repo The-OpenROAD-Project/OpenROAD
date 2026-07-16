@@ -203,6 +203,7 @@ const visibility = {
     // Module view
     module_view: false,
     // Misc
+    detailed: false,
     rulers: true,
     scale_bar: true,
     // Debug

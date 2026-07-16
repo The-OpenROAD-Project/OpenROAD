@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <numbers>
 #include <set>
 #include <string>
 #include <string_view>
@@ -124,7 +125,7 @@ std::set<int> textPixels(const std::vector<unsigned char>& a,
   return result;
 }
 
-constexpr double kPi = 3.14159265358979323846;
+constexpr double kPi = std::numbers::pi;
 
 // Fraction of AC energy that sits in the moiré "beat band" (spatial periods
 // 16..128 px), computed from the per-column and per-row alpha profiles (max of
@@ -1704,6 +1705,49 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsCulled)
          "at zoom-out, not render a coverage tint or an opaque sheet)";
 }
 
+TEST_F(MoireArrayTest, DetailedViewRendersSubResolutionInstances)
+{
+  // With "Detailed view" on, the sub-resolution cull is relaxed
+  // (instance_size_limit_dbu == 0, mirroring the Qt GUI's instanceSizeLimit()
+  // in detailed view), so the same dense bump array that vanishes at zoom-out
+  // by default is drawn instead.  Off by default so the moiré fix is
+  // unchanged in the normal view.
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  m->setType(odb::dbMasterType::COVER_BUMP);
+
+  buildArray(
+      /*n=*/128);  // bumps render ~1 px at z=0 → below the cull threshold
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.detailed = true;
+
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0, vis), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+
+  const int x0 = iw / 4;
+  const int x1 = 3 * iw / 4;
+  const int y0 = ih / 4;
+  const int y1 = 3 * ih / 4;
+  double alpha_sum = 0.0;
+  int n_px = 0;
+  for (int y = y0; y < y1; ++y) {
+    for (int x = x0; x < x1; ++x) {
+      alpha_sum += pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3];
+      ++n_px;
+    }
+  }
+  const double mean_alpha = alpha_sum / n_px;
+  EXPECT_GT(mean_alpha, 0.0)
+      << "detailed view must render sub-resolution instances that the default "
+         "view culls (Qt parity: instanceSizeLimit() == 0)";
+}
+
 TEST_F(MoireArrayTest, BandRendersDiscreteBumpsNotSlab)
 {
   // A bump that renders just below the LOD threshold (~6 px) is drawn as a
@@ -1912,6 +1956,88 @@ TEST_F(TileGeneratorTest, HeatMapNumbersRenderAcrossHorizontalTileBoundary)
   // edge -- together they form the full label across the seam.
   EXPECT_GE(*top.begin(), kTileSize / 2);
   EXPECT_LT(*bottom.rbegin(), kTileSize / 2);
+}
+
+TEST_F(TileGeneratorTest, InPlaceDesignEditInvalidatesTileCache)
+{
+  // A geometry edit that happens without a full reload (e.g. an instance moved
+  // by placement) must drop the cached PNGs and notify clients — otherwise the
+  // web viewer serves stale tiles.  This is maliberty's cache-invalidation
+  // note.
+  odb::dbInst* inst = placeInst("INV_X1", "i1", 10000, 10000);
+  ASSERT_NE(inst, nullptr);
+  makeTileGen();
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  // Build the instance R-tree so the edit is a valid→invalid transition:
+  // Search::announceModified debounces and only fires once the index exists.
+  tile_gen_->generateTile("_instances", 0, 0, 0);
+
+  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  ASSERT_GT(tile_gen_->tileCacheSize(), 0u);
+
+  // Move the placed instance: odb fires inDbPostMoveInst → Search::clearInsts →
+  // announceModified → TileGenerator::onDesignChanged.
+  inst->setLocation(20000, 20000);
+
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "in-place design edit left stale PNGs in the tile cache";
+  EXPECT_GE(refresh_calls, 1)
+      << "design edit did not notify clients to re-request tiles";
+}
+
+TEST_F(TileGeneratorTest, DieAreaChangeInvalidatesTileCache)
+{
+  // A die-area resize moves the tile bounds (getBounds), so every cached PNG
+  // (keyed by z/x/y) is stale afterwards.  It reaches Search only via
+  // inDbBlockSetDieArea, whose setTopChip early-returns on the unchanged chip;
+  // Search::notifyModified must still fire so the cache is dropped and clients
+  // are told to re-request.  (Instance moves are covered separately; this
+  // guards the geometry edits that don't map to a spatial index.)
+  placeInst("INV_X1", "i1", 10000, 10000);
+  makeTileGen();
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  ASSERT_GT(tile_gen_->tileCacheSize(), 0u);
+
+  block_->setDieArea(odb::Rect(0, 0, 120000, 120000));
+
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "die-area change left stale PNGs in the tile cache";
+  EXPECT_GE(refresh_calls, 1)
+      << "die-area change did not notify clients to re-request tiles";
+}
+
+TEST_F(TileGeneratorTest, EagerInitReindexDoesNotSpuriouslyNotify)
+{
+  // eagerInit() clears the cache itself and drives its own client refresh, so
+  // its bulk reindex must NOT fire the design-changed callback again.
+  placeInst("INV_X1", "i1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->generateTile("_instances", 0, 0, 0);  // build the index once
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  // Prove the callback is actually wired: a real design edit fires it.  Without
+  // this, the test below could pass simply because the callback was never
+  // installed.
+  block_->setDieArea(odb::Rect(0, 0, 120000, 120000));
+  ASSERT_GE(refresh_calls, 1);
+
+  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  refresh_calls = 0;
+  tile_gen_->eagerInit();
+
+  EXPECT_EQ(refresh_calls, 0)
+      << "eagerInit reindex fired the design-changed callback";
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "eagerInit did not clear the tile cache";
 }
 
 }  // namespace
