@@ -462,6 +462,7 @@ TruthTable projectOutputs(const TruthTable& f,
   g.dontcares.assign((size_t) g.noutputs * nm, false);
   for (int o = 0; o < g.noutputs; ++o) {
     const int src = keep_indices[o];
+    assert(src >= 0 && src < f.noutputs);
     std::copy(f.values.begin() + (size_t) src * nm,
               f.values.begin() + (size_t) (src + 1) * nm,
               g.values.begin() + (size_t) o * nm);
@@ -818,6 +819,7 @@ class Search
     // drop it from the problem.
     std::vector<int> out_passthrough;
     out_passthrough.assign(f.noutputs, -1);
+    std::vector<int> kept_positions;
     std::vector<int> kept_outputs;
     assert(f_output_ids.size() == f.noutputs);
     for (int i = 0; i < f.noutputs; i++) {
@@ -825,6 +827,7 @@ class Search
         out_passthrough[i] = f.vars[*v];
         npeeled++;
       } else {
+        kept_positions.push_back(i);
         kept_outputs.push_back(f_output_ids[i]);
       }
     }
@@ -844,7 +847,7 @@ class Search
       }
       return std::make_unique<Round>(std::move(r));
     }
-    f = projectOutputs(f, kept_outputs);
+    f = projectOutputs(f, kept_positions);
     f.shrinkToSupport();
     f_output_ids = {kept_outputs};
     // done peeling
