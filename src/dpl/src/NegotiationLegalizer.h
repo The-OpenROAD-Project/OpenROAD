@@ -166,6 +166,7 @@ class NegotiationLegalizer
                                                      int iter = 0) const;
   [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double targetCostFromDisp(int disp) const;
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
