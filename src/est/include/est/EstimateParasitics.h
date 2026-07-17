@@ -100,30 +100,30 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                // Return values.
                double& res,
                double& cap) const;
-  // A null chip in the setters below writes the default values used by
-  // chips without chip-specific values.
-  void addClkLayer(odb::dbChip* chip, odb::dbTechLayer* layer);
-  void addSignalLayer(odb::dbChip* chip, odb::dbTechLayer* layer);
+  // A null tech in the setters below writes the default values used by
+  // chips whose technology has no specific values.
+  void addClkLayer(odb::dbTech* tech, odb::dbTechLayer* layer);
+  void addSignalLayer(odb::dbTech* tech, odb::dbTechLayer* layer);
   void sortClkAndSignalLayers();
   // Set the resistance and capacitance used for horizontal parasitics on signal
   // nets.
-  void setHWireSignalRC(odb::dbChip* chip,
+  void setHWireSignalRC(odb::dbTech* tech,
                         const sta::Scene* scene,
                         double res,   // ohms/meter
                         double cap);  // farads/meter
   // Set the resistance and capacitance used for vertical wires parasitics on
   // signal nets.
-  void setVWireSignalRC(odb::dbChip* chip,
+  void setVWireSignalRC(odb::dbTech* tech,
                         const sta::Scene* scene,
                         double res,   // ohms/meter
                         double cap);  // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setHWireClkRC(odb::dbChip* chip,
+  void setHWireClkRC(odb::dbTech* tech,
                      const sta::Scene* scene,
                      double res,
                      double cap);  // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setVWireClkRC(odb::dbChip* chip,
+  void setVWireClkRC(odb::dbTech* tech,
                      const sta::Scene* scene,
                      double res,
                      double cap);  // farads/meter
@@ -217,7 +217,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   utl::Logger* getLogger() { return logger_; }
 
  private:
-  // Wire RC values and layers of one chip, indexed by corner->index()
+  // Wire RC values and layers of one technology, indexed by corner->index()
   struct WireRC
   {
     std::vector<odb::dbTechLayer*> signal_layers;
@@ -228,10 +228,10 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
     std::vector<ParasiticsCapacitance> clk_cap;     // Farads/meter
   };
 
-  odb::dbChip* currentChip() const;
-  WireRC& wireRC(odb::dbChip* chip) { return wire_rc_[chip]; }
-  // Resolve one WireRC category for the current chip; a category left unset
-  // for a chip falls back to the defaults (nullptr entry) independently.
+  odb::dbTech* currentTech() const;
+  WireRC& wireRC(odb::dbTech* tech) { return wire_rc_[tech]; }
+  // Resolve one WireRC category for the current technology; a category left
+  // unset for a tech falls back to the defaults (nullptr entry) independently.
   template <typename T>
   const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
   void ensureParasitics();
@@ -287,9 +287,9 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
       layer_res_;  // ohms/meter
   std::unordered_map<odb::dbTechLayer*, std::vector<double>>
       layer_cap_;  // Farads/meter
-  // Wire RC per chip; the nullptr entry holds the defaults used by chips
-  // without chip-specific values
-  std::unordered_map<odb::dbChip*, WireRC> wire_rc_;
+  // Wire RC per technology; the nullptr entry holds the defaults used by
+  // chips whose technology has no specific values
+  std::unordered_map<odb::dbTech*, WireRC> wire_rc_;
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::kNone;
 

@@ -138,24 +138,25 @@ void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
 
 ////////////////////////////////////////////////////////////////
 
-odb::dbChip* EstimateParasitics::currentChip() const
+odb::dbTech* EstimateParasitics::currentTech() const
 {
   if (block_ != nullptr) {
-    return block_->getChip();
+    return block_->getTech();
   }
-  return db_->getChip();
+  odb::dbChip* chip = db_->getChip();
+  return chip != nullptr ? chip->getTech() : nullptr;
 }
 
-void EstimateParasitics::addClkLayer(odb::dbChip* chip, odb::dbTechLayer* layer)
+void EstimateParasitics::addClkLayer(odb::dbTech* tech, odb::dbTechLayer* layer)
 {
-  WireRC& wire_rc = wireRC(chip);
+  WireRC& wire_rc = wireRC(tech);
   wire_rc.clk_layers.push_back(layer);
 }
 
-void EstimateParasitics::addSignalLayer(odb::dbChip* chip,
+void EstimateParasitics::addSignalLayer(odb::dbTech* tech,
                                         odb::dbTechLayer* layer)
 {
-  WireRC& wire_rc = wireRC(chip);
+  WireRC& wire_rc = wireRC(tech);
   wire_rc.signal_layers.push_back(layer);
 }
 
@@ -165,30 +166,30 @@ void EstimateParasitics::sortClkAndSignalLayers()
     return a->getNumber() < b->getNumber();
   };
 
-  for (auto& [chip, wire_rc] : wire_rc_) {
+  for (auto& [tech, wire_rc] : wire_rc_) {
     std::ranges::sort(wire_rc.clk_layers, sort_layers);
     std::ranges::sort(wire_rc.signal_layers, sort_layers);
   }
 }
 
-void EstimateParasitics::setHWireSignalRC(odb::dbChip* chip,
+void EstimateParasitics::setHWireSignalRC(odb::dbTech* tech,
                                           const sta::Scene* scene,
                                           double res,
                                           double cap)
 {
-  WireRC& wire_rc = wireRC(chip);
+  WireRC& wire_rc = wireRC(tech);
   wire_rc.signal_res.resize(sta_->scenes().size());
   wire_rc.signal_cap.resize(sta_->scenes().size());
   wire_rc.signal_res[scene->index()].h_res = res;
   wire_rc.signal_cap[scene->index()].h_cap = cap;
 }
 
-void EstimateParasitics::setVWireSignalRC(odb::dbChip* chip,
+void EstimateParasitics::setVWireSignalRC(odb::dbTech* tech,
                                           const sta::Scene* scene,
                                           double res,
                                           double cap)
 {
-  WireRC& wire_rc = wireRC(chip);
+  WireRC& wire_rc = wireRC(tech);
   wire_rc.signal_res.resize(sta_->scenes().size());
   wire_rc.signal_cap.resize(sta_->scenes().size());
   wire_rc.signal_res[scene->index()].v_res = res;
@@ -201,12 +202,12 @@ const std::vector<T>& EstimateParasitics::resolveWireRC(
     std::vector<T> WireRC::*category) const
 {
   static const std::vector<T> empty;
-  odb::dbChip* chip = currentChip();
-  auto it = wire_rc_.find(chip);
+  odb::dbTech* tech = currentTech();
+  auto it = wire_rc_.find(tech);
   if (it != wire_rc_.end() && !(it->second.*category).empty()) {
     return it->second.*category;
   }
-  if (chip != nullptr) {
+  if (tech != nullptr) {
     it = wire_rc_.find(nullptr);
     if (it != wire_rc_.end() && !(it->second.*category).empty()) {
       return it->second.*category;
@@ -288,24 +289,24 @@ void EstimateParasitics::wireSignalRC(const sta::Scene* scene,
                                   / 2;
 }
 
-void EstimateParasitics::setHWireClkRC(odb::dbChip* chip,
+void EstimateParasitics::setHWireClkRC(odb::dbTech* tech,
                                        const sta::Scene* scene,
                                        double res,
                                        double cap)
 {
-  WireRC& wire_rc = wireRC(chip);
+  WireRC& wire_rc = wireRC(tech);
   wire_rc.clk_res.resize(sta_->scenes().size());
   wire_rc.clk_cap.resize(sta_->scenes().size());
   wire_rc.clk_res[scene->index()].h_res = res;
   wire_rc.clk_cap[scene->index()].h_cap = cap;
 }
 
-void EstimateParasitics::setVWireClkRC(odb::dbChip* chip,
+void EstimateParasitics::setVWireClkRC(odb::dbTech* tech,
                                        const sta::Scene* scene,
                                        double res,
                                        double cap)
 {
-  WireRC& wire_rc = wireRC(chip);
+  WireRC& wire_rc = wireRC(tech);
   wire_rc.clk_res.resize(sta_->scenes().size());
   wire_rc.clk_cap.resize(sta_->scenes().size());
   wire_rc.clk_res[scene->index()].v_res = res;
