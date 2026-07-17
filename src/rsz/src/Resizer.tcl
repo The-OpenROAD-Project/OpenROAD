@@ -272,7 +272,10 @@ proc repair_timing { args } {
   set effort_directives {}
   for { set i 0 } { $i < [llength $args] } { incr i } {
     set arg [lindex $args $i]
-    if { [string length $arg] >= 2 && [string match "$arg*" "-effort"] } {
+    if {
+      [string length $arg] >= 2
+      && [string equal -length [string length $arg] $arg "-effort"]
+    } {
       # Unique-prefix abbreviation, as honored by parse_key_args below.
       incr i
       foreach directive [lindex $args $i] {
