@@ -5,5 +5,5 @@
 [INFO ODB-0132]     Created 2 special nets and 10 connections.
 [INFO ODB-0133]     Created 8 nets and 14 connections.
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias
-[ERROR EST-0032] -layer and -layers require chips that share one technology; set each chip separately with -chip.
+[ERROR EST-0032] -layer and -layers require a single technology; set each technology separately with -tech.
 EST-0032

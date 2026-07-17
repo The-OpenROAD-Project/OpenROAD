@@ -4,5 +4,7 @@
 [INFO ODB-0131]     Created 5 components and 27 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 10 connections.
 [INFO ODB-0133]     Created 8 nets and 14 connections.
-[WARNING EST-0030] no chip uses technology no_such_tech; values ignored.
-[WARNING EST-0031] design has no RDL chip; values ignored.
+[ERROR EST-0030] technology no_such_tech not found.
+EST-0030
+[ERROR EST-0028] Use only one of -tech or -redistribution_layer.
+EST-0028
