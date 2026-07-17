@@ -86,14 +86,11 @@ class frAccessPoint : public frBlockObject
   bool hasViaDef(int numCut = 1, int idx = 0) const
   {
     // first check numCuts
-    int numCutIdx = numCut - 1;
-    if (numCutIdx >= 0 && numCutIdx < (int) viaDefs_.size()) {
-      ;
-    } else {
+    if (numCut < 1 || numCut > viaDefs_.size()) {
       return false;
     }
     // then check idx
-    if (idx >= 0 && idx < (int) (viaDefs_[numCutIdx].size())) {
+    if (idx >= 0 && idx < (int) (viaDefs_[numCut - 1].size())) {
       return true;
     }
     return false;
