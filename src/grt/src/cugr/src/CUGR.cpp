@@ -1399,6 +1399,12 @@ std::shared_ptr<GRTreeNode> CUGR::buildTreeFromRoute(const GRoute& route) const
   for (const GSegment& segment : route) {
     const int init_layer = segment.init_layer - 1;
     const int final_layer = segment.final_layer - 1;
+    const int num_layers = grid_graph_->getNumLayers();
+    if (init_layer < 0 || init_layer >= num_layers || final_layer < 0
+        || final_layer >= num_layers) {
+      // Malformed/out-of-range segment; fall back to a reroute.
+      return nullptr;
+    }
     if (segment.isVia()) {
       const BoxT cells = grid_graph_->rangeSearchCells(BoxT(
           segment.init_x, segment.init_y, segment.final_x, segment.final_y));
@@ -1839,6 +1845,8 @@ void CUGR::verifyDemandConsistency(const char* tag)
 
   constexpr double tol = 1e-6;
   double max_diff = 0.0;
+  // Floor at 0: base demand (all trees removed) is non-negative in a healthy
+  // grid, so a negative min_base flags over-removal 0 means clean.
   double min_base = 0.0;
   int mismatches = 0;
   for (size_t l = 0; l < live.size(); l++) {
