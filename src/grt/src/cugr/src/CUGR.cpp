@@ -1845,18 +1845,22 @@ void CUGR::verifyDemandConsistency(const char* tag)
 
   constexpr double tol = 1e-6;
   double max_diff = 0.0;
-  // Floor at 0: base demand (all trees removed) is non-negative in a healthy
-  // grid, so a negative min_base flags over-removal 0 means clean.
-  double min_base = 0.0;
+  // With all trees removed, demand must be zero; any residual is a leak.
+  double max_residual_base = 0.0;
   int mismatches = 0;
+  int leaked_edges = 0;
   for (size_t l = 0; l < live.size(); l++) {
     for (size_t x = 0; x < live[l].size(); x++) {
       for (size_t y = 0; y < live[l][x].size(); y++) {
         const double diff = std::abs(recomputed[l][x][y] - live[l][x][y]);
         max_diff = std::max(max_diff, diff);
-        min_base = std::min(min_base, base[l][x][y]);
+        const double residual = std::abs(base[l][x][y]);
+        max_residual_base = std::max(max_residual_base, residual);
         if (diff > tol) {
           mismatches++;
+        }
+        if (residual > tol) {
+          leaked_edges++;
         }
       }
     }
@@ -1866,11 +1870,12 @@ void CUGR::verifyDemandConsistency(const char* tag)
              "verify_demand",
              1,
              "demand round-trip [{}]: max_diff={:.6g} mismatched_edges={} "
-             "min_base_demand={:.6g}",
+             "max_residual_base={:.6g} leaked_edges={}",
              tag,
              max_diff,
              mismatches,
-             min_base);
+             max_residual_base,
+             leaked_edges);
 }
 
 }  // namespace grt
