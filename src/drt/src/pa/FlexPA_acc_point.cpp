@@ -874,7 +874,7 @@ void FlexPA::filterViaAccess(
     const gtl::polygon_90_set_data<frCoord>& polyset,
     T* pin,
     frInstTerm* inst_term,
-    bool deep_search)
+    bool try_all_vias)
 {
   const odb::Point begin_point = ap->getPoint();
   const auto layer_num = ap->getLayerNum();
@@ -884,51 +884,44 @@ void FlexPA::filterViaAccess(
     return;
   }
 
-  bool via_in_pin = false;
+  bool via_must_be_in_pin = false;
   const auto lower_type = ap->getType(true);
   const auto upper_type = ap->getType(false);
   if (layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
       && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM) {
-    via_in_pin = true;
+    via_must_be_in_pin = true;
   } else if ((lower_type == frAccessPointEnum::EncOpt
               && upper_type != frAccessPointEnum::NearbyGrid)
              || (upper_type == frAccessPointEnum::EncOpt
                  && lower_type != frAccessPointEnum::NearbyGrid)) {
-    via_in_pin = true;
+    via_must_be_in_pin = true;
   }
 
-  const int max_num_via_trial = 2;
   // use std:pair to ensure deterministic behavior
   std::vector<const frViaDef*> via_defs;
   getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
   if (via_defs.empty()) {  // no via map entry
-    // hardcode first two single vias
-    auto collect_vias = [&](int adj_layer_num, int max_trial) {
-      std::vector<const frViaDef*> candidate_vias;
-      if (deep_search) {
-        candidate_vias = getAllViaDefs(adj_layer_num, inst_term);
-      } else {
-        candidate_vias = getPriorityViaDefs(adj_layer_num, inst_term);
-      }
-      via_defs.insert(
-          via_defs.end(), candidate_vias.begin(), candidate_vias.end());
-    };
 
     // UP Vias
-    collect_vias(layer_num + 1, max_num_via_trial);
+    std::vector<const frViaDef*> up_vias
+        = getPriorityViaDefs(layer_num + 1, inst_term, try_all_vias);
+    via_defs.insert(via_defs.end(), up_vias.begin(), up_vias.end());
 
     // DOWN Vias
     if (isIOTerm(inst_term)) {
-      collect_vias(layer_num - 1, max_num_via_trial);
+      std::vector<const frViaDef*> down_vias
+          = getPriorityViaDefs(layer_num - 1, inst_term, try_all_vias);
+      via_defs.insert(via_defs.end(), down_vias.begin(), down_vias.end());
     }
   }
 
   int valid_via_count = 0;
+  const int max_num_via_trial = 2;
   for (const frViaDef* via_def : via_defs) {
     auto via = std::make_unique<frVia>(via_def, begin_point);
     const odb::Rect box = via->getLayer1BBox();
-    if (inst_term && !deep_search) {
+    if (inst_term && !try_all_vias) {
       odb::Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
       if (!boundary_bbox.contains(box)) {
         continue;
@@ -939,9 +932,9 @@ void FlexPA::filterViaAccess(
       }
     }
 
-    frCoord max_ext = viaMaxExt(inst_term, ap, polyset, via_def);
+    const bool via_not_int_pin = viaMaxExt(inst_term, ap, polyset, via_def) > 0;
 
-    if (via_in_pin && max_ext) {
+    if (via_must_be_in_pin && via_not_int_pin) {
       continue;
     }
     if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {

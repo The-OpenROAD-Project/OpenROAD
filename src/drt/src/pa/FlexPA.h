@@ -422,21 +422,6 @@ class FlexPA
                                                   = nullptr,
                                                   bool get_all = false);
 
-  /**
-   * @brief Gets all non-avoid via defs in the layer.
-   *
-   * @param layer_num layer in which the vias exist
-   * @param inst_term optional param for when the caller wants to avoid certain
-   * via_defs depending on the inst_term
-   *
-   * @return a vector of all vias
-   */
-  std::vector<const frViaDef*> getAllViaDefs(frLayerNum layer_num,
-                                             frInstTerm* inst_term = nullptr)
-  {
-    return getPriorityViaDefs(layer_num, inst_term, true);
-  }
-
   void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                             const gtl::rectangle_data<frCoord>& rect,
                             const frViaDef* via_def,
@@ -641,8 +626,8 @@ class FlexPA
    * @param polyset polys auxilary set (same information as polys)
    * @param pin access pin
    * @param inst_term instance terminal
-   * @param deep_search TODO: I understand one of its uses but not why "deep
-   * search"
+   * @param try_all_vias If all vias will be tested instead of only the priority
+   * ones
    */
   template <typename T>
   void filterViaAccess(
@@ -651,7 +636,7 @@ class FlexPA
       const gtl::polygon_90_set_data<frCoord>& polyset,
       T* pin,
       frInstTerm* inst_term,
-      bool deep_search = false);
+      bool try_all_vias = false);
 
   /**
    * @brief checks if an access point can have planar access, alters the point
