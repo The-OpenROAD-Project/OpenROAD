@@ -286,7 +286,7 @@ class FlexPA
       const odb::Point& pt,
       frLayerNum layer_num,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      std::vector<std::pair<int, const frViaDef*>>& via_defs);
+      std::vector<const frViaDef*>& via_defs);
 
   /**
    * @brief Contructs a vector with all pin figures in each layer
@@ -406,6 +406,36 @@ class FlexPA
                      frLayerNum layer_num,
                      frCoord low,
                      frCoord high);
+
+  /**
+   * @brief Gets a subset of the available via defs on a given layer as a
+   * vector.
+   *
+   * @param layer_num layer in which the vias exist
+   * @param inst_term optional param for when the caller wants to avoid certain
+   * via_defs depending on the inst_term
+   *
+   * @return a vector of the priority vias
+   */
+  std::vector<const frViaDef*> getPriorityViaDefs(frLayerNum layer_num,
+                                                  frInstTerm* inst_term
+                                                  = nullptr,
+                                                  bool get_all = false);
+
+  /**
+   * @brief Gets all non-avoid via defs in the layer.
+   *
+   * @param layer_num layer in which the vias exist
+   * @param inst_term optional param for when the caller wants to avoid certain
+   * via_defs depending on the inst_term
+   *
+   * @return a vector of all vias
+   */
+  std::vector<const frViaDef*> getAllViaDefs(frLayerNum layer_num,
+                                             frInstTerm* inst_term = nullptr)
+  {
+    return getPriorityViaDefs(layer_num, inst_term, true);
+  }
 
   void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                             const gtl::rectangle_data<frCoord>& rect,
