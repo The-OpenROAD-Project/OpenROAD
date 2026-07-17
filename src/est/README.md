@@ -15,6 +15,9 @@ The `set_wire_rc` command sets the resistance and capacitance used to estimate
 delay of routing wires.  Separate values can be specified for clock and data
 nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
+In 3D designs the values can be targeted at specific chips with the `-tech`,
+`-chip` and `-redistribution_layer` selectors; without a selector the values
+are the defaults used by chips that have no chip-specific values.
 
 ```
 # Either run 
@@ -31,6 +34,9 @@ set_wire_rc
     [-data]
     [-corner corner]
     [-layers layers_list]
+    [-tech tech]
+    [-chip chip]
+    [-redistribution_layer]
 
 or 
 set_wire_rc
@@ -38,6 +44,9 @@ set_wire_rc
     [-h_capacitance cap]
     [-v_resistance res]
     [-v_capacitance cap]
+    [-tech tech]
+    [-chip chip]
+    [-redistribution_layer]
 
 or
 set_wire_rc 
@@ -46,10 +55,16 @@ set_wire_rc
     [-data]
     [-corner corner]
     [-layer layer_name]
+    [-tech tech]
+    [-chip chip]
+    [-redistribution_layer]
 or 
 set_wire_rc
     [-resistance res]
     [-capacitance cap]
+    [-tech tech]
+    [-chip chip]
+    [-redistribution_layer]
 ```
 
 #### Options
@@ -68,7 +83,7 @@ set_wire_rc
 | `-v_capacitance` | Capacitance per unit length for vertical wires, units are from the first Liberty file read. |
 | `-tech` | Apply the values to all chips using this technology (3D designs). Layers given with `-layer`/`-layers` are looked up in this technology. |
 | `-chip` | Apply the values to the named chip only (3D designs). |
-| `-redistribution_layer` | Apply the values to all RDL chips. Warns and does nothing when the design has no RDL chip, so shared scripts work across designs. |
+| `-redistribution_layer` | Apply the values to every RDL chip in the design, however many there are. Warns and does nothing when the design has none, so shared scripts work across designs. `-layer`/`-layers` require the selected RDL chips to share one technology; with mixed RDL technologies set each chip separately with `-chip`. |
 
 Without `-tech`, `-chip` or `-redistribution_layer` the values are the defaults
 used by every chip that has no chip-specific values. Signal values, clock
