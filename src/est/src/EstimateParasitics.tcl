@@ -1,18 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
-namespace eval est {
-proc get_db_tech_checked { } {
-  set tech [ord::get_db_tech]
-  if { $tech == "NULL" } {
-    utl::error EST 210 "No technology loaded."
-  }
-  return $tech
-}
-
-# namespace eval est
-}
-
 sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
                                             [-spef_file filename]}
 
@@ -183,87 +171,6 @@ proc report_layer_rc { args } {
     puts [format "%10s | %14.2e " [$layer getName] $res_ui]
   }
   puts "----------------------------"
-}
-
-namespace eval est {
-# Chips targeted by -chip/-tech/-redistribution_layer; empty with
-# has_selector unset means the default values shared by chips without
-# specific values, empty with has_selector set means nothing to do.
-proc parse_wire_rc_chips { keys_var flags_var selector_var } {
-  upvar 1 $keys_var keys
-  upvar 1 $flags_var flags
-  upvar 1 $selector_var has_selector
-
-  set selector_count [expr {
-    [info exists keys(-tech)] + [info exists keys(-chip)]
-    + [info exists flags(-redistribution_layer)]
-  }]
-  if { $selector_count > 1 } {
-    utl::error EST 28 "Use only one of -tech, -chip or -redistribution_layer."
-  }
-  set has_selector [expr { $selector_count > 0 }]
-
-  set db [ord::get_db]
-  set target_chips {}
-  if { [info exists keys(-chip)] } {
-    set chip [$db findChip $keys(-chip)]
-    if { $chip == "NULL" } {
-      utl::error EST 29 "chip $keys(-chip) not found."
-    }
-    lappend target_chips $chip
-  } elseif { [info exists keys(-tech)] } {
-    foreach chip [$db getChips] {
-      set chip_tech [$chip getTech]
-      if { $chip_tech != "NULL" && [$chip_tech getName] == $keys(-tech) } {
-        lappend target_chips $chip
-      }
-    }
-    if { [llength $target_chips] == 0 } {
-      utl::warn EST 30 "no chip uses technology $keys(-tech); values ignored."
-    }
-  } elseif { [info exists flags(-redistribution_layer)] } {
-    foreach chip [$db getChips] {
-      if { [$chip getChipType] == "RDL" } {
-        lappend target_chips $chip
-      }
-    }
-    if { [llength $target_chips] == 0 } {
-      utl::warn EST 31 "design has no RDL chip; values ignored."
-    }
-  }
-  return $target_chips
-}
-
-# Layer lookups use the targeted chips' technology when one is selected;
-# layers cannot be resolved for chips with different technologies.
-proc wire_rc_tech { chips } {
-  if { [llength $chips] > 0 } {
-    set tech [[lindex $chips 0] getTech]
-    foreach chip $chips {
-      if { [$chip getTech] != $tech } {
-        utl::error EST 32 "-layer and -layers require chips that share one\
-          technology; set each chip separately with -chip."
-      }
-    }
-    if { $tech != "NULL" } {
-      return $tech
-    }
-  }
-  return [est::get_db_tech_checked]
-}
-
-proc add_wire_rc_layers { chips clk signal layer } {
-  foreach chip $chips {
-    if { $clk || !$signal } {
-      est::add_clk_layer_cmd $chip $layer
-    }
-    if { $signal || !$clk } {
-      est::add_signal_layer_cmd $chip $layer
-    }
-  }
-}
-
-# namespace eval est
 }
 
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
@@ -478,6 +385,14 @@ proc set_wire_rc { args } {
 }
 
 namespace eval est {
+proc get_db_tech_checked { } {
+  set tech [ord::get_db_tech]
+  if { $tech == "NULL" } {
+    utl::error EST 210 "No technology loaded."
+  }
+  return $tech
+}
+
 proc check_corner_wire_caps { } {
   set have_rc 1
   foreach corner [sta::scenes] {
@@ -530,6 +445,83 @@ proc set_dblayer_wire_rc { layer res cap } {
 
 proc set_dbvia_wire_r { layer res } {
   $layer setResistance $res
+}
+
+# Chips targeted by -chip/-tech/-redistribution_layer; empty with
+# has_selector unset means the default values shared by chips without
+# specific values, empty with has_selector set means nothing to do.
+proc parse_wire_rc_chips { keys_var flags_var selector_var } {
+  upvar 1 $keys_var keys
+  upvar 1 $flags_var flags
+  upvar 1 $selector_var has_selector
+
+  set selector_count [expr {
+    [info exists keys(-tech)] + [info exists keys(-chip)]
+    + [info exists flags(-redistribution_layer)]
+  }]
+  if { $selector_count > 1 } {
+    utl::error EST 28 "Use only one of -tech, -chip or -redistribution_layer."
+  }
+  set has_selector [expr { $selector_count > 0 }]
+
+  set db [ord::get_db]
+  set target_chips {}
+  if { [info exists keys(-chip)] } {
+    set chip [$db findChip $keys(-chip)]
+    if { $chip == "NULL" } {
+      utl::error EST 29 "chip $keys(-chip) not found."
+    }
+    lappend target_chips $chip
+  } elseif { [info exists keys(-tech)] } {
+    foreach chip [$db getChips] {
+      set chip_tech [$chip getTech]
+      if { $chip_tech != "NULL" && [$chip_tech getName] == $keys(-tech) } {
+        lappend target_chips $chip
+      }
+    }
+    if { [llength $target_chips] == 0 } {
+      utl::warn EST 30 "no chip uses technology $keys(-tech); values ignored."
+    }
+  } elseif { [info exists flags(-redistribution_layer)] } {
+    foreach chip [$db getChips] {
+      if { [$chip getChipType] == "RDL" } {
+        lappend target_chips $chip
+      }
+    }
+    if { [llength $target_chips] == 0 } {
+      utl::warn EST 31 "design has no RDL chip; values ignored."
+    }
+  }
+  return $target_chips
+}
+
+# Layer lookups use the targeted chips' technology when one is selected;
+# layers cannot be resolved for chips with different technologies.
+proc wire_rc_tech { chips } {
+  if { [llength $chips] > 0 } {
+    set tech [[lindex $chips 0] getTech]
+    foreach chip $chips {
+      if { [$chip getTech] != $tech } {
+        utl::error EST 32 "-layer and -layers require chips that share one\
+          technology; set each chip separately with -chip."
+      }
+    }
+    if { $tech != "NULL" } {
+      return $tech
+    }
+  }
+  return [est::get_db_tech_checked]
+}
+
+proc add_wire_rc_layers { chips clk signal layer } {
+  foreach chip $chips {
+    if { $clk || !$signal } {
+      est::add_clk_layer_cmd $chip $layer
+    }
+    if { $signal || !$clk } {
+      est::add_signal_layer_cmd $chip $layer
+    }
+  }
 }
 
 # namespace
