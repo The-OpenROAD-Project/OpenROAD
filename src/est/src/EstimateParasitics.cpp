@@ -193,6 +193,26 @@ void EstimateParasitics::setVWireSignalRC(odb::dbChip* chip,
   wire_rc.signal_cap[scene->index()].v_cap = cap;
 }
 
+// Defined outside the header; all instantiations live in this file.
+template <typename T>
+const std::vector<T>& EstimateParasitics::resolveWireRC(
+    std::vector<T> WireRC::*category) const
+{
+  static const std::vector<T> empty;
+  odb::dbChip* chip = currentChip();
+  auto it = wire_rc_.find(chip);
+  if (it != wire_rc_.end() && !(it->second.*category).empty()) {
+    return it->second.*category;
+  }
+  if (chip != nullptr) {
+    it = wire_rc_.find(nullptr);
+    if (it != wire_rc_.end() && !(it->second.*category).empty()) {
+      return it->second.*category;
+    }
+  }
+  return empty;
+}
+
 double EstimateParasitics::wireSignalResistance(const sta::Scene* scene) const
 {
   const auto& values = resolveWireRC(&WireRC::signal_res);

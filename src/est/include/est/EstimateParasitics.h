@@ -233,22 +233,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // Resolve one WireRC category for the current chip; a category left unset
   // for a chip falls back to the defaults (nullptr entry) independently.
   template <typename T>
-  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const
-  {
-    static const std::vector<T> empty;
-    odb::dbChip* chip = currentChip();
-    auto it = wire_rc_.find(chip);
-    if (it != wire_rc_.end() && !(it->second.*category).empty()) {
-      return it->second.*category;
-    }
-    if (chip != nullptr) {
-      it = wire_rc_.find(nullptr);
-      if (it != wire_rc_.end() && !(it->second.*category).empty()) {
-        return it->second.*category;
-      }
-    }
-    return empty;
-  }
+  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
   void ensureParasitics();
   bool isIdealClockPin(const sta::Pin* pin) const;
   bool isIdealClockNet(const sta::Net* net) const;
