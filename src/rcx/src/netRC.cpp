@@ -1651,8 +1651,6 @@ void extMain::setCornerCount()
 
 void extMain::run()
 {
-  uint32_t debugNetId = 0;
-
   _diagFlow = true;
   _usingMetalPlanes = true;
 
@@ -1788,11 +1786,11 @@ void extMain::run()
 
     m._debugFP = nullptr;
     m._netId = 0;
-    debugNetId = 0;
-    if (debugNetId > 0) {
-      m._netId = debugNetId;
+
+    if (_debug_net_id > 0) {
+      m._netId = _debug_net_id;
       char bufName[32];
-      sprintf(bufName, "%d", debugNetId);
+      sprintf(bufName, "%u", m._netId);
       m._debugFP = fopen(bufName, "w");
     }
 
