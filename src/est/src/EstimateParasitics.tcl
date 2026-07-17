@@ -234,10 +234,17 @@ proc parse_wire_rc_chips { keys_var flags_var selector_var } {
   return $target_chips
 }
 
-# Layer lookups use the targeted chips' technology when one is selected.
+# Layer lookups use the targeted chips' technology when one is selected;
+# layers cannot be resolved for chips with different technologies.
 proc wire_rc_tech { chips } {
   if { [llength $chips] > 0 } {
     set tech [[lindex $chips 0] getTech]
+    foreach chip $chips {
+      if { [$chip getTech] != $tech } {
+        utl::error EST 32 "-layer and -layers require chips that share one\
+          technology; set each chip separately with -chip."
+      }
+    }
     if { $tech != "NULL" } {
       return $tech
     }
@@ -491,7 +498,8 @@ proc check_parasitics { } {
 
 proc dblayer_wire_rc { layer } {
   set layer_width_dbu [$layer getWidth]
-  set layer_width_micron [ord::dbu_to_microns $layer_width_dbu]
+  set dbu_per_micron [[$layer getTech] getDbUnitsPerMicron]
+  set layer_width_micron [expr { double($layer_width_dbu) / $dbu_per_micron }]
   set res_ohm_per_sq [$layer getResistance]
   set res_ohm_per_micron [expr $res_ohm_per_sq / $layer_width_micron]
   set cap_area_pf_per_sq_micron [$layer getCapacitance]
@@ -509,7 +517,8 @@ proc dblayer_wire_rc { layer } {
 proc set_dblayer_wire_rc { layer res cap } {
   # Zero the edge cap and just use the user given value
   $layer setEdgeCapacitance 0
-  set wire_width [ord::dbu_to_microns [$layer getWidth]]
+  set dbu_per_micron [[$layer getTech] getDbUnitsPerMicron]
+  set wire_width [expr { double([$layer getWidth]) / $dbu_per_micron }]
   # Convert wire capacitance/wire_length to capacitance/area (pF/um)
   set cap_per_square [expr $cap * 1e+6 / $wire_width]
   $layer setCapacitance $cap_per_square

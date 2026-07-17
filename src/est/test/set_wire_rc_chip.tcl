@@ -20,6 +20,19 @@ set_wire_rc -redistribution_layer -resistance 1e-3 -capacitance 1e-1
 # a second tech makes the database multi-tech; tech-targeted values still work
 read_lef -tech -tech_name tech2 Nangate45/Nangate45.lef
 
+# a second chip on its own technology: -chip, -tech and RDL selectors succeed
+set db [ord::get_db]
+odb::dbChip_create $db [$db findTech tech2] "chip2" "RDL"
+set_wire_rc -chip chip2 -resistance 1e-3 -capacitance 1e-1
+set_wire_rc -tech tech2 -layer metal3
+set_wire_rc -redistribution_layer -resistance 2e-3 -capacitance 2e-1
+
+# heterogeneous RDL technologies cannot resolve a shared layer
+odb::dbChip_create $db [$db findTech Nangate45] "chip3" "RDL"
+set_wire_rc -redistribution_layer -resistance 2e-3 -capacitance 2e-1
+catch { set_wire_rc -redistribution_layer -layer metal3 } msg
+puts $msg
+
 # same wire RC values as make_parasitics1
 set lambda .12
 # kohm/square.

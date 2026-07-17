@@ -11,6 +11,8 @@ EST-0028
 [WARNING EST-0030] no chip uses technology no_such_tech; values ignored.
 [WARNING EST-0031] design has no RDL chip; values ignored.
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias
+[ERROR EST-0032] -layer and -layers require chips that share one technology; set each chip separately with -chip.
+EST-0032
 Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
