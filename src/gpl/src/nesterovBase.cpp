@@ -2552,9 +2552,10 @@ void NesterovBase::setTargetDensity(float density)
   assert(omp_get_thread_num() == 0);
   targetDensity_ = density;
   bg_.setBinTargetDensity(density);
+  auto& bins = getBins();
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t i = 0; i < getBins().size(); ++i) {
-    getBins()[i].setBinTargetDensity(density);
+  for (size_t i = 0; i < bins.size(); ++i) {
+    bins[i].setBinTargetDensity(density);
   }
   // update nonPlaceArea's target denstiy
   bg_.updateBinsNonPlaceArea();
@@ -2729,7 +2730,7 @@ void NesterovBase::updateDensitySize()
 {
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto i = 0; i < nb_gcells_.size(); ++i) {
+  for (size_t i = 0; i < nb_gcells_.size(); ++i) {
     auto& gCell = nb_gcells_[i];
     float scaleX = 0, scaleY = 0;
     float densitySizeX = 0, densitySizeY = 0;
@@ -2897,9 +2898,10 @@ void NesterovBase::updateDensityFieldBin()
 {
   assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
+  auto& bins = getBins();
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t i = 0; i < getBins().size(); ++i) {
-    auto& bin = getBins()[i];
+  for (size_t i = 0; i < bins.size(); ++i) {
+    auto& bin = bins[i];
     fft_->updateDensity(bin.x(), bin.y(), bin.getDensity());
   }
 
@@ -2911,8 +2913,8 @@ void NesterovBase::updateDensityFieldBin()
   sumPhi_ = 0;
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : sumPhi_)
-  for (size_t i = 0; i < getBins().size(); ++i) {
-    auto& bin = getBins()[i];
+  for (size_t i = 0; i < bins.size(); ++i) {
+    auto bin = bins[i];
     auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
     bin.setElectroField(eFieldPair.first, eFieldPair.second);
 
@@ -3820,7 +3822,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     }
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-    for (size_t  i = 0; i < nb_gcells_.size(); ++i) {
+    for (size_t i = 0; i < nb_gcells_.size(); ++i) {
       auto& gCell = nb_gcells_[i];
       if (!gCell->isInstance()) {
         continue;
