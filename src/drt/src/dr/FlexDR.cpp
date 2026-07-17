@@ -667,7 +667,7 @@ void FlexDR::reportIterationViolations() const
           continue;
         }
         auto type = marker->getConstraint()->getViolName();
-        if (relabel.find(type) != relabel.end()) {
+        if (relabel.contains(type)) {
           type = relabel.at(type);
         }
         violations[type][marker->getLayerNum()]++;
@@ -1171,7 +1171,7 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
         worker_best_result;  // holds the best worker in results
     for (auto& worker : batch) {
       const int worker_id = worker->getWorkerId();
-      if (worker_best_result.find(worker_id) == worker_best_result.end()
+      if (!worker_best_result.contains(worker_id)
           || worker->getBestNumMarkers()
                  < worker_best_result[worker_id]->getBestNumMarkers()) {
         worker_best_result[worker_id] = worker.get();
@@ -1410,7 +1410,7 @@ void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
         worker_best_result;  // holds the best worker in results
     for (auto& worker : batch) {
       const int worker_id = worker->getWorkerId();
-      if (worker_best_result.find(worker_id) == worker_best_result.end()
+      if (!worker_best_result.contains(worker_id)
           || worker->getBestNumMarkers()
                  < worker_best_result[worker_id]->getBestNumMarkers()) {
         worker_best_result[worker_id] = worker.get();

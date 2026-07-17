@@ -107,7 +107,7 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
   frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
   frCoord coord = (low + high) / 2 / manu_grid * manu_grid;
 
-  if (coords.find(coord) == coords.end()) {
+  if (!coords.contains(coord)) {
     coords.insert(std::make_pair(coord, frAccessPointEnum::Center));
   } else {
     coords[coord] = std::min(coords[coord], frAccessPointEnum::Center);
@@ -134,7 +134,7 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
   const int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
                                            : gtl::xl(rect) - box.xMin();
   for (const int coord : {coord_top, coord_low}) {
-    if (coords.find(coord) == coords.end()) {
+    if (!coords.contains(coord)) {
       coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
     } else {
       coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
@@ -230,7 +230,7 @@ void FlexPA::createSingleAccessPoint(
     return;
   }
   odb::Point fpt(x, y);
-  if (apset.find(std::make_pair(fpt, layer_num)) != apset.end()) {
+  if (apset.contains(std::make_pair(fpt, layer_num))) {
     return;
   }
   auto ap = std::make_unique<frAccessPoint>(fpt, layer_num);
@@ -887,8 +887,7 @@ void FlexPA::filterViaAccess(
       if (adj_layer_num > router_cfg_->TOP_ROUTING_LAYER) {
         return;
       }
-      if (layer_num_to_via_defs_.find(adj_layer_num)
-          != layer_num_to_via_defs_.end()) {
+      if (layer_num_to_via_defs_.contains(adj_layer_num)) {
         for (auto& [tup, via_def] : layer_num_to_via_defs_[adj_layer_num][1]) {
           if (inst_term && inst_term->isStubborn()
               && avoid_via_defs_.contains(via_def)) {

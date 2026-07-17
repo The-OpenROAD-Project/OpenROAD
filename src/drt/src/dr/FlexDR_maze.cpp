@@ -1902,8 +1902,8 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         continue;
       }
       if (ripupMode_ == RipUpMode::DRC && checking_obj != nullptr
-          && obj_gc_version.find(net->getFrNet()) != obj_gc_version.end()
-          && obj_gc_version.find(checking_obj) != obj_gc_version.end()
+          && obj_gc_version.contains(net->getFrNet())
+          && obj_gc_version.contains(checking_obj)
           && obj_gc_version[net->getFrNet()] == std::make_pair(gc_version, 0)
           && obj_gc_version[checking_obj] == std::make_pair(gc_version, 0)) {
         continue;
@@ -2661,7 +2661,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         /*update access point (AP) connectivity info. If it is over a boundary
         pin may still be over an unseen AP (this is checked by
         checkViaConnectivity) */
-        if (realPinApMazeIdx.find(mzIdxBot) != realPinApMazeIdx.end()) {
+        if (realPinApMazeIdx.contains(mzIdxBot)) {
           if (!addApPathSegs(mzIdxBot, net)) {
             currVia->setBottomConnected(true);
           }
@@ -2669,7 +2669,7 @@ void FlexDRWorker::routeNet_postAstarWritePath(
           checkViaConnectivityToAP(
               currVia.get(), true, net->getFrNet(), apMazeIdx, mzIdxBot);
         }
-        if (realPinApMazeIdx.find(mzIdxTop) != realPinApMazeIdx.end()) {
+        if (realPinApMazeIdx.contains(mzIdxTop)) {
           if (!addApPathSegs(mzIdxTop, net)) {
             currVia->setTopConnected(true);
           }
@@ -2886,14 +2886,14 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
   FlexMazeIdx start(startX, startY, z), end(endX, endY, z);
   auto layer = getTech()->getLayer(currLayerNum);
   auto currStyle = layer->getDefaultSegStyle();
-  if (realApMazeIdx.find(start) != realApMazeIdx.end()) {
+  if (realApMazeIdx.contains(start)) {
     if (!addApPathSegs(start, net)) {
       currStyle.setBeginStyle(frcTruncateEndStyle, 0);
     }
   } else {
     checkPathSegStyle(currPathSeg.get(), true, currStyle, apMazeIdx, start);
   }
-  if (realApMazeIdx.find(end) != realApMazeIdx.end()) {
+  if (realApMazeIdx.contains(end)) {
     if (!addApPathSegs(end, net)) {
       currStyle.setEndStyle(frcTruncateEndStyle, 0);
     }
@@ -2967,8 +2967,7 @@ void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
                                      const FlexMazeIdx& idx)
 {
   const odb::Point& pt = (isBegin ? ps->getBeginPoint() : ps->getEndPoint());
-  if (apMazeIdx.find(idx) == apMazeIdx.end()
-      && !isInWorkerBorder(pt.x(), pt.y())) {
+  if (!apMazeIdx.contains(idx) && !isInWorkerBorder(pt.x(), pt.y())) {
     return;
   }
   if (hasAccessPoint(pt, ps->getLayerNum(), ps->getNet()->getFrNet())) {
@@ -3341,7 +3340,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
 
   frArea currArea = 0;
   if (router_cfg_->ENABLE_BOUNDARY_MAR_FIX) {
-    if (areaMap.find(points[0]) != areaMap.end()) {
+    if (areaMap.contains(points[0])) {
       currArea = areaMap.find(points[0])->second;
     } else {
       currArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
@@ -3439,7 +3438,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     layerNum = gridGraph_.getLayerNum(currIdx.z());
     minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
     frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-    if (currArea < reqArea && areaMap.find(currIdx) != areaMap.end()) {
+    if (currArea < reqArea && areaMap.contains(currIdx)) {
       if (!prev_is_wire) {
         currArea /= 2;
       }

@@ -186,7 +186,7 @@ void FlexPA::updateDirtyInsts()
   frOrderedIdSet<frInst*> processed_insts;
   std::vector<std::vector<frInst*>> inst_rows;
   for (auto& inst : pattern_insts) {
-    if (processed_insts.find(inst) != processed_insts.end() || isSkipInst(inst)
+    if (processed_insts.contains(inst) || isSkipInst(inst)
         || !isStdCell(inst)) {
       continue;
     }

@@ -711,7 +711,7 @@ void FlexDRConnectivityChecker::finish(
     it++;
     const odb::Point origin = obj->getOrigin();
     lNum = obj->getLayerNum();
-    if (validPoints.find(std::make_pair(origin, lNum)) == validPoints.end()) {
+    if (!validPoints.contains(std::make_pair(origin, lNum))) {
       // negative rule
       addMarker(net, obj->getLayerNum(), obj->getBBox());
       if (save_updates_) {

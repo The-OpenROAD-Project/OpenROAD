@@ -47,8 +47,7 @@ void FlexPA::buildInstsSet()
     target_frinsts.insert(design_->getTopBlock()->findInst(inst));
   }
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!target_insts_.empty()
-        && target_frinsts.find(inst.get()) == target_frinsts.end()) {
+    if (!target_insts_.empty() && !target_frinsts.contains(inst.get())) {
       continue;
     }
     addToInstsSet(inst.get());

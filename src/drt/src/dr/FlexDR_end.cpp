@@ -35,7 +35,7 @@ void FlexDRWorker::endGetModNets(frOrderedIdSet<frNet*>& modNets)
   }
   // change modified flag to true if another subnet get routed
   for (auto& net : nets_) {
-    if (!net->isModified() && modNets.find(net->getFrNet()) != modNets.end()) {
+    if (!net->isModified() && modNets.contains(net->getFrNet())) {
       net->setModified(true);
     }
   }
@@ -278,7 +278,7 @@ void FlexDRWorker::endRemoveNets(
     if (rptr->typeId() == frcPathSeg) {
       auto cptr = static_cast<frPathSeg*>(rptr);
       if (cptr->hasNet()) {
-        if (modNets.find(cptr->getNet()) != modNets.end()) {
+        if (modNets.contains(cptr->getNet())) {
           endRemoveNets_pathSeg(design, cptr, boundPts[cptr->getNet()]);
         }
       } else {
@@ -287,7 +287,7 @@ void FlexDRWorker::endRemoveNets(
     } else if (rptr->typeId() == frcVia) {
       auto cptr = static_cast<frVia*>(rptr);
       if (cptr->hasNet()) {
-        if (modNets.find(cptr->getNet()) != modNets.end()) {
+        if (modNets.contains(cptr->getNet())) {
           endRemoveNets_via(design, cptr);
         }
       } else {
@@ -296,7 +296,7 @@ void FlexDRWorker::endRemoveNets(
     } else if (rptr->typeId() == frcPatchWire) {
       auto cptr = static_cast<frPatchWire*>(rptr);
       if (cptr->hasNet()) {
-        if (modNets.find(cptr->getNet()) != modNets.end()) {
+        if (modNets.contains(cptr->getNet())) {
           endRemoveNets_patchWire(design, cptr);
         }
       } else {

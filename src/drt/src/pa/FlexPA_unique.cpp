@@ -44,7 +44,7 @@ void UniqueClass::removeInst(frInst* inst)
 
 bool UniqueClass::hasInst(frInst* inst) const
 {
-  return insts_.find(inst) != insts_.end();
+  return insts_.contains(inst);
 }
 
 frInst* UniqueClass::getFirstInst() const
@@ -106,7 +106,7 @@ void UniqueInsts::initMasterToPinLayerRange()
   const frLayerNum bottom_layer_num = getTech()->getBottomLayerNum();
   for (auto& uMaster : design_->getMasters()) {
     auto master = uMaster.get();
-    if (!masters.empty() && masters.find(master->getName()) == masters.end()) {
+    if (!masters.empty() && !masters.contains(master->getName())) {
       continue;
     }
     frLayerNum min_layer_num = std::numeric_limits<frLayerNum>::max();
@@ -212,7 +212,7 @@ UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 UniqueClass* UniqueInsts::computeUniqueClass(frInst* inst)
 {
   const auto key = computeUniqueClassKey(inst);
-  if (unique_class_by_key_.find(key) == unique_class_by_key_.end()) {
+  if (!unique_class_by_key_.contains(key)) {
     // new unique class
     auto unique_class = std::make_unique<UniqueClass>(key);
     auto unique_class_ptr = unique_class.get();
@@ -244,8 +244,7 @@ void UniqueInsts::computeUnique()
   }
 
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!target_insts_.empty()
-        && target_frinsts.find(inst.get()) == target_frinsts.end()) {
+    if (!target_insts_.empty() && !target_frinsts.contains(inst.get())) {
       continue;
     }
     addInst(inst.get());
@@ -334,7 +333,7 @@ void UniqueInsts::report() const
 
 UniqueClass* UniqueInsts::getUniqueClass(frInst* inst) const
 {
-  if (inst_to_unique_class_.find(inst) == inst_to_unique_class_.end()) {
+  if (!inst_to_unique_class_.contains(inst)) {
     return nullptr;
   }
   return inst_to_unique_class_.at(inst);
@@ -342,7 +341,7 @@ UniqueClass* UniqueInsts::getUniqueClass(frInst* inst) const
 
 bool UniqueInsts::hasUnique(frInst* inst) const
 {
-  return inst_to_unique_class_.find(inst) != inst_to_unique_class_.end();
+  return inst_to_unique_class_.contains(inst);
 }
 
 // deleteInst has to be called both when an instance is deleted and might

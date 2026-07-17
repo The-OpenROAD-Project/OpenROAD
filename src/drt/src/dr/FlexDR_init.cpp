@@ -304,7 +304,7 @@ void FlexDRWorker::initNetObjs(
         if (getRipupMode() == RipUpMode::INCR && net->hasInitialRouting()) {
           continue;
         }
-        if (nets.find(net) == nets.end()) {
+        if (!nets.contains(net)) {
           nets.insert(net);
           netRouteObjs[net].clear();
           netExtObjs[net].clear();
@@ -321,7 +321,7 @@ void FlexDRWorker::initNetObjs(
       origGuides.clear();
       design->getRegionQuery()->queryOrigGuide(getRouteBox(), lNum, origGuides);
       for (auto& [box, net] : origGuides) {
-        if (nets.find(net) == nets.end()) {
+        if (!nets.contains(net)) {
           continue;
         }
         frRect rect;
@@ -333,7 +333,7 @@ void FlexDRWorker::initNetObjs(
     std::vector<frGuide*> guides;
     design->getRegionQuery()->queryGuide(getRouteBox(), guides);
     for (auto& guide : guides) {
-      if (nets.find(guide->getNet()) == nets.end()) {
+      if (!nets.contains(guide->getNet())) {
         continue;
       }
       auto [bp, ep] = guide->getPoints();
@@ -2200,10 +2200,10 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
       if (!getRouteBox().intersects(bp)) {
         continue;
       }
-      if (vioNets.find(obj->getNet()) == vioNets.end()) {
+      if (!vioNets.contains(obj->getNet())) {
         // add history cost
         const auto [objMIdx1, objMIdx2] = obj->getMazeIdx();
-        if (viaHistoryMarkers_.find(objMIdx1) == viaHistoryMarkers_.end()) {
+        if (!viaHistoryMarkers_.contains(objMIdx1)) {
           gridGraph_.addMarkerCostVia(objMIdx1.x(), objMIdx1.y(), objMIdx1.z());
           viaHistoryMarkers_.insert(objMIdx1);
 
@@ -2345,8 +2345,8 @@ void FlexDRWorker::route_queue_init_queue(
     frOrderedIdSet<drNet*> addedNets;
     for (auto& marker : markers_) {
       for (auto net : ripupNets) {
-        if (marker.getSrcs().find(net->getFrNet()) != marker.getSrcs().end()) {
-          if (addedNets.find(net) != addedNets.end()) {
+        if (marker.getSrcs().contains(net->getFrNet())) {
+          if (addedNets.contains(net)) {
             continue;
           }
           addedNets.insert(net);
@@ -2497,7 +2497,7 @@ void FlexDRWorker::route_queue_update_from_marker(
           }
           // rerouteQueue.push_back(std::make_pair(dNet, std::make_pair(true,
           // dNet->getNumReroutes())));
-          if (uniqueAggressors.find(fNet) == uniqueAggressors.end()) {
+          if (!uniqueAggressors.contains(fNet)) {
             uniqueAggressors.insert(fNet);
             uniqueAggressorOwners.push_back(fNet);
           }
@@ -2510,7 +2510,7 @@ void FlexDRWorker::route_queue_update_from_marker(
   if (hasRerouteNet) {
     frOrderedIdSet<frBlockObject*> checkDRCOwners;
     for (auto& src : marker->getSrcs()) {
-      if (movableAggressorOwners.find(src) == movableAggressorOwners.end()) {
+      if (!movableAggressorOwners.contains(src)) {
         if (src) {
           checkDRCOwners.insert(src);
         }
@@ -2520,7 +2520,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     for (auto& owner : checkDRCOwners) {
       // rerouteQueue.push_back(std::make_pair(owner, std::make_pair(false,
       // -1)));
-      if (uniqueVictims.find(owner) == uniqueVictims.end()) {
+      if (!uniqueVictims.contains(owner)) {
         uniqueVictims.insert(owner);
         uniqueVictimOwners.push_back(owner);
       }
@@ -2546,7 +2546,7 @@ void FlexDRWorker::route_queue_update_from_marker(
               if (!canRipup(dNet)) {
                 continue;
               }
-              if (uniqueAggressors.find(fNet) == uniqueAggressors.end()) {
+              if (!uniqueAggressors.contains(fNet)) {
                 uniqueAggressors.insert(fNet);
                 uniqueAggressorOwners.push_back(fNet);
               }
@@ -2560,7 +2560,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     if (hasRerouteNet) {
       frOrderedIdSet<frBlockObject*> checkDRCOwners;
       for (auto& src : marker->getSrcs()) {
-        if (routeOwners.find(src) == routeOwners.end()) {
+        if (!routeOwners.contains(src)) {
           if (src) {
             checkDRCOwners.insert(src);
           }
@@ -2568,7 +2568,7 @@ void FlexDRWorker::route_queue_update_from_marker(
       }
       // push checkDRCOwners to queue for DRC
       for (auto& owner : checkDRCOwners) {
-        if (uniqueVictims.find(owner) == uniqueVictims.end()) {
+        if (!uniqueVictims.contains(owner)) {
           uniqueVictims.insert(owner);
           uniqueVictimOwners.push_back(owner);
         }
