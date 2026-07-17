@@ -447,9 +447,9 @@ proc set_dbvia_wire_r { layer res } {
   $layer setResistance $res
 }
 
-# Chips targeted by -chip/-tech/-redistribution_layer; empty with
-# has_selector unset means the default values shared by chips without
-# specific values, empty with has_selector set means nothing to do.
+# Return the chips selected by -chip/-tech/-redistribution_layer, setting
+# has_selector in the caller. An empty result means "set the shared
+# defaults" when no selector was given and "nothing to do" when one was.
 proc parse_wire_rc_chips { keys_var flags_var selector_var } {
   upvar 1 $keys_var keys
   upvar 1 $flags_var flags
