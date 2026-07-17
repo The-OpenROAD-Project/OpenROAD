@@ -23,7 +23,6 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
-#include "utl/timer.h"
 
 namespace dpl {
 
@@ -298,30 +297,14 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   current_iter_ = iter;
   current_iter_movers_.clear();
 
-  // Reset findBestLocation profiling accumulators.
-  prof_init_search_s_ = 0;
-  prof_curr_search_s_ = 0;
-  prof_filter_s_ = 0;
-  prof_neg_cost_s_ = 0;
-  prof_drc_s_ = 0;
-  prof_candidates_evaluated_ = 0;
-  prof_candidates_filtered_ = 0;
-
   // Reset per-iteration stuck-cell tallies.
   stuck_no_candidate_count_iter_ = 0;
   stuck_same_pos_count_iter_ = 0;
   stuck_no_candidate_by_height_iter_.clear();
   stuck_same_pos_by_height_iter_.clear();
 
-  double sort_s{0}, rip_up_s{0}, find_best_s{0}, place_s{0};
-  double sync_s{0}, violations_s{0}, bystander_s{0}, history_s{0};
-  const utl::Timer total_iter_timer;
-
   int moves_count = 0;
-  {
-    utl::DebugScopedTimer t(sort_s);
-    sortByNegotiationOrder(activeCells);
-  }
+  sortByNegotiationOrder(activeCells);
 
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
@@ -331,19 +314,9 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     if (iter >= kIsolationPt && isCellLegal(idx)) {
       continue;
     }
-    int bx, by;
-    {
-      utl::DebugScopedTimer t(rip_up_s);
-      ripUp(idx);
-    }
-    {
-      utl::DebugScopedTimer t(find_best_s);
-      std::tie(bx, by) = findBestLocation(idx, iter);
-    }
-    {
-      utl::DebugScopedTimer t(place_s);
-      place(idx, bx, by);
-    }
+    ripUp(idx);
+    const auto [bx, by] = findBestLocation(idx, iter);
+    place(idx, bx, by);
     moves_count++;
     debugPrint(logger_,
                utl::DPL,
@@ -362,10 +335,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   // entry when a co-located cell is ripped up, leaving bystander cells
   // invisible to DRC checks.  A full re-sync restores every cell so the
   // violation scan below is accurate.
-  {
-    utl::DebugScopedTimer t(sync_s);
-    syncAllCellsToDplGrid();
-  }
+  syncAllCellsToDplGrid();
 
   // Count remaining violations (grid overuse) AND DRC violations.
   // Both must reach zero for the negotiation to converge.
@@ -376,127 +346,49 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   int illegalCellCount = 0;
   int illegalSiteCount = 0;
   std::unordered_set<int> active_set(activeCells.begin(), activeCells.end());
-  {
-    utl::DebugScopedTimer t(violations_s);
-    for (int idx : activeCells) {
-      if (cells_[idx].fixed) {
-        continue;
-      }
-      const NegCell& cell = cells_[idx];
-      const int xBegin = effXBegin(cell);
-      const int xEnd = effXEnd(cell);
-      for (int dy = 0; dy < cell.height; ++dy) {
-        for (int gx = xBegin; gx < xEnd; ++gx) {
-          if (gridExists(gx, cell.y + dy)) {
-            const int overuse = gridAt(gx, cell.y + dy).overuse();
-            totalViolations += overuse;
-            if (overuse > 0) {
-              ++illegalSiteCount;
-            }
+  for (int idx : activeCells) {
+    if (cells_[idx].fixed) {
+      continue;
+    }
+    const NegCell& cell = cells_[idx];
+    const int xBegin = effXBegin(cell);
+    const int xEnd = effXEnd(cell);
+    for (int dy = 0; dy < cell.height; ++dy) {
+      for (int gx = xBegin; gx < xEnd; ++gx) {
+        if (gridExists(gx, cell.y + dy)) {
+          const int overuse = gridAt(gx, cell.y + dy).overuse();
+          totalViolations += overuse;
+          if (overuse > 0) {
+            ++illegalSiteCount;
           }
         }
       }
-      if (!isCellLegal(idx)) {
-        ++totalViolations;
-        ++illegalCellCount;
-      }
+    }
+    if (!isCellLegal(idx)) {
+      ++totalViolations;
+      ++illegalCellCount;
     }
   }
 
   // Scan all movable cells for newly-created DRC violations outside the
   // current active set.  This handles cases where a move in the active
   // set created a one-site gap (or other DRC issue) with a bystander.
-  {
-    utl::DebugScopedTimer t(bystander_s);
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (cells_[i].fixed || active_set.contains(i)) {
-        continue;
-      }
-      if (!isCellLegal(i)) {
-        activeCells.push_back(i);
-        active_set.insert(i);
-        ++totalViolations;
-        ++illegalCellCount;
-      }
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (cells_[i].fixed || active_set.contains(i)) {
+      continue;
+    }
+    if (!isCellLegal(i)) {
+      activeCells.push_back(i);
+      active_set.insert(i);
+      ++totalViolations;
+      ++illegalCellCount;
     }
   }
 
   if (totalViolations > 0 && updateHistory) {
-    utl::DebugScopedTimer t(history_s);
     updateHistoryCosts(activeCells);
     updateDrcHistoryCosts(activeCells);
     sortByNegotiationOrder(activeCells);
-  }
-
-  // Emit runtime profiling only on iterations that also print a table row
-  // (first 10, then every 10th), to keep the two outputs aligned.
-  if (print_row && logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
-    const double total_ms = total_iter_timer.elapsed() * 1e3;
-    auto pct = [total_ms](double ms_val) {
-      return total_ms > 0 ? 100.0 * ms_val / total_ms : 0.0;
-    };
-    auto to_ms = [](double s) { return s * 1e3; };
-    const double rip_up_ms = to_ms(rip_up_s);
-    const double find_best_ms = to_ms(find_best_s);
-    const double place_ms = to_ms(place_s);
-    const double sort_ms = to_ms(sort_s);
-    const double sync_ms = to_ms(sync_s);
-    const double violations_ms = to_ms(violations_s);
-    const double bystander_ms = to_ms(bystander_s);
-    const double history_ms = to_ms(history_s);
-    const double initSearchMs = prof_init_search_s_ * 1e3;
-    const double currSearchMs = prof_curr_search_s_ * 1e3;
-    const double filterMs = prof_filter_s_ * 1e3;
-    const double negCostMs = prof_neg_cost_s_ * 1e3;
-    const double drcMs = prof_drc_s_ * 1e3;
-    const double overhead = find_best_ms - filterMs - negCostMs - drcMs;
-    logger_->report(
-        "  negotiationIter {} ({:.1f}ms, {} moves): "
-        "sort {:.1f}ms ({:.0f}%), "
-        "ripUp {:.1f}ms ({:.0f}%), findBest {:.1f}ms ({:.0f}%), place {:.1f}ms "
-        "({:.0f}%), "
-        "syncGrid {:.1f}ms ({:.0f}%), violationsCount {:.1f}ms ({:.0f}%), "
-        "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
-        iter,
-        total_ms,
-        moves_count,
-        sort_ms,
-        pct(sort_ms),
-        rip_up_ms,
-        pct(rip_up_ms),
-        find_best_ms,
-        pct(find_best_ms),
-        place_ms,
-        pct(place_ms),
-        sync_ms,
-        pct(sync_ms),
-        violations_ms,
-        pct(violations_ms),
-        bystander_ms,
-        pct(bystander_ms),
-        history_ms,
-        pct(history_ms));
-    logger_->report(
-        "    findBest by region ({} candidates, {} filtered): "
-        "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%)",
-        prof_candidates_evaluated_,
-        prof_candidates_filtered_,
-        initSearchMs,
-        pct(initSearchMs),
-        currSearchMs,
-        pct(currSearchMs));
-    logger_->report(
-        "    findBest by function: "
-        "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
-        "drc {:.1f}ms ({:.0f}%), overhead {:.1f}ms ({:.0f}%)",
-        filterMs,
-        pct(filterMs),
-        negCostMs,
-        pct(negCostMs),
-        drcMs,
-        pct(drcMs),
-        overhead,
-        pct(overhead));
   }
 
   last_iter_ = iter;
@@ -724,26 +616,17 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   const double drc_penalty = drc_penalty_ * (1.0 + iter);
 
   auto tryLocation = [&](int tx, int ty) {
-    {
-      utl::DebugScopedTimer t(prof_filter_s_);
-      if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
-          || !respectsFence(cell_idx, tx, ty)) {
-        ++prof_candidates_filtered_;
-        return;
-      }
+    if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
+        || !respectsFence(cell_idx, tx, ty)) {
+      return;
     }
 
-    double cost;
-    {
-      utl::DebugScopedTimer t(prof_neg_cost_s_);
-      cost = negotiationCost(cell_idx, tx, ty);
-    }
+    double cost = negotiationCost(cell_idx, tx, ty);
 
     // Add a DRC penalty so clean positions are strongly preferred,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      utl::DebugScopedTimer t(prof_drc_s_);
       odb::dbOrientType targetOrient = node->getOrient();
       odb::dbSite* site = cell.db_inst->getMaster()->getSite();
       if (site != nullptr) {
@@ -757,7 +640,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
           node, GridX{tx}, GridY{ty}, targetOrient);
       cost += drc_penalty * drcCount;
     }
-    ++prof_candidates_evaluated_;
     if (cost < best_cost) {
       best_cost = cost;
       best_x = tx;
@@ -770,12 +652,9 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // see buildSearchWindow).
   const SearchWindow init_window
       = buildSearchWindow(cell, cell.init_x, cell.init_y);
-  {
-    utl::DebugScopedTimer t(prof_init_search_s_);
-    for (int ty : init_window.rows) {
-      for (int dx = init_window.dx_lo; dx <= init_window.dx_hi; ++dx) {
-        tryLocation(cell.init_x + dx, ty);
-      }
+  for (int ty : init_window.rows) {
+    for (int dx = init_window.dx_lo; dx <= init_window.dx_hi; ++dx) {
+      tryLocation(cell.init_x + dx, ty);
     }
   }
 
@@ -790,7 +669,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   SearchWindow curr_window;
   if (displaced) {
     curr_window = buildSearchWindow(cell, cell.x, cell.y);
-    utl::DebugScopedTimer t(prof_curr_search_s_);
     debugPrint(logger_,
                utl::DPL,
                "negotiation",
@@ -910,13 +788,12 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                  "negotiation",
                  2,
                  "findBestLocation: no valid candidate found for cell '{}' "
-                 "(iter {}, size {} rows x {} sites) — all {} candidate "
+                 "(iter {}, size {} rows x {} sites) — all candidates "
                  "filtered, cell may be stuck.",
                  cell.db_inst->getName(),
                  iter,
                  cell.height,
-                 cell.width,
-                 prof_candidates_filtered_);
+                 cell.width);
     }
 
     else if (best_x == cell.x && best_y == cell.y) {

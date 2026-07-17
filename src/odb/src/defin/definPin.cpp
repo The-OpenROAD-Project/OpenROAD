@@ -43,14 +43,45 @@ void definPin::pinBegin(const char* name, const char* net_name)
   const char* s = strstr(name, ".extra");
 
   if (s == nullptr) {
-    if (_mode != defin::DEFAULT) {
+    if (_mode == defin::FLOORPLAN || _mode == defin::INCREMENTAL) {
       _cur_bterm = _block->findBTerm(name);
       if (_cur_bterm != nullptr) {
         _update_cnt++;
       }
     } else {
+      // DEFAULT and THREE_D_BLOX create the pin.
       _cur_bterm = dbBTerm::create(net, name);
-      _bterm_cnt++;
+      if (_cur_bterm != nullptr) {
+        _bterm_cnt++;
+      } else if (_mode == defin::THREE_D_BLOX) {
+        // Reuse the existing bterm: a bump may have already created it (and
+        // its net) from the bump map.
+        _cur_bterm = _block->findBTerm(name);
+        // The reused pin must belong to the net named by this PIN; a mismatch
+        // is an error since reconnecting would leave the old net dangling.
+        dbNet* existing_net = _cur_bterm->getNet();
+        if (existing_net != nullptr && existing_net != net) {
+          _logger->warn(utl::ODB,
+                        548,
+                        "error: 3DBlox DEF pin {} is already connected to net "
+                        "{} but the DEF specifies net {}",
+                        name,
+                        existing_net->getName(),
+                        net->getName());
+          _cur_bterm = nullptr;
+          _errors++;
+          return;
+        }
+        _update_cnt++;
+        _cur_bterm->connect(net);
+        // Make the DEF authoritative for the reused pin: drop any shapes
+        // created earlier (e.g. from the bump map) so the DEF's port geometry
+        // is not duplicated.
+        dbSet<dbBPin> old_bpins = _cur_bterm->getBPins();
+        for (auto itr = old_bpins.begin(); itr != old_bpins.end();) {
+          itr = dbBPin::destroy(itr);
+        }
+      }
     }
   } else  // extra pin statement
   {
