@@ -85,6 +85,28 @@ every chip whose technology has no specific values. Signal values, clock values
 and routing layers fall back to the defaults independently, so a technology with
 only specific signal values still uses the default clock values.
 
+### Set Bump RC
+
+The `set_bump_rc` command sets the lumped resistance and capacitance used for
+chip bumps in 3D designs (`dbChipBump` instances). Unlike `set_wire_rc`, the
+values are absolute per bump, not per unit length. Without values, bumps use a
+small connectivity resistor.
+
+```tcl
+set_bump_rc
+    [-corner corner]
+    [-resistance res]
+    [-capacitance cap]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Process corner to set the values for; all corners when omitted. |
+| `-resistance` | Resistance per bump, units are from the first Liberty file read. |
+| `-capacitance` | Capacitance per bump, units are from the first Liberty file read. |
+
 ### Set Layer RC
 
 The `set_layer_rc` command can be used to set the resistance and capacitance
