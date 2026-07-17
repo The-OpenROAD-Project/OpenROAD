@@ -15,7 +15,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 #include "PlacementDRC.h"
@@ -48,6 +47,128 @@ using std::vector;
 using utl::DPL;
 
 using utl::format_as;  // NOLINT(misc-unused-using-decls)
+
+namespace {
+// Heap entry for diamondSearch().  Defined at file scope (rather than locally
+// inside diamondSearch) so the scratch backing buffers can be declared as
+// reusable static thread_local containers below, avoiding a fresh heap
+// allocation on every call.
+struct PQ_entry
+{
+  int manhattan_distance;
+  GridPt p;
+  int sequence;
+  bool operator>(const PQ_entry& other) const
+  {
+    return std::tie(manhattan_distance, sequence)
+           > std::tie(other.manhattan_distance, other.sequence);
+  }
+};
+
+// priority_queue subclass that exposes its backing container so the (grown
+// once) allocation can be moved back into a reusable thread_local buffer.
+struct ReusableHeap
+    : std::priority_queue<PQ_entry,
+                          std::vector<PQ_entry>,
+                          std::greater<PQ_entry>>
+{
+  explicit ReusableHeap(std::vector<PQ_entry>&& backing)
+      : std::priority_queue<PQ_entry,
+                            std::vector<PQ_entry>,
+                            std::greater<PQ_entry>>(std::greater<PQ_entry>{},
+                                                    std::move(backing))
+  {
+  }
+  std::vector<PQ_entry> takeBacking() { return std::move(this->c); }
+};
+
+// Generation-stamped replacement for the per-call
+// `std::unordered_set<GridPt> visited` used by diamondSearch().
+//
+// Instead of a hash set (one malloc/free + hash insert per visited grid point,
+// which dominated allocator cost on congested designs where the diamond
+// expands over many points), this is a flat array of "last-visited generation"
+// stamps indexed by `(y - origin_y) * width + (x - origin_x)`.  A point is
+// "visited" iff its stamp equals the current generation; beginSearch() bumps
+// the generation so no per-call clearing or reallocation is needed.
+//
+// Equivalence to the old set: contains()/insert() behave identically for every
+// (x, y) the search can insert, and the loop logic (which points are enqueued)
+// is left untouched -- only the data structure backing `visited` changes.
+//
+// Sizing/indexing must cover EVERY (x, y) ever passed to contains()/insert():
+//   * the center {x, y}, which is inserted unconditionally and can lie far
+//     OUTSIDE the clipped grid window (the initial cell location may be well
+//     outside the core, e.g. simple03 places a cell 3x beyond the die);
+//   * every neighbor enqueued, i.e. the closed window
+//     [x_min, x_max] x [y_min, y_max]; and
+//   * a ONE-CELL HALO around that, because diamondSearch calls
+//     contains(neighbor) BEFORE the limit test, so neighbors one step outside
+//     the window (x_max+1, x_min-1, y_max+1, y_min-1, and likewise around an
+//     out-of-window center) are probed via contains() even though they are then
+//     rejected for enqueue.
+// The caller therefore sizes/indexes over the bounding box of {center} U window
+// expanded by one cell on every side:
+//   origin = (min(x_min, x_center) - 1, min(y_min, y_center) - 1)
+//   extent = (max(x_max, x_center) + 1, max(y_max, y_center) + 1)
+// Indexing relative to that origin covers all probed/inserted points with no
+// dropped inserts -- exactly matching the unordered_set's behavior -- while
+// never indexing out of range.
+class VisitedStamps
+{
+ public:
+  // Prepare for a new search whose insertable coordinates are bounded by the
+  // inclusive box [lo_x, hi_x] x [lo_y, hi_y].
+  void beginSearch(const int lo_x,
+                   const int lo_y,
+                   const int hi_x,
+                   const int hi_y)
+  {
+    origin_x_ = lo_x;
+    origin_y_ = lo_y;
+    width_ = hi_x - lo_x + 1;
+    const int height = hi_y - lo_y + 1;
+    const size_t needed = static_cast<size_t>(width_) * height;
+    if (stamps_.size() < needed) {
+      // Grow (never shrink) and reset stamps; growing invalidates the old
+      // generation baseline for the new entries, so restart generations.
+      stamps_.assign(needed, 0);
+      generation_ = 0;
+    }
+    // Bump generation; everything stamped with a prior generation is now
+    // implicitly "unvisited".  Handle the (astronomically unlikely) wraparound
+    // by clearing.
+    if (++generation_ == 0) {
+      std::fill(stamps_.begin(), stamps_.end(), 0);
+      generation_ = 1;
+    }
+  }
+
+  bool contains(const GridPt& p) const
+  {
+    return stamps_[index(p)] == generation_;
+  }
+
+  void insert(const GridPt& p) { stamps_[index(p)] = generation_; }
+
+ private:
+  size_t index(const GridPt& p) const
+  {
+    const int local_x = p.x.v - origin_x_;
+    const int local_y = p.y.v - origin_y_;
+    const size_t idx = static_cast<size_t>(local_y) * width_ + local_x;
+    assert(local_x >= 0 && local_x < width_ && local_y >= 0
+           && idx < stamps_.size());
+    return idx;
+  }
+
+  std::vector<uint32_t> stamps_;
+  uint32_t generation_ = 0;
+  int origin_x_ = 0;
+  int origin_y_ = 0;
+  int width_ = 0;
+};
+}  // namespace
 
 std::string Opendp::printBgBox(
     const boost::geometry::model::box<bgPoint>& queryBox)
@@ -877,20 +998,39 @@ PixelPt Opendp::diamondSearch(const Node* cell,
              y_min,
              y_max - 1);
 
-  struct PQ_entry
-  {
-    int manhattan_distance;
-    GridPt p;
-    int sequence;
-    bool operator>(const PQ_entry& other) const
-    {
-      return std::tie(manhattan_distance, sequence)
-             > std::tie(other.manhattan_distance, other.sequence);
-    }
-  };
-  std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
-      positionsHeap;
-  std::unordered_set<GridPt> visited;
+  // Reusable scratch buffers.  diamondSearch is called once per placed cell
+  // (hundreds of thousands of times); allocating a fresh priority-queue backing
+  // vector and a visited hash set on every call dominated the allocator cost in
+  // profiling.  These thread_local buffers are cleared and reused instead, so
+  // each thread keeps a single grown-once allocation.  They are thread_local
+  // (not Opendp members) because diamondSearch is const and may be invoked from
+  // multiple threads; thread_local keeps the reuse data-race free without
+  // changing behavior.
+  static thread_local std::vector<PQ_entry> heap_backing;
+  static thread_local VisitedStamps visited;
+
+  heap_backing.clear();
+  // Prepare the generation-stamped visited set.  It must cover every (x, y)
+  // ever passed to visited.contains()/insert(), which behaves exactly like the
+  // old unordered_set.  Two subtleties beyond the obvious search window:
+  //   1. The center {x, y} is inserted unconditionally and may lie outside the
+  //      clipped window (the initial cell location can be far outside the
+  //      core).
+  //   2. contains(neighbor) is evaluated BEFORE the limit test, so neighbors
+  //      one cell OUTSIDE the window (x_max+1, x_min-1, y_max+1, y_min-1) are
+  //      probed via contains() even though they are then rejected for enqueue.
+  // So index over the window-or-center bounding box expanded by a one-cell halo
+  // on every side.  This matches the unordered_set's behavior with no dropped
+  // inserts and no out-of-range index.
+  visited.beginSearch(min(x_min, x).v - 1,
+                      min(y_min, y).v - 1,
+                      max(x_max, x).v + 1,
+                      max(y_max, y).v + 1);
+
+  // Construct the heap over the reused backing vector.  Moving the (cleared but
+  // capacity-retaining) vector in preserves the allocation; we move it back out
+  // before returning so the next call reuses it.
+  ReusableHeap positionsHeap(std::move(heap_backing));
   int sequence = 0;
   GridPt center{x, y};
   positionsHeap.push(
@@ -906,8 +1046,10 @@ PixelPt Opendp::diamondSearch(const Node* cell,
     positionsHeap.pop();
 
     if (canBePlaced(cell, nearest.x, nearest.y)) {
-      return PixelPt(
+      const PixelPt result(
           grid_->gridPixel(nearest.x, nearest.y), nearest.x, nearest.y);
+      heap_backing = positionsHeap.takeBacking();
+      return result;
     }
 
     // Put neighbors in the queue
@@ -929,6 +1071,7 @@ PixelPt Opendp::diamondSearch(const Node* cell,
                           .sequence = sequence++});
     }
   }
+  heap_backing = positionsHeap.takeBacking();
   return PixelPt();
 }
 
@@ -1019,7 +1162,14 @@ bool Opendp::checkPixels(const Node* cell,
     return false;
   }
 
-  odb::dbSite* site = cell->getSite();
+  // Hoist cell-invariant master/site lookups out of the per-pixel loop and off
+  // the odb traversal path.  cell->getSite() and cell->getDbInst()->getMaster()
+  // each walk dbInst->dbMaster on every probe; on congested designs
+  // diamondSearch probes enormously, making these the top DB hot spots.  The
+  // dpl Master caches the same odb::dbMaster*/odb::dbSite* pointers, so reading
+  // them here is pointer-identical to the odb traversal but far cheaper.
+  const Master* master = cell->getMaster();
+  odb::dbSite* site = master->getDbSite();
   for (GridY y1 = y; y1 < y_end; y1++) {
     const bool first_row = (y1 == y);
     for (GridX x1 = x; x1 < x_end; x1++) {
@@ -1083,8 +1233,9 @@ bool Opendp::checkPixels(const Node* cell,
 
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
 
-  // Check for symmetry
-  auto* dbMaster = cell->getDbInst()->getMaster();
+  // Check for symmetry.  Use the cached db master (pointer-identical to
+  // cell->getDbInst()->getMaster()) to avoid the odb traversal per probe.
+  auto* dbMaster = master->getDbMaster();
   unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
   if (!checkMasterSym(masterSym, orient)) {
     return false;
@@ -1093,7 +1244,7 @@ bool Opendp::checkPixels(const Node* cell,
   // For multi-row cells, the bottom-row site/orient check above only covers
   // the bottom row; it doesn't ensure the master's power pin stack lines up
   // with the PDN rail stack across the span.  Reject wrong-parity landings.
-  if (cell->getMaster()->isMultiRow() && !checkRowPowerCompatible(cell, y)) {
+  if (master->isMultiRow() && !checkRowPowerCompatible(cell, y)) {
     return false;
   }
 
