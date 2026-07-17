@@ -367,6 +367,30 @@ double EstimateParasitics::wireClkVCapacitance(const sta::Scene* scene) const
   return clk_cap[scene->index()].v_cap;
 }
 
+void EstimateParasitics::setBumpRC(const sta::Scene* scene,
+                                   double res,
+                                   double cap)
+{
+  bump_rc_.resize(sta_->scenes().size());
+  bump_rc_[scene->index()].res = res;
+  bump_rc_[scene->index()].cap = cap;
+}
+
+bool EstimateParasitics::bumpRC(const sta::Scene* scene,
+                                // Return values.
+                                double& res,
+                                double& cap) const
+{
+  if (bump_rc_.empty()) {
+    res = 0.0;
+    cap = 0.0;
+    return false;
+  }
+  res = bump_rc_[scene->index()].res;
+  cap = bump_rc_[scene->index()].cap;
+  return true;
+}
+
 ////////////////////////////////////////////////////////////////
 
 void EstimateParasitics::setDbCbkOwner(odb::dbBlock* block)
@@ -758,11 +782,27 @@ bool EstimateParasitics::isPadNet(const sta::Net* net) const
              || (network_->isTopLevelPort(pin2) && isPadPin(pin1)));
 }
 
+bool EstimateParasitics::isChipBumpPin(const sta::Pin* pin) const
+{
+  if (pin == nullptr || network_->isTopLevelPort(pin)) {
+    return false;
+  }
+  sta::Instance* inst = network_->instance(pin);
+  if (inst == nullptr) {
+    return false;
+  }
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  return db_inst != nullptr && db_inst->getChipBump() != nullptr;
+}
+
 void EstimateParasitics::makePadParasitic(const sta::Net* net,
                                           sta::SpefWriter* spef_writer)
 {
   const sta::Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
+  const bool is_bump = isChipBumpPin(pin1) || isChipBumpPin(pin2);
   for (sta::Scene* corner : sta_->scenes()) {
     sta::Parasitics* parasitics = corner->parasitics(max_);
     sta::Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
@@ -772,7 +812,18 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
         = parasitics->ensureParasiticNode(parasitic, pin2, network_);
 
     // Use a small resistor to keep the connectivity intact.
-    parasitics->makeResistor(parasitic, 1, .001, n1, n2);
+    double res = 0.001;
+    double cap = 0.0;
+    if (is_bump) {
+      double bump_res, bump_cap;
+      if (bumpRC(corner, bump_res, bump_cap)) {
+        res = std::max(bump_res, res);
+        cap = bump_cap;
+      }
+    }
+    parasitics->incrCap(n1, cap / 2.0);
+    parasitics->makeResistor(parasitic, 1, res, n1, n2);
+    parasitics->incrCap(n2, cap / 2.0);
     if (spef_writer) {
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }

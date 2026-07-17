@@ -209,6 +209,16 @@ set_v_wire_clk_rc_cmd(odb::dbTech *tech,
   estimate_parasitics->setVWireClkRC(tech, corner, res, cap);
 }
 
+void
+set_bump_rc_cmd(const Scene *corner,
+                float res,
+                float cap)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->setBumpRC(corner, res, cap);
+}
+
 // ohms/meter
 double
 wire_signal_resistance(const Scene *corner)
