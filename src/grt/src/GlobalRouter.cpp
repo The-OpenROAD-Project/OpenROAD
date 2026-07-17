@@ -6473,7 +6473,13 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
     std::vector<odb::dbNet*> rerouted;
     rerouted.reserve(dirty_nets.size());
     for (Net* net : dirty_nets) {
-      rerouted.push_back(net->getDbNet());
+      odb::dbNet* db_net = net->getDbNet();
+      // saveGuides skips unrouted nets, so clear their stale guides here.
+      if (routes_.find(db_net) == routes_.end()) {
+        db_net->clearGuides();
+      } else {
+        rerouted.push_back(db_net);
+      }
     }
     saveGuides(rerouted);
   }
