@@ -1789,9 +1789,7 @@ void extMain::run()
 
     if (_debug_net_id > 0) {
       m._netId = _debug_net_id;
-      char bufName[32];
-      sprintf(bufName, "%u", m._netId);
-      m._debugFP = fopen(bufName, "w");
+      m._debugFP = fopen(std::to_string(m._netId).c_str(), "w");
     }
 
     getPeakMemory("Start CouplingFlow");
