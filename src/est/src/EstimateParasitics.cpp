@@ -73,8 +73,7 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
       stt_builder_(stt_builder),
       global_router_(global_router),
       db_network_(sta->getDbNetwork()),
-      db_(db),
-      db_cbk_(std::make_unique<OdbCallBack>(this, network_, db_network_))
+      db_(db)
 {
   dbStaState::init(sta);
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
@@ -127,13 +126,14 @@ void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  double& cap) const
 {
   const auto res_it = layer_res_.find(layer);
-  if (res_it == layer_res_.end()) {
-    res = 0.0;
-    cap = 0.0;
-  } else {
-    res = res_it->second[corner->index()];
-    cap = layer_cap_.at(layer)[corner->index()];
-  }
+  const auto cap_it = layer_cap_.find(layer);
+  const size_t corner_idx = corner->index();
+  res = res_it != layer_res_.end() && corner_idx < res_it->second.size()
+            ? res_it->second[corner_idx]
+            : 0.0;
+  cap = cap_it != layer_cap_.end() && corner_idx < cap_it->second.size()
+            ? cap_it->second[corner_idx]
+            : 0.0;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -148,8 +148,9 @@ odb::dbChip* EstimateParasitics::currentChip() const
 
 const EstimateParasitics::WireRC* EstimateParasitics::findWireRC() const
 {
-  auto it = wire_rc_.find(currentChip());
-  if (it == wire_rc_.end()) {
+  odb::dbChip* chip = currentChip();
+  auto it = wire_rc_.find(chip);
+  if (it == wire_rc_.end() && chip != nullptr) {
     it = wire_rc_.find(nullptr);
   }
   return it == wire_rc_.end() ? nullptr : &it->second;
