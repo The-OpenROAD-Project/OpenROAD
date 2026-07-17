@@ -211,6 +211,8 @@ TEST_F(TestEstimateParasitics, WireRcPerChip)
   ep_.initChip(chip1);
   ep_.setHWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
   ep_.setVWireSignalRC(nullptr, scene, 2.0e3, 2.0e-10);
+  ep_.setHWireClkRC(nullptr, scene, 5.0e3, 5.0e-10);
+  ep_.setVWireClkRC(nullptr, scene, 5.0e3, 5.0e-10);
   EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
   EXPECT_DOUBLE_EQ(ep_.wireSignalVCapacitance(scene), 2.0e-10);
 
@@ -229,11 +231,12 @@ TEST_F(TestEstimateParasitics, WireRcPerChip)
   // The chip-specific values do not leak into the default-valued chip.
   EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
 
-  // Rebinding to the second chip resolves its chip-specific values.
+  // Rebinding to the second chip resolves its chip-specific signal values;
+  // its unset clock values fall back to the defaults independently.
   ep_.initChip(chip2);
   EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 3.0e3);
   EXPECT_DOUBLE_EQ(ep_.wireSignalVCapacitance(scene), 4.0e-10);
-  EXPECT_DOUBLE_EQ(ep_.wireClkHResistance(scene), 0.0);
+  EXPECT_DOUBLE_EQ(ep_.wireClkHResistance(scene), 5.0e3);
 
   // Rebinding back to a chip without an entry falls back to the defaults.
   ep_.initChip(chip1);

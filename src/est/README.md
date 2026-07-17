@@ -71,7 +71,9 @@ set_wire_rc
 | `-redistribution_layer` | Apply the values to all RDL chips. Warns and does nothing when the design has no RDL chip, so shared scripts work across designs. |
 
 Without `-tech`, `-chip` or `-redistribution_layer` the values are the defaults
-used by every chip that has no chip-specific values.
+used by every chip that has no chip-specific values. Signal values, clock
+values and routing layers fall back to the defaults independently, so a chip
+with only chip-specific signal values still uses the default clock values.
 
 ### Set Layer RC
 

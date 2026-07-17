@@ -230,7 +230,25 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 
   odb::dbChip* currentChip() const;
   WireRC& wireRC(odb::dbChip* chip) { return wire_rc_[chip]; }
-  const WireRC* findWireRC() const;
+  // Resolve one WireRC category for the current chip; a category left unset
+  // for a chip falls back to the defaults (nullptr entry) independently.
+  template <typename T>
+  const std::vector<T>& wireRCVector(std::vector<T> WireRC::*member) const
+  {
+    static const std::vector<T> empty;
+    odb::dbChip* chip = currentChip();
+    auto it = wire_rc_.find(chip);
+    if (it != wire_rc_.end() && !(it->second.*member).empty()) {
+      return it->second.*member;
+    }
+    if (chip != nullptr) {
+      it = wire_rc_.find(nullptr);
+      if (it != wire_rc_.end() && !(it->second.*member).empty()) {
+        return it->second.*member;
+      }
+    }
+    return empty;
+  }
   void ensureParasitics();
   bool isIdealClockPin(const sta::Pin* pin) const;
   bool isIdealClockNet(const sta::Net* net) const;
