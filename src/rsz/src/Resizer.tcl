@@ -259,9 +259,32 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-max_utilization util] \
                                         [-match_cell_footprint] \
                                         [-max_repairs_per_pass max_repairs_per_pass]\
+                                        [-effort directives]\
                                         [-verbose]}
 
 proc repair_timing { args } {
+  # -effort is a coarse optimization policy in the spirit of compiler driver
+  # -O flags (POLA): directives apply left to right and a later directive
+  # overrides an earlier one, so an explicit -hold to the right of
+  # "-effort explore" re-enables hold repair. Scanned from the raw argument
+  # list because position carries meaning; resolution lives in
+  # rsz::EffortPolicy.
+  set effort_directives {}
+  for { set i 0 } { $i < [llength $args] } { incr i } {
+    set arg [lindex $args $i]
+    if { [string length $arg] >= 2 && [string match "$arg*" "-effort"] } {
+      # Unique-prefix abbreviation, as honored by parse_key_args below.
+      incr i
+      foreach directive [lindex $args $i] {
+        lappend effort_directives $directive
+      }
+    } elseif { $arg eq "-hold" } {
+      # Shorter prefixes resolve to -hold_margin, so exact match only.
+      lappend effort_directives -hold
+    }
+  }
+  rsz::set_repair_effort $effort_directives
+
   # `-phases` is the public spelling listed in -help / define_cmd_args.
   # `-policy` and `-policies` are accepted-but-undocumented aliases for the
   # same phase sequence; only one of the three may be supplied per call.
@@ -269,7 +292,8 @@ proc repair_timing { args } {
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
             -phases -policy -policies \
-            -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
+            -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass \
+            -effort} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
              -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint -verbose}
@@ -391,9 +415,13 @@ proc repair_timing { args } {
         $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
     }
     if { $hold } {
-      set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
-        $allow_setup_violations $max_buffer_percent $max_passes \
-        $max_iterations $match_cell_footprint $verbose]
+      if { [rsz::repair_effort_repairs_hold] } {
+        set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
+          $allow_setup_violations $max_buffer_percent $max_passes \
+          $max_iterations $match_cell_footprint $verbose]
+      } else {
+        utl::info RSZ 3303 "-effort explore: hold repair not run."
+      }
     }
   }
 

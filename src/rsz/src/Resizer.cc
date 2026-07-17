@@ -5067,6 +5067,22 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
 
 ////////////////////////////////////////////////////////////////
 
+void Resizer::setRepairEffort(const char* directives)
+{
+  repair_effort_ = EffortPolicy();
+  std::istringstream stream(directives != nullptr ? directives : "");
+  std::string directive;
+  while (stream >> directive) {
+    if (!repair_effort_.apply(directive)) {
+      logger_->error(RSZ,
+                     3302,
+                     "unknown -effort directive '{}'; defined directives are "
+                     "tapeout and explore.",
+                     directive);
+    }
+  }
+}
+
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
@@ -5105,6 +5121,8 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+  config.plateau_start_iteration = repair_effort_.plateau_start_iteration;
+  config.min_inc_fix_rate = repair_effort_.min_inc_fix_rate;
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);

@@ -201,3 +201,21 @@ gtest_discover_tests(TestResizerMt
 
 add_dependencies(build_and_test TestResizerMt
 )
+
+add_executable(TestEffortPolicy TestEffortPolicy.cc)
+target_link_libraries(TestEffortPolicy
+        GTest::gtest
+        GTest::gtest_main
+)
+
+target_include_directories(TestEffortPolicy
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/include
+)
+
+gtest_discover_tests(TestEffortPolicy
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestEffortPolicy
+)

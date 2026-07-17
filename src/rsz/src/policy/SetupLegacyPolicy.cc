@@ -93,7 +93,7 @@ bool SetupLegacyPolicy::initializeMainRepair(MainRepairState& main_state,
   main_state.initial_tns = sta_->totalNegativeSlack(max_);
   main_state.prev_tns = main_state.initial_tns;
   main_state.num_viols = violating_ends.size();
-  main_state.fix_rate_threshold = inc_fix_rate_threshold_;
+  main_state.fix_rate_threshold = config_.min_inc_fix_rate;
 
   printProgress(main_state.opto_iteration, false, main_state.phase_marker);
 

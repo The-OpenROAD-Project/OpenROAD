@@ -909,7 +909,8 @@ bool SetupLegacyBase::terminateProgress(const int iteration,
     float curr_tns = sta_->totalNegativeSlack(max_);
     float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
     prev_tns = curr_tns;
-    if (iteration > 1000 && inc_fix_rate < fix_rate_threshold) {
+    if (iteration > config_.plateau_start_iteration
+        && inc_fix_rate < fix_rate_threshold) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
