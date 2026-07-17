@@ -7,11 +7,15 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Parasitics.hh"
+#include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "tst/IntegratedFixture.h"
 
@@ -195,6 +199,51 @@ TEST_F(TestEstimateParasitics, ScanClockIdealOnlyInTestMode)
   // scan clock port and scan_reg/CK through delaysInvalidFromFanin().
   EXPECT_TRUE(sta_->search()->arrivalsValid());
   ep_.setIncrementalParasiticsEnabled(false);
+}
+
+// Verifies that set_bump_rc values are used for nets terminating on a
+// dbChipBump instance, replacing the small pad connectivity resistor.
+TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  sta::Scene* scene = sta_->scenes().front();
+  // scan_clk drives only scan_reg/CK: a two-pin port-to-instance net.
+  sta::Pin* scan_clk_pin = findTopPin("scan_clk");
+  ASSERT_NE(scan_clk_pin, nullptr);
+  sta::Net* net = flatNet(scan_clk_pin);
+  ASSERT_NE(net, nullptr);
+
+  // Make scan_reg a bump: pad-class master wrapped by a dbChipBump.
+  odb::dbInst* scan_reg = block_->findInst("scan_reg");
+  ASSERT_NE(scan_reg, nullptr);
+  scan_reg->getMaster()->setType(odb::dbMasterType::COVER_BUMP);
+  odb::dbChipRegion* region = odb::dbChipRegion::create(
+      db_->getChip(), "f2f", odb::dbChipRegion::Side::FRONT, nullptr);
+  ASSERT_NE(region, nullptr);
+  ASSERT_NE(odb::dbChipBump::create(region, scan_reg), nullptr);
+
+  // Without bump values the legacy small connectivity resistor is used.
+  ep_.estimateWireParasitic(net);
+  sta::Parasitics* parasitics = scene->parasitics(sta::MinMax::max());
+  sta::Parasitic* pi = parasitics->findPiElmore(
+      scan_clk_pin, sta::RiseFall::rise(), sta::MinMax::max());
+  ASSERT_NE(pi, nullptr);
+  float c2, rpi, c1;
+  parasitics->piModel(pi, c2, rpi, c1);
+  EXPECT_FLOAT_EQ(rpi, 0.001f);
+  // The reduced pi model includes the load pin caps; save them as baseline.
+  const float pin_caps = c2 + c1;
+
+  // With bump values the lumped bump RC is added on top of the pin caps.
+  ep_.setBumpRC(scene, 2.5, 4.0e-14);
+  ep_.estimateWireParasitic(net);
+  pi = parasitics->findPiElmore(
+      scan_clk_pin, sta::RiseFall::rise(), sta::MinMax::max());
+  ASSERT_NE(pi, nullptr);
+  parasitics->piModel(pi, c2, rpi, c1);
+  EXPECT_FLOAT_EQ(rpi, 2.5f);
+  EXPECT_NEAR(c2 + c1 - pin_caps, 4.0e-14, 1.0e-16);
 }
 
 // Verifies that wire RC values are stored per chip: chip-specific values take
