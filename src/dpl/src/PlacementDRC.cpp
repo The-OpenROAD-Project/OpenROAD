@@ -195,9 +195,9 @@ bool PlacementDRC::checkDRC(const Node* cell,
                             const odb::dbOrientType& orient) const
 {
   if (!logger_->debugCheck(DPL, "checkDRC", 1)) {
-    // Fast path: bail on the first failing check.
-    return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
-           && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);
+    // Fast path: bail on the first failing check, cheapest first.
+    return checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y)
+           && checkPadding(cell, x, y) && checkEdgeSpacing(cell, x, y, orient);
   }
 
   // Debug path: evaluate every check so the report shows each one.
