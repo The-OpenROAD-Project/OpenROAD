@@ -642,8 +642,6 @@ std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
     const std::vector<odb::dbAccessPoint*>& aps,
     const odb::Point& inst_location) const
 {
-  const int amount_per_x = design_->getDieRegion().hx() / x_size_;
-  const int amount_per_y = design_->getDieRegion().hy() / y_size_;
   std::vector<AccessPoint> aps_on_grid;
   for (const auto& ap : aps) {
     odb::Point ap_position = ap->getPoint();
@@ -655,12 +653,16 @@ std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
     xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
     xform.apply(ap_position);
 
-    const int ap_x = (ap_position.getX() / amount_per_x >= x_size_)
-                         ? x_size_ - 1
-                         : ap_position.getX() / amount_per_x;
-    const int ap_y = ((ap_position.getY() / amount_per_y >= y_size_)
-                          ? y_size_ - 1
-                          : ap_position.getY() / amount_per_y);
+    // Map to the gcell containing the point with the same gridline search as
+    // every other dbu->gcell conversion (a fixed die/size pitch drifts off the
+    // real gridlines and lands boundary pins one gcell off). A point exactly
+    // on a gridline degenerates the interval; low() picks the upper cell.
+    const BoxT cells = rangeSearchCells(BoxT(ap_position.getX(),
+                                             ap_position.getY(),
+                                             ap_position.getX(),
+                                             ap_position.getY()));
+    const int ap_x = std::clamp(cells[0].low(), 0, x_size_ - 1);
+    const int ap_y = std::clamp(cells[1].low(), 0, y_size_ - 1);
     const PointT selected_point = PointT(ap_x, ap_y);
     const int num_layer
         = std::clamp(layer->getRoutingLevel() - 1, 0, getNumLayers() - 1);
@@ -707,7 +709,12 @@ bool GridGraph::findODBAccessPoints(
     access_points.clear();
     if (!aps_on_grid.empty()) {
       AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
-      selected_access_points.emplace(selected_ap);
+      // Pins can share a gcell with APs on different layers; merge the fixed
+      // layer interval so the tree reaches every pin (like the shape path).
+      auto it = selected_access_points.emplace(selected_ap).first;
+      IntervalT& fixed_layer_interval = it->layers;
+      fixed_layer_interval.update(selected_ap.layers.low());
+      fixed_layer_interval.update(selected_ap.layers.high());
       net->addBTermAccessPoint(bterm, selected_ap);
       has_aps = true;
     }
@@ -733,7 +740,12 @@ bool GridGraph::findODBAccessPoints(
         = translateAccessPointsToGrid(access_points, odb::Point(x, y));
     if (!aps_on_grid.empty()) {
       AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
-      selected_access_points.emplace(selected_ap);
+      // Pins can share a gcell with APs on different layers; merge the fixed
+      // layer interval so the tree reaches every pin (like the shape path).
+      auto it = selected_access_points.emplace(selected_ap).first;
+      IntervalT& fixed_layer_interval = it->layers;
+      fixed_layer_interval.update(selected_ap.layers.low());
+      fixed_layer_interval.update(selected_ap.layers.high());
       net->addITermAccessPoint(iterm, selected_ap);
       access_points.clear();
       has_aps = true;
