@@ -232,14 +232,16 @@ TEST_F(TestResizer, WeakerCellFirstOrdersHigherDriveResistanceFirst)
   ASSERT_NE(weaker_cell, nullptr);
   ASSERT_NE(stronger_cell, nullptr);
 
-  const int lib_ap = sta_->cmdScene()->libertyIndex(sta::MinMax::max());
+  const int lib_ap_index = sta_->cmdScene()->libertyIndex(sta::MinMax::max());
   const sta::LibertyPort* weaker_base_port = weaker_cell->findLibertyPort("Z");
   const sta::LibertyPort* stronger_base_port
       = stronger_cell->findLibertyPort("Z");
   ASSERT_NE(weaker_base_port, nullptr);
   ASSERT_NE(stronger_base_port, nullptr);
-  const sta::LibertyPort* weaker_port = weaker_base_port->scenePort(lib_ap);
-  const sta::LibertyPort* stronger_port = stronger_base_port->scenePort(lib_ap);
+  const sta::LibertyPort* weaker_port
+      = weaker_base_port->scenePort(lib_ap_index);
+  const sta::LibertyPort* stronger_port
+      = stronger_base_port->scenePort(lib_ap_index);
   ASSERT_NE(weaker_port, nullptr);
   ASSERT_NE(stronger_port, nullptr);
   ASSERT_LT(stronger_port->driveResistance(), weaker_port->driveResistance());
@@ -254,9 +256,56 @@ TEST_F(TestResizer, WeakerCellFirstOrdersHigherDriveResistanceFirst)
   const TestMoveGenerator generator(context);
 
   EXPECT_TRUE(
-      generator.weakerCellFirst(weaker_cell, stronger_cell, "Z", lib_ap));
+      generator.weakerCellFirst(weaker_cell, stronger_cell, "Z", lib_ap_index));
   EXPECT_FALSE(
-      generator.weakerCellFirst(stronger_cell, weaker_cell, "Z", lib_ap));
+      generator.weakerCellFirst(stronger_cell, weaker_cell, "Z", lib_ap_index));
+}
+
+TEST_F(TestResizer, WeakerCellFirstOrdersHigherIntrinsicDelayFirst)
+{
+  sta::LibertyLibrary* library
+      = readLiberty(test_root_path_ + "cpp/TestResizerIntrinsic.lib");
+  ASSERT_NE(library, nullptr);
+
+  const sta::LibertyCell* faster_cell
+      = library->findLibertyCell("INTRINSIC_FAST");
+  const sta::LibertyCell* slower_cell
+      = library->findLibertyCell("INTRINSIC_SLOW");
+  ASSERT_NE(faster_cell, nullptr);
+  ASSERT_NE(slower_cell, nullptr);
+
+  const int lib_ap_index = sta_->cmdScene()->libertyIndex(sta::MinMax::max());
+  const sta::LibertyPort* faster_base_port = faster_cell->findLibertyPort("Z");
+  const sta::LibertyPort* slower_base_port = slower_cell->findLibertyPort("Z");
+  ASSERT_NE(faster_base_port, nullptr);
+  ASSERT_NE(slower_base_port, nullptr);
+  const sta::LibertyPort* faster_port
+      = faster_base_port->scenePort(lib_ap_index);
+  const sta::LibertyPort* slower_port
+      = slower_base_port->scenePort(lib_ap_index);
+  ASSERT_NE(faster_port, nullptr);
+  ASSERT_NE(slower_port, nullptr);
+  ASSERT_FLOAT_EQ(faster_port->driveResistance(),
+                  slower_port->driveResistance());
+  const sta::ArcDelay faster_intrinsic
+      = faster_port->intrinsicDelay(resizer_.staState());
+  const sta::ArcDelay slower_intrinsic
+      = slower_port->intrinsicDelay(resizer_.staState());
+  ASSERT_LT(faster_intrinsic, slower_intrinsic);
+
+  MoveCommitter committer(resizer_);
+  const OptimizerRunConfig run_config;
+  const OptimizationPolicyConfig policy_config;
+  const GeneratorContext context{.resizer = resizer_,
+                                 .committer = committer,
+                                 .run_config = run_config,
+                                 .policy_config = policy_config};
+  const TestMoveGenerator generator(context);
+
+  EXPECT_TRUE(
+      generator.weakerCellFirst(slower_cell, faster_cell, "Z", lib_ap_index));
+  EXPECT_FALSE(
+      generator.weakerCellFirst(faster_cell, slower_cell, "Z", lib_ap_index));
 }
 
 TEST_F(TestResizer, SwapPinsFeedthroughModNet)

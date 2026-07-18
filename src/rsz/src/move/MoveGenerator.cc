@@ -47,8 +47,8 @@ bool MoveGenerator::weakerCellFirst(const sta::LibertyCell* lhs,
       = lhs_port->intrinsicDelay(resizer_.staState());
   const sta::ArcDelay rhs_intrinsic
       = rhs_port->intrinsicDelay(resizer_.staState());
-  return std::tie(rhs_drive_resistance, lhs_intrinsic)
-         < std::tie(lhs_drive_resistance, rhs_intrinsic);
+  return std::tie(lhs_drive_resistance, lhs_intrinsic)
+         > std::tie(rhs_drive_resistance, rhs_intrinsic);
 }
 
 }  // namespace rsz
