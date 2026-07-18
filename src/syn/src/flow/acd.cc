@@ -1485,6 +1485,14 @@ bool synthesize(const SynthesisProblem& problem,
                 long long* explore_calls,
                 float effort)
 {
+  if (problem.outputs.size() > 2) {
+    logger->error(
+        utl::SYN,
+        67,
+        "ACD remapper is limited to up to 2 outputs but problem has {}",
+        problem.outputs.size());
+  }
+
   Objective objective;
   objective.min_slacks[0] = -std::numeric_limits<float>::infinity();
   objective.min_slacks[1] = -std::numeric_limits<float>::infinity();
