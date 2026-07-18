@@ -3,7 +3,6 @@
 
 #include "SizeUpMtGenerator.hh"
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -81,16 +80,7 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
     return replacements;
   }
 
-  // Rank equivalent cells from weakest to strongest so equal timing scores
-  // prefer the smallest size-up step.
   const std::string& drvr_port_name = drvr_port->name();
-  std::ranges::sort(
-      swappable_cells.begin(),
-      swappable_cells.end(),
-      [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
-                                      const sta::LibertyCell* cell2) {
-        return weakerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
-      });
 
   const sta::LibertyPort* scene_drvr_port = drvr_port->scenePort(lib_ap);
   if (scene_drvr_port == nullptr) {
