@@ -2914,7 +2914,7 @@ void NesterovBase::updateDensityFieldBin()
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : sumPhi_)
   for (size_t i = 0; i < bins.size(); ++i) {
-    auto bin = bins[i];
+    auto& bin = bins[i];
     auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
     bin.setElectroField(eFieldPair.first, eFieldPair.second);
 
