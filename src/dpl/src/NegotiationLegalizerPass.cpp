@@ -345,7 +345,6 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   int totalViolations = 0;
   int illegalCellCount = 0;
   int illegalSiteCount = 0;
-  std::unordered_set<int> active_set(activeCells.begin(), activeCells.end());
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -373,13 +372,16 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   // Scan all movable cells for newly-created DRC violations outside the
   // current active set.  This handles cases where a move in the active
   // set created a one-site gap (or other DRC issue) with a bystander.
+  std::vector<char> is_active(cells_.size(), 0);
+  for (int idx : activeCells) {
+    is_active[idx] = 1;
+  }
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (cells_[i].fixed || active_set.contains(i)) {
+    if (cells_[i].fixed || is_active[i]) {
       continue;
     }
     if (!isCellLegal(i)) {
       activeCells.push_back(i);
-      active_set.insert(i);
       ++totalViolations;
       ++illegalCellCount;
     }
@@ -607,9 +609,10 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
 
   // Look up the DPL Node once for DRC checks (may be null if no
   // Opendp integration is available).
-  Node* node = (opendp_ && opendp_->drc_engine_ && network_)
-                   ? network_->getNode(cell.db_inst)
-                   : nullptr;
+  Node* node = (opendp_ && opendp_->drc_engine_) ? cell.node : nullptr;
+  const odb::dbOrientType default_orient
+      = node != nullptr ? node->getOrient() : odb::dbOrientType();
+  odb::dbSite* site = cell.db_inst->getMaster()->getSite();
 
   // DRC penalty escalates with iteration count: early iterations are
   // lenient (cells can tolerate DRC violations to resolve overlaps first),
@@ -645,10 +648,11 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       return;
     }
 
-    double cost = negotiationCost(cell_idx, tx, ty);
+    double cost = negotiationCost(cell_idx, tx, ty, best_cost);
     if (cost > best_cost) {
       // Already loses on displacement + congestion; skip the DRC count,
-      // the most expensive term to evaluate.
+      // the most expensive term to evaluate. Ties proceed to the rank
+      // comparison below.
       return;
     }
 
@@ -656,14 +660,11 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      odb::dbOrientType targetOrient = node->getOrient();
-      odb::dbSite* site = cell.db_inst->getMaster()->getSite();
+      odb::dbOrientType targetOrient = default_orient;
       if (site != nullptr) {
         auto orient
             = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
-        if (orient.has_value()) {
-          targetOrient = orient.value();
-        }
+        targetOrient = orient.has_value() ? orient.value() : default_orient;
       }
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
           node, GridX{tx}, GridY{ty}, targetOrient);
@@ -825,8 +826,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                           ? "inf"
                           : std::to_string(best_cost));
       if (node != nullptr) {
-        odb::dbOrientType targetOrient = node->getOrient();
-        odb::dbSite* site = cell.db_inst->getMaster()->getSite();
+        odb::dbOrientType targetOrient = default_orient;
         if (site != nullptr) {
           auto orient = opendp_->grid_->getSiteOrientation(
               GridX{best_x}, GridY{best_y}, site);
@@ -890,10 +890,21 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
 //   Cost(x,y) = b(x,y) + Σ_grids h(g) * p(g)
 // ===========================================================================
 
-double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
+// The aborts are strict (>) rather than >=: partial sums only grow, so a
+// candidate whose true cost is <= abort_bound is never aborted and its
+// exact cost is returned. findBestLocation relies on this to tell a true
+// cost tie (returned value == abort_bound after a complete sum) apart
+// from an aborted partial sum, which its scan-rank tie-breaking needs.
+double NegotiationLegalizer::negotiationCost(int cell_idx,
+                                             int x,
+                                             int y,
+                                             double abort_bound) const
 {
   const NegCell& cell = cells_[cell_idx];
   double cost = targetCost(cell_idx, x, y);
+  if (cost > abort_bound) {
+    return cost;
+  }
 
   const int xBegin = std::max(0, x - cell.pad_left);
   const int xEnd = std::min(grid_w_, x + cell.width + cell.pad_right);
@@ -901,13 +912,11 @@ double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
     for (int gx = xBegin; gx < xEnd; ++gx) {
       const int gy = y + dy;
       if (!gridExists(gx, gy)) {
-        cost += kInfCost;
-        continue;
+        return cost + kInfCost;
       }
       const Pixel& g = gridAt(gx, gy);
       if (g.capacity == 0) {
-        cost += kInfCost;  // blockage
-        continue;
+        return cost + kInfCost;  // blockage
       }
       // Congestion term: h * p  (Eq. 10).
       // Usage is incremented by 1 to account for this cell being placed.
@@ -915,6 +924,9 @@ double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
       const auto cap = static_cast<double>(g.capacity);
       const double penalty = usageWithCell / cap;
       cost += g.hist_cost * penalty;
+      if (cost > abort_bound) {
+        return cost;
+      }
     }
   }
   return cost;
@@ -1007,7 +1019,7 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
       continue;
     }
     const NegCell& cell = cells_[idx];
-    Node* node = network_->getNode(cell.db_inst);
+    Node* node = cell.node;
     if (node == nullptr) {
       continue;
     }
@@ -1275,7 +1287,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
       continue;
     }
     const NegCell& cell = cells_[idx];
-    Node* node = network_->getNode(cell.db_inst);
+    Node* node = cell.node;
     if (node == nullptr) {
       continue;
     }
