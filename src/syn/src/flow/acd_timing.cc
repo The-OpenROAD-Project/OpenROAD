@@ -268,7 +268,7 @@ void populateCutTiming(sta::dbNetwork* network,
   sta::Graph* graph = sta->graph();
   sta::Search* search = sta->search();
   sta::GraphDelayCalc* graph_dcalc = sta->graphDelayCalc();
-  const sta::Scene* scene = sta ? sta->cmdScene() : nullptr;
+  const sta::Scene* scene = sta->cmdScene();
   const sta::MinMax* max = sta::MinMax::max();
 
   const auto dcalc_ap = scene->dcalcAnalysisPtIndex(max);
