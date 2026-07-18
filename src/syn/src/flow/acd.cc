@@ -49,8 +49,14 @@ void TruthTable::swapVars(int a, int b)
         continue;
       }
       const int j = (i & ~(1 << b)) | (1 << a);
-      std::swap(values[base + i], values[base + j]);
-      std::swap(dontcares[base + i], dontcares[base + j]);
+      // std::swap won't bind std::vector<bool>'s proxy references, so swap the
+      // two positions through plain bool temporaries.
+      const bool vi = values[base + i], vj = values[base + j];
+      values[base + i] = vj;
+      values[base + j] = vi;
+      const bool di = dontcares[base + i], dj = dontcares[base + j];
+      dontcares[base + i] = dj;
+      dontcares[base + j] = di;
     }
   }
 }
