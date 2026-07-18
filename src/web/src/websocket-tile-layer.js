@@ -3,6 +3,8 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
+import { buildVisibilityFlags } from './ui-utils.js';
+
 // `app` (last arg) is read lazily on every request so that
 // app.visibleChiplets, populated by display-controls.js after the tech
 // metadata arrives, is reflected in tile requests without rebuilding
@@ -21,15 +23,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
     // send it on every request so the wire schema stays uniform with
     // selectAt requests.
     function buildTileRequest(coords, layerName) {
-        const vf = {};
-        for (const [k, v] of Object.entries(visibility)) {
-            vf[k] = !!v;
-        }
-        if (selectability) {
-            for (const [k, v] of Object.entries(selectability)) {
-                vf['s_' + k] = !!v;
-            }
-        }
+        const vf = buildVisibilityFlags(visibility, selectability);
         const req = {
             type: 'tile',
             layer: layerName,

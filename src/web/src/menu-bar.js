@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { showFindDialog, showGotoDialog } from './search-nav.js';
+
 // Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
 export function createMenuBar(app) {
     const menus = [
@@ -19,8 +21,12 @@ export function createMenuBar(app) {
             { label: 'Show DBU', action: () => app.toggleShowDbu(),
               checked: () => app.showDbu },
             { type: 'separator' },
-            { label: 'Find...', shortcut: 'Ctrl+F', disabled: true },
-            { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
+            { label: 'Find...', shortcut: 'Ctrl+F',
+              action: () => showFindDialog(app),
+              enabledWhen: () => !!app.designScale },
+            { label: 'Go to Position...', shortcut: 'Shift+G',
+              action: () => showGotoDialog(app),
+              enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Tools', items: [
             { label: 'Ruler', shortcut: 'K',

@@ -240,6 +240,7 @@ html, body {
     justify-content: center;
 }
 .modal-dialog {
+    position: relative;
     background: var(--bg-header);
     border: 1px solid var(--border-strong);
     border-radius: 6px;
@@ -247,6 +248,24 @@ html, body {
     min-width: 400px;
     color: var(--fg-primary);
     font: 13px monospace;
+}
+.modal-dialog .modal-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--fg-primary);
+    font-size: 18px;
+    line-height: 20px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+.modal-dialog .modal-close:hover {
+    opacity: 1;
 }
 .modal-dialog h3 {
     margin: 0 0 12px 0;
@@ -301,6 +320,29 @@ html, body {
 .modal-dialog button:disabled {
     opacity: 0.5;
     cursor: default;
+}
+
+/* Search & navigation dialogs (Find / Go to) */
+.search-nav-dialog .sn-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+.search-nav-dialog .sn-row label {
+    width: 64px;
+    flex-shrink: 0;
+}
+.search-nav-dialog .sn-row .fb-path-input,
+.search-nav-dialog .sn-type {
+    flex: 1;
+}
+.search-nav-dialog .sn-check {
+    display: block;
+    margin: 8px 0 2px;
+}
+.modal-dialog .modal-error.info {
+    color: var(--fg-primary);
 }
 
 /* File browser dialog */
@@ -445,6 +487,13 @@ html, body {
 /* Leaflet map cursor */
 .leaflet-container {
     cursor: default !important;
+}
+/* "Fit" control button — inherits .leaflet-bar sizing from Leaflet's CSS. */
+.leaflet-control-fit a {
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 26px;
+    text-align: center;
 }
 .leaflet-dragging .leaflet-container {
     cursor: grabbing !important;
@@ -726,6 +775,80 @@ html, body {
 .context-menu-item:hover {
     background: var(--bg-hover);
     color: var(--fg-bright);
+}
+.cm-item {
+    position: relative;
+    padding: 5px 12px;
+    padding-right: 24px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.cm-item:hover {
+    background: var(--bg-hover);
+    color: var(--fg-bright);
+}
+.cm-item.disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+.cm-item.has-submenu::after {
+    content: '▶';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    opacity: 0.7;
+}
+.cm-submenu {
+    position: absolute;
+    left: 100%;
+    top: -5px;
+    display: none;
+    background: var(--bg-context);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    min-width: 160px;
+    padding: 4px 0;
+    box-shadow: 0 2px 8px var(--shadow);
+}
+.cm-item.has-submenu:hover > .cm-submenu {
+    display: block;
+}
+.cm-submenu.flip-left {
+    left: auto;
+    right: 100%;
+}
+.cm-swatch {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin-right: 8px;
+    border: 1px solid var(--border-strong);
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.cm-toast {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    max-width: 80%;
+    padding: 6px 12px;
+    background: var(--bg-context);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px var(--shadow);
+    color: var(--fg-bright);
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+.cm-toast-hide {
+    opacity: 0;
 }
 
 /* Tcl Console */

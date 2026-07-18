@@ -28,6 +28,9 @@ set(WEB_ASSET_FILES
     src/tcl-completer.js
     src/hierarchy-browser.js
     src/menu-bar.js
+    src/context-menu.js
+    src/search-nav.js
+    src/capture.js
     src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
@@ -64,6 +67,9 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/context-menu.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/search-nav.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js

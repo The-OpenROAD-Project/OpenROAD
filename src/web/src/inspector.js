@@ -265,9 +265,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 if (data.bbox && app.map && app.designScale) {
                     const [x1, y1, x2, y2] = data.bbox;
                     if (data.type !== 'Inst') {
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    pulseHighlight(data.bbox, data.type);
                 }
                 // Redraw tiles to restore selection-set highlights.
                 redrawAllLayers();
@@ -313,9 +313,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                     // For non-instance objects, show dashed bbox outline
                     // (instances get the yellow tile-based highlight instead)
                     if (data.type !== 'Inst') {
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    pulseHighlight(data.bbox, data.type);
                 }
                 // Refresh overlay to update instance highlight
                 refreshOverlay();
@@ -355,9 +355,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 if (data.bbox && app.map && app.designScale) {
                     if (data.type !== 'Inst') {
                         const [x1, y1, x2, y2] = data.bbox;
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    pulseHighlight(data.bbox, data.type);
                 }
                 refreshOverlay();
             })
@@ -367,9 +367,15 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             });
     }
 
-    function highlightBBox(x1, y1, x2, y2) {
+    function highlightBBox(x1, y1, x2, y2, type) {
         if (app.highlightRect) {
             app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        // A net's bbox spans its whole extent, which is distracting; the net's
+        // trace is already highlighted via the overlay, so skip the rectangle.
+        if (type === 'Net') {
+            return;
         }
         const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY);
         app.highlightRect = L.rectangle(bounds, {
@@ -382,8 +388,10 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     // animation.  The pulse is a filled rectangle that fades in and out
     // several times, then removes itself.
     let pulseLayer = null;
-    function pulseHighlight(bbox) {
+    function pulseHighlight(bbox, type) {
         if (!bbox || !app.map || !app.designScale) return;
+        // A net's bbox spans the whole net; don't pulse a giant rectangle.
+        if (type === 'Net') return;
         if (pulseLayer) {
             app.map.removeLayer(pulseLayer);
             pulseLayer = null;

@@ -97,6 +97,7 @@ struct WebSocketRequest
     kSlackHistogram,
     kFanoutHistogram,
     kSelectFanoutBin,
+    kFind,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
@@ -123,6 +124,7 @@ struct WebSocketRequest
     kDebugCharts,
     kGet3DData,
     kOverlayTile,
+    kContextAction,
     kUnknown
   };
 
@@ -164,6 +166,17 @@ struct SessionState
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;
+  // Selection highlight line segments (net flywires / route paths) — rendered
+  // in the selection color (yellow) via the overlay flight-line channel.
+  // Guarded by selection_mutex.
+  std::vector<std::pair<odb::Point, odb::Point>> highlight_lines;
+  // Context-menu "Highlight →" groups: colored shapes carrying the per-group
+  // color (gui::Painter::kHighlightColors[group]).  Rendered via the colored
+  // overlay path, independent of the single-style selection highlight above.
+  // Guarded by selection_mutex.
+  std::vector<ColoredRect> highlight_group_rects;
+  std::vector<ColoredPolygon> highlight_group_polys;
+  std::vector<FlightLine> highlight_group_lines;
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;
@@ -235,6 +248,8 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleFind(const WebSocketRequest& req,
+                               SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
   WebSocketResponse handleSelectNext(const WebSocketRequest& req,
@@ -247,6 +262,8 @@ class SelectHandler
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);
+  WebSocketResponse handleContextAction(const WebSocketRequest& req,
+                                        SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;
