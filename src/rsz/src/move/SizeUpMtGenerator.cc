@@ -98,10 +98,13 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
   }
 
   const float drive = scene_drvr_port->driveResistance();
-  // Keep every stronger equivalent cell and let candidate::estimate do the
-  // exact timing check.
+  // Keep every equivalent cell that does not weaken drive resistance and let
+  // candidate::estimate require a strict delay improvement.
   odb::dbMaster* current_master = resizer_.dbNetwork()->staToDb(cell);
   for (sta::LibertyCell* swappable : swappable_cells) {
+    if (swappable == cell) {
+      continue;
+    }
     odb::dbMaster* swappable_master = resizer_.dbNetwork()->staToDb(swappable);
     if (current_master == nullptr || swappable_master == nullptr) {
       continue;
@@ -123,7 +126,7 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
       continue;
     }
     const float swappable_drive = swappable_drvr->driveResistance();
-    if (swappable_drive < drive) {
+    if (swappable_drive <= drive) {
       replacements.push_back(swappable);
     }
   }

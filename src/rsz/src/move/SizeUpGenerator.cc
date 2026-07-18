@@ -179,8 +179,8 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
   const float delay = resizer_.gateDelay(drvr_port, load_cap, scene, min_max)
                       + prev_drive * scene_input_port->capacitance();
 
-  // Accept the first cell that improves both drive resistance and estimated
-  // stage delay.
+  // Accept the first cell that does not weaken drive resistance and improves
+  // estimated stage delay.
   for (sta::LibertyCell* swappable : swappable_cells) {
     sta::LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
     if (swappable_corner == nullptr) {
@@ -197,7 +197,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     const float swappable_delay
         = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
           + prev_drive * swappable_input->capacitance();
-    if (swappable_drive < drive && swappable_delay < delay) {
+    if (swappable_drive <= drive && swappable_delay < delay) {
       return swappable;
     }
   }
