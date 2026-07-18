@@ -25,10 +25,10 @@ const sta::LibertyPort* MoveGenerator::findScenePort(
   return port != nullptr ? port->scenePort(lib_ap_index) : nullptr;
 }
 
-bool MoveGenerator::strongerCellFirst(const sta::LibertyCell* lhs,
-                                      const sta::LibertyCell* rhs,
-                                      const std::string& drvr_port_name,
-                                      const int lib_ap_index) const
+bool MoveGenerator::weakerCellFirst(const sta::LibertyCell* lhs,
+                                    const sta::LibertyCell* rhs,
+                                    const std::string& drvr_port_name,
+                                    const int lib_ap_index) const
 {
   const sta::LibertyPort* lhs_port
       = findScenePort(lhs, drvr_port_name, lib_ap_index);
@@ -47,8 +47,8 @@ bool MoveGenerator::strongerCellFirst(const sta::LibertyCell* lhs,
       = lhs_port->intrinsicDelay(resizer_.staState());
   const sta::ArcDelay rhs_intrinsic
       = rhs_port->intrinsicDelay(resizer_.staState());
-  return std::tie(lhs_drive_resistance, lhs_intrinsic)
-         < std::tie(rhs_drive_resistance, rhs_intrinsic);
+  return std::tie(rhs_drive_resistance, lhs_intrinsic)
+         < std::tie(lhs_drive_resistance, rhs_intrinsic);
 }
 
 }  // namespace rsz

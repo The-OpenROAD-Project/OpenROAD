@@ -155,8 +155,8 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     return nullptr;
   }
 
-  // Evaluate stronger equivalent cells first so the search stops on the best
-  // local replacement.
+  // Evaluate weaker equivalent cells first so the search stops on the smallest
+  // local size-up step.
   const std::string& in_port_name = in_port->name();
   const std::string& drvr_port_name = drvr_port->name();
   std::ranges::sort(
@@ -164,7 +164,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
       swappable_cells.end(),
       [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
                                       const sta::LibertyCell* cell2) {
-        return strongerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
+        return weakerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
       });
 
   const sta::LibertyPort* scene_drvr_port

@@ -42,7 +42,7 @@ class TestMoveGenerator : public MoveGenerator
     return {};
   }
 
-  using MoveGenerator::strongerCellFirst;
+  using MoveGenerator::weakerCellFirst;
 };
 
 class TestResizer : public tst::IntegratedFixture
@@ -223,7 +223,7 @@ class TestResizer : public tst::IntegratedFixture
   }
 };
 
-TEST_F(TestResizer, StrongerCellFirstOrdersLowerDriveResistanceFirst)
+TEST_F(TestResizer, WeakerCellFirstOrdersHigherDriveResistanceFirst)
 {
   const sta::LibertyCell* weaker_cell
       = sta_->network()->findLibertyCell("BUF_X1");
@@ -254,9 +254,9 @@ TEST_F(TestResizer, StrongerCellFirstOrdersLowerDriveResistanceFirst)
   const TestMoveGenerator generator(context);
 
   EXPECT_TRUE(
-      generator.strongerCellFirst(stronger_cell, weaker_cell, "Z", lib_ap));
+      generator.weakerCellFirst(weaker_cell, stronger_cell, "Z", lib_ap));
   EXPECT_FALSE(
-      generator.strongerCellFirst(weaker_cell, stronger_cell, "Z", lib_ap));
+      generator.weakerCellFirst(stronger_cell, weaker_cell, "Z", lib_ap));
 }
 
 TEST_F(TestResizer, SwapPinsFeedthroughModNet)

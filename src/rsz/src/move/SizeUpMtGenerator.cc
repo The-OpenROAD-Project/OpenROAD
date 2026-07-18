@@ -81,15 +81,15 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
     return replacements;
   }
 
-  // Rank equivalent cells from strongest to weakest so the first legal win is
-  // the best gain.
+  // Rank equivalent cells from weakest to strongest so equal timing scores
+  // prefer the smallest size-up step.
   const std::string& drvr_port_name = drvr_port->name();
   std::ranges::sort(
       swappable_cells.begin(),
       swappable_cells.end(),
       [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
                                       const sta::LibertyCell* cell2) {
-        return strongerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
+        return weakerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
       });
 
   const sta::LibertyPort* scene_drvr_port = drvr_port->scenePort(lib_ap);
