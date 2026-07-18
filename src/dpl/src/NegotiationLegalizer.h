@@ -184,9 +184,7 @@ class NegotiationLegalizer
       const std::unordered_map<int, int>& no_cand_by_height,
       const std::unordered_map<int, int>& same_pos_by_height) const;
 
-  // Post-optimisation
-  void greedyImprove(int passes);
-  void cellSwap();
+  // Stall recovery
   void diamondRecovery(const std::vector<int>& activeCells);
 
   // Constraint helpers

@@ -191,16 +191,6 @@ void NegotiationLegalizer::legalize()
 
   debugPause("Pause after negotiation pass");
 
-  // --- Part 3: Post-optimisation ------------------------------------------
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation",
-             1,
-             "NegotiationLegalizer: post-optimisation.");
-  // greedyImprove(5);
-  // cellSwap();
-  // greedyImprove(1);
-
   const double avgDisp = avgDisplacement();
   const int maxDisp = maxDisplacement();
   const int nViol = numViolations();
