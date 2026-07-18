@@ -16,7 +16,6 @@ cc_library(
     srcs = [
         "src/flow/abc.cc",
         "src/flow/acd.cc",
-        "src/flow/acd.h",
         "src/flow/acd_resynth.cc",
         "src/flow/acd_resynth.h",
         "src/flow/acd_timing.cc",
@@ -32,14 +31,15 @@ cc_library(
         "src/flow/opt_gatefusion.h",
         "src/flow/sequential_mapper.cc",
         "src/flow/target_index.cc",
-        "src/flow/target_index.h",
         "src/synthesis.cpp",
     ],
     hdrs = [
         "include/syn/synthesis.h",
+        "src/flow/acd.h",
         "src/flow/combinational_mapper_npn.h",
         "src/flow/constant_fold.h",
         "src/flow/import.h",
+        "src/flow/target_index.h",
     ],
     includes = [
         "include",

@@ -71,6 +71,8 @@ Truth6 composeFexpr(sta::FuncExpr* f,
   return 0;
 }
 
+}  // namespace
+
 TruthTable evaluateFunction(const GateNetwork& net)
 {
   std::vector<Truth6> node_tt(net.nodes.size());
@@ -111,8 +113,6 @@ TruthTable evaluateFunction(const GateNetwork& net)
   }
   return result;
 }
-
-}  // namespace
 
 Resynthesis::Resynthesis(Synthesis* synthesis) : synthesis_(synthesis)
 {

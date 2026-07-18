@@ -230,6 +230,11 @@ bool synthesize(const SynthesisProblem& problem,
                 long long* explore_calls,
                 float effort);
 
+// The (possibly multi-output) truth table `net` realizes, read back off each
+// node's Liberty function.  Used to check a network against the function it was
+// meant to compute.
+TruthTable evaluateFunction(const GateNetwork& net);
+
 NodeArrivals outputArrival(const sta::LibertyPort* out_port,
                            const std::vector<NodeArrivals>& input_pin_arrivals,
                            float load,

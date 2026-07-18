@@ -110,6 +110,20 @@ cc_test(
 )
 
 cc_test(
+    name = "acd_test",
+    srcs = ["acd_test.cc"],
+    data = ["cm_test_cells.lib"],
+    deps = [
+        "//src/dbSta",
+        "//src/sta:opensta_lib",
+        "//src/syn",
+        "//src/syn/src/ir",
+        "//src/tst",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
     name = "bitblast_test",
     srcs = ["bitblast_test.cc"],
     deps = [
