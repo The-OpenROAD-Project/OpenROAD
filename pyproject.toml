@@ -1,7 +1,3 @@
 [tool.black]
-extend-exclude = '''
-^/third-party/
-'''
-force-exclude = '''
-^/third-party/
-'''
+extend-exclude = '^/third-party/'
+force-exclude = '^/third-party/'
