@@ -123,7 +123,12 @@ NodeArrivals outputArrival(const sta::LibertyPort* out_port,
         }
 
         auto it = std::find(in_ports.begin(), in_ports.end(), arc->from());
-        assert(it != in_ports.end());
+        if (it == in_ports.end()) {
+          // This can happen with output->output edges, which we choose
+          // to ignore
+          continue;
+        }
+
         int in_idx = it - in_ports.begin();
         const auto* in_rf = arc->fromEdge()->asRiseFall();
         const auto* out_rf = arc->toEdge()->asRiseFall();
