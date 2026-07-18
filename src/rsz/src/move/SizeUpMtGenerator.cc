@@ -87,7 +87,7 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
     return replacements;
   }
 
-  const float drive = scene_drvr_port->driveResistance();
+  const float drive_r = scene_drvr_port->driveResistance();
   // Keep every equivalent cell that does not weaken drive resistance and let
   // candidate::estimate require a strict delay improvement.
   odb::dbMaster* current_master = resizer_.dbNetwork()->staToDb(cell);
@@ -115,8 +115,8 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
     if (swappable_drvr == nullptr) {
       continue;
     }
-    const float swappable_drive = swappable_drvr->driveResistance();
-    if (swappable_drive <= drive) {
+    const float swappable_drive_r = swappable_drvr->driveResistance();
+    if (swappable_drive_r <= drive_r) {
       replacements.push_back(swappable);
     }
   }

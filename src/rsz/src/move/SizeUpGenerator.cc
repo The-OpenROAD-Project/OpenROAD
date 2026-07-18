@@ -175,7 +175,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     return nullptr;
   }
 
-  const float drive = scene_drvr_port->driveResistance();
+  const float drive_r = scene_drvr_port->driveResistance();
   const float delay = resizer_.gateDelay(drvr_port, load_cap, scene, min_max)
                       + prev_drive * scene_input_port->capacitance();
 
@@ -193,11 +193,11 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     if (swappable_drvr == nullptr || swappable_input == nullptr) {
       continue;
     }
-    const float swappable_drive = swappable_drvr->driveResistance();
+    const float swappable_drive_r = swappable_drvr->driveResistance();
     const float swappable_delay
         = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
           + prev_drive * swappable_input->capacitance();
-    if (swappable_drive <= drive && swappable_delay < delay) {
+    if (swappable_drive_r <= drive_r && swappable_delay < delay) {
       return swappable;
     }
   }
