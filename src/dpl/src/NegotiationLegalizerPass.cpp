@@ -649,10 +649,12 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
 
     double cost = negotiationCost(cell_idx, tx, ty, best_cost);
-    if (cost > best_cost) {
-      // Already loses on displacement + congestion; skip the DRC count,
-      // the most expensive term to evaluate. Ties proceed to the rank
-      // comparison below.
+    if (cost > best_cost || (cost == best_cost && rank >= best_rank)) {
+      // Already loses on displacement + congestion, or ties the incumbent
+      // with a losing rank — the DRC term below only adds cost, so neither
+      // can win. Skip the DRC count, the most expensive term to evaluate.
+      // Ties with a winning rank proceed: a DRC violation would still
+      // disqualify them.
       return;
     }
 
