@@ -2207,8 +2207,8 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
         auto& candidate = dist_to_boundary[0];
         auto& second_candidate = dist_to_boundary[1];
 
-        // When a pin equally distant from two or more edges (i.e. in the
-        // corner) we use the pin's layer direction is used to choose between
+        // When a pin is equally distant from two or more edges (i.e. in the
+        // corner) the pin's layer direction is used to choose between
         // candidates
         if (isEquidistantDifferentDirections(candidate, second_candidate)) {
           auto direction
@@ -2241,7 +2241,7 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
   }
 
   // Adjust halo orientation for fixed macros here, since those
-  // are skipped during orientation improve and thus never adjuted
+  // are skipped during orientation improve and thus never properly adjusted
   if (inst->getPlacementStatus().isFixed()) {
     auto orient = inst->getOrient();
     if (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180) {
