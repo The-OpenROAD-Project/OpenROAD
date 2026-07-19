@@ -955,7 +955,20 @@ struct Wavefront
   int expansion_south;
   bool operator<(const Wavefront& rhs) const
   {
-    return expansions_done > rhs.expansions_done;
+    // Total order so that priority_queue pop order does not depend on the
+    // standard library's heap implementation.
+    if (expansions_done != rhs.expansions_done) {
+      return expansions_done > rhs.expansions_done;
+    }
+    if (id != rhs.id) {
+      return id > rhs.id;
+    }
+    return std::tie(
+               expansion_east, expansion_west, expansion_north, expansion_south)
+           > std::tie(rhs.expansion_east,
+                      rhs.expansion_west,
+                      rhs.expansion_north,
+                      rhs.expansion_south);
   }
 };
 
