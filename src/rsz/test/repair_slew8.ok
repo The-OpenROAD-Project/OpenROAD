@@ -28,7 +28,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r248/RESET_B                            1.50    1.10    0.40 (MET)
+r248/RESET_B                            1.50    1.03    0.47 (MET)
 
 max capacitance
 

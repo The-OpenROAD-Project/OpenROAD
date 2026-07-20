@@ -21,38 +21,38 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.177 |       -0.5 |       -0.3 |      2 | y2
-       2* |       0 |       2 |        0 |      0 |     0 |   +29.6% |   -0.136 |       -0.4 |       -0.3 |      2 | y2
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.176 |       -0.5 |       -0.3 |      2 | y2
+       2* |       0 |       2 |        0 |      0 |     0 |   +29.6% |   -0.137 |       -0.4 |       -0.3 |      2 | y2
 [DEBUG RSZ-move_tracker] WNS_PATH Phase Endpoint Profiler: No endpoint statistics collected
-    final |       0 |       2 |        0 |      0 |     0 |   +29.6% |   -0.136 |       -0.4 |       -0.3 |      2 | y2
+    final |       0 |       2 |        0 |      0 |     0 |   +29.6% |   -0.137 |       -0.4 |       -0.3 |      2 | y2
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0211] 
 [INFO RSZ-0212] === Optimization Analysis Reports ===
 [DEBUG RSZ-move_tracker] Pin Slack Distribution:
-[DEBUG RSZ-move_tracker] Slack range: min=-0.177 ns, max=-0.130 ns
+[DEBUG RSZ-move_tracker] Slack range: min=-0.176 ns, max=-0.130 ns
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Pre-Optimization Gate Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
-[DEBUG RSZ-move_tracker] < -0.172           |      3 | ###
-[DEBUG RSZ-move_tracker] [-0.172,-0.168)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.168,-0.163)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.163,-0.158)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.158,-0.154)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.154,-0.149)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.149,-0.144)    |      0 |
+[DEBUG RSZ-move_tracker] < -0.171           |      3 | ###
+[DEBUG RSZ-move_tracker] [-0.171,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.162)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.162,-0.157)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.157,-0.153)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.153,-0.148)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.148,-0.144)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.144,-0.139)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.139,-0.135)    |      0 |
 [DEBUG RSZ-move_tracker] >= 0.000           |      2 | ##
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Post-Optimization Gate Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
-[DEBUG RSZ-move_tracker] < -0.172           |      0 |
-[DEBUG RSZ-move_tracker] [-0.172,-0.168)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.168,-0.163)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.163,-0.158)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.158,-0.154)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.154,-0.149)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.149,-0.144)    |      0 |
+[DEBUG RSZ-move_tracker] < -0.171           |      0 |
+[DEBUG RSZ-move_tracker] [-0.171,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.162)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.162,-0.157)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.157,-0.153)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.153,-0.148)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.148,-0.144)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.144,-0.139)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.139,-0.135)    |      0 |
 [DEBUG RSZ-move_tracker] >= 0.000           |      5 | #####
@@ -63,26 +63,26 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Pre-Optimization Endpoint Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
-[DEBUG RSZ-move_tracker] < -0.172           |      1 | #
-[DEBUG RSZ-move_tracker] [-0.172,-0.168)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.168,-0.163)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.163,-0.158)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.158,-0.154)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.154,-0.149)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.149,-0.144)    |      0 |
+[DEBUG RSZ-move_tracker] < -0.171           |      1 | #
+[DEBUG RSZ-move_tracker] [-0.171,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.162)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.162,-0.157)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.157,-0.153)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.153,-0.148)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.148,-0.144)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.144,-0.139)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.139,-0.135)    |      0 |
 [DEBUG RSZ-move_tracker] >= 0.000           |      1 | #
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Post-Optimization Endpoint Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
-[DEBUG RSZ-move_tracker] < -0.172           |      0 |
-[DEBUG RSZ-move_tracker] [-0.172,-0.168)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.168,-0.163)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.163,-0.158)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.158,-0.154)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.154,-0.149)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.149,-0.144)    |      0 |
+[DEBUG RSZ-move_tracker] < -0.171           |      0 |
+[DEBUG RSZ-move_tracker] [-0.171,-0.167)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.167,-0.162)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.162,-0.157)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.157,-0.153)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.153,-0.148)    |      0 |
+[DEBUG RSZ-move_tracker] [-0.148,-0.144)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.144,-0.139)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.139,-0.135)    |      1 | #
 [DEBUG RSZ-move_tracker] >= 0.000           |      1 | #
@@ -93,25 +93,25 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [DEBUG RSZ-move_tracker] Analyzing top 2 most critical endpoints:
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Endpoint                                 | Startpoint                               |  Slack(ns) |  EpTNS(ns) | NegPath | Levels | Worst Delay Pin (Gate)                   |  Arc(ps) | Load(ps) | Intr(ps) | Fanout
-[DEBUG RSZ-move_tracker] y2                                       | a2                                       |     -0.136 |     -1.370 |      12 |      8 | U4/ZN (XNOR2_X1)                         |     57.6 |     34.6 |     23.0 |      1
+[DEBUG RSZ-move_tracker] y2                                       | a2                                       |     -0.137 |     -1.372 |      12 |      8 | U4/ZN (XNOR2_X1)                         |     58.9 |     35.3 |     23.6 |      1
 [DEBUG RSZ-move_tracker] y1                                       | a1                                       |     -0.130 |     -0.456 |       4 |      6 | U5/ZN (AND2_X1)                          |     72.0 |     43.2 |     28.8 |      1
 [DEBUG RSZ-move_tracker] 
-[DEBUG RSZ-move_tracker] Post-Optimization Summary: WNS = -0.136 ns, TNS = -0.266 ns, 2 violating endpoints
+[DEBUG RSZ-move_tracker] Post-Optimization Summary: WNS = -0.137 ns, TNS = -0.267 ns, 2 violating endpoints
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] === Critical Endpoint Path Distribution ===
 [DEBUG RSZ-move_tracker] 
-[DEBUG RSZ-move_tracker] Endpoint #1: y2 (slack = -0.136 ns)
+[DEBUG RSZ-move_tracker] Endpoint #1: y2 (slack = -0.137 ns)
 [DEBUG RSZ-move_tracker] Found 12 paths to this endpoint
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Path Slack Distribution for Endpoint #1
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Paths | Distribution
-[DEBUG RSZ-move_tracker] < -0.136           |      0 |
-[DEBUG RSZ-move_tracker] [-0.136,-0.129)    |      4 | ####
-[DEBUG RSZ-move_tracker] [-0.129,-0.121)    |      2 | ##
-[DEBUG RSZ-move_tracker] [-0.121,-0.114)    |      1 | #
+[DEBUG RSZ-move_tracker] < -0.137           |      0 |
+[DEBUG RSZ-move_tracker] [-0.137,-0.129)    |      4 | ####
+[DEBUG RSZ-move_tracker] [-0.129,-0.122)    |      2 | ##
+[DEBUG RSZ-move_tracker] [-0.122,-0.114)    |      1 | #
 [DEBUG RSZ-move_tracker] [-0.114,-0.106)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.106,-0.098)    |      3 | ###
-[DEBUG RSZ-move_tracker] [-0.098,-0.091)    |      1 | #
+[DEBUG RSZ-move_tracker] [-0.106,-0.099)    |      3 | ###
+[DEBUG RSZ-move_tracker] [-0.099,-0.091)    |      1 | #
 [DEBUG RSZ-move_tracker] [-0.091,-0.083)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.083,-0.076)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.076,-0.068)    |      0 |
@@ -122,13 +122,13 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Path Slack Distribution for Endpoint #2
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Paths | Distribution
-[DEBUG RSZ-move_tracker] < -0.136           |      0 |
-[DEBUG RSZ-move_tracker] [-0.136,-0.129)    |      1 | #
-[DEBUG RSZ-move_tracker] [-0.129,-0.121)    |      1 | #
-[DEBUG RSZ-move_tracker] [-0.121,-0.114)    |      0 |
+[DEBUG RSZ-move_tracker] < -0.137           |      0 |
+[DEBUG RSZ-move_tracker] [-0.137,-0.129)    |      1 | #
+[DEBUG RSZ-move_tracker] [-0.129,-0.122)    |      1 | #
+[DEBUG RSZ-move_tracker] [-0.122,-0.114)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.114,-0.106)    |      0 |
-[DEBUG RSZ-move_tracker] [-0.106,-0.098)    |      1 | #
-[DEBUG RSZ-move_tracker] [-0.098,-0.091)    |      1 | #
+[DEBUG RSZ-move_tracker] [-0.106,-0.099)    |      1 | #
+[DEBUG RSZ-move_tracker] [-0.099,-0.091)    |      1 | #
 [DEBUG RSZ-move_tracker] [-0.091,-0.083)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.083,-0.076)    |      0 |
 [DEBUG RSZ-move_tracker] [-0.076,-0.068)    |      0 |
@@ -140,9 +140,9 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [DEBUG RSZ-move_tracker] Category 2: 5 critical pins NEVER visited
 [DEBUG RSZ-move_tracker]   (These pins are on critical paths but were never considered for optimization)
 [DEBUG RSZ-move_tracker]   Pin                                    | Gate Type                      | PinSlk(ps) |  Load(ps) |  Intr(ps) | Fanout
-[DEBUG RSZ-move_tracker]   U3/ZN                                  | NAND2_X2                       |    -132.09 |     23.42 |      7.10 |      1
-[DEBUG RSZ-move_tracker]   wire2/Z                                | BUF_X8                         |    -132.09 |     23.41 |     17.41 |      1
-[DEBUG RSZ-move_tracker]   U4/ZN                                  | XNOR2_X1                       |    -132.09 |     30.34 |     15.39 |      1
+[DEBUG RSZ-move_tracker]   U3/ZN                                  | NAND2_X2                       |    -132.52 |     22.45 |      7.10 |      1
+[DEBUG RSZ-move_tracker]   U4/ZN                                  | XNOR2_X1                       |    -132.52 |     31.61 |     15.39 |      1
+[DEBUG RSZ-move_tracker]   wire2/Z                                | BUF_X8                         |    -132.52 |     22.44 |     17.41 |      1
 [DEBUG RSZ-move_tracker]   U5/ZN                                  | AND2_X1                        |    -129.92 |     49.36 |     22.62 |      1
 [DEBUG RSZ-move_tracker]   wire1/Z                                | BUF_X4                         |    -129.92 |     33.17 |     12.58 |      1
 [DEBUG RSZ-move_tracker] Summary: 5 critical pins identified, 0 visited, 0 had moves attempted

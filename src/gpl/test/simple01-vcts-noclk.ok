@@ -90,38 +90,38 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
       192 |     +0.0% |       0 |        0 |       128
       224 |     +0.0% |       0 |        0 |        96
       256 |     +0.0% |       0 |        0 |        64
-      288 |     +0.0% |       0 |        0 |        32
-    final |     +0.0% |       0 |        0 |         0
+      288 |     +0.2% |       0 |        1 |        32
+    final |     +0.9% |       0 |        5 |         0
 -------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 1e+30
 [WARNING GPL-0102] Timing-driven: no slacks found. Timing-driven mode disabled.
-[INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
-[INFO GPL-0109] Timing-driven: repair_design, gcells created: 0, deleted: 0
-[INFO GPL-0110] Timing-driven: new target density: 0.7
+[INFO GPL-0107] Timing-driven: repair_design delta area: 5.054 um^2 (+0.84%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 5 (+1.75%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 5, deleted: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.70529836
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      220 |   0.5989 |  2.190318e+03 |   +1.57% |  2.46e-09 |      
-      230 |   0.5619 |  2.228174e+03 |   +1.73% |  4.01e-09 |      
-      240 |   0.5191 |  2.260689e+03 |   +1.46% |  6.53e-09 |      
-      250 |   0.4636 |  2.269843e+03 |   +0.40% |  1.06e-08 |      
-      260 |   0.4119 |  2.265764e+03 |   -0.18% |  1.73e-08 |      
-      270 |   0.3600 |  2.276900e+03 |   +0.49% |  2.82e-08 |      
-      280 |   0.3233 |  2.276961e+03 |   +0.00% |  4.33e-08 |      
-      290 |   0.2927 |  2.299426e+03 |   +0.99% |  6.38e-08 |      
-      300 |   0.2651 |  2.318532e+03 |   +0.83% |  9.39e-08 |      
-      310 |   0.2405 |  2.337773e+03 |   +0.83% |  1.38e-07 |      
-      320 |   0.2116 |  2.355827e+03 |   +0.77% |  2.04e-07 |      
-      330 |   0.1706 |  2.364090e+03 |   +0.35% |  3.00e-07 |      
-      340 |   0.1419 |  2.380123e+03 |   +0.68% |  4.42e-07 |      
-      350 |   0.1150 |  2.392987e+03 |   +0.54% |  6.52e-07 |      
-      358 |   0.0983 |  2.402369e+03 |          |  9.23e-07 |      
+      220 |   0.5987 |  2.203816e+03 |   +2.20% |  2.46e-09 |      
+      230 |   0.5622 |  2.243320e+03 |   +1.79% |  4.01e-09 |      
+      240 |   0.5180 |  2.277249e+03 |   +1.51% |  6.53e-09 |      
+      250 |   0.4669 |  2.286796e+03 |   +0.42% |  1.06e-08 |      
+      260 |   0.4113 |  2.288857e+03 |   +0.09% |  1.73e-08 |      
+      270 |   0.3568 |  2.288729e+03 |   -0.01% |  2.82e-08 |      
+      280 |   0.3250 |  2.313512e+03 |   +1.08% |  4.28e-08 |      
+      290 |   0.2938 |  2.331948e+03 |   +0.80% |  6.31e-08 |      
+      300 |   0.2669 |  2.345217e+03 |   +0.57% |  9.30e-08 |      
+      310 |   0.2386 |  2.363027e+03 |   +0.76% |  1.37e-07 |      
+      320 |   0.2062 |  2.377057e+03 |   +0.59% |  2.02e-07 |      
+      330 |   0.1740 |  2.391465e+03 |   +0.61% |  2.97e-07 |      
+      340 |   0.1466 |  2.402870e+03 |   +0.48% |  4.38e-07 |      
+      350 |   0.1182 |  2.414199e+03 |   +0.47% |  6.45e-07 |      
+      359 |   0.0992 |  2.426436e+03 |          |  9.50e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 358
-[INFO GPL-1002] Placed Cell Area              600.9924
+[INFO GPL-1001] Global placement finished at iteration 359
+[INFO GPL-1002] Placed Cell Area              606.0464
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6400 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.7001
-[INFO GPL-1008]     - For 80% usage of free space: 0.7876
-[INFO GPL-1014] Final placement area: 600.99 (+0.00%)
+[INFO GPL-1007]     - For 90% usage of free space: 0.7059
+[INFO GPL-1008]     - For 80% usage of free space: 0.7942
+[INFO GPL-1014] Final placement area: 606.05 (+0.84%)

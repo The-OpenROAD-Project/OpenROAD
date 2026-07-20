@@ -23,6 +23,6 @@
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Pre-ECO:  WNS=  -0.162   TNS=  -4.061   Area=     684 um^2   Power= 2.784951e-03 W
-Post-ECO: WNS=  -0.079   TNS=  -2.001   Area=     740 um^2   Power= 3.192202e-03 W
-Delta:    WNS=   0.083   TNS=   2.060   Area=     +56 um^2   Power=+4.072513e-04 W
+Post-ECO: WNS=  -0.079   TNS=  -2.001   Area=     740 um^2   Power= 3.192169e-03 W
+Delta:    WNS=   0.083   TNS=   2.060   Area=     +56 um^2   Power=+4.072185e-04 W
 pass

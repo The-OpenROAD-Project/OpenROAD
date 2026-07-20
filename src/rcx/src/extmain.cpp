@@ -391,37 +391,28 @@ double extMain::getResistance(const uint32_t level,
   return getLefResistance(level, width, len, model);
 }
 
-void extMain::setBlockFromChip()
+void extMain::setBlockFromChip(odb::dbChip* chip)
 {
-  if (_db->getChip() == nullptr) {
+  if (!chip) {
     logger_->error(RCX, 497, "No design is loaded.");
   }
-  _tech = _db->getTech();
-  _block = _db->getChip()->getBlock();
-  _blockId = _block->getId();
-  _prevControl = _block->getExtControl();
-  _block->setExtmi(this);
 
-  if (_spef != nullptr) {
-    _spef = nullptr;
-    _extracted = false;
+  _tech = chip->getTech();
+  _block = chip->getBlock();
+
+  if (!_block) {
+    logger_->error(RCX, 18, "Could not get the block from the chip.");
   }
 
-  _bufSpefCnt = 0;
-  _origSpefFilePrefix = nullptr;
-  _newSpefFilePrefix = nullptr;
-}
-
-void extMain::setBlock(dbBlock* block)
-{
-  _block = block;
+  _blockId = _block->getId();
   _prevControl = _block->getExtControl();
   _block->setExtmi(this);
-  _blockId = _block->getId();
+
   if (_spef) {
     _spef = nullptr;
     _extracted = false;
   }
+
   _bufSpefCnt = 0;
   _origSpefFilePrefix = nullptr;
   _newSpefFilePrefix = nullptr;

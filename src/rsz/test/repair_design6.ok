@@ -23,13 +23,13 @@ place86/Y                              92.160  152.951  -60.791 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       419
-    final |   +115.5% |       4 |     215 |           132 |         0
+    final |   +112.4% |       4 |     285 |           132 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 132 slew violations.
 [INFO RSZ-0036] Found 58 capacitance violations.
 [INFO RSZ-0039] Resized 4 instances.
 [INFO RSZ-0044] Rerouted 102 nets.
-[INFO RSZ-0038] Inserted 215 buffers in 132 nets.
+[INFO RSZ-0038] Inserted 285 buffers in 132 nets.
 max slew
 
 Pin                                     Limit     Slew    Slack
