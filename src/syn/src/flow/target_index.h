@@ -28,6 +28,7 @@ namespace cm {
 
 static constexpr int kCutMaximum = 6;
 
+// One candidate mapping target for an NPN-equivalence class
 struct MapTarget
 {
   sta::LibertyCell* cell;
@@ -36,6 +37,8 @@ struct MapTarget
   NPN via;
 };
 
+// Index of the available gates for fast lookup during combinational
+// mapping or resynthesis
 struct TargetIndex
 {
   // The key is (num_inputs, canonical truth table)
@@ -46,6 +49,7 @@ struct TargetIndex
   std::pair<sta::LibertyCell*, int> tie_high;
 };
 
+// Build TargetIndex
 void buildIndex(sta::Network* network,
                 TargetIndex& index,
                 utl::Logger* logger,
