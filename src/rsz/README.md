@@ -782,11 +782,6 @@ wrappers with unit conversions (microns → metres, nanoseconds → seconds,
 percentages → fractions), but these are not considered part of the *final*
 API and may be subject to change.
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
-about this tool.
-
 ## License
 
 BSD 3-Clause License. See [LICENSE](../../LICENSE) file.
