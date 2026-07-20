@@ -196,10 +196,6 @@ Simply run the following script:
 "Hier-RTLMP: A hierarchical automatic macro placer for large-scale complex IP blocks.",
 [(.pdf)](https://arxiv.org/pdf/2304.11761.pdf), arXiv preprint arXiv:2304.11761, 2023.
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+hier-rtlmp+OR+hier+OR+mpl) about this tool.
-
 ## License
 
 BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

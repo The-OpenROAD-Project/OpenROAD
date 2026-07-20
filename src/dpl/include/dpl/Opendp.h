@@ -113,7 +113,6 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
                          bool use_diamond_legalizer = false,
-                         bool run_abacus = false,
                          int site_search_window = -1,
                          int row_search_window = -1,
                          double drc_penalty = -1.0,
@@ -182,7 +181,7 @@ class Opendp
   odb::Point getOdbLocation(const Node* cell) const;
   odb::Point getDplLocation(const Node* cell) const;
 
-  bool isUseNegotiationLegalizer() { return !use_diamond_legalizer_; }
+  bool isUseNegotiationLegalizer() const { return !use_diamond_legalizer_; }
 
  private:
   using bgPoint

@@ -1070,48 +1070,6 @@ void extMain::removeExt(std::vector<dbNet*>& nets)
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
 
-int extMain::setMinTypMax(bool min,
-                          bool typ,
-                          bool max,
-                          int setMin,
-                          int setTyp,
-                          int setMax,
-                          uint32_t extDbCnt)
-{
-  _modelMap.resetCnt(0);
-  _metRCTable.resetCnt(0);
-  _currentModel = nullptr;
-  if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
-    if (setMin >= 0) {
-      _modelMap.add(setMin);
-    }
-    if (setTyp >= 0) {
-      _modelMap.add(setTyp);
-    }
-    if (setMax >= 0) {
-      _modelMap.add(setMax);
-    }
-    _extDbCnt = _modelMap.getCnt();
-
-    _block->setCornerCount(_extDbCnt);
-  } else if (extDbCnt == 1) {  // extract first <extDbCnt>
-    _block->setCornerCount(extDbCnt);
-    _extDbCnt = extDbCnt;
-    _modelMap.add(0);
-  }
-
-  if (_currentModel == nullptr) {
-    _currentModel = getRCmodel(0);
-    for (uint32_t ii = 0; ii < _modelMap.getCnt(); ii++) {
-      uint32_t jj = _modelMap.get(ii);
-      _metRCTable.add(_currentModel->getMetRCTable(jj));
-    }
-  }
-  _cornerCnt = _extDbCnt;  // the Cnt's are the same in the old flow
-
-  return 0;
-}
-
 extCorner::extCorner()
 {
   _name = nullptr;
@@ -1671,46 +1629,30 @@ bool extMain::modelExists()
   return true;
 }
 
-void extMain::makeBlockRCsegs()
+void extMain::setCornerCount()
 {
-  if (!modelExists()) {
-    return;
+  uint32_t scaled_corner_count = 0;
+  if (_scaledCornerTable != nullptr) {
+    scaled_corner_count = _scaledCornerTable->getCnt();
   }
 
-  uint32_t debugNetId = 0;
+  if (_cornerCnt != _extDbCnt + scaled_corner_count) {
+    logger_->error(RCX,
+                   16,
+                   "Corner count invariant violated: total corners ({}) != "
+                   "process corners ({}) + scaled corners ({})",
+                   _cornerCnt,
+                   _extDbCnt,
+                   scaled_corner_count);
+  }
 
+  _block->setCornerCount(_cornerCnt, _extDbCnt, nullptr);
+}
+
+void extMain::run()
+{
   _diagFlow = true;
   _usingMetalPlanes = true;
-
-  odb::dbTech* tech = _block->getTech();
-  const bool has_rules_file = !tech->getExtractionRulesFile().empty();
-
-  if ((_processCornerTable != nullptr)
-      || ((_processCornerTable == nullptr) && has_rules_file)) {
-    std::unique_ptr<extRCModel> rules_model
-        = parseRules(tech, _processCornerTable, _v2, logger_);
-    registerRulesModel(rules_model.release());
-
-    uint32_t scaled_corner_count = 0;
-    if (_scaledCornerTable != nullptr) {
-      scaled_corner_count = _scaledCornerTable->getCnt();
-    }
-
-    if (_cornerCnt != _extDbCnt + scaled_corner_count) {
-      logger_->error(RCX,
-                     16,
-                     "Corner count invariant violated: total corners ({}) != "
-                     "process corners ({}) + scaled corners ({})",
-                     _cornerCnt,
-                     _extDbCnt,
-                     scaled_corner_count);
-    }
-
-    _block->setCornerCount(_cornerCnt, _extDbCnt, nullptr);
-  } else if (setMinTypMax(false, false, false, -1, -1, -1, 1) < 0) {
-    logger_->warn(RCX, 129, "Wrong combination of corner related options!");
-    return;
-  }
 
   _foreign = false;  // extract after read_spef
 
@@ -1844,12 +1786,10 @@ void extMain::makeBlockRCsegs()
 
     m._debugFP = nullptr;
     m._netId = 0;
-    debugNetId = 0;
-    if (debugNetId > 0) {
-      m._netId = debugNetId;
-      char bufName[32];
-      sprintf(bufName, "%d", debugNetId);
-      m._debugFP = fopen(bufName, "w");
+
+    if (_debug_net_id > 0) {
+      m._netId = _debug_net_id;
+      m._debugFP = fopen(std::to_string(m._netId).c_str(), "w");
     }
 
     getPeakMemory("Start CouplingFlow");

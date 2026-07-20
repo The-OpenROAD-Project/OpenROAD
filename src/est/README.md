@@ -55,7 +55,7 @@ set_wire_rc
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ------------- | ----------------------------------------------- |
 | `-clock` | Enable setting of RC for clock nets. |
 | `-signal` | Enable setting of RC for signal nets. |
 | `-layers` | Use the LEF technology resistance and area/edge capacitance values for the layers. The values for each layers will be used for wires with the prefered layer direction, if 2 or more layers have the same prefered direction the avarege value is used for wires with that direction. This is used for a default width wire on the layer. |
@@ -85,7 +85,7 @@ set_layer_rc
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ----------- | ------------------------------------------------- |
 | `-layer` | Set layer name to modify. Note that the layer must be a routing layer. |
 | `-via` | Select via layer name. Note that via resistance is per cut/via, not area-based. |
 | `-resistance` | Resistance per unit length, same convention as `set_wire_rc`. |
@@ -135,7 +135,7 @@ estimate_parasitics
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| -------------- | ---------------------------------------------- |
 | `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
 | `-spef_file` | Optional. File name to write SPEF files. If more than one corner is available for the design, the files will be written as filename_corner.spef. |
 
@@ -170,11 +170,6 @@ Simply run the following script:
 ```
 
 ## Limitations
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
-about this tool.
 
 ## License
 

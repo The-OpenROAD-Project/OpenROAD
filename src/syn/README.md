@@ -24,7 +24,7 @@ synthesize
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| --------------- | --------------------------------------------- |
 | `-reduce_name_loss` | Disable any optimization steps which would cause mass loss of intermediate signal names. This option trades away quality of results for interpretability. |
 
 ## Limitations

@@ -24,7 +24,7 @@ TEST_F(CheckerFixture, test_no_violations)
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
 
-  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn1->setThickness(0);
 
   check();
@@ -70,7 +70,7 @@ TEST_F(CheckerFixture, test_single_floating_chip)
 
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
-  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn1->setThickness(0);
 
   check();
@@ -107,7 +107,7 @@ TEST_F(CheckerFixture, test_multiple_floating_groups)
 
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
-  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn1->setThickness(0);
 
   check();
@@ -124,7 +124,7 @@ TEST_F(CheckerFixture, test_connectivity_gap)
   auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
-  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn->setThickness(100);  // Expect gap of 100
 
   // Case 1: Valid connection
@@ -359,12 +359,14 @@ TEST_F(CheckerFixture, test_connection_invalid_xy)
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
 
-  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn->setThickness(0);
 
   check();
   auto markers = getMarkers(connected_regions_category);
-  EXPECT_EQ(markers.size(), 1);
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_NE(markers[0]->getComment().find("do not overlap in the XY plane"),
+            std::string::npos);
 }
 
 TEST_F(CheckerFixture, test_connection_invalid_sides)
@@ -387,7 +389,78 @@ TEST_F(CheckerFixture, test_connection_invalid_sides)
 
   check();
   auto markers = getMarkers(connected_regions_category);
-  EXPECT_EQ(markers.size(), 1);
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_NE(markers[0]->getComment().find("Ill-defined stacking direction"),
+            std::string::npos);
+}
+
+TEST_F(CheckerFixture, test_connection_swapped_top_bottom)
+{
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));  // Stacked on top
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+
+  // The regions mate physically, but the connection declares the lower die's
+  // region as top and the upper die's region as bottom.
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  auto markers = getMarkers(connected_regions_category);
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_NE(markers[0]->getComment().find("Ill-defined stacking direction"),
+            std::string::npos);
+}
+
+TEST_F(CheckerFixture, test_connection_in_z_mirrored_assembly)
+{
+  // Assembly with chip2 stacked on chip1 and a properly declared connection:
+  // top is the upper die's down-facing region.
+  auto* assembly
+      = dbChip::create(db_.get(), nullptr, "Assembly", dbChip::ChipType::HIER);
+
+  auto inst1 = dbChipInst::create(assembly, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(assembly, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));  // Stacked on top
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+  auto* conn = dbChipConn::create("c1", assembly, {inst2}, ri2, {inst1}, ri1);
+  conn->setThickness(0);
+
+  // Mirror the whole assembly in Z at the top level. In world coordinates
+  // r1_fr now faces down from above and r2_bk faces up from below.
+  auto asm_inst = dbChipInst::create(top_chip_, assembly, "asm_inst");
+  asm_inst->setOrient(dbOrientType3D(dbOrientType::R0, true));
+  asm_inst->setLoc(Point3D(0, 0, 0));
+
+  check();
+  EXPECT_TRUE(getMarkers(connected_regions_category).empty());
+
+  // The unfolded connection reflects world orientation: the declared roles
+  // swap under the mirror.
+  auto conns = db_->getUnfoldedChipConns();
+  ASSERT_EQ(conns.size(), 1);
+  dbUnfoldedChipConn* uf_conn = *conns.begin();
+  EXPECT_EQ(
+      uf_conn->getTopRegion()->getChipRegionInst()->getChipRegion()->getName(),
+      "r1_fr");
+  EXPECT_EQ(uf_conn->getBottomRegion()
+                ->getChipRegionInst()
+                ->getChipRegion()
+                ->getName(),
+            "r2_bk");
 }
 
 TEST_F(CheckerFixture, test_connection_thickness_mismatch)
@@ -403,12 +476,15 @@ TEST_F(CheckerFixture, test_connection_thickness_mismatch)
   auto* ri1 = inst1->findChipRegionInst("r1_fr");
   auto* ri2 = inst2->findChipRegionInst("r2_bk");
 
-  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn->setThickness(50);  // Mismatch (100 != 50)
 
   check();
   auto markers = getMarkers(connected_regions_category);
-  EXPECT_EQ(markers.size(), 1);
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_NE(
+      markers[0]->getComment().find("does not match connection thickness"),
+      std::string::npos);
 }
 
 TEST_F(CheckerFixture, test_connection_internal_ext)
@@ -442,7 +518,10 @@ TEST_F(CheckerFixture, test_connection_internal_ext)
   // Test failure: move inst2 outside Z-range of inst1
   inst2->setLoc(Point3D(0, 0, 600));
   check();
-  EXPECT_EQ(getMarkers(connected_regions_category).size(), 1);
+  auto markers = getMarkers(connected_regions_category);
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_NE(markers[0]->getComment().find("do not overlap in Z"),
+            std::string::npos);
 }
 
 }  // namespace

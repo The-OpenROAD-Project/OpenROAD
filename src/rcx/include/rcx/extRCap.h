@@ -1725,6 +1725,8 @@ class extMain
 {
   // --------------------- dkf 092024 ------------------------
  public:
+  void run();
+
   extSolverGen* _currentSolverGen;
 
   // v2 -----------------------------------------------------
@@ -2054,14 +2056,6 @@ class extMain
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
 
-  int setMinTypMax(bool min,
-                   bool typ,
-                   bool max,
-                   int setMin,
-                   int setTyp,
-                   int setMax,
-                   uint32_t extDbCnt);
-
   extRCModel* getRCmodel(uint32_t n);
 
   void calcRes0(double* deltaRes,
@@ -2124,7 +2118,9 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  void makeBlockRCsegs();
+  void setCornerCount();
+
+  Array1D<extCorner*>* getProcessCornerTable() { return _processCornerTable; }
 
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,

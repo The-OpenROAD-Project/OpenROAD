@@ -483,7 +483,10 @@ cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
-    data = glob(["cpp/TestResizer*.v"]) + [
+    data = glob([
+        "cpp/TestResizer*.lib",
+        "cpp/TestResizer*.v",
+    ]) + [
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
     ],
