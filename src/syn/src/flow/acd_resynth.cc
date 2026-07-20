@@ -111,8 +111,14 @@ TruthTable evaluateFunction(const GateNetwork& net)
   return result;
 }
 
-Resynthesis::Resynthesis(Synthesis* synthesis) : synthesis_(synthesis)
+Resynthesis::Resynthesis(utl::Logger* logger,
+                         sta::dbSta* sta,
+                         rsz::Resizer* resizer,
+                         Synthesis* synthesis)
+    : logger_(logger), resizer_(resizer), synthesis_(synthesis)
 {
+  dbStaState::init(sta);
+  db_network_ = sta->getDbNetwork();
 }
 
 Resynthesis::~Resynthesis()
@@ -121,20 +127,16 @@ Resynthesis::~Resynthesis()
 
 void Resynthesis::init()
 {
-  logger_ = synthesis_->logger_;
-  dbStaState::init(synthesis_->sta_);
-  db_network_ = synthesis_->sta_->getDbNetwork();
   corner_ = sta_->cmdScene();
 
   // Delay estimation assumes a fixed input slew rather than propagating one.
   // Take the slew a buffer settles at driving its target load; the preamble is
   // what fills those in, and without it they read back as zero.
-  rsz::Resizer* resizer = synthesis_->resizer_;
-  resizer->resizePreamble();
+  resizer_->resizePreamble();
   fixed_slew_[sta::RiseFall::riseIndex()]
-      = resizer->targetSlew(sta::RiseFall::rise());
+      = resizer_->targetSlew(sta::RiseFall::rise());
   fixed_slew_[sta::RiseFall::fallIndex()]
-      = resizer->targetSlew(sta::RiseFall::fall());
+      = resizer_->targetSlew(sta::RiseFall::fall());
 
   if (fixed_slew_[0] <= 0.0f || fixed_slew_[1] <= 0.0f) {
     logger_->error(utl::SYN,

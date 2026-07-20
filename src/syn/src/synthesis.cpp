@@ -34,7 +34,7 @@ Synthesis::Synthesis(odb::dbDatabase* db,
     : db_(db), resizer_(resizer), logger_(logger)
 {
   dbStaState::init(sta);
-  resynthesis_ = std::make_unique<acd::Resynthesis>(this);
+  resynthesis_ = std::make_unique<acd::Resynthesis>(logger, sta, resizer, this);
 }
 
 Synthesis::~Synthesis() = default;

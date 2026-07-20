@@ -119,7 +119,7 @@ class Synthesis : public sta::dbStaState
 
   Graph* graph() { return graph_.get(); }
 
- protected:
+ private:
   // Resolve a net reference string to a Net.
   Net resolveNetRef(const std::string& net_ref) const;
 
@@ -128,8 +128,6 @@ class Synthesis : public sta::dbStaState
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<Graph> graph_;
   std::unique_ptr<acd::Resynthesis> resynthesis_;
-
-  friend class acd::Resynthesis;
 };
 
 // Free-function entry points re-declared here so tests don't need to

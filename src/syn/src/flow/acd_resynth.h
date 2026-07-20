@@ -23,6 +23,10 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
+namespace rsz {
+class Resizer;
+}
+
 namespace syn {
 
 class Synthesis;
@@ -45,7 +49,10 @@ using ConePins = std::set<const sta::Pin*, PinIdLess>;
 class Resynthesis : public sta::dbStaState
 {
  public:
-  Resynthesis(Synthesis* synthesis);
+  Resynthesis(utl::Logger* logger,
+              sta::dbSta* sta,
+              rsz::Resizer* resizer,
+              Synthesis* synthesis);
   ~Resynthesis();
   void init();
 
@@ -168,9 +175,10 @@ class Resynthesis : public sta::dbStaState
   // One per pin that had anything worth doing, over the whole run
   std::vector<Substitution> substitutions_;
 
-  Synthesis* synthesis_ = nullptr;
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
+  rsz::Resizer* resizer_ = nullptr;
+  Synthesis* synthesis_ = nullptr;
 
   // Pin the current enumeration is rooted at
   const sta::Pin* head_ = nullptr;
