@@ -130,8 +130,7 @@ void Resynthesis::init()
   corner_ = sta_->cmdScene();
 
   // Delay estimation assumes a fixed input slew rather than propagating one.
-  // Take the slew a buffer settles at driving its target load; the preamble is
-  // what fills those in, and without it they read back as zero.
+  // Borrow the 'target slew' value from resizer.
   resizer_->resizePreamble();
   fixed_slew_[sta::RiseFall::riseIndex()]
       = resizer_->targetSlew(sta::RiseFall::rise());
@@ -520,34 +519,56 @@ bool Resynthesis::expandableDriver(odb::dbITerm* driver)
     return false;
   }
 
-  // If it has too many pins
-  auto pins = instance->getITerms();
-  if ((int) pins.size()
-      > max_leaves_
-            + 1 /* output */ + 2 /* supplies */ + 1 /* side output for MOG */) {
-    return false;
-  }
-
-  // We only follow multi-output gates as far as a second output
-  int noutputs = 0;
-  for (odb::dbITerm* pin : pins) {
-    if (isSignalOutput(pin)) {
-      noutputs++;
-    }
-  }
-  if (noutputs > 2) {
-    return false;
-  }
-
   // Is sequential, or lacks Liberty definition
   sta::LibertyCell* cell
       = db_network_->libertyCell(db_network_->dbToSta(instance));
   if (!cell || cell->isSequential()) {
     return false;
   }
-
   if (exclude_buffers_ && cell->isBuffer()) {
     return false;
+  }
+
+  // If it has too many pins, any are inout, or on a don't touch net
+  auto pins = instance->getITerms();
+  int ninputs = 0, noutputs = 0;
+  for (odb::dbITerm* pin : pins) {
+    odb::dbNet* net = pin->getNet();
+
+    if (net && net->isDoNotTouch()) {
+      // Gate connected to a don't touch net - reject
+      return false;
+    }
+
+    if (pin->getSigType() == odb::dbSigType::SIGNAL) {
+      auto io_type = pin->getIoType();
+      if (io_type == odb::dbIoType::INOUT) {
+        // Inout pin - reject
+        return false;
+      }
+
+      if (io_type == odb::dbIoType::INPUT) {
+        ninputs++;
+        if (ninputs > max_intermediate_leaves_) {
+          // Gate with too many inputs - reject
+          return false;
+        }
+      }
+      if (io_type == odb::dbIoType::OUTPUT) {
+        noutputs++;
+        if (noutputs > 2) {
+          // MOG with more than two outputs - reject
+          return false;
+        }
+
+        sta::LibertyPort* port
+            = db_network_->libertyPort(db_network_->dbToSta(driver));
+        if (!port || !port->function() || port->tristateEnable()) {
+          // Port is not two-state with known function
+          return false;
+        }
+      }
+    }
   }
 
   // Any of its inputs are dangling, or not on signal nets
