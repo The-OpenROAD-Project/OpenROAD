@@ -372,7 +372,7 @@ void Resynthesis::resynthesizePin(const sta::Pin* head)
   }
 }
 
-void Resynthesis::applySubstitution(const Substitution& s, ConePins& obsoleted)
+bool Resynthesis::applySubstitution(const Substitution& s, ConePins& obsoleted)
 {
   odb::dbBlock* block = db_network_->block();
 
@@ -391,7 +391,7 @@ void Resynthesis::applySubstitution(const Substitution& s, ConePins& obsoleted)
     if (is_pi) {
       // We do not support passthroughs in the replacement
       // network. This should happen rarely. Drop the substitution.
-      return;
+      return false;
     }
     const auto& [orig_is_pi, orig_node] = s.original.outs[i];
     taken_over[node]
@@ -436,6 +436,8 @@ void Resynthesis::applySubstitution(const Substitution& s, ConePins& obsoleted)
   for (const GateNode& node : s.original.nodes) {
     obsoleted.insert(node.driver_pin);
   }
+
+  return true;
 }
 
 void Resynthesis::commit()
@@ -458,8 +460,9 @@ void Resynthesis::commit()
       continue;
     }
 
-    applySubstitution(s, obsoleted);
-    applied++;
+    if (applySubstitution(s, obsoleted)) {
+      applied++;
+    }
   }
 
   // Only now that every substitution has been read is it safe to unhook

@@ -169,7 +169,7 @@ class Resynthesis : public sta::dbStaState
   };
 
   // Build `s.replacement` into the netlist and note the drivers it obsoletes.
-  void applySubstitution(const Substitution& s, ConePins& obsoleted);
+  bool applySubstitution(const Substitution& s, ConePins& obsoleted);
   // Best over the cuts enumerated for the pin in hand
   std::optional<Substitution> pin_best_ = {};
   // One per pin that had anything worth doing, over the whole run
