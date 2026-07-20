@@ -109,44 +109,6 @@ void TruthTable::swapVars(const int a, const int b)
   }
 }
 
-void TruthTable::changeVars(const std::vector<int>& new_vars)
-{
-  assert(new_vars.size() == variables_.size());
-  const int nv = numVariables();
-  int max_var = 0;
-  for (int v : variables_) {
-    max_var = std::max(max_var, v);
-  }
-  std::vector<int> vi(max_var + 1, -1);
-  for (int i = 0; i < nv; ++i) {
-    vi[variables_[i]] = i;
-  }
-  std::vector<int> p(nv);
-  for (int i = 0; i < nv; ++i) {
-    assert(vi[new_vars[i]] != -1);
-    p[vi[new_vars[i]]] = i;
-  }
-  const int n = numMinterms();
-  std::vector<bool> nv_vals(values_.size());
-  std::vector<bool> nv_dcs(dontcares_.size());
-  for (int o = 0; o < numOutputs(); ++o) {
-    const int base = o * n;
-    for (int i = 0; i < n; ++i) {
-      int j = 0;
-      for (int k = 0; k < nv; ++k) {
-        if (i & 1 << k) {
-          j |= 1 << p[k];
-        }
-      }
-      nv_vals[base + j] = values_[base + i];
-      nv_dcs[base + j] = dontcares_[base + i];
-    }
-  }
-  variables_ = new_vars;
-  values_ = std::move(nv_vals);
-  dontcares_ = std::move(nv_dcs);
-}
-
 std::optional<int> TruthTable::findUnsupportedVar() const
 {
   uint32_t supported = 0;
