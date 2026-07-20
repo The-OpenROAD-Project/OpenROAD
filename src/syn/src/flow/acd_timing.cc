@@ -154,10 +154,10 @@ float networkSlack(utl::Logger* logger,
 
   std::vector<float> load(net.nodes.size(), 0.0f);
 
-  for (size_t i = 0; i < problem.outputs.size(); i++) {
+  for (size_t i = 0; i < problem.numOutputs(); i++) {
     const auto [is_pi, gate_idx] = net.outs[i];
     if (!is_pi) {
-      load[gate_idx] += problem.outputs[i].external_load;
+      load[gate_idx] += problem.output(i).external_load;
     }
   }
 
@@ -180,7 +180,7 @@ float networkSlack(utl::Logger* logger,
   std::vector<NodeArrivals> node_arrivals(net.nodes.size());
   auto src_arr = [&](std::pair<bool, int> ref) -> const NodeArrivals& {
     if (ref.first) {
-      return problem.inputs[ref.second].arrivals;
+      return problem.input(ref.second).arrivals;
     } else {
       return node_arrivals[ref.second];
     }
@@ -314,7 +314,7 @@ void populateCutTiming(sta::dbNetwork* network,
 
   std::unordered_map<sta::Vertex*, int> vertex_po_index;
   assert(roots.size() == problem.outputs.size());
-  for (int i = 0; i < problem.outputs.size(); i++) {
+  for (int i = 0; i < problem.numOutputs(); i++) {
     sta::PinSet* pin_set = network->drivers(roots[i]);
     if (pin_set->size() != 1) {
       continue;
@@ -336,11 +336,11 @@ void populateCutTiming(sta::dbNetwork* network,
       }
     }
 
-    problem.outputs[i].external_load = load;
+    problem.output(i).external_load = load;
   }
 
   assert(leaves.size() == problem.inputs.size());
-  for (size_t li = 0; li < problem.inputs.size(); li++) {
+  for (size_t li = 0; li < problem.numInputs(); li++) {
     sta::PinSet* pin_set = network->drivers(leaves[li]);
     if (pin_set->size() != 1) {
       continue;
@@ -361,7 +361,7 @@ void populateCutTiming(sta::dbNetwork* network,
       }
       const sta::RiseFall* leaf_rf = p0->transition(sta);
       const float a0 = p0->arrival();
-      acd::ArrivalSet& slot = problem.inputs[li].arrivals.atTransition(leaf_rf);
+      acd::ArrivalSet& slot = problem.input(li).arrivals.atTransition(leaf_rf);
 
       std::vector<std::tuple<sta::Vertex*, sta::Tag*, const sta::RiseFall*>>
           stack;

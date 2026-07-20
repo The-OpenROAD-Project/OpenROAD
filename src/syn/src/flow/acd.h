@@ -132,10 +132,9 @@ class NodeArrivals
   ArrivalSet rise, fall;
 };
 
-struct SynthesisProblem
+class SynthesisProblem
 {
-  TruthTable function;
-
+ public:
   struct PrimaryInput
   {
     NodeArrivals arrivals;
@@ -147,16 +146,30 @@ struct SynthesisProblem
     double criticality = 0.0;
   };
 
-  std::vector<PrimaryInput> inputs;
-  std::vector<PrimaryOutput> outputs;
-
-  SynthesisProblem() = default;
   SynthesisProblem(TruthTable f)
-      : function(std::move(f)),
-        inputs(function.numVariables()),
-        outputs(function.numOutputs())
+      : function_(std::move(f)),
+        inputs_(function_.numVariables()),
+        outputs_(function_.numOutputs())
   {
   }
+
+  const TruthTable& getFunction() const { return function_; }
+  int numInputs() const { return inputs_.size(); }
+  int numOutputs() const { return outputs_.size(); }
+
+  PrimaryInput& input(const int index) { return inputs_.at(index); }
+  const PrimaryInput& input(const int index) const { return inputs_.at(index); }
+
+  PrimaryOutput& output(const int index) { return outputs_.at(index); }
+  const PrimaryOutput& output(const int index) const
+  {
+    return outputs_.at(index);
+  }
+
+ private:
+  const TruthTable function_;
+  std::vector<PrimaryInput> inputs_;
+  std::vector<PrimaryOutput> outputs_;
 };
 
 using Cost = double;

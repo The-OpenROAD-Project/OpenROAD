@@ -67,8 +67,8 @@ class AcdTest : public tst::Fixture
     }
 
     acd::SynthesisProblem problem(f);
-    problem.outputs[0].critical = true;
-    problem.outputs[0].criticality = 1.0;
+    problem.output(0).critical = true;
+    problem.output(0).criticality = 1.0;
     return problem;
   }
 
@@ -78,7 +78,7 @@ class AcdTest : public tst::Fixture
   {
     for (const auto* in_rf : sta::RiseFall::range()) {
       for (const auto* out_rf : sta::RiseFall::range()) {
-        p.inputs[var].arrivals.atTransition(in_rf).atExit(0, out_rf) = arrival;
+        p.input(var).arrivals.atTransition(in_rf).atExit(0, out_rf) = arrival;
       }
     }
   }

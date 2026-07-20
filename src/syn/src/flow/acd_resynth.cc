@@ -1079,10 +1079,7 @@ void Resynthesis::evaluateCut(const std::vector<const sta::Pin*>& roots,
                               const int mffc_size)
 {
   stats_.cuts++;
-  SynthesisProblem problem;
-  problem.function = evaluateFunction(orig_net);
-  problem.inputs.resize(orig_net.ninputs);
-  problem.outputs.resize(orig_net.outs.size());
+  SynthesisProblem problem(evaluateFunction(orig_net));
 
   {
     std::unordered_set<sta::Instance*> cone_set;
@@ -1121,9 +1118,9 @@ void Resynthesis::evaluateCut(const std::vector<const sta::Pin*>& roots,
       continue;
     }
 
-    problem.outputs[i].critical = true;
+    problem.output(i).critical = true;
     // 1 on the design's worst path, tapering off as slack approaches zero
-    problem.outputs[i].criticality
+    problem.output(i).criticality
         = wns_ < 0.0f ? std::min(1.0, (double) root_slack / (double) wns_)
                       : 1.0;
   }
@@ -1192,7 +1189,7 @@ void Resynthesis::evaluateCut(const std::vector<const sta::Pin*>& roots,
 
   // A candidate that doesn't compute what the cut computes is worthless, and
   // reading it back the way we read the netlist in says so cheaply.
-  if (evaluateFunction(cand) != problem.function) {
+  if (evaluateFunction(cand) != problem.getFunction()) {
     logger_->error(utl::SYN,
                    62,
                    "Resynthesized network for the cut at {} is not equivalent "

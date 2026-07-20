@@ -715,7 +715,7 @@ Search::Search(utl::Logger* logger,
       objective_(objective),
       max_bound_width_(max_bound_width),
       lateral_enabled_(lateral_enabled),
-      next_var_((int) problem_.inputs.size()),
+      next_var_((int) problem_.numInputs()),
       // If slack cost factor is zero on both outputs, disable timing mode.
       timing_(!(objective_.slack_cost_factor[0] == 0.0
                 && objective_.slack_cost_factor[1] == 0.0))
@@ -724,26 +724,26 @@ Search::Search(utl::Logger* logger,
   // Assert cannonical ordering. Variables being in the range 0...ninputs
   // is assumed by the symmetry class processing below and by initilization
   // of `next_var_`.
-  for (int i = 0; i < problem_.inputs.size(); i++) {
+  for (int i = 0; i < problem_.numInputs(); i++) {
     assert(problem_.function.variable(i) == i);
   }
 
   if (timing_) {
-    for (size_t i = 0; i < problem_.inputs.size(); i++) {
-      setArrivals(i, problem_.inputs[i].arrivals);
+    for (size_t i = 0; i < problem_.numInputs(); i++) {
+      setArrivals(i, problem_.input(i).arrivals);
     }
   }
 
   // Characterize symmetries once up front so that we can use them later
   // to prune redundant branches when searching decompositions
-  const std::vector<int> classes = symmetryClasses(problem_.function);
+  const std::vector<int> classes = symmetryClasses(problem_.getFunction());
 
   // pairs with (var ID, class)
   std::vector<std::pair<int, int>> classified;
-  classified.reserve(problem_.inputs.size());
-  for (int i = 0; i < problem_.inputs.size(); i++) {
+  classified.reserve(problem_.numInputs());
+  for (int i = 0; i < problem_.numInputs(); i++) {
     classified.push_back(
-        std::make_pair(problem_.function.variable(i), classes[i]));
+        std::make_pair(problem_.getFunction().variable(i), classes[i]));
   }
 
   // Re-order the classified so that within a symmetry class, variables
@@ -761,7 +761,7 @@ Search::Search(utl::Logger* logger,
 
   // Populate sym_info with findings
   int small_class_id = 0;
-  sym_info_.assign(problem.inputs.size(), std::make_pair<int, int>(-1, 0));
+  sym_info_.assign(problem.numInputs(), std::make_pair<int, int>(-1, 0));
   for (size_t i = 0; i < classified.size(); i++) {
     int class_ = classified[i].second;
     size_t size = 1;
@@ -802,10 +802,10 @@ Search::Search(utl::Logger* logger,
 
 std::unique_ptr<Round> Search::run(const Cost budget)
 {
-  std::vector<int> global_output_ids(problem_.outputs.size());
+  std::vector<int> global_output_ids(problem_.numOutputs());
   std::iota(global_output_ids.begin(), global_output_ids.end(), 0);
 
-  return recurse(problem_.function,
+  return recurse(problem_.getFunction(),
                  global_output_ids,
                  0,
                  /*allow_lateral=*/true,
@@ -820,7 +820,7 @@ bool Search::consumeSymmetricInputs(const SITracking& prior,
   updated = prior;
 
   for (auto var_idx : bound_vars) {
-    if (var_idx < problem_.inputs.size()) {
+    if (var_idx < problem_.numInputs()) {
       const auto [cb, pb] = sym_info_.at(var_idx);
       if (cb >= 0) {
         updated.sym_classes_consumed[cb]++;
@@ -829,7 +829,7 @@ bool Search::consumeSymmetricInputs(const SITracking& prior,
   }
 
   for (auto var_idx : bound_vars) {
-    if (var_idx < problem_.inputs.size()) {
+    if (var_idx < problem_.numInputs()) {
       const auto [cb, pb] = sym_info_.at(var_idx);
       if (cb >= 0) {
         if (pb < prior.sym_classes_consumed[cb]
@@ -845,7 +845,7 @@ bool Search::consumeSymmetricInputs(const SITracking& prior,
 
 std::pair<int, int> Search::symClass(const int var_idx)
 {
-  if (var_idx >= problem_.inputs.size()) {
+  if (var_idx >= problem_.numInputs()) {
     return std::make_pair(-1, 0);
   } else {
     return sym_info_.at(var_idx);
@@ -1539,12 +1539,12 @@ bool synthesize(const SynthesisProblem& problem,
                 long long* explore_calls,
                 const float effort)
 {
-  if (problem.outputs.size() > 2) {
+  if (problem.numOutputs() > 2) {
     logger->error(
         utl::SYN,
         67,
         "ACD remapper is limited to up to 2 outputs but problem has {}",
-        problem.outputs.size());
+        problem.numOutputs());
   }
 
   Objective objective;
@@ -1552,8 +1552,8 @@ bool synthesize(const SynthesisProblem& problem,
   objective.min_slacks[1] = -std::numeric_limits<float>::infinity();
   objective.slack_cost_factor[0] = 0;
   objective.slack_cost_factor[1] = 0;
-  for (int i = 0; i < (int) problem.outputs.size() && i < 2; ++i) {
-    objective.slack_cost_factor[i] = problem.outputs[i].critical ? -effort : 0;
+  for (int i = 0; i < (int) problem.numOutputs() && i < 2; ++i) {
+    objective.slack_cost_factor[i] = problem.output(i).critical ? -effort : 0;
   }
 
   Search ex(
@@ -1568,7 +1568,7 @@ bool synthesize(const SynthesisProblem& problem,
     return false;
   }
 
-  out = emitNetworkForSolution(problem.inputs.size(), std::move(root));
+  out = emitNetworkForSolution(problem.numInputs(), std::move(root));
   return true;
 }
 
