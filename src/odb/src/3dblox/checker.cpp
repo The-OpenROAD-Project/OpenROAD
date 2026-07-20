@@ -183,53 +183,55 @@ const char* sideToString(dbUnfoldedChipRegionInst::EffectiveSide side)
   return "UNKNOWN";
 }
 
-MatingSurfaces getMatingSurfaces(dbUnfoldedChipConn* conn)
+enum class ConnectionStatus
 {
-  dbUnfoldedChipRegionInst* r1 = conn->getTopRegion();
-  dbUnfoldedChipRegionInst* r2 = conn->getBottomRegion();
-  if (!r1 || !r2) {
-    return {.valid = false, .top_z = 0, .bot_z = 0};
+  kValid,
+  // The declared top/bot regions contradict the physical stackup: the top
+  // region must face down and the bottom region must face up.
+  kInvalidDirection,
+  // The regions do not overlap in the XY plane.
+  kInvalidXYOverlap,
+  // The internal_ext regions do not overlap in Z.
+  kInvalidZOverlap,
+  // The gap between the mating surfaces does not match the connection
+  // thickness.
+  kInvalidThickness,
+};
+
+ConnectionStatus getConnectionStatus(dbUnfoldedChipConn* conn)
+{
+  dbUnfoldedChipRegionInst* top = conn->getTopRegion();
+  dbUnfoldedChipRegionInst* bot = conn->getBottomRegion();
+  if (!top || !bot) {
+    return ConnectionStatus::kValid;
+  }
+  if (!top->getCuboid().xyIntersects(bot->getCuboid())) {
+    return ConnectionStatus::kInvalidXYOverlap;
+  }
+  if (top->isInternalExt() || bot->isInternalExt()) {
+    return std::max(top->getCuboid().zMin(), bot->getCuboid().zMin())
+                   <= std::min(top->getCuboid().zMax(), bot->getCuboid().zMax())
+               ? ConnectionStatus::kValid
+               : ConnectionStatus::kInvalidZOverlap;
   }
 
-  // r1 faces down (Bottom side) and r2 faces up (Top side) -> r1 is above r2
-  bool r1_down_r2_up = r1->isBottom() && r2->isTop();
-  // r1 faces up (Top side) and r2 faces down (Bottom side) -> r2 is above r1
-  bool r1_up_r2_down = r1->isTop() && r2->isBottom();
-
-  if (r1_down_r2_up == r1_up_r2_down) {
-    return {.valid = false, .top_z = 0, .bot_z = 0};
+  // The top region mates from the die above the connection, so its surface
+  // must face down; the bottom region mates from below and must face up.
+  if (!top->isBottom() || !bot->isTop()) {
+    return ConnectionStatus::kInvalidDirection;
   }
 
-  auto* top = r1_down_r2_up ? r1 : r2;
-  auto* bot = r1_down_r2_up ? r2 : r1;
-  return {
-      .valid = true, .top_z = top->getSurfaceZ(), .bot_z = bot->getSurfaceZ()};
+  // A negative gap means the declared top surface lies below the bottom one.
+  const int gap = top->getSurfaceZ() - bot->getSurfaceZ();
+  if (gap != conn->getChipConn()->getThickness()) {
+    return ConnectionStatus::kInvalidThickness;
+  }
+  return ConnectionStatus::kValid;
 }
 
 bool isValid(dbUnfoldedChipConn* conn)
 {
-  auto* r1 = conn->getTopRegion();
-  auto* r2 = conn->getBottomRegion();
-  if (!r1 || !r2) {
-    return true;
-  }
-  if (!r1->getCuboid().xyIntersects(r2->getCuboid())) {
-    return false;
-  }
-  if (r1->isInternalExt() || r2->isInternalExt()) {
-    return std::max(r1->getCuboid().zMin(), r2->getCuboid().zMin())
-           <= std::min(r1->getCuboid().zMax(), r2->getCuboid().zMax());
-  }
-
-  auto surfaces = getMatingSurfaces(conn);
-  if (!surfaces.valid) {
-    return false;
-  }
-  if (surfaces.top_z < surfaces.bot_z) {
-    return false;
-  }
-  return (surfaces.top_z - surfaces.bot_z)
-         == conn->getChipConn()->getThickness();
+  return getConnectionStatus(conn) == ConnectionStatus::kValid;
 }
 
 }  // namespace
@@ -428,17 +430,56 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat)
   int count = 0;
   dbMarkerCategory* cat = nullptr;
   for (dbUnfoldedChipConn* conn : db_->getUnfoldedChipConns()) {
-    if (!isValid(conn)) {
+    const ConnectionStatus status = getConnectionStatus(conn);
+    if (status != ConnectionStatus::kValid) {
       if (!cat) {
         cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
       }
       if (auto* marker = dbMarker::create(cat)) {
         marker->addSource(conn->getChipConn());
-        std::string msg
-            = fmt::format("Invalid connection {}: {} to {}",
-                          conn->getChipConn()->getName(),
-                          describe(conn->getTopRegion(), marker),
-                          describe(conn->getBottomRegion(), marker));
+        const std::string conn_name = conn->getChipConn()->getName();
+        const std::string top_desc = describe(conn->getTopRegion(), marker);
+        const std::string bot_desc = describe(conn->getBottomRegion(), marker);
+        std::string msg;
+        switch (status) {
+          case ConnectionStatus::kInvalidDirection:
+            msg = fmt::format(
+                "Ill-defined stacking direction for connection {}: top region "
+                "{} must face BOTTOM and bottom region {} must face TOP",
+                conn_name,
+                top_desc,
+                bot_desc);
+            break;
+          case ConnectionStatus::kInvalidXYOverlap:
+            msg = fmt::format(
+                "Invalid connection {}: {} and {} do not overlap in the XY "
+                "plane",
+                conn_name,
+                top_desc,
+                bot_desc);
+            break;
+          case ConnectionStatus::kInvalidZOverlap:
+            msg = fmt::format(
+                "Invalid connection {}: internal_ext regions {} and {} do not "
+                "overlap in Z",
+                conn_name,
+                top_desc,
+                bot_desc);
+            break;
+          case ConnectionStatus::kInvalidThickness:
+            msg = fmt::format(
+                "Invalid connection {}: gap {} between {} and {} does not "
+                "match connection thickness {}",
+                conn_name,
+                conn->getTopRegion()->getSurfaceZ()
+                    - conn->getBottomRegion()->getSurfaceZ(),
+                top_desc,
+                bot_desc,
+                conn->getChipConn()->getThickness());
+            break;
+          case ConnectionStatus::kValid:
+            break;
+        }
         marker->setComment(msg);
         logger_->warn(utl::ODB, 207, msg);
       }

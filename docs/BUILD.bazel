@@ -7,6 +7,7 @@ man_pages(
     name = "man_pages",
     docs_srcs = [
         "Makefile",
+        "src/man_fontfix.tmac",
     ] + glob(["md/**/*.md"]),
     messages = [
         "//src/ant:messages_txt",
