@@ -359,12 +359,10 @@ void Synthesis::acdResynth(int max_leaves,
                    58,
                    "-max_leaves must be between 1 and 6, not {}.",
                    max_leaves);
-    return;
   }
   if (max_cells < 1) {
     logger_->error(
         utl::SYN, 59, "-max_cells must be 1 or more, not {}.", max_cells);
-    return;
   }
   // Cuts wider than the search allows would never be reached to evaluate
   if (max_intermediate_leaves < max_leaves) {
@@ -374,7 +372,6 @@ void Synthesis::acdResynth(int max_leaves,
                    "({}).",
                    max_intermediate_leaves,
                    max_leaves);
-    return;
   }
   // The head is an output of its own cut, so there is always at least one
   if (max_outerfans < 1) {
@@ -382,7 +379,6 @@ void Synthesis::acdResynth(int max_leaves,
                    65,
                    "-max_outerfans must be 1 or more, not {}.",
                    max_outerfans);
-    return;
   }
 
   resynthesis_->resynthesize(max_leaves,
