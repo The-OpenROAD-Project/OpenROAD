@@ -981,14 +981,10 @@ void Resynthesis::expandCut(int wedge,
     std::unordered_map<const sta::Pin*, int> f_cut_users = cut_users;
     int f_ngates = ngates;
     int f_nouterfans = nouterfans;
-    const int before_fwd = f_nouterfans;
-    const long long taken_before = stats_.taken_in;
     {
       utl::DebugScopedTimer timer(stats_.t_forward);
       expandForward(f_leaves, f_drivers, f_cut_users, f_ngates, f_nouterfans);
     }
-
-    const int fwd_took = (int) (stats_.taken_in - taken_before);
 
     // The timing objective only carries two outputs
     if (f_nouterfans <= 2) {
@@ -996,35 +992,8 @@ void Resynthesis::expandCut(int wedge,
       std::vector<const sta::Pin*> roots;
       GateNetwork net;
       collectCone(f_leaves, f_drivers, f_cut_users, cone, roots, net);
-      // TEMPORARY probe
-      if ((int) cone.size() != f_ngates || (int) roots.size() != f_nouterfans) {
-        printf(
-            "!!! head=%s cone=%zu ngates=%d roots=%zu nouterfans=%d "
-            "| before_forward=%d taken_in=%d\n",
-            db_network_->pathName(head_).c_str(),
-            cone.size(),
-            f_ngates,
-            roots.size(),
-            f_nouterfans,
-            before_fwd,
-            fwd_took);
-        for (const sta::Pin* d : f_drivers) {
-          odb::dbITerm* dt = asDriverITerm(d);
-          printf("    driver %s  cut_users=%d nusers=%d%s%s\n",
-                 db_network_->pathName(d).c_str(),
-                 f_cut_users.count(d) ? f_cut_users.at(d) : -1,
-                 nusers(d),
-                 d == head_ ? " HEAD" : "",
-                 (dt && siblingOutput(dt)) ? " MOG" : "");
-        }
-        for (const sta::Pin* r : roots) {
-          printf("    root %s\n", db_network_->pathName(r).c_str());
-        }
-        fflush(stdout);
-      }
       assert((int) cone.size() == f_ngates);
       assert((int) roots.size() == f_nouterfans);
-
       evaluateCut(roots, f_leaves, cone, net, mffc_size);
     }
   }
