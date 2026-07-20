@@ -112,8 +112,8 @@ class ArrivalSet
   static constexpr float kNegInf = -std::numeric_limits<float>::infinity();
 
  private:
-  // Minus budget remaining on arcs going to first input rise, first input fall,
-  // second output rise, second output fall
+  // Minus budget remaining on arcs going to first output rise, first output
+  // fall, second output rise, second output fall
   std::array<float, 4> v = {kNegInf, kNegInf, kNegInf, kNegInf};
 };
 
