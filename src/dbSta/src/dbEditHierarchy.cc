@@ -20,6 +20,28 @@
 
 namespace sta {
 
+// Keep in sync with the identical helper in odb dbInsertBuffer.cpp: escaped
+// brackets ("\[") collapse to a single underscore, bare brackets become
+// underscores.
+static std::string replaceBracketsWithUnderscores(std::string_view name)
+{
+  std::string sanitized_name;
+  sanitized_name.reserve(name.size());
+
+  for (size_t i = 0; i < name.size(); i++) {
+    const char ch = name[i];
+    if (ch == '\\' && i + 1 < name.size()
+        && (name[i + 1] == '[' || name[i + 1] == ']')) {
+      sanitized_name += '_';
+      i++;
+      continue;
+    }
+    sanitized_name += (ch == '[' || ch == ']') ? '_' : ch;
+  }
+
+  return sanitized_name;
+}
+
 void dbEditHierarchy::getParentHierarchy(
     odb::dbModule* start_module,
     std::vector<odb::dbModule*>& parent_hierarchy) const
@@ -618,6 +640,16 @@ std::string dbEditHierarchy::makeUniqueName(odb::dbModule* module,
   } else {
     base_name = name;
   }
+
+  // The name is usually derived from a flat net, whose base name may be a
+  // bus bit like "data[5]".  A dbModBTerm/dbModITerm/dbModNet carrying
+  // literal brackets is ambiguous downstream: Verilog emission and name-based
+  // pin lookup (sta::parseBusName) read "data[5]" as a select of a bus
+  // "data" that does not exist in the module, so the port declaration, its
+  // references and the parent instance connection disagree (undriven cones in
+  // the written netlist).  Hierarchical ports and nets created here are
+  // synthetic, so flatten the brackets into plain scalar names instead.
+  base_name = replaceBracketsWithUnderscores(base_name);
 
   odb::dbBlock* block = db_network_->block();
   std::string full = block->makeNewNetName(

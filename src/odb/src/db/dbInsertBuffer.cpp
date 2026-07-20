@@ -1243,7 +1243,7 @@ dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
   dbModule* parent_module = mod_net->getParent();
   assert(parent_module == current_mod);
 
-  std::string port_name = mod_net->getName();
+  std::string port_name = replaceBracketsWithUnderscores(mod_net->getName());
   dbModInst* mod_inst = current_mod->getModInst();
   if (parent_module->findModBTerm(port_name.c_str()) != nullptr
       || (mod_inst != nullptr
