@@ -175,13 +175,7 @@ class MatchCache
   // As `match`, but free to pick any fill of the don't-care positions
   std::optional<CellMatch> matchDC(Truth6 care_tt, Truth6 care_mask, int arity);
 
-  Cost minAreaForWidth(int w) const
-  {
-    if (w < 0 || w >= (int) min_area_for_width_.size()) {
-      return kInfCost;
-    }
-    return min_area_for_width_[w];
-  }
+  Cost minAreaForWidth(int w) const;
 
   sta::LibertyCell* inverter() const { return index_.inverter; }
   sta::LibertyCell* nand2() const { return nand2_; }

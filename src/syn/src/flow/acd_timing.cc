@@ -23,13 +23,13 @@
 namespace syn {
 namespace acd {
 
-float& ArrivalSet::atExit(int out, const sta::RiseFall* out_rf)
+float& ArrivalSet::atExit(const int out, const sta::RiseFall* out_rf)
 {
   assert((size_t) out * 2 + out_rf->index() < v.size());
   return v[(size_t) out * 2 + out_rf->index()];
 }
 
-float ArrivalSet::atExit(int out, const sta::RiseFall* out_rf) const
+float ArrivalSet::atExit(const int out, const sta::RiseFall* out_rf) const
 {
   assert((size_t) out * 2 + out_rf->index() < v.size());
   return v[(size_t) out * 2 + out_rf->index()];
@@ -44,7 +44,7 @@ void ArrivalSet::mergeMax(const ArrivalSet& o)
 }
 
 // This value with a scalar delay added to every entry (-inf stays -inf).
-ArrivalSet ArrivalSet::plus(float d) const
+ArrivalSet ArrivalSet::plus(const float d) const
 {
   ArrivalSet r;
   for (int i = 0; i < 4; i++) {
@@ -62,18 +62,16 @@ ArrivalSet& NodeArrivals::atTransition(const sta::RiseFall* rf)
 {
   if (rf == sta::RiseFall::rise()) {
     return rise;
-  } else {
-    return fall;
   }
+  return fall;
 }
 
 const ArrivalSet& NodeArrivals::atTransition(const sta::RiseFall* rf) const
 {
   if (rf == sta::RiseFall::rise()) {
     return rise;
-  } else {
-    return fall;
   }
+  return fall;
 }
 
 float NodeArrivals::maxEntry() const
@@ -81,7 +79,7 @@ float NodeArrivals::maxEntry() const
   return std::max(rise.maxEntry(), fall.maxEntry());
 }
 
-float NodeArrivals::exitSlack(int idx) const
+float NodeArrivals::exitSlack(const int idx) const
 {
   float ret = std::numeric_limits<float>::infinity();
   for (auto rf : sta::RiseFall::range()) {
@@ -92,7 +90,7 @@ float NodeArrivals::exitSlack(int idx) const
 
 NodeArrivals outputArrival(const sta::LibertyPort* out_port,
                            const std::vector<NodeArrivals>& input_pin_arrivals,
-                           float load,
+                           const float load,
                            const sta::Scene* corner,
                            const float fixed_slew[2])
 {
@@ -236,7 +234,7 @@ float findDelayLowerBound(const sta::Scene* corner,
 {
   const sta::MinMax* max = sta::MinMax::max();
   const sta::Pvt* pvt = corner->sdc()->operatingConditions(max);
-  float avg_cin = avgInputCap(const_cast<const sta::LibertyCell*>(
+  const float avg_cin = avgInputCap(const_cast<const sta::LibertyCell*>(
       const_cast<sta::LibertyCell*>(cell)->sceneCell(corner, max)));
   float bound = std::numeric_limits<float>::infinity();
 

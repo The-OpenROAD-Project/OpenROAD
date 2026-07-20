@@ -43,7 +43,7 @@ static bool isSignalOutput(odb::dbITerm* pin)
 
 // Compose a cell's Liberty function over per-port truth tables
 Truth6 composeFexpr(sta::FuncExpr* f,
-                    int nvars,
+                    const int nvars,
                     const std::map<sta::LibertyPort*, Truth6>& port_tt)
 {
   using Op = sta::FuncExpr::Op;
@@ -174,7 +174,7 @@ int Resynthesis::nusers(const sta::Pin* pin)
   }
   // Everything on the net save for `pin` itself, which is driving it.  Top-
   // level ports count: a value escaping through one is a user like any other.
-  int npins = net->getITerms().size() + net->getBTerms().size();
+  const int npins = net->getITerms().size() + net->getBTerms().size();
   assert(npins >= 1);
   return npins - 1;
 }
@@ -217,14 +217,14 @@ bool Resynthesis::isMultiOutput(const sta::Pin* pin)
   return driver && siblingOutput(driver);
 }
 
-void Resynthesis::resynthesize(int max_leaves,
-                               int max_intermediate_leaves,
-                               int max_cells,
-                               int max_outerfans,
-                               bool exclude_buffers,
-                               bool allow_lateral,
-                               float timing_opt_effort,
-                               bool apply)
+void Resynthesis::resynthesize(const int max_leaves,
+                               const int max_intermediate_leaves,
+                               const int max_cells,
+                               const int max_outerfans,
+                               const bool exclude_buffers,
+                               const bool allow_lateral,
+                               const float timing_opt_effort,
+                               const bool apply)
 {
   stats_ = Stats();
   init();
@@ -1084,7 +1084,7 @@ void Resynthesis::evaluateCut(const std::vector<const sta::Pin*>& roots,
                               const std::vector<const sta::Pin*>& leaves,
                               const std::vector<odb::dbInst*>& cone,
                               const GateNetwork& orig_net,
-                              int mffc_size)
+                              const int mffc_size)
 {
   stats_.cuts++;
   SynthesisProblem problem;
