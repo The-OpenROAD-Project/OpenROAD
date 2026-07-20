@@ -116,7 +116,7 @@ proc acd_resynth { args } {
   set timing_opt_effort [expr 1.0e11]
   if { [info exists keys(-effort)] } {
     set timing_opt_effort $keys(-effort)
-    sta::check_positive_integer "-effort" $timing_opt_effort
+    sta::check_positive_float "-effort" $timing_opt_effort
   }
 
   set apply [info exists flags(-apply)]
