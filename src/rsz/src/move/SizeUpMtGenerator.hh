@@ -21,8 +21,8 @@ class Instance;
 
 namespace rsz {
 
-// MT-safe generator that enumerates all same-VT stronger cells for one
-// target using a prepared ArcDelayState.
+// MT-safe generator that enumerates same-VT cells that do not weaken output
+// drive for one target using a prepared ArcDelayState.
 //
 // prepareRequirements() requests kArcDelayState so worker threads can read the
 // prepared timing snapshot without touching shared STA state. Produces multiple

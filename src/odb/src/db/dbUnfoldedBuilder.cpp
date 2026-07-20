@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbChip.h"
@@ -89,7 +90,7 @@ void dbUnfoldedBuilder::build()
   for (dbChipInst* inst : chip->getChipInsts()) {
     buildUnfoldedChip(inst, path, dbTransform());
   }
-  unfoldConnections(chip, {});
+  unfoldConnections(chip, {}, dbTransform());
   unfoldNets(chip, {});
 }
 
@@ -109,7 +110,7 @@ _dbUnfoldedChipInst* dbUnfoldedBuilder::buildUnfoldedChip(
     for (auto* sub : master->getChipInsts()) {
       buildUnfoldedChip(sub, path, total);
     }
-    unfoldConnections(master, path);
+    unfoldConnections(master, path, total);
     unfoldNets(master, path);
     path.pop_back();
     return nullptr;
@@ -207,7 +208,8 @@ _dbUnfoldedChipInst* dbUnfoldedBuilder::findUnfoldedChip(
 
 void dbUnfoldedBuilder::unfoldConnections(
     dbChip* chip,
-    const std::vector<dbChipInst*>& parent_path)
+    const std::vector<dbChipInst*>& parent_path,
+    const dbTransform& parent_xform)
 {
   for (auto* conn : chip->getChipConns()) {
     dbId<_dbUnfoldedChipRegionInst> top_region = 0;
@@ -231,6 +233,9 @@ void dbUnfoldedBuilder::unfoldConnections(
     if (top_region.isValid() || bot_region.isValid()) {
       _dbUnfoldedChipConn* uf_conn = db_->unfolded_chip_conn_tbl_->create();
       uf_conn->chip_conn_ = conn->getImpl()->getOID();
+      if (parent_xform.isMirrorZ()) {
+        std::swap(top_region, bot_region);
+      }
       uf_conn->top_region_ = top_region;
       uf_conn->bottom_region_ = bot_region;
     }

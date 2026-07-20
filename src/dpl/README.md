@@ -221,11 +221,6 @@ The following limitations apply when using the NegotiationLegalizer (default):
    VDD/VSS. Replace with actual LEF pg_pin parsing once available in the
    build context.
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+opendp+in%3Atitle)
-about this tool.
-
 ## Authors
 
 -   SangGi Do and Mingyu Woo (respective Ph. D. advisors: Seokhyeong Kang,
