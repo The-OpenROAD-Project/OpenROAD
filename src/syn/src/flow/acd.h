@@ -42,17 +42,28 @@ class dbInst;
 namespace syn::acd {
 
 // A possibly-multi-output truth table over an arbitrary set of integer
-// variable IDs.  `values` and `dontcares` are laid out so that the index for
-// output `o` at minterm `m` is `o * (1 << vars.size()) + m`.
-struct TruthTable
+// variable IDs. Values and don't-cares are stored output-major and accessed by
+// output and minterm.
+class TruthTable
 {
-  std::vector<int> vars;
-  int noutputs = 1;
-  std::vector<bool> values;
-  std::vector<bool> dontcares;
+ public:
+  TruthTable();
+  TruthTable(std::vector<int> variables,
+             int num_outputs,
+             bool initial_value = false,
+             bool initial_dontcare = false);
 
-  int nminterms() const { return 1 << (int) vars.size(); }
-  int totalSize() const { return noutputs * nminterms(); }
+  const std::vector<int>& variables() const { return variables_; }
+  int variable(const int position) const { return variables_[position]; }
+  int numVariables() const { return static_cast<int>(variables_.size()); }
+  int numOutputs() const { return num_outputs_; }
+  int numMinterms() const { return 1 << numVariables(); }
+  int size() const { return numOutputs() * numMinterms(); }
+
+  bool value(int output, int minterm) const;
+  bool dontCare(int output, int minterm) const;
+  void setValue(int output, int minterm, bool value);
+  void setDontCare(int output, int minterm, bool dontcare);
 
   // Swap variable positions `a` and `b` in the truth table representation,
   // applying the same permutation to every output.
@@ -71,6 +82,14 @@ struct TruthTable
 
   bool operator==(const TruthTable&) const = default;
   bool hasDontcares() const;
+
+ private:
+  int index(int output, int minterm) const;
+
+  std::vector<int> variables_;
+  int num_outputs_ = 1;
+  std::vector<bool> values_;
+  std::vector<bool> dontcares_;
 };
 
 // The timing objective is given to resynthesis as a collection of arcs
@@ -134,8 +153,8 @@ struct SynthesisProblem
   SynthesisProblem() = default;
   SynthesisProblem(TruthTable f)
       : function(std::move(f)),
-        inputs(function.vars.size()),
-        outputs((size_t) function.noutputs)
+        inputs(function.numVariables()),
+        outputs(function.numOutputs())
   {
   }
 };

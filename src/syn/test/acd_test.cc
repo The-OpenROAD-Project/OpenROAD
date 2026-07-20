@@ -60,14 +60,10 @@ class AcdTest : public tst::Fixture
   // `kAndOrChain5` into the layout synthesize/evaluateFunction use.
   acd::SynthesisProblem makeAndOrChainProblem()
   {
-    acd::TruthTable f;
-    f.vars = {0, 1, 2, 3, 4};
-    f.noutputs = 1;
+    acd::TruthTable f({0, 1, 2, 3, 4}, 1);
     const int nminterms = 1 << 5;
-    f.values.resize(nminterms);
-    f.dontcares.assign(nminterms, false);
     for (int m = 0; m < nminterms; m++) {
-      f.values[m] = (kAndOrChain5 >> m) & 1;
+      f.setValue(0, m, (kAndOrChain5 >> m) & 1);
     }
 
     acd::SynthesisProblem problem(f);
@@ -117,7 +113,7 @@ class AcdTest : public tst::Fixture
     const acd::TruthTable tt = acd::evaluateFunction(net);
     uint32_t bits = 0;
     for (int m = 0; m < (1 << 5); m++) {
-      if (tt.values[m]) {
+      if (tt.value(0, m)) {
         bits |= uint32_t{1} << m;
       }
     }

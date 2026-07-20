@@ -84,7 +84,7 @@ TruthTable evaluateFunction(const GateNetwork& net)
     while (it.hasNext()) {
       sta::LibertyPort* p = it.next();
       if (p->direction()->isInput() && !p->isPwrGnd()) {
-        auto& fanin = node.fanins[idx++];
+        const auto& fanin = node.fanins[idx++];
         cell_inputs[p]
             = fanin.first ? (cofactor_masks[fanin.second] & mask6(net.ninputs))
                           : node_tt[fanin.second];
@@ -94,21 +94,18 @@ TruthTable evaluateFunction(const GateNetwork& net)
         = composeFexpr(node.driver_port->function(), net.ninputs, cell_inputs);
   }
 
-  TruthTable result;
-  result.vars.resize(net.ninputs);
+  std::vector<int> variables(net.ninputs);
   for (int i = 0; i < net.ninputs; ++i) {
-    result.vars[i] = i;
+    variables[i] = i;
   }
-  result.noutputs = (int) net.outs.size();
+  TruthTable result(std::move(variables), net.outs.size());
   const int nminterms = 1 << net.ninputs;
-  result.values.assign(result.noutputs * nminterms, false);
-  result.dontcares.assign(result.noutputs * nminterms, false);
   for (size_t i = 0; i < net.outs.size(); i++) {
     const auto& [is_pi, idx] = net.outs[i];
-    Truth6 tt
+    const Truth6 tt
         = is_pi ? (cofactor_masks[idx] & mask6(net.ninputs)) : node_tt[idx];
     for (int j = 0; j < nminterms; j++) {
-      result.values[i * nminterms + j] = ((tt >> j) & 1) != 0;
+      result.setValue(i, j, ((tt >> j) & 1) != 0);
     }
   }
   return result;

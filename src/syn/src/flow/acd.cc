@@ -36,14 +36,59 @@
 
 namespace syn::acd {
 
-void TruthTable::swapVars(int a, int b)
+TruthTable::TruthTable() : TruthTable({}, 1)
+{
+}
+
+TruthTable::TruthTable(std::vector<int> variables,
+                       const int num_outputs,
+                       const bool initial_value,
+                       const bool initial_dontcare)
+    : variables_(std::move(variables)), num_outputs_(num_outputs)
+{
+  assert(numOutputs() > 0);
+  assert(numVariables() < std::numeric_limits<int>::digits);
+  values_.assign(size(), initial_value);
+  dontcares_.assign(size(), initial_dontcare);
+}
+
+int TruthTable::index(const int output, const int minterm) const
+{
+  assert(output >= 0 && output < numOutputs());
+  assert(minterm >= 0 && minterm < numMinterms());
+  return output * numMinterms() + minterm;
+}
+
+bool TruthTable::value(const int output, const int minterm) const
+{
+  return values_[index(output, minterm)];
+}
+
+bool TruthTable::dontCare(const int output, const int minterm) const
+{
+  return dontcares_[index(output, minterm)];
+}
+
+void TruthTable::setValue(const int output, const int minterm, const bool value)
+{
+  values_[index(output, minterm)] = value;
+}
+
+void TruthTable::setDontCare(const int output,
+                             const int minterm,
+                             const bool dontcare)
+{
+  dontcares_[index(output, minterm)] = dontcare;
+}
+
+void TruthTable::swapVars(const int a, const int b)
 {
   if (a == b) {
     return;
   }
-  std::swap(vars[a], vars[b]);
-  const int n = nminterms();
-  for (int o = 0; o < noutputs; ++o) {
+  std::swap(variables_[a], variables_[b]);
+  const int n = numMinterms();
+  for (int o = 0; o < numOutputs(); ++o) {
     const int base = o * n;
     for (int i = 0; i < n; ++i) {
       if ((i >> a & 1) || !(i >> b & 1)) {
@@ -52,37 +97,39 @@ void TruthTable::swapVars(int a, int b)
       const int j = (i & ~(1 << b)) | (1 << a);
       // std::swap won't bind std::vector<bool>'s proxy references, so swap the
       // two positions through plain bool temporaries.
-      const bool vi = values[base + i], vj = values[base + j];
-      values[base + i] = vj;
-      values[base + j] = vi;
-      const bool di = dontcares[base + i], dj = dontcares[base + j];
-      dontcares[base + i] = dj;
-      dontcares[base + j] = di;
+      const bool vi = values_[base + i];
+      const bool vj = values_[base + j];
+      values_[base + i] = vj;
+      values_[base + j] = vi;
+      const bool di = dontcares_[base + i];
+      const bool dj = dontcares_[base + j];
+      dontcares_[base + i] = dj;
+      dontcares_[base + j] = di;
     }
   }
 }
 
 void TruthTable::changeVars(const std::vector<int>& new_vars)
 {
-  assert(new_vars.size() == vars.size());
-  const int nv = (int) vars.size();
+  assert(new_vars.size() == variables_.size());
+  const int nv = numVariables();
   int max_var = 0;
-  for (int v : vars) {
+  for (int v : variables_) {
     max_var = std::max(max_var, v);
   }
   std::vector<int> vi(max_var + 1, -1);
   for (int i = 0; i < nv; ++i) {
-    vi[vars[i]] = i;
+    vi[variables_[i]] = i;
   }
   std::vector<int> p(nv);
   for (int i = 0; i < nv; ++i) {
     assert(vi[new_vars[i]] != -1);
     p[vi[new_vars[i]]] = i;
   }
-  const int n = nminterms();
-  std::vector<bool> nv_vals(values.size());
-  std::vector<bool> nv_dcs(dontcares.size());
-  for (int o = 0; o < noutputs; ++o) {
+  const int n = numMinterms();
+  std::vector<bool> nv_vals(values_.size());
+  std::vector<bool> nv_dcs(dontcares_.size());
+  for (int o = 0; o < numOutputs(); ++o) {
     const int base = o * n;
     for (int i = 0; i < n; ++i) {
       int j = 0;
@@ -91,31 +138,31 @@ void TruthTable::changeVars(const std::vector<int>& new_vars)
           j |= 1 << p[k];
         }
       }
-      nv_vals[base + j] = values[base + i];
-      nv_dcs[base + j] = dontcares[base + i];
+      nv_vals[base + j] = values_[base + i];
+      nv_dcs[base + j] = dontcares_[base + i];
     }
   }
-  vars = new_vars;
-  values = std::move(nv_vals);
-  dontcares = std::move(nv_dcs);
+  variables_ = new_vars;
+  values_ = std::move(nv_vals);
+  dontcares_ = std::move(nv_dcs);
 }
 
 std::optional<int> TruthTable::findUnsupportedVar() const
 {
   uint32_t supported = 0;
-  for (int i = 0; i < (int) values.size(); i++) {
-    for (int j = 0; j < (int) vars.size(); j++) {
+  for (int i = 0; i < size(); i++) {
+    for (int j = 0; j < numVariables(); j++) {
       if (i & (1u << j)) {
         continue;
       }
-      if (!dontcares[i] && !dontcares[i | (1u << j)]
-          && values[i] != values[i | (1u << j)]) {
+      if (!dontcares_[i] && !dontcares_[i | (1u << j)]
+          && values_[i] != values_[i | (1u << j)]) {
         supported |= 1u << j;
       }
     }
   }
 
-  for (int j = 0; j < (int) vars.size(); j++) {
+  for (int j = 0; j < numVariables(); j++) {
     if (!(supported & (1u << j))) {
       return j;
     }
@@ -123,18 +170,18 @@ std::optional<int> TruthTable::findUnsupportedVar() const
   return {};
 }
 
-std::optional<int> TruthTable::outputPassthrough(int out_idx) const
+std::optional<int> TruthTable::outputPassthrough(const int out_idx) const
 {
-  const int nm = nminterms();
+  const int nm = numMinterms();
   const int base = out_idx * nm;
-  for (int v = 0; v < (int) vars.size(); v++) {
+  for (int v = 0; v < numVariables(); v++) {
     bool match = true;
     for (int m = 0; m < nm; m++) {
-      if (dontcares[base + m]) {
+      if (dontcares_[base + m]) {
         continue;
       }
       // Output value must equal bit v of the minterm at every care position.
-      if (values[base + m] != (bool) ((m >> v) & 1)) {
+      if (values_[base + m] != (bool) ((m >> v) & 1)) {
         match = false;
         break;
       }
@@ -152,39 +199,40 @@ void TruthTable::shrinkToSupport()
   // since merging a variable's cofactors can fill don't-cares that newly
   // support another variable.
   while (std::optional<int> j = findUnsupportedVar()) {
-    const int nv = (int) vars.size();
+    const int nv = numVariables();
     // Move the unsupported variable to the highest position so its two
     // cofactors are the contiguous low and high halves of each output block.
     swapVars(*j, nv - 1);
     const int old_n = 1 << nv;
     const int new_n = old_n >> 1;
-    std::vector<bool> nv_vals(noutputs * new_n, false);
-    std::vector<bool> nv_dcs(noutputs * new_n, true);
-    for (int o = 0; o < noutputs; ++o) {
+    std::vector<bool> nv_vals(numOutputs() * new_n, false);
+    std::vector<bool> nv_dcs(numOutputs() * new_n, true);
+    for (int o = 0; o < numOutputs(); ++o) {
       for (int i = 0; i < new_n; ++i) {
         const int lo = o * old_n + i;  // dropped var = 0 cofactor
         const int hi = lo + new_n;     // dropped var = 1 cofactor
         const int dst = o * new_n + i;
         // Merge cofactors: take whichever side is care (they agree where both
         // are care, since the variable is unsupported); leave DC otherwise.
-        if (!dontcares[lo]) {
-          nv_vals[dst] = values[lo];
+        if (!dontcares_[lo]) {
+          nv_vals[dst] = values_[lo];
           nv_dcs[dst] = false;
-        } else if (!dontcares[hi]) {
-          nv_vals[dst] = values[hi];
+        } else if (!dontcares_[hi]) {
+          nv_vals[dst] = values_[hi];
           nv_dcs[dst] = false;
         }
       }
     }
-    vars.pop_back();
-    values = std::move(nv_vals);
-    dontcares = std::move(nv_dcs);
+    variables_.pop_back();
+    values_ = std::move(nv_vals);
+    dontcares_ = std::move(nv_dcs);
   }
 }
 
 bool TruthTable::hasDontcares() const
 {
-  return std::find(dontcares.begin(), dontcares.end(), true) != dontcares.end();
+  return std::find(dontcares_.begin(), dontcares_.end(), true)
+         != dontcares_.end();
 }
 
 namespace {
@@ -368,31 +416,24 @@ struct Fragment
 };
 
 bool columnsMatch(const TruthTable& tt,
-                  int fraglen,
-                  int b1,
-                  int b2,
-                  bool* b1_refined)
+                  const int fraglen,
+                  const int b1,
+                  const int b2,
+                  bool* const b1_refined)
 {
   bool refining = false;
-  int nminterms = tt.nminterms();
-  for (int out_idx = 0; out_idx < tt.noutputs; out_idx++) {
-    auto v1 = tt.values.begin() + nminterms * out_idx + b1 * fraglen;
-    auto v2 = tt.values.begin() + nminterms * out_idx + b2 * fraglen;
-    auto d1 = tt.dontcares.begin() + nminterms * out_idx + b1 * fraglen;
-    auto d2 = tt.dontcares.begin() + nminterms * out_idx + b2 * fraglen;
-
+  for (int out_idx = 0; out_idx < tt.numOutputs(); out_idx++) {
     for (int i = 0; i < fraglen; ++i) {
+      const int m1 = b1 * fraglen + i;
+      const int m2 = b2 * fraglen + i;
       // Are we refinining the column b1?
-      if (*d1 && !*d2) {
+      if (tt.dontCare(out_idx, m1) && !tt.dontCare(out_idx, m2)) {
         refining = true;
       }
-      if (!*d1 && !*d2 && *v1 != *v2) {
+      if (!tt.dontCare(out_idx, m1) && !tt.dontCare(out_idx, m2)
+          && tt.value(out_idx, m1) != tt.value(out_idx, m2)) {
         return false;
       }
-      ++v1;
-      ++v2;
-      ++d1;
-      ++d2;
     }
   }
   if (refining) {
@@ -403,9 +444,9 @@ bool columnsMatch(const TruthTable& tt,
 
 bool fragmentMatches(const TruthTable& tt,
                      const Fragment& frag,
-                     int fraglen,
-                     int candidate_b,
-                     bool* refined)
+                     const int fraglen,
+                     const int candidate_b,
+                     bool* const refined)
 {
   if (frag.column_bound_idx.empty()) {
     return false;
@@ -426,9 +467,9 @@ struct FragmentSet
 };
 
 // Identify fragments and fragment decoding map
-FragmentSet findFragments(const TruthTable& tt, int bn)
+FragmentSet findFragments(const TruthTable& tt, const int bn)
 {
-  const int nvars = (int) tt.vars.size();
+  const int nvars = tt.numVariables();
   const int fn = nvars - bn;
   assert(fn >= 0);
   const int fraglen = 1 << fn;
@@ -469,21 +510,14 @@ FragmentSet findFragments(const TruthTable& tt, int bn)
 TruthTable projectOutputs(const TruthTable& f,
                           const std::vector<int>& keep_indices)
 {
-  TruthTable g;
-  g.vars = f.vars;
-  g.noutputs = (int) keep_indices.size();
-  const int nm = 1 << (int) f.vars.size();
-  g.values.assign((size_t) g.noutputs * nm, false);
-  g.dontcares.assign((size_t) g.noutputs * nm, false);
-  for (int o = 0; o < g.noutputs; ++o) {
+  TruthTable g(f.variables(), keep_indices.size());
+  for (int o = 0; o < g.numOutputs(); ++o) {
     const int src = keep_indices[o];
-    assert(src >= 0 && src < f.noutputs);
-    std::copy(f.values.begin() + (size_t) src * nm,
-              f.values.begin() + (size_t) (src + 1) * nm,
-              g.values.begin() + (size_t) o * nm);
-    std::copy(f.dontcares.begin() + (size_t) src * nm,
-              f.dontcares.begin() + (size_t) (src + 1) * nm,
-              g.dontcares.begin() + (size_t) o * nm);
+    assert(src >= 0 && src < f.numOutputs());
+    for (int m = 0; m < f.numMinterms(); m++) {
+      g.setValue(o, m, f.value(src, m));
+      g.setDontCare(o, m, f.dontCare(src, m));
+    }
   }
   return g;
 }
@@ -533,26 +567,25 @@ Truth6 swapVars6(Truth6 t, int i, int j)
 // (positions sharing an id are interchangeable).
 std::vector<int> symmetryClasses(const TruthTable& f)
 {
-  const int nv = (int) f.vars.size();
+  const int nv = f.numVariables();
   const int nm = 1 << nv;
   const Truth6 fmask = mask6(nv);
 
   // Pack each output's values / don't-cares into Truth6 words.
-  std::vector<Truth6> val(f.noutputs, 0), dc(f.noutputs, 0);
-  for (int o = 0; o < f.noutputs; ++o) {
-    const int base = o * nm;
+  std::vector<Truth6> val(f.numOutputs(), 0), dc(f.numOutputs(), 0);
+  for (int o = 0; o < f.numOutputs(); ++o) {
     for (int m = 0; m < nm; ++m) {
-      if (f.values[base + m]) {
+      if (f.value(o, m)) {
         val[o] |= (Truth6) 1 << m;
       }
-      if (f.dontcares[base + m]) {
+      if (f.dontCare(o, m)) {
         dc[o] |= (Truth6) 1 << m;
       }
     }
   }
 
   auto symmetric = [&](int i, int j) {
-    for (int o = 0; o < f.noutputs; ++o) {
+    for (int o = 0; o < f.numOutputs(); ++o) {
       // The don't-care set must be invariant under the swap...
       if ((swapVars6(dc[o], i, j) & fmask) != (dc[o] & fmask)) {
         return false;
@@ -597,13 +630,17 @@ struct Objective
   double slack_cost_factor[2];
 };
 
-static std::string hexdump(std::vector<bool> tt)
+static std::string hexdump(const TruthTable& tt, const bool dump_dontcares)
 {
   std::string ret;
-  for (int i = 0; i < (int) tt.size(); i += 4) {
+  for (int i = 0; i < tt.size(); i += 4) {
     int nibble = 0;
-    for (int j = i; j < (int) tt.size() && j < i + 4; j++) {
-      if (tt[j]) {
+    for (int j = i; j < tt.size() && j < i + 4; j++) {
+      const int output = j / tt.numMinterms();
+      const int minterm = j % tt.numMinterms();
+      const bool bit = dump_dontcares ? tt.dontCare(output, minterm)
+                                      : tt.value(output, minterm);
+      if (bit) {
         nibble |= 1 << (j - i);
       }
     }
@@ -638,7 +675,7 @@ class Search
   // in one canonical order as different orders would be redundant
   bool consumeSymmetricInputs(const SITracking& prior,
                               SITracking& updated,
-                              const std::span<int> bound_vars);
+                              const std::span<const int> bound_vars);
 
   std::pair<int, int> symClass(int var_idx);
 
@@ -726,7 +763,7 @@ Search::Search(utl::Logger* logger,
   // is assumed by the symmetry class processing below and by initilization
   // of `next_var_`.
   for (int i = 0; i < problem_.inputs.size(); i++) {
-    assert(problem_.function.vars[i] == i);
+    assert(problem_.function.variable(i) == i);
   }
 
   if (timing_) {
@@ -743,7 +780,8 @@ Search::Search(utl::Logger* logger,
   std::vector<std::pair<int, int>> classified;
   classified.reserve(problem_.inputs.size());
   for (int i = 0; i < problem_.inputs.size(); i++) {
-    classified.push_back(std::make_pair(problem_.function.vars[i], classes[i]));
+    classified.push_back(
+        std::make_pair(problem_.function.variable(i), classes[i]));
   }
 
   // Re-order the classified so that within a symmetry class, variables
@@ -815,7 +853,7 @@ std::unique_ptr<Round> Search::run(const Cost budget)
 
 bool Search::consumeSymmetricInputs(const SITracking& prior,
                                     SITracking& updated,
-                                    const std::span<int> bound_vars)
+                                    const std::span<const int> bound_vars)
 {
   updated = prior;
 
@@ -886,13 +924,13 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
   // inputs needs no logic of its own, so record the variable it wires to and
   // drop it from the problem.
   std::vector<int> out_passthrough;
-  out_passthrough.assign(f.noutputs, -1);
+  out_passthrough.assign(f.numOutputs(), -1);
   std::vector<int> kept_positions;
   std::vector<int> kept_outputs;
-  assert(f_output_ids.size() == f.noutputs);
-  for (int i = 0; i < f.noutputs; i++) {
+  assert(f_output_ids.size() == f.numOutputs());
+  for (int i = 0; i < f.numOutputs(); i++) {
     if (std::optional<int> v = f.outputPassthrough(i)) {
-      out_passthrough[i] = f.vars[*v];
+      out_passthrough[i] = f.variable(*v);
       npeeled++;
     } else {
       kept_positions.push_back(i);
@@ -904,7 +942,7 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
     Round r;
     r.out_passthrough = std::move(out_passthrough);
     if (timing_) {
-      for (int i = 0; i < f.noutputs; i++) {
+      for (int i = 0; i < f.numOutputs(); i++) {
         auto idx = f_output_ids[i];
         r.cost += arrivals_.at(r.out_passthrough[i]).exitSlack(idx)
                   * objective_.slack_cost_factor[idx];
@@ -928,9 +966,9 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
                "{:{}s}{} (dontcare {}) nvars={} npeeled={}",
                "",
                depth * 2,
-               hexdump(f.values),
-               hexdump(f.dontcares),
-               f.vars.size(),
+               hexdump(f, false),
+               hexdump(f, true),
+               f.numVariables(),
                npeeled);
   } else {
     debugPrint(logger_,
@@ -940,19 +978,19 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
                "{:{}s}{} nvars={} npeeled={}",
                "",
                depth * 2,
-               hexdump(f.values),
-               f.vars.size(),
+               hexdump(f, false),
+               f.numVariables(),
                npeeled);
   }
 
-  if (f.vars.empty()) {
+  if (f.numVariables() == 0) {
     return nullptr;
   }
 
   Cost slack_cost = 0;
-  for (int i = 0; i < f.noutputs; i++) {
+  for (int i = 0; i < f.numOutputs(); i++) {
     const auto idx = f_output_ids[i];
-    const float out_slack = slackUpperBound(f.vars, idx);
+    const float out_slack = slackUpperBound(f.variables(), idx);
     if (out_slack < objective_.min_slacks[idx]) {
       return nullptr;
     }
@@ -961,7 +999,7 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
 
   {
     const Cost lb
-        = slack_cost + lutMinCost(mc_, max_bound_width_, f.vars.size());
+        = slack_cost + lutMinCost(mc_, max_bound_width_, f.numVariables());
     if (lb >= budget) {
       debugPrint(logger_,
                  utl::SYN,
@@ -978,15 +1016,15 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
 
   // Leaf base case: realize the whole single-output function as one library
   // cell, exploiting don't-cares.
-  if (f.noutputs == 1) {
-    const int nvars = f.vars.size();
+  if (f.numOutputs() == 1) {
+    const int nvars = f.numVariables();
     const int nm = 1 << nvars;
     Truth6 care_tt = 0;
     Truth6 care_mask = 0;
     for (int m = 0; m < nm; m++) {
-      if (!f.dontcares[m]) {
+      if (!f.dontCare(0, m)) {
         care_mask |= (Truth6) 1 << m;
-        if (f.values[m]) {
+        if (f.value(0, m)) {
           care_tt |= (Truth6) 1 << m;
         }
       }
@@ -997,7 +1035,7 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
       if (timing_) {
         std::vector<NodeArrivals> port_in(cm->arity);
         for (int j = 0; j < cm->arity; j++) {
-          port_in[j] = arrivals_.at(f.vars[cm->perm[j]]);
+          port_in[j] = arrivals_.at(f.variable(cm->perm[j]));
         }
         leaf_arr = cellDelay(cm->driver, port_in);
         solution_cost = cm->area
@@ -1017,7 +1055,7 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
         leaf.output = id;
         leaf.inputs.resize(cm->arity);
         for (int j = 0; j < cm->arity; j++) {
-          leaf.inputs[j] = f.vars[cm->perm[j]];
+          leaf.inputs[j] = f.variable(cm->perm[j]);
         }
         // The single output is the cell's output net.
         leaf.next = std::make_unique<Round>();
@@ -1040,12 +1078,12 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
     }
   }
 
-  for (int bn = 2; bn <= max_bound_width_ && bn <= f.vars.size(); ++bn) {
+  for (int bn = 2; bn <= max_bound_width_ && bn <= f.numVariables(); ++bn) {
     if (slack_cost + mc_.minAreaForWidth(bn) >= budget) {
       break;
     }
 
-    const int fn = f.vars.size() - bn;
+    const int fn = f.numVariables() - bn;
     if (fn == 0) {
       // Bound = all vars: there is exactly one bound set, so handle it as a
       // single trial.
@@ -1065,7 +1103,7 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
       {
         // Top `bn` positions in the variable list are the bound set under
         // test
-        auto bs = std::span<int>(cur.vars.data() + fn, bn);
+        auto bs = std::span<const int>(cur.variables().data() + fn, bn);
 
         std::unique_ptr<Round> candidate;
         SITracking updated_si;
@@ -1132,21 +1170,21 @@ std::unique_ptr<Round> Search::recurse(TruthTable f,
   }
 
   // Output-split candidate: decompose the two outputs independently
-  if (depth >= 1 && f.noutputs == 2) {
+  if (depth >= 1 && f.numOutputs() == 2) {
     TruthTable f0 = projectOutputs(f, {0});
     TruthTable f1 = projectOutputs(f, {1});
     std::unique_ptr<Round> s0, s1;
     debugPrint(logger_, utl::SYN, "acd", 3, "{:{}s} splitting", "", depth * 2);
 
     static std::array output0 = {0};
-    if ((s0 = recurse(
-             f0,
-             output0,
-             depth + 1,
-             allow_lateral,
-             budget
-                 - objective_.slack_cost_factor[1] * slackUpperBound(f.vars, 1),
-             prior_si))
+    if ((s0 = recurse(f0,
+                      output0,
+                      depth + 1,
+                      allow_lateral,
+                      budget
+                          - objective_.slack_cost_factor[1]
+                                * slackUpperBound(f.variables(), 1),
+                      prior_si))
         != nullptr) {
       static std::array output1 = {1};
       if ((s1 = recurse(f1,
@@ -1182,7 +1220,7 @@ std::unique_ptr<Round> Search::tryBoundChoice(const TruthTable& g,
                                               const bool allow_lateral,
                                               const SITracking& prior_si)
 {
-  const int nvars = (int) g.vars.size();
+  const int nvars = g.numVariables();
   const FragmentSet fset = findFragments(g, bn);
   const int nfrags = (int) fset.fragments.size();
   const int ndecoding_luts_raw
@@ -1202,10 +1240,10 @@ std::unique_ptr<Round> Search::tryBoundChoice(const TruthTable& g,
   for (int sh = sh_first; sh <= sh_last; ++sh) {
     // Skip redundant shared-variable choices by original function symmetry
     if (sh >= 0) {
-      const int sh_cls = symClass(g.vars[fn + sh]).first;
+      const int sh_cls = symClass(g.variable(fn + sh)).first;
       bool redundant = false;
       for (int sh2 = 0; sh2 < sh; ++sh2) {
-        if (sh_cls >= 0 && symClass(g.vars[fn + sh2]).first == sh_cls) {
+        if (sh_cls >= 0 && symClass(g.variable(fn + sh2)).first == sh_cls) {
           redundant = true;
           break;
         }
@@ -1310,7 +1348,8 @@ std::unique_ptr<Round> Search::tryBoundChoice(const TruthTable& g,
       if (timing_) {
         std::vector<NodeArrivals> port_in(arity);
         for (int j = 0; j < arity; ++j) {
-          port_in[j] = arrivals_.at(g.vars[fn + bound_var_indices[m->perm[j]]]);
+          port_in[j]
+              = arrivals_.at(g.variable(fn + bound_var_indices[m->perm[j]]));
         }
         setArrivals(dec, cellDelay(m->driver, port_in));
       }
@@ -1342,7 +1381,7 @@ std::unique_ptr<Round> Search::tryBoundChoice(const TruthTable& g,
       // bound_var_indices[m->perm[j]] of the decomposition's variable order.
       std::vector<int> port_inputs(arity);
       for (int j = 0; j < arity; ++j) {
-        port_inputs[j] = g.vars[fn + bound_var_indices[m->perm[j]]];
+        port_inputs[j] = g.variable(fn + bound_var_indices[m->perm[j]]);
       }
       best_local = Round{};
       best_local.driver = m->driver;
@@ -1370,27 +1409,26 @@ TruthTable Search::buildUpperFunction(const TruthTable& f,
                                       const std::vector<int>& bound_to_code,
                                       const int varcounter)
 {
-  TruthTable up;
-  up.noutputs = f.noutputs;
-  up.vars.reserve(fn + ndecoding_luts + nshared);
+  std::vector<int> variables;
+  variables.reserve(fn + ndecoding_luts + nshared);
   for (int i = 0; i < fn; ++i) {
-    up.vars.push_back(f.vars[i]);
+    variables.push_back(f.variable(i));
   }
   for (int i = 0; i < ndecoding_luts; ++i) {
-    up.vars.push_back(varcounter + i);
+    variables.push_back(varcounter + i);
   }
   for (int i = 0; i < bn; ++i) {
     if (shmask & (1u << i)) {
-      up.vars.push_back(f.vars[fn + i]);
+      variables.push_back(f.variable(fn + i));
     }
   }
-  const int up_nvars = (int) up.vars.size();
-  const int up_nminterms = 1 << up_nvars;
-  up.values.assign((size_t) up.noutputs * up_nminterms, true);
-  up.dontcares.assign((size_t) up.noutputs * up_nminterms, true);
+  TruthTable up(std::move(variables),
+                f.numOutputs(),
+                /*initial_value=*/true,
+                /*initial_dontcare=*/true);
 
   const int fraglen = 1 << fn;
-  for (int out = 0; out < f.noutputs; ++out) {
+  for (int out = 0; out < f.numOutputs(); ++out) {
     for (int b = 0; b < (1 << bn); ++b) {
       const int code = bound_to_code[b];
       if (code < 0) {
@@ -1409,14 +1447,12 @@ TruthTable Search::buildUpperFunction(const TruthTable& f,
       for (int free_idx = 0; free_idx < fraglen; ++free_idx) {
         const int up_idx
             = free_idx | (code << fn) | (shared_part << (fn + ndecoding_luts));
-        const int src_idx
-            = b * fraglen + free_idx + out * (1 << (int) f.vars.size());
-        const int dst_idx = out * up_nminterms + up_idx;
-        const bool src_is_dc = f.dontcares[src_idx];
-        const bool dst_is_dc = up.dontcares[dst_idx];
+        const int src_minterm = b * fraglen + free_idx;
+        const bool src_is_dc = f.dontCare(out, src_minterm);
+        const bool dst_is_dc = up.dontCare(out, up_idx);
         if (dst_is_dc || !src_is_dc) {
-          up.values[dst_idx] = f.values[src_idx];
-          up.dontcares[dst_idx] = src_is_dc;
+          up.setValue(out, up_idx, f.value(out, src_minterm));
+          up.setDontCare(out, up_idx, src_is_dc);
         }
       }
     }
