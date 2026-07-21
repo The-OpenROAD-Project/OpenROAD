@@ -759,8 +759,8 @@ _install_abseil() {
         done
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=installed")
     else
-        if [[ "${absl_prefix_found}" == "${OR_TOOLS_PATH}" ]] \
-            && [[ -d "${absl_prefix_install}/lib/cmake/absl" || -d "${absl_prefix_install}/lib64/cmake/absl" ]]; then
+        if [[ "${absl_prefix_found}" == "${OR_TOOLS_PATH}" ]] &&
+            [[ -d "${absl_prefix_install}/lib/cmake/absl" || -d "${absl_prefix_install}/lib64/cmake/absl" ]]; then
             warn "Stale Abseil found in ${absl_prefix_install} alongside the or-tools copy."
             warn "Remove include/absl, lib*/cmake/absl and lib*/libabsl_* from ${absl_prefix_install} to avoid runtime ODR errors."
         fi
