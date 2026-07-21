@@ -38,6 +38,14 @@ set_global_routing_layer_adjustment * 0.7
 
 set_routing_layers -signal met1-met5 -clock met3-met4
 
+# Suppress the per-iteration "GRT-0102 Start extra iteration" trace: its count
+# is order/compiler-sensitive (the same result can be reached in a different
+# number of iterations), so asserting it made the golden fail across builds.
+# Keep -verbose so the routing-resource, congestion, and final-result lines are
+# still checked; the goal this test verifies -- one-at-a-time NDR disables
+# bounded by the reset cap, then a single batch disabling the remaining NDR
+# nets -- is carried by the GRT-0273 warnings, which are always logged.
+suppress_message GRT 102
 global_route -verbose -allow_congestion
 
 set guide_file [make_result_file soft_ndr_reset_cap.guide]

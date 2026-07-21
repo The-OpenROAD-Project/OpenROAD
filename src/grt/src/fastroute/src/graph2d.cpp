@@ -673,10 +673,14 @@ double Graph2D::getCostNDRAware(FrNet* net,
     // half the edge cost a second time in the initial routing steps. But we
     // only need to count once to avoid problems when managing 3D capacity
     if (is_net_present) {
+      // Mirror exactly what this net added: if it contributed the inflated
+      // overflow cost when routed, remove the same amount now. Using the
+      // edge's current ndr_overflow state instead would remove a different
+      // amount than was added when other nets changed that state in between,
+      // underflowing the uint16_t usage/ndr_overflow (GRT-0228).
+      const bool net_added_overflow = ndr_nets.find(net)->second;
       ndr_nets.erase(net);
-      // If the edge already has an overflow caused by NDR net we need to remove
-      // the big edge cost value
-      if (edge.ndr_overflow > 0) {
+      if (net_added_overflow) {
         edge.ndr_overflow--;
         final_edge_cost = -OVERFLOW_COST_MULTIPLIER * edgeCost;
       } else {
@@ -693,13 +697,17 @@ double Graph2D::getCostNDRAware(FrNet* net,
       // If the edge already has an overflow caused by NDR net or it will have
       // an overflow due to lack of capacity in a single layer, we need to add
       // the big edge cost value
-      if (edge.ndr_overflow > 0 || !hasNDRCapacity(net, x, y, direction)) {
+      const bool net_added_overflow
+          = edge.ndr_overflow > 0 || !hasNDRCapacity(net, x, y, direction);
+      if (net_added_overflow) {
         edge.ndr_overflow++;
         final_edge_cost = OVERFLOW_COST_MULTIPLIER * edgeCost;
       } else {
         final_edge_cost = edgeCost;
       }
-      ndr_nets.insert(net);
+      // Remember whether this net added the inflated cost so the matching
+      // rip-up subtracts the same amount.
+      ndr_nets[net] = net_added_overflow;
       updateNDRCapLayer(x, y, net, direction, edge_cost);
     }
   }

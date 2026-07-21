@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <set>
 #include <string>
 #include <utility>
@@ -152,9 +153,13 @@ class Graph2D
   multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
   multi_array<Cap3D, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
   multi_array<Cap3D, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
-  multi_array<std::set<FrNet*>, 2>
+  // Maps each NDR net present on an edge to whether it contributed the
+  // inflated overflow cost when it was added. Removal must subtract exactly
+  // what the net added, regardless of how the edge's overflow state changed
+  // in between, otherwise the uint16_t usage/ndr_overflow underflows.
+  multi_array<std::map<FrNet*, bool>, 2>
       v_ndr_nets_;  // The way it is indexed is (X, Y)
-  multi_array<std::set<FrNet*>, 2>
+  multi_array<std::map<FrNet*, bool>, 2>
       h_ndr_nets_;  // The way it is indexed is (X, Y)
   std::vector<NDRCongestion> congested_ndrs_;
 

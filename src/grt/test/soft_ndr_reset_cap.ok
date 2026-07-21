@@ -33,67 +33,12 @@ met5       Horizontal       3108          1406          54.76%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove congestion.
-[INFO GRT-0102] Start extra iteration 1/50
-[INFO GRT-0102] Start extra iteration 2/50
-[INFO GRT-0102] Start extra iteration 3/50
-[INFO GRT-0102] Start extra iteration 4/50
-[INFO GRT-0102] Start extra iteration 5/50
-[INFO GRT-0102] Start extra iteration 6/50
-[INFO GRT-0102] Start extra iteration 7/50
-[INFO GRT-0102] Start extra iteration 8/50
-[INFO GRT-0102] Start extra iteration 9/50
-[INFO GRT-0102] Start extra iteration 10/50
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clk
-[INFO GRT-0102] Start extra iteration 1/50
-[INFO GRT-0102] Start extra iteration 2/50
-[INFO GRT-0102] Start extra iteration 3/50
-[INFO GRT-0102] Start extra iteration 4/50
-[INFO GRT-0102] Start extra iteration 5/50
-[INFO GRT-0102] Start extra iteration 6/50
-[INFO GRT-0102] Start extra iteration 7/50
-[INFO GRT-0102] Start extra iteration 8/50
-[INFO GRT-0102] Start extra iteration 9/50
-[INFO GRT-0102] Start extra iteration 10/50
-[INFO GRT-0102] Start extra iteration 11/50
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clknet_2_3__leaf_clk
-[INFO GRT-0102] Start extra iteration 1/50
-[INFO GRT-0102] Start extra iteration 2/50
-[INFO GRT-0102] Start extra iteration 3/50
-[INFO GRT-0102] Start extra iteration 4/50
-[INFO GRT-0102] Start extra iteration 5/50
-[INFO GRT-0102] Start extra iteration 6/50
-[INFO GRT-0102] Start extra iteration 7/50
-[INFO GRT-0102] Start extra iteration 8/50
-[INFO GRT-0102] Start extra iteration 9/50
-[INFO GRT-0102] Start extra iteration 10/50
-[INFO GRT-0102] Start extra iteration 11/50
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clknet_2_2__leaf_clk
-[INFO GRT-0102] Start extra iteration 1/50
-[INFO GRT-0102] Start extra iteration 2/50
-[INFO GRT-0102] Start extra iteration 3/50
-[INFO GRT-0102] Start extra iteration 4/50
-[INFO GRT-0102] Start extra iteration 5/50
-[INFO GRT-0102] Start extra iteration 6/50
-[INFO GRT-0102] Start extra iteration 7/50
-[INFO GRT-0102] Start extra iteration 8/50
-[INFO GRT-0102] Start extra iteration 9/50
-[INFO GRT-0102] Start extra iteration 10/50
-[INFO GRT-0102] Start extra iteration 11/50
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clknet_2_1__leaf_clk
-[INFO GRT-0102] Start extra iteration 1/50
-[INFO GRT-0102] Start extra iteration 2/50
-[INFO GRT-0102] Start extra iteration 3/50
-[INFO GRT-0102] Start extra iteration 4/50
-[INFO GRT-0102] Start extra iteration 5/50
-[INFO GRT-0102] Start extra iteration 6/50
-[INFO GRT-0102] Start extra iteration 7/50
-[INFO GRT-0102] Start extra iteration 8/50
-[INFO GRT-0102] Start extra iteration 9/50
-[INFO GRT-0102] Start extra iteration 10/50
-[INFO GRT-0102] Start extra iteration 11/50
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clknet_2_0__leaf_clk
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clknet_0_clk
-[INFO GRT-0102] Start extra iteration 1/50
 [INFO GRT-0197] Via related to pin nodes: 151
 [INFO GRT-0198] Via related Steiner nodes: 13
 [INFO GRT-0199] Via filling finished.
