@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -167,11 +168,15 @@ void buildIndex(sta::Network* network,
           Truth6 f1 = fexprEval(outputs[1]->function(), inputs);
           if ((f0 == 0 && f1 == 1) || (f0 == 1 && f1 == 0)) {
             if (!index.tie_low.first
-                || cell->area() < index.tie_low.first->area()) {
+                || std::make_pair(cell->area(), cell->name())
+                       < std::make_pair(index.tie_low.first->area(),
+                                        index.tie_low.first->name())) {
               index.tie_low = {cell, (f0 == 0) ? 0 : 1};
             }
             if (!index.tie_high.first
-                || cell->area() < index.tie_high.first->area()) {
+                || std::make_pair(cell->area(), cell->name())
+                       < std::make_pair(index.tie_high.first->area(),
+                                        index.tie_high.first->name())) {
               index.tie_high = {cell, (f0 == 1) ? 0 : 1};
             }
           }
@@ -181,12 +186,16 @@ void buildIndex(sta::Network* network,
           Truth6 f0 = fexprEval(outputs[0]->function(), inputs);
           if (f0 == 0
               && (!index.tie_low.first
-                  || cell->area() < index.tie_low.first->area())) {
+                  || std::make_pair(cell->area(), cell->name())
+                         < std::make_pair(index.tie_low.first->area(),
+                                          index.tie_low.first->name()))) {
             index.tie_low = {cell, 0};
           }
           if (f0 == 1
               && (!index.tie_high.first
-                  || cell->area() < index.tie_high.first->area())) {
+                  || std::make_pair(cell->area(), cell->name())
+                         < std::make_pair(index.tie_high.first->area(),
+                                          index.tie_high.first->name()))) {
             index.tie_high = {cell, 0};
           }
         }
@@ -212,7 +221,9 @@ void buildIndex(sta::Network* network,
 
       // Track inverter
       if (inputs.size() == 1 && func == 0b01) {
-        if (!index.inverter || cell->area() < index.inverter->area()) {
+        if (!index.inverter
+            || std::make_pair(cell->area(), cell->name()) < std::make_pair(
+                   index.inverter->area(), index.inverter->name())) {
           index.inverter = cell;
         }
       }
@@ -229,8 +240,10 @@ void buildIndex(sta::Network* network,
   // Prune targets: keep smallest cell per cFingerprint
   for (auto& [key, targets] : index.classes) {
     std::ranges::sort(targets, [](const MapTarget& a, const MapTarget& b) {
-      return std::make_pair(a.via.cFingerprint(), a.cell->area())
-             < std::make_pair(b.via.cFingerprint(), b.cell->area());
+      return std::make_tuple(
+                 a.via.cFingerprint(), a.cell->area(), a.cell->name())
+             < std::make_tuple(
+                 b.via.cFingerprint(), b.cell->area(), b.cell->name());
     });
     auto unique_range = std::ranges::unique(
         targets, [](const MapTarget& a, const MapTarget& b) {
