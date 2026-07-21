@@ -293,69 +293,6 @@ describe('SchematicWidget schematic navigation', () => {
         container.element.remove();
     });
 
-    it('remaps OpenROAD symbol connections when merging an expanded cone', () => {
-        const { widget, container } = makeWidget();
-        const currentNetlist = {
-            modules: {
-                top: {
-                    cells: {
-                        u1: {
-                            type: 'existing',
-                            connections: { A: [2], Y: [3] },
-                        },
-                    },
-                    netnames: {
-                        shared: { hide_name: 0, bits: [2], attributes: {} },
-                        used1: { hide_name: 0, bits: [3], attributes: {} },
-                        used2: { hide_name: 0, bits: [4], attributes: {} },
-                    },
-                },
-            },
-        };
-        const expandedCone = {
-            modules: {
-                top: {
-                    cells: {
-                        dff1: {
-                            type: 'DFF_X1',
-                            connections: { D: [2], CK: [3], Q: [4], QN: [5] },
-                            attributes: {
-                                openroad_symbol_type: 'openroad_dff',
-                                openroad_symbol_connections: {
-                                    D: [2],
-                                    CK: [3],
-                                    Q: [4],
-                                    QN: [5],
-                                },
-                            },
-                        },
-                    },
-                    netnames: {
-                        shared: { hide_name: 0, bits: [2], attributes: {} },
-                        clk: { hide_name: 0, bits: [3], attributes: {} },
-                        q: { hide_name: 0, bits: [4], attributes: {} },
-                        qn: { hide_name: 0, bits: [5], attributes: {} },
-                    },
-                },
-            },
-        };
-
-        const merged = widget._mergeSchematicNetlists(currentNetlist, expandedCone);
-        const mergedDff = merged.modules.top.cells.dff1;
-
-        assert.deepEqual(mergedDff.connections, { D: [2], CK: [5], Q: [6], QN: [7] });
-        assert.deepEqual(mergedDff.attributes.openroad_symbol_connections, {
-            D: [2],
-            CK: [5],
-            Q: [6],
-            QN: [7],
-        });
-        assert.deepEqual(
-            expandedCone.modules.top.cells.dff1.attributes.openroad_symbol_connections,
-            { D: [2], CK: [3], Q: [4], QN: [5] });
-        container.element.remove();
-    });
-
     it('expands when the clicked shape only has a cell class', async () => {
         const requests = [];
         const centeredNetlist = {
@@ -470,49 +407,87 @@ describe('SchematicWidget schematic navigation', () => {
 });
 
 describe('canonicalizeCell', () => {
-    it('maps simple gates to skin types and A/B/Y pids', () => {
+    it('maps simple gates to OpenROAD skin types and A1/A2/Y pids', () => {
         const got = canonicalizeCell(cell({
             type: 'NOR2_X1', gate_kind: 'nor',
             port_directions: { A1: 'input', A2: 'input', ZN: 'output' },
             connections: { A1: [2], A2: [3], ZN: [4] },
         }));
-        assert.equal(got.type, '$_NOR_');
-        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'Y']);
-        assert.deepEqual(got.connections, { A: [2], B: [3], Y: [4] });
-        assert.deepEqual(got.port_directions, { A: 'input', B: 'input', Y: 'output' });
+        assert.equal(got.type, 'openroad_nor2');
+        assert.deepEqual(Object.keys(got.connections), ['A1', 'A2', 'Y']);
+        assert.deepEqual(got.connections, { A1: [2], A2: [3], Y: [4] });
+        assert.deepEqual(got.port_directions, { A1: 'input', A2: 'input', Y: 'output' });
         // The real pin names are kept (pid -> name) so the symbol can be labelled.
-        assert.deepEqual(got.port_labels, { A: 'A1', B: 'A2', Y: 'ZN' });
+        assert.deepEqual(got.port_labels, { A1: 'A1', A2: 'A2', Y: 'ZN' });
     });
 
-    it('maps an inverter to $_NOT_ with A/Y', () => {
+    it('maps an inverter to openroad_inverter with A/Y', () => {
         const got = canonicalizeCell(cell({
             type: 'INV_X1', gate_kind: 'not',
             port_directions: { A: 'input', ZN: 'output' },
             connections: { A: [7], ZN: [8] },
         }));
-        assert.equal(got.type, '$_NOT_');
+        assert.equal(got.type, 'openroad_inverter');
         assert.deepEqual(got.connections, { A: [7], Y: [8] });
     });
 
-    it('maps a buffer to $_BUF_', () => {
+    it('maps a buffer to openroad_buffer', () => {
         const got = canonicalizeCell(cell({
             type: 'BUF_X1', gate_kind: 'buf',
             port_directions: { A: 'input', Z: 'output' },
             connections: { A: [1], Z: [2] },
         }));
-        assert.equal(got.type, '$_BUF_');
+        assert.equal(got.type, 'openroad_buffer');
         assert.deepEqual(got.connections, { A: [1], Y: [2] });
     });
 
-    it('maps a 3-input gate to a per-arity symbol (nand3)', () => {
+    it('maps a 3-input gate to an OpenROAD per-arity symbol', () => {
         const got = canonicalizeCell(cell({
             type: 'NAND3_X1', gate_kind: 'nand',
             port_directions: { A1: 'input', A2: 'input', A3: 'input', ZN: 'output' },
             connections: { A1: [2], A2: [3], A3: [4], ZN: [5] },
         }));
-        assert.equal(got.type, 'nand3');
-        assert.deepEqual(got.connections, { A: [2], B: [3], C: [4], Y: [5] });
-        assert.deepEqual(got.port_labels, { A: 'A1', B: 'A2', C: 'A3', Y: 'ZN' });
+        assert.equal(got.type, 'openroad_nand3');
+        assert.deepEqual(got.connections, { A1: [2], A2: [3], A3: [4], Y: [5] });
+        assert.deepEqual(got.port_labels, { A1: 'A1', A2: 'A2', A3: 'A3', Y: 'ZN' });
+    });
+
+    it('uses backend gate_ports to preserve Liberty input order', () => {
+        const got = canonicalizeCell(cell({
+            type: 'NAND2_X1',
+            gate_kind: 'nand',
+            gate_ports: { A1: 'B', A2: 'A', Y: 'ZN' },
+            port_directions: { A: 'input', B: 'input', ZN: 'output' },
+            connections: { A: [2], B: [3], ZN: [4] },
+        }));
+
+        assert.equal(got.type, 'openroad_nand2');
+        assert.deepEqual(got.connections, { A1: [3], A2: [2], Y: [4] });
+        assert.deepEqual(got.port_labels, { A1: 'B', A2: 'A', Y: 'ZN' });
+    });
+
+    it('maps DFF cells to OpenROAD register symbols using gate_ports', () => {
+        const got = canonicalizeCell(cell({
+            type: 'DFF_X1',
+            gate_kind: 'dff',
+            gate_ports: { D: 'D', CK: 'CK', Q: 'Q', QN: 'QN' },
+            port_directions: {
+                D: 'input',
+                CK: 'input',
+                Q: 'output',
+                QN: 'output',
+            },
+            connections: { D: [1], CK: [2], Q: [3], QN: [4] },
+        }));
+
+        assert.equal(got.type, 'openroad_dff');
+        assert.deepEqual(got.connections, { D: [1], CK: [2], Q: [3], QN: [4] });
+        assert.deepEqual(got.port_labels, {
+            D: 'D',
+            CK: 'CK',
+            Q: 'Q',
+            QN: 'QN',
+        });
     });
 
     it('leaves an unsupported-width gate (>4 inputs) as a box', () => {
@@ -538,79 +513,27 @@ describe('canonicalizeCell', () => {
             },
             connections: { A1: [2], A2: [3], ZN: [4], VDD: [5], VSS: [6] },
         }));
-        assert.equal(got.type, '$_NAND_');
-        assert.deepEqual(Object.keys(got.connections).sort(), ['A', 'B', 'Y']);
+        assert.equal(got.type, 'openroad_nand2');
+        assert.deepEqual(Object.keys(got.connections).sort(), ['A1', 'A2', 'Y']);
     });
 
-    it('maps AOI21 to its symbol with the literal as A and the AND pair as B,C', () => {
-        const got = canonicalizeCell(cell({
+    it('leaves compound AOI/OAI gates as labelled boxes', () => {
+        const aoi = cell({
             type: 'AOI21_X2', gate_kind: 'aoi',
             gate_terms: [['A'], ['B1', 'B2']],
             port_directions: { A: 'input', B1: 'input', B2: 'input', ZN: 'output' },
             connections: { A: [4], B1: [8], B2: [11], ZN: [12] },
-        }));
-        assert.equal(got.type, 'aoi21');
-        // smallest term (literal A) -> pid A; the AND pair -> B, C; output -> Y
-        assert.deepEqual(got.connections, { A: [4], B: [8], C: [11], Y: [12] });
-        // Real pin names preserved per port id for labelling.
-        assert.deepEqual(got.port_labels, { A: 'A', B: 'B1', C: 'B2', Y: 'ZN' });
-    });
-
-    it('maps OAI22 to its symbol with four inputs A..D', () => {
-        const got = canonicalizeCell(cell({
+        });
+        const oai = cell({
             type: 'OAI22_X1', gate_kind: 'oai',
             gate_terms: [['A1', 'A2'], ['B1', 'B2']],
             port_directions: {
                 A1: 'input', A2: 'input', B1: 'input', B2: 'input', ZN: 'output',
             },
             connections: { A1: [1], A2: [2], B1: [3], B2: [4], ZN: [5] },
-        }));
-        assert.equal(got.type, 'oai22');
-        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'C', 'D', 'Y']);
-    });
-
-    it('maps AOI211 (literals A,B; AND pair C,D)', () => {
-        // !((C1 & C2) | B | A): smallest terms first -> the two literals get
-        // pids A,B and the AND pair gets C,D.
-        const got = canonicalizeCell(cell({
-            type: 'AOI211_X1', gate_kind: 'aoi',
-            gate_terms: [['C1', 'C2'], ['B'], ['A']],
-            port_directions: { C1: 'input', C2: 'input', B: 'input', A: 'input', ZN: 'output' },
-            connections: { C1: [3], C2: [4], B: [2], A: [1], ZN: [5] },
-        }));
-        assert.equal(got.type, 'aoi211');
-        assert.deepEqual(got.connections, { A: [2], B: [1], C: [3], D: [4], Y: [5] });
-        assert.deepEqual(got.port_labels, { A: 'B', B: 'A', C: 'C1', D: 'C2', Y: 'ZN' });
-    });
-
-    it('maps OAI33 to its symbol with six inputs A..F', () => {
-        const got = canonicalizeCell(cell({
-            type: 'OAI33_X1', gate_kind: 'oai',
-            gate_terms: [['A1', 'A2', 'A3'], ['B1', 'B2', 'B3']],
-            port_directions: {
-                A1: 'input', A2: 'input', A3: 'input',
-                B1: 'input', B2: 'input', B3: 'input', ZN: 'output',
-            },
-            connections: { A1: [1], A2: [2], A3: [3], B1: [4], B2: [5], B3: [6], ZN: [7] },
-        }));
-        assert.equal(got.type, 'oai33');
-        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'C', 'D', 'E', 'F', 'Y']);
-    });
-
-    it('leaves unsupported compound arities unchanged (labelled box)', () => {
-        // A four-term AOI (aoi2111) has no skin symbol, so it stays a box.
-        const orig = cell({
-            type: 'AOI2111_X1', gate_kind: 'aoi',
-            gate_terms: [['A'], ['B'], ['C'], ['D1', 'D2']],
-            port_directions: {
-                A: 'input', B: 'input', C: 'input', D1: 'input', D2: 'input', ZN: 'output',
-            },
-            connections: { A: [1], B: [2], C: [3], D1: [4], D2: [5], ZN: [6] },
         });
-        const got = canonicalizeCell(orig);
-        assert.equal(got.type, 'AOI2111_X1');          // type unchanged
-        assert.ok(got.connections.D1 && got.connections.ZN);  // real pins kept
-        assert.equal(got.port_labels, undefined);      // no remap -> no labels
+        assert.strictEqual(canonicalizeCell(aoi), aoi);
+        assert.strictEqual(canonicalizeCell(oai), oai);
     });
 
     it('leaves cells without a gate_kind unchanged', () => {
@@ -641,7 +564,7 @@ describe('canonicalizeForSkin', () => {
         const cells = out.modules.top.cells;
         // Keys (instance names) preserved.
         assert.deepEqual(Object.keys(cells).sort(), ['_983_', 'myff']);
-        assert.equal(cells._983_.type, '$_NOR_');     // gate rewritten
+        assert.equal(cells._983_.type, 'openroad_nor2');  // gate rewritten
         assert.equal(cells.myff.type, 'DFF_X1');       // non-gate untouched
         // Input is not mutated.
         assert.equal(json.modules.top.cells._983_.type, 'NOR2_X1');
@@ -650,6 +573,41 @@ describe('canonicalizeForSkin', () => {
     it('returns the input unchanged when there is no top module', () => {
         const json = { foo: 1 };
         assert.strictEqual(canonicalizeForSkin(json), json);
+    });
+});
+
+describe('SchematicWidget label placement', () => {
+    it('creates OpenROAD port labels from skin pin markers', () => {
+        const { widget, container } = makeWidget();
+        const svg = document.createElementNS(svgNS, 'svg');
+        const group = document.createElementNS(svgNS, 'g');
+        group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
+
+        const inputMarker = document.createElementNS(svgNS, 'g');
+        inputMarker.setAttribute('s:pid', 'A1');
+        inputMarker.setAttribute('s:x', '0');
+        inputMarker.setAttribute('s:y', '7');
+        const outputMarker = document.createElementNS(svgNS, 'g');
+        outputMarker.setAttribute('s:pid', 'Y');
+        outputMarker.setAttribute('s:x', '30');
+        outputMarker.setAttribute('s:y', '15');
+        group.append(inputMarker, outputMarker);
+        svg.appendChild(group);
+        widget._svgEl = svg;
+
+        widget._updateOpenRoadPortLabels(group, {
+            type: 'openroad_nand2',
+            port_labels: { A1: 'A1', Y: 'ZN' },
+        });
+
+        const input = group.querySelector('text[data-openroad-port="A1"]');
+        const output = group.querySelector('text[data-openroad-port="Y"]');
+        assert.equal(input.textContent, 'A1');
+        assert.equal(input.style.fontSize, '10px');
+        assert.equal(input.style.textAnchor, 'end');
+        assert.equal(output.textContent, 'ZN');
+        assert.equal(output.style.fontWeight, 'bold');
+        container.element.remove();
     });
 });
 
