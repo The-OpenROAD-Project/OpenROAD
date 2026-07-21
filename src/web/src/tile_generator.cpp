@@ -1394,7 +1394,8 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const std::vector<FlightLine>& flight_lines,
     const std::set<uint32_t>* route_guide_net_ids,
     const bool has_visible_layers,
-    const std::set<std::string>& visible_layers) const
+    const std::set<std::string>& visible_layers,
+    const std::vector<TextLabel>& labels) const
 {
   constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
   std::vector<unsigned char> image(kBufferSize, 0);  // fully transparent
@@ -1408,7 +1409,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
 
   // Short-circuit: if there's nothing to draw, return a blank tile.
   if (highlight_rects.empty() && highlight_polys.empty()
-      && colored_rects.empty() && flight_lines.empty()
+      && colored_rects.empty() && flight_lines.empty() && labels.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
     std::vector<unsigned char> png;
     lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
@@ -1443,6 +1444,9 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   }
   if (!flight_lines.empty()) {
     drawFlightLines(image, flight_lines, dbu_tile, scale);
+  }
+  if (!labels.empty()) {
+    drawTextLabels(image, labels, dbu_tile, scale);
   }
   if (route_guide_net_ids && !route_guide_net_ids->empty()) {
     // Draw route guides only for visible tech layers.
@@ -2934,6 +2938,10 @@ void TileGenerator::saveImage(const std::string& filename,
     layers_to_render.emplace_back("_pins");
   }
 
+  // Snapshot the user labels once (locks labels_mutex_ + copies) instead of
+  // per tile — the set is identical for every tile in the image.
+  const std::vector<TextLabel> labels = labelsForDraw();
+
   // Render each tile, compositing all layers.
   for (int ty = ty_min; ty <= ty_max; ++ty) {
     for (int tx = tx_min; tx <= tx_max; ++tx) {
@@ -2959,6 +2967,26 @@ void TileGenerator::saveImage(const std::string& filename,
             }
             const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
             compositePixel(&output[dst_idx], &tile_buf[src_idx]);
+          }
+        }
+      }
+
+      // Composite user text labels on top of all layers (Qt-parity: labels
+      // appear in save_image).
+      auto label_buf = labels.empty()
+                           ? std::vector<unsigned char>()
+                           : renderLabelTile(z, tx, leaflet_y, labels);
+      if (!label_buf.empty()) {
+        for (int py = 0; py < kTileSizeInPixel; ++py) {
+          for (int px = 0; px < kTileSizeInPixel; ++px) {
+            const int src_idx = (py * kTileSizeInPixel + px) * 4;
+            const int dst_x = out_ox + px;
+            const int dst_y = out_oy + py;
+            if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+              continue;
+            }
+            const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
+            compositePixel(&output[dst_idx], &label_buf[src_idx]);
           }
         }
       }
@@ -3754,6 +3782,180 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
     c.a = 220;
     drawLine(image, px0, py0, px1, py1, c);
   }
+}
+
+void TileGenerator::drawTextLabels(std::vector<unsigned char>& image,
+                                   const std::vector<TextLabel>& labels,
+                                   const odb::Rect& dbu_tile,
+                                   const double scale) const
+{
+  for (const auto& label : labels) {
+    if (label.text.empty()) {
+      continue;
+    }
+    const GlyphCache::FontSize& font
+        = fontAtlasGetFont(label.size > 0 ? label.size : 14);
+    const int text_width = getTextWidth(label.text, font);
+    const int text_height = getTextHeight(font);
+    const int pixel_x = std::lround((label.pos.x() - dbu_tile.xMin()) * scale);
+    const int pixel_y
+        = 255 - std::lround((label.pos.y() - dbu_tile.yMin()) * scale);
+
+    // Position the text box relative to the anchor point.  Default "center".
+    // The box may straddle a tile seam; skip only when it is fully off-tile so
+    // each tile draws its slice (drawText clips per-pixel).
+    int text_px_min = pixel_x - text_width / 2;
+    int text_py_min = pixel_y - text_height / 2;
+    const std::string& a = label.anchor;
+    if (a == "top_left" || a == "bottom_left") {
+      text_px_min = pixel_x;
+    } else if (a == "top_right" || a == "bottom_right") {
+      text_px_min = pixel_x - text_width;
+    }
+    if (a == "top_left" || a == "top_right") {
+      text_py_min = pixel_y;
+    } else if (a == "bottom_left" || a == "bottom_right") {
+      text_py_min = pixel_y - text_height;
+    }
+
+    if (text_px_min + text_width <= 0 || text_px_min >= kTileSizeInPixel
+        || text_py_min + text_height <= 0 || text_py_min >= kTileSizeInPixel) {
+      continue;
+    }
+    drawText(image, text_px_min, text_py_min, label.text, font, label.color);
+  }
+}
+
+std::vector<unsigned char> TileGenerator::renderLabelTile(
+    const int z,
+    const int x,
+    int y,
+    const std::vector<TextLabel>& labels) const
+{
+  if (labels.empty()) {
+    return {};
+  }
+  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image(kBufferSize, 0);  // transparent
+
+  // Tile bounding box in DBU (same math as generateOverlayTile).
+  const double num_tiles_at_zoom = pow(2, z);
+  y = num_tiles_at_zoom - 1 - y;  // flip Y
+  const odb::Rect full_bounds = getBounds();
+  if (full_bounds.maxDXDY() <= 0) {
+    return {};
+  }
+  const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+  const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
+  const int dbu_y_min = full_bounds.yMin() + y * tile_dbu_size;
+  const int dbu_x_max = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+  const int dbu_y_max = full_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
+  const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
+  const double scale = kTileSizeInPixel / tile_dbu_size;
+
+  drawTextLabels(image, labels, dbu_tile, scale);
+  return image;
+}
+
+//------------------------------------------------------------------------------
+// User text labels (2.12) — global design annotations
+//------------------------------------------------------------------------------
+
+std::string TileGenerator::addLabel(const odb::Point& pos,
+                                    const std::string& text,
+                                    const Color& color,
+                                    const int size,
+                                    const std::string& anchor,
+                                    const std::string& name)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  std::string label_name = name;
+  if (label_name.empty()) {
+    label_name = "label" + std::to_string(next_label_id_++);
+  }
+  // Reject a duplicate name (mirrors the Qt GUI, which warns GUI-44).
+  for (const auto& l : labels_) {
+    if (l.name == label_name) {
+      return "";
+    }
+  }
+  labels_.push_back(
+      {pos, text, color, size, anchor.empty() ? "center" : anchor, label_name});
+  return label_name;
+}
+
+bool TileGenerator::deleteLabel(const std::string& name)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  for (auto it = labels_.begin(); it != labels_.end(); ++it) {
+    if (it->name == name) {
+      labels_.erase(it);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TileGenerator::updateLabel(const std::string& name,
+                                const odb::Point& pos,
+                                const std::string& text,
+                                const Color& color,
+                                const int size,
+                                const std::string& anchor)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  for (auto& l : labels_) {
+    if (l.name == name) {
+      l.pos = pos;
+      l.text = text;
+      l.color = color;
+      l.size = size;
+      l.anchor = anchor.empty() ? "center" : anchor;
+      return true;
+    }
+  }
+  return false;
+}
+
+void TileGenerator::clearLabels()
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  labels_.clear();
+}
+
+std::vector<TextLabel> TileGenerator::labelsForDraw() const
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  std::vector<TextLabel> out;
+  out.reserve(labels_.size());
+  for (const auto& l : labels_) {
+    out.push_back({l.pos, l.text, l.color, l.size, l.anchor});
+  }
+  return out;
+}
+
+boost::json::array TileGenerator::labelsJson() const
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  boost::json::array arr;
+  arr.reserve(labels_.size());
+  for (const auto& l : labels_) {
+    boost::json::object o;
+    o["name"] = l.name;
+    o["x"] = l.pos.x();
+    o["y"] = l.pos.y();
+    o["text"] = l.text;
+    o["size"] = l.size;
+    o["anchor"] = l.anchor;
+    boost::json::object c;
+    c["r"] = static_cast<int>(l.color.r);
+    c["g"] = static_cast<int>(l.color.g);
+    c["b"] = static_cast<int>(l.color.b);
+    c["a"] = static_cast<int>(l.color.a);
+    o["color"] = std::move(c);
+    arr.emplace_back(std::move(o));
+  }
+  return arr;
 }
 
 void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,

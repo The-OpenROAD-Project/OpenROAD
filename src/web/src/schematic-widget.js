@@ -297,6 +297,26 @@ export class SchematicWidget {
         }
     }
 
+    // Web-only: mirror the layout timing cone here when the timing widget asks
+    // to sync (see TimingWidget._applyCone).  Matches the schematic depth
+    // inputs to the cone request and re-renders for the same target.  Called
+    // from a single 'openroad-cone-sync' listener registered in main.js — kept
+    // out of the constructor so listeners don't accumulate across designs.
+    syncCone(detail = {}) {
+        const faninEl = this.controls.querySelector('#schematic-fanin-depth');
+        const fanoutEl = this.controls.querySelector('#schematic-fanout-depth');
+        if (faninEl && detail.fanin_depth !== undefined) {
+            faninEl.value = detail.fanin_depth;
+        }
+        if (fanoutEl && detail.fanout_depth !== undefined) {
+            fanoutEl.value = detail.fanout_depth;
+        }
+        this.refresh();
+        if (this.appState.focusComponent) {
+            this.appState.focusComponent('SchematicWidget');
+        }
+    }
+
     // ── Refresh ──────────────────────────────────────────────────────────────
 
     refresh() {

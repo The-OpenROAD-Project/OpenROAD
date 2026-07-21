@@ -159,3 +159,57 @@ proc web_save_report { args } {
 
   web::save_report_cmd $path $max_setup $max_hold
 }
+
+sta::define_cmd_args "add_label" {-position {x y} \
+                                  [-anchor anchor] \
+                                  [-color color] \
+                                  [-size size] \
+                                  [-name name] \
+                                  text
+}
+
+proc add_label { args } {
+  sta::parse_key_args "add_label" args \
+    keys {-position -anchor -color -size -name} flags {}
+
+  if { ![info exists keys(-position)] } {
+    utl::error WEB 44 "-position is required."
+  }
+  set pos $keys(-position)
+  if { [llength $pos] != 2 } {
+    utl::error WEB 45 "-position must have 2 elements {x y}."
+  }
+  sta::check_argc_eq1 "add_label" $args
+  set text [lindex $args 0]
+
+  # -position is in microns; convert to DBU for the renderer.
+  set db [ord::get_db]
+  set dbu [$db getDbuPerMicron]
+  set x [expr { int([lindex $pos 0] * $dbu) }]
+  set y [expr { int([lindex $pos 1] * $dbu) }]
+
+  set anchor ""
+  if { [info exists keys(-anchor)] } { set anchor $keys(-anchor) }
+  set color ""
+  if { [info exists keys(-color)] } { set color $keys(-color) }
+  set size 0
+  if { [info exists keys(-size)] } { set size $keys(-size) }
+  set name ""
+  if { [info exists keys(-name)] } { set name $keys(-name) }
+
+  web::add_label_cmd $x $y $text $anchor $color $size $name
+}
+
+sta::define_cmd_args "delete_label" { name }
+
+proc delete_label { args } {
+  sta::check_argc_eq1 "delete_label" $args
+  web::delete_label_cmd [lindex $args 0]
+}
+
+sta::define_cmd_args "clear_labels" {}
+
+proc clear_labels { args } {
+  sta::check_argc_eq0 "clear_labels" $args
+  web::clear_labels_cmd
+}

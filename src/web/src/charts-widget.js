@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Canvas-based slack histogram widget.
+// Canvas-based charts widget: slack (setup/hold), net fanout, net length (HPWL)
+// histograms plus engine-provided line charts (GPL/MPL/DPL/PAD), all selected
+// from a single dropdown.  No charting library — everything is drawn on a 2D
+// canvas.
 
 import { getThemeColors } from './theme.js';
 import { isStaticMode } from './ui-utils.js';
@@ -19,13 +22,21 @@ const kNegativeBorder = '#8b0000';  // darkred
 const kPositiveFill = '#90ee90';    // lightgreen
 const kPositiveBorder = '#006400';  // darkgreen
 
-// Line chart series colors (Tableau 10)
+// Line chart / stacked-series colors (Tableau 10)
 const kLineColors = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2',
-                      '#59a14f', '#edc948', '#b07aa1', '#ff9da7'];
+                     '#59a14f', '#edc948', '#b07aa1', '#ff9da7'];
 const kNegativeHighlight = 'rgba(240,128,128,0.12)';
 const kPositiveHighlight = 'rgba(144,238,144,0.12)';
 const kNegativeHover = '#ff9999';
 const kPositiveHover = '#b0ffb0';
+
+// Built-in histogram chart types (value → label) shown in the dropdown.
+const kBuiltinCharts = [
+    { value: 'setup', label: 'Setup Slack' },
+    { value: 'hold', label: 'Hold Slack' },
+    { value: 'fanout', label: 'Net Fanout' },
+    { value: 'netlength', label: 'Net Length (HPWL)' },
+];
 
 // Pure hit-test — returns the bar whose column contains (mx, my), or null.
 // Uses the full column height (chartArea top to bottom) so that buckets with
@@ -150,11 +161,35 @@ function computeLogYAxis(maxCount) {
     return { yMax: topDecade, yTicks: ticks };
 }
 
+// Build CSV text for a histogram (bins + optional stacked series) or a line
+// chart.  Pure — extracted for testability.
+export function buildChartCsv(kind, data) {
+    if (!data) return '';
+    if (kind === 'generic') {
+        const yl = data.y_labels || [];
+        const header = ['x', ...yl].join(',');
+        const rows = (data.points || []).map(
+            (p) => [p.x, ...(p.ys || [])].join(','));
+        return [header, ...rows].join('\n');
+    }
+    // histogram
+    const bins = data.bins || [];
+    const series = Array.isArray(data.series) ? data.series : [];
+    const header = ['lower', 'upper', 'count',
+                    ...series.map((s) => s.name || 'group')].join(',');
+    const rows = bins.map((b, i) => {
+        const cols = [b.lower, b.upper, b.count];
+        for (const s of series) cols.push((s.counts && s.counts[i]) || 0);
+        return cols.join(',');
+    });
+    return [header, ...rows].join('\n');
+}
+
 export class ChartsWidget {
     constructor(app, redrawAllLayers) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
-        // 'setup' and 'hold' show endpoint slack; 'fanout' shows net fanout.
+        // Histogram kind: 'setup'|'hold' (endpoint slack), 'fanout', 'netlength'.
         this._currentTab = 'setup';
         this._histogramData = null;
         this._bars = [];
@@ -163,9 +198,9 @@ export class ChartsWidget {
         this._chartArea = null;
         this._hoveredBar = null;
 
-        // Debug charts (line charts from GPL, etc.)
+        // Engine line charts (GPL HPWL, MPL area, etc.).
         this._debugCharts = [];
-        this._activeDebugChart = -1;  // -1 = show histogram
+        this._activeDebugChart = -1;  // -1 = show the selected histogram
 
         this._build();
     }
@@ -176,13 +211,7 @@ export class ChartsWidget {
         const el = document.createElement('div');
         el.className = 'charts-widget';
 
-        // Debug chart tabs (hidden until debug charts arrive)
-        this._debugTabBar = document.createElement('div');
-        this._debugTabBar.className = 'timing-tab-bar';
-        this._debugTabBar.style.display = 'none';
-        el.appendChild(this._debugTabBar);
-
-        // Toolbar
+        // Toolbar: Update + chart-type dropdown + exports + status.
         const toolbar = document.createElement('div');
         toolbar.className = 'charts-toolbar';
 
@@ -193,45 +222,44 @@ export class ChartsWidget {
             this._updateBtn.style.display = 'none';
         }
 
+        // Unified chart-type selector (built-ins + engine line charts).
+        this._chartSelect = document.createElement('select');
+        this._chartSelect.className = 'charts-select';
+
+        this._csvBtn = document.createElement('button');
+        this._csvBtn.className = 'timing-btn';
+        this._csvBtn.textContent = 'CSV';
+        this._csvBtn.title = 'Export the current chart data as CSV';
+
+        this._pngBtn = document.createElement('button');
+        this._pngBtn.className = 'timing-btn';
+        this._pngBtn.textContent = 'PNG';
+        this._pngBtn.title = 'Export the current chart as a PNG image';
+
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
 
         toolbar.appendChild(this._updateBtn);
+        toolbar.appendChild(this._chartSelect);
+        toolbar.appendChild(this._csvBtn);
+        toolbar.appendChild(this._pngBtn);
         toolbar.appendChild(this._statusLabel);
         el.appendChild(toolbar);
 
-        // Tab bar (Setup / Hold)
-        const tabBar = document.createElement('div');
-        tabBar.className = 'timing-tab-bar';
-
-        this._setupTab = document.createElement('div');
-        this._setupTab.className = 'timing-tab active';
-        this._setupTab.textContent = 'Setup Slack';
-
-        this._holdTab = document.createElement('div');
-        this._holdTab.className = 'timing-tab';
-        this._holdTab.textContent = 'Hold Slack';
-
-        this._fanoutTab = document.createElement('div');
-        this._fanoutTab.className = 'timing-tab';
-        this._fanoutTab.textContent = 'Net Fanout';
-
-        tabBar.appendChild(this._setupTab);
-        tabBar.appendChild(this._holdTab);
-        tabBar.appendChild(this._fanoutTab);
-        el.appendChild(tabBar);
-
-        // Filter row
+        // Filter row (path groups + clock) — only for slack histograms.
         const filterRow = document.createElement('div');
         filterRow.className = 'charts-toolbar';
 
         const pgLabel = document.createElement('span');
-        pgLabel.textContent = 'Path Group:';
+        pgLabel.textContent = 'Path Groups:';
         pgLabel.style.color = 'var(--fg-muted)';
         pgLabel.style.fontSize = '12px';
+        // Multiple selection → stacked histogram (Qt parity). None → all.
         this._pathGroupSelect = document.createElement('select');
         this._pathGroupSelect.className = 'charts-select';
-        this._pathGroupSelect.innerHTML = '<option value="">All</option>';
+        this._pathGroupSelect.multiple = true;
+        this._pathGroupSelect.size = 1;
+        this._pathGroupSelect.title = 'Select 0 = all, or ≥1 to stack by group';
 
         const clkLabel = document.createElement('span');
         clkLabel.textContent = 'Clock:';
@@ -258,15 +286,13 @@ export class ChartsWidget {
         this._tooltip.style.display = 'none';
         el.appendChild(this._tooltip);
 
-        // Group histogram-specific elements so we can hide them
-        // when a debug line chart tab is active.
-        this._histogramControls = [toolbar, tabBar, filterRow];
-        // Filters only apply to slack histograms (Setup/Hold).
+        // Filter row hidden for non-slack charts.
         this._filterRow = filterRow;
 
         this.element = el;
 
         this._ctx = this._canvas.getContext('2d');
+        this._rebuildSelect();
         this._bindEvents();
 
         if (isStaticMode(this._app)) {
@@ -276,14 +302,15 @@ export class ChartsWidget {
 
     _bindEvents() {
         this._updateBtn.addEventListener('click', () => this.update());
+        this._chartSelect.addEventListener('change',
+            () => this._onSelectChange());
+        this._csvBtn.addEventListener('click', () => this._exportCsv());
+        this._pngBtn.addEventListener('click', () => this._exportPng());
 
-        this._setupTab.addEventListener('click', () => this._selectTab('setup'));
-        this._holdTab.addEventListener('click', () => this._selectTab('hold'));
-        this._fanoutTab.addEventListener('click',
-            () => this._selectTab('fanout'));
-
-        this._pathGroupSelect.addEventListener('change', () => this._fetchHistogram());
-        this._clockSelect.addEventListener('change', () => this._fetchHistogram());
+        this._pathGroupSelect.addEventListener('change',
+            () => this._fetchHistogram());
+        this._clockSelect.addEventListener('change',
+            () => this._fetchHistogram());
 
         this._canvas.addEventListener('mousemove', (e) => this._handleHover(e));
         this._canvas.addEventListener('mouseleave', () => {
@@ -295,10 +322,7 @@ export class ChartsWidget {
         this._canvas.addEventListener('dblclick',
             (e) => this._handleDblClick(e));
 
-        // Re-render on resize
-        const ro = new ResizeObserver(() => {
-            this._syncView();
-        });
+        const ro = new ResizeObserver(() => this._syncView());
         ro.observe(this._canvas);
     }
 
@@ -310,17 +334,38 @@ export class ChartsWidget {
         this._ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    _selectTab(tab) {
-        if (this._currentTab === tab) return;
-        this._currentTab = tab;
-        this._setupTab.classList.toggle('active', tab === 'setup');
-        this._holdTab.classList.toggle('active', tab === 'hold');
-        this._fanoutTab.classList.toggle('active', tab === 'fanout');
-        // Path-group / clock filters only apply to slack histograms.
-        this._filterRow.style.display = (tab === 'fanout') ? 'none' : '';
-        this._hoveredBar = null;
-        this._tooltip.style.display = 'none';
-        this.update();
+    // Populate the dropdown with built-in histograms + engine line charts, and
+    // set its value to the current selection.
+    _rebuildSelect() {
+        const sel = this._chartSelect;
+        sel.innerHTML = '';
+        for (const c of kBuiltinCharts) {
+            const opt = document.createElement('option');
+            opt.value = c.value;
+            opt.textContent = c.label;
+            sel.appendChild(opt);
+        }
+        this._debugCharts.forEach((chart, i) => {
+            const opt = document.createElement('option');
+            opt.value = 'gen:' + i;
+            opt.textContent = chart.name || ('Chart ' + i);
+            sel.appendChild(opt);
+        });
+        sel.value = this._activeDebugChart >= 0
+            ? 'gen:' + this._activeDebugChart : this._currentTab;
+    }
+
+    _onSelectChange() {
+        const v = this._chartSelect.value;
+        if (v.startsWith('gen:')) {
+            this._activeDebugChart = parseInt(v.slice(4), 10) || 0;
+            this._hoveredBar = null;
+            this._tooltip.style.display = 'none';
+            this._syncView();
+        } else {
+            // _selectTab owns resetting _activeDebugChart to -1.
+            this._selectTab(v);
+        }
     }
 
     async update() {
@@ -328,10 +373,19 @@ export class ChartsWidget {
         this._updateBtn.textContent = 'Loading...';
         this._statusLabel.textContent = '';
         try {
-            if (this._currentTab !== 'fanout') {
-                await this._fetchFilters();
+            // Surface any engine-provided line charts on-demand (not only
+            // during the placement debugger pause).  The generic charts are
+            // independent of the histogram, so fetch them concurrently.
+            if (this._activeDebugChart < 0) {
+                if (this._currentTab === 'setup'
+                    || this._currentTab === 'hold') {
+                    await this._fetchFilters();
+                }
+                await Promise.all(
+                    [this._fetchHistogram(), this._fetchGenericCharts()]);
+            } else {
+                await this._fetchGenericCharts();
             }
-            await this._fetchHistogram();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
@@ -343,22 +397,42 @@ export class ChartsWidget {
         const filters = await this._app.websocketManager.request({
             type: 'chart_filters',
         });
-        this._populateSelect(this._pathGroupSelect, filters.path_groups || []);
-        this._populateSelect(this._clockSelect, filters.clocks || []);
+        this._populatePathGroups(filters.path_groups || []);
+        this._populateClocks(filters.clocks || []);
     }
 
-    _populateSelect(select, items) {
-        const prev = select.value;
-        select.innerHTML = '<option value="">All</option>';
+    _populatePathGroups(items) {
+        const prev = new Set(Array.from(this._pathGroupSelect.selectedOptions,
+                                        (o) => o.value));
+        this._pathGroupSelect.innerHTML = '';
         for (const name of items) {
             const opt = document.createElement('option');
             opt.value = name;
             opt.textContent = name;
-            select.appendChild(opt);
+            opt.selected = prev.has(name);
+            this._pathGroupSelect.appendChild(opt);
         }
-        // Restore previous selection if still valid
-        if (items.includes(prev)) {
-            select.value = prev;
+    }
+
+    _populateClocks(items) {
+        const prev = this._clockSelect.value;
+        this._clockSelect.innerHTML = '<option value="">All</option>';
+        for (const name of items) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            this._clockSelect.appendChild(opt);
+        }
+        if (items.includes(prev)) this._clockSelect.value = prev;
+    }
+
+    async _fetchGenericCharts() {
+        try {
+            const data = await this._app.websocketManager.request(
+                { type: 'debug_charts' });
+            this.setDebugCharts(data.charts || []);
+        } catch (err) {
+            /* engine charts are optional */
         }
     }
 
@@ -371,14 +445,18 @@ export class ChartsWidget {
             let req;
             if (requestedTab === 'fanout') {
                 req = { type: 'fanout_histogram' };
+            } else if (requestedTab === 'netlength') {
+                req = { type: 'net_length_histogram',
+                        use_dbu: !!this._app.showDbu };
             } else {
                 req = {
                     type: 'slack_histogram',
                     is_setup: requestedTab === 'setup',
                 };
-                if (this._pathGroupSelect.value) {
-                    req.path_group = this._pathGroupSelect.value;
-                }
+                const groups = Array.from(
+                    this._pathGroupSelect.selectedOptions, (o) => o.value)
+                    .filter(Boolean);
+                if (groups.length > 0) req.path_groups = groups;
                 if (this._clockSelect.value) {
                     req.clock_name = this._clockSelect.value;
                 }
@@ -391,7 +469,7 @@ export class ChartsWidget {
             this._histogramData = data;
             this._syncView();
 
-            if (requestedTab === 'fanout') {
+            if (requestedTab === 'fanout' || requestedTab === 'netlength') {
                 const total = data.total_nets || 0;
                 this._statusLabel.textContent = `${total} nets`;
             } else {
@@ -404,6 +482,19 @@ export class ChartsWidget {
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
+    }
+
+    _selectTab(tab) {
+        if (this._currentTab === tab && this._activeDebugChart < 0) return;
+        this._currentTab = tab;
+        this._activeDebugChart = -1;
+        if (this._chartSelect) this._chartSelect.value = tab;
+        // Path-group / clock filters only apply to slack histograms.
+        this._filterRow.style.display =
+            (tab === 'setup' || tab === 'hold') ? '' : 'none';
+        this._hoveredBar = null;
+        this._tooltip.style.display = 'none';
+        this.update();
     }
 
     _computeLayout() {
@@ -421,6 +512,11 @@ export class ChartsWidget {
 
     render() { this._syncView(); }
 
+    _stackedSeries() {
+        const s = this._histogramData?.series;
+        return (Array.isArray(s) && s.length > 1) ? s : null;
+    }
+
     _render() {
         const rect = this._canvas.getBoundingClientRect();
         const w = rect.width;
@@ -429,8 +525,6 @@ export class ChartsWidget {
         const tc = getThemeColors();
 
         ctx.clearRect(0, 0, w, h);
-
-        // Background
         ctx.fillStyle = tc.canvasBg;
         ctx.fillRect(0, 0, w, h);
 
@@ -449,6 +543,7 @@ export class ChartsWidget {
         this._drawAxes(ctx, tc);
         this._drawBars(ctx);
         this._drawTitle(ctx, w, tc);
+        if (this._stackedSeries()) this._drawSeriesLegend(ctx, tc);
     }
 
     _drawAxes(ctx, tc) {
@@ -458,13 +553,11 @@ export class ChartsWidget {
         ctx.strokeStyle = tc.canvasAxis;
         ctx.lineWidth = 1;
 
-        // Y axis line
         ctx.beginPath();
         ctx.moveTo(ca.left, ca.top);
         ctx.lineTo(ca.left, ca.bottom);
         ctx.stroke();
 
-        // X axis line
         ctx.beginPath();
         ctx.moveTo(ca.left, ca.bottom);
         ctx.lineTo(ca.right, ca.bottom);
@@ -492,7 +585,8 @@ export class ChartsWidget {
             }
         }
 
-        const isFanout = this._currentTab === 'fanout';
+        const tab = this._currentTab;
+        const netCount = (tab === 'fanout' || tab === 'netlength');
 
         // Y axis title
         ctx.save();
@@ -503,7 +597,7 @@ export class ChartsWidget {
         ctx.fillStyle = tc.canvasTitle;
         ctx.font = '11px monospace';
         ctx.fillText(this._logY ? 'Nets (log)'
-                                : (isFanout ? 'Nets' : 'Endpoints'), 0, 0);
+                                : (netCount ? 'Nets' : 'Endpoints'), 0, 0);
         ctx.restore();
 
         // X axis labels — show bin boundaries
@@ -513,19 +607,20 @@ export class ChartsWidget {
         ctx.font = '10px monospace';
 
         const bins = this._histogramData.bins;
-        const unit = this._histogramData.time_unit || '';
+        const unit = this._histogramData.time_unit
+            || this._histogramData.length_unit || '';
 
-        // Determine precision from bin width.  Fanout bins are integer-valued.
         const binWidth = bins.length > 0 ? bins[0].upper - bins[0].lower : 1;
-        const precision = isFanout
+        const precision = (tab === 'fanout')
             ? 0 : Math.max(0, -Math.floor(Math.log10(binWidth)));
 
-        // Label at each bar boundary
         for (let i = 0; i <= this._bars.length; i++) {
-            const val = i < bins.length ? bins[i].lower : bins[bins.length - 1].upper;
+            const val = i < bins.length
+                ? bins[i].lower : bins[bins.length - 1].upper;
             const x = i < this._bars.length
                 ? this._bars[i].x
-                : this._bars[this._bars.length - 1].x + this._bars[this._bars.length - 1].width;
+                : this._bars[this._bars.length - 1].x
+                  + this._bars[this._bars.length - 1].width;
             ctx.fillText(val.toFixed(precision), x, ca.bottom + 4);
         }
 
@@ -534,45 +629,80 @@ export class ChartsWidget {
         ctx.font = '11px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        const xTitle = isFanout
-            ? 'Fanout (loads)' : `Slack [${unit}]`;
+        let xTitle;
+        if (tab === 'fanout') xTitle = 'Fanout (loads)';
+        else if (tab === 'netlength') xTitle = `Net length [${unit}]`;
+        else xTitle = `Slack [${unit}]`;
         ctx.fillText(xTitle, (ca.left + ca.right) / 2, ca.bottom + 22);
     }
 
     _drawBars(ctx) {
         const ca = this._chartArea;
-        for (const bar of this._bars) {
+        const series = this._stackedSeries();
+        for (let i = 0; i < this._bars.length; i++) {
+            const bar = this._bars[i];
             const isHovered = (this._hoveredBar === bar);
 
-            // Draw a subtle column highlight on hover so the full clickable
-            // area is visible, even for buckets with very short bars.
             if (isHovered && ca) {
                 ctx.fillStyle = bar.negative
                     ? kNegativeHighlight : kPositiveHighlight;
                 ctx.fillRect(bar.x, ca.top, bar.width, ca.bottom - ca.top);
             }
 
-            if (bar.height <= 0) continue;
+            if (bar.height <= 0 || bar.count <= 0) continue;
 
-            // Fill
+            if (series) {
+                // Stacked: one colored segment per path group, bottom-up.
+                let yBottom = bar.y + bar.height;
+                for (let s = 0; s < series.length; s++) {
+                    const c = (series[s].counts && series[s].counts[i]) || 0;
+                    if (c <= 0) continue;
+                    const segH = bar.height * (c / bar.count);
+                    const segY = yBottom - segH;
+                    ctx.fillStyle = kLineColors[s % kLineColors.length];
+                    ctx.fillRect(bar.x, segY, bar.width, segH);
+                    yBottom = segY;
+                }
+                ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(bar.x, bar.y, bar.width, bar.height);
+                continue;
+            }
+
             ctx.fillStyle = bar.negative ? kNegativeFill : kPositiveFill;
             if (isHovered) {
                 ctx.fillStyle = bar.negative ? kNegativeHover : kPositiveHover;
             }
             ctx.fillRect(bar.x, bar.y, bar.width, bar.height);
 
-            // Border
             ctx.strokeStyle = bar.negative ? kNegativeBorder : kPositiveBorder;
             ctx.lineWidth = 1;
             ctx.strokeRect(bar.x, bar.y, bar.width, bar.height);
         }
     }
 
+    _drawSeriesLegend(ctx, tc) {
+        const series = this._stackedSeries();
+        const ca = this._chartArea;
+        if (!series || !ca) return;
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        const lx = ca.right - 120;
+        const ly = ca.top + 4;
+        for (let s = 0; s < series.length; s++) {
+            ctx.fillStyle = kLineColors[s % kLineColors.length];
+            ctx.fillRect(lx, ly + s * 14, 12, 10);
+            ctx.fillStyle = tc.canvasLabel;
+            ctx.fillText(series[s].name || `group ${s}`, lx + 16, ly + s * 14);
+        }
+    }
+
     _drawTitle(ctx, canvasWidth, tc) {
         let title;
-        if (this._currentTab === 'fanout') {
-            title = 'Net Fanout';
-        } else {
+        if (this._currentTab === 'fanout') title = 'Net Fanout';
+        else if (this._currentTab === 'netlength') title = 'Net Length (HPWL)';
+        else {
             const mode = this._currentTab === 'setup' ? 'Setup' : 'Hold';
             title = `${mode} Endpoint Slack`;
         }
@@ -603,30 +733,30 @@ export class ChartsWidget {
         }
 
         if (bar) {
-            const isFanout = this._currentTab === 'fanout';
+            const tab = this._currentTab;
             const binWidth = bar.upper - bar.lower;
-            if (isFanout) {
-                // Bin upper is exclusive; show [lo, hi-1] inclusively when
-                // bin_width is 1 the range collapses to a single value.
+            if (tab === 'fanout') {
                 const hiInclusive = bar.upper - 1;
                 const range = (bar.lower === hiInclusive)
-                    ? `${bar.lower}`
-                    : `[${bar.lower}, ${hiInclusive}]`;
+                    ? `${bar.lower}` : `[${bar.lower}, ${hiInclusive}]`;
+                this._tooltip.textContent = `Nets: ${bar.count}\nFanout: ${range}`;
+            } else if (tab === 'netlength') {
+                const unit = this._histogramData?.length_unit || '';
+                const prec = Math.max(0, -Math.floor(Math.log10(binWidth)));
                 this._tooltip.textContent =
-                    `Nets: ${bar.count}\nFanout: ${range}`;
+                    `Nets: ${bar.count}\n`
+                    + `Length: [${bar.lower.toFixed(prec)}, `
+                    + `${bar.upper.toFixed(prec)}) ${unit}`;
             } else {
                 const unit = this._histogramData?.time_unit || '';
-                const precision
-                    = Math.max(0, -Math.floor(Math.log10(binWidth)));
+                const prec = Math.max(0, -Math.floor(Math.log10(binWidth)));
                 this._tooltip.textContent =
                     `Endpoints: ${bar.count}\n`
-                    + `Slack: [${bar.lower.toFixed(precision)}, `
-                    + `${bar.upper.toFixed(precision)}) ${unit}`;
+                    + `Slack: [${bar.lower.toFixed(prec)}, `
+                    + `${bar.upper.toFixed(prec)}) ${unit}`;
             }
             this._tooltip.style.display = 'block';
 
-            // Flip the tooltip to the left of the cursor when it would
-            // overflow the widget's right edge; clamp inside otherwise.
             const rect = this.element.getBoundingClientRect();
             const ttRect = this._tooltip.getBoundingClientRect();
             const margin = 4;
@@ -649,8 +779,10 @@ export class ChartsWidget {
 
     async _handleClick(e) {
         if (this._activeDebugChart >= 0) return;
-        // Fanout bars are informational only — no timing-path drilldown.
-        if (this._currentTab === 'fanout') return;
+        // Only slack histograms drill down to timing paths.
+        if (this._currentTab === 'fanout' || this._currentTab === 'netlength') {
+            return;
+        }
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
@@ -662,7 +794,6 @@ export class ChartsWidget {
                 slack_min: bar.lower,
                 slack_max: bar.upper,
             });
-
             if (this._app.timingWidget) {
                 this._app.timingWidget.showPaths(
                     this._currentTab, resp.paths || []);
@@ -675,24 +806,26 @@ export class ChartsWidget {
         }
     }
 
-    // Double-click on a fanout bar selects every net in that bin (server-
-    // side multi-selection) and opens the first one in the Inspector.  The
-    // prev/next chevrons in the Inspector then cycle through all of them.
+    // Double-click on a fanout / net-length bar selects every net in that bin
+    // (server-side multi-selection) and opens the first in the Inspector.
     async _handleDblClick(e) {
         if (this._activeDebugChart >= 0) return;
-        if (this._currentTab !== 'fanout') return;
+        let type;
+        if (this._currentTab === 'fanout') type = 'select_fanout_bin';
+        else if (this._currentTab === 'netlength') type = 'select_net_length_bin';
+        else return;
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
         try {
             const resp = await this._app.websocketManager.request({
-                type: 'select_fanout_bin',
+                type,
                 lower: bar.lower,
                 upper: bar.upper,
                 use_dbu: this._app.showDbu,
             });
             if (resp && resp.truncated) {
                 console.warn(
-                    `Fanout bin has ${resp.count} nets; selection capped at `
+                    `Bin has ${resp.count} nets; selection capped at `
                     + `${resp.selection_limit} for performance.`);
             }
             if (this._app.updateInspector) {
@@ -705,82 +838,95 @@ export class ChartsWidget {
                 this._redrawAllLayers();
             }
         } catch (err) {
-            console.error('Fanout bin select failed:', err);
+            console.error('Net bin select failed:', err);
         }
     }
 
-    // ---- Debug line charts (GPL HPWL, density, etc.) ----
+    // ---- Exports ----
+
+    _activeChartData() {
+        if (this._activeDebugChart >= 0) {
+            return { kind: 'generic',
+                     data: this._debugCharts[this._activeDebugChart] };
+        }
+        return { kind: 'histogram', data: this._histogramData };
+    }
+
+    // Base filename (no extension) for the currently shown chart.
+    _chartBaseName() {
+        return this._activeDebugChart >= 0
+            ? (this._debugCharts[this._activeDebugChart].name || 'chart')
+            : this._currentTab;
+    }
+
+    // Trigger a browser download of `url` as `filename`.  Pass revoke:true for
+    // object URLs (Blob) that need releasing; data URLs (canvas) don't.
+    _triggerDownload(filename, url, { revoke = false } = {}) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        if (revoke) URL.revokeObjectURL(url);
+    }
+
+    _download(filename, mime, content) {
+        try {
+            const url = URL.createObjectURL(new Blob([content], { type: mime }));
+            this._triggerDownload(filename, url, { revoke: true });
+        } catch (err) {
+            console.error('Download failed:', err);
+        }
+    }
+
+    _exportCsv() {
+        const { kind, data } = this._activeChartData();
+        if (!data) return;
+        const csv = buildChartCsv(kind, data);
+        this._download(this._chartBaseName() + '.csv', 'text/csv', csv);
+    }
+
+    _exportPng() {
+        try {
+            const url = this._canvas.toDataURL('image/png');
+            this._triggerDownload(this._chartBaseName() + '.png', url);
+        } catch (err) {
+            console.error('PNG export failed:', err);
+        }
+    }
+
+    // ---- Engine line charts (GPL HPWL, density, etc.) ----
 
     setDebugCharts(charts) {
         this._debugCharts = charts;
-        this._rebuildDebugTabs();
-        // Auto-select the first debug chart if none is active;
-        // reset to histogram if charts are now empty.
         if (charts.length === 0) {
             this._activeDebugChart = -1;
-        } else if (this._activeDebugChart < 0) {
-            this._activeDebugChart = 0;
         } else if (this._activeDebugChart >= charts.length) {
             this._activeDebugChart = 0;
         }
+        this._rebuildSelect();
         this._syncView();
     }
 
-    _rebuildDebugTabs() {
-        const bar = this._debugTabBar;
-        bar.innerHTML = '';
-        if (this._debugCharts.length === 0) {
-            bar.style.display = 'none';
-            return;
-        }
-        bar.style.display = '';
-
-        // "Histogram" tab to switch back to the slack histogram.
-        const histTab = document.createElement('div');
-        histTab.className = 'timing-tab' +
-            (this._activeDebugChart < 0 ? ' active' : '');
-        histTab.textContent = 'Histogram';
-        histTab.addEventListener('click', () => {
-            this._activeDebugChart = -1;
-            this._rebuildDebugTabs();
-            this._syncView();
-        });
-        bar.appendChild(histTab);
-
-        // One tab per debug chart.
-        this._debugCharts.forEach((chart, i) => {
-            const tab = document.createElement('div');
-            tab.className = 'timing-tab' +
-                (this._activeDebugChart === i ? ' active' : '');
-            tab.textContent = chart.name;
-            tab.addEventListener('click', () => {
-                this._activeDebugChart = i;
-                this._rebuildDebugTabs();
-                this._syncView();
-            });
-            bar.appendChild(tab);
-        });
-    }
-
     _syncView() {
-        const showHist = this._activeDebugChart < 0;
-        if (!showHist) {
+        const isGeneric = this._activeDebugChart >= 0;
+        if (isGeneric) {
             this._hoveredBar = null;
             this._tooltip.style.display = 'none';
         }
-        for (const el of this._histogramControls) {
-            el.style.display = showHist ? '' : 'none';
-        }
-        // Filter row is slack-only; hide it on the fanout tab.
-        if (showHist && this._currentTab === 'fanout' && this._filterRow) {
-            this._filterRow.style.display = 'none';
+        // Filters apply only to slack histograms.
+        const isSlack = !isGeneric
+            && (this._currentTab === 'setup' || this._currentTab === 'hold');
+        if (this._filterRow) {
+            this._filterRow.style.display = isSlack ? '' : 'none';
         }
         this._sizeCanvas();
-        if (showHist) {
+        if (isGeneric) {
+            this._renderLineChart(this._debugCharts[this._activeDebugChart]);
+        } else {
             this._computeLayout();
             this._render();
-        } else {
-            this._renderLineChart(this._debugCharts[this._activeDebugChart]);
         }
     }
 
@@ -814,7 +960,6 @@ export class ChartsWidget {
         const cH = cBottom - cTop;
         if (cW <= 0 || cH <= 0) return;
 
-        // Compute data ranges.
         let xMin = pts[0].x, xMax = pts[0].x;
         let yMin = Infinity, yMax = -Infinity;
         for (const p of pts) {
@@ -827,7 +972,6 @@ export class ChartsWidget {
         }
         if (xMin === xMax) xMax = xMin + 1;
         if (!isFinite(yMin) || !isFinite(yMax)) { yMin = 0; yMax = 1; }
-        // Add 5% padding to Y range.
         const yPad = (yMax - yMin) * 0.05 || 1;
         yMin -= yPad;
         yMax += yPad;
@@ -835,7 +979,6 @@ export class ChartsWidget {
         const toX = (v) => cLeft + ((v - xMin) / (xMax - xMin)) * cW;
         const toY = (v) => cBottom - ((v - yMin) / (yMax - yMin)) * cH;
 
-        // Axes.
         ctx.strokeStyle = tc.canvasAxis;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -844,7 +987,6 @@ export class ChartsWidget {
         ctx.lineTo(cRight, cBottom);
         ctx.stroke();
 
-        // Y axis ticks.
         ctx.fillStyle = tc.canvasLabel;
         ctx.font = '10px monospace';
         ctx.textAlign = 'right';
@@ -863,7 +1005,6 @@ export class ChartsWidget {
             }
         }
 
-        // X axis ticks.
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         if (pts.length === 1) {
@@ -879,19 +1020,16 @@ export class ChartsWidget {
             }
         }
 
-        // Axis labels.
         ctx.fillStyle = tc.canvasTitle;
         ctx.font = '11px monospace';
         ctx.textAlign = 'center';
         ctx.fillText(chart.x_label || '', (cLeft + cRight) / 2, cBottom + 22);
 
-        // Title.
         ctx.fillStyle = tc.fgPrimary;
         ctx.font = '13px monospace';
         ctx.textBaseline = 'top';
         ctx.fillText(chart.name, w / 2, 4);
 
-        // Draw each Y series as a line.
         for (let s = 0; s < numSeries; s++) {
             ctx.strokeStyle = kLineColors[s % kLineColors.length];
             ctx.lineWidth = 1.5;
@@ -906,12 +1044,11 @@ export class ChartsWidget {
             ctx.stroke();
         }
 
-        // Legend (if multiple series).
         if (numSeries > 1 && chart.y_labels) {
             ctx.font = '10px monospace';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
-            let lx = cLeft + 8;
+            const lx = cLeft + 8;
             const ly = cTop + 4;
             for (let s = 0; s < numSeries; s++) {
                 const color = kLineColors[s % kLineColors.length];
@@ -932,7 +1069,6 @@ export class ChartsWidget {
         return v.toPrecision(3);
     }
 
-    // Integer counts on Y axis: compact for large values, plain otherwise.
     _formatCount(v) {
         if (v === 0) return '0';
         if (v >= 1e6) return (v / 1e6) + 'M';

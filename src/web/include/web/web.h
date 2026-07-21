@@ -122,6 +122,18 @@ class WebServer
                  double dbu_per_pixel,
                  const std::string& vis_json);
 
+  // User text labels (2.12), Tcl-driven (add_label/delete_label/clear_labels).
+  // Delegate to the shared TileGenerator store; returns the label name.
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       const std::string& anchor,
+                       const std::string& color,
+                       int size,
+                       const std::string& name);
+  void deleteLabel(const std::string& name);
+  void clearLabels();
+
   // Tears down the I/O threads and cleans up hooks.  Safe to call multiple
   // times and from any thread; after it returns, isRunning() is false and
   // serve() may be called again to restart the server.

@@ -46,6 +46,9 @@ export class TimingWidget {
         toolbar.appendChild(this._pathCountLabel);
         el.appendChild(toolbar);
 
+        // --- Timing cone panel (fanin/fanout overlay on the layout) ---
+        el.appendChild(this._buildConePanel());
+
         // --- Setup/Hold Tab Bar ---
         const tabBar = document.createElement('div');
         tabBar.className = 'timing-tab-bar';
@@ -174,6 +177,168 @@ export class TimingWidget {
                 }
             }
         });
+    }
+
+    // Build the timing-cone control panel.  Web-GUI additions over the Qt
+    // GUI: an interactive per-direction depth limit, a slack↔depth color
+    // toggle, and (via main.js) schematic cross-highlight.
+    _buildConePanel() {
+        const panel = document.createElement('div');
+        panel.className = 'timing-cone-panel';
+
+        const title = document.createElement('span');
+        title.className = 'timing-cone-title';
+        title.textContent = 'Timing cone:';
+        panel.appendChild(title);
+
+        const mkCheckbox = (id, text, checked = false) => {
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = id;
+            input.checked = checked;
+            const lbl = document.createElement('label');
+            lbl.htmlFor = id;
+            lbl.textContent = text;
+            return { input, lbl };
+        };
+
+        const fanin = mkCheckbox('cone-fanin', 'Fanin', true);
+        const fanout = mkCheckbox('cone-fanout', 'Fanout', true);
+        this._coneFanin = fanin.input;
+        this._coneFanout = fanout.input;
+        panel.append(fanin.input, fanin.lbl, fanout.input, fanout.lbl);
+
+        // Depth limits (0 = unlimited, matching the Qt GUI's behaviour).
+        const mkDepth = (label) => {
+            const lbl = document.createElement('label');
+            lbl.className = 'timing-cone-depth-label';
+            lbl.textContent = label;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.value = '0';
+            input.className = 'timing-cone-depth';
+            input.title = '0 = unlimited';
+            lbl.appendChild(input);
+            return { lbl, input };
+        };
+        const fi = mkDepth('in≤');
+        const fo = mkDepth('out≤');
+        this._coneFaninDepth = fi.input;
+        this._coneFanoutDepth = fo.input;
+        panel.append(fi.lbl, fo.lbl);
+
+        // Color mode: slack (Qt parity) or logic depth (Web-only).
+        this._coneColorMode = document.createElement('select');
+        this._coneColorMode.className = 'timing-cone-colormode';
+        for (const [val, text] of [['slack', 'by slack'], ['depth', 'by depth']]) {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = text;
+            this._coneColorMode.appendChild(opt);
+        }
+        panel.appendChild(this._coneColorMode);
+
+        // Sync the schematic cone view for the same target (Web-only).
+        const sync = mkCheckbox('cone-sync-schematic', 'Sync schematic');
+        this._coneSyncSchematic = sync.input;
+        panel.append(sync.input, sync.lbl);
+
+        this._coneApplyBtn = document.createElement('button');
+        this._coneApplyBtn.className = 'timing-btn';
+        this._coneApplyBtn.textContent = 'Cone';
+        this._coneApplyBtn.title = 'Show the timing cone for the selected instance';
+        this._coneClearBtn = document.createElement('button');
+        this._coneClearBtn.className = 'timing-btn';
+        this._coneClearBtn.textContent = 'Clear';
+        panel.append(this._coneApplyBtn, this._coneClearBtn);
+
+        this._coneStatus = document.createElement('span');
+        this._coneStatus.className = 'timing-cone-status';
+        panel.appendChild(this._coneStatus);
+
+        this._coneApplyBtn.addEventListener('click', () => this._applyCone());
+        this._coneClearBtn.addEventListener('click', () => this._clearCone());
+
+        return panel;
+    }
+
+    // The cone target: the currently selected instance.  (The backend also
+    // accepts pin_name for a future per-pin cone, but the web UI has no pin
+    // selection yet, so we always target the instance.)
+    _coneTarget() {
+        return this._app.selectedInstanceName || '';
+    }
+
+    async _applyCone() {
+        const fanin = this._coneFanin.checked;
+        const fanout = this._coneFanout.checked;
+        if (!fanin && !fanout) {
+            this._coneStatus.textContent = 'select fanin and/or fanout';
+            return;
+        }
+        const inst = this._coneTarget();
+        if (!inst) {
+            this._coneStatus.textContent = 'select an instance first';
+            return;
+        }
+        const req = {
+            type: 'timing_cone',
+            fanin,
+            fanout,
+            fanin_depth: Math.max(0, parseInt(this._coneFaninDepth.value, 10) || 0),
+            fanout_depth: Math.max(0, parseInt(this._coneFanoutDepth.value, 10) || 0),
+            color_mode: this._coneColorMode.value,
+            inst_name: inst,
+        };
+        this._coneApplyBtn.disabled = true;
+        this._coneStatus.textContent = 'computing…';
+        try {
+            const res = await this._app.websocketManager.request(req);
+            this._refreshOverlay();
+            this._renderConeStatus(res);
+            if (this._coneSyncSchematic.checked && inst) {
+                // Web-only: mirror the cone in the schematic SVG view.
+                document.dispatchEvent(new CustomEvent('openroad-cone-sync', {
+                    detail: {
+                        inst_name: inst,
+                        fanin_depth: req.fanin_depth,
+                        fanout_depth: req.fanout_depth,
+                    },
+                }));
+            }
+        } catch (e) {
+            this._coneStatus.textContent = 'cone error: ' + (e.message || e);
+        }
+        this._coneApplyBtn.disabled = false;
+    }
+
+    _renderConeStatus(res) {
+        if (!res) {
+            this._coneStatus.textContent = '';
+            return;
+        }
+        const n = res.node_count || 0;
+        if (n === 0) {
+            this._coneStatus.textContent = 'empty cone';
+            return;
+        }
+        let txt = n + ' pins';
+        if (res.color_mode === 'depth') {
+            txt += `, depth ±${res.max_depth}`;
+        } else if (res.constrained) {
+            const unit = res.time_unit || '';
+            txt += `, slack ${fmtTime(res.min_slack)}…${fmtTime(res.max_slack)}${unit}`;
+        } else {
+            txt += ', unconstrained';
+        }
+        this._coneStatus.textContent = txt;
+    }
+
+    _clearCone() {
+        this._app.websocketManager.request({ type: 'timing_cone', clear: true })
+            .then(() => this._refreshOverlay());
+        this._coneStatus.textContent = '';
     }
 
     showPaths(tab, paths) {

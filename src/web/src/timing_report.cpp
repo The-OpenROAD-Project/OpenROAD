@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
@@ -17,6 +19,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -402,25 +405,35 @@ static void collectFilteredSlacks(sta::dbSta* sta,
   PathGroupSlackVisitor visitor(pg, clk, sta);
 
   for (sta::Vertex* vertex : sta->endpoints()) {
-    total_endpoints++;
     visit_ends.visitPathEnds(vertex, &visitor);
+    // Count only endpoints that belong to this path group (hasSlack() is false
+    // for out-of-group endpoints).  This keeps total_endpoints/unconstrained
+    // correct when getSlackHistogram calls this once per group for a stacked
+    // histogram — path groups are disjoint, so per-group counts sum to the
+    // distinct-endpoint total instead of inflating by the number of groups.
     if (visitor.hasSlack()) {
+      total_endpoints++;
       float slack = visitor.worstSlack();
       if (slack >= sta::INF || slack <= -sta::INF) {
         unconstrained_count++;
       } else {
         slacks.push_back(slack / time_scale);
       }
-    } else {
-      unconstrained_count++;
     }
     visitor.reset();
   }
 }
 
-// Helper: given a vector of slack values, bin them and populate result.
-static void binSlacks(const std::vector<float>& slacks,
-                      SlackHistogramResult& result)
+// Shared bin geometry so an aggregate histogram and its per-group series use
+// identical edges.
+struct SlackBinEdges
+{
+  float bin_min;
+  float bin_width;
+  int num_bins;
+};
+
+static SlackBinEdges computeSlackBinEdges(const std::vector<float>& slacks)
 {
   float min_slack = std::numeric_limits<float>::max();
   float max_slack = std::numeric_limits<float>::lowest();
@@ -433,43 +446,61 @@ static void binSlacks(const std::vector<float>& slacks,
   min_slack = std::min(0.0f, min_slack);
   max_slack = std::max(0.0f, max_slack);
 
-  int num_bins;
-  float bin_min;
-  float bin_width;
-
   if (min_slack == max_slack) {
-    num_bins = 1;
-    bin_min = min_slack - 0.1f;
-    bin_width = 0.3f;
-  } else {
-    constexpr int kDefaultBuckets = 10;
-    bin_width = snapBinInterval((max_slack - min_slack) / kDefaultBuckets);
-    bin_min = std::floor(min_slack / bin_width) * bin_width;
-    const float bin_max = std::ceil(max_slack / bin_width) * bin_width;
-    num_bins = static_cast<int>(std::round((bin_max - bin_min) / bin_width));
-    num_bins = std::max(num_bins, 1);
+    return {min_slack - 0.1f, 0.3f, 1};
   }
+  constexpr int kDefaultBuckets = 10;
+  const float bin_width
+      = snapBinInterval((max_slack - min_slack) / kDefaultBuckets);
+  const float bin_min = std::floor(min_slack / bin_width) * bin_width;
+  const float bin_max = std::ceil(max_slack / bin_width) * bin_width;
+  int num_bins = static_cast<int>(std::round((bin_max - bin_min) / bin_width));
+  num_bins = std::max(num_bins, 1);
+  return {bin_min, bin_width, num_bins};
+}
 
-  std::vector<int> counts(num_bins, 0);
-  for (float s : slacks) {
-    int idx = static_cast<int>((s - bin_min) / bin_width);
-    idx = std::clamp(idx, 0, num_bins - 1);
+// Count `values` into the given bin edges (parallel to the edges' bins).
+static std::vector<int> binIntoEdges(const std::vector<float>& values,
+                                     const SlackBinEdges& edges)
+{
+  std::vector<int> counts(edges.num_bins, 0);
+  for (float s : values) {
+    int idx = static_cast<int>((s - edges.bin_min) / edges.bin_width);
+    idx = std::clamp(idx, 0, edges.num_bins - 1);
     counts[idx]++;
   }
+  return counts;
+}
 
-  result.bins.reserve(num_bins);
-  for (int i = 0; i < num_bins; i++) {
-    float lower = bin_min + i * bin_width;
-    float upper = lower + bin_width;
-    float center = (lower + upper) / 2.0f;
-    result.bins.push_back({lower, upper, counts[i], center < 0});
+// Collect per-endpoint slacks (user units) for the unfiltered case.
+static void collectUnfilteredSlacks(sta::dbSta* sta,
+                                    bool is_setup,
+                                    std::vector<float>& slacks,
+                                    int& total_endpoints,
+                                    int& unconstrained_count)
+{
+  const sta::MinMax* min_max
+      = is_setup ? sta::MinMax::max() : sta::MinMax::min();
+  sta::SceneSeq scenes = sta->scenes();
+  const float time_scale = sta->units()->timeUnit()->scale();
+  for (sta::Vertex* vertex : sta->endpoints()) {
+    total_endpoints++;
+    const sta::Pin* pin = vertex->pin();
+    const float slack
+        = sta->slack(pin, sta::RiseFallBoth::riseFall(), scenes, min_max);
+    if (slack >= sta::INF || slack <= -sta::INF) {
+      unconstrained_count++;
+      continue;
+    }
+    slacks.push_back(slack / time_scale);
   }
 }
 
 SlackHistogramResult TimingReport::getSlackHistogram(
     bool is_setup,
     const std::string& path_group,
-    const std::string& clock_name) const
+    const std::string& clock_name,
+    const std::vector<std::string>& path_groups) const
 {
   SlackHistogramResult result;
   if (!sta_) {
@@ -478,13 +509,24 @@ SlackHistogramResult TimingReport::getSlackHistogram(
 
   sta_->ensureGraph();
   sta_->searchPreamble();
-
   result.time_unit = sta_->units()->timeUnit()->scaleAbbrevSuffix();
 
-  std::vector<float> slacks;
-
-  if (!path_group.empty() || !clock_name.empty()) {
-    // Filtered mode: use path group visitor pattern.
+  // Build (group_name, slacks) entries.  Multiple entries → stacked series.
+  std::vector<std::pair<std::string, std::vector<float>>> group_slacks;
+  if (!path_groups.empty()) {
+    for (const std::string& group : path_groups) {
+      std::vector<float> slacks;
+      collectFilteredSlacks(sta_,
+                            is_setup,
+                            group,
+                            clock_name,
+                            slacks,
+                            result.total_endpoints,
+                            result.unconstrained_count);
+      group_slacks.emplace_back(group, std::move(slacks));
+    }
+  } else if (!path_group.empty() || !clock_name.empty()) {
+    std::vector<float> slacks;
     collectFilteredSlacks(sta_,
                           is_setup,
                           path_group,
@@ -492,30 +534,42 @@ SlackHistogramResult TimingReport::getSlackHistogram(
                           slacks,
                           result.total_endpoints,
                           result.unconstrained_count);
+    group_slacks.emplace_back(path_group, std::move(slacks));
   } else {
-    // Unfiltered mode: simple slack query per endpoint.
-    const sta::MinMax* min_max
-        = is_setup ? sta::MinMax::max() : sta::MinMax::min();
-    sta::SceneSeq scenes = sta_->scenes();
-    const float time_scale = sta_->units()->timeUnit()->scale();
-
-    for (sta::Vertex* vertex : sta_->endpoints()) {
-      result.total_endpoints++;
-      const sta::Pin* pin = vertex->pin();
-      float slack
-          = sta_->slack(pin, sta::RiseFallBoth::riseFall(), scenes, min_max);
-
-      if (slack >= sta::INF || slack <= -sta::INF) {
-        result.unconstrained_count++;
-        continue;
-      }
-
-      slacks.push_back(slack / time_scale);
-    }
+    std::vector<float> slacks;
+    collectUnfilteredSlacks(sta_,
+                            is_setup,
+                            slacks,
+                            result.total_endpoints,
+                            result.unconstrained_count);
+    group_slacks.emplace_back("", std::move(slacks));
   }
 
-  if (!slacks.empty()) {
-    binSlacks(slacks, result);
+  // Union of all slacks defines the shared bin edges.
+  std::vector<float> all_slacks;
+  for (const auto& [name, slacks] : group_slacks) {
+    all_slacks.insert(all_slacks.end(), slacks.begin(), slacks.end());
+  }
+  if (all_slacks.empty()) {
+    return result;
+  }
+
+  const SlackBinEdges edges = computeSlackBinEdges(all_slacks);
+  const std::vector<int> counts = binIntoEdges(all_slacks, edges);
+  result.bins.reserve(edges.num_bins);
+  for (int i = 0; i < edges.num_bins; i++) {
+    const float lower = edges.bin_min + i * edges.bin_width;
+    const float upper = lower + edges.bin_width;
+    const float center = (lower + upper) / 2.0f;
+    result.bins.push_back({lower, upper, counts[i], center < 0});
+  }
+
+  // Per-group stacked series (only meaningful for >1 group).
+  if (group_slacks.size() > 1) {
+    result.series.reserve(group_slacks.size());
+    for (const auto& [name, slacks] : group_slacks) {
+      result.series.push_back({name, binIntoEdges(slacks, edges)});
+    }
   }
 
   return result;
@@ -540,6 +594,261 @@ ChartFilters TimingReport::getChartFilters() const
   }
 
   return filters;
+}
+
+// ── Timing cone ──
+
+namespace {
+
+// Walk the STA timing graph from `source_pin`, one logic level at a time, over
+// the pins reachable in the given direction (`seed_pins` = findFanin/FanoutPins
+// result).  Returns depth (>0) → pins.  Register clock pins are dropped, as in
+// the Qt GUI.  `max_depth` (>0) caps the number of levels; 0 = unlimited.
+std::map<int, std::set<const sta::Pin*>> walkConeLevels(
+    sta::dbSta* sta,
+    const sta::Pin* source_pin,
+    sta::PinSet seed_pins,
+    bool is_fanin,
+    int max_depth)
+{
+  auto* network = sta->getDbNetwork();
+  auto* graph = sta->graph();
+
+  seed_pins.erase(source_pin);
+
+  std::map<int, std::set<const sta::Pin*>> levels;
+  levels[0].insert(source_pin);
+
+  int level = 0;
+  int remaining = -1;
+  while (!seed_pins.empty()
+         && remaining != static_cast<int>(seed_pins.size())) {
+    if (max_depth > 0 && level >= max_depth) {
+      break;
+    }
+    remaining = static_cast<int>(seed_pins.size());
+    const int next_level = level + 1;
+
+    auto& current = levels[level];
+    auto& next = levels[next_level];
+
+    for (const auto* pin : current) {
+      auto* pin_vertex = graph->pinDrvrVertex(pin);
+      if (pin_vertex == nullptr) {
+        continue;
+      }
+
+      std::unique_ptr<sta::VertexEdgeIterator> itr;
+      if (is_fanin) {
+        itr = std::make_unique<sta::VertexInEdgeIterator>(pin_vertex, graph);
+      } else {
+        itr = std::make_unique<sta::VertexOutEdgeIterator>(pin_vertex, graph);
+      }
+
+      while (itr->hasNext()) {
+        auto* edge = itr->next();
+        sta::Vertex* next_vertex = edge->to(graph);
+        if (next_vertex == pin_vertex) {
+          next_vertex = edge->from(graph);
+        }
+        const auto* next_pin = next_vertex->pin();
+        auto found = seed_pins.find(next_pin);
+        if (found != seed_pins.end()) {
+          if (!network->isRegClkPin(next_pin)) {
+            next.insert(next_pin);
+          }
+          seed_pins.erase(found);
+        }
+      }
+    }
+
+    level = next_level;
+  }
+
+  levels.erase(0);  // source is added separately by the caller
+  return levels;
+}
+
+}  // namespace
+
+TimingConeResult TimingReport::computeTimingCone(const std::string& pin_name,
+                                                 bool fanin,
+                                                 bool fanout,
+                                                 int fanin_depth,
+                                                 int fanout_depth) const
+{
+  TimingConeResult result;
+  if (!sta_) {
+    result.error = "no STA";
+    return result;
+  }
+  if (!fanin && !fanout) {
+    result.ok = true;  // nothing requested — an empty cone is valid (clear)
+    return result;
+  }
+
+  auto* network = sta_->getDbNetwork();
+  odb::dbBlock* block = network->block();
+  if (block == nullptr) {
+    result.error = "no design";
+    return result;
+  }
+
+  // Resolve the pin (ITerm "inst/pin" or top-level BTerm).
+  odb::dbITerm* src_iterm = block->findITerm(pin_name.c_str());
+  odb::dbBTerm* src_bterm
+      = src_iterm ? nullptr : block->findBTerm(pin_name.c_str());
+  if (src_iterm == nullptr && src_bterm == nullptr) {
+    result.error = "pin not found: " + pin_name;
+    return result;
+  }
+  if ((src_iterm && src_iterm->getSigType().isSupply())
+      || (src_bterm && src_bterm->getSigType().isSupply())) {
+    result.error = "cannot build a timing cone from a supply pin";
+    return result;
+  }
+
+  const sta::Pin* source_pin
+      = src_iterm ? network->dbToSta(src_iterm) : network->dbToSta(src_bterm);
+  if (source_pin == nullptr) {
+    result.error = "pin has no timing graph vertex";
+    return result;
+  }
+
+  sta_->ensureGraph();
+  sta_->searchPreamble();
+  auto* graph = sta_->graph();
+  const sta::Mode* mode = sta_->cmdMode();
+
+  // depth (signed) → pins.  Fanin levels are negative, fanout positive.
+  std::map<int, std::set<const sta::Pin*>> depth_map;
+  depth_map[0].insert(source_pin);
+
+  if (fanin) {
+    sta::PinSeq seed;
+    seed.push_back(source_pin);
+    sta::PinSet pins = sta_->findFaninPins(&seed,
+                                           true,   // flat
+                                           false,  // startpoints_only
+                                           0,
+                                           0,
+                                           true,  // thru_disabled
+                                           true,  // thru_constants
+                                           mode);
+    for (auto& [level, pin_list] :
+         walkConeLevels(sta_, source_pin, std::move(pins), true, fanin_depth)) {
+      depth_map[-level].insert(pin_list.begin(), pin_list.end());
+    }
+  }
+  if (fanout) {
+    sta::PinSeq seed;
+    seed.push_back(source_pin);
+    sta::PinSet pins = sta_->findFanoutPins(&seed,
+                                            true,   // flat
+                                            false,  // endpoints_only
+                                            0,
+                                            0,
+                                            true,  // thru_disabled
+                                            true,  // thru_constants
+                                            mode);
+    for (auto& [level, pin_list] : walkConeLevels(
+             sta_, source_pin, std::move(pins), false, fanout_depth)) {
+      depth_map[level].insert(pin_list.begin(), pin_list.end());
+    }
+  }
+
+  // Materialize nodes and remember, per sta::Pin, its node index so we can wire
+  // up flight-line source→sink pairs afterwards.
+  std::map<const sta::Pin*, int> pin_to_index;
+  const float time_scale = sta_->units()->timeUnit()->scale();
+  float min_slack = std::numeric_limits<float>::max();
+  float max_slack = std::numeric_limits<float>::lowest();
+
+  for (const auto& [depth, pins] : depth_map) {
+    for (const auto* pin : pins) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      network->staToDb(pin, iterm, bterm, moditerm);
+      if (iterm == nullptr && bterm == nullptr) {
+        continue;  // modITerm / hierarchical pin — not drawable on the layout
+      }
+
+      TimingConeNode node;
+      node.iterm = iterm;
+      node.bterm = bterm;
+      node.inst = iterm ? iterm->getInst() : nullptr;
+      node.depth = depth;
+
+      sta::Vertex* vertex = graph->pinDrvrVertex(pin);
+      if (vertex != nullptr) {
+        const sta::Slack slack = sta_->slack(vertex, sta::MinMax::max());
+        if (!sta::delayInf(slack, sta_)) {
+          node.slack = sta::delayAsFloat(slack) / time_scale;
+          node.has_slack = true;
+          min_slack = std::min(min_slack, node.slack);
+          max_slack = std::max(max_slack, node.slack);
+        }
+      }
+
+      pin_to_index[pin] = static_cast<int>(result.nodes.size());
+      result.nodes.push_back(std::move(node));
+    }
+  }
+
+  // Pair each node at level L with nodes at level L+1 it drives (matches the Qt
+  // GUI's buildConeConnectivity): the flight line runs source(L) → sink(L+1).
+  // Iterate the depth_map in order so L / L+1 are adjacent.
+  auto level_it = depth_map.begin();
+  for (; level_it != depth_map.end(); ++level_it) {
+    const int level = level_it->first;
+    auto next_level_it = depth_map.find(level + 1);
+    if (next_level_it == depth_map.end()) {
+      continue;
+    }
+
+    // Map both driver and load vertices of the next level's pins to node index.
+    std::map<sta::Vertex*, int> next_vertices;
+    for (const auto* next_pin : next_level_it->second) {
+      auto idx_it = pin_to_index.find(next_pin);
+      if (idx_it == pin_to_index.end()) {
+        continue;
+      }
+      next_vertices[graph->pinDrvrVertex(next_pin)] = idx_it->second;
+      next_vertices[graph->pinLoadVertex(next_pin)] = idx_it->second;
+    }
+
+    for (const auto* src_pin : level_it->second) {
+      auto src_idx_it = pin_to_index.find(src_pin);
+      if (src_idx_it == pin_to_index.end()) {
+        continue;
+      }
+      sta::Vertex* drvr = graph->pinDrvrVertex(src_pin);
+      if (drvr == nullptr) {
+        continue;
+      }
+      sta::VertexOutEdgeIterator fanout_iter(drvr, graph);
+      while (fanout_iter.hasNext()) {
+        sta::Edge* edge = fanout_iter.next();
+        auto found = next_vertices.find(edge->to(graph));
+        if (found != next_vertices.end()) {
+          result.nodes[found->second].source_indices.push_back(
+              src_idx_it->second);
+        }
+      }
+    }
+  }
+
+  result.constrained = max_slack >= min_slack;
+  if (result.constrained) {
+    result.min_slack = min_slack;
+    result.max_slack = max_slack;
+  }
+  auto* time_unit = sta_->units()->timeUnit();
+  result.time_unit = std::string(time_unit->scaleAbbreviation())
+                     + std::string(time_unit->suffix());
+  result.ok = true;
+  return result;
 }
 
 // ── JSON serialization helpers ──
@@ -617,6 +926,22 @@ boost::json::object serializeSlackHistogram(const SlackHistogramResult& h)
   o["unconstrained_count"] = h.unconstrained_count;
   o["total_endpoints"] = h.total_endpoints;
   o["time_unit"] = h.time_unit;
+  if (!h.series.empty()) {
+    boost::json::array series;
+    series.reserve(h.series.size());
+    for (const auto& s : h.series) {
+      boost::json::object so;
+      so["name"] = s.name;
+      boost::json::array counts;
+      counts.reserve(s.counts.size());
+      for (int c : s.counts) {
+        counts.emplace_back(c);
+      }
+      so["counts"] = std::move(counts);
+      series.emplace_back(std::move(so));
+    }
+    o["series"] = std::move(series);
+  }
   return o;
 }
 
@@ -704,6 +1029,86 @@ boost::json::object serializeFanoutHistogram(const FanoutHistogramResult& h)
   }
   o["bins"] = std::move(bins);
   o["total_nets"] = h.total_nets;
+  return o;
+}
+
+// ── Net-length (HPWL) histogram ──
+
+int netHpwlDbu(odb::dbNet* net)
+{
+  if (!net) {
+    return 0;
+  }
+  const odb::Rect bbox = net->getTermBBox();
+  if (bbox.dx() < 0 || bbox.dy() < 0) {
+    return 0;  // no terminals with valid locations
+  }
+  return bbox.dx() + bbox.dy();
+}
+
+NetLengthHistogramResult computeNetLengthHistogram(odb::dbBlock* block,
+                                                   bool use_dbu)
+{
+  NetLengthHistogramResult result;
+  if (!block) {
+    return result;
+  }
+  const double dbu_per_micron = std::max(1, block->getDbUnitsPerMicron());
+  const double scale = use_dbu ? 1.0 : (1.0 / dbu_per_micron);
+  result.length_unit = use_dbu ? "DBU" : "µm";  // µm
+
+  std::vector<float> lengths;
+  float max_len = 0.0f;
+  for (odb::dbNet* net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+    const float len = static_cast<float>(netHpwlDbu(net) * scale);
+    lengths.push_back(len);
+    max_len = std::max(max_len, len);
+  }
+  result.total_nets = static_cast<int>(lengths.size());
+  if (lengths.empty() || max_len <= 0.0f) {
+    return result;
+  }
+
+  constexpr int kDefaultBuckets = 10;
+  const float bin_width = snapBinInterval(max_len / kDefaultBuckets);
+  const float bin_max = std::ceil(max_len / bin_width) * bin_width;
+  const int num_bins
+      = std::max(1, static_cast<int>(std::round(bin_max / bin_width)));
+
+  std::vector<int> counts(num_bins, 0);
+  for (float len : lengths) {
+    int idx = static_cast<int>(len / bin_width);
+    idx = std::clamp(idx, 0, num_bins - 1);
+    counts[idx]++;
+  }
+  result.bins.reserve(num_bins);
+  for (int i = 0; i < num_bins; i++) {
+    const float lower = i * bin_width;
+    const float upper = lower + bin_width;
+    result.bins.push_back({lower, upper, counts[i]});
+  }
+  return result;
+}
+
+boost::json::object serializeNetLengthHistogram(
+    const NetLengthHistogramResult& h)
+{
+  boost::json::object o;
+  boost::json::array bins;
+  bins.reserve(h.bins.size());
+  for (const auto& bin : h.bins) {
+    boost::json::object b;
+    b["lower"] = bin.lower;
+    b["upper"] = bin.upper;
+    b["count"] = bin.count;
+    bins.emplace_back(std::move(b));
+  }
+  o["bins"] = std::move(bins);
+  o["total_nets"] = h.total_nets;
+  o["length_unit"] = h.length_unit;
   return o;
 }
 

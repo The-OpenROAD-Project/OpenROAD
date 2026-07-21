@@ -388,7 +388,8 @@ export class RulerManager {
             pt1: { ...pt1 },
             name: `ruler${id}`,
             label: '',
-            euclidian: true,
+            // Global default style for new rulers (2.12); per-ruler editable.
+            euclidian: this._app.rulerStyle !== 'manhattan',
         };
         this._rulers.push(ruler);
         this._renderRuler(ruler);
