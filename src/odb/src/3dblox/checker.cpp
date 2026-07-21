@@ -266,7 +266,6 @@ void Checker::check()
     return;
   }
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
-  computeBumpLayerMatches();
   checkLogicalConnectivity(top_cat);
   checkFloatingChips(top_cat);
   checkOverlappingChips(top_cat);
@@ -578,6 +577,7 @@ void Checker::checkNetConnectivity(dbMarkerCategory* top_cat)
 
 void Checker::checkBumpLayer(dbMarkerCategory* top_cat)
 {
+  computeBumpLayerMatches();
   // Flag bumps whose pin geometry, per computeBumpLayerMatches(), does not
   // land on their region's declared contact layer.
   dbMarkerCategory* cat = nullptr;
