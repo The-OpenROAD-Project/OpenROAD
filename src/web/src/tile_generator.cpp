@@ -3869,15 +3869,24 @@ std::string TileGenerator::addLabel(const odb::Point& pos,
                                     const std::string& name)
 {
   std::lock_guard<std::mutex> lock(labels_mutex_);
+  auto name_in_use = [this](const std::string& n) {
+    for (const auto& l : labels_) {
+      if (l.name == n) {
+        return true;
+      }
+    }
+    return false;
+  };
   std::string label_name = name;
   if (label_name.empty()) {
-    label_name = "label" + std::to_string(next_label_id_++);
-  }
-  // Reject a duplicate name (mirrors the Qt GUI, which warns GUI-44).
-  for (const auto& l : labels_) {
-    if (l.name == label_name) {
-      return "";
-    }
+    // Auto-generate; skip ids already taken by a user-named label.
+    do {
+      label_name = "label" + std::to_string(next_label_id_++);
+    } while (name_in_use(label_name));
+  } else if (name_in_use(label_name)) {
+    // Reject a duplicate explicit name (mirrors the Qt GUI, which warns
+    // GUI-44).
+    return "";
   }
   labels_.push_back(
       {pos, text, color, size, anchor.empty() ? "center" : anchor, label_name});

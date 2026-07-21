@@ -633,7 +633,13 @@ std::map<int, std::set<const sta::Pin*>> walkConeLevels(
     auto& next = levels[next_level];
 
     for (const auto* pin : current) {
+      // Input pins only have a load vertex; output pins only a driver vertex.
+      // Fall back to pinLoadVertex so the walk expands through input pins
+      // instead of stopping one level in.
       auto* pin_vertex = graph->pinDrvrVertex(pin);
+      if (pin_vertex == nullptr) {
+        pin_vertex = graph->pinLoadVertex(pin);
+      }
       if (pin_vertex == nullptr) {
         continue;
       }
@@ -780,7 +786,12 @@ TimingConeResult TimingReport::computeTimingCone(const std::string& pin_name,
       node.inst = iterm ? iterm->getInst() : nullptr;
       node.depth = depth;
 
+      // Input pins have only a load vertex — fall back to it so slack is
+      // annotated for the whole cone, not just driver pins.
       sta::Vertex* vertex = graph->pinDrvrVertex(pin);
+      if (vertex == nullptr) {
+        vertex = graph->pinLoadVertex(pin);
+      }
       if (vertex != nullptr) {
         const sta::Slack slack = sta_->slack(vertex, sta::MinMax::max());
         if (!sta::delayInf(slack, sta_)) {

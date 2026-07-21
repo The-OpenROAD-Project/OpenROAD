@@ -62,6 +62,20 @@ TEST_F(LabelTest, DuplicateNameRejected)
   EXPECT_EQ(gen_->labelsForDraw().size(), 1u);
 }
 
+TEST_F(LabelTest, AutoNameSkipsUserTakenId)
+{
+  const Color c{.r = 0, .g = 0, .b = 0, .a = 255};
+  // A user manually grabs "label0"; the next auto-generated name must not
+  // collide with it (which would otherwise return "").
+  EXPECT_EQ(gen_->addLabel({0, 0}, "manual", c, 0, "center", "label0"),
+            "label0");
+  const std::string automatic
+      = gen_->addLabel({1, 1}, "auto", c, 0, "center", "");
+  EXPECT_FALSE(automatic.empty());
+  EXPECT_NE(automatic, "label0");
+  EXPECT_EQ(gen_->labelsForDraw().size(), 2u);
+}
+
 TEST_F(LabelTest, DeleteAndClear)
 {
   const Color c{.r = 0, .g = 0, .b = 0, .a = 255};

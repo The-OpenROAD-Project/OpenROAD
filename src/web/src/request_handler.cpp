@@ -131,6 +131,23 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
   resp.payload.assign(s.begin(), s.end());
 }
 
+// Read a JSON number as a double, accepting the integer kinds too.  JS
+// serializes whole numbers without a decimal point (5.0 -> "5"), so Boost.JSON
+// parses them as int64/uint64 and value::as_double() would throw.
+double jsonToDouble(const boost::json::value& v)
+{
+  if (v.is_double()) {
+    return v.get_double();
+  }
+  if (v.is_int64()) {
+    return static_cast<double>(v.get_int64());
+  }
+  if (v.is_uint64()) {
+    return static_cast<double>(v.get_uint64());
+  }
+  throw std::runtime_error("value is not a number");
+}
+
 }  // namespace
 
 // RAII helper: temporarily sets Descriptor::Property::convert_dbu to a
@@ -1103,8 +1120,8 @@ WebSocketResponse SelectHandler::handleSelectNetLengthBin(
   try {
     // Bin edges arrive in the histogram's display units (µm or DBU); convert
     // to DBU to compare against netHpwlDbu().
-    const double lower = req.json.at("lower").as_double();
-    const double upper = req.json.at("upper").as_double();
+    const double lower = jsonToDouble(req.json.at("lower"));
+    const double upper = jsonToDouble(req.json.at("upper"));
 
     odb::dbBlock* block = gen_->getBlock();
     if (!block) {
