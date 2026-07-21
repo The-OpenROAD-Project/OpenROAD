@@ -7,6 +7,8 @@ read_def reg3.def
 catch { set_wire_rc -tech no_such_tech -resistance 1e-3 -capacitance 1e-1 } msg
 puts $msg
 # selectors are mutually exclusive
-catch { set_wire_rc -tech Nangate45 -redistribution_layer \
-  -resistance 1e-3 -capacitance 1e-1 } msg
+catch {
+  set_wire_rc -tech Nangate45 -redistribution_layer \
+    -resistance 1e-3 -capacitance 1e-1
+} msg
 puts $msg
