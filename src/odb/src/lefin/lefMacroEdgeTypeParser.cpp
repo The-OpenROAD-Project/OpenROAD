@@ -61,9 +61,12 @@ bool lefMacroEdgeTypeParser::parseSubRule(const std::string& s)
   qi::rule<std::string::const_iterator, space_type> RANGE
       = (lit("RANGE") >> double_
          >> double_)[boost::bind(&lefMacroEdgeTypeParser::setRange, this, _1)];
+  // Edge type names may start with any non-blank character (e.g. "2")
+  qi::rule<std::string::const_iterator, std::string(), space_type> EDGE_TYPE
+      = lexeme[+(char_ - blank - '\n' - ';')];
   qi::rule<std::string::const_iterator, space_type> LEF58_EDGETYPE
-      = (lit("EDGETYPE") >> EDGE_DIR
-         >> _string[boost::bind(&dbMasterEdgeType::setEdgeType, edge_type_, _1)]
+      = (lit("EDGETYPE") >> EDGE_DIR >> EDGE_TYPE[boost::bind(
+             &dbMasterEdgeType::setEdgeType, edge_type_, _1)]
          >> -(CELLROW | HALFROW | RANGE) >> lit(";"));
 
   auto first = s.begin();
