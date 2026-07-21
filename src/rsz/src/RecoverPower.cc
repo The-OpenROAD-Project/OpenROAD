@@ -154,6 +154,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
       if (better) {
         failed_move_threshold = 0;
         resizer_->journalEnd();
+        resize_count_++;
         debugPrint(logger_,
                    RSZ,
                    "recover_power",
@@ -178,6 +179,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                         "power recovery",
                         failed_move_threshold_limit_);
           resizer_->journalEnd();
+          resize_count_++;
           break;
         }
         resizer_->journalRestore();
@@ -228,6 +230,10 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     drvr_vertex = recoverPower(path, slack);
+  }
+  // No accept/reject journal here: a returned vertex is one kept downsize.
+  if (drvr_vertex != nullptr) {
+    resize_count_++;
   }
 
   if (resize_count_ > 0) {
@@ -360,7 +366,7 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
                  drvr_port->libertyCell()->name(),
                  downsize->name());
       if (resizer_->replaceCell(drvr, downsize, true)) {
-        resize_count_++;
+        // Counted by the caller only if the move is kept (journalEnd).
         return true;
       }
     }
