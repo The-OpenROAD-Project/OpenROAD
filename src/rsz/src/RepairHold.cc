@@ -766,7 +766,7 @@ RepairHold::HoldMoveStats RepairHold::makeHoldDelay(
   // Sta::checkMaxSlewCap does not force dcalc update so do it explicitly.
   sta_->findDelays(buffer_out_vertex);
   if (!checkMaxSlewCap(buffer_out_pin)
-      && resizer_->resizeToTargetSlew(buffer_out_pin)) {
+      && resizer_->resizeToCapRatio(buffer_out_pin, /*upsize_only=*/false)) {
     estimate_parasitics_->updateParasitics();
     stats.resizes = 1;
   }
