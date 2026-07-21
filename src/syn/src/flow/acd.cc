@@ -229,7 +229,9 @@ MatchCache::MatchCache(utl::Logger* logger,
     if (nand2_class != index.classes.end()) {
       for (auto& target : nand2_class->second) {
         if ((target.via * semiclass_map).isPermutation()) {
-          if (!nand2_ || target.cell->area() < nand2_->area()) {
+          if (!nand2_
+              || std::make_pair(target.cell->area(), target.cell->name())
+                     < std::make_pair(nand2_->area(), nand2_->name())) {
             nand2_ = target.cell;
           }
         }
