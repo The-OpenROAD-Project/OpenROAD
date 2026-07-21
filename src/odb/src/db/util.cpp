@@ -5,12 +5,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <map>
 #include <numeric>
 #include <ranges>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -25,6 +27,26 @@ namespace odb {
 
 using std::string;
 using std::vector;
+
+std::string replaceBracketsWithUnderscores(std::string_view name)
+{
+  std::string sanitized_name;
+  sanitized_name.reserve(name.size());
+
+  for (size_t i = 0; i < name.size(); i++) {
+    const char ch = name[i];
+    // An escaped bracket ("\[" or "\]") collapses into a single underscore.
+    if (ch == '\\' && i + 1 < name.size()
+        && (name[i + 1] == '[' || name[i + 1] == ']')) {
+      sanitized_name += '_';
+      i++;
+      continue;
+    }
+    sanitized_name += (ch == '[' || ch == ']') ? '_' : ch;
+  }
+
+  return sanitized_name;
+}
 
 static void buildRow(dbBlock* block,
                      const string& name,

@@ -20,28 +20,10 @@
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace odb {
-
-static std::string replaceBracketsWithUnderscores(std::string_view name)
-{
-  std::string sanitized_name;
-  sanitized_name.reserve(name.size());
-
-  for (size_t i = 0; i < name.size(); i++) {
-    const char ch = name[i];
-    if (ch == '\\' && i + 1 < name.size()
-        && (name[i + 1] == '[' || name[i + 1] == ']')) {
-      sanitized_name += '_';
-      i++;
-      continue;
-    }
-    sanitized_name += (ch == '[' || ch == ']') ? '_' : ch;
-  }
-
-  return sanitized_name;
-}
 
 dbInsertBuffer::dbInsertBuffer(dbNet* net)
     : net_(net),
@@ -1232,7 +1214,8 @@ void dbInsertBuffer::connectPeerITerms(dbModule* mod,
 dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
                                                   dbModNet* mod_net,
                                                   dbIoType io_type,
-                                                  const char* suffix)
+                                                  const char* suffix,
+                                                  dbNet* corresponding_flat_net)
 {
   for (dbModBTerm* bterm : mod_net->getModBTerms()) {
     if (bterm->getIoType() == io_type) {
@@ -1243,12 +1226,21 @@ dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
   dbModule* parent_module = mod_net->getParent();
   assert(parent_module == current_mod);
 
-  std::string port_name = mod_net->getName();
+  const std::string mod_net_name = mod_net->getName();
+  std::string port_name = replaceBracketsWithUnderscores(mod_net_name);
   dbModInst* mod_inst = current_mod->getModInst();
   if (parent_module->findModBTerm(port_name.c_str()) != nullptr
       || (mod_inst != nullptr
           && mod_inst->findModITerm(port_name.c_str()) != nullptr)) {
     port_name = makeUniqueHierName(current_mod, port_name, suffix);
+  } else if (port_name != mod_net_name) {
+    // Sanitized port names must be unique in the Verilog module scope.
+    const std::string full_port_name
+        = block_->makeNewNetName(current_mod,
+                                 port_name.c_str(),
+                                 dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                                 corresponding_flat_net);
+    port_name = block_->getBaseName(full_port_name.c_str());
   }
 
   assert(parent_module->findModBTerm(port_name.c_str()) == nullptr);
@@ -1289,8 +1281,8 @@ dbObject* dbInsertBuffer::traceUp(dbObject* current_obj,
     dbModNet* mod_net
         = ensureModNet(current_obj, current_mod, corresponding_flat_net);
 
-    dbModBTerm* port
-        = findOrCreateTracePort(current_mod, mod_net, io_type, suffix);
+    dbModBTerm* port = findOrCreateTracePort(
+        current_mod, mod_net, io_type, suffix, corresponding_flat_net);
 
     current_obj = port->getParentModITerm();
     current_mod = current_mod->getModInst()->getParent();

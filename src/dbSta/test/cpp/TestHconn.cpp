@@ -980,4 +980,30 @@ TEST_F(TestHconn, ConnectionMade)
             (num_mod_bterms_before_delete - num_mod_bterms_after_delete));
 }
 
+TEST_F(TestHconn, BracketedConnectionName)
+{
+  dbInst* source_inst = dbInst::create(block_,
+                                       lib_->findMaster("INV_X1"),
+                                       "inv1_mod_inst/bracket_source",
+                                       false,
+                                       inv1_mod_master_);
+  dbITerm* source_pin = source_inst->findITerm("ZN");
+  ASSERT_NE(source_pin, nullptr);
+  source_inst->findITerm("A")->connect(ip0_net_);
+  source_inst->findITerm("A")->connect(inv1_mod_i0_modnet_);
+  inv4_4_ip_->disconnect();
+
+  dbNet* flat_net = dbNet::create(block_, "data\\[5\\]", false);
+  ASSERT_NE(flat_net, nullptr);
+  source_pin->connect(flat_net);
+  inv4_4_ip_->connect(flat_net);
+
+  db_network_->hierarchicalConnect(source_pin, inv4_4_ip_, "data\\[5\\]");
+
+  EXPECT_EQ(inv1_mod_master_->findModBTerm("data\\[5\\]_o"), nullptr);
+  EXPECT_NE(inv1_mod_master_->findModBTerm("data_5__o"), nullptr);
+  EXPECT_EQ(inv4_mod_level2_master_->findModBTerm("data\\[5\\]_i"), nullptr);
+  EXPECT_NE(inv4_mod_level2_master_->findModBTerm("data_5__i"), nullptr);
+}
+
 }  // namespace odb

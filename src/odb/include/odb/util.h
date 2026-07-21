@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace utl {
@@ -22,6 +23,9 @@ class dbNet;
 class dbTechLayer;
 class Rect;
 class Polygon;
+
+// Replaces bare and escaped brackets in generated scalar names.
+std::string replaceBracketsWithUnderscores(std::string_view name);
 
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);
 

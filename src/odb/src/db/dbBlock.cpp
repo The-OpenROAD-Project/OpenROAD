@@ -3931,8 +3931,24 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
   // does not have to be some massive string like root/X/Y/U1.
   //
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  auto exists = [this](const char* name) {
-    return findInst(name) != nullptr || findModInst(name) != nullptr;
+  const dbModule* scope = parent ? parent->getMaster() : getTopModule();
+  auto exists = [this, scope](const char* name) {
+    if (findInst(name) != nullptr || findModInst(name) != nullptr) {
+      return true;
+    }
+
+    // An instance name must also be unique against net/port names in the
+    // scope: a net/port and an instance cannot share a name in one Verilog
+    // scope (mirror of the instance check in makeNewNetName).
+    if (scope != nullptr) {
+      const char* base = getBaseName(name);
+      if (scope->getModNet(base) || scope->findModBTerm(base)) {
+        return true;
+      }
+    }
+
+    // Flat net collision check
+    return findNet(name) != nullptr;
   };
   return block->makeNewName(
       parent, base_name, uniquify, block->unique_inst_index_, exists);

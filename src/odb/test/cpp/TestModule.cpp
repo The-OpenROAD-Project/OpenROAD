@@ -281,6 +281,7 @@ TEST_F(ModuleFixture, test_default)
   dbInst::destroy(inst1);
   EXPECT_EQ(parent_mod->getInsts().size(), 0);
 }
+
 TEST_F(ModuleFixture, test_find_modinst)
 {
   auto top = block_->getTopModule();
@@ -324,6 +325,43 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
       top, "no_collision_here", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   EXPECT_STREQ(block_->getBaseName(fresh.c_str()), "no_collision_here");
 }
+
+// Mirror of makeNewNetName_avoids_instance_collision: makeNewInstName must
+// not hand out a name that already belongs to a net or port in the scope,
+// because a net/port and an instance cannot share a name in one Verilog
+// module scope ("Instance has the same name as port").
+TEST_F(ModuleFixture, makeNewInstName_avoids_net_collision)
+{
+  auto top = block_->getTopModule();
+  ASSERT_NE(top, nullptr);
+
+  // Flat net collision: a net named "n1" exists in scope.
+  dbNet::create(block_, "n1");
+  std::string flat = block_->makeNewInstName(
+      nullptr, "n1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(flat.c_str()), "n1")
+      << "instance name must not collide with flat net 'n1'";
+
+  // ModNet collision: a modnet named "mn1" in the top module.
+  dbModNet::create(top, "mn1");
+  std::string hier_net = block_->makeNewInstName(
+      nullptr, "mn1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(hier_net.c_str()), "mn1")
+      << "instance name must not collide with modnet 'mn1'";
+
+  // Port collision: a modbterm named "p1" on the top module.
+  dbModBTerm::create(top, "p1");
+  std::string port = block_->makeNewInstName(
+      nullptr, "p1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(port.c_str()), "p1")
+      << "instance name must not collide with port 'p1'";
+
+  // No collision: a fresh name is returned unchanged.
+  std::string fresh = block_->makeNewInstName(
+      nullptr, "fresh_inst", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STREQ(block_->getBaseName(fresh.c_str()), "fresh_inst");
+}
+
 class DetailedFixture : public SimpleDbFixture
 {
  protected:
@@ -360,6 +398,7 @@ class DetailedFixture : public SimpleDbFixture
   dbInst* inst2;
   dbInst* inst3;
 };
+
 TEST_F(DetailedFixture, test_destroy)
 {
   EXPECT_EQ(block->getModInsts().size(), 3);
