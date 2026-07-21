@@ -1208,11 +1208,15 @@ void dbDatabase::triggerPostReadDef(dbBlock* block, const bool floorplan)
 
 void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
 {
+  // Build the unfolded model BEFORE notifying observers: a postRead3Dbx
+  // observer's purpose is to consume the just-read design, and building it
+  // afterward (a) leaves the model empty in the callback and (b) frees any
+  // unfolded objects an observer cached. See analysis: dangling-unfolded UAF.
+  constructUnfoldedModel();
   _dbDatabase* db = (_dbDatabase*) this;
   for (dbDatabaseObserver* observer : db->observers_) {
     observer->postRead3Dbx(chip);
   }
-  constructUnfoldedModel();
 }
 
 void dbDatabase::triggerPostReadDb()

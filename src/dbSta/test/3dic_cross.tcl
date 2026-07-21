@@ -15,6 +15,29 @@ read_3dbx 3dic_cross.3dbx
 # terminology.
 report_3dic_summary
 
+# Unique-master structural iteration: each chiplet master (flop_chip_a,
+# flop_chip_b) is instantiated exactly once, so DbInstanceChildIterator
+# surfaces both chip-insts AND flat-descends their unique interiors (ff/inv/
+# buf + the bump insts). This is the A3 unique-master descent. (Duplicated
+# masters are rejected up front by STA-3004; see 3dic_get_cells.tcl.)
+proc cell_names { } {
+  set names {}
+  foreach c [get_cells *] {
+    lappend names [get_full_name $c]
+  }
+  return [lsort $names]
+}
+check "flat cell set" { cell_names } {chipA chipA/buf chipA/bump_clk\
+  chipA/bump_d chipA/bump_q chipA/ff chipA/inv chipB chipB/buf\
+  chipB/bump_clk chipB/bump_d chipB/bump_q chipB/ff chipB/inv}
+# DbInstancePinIterator yields one bump Pin per chip-inst bump.
+check "chipA bump-pin count" {
+  llength [get_pins -of_objects [get_cells chipA]]
+} 3
+check "chipB bump-pin count" {
+  llength [get_pins -of_objects [get_cells chipB]]
+} 3
+
 proc chip_net_names { } {
   set names {}
   foreach n [get_nets *] {

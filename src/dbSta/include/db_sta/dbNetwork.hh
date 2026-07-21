@@ -565,7 +565,8 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
   // 3DIC: width of the per-chiplet-block discriminator stamped into the upper
   // bits of an encoded ObjectId. With DBIDTAG_WIDTH=4 tag bits and a 20-bit
-  // per-block db_id, this leaves 8 bits -> up to 255 unique chiplet blocks.
+  // per-block db_id, this leaves 8 bits -> up to 256 unique chiplet blocks
+  // (discriminators 0..255).
   static constexpr unsigned kBlockTagWidth = 8;
   static constexpr unsigned kBlockTagShift = 32 - kBlockTagWidth;        // 24
   static constexpr uint32_t kBlockTagMask = (1U << kBlockTagWidth) - 1;  // 0xFF
@@ -592,13 +593,14 @@ class dbNetwork : public ConcreteNetwork
   // ---- 3DIC (3DBlox) state ----
   // Top dbChip of a 3Dbx design (hierarchical chip, no own dbBlock).
   odb::dbChip* top_chip_ = nullptr;
-  // Chiplet master dbBlock -> the chip-inst that placed it; only blocks
-  // placed by exactly one chip-inst (shared masters are skipped — their
-  // inner dbInsts would alias across placements; see Track A5 guard).
+  // Chiplet master dbBlock -> the chip-inst that placed it. Duplicated
+  // masters (a block placed by >1 chip-inst) are rejected in setTopChip
+  // (STA-3004), so every entry here is a uniquely-placed master.
   odb::PtrMap<odb::dbBlock, odb::dbChipInst*> block_to_chip_inst_;
-  // Per-block 1..N discriminator stamped into upper ObjectId bits so
+  // Per-block 0..N-1 discriminator stamped into upper ObjectId bits so
   // iterms/bterms/insts/nets from different chiplet blocks (each numbered
-  // from 1) don't collide in NetSet/PinSet keys.
+  // from 1) don't collide in NetSet/PinSet keys. Starts at 0 so a single
+  // chiplet block stamps nothing (no-op, same as 2D).
   odb::PtrMap<odb::dbBlock, uint32_t> block_disc_;
   // One synthetic (non-Liberty) Cell per chiplet master, backing
   // cell()/port()/name() for chip-inst and chip-bump pins. Owned by

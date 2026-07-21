@@ -387,10 +387,9 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   if (chip == nullptr) {
     return;
   }
-  // The unfolded model is not auto-built when this read callback fires, so
-  // build it here before STA consumes it (chip-bump identity keys off the
-  // per-unfold-path dbUnfoldedChipBumpInst objects).
-  db_->constructUnfoldedModel();
+  // The unfolded model is already built before this callback fires
+  // (dbDatabase::triggerPostRead3Dbx constructs it before notifying
+  // observers), so STA can consume it directly here.
   db_network_->setTopChip(chip);
 
   // dbBlockCallBackObj is single-owner (addOwner removes the previous owner).
@@ -398,30 +397,19 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   // dbBlock, so allocate one dbStaCbk per chiplet block rather than reusing
   // db_cbk_ (which would unhook all but the last chiplet).
   chiplet_cbks_.clear();
-  bool hier_master_seen = false;
-  // Dedupe by block: a chiplet master placed by >1 chip-inst (duplicated
-  // master) maps to one shared dbBlock. A dbBlock holds a LIST of callbacks,
-  // so hooking one per chip-inst would register multiple live callbacks on
-  // that block and fire each db edit once per placement (redundant, and unsafe
-  // for any non-idempotent handler). One callback per distinct block suffices.
-  // NOTE (Track B): this hooks TOP-LEVEL chiplet blocks only. A HIER master has
-  // no own dbBlock (skipped below), so leaf blocks nested under hierarchical
-  // chiplets are NOT hooked. The fix is to walk the unfolded model
-  // (db->getUnfoldedChipInsts(), which recurses into HIER) and hook one cbk per
-  // distinct leaf dbBlock*. Gated for now by the STA-3001 warning below.
+  // Dedupe by block: hook one dbStaCbk per distinct chiplet dbBlock. A dbBlock
+  // holds a LIST of callbacks, so hooking one per chip-inst would register
+  // redundant live callbacks. setTopChip has already rejected hierarchical
+  // (STA-3001) and duplicated (STA-3004) masters, so every chip-inst here has
+  // a distinct, own dbBlock; the dedupe set is defensive.
   odb::PtrSet<odb::dbBlock> hooked_blocks;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
-    odb::dbChip* master = chip_inst->getMasterChip();
-    if (master != nullptr
-        && master->getChipType() == odb::dbChip::ChipType::HIER) {
-      hier_master_seen = true;
-    }
     odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst);
     if (chiplet_block == nullptr) {
       continue;
     }
     if (!hooked_blocks.insert(chiplet_block).second) {
-      continue;  // already hooked (shared/duplicated master block)
+      continue;  // already hooked
     }
     auto cbk = std::make_unique<dbStaCbk>(this);
     cbk->setNetwork(db_network_);
@@ -429,18 +417,6 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
     chiplet_cbks_.push_back(std::move(cbk));
   }
 
-  if (hier_master_seen) {
-    // Track A5: nested chiplets need per-unfold-path identity (dbUnfoldedInst)
-    // to time their interiors; until that lands, warn rather than silently
-    // produce incomplete cross-chiplet paths.
-    logger_->warn(
-        utl::STA,
-        3001,
-        "3DIC STA currently supports flat (single-level) chip "
-        "hierarchies only. A chip instance references a "
-        "hierarchical chiplet master; its interior is not timed and "
-        "cross-chiplet paths through nested chiplets are incomplete.");
-  }
   // No unconditional INFO banner here: read_3dbx runs on pure-odb flows too,
   // and announcing "STA active" on every read is noise. The structural
   // counts are available on demand via report_3dic_summary.

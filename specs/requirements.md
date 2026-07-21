@@ -43,6 +43,13 @@ invalidation; re-attach vertex ids after each `constructUnfoldedModel()`.**
 **Still open with Osama:**
 - (a) a **rebuild-notification hook** so STA knows a rebuild occurred (today no
   signal; STA would have to re-run unconditionally).
+  - **Concrete instance found (2026-07-03 ASAP7 field test, fixed):**
+    `dbDatabase::triggerPostRead3Dbx` (`dbDatabase.cpp:1210`) rebuilds the
+    unfolded model *after* notifying `postRead3Dbx` observers, freeing the
+    objects STA indexed in the callback → use-after-free on the first chip-net
+    query. Fix = build **before** notifying (pure reorder). STA's net-count
+    staleness check cannot see this same-count rebuild — the general hook still
+    wanted. See `2026-07-03-asap7-field-test.md` F1.
 - (b) persist-vs-rebuild decision (lift no-serial?) — affects save/restore
   after `make_graph`, which currently loses any id on these objects.
 - Decision needed: persist the unfolded tables to `.odb` (lift `no-serial`)
@@ -192,6 +199,14 @@ Osama ask. Remaining is **STA-side** (Track E3 / TODO 3): consult the loaded
 `LibertyCell` in `makeTopCellForChip` instead of synthesizing a stub, and
 suppress the BIDIRECT fallback when an ETM is present.
 
+### R12. 3dbv path-glob robustness — MINOR (found 2026-07-03)
+`baseParser.cpp matchesPattern` supports only a **single** `*` (prefix+suffix; a
+second `*` is literal). A two-wildcard liberty/LEF entry in a `.3dbv` matches
+**zero** files with **no warning** — silently loaded no std-cell liberty in the
+ASAP7 field test, surfacing only much later as `report_checks` "No paths found".
+- Ask (odb, minor): warn when a resolved glob matches 0 files; optionally
+  support multiple `*`. Workaround: single-`*` patterns per file group.
+
 ---
 
 ## Open decisions to confirm with Osama (summary)
@@ -208,3 +223,4 @@ inline in their sections.
 | R7 | RESOLVED | IO cells interior; remaining: confirm RCX targets net2 → SPEF | Arthur |
 | R4 · R9 · R11 | RESOLVED | net enumeration done; unbound-bump query exists; ETM `.lib` already loaded — remaining work is STA-side | — |
 | R8 · R10 | nice-to-have | callbacks (TODO 4); `dbMarker` chip cases (TODO 5) | Osama |
+| R12 | nice-to-have | 3dbv glob: warn on 0-match / support multi-`*` (field test) | Osama |

@@ -952,62 +952,81 @@ void dbNetwork::setTopChip(odb::dbChip* chip)
     return;
   }
 
+  // A leaf chip that carries its own dbBlock is just a flat design reached
+  // through read_3dbx -> route it through the existing single-block path and
+  // skip the chip-inst discriminator machinery entirely (has3DicChip() is
+  // false for it, so no discriminator is stamped).
+  if (chip->getBlock() != nullptr) {
+    if (block_ == nullptr) {
+      block_ = chip->getBlock();
+    }
+    return;
+  }
+
   // Build two per-chiplet-block maps in one pass over the chip-insts.
   // odb deletes std::less for db-object pointers, so key on PtrMap
   // (ODBPtrLess), never std::map<dbBlock*, ...>.
   //
   //  - block_refs: how many chip-insts place this master block. A block
-  //    placed by >1 chip-inst is a "shared master": its inner dbInsts alias
-  //    across placements, so it is NOT descendable (Track A5 guard) and is
-  //    dropped from block_to_chip_inst_ below.
-  //  - block_disc_: a 1..N discriminator per unique block, stamped into the
+  //    placed by >1 chip-inst is a duplicated master; timing its shared
+  //    interior would alias inner dbInsts across placements, which is not
+  //    supported in this version -> hard-error (STA-3004).
+  //  - block_disc_: a 0..N-1 discriminator per unique block, stamped into the
   //    upper bits of the encoded ObjectId so objects numbered from 1 in
-  //    different chiplet blocks don't collide as NetSet/PinSet keys.
+  //    different chiplet blocks don't collide as NetSet/PinSet keys. Starting
+  //    at 0 means a single-chiplet design stamps 0 everywhere (no-op), so no
+  //    separate is-3D guard is needed.
   //
   // The discriminator only has kBlockTagWidth bits. If unique blocks exceed
   // that, distinct blocks would alias to the same key and silently merge
   // pins/nets across chiplets -> wrong timing. Hard-error instead.
   constexpr uint32_t kMaxBlockDisc = (1U << kBlockTagWidth) - 1;
   odb::PtrMap<odb::dbBlock, int> block_refs;
-  uint32_t next_disc = 1;
+  uint32_t curr_disc = 0;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
-    // A chip-inst with no master chip is malformed for STA: no body, bumps,
-    // or ports to time. Fail loudly rather than silently skipping it (which
-    // would drop its nets/paths without warning).
-    if (chip_inst->getMasterChip() == nullptr) {
-      logger_->error(utl::STA,
-                     3003,
-                     "3DIC chip instance {} has no master chip; STA cannot "
-                     "build a model for it.",
-                     chip_inst->getName());
-    }
     odb::dbBlock* block = blockOf(chip_inst);
     if (block == nullptr) {
-      // Master exists but is itself hierarchical (no own dbBlock) -- legal;
-      // the HIER case is flagged by postRead3Dbx (STA-3001).
-      continue;
+      // Master is hierarchical (no own dbBlock). Nested chiplet hierarchies
+      // are not supported in this version: their interiors need per-unfold-
+      // path identity (dbUnfoldedInst) that does not yet exist, so timing
+      // them would produce incomplete cross-chiplet paths. Refuse rather than
+      // silently build a partial graph.
+      logger_->error(utl::STA,
+                     3001,
+                     "3DIC STA does not support hierarchical (nested) chiplet "
+                     "masters yet: chip instance {} references a hierarchical "
+                     "master. Flatten to single-level chiplets.",
+                     chip_inst->getName());
     }
     block_refs[block]++;
     block_to_chip_inst_[block] = chip_inst;
-    if (block_disc_.emplace(block, next_disc).second) {
-      if (next_disc > kMaxBlockDisc) {
+    if (block_disc_.emplace(block, curr_disc).second) {
+      if (curr_disc > kMaxBlockDisc) {
         logger_->error(utl::STA,
                        3002,
                        "3DIC design has more than {} unique chiplet blocks; "
                        "the {}-bit per-block ObjectId discriminator overflows "
                        "and chiplet pins/nets would alias. Widen "
                        "kBlockTagWidth or reduce unique chiplet definitions.",
-                       kMaxBlockDisc,
+                       kMaxBlockDisc + 1,
                        kBlockTagWidth);
       }
-      ++next_disc;
+      ++curr_disc;
     }
   }
-  // Drop shared-master blocks: their inner dbInsts can't be descended (the
-  // pointers alias across placements). They stay opaque leaves.
+  // Duplicated masters are not supported in this version: descending a block
+  // placed by >1 chip-inst would alias its inner dbInsts across placements,
+  // and much downstream code assumes a chiplet block is placed once. Refuse
+  // rather than build a wrong graph. (Real duplicated-master support needs
+  // per-unfold-path identity -- dbUnfoldedInst, Track A'.)
   for (auto& [block, count] : block_refs) {
     if (count > 1) {
-      block_to_chip_inst_.erase(block);
+      logger_->error(utl::STA,
+                     3004,
+                     "3DIC STA does not support the same chiplet master placed "
+                     "more than once yet ({} placements of one master block). "
+                     "Each chiplet master must be instantiated exactly once.",
+                     count);
     }
   }
 
@@ -1017,14 +1036,6 @@ void dbNetwork::setTopChip(odb::dbChip* chip)
   buildUnfoldedMaps();
   unfolded_cache_net_count_ = top_chip_->getChipNets().size();
 
-  // A leaf chip that carries its own dbBlock is just a flat design reached
-  // through read_3dbx -> route it through the existing single-block path.
-  if (chip->getBlock() != nullptr) {
-    if (block_ == nullptr) {
-      block_ = chip->getBlock();
-    }
-    return;
-  }
   // Hierarchical chip (no own block): synthesize a top cell so STA can see
   // the chip-inst children through topInstance().
   if (!chip->getChipInsts().empty()) {

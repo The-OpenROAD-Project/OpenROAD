@@ -40,12 +40,14 @@ chiplets) is explicitly OUT and parked behind `dbUnfoldedInst`.
 - **A4 Drop the old side-map.** Move bump vertexId off
   `chip_bump_vertex_ids_` onto `dbUnfoldedChipBumpInst`; re-attach on every
   `constructUnfoldedModel()` rebuild.
-- **A5 Shared-master interior guard.** Do NOT descend a duplicated master's
-  shared interior (alias → collision/crash). Keep shared-master blocks out of
-  the descend set (mirror #10417's `block_to_chip_inst_` filter); duplicated
-  chiplet = opaque box, bump pins only, with a loud `STA-3xxx` warning.
-- **A6 Regression.** Port #10417's `3dic_cross.tcl`; add the duplicated-master
-  assertions. Register in CMake + Bazel.
+- **A5 Duplicated-master hard-error (revised, PR #10664).** Do NOT descend a
+  duplicated master's shared interior (alias → collision/crash). Per Osama's
+  review: **reject with `STA-3004`** rather than time as an opaque box — a
+  partial graph is a correctness trap since downstream code assumes a block is
+  placed once. Nested (HIER) masters likewise hard-error (`STA-3001`).
+- **A6 Regression.** `3dic_cross.tcl` (unique-master path + flat cell/pin
+  iteration) and `3dic_get_cells.tcl` (duplicated-master `STA-3004` error).
+  Register in CMake + Bazel.
 
 ## Unfolded model: verified correct + build-timing note (2026-06-12)
 
@@ -86,8 +88,10 @@ inspection is unavailable until the dbSet is wrapped.
 2. **Composite-`Pin*` rejected** for interior identity — hits the 32-bit
    `ObjectId` ceiling as a correctness failure (TODO 7) and is throwaway.
    Interior duplicated-master identity waits for `dbUnfoldedInst`.
-3. **Duplicated masters are opaque, not wrong.** A5 guard + warning. Missing
-   interior paths is a documented, loud limitation — matches #10417.
+3. **Duplicated masters hard-error (revised, PR #10664).** Originally planned
+   as an opaque box + warning; Osama's review changed this to a hard `STA-3004`
+   error — downstream code assumes single placement, so a partial graph is a
+   correctness trap. Real support is Track A' (`dbUnfoldedInst`).
 4. **Zero-delay bonds.** RC is Track D; Track A asserts zero-delay.
 5. **Fixture: port #10417's `3dic_cross.tcl`** (fake LEF/DEF/`.bmap`/3dbv)
    rather than authoring fresh.
