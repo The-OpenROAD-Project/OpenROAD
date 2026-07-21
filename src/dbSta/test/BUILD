@@ -9,6 +9,8 @@ load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(["synthetic_linear.lib"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
     "block_sta1",
@@ -356,6 +358,26 @@ cc_test(
     srcs = ["cpp/TestWriteVerilog.cpp"],
     data = glob(["cpp/TestWriteVerilog*.v"]),
     deps = [
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "dbsta_lambertw_test",
+    srcs = ["cpp/TestLambertW.cc"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "cpp/TestDbSta_0.v",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dbSta:lambertw_delay_calc",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",

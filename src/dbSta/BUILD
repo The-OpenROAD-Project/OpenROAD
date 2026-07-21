@@ -2,6 +2,8 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -9,6 +11,17 @@ load("//test:regression.bzl", "messages_txt")
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
+)
+
+cc_library(
+    name = "lambertw_delay_calc",
+    srcs = ["src/DmpCeffLambertWDelayCalc.cc"],
+    hdrs = ["src/DmpCeffLambertWDelayCalc.hh"],
+    deps = [
+        "//src/sta:opensta_lib",
+        "@boost.math",
+    ],
+    features = ["-layering_check"]
 )
 
 cc_library(
@@ -26,6 +39,7 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSdcNetwork",
+        ":lambertw_delay_calc",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -196,4 +210,42 @@ tcl_wrap_cc(
 
 messages_txt(
     visibility = ["//docs:__pkg__"],
+)
+
+cc_binary(
+    name = "ceff_training_data_generator",
+    srcs = ["src/ceff_training_data_generator.cc"],
+    data = [
+        "//src/dbSta/test:synthetic_linear.lib",
+    ],
+    deps = [
+        "//src/sta:opensta_lib",
+    ],
+    features = ["-layering_check"],
+)
+
+py_binary(
+    name = "fit_pade",
+    srcs = ["src/fit_pade.py"],
+    deps = [
+        "@openroad-pip//numpy",
+        "@openroad-pip//pandas",
+        "@openroad-pip//scipy",
+    ],
+)
+
+genrule(
+    name = "generate_training_data",
+    srcs = ["//src/dbSta/test:synthetic_linear.lib"],
+    outs = ["dmp_training_data.csv"],
+    cmd = "$(location :ceff_training_data_generator) $(location //src/dbSta/test:synthetic_linear.lib) > $@",
+    tools = [":ceff_training_data_generator"],
+)
+
+genrule(
+    name = "generate_pade_coefficients",
+    srcs = [":dmp_training_data.csv"],
+    outs = ["PadeCoefficients.h"],
+    cmd = "$(location :fit_pade) --csv_path=$< --output=$@",
+    tools = [":fit_pade"],
 )
