@@ -597,6 +597,36 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestRepairHoldRollback",
+    srcs = ["cpp/TestRepairHoldRollback.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "gcd_nangate45_placed.def",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_library(
     name = "helpers",
     srcs = ["helpers.py"],
