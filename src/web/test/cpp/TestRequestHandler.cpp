@@ -1698,6 +1698,39 @@ TEST_F(SchematicHandlerTest, GateKeepsMasterNameAndRealPins)
   EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
 }
 
+TEST_F(SchematicHandlerTest, GatePortsPreserveSymbolPinOrder)
+{
+  makeGate("NAND2_X1", "g_nand", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_nand").as_object();
+
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "nand");
+  auto& gate_ports = cell.at("gate_ports").as_object();
+  EXPECT_EQ(std::string(gate_ports.at("A1").as_string()), "A1");
+  EXPECT_EQ(std::string(gate_ports.at("A2").as_string()), "A2");
+  EXPECT_EQ(std::string(gate_ports.at("Y").as_string()), "ZN");
+}
+
+TEST_F(SchematicHandlerTest, DffGetsRegisterKindAndGatePorts)
+{
+  makeGate("DFF_X1",
+           "g_dff",
+           {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_dff").as_object();
+
+  EXPECT_EQ(std::string(cell.at("type").as_string()), "DFF_X1");
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "dff");
+  auto& gate_ports = cell.at("gate_ports").as_object();
+  EXPECT_EQ(std::string(gate_ports.at("D").as_string()), "D");
+  EXPECT_EQ(std::string(gate_ports.at("CK").as_string()), "CK");
+  EXPECT_EQ(std::string(gate_ports.at("Q").as_string()), "Q");
+  EXPECT_EQ(std::string(gate_ports.at("QN").as_string()), "QN");
+  EXPECT_FALSE(cell.at("attributes").as_object().contains("openroad_symbol_type"));
+}
+
 TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)
 {
   // AOI/OAI cells classify as compound gates with first-level term sizes.

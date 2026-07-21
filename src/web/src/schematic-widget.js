@@ -364,10 +364,10 @@ export class SchematicWidget {
         }
         this._lastDoubleClickTime = now;
 
-        e.preventDefault();  //Stops the browser’s default double-click behavior
-        e.stopPropagation();  //Stops the event from propagating further up the DOM tree
-        this.appState.selectedInstanceName = name;  //Stores the clicked instance name as the currently selected instance
-        this._highlightCellGroup(hit.group);  //Highlights the clicked cell group in the schematic
+        e.preventDefault();
+        e.stopPropagation();
+        this.appState.selectedInstanceName = name;
+        this._highlightCellGroup(hit.group);
         this._fetchInspect(name);
         return this._expandFromInstance(name);
     }
@@ -456,198 +456,6 @@ export class SchematicWidget {
 
     // ── NetlistSVG init ──────────────────────────────────────────────────────
 
-    _addOpenRoadSkinSymbols(skin) {
-        // Inject OpenROAD-owned templates so rendering is independent of the
-        // NetlistSVG skin revision. The ports match the backend's normalized
-        // connections.
-        const closingSvg = skin.lastIndexOf('</svg>');
-        if (closingSvg === -1) {
-            throw new Error('NetlistSVG skin is not valid SVG');
-        }
-
-        const gateInputYs = {
-            2: [7, 23],
-            3: [6, 15, 24],
-            4: [5, 11.5, 18.5, 25],
-        };
-
-        // - s:type: the cell type NetlistSVG matches, like openroad_nand2.
-        // - s:alias: extra matching name.
-        // - <path> / <circle>: the actual SVG shape.
-        // - <g s:x=... s:y=... s:pid=...>: pin locations.
-        // - <text s:attribute="ref">: instance name label.
-        const nodeLabel = (x, label) =>
-            `    <text x="${x}" y="-4" class="nodelabel $cell_id" s:attribute="ref">${label}</text>`;
-        const pinLabel = (x, y, label, anchor = 'start', port = label, side = 'right') =>
-            `    <text x="${x}" y="${y}" data-openroad-port="${port}" data-openroad-port-side="${side}" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:${anchor};pointer-events:none;">${label}</text>`;
-        const portPin = (x, y, port, label, anchor, side, labelX, labelY = -4) => `
-    <g transform="translate(${x}, ${y})" s:x="${x}" s:y="${y}" s:pid="${port}">
-${pinLabel(labelX, labelY, label, anchor, port, side)}
-    </g>`;
-        const inputPins = (count, x = 0, labelY = -4) => gateInputYs[count]
-            .map((y, i) => {
-                const port = `A${i + 1}`;
-                return portPin(x, y, port, port, 'end', 'left', -3, labelY);
-            })
-            .join('\n');
-        const outputPin = (x, y, port = 'Y', label = port, labelX = 4) =>
-            portPin(x, y, port, label, 'start', 'right', labelX);
-
-        // NetlistSVG selects one of these drawings when a cell's "type"
-        // matches s:type or s:alias. The <path> elements draw gate outlines;
-        // the <circle> elements draw inversion bubbles.
-        const andTemplate = (count) => `
-  <g s:type="openroad_and${count}" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_and${count}"/>
-${nodeLabel(15, `and${count}`)}
-    <!-- AND body: flat input side with rounded output side. -->
-    <path d="M0,0 L15,0 C23.284,0 30,6.716 30,15 C30,23.284 23.284,30 15,30 L0,30 Z" class="$cell_id"/>
-${inputPins(count)}
-${outputPin(30, 15, 'Y', 'Y', 0)}
-  </g>
-`;
-        const nandTemplate = (count) => `
-  <g s:type="openroad_nand${count}" transform="translate(0,0)" s:width="34" s:height="30">
-    <s:alias val="openroad_nand${count}"/>
-${nodeLabel(17, `nand${count}`)}
-    <!-- NAND body: same AND outline plus an output inversion bubble. -->
-    <path d="M0,0 L14,0 C21.732,0 28,6.716 28,15 C28,23.284 21.732,30 14,30 L0,30 Z" class="$cell_id"/>
-    <circle cx="31" cy="15" r="3" class="$cell_id"/>
-${inputPins(count, 0, count === 3 ? -2 : -4)}
-${outputPin(34, 15, 'Y', 'Y', 0)}
-  </g>
-`;
-        const orTemplate = (count) => `
-  <g s:type="openroad_or${count}" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_or${count}"/>
-${nodeLabel(15, `or${count}`)}
-    <!-- OR body: two arcs form the curved input side and curved output side. -->
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-${inputPins(count, 3)}
-${outputPin(30, 15, 'Y', 'Y', 0)}
-  </g>
-`;
-        const norTemplate = (count) => `
-  <g s:type="openroad_nor${count}" transform="translate(0,0)" s:width="37" s:height="30">
-    <s:alias val="openroad_nor${count}"/>
-${nodeLabel(18.5, `nor${count}`)}
-    <!-- NOR body: same OR outline plus an output inversion bubble. -->
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="34" cy="15" r="3" class="$cell_id"/>
-${inputPins(count, 3)}
-${outputPin(37, 15, 'Y', 'Y', 0)}
-  </g>
-`;
-        const xorTemplate = (count) => `
-  <g s:type="openroad_xor${count}" transform="translate(0,0)" s:width="33" s:height="30">
-    <s:alias val="openroad_xor${count}"/>
-${nodeLabel(16.5, `xor${count}`)}
-    <!-- XOR body: OR outline plus the extra curved input stroke. -->
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-${inputPins(count)}
-${outputPin(33, 15, 'Y', 'Y', 0)}
-  </g>
-`;
-        const xnorTemplate = (count) => `
-  <g s:type="openroad_xnor${count}" transform="translate(0,0)" s:width="40" s:height="30">
-    <s:alias val="openroad_xnor${count}"/>
-${nodeLabel(20, `xnor${count}`)}
-    <!-- XNOR body: XOR outline plus an output inversion bubble. -->
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="37" cy="15" r="3" class="$cell_id"/>
-${inputPins(count)}
-${outputPin(40, 15, 'Y', 'Y', 0)}
-  </g>
-`;
-        const bufferTemplate = `
-  <g s:type="openroad-buffer" transform="translate(0,0)" s:width="30" s:height="20">
-    <s:alias val="openroad_buffer"/>
-${nodeLabel(10, 'buffer')}
-    <!-- Buffer body: triangle. -->
-    <path d="M0,0 L0,20 L20,10 Z" class="$cell_id"/>
-${portPin(0, 10, 'A', 'A', 'end', 'left', -3)}
-${outputPin(20, 10, 'Y', 'Y', 0)}
-  </g>
-`;
-        const inverterTemplate = `
-  <g s:type="openroad-inverter" transform="translate(0,0)" s:width="25" s:height="20">
-    <s:alias val="openroad_inverter"/>
-${nodeLabel(12.5, 'inverter')}
-    <!-- Inverter body: triangle plus an output inversion bubble. -->
-    <path d="M0,0 L0,20 L20,10 Z" class="$cell_id"/>
-    <circle cx="23" cy="10" r="3" class="$cell_id"/>
-${portPin(0, 10, 'A', 'A', 'end', 'left', -3)}
-${outputPin(25, 10, 'Y', 'Y', 0)}
-  </g>
-`;
-        const dffTemplate = `
-  <g s:type="openroad_dff" transform="translate(0,0)" s:width="46" s:height="44">
-    <s:alias val="openroad_dff"/>
-${nodeLabel(23, 'dff')}
-    <!-- Register body plus a closed edge-triggered clock triangle on CK. -->
-    <rect x="0" y="0" width="46" height="44" class="$cell_id"/>
-    <path d="M0,30 L7,34 L0,38 Z" class="$cell_id" style="stroke-linejoin:miter;"/>
-${portPin(0, 12, 'D', 'D', 'end', 'left', -3)}
-${portPin(0, 34, 'CK', 'CK', 'end', 'left', -3)}
-${outputPin(46, 12, 'Q')}
-${outputPin(46, 32, 'QN')}
-  </g>
-`;
-        const dffrTemplate = `
-  <g s:type="openroad_dffr" transform="translate(0,0)" s:width="50" s:height="54">
-    <s:alias val="openroad_dffr"/>
-${nodeLabel(25, 'dffr')}
-    <!-- Resettable register: DFF body plus active-low RN bubble. -->
-    <rect x="0" y="0" width="50" height="54" class="$cell_id"/>
-    <path d="M0,24 L7,28 L0,32 Z" class="$cell_id" style="stroke-linejoin:miter;"/>
-    <circle cx="3" cy="44" r="3" class="$cell_id"/>
-${portPin(0, 12, 'D', 'D', 'end', 'left', -3)}
-${portPin(0, 28, 'CK', 'CK', 'end', 'left', -3)}
-${portPin(0, 44, 'RN', 'RN', 'end', 'left', -3)}
-${outputPin(50, 12, 'Q')}
-${outputPin(50, 34, 'QN')}
-  </g>
-`;
-        const dffsTemplate = `
-  <g s:type="openroad_dffs" transform="translate(0,0)" s:width="50" s:height="54">
-    <s:alias val="openroad_dffs"/>
-${nodeLabel(25, 'dffs')}
-    <!-- Settable register: DFF body plus active-low SN bubble. -->
-    <rect x="0" y="0" width="50" height="54" class="$cell_id"/>
-    <path d="M0,24 L7,28 L0,32 Z" class="$cell_id" style="stroke-linejoin:miter;"/>
-    <circle cx="3" cy="44" r="3" class="$cell_id"/>
-${portPin(0, 12, 'D', 'D', 'end', 'left', -3)}
-${portPin(0, 28, 'CK', 'CK', 'end', 'left', -3)}
-${portPin(0, 44, 'SN', 'SN', 'end', 'left', -3)}
-${outputPin(50, 12, 'Q')}
-${outputPin(50, 34, 'QN')}
-  </g>
-`;
-        const gateTemplates = [2, 3, 4]
-            .map((count) =>
-                andTemplate(count)
-                + nandTemplate(count)
-                + orTemplate(count)
-                + norTemplate(count)
-                + xorTemplate(count)
-                + xnorTemplate(count))
-            .join('');
-        return skin.slice(0, closingSvg)
-             + bufferTemplate
-             + inverterTemplate
-             + dffTemplate
-             + dffrTemplate
-             + dffsTemplate
-             + gateTemplates
-             + skin.slice(closingSvg);
-    }
-
     async initNetlistSVG() {
         try {
             if (!window.netlistsvg) {
@@ -655,17 +463,16 @@ ${outputPin(50, 34, 'QN')}
             }
             this.netlistsvg = window.netlistsvg;
 
-            // The bundle passes skinData to onml.p() which expects a raw XML
-            // string — not a DOMParser Document.  Fetch the skin as plain text.
-            let skin = this.netlistsvg.digitalSkin || this.netlistsvg.defaultSkin;
-            if (!skin || typeof skin !== 'string') {
-                const resp = await fetch('https://unpkg.com/netlistsvg/lib/default.svg');
-                if (!resp.ok) {
-                    throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
-                }
-                skin = await resp.text();
+            // Load OpenROAD's custom skin (served as a local asset).  It defines
+            // proper gate symbols with correctly-placed ports and instance-name
+            // labels; renderNetlist() rewrites cell types to match it (see
+            // canonicalizeForSkin).  render() passes the skin to onml.p(), which
+            // expects a raw XML string, so fetch it as text.
+            const resp = await fetch('openroad_skin.svg');
+            if (!resp.ok) {
+                throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
             }
-            this.skin = this._addOpenRoadSkinSymbols(skin);
+            this.skin = await resp.text();
             this._netlistsvgReady = true;
             console.log('NetlistSVG ready.');
         } catch (err) {
@@ -716,7 +523,7 @@ ${outputPin(50, 34, 'QN')}
                 }));
     }
 
-    _schematicDepths() {  //reads the fanin/fanout input boxes.
+    _schematicDepths() {
         const faninRaw = parseInt(
             this.controls.querySelector('#schematic-fanin-depth').value,
             10);
@@ -819,7 +626,6 @@ ${outputPin(50, 34, 'QN')}
         return value;
     }
 
-    //keeps existing cells, adds new cells, merges ports/netnames, and remaps net IDs.
     _mergeSchematicNetlists(baseNetlist, addedNetlist) {
         const baseTop = this._topModule(baseNetlist);
         const addedTop = this._topModule(addedNetlist);
@@ -895,17 +701,18 @@ ${outputPin(50, 34, 'QN')}
                     copiedCell.connections,
                     bitRemap);
             }
-            if (copiedCell.attributes
-                && copiedCell.attributes.openroad_symbol_connections) {
-                copiedCell.attributes.openroad_symbol_connections
-                    = this._remapSchematicBits(
-                        copiedCell.attributes.openroad_symbol_connections,
-                        bitRemap);
-            }
             mergedTop.cells[cellName] = copiedCell;
         }
 
         return merged;
+    }
+
+    _isSymbolView() {
+        return this.controls.querySelector('#schematic-view-style').value !== 'boxes';
+    }
+
+    _netlistForView(yosysJson) {
+        return this._isSymbolView() ? canonicalizeForSkin(yosysJson) : yosysJson;
     }
 
     setStatus(msg) {
@@ -914,196 +721,197 @@ ${outputPin(50, 34, 'QN')}
 
     // ── Render ───────────────────────────────────────────────────────────────
 
-    _isSymbolView() {
-        return this.controls.querySelector('#schematic-view-style').value !== 'boxes';
-    }
-
-    _netlistForView(yosysJson) {
-        if (this._isSymbolView()) {
-            const cells = yosysJson.modules && yosysJson.modules.top
-                        && yosysJson.modules.top.cells || {};
-            if (!Object.values(cells).some((cell) =>
-                    cell.attributes && cell.attributes.openroad_symbol_type)) {
-                return yosysJson;
-            }
-
-            const netlist = JSON.parse(JSON.stringify(yosysJson));
-            const symbolCells = netlist.modules && netlist.modules.top
-                              && netlist.modules.top.cells || {};
-            for (const cell of Object.values(symbolCells)) {
-                const attributes = cell.attributes || {};
-                if (!attributes.openroad_symbol_type) {
-                    continue;
-                }
-
-                attributes.openroad_master = cell.type;
-                cell.type = attributes.openroad_symbol_type;
-                cell.port_directions = attributes.openroad_symbol_port_directions || {};
-                cell.connections = attributes.openroad_symbol_connections || {};
-            }
-            return netlist;
-        }
-
-        // The backend normalizes supported Liberty cells to NetlistSVG symbol
-        // types. Restore the physical master and pin names for users who prefer
-        // the original generic-box representation.
-        const netlist = JSON.parse(JSON.stringify(yosysJson));
-        const cells = netlist.modules && netlist.modules.top
-                    && netlist.modules.top.cells || {};
-        for (const cell of Object.values(cells)) {
-            const attributes = cell.attributes || {};
-            if (!attributes.openroad_master) {
-                continue;
-            }
-
-            const inputPorts = Array.isArray(attributes.openroad_input_ports)
-                ? attributes.openroad_input_ports
-                : [attributes.openroad_input_port || 'A'];
-            const normalizedInputPorts = Array.isArray(attributes.openroad_normalized_input_ports)
-                ? attributes.openroad_normalized_input_ports
-                : inputPorts.map((_, index) => inputPorts.length === 1 ? 'A' : `A${index + 1}`);
-            const outputPorts = Array.isArray(attributes.openroad_output_ports)
-                ? attributes.openroad_output_ports
-                : [attributes.openroad_output_port || 'Y'];
-            const normalizedOutputPorts = Array.isArray(attributes.openroad_normalized_output_ports)
-                ? attributes.openroad_normalized_output_ports
-                : outputPorts.map((_, index) => index === 0 ? 'Y' : `Y${index + 1}`);
-
-            cell.type = attributes.openroad_master;
-            const portDirections = {};
-            const connections = {};
-            inputPorts.forEach((inputPort, index) => {
-                const normalizedPort = normalizedInputPorts[index]
-                    || (inputPorts.length === 1 ? 'A' : `A${index + 1}`);
-                const inputConnection = cell.connections && cell.connections[normalizedPort];
-                if (inputConnection) {
-                    portDirections[inputPort] = 'input';
-                    connections[inputPort] = inputConnection;
-                }
-            });
-            outputPorts.forEach((outputPort, index) => {
-                const normalizedPort = normalizedOutputPorts[index]
-                    || (index === 0 ? 'Y' : `Y${index + 1}`);
-                const outputConnection = cell.connections && cell.connections[normalizedPort];
-                if (outputConnection) {
-                    portDirections[outputPort] = 'output';
-                    connections[outputPort] = outputConnection;
-                }
-            });
-            cell.port_directions = portDirections;
-            cell.connections = connections;
-        }
-        return netlist;
-    }
-
     _cellGroupForInstance(instName) {
-        if (!this._svgEl) {
+        if (!this._svgEl || !instName) {
             return null;
         }
 
         const prefixed = 'cell_' + instName;
-        return this._svgEl.querySelector(`#${CSS.escape(prefixed)}`)
-            || this._svgEl.querySelector(`#${CSS.escape(instName)}`)
-            || this._closestGroup(
-                this._svgEl.querySelector(`.${CSS.escape(prefixed)}`));
+        const byId =
+            this._svgEl.querySelector(`#${CSS.escape(prefixed)}`)
+            || this._svgEl.querySelector(`#${CSS.escape(instName)}`);
+        if (byId) {
+            return this._closestGroup(byId) || byId;
+        }
+
+        const byClass =
+            this._svgEl.querySelector(`.${CSS.escape(prefixed)}`)
+            || this._svgEl.querySelector(`.${CSS.escape(instName)}`);
+        return byClass ? this._closestGroup(byClass) : null;
     }
 
-    _cellClassIdsForGroup(group) {
-        const ids = new Set();
+    _cellClassIdsForGroup(group, instName) {
+        const cellIds = new Set();
         if (!group) {
-            return ids;
+            return cellIds;
         }
-
-        const visit = (el) => {
-            const classAttr = el.getAttribute && el.getAttribute('class');
-            if (!classAttr) {
-                return;
-            }
-            for (const token of classAttr.split(/\s+/)) {
-                if (token.startsWith('cell_')) {
-                    ids.add(token);
-                }
-            }
-        };
-
-        visit(group);
-        for (const el of group.querySelectorAll('[class]')) {
-            visit(el);
+        const prefixed = 'cell_' + instName;
+        if (group.id && (group.id === prefixed || group.id === instName)) {
+            cellIds.add(group.id);
         }
-        return ids;
+        const classAttr = group.getAttribute && group.getAttribute('class');
+        if (classAttr) {
+            classAttr.split(/\s+/)
+                .filter(Boolean)
+                .filter((token) => token === prefixed || token === instName)
+                .forEach((token) => cellIds.add(token));
+        }
+        return cellIds;
     }
 
     _hitElementsForCell(group, cellIds) {
-        const elements = new Set();
-        const addShapeElements = (root) => {
-            if (!root) {
-                return;
-            }
-            const tagName = root.tagName && root.tagName.toLowerCase();
-            if (['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line'].includes(tagName)) {
-                elements.add(root);
-            }
-            if (root.querySelectorAll) {
-                for (const el of root.querySelectorAll(
-                    'path,rect,circle,ellipse,polygon,polyline,line')) {
-                    elements.add(el);
-                }
-            }
-        };
-
-        addShapeElements(group);
+        const hitElements = new Set();
+        const shapeSelector = 'path,rect,circle,ellipse,polygon,polyline,line';
+        if (group) {
+            group.querySelectorAll(shapeSelector)
+                .forEach((el) => hitElements.add(el));
+        }
         for (const cellId of cellIds) {
-            for (const el of this._svgEl.querySelectorAll(`.${CSS.escape(cellId)}`)) {
-                addShapeElements(el);
-            }
+            this._svgEl.querySelectorAll(`.${CSS.escape(cellId)}`)
+                .forEach((el) => {
+                    if (el.matches(shapeSelector)) {
+                        hitElements.add(el);
+                    }
+                    el.querySelectorAll(shapeSelector)
+                        .forEach((shape) => hitElements.add(shape));
+                });
         }
-
-        if (elements.size === 0 && group) {
-            elements.add(group);
+        if (hitElements.size === 0 && group) {
+            hitElements.add(group);
         }
-        return [...elements];
+        return Array.from(hitElements);
     }
 
     _registerSvgCellHitRecord(instName, group) {
-        const cellIds = new Set([`cell_${instName}`, instName]);
-        if (group && group.id) {
-            cellIds.add(group.id);
+        if (!this._svgEl || !instName || !group) {
+            return;
         }
-        for (const classId of this._cellClassIdsForGroup(group)) {
-            cellIds.add(classId);
-        }
+
+        const prefixed = 'cell_' + instName;
+        const cellIds = this._cellClassIdsForGroup(group, instName);
+        cellIds.add(prefixed);
+        cellIds.add(instName);
 
         for (const cellId of cellIds) {
             this._svgIdToInstName.set(cellId, instName);
         }
 
-        let hitGroup = group;
-        if (!hitGroup) {
-            for (const cellId of cellIds) {
-                hitGroup = this._cellGroupForSvgId(cellId);
-                if (hitGroup) {
-                    break;
-                }
-            }
-        }
-
-        const hitElements = this._hitElementsForCell(hitGroup, cellIds);
-        if (hitElements.length === 0) {
-            return;
-        }
-
+        const hitElements = this._hitElementsForCell(group, cellIds);
         this._svgCellHitRecords.push({
             instName,
-            cellId: [...cellIds][0],
-            group: hitGroup,
+            cellId: Array.from(cellIds)[0] || prefixed,
+            group,
             hitElements,
         });
     }
 
-    _openRoadPortLabelMap(cell) {
-        const attributes = cell.attributes || {};
-        const labels = new Map();
+    async renderNetlist(yosysJson) {
+        try {
+            this.setStatus('Rendering…');
+            this._currentNetlist = yosysJson;
 
+            // Debug aid: the last netlist rendered is exposed so it can be
+            // captured for the offline render preview tool
+            // (src/web/test/visual). In DevTools:
+            //   copy(JSON.stringify(window.__lastSchematic))
+            if (typeof window !== 'undefined') window.__lastSchematic = yosysJson;
+
+            // Rewrite recognised logic gates to the canonical types our custom
+            // skin draws (proper gate symbols with correctly-placed ports), so
+            // netlistsvg renders and routes them natively.
+            const renderJson = this._netlistForView(yosysJson);
+
+            // netlistsvg.render() is Promise-based in v1.x (async ELK layout),
+            // but older versions used a callback: render(skin, json, done).
+            // Support both so the widget works with either bundle.
+            let svgString;
+            const result = this.netlistsvg.render(this.skin, renderJson);
+            if (result && typeof result.then === 'function') {
+                // Promise-based (v1.x)
+                svgString = await result;
+            } else {
+                // Callback-based (older); wrap in a Promise
+                svgString = await new Promise((resolve, reject) => {
+                    this.netlistsvg.render(this.skin, renderJson, (err, svg) => {
+                        if (err) reject(err); else resolve(svg);
+                    });
+                });
+            }
+
+            if (typeof svgString !== 'string' || !svgString.includes('<svg')) {
+                throw new Error('render() did not return a valid SVG string');
+            }
+
+            // Inject SVG into the viewport
+            this._selectedCell = null;
+            this.controls.querySelector('#schematic-zoom-to').disabled = true;
+            this._svgIdToInstName.clear();
+            this._svgCellHitRecords = [];
+            this.svgContainer.innerHTML = svgString;
+            this._svgEl = this.svgContainer.querySelector('svg');
+            this._scopeSkinStyles();
+            const symbolView = this._isSymbolView();
+            if (symbolView) {
+                this._ensureOpenRoadSymbolLabels(renderJson);
+                this._layoutInstanceLabels(renderJson);
+                this._padSvgToContent();
+            }
+
+            // Build SVG-id → ODB instance-name map.
+            // netlistsvg renders each cell with id="cell_<instName>", so we
+            // check each known instance name against that pattern.
+            const cells = yosysJson.modules && yosysJson.modules.top
+                        && yosysJson.modules.top.cells || {};
+            for (const instName of Object.keys(cells)) {
+                this._registerSvgCellHitRecord(
+                    instName,
+                    this._cellGroupForInstance(instName));
+            }
+            if (this._svgEl) {
+                // Remove any CSS size constraints — transform-based zoom handles sizing
+                this._svgEl.style.maxWidth = '';
+                this._svgEl.style.height = '';
+                this._svgEl.style.display = 'block';
+            }
+
+            // Reset to identity, then fit once the browser has fully painted
+            // the SVG. Two rAFs are used: the first lets the DOM update, the
+            // second lets the layout engine commit real text dimensions.
+            this._scale = 1;
+            this._panX = 0;
+            this._panY = 0;
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (symbolView) {
+                    this._layoutInstanceLabels(renderJson);
+                    this._padSvgToContent();
+                }
+                this.fitView();
+            }));
+
+            const cellCount = Object.keys(yosysJson.modules.top.cells).length;
+            this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);
+        } catch (err) {
+            console.error('NetlistSVG render failed:', err);
+            this.setStatus(`Render error: ${err.message || err}`);
+        }
+    }
+
+    _svgSkinAttribute(el, attrName) {
+        const netlistsvgNS = 'https://github.com/nturley/netlistsvg';
+        return el.getAttribute(`s:${attrName}`)
+            || el.getAttributeNS(netlistsvgNS, attrName);
+    }
+
+    _openRoadPortLabelMap(cell) {
+        const labels = new Map();
+        if (cell.port_labels && typeof cell.port_labels === 'object') {
+            for (const [symbolPort, realPort] of Object.entries(cell.port_labels)) {
+                labels.set(symbolPort, realPort);
+            }
+            return labels;
+        }
+
+        const attributes = cell.attributes || {};
         const inputPorts = Array.isArray(attributes.openroad_input_ports)
             ? attributes.openroad_input_ports
             : (attributes.openroad_input_port ? [attributes.openroad_input_port] : []);
@@ -1114,27 +922,12 @@ ${outputPin(50, 34, 'QN')}
 
         if (attributes.openroad_output_port) {
             labels.set('Y', attributes.openroad_output_port);
-            if (attributes.openroad_symbol_connections
-                && Object.prototype.hasOwnProperty.call(
-                    attributes.openroad_symbol_connections,
-                    'Q')) {
-                labels.set('Q', attributes.openroad_output_port);
-            }
+            labels.set('Q', attributes.openroad_output_port);
         }
-
-        if (attributes.openroad_data_port) {
-            labels.set('D', attributes.openroad_data_port);
-        }
-        if (attributes.openroad_clock_port) {
-            labels.set('CK', attributes.openroad_clock_port);
-        }
-        if (attributes.openroad_clear_port) {
-            labels.set('RN', attributes.openroad_clear_port);
-        }
-        if (attributes.openroad_preset_port) {
-            labels.set('SN', attributes.openroad_preset_port);
-        }
-
+        if (attributes.openroad_data_port) labels.set('D', attributes.openroad_data_port);
+        if (attributes.openroad_clock_port) labels.set('CK', attributes.openroad_clock_port);
+        if (attributes.openroad_clear_port) labels.set('RN', attributes.openroad_clear_port);
+        if (attributes.openroad_preset_port) labels.set('SN', attributes.openroad_preset_port);
         return labels;
     }
 
@@ -1144,19 +937,11 @@ ${outputPin(50, 34, 'QN')}
     }
 
     _textAnchorForLabel(label) {
-        if (label.style.textAnchor) {
-            return label.style.textAnchor;
-        }
+        if (label.style.textAnchor) return label.style.textAnchor;
         const textAnchor = label.getAttribute('text-anchor');
-        if (textAnchor) {
-            return textAnchor;
-        }
-        if (label.classList.contains('inputPortLabel')) {
-            return 'end';
-        }
-        if (label.classList.contains('nodelabel')) {
-            return 'middle';
-        }
+        if (textAnchor) return textAnchor;
+        if (label.classList.contains('inputPortLabel')) return 'end';
+        if (label.classList.contains('nodelabel')) return 'middle';
         return 'start';
     }
 
@@ -1189,7 +974,8 @@ ${outputPin(50, 34, 'QN')}
             // Fall back to an estimate in tests and during early SVG layout.
         }
 
-        const fontSize = parseFloat(label.style.fontSize || label.getAttribute('font-size') || '5') || 5;
+        const fontSize = parseFloat(
+            label.style.fontSize || label.getAttribute('font-size') || '10') || 10;
         const text = label.textContent || '';
         const width = Math.max(text.length, 1) * fontSize * 0.65;
         const height = fontSize;
@@ -1229,11 +1015,8 @@ ${outputPin(50, 34, 'QN')}
             };
         } finally {
             for (const [label, display] of hiddenText) {
-                if (display === null) {
-                    label.removeAttribute('display');
-                } else {
-                    label.setAttribute('display', display);
-                }
+                if (display === null) label.removeAttribute('display');
+                else label.setAttribute('display', display);
             }
         }
     }
@@ -1255,9 +1038,7 @@ ${outputPin(50, 34, 'QN')}
     _portMarkerPosition(marker) {
         let x = this._parseSvgNumber(this._svgSkinAttribute(marker, 'x'));
         let y = this._parseSvgNumber(this._svgSkinAttribute(marker, 'y'));
-        if (x !== null && y !== null) {
-            return { x, y };
-        }
+        if (x !== null && y !== null) return { x, y };
 
         const transform = marker.getAttribute('transform') || '';
         const match = transform.match(
@@ -1279,12 +1060,8 @@ ${outputPin(50, 34, 'QN')}
         const pinInsideY = pin.y >= bodyBounds.y && pin.y <= bodyBounds.bottom;
         const edgeTolerance = 1;
 
-        if (pinInsideX && pin.y <= bodyBounds.y + edgeTolerance) {
-            return 'top';
-        }
-        if (pinInsideX && pin.y >= bodyBounds.bottom - edgeTolerance) {
-            return 'bottom';
-        }
+        if (pinInsideX && pin.y <= bodyBounds.y + edgeTolerance) return 'top';
+        if (pinInsideX && pin.y >= bodyBounds.bottom - edgeTolerance) return 'bottom';
         if (!pinInsideY) {
             return Math.abs(pin.x - centerX) > Math.abs(pin.y - centerY)
                 ? (pin.x < centerX ? 'left' : 'right')
@@ -1293,16 +1070,51 @@ ${outputPin(50, 34, 'QN')}
         return pin.x < centerX ? 'left' : 'right';
     }
 
-    _positionOpenRoadPortLabel(group, label, normalizedPort) {
+    _ensureOpenRoadPortLabelElement(group, normalizedPort) {
+        const existing = group.querySelector(
+            `text[data-openroad-port="${CSS.escape(normalizedPort)}"]`);
+        if (existing) return existing;
+
         const marker = this._portMarkerForLabel(group, normalizedPort);
-        if (!marker) {
-            return false;
+        if (!marker) return null;
+
+        let side = 'right';
+        const pin = this._portMarkerPosition(marker);
+        if (pin) {
+            try {
+                side = this._openRoadPortLabelSide(pin, this._groupBoundsWithoutText(group));
+            } catch (_) {
+                side = 'right';
+            }
         }
 
-        const pin = this._portMarkerPosition(marker);
-        if (!pin) {
-            return false;
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('data-openroad-port', normalizedPort);
+        label.setAttribute('data-openroad-port-side', side);
+        if (side === 'left') {
+            label.setAttribute('class', 'inputPortLabel');
+            label.setAttribute('x', '-3');
+            label.setAttribute('y', '-4');
+        } else if (side === 'right') {
+            label.setAttribute('x', '0');
+            label.setAttribute('y', '-4');
+        } else if (side === 'top') {
+            label.setAttribute('x', '0');
+            label.setAttribute('y', '-5');
+        } else {
+            label.setAttribute('x', '0');
+            label.setAttribute('y', '10');
         }
+        marker.appendChild(label);
+        return label;
+    }
+
+    _positionOpenRoadPortLabel(group, label, normalizedPort) {
+        const marker = this._portMarkerForLabel(group, normalizedPort);
+        if (!marker) return false;
+
+        const pin = this._portMarkerPosition(marker);
+        if (!pin) return false;
 
         let side = label.getAttribute('data-openroad-port-side');
         if (!side) {
@@ -1314,11 +1126,8 @@ ${outputPin(50, 34, 'QN')}
         }
 
         let anchor = 'middle';
-        if (side === 'left') {
-            anchor = 'end';
-        } else if (side === 'right') {
-            anchor = 'start';
-        }
+        if (side === 'left') anchor = 'end';
+        else if (side === 'right') anchor = 'start';
 
         const labelIsInsideMarker = marker.contains(label);
         if (labelIsInsideMarker
@@ -1332,15 +1141,10 @@ ${outputPin(50, 34, 'QN')}
 
         let x = pin.x;
         let y = pin.y - 4;
-        if (side === 'left') {
-            x = pin.x - 3;
-        } else if (side === 'right') {
-            x = pin.x + 4;
-        } else if (side === 'top') {
-            y = pin.y - 5;
-        } else if (side === 'bottom') {
-            y = pin.y + 10;
-        }
+        if (side === 'left') x = pin.x - 3;
+        else if (side === 'right') x = pin.x + 4;
+        else if (side === 'top') y = pin.y - 5;
+        else if (side === 'bottom') y = pin.y + 10;
 
         label.setAttribute('x', String(x));
         label.setAttribute('y', String(y));
@@ -1359,23 +1163,16 @@ ${outputPin(50, 34, 'QN')}
         }
 
         const bbox = this._textBBox(label);
-        if (this._rectOverlapArea(bbox, bodyBounds) === 0) {
-            return;
-        }
+        if (this._rectOverlapArea(bbox, bodyBounds) === 0) return;
 
         const gap = 2;
         const side = label.getAttribute('data-openroad-port-side') || 'right';
         let dx = 0;
         let dy = 0;
-        if (side === 'left') {
-            dx = bodyBounds.x - gap - bbox.right;
-        } else if (side === 'right') {
-            dx = bodyBounds.right + gap - bbox.x;
-        } else if (side === 'top') {
-            dy = bodyBounds.y - gap - bbox.bottom;
-        } else if (side === 'bottom') {
-            dy = bodyBounds.bottom + gap - bbox.y;
-        }
+        if (side === 'left') dx = bodyBounds.x - gap - bbox.right;
+        else if (side === 'right') dx = bodyBounds.right + gap - bbox.x;
+        else if (side === 'top') dy = bodyBounds.y - gap - bbox.bottom;
+        else if (side === 'bottom') dy = bodyBounds.bottom + gap - bbox.y;
 
         if (dx !== 0 || dy !== 0) {
             const x = parseFloat(label.getAttribute('x') || '0') || 0;
@@ -1386,37 +1183,32 @@ ${outputPin(50, 34, 'QN')}
     }
 
     _normalizeSchematicPortText() {
-        if (!this._svgEl) {
-            return;
-        }
+        if (!this._svgEl) return;
 
         for (const label of this._svgEl.querySelectorAll('text')) {
-            if (this._isInstanceLabel(label)) {
-                continue;
-            }
-
+            if (this._isInstanceLabel(label)) continue;
             this._stylePortLabel(label);
         }
     }
 
     _updateOpenRoadPortLabels(group, cell) {
         const labels = this._openRoadPortLabelMap(cell);
+        for (const normalizedPort of labels.keys()) {
+            this._ensureOpenRoadPortLabelElement(group, normalizedPort);
+        }
+
         for (const label of group.querySelectorAll('text[data-openroad-port]')) {
             const normalizedPort = label.getAttribute('data-openroad-port');
             label.textContent = labels.get(normalizedPort) || normalizedPort;
             this._stylePortLabel(label);
             const positioned = this._positionOpenRoadPortLabel(group, label, normalizedPort);
             this._stylePortLabel(label);
-            if (!positioned) {
-                this._avoidOpenRoadPortLabelShape(group, label);
-            }
+            if (!positioned) this._avoidOpenRoadPortLabelShape(group, label);
         }
     }
 
     _ensureOpenRoadSymbolLabels(netlist) {
-        if (!this._svgEl) {
-            return;
-        }
+        if (!this._svgEl) return;
 
         const cells = netlist.modules && netlist.modules.top
                     && netlist.modules.top.cells || {};
@@ -1426,17 +1218,13 @@ ${outputPin(50, 34, 'QN')}
         this._normalizeSchematicPortText();
 
         for (const [instName, cell] of Object.entries(cells)) {
-            const attributes = cell.attributes || {};
-            if (!attributes.openroad_master
+            if (!cell.port_labels
                 && (typeof cell.type !== 'string' || !cell.type.startsWith('openroad_'))) {
                 continue;
             }
-            const displayName = attributes.ref || instName;
-
+            const displayName = (cell.attributes && cell.attributes.ref) || instName;
             const group = this._cellGroupForInstance(instName);
-            if (!group) {
-                continue;
-            }
+            if (!group) continue;
 
             let label = null;
             for (const text of group.querySelectorAll('text')) {
@@ -1468,9 +1256,6 @@ ${outputPin(50, 34, 'QN')}
             label.setAttribute('style',
                 'fill:#000;stroke:none;font-size:10px;font-weight:bold;'
                 + 'font-family:"Courier New",monospace;text-anchor:middle;');
-
-            // Move the label to the end so strokes from the symbol or wires do
-            // not paint over it.
             group.appendChild(label);
         }
     }
@@ -1478,9 +1263,7 @@ ${outputPin(50, 34, 'QN')}
     _instanceLabelLines(name) {
         const text = String(name);
         const maxLineChars = 22;
-        if (text.length <= maxLineChars) {
-            return [text];
-        }
+        if (text.length <= maxLineChars) return [text];
 
         const lines = [];
         let remaining = text;
@@ -1492,15 +1275,11 @@ ${outputPin(50, 34, 'QN')}
                     break;
                 }
             }
-            if (breakAt === -1) {
-                breakAt = maxLineChars;
-            }
+            if (breakAt === -1) breakAt = maxLineChars;
             lines.push(remaining.slice(0, breakAt));
             remaining = remaining.slice(breakAt);
         }
-        if (remaining.length > 0) {
-            lines.push(remaining);
-        }
+        if (remaining.length > 0) lines.push(remaining);
         return lines;
     }
 
@@ -1514,12 +1293,6 @@ ${outputPin(50, 34, 'QN')}
             tspan.textContent = line;
             label.appendChild(tspan);
         }
-    }
-
-    _svgSkinAttribute(el, attrName) {
-        const netlistsvgNS = 'https://github.com/nturley/netlistsvg';
-        return el.getAttribute(`s:${attrName}`)
-            || el.getAttributeNS(netlistsvgNS, attrName);
     }
 
     _instanceLabelForGroup(group) {
@@ -1538,11 +1311,8 @@ ${outputPin(50, 34, 'QN')}
         try {
             return group.getBBox();
         } finally {
-            if (oldDisplay === null) {
-                label.removeAttribute('display');
-            } else {
-                label.setAttribute('display', oldDisplay);
-            }
+            if (oldDisplay === null) label.removeAttribute('display');
+            else label.setAttribute('display', oldDisplay);
         }
     }
 
@@ -1560,11 +1330,8 @@ ${outputPin(50, 34, 'QN')}
                 height: rect.height + padding * 2,
             };
         } finally {
-            if (oldDisplay === null) {
-                label.removeAttribute('display');
-            } else {
-                label.setAttribute('display', oldDisplay);
-            }
+            if (oldDisplay === null) label.removeAttribute('display');
+            else label.setAttribute('display', oldDisplay);
         }
     }
 
@@ -1625,18 +1392,8 @@ ${outputPin(50, 34, 'QN')}
         const labelOffset = (this._labelLineCount(label) - 1) * lineHeight;
         const topGap = 14;
         return [
-            {
-                x: centerX,
-                y: bodyBounds.y - topGap - labelOffset,
-                anchor: 'middle',
-                preference: 0,
-            },
-            {
-                x: centerX,
-                y: bodyBounds.y + bodyBounds.height + 14,
-                anchor: 'middle',
-                preference: 12,
-            },
+            { x: centerX, y: bodyBounds.y - topGap - labelOffset, anchor: 'middle', preference: 0 },
+            { x: centerX, y: bodyBounds.y + bodyBounds.height + 14, anchor: 'middle', preference: 12 },
             {
                 x: bodyBounds.x + bodyBounds.width + 10,
                 y: centerY + 4 - labelOffset / 2,
@@ -1649,20 +1406,12 @@ ${outputPin(50, 34, 'QN')}
                 anchor: 'end',
                 preference: 24,
             },
-            {
-                x: centerX,
-                y: centerY + 4 - labelOffset / 2,
-                anchor: 'middle',
-                preference: 80,
-            },
+            { x: centerX, y: centerY + 4 - labelOffset / 2, anchor: 'middle', preference: 80 },
         ];
     }
 
     _wireObstacleRects(cellGroups) {
-        if (!this._svgEl) {
-            return [];
-        }
-
+        if (!this._svgEl) return [];
         const insideCell = (element) =>
             cellGroups.some((group) => group.contains(element));
 
@@ -1681,27 +1430,18 @@ ${outputPin(50, 34, 'QN')}
     }
 
     _layoutInstanceLabels(netlist) {
-        if (!this._svgEl) {
-            return;
-        }
+        if (!this._svgEl) return;
 
         const cells = netlist.modules && netlist.modules.top
                     && netlist.modules.top.cells || {};
         const records = [];
         for (const instName of Object.keys(cells)) {
             const group = this._cellGroupForInstance(instName);
-            if (!group) {
-                continue;
-            }
+            if (!group) continue;
             const label = this._instanceLabelForGroup(group);
-            if (label) {
-                records.push({ group, label });
-            }
+            if (label) records.push({ group, label });
         }
-
-        if (records.length === 0) {
-            return;
-        }
+        if (records.length === 0) return;
 
         const cellGroups = records.map(({ group }) => group);
         const wireRects = this._wireObstacleRects(cellGroups);
@@ -1712,13 +1452,8 @@ ${outputPin(50, 34, 'QN')}
             .filter((rect) => rect.width > 0 && rect.height > 0);
         for (const record of records) {
             try {
-                const rect = this._groupScreenRectWithoutLabel(
-                    record.group,
-                    record.label,
-                    5);
-                if (rect.width > 0 && rect.height > 0) {
-                    occupiedRects.push(rect);
-                }
+                const rect = this._groupScreenRectWithoutLabel(record.group, record.label, 5);
+                if (rect.width > 0 && rect.height > 0) occupiedRects.push(rect);
             } catch (_) {
                 // Ignore groups that cannot be measured yet.
             }
@@ -1748,15 +1483,9 @@ ${outputPin(50, 34, 'QN')}
                 const overlap = occupiedRects.reduce(
                     (sum, occupied) => sum + this._rectOverlapArea(rect, occupied),
                     0);
-                const score = wireOverlap * 1000
-                    + overlap * 100
-                    + candidate.preference;
-                if (!best || score < best.score) {
-                    best = { candidate, score };
-                }
-                if (wireOverlap === 0
-                    && overlap === 0
-                    && score === candidate.preference) {
+                const score = wireOverlap * 1000 + overlap * 100 + candidate.preference;
+                if (!best || score < best.score) best = { candidate, score };
+                if (wireOverlap === 0 && overlap === 0 && score === candidate.preference) {
                     break;
                 }
             }
@@ -1779,10 +1508,7 @@ ${outputPin(50, 34, 'QN')}
             return bounds;
         }
 
-        if (!bounds) {
-            return { ...rect };
-        }
-
+        if (!bounds) return { ...rect };
         bounds.x = Math.min(bounds.x, rect.x);
         bounds.y = Math.min(bounds.y, rect.y);
         bounds.right = Math.max(bounds.right, rect.right);
@@ -1792,11 +1518,7 @@ ${outputPin(50, 34, 'QN')}
 
     _screenRectToSvgRect(screenRect) {
         const ctm = this._svgEl && this._svgEl.getScreenCTM();
-        if (!ctm
-            || screenRect.width <= 0
-            || screenRect.height <= 0) {
-            return null;
-        }
+        if (!ctm || screenRect.width <= 0 || screenRect.height <= 0) return null;
 
         try {
             const inverse = ctm.inverse();
@@ -1813,7 +1535,6 @@ ${outputPin(50, 34, 'QN')}
             });
             const xs = corners.map((corner) => corner.x);
             const ys = corners.map((corner) => corner.y);
-
             return {
                 x: Math.min(...xs),
                 y: Math.min(...ys),
@@ -1855,7 +1576,6 @@ ${outputPin(50, 34, 'QN')}
             });
             const xs = corners.map((corner) => corner.x);
             const ys = corners.map((corner) => corner.y);
-
             return {
                 x: Math.min(...xs),
                 y: Math.min(...ys),
@@ -1877,9 +1597,7 @@ ${outputPin(50, 34, 'QN')}
     }
 
     _openRoadLabelBounds() {
-        if (!this._svgEl) {
-            return null;
-        }
+        if (!this._svgEl) return null;
 
         let bounds = null;
         for (const label of this._svgEl.querySelectorAll('text[data-openroad-label="instance"]')) {
@@ -1914,9 +1632,7 @@ ${outputPin(50, 34, 'QN')}
     }
 
     _svgContentBoundsFromSvgBBox() {
-        if (!this._svgEl) {
-            return null;
-        }
+        if (!this._svgEl) return null;
 
         const selectors = [
             'g[id^="cell_"]',
@@ -1937,9 +1653,7 @@ ${outputPin(50, 34, 'QN')}
     }
 
     _svgContentBoundsFromScreen() {
-        if (!this._svgEl) {
-            return null;
-        }
+        if (!this._svgEl) return null;
 
         const selectors = [
             'g[id^="cell_"]',
@@ -1962,9 +1676,7 @@ ${outputPin(50, 34, 'QN')}
     }
 
     _padSvgToContent() {
-        if (!this._svgEl) {
-            return;
-        }
+        if (!this._svgEl) return;
 
         try {
             let bounds = null;
@@ -1975,14 +1687,10 @@ ${outputPin(50, 34, 'QN')}
                 right: bbox.x + bbox.width,
                 bottom: bbox.y + bbox.height,
             });
-            // This is the clipping guard: include rendered text bounds, then
-            // grow the SVG viewBox when names extend past the original SVG.
             bounds = this._unionSvgRect(bounds, this._svgContentBoundsFromSvgBBox());
             bounds = this._unionSvgRect(bounds, this._openRoadLabelBounds());
             bounds = this._unionSvgRect(bounds, this._svgContentBoundsFromScreen());
-            if (!bounds) {
-                return;
-            }
+            if (!bounds) return;
 
             const padding = 32;
             const x = Math.floor(bounds.x - padding);
@@ -2000,83 +1708,35 @@ ${outputPin(50, 34, 'QN')}
         }
     }
 
-    async renderNetlist(yosysJson) {
-        try {
-            this.setStatus('Rendering…');
-            this._currentNetlist = yosysJson;
-            const renderJson = this._netlistForView(yosysJson);
-
-            // netlistsvg.render() is Promise-based in v1.x (async ELK layout),
-            // but older versions used a callback: render(skin, json, done).
-            // Support both so the widget works with either bundle.
-            let svgString;
-            const result = this.netlistsvg.render(this.skin, renderJson);
-            if (result && typeof result.then === 'function') {
-                // Promise-based (v1.x)
-                svgString = await result;
-            } else {
-                // Callback-based (older); wrap in a Promise
-                svgString = await new Promise((resolve, reject) => {
-                    this.netlistsvg.render(this.skin, renderJson, (err, svg) => {
-                        if (err) reject(err); else resolve(svg);
-                    });
-                });
-            }
-
-            if (typeof svgString !== 'string' || !svgString.includes('<svg')) {
-                throw new Error('render() did not return a valid SVG string');
-            }
-
-            // Inject SVG into the viewport
-            this._selectedCell = null;
-            this.controls.querySelector('#schematic-zoom-to').disabled = true;
-            this._svgIdToInstName.clear();
-            this._svgCellHitRecords = [];
-            this.svgContainer.innerHTML = svgString;
-            this._svgEl = this.svgContainer.querySelector('svg');
-            const symbolView = this._isSymbolView();
-            if (symbolView) {
-                this._ensureOpenRoadSymbolLabels(renderJson);
-                this._layoutInstanceLabels(renderJson);
-                this._padSvgToContent();
-            }
-
-            // Build SVG-id → ODB instance-name map.
-            // netlistsvg renders each cell with id="cell_<instName>", so we
-            // check each known instance name against that pattern.
-            const cells = yosysJson.modules && yosysJson.modules.top
-                        && yosysJson.modules.top.cells || {};
-            for (const instName of Object.keys(cells)) {
-                // Try "cell_<instName>" first (netlistsvg default prefix), then
-                // the bare name as a fallback for any other renderer.
-                const group = this._cellGroupForInstance(instName);
-                this._registerSvgCellHitRecord(instName, group);
-            }
-            if (this._svgEl) {
-                // Remove any CSS size constraints — transform-based zoom handles sizing
-                this._svgEl.style.maxWidth = '';
-                this._svgEl.style.height = '';
-                this._svgEl.style.display = 'block';
-            }
-            // Reset to identity, then fit once the browser has fully painted
-            // the SVG. Two rAFs are used: the first lets the DOM update, the
-            // second lets the layout engine commit real text dimensions.
-            this._scale = 1;
-            this._panX = 0;
-            this._panY = 0;
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                if (symbolView) {
-                    this._layoutInstanceLabels(renderJson);
-                    this._padSvgToContent();
+    // netlistsvg's skin embeds a <style> with unscoped element selectors
+    // (e.g. `svg { fill:none; stroke:#000 }`, `text { fill:#000 }`). A <style>
+    // inside an inline SVG is NOT scoped to that SVG -- once injected into the
+    // page its rules apply document-wide, clobbering the fill/stroke of every
+    // other inline-SVG icon in the app (the inspector/ruler buttons rendered as
+    // black, unfilled outlines). Prefix each rule with the widget's container
+    // class so the skin only styles this schematic.
+    _scopeSkinStyles() {
+        if (!this._svgEl) return;
+        const scope = '.schematic-widget';
+        // Recurse so selectors nested inside @media/@supports blocks (which
+        // expose .cssRules but no .selectorText) are scoped too.
+        const scopeRules = (rules) => {
+            for (const rule of rules) {
+                if (rule.selectorText) {
+                    rule.selectorText = scopeCssSelector(rule.selectorText, scope);
+                } else if (rule.cssRules) {
+                    scopeRules(rule.cssRules);
                 }
-                this.fitView();
-            }));
-
-            const cellCount = Object.keys(yosysJson.modules.top.cells).length;
-            this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);
-        } catch (err) {
-            console.error('NetlistSVG render failed:', err);
-            this.setStatus(`Render error: ${err.message || err}`);
+            }
+        };
+        for (const styleEl of this._svgEl.querySelectorAll('style')) {
+            const sheet = styleEl.sheet;
+            if (!sheet) continue;
+            try {
+                scopeRules(sheet.cssRules);
+            } catch (e) {
+                continue;  // Should not happen for same-origin inline styles.
+            }
         }
     }
 }
@@ -2105,33 +1765,34 @@ export function scopeCssSelector(selectorText, scope) {
 
 // ── Skin canonicalization ──────────────────────────────────────────────────
 //
-// The server tags recognised combinational cells with `gate_kind`
-// (and/nand/or/nor/xor/xnor/not/buf, or aoi/oai with `gate_terms`).  Before
-// rendering we rewrite those cells to the canonical gate types drawn by the
-// custom skin (openroad_skin.svg) and remap their pins to the symbol's port ids
-// (A, B, …, Y).  netlistsvg then renders proper gate symbols and routes the
-// wires to the symbol-defined port positions — no overlay or alignment needed.
+// The server tags recognised combinational cells with `gate_kind`. Before
+// rendering we rewrite simple gates to OpenROAD's skin symbols and remap their
+// pins to the symbol's port ids. Compound AOI/OAI cells intentionally stay as
+// labelled boxes so this viewer matches the original OpenROAD schematic style.
 
-// gate_kind -> skin symbol type (a Yosys primitive alias the skin recognises).
+// gate_kind -> OpenROAD skin symbol type for one-input gates.
 const SKIN_SIMPLE_TYPE = {
-    and: '$_AND_', nand: '$_NAND_', or: '$_OR_', nor: '$_NOR_',
-    xor: '$_XOR_', xnor: '$_XNOR_', not: '$_NOT_', buf: '$_BUF_',
+    not: 'openroad_inverter',
+    buf: 'openroad_buffer',
 };
 
-// Compound gate types the skin actually draws.  Unsupported arities are left as
-// labelled generic boxes (which keep the design's real pin names).
-const SKIN_COMPOUND_TYPES = new Set([
-    'aoi21', 'aoi22', 'aoi211', 'aoi221', 'aoi222', 'aoi33',
-    'oai21', 'oai22', 'oai211', 'oai221', 'oai222', 'oai33',
-]);
+const SKIN_GATE_KINDS = new Set(['and', 'nand', 'or', 'nor', 'xor', 'xnor']);
+const SKIN_REGISTER_KINDS = new Set(['dff', 'dffr', 'dffs']);
 
-// Wider (>2-input) basic gates the skin draws, named kind+arity.  2-input gates
-// use the Yosys primitive aliases in SKIN_SIMPLE_TYPE instead.
-const SKIN_MULTI_TYPES = new Set([
-    'and3', 'and4', 'or3', 'or4', 'nand3', 'nand4', 'nor3', 'nor4',
-]);
+function normalizedPortMap(cell) {
+    const ports = cell && cell.gate_ports;
+    if (!ports || typeof ports !== 'object' || Array.isArray(ports)) {
+        return null;
+    }
 
-const PID_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const map = {};
+    for (const [symbolPort, realPort] of Object.entries(ports)) {
+        if (typeof realPort === 'string' && realPort.length > 0) {
+            map[symbolPort] = realPort;
+        }
+    }
+    return Object.keys(map).length > 0 ? map : null;
+}
 
 // Rewrite one cell to a custom-skin gate symbol when it carries a recognised
 // `gate_kind`: set its `type` to the canonical symbol name and remap its
@@ -2153,38 +1814,39 @@ export function canonicalizeCell(cell) {
 
     let type;
     const pidOf = {};  // real pin name -> symbol port id
+    const gatePorts = normalizedPortMap(cell);
 
-    if (kind === 'aoi' || kind === 'oai') {
-        const terms = Array.isArray(cell.gate_terms) ? cell.gate_terms : [];
-        if (!terms.length) return cell;
-        const sizes = terms.map((t) => t.length);
-        type = kind + sizes.slice().sort((a, b) => b - a).join('');
-        if (!SKIN_COMPOUND_TYPES.has(type)) return cell;
-        // Assign input pids term-by-term, smallest term first (so a 1-pin
-        // literal term gets 'A'); matches the symbol's port layout.
-        const ordered = terms.map((t) => t.slice())
-            .sort((a, b) => a.length - b.length);
-        let i = 0;
-        for (const term of ordered) {
-            for (const pin of term) {
-                pidOf[pin] = PID_LETTERS[i] || ('I' + i);
-                i++;
+    const n = inPins.length;
+    if (SKIN_REGISTER_KINDS.has(kind)) {
+        if (!gatePorts) return cell;
+        type = `openroad_${kind}`;
+        for (const [symbolPort, realPort] of Object.entries(gatePorts)) {
+            pidOf[realPort] = symbolPort;
+        }
+    } else if (kind === 'not' || kind === 'buf') {
+        type = SKIN_SIMPLE_TYPE[kind];
+        if (gatePorts) {
+            for (const [symbolPort, realPort] of Object.entries(gatePorts)) {
+                pidOf[realPort] = symbolPort;
             }
+        } else {
+            if (n !== 1) return cell;
+            pidOf[inPins[0]] = 'A';
+        }
+    } else if (SKIN_GATE_KINDS.has(kind)) {
+        if (n < 2 || n > 4) return cell;
+        type = `openroad_${kind}${n}`;
+        if (gatePorts) {
+            for (const [symbolPort, realPort] of Object.entries(gatePorts)) {
+                pidOf[realPort] = symbolPort;
+            }
+        } else {
+            inPins.forEach((pin, idx) => { pidOf[pin] = `A${idx + 1}`; });
         }
     } else {
-        const n = inPins.length;
-        if (kind === 'not' || kind === 'buf') {
-            type = SKIN_SIMPLE_TYPE[kind];          // 1-input
-        } else if (n <= 2) {
-            type = SKIN_SIMPLE_TYPE[kind];          // 2-input Yosys primitive
-        } else {
-            type = kind + n;                        // wider gate, e.g. nand3
-            if (!SKIN_MULTI_TYPES.has(type)) return cell;
-        }
-        if (!type) return cell;
-        inPins.forEach((pin, idx) => { pidOf[pin] = PID_LETTERS[idx] || ('I' + idx); });
+        return cell;
     }
-    if (outPin !== null) pidOf[outPin] = 'Y';
+    if (outPin !== null && !pidOf[outPin]) pidOf[outPin] = 'Y';
 
     const conns = cell.connections || {};
     const newConns = {};
