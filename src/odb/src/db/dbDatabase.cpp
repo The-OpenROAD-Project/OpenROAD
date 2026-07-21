@@ -925,13 +925,18 @@ bool dbDatabase::hasHierarchy() const
 
 bool dbDatabase::hasHierarchicalChip() const
 {
+  return getHierarchicalChip() != nullptr;
+}
+
+dbChip* dbDatabase::getHierarchicalChip() const
+{
   for (dbChip* chip : getChips()) {
     if (chip->getChipType() == dbChip::ChipType::HIER) {
-      return true;
+      return chip;
     }
   }
 
-  return false;
+  return nullptr;
 }
 
 void dbDatabase::read(std::istream& file)

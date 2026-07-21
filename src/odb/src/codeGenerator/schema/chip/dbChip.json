@@ -188,6 +188,12 @@
       "schema": "kSchemaChipTech"
     },
     {
+      "name": "assembly_extraction_rules_file_",
+      "type": "std::string",
+      "flags": ["private"],
+      "schema": "kSchemaChipAssemblyExtractionRulesFile"
+    },
+    {
       "name": "marker_categories_map_",
       "type": "std::unordered_map<std::string, dbId<_dbMarkerCategory>>",
       "flags": ["private", "no-serial"]

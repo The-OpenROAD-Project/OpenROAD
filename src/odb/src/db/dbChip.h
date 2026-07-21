@@ -83,6 +83,7 @@ class _dbChip : public _dbObject
   std::unordered_map<std::string, dbId<_dbChipInst>> chipinsts_map_;
   std::unordered_map<std::string, dbId<_dbChipRegion>> chip_region_map_;
   dbId<_dbTech> tech_;
+  std::string assembly_extraction_rules_file_;
   std::unordered_map<std::string, dbId<_dbMarkerCategory>>
       marker_categories_map_;
   dbTable<_dbProperty>* prop_tbl_;

@@ -115,6 +115,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (tech_ != rhs.tech_) {
     return false;
   }
+  if (assembly_extraction_rules_file_ != rhs.assembly_extraction_rules_file_) {
+    return false;
+  }
   if (*prop_tbl_ != *rhs.prop_tbl_) {
     return false;
   }
@@ -273,6 +276,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(kSchemaChipTech)) {
     stream >> obj.tech_;
   }
+  if (obj.getDatabase()->isSchema(kSchemaChipAssemblyExtractionRulesFile)) {
+    stream >> obj.assembly_extraction_rules_file_;
+  }
   if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
     stream >> *obj.chip_region_tbl_;
   }
@@ -335,6 +341,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.conns_;
   stream << obj.nets_;
   stream << obj.tech_;
+  stream << obj.assembly_extraction_rules_file_;
   stream << *obj.chip_region_tbl_;
   stream << *obj.chip_cap_node_tbl_;
   stream << *obj.chip_r_seg_tbl_;
@@ -380,6 +387,8 @@ void _dbChip::collectMemInfo(MemInfo& info)
 
   info.children["chipinsts_map"].add(chipinsts_map_);
   info.children["chip_region_map"].add(chip_region_map_);
+  info.children["assembly_extraction_rules_file"].add(
+      assembly_extraction_rules_file_);
   info.children["marker_categories_map"].add(marker_categories_map_);
   prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
   chip_region_tbl_->collectMemInfo(info.children["chip_region_tbl_"]);
@@ -658,6 +667,34 @@ dbChip::ChipType dbChip::getChipType() const
 {
   _dbChip* obj = (_dbChip*) this;
   return (dbChip::ChipType) obj->type_;
+}
+
+std::string dbChip::getAssemblyExtractionRulesFile() const
+{
+  _dbChip* chip = (_dbChip*) this;
+
+  if (getChipType() != ChipType::HIER) {
+    chip->getLogger()->error(utl::ODB,
+                             1219,
+                             "The assembly extraction rules file is only "
+                             "available on a hierarchical chip.");
+  }
+
+  return chip->assembly_extraction_rules_file_;
+}
+
+void dbChip::setAssemblyExtractionRulesFile(const std::string& rules_file_path)
+{
+  _dbChip* chip = (_dbChip*) this;
+
+  if (getChipType() != ChipType::HIER) {
+    chip->getLogger()->error(utl::ODB,
+                             1220,
+                             "The assembly extraction rules file can only be "
+                             "set on a hierarchical chip.");
+  }
+
+  chip->assembly_extraction_rules_file_ = rules_file_path;
 }
 
 dbBlock* dbChip::getBlock()

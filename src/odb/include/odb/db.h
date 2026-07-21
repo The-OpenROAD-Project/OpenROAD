@@ -7366,6 +7366,10 @@ class dbChip : public dbObject
 
   dbTech* getTech() const;
 
+  std::string getAssemblyExtractionRulesFile() const;
+
+  void setAssemblyExtractionRulesFile(const std::string& rules_file_path);
+
   Rect getBBox() const;
 
   Cuboid getCuboid() const;
@@ -7700,6 +7704,8 @@ class dbDatabase : public dbObject
   bool hasHierarchy() const;
 
   bool hasHierarchicalChip() const;
+
+  dbChip* getHierarchicalChip() const;
 
   void setTopChip(dbChip* chip);
   ///

@@ -1244,15 +1244,32 @@ proc add_3dblox_alignment_marker_rule { args } {
 }
 
 sta::define_cmd_args "set_extraction_rules_file" {
-    [-tech tech_name] rules_file
+    [-tech tech_name] [-assembly] rules_file
 }
 
 proc set_extraction_rules_file { args } {
   sta::parse_key_args "set_extraction_rules_file" args \
-    keys {-tech} flags {}
+    keys {-tech} flags {-assembly}
   sta::check_argc_eq1 "set_extraction_rules_file" $args
 
   set db [ord::get_db]
+
+  if { [info exists flags(-assembly)] } {
+    if { [info exists keys(-tech)] } {
+      utl::error ODB 1221 "-assembly cannot be used with -tech."
+    }
+
+    set hier_chip [$db getHierarchicalChip]
+
+    if { $hier_chip == "NULL" } {
+      utl::error ODB 481 "Could not set assembly extraction rules file.\
+        No hierarchical chip found."
+    }
+
+    $hier_chip setAssemblyExtractionRulesFile [lindex $args 0]
+    return
+  }
+
   if { [info exists keys(-tech)] } {
     set tech [$db findTech $keys(-tech)]
   } elseif { [$db hasHierarchicalChip] } {
