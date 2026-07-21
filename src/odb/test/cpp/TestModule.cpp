@@ -6,6 +6,7 @@
 #include "helper.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/util.h"
 
 namespace odb {
 namespace {
@@ -235,6 +236,18 @@ class ModuleFixture : public SimpleDbFixture
   dbBlock* block_;
 };
 
+TEST(UtilTest, replaceBracketsPreservesBackslashPairs)
+{
+  EXPECT_EQ(replaceBracketsWithUnderscores(R"(foo\[3\])"), "foo_3_");
+  EXPECT_EQ(replaceBracketsWithUnderscores(R"(foo\\[0])"), R"(foo\\_0_)");
+}
+
+TEST_F(ModuleFixture, getBaseNamePreservesEscapedDelimiters)
+{
+  EXPECT_STREQ(block_->getBaseName(R"(parent/path\/leaf)"), R"(path\/leaf)");
+  EXPECT_STREQ(block_->getBaseName(R"(parent/path\\/leaf)"), "leaf");
+}
+
 TEST_F(ModuleFixture, test_default)
 {
   // dbModule::create() Succeed
@@ -327,6 +340,31 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
   EXPECT_NE(escaped_leaf, "path\\/leaf")
       << "net name must not collide with escaped instance 'path\\/leaf'";
 
+  // Parsed hierarchical instances retain their full block-level names.
+  dbModule* parsed_master = dbModule::create(block_, "parsed_master");
+  dbModInst::create(top, parsed_master, "h0");
+  dbInst::create(
+      block_, lib_->findMaster("and2"), "h0/drvr", false, parsed_master);
+  std::string parsed_leaf = block_->makeNewNetName(
+      parsed_master, "drvr", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(parsed_leaf, "h0/drvr")
+      << "net name must not collide with parsed leaf instance 'h0/drvr'";
+
+  // A concrete top port collides unless it belongs to the candidate net.
+  dbNet* top_port_net = dbNet::create(block_, "top_port_net");
+  ASSERT_NE(top_port_net, nullptr);
+  ASSERT_NE(dbBTerm::create(top_port_net, "top_port"), nullptr);
+  std::string top_port_name = block_->makeNewNetName(
+      top, "top_port", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(top_port_name, "top_port")
+      << "net name must not collide with concrete top port 'top_port'";
+  std::string associated_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               top_port_net);
+  EXPECT_EQ(associated_port_name, "top_port");
+
   // No collision: a fresh name is returned unchanged.
   std::string fresh = block_->makeNewNetName(
       top, "no_collision_here", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
@@ -371,6 +409,16 @@ TEST_F(ModuleFixture, makeNewInstName_avoids_net_collision)
   EXPECT_NE(escaped_hier, "path\\/mod")
       << "instance name must not collide with escaped module instance "
          "'path\\/mod'";
+
+  // Parsed hierarchical instances retain their full block-level names.
+  dbModule* parsed_master = dbModule::create(block_, "parsed_master");
+  dbModInst* parsed_parent = dbModInst::create(top, parsed_master, "h0");
+  dbInst::create(
+      block_, lib_->findMaster("and2"), "h0/drvr", false, parsed_master);
+  std::string parsed_leaf = block_->makeNewInstName(
+      parsed_parent, "drvr", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(parsed_leaf, "h0/drvr")
+      << "instance name must not collide with parsed leaf instance 'h0/drvr'";
 
   // Module port collision: a modbterm named "p1" on the top module.
   dbModBTerm::create(top, "p1");

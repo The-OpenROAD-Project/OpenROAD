@@ -41,7 +41,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/dbUtil.h"
-#include "odb/util.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -390,8 +389,7 @@ dbModNet* dbModNet::create(dbModule* parent_module,
   dbBlock* block = parent_module->getOwner();
   std::string net_name = block->makeNewNetName(
       parent_module, base_name, uniquify, corresponding_flat_net);
-  return create(parent_module,
-                getModuleLocalName(parent_module, net_name.c_str()));
+  return create(parent_module, block->getBaseName(net_name.c_str()));
 }
 
 void dbModNet::destroy(dbModNet* mod_net)

@@ -3883,7 +3883,10 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
 
   auto exists = [this, scope, corresponding_flat_net](const char* name) {
     if (scope != nullptr) {
-      const char* base = getModuleLocalName(scope, name);
+      const char* base = getBaseName(name);
+      dbBTerm* top_bterm = scope == getTopModule() ? findBTerm(base) : nullptr;
+      const bool bterm_collision
+          = top_bterm != nullptr && corresponding_flat_net == nullptr;
       // A net/port name must also be unique against instance names in the
       // scope: a net/port and an instance cannot share a name in one
       // Verilog scope.  OpenROAD can promote an anonymous net ("_NNNNN_")
@@ -3892,8 +3895,9 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
       // with a leaf or hierarchical instance of the same name -- illegal
       // Verilog that Verilator rejects with "Instance has the same name
       // as port".
-      if (scope->getModNet(base) || scope->findModBTerm(base)
-          || scope->findModInst(base) || scope->findDbInst(base)) {
+      if (findInst(name) || scope->getModNet(base) || scope->findModBTerm(base)
+          || scope->findModInst(base) || scope->findDbInst(base)
+          || bterm_collision) {
         return true;
       }
     }
@@ -3939,8 +3943,8 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
     // scope: a net/port and an instance cannot share a name in one
     // Verilog scope (mirror of the instance check in makeNewNetName).
     if (scope != nullptr) {
-      const char* base = getModuleLocalName(scope, name);
-      if (scope->findDbInst(base) || scope->findModInst(base)
+      const char* base = getBaseName(name);
+      if (findInst(name) || scope->findDbInst(base) || scope->findModInst(base)
           || scope->getModNet(base) || scope->findModBTerm(base)
           || (scope == getTopModule() && findBTerm(base) != nullptr)) {
         return true;
@@ -3956,15 +3960,17 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
 
 const char* dbBlock::getBaseName(const char* full_name) const
 {
-  // If name contains the hierarchy delimiter, use the partial string
-  // after the last occurrence of the hierarchy delimiter.
-  // This prevents a very long term/net name creation when the name
-  // begins with a back-slash as "\soc/module1/instance_a/.../clk_port"
-  const char* last_hier_delimiter = strrchr(full_name, getHierarchyDelimiter());
-  if (last_hier_delimiter != nullptr) {
-    return last_hier_delimiter + 1;
+  const char hierarchy_delimiter = getHierarchyDelimiter();
+  const char* base_name = full_name;
+  size_t backslash_run = 0;
+  for (const char* cursor = full_name; *cursor != '\0'; cursor++) {
+    // Escaped delimiters belong to the local Verilog identifier.
+    if (*cursor == hierarchy_delimiter && backslash_run % 2 == 0) {
+      base_name = cursor + 1;
+    }
+    backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
   }
-  return full_name;
+  return base_name;
 }
 
 dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)

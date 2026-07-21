@@ -897,6 +897,9 @@ TEST_F(TestHconn, ConnectionMade)
   db_network_->hierarchicalConnect(
       inv1_2_inst_op0, inv4_4_ip_, hier_net_name.c_str());
 
+  // A full flat-net path must produce local hierarchy port names.
+  EXPECT_NE(inv1_mod_master_->findModBTerm("A_o"), nullptr);
+
   if (kDebugMsgs) {
     std::stringstream str_str_final;
     DbStrDebugHierarchy(block_, str_str_final);

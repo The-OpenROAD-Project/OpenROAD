@@ -19,7 +19,6 @@ namespace odb {
 class dbBlock;
 class dbBox;
 class dbDatabase;
-class dbModule;
 class dbNet;
 class dbTechLayer;
 class Rect;
@@ -27,10 +26,6 @@ class Polygon;
 
 // Replaces bare and escaped brackets in generated scalar names.
 std::string replaceBracketsWithUnderscores(std::string_view name);
-
-// Returns the local identifier within a generated hierarchical name while
-// preserving hierarchy delimiters that belong to an escaped identifier.
-const char* getModuleLocalName(const dbModule* module, const char* full_name);
 
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);
 

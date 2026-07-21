@@ -506,8 +506,12 @@ dbNet* dbInsertBuffer::createNewFlatNet(
   }
 
   // Create a new net
-  dbNet* new_net = dbNet::create(
-      block_, new_net_name.c_str(), new_net_uniquify, target_module_);
+  std::string full_new_net_name
+      = block_->makeNewNetName(target_module_,
+                               new_net_name.c_str(),
+                               new_net_uniquify,
+                               bterm != nullptr ? bterm->getNet() : nullptr);
+  dbNet* new_net = dbNet::create(block_, full_new_net_name.c_str());
   if (new_net == nullptr) {
     logger_->error(
         utl::ODB,
@@ -530,7 +534,7 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
   }
   std::string full = block_->makeNewNetName(
       module, name.c_str(), dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
-  return std::string(getModuleLocalName(module, full.c_str()));
+  return std::string(block_->getBaseName(full.c_str()));
 }
 
 int dbInsertBuffer::getModuleDepth(const dbModule* mod) const
@@ -1240,7 +1244,7 @@ dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
                                  port_name.c_str(),
                                  dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
                                  corresponding_flat_net);
-    port_name = getModuleLocalName(current_mod, full_port_name.c_str());
+    port_name = block_->getBaseName(full_port_name.c_str());
   }
 
   assert(parent_module->findModBTerm(port_name.c_str()) == nullptr);
