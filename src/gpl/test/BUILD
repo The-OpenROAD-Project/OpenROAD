@@ -117,12 +117,13 @@ filegroup(
     data = [":test_resources"],
 ) for test_name in ALL_TESTS]
 
-[regression_test(
-    name = test_name,
-    size = "large",
-    data = [":test_resources"],
-    tags = ["manual"],
-) for test_name in LARGE_TESTS]
+for test_name in LARGE_TESTS:
+    regression_test(
+        name = test_name,
+        size = "large",
+        data = [":test_resources"],
+        tags = ["manual"],
+    )
 
 PY_TESTS = [
     "ar01",
