@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <set>
 #include <string>
@@ -14,6 +16,7 @@
 #include "boost/json/serialize.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -28,6 +31,96 @@ namespace {
 boost::json::object parseObj(std::string_view json)
 {
   return boost::json::parse(json).as_object();
+}
+
+// Fixed tile dimensions produced by TileGenerator (kTileSizeInPixel).
+constexpr int kTileSize = 256;
+// Square die side used by the tile-seam tests (DBU; 45 um at 2000 dbu/um).
+constexpr int kSeamDieSide = 90000;
+
+enum class Axis
+{
+  kColumn,
+  kRow
+};
+
+// Minimal concrete heat map with a single populated bin, used to exercise
+// number rendering across tile boundaries (issue #10925).  getBounds() returns
+// the block bbox passed by the caller (which the tests align to a tile seam);
+// the tile grid uses TileGenerator::getBounds(), which adds a symmetric
+// pin-label margin, so the seam stays at the bbox center where the bin sits.
+class BoundaryHeatMap : public gui::HeatMapDataSource
+{
+ public:
+  BoundaryHeatMap(utl::Logger* logger,
+                  const odb::Rect& bounds,
+                  const odb::Rect& cell)
+      : gui::HeatMapDataSource(logger,
+                               "Boundary HM",
+                               "BoundaryHM",
+                               "BoundaryHM"),
+        bounds_(bounds),
+        cell_(cell)
+  {
+  }
+
+  odb::Rect getBounds() const override { return bounds_; }
+
+  // The label text is hardcoded here, so the numeric bin value is arbitrary --
+  // it only needs to mark the bin populated (see populateMap).
+  std::string formatValue(double /*value*/, bool /*legend*/) const override
+  {
+    return "29.89";
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    // A sub-rectangle strictly inside the target bin, so addToMap (which marks
+    // every bin returned by getMapView, including zero-overlap neighbors)
+    // populates only that single bin.  The value is arbitrary (see
+    // formatValue).
+    addToMap(odb::Rect(cell_.xMin() + 1,
+                       cell_.yMin() + 1,
+                       cell_.xMax() - 1,
+                       cell_.yMax() - 1),
+             1.0);
+    return true;
+  }
+
+  void combineMapData(bool /*base_has_value*/,
+                      double& base,
+                      double new_data,
+                      double /*data_area*/,
+                      double /*intersection_area*/,
+                      double /*rect_area*/) override
+  {
+    base = new_data;
+  }
+
+ private:
+  odb::Rect bounds_;
+  odb::Rect cell_;
+};
+
+// Return the set of columns (Axis::kColumn) or rows (Axis::kRow) where two RGBA
+// tile buffers differ.  Toggling "show numbers" leaves the bin fill untouched,
+// so the diff isolates the rendered text pixels regardless of the fill color.
+std::set<int> textPixels(const std::vector<unsigned char>& a,
+                         const std::vector<unsigned char>& b,
+                         Axis axis)
+{
+  EXPECT_EQ(a.size(), b.size());
+  std::set<int> result;
+  const size_t num_pixels = std::min(a.size(), b.size()) / 4;
+  for (size_t p = 0; p < num_pixels; ++p) {
+    const size_t i = p * 4;
+    if (std::memcmp(&a[i], &b[i], 4) != 0) {
+      result.insert(axis == Axis::kColumn ? static_cast<int>(p % kTileSize)
+                                          : static_cast<int>(p / kTileSize));
+    }
+  }
+  return result;
 }
 
 class TileGeneratorTest : public tst::Nangate45Fixture
@@ -122,7 +215,59 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
+  // Build a square design whose z=1 tile seam is centered on the die, attach a
+  // single-bin heat map (bin grid over the block bbox) whose populated bin is
+  // `cell`, and stash it in heatmap_.  Invoke via ASSERT_NO_FATAL_FAILURE so a
+  // geometry-assert failure aborts the caller.
+  void buildSeamDesign(const odb::Rect& cell)
+  {
+    odb::dbMaster* master = lib_->findMaster("BUF_X16");
+    ASSERT_NE(master, nullptr);
+    const int w = master->getWidth();
+    const int h = master->getHeight();
+    block_->setDieArea(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide));
+    placeInst("BUF_X16", "buf_ll", 0, 0);
+    placeInst("BUF_X16", "buf_ur", kSeamDieSide - w, kSeamDieSide - h);
+
+    makeTileGen();
+    // The bin grid uses the (clean) block bbox; the tile grid uses getBounds(),
+    // which adds a symmetric pin-label margin, so both seams stay at the bbox
+    // center -- where the target bin is centered -- and bins/tiles agree there.
+    const odb::Rect blk = block_->getBBox()->getBox();
+    ASSERT_EQ(blk.xMin(), 0);
+    ASSERT_EQ(blk.yMin(), 0);
+    ASSERT_EQ(blk.xMax(), kSeamDieSide);
+    ASSERT_EQ(blk.yMax(), kSeamDieSide);
+    const odb::Rect bounds = tile_gen_->getBounds();
+    ASSERT_EQ(bounds.dx(), bounds.dy());  // square => seams at center...
+    ASSERT_EQ(bounds.xMin() + bounds.xMax(), kSeamDieSide);  // ...x = kSide/2
+    ASSERT_EQ(bounds.yMin() + bounds.yMax(), kSeamDieSide);  // ...y = kSide/2
+
+    heatmap_ = std::make_unique<BoundaryHeatMap>(getLogger(), blk, cell);
+    heatmap_->setChip(chip_);
+    heatmap_->setGridSizes(15.0, 15.0);  // 15 um bins -> 30000 DBU (3x3 grid)
+    // Never gate the bin out of the visible map on value range.
+    heatmap_->setDrawBelowRangeMin(true);
+    heatmap_->setDrawAboveRangeMax(true);
+  }
+
+  // Render tile (zoom,x,y) of heatmap_ with numbers on and off and return the
+  // columns/rows (per `axis`) whose pixels the label adds.
+  std::set<int> seamTextPixels(int zoom, int x, int y, Axis axis)
+  {
+    unsigned width = 0;
+    unsigned height = 0;
+    heatmap_->setShowNumbers(true);
+    const std::vector<unsigned char> on = decodePng(
+        tile_gen_->generateHeatMapTile(*heatmap_, zoom, x, y), width, height);
+    heatmap_->setShowNumbers(false);
+    const std::vector<unsigned char> off = decodePng(
+        tile_gen_->generateHeatMapTile(*heatmap_, zoom, x, y), width, height);
+    return textPixels(on, off, axis);
+  }
+
   std::unique_ptr<TileGenerator> tile_gen_;
+  std::unique_ptr<BoundaryHeatMap> heatmap_;
 };
 
 TEST_F(TileGeneratorTest, HasStaFalseWhenNull)
@@ -1274,6 +1419,57 @@ TEST_F(TileGeneratorTest, LayerHierarchyNoBacksideCategory)
     EXPECT_NE(inst.as_object().at("name").as_string(), "Backside")
         << "Backside category should not appear when no layers are backside";
   }
+}
+
+// Heat-map value labels must render across tile boundaries.  A bin whose center
+// falls on a tile seam previously had its number drawn only in the tile
+// containing the center, clipping the digits on the other side (e.g. "29.89"
+// showing as ".89").  See issue #10925.
+TEST_F(TileGeneratorTest, HeatMapNumbersRenderAcrossTileBoundary)
+{
+  // Center column [30000,60000] is centered on the vertical seam (x=45000);
+  // bottom row [0,30000] sits inside a single tile row (maps to tile y=1).
+  ASSERT_NO_FATAL_FAILURE(buildSeamDesign(
+      odb::Rect(kSeamDieSide / 3, 0, 2 * kSeamDieSide / 3, kSeamDieSide / 3)));
+
+  const std::set<int> left = seamTextPixels(1, 0, 1, Axis::kColumn);
+  const std::set<int> right = seamTextPixels(1, 1, 1, Axis::kColumn);
+
+  // Regression check: the left tile (which does NOT contain the bin center)
+  // must still render the leading digits.  Before the fix it drew nothing.
+  ASSERT_FALSE(left.empty())
+      << "left tile has no number pixels: leading digits were clipped";
+  ASSERT_FALSE(right.empty()) << "right tile has no number pixels";
+
+  // The left tile's text hugs its right edge and the right tile's hugs its left
+  // edge -- together they form the full label across the seam.
+  EXPECT_GE(*left.begin(), kTileSize / 2);
+  EXPECT_LT(*right.rbegin(), kTileSize / 2);
+}
+
+// Same as above but for the horizontal seam: the fix clips the text box in y
+// symmetrically with x, so a bin centered on a horizontal tile boundary must
+// render its label in both vertically-adjacent tiles.
+TEST_F(TileGeneratorTest, HeatMapNumbersRenderAcrossHorizontalTileBoundary)
+{
+  // Center row [30000,60000] is centered on the horizontal seam (y=45000);
+  // left column [0,30000] sits inside a single tile column (tile x=0).
+  ASSERT_NO_FATAL_FAILURE(buildSeamDesign(
+      odb::Rect(0, kSeamDieSide / 3, kSeamDieSide / 3, 2 * kSeamDieSide / 3)));
+
+  const std::set<int> top = seamTextPixels(1, 0, 0, Axis::kRow);
+  const std::set<int> bottom = seamTextPixels(1, 0, 1, Axis::kRow);
+
+  // Regression check: the bottom tile (whose DBU range excludes the bin center
+  // at y=45000) must still render its half of the label.
+  ASSERT_FALSE(bottom.empty())
+      << "bottom tile has no number pixels: label was clipped at the seam";
+  ASSERT_FALSE(top.empty()) << "top tile has no number pixels";
+
+  // The top tile's text hugs its bottom edge and the bottom tile's hugs its top
+  // edge -- together they form the full label across the seam.
+  EXPECT_GE(*top.begin(), kTileSize / 2);
+  EXPECT_LT(*bottom.rbegin(), kTileSize / 2);
 }
 
 }  // namespace

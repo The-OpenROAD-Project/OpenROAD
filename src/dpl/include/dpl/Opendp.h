@@ -112,8 +112,7 @@ class Opendp
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
-                         bool use_negotiation = false,
-                         bool run_abacus = false,
+                         bool use_diamond_legalizer = false,
                          int site_search_window = -1,
                          int row_search_window = -1,
                          double drc_penalty = -1.0,
@@ -181,6 +180,8 @@ class Opendp
 
   odb::Point getOdbLocation(const Node* cell) const;
   odb::Point getDplLocation(const Node* cell) const;
+
+  bool isUseNegotiationLegalizer() const { return !use_diamond_legalizer_; }
 
  private:
   using bgPoint
@@ -412,7 +413,7 @@ class Opendp
   int negotiation_debug_interval_ = 1;
   int negotiation_debug_start_ = 0;
   bool incremental_ = false;
-  bool use_negotiation_ = false;
+  bool use_diamond_legalizer_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

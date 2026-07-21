@@ -23,7 +23,6 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
-#include "utl/timer.h"
 
 namespace dpl {
 
@@ -298,30 +297,14 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   current_iter_ = iter;
   current_iter_movers_.clear();
 
-  // Reset findBestLocation profiling accumulators.
-  prof_init_search_s_ = 0;
-  prof_curr_search_s_ = 0;
-  prof_filter_s_ = 0;
-  prof_neg_cost_s_ = 0;
-  prof_drc_s_ = 0;
-  prof_candidates_evaluated_ = 0;
-  prof_candidates_filtered_ = 0;
-
   // Reset per-iteration stuck-cell tallies.
   stuck_no_candidate_count_iter_ = 0;
   stuck_same_pos_count_iter_ = 0;
   stuck_no_candidate_by_height_iter_.clear();
   stuck_same_pos_by_height_iter_.clear();
 
-  double sort_s{0}, rip_up_s{0}, find_best_s{0}, place_s{0};
-  double sync_s{0}, violations_s{0}, bystander_s{0}, history_s{0};
-  const utl::Timer total_iter_timer;
-
   int moves_count = 0;
-  {
-    utl::DebugScopedTimer t(sort_s);
-    sortByNegotiationOrder(activeCells);
-  }
+  sortByNegotiationOrder(activeCells);
 
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
@@ -331,19 +314,9 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     if (iter >= kIsolationPt && isCellLegal(idx)) {
       continue;
     }
-    int bx, by;
-    {
-      utl::DebugScopedTimer t(rip_up_s);
-      ripUp(idx);
-    }
-    {
-      utl::DebugScopedTimer t(find_best_s);
-      std::tie(bx, by) = findBestLocation(idx, iter);
-    }
-    {
-      utl::DebugScopedTimer t(place_s);
-      place(idx, bx, by);
-    }
+    ripUp(idx);
+    const auto [bx, by] = findBestLocation(idx, iter);
+    place(idx, bx, by);
     moves_count++;
     debugPrint(logger_,
                utl::DPL,
@@ -362,10 +335,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   // entry when a co-located cell is ripped up, leaving bystander cells
   // invisible to DRC checks.  A full re-sync restores every cell so the
   // violation scan below is accurate.
-  {
-    utl::DebugScopedTimer t(sync_s);
-    syncAllCellsToDplGrid();
-  }
+  syncAllCellsToDplGrid();
 
   // Count remaining violations (grid overuse) AND DRC violations.
   // Both must reach zero for the negotiation to converge.
@@ -375,128 +345,52 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   int totalViolations = 0;
   int illegalCellCount = 0;
   int illegalSiteCount = 0;
-  std::unordered_set<int> active_set(activeCells.begin(), activeCells.end());
-  {
-    utl::DebugScopedTimer t(violations_s);
-    for (int idx : activeCells) {
-      if (cells_[idx].fixed) {
-        continue;
-      }
-      const NegCell& cell = cells_[idx];
-      const int xBegin = effXBegin(cell);
-      const int xEnd = effXEnd(cell);
-      for (int dy = 0; dy < cell.height; ++dy) {
-        for (int gx = xBegin; gx < xEnd; ++gx) {
-          if (gridExists(gx, cell.y + dy)) {
-            const int overuse = gridAt(gx, cell.y + dy).overuse();
-            totalViolations += overuse;
-            if (overuse > 0) {
-              ++illegalSiteCount;
-            }
+  for (int idx : activeCells) {
+    if (cells_[idx].fixed) {
+      continue;
+    }
+    const NegCell& cell = cells_[idx];
+    const int xBegin = effXBegin(cell);
+    const int xEnd = effXEnd(cell);
+    for (int dy = 0; dy < cell.height; ++dy) {
+      for (int gx = xBegin; gx < xEnd; ++gx) {
+        if (gridExists(gx, cell.y + dy)) {
+          const int overuse = gridAt(gx, cell.y + dy).overuse();
+          totalViolations += overuse;
+          if (overuse > 0) {
+            ++illegalSiteCount;
           }
         }
       }
-      if (!isCellLegal(idx)) {
-        ++totalViolations;
-        ++illegalCellCount;
-      }
+    }
+    if (!isCellLegal(idx)) {
+      ++totalViolations;
+      ++illegalCellCount;
     }
   }
 
   // Scan all movable cells for newly-created DRC violations outside the
   // current active set.  This handles cases where a move in the active
   // set created a one-site gap (or other DRC issue) with a bystander.
-  {
-    utl::DebugScopedTimer t(bystander_s);
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (cells_[i].fixed || active_set.contains(i)) {
-        continue;
-      }
-      if (!isCellLegal(i)) {
-        activeCells.push_back(i);
-        active_set.insert(i);
-        ++totalViolations;
-        ++illegalCellCount;
-      }
+  std::vector<char> is_active(cells_.size(), 0);
+  for (int idx : activeCells) {
+    is_active[idx] = 1;
+  }
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (cells_[i].fixed || is_active[i]) {
+      continue;
+    }
+    if (!isCellLegal(i)) {
+      activeCells.push_back(i);
+      ++totalViolations;
+      ++illegalCellCount;
     }
   }
 
   if (totalViolations > 0 && updateHistory) {
-    utl::DebugScopedTimer t(history_s);
     updateHistoryCosts(activeCells);
     updateDrcHistoryCosts(activeCells);
     sortByNegotiationOrder(activeCells);
-  }
-
-  // Emit runtime profiling only on iterations that also print a table row
-  // (first 10, then every 10th), to keep the two outputs aligned.
-  if (print_row && logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
-    const double total_ms = total_iter_timer.elapsed() * 1e3;
-    auto pct = [total_ms](double ms_val) {
-      return total_ms > 0 ? 100.0 * ms_val / total_ms : 0.0;
-    };
-    auto to_ms = [](double s) { return s * 1e3; };
-    const double rip_up_ms = to_ms(rip_up_s);
-    const double find_best_ms = to_ms(find_best_s);
-    const double place_ms = to_ms(place_s);
-    const double sort_ms = to_ms(sort_s);
-    const double sync_ms = to_ms(sync_s);
-    const double violations_ms = to_ms(violations_s);
-    const double bystander_ms = to_ms(bystander_s);
-    const double history_ms = to_ms(history_s);
-    const double initSearchMs = prof_init_search_s_ * 1e3;
-    const double currSearchMs = prof_curr_search_s_ * 1e3;
-    const double filterMs = prof_filter_s_ * 1e3;
-    const double negCostMs = prof_neg_cost_s_ * 1e3;
-    const double drcMs = prof_drc_s_ * 1e3;
-    const double overhead = find_best_ms - filterMs - negCostMs - drcMs;
-    logger_->report(
-        "  negotiationIter {} ({:.1f}ms, {} moves): "
-        "sort {:.1f}ms ({:.0f}%), "
-        "ripUp {:.1f}ms ({:.0f}%), findBest {:.1f}ms ({:.0f}%), place {:.1f}ms "
-        "({:.0f}%), "
-        "syncGrid {:.1f}ms ({:.0f}%), violationsCount {:.1f}ms ({:.0f}%), "
-        "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
-        iter,
-        total_ms,
-        moves_count,
-        sort_ms,
-        pct(sort_ms),
-        rip_up_ms,
-        pct(rip_up_ms),
-        find_best_ms,
-        pct(find_best_ms),
-        place_ms,
-        pct(place_ms),
-        sync_ms,
-        pct(sync_ms),
-        violations_ms,
-        pct(violations_ms),
-        bystander_ms,
-        pct(bystander_ms),
-        history_ms,
-        pct(history_ms));
-    logger_->report(
-        "    findBest by region ({} candidates, {} filtered): "
-        "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%)",
-        prof_candidates_evaluated_,
-        prof_candidates_filtered_,
-        initSearchMs,
-        pct(initSearchMs),
-        currSearchMs,
-        pct(currSearchMs));
-    logger_->report(
-        "    findBest by function: "
-        "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
-        "drc {:.1f}ms ({:.0f}%), overhead {:.1f}ms ({:.0f}%)",
-        filterMs,
-        pct(filterMs),
-        negCostMs,
-        pct(negCostMs),
-        drcMs,
-        pct(drcMs),
-        overhead,
-        pct(overhead));
   }
 
   last_iter_ = iter;
@@ -700,7 +594,8 @@ NegotiationLegalizer::SearchWindow NegotiationLegalizer::buildSearchWindow(
 }
 
 // ===========================================================================
-// findBestLocation – enumerate candidates within the search window
+// findBestLocation – enumerate candidates within the search window in
+// wavefronts of increasing displacement, with branch-and-bound pruning
 // ===========================================================================
 
 std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
@@ -714,52 +609,72 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
 
   // Look up the DPL Node once for DRC checks (may be null if no
   // Opendp integration is available).
-  Node* node = (opendp_ && opendp_->drc_engine_ && network_)
-                   ? network_->getNode(cell.db_inst)
-                   : nullptr;
+  Node* node = (opendp_ && opendp_->drc_engine_) ? cell.node : nullptr;
+  const odb::dbOrientType default_orient
+      = node != nullptr ? node->getOrient() : odb::dbOrientType();
+  odb::dbSite* site = cell.db_inst->getMaster()->getSite();
 
   // DRC penalty escalates with iteration count: early iterations are
   // lenient (cells can tolerate DRC violations to resolve overlaps first),
   // later iterations strongly penalise DRC violations to force resolution.
   const double drc_penalty = drc_penalty_ * (1.0 + iter);
 
-  auto tryLocation = [&](int tx, int ty) {
-    {
-      utl::DebugScopedTimer t(prof_filter_s_);
-      if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
-          || !respectsFence(cell_idx, tx, ty)) {
-        ++prof_candidates_filtered_;
-        return;
-      }
+  // Every pixel of a placeable footprint contributes at least
+  // hist_cost * (usage + 1) / capacity >= 1.0 to negotiationCost (capacity
+  // is 0 or 1 and hist_cost only grows from 1.0), so any candidate's final
+  // cost is at least targetCost + width * height. This floor lets the
+  // bound below stop the search right after the first uncontended
+  // location instead of a footprint's worth of wavefronts later.
+  const double congestion_floor
+      = static_cast<double>(cell.width) * static_cast<double>(cell.height);
+
+  // Cost ties are broken by the row-major scan rank (window, row position,
+  // dx) the plain window scan would visit candidates in, so the wavefront
+  // visit order below returns the same location an exhaustive scan picks.
+  // Starts minimal so the initial kInfCost incumbent never loses a tie.
+  using ScanRank = std::tuple<int, int, int>;
+  ScanRank best_rank{-1, -1, -1};
+
+  auto tryLocation = [&](int tx, int ty, const ScanRank& rank) {
+    // Lower-bound prune: the displacement term plus the congestion floor
+    // already exceeds the incumbent cost, and the congestion and DRC terms
+    // below only add to it. Candidates that tie the incumbent are kept for
+    // the rank comparison.
+    if (targetCost(cell_idx, tx, ty) + congestion_floor > best_cost) {
+      return;
+    }
+    if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
+        || !respectsFence(cell_idx, tx, ty)) {
+      return;
     }
 
-    double cost;
-    {
-      utl::DebugScopedTimer t(prof_neg_cost_s_);
-      cost = negotiationCost(cell_idx, tx, ty);
+    double cost = negotiationCost(cell_idx, tx, ty, best_cost);
+    if (cost > best_cost || (cost == best_cost && rank >= best_rank)) {
+      // Already loses on displacement + congestion, or ties the incumbent
+      // with a losing rank — the DRC term below only adds cost, so neither
+      // can win. Skip the DRC count, the most expensive term to evaluate.
+      // Ties with a winning rank proceed: a DRC violation would still
+      // disqualify them.
+      return;
     }
 
     // Add a DRC penalty so clean positions are strongly preferred,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      utl::DebugScopedTimer t(prof_drc_s_);
-      odb::dbOrientType targetOrient = node->getOrient();
-      odb::dbSite* site = cell.db_inst->getMaster()->getSite();
+      odb::dbOrientType targetOrient = default_orient;
       if (site != nullptr) {
         auto orient
             = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
-        if (orient.has_value()) {
-          targetOrient = orient.value();
-        }
+        targetOrient = orient.has_value() ? orient.value() : default_orient;
       }
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
           node, GridX{tx}, GridY{ty}, targetOrient);
       cost += drc_penalty * drcCount;
     }
-    ++prof_candidates_evaluated_;
-    if (cost < best_cost) {
+    if (cost < best_cost || (cost == best_cost && rank < best_rank)) {
       best_cost = cost;
+      best_rank = rank;
       best_x = tx;
       best_y = ty;
     }
@@ -768,13 +683,40 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // Search around the initial (GP) position. The window's rows and asymmetric
   // dx reach are already shifted away from macros/off-core walls (built once,
   // see buildSearchWindow).
+  //
+  // Candidates are visited in wavefronts of increasing Manhattan
+  // displacement from the init position — the diamond-search order.
+  // targetCost is monotone in that displacement and every other cost term
+  // is non-negative, so once a wavefront's displacement cost plus the
+  // congestion floor exceeds the incumbent cost, no remaining candidate
+  // can win or tie and the search stops. In an uncontended region this
+  // ends the scan right after the first overlap/DRC-free location; under
+  // contention the bound stays above best_cost and the full window is
+  // searched, where the effort is justified.
   const SearchWindow init_window
       = buildSearchWindow(cell, cell.init_x, cell.init_y);
-  {
-    utl::DebugScopedTimer t(prof_init_search_s_);
-    for (int ty : init_window.rows) {
-      for (int dx = init_window.dx_lo; dx <= init_window.dx_hi; ++dx) {
-        tryLocation(cell.init_x + dx, ty);
+  int max_dy = 0;
+  for (int ty : init_window.rows) {
+    max_dy = std::max(max_dy, std::abs(ty - cell.init_y));
+  }
+  // dx_lo <= 0 <= dx_hi always holds (see horizontalWindowBounds).
+  const int max_d = max_dy + std::max(-init_window.dx_lo, init_window.dx_hi);
+  for (int d = 0; d <= max_d; ++d) {
+    if (targetCostFromDisp(d) + congestion_floor > best_cost) {
+      break;
+    }
+    for (int row_pos = 0; std::cmp_less(row_pos, init_window.rows.size());
+         ++row_pos) {
+      const int ty = init_window.rows[row_pos];
+      const int rem = d - std::abs(ty - cell.init_y);
+      if (rem < 0) {
+        continue;
+      }
+      if (-rem >= init_window.dx_lo) {
+        tryLocation(cell.init_x - rem, ty, {0, row_pos, -rem});
+      }
+      if (rem > 0 && rem <= init_window.dx_hi) {
+        tryLocation(cell.init_x + rem, ty, {0, row_pos, rem});
       }
     }
   }
@@ -786,11 +728,15 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // Also search around the current position — critical when the cell has
   // already been displaced far from init_x and needs to explore its local
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
+  //
+  // targetCost is anchored at the init position, so wavefront ordering
+  // around the current position gives no usable bound here; the window is
+  // scanned in full, with the O(1) prune in tryLocation rejecting
+  // candidates that cannot beat the incumbent.
   const bool displaced = (cell.x != cell.init_x || cell.y != cell.init_y);
   SearchWindow curr_window;
   if (displaced) {
     curr_window = buildSearchWindow(cell, cell.x, cell.y);
-    utl::DebugScopedTimer t(prof_curr_search_s_);
     debugPrint(logger_,
                utl::DPL,
                "negotiation",
@@ -798,9 +744,11 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                "Searching at current position for {} (searching from inital "
                "position found no better solution).",
                cell.db_inst->getName());
-    for (int ty : curr_window.rows) {
+    for (int row_pos = 0; std::cmp_less(row_pos, curr_window.rows.size());
+         ++row_pos) {
+      const int ty = curr_window.rows[row_pos];
       for (int dx = curr_window.dx_lo; dx <= curr_window.dx_hi; ++dx) {
-        tryLocation(cell.x + dx, ty);
+        tryLocation(cell.x + dx, ty, {1, row_pos, dx});
       }
     }
   }
@@ -880,8 +828,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                           ? "inf"
                           : std::to_string(best_cost));
       if (node != nullptr) {
-        odb::dbOrientType targetOrient = node->getOrient();
-        odb::dbSite* site = cell.db_inst->getMaster()->getSite();
+        odb::dbOrientType targetOrient = default_orient;
         if (site != nullptr) {
           auto orient = opendp_->grid_->getSiteOrientation(
               GridX{best_x}, GridY{best_y}, site);
@@ -910,13 +857,12 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                  "negotiation",
                  2,
                  "findBestLocation: no valid candidate found for cell '{}' "
-                 "(iter {}, size {} rows x {} sites) — all {} candidate "
+                 "(iter {}, size {} rows x {} sites) — all candidates "
                  "filtered, cell may be stuck.",
                  cell.db_inst->getName(),
                  iter,
                  cell.height,
-                 cell.width,
-                 prof_candidates_filtered_);
+                 cell.width);
     }
 
     else if (best_x == cell.x && best_y == cell.y) {
@@ -929,7 +875,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       debugPrint(logger_,
                  utl::DPL,
                  "negotiation",
-                 1,
+                 2,
                  "Negotiation: best location for cell '{}' at iteration {} "
                  "(size {} rows x {} sites) is its current position.",
                  cell.db_inst->getName(),
@@ -946,10 +892,21 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
 //   Cost(x,y) = b(x,y) + Σ_grids h(g) * p(g)
 // ===========================================================================
 
-double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
+// The aborts are strict (>) rather than >=: partial sums only grow, so a
+// candidate whose true cost is <= abort_bound is never aborted and its
+// exact cost is returned. findBestLocation relies on this to tell a true
+// cost tie (returned value == abort_bound after a complete sum) apart
+// from an aborted partial sum, which its scan-rank tie-breaking needs.
+double NegotiationLegalizer::negotiationCost(int cell_idx,
+                                             int x,
+                                             int y,
+                                             double abort_bound) const
 {
   const NegCell& cell = cells_[cell_idx];
   double cost = targetCost(cell_idx, x, y);
+  if (cost > abort_bound) {
+    return cost;
+  }
 
   const int xBegin = std::max(0, x - cell.pad_left);
   const int xEnd = std::min(grid_w_, x + cell.width + cell.pad_right);
@@ -957,13 +914,11 @@ double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
     for (int gx = xBegin; gx < xEnd; ++gx) {
       const int gy = y + dy;
       if (!gridExists(gx, gy)) {
-        cost += kInfCost;
-        continue;
+        return cost + kInfCost;
       }
       const Pixel& g = gridAt(gx, gy);
       if (g.capacity == 0) {
-        cost += kInfCost;  // blockage
-        continue;
+        return cost + kInfCost;  // blockage
       }
       // Congestion term: h * p  (Eq. 10).
       // Usage is incremented by 1 to account for this cell being placed.
@@ -971,6 +926,9 @@ double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
       const auto cap = static_cast<double>(g.capacity);
       const double penalty = usageWithCell / cap;
       cost += g.hist_cost * penalty;
+      if (cost > abort_bound) {
+        return cost;
+      }
     }
   }
   return cost;
@@ -979,15 +937,22 @@ double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
 // ===========================================================================
 // targetCost – Eq. 11 from the NBLG paper
 //   b(x,y) = δ + mf * max(δ − th, 0)
+// Monotone increasing in δ (mf >= 0), which findBestLocation relies on to
+// bound the cost of unvisited wavefronts.
 // ===========================================================================
+
+double NegotiationLegalizer::targetCostFromDisp(int disp) const
+{
+  return static_cast<double>(disp)
+         + max_disp_multiplier_
+               * static_cast<double>(std::max(0, disp - max_disp_threshold_));
+}
 
 double NegotiationLegalizer::targetCost(int cell_idx, int x, int y) const
 {
   const NegCell& cell = cells_[cell_idx];
-  const int disp = std::abs(x - cell.init_x) + std::abs(y - cell.init_y);
-  return static_cast<double>(disp)
-         + max_disp_multiplier_
-               * static_cast<double>(std::max(0, disp - max_disp_threshold_));
+  return targetCostFromDisp(std::abs(x - cell.init_x)
+                            + std::abs(y - cell.init_y));
 }
 
 // ===========================================================================
@@ -1056,7 +1021,7 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
       continue;
     }
     const NegCell& cell = cells_[idx];
-    Node* node = network_->getNode(cell.db_inst);
+    Node* node = cell.node;
     if (node == nullptr) {
       continue;
     }
@@ -1147,165 +1112,6 @@ void NegotiationLegalizer::sortByNegotiationOrder(
 }
 
 // ===========================================================================
-// greedyImprove – post-optimisation: reduce displacement without creating
-// new overlaps.
-// ===========================================================================
-
-void NegotiationLegalizer::greedyImprove(int passes)
-{
-  std::vector<int> order;
-  order.reserve(cells_.size());
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (!cells_[i].fixed) {
-      order.push_back(i);
-    }
-  }
-
-  for (int pass = 0; pass < passes; ++pass) {
-    int improved = 0;
-
-    for (int idx : order) {
-      NegCell& cell = cells_[idx];
-      const int curDisp = cell.displacement();
-
-      ripUp(idx);
-
-      int best_x = cell.x;
-      int best_y = cell.y;
-      int best_dist = curDisp;
-
-      auto tryLoc = [&](int target_x, int target_y) {
-        if (!inDie(target_x, target_y, cell.width, cell.height)) {
-          return;
-        }
-        if (!isValidRow(target_y, cell, target_x)) {
-          return;
-        }
-        if (!respectsFence(idx, target_x, target_y)) {
-          return;
-        }
-        // Only accept if no new overlap or padding violation is introduced.
-        const int target_x_begin = std::max(0, target_x - cell.pad_left);
-        const int target_x_end
-            = std::min(grid_w_, target_x + cell.width + cell.pad_right);
-        for (int dy = 0; dy < cell.height; ++dy) {
-          for (int gx = target_x_begin; gx < target_x_end; ++gx) {
-            if (gridAt(gx, target_y + dy).overuse() > 0) {
-              return;
-            }
-          }
-        }
-        const int d = std::abs(target_x - cell.init_x)
-                      + std::abs(target_y - cell.init_y);
-        if (d < best_dist) {
-          best_dist = d;
-          best_x = target_x;
-          best_y = target_y;
-        }
-      };
-
-      const int site_window = effectiveSiteWindow(cell);
-      const std::vector<int> rows
-          = verticalWindowRows(cell,
-                               cell.y,
-                               cell.init_x - site_window,
-                               cell.init_x + site_window,
-                               row_search_window_,
-                               effectiveRowCap(cell));
-      for (int target_y : rows) {
-        for (int dx = -site_window; dx <= site_window; ++dx) {
-          tryLoc(cell.init_x + dx, target_y);
-        }
-      }
-
-      place(idx, best_x, best_y);
-      if (best_dist < curDisp) {
-        ++improved;
-      }
-    }
-
-    if (improved == 0) {
-      break;
-    }
-  }
-}
-
-// ===========================================================================
-// cellSwap – swap pairs of same-type cells when total displacement decreases
-// without exceeding the current maximum displacement.
-// ===========================================================================
-
-void NegotiationLegalizer::cellSwap()
-{
-  const int maxDisp = maxDisplacement();
-
-  // Group movable cells by (height, width).  Power-rail compatibility of any
-  // candidate swap is enforced below by isValidRow(), so it need not be part
-  // of the grouping key.
-  struct GroupKey
-  {
-    int height;
-    int width;
-    bool operator==(const GroupKey& o) const
-    {
-      return height == o.height && width == o.width;
-    }
-  };
-  struct GroupKeyHash
-  {
-    size_t operator()(const GroupKey& k) const
-    {
-      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8);
-    }
-  };
-
-  std::unordered_map<GroupKey, std::vector<int>, GroupKeyHash> groups;
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (!cells_[i].fixed) {
-      groups[{cells_[i].height, cells_[i].width}].push_back(i);
-    }
-  }
-
-  for (auto& [key, grp] : groups) {
-    for (int ii = 0; ii < static_cast<int>(grp.size()); ++ii) {
-      for (int jj = ii + 1; jj < static_cast<int>(grp.size()); ++jj) {
-        const int a = grp[ii];
-        const int b = grp[jj];
-        NegCell& ca = cells_[a];
-        NegCell& cb = cells_[b];
-
-        const int dispBefore = ca.displacement() + cb.displacement();
-        const int newDispA
-            = std::abs(cb.x - ca.init_x) + std::abs(cb.y - ca.init_y);
-        const int newDispB
-            = std::abs(ca.x - cb.init_x) + std::abs(ca.y - cb.init_y);
-        const int dispAfter = newDispA + newDispB;
-
-        if (dispAfter >= dispBefore) {
-          continue;
-        }
-        if (newDispA > maxDisp || newDispB > maxDisp) {
-          continue;
-        }
-        if (!respectsFence(a, cb.x, cb.y) || !respectsFence(b, ca.x, ca.y)) {
-          continue;
-        }
-        if (!isValidRow(cb.y, ca, cb.x) || !isValidRow(ca.y, cb, ca.x)) {
-          continue;
-        }
-
-        ripUp(a);
-        ripUp(b);
-        std::swap(ca.x, cb.x);
-        std::swap(ca.y, cb.y);
-        place(a, ca.x, ca.y);
-        place(b, cb.x, cb.y);
-      }
-    }
-  }
-}
-
-// ===========================================================================
 // diamondRecovery – break stalls by trying the Opendp BFS diamond search on
 // each illegal cell.  Unlike findBestLocation (bounded rectangular window),
 // the diamond search expands outward in physical Manhattan order until it
@@ -1324,7 +1130,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
       continue;
     }
     const NegCell& cell = cells_[idx];
-    Node* node = network_->getNode(cell.db_inst);
+    Node* node = cell.node;
     if (node == nullptr) {
       continue;
     }
@@ -1350,7 +1156,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
       place(idx, cell.x, cell.y);
     }
   }
-  logger_->report("diamondRecovery: recovered {}/{} stuck cells.",
+  logger_->report("diamond recovery: recovered {}/{} stuck cells.",
                   recovered,
                   activeCells.size());
 }
