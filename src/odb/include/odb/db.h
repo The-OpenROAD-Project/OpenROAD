@@ -5109,6 +5109,11 @@ class dbRegion : public dbObject
   dbSet<dbBox> getBoundaries();
 
   ///
+  /// Get the overlap area between the region and a rectangle
+  ///
+  int64_t getOverlapArea(const Rect& r);
+
+  ///
   /// Add this instance to the region
   ///
   void addInst(dbInst* inst);
