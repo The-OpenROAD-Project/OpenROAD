@@ -98,7 +98,7 @@ detailed_route
 
 #### Developer arguments
 
-Some arguments that are helpful for developers are listed here. 
+Some arguments that are helpful for developers are listed here.  
 
 | Switch Name | Description |
 | ----- | ----- |

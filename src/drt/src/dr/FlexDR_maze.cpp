@@ -2229,7 +2229,7 @@ void FlexDRWorker::routeNet_prep(
     }
     unConnPins.insert(pin.get());
     if (gridGraph_.getNDR()) {
-      if (router_cfg_->AUTO_TAPER_NDR_NETS
+      if (net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)
           && pin->isInstPin()) {  // create a taper box for each pin
         auto [l, h] = pin->getAPBbox();
         frCoord pitch
@@ -2648,7 +2648,8 @@ void FlexDRWorker::routeNet_postAstarWritePath(
           via = net_ndr->getPrefVia(startLayerNum / 2 - 1);
         }
         auto currVia = std::make_unique<drVia>(via);
-        if (net->hasNDR() && router_cfg_->AUTO_TAPER_NDR_NETS) {
+        if (net->hasNDR()
+            && net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
           if (isInsideTaperBox(endX, endY, startZ, endZ, mazeIdx2TaperBox)) {
             currVia->setTapered(true);
           }
@@ -2818,7 +2819,8 @@ bool FlexDRWorker::splitPathSeg(frMIdx& midX,
                                 drNet* net)
 {
   taperFirstPiece = false;
-  if (!net->hasNDR() || !router_cfg_->AUTO_TAPER_NDR_NETS) {
+  if (!net->hasNDR()
+      || !net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
     return false;
   }
   frBox3D* bx = nullptr;
