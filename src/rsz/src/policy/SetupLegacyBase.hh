@@ -211,7 +211,6 @@ class SetupLegacyBase : public OptimizationPolicy
   static constexpr int print_interval_ = 10;
   static constexpr int opto_small_interval_ = 100;
   static constexpr int opto_large_interval_ = 1000;
-  static constexpr float inc_fix_rate_threshold_ = 0.0001;
 };
 
 }  // namespace rsz

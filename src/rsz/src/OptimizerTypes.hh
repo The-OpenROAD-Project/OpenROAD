@@ -412,6 +412,12 @@ struct OptimizerRunConfig
   int max_iterations{0};
   int max_passes{100};
   int max_repairs_per_pass{1};
+  // Setup repair's marginal-progress stop: it may fire once opto_iteration
+  // exceeds plateau_start_iteration and the incremental TNS fix rate drops
+  // below min_inc_fix_rate. Populated from the repair_timing -effort policy
+  // (rsz/EffortPolicy.hh); the defaults are the tapeout values.
+  int plateau_start_iteration{1000};
+  float min_inc_fix_rate{0.0001f};
   bool match_cell_footprint{false};
   bool verbose{false};
   bool skip_pin_swap{false};

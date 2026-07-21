@@ -118,7 +118,7 @@ bool SetupLastGaspPolicy::initializeLastGaspRepair(
   last_gasp_state.initial_tns = setup_context_.initial_tns;
   last_gasp_state.prev_tns = curr_tns;
   last_gasp_state.prev_worst_slack = violating_ends.front().second;
-  last_gasp_state.fix_rate_threshold = inc_fix_rate_threshold_;
+  last_gasp_state.fix_rate_threshold = config_.min_inc_fix_rate;
 
   debugPrint(logger_,
              RSZ,

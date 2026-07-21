@@ -31,6 +31,7 @@
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "rsz/EffortPolicy.hh"
 #include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Delay.hh"
@@ -340,6 +341,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float targetLoadCap(sta::LibertyCell* cell);
 
   ////////////////////////////////////////////////////////////////
+  // Resolve repair_timing -effort directives (left to right, later wins)
+  // into the policy consulted by repairSetup and the hold-repair decision.
+  // Errors on an unknown directive.
+  void setRepairEffort(const char* directives);
+  bool repairEffortRepairsHold() const { return repair_effort_.repair_hold; }
+
   bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
@@ -949,6 +956,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   sta::LibertyCellSet dont_use_;
   double max_area_ = 0.0;
+
+  EffortPolicy repair_effort_;
 
   utl::Logger* logger_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;

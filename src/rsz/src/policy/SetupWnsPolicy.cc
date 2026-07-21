@@ -94,7 +94,7 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
   std::map<const sta::Pin*, int> endpoint_pass_limits;
   bool any_improvement_this_round = false;
   int total_decreasing_slack_passes = 0;
-  float fix_rate_threshold = inc_fix_rate_threshold_;
+  float fix_rate_threshold = config_.min_inc_fix_rate;
   sta::Slack target_end_slack = 0.0;
   sta::Slack target_worst_slack = 0.0;
   sta::Slack target_tns_local = 0.0;

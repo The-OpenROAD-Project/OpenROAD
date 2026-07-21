@@ -357,6 +357,22 @@ repair_net_cmd(Net *net,
   resizer->repairNet(net, max_length, slew_margin, cap_margin);
 }
 
+void
+set_repair_effort(const char* directives)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setRepairEffort(directives);
+}
+
+bool
+repair_effort_repairs_hold()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->repairEffortRepairsHold();
+}
+
 bool
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
