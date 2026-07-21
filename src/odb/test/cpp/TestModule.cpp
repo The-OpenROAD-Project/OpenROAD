@@ -364,6 +364,13 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
                                dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
                                top_port_net);
   EXPECT_EQ(associated_port_name, "top_port");
+  dbNet* unrelated_net = dbNet::create(block_, "unrelated_net");
+  std::string unrelated_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               unrelated_net);
+  EXPECT_NE(unrelated_port_name, "top_port");
 
   // No collision: a fresh name is returned unchanged.
   std::string fresh = block_->makeNewNetName(

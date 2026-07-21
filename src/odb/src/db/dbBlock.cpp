@@ -3885,8 +3885,13 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
     if (scope != nullptr) {
       const char* base = getBaseName(name);
       dbBTerm* top_bterm = scope == getTopModule() ? findBTerm(base) : nullptr;
-      const bool bterm_collision
-          = top_bterm != nullptr && corresponding_flat_net == nullptr;
+      const bool bterm_associated
+          = top_bterm != nullptr && corresponding_flat_net != nullptr
+            && (top_bterm->getNet() == corresponding_flat_net
+                || strcmp(getBaseName(corresponding_flat_net->getConstName()),
+                          base)
+                       == 0);
+      const bool bterm_collision = top_bterm != nullptr && !bterm_associated;
       // A net/port name must also be unique against instance names in the
       // scope: a net/port and an instance cannot share a name in one
       // Verilog scope.  OpenROAD can promote an anonymous net ("_NNNNN_")
