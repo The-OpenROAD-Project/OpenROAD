@@ -302,7 +302,7 @@ TEST_F(ModuleFixture, test_find_modinst)
 // as port").
 TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
 {
-  auto top = block_->getTopModule();
+  dbModule* top = block_->getTopModule();
   ASSERT_NE(top, nullptr);
 
   // Leaf (dbInst) collision: an instance named "_42_" exists in scope.
@@ -313,12 +313,19 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
       << "net name must not collide with leaf instance '_42_'";
 
   // Hierarchical (dbModInst) collision: a module instance named "_99_".
-  auto master = dbModule::create(block_, "anon_master");
+  dbModule* master = dbModule::create(block_, "anon_master");
   dbModInst::create(top, master, "_99_");
   std::string hier = block_->makeNewNetName(
       top, "_99_", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   EXPECT_STRNE(block_->getBaseName(hier.c_str()), "_99_")
       << "net name must not collide with module instance '_99_'";
+
+  // Escaped identifier collision: the local instance name contains '/'.
+  dbInst::create(block_, lib_->findMaster("and2"), "path/leaf");
+  std::string escaped_leaf = block_->makeNewNetName(
+      top, "path/leaf", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(escaped_leaf, "path/leaf")
+      << "net name must not collide with escaped instance 'path/leaf'";
 
   // No collision: a fresh name is returned unchanged.
   std::string fresh = block_->makeNewNetName(
@@ -348,6 +355,13 @@ TEST_F(ModuleFixture, makeNewInstName_avoids_net_collision)
       nullptr, "mn1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   EXPECT_STRNE(block_->getBaseName(hier_net.c_str()), "mn1")
       << "instance name must not collide with modnet 'mn1'";
+
+  // Escaped identifier collision: the local ModNet name contains '/'.
+  dbModNet::create(top, "path/net");
+  std::string escaped_net = block_->makeNewInstName(
+      nullptr, "path/net", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_NE(escaped_net, "path/net")
+      << "instance name must not collide with escaped ModNet 'path/net'";
 
   // Module port collision: a modbterm named "p1" on the top module.
   dbModBTerm::create(top, "p1");

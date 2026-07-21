@@ -3879,17 +3879,22 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
 {
   const dbModule* scope = parent ? parent : getTopModule();
   dbModInst* mod_inst = scope ? scope->getModInst() : nullptr;
+  // Escaped local identifiers may contain the hierarchy delimiter.
+  const size_t local_name_offset
+      = mod_inst ? mod_inst->getHierarchicalName().size() + 1 : 0;
 
-  auto exists = [this, scope, corresponding_flat_net](const char* name) {
+  const auto exists = [this, scope, corresponding_flat_net, local_name_offset](
+                          const char* name) {
     if (scope != nullptr) {
-      const char* base = getBaseName(name);
+      const char* base = name + local_name_offset;
       // A net/port name must also be unique against instance names in the
-      // scope: a net/port and an instance cannot share a name in one Verilog
-      // scope.  OpenROAD can promote an anonymous net ("_NNNNN_") to a
-      // module boundary port, and yosys/ABC name anonymous cells "_NNNNN_"
-      // too, so without this check the promoted port collides with a leaf or
-      // hierarchical instance of the same name -- illegal Verilog that
-      // Verilator rejects with "Instance has the same name as port".
+      // scope: a net/port and an instance cannot share a name in one
+      // Verilog scope.  OpenROAD can promote an anonymous net ("_NNNNN_")
+      // to a module boundary port, and yosys/ABC name anonymous cells
+      // "_NNNNN_" too, so without this check the promoted port collides
+      // with a leaf or hierarchical instance of the same name -- illegal
+      // Verilog that Verilator rejects with "Instance has the same name
+      // as port".
       if (scope->getModNet(base) || scope->findModBTerm(base)
           || scope->findModInst(base) || scope->findDbInst(base)) {
         return true;
@@ -3903,8 +3908,8 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
         // Strict mode: any flat net hit is a collision
         return true;
       }
-      // Lenient mode: only internal flat nets (excluding the corresponding
-      // one) are collisions
+      // Lenient mode: only internal flat nets (excluding the
+      // corresponding one) are collisions
       if (existing_net != corresponding_flat_net
           && existing_net->isInternalTo(scope)) {
         return true;
@@ -3932,16 +3937,19 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
   //
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
   const dbModule* scope = parent ? parent->getMaster() : getTopModule();
-  auto exists = [this, scope](const char* name) {
+  // Escaped local identifiers may contain the hierarchy delimiter.
+  const size_t local_name_offset
+      = parent ? parent->getHierarchicalName().size() + 1 : 0;
+  const auto exists = [this, scope, local_name_offset](const char* name) {
     if (findInst(name) != nullptr || findModInst(name) != nullptr) {
       return true;
     }
 
     // An instance name must also be unique against net/port names in the
-    // scope: a net/port and an instance cannot share a name in one Verilog
-    // scope (mirror of the instance check in makeNewNetName).
+    // scope: a net/port and an instance cannot share a name in one
+    // Verilog scope (mirror of the instance check in makeNewNetName).
     if (scope != nullptr) {
-      const char* base = getBaseName(name);
+      const char* base = name + local_name_offset;
       if (scope->getModNet(base) || scope->findModBTerm(base)
           || (scope == getTopModule() && findBTerm(base) != nullptr)) {
         return true;
