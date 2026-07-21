@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -240,10 +241,22 @@ void buildIndex(sta::Network* network,
   // Prune targets: keep smallest cell per cFingerprint
   for (auto& [key, targets] : index.classes) {
     std::ranges::sort(targets, [](const MapTarget& a, const MapTarget& b) {
-      return std::make_tuple(
-                 a.via.cFingerprint(), a.cell->area(), a.cell->name())
-             < std::make_tuple(
-                 b.via.cFingerprint(), b.cell->area(), b.cell->name());
+      auto a_label = std::make_tuple(
+          a.via.cFingerprint(), a.cell->area(), a.cell->name());
+      auto b_label = std::make_tuple(
+          b.via.cFingerprint(), b.cell->area(), b.cell->name());
+
+      if (a_label != b_label) {
+        return a_label < b_label;
+      }
+
+      // If we fall through to here, both `a` and `b` are the same
+      // cell with difference in pin permutation. Break the tie
+      // deterministically.
+      return std::lexicographical_compare(std::begin(a.via.permutation),
+                                          std::end(a.via.permutation),
+                                          std::begin(b.via.permutation),
+                                          std::end(b.via.permutation));
     });
     auto unique_range = std::ranges::unique(
         targets, [](const MapTarget& a, const MapTarget& b) {

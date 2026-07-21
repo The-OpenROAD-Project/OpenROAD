@@ -3,10 +3,10 @@
 worst slack max -0.09
 tns max -2.35
 === pass 1 ===
-[INFO SYN-0064] acd_resynth: applied 33 of 70 substitutions, 59 gates out
+[INFO SYN-0064] acd_resynth: applied 33 of 71 substitutions, 61 gates out
 worst slack max -0.07
-tns max -1.44
+tns max -1.46
 === pass 2 ===
-[INFO SYN-0064] acd_resynth: applied 9 of 62 substitutions, 26 gates out
+[INFO SYN-0064] acd_resynth: applied 9 of 62 substitutions, 23 gates out
 worst slack max -0.06
 tns max -1.19
