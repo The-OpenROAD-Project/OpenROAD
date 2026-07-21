@@ -506,11 +506,8 @@ dbNet* dbInsertBuffer::createNewFlatNet(
   }
 
   // Create a new net
-  std::string full_new_net_name
-      = block_->makeNewNetName(target_module_,
-                               new_net_name.c_str(),
-                               new_net_uniquify,
-                               bterm != nullptr ? bterm->getNet() : nullptr);
+  std::string full_new_net_name = block_->makeNewNetName(
+      target_module_, new_net_name.c_str(), new_net_uniquify, nullptr, bterm);
   dbNet* new_net = dbNet::create(block_, full_new_net_name.c_str());
   if (new_net == nullptr) {
     logger_->error(
@@ -1499,10 +1496,26 @@ void dbInsertBuffer::createNewFlatAndHierNets(
   if (needs_mod_net) {
     const char* base_name = block_->getBaseName(new_flat_net_->getConstName());
     dlogCreatingNewHierNet(base_name);
-    new_mod_net_ = dbModNet::create(target_module_,
-                                    base_name,
-                                    dbNameUniquifyType::IF_NEEDED,
-                                    new_flat_net_);
+
+    // Reuse only the exact BTerm that will move to the new flat net.
+    dbBTerm* associated_bterm = nullptr;
+    for (dbObject* load_obj : load_pins) {
+      if (load_obj->getObjectType() == dbBTermObj) {
+        dbBTerm* load_bterm = static_cast<dbBTerm*>(load_obj);
+        if (strcmp(load_bterm->getConstName(), base_name) == 0) {
+          associated_bterm = load_bterm;
+          break;
+        }
+      }
+    }
+    const std::string full_mod_net_name
+        = block_->makeNewNetName(target_module_,
+                                 base_name,
+                                 dbNameUniquifyType::IF_NEEDED,
+                                 new_flat_net_,
+                                 associated_bterm);
+    new_mod_net_ = dbModNet::create(
+        target_module_, block_->getBaseName(full_mod_net_name.c_str()));
   }
 }
 

@@ -3873,24 +3873,27 @@ std::string _dbBlock::makeNewName(
 // (strict mode for flat net creation).
 // If corresponding_flat_net is non-null, only internal flat nets excluding
 // the corresponding one collide (lenient mode for ModNet creation).
+// If associated_bterm is non-null, that exact top-level port may reuse the
+// candidate name while its net association is being updated.
 std::string dbBlock::makeNewNetName(const dbModule* parent,
                                     const char* base_name,
                                     const dbNameUniquifyType& uniquify,
-                                    dbNet* corresponding_flat_net)
+                                    dbNet* corresponding_flat_net,
+                                    const dbBTerm* associated_bterm)
 {
   const dbModule* scope = parent ? parent : getTopModule();
   dbModInst* mod_inst = scope ? scope->getModInst() : nullptr;
 
-  auto exists = [this, scope, corresponding_flat_net](const char* name) {
+  auto exists = [this, scope, corresponding_flat_net, associated_bterm](
+                    const char* name) {
     if (scope != nullptr) {
       const char* base = getBaseName(name);
       dbBTerm* top_bterm = scope == getTopModule() ? findBTerm(base) : nullptr;
       const bool bterm_associated
-          = top_bterm != nullptr && corresponding_flat_net != nullptr
-            && (top_bterm->getNet() == corresponding_flat_net
-                || strcmp(getBaseName(corresponding_flat_net->getConstName()),
-                          base)
-                       == 0);
+          = top_bterm != nullptr
+            && ((corresponding_flat_net != nullptr
+                 && top_bterm->getNet() == corresponding_flat_net)
+                || top_bterm == associated_bterm);
       const bool bterm_collision = top_bterm != nullptr && !bterm_associated;
       // A net/port name must also be unique against instance names in the
       // scope: a net/port and an instance cannot share a name in one

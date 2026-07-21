@@ -353,7 +353,8 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
   // A concrete top port collides unless it belongs to the candidate net.
   dbNet* top_port_net = dbNet::create(block_, "top_port_net");
   ASSERT_NE(top_port_net, nullptr);
-  ASSERT_NE(dbBTerm::create(top_port_net, "top_port"), nullptr);
+  dbBTerm* top_port = dbBTerm::create(top_port_net, "top_port");
+  ASSERT_NE(top_port, nullptr);
   std::string top_port_name = block_->makeNewNetName(
       top, "top_port", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   EXPECT_NE(top_port_name, "top_port")
@@ -364,6 +365,13 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
                                dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
                                top_port_net);
   EXPECT_EQ(associated_port_name, "top_port");
+  std::string migrating_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               nullptr,
+                               top_port);
+  EXPECT_EQ(migrating_port_name, "top_port");
   dbNet* unrelated_net = dbNet::create(block_, "unrelated_net");
   std::string unrelated_port_name
       = block_->makeNewNetName(top,
@@ -371,6 +379,23 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
                                dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
                                unrelated_net);
   EXPECT_NE(unrelated_port_name, "top_port");
+  dbNet* unrelated_same_base_net = dbNet::create(block_, "child/top_port");
+  ASSERT_NE(unrelated_same_base_net, nullptr);
+  std::string unrelated_same_base_port_name
+      = block_->makeNewNetName(top,
+                               "top_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
+                               unrelated_same_base_net);
+  EXPECT_NE(unrelated_same_base_port_name, "top_port");
+
+  // An escaped local delimiter must not fall back to an unrelated port.
+  dbModBTerm* escaped_port = dbModBTerm::create(top, "escaped_port");
+  ASSERT_NE(escaped_port, nullptr);
+  std::string escaped_port_name
+      = block_->makeNewNetName(top,
+                               "path\\/escaped_port",
+                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_EQ(escaped_port_name, "path\\/escaped_port");
 
   // No collision: a fresh name is returned unchanged.
   std::string fresh = block_->makeNewNetName(
