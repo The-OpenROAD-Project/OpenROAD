@@ -3,7 +3,6 @@
 
 #include "SizeUpMtGenerator.hh"
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -81,27 +80,21 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
     return replacements;
   }
 
-  // Rank equivalent cells from strongest to weakest so the first legal win is
-  // the best gain.
   const std::string& drvr_port_name = drvr_port->name();
-  std::ranges::sort(
-      swappable_cells.begin(),
-      swappable_cells.end(),
-      [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
-                                      const sta::LibertyCell* cell2) {
-        return strongerCellLess(cell1, cell2, drvr_port_name, lib_ap);
-      });
 
   const sta::LibertyPort* scene_drvr_port = drvr_port->scenePort(lib_ap);
   if (scene_drvr_port == nullptr) {
     return replacements;
   }
 
-  const float drive = scene_drvr_port->driveResistance();
-  // Keep every stronger equivalent cell and let candidate::estimate do the
-  // exact timing check.
+  const float drive_r = scene_drvr_port->driveResistance();
+  // Keep every equivalent cell that does not weaken drive resistance and let
+  // candidate::estimate require a strict delay improvement.
   odb::dbMaster* current_master = resizer_.dbNetwork()->staToDb(cell);
   for (sta::LibertyCell* swappable : swappable_cells) {
+    if (swappable == cell) {
+      continue;
+    }
     odb::dbMaster* swappable_master = resizer_.dbNetwork()->staToDb(swappable);
     if (current_master == nullptr || swappable_master == nullptr) {
       continue;
@@ -122,8 +115,8 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
     if (swappable_drvr == nullptr) {
       continue;
     }
-    const float swappable_drive = swappable_drvr->driveResistance();
-    if (swappable_drive < drive) {
+    const float swappable_drive_r = swappable_drvr->driveResistance();
+    if (swappable_drive_r <= drive_r) {
       replacements.push_back(swappable);
     }
   }

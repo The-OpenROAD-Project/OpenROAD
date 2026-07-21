@@ -483,7 +483,10 @@ cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
-    data = glob(["cpp/TestResizer*.v"]) + [
+    data = glob([
+        "cpp/TestResizer*.lib",
+        "cpp/TestResizer*.v",
+    ]) + [
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
     ],
@@ -583,6 +586,36 @@ cc_test(
         "//src/est",
         "//src/grt",
         "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRepairHoldRollback",
+    srcs = ["cpp/TestRepairHoldRollback.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "gcd_nangate45_placed.def",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
