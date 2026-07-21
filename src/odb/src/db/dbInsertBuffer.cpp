@@ -24,6 +24,25 @@
 
 namespace odb {
 
+static std::string replaceBracketsWithUnderscores(std::string_view name)
+{
+  std::string sanitized_name;
+  sanitized_name.reserve(name.size());
+
+  for (size_t i = 0; i < name.size(); i++) {
+    const char ch = name[i];
+    if (ch == '\\' && i + 1 < name.size()
+        && (name[i + 1] == '[' || name[i + 1] == ']')) {
+      sanitized_name += '_';
+      i++;
+      continue;
+    }
+    sanitized_name += (ch == '[' || ch == ']') ? '_' : ch;
+  }
+
+  return sanitized_name;
+}
+
 dbInsertBuffer::dbInsertBuffer(dbNet* net)
     : net_(net),
       block_(net ? net->getBlock() : nullptr),
@@ -258,6 +277,9 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
   dbMTerm* input_mterm = nullptr;
   dbMTerm* output_mterm = nullptr;
   for (dbMTerm* mterm : const_cast<dbMaster*>(buffer_master_)->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
     if (mterm->getIoType() == dbIoType::INPUT) {
       if (input_mterm != nullptr) {
         logger_->warn(utl::ODB,
@@ -495,6 +517,12 @@ dbNet* dbInsertBuffer::createNewFlatNet(
     new_net_uniquify = dbNameUniquifyType::IF_NEEDED;
   }
 
+  if (bterm == nullptr) {
+    // New split nets are scalar wires. Keep their generated names easy to read
+    // by replacing bracket characters before ODB stores the name.
+    new_net_name = replaceBracketsWithUnderscores(new_net_name);
+  }
+
   // Create a new net
   dbNet* new_net = dbNet::create(
       block_, new_net_name.c_str(), new_net_uniquify, target_module_);
@@ -513,7 +541,11 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const std::string& base_name,
                                                const char* suffix) const
 {
-  std::string name = (suffix == nullptr) ? base_name : base_name + suffix;
+  // insertBuffer only punches scalar hierarchy ports, never bus ports.
+  std::string name = replaceBracketsWithUnderscores(base_name);
+  if (suffix != nullptr) {
+    name += suffix;
+  }
   std::string full = block_->makeNewNetName(
       module, name.c_str(), dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   return std::string(block_->getBaseName(full.c_str()));

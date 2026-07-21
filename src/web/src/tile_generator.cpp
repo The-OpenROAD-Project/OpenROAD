@@ -117,6 +117,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"blockages",              &TileVisibility::blockages,              true},
     {"placement_blockages",    &TileVisibility::placement_blockages,    true},
     {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
+    {"fills",                  &TileVisibility::fills,                  false},
     {"rows",                   &TileVisibility::rows,                   false},
     {"tracks_pref",            &TileVisibility::tracks_pref,            false},
     {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
@@ -1667,6 +1668,19 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
       const Color obs_color = color.lighter();
 
+      // Clip a shape's bbox to this tile and paint it as a solid rect.  Shared
+      // by every per-layer shape below (routing wires/vias, special-net vias,
+      // master obstructions, cell-pin boxes, pin-direction boxes, fills): they
+      // all do overlaps -> intersect -> toPixels -> drawFilledRect.
+      auto draw_box_in_tile = [&](const odb::Rect& box, const Color& c) {
+        if (!box.overlaps(dbu_tile)) {
+          return;
+        }
+        drawFilledRect(image_buffer,
+                       toPixels(scale, box.intersect(dbu_tile), dbu_tile),
+                       c);
+      };
+
       // Special "_modules" layer: draw filled module-colored rectangles
       const bool modules_layer
           = (layer == "_modules" && module_colors && !module_colors->empty());
@@ -1855,11 +1869,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
 
               // Draw the box rect itself (same as GUI painter.drawRect).
-              if (box_rect.overlaps(dbu_tile)) {
-                const odb::Rect overlap = box_rect.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-                drawFilledRect(image_buffer, draw, marker_color);
-              }
+              draw_box_in_tile(box_rect, marker_color);
 
               // Draw pin name label when zoomed in enough.
               if (draw_pin_names && vis.pin_names) {
@@ -2107,13 +2117,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 odb::Rect box = obs->getBox();
                 inst->getTransform().apply(box);
-                if (!box.overlaps(dbu_tile)) {
-                  continue;
-                }
-                const odb::Rect overlap = box.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-                drawFilledRect(image_buffer, draw, obs_color);
+                draw_box_in_tile(box, obs_color);
               }
             }
 
@@ -2134,13 +2138,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     }
                     odb::Rect box = geom->getBox();
                     inst->getTransform().apply(box);
-                    if (!box.overlaps(dbu_tile)) {
-                      continue;
-                    }
-                    const odb::Rect overlap = box.intersect(dbu_tile);
-                    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-                    drawFilledRect(image_buffer, draw, color);
+                    draw_box_in_tile(box, color);
                   }
                 }
               }
@@ -2255,13 +2253,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             const odb::Rect& box = std::get<0>(shape);
-            if (!box.overlaps(dbu_tile)) {
-              continue;
-            }
-            const odb::Rect overlap = box.intersect(dbu_tile);
-            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-            drawFilledRect(image_buffer, draw, color);
+            draw_box_in_tile(box, color);
           }
         }
 
@@ -2326,12 +2318,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
               odb::Rect box = vbox->getBox();
               box.moveDelta(origin.x(), origin.y());
-              if (!box.overlaps(dbu_tile)) {
-                continue;
-              }
-              const odb::Rect overlap = box.intersect(dbu_tile);
-              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-              drawFilledRect(image_buffer, draw, color);
+              draw_box_in_tile(box, color);
             }
           }
         }
@@ -2380,12 +2367,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 odb::Rect box = vbox->getBox();
                 box.moveDelta(origin.x(), origin.y());
-                if (!box.overlaps(dbu_tile)) {
-                  continue;
-                }
-                const odb::Rect overlap = box.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-                drawFilledRect(image_buffer, draw, color);
+                draw_box_in_tile(box, color);
               }
             }
           }
@@ -2447,6 +2429,28 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
               }
             }
+          }
+        }
+
+        // Draw metal fill (dbFill) on per-layer tiles.  Mirrors the GUI, which
+        // draws fills in a darker variant of the layer color (lighter(50)).
+        if (!instances_only && tech_layer && vis.fills) {
+          const Color fill_color = color.darken(0.5);
+          // Cull sub-pixel fills at low zoom, mirroring the GUI's shape_limit
+          // (renderThread.cpp passes fineViewableResolution).  scale is
+          // pixels/DBU, so 1/scale is the DBU span of one pixel; 0 at high
+          // zoom leaves searchFills unfiltered.
+          const int min_size = static_cast<int>(1.0 / scale);
+          for (odb::dbFill* fill : search_->searchFills(block,
+                                                        tech_layer,
+                                                        dbu_x_min,
+                                                        dbu_y_min,
+                                                        dbu_x_max,
+                                                        dbu_y_max,
+                                                        min_size)) {
+            odb::Rect box;
+            fill->getRect(box);
+            draw_box_in_tile(box, fill_color);
           }
         }
 
@@ -2773,19 +2777,29 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
         = 0.5 * (map_point.rect.xMin() + map_point.rect.xMax());
     const double center_y
         = 0.5 * (map_point.rect.yMin() + map_point.rect.yMax());
-    if (center_x < dbu_tile.xMin() || center_x >= dbu_tile.xMax()
-        || center_y < dbu_tile.yMin() || center_y >= dbu_tile.yMax()) {
-      continue;
-    }
 
     const int pixel_x = std::lround((center_x - dbu_tile.xMin()) * scale);
     const int pixel_y = 255 - std::lround((center_y - dbu_tile.yMin()) * scale);
-    drawText(image_buffer,
-             pixel_x - text_width / 2,
-             pixel_y - text_height / 2,
-             text,
-             heatmap_font,
-             text_color);
+
+    // The label is centered on the bin center and may straddle the boundary
+    // between adjacent tiles.  Skipping when the center falls outside this tile
+    // would drop the half of the text that spills into the neighbor (e.g.
+    // "29.89" rendering as ".89").  Instead skip only when the whole text box
+    // is off-tile; each tile draws its slice and drawText/blendPixel clip
+    // per-pixel, so the slices join seamlessly across the seam.  Note the box
+    // spans the half-open range [min, max), so max <= 0 is fully off-tile.
+    const int text_px_min = pixel_x - text_width / 2;
+    const int text_px_max = text_px_min + text_width;
+    const int text_py_min = pixel_y - text_height / 2;
+    const int text_py_max = text_py_min + text_height;
+
+    if (text_px_max <= 0 || text_px_min >= kTileSizeInPixel || text_py_max <= 0
+        || text_py_min >= kTileSizeInPixel) {
+      continue;
+    }
+
+    drawText(
+        image_buffer, text_px_min, text_py_min, text, heatmap_font, text_color);
   }
 
   std::vector<unsigned char> png_data;

@@ -144,10 +144,10 @@ PY_TESTS = [
 cc_test(
     name = "gpl_fft_unittest",
     srcs = ["fft_test.cc"],
-    features = ["-layering_check"],  # TODO: includes private headers
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//src/gpl",
+        "//src/gpl",  # buildcleaner: keep: needs fixing gpl layering first.
+        "//src/gpl:gpl_private_hdrs",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",

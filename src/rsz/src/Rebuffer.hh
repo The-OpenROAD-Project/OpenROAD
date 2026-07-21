@@ -120,7 +120,7 @@ class Rebuffer : public sta::dbStaState
                                         float best_cap);
 
   float findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell);
-  void characterizeBufferLimits();
+  void characterizeBuffers();
 
   struct BufferSize
   {
@@ -128,7 +128,21 @@ class Rebuffer : public sta::dbStaState
     FixedDelay intrinsic_delay;
     float margined_max_cap;
     float driver_resistance;
+
+    struct Asymptotics
+    {
+      // asymptotic parameters when buffering long wires
+      float buffer_spacing;
+      float delay_per_meter;
+      float delay_per_farad;
+      float input_cap;
+    };
+    // -1 for `set_wire_rc` values
+    std::map<int, Asymptotics> long_wire_asymptotics;
   };
+
+  sta::Delay characterizationDelay(BufferSize& size, float load_cap);
+  void findLongWireAsymptotics(int layer, Rebuffer::BufferSize& size);
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,
                               const BufferedNetPtr& bnet,
@@ -154,9 +168,6 @@ class Rebuffer : public sta::dbStaState
   sta::Path* arrival_paths_[sta::RiseFall::index_count] = {nullptr};
 
   int resizer_max_wire_length_ = 0;
-  int wire_length_step_ = 0;
-  std::unordered_map<int, int> layer_wire_length_step_;
-
   double initial_design_area_ = 0.0;
   int print_interval_ = 0;
   int removed_count_ = 0;

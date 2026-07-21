@@ -7,7 +7,7 @@ read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 
-set behavioral_file [make_result_file make_8x8_1rw1r_behavioral.v]
+set behavioral_file [make_result_file make_8x8_2rw1r_behavioral.v]
 
 generate_ram \
   -mask_size 8 \
@@ -16,8 +16,6 @@ generate_ram \
   -r_ports 2 \
   -w_ports 1 \
   -storage_cell sky130_fd_sc_hd__dfxtp_1 \
-  -power_pin VPWR \
-  -ground_pin VGND \
   -routing_layer {met1 0.48} \
   -ver_layer {met2 0.48 40} \
   -hor_layer {met3 0.48 20} \
