@@ -576,13 +576,6 @@ DRC on the whole chip).
 
 ## Limitations
 
-## FAQs
-
-Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+odb+in%3Atitle)
-about this tool.
-
-
 ## LICENSE
 
 BSD 3-Clause License. See [LICENSE](../../LICENSE) file.
