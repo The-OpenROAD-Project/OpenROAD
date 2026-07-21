@@ -5,6 +5,8 @@ include("openroad")
 
 or_integration_tests(
   "syn"
+  TESTS
+    acd_resynth
 )
 
 set(_syn_test_libs
