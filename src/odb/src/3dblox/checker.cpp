@@ -183,6 +183,25 @@ const char* sideToString(dbUnfoldedChipRegionInst::EffectiveSide side)
   return "UNKNOWN";
 }
 
+// Whether the bump master's pin geometry includes a shape on the given
+// layer. Used to verify a bump against its region's declared contact layer
+// (dbChipRegion::getLayer()) -- the 3DBlox spec defines that layer as the
+// one responsible for the bump's external connection (hybrid bond/micro
+// bump), so a bump's own pins must actually land on it.
+bool masterPinOnLayer(dbMaster* master, dbTechLayer* layer)
+{
+  for (dbMTerm* mterm : master->getMTerms()) {
+    for (dbMPin* mpin : mterm->getMPins()) {
+      for (dbBox* box : mpin->getGeometry()) {
+        if (box->getTechLayer() == layer) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 enum class ConnectionStatus
 {
   kValid,
@@ -247,13 +266,36 @@ void Checker::check()
     return;
   }
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
+  computeBumpLayerMatches();
   checkLogicalConnectivity(top_cat);
   checkFloatingChips(top_cat);
   checkOverlappingChips(top_cat);
   checkInternalExtUsage(top_cat);
   checkConnectionRegions(top_cat);
   checkBumpPhysicalAlignment(top_cat);
+  checkBumpLayer(top_cat);
   checkAlignmentMarkers(top_cat);
+}
+
+void Checker::computeBumpLayerMatches()
+{
+  // dbChipRegion::getLayer() is the contact layer responsible for the
+  // region's external connections (hybrid bonds/micro bumps) per the
+  // 3DBlox spec, so a bump's own pin geometry must land on it. Regions
+  // without a declared layer are left unrecorded (unverifiable). The
+  // result is session-only; nothing is persisted in ODB.
+  for (dbChip* chip : db_->getChips()) {
+    for (dbChipRegion* region : chip->getChipRegions()) {
+      dbTechLayer* layer = region->getLayer();
+      if (layer == nullptr) {
+        continue;
+      }
+      for (dbChipBump* bump : region->getChipBumps()) {
+        bump_layer_match_[bump]
+            = masterPinOnLayer(bump->getInst()->getMaster(), layer);
+      }
+    }
+  }
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat)
@@ -532,6 +574,47 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat)
 
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat)
 {
+}
+
+void Checker::checkBumpLayer(dbMarkerCategory* top_cat)
+{
+  // Flag bumps whose pin geometry, per computeBumpLayerMatches(), does not
+  // land on their region's declared contact layer.
+  dbMarkerCategory* cat = nullptr;
+  int violation_count = 0;
+  for (dbUnfoldedChipBumpInst* bump : db_->getUnfoldedChipBumpInsts()) {
+    dbChipBump* chip_bump = bump->getChipBumpInst()->getChipBump();
+    const auto it = bump_layer_match_.find(chip_bump);
+    if (it == bump_layer_match_.end() || it->second) {
+      continue;
+    }
+    violation_count++;
+    if (!cat) {
+      cat = dbMarkerCategory::createOrReplace(top_cat, "Bump layer mismatch");
+    }
+    if (auto* marker = dbMarker::create(cat)) {
+      const Point3D p = bump->getGlobalPosition();
+      marker->addSource(bump->getChipBumpInst());
+      marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
+                            p.y() - kBumpMarkerHalfSize,
+                            p.x() + kBumpMarkerHalfSize,
+                            p.y() + kBumpMarkerHalfSize));
+      dbChipRegion* chip_region = chip_bump->getChipRegion();
+      marker->setComment(fmt::format(
+          "Bump {} in region {} has no pin geometry on the region's "
+          "declared contact layer {}",
+          chip_bump->getInst()->getName(),
+          chip_region->getName(),
+          chip_region->getLayer()->getName()));
+    }
+  }
+  if (violation_count > 0) {
+    logger_->warn(utl::ODB,
+                  554,
+                  "Found {} bump(s) whose pin geometry does not match their "
+                  "region's declared contact layer",
+                  violation_count);
+  }
 }
 
 void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
