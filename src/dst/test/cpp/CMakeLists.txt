@@ -43,11 +43,13 @@ add_test(
   COMMAND TestBalancer
 )
 
-# This test case appears to have an internal race condition
-#add_test(
-#  NAME "dst.TestDistributed"
-#  COMMAND TestDistributed
-#)
+# Re-enabled: the former race was unsynchronized async startup + hard-coded
+# ports (see DIST_MULTIHOST_INVESTIGATION.md Part B). TestDistributed now
+# allocates ephemeral ports and polls for listener readiness before sending.
+add_test(
+  NAME "dst.TestDistributed"
+  COMMAND TestDistributed
+)
 
 add_dependencies(build_and_test 
   TestWorker

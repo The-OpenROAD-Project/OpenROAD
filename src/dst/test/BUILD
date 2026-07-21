@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
@@ -42,12 +41,11 @@ cc_test(
     }),
 )
 
-# CMake builds TestDistributed but does not register it with add_test()
-# because the case is still race-prone. Keep the binary buildable in Bazel
-# without making it part of `bazel test //src/...`.
-cc_binary(
+# Re-enabled as a cc_test: the former race was unsynchronized async startup +
+# hard-coded ports (see DIST_MULTIHOST_INVESTIGATION.md Part B). TestDistributed
+# now allocates ephemeral ports and polls for listener readiness before sending.
+cc_test(
     name = "dst_distributed_test",
-    testonly = True,
     srcs = [
         "cpp/TestDistributed.cc",
         "cpp/stubs.cpp",
@@ -104,4 +102,9 @@ test_suite(
 test_suite(
     name = "dst.TestBalancer",
     tests = [":dst_balancer_test"],
+)
+
+test_suite(
+    name = "dst.TestDistributed",
+    tests = [":dst_distributed_test"],
 )
