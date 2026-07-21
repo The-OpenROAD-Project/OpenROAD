@@ -4,30 +4,30 @@ module top (in);
  wire net4;
  wire n2;
 
- H0 h0 (.data_5__2(net4),
+ H0 h0 (.\path/data_5__2 (net4),
     .h0_in(in),
     .h0_out(n2));
  H1 h1 (.net3(net4),
     .h1_in(n2));
 endmodule
-module H0 (data_5__2,
+module H0 (\path/data_5__2 ,
     h0_in,
     h0_out);
- output data_5__2;
+ output \path/data_5__2 ;
  input h0_in;
  output h0_out;
 
  wire collision_output;
- wire [5:0] data;
+ wire [5:0] \path/data ;
 
- BUF_X1 buf0 (.A(data[5]),
+ BUF_X1 buf0 (.A(\path/data [5]),
     .Z(h0_out));
- BUF_X1 data_5_ (.A(data[5]),
-    .Z(collision_output));
  BUF_X1 drvr (.A(h0_in),
-    .Z(data[5]));
- BUF_X1 nontarget0 (.A(data[5]));
- assign data_5__2 = data[5];
+    .Z(\path/data [5]));
+ BUF_X1 nontarget0 (.A(\path/data [5]));
+ BUF_X1 \path/data_5_  (.A(\path/data [5]),
+    .Z(collision_output));
+ assign \path/data_5__2  = \path/data [5];
 endmodule
 module H1 (net3,
     h1_in);

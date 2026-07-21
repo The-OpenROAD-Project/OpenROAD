@@ -251,7 +251,6 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
 {
   assert(source_pin != nullptr);
   assert(dest_pin != nullptr);
-  connection_name = getBaseName(connection_name);
   dlogHierConnStart(
       source_pin, db_network_->dbToSta(dest_pin), connection_name);
 
@@ -456,7 +455,6 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
 {
   assert(source_pin != nullptr);
   assert(dest_pin != nullptr);
-  connection_name = getBaseName(connection_name);
   dlogHierConnStart(
       source_pin, db_network_->dbToSta(dest_pin), connection_name);
 
@@ -628,12 +626,7 @@ std::string dbEditHierarchy::makeUniqueName(odb::dbModule* module,
       module,
       base_name.c_str(),
       odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
-  return std::string(block->getBaseName(full.c_str()));
-}
-
-const char* dbEditHierarchy::getBaseName(const char* connection_name) const
-{
-  return db_network_->block()->getBaseName(connection_name);
+  return std::string(odb::getModuleLocalName(module, full.c_str()));
 }
 
 void dbEditHierarchy::dlogHierConnStart(odb::dbITerm* source_pin,

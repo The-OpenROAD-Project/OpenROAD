@@ -3482,13 +3482,13 @@ TEST_F(TestInsertBuffer, BusBitTracePortName)
   ASSERT_NE(driver_pin, nullptr);
   dbModule* driver_module = driver_pin->getInst()->getModule();
   ASSERT_NE(driver_module, nullptr);
-  dbModNet* driver_mod_net = dbModNet::create(driver_module, "data[5]");
+  dbModNet* driver_mod_net = dbModNet::create(driver_module, "path\\/data[5]");
   ASSERT_TRUE(driver_mod_net->getModBTerms().empty());
   driver_pin->connect(driver_mod_net);
 
   // Reserve the sanitized name in the module's Verilog namespace.
-  dbInst* name_collision
-      = dbInst::create(block_, buffer_master, "data_5_", false, driver_module);
+  dbInst* name_collision = dbInst::create(
+      block_, buffer_master, "path\\/data_5_", false, driver_module);
   ASSERT_NE(name_collision, nullptr);
   dbITerm* collision_input = name_collision->findITerm("A");
   dbITerm* collision_output = name_collision->findITerm("Z");
@@ -3526,14 +3526,14 @@ TEST_F(TestInsertBuffer, BusBitTracePortName)
       true);
   ASSERT_NE(buffer, nullptr);
 
-  EXPECT_EQ(driver_module->findModBTerm("data[5]"), nullptr);
-  EXPECT_EQ(driver_module->findModBTerm("data_5_"), nullptr);
+  EXPECT_EQ(driver_module->findModBTerm("path\\/data[5]"), nullptr);
+  EXPECT_EQ(driver_module->findModBTerm("path\\/data_5_"), nullptr);
   dbSet<dbModBTerm> trace_ports = driver_mod_net->getModBTerms();
   ASSERT_EQ(trace_ports.size(), 1);
   dbModBTerm* trace_port = *trace_ports.begin();
   ASSERT_NE(trace_port, nullptr);
   const std::string trace_port_name = trace_port->getName();
-  EXPECT_EQ(trace_port_name.rfind("data_5__", 0), 0);
+  EXPECT_EQ(trace_port_name.rfind("path\\/data_5__", 0), 0);
   EXPECT_EQ(trace_port->getModNet(), driver_mod_net);
   EXPECT_NE(driver_module->getModInst()->findModITerm(trace_port->getName()),
             nullptr);

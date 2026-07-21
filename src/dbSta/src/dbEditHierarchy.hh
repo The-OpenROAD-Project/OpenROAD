@@ -66,8 +66,6 @@ class dbEditHierarchy
       const std::vector<odb::dbModule*>& source_parent_tree,
       const std::vector<odb::dbModule*>& dest_parent_tree) const;
 
-  const char* getBaseName(const char* connection_name) const;
-
   // Debug log methods
   void dlogHierConnStart(odb::dbITerm* source_pin,
                          Pin* dest_pin,

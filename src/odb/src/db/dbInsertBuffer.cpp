@@ -530,7 +530,7 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
   }
   std::string full = block_->makeNewNetName(
       module, name.c_str(), dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
-  return std::string(block_->getBaseName(full.c_str()));
+  return std::string(getModuleLocalName(module, full.c_str()));
 }
 
 int dbInsertBuffer::getModuleDepth(const dbModule* mod) const
@@ -1240,7 +1240,7 @@ dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
                                  port_name.c_str(),
                                  dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE,
                                  corresponding_flat_net);
-    port_name = block_->getBaseName(full_port_name.c_str());
+    port_name = getModuleLocalName(current_mod, full_port_name.c_str());
   }
 
   assert(parent_module->findModBTerm(port_name.c_str()) == nullptr);

@@ -993,17 +993,19 @@ TEST_F(TestHconn, BracketedConnectionName)
   source_inst->findITerm("A")->connect(inv1_mod_i0_modnet_);
   inv4_4_ip_->disconnect();
 
-  dbNet* flat_net = dbNet::create(block_, "data\\[5\\]", false);
+  dbNet* flat_net = dbNet::create(block_, "path\\/data\\[5\\]", false);
   ASSERT_NE(flat_net, nullptr);
   source_pin->connect(flat_net);
   inv4_4_ip_->connect(flat_net);
 
-  db_network_->hierarchicalConnect(source_pin, inv4_4_ip_, "data\\[5\\]");
+  db_network_->hierarchicalConnect(
+      source_pin, inv4_4_ip_, "path\\/data\\[5\\]");
 
-  EXPECT_EQ(inv1_mod_master_->findModBTerm("data\\[5\\]_o"), nullptr);
-  EXPECT_NE(inv1_mod_master_->findModBTerm("data_5__o"), nullptr);
-  EXPECT_EQ(inv4_mod_level2_master_->findModBTerm("data\\[5\\]_i"), nullptr);
-  EXPECT_NE(inv4_mod_level2_master_->findModBTerm("data_5__i"), nullptr);
+  EXPECT_EQ(inv1_mod_master_->findModBTerm("path\\/data\\[5\\]_o"), nullptr);
+  EXPECT_NE(inv1_mod_master_->findModBTerm("path\\/data_5__o"), nullptr);
+  EXPECT_EQ(inv4_mod_level2_master_->findModBTerm("path\\/data\\[5\\]_i"),
+            nullptr);
+  EXPECT_NE(inv4_mod_level2_master_->findModBTerm("path\\/data_5__i"), nullptr);
 }
 
 }  // namespace odb

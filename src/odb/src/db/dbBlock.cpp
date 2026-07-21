@@ -131,6 +131,7 @@
 #include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 #include "odb/poly_decomp.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -3879,14 +3880,10 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
 {
   const dbModule* scope = parent ? parent : getTopModule();
   dbModInst* mod_inst = scope ? scope->getModInst() : nullptr;
-  // Escaped local identifiers may contain the hierarchy delimiter.
-  const size_t local_name_offset
-      = mod_inst ? mod_inst->getHierarchicalName().size() + 1 : 0;
 
-  const auto exists = [this, scope, corresponding_flat_net, local_name_offset](
-                          const char* name) {
+  auto exists = [this, scope, corresponding_flat_net](const char* name) {
     if (scope != nullptr) {
-      const char* base = name + local_name_offset;
+      const char* base = getModuleLocalName(scope, name);
       // A net/port name must also be unique against instance names in the
       // scope: a net/port and an instance cannot share a name in one
       // Verilog scope.  OpenROAD can promote an anonymous net ("_NNNNN_")
@@ -3937,20 +3934,14 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
   //
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
   const dbModule* scope = parent ? parent->getMaster() : getTopModule();
-  // Escaped local identifiers may contain the hierarchy delimiter.
-  const size_t local_name_offset
-      = parent ? parent->getHierarchicalName().size() + 1 : 0;
-  const auto exists = [this, scope, local_name_offset](const char* name) {
-    if (findInst(name) != nullptr || findModInst(name) != nullptr) {
-      return true;
-    }
-
+  auto exists = [this, scope](const char* name) {
     // An instance name must also be unique against net/port names in the
     // scope: a net/port and an instance cannot share a name in one
     // Verilog scope (mirror of the instance check in makeNewNetName).
     if (scope != nullptr) {
-      const char* base = name + local_name_offset;
-      if (scope->getModNet(base) || scope->findModBTerm(base)
+      const char* base = getModuleLocalName(scope, name);
+      if (scope->findDbInst(base) || scope->findModInst(base)
+          || scope->getModNet(base) || scope->findModBTerm(base)
           || (scope == getTopModule() && findBTerm(base) != nullptr)) {
         return true;
       }

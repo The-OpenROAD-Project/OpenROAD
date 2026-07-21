@@ -48,6 +48,15 @@ std::string replaceBracketsWithUnderscores(std::string_view name)
   return sanitized_name;
 }
 
+const char* getModuleLocalName(const dbModule* module, const char* full_name)
+{
+  dbModInst* module_inst = module->getModInst();
+  if (module_inst == nullptr) {
+    return full_name;
+  }
+  return full_name + module_inst->getHierarchicalName().size() + 1;
+}
+
 static void buildRow(dbBlock* block,
                      const string& name,
                      dbSite* site,
