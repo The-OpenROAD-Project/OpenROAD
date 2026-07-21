@@ -332,7 +332,7 @@ TEST_F(ModuleFixture, makeNewNetName_avoids_instance_collision)
 // module scope ("Instance has the same name as port").
 TEST_F(ModuleFixture, makeNewInstName_avoids_net_collision)
 {
-  auto top = block_->getTopModule();
+  dbModule* top = block_->getTopModule();
   ASSERT_NE(top, nullptr);
 
   // Flat net collision: a net named "n1" exists in scope.
@@ -349,12 +349,22 @@ TEST_F(ModuleFixture, makeNewInstName_avoids_net_collision)
   EXPECT_STRNE(block_->getBaseName(hier_net.c_str()), "mn1")
       << "instance name must not collide with modnet 'mn1'";
 
-  // Port collision: a modbterm named "p1" on the top module.
+  // Module port collision: a modbterm named "p1" on the top module.
   dbModBTerm::create(top, "p1");
   std::string port = block_->makeNewInstName(
       nullptr, "p1", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   EXPECT_STRNE(block_->getBaseName(port.c_str()), "p1")
       << "instance name must not collide with port 'p1'";
+
+  // Top port collision: the bterm name differs from its backing net.
+  dbNet* top_port_net = dbNet::create(block_, "top_port_net");
+  ASSERT_NE(top_port_net, nullptr);
+  dbBTerm* top_port = dbBTerm::create(top_port_net, "top_port");
+  ASSERT_NE(top_port, nullptr);
+  std::string top_port_name = block_->makeNewInstName(
+      nullptr, "top_port", dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  EXPECT_STRNE(block_->getBaseName(top_port_name.c_str()), "top_port")
+      << "instance name must not collide with top port 'top_port'";
 
   // No collision: a fresh name is returned unchanged.
   std::string fresh = block_->makeNewInstName(

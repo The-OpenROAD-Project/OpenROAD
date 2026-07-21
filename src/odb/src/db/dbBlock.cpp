@@ -3942,7 +3942,8 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
     // scope (mirror of the instance check in makeNewNetName).
     if (scope != nullptr) {
       const char* base = getBaseName(name);
-      if (scope->getModNet(base) || scope->findModBTerm(base)) {
+      if (scope->getModNet(base) || scope->findModBTerm(base)
+          || (scope == getTopModule() && findBTerm(base) != nullptr)) {
         return true;
       }
     }
