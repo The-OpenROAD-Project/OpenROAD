@@ -72,10 +72,9 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
   }
 
  protected:
-  // NOLINTNEXTLINE(misc-include-cleaner)
   void sink_it_(const spdlog::details::log_msg& msg) override
   {
-    spdlog::memory_buf_t formatted;  // NOLINT(misc-include-cleaner)
+    spdlog::memory_buf_t formatted;
     spdlog::sinks::base_sink<std::mutex>::formatter_->format(msg, formatted);
     std::string text(formatted.data(), formatted.size());
     while (!text.empty() && (text.back() == '\n' || text.back() == '\r')) {
@@ -238,7 +237,8 @@ void WebServer::serve(int port)
           }
         });
 
-    auto const address = net::ip::make_address("0.0.0.0");
+    // CHANGED: 0.0.0.0 → 127.0.0.1 (security: restrict to localhost)
+    auto const address = net::ip::make_address("127.0.0.1");
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
 
@@ -422,7 +422,7 @@ void WebServer::stop()
   // the timer mid-shutdown.
   log_drain_timer_.reset();
   // Release without destroying — destroying io_context can crash on
-  // residual async handlers. Leak is bounded (at most one io_context
+  // residual async handlers.  Leak is bounded (at most one io_context
   // per serve/stop cycle).
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
   generator_.reset();
