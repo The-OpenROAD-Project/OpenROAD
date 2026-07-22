@@ -78,6 +78,7 @@ TESTS = [
     "region_adjustment",
     "remove_buffers1",
     "remove_buffers2",
+    "remove_buffers3",
     "repair_antennas1",
     "repair_antennas2",
     "repair_antennas3",
