@@ -44,6 +44,7 @@
         "dbChipCapNode.h",
         "dbChipNet.h",
         "dbDatabase.h",
-        "dbTable.h"
+        "dbTable.h",
+        "utl/Logger.h"
     ]
 }

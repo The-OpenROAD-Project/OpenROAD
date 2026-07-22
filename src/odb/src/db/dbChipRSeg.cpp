@@ -11,6 +11,7 @@
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/db.h"
+#include "utl/Logger.h"
 namespace odb {
 template class dbTable<_dbChipRSeg>;
 
@@ -94,6 +95,31 @@ dbChipRSeg* dbChipRSeg::create(dbChipNet* chip_net_,
 {
   _dbChipNet* chip_net = (_dbChipNet*) chip_net_;
   _dbChip* chip = (_dbChip*) chip_net_->getChip();
+  utl::Logger* logger = chip->getLogger();
+
+  if (!source_cap_node_ || !target_cap_node_) {
+    logger->error(utl::ODB,
+                  535,
+                  "Cannot create chip r-seg on net {} with a null cap node.",
+                  chip_net_->getName());
+  }
+
+  if (source_cap_node_ == target_cap_node_) {
+    logger->error(
+        utl::ODB,
+        536,
+        "Cannot create chip r-seg on net {} between a cap node and itself.",
+        chip_net_->getName());
+  }
+
+  if (source_cap_node_->getChipNet() != chip_net_
+      || target_cap_node_->getChipNet() != chip_net_) {
+    logger->error(utl::ODB,
+                  537,
+                  "Cannot create chip r-seg on net {}: its source and target "
+                  "cap nodes must belong to that net.",
+                  chip_net_->getName());
+  }
 
   _dbChipRSeg* r_seg = chip->chip_r_seg_tbl_->create();
   r_seg->source_cap_node_ = source_cap_node_->getImpl()->getOID();

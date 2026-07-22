@@ -460,5 +460,110 @@ TEST_F(SimpleDbFixture, test_chip_bump_bterm_serialization)
   EXPECT_EQ(bump2->getBTerm(), bterm2);
 }
 
+TEST_F(ChipHierarchyFixture, test_chip_parasitics)
+{
+  auto io_bump_inst
+      = *(*io_inst->getRegions().begin())->getChipBumpInsts().begin();
+
+  dbChipRegionInst* memory_region = nullptr;
+  for (auto region : memory_inst->getRegions()) {
+    if (region->getChipRegion() == memory_chip_region_r1) {
+      memory_region = region;
+      break;
+    }
+  }
+  auto memory_bump_inst = *memory_region->getChipBumpInsts().begin();
+
+  dbChipNet* net = dbChipNet::create(system_chip, "net1");
+  net->addBumpInst(io_bump_inst, {io_inst});
+  net->addBumpInst(memory_bump_inst, {memory_inst});
+
+  dbChipCapNode* source = dbChipCapNode::create(net);
+  source->setCapacitance(1.5);
+  source->setChipBumpInst(io_bump_inst);
+  dbChipCapNode* target = dbChipCapNode::create(net);
+  target->setChipBumpInst(memory_bump_inst);
+
+  EXPECT_EQ(net->getChipCapNodes().size(), 2);
+  EXPECT_FLOAT_EQ(source->getCapacitance(), 1.5);
+  EXPECT_EQ(source->getChipBumpInst(), io_bump_inst);
+  EXPECT_EQ(source->getChipNet(), net);
+
+  // getBTerm resolves through the bump, and is null until the bump has one.
+  EXPECT_EQ(source->getBTerm(), nullptr);
+  dbBTerm* bterm
+      = dbBTerm::create(dbNet::create(io_chip->getBlock(), "sig"), "sig");
+  io_bump->setBTerm(bterm);
+  EXPECT_EQ(source->getBTerm(), bterm);
+
+  dbChipRSeg* r_seg = dbChipRSeg::create(net, source, target);
+  r_seg->setResistance(0.097);
+
+  EXPECT_EQ(net->getChipRSegs().size(), 1);
+  EXPECT_FLOAT_EQ(r_seg->getResistance(), 0.097);
+  EXPECT_EQ(r_seg->getSourceCapNode(), source);
+  EXPECT_EQ(r_seg->getTargetCapNode(), target);
+  EXPECT_EQ(r_seg->getChipNet(), net);
+
+  // create() rejects null, identical, and foreign-net cap nodes.
+  EXPECT_THROW(dbChipRSeg::create(net, nullptr, target), std::exception);
+  EXPECT_THROW(dbChipRSeg::create(net, source, source), std::exception);
+  dbChipNet* other_net = dbChipNet::create(system_chip, "net2");
+  dbChipCapNode* other_cap_node = dbChipCapNode::create(other_net);
+  EXPECT_THROW(dbChipRSeg::create(net, source, other_cap_node), std::exception);
+
+  // destroy() unlinks from the net's lists.
+  dbChipRSeg::destroy(r_seg);
+  EXPECT_EQ(net->getChipRSegs().size(), 0);
+  dbChipCapNode::destroy(source);
+  EXPECT_EQ(net->getChipCapNodes().size(), 1);
+}
+
+TEST_F(SimpleDbFixture, test_chip_parasitics_serialization)
+{
+  createSimpleDB();
+  dbChip* chip = db_->getChip();
+
+  dbChipNet* net = dbChipNet::create(chip, "net1");
+  dbChipCapNode* source = dbChipCapNode::create(net);
+  source->setCapacitance(2.5);
+  dbChipCapNode* target = dbChipCapNode::create(net);
+  dbChipRSeg* r_seg = dbChipRSeg::create(net, source, target);
+  r_seg->setResistance(0.097);
+
+  std::filesystem::create_directory("results");
+  const std::string tmp_path = "results/test_chip_parasitics_serialization.odb";
+  {
+    std::ofstream out;
+    out.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                   | std::ios::eofbit);
+    out.open(tmp_path, std::ios::binary);
+    db_->write(out);
+  }
+
+  dbDatabase* db2 = dbDatabase::create();
+  {
+    std::ifstream in;
+    in.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+    in.open(tmp_path, std::ios::binary);
+    db2->read(in);
+  }
+
+  dbChip* chip2 = db2->getChip();
+  ASSERT_NE(chip2, nullptr);
+  ASSERT_EQ(chip2->getChipNets().size(), 1);
+  dbChipNet* net2 = *chip2->getChipNets().begin();
+
+  ASSERT_EQ(net2->getChipCapNodes().size(), 2);
+  ASSERT_EQ(net2->getChipRSegs().size(), 1);
+
+  dbChipRSeg* r_seg2 = *net2->getChipRSegs().begin();
+  EXPECT_FLOAT_EQ(r_seg2->getResistance(), 0.097);
+  EXPECT_FLOAT_EQ(r_seg2->getSourceCapNode()->getCapacitance(), 2.5);
+  EXPECT_EQ(r_seg2->getSourceCapNode()->getChipNet(), net2);
+  EXPECT_EQ(r_seg2->getTargetCapNode()->getChipNet(), net2);
+}
+
 }  // namespace
 }  // namespace odb
