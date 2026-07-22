@@ -76,6 +76,8 @@ or_integration_tests(
     region_adjustment
     remove_buffers1
     remove_buffers2
+    remove_buffers1_cugr
+    remove_buffers2_cugr
     remove_buffers3
     repair_antennas1
     repair_antennas2
