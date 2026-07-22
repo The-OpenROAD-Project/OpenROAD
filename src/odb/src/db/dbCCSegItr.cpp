@@ -10,7 +10,6 @@
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 
 namespace odb {

@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <limits>
 #include <list>
+#include <string>
 #include <vector>
 
 #include "find_some_net.h"
@@ -71,7 +72,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   // Model file is required if not option _lefRC is used.
   // _lefRC option requires Resistance and Capacitance values per Layer and
   // Technology to be taken from LEF file.
-  if (!_lefRC && !modelExists(extRules)) {
+  if (!_lefRC && !modelExists()) {
     return;
   }
 
@@ -399,7 +400,7 @@ uint32_t extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
   }
 
   _netGndcCalibFactor = net->getGndcCalibFactor();
-  _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
+  _netGndcCalibration = _netGndcCalibFactor != 1.0;
 
   initJunctionIdMaps(net);
 
@@ -742,7 +743,7 @@ dbRSeg* extMain::addRSeg_v2(dbNet* net,
                rsid,
                srcId,
                dstId,
-               rc->getCapacitance(0));
+               rc->getGroundCapacitance(0));
   }
 
   srcId = dstId;
@@ -785,11 +786,11 @@ void extMain::loopWarning(dbNet* net, const dbWirePathShape& pshape)
   }
   logger_->warn(RCX,
                 117,
-                "Net {} {} has a loop at x={} y={} {}.",
+                "Net {} {} has a loop at x={:.2f}um y={:.2f}um {}.",
                 net->getId(),
                 net->getConstName(),
-                pshape.point.getX(),
-                pshape.point.getY(),
+                _block->dbuToMicrons(pshape.point.getX()),
+                _block->dbuToMicrons(pshape.point.getY()),
                 tname);
 }
 void extMain::initJunctionIdMaps(dbNet* net)
@@ -805,7 +806,7 @@ void extMain::initJunctionIdMaps(dbNet* net)
   }
   uint32_t srcJid;
   dbWirePathItr pitr;
-  if (!(_mergeResBound != 0.0 || _mergeViaRes)) {
+  if (_mergeResBound == 0.0 && !_mergeViaRes) {
     return;
   }
   dbWire* wire = net->getWire();
@@ -985,10 +986,6 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
 
   // uint32_t cornerTable[10];
   uint32_t extCornerDbCnt = 0;
-
-  _minModelIndex = 0;
-  _maxModelIndex = 0;
-  _typModelIndex = 0;
 
   if (_processCornerTable != nullptr) {
     // User define process corners using <ext define_process_corner>

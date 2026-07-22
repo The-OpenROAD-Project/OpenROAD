@@ -45,8 +45,11 @@ for { set i 1 } { $i <= 100 } { incr i } {
 }
 ord::design_created
 
+proc arrival { vertex } {
+  return [[sta::vertex_worst_arrival_path $vertex max] arrival]
+}
+
 proc summarize_solution { } {
-  sta::network_changed
   estimate_parasitics -placement
   sta::find_timing
   puts "-------------------------------------------------------------"
@@ -54,9 +57,11 @@ proc summarize_solution { } {
   puts "-------------------------------------------------------------"
   set micron2 [expr [ord::microns_to_dbu 1]**2]
   for { set i 1 } { $i <= 100 } { incr i } {
+    set i1i [get_pin i1-$i/A]
     set i1o [get_pin i1-$i/Z]
     set i2i [get_pin i2-$i/A]
-    set delay [expr [[$i2i vertices] arrival max] - [[$i1o vertices] arrival max]]
+
+    set delay [expr [arrival [$i2i vertices]] - [arrival [$i1i vertices]]]
 
     set area 0.0
     set sequence ""

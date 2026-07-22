@@ -10,6 +10,7 @@
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbITerm.h"
 #include "dbInst.h"
@@ -17,22 +18,30 @@
 #include "dbNet.h"
 #include "dbObstruction.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <fstream>
+#include <set>
+#include <variant>
+#include <vector>
+
 #include "dbChip.h"
 #include "dbCore.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarker>;
 
 bool _dbMarker::operator==(const _dbMarker& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.visited != rhs.flags_.visited) {
     return false;
   }
@@ -61,6 +70,7 @@ bool _dbMarker::operator==(const _dbMarker& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbMarker::operator<(const _dbMarker& rhs) const
@@ -139,6 +149,12 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
         obj.shapes_.emplace_back(p);
         break;
       }
+      case _dbMarker::ShapeType::kCuboid: {
+        Cuboid c;
+        stream >> c;
+        obj.shapes_.emplace_back(c);
+        break;
+      }
     }
   }
   // User Code End >>
@@ -175,9 +191,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
     } else if (std::holds_alternative<Rect>(shape)) {
       stream << _dbMarker::ShapeType::kRect;
       stream << std::get<Rect>(shape);
-    } else {
+    } else if (std::holds_alternative<Polygon>(shape)) {
       stream << _dbMarker::ShapeType::kPolygon;
       stream << std::get<Polygon>(shape);
+    } else if (std::holds_alternative<Cuboid>(shape)) {
+      stream << _dbMarker::ShapeType::kCuboid;
+      stream << std::get<Cuboid>(shape);
     }
   }
   // User Code End <<
@@ -189,8 +208,9 @@ void _dbMarker::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["comment"].add(comment_);
+
+  // User Code Begin collectMemInfo
   info.children["sources"].add(sources_);
   info.children["shapes"].add(shapes_);
   // User Code End collectMemInfo
@@ -538,7 +558,7 @@ void dbMarker::setComment(const std::string& comment)
   obj->comment_ = comment;
 }
 
-std::string dbMarker::getComment() const
+const std::string& dbMarker::getComment() const
 {
   _dbMarker* obj = (_dbMarker*) this;
   return obj->comment_;
@@ -634,6 +654,19 @@ std::string dbMarker::getName() const
       case dbChipInstObj:
         sources += static_cast<dbChipInst*>(src)->getName();
         break;
+      case dbChipConnObj: {
+        const dbChipConn* conn = static_cast<dbChipConn*>(src);
+        sources += fmt::format(
+            "{}:{}", conn->getParentChip()->getName(), conn->getName());
+        break;
+      }
+      case dbChipRegionInstObj: {
+        const dbChipRegionInst* region = static_cast<dbChipRegionInst*>(src);
+        sources += fmt::format("{}.regions.{}",
+                               region->getChipInst()->getName(),
+                               region->getChipRegion()->getName());
+        break;
+      }
       default:
         obj->getLogger()->error(
             utl::ODB, 290, "Unsupported object type: {}", src->getTypeName());
@@ -686,6 +719,12 @@ void dbMarker::addShape(const Polygon& polygon)
 {
   _dbMarker* marker = (_dbMarker*) this;
   marker->shapes_.emplace_back(polygon);
+}
+
+void dbMarker::addShape(const Cuboid& cuboid)
+{
+  _dbMarker* marker = (_dbMarker*) this;
+  marker->shapes_.emplace_back(cuboid);
 }
 
 void dbMarker::setTechLayer(dbTechLayer* layer)
@@ -762,21 +801,23 @@ Rect dbMarker::getBBox() const
       }
     } else if (std::holds_alternative<Rect>(shape)) {
       bbox.merge(std::get<Rect>(shape));
-    } else {
+    } else if (std::holds_alternative<Polygon>(shape)) {
       bbox.merge(std::get<Polygon>(shape).getEnclosingRect());
+    } else if (std::holds_alternative<Cuboid>(shape)) {
+      bbox.merge(std::get<Cuboid>(shape).getEnclosingRect());
     }
   }
 
   return bbox;
 }
 
-std::set<dbObject*> dbMarker::getSources() const
+odb::PtrSet<dbObject> dbMarker::getSources() const
 {
   _dbMarker* marker = (_dbMarker*) this;
   _dbBlock* block = marker->getBlock();
   _dbChip* chip = marker->getChip();
 
-  std::set<dbObject*> objs;
+  odb::PtrSet<dbObject> objs;
   if (block) {
     for (const auto& [db_type, id] : marker->sources_) {
       dbObjectTable* table = block->getObjectTable(db_type);

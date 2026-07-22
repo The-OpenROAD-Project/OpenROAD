@@ -32,6 +32,7 @@ set(OPENROAD_SOURCE
   Design.cc
   Timing.cc
   Tech.cc
+  tcl_readline_setup.cc
   OpenRoad.cc
   Main.cc
   )
@@ -43,6 +44,8 @@ else()
 endif()
 
 if(USE_SYSTEM_OPENSTA)
+  find_package(CUDD REQUIRED)
+
   if(NOT OPENSTA_LIBRARY)
     find_library(OPENSTA_LIBRARY NAMES OpenSTA
                  PATHS
@@ -64,12 +67,9 @@ if(USE_SYSTEM_OPENSTA)
   add_library(OpenSTA STATIC IMPORTED)
   set_target_properties(OpenSTA PROPERTIES
     IMPORTED_LOCATION "${OPENSTA_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${OPENSTA_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES CUDD::CUDD
   )
-  if(CUDD_LIB)
-    set_target_properties(OpenSTA PROPERTIES 
-      INTERFACE_LINK_LIBRARIES "${CUDD_LIB}"
-    )
-  endif()
 else()
   # local build of opensta
   set(OPENSTA_LIBRARY "sta_swig")
@@ -113,23 +113,6 @@ endif()
 # Do not use REQUIRED because it also requires TK.
 find_package(TCL)
 
-# check for tclReadline
-set(TCL_READLINE_POSSIBLE_NAMES tclreadline-2.1.0
-    tclreadline-2.3.2 tclreadline-2.3.6 tclreadline-2.3.7 tclreadline-2.3.8
-    )
-find_library(TCL_READLINE_LIBRARY
-  NAMES tclreadline ${TCL_READLINE_POSSIBLE_NAMES}
-  PATHS ${TCL_LIB_PATHS}
-  )
-if (TCL_READLINE_LIBRARY)
-  message(STATUS "TCL readline library: ${TCL_READLINE_LIBRARY}")
-endif()
-
-find_path(TCL_READLINE_H tclreadline.h)
-if (TCL_READLINE_H)
-  message(STATUS "TCL readline header: ${TCL_READLINE_H}")
-endif()
-
 option(BUILD_TCLX "Build with tclX included" ON)
 if (BUILD_TCLX AND TCLX_LIBRARY)
   message(STATUS "TclX library: ${TCLX_LIBRARY}")
@@ -138,14 +121,14 @@ if (BUILD_TCLX AND TCLX_H)
   message(STATUS "TclX header: ${TCLX_H}")
 endif()
 
-find_package(SWIG 4.0 REQUIRED)
-if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
-  message(STATUS "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
-endif()
+find_package(SWIG 4.3 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost CONFIG REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
+
+find_package(absl REQUIRED)
+message(STATUS "absl: ${absl_VERSION}")
 
 if (ENABLE_TESTS)
   find_package(GTest REQUIRED)
@@ -244,21 +227,39 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 ################################################################
 
+# Shared Tcl TAB completion engine — used by the web Tcl console and
+# (later) by the CLI linenoise REPL.
+add_library(cli_completer STATIC
+  cli_completer.cc
+)
+target_include_directories(cli_completer
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${TCL_INCLUDE_PATH}
+)
+target_link_libraries(cli_completer PUBLIC ${TCL_LIBRARY})
+target_compile_features(cli_completer PUBLIC cxx_std_20)
+
+################################################################
+
 # Build flow tools
 add_subdirectory(ifp)
 add_subdirectory(pad)
 add_subdirectory(odb)
 if (NOT USE_SYSTEM_OPENSTA)
-  if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
-    # Pass along tcl readline enablement to OpenSTA build
-    set(USE_TCL_READLINE ON)
-    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-  endif()
+  # OpenROAD drives its interactive line editing via the linenoise-backed
+  # ::tclreadline shim in src/tcl_readline_setup.cc.  We do not want
+  # OpenSTA's standalone `sta` binary to pull in GNU readline / tclreadline.
+  set(USE_TCL_READLINE OFF)
+  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
   add_subdirectory(sta)
 endif()
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
-add_subdirectory(tst)
+if(ENABLE_TESTS)
+  # tst provides gtest-based fixture libraries used only by test targets, and
+  # links GTest::gtest, which only exists when ENABLE_TESTS is on.
+  add_subdirectory(tst)
+endif()
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
@@ -285,6 +286,8 @@ add_subdirectory(dft)
 add_subdirectory(mpl)
 add_subdirectory(par)
 add_subdirectory(est)
+add_subdirectory(syn)
+add_subdirectory(web)
 
 ################################################################
 
@@ -343,7 +346,6 @@ target_link_libraries(openroad
   cut
   grt
   tap
-  gui
   drt
   dst
   psm
@@ -355,6 +357,12 @@ target_link_libraries(openroad
   mpl
   par
   est
+  syn
+  web
+  gui
+  cli_completer
+  linenoise
+  absl::synchronization
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -362,16 +370,6 @@ target_link_libraries(openroad
 )
 
 target_compile_definitions(openroad PRIVATE BUILD_TYPE="${CMAKE_BUILD_TYPE}")
-
-# tclReadline
-if (TCL_READLINE_LIBRARY AND TCL_READLINE_H)
-  target_compile_definitions(openroad PRIVATE ENABLE_READLINE)
-  target_link_libraries(openroad ${TCL_READLINE_LIBRARY})
-  target_include_directories(openroad PRIVATE ${TCL_READLINE_H})
-  message(STATUS "TCL readline enabled")
-else()
-  message(STATUS "TCL readline disabled")
-endif()
 
 if (BUILD_TCLX AND TCLX_LIBRARY AND TCLX_H)
   target_compile_definitions(openroad PRIVATE ENABLE_TCLX)
@@ -387,7 +385,9 @@ if (ZLIB_FOUND)
 endif()
 
 # Optional CUDD library for OpenSTA
-if (CUDD_LIB)
+if (TARGET CUDD::CUDD)
+  target_link_libraries(openroad CUDD::CUDD)
+elseif (CUDD_LIB)
   target_link_libraries(openroad ${CUDD_LIB})
 endif()
 
@@ -409,31 +409,35 @@ if (Python3_FOUND AND BUILD_PYTHON)
       OpenSTA
       ifp
   )
-  target_link_libraries(openroad
-    ord_py
-    odb_py
-    ifp_py
-    utl_py
-    ant_py
-    grt_py
-    gpl_py
-    dpl_py
-    exa_py
-    ppl_py
-    tap_py
-    cgt_py
-    cts_py
-    drt_py
-    fin_py
-#    ram_py
-    rcx_py
-    rmp_py
-    stt_py
-    psm_py
-    pdn_py
-    dft_py
-    par_py
+  set(OPENROAD_PYTHON_MODULES
+      ord_py
+      odb_py
+      ifp_py
+      utl_py
+      ant_py
+      grt_py
+      gpl_py
+      dpl_py
+      exa_py
+      ppl_py
+      tap_py
+      cgt_py
+      cts_py
+      drt_py
+      fin_py
+#      ram_py
+      rcx_py
+      rmp_py
+      stt_py
+      psm_py
+      pdn_py
+      rsz_py
+      syn_py
+      dft_py
+      par_py
+      web_py
   )
+  target_link_libraries(openroad ${OPENROAD_PYTHON_MODULES})
 
 else()
   message(STATUS "Python3 disabled")

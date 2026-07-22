@@ -4,14 +4,20 @@
 #include "ConcreteSwapArithModules.hh"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstring>
+#include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
-#include "sta/Liberty.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
@@ -77,7 +83,7 @@ bool ConcreteSwapArithModules::replaceArithModules(const int path_count,
 
   // Identify critical mod instances based on target, path_count and
   // slack_threshold
-  std::set<dbModInst*> arithInsts;
+  odb::PtrSet<dbModInst> arithInsts;
   findCriticalInstances(path_count, target, slack_threshold, arithInsts);
   if (arithInsts.empty()) {
     return false;
@@ -91,7 +97,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
     const int path_count,
     const std::string& target,
     const float slack_threshold,
-    std::set<dbModInst*>& insts)
+    odb::PtrSet<dbModInst>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -100,14 +106,20 @@ void ConcreteSwapArithModules::findCriticalInstances(
                 slack_threshold);
 
   // Find all violating endpoints and slacks
-  const VertexSet* endpoints = sta_->endpoints();
+  //
+  // Make sure timing is fully computed before we start iterating
+  // over the endpoint set. Otherwise the set can get modified
+  // mid iteration by the slack query.
+  sta_->updateTiming(false);
+  const VertexSet& endpoints = sta_->endpoints();
   vector<pair<Vertex*, Slack>> violating_ends;
-  for (Vertex* end : *endpoints) {
-    const Slack end_slack = sta_->vertexSlack(end, max_);
+  for (Vertex* end : endpoints) {
+    const Slack end_slack = sta_->slack(end, max_);
     if (end_slack < slack_threshold) {
       violating_ends.emplace_back(end, end_slack);
     }
   }
+
   std::ranges::stable_sort(violating_ends,
                            [](const auto& end_slack1, const auto& end_slack2) {
                              return end_slack1.second < end_slack2.second;
@@ -145,7 +157,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
 
 void ConcreteSwapArithModules::collectArithInstsOnPath(
     const Path* path,
-    std::set<dbModInst*>& arithInsts)
+    odb::PtrSet<dbModInst>& arithInsts)
 {
   PathExpanded expanded(path, sta_);
   if (expanded.size() > 1) {
@@ -241,11 +253,11 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
+bool ConcreteSwapArithModules::doSwapInstances(odb::PtrSet<dbModInst>& insts,
                                                const std::string& target)
 {
   int swapped_count = 0;
-  std::set<dbModInst*> swappedInsts;
+  odb::PtrSet<dbModInst> swappedInsts;
 
   for (dbModInst* inst : insts) {
     dbModule* old_master = inst->getMaster();
@@ -296,7 +308,7 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
                 target);
   logger_->metric("design__instance__count__swapped_arithmetic_operator",
                   swapped_count);
-  return (swapped_count > 0);
+  return swapped_count > 0;
 }
 
 void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,

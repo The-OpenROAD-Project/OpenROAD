@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 
@@ -20,7 +21,7 @@ class dbTechLayer;
 
 namespace sta {
 class dbSta;
-class Corner;
+class Scene;
 }  // namespace sta
 namespace utl {
 class Logger;
@@ -31,6 +32,10 @@ class EstimateParasitics;
 namespace dpl {
 class Opendp;
 }
+namespace gui {
+class HeatMapSourceRegistration;
+using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
+}  // namespace gui
 
 namespace psm {
 class IRDropDataSource;
@@ -62,7 +67,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   };
 
   using IRDropByPoint = std::map<odb::Point, double>;
-  using IRDropByLayer = std::map<odb::dbTechLayer*, IRDropByPoint>;
+  using IRDropByLayer = odb::PtrMap<odb::dbTechLayer, IRDropByPoint>;
 
   PDNSim(utl::Logger* logger,
          odb::dbDatabase* db,
@@ -71,10 +76,10 @@ class PDNSim : public odb::dbBlockCallBackObj
          dpl::Opendp* opendp);
   ~PDNSim() override;
 
-  void setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage);
-  void setInstPower(odb::dbInst* inst, sta::Corner* corner, float power);
+  void setNetVoltage(odb::dbNet* net, sta::Scene* corner, double voltage);
+  void setInstPower(odb::dbInst* inst, sta::Scene* corner, float power);
   void analyzePowerGrid(odb::dbNet* net,
-                        sta::Corner* corner,
+                        sta::Scene* corner,
                         GeneratedSourceType source_type,
                         const std::string& voltage_file,
                         bool use_prev_solution,
@@ -83,12 +88,12 @@ class PDNSim : public odb::dbBlockCallBackObj
                         const std::string& error_file,
                         const std::string& voltage_source_file);
   void writeSpiceNetwork(odb::dbNet* net,
-                         sta::Corner* corner,
+                         sta::Scene* corner,
                          GeneratedSourceType source_type,
                          const std::string& spice_file,
                          const std::string& voltage_source_file);
   void getIRDropForLayer(odb::dbNet* net,
-                         sta::Corner* corner,
+                         sta::Scene* corner,
                          odb::dbTechLayer* layer,
                          IRDropByPoint& ir_drop) const;
   bool checkConnectivity(odb::dbNet* net,
@@ -122,6 +127,9 @@ class PDNSim : public odb::dbBlockCallBackObj
   void addDecapMaster(odb::dbMaster* decap_master, double decap_cap);
   void insertDecapCells(double target, const char* net_name);
 
+  odb::dbNet* getLastAnalyzedNet() const { return last_net_; }
+  sta::Scene* getLastAnalyzedCorner() const { return last_corner_; }
+
  private:
   // Functions of decap cells
   odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
@@ -135,16 +143,17 @@ class PDNSim : public odb::dbBlockCallBackObj
   dpl::Opendp* opendp_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
-  std::unique_ptr<IRDropDataSource> heatmap_;
+  gui::HeatMapSourceHandle heatmap_source_;
 
   bool debug_gui_enabled_ = false;
 
   GeneratedSourceSettings generated_source_settings_;
 
-  std::map<odb::dbNet*, std::unique_ptr<IRSolver>> solvers_;
-  std::map<odb::dbNet*, std::map<sta::Corner*, double>> user_voltages_;
-  std::map<odb::dbInst*, std::map<sta::Corner*, float>> user_powers_;
+  odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>> solvers_;
+  odb::PtrMap<odb::dbNet, std::map<sta::Scene*, double>> user_voltages_;
+  odb::PtrMap<odb::dbInst, std::map<sta::Scene*, float>> user_powers_;
 
-  sta::Corner* last_corner_ = nullptr;
+  odb::dbNet* last_net_ = nullptr;
+  sta::Scene* last_corner_ = nullptr;
 };
 }  // namespace psm

@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "utl/Logger.h"
+#include "utl/Progress.h"
 
 namespace utl {
 

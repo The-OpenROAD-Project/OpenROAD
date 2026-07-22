@@ -9,16 +9,21 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSStructure.h"
+#include "odb/geom.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSBox>;
 
 bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (layer_ != rhs.layer_) {
     return false;
   }
@@ -30,6 +35,7 @@ bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSBox::operator<(const _dbGDSBox& rhs) const
@@ -106,7 +112,7 @@ int16_t dbGDSBox::getDatatype() const
   return obj->datatype_;
 }
 
-void dbGDSBox::setBounds(Rect bounds)
+void dbGDSBox::setBounds(const Rect& bounds)
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
 
@@ -120,10 +126,17 @@ Rect dbGDSBox::getBounds() const
 }
 
 // User Code Begin dbGDSBoxPublicMethods
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSBox::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>& dbGDSBox::getPropattr()
+    const
 {
   auto* obj = (_dbGDSBox*) this;
   return obj->propattr_;
+}
+
+void dbGDSBox::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSBox*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSBox* dbGDSBox::create(dbGDSStructure* structure)

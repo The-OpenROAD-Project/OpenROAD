@@ -13,6 +13,10 @@
 #include "dbVector.h"
 #include "odb/dbMatrix.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -38,6 +42,7 @@ class _dbTechLayerForbiddenSpacingRule;
 class _dbTechLayerKeepOutZoneRule;
 class _dbTechLayerWrongDirSpacingRule;
 class _dbTechLayerTwoWiresForbiddenSpcRule;
+class _dbTechLayerVoltageSpacing;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -65,7 +70,8 @@ struct dbTechLayerFlags
   bool right_way_on_grid_only_check_mask : 1;
   bool rect_only_except_non_core_pins : 1;
   uint32_t lef58_type : 5;
-  uint32_t spare_bits : 4;
+  bool is_backside : 1;
+  uint32_t spare_bits : 3;
 };
 
 class _dbTechLayer : public _dbObject
@@ -88,6 +94,7 @@ class _dbTechLayer : public _dbObject
 
   dbTechLayerFlags flags_;
   uint32_t wrong_way_width_;
+  uint32_t wrong_way_min_width_;
   float layer_adjustment_;
   std::vector<std::pair<int, int>> orth_spacing_tbl_;
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
@@ -112,6 +119,7 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
   dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>*
       two_wires_forbidden_spc_rules_tbl_;
+  dbTable<_dbTechLayerVoltageSpacing>* voltage_spacing_rules_tbl_;
 
   // User Code Begin Fields
 
@@ -127,7 +135,7 @@ class _dbTechLayer : public _dbObject
   uint32_t wire_extension_;
   uint32_t number_;
   uint32_t rlevel_;
-  double area_;
+  int64_t area_;
   uint32_t thickness_;
   uint32_t max_width_;
   int min_width_;

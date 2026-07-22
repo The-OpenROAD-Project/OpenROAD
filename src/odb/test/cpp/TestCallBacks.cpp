@@ -2,7 +2,8 @@
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
-#include "tst/fixture.h"
+#include "odb/dbTypes.h"
+#include "tst/db_fixture.h"
 
 namespace odb {
 namespace {

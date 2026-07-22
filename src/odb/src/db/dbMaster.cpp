@@ -25,7 +25,6 @@
 #include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -61,6 +60,10 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
   }
 
   if (flags_.type != rhs.flags_.type) {
+    return false;
+  }
+
+  if (flags_.is_backside_bridge != rhs.flags_.is_backside_bridge) {
     return false;
   }
 
@@ -170,6 +173,7 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   flags_.mark = 0;
   flags_.special_power = 0;
   flags_.sequential = 0;
+  flags_.is_backside_bridge = 0;
   flags_.spare_bits_19 = 0;
 
   x_ = 0;
@@ -640,7 +644,19 @@ uint32_t dbMaster::isMarked()
 void dbMaster::setSpecialPower(bool value)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->flags_.special_power = (value == true) ? 1 : 0;
+  master->flags_.special_power = (value) ? 1 : 0;
+}
+
+void dbMaster::setBacksideBridge(bool is_bridge)
+{
+  _dbMaster* master = (_dbMaster*) this;
+  master->flags_.is_backside_bridge = is_bridge ? 1 : 0;
+}
+
+bool dbMaster::isBacksideBridge() const
+{
+  _dbMaster* master = (_dbMaster*) this;
+  return master->flags_.is_backside_bridge == 1;
 }
 
 bool dbMaster::isSpecialPower()

@@ -21,16 +21,17 @@
 #include "boost/geometry/geometry.hpp"
 #include "connection.h"
 #include "db_sta/dbNetwork.hh"
+#include "debug_gui.h"
 #include "est/EstimateParasitics.h"
 #include "ir_network.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "psm/pdnsim.h"
 #include "shape.h"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
@@ -85,7 +86,7 @@ odb::dbTech* IRSolver::getTech() const
 }
 
 PDNSim::IRDropByPoint IRSolver::getIRDrop(odb::dbTechLayer* layer,
-                                          sta::Corner* corner) const
+                                          sta::Scene* corner) const
 {
   PDNSim::IRDropByPoint ir_drop;
 
@@ -124,36 +125,25 @@ bool IRSolver::check(bool check_bterms)
     return connected_.value();
   }
 
-  // set to true and unset if it failed
-  connected_ = true;
-  if (check_bterms && !checkBTerms()) {
-    reportMissingBTerm();
+  if (!network_->hasNodes()) {
     connected_ = false;
-  }
-  if (!checkOpen()) {
-    reportUnconnectedNodes();
-    connected_ = false;
-  }
-  if (!checkShort()) {
-    connected_ = false;
+  } else {
+    // set to true and unset if it failed
+    connected_ = true;
+    if (check_bterms && !checkBTerms()) {
+      reportMissingBTerm();
+      connected_ = false;
+    }
+    if (!checkOpen()) {
+      reportUnconnectedNodes();
+      connected_ = false;
+    }
+    if (!checkShort()) {
+      connected_ = false;
+    }
   }
 
   return connected_.value();
-}
-
-bool IRSolver::wasNodeVisited(const std::unique_ptr<ITermNode>& node) const
-{
-  return wasNodeVisited(node.get());
-}
-
-bool IRSolver::wasNodeVisited(const std::unique_ptr<Node>& node) const
-{
-  return wasNodeVisited(node.get());
-}
-
-bool IRSolver::wasNodeVisited(const Node* node) const
-{
-  return visited_.find(node) != visited_.end();
 }
 
 bool IRSolver::checkOpen()
@@ -161,7 +151,7 @@ bool IRSolver::checkOpen()
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Check open: {}");
 
-  visited_.clear();
+  network_->clearVisitedNodes();
   const std::size_t total_nodes = network_->getNodeCount(true);
   const auto connections_map = network_->getConnectionMap();
 
@@ -179,7 +169,7 @@ bool IRSolver::checkOpen()
   while (!queue.empty()) {
     Node* node = queue.front();
     queue.pop();
-    if (wasNodeVisited(node)) {
+    if (node->isVisited()) {
       // already been here, so we can continue to next node
       continue;
     }
@@ -196,11 +186,11 @@ bool IRSolver::checkOpen()
                  total_nodes);
     }
 
-    visited_.insert(node);
+    node->setVisited(true);
 
     for (const auto* conn : connections_map.at(node)) {
       Node* next = conn->getOtherNode(node);
-      if (wasNodeVisited(next)) {
+      if (next->isVisited()) {
         // already been here, so we do not need to add it to the queue
         continue;
       }
@@ -210,7 +200,7 @@ bool IRSolver::checkOpen()
 
   for (const auto& [layer, layer_nodes] : network_->getNodes()) {
     for (const auto& node : layer_nodes) {
-      if (wasNodeVisited(node)) {
+      if (node->isVisited()) {
         continue;
       }
 
@@ -249,7 +239,7 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
 
   for (const auto& [layer, nodes] : network_->getNodes()) {
     for (const auto& node : nodes) {
-      if (wasNodeVisited(node)) {
+      if (node->isVisited()) {
         continue;
       }
 
@@ -258,7 +248,7 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
   }
 
   for (const auto& node : network_->getITermNodes()) {
-    if (wasNodeVisited(node)) {
+    if (node->isVisited()) {
       continue;
     }
 
@@ -307,7 +297,7 @@ void IRSolver::reportUnconnectedNodes() const
         marker->addShape(node->getPoint());
       }
     }
-    std::map<odb::dbTechLayer*, IRNetwork::ShapeTree> shapes;
+    odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> shapes;
     odb::dbMarkerCategory* category
         = odb::dbMarkerCategory::create(net_category, "Unconnected shape");
 
@@ -353,7 +343,7 @@ void IRSolver::reportUnconnectedNodes() const
   }
 
   if (!results.unconnected_iterms.empty()) {
-    std::set<odb::dbInst*> insts;
+    odb::PtrSet<odb::dbInst> insts;
     for (const auto& node : results.unconnected_iterms) {
       insts.insert(node->getITerm()->getInst());
       logger_->warn(utl::PSM,
@@ -388,7 +378,7 @@ bool IRSolver::checkShort() const
   return true;
 }
 
-void IRSolver::assertResistanceMap(sta::Corner* corner) const
+void IRSolver::assertResistanceMap(sta::Scene* corner) const
 {
   const auto required_layers = network_->getLayers();
   bool error = false;
@@ -410,7 +400,7 @@ void IRSolver::assertResistanceMap(sta::Corner* corner) const
   }
 }
 
-Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
+Connection::ResistanceMap IRSolver::getResistanceMap(sta::Scene* corner) const
 {
   Connection::ResistanceMap resistance;
 
@@ -476,7 +466,7 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
 }
 
 Connection::ConnectionMap<Connection::Conductance>
-IRSolver::generateConductanceMap(sta::Corner* corner,
+IRSolver::generateConductanceMap(sta::Scene* corner,
                                  const Connections& connections) const
 {
   const utl::DebugScopedTimer timer(
@@ -495,7 +485,7 @@ IRSolver::generateConductanceMap(sta::Corner* corner,
 
 IRSolver::Voltage IRSolver::generateSourceNodes(GeneratedSourceType source_type,
                                                 const std::string& source_file,
-                                                sta::Corner* corner,
+                                                sta::Scene* corner,
                                                 SourceNodes& sources) const
 {
   const utl::DebugScopedTimer timer(
@@ -739,7 +729,7 @@ SourceNodes IRSolver::generateSourceNodesFromShapes(
 
 IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
     const std::string& source_file,
-    sta::Corner* corner,
+    sta::Scene* corner,
     SourceNodes& sources) const
 {
   const utl::DebugScopedTimer timer(
@@ -827,13 +817,13 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
 }
 
 IRSolver::Power IRSolver::buildNodeCurrentMap(
-    sta::Corner* corner,
+    sta::Scene* corner,
     ValueNodeMap<Current>& currents) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
   // Build power map
-  std::map<odb::dbInst*, Power> instance_powers;
+  odb::PtrMap<odb::dbInst, Power> instance_powers;
   const auto inst_nodes = network_->getInstanceNodeMapping();
   const Voltage power_voltage = getPowerNetVoltage(corner);
   if (power_voltage == 0) {
@@ -1005,7 +995,7 @@ void IRSolver::addSourcesToMatrixAndVoltages(
   }
 }
 
-void IRSolver::solve(sta::Corner* corner,
+void IRSolver::solve(sta::Scene* corner,
                      GeneratedSourceType source_type,
                      const std::string& source_file)
 {
@@ -1014,6 +1004,14 @@ void IRSolver::solve(sta::Corner* corner,
   if (network_->isFloorplanningOnly()) {
     network_->setFloorplanning(false);
     network_->construct();
+  }
+
+  if (!network_->hasNodes()) {
+    voltages_.erase(corner);
+    currents_.erase(corner);
+    solution_voltages_.erase(corner);
+    solution_power_.erase(corner);
+    return;
   }
 
   assertResistanceMap(corner);
@@ -1168,13 +1166,13 @@ void IRSolver::solve(sta::Corner* corner,
   solution_power_[corner] = total_power;
 }
 
-std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
-    sta::Corner* corner) const
+odb::PtrMap<odb::dbInst, IRSolver::Power> IRSolver::getInstancePower(
+    sta::Scene* corner) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Power calculation: {}");
 
-  std::map<odb::dbInst*, IRSolver::Power> inst_power;
+  odb::PtrMap<odb::dbInst, IRSolver::Power> inst_power;
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
@@ -1201,13 +1199,13 @@ std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
   return inst_power;
 }
 
-std::optional<IRSolver::Voltage> IRSolver::getSDCVoltage(sta::Corner* corner,
+std::optional<IRSolver::Voltage> IRSolver::getSDCVoltage(sta::Scene* corner,
                                                          odb::dbNet* net) const
 {
   const auto max = sta::MinMax::max();
   const sta::dbNetwork* network = sta_->getDbNetwork();
 
-  sta::Sdc* sdc = sta_->sdc();
+  sta::Sdc* sdc = corner->sdc();
   bool exists;
   float sdc_voltage;
   sdc->voltage(network->dbToSta(net), max, sdc_voltage, exists);
@@ -1224,13 +1222,12 @@ std::optional<IRSolver::Voltage> IRSolver::getSDCVoltage(sta::Corner* corner,
 }
 
 std::optional<IRSolver::Voltage> IRSolver::getPVTVoltage(
-    sta::Corner* corner) const
+    sta::Scene* corner) const
 {
   const auto max = sta::MinMax::max();
   const sta::dbNetwork* network = sta_->getDbNetwork();
 
-  const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max);
-  const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+  const sta::Pvt* pvt = corner->sdc()->operatingConditions(max);
   if (pvt == nullptr) {
     const sta::LibertyLibrary* default_library
         = network->defaultLibertyLibrary();
@@ -1246,7 +1243,7 @@ std::optional<IRSolver::Voltage> IRSolver::getPVTVoltage(
   return {};
 }
 
-std::optional<IRSolver::Voltage> IRSolver::getUserVoltage(sta::Corner* corner,
+std::optional<IRSolver::Voltage> IRSolver::getUserVoltage(sta::Scene* corner,
                                                           odb::dbNet* net) const
 {
   auto find_net = user_voltages_.find(net);
@@ -1270,7 +1267,7 @@ std::optional<IRSolver::Voltage> IRSolver::getUserVoltage(sta::Corner* corner,
 }
 
 std::optional<IRSolver::Voltage> IRSolver::getSolutionVoltage(
-    sta::Corner* corner) const
+    sta::Scene* corner) const
 {
   auto find_corner = solution_voltages_.find(corner);
   if (find_corner != solution_voltages_.end()) {
@@ -1295,7 +1292,7 @@ odb::dbNet* IRSolver::getPowerNet() const
   return nullptr;
 }
 
-IRSolver::Voltage IRSolver::getPowerNetVoltage(sta::Corner* corner) const
+IRSolver::Voltage IRSolver::getPowerNetVoltage(sta::Scene* corner) const
 {
   odb::dbNet* net = getPowerNet();
 
@@ -1331,7 +1328,7 @@ IRSolver::Voltage IRSolver::getPowerNetVoltage(sta::Corner* corner) const
   return 0.0;
 }
 
-IRSolver::Voltage IRSolver::getNetVoltage(sta::Corner* corner) const
+IRSolver::Voltage IRSolver::getNetVoltage(sta::Scene* corner) const
 {
   if (net_->getSigType() == odb::dbSigType::GROUND) {
     return 0.0;
@@ -1340,7 +1337,7 @@ IRSolver::Voltage IRSolver::getNetVoltage(sta::Corner* corner) const
   return getPowerNetVoltage(corner);
 }
 
-bool IRSolver::hasSolution(sta::Corner* corner) const
+bool IRSolver::hasSolution(sta::Scene* corner) const
 {
   const bool has_voltages = voltages_.find(corner) != voltages_.end();
   const bool has_currents = currents_.find(corner) != currents_.end();
@@ -1351,7 +1348,7 @@ bool IRSolver::hasSolution(sta::Corner* corner) const
   return false;
 }
 
-IRSolver::Results IRSolver::getSolution(sta::Corner* corner) const
+IRSolver::Results IRSolver::getSolution(sta::Scene* corner) const
 {
   Results results;
   if (!hasSolution(corner)) {
@@ -1405,7 +1402,7 @@ IRSolver::Results IRSolver::getSolution(sta::Corner* corner) const
   return results;
 }
 
-IRSolver::EMResults IRSolver::getEMSolution(sta::Corner* corner) const
+IRSolver::EMResults IRSolver::getEMSolution(sta::Scene* corner) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "EM solution: {}");
@@ -1430,7 +1427,7 @@ IRSolver::EMResults IRSolver::getEMSolution(sta::Corner* corner) const
 }
 
 std::string IRSolver::getMetricKey(const std::string& key,
-                                   sta::Corner* corner) const
+                                   sta::Scene* corner) const
 {
   const std::string corner_name
       = corner != nullptr ? corner->name() : "default";
@@ -1440,7 +1437,7 @@ std::string IRSolver::getMetricKey(const std::string& key,
   return key + metric_suffix;
 }
 
-void IRSolver::report(sta::Corner* corner) const
+void IRSolver::report(sta::Scene* corner) const
 {
   const auto results = getSolution(corner);
 
@@ -1464,7 +1461,7 @@ void IRSolver::report(sta::Corner* corner) const
                   results.worst_ir_drop);
 }
 
-void IRSolver::reportEM(sta::Corner* corner) const
+void IRSolver::reportEM(sta::Scene* corner) const
 {
   const auto results = getEMSolution(corner);
 
@@ -1502,7 +1499,7 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
 }
 
 void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
-                                        sta::Corner* corner) const
+                                        sta::Scene* corner) const
 {
   if (voltage_file.empty()) {
     return;
@@ -1542,8 +1539,7 @@ void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
   }
 }
 
-void IRSolver::writeEMFile(const std::string& em_file,
-                           sta::Corner* corner) const
+void IRSolver::writeEMFile(const std::string& em_file, sta::Scene* corner) const
 {
   if (em_file.empty()) {
     return;
@@ -1577,7 +1573,7 @@ void IRSolver::writeEMFile(const std::string& em_file,
 
 void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
                               const std::string& spice_file,
-                              sta::Corner* corner,
+                              sta::Scene* corner,
                               const std::string& voltage_source_file) const
 {
   std::ofstream spice(spice_file);
@@ -1650,7 +1646,7 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
 }
 
 Connection::ConnectionMap<IRSolver::Current> IRSolver::generateCurrentMap(
-    sta::Corner* corner) const
+    sta::Scene* corner) const
 {
   const auto& voltages = voltages_.at(corner);
   Connection::ConnectionMap<IRSolver::Current> currents;
@@ -1736,9 +1732,9 @@ bool IRSolver::belongsTo(Connection* connection) const
   return network_->belongsTo(connection);
 }
 
-std::vector<sta::Corner*> IRSolver::getCorners() const
+std::vector<sta::Scene*> IRSolver::getCorners() const
 {
-  std::vector<sta::Corner*> corners;
+  std::vector<sta::Scene*> corners;
   corners.reserve(voltages_.size());
 
   for (const auto& [corner, nodes] : voltages_) {
@@ -1748,7 +1744,7 @@ std::vector<sta::Corner*> IRSolver::getCorners() const
   return corners;
 }
 
-std::optional<IRSolver::Voltage> IRSolver::getVoltage(sta::Corner* corner,
+std::optional<IRSolver::Voltage> IRSolver::getVoltage(sta::Scene* corner,
                                                       Node* node) const
 {
   auto find_c = voltages_.find(corner);

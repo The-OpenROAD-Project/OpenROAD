@@ -1,7 +1,14 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO IFP-0107] Defining die area using utilization: 1.00% and aspect ratio: 1.
 [WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
 [INFO IFP-0001] Added 39 rows of 235 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO IFP-0101] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO IFP-0102] Core area:                        11467.248 um^2
+[INFO IFP-0103] Total instances area:               158.902 um^2
+[INFO IFP-0104] Effective utilization:                0.014
+[INFO IFP-0105] Number of instances:                     22
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 398
@@ -11,20 +18,23 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 410.02 um.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0016] Core area:                   11467.248 um^2
+[INFO GPL-0036] Movable instances area:        158.902 um^2
+[INFO GPL-0037] Total instances area:          158.902 um^2
+[INFO GPL-0035] Pin density area adjust:        16.145 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:                37
 [INFO GPL-0007] Movable instances:                  13
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                    24
 [INFO GPL-0010] Number of nets:                     26
 [INFO GPL-0011] Number of pins:                     65
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] Placement BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 11467.248 um^2
 [INFO GPL-0017] Fixed instances area:         4684.493 um^2
@@ -32,16 +42,15 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     1.533 %
 [INFO GPL-0020] Standard cells area:           103.950 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Initializing region: PD_D1
+[INFO GPL-0032] ---- Initialize Region: PD_D1
 [INFO GPL-0006] Number of instances:                 3
 [INFO GPL-0007] Movable instances:                   3
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     26
 [INFO GPL-0011] Number of pins:                     65
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] Placement BBox: (  2.300  2.720 ) ( 57.500 19.040 ) um
 [INFO GPL-0014] Region name: PD_D1.
 [INFO GPL-0015] Region area:                   900.864 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -49,16 +58,15 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     2.578 %
 [INFO GPL-0020] Standard cells area:            23.228 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Initializing region: PD_D2
+[INFO GPL-0032] ---- Initialize Region: PD_D2
 [INFO GPL-0006] Number of instances:                 6
 [INFO GPL-0007] Movable instances:                   6
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     26
 [INFO GPL-0011] Number of pins:                     65
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] Placement BBox: (  2.300 92.480 ) ( 57.500 108.800 ) um
 [INFO GPL-0014] Region name: PD_D2.
 [INFO GPL-0015] Region area:                   900.864 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -66,7 +74,10 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     5.314 %
 [INFO GPL-0020] Standard cells area:            47.869 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 13	Region center = 9
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.996 um^2
 [INFO GPL-0025] Ideal bin area:                 11.423 um^2
@@ -75,7 +86,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       6.756 *  6.630 um
 [INFO GPL-0030] Number of bins:                    256
-[INFO GPL-0033] Initializing Nesterov region: PD_D1
+[INFO GPL-0033] ---- Initialize Nesterov Region: PD_D1
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.743 um^2
 [INFO GPL-0025] Ideal bin area:                 11.061 um^2
@@ -84,7 +95,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):           8 ,      4
 [INFO GPL-0029] Bin size (W * H):       6.900 *  4.080 um
 [INFO GPL-0030] Number of bins:                     32
-[INFO GPL-0033] Initializing Nesterov region: PD_D2
+[INFO GPL-0033] ---- Initialize Nesterov Region: PD_D2
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.978 um^2
 [INFO GPL-0025] Ideal bin area:                 11.397 um^2
@@ -93,14 +104,14 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):           8 ,      4
 [INFO GPL-0029] Bin size (W * H):       6.900 *  4.080 um
 [INFO GPL-0030] Number of bins:                     32
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0000 |  1.027607e+03 |   +0.00% |  2.22e-13 |      
-        0 |   0.0000 |  1.027607e+03 |   +0.00% |  2.55e-12 |  (PD_D1)
-        0 |   0.0418 |  1.027607e+03 |   +0.00% |  2.49e-12 |  (PD_D2)
-        0 |   0.0000 |  1.027607e+03 |          |  2.31e-13 |      
+        0 |   0.0000 |  1.040973e+03 |   +0.00% |  1.93e-13 |      
+        0 |   0.0000 |  1.040973e+03 |   +0.00% |  2.57e-12 |  (PD_D1)
+        0 |   0.0393 |  1.040973e+03 |   +0.00% |  2.50e-12 |  (PD_D2)
+        0 |   0.0000 |  1.040973e+03 |          |  2.00e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area              103.9499
@@ -110,7 +121,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0170
 [INFO GPL-1008]     - For 80% usage of free space: 0.0192
 [INFO GPL-1009]     - For 50% usage of free space: 0.0307
-        0 |   0.0000 |  1.027607e+03 |          |  2.65e-12 | PD_D1
+        0 |   0.0000 |  1.040973e+03 |          |  2.67e-12 | PD_D1
 ---------------------------------------------------------------
 [INFO GPL-1016] Region 'PD_D1' placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               23.2282
@@ -120,7 +131,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0286
 [INFO GPL-1008]     - For 80% usage of free space: 0.0322
 [INFO GPL-1009]     - For 50% usage of free space: 0.0516
-        0 |   0.0418 |  1.027607e+03 |          |  2.59e-12 | PD_D2
+        0 |   0.0393 |  1.040973e+03 |          |  2.60e-12 | PD_D2
 ---------------------------------------------------------------
 [INFO GPL-1016] Region 'PD_D2' placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               47.8688
@@ -131,14 +142,31 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0664
 [INFO GPL-1009]     - For 50% usage of free space: 0.1063
 [INFO GPL-1014] Final placement area: 175.05 (+0.00%)
+[INFO DPL-0006] Core area: 11467.25 um^2
+[INFO DPL-0007] Movable instances area: 158.90 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 1.4%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 22 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         75.8 u
-average displacement        3.4 u
-max displacement            6.8 u
-original HPWL            1027.5 u
-legalized HPWL           1101.1 u
-delta HPWL                    7 %
+total displacement         96.8 u
+average displacement        4.4 u
+max displacement           15.1 u
+original HPWL            1041.2 u
+legalized HPWL           1161.0 u
+delta HPWL                   12 %
 
 Detailed placement improvement.
 [INFO DPL-0401] Setting random seed to 1.
@@ -155,48 +183,36 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPL-0303] Running algorithm for independent set matching.
 [INFO DPL-0300] Set matching objective is wirelength.
-[INFO DPL-0301] Pass   1 of matching; objective is 1.101929e+06.
-[INFO DPL-0302] End of matching; objective is 1.093570e+06, improvement is 0.76 percent.
+[INFO DPL-0301] Pass   1 of matching; objective is 1.160729e+06.
+[INFO DPL-0301] Pass   2 of matching; objective is 1.129399e+06.
+[INFO DPL-0302] End of matching; objective is 1.129399e+06, improvement is 2.70 percent.
 [INFO DPL-0303] Running algorithm for global swaps.
-[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.056937e+06.
-[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.056937e+06.
-[INFO DPL-0307] End of global swaps; objective is 1.056937e+06, improvement is 3.35 percent.
+[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.079431e+06.
+[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.063075e+06.
+[INFO DPL-0306] Pass   3 of global swaps; hpwl is 1.060198e+06.
+[INFO DPL-0307] End of global swaps; objective is 1.060198e+06, improvement is 6.13 percent.
 [INFO DPL-0303] Running algorithm for vertical swaps.
-[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.021322e+06.
-[INFO DPL-0308] Pass   2 of vertical swaps; hpwl is 1.012356e+06.
-[INFO DPL-0309] End of vertical swaps; objective is 1.012356e+06, improvement is 4.22 percent.
+[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.024466e+06.
+[INFO DPL-0308] Pass   2 of vertical swaps; hpwl is 9.986710e+05.
+[INFO DPL-0308] Pass   3 of vertical swaps; hpwl is 9.954140e+05.
+[INFO DPL-0309] End of vertical swaps; objective is 9.954140e+05, improvement is 6.11 percent.
 [INFO DPL-0303] Running algorithm for reordering.
-[INFO DPL-0304] Pass   1 of reordering; objective is 1.012356e+06.
-[INFO DPL-0305] End of reordering; objective is 1.012356e+06, improvement is 0.00 percent.
+[INFO DPL-0304] Pass   1 of reordering; objective is 9.954140e+05.
+[INFO DPL-0305] End of reordering; objective is 9.954140e+05, improvement is 0.00 percent.
 [INFO DPL-0303] Running algorithm for random improvement.
 [INFO DPL-0324] Random improver is using random generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 440, swaps 36, moves   400 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.012356e+06, Scratch cost 9.973210e+05, Incremental cost 9.973210e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.973210e+05.
-[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 1.49 percent.
-[INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 880, swaps 66, moves   801 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.973210e+05, Scratch cost 9.477810e+05, Incremental cost 9.477810e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.477810e+05.
-[INFO DPL-0327] Pass   2 of random improver; improvement in cost is 4.97 percent.
-[INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 1320, swaps 101, moves  1201 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.477810e+05, Scratch cost 9.265230e+05, Incremental cost 9.265230e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.265230e+05.
-[INFO DPL-0327] Pass   3 of random improver; improvement in cost is 2.24 percent.
-[INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 1760, swaps 139, moves  1597 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.265230e+05, Scratch cost 9.246770e+05, Incremental cost 9.246770e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.246770e+05.
-[INFO DPL-0327] Pass   4 of random improver; improvement in cost is 0.20 percent.
-[INFO DPL-0328] End of random improver; improvement is 8.660886 percent.
+[INFO DPL-0335] Generator random, Cumulative attempts 440, swaps 41, moves   395 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.954140e+05, Scratch cost 9.895000e+05, Incremental cost 9.895000e+05, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 9.895000e+05.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 0.59 percent.
+[INFO DPL-0328] End of random improver; improvement is 0.594125 percent.
 [INFO DPL-0380] Cell flipping.
 [INFO DPL-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPL-0383] Performed 7 cell flips.
-[INFO DPL-0384] End of flipping; objective is 9.144300e+05, improvement is 1.11 percent.
+[INFO DPL-0383] Performed 5 cell flips.
+[INFO DPL-0384] End of flipping; objective is 9.859720e+05, improvement is 0.36 percent.
 [INFO DPL-0313] Found 0 cells in wrong regions.
 [INFO DPL-0315] Found 0 row alignment problems.
 [INFO DPL-0314] Found 0 site alignment problems.
@@ -204,8 +220,8 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL             1101.1 u (     585.5,      515.6)
-Final HPWL                 914.2 u (     440.1,      474.0)
-Delta HPWL                 -17.0 % (     -24.8,       -8.1)
+Original HPWL             1161.0 u (     570.7,      590.3)
+Final HPWL                 984.3 u (     530.6,      453.7)
+Delta HPWL                 -15.2 % (      -7.0,      -23.1)
 
 No differences found.

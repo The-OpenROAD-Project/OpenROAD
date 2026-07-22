@@ -76,8 +76,7 @@ float GreedyRefine::Pass(
                                      solution,
                                      block_balance,
                                      upper_block_balance,
-                                     lower_block_balance)
-          == true) {
+                                     lower_block_balance)) {
         HyperedgeGainPtr gain_hyperedge = CalculateHyperedgeGain(
             hyperedge_id, to_pid, hgraph, solution, cur_paths_cost, net_degs);
         if (!best_gain_hyperedge

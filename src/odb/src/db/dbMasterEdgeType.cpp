@@ -7,16 +7,17 @@
 #include <cstdint>
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbMasterEdgeType>;
 
 bool _dbMasterEdgeType::operator==(const _dbMasterEdgeType& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (edge_dir_ != rhs.edge_dir_) {
     return false;
   }
@@ -37,6 +38,7 @@ bool _dbMasterEdgeType::operator==(const _dbMasterEdgeType& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbMasterEdgeType::operator<(const _dbMasterEdgeType& rhs) const
@@ -79,9 +81,7 @@ void _dbMasterEdgeType::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["edge_type"].add(edge_type_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ void dbMasterEdgeType::setEdgeType(const std::string& edge_type)
   obj->edge_type_ = edge_type;
 }
 
-std::string dbMasterEdgeType::getEdgeType() const
+const std::string& dbMasterEdgeType::getEdgeType() const
 {
   _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
   return obj->edge_type_;

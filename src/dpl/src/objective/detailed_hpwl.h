@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "detailed_objective.h"
+#include "infrastructure/network.h"
 
 namespace dpl {
 

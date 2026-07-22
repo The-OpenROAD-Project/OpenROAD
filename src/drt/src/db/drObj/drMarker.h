@@ -39,7 +39,7 @@ class drMazeMarker : public drBlockObject
       }
       --cnt_;
     }
-    return (cnt_) ? true : false;
+    return (cnt_) != 0;
   }
   // getters
   frConstraint* getConstraint() const { return constraint_; }

@@ -5,7 +5,6 @@
 
 #include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
-#include "db_sta/dbSta.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 

@@ -7,8 +7,11 @@
 #include <list>
 #include <map>
 #include <ostream>
+#include <set>
 #include <string>
+#include <unordered_map>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbObject.h"
@@ -84,7 +87,9 @@ class DefOut::Impl
   void writeFills(dbBlock* block);
   void writeNets(dbBlock* block);
   void writeNet(dbNet* net);
-  void writeSNet(dbNet* net);
+  void writeSNet(
+      dbNet* net,
+      const std::unordered_map<std::string, odb::PtrSet<dbNet>>& snet_term_map);
   void writeWire(dbWire* wire);
   void writeSWire(dbSWire* wire);
   void writeSpecialPath(dbSBox* box);

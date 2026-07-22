@@ -5,6 +5,7 @@
 
 #include <vector>
 
+#include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
@@ -12,7 +13,6 @@
 #include "db_sta/dbSta.hh"
 #include "delay_optimization_strategy.h"
 #include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Search.hh"
@@ -31,7 +31,9 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   sta->ensureGraph();
   sta->ensureLevelized();
   sta->searchPreamble();
-  sta->ensureClkNetwork();
+  for (auto mode : sta->modes()) {
+    sta->ensureClkNetwork(mode);
+  }
 
   sta::dbNetwork* network = sta->getDbNetwork();
 

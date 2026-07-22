@@ -31,7 +31,7 @@
     Sinks per sub-region: 1
     Sub-region size: 3.5902 X 6.0700
 [INFO CTS-0034]     Segment length (rounded): 2.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 2.
 [INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
@@ -64,7 +64,7 @@
     Sinks per sub-region: 9
     Sub-region size: 3.3521 X 1.4000
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 134.
 [INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk1.
@@ -97,7 +97,7 @@
     Sinks per sub-region: 9
     Sub-region size: 3.3521 X 1.3439
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (530.044 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 144.
 [INFO CTS-0018]     Created 3 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
@@ -136,11 +136,12 @@
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 14
 [INFO CTS-0033] Balancing latency for clock clk
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (50612 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (45012 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (39412 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (33812 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (101013 149105)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (102026 98350)
-[INFO CTS-0036]  inserted 6 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 6
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (51545 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (46878 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (42212 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (37545 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (32878 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (101013 149105)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (102026 98350)
+[INFO CTS-0036]  inserted 7 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 7

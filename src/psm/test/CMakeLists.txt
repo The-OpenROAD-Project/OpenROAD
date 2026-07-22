@@ -9,8 +9,10 @@ or_integration_tests(
     aes_test_vdd
     aes_test_vss
     check_power_grid
+    check_power_grid_backside
     check_power_grid_disconnected
     check_power_grid_disconnected_macro
+    check_power_grid_empty_net
     check_power_grid_floorplanning
     check_power_grid_macros
     check_power_grid_ok_disconnected
@@ -40,6 +42,3 @@ or_integration_tests(
     zerosoc_pads_check_only_disconnected
 )
 
-# Skipped
-#psm_man_tcl_check
-#psm_readme_msgs_check

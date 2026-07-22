@@ -16,8 +16,10 @@
 #include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Objects.h"
 #include "infrastructure/detailed_segment.h"
 #include "objective/detailed_hpwl.h"
+#include "optimization/detailed_generator.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
 
@@ -148,7 +150,7 @@ void DetailedVerticalSwap::verticalSwap()
   double currHpwl = hpwlObj.curr();
   // Consider each candidate cell once.
   for (Node* ndi : candidates) {
-    if (generate(ndi) == false) {
+    if (!generate(ndi)) {
       continue;
     }
 

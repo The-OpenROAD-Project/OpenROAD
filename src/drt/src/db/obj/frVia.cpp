@@ -4,6 +4,7 @@
 #include "db/obj/frVia.h"
 
 #include "db/drObj/drVia.h"
+#include "db/obj/frRef.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
 

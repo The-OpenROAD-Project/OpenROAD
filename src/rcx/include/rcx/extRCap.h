@@ -31,18 +31,13 @@
 #include "rcx/ext_options.h"
 #include "rcx/extprocess.h"
 #include "rcx/util.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace rcx {
 
 class extMeasure;
 class extMeasureRC;
 struct SEQ;
-
-using utl::Logger;
 
 class extSpef;
 class GridTable;
@@ -66,29 +61,29 @@ class extDistRC
 
   // -----------------------------------------------------------
 
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
   void printDebug(const char*,
                   const char*,
                   uint32_t,
                   uint32_t,
                   extDistRC* rcUnit = nullptr);
   void printDebugRC_values(const char* msg);
-  void printDebugRC(const char*, Logger* logger);
+  void printDebugRC(const char*, utl::Logger* logger);
   void printDebugRC(int met,
                     int overMet,
                     int underMet,
                     int width,
                     int dist,
                     int dbUnit,
-                    Logger* logger);
-  void printDebugRC_sum(int len, int dbUnit, Logger* logger);
+                    utl::Logger* logger);
+  void printDebugRC_sum(int len, int dbUnit, utl::Logger* logger);
   void printDebugRC_diag(int met,
                          int overMet,
                          int underMet,
                          int width,
                          int dist,
                          int dbUnit,
-                         Logger* logger);
+                         utl::Logger* logger);
   double GetDBcoords(int x, int db_factor);
   void set(uint32_t d, double cc, double fr, double a, double r);
   void readRC(Parser* parser, double dbFactor = 1.0);
@@ -117,7 +112,7 @@ class extDistRC
   double fringeW_;
   double diag_;
   double res_;
-  Logger* logger_;
+  utl::Logger* logger_;
 
   friend class extDistRCTable;
   friend class extDistWidthRCTable;
@@ -204,7 +199,7 @@ class extDistRCTable
   int maxDist_;
   uint32_t distCnt_;
   uint32_t unit_;
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 class extDistWidthRCTable
@@ -398,7 +393,7 @@ class extMetRCTable
   // ----------------------------------------------------------------------------------------
   extMetRCTable(uint32_t layerCnt,
                 AthPool<extDistRC>* rcPool,
-                Logger* logger_,
+                utl::Logger* logger_,
                 bool OUREVERSEORDER);
   ~extMetRCTable();
 
@@ -467,7 +462,7 @@ class extMetRCTable
 
   AthPool<extDistRC>* _rcPoolPtr;
   double _rate;
-  Logger* logger_;
+  utl::Logger* logger_;
 
   // dkf 092024
   Array1D<extViaModel*> _viaModel;
@@ -704,8 +699,8 @@ class extRCModel
   int getDiagModel() { return _diagModel; };
   bool getVerticalDiagFlag() { return _verticalDiag; };
   void setDiagModel(uint32_t i) { _diagModel = i; }
-  extRCModel(uint32_t layerCnt, const char* name, Logger* logger);
-  extRCModel(const char* name, Logger* logger);
+  extRCModel(uint32_t layerCnt, const char* name, utl::Logger* logger);
+  extRCModel(const char* name, utl::Logger* logger);
   extProcess* getProcess();
   uint32_t findBiggestDatarateIndex(double d);
   ~extRCModel();
@@ -962,7 +957,7 @@ class extRCModel
   bool OUReverseOrder_{false};
 
  protected:
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 class extLenOU  // assume cross-section on the z-direction
@@ -1557,7 +1552,7 @@ class extMeasure
   int _dbunit;
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 class extMainOptions
@@ -1730,6 +1725,8 @@ class extMain
 {
   // --------------------- dkf 092024 ------------------------
  public:
+  void run();
+
   extSolverGen* _currentSolverGen;
 
   // v2 -----------------------------------------------------
@@ -1763,6 +1760,7 @@ class extMain
                      uint32_t* cornerTable);
 
   void setExtractionOptions_v2(ExtractOptions options);
+  void setExtractionOptions(const ExtractOptions& options);
   uint32_t makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint32_t resetMapNodes_v2(odb::dbWire* wire);
 
@@ -1831,7 +1829,7 @@ class extMain
                                const char* prefix,
                                const char* postfix,
                                bool v = false);
-  bool modelExists(const char* extRules);
+  bool modelExists();
 
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
@@ -1896,7 +1894,7 @@ class extMain
                     bool win);
   uint32_t readProcess(const char* name, const char* filename);
 
-  void init(odb::dbDatabase* db, Logger* logger);
+  void init(odb::dbDatabase* db, utl::Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,
                              const char* filterNet,
                              uint32_t corner);
@@ -2058,14 +2056,6 @@ class extMain
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
 
-  int setMinTypMax(bool min,
-                   bool typ,
-                   bool max,
-                   int setMin,
-                   int setTyp,
-                   int setMax,
-                   uint32_t extDbCnt);
-
   extRCModel* getRCmodel(uint32_t n);
 
   void calcRes0(double* deltaRes,
@@ -2098,8 +2088,7 @@ class extMain
   uint32_t getMultiples(uint32_t cnt, uint32_t base);
   uint32_t getExtLayerCnt(odb::dbTech* tech);
 
-  void setBlockFromChip();
-  void setBlock(odb::dbBlock* block);
+  void setBlockFromChip(odb::dbChip* chip);
   odb::dbBlock* getBlock() { return _block; }
   odb::dbTech* getTech() { return _tech; }
   extRCModel* getRCModel() { return _modelTable->get(0); }
@@ -2129,14 +2118,9 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  void makeBlockRCsegs(const char* netNames,
-                       uint32_t cc_up,
-                       uint32_t ccFlag,
-                       double resBound,
-                       bool mergeViaRes,
-                       double ccThres,
-                       int contextDepth,
-                       const char* extRules);
+  void setCornerCount();
+
+  Array1D<extCorner*>* getProcessCornerTable() { return _processCornerTable; }
 
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,
@@ -2266,7 +2250,7 @@ class extMain
   void addDummyCorners(uint32_t cornerCnt);
   static void addDummyCorners(odb::dbBlock* block,
                               uint32_t cnt,
-                              Logger* logger);
+                              utl::Logger* logger);
   char* addRCCorner(const char* name, int model, int userDefined = 1);
   char* addRCCornerScaled(const char* name,
                           uint32_t model,
@@ -2278,7 +2262,7 @@ class extMain
   void cleanCornerTables();
   int getDbCornerIndex(const char* name);
   int getDbCornerModel(const char* name);
-  bool setCorners(const char* rulesFileName);
+  void registerRulesModel(extRCModel* rules_model);
   int getProcessCornerDbIndex(int pcidx);
   void getScaledCornerDbIndex(int pcidx, int& scidx, int& scdbIdx);
   void getScaledRC(int sidx, double& res, double& cap);
@@ -2287,7 +2271,6 @@ class extMain
   void genScaledExt();
   void makeCornerNameMap();
   void getExtractedCorners();
-  void makeCornerMapFromExtControl();
   bool checkLayerResistance();
 
   uint32_t getNetBbox(odb::dbNet* net, odb::Rect& maxRect);
@@ -2338,7 +2321,7 @@ class extMain
 
   static odb::dbRSeg* getRseg(odb::dbNet* net,
                               uint32_t shapeId,
-                              Logger* logger);
+                              utl::Logger* logger);
 
   void write_spef_nets(bool flatten, bool parallel);
   extSpef* getSpef();
@@ -2673,10 +2656,10 @@ class extMain
   void setMinRC(uint32_t ii, uint32_t jj, extDistRC* rc);
   void setMaxRC(uint32_t ii, uint32_t jj, extDistRC* rc);
 
-  Logger* getLogger() { return logger_; }
+  utl::Logger* getLogger() { return logger_; }
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
 
   bool _batchScaleExt = true;
   Array1D<extCorner*>* _processCornerTable = nullptr;
@@ -2694,9 +2677,6 @@ class extMain
   double* _tmpResTable = new double[10];
   double* _tmpSumResTable = new double[10];
   int _sumUpdated;
-  int _minModelIndex;  // TO_TEST
-  int _typModelIndex;  //
-  int _maxModelIndex;  //
 
   odb::dbDatabase* _db = nullptr;
   odb::dbTech* _tech = nullptr;
@@ -2728,6 +2708,7 @@ class extMain
   int _ccMaxY;
   double _mergeResBound = 0.0;
   bool _mergeViaRes = false;
+  const char* target_nets_names_{nullptr};
   bool _mergeParallelCC = false;
   bool _reportNetNoWire = false;
   int _netNoWireCnt = 0;
@@ -2841,5 +2822,11 @@ class extMain
                              dbCreateNetUtil* db_net_util);  // 061123
   // ---------------------------------------------------------
 };
+
+std::unique_ptr<extRCModel> parseRules(
+    odb::dbTech* tech,
+    const Array1D<extCorner*>* extractor_corner_table,
+    bool is_v2,
+    utl::Logger* logger);
 
 }  // namespace rcx

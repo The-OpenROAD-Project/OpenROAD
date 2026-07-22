@@ -7,9 +7,11 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
+#include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbTech.h"
@@ -21,6 +23,7 @@ template class dbTable<_dbTechLayerSpacingEolRule>;
 bool _dbTechLayerSpacingEolRule::operator==(
     const _dbTechLayerSpacingEolRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.exact_width_valid != rhs.flags_.exact_width_valid) {
     return false;
   }
@@ -250,6 +253,7 @@ bool _dbTechLayerSpacingEolRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerSpacingEolRule::operator<(
@@ -1446,17 +1450,19 @@ bool dbTechLayerSpacingEolRule::isToNotchLengthValid() const
   return obj->flags_.to_notch_length_valid;
 }
 
-// User Code Begin dbTechLayerSpacingEolRulePublicMethods
 dbTechLayerSpacingEolRule* dbTechLayerSpacingEolRule::create(
-    dbTechLayer* _layer)
+    dbTechLayer* parent)
 {
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerSpacingEolRule* newrule = layer->spacing_eol_rules_tbl_->create();
-  newrule->layer_ = _layer->getImpl()->getOID();
-
-  return ((dbTechLayerSpacingEolRule*) newrule);
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerSpacingEolRule*) _parent->spacing_eol_rules_tbl_->create();
 }
-
+void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->spacing_eol_rules_tbl_->destroy((_dbTechLayerSpacingEolRule*) obj);
+}
+// User Code Begin dbTechLayerSpacingEolRulePublicMethods
 dbTechLayerSpacingEolRule*
 dbTechLayerSpacingEolRule::getTechLayerSpacingEolRule(dbTechLayer* inly,
                                                       uint32_t dbid)
@@ -1465,14 +1471,6 @@ dbTechLayerSpacingEolRule::getTechLayerSpacingEolRule(dbTechLayer* inly,
   return (dbTechLayerSpacingEolRule*) layer->spacing_eol_rules_tbl_->getPtr(
       dbid);
 }
-
-void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->spacing_eol_rules_tbl_->destroy((_dbTechLayerSpacingEolRule*) rule);
-}
-
 // User Code End dbTechLayerSpacingEolRulePublicMethods
 }  // namespace odb
 // Generator Code End Cpp

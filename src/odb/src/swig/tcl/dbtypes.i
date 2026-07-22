@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+%{
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+%}
+
 %import <std_vector.i>
 
 %template(vector_str) std::vector<std::string>;
@@ -172,8 +178,8 @@
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
     Tcl_Obj **listobjv;
-    int       nitems;
-    int       i;
+    Tcl_Size  nitems;
+    Tcl_Size  i;
     T*        temp;
     swig_type_info *tf = SWIG_TypeQuery("T" "*");
 
@@ -197,7 +203,7 @@
 }
 %typemap(typecheck) vector< T * >, std::vector< T * >, vector< T * > &, std::vector< T * > & {
     Tcl_Obj **listobjv;
-    int       nitems;
+    Tcl_Size   nitems;
     T         *temp;
     std::vector< T > *v;
     swig_type_info *tf = SWIG_TypeQuery("T" "*");
@@ -256,6 +262,14 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
     Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), obj);
   }
 }
+%typemap(in, numinputs=0) odb::dbShape &OUTPUT (odb::dbShape temp) {
+    $1 = new odb::dbShape(temp);
+}
+%typemap(argout) odb::dbShape &OUTPUT {
+    swig_type_info *tf = SWIG_TypeQuery("odb::dbShape" "*");
+    Tcl_Obj *obj = SWIG_NewInstanceObj($1, tf, SWIG_POINTER_OWN);
+    Tcl_SetObjResult(interp, obj);
+}
 %typemap(argout) std::vector<int> &OUTPUT {
   for(auto it = $1->begin(); it != $1->end(); it++) {
     Tcl_Obj *obj = Tcl_NewIntObj(*it);
@@ -265,5 +279,6 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
 }
 
 %apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };
+%apply odb::dbShape &OUTPUT { odb::dbShape & shape };
 
 %include containers.i

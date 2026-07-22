@@ -9,8 +9,17 @@ cmake_policy(SET CMP0078 NEW)
 # Allows SWIG_MODULE_NAME to be set
 cmake_policy(SET CMP0086 NEW)
 
-# Allows <PackageName>_ROOT to be used
+# CMP0074: Allows find_package to use <PackageName>_ROOT variables. This
+# policy was the original mechanism for letting users specify custom
+# dependency locations.
 cmake_policy(SET CMP0074 NEW)
+
+# CMP0144: Standardizes the use of <PACKAGENAME>_ROOT (uppercase) variables
+# in find_package. Newer CMake modules rely on this policy for consistent
+# behavior. Setting both CMP0074 and CMP0144 ensures that both older and
+# newer find modules correctly respect custom dependency paths, which is
+# critical for builds in non-standard environments.
+cmake_policy(SET CMP0144 NEW)
 
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)
@@ -20,13 +29,6 @@ cmake_policy(SET CMP0077 NEW)
 
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
-
-# Interfers with Qt so off by default.
-option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
-
-if (LINK_TIME_OPTIMIZATION)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 # Allow to use external shared boost libraries
 option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)
@@ -40,6 +42,13 @@ option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 # Allow disabling tests
 option(ENABLE_TESTS "Enable OpenROAD tests" ON)
 
+# Opt-in GPU acceleration via Kokkos. The actual compute backend (CUDA, HIP,
+# SYCL, or host-only OpenMP/Threads) is determined by the installed Kokkos
+# package; OpenROAD inspects Kokkos_ENABLE_* and turns on the matching CMake
+# language and dependencies automatically. See the per-module CMakeLists for
+# how individual subsystems wire their GPU sources.
+option(ENABLE_GPU "Enable GPU acceleration via Kokkos" OFF)
+
 # Allow enabling address sanitizer
 option(ASAN "Enable Address Sanitizer" OFF)
 
@@ -52,7 +61,7 @@ option(TSAN "Enable Thread Sanitizer" OFF)
 option(UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 
 project(OpenROAD VERSION 1
-  LANGUAGES CXX
+  LANGUAGES C CXX
 )
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
@@ -66,10 +75,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# Defer GoogleTest case discovery from build time (POST_BUILD default, which
+# execs each test binary during the build) to ctest time. On a loaded CI host
+# the build-time discovery run can exceed the timeout and fail the whole build.
+set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
+
 # Get version string in OPENROAD_VERSION
 if(NOT OPENROAD_VERSION)
   include(GetGitRevisionDescription)
-  git_describe(OPENROAD_VERSION)
+  git_describe(OPENROAD_VERSION --tags --match "[0-9][0-9]Q[0-9]")
   string(FIND ${OPENROAD_VERSION} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
   if(${GIT_DESCRIBE_NOTFOUND} GREATER -1)
     message(WARNING "OpenROAD git describe failed, using sha1 instead")
@@ -82,6 +96,13 @@ message(STATUS "OpenROAD version: ${OPENROAD_VERSION}")
 # Default to bulding optimnized/release executable.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RELEASE)
+endif()
+
+# GPU backend wiring (opt-in). All Kokkos / CUDA / HIP / SYCL detection,
+# compiler probing, and language enablement live in cmake/KokkosBackend.cmake
+# and are loaded only when the user opts in via ENABLE_GPU=ON.
+if(ENABLE_GPU)
+  include(KokkosBackend)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -109,7 +130,7 @@ message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
 message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 
 # Detect OS distribution and version from /etc/os-release
-# LTO is known to cause build errors on Debian 11 and Rocky Linux 8
+# LTO is known to cause build errors on Rocky Linux 8
 set(LTO_UNSUPPORTED_OS FALSE)
 if(EXISTS "/etc/os-release")
   file(STRINGS "/etc/os-release" OS_RELEASE_CONTENTS)
@@ -125,10 +146,19 @@ if(EXISTS "/etc/os-release")
   endforeach()
 
   # Check for unsupported OS for LTO
-  if((OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11") OR
-     (OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8"))
+  if(OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8")
     set(LTO_UNSUPPORTED_OS TRUE)
     message(STATUS "Detected unsupported OS (${OS_ID} ${OS_VERSION_ID}): LTO will be disabled due to known build issues")
+    # Rocky 8 ships gcc 8 in /usr/lib64/libstdc++.so.6.  gcc-toolset-13's
+    # `-lstdc++` resolves through a linker script that pulls
+    # libstdc++_nonshared.a (fill-in for <filesystem> etc.).  When that
+    # archive's TUs (e.g. fs_path80.o) are pulled into a link with many
+    # OpenROAD .a/.so inputs, the order/visibility of the system
+    # libstdc++.so.6 ends up such that ld can't resolve internal helpers
+    # like basic_string::resize and _Sp_counted_*.  Statically link
+    # libstdc++/libgcc to sidestep the fill-in archive entirely.
+    add_link_options(-static-libstdc++ -static-libgcc)
+    message(STATUS "Rocky 8: enabling -static-libstdc++ -static-libgcc to avoid libstdc++_nonshared.a link errors")
   endif()
 endif()
 
@@ -152,6 +182,25 @@ if (LINK_TIME_OPTIMIZATION AND NOT LTO_UNSUPPORTED_OS)
   endif()
 endif()
 message(STATUS "LTO/IPO is ${LTO_STATUS}")
+
+# Compress DWARF debug sections in builds that emit debug info. This is a
+# large on-disk win for template-heavy C++ (debug info dominates these
+# binaries) and is transparent to gdb/readelf/addr2line/lldb. It is a no-op
+# for builds without -g (e.g. Release), so it is safe to apply globally.
+# Excluded on Apple platforms: Mach-O does not support -gz=zlib and AppleClang
+# (which CMAKE_CXX_COMPILER_ID matches as "Clang") would fail the build.
+# The compile flag is scoped to C/C++: -gz is a GCC/Clang host-compiler flag
+# that nvcc does not accept (it would need explicit -Xcompiler forwarding), so
+# applying it directory-wide would break CUDA (ENABLE_GPU) debug builds where
+# gpl marks GPU sources as LANGUAGE CUDA. The link flag needs no such guard:
+# linking is driven by the host C++ compiler.
+if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   AND NOT APPLE)
+  set(DEBUG_CONFIG_GENEX "$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>")
+  add_compile_options(
+    "$<$<AND:${DEBUG_CONFIG_GENEX},$<COMPILE_LANGUAGE:CXX,C>>:-gz=zlib>")
+  add_link_options("$<${DEBUG_CONFIG_GENEX}:-gz=zlib>")
+endif()
 
 # configure a header file to pass some of the CMake settings
 configure_file(
@@ -226,3 +275,19 @@ endif()
 # Add a configuration for ReleaseWithAsserts
 set(CMAKE_CXX_FLAGS_RELEASEWITHASSERTS "${CMAKE_CXX_FLAGS_RELEASE} -UNDEBUG" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS_RELEASEWITHASSERTS "${CMAKE_C_FLAGS_RELEASE} -UNDEBUG" CACHE STRING "" FORCE)
+
+# ==============================================================================
+# OPENROAD BUILD CONFIGURATION SUMMARY
+# ==============================================================================
+message(STATUS "")
+message(STATUS "=========================================================")
+message(STATUS " OpenROAD Configuration Summary ")
+message(STATUS "=========================================================")
+message(STATUS " C++ Standard   : ${CMAKE_CXX_STANDARD}")
+message(STATUS " Build Type     : ${CMAKE_BUILD_TYPE}")
+message(STATUS " GUI Support    : ${BUILD_GUI}")
+message(STATUS " Python Bindings: ${BUILD_PYTHON}")
+message(STATUS " Tests Enabled  : ${ENABLE_TESTS}")
+message(STATUS "=========================================================")
+message(STATUS " Configuration complete.")
+message(STATUS "")

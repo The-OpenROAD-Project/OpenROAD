@@ -3,30 +3,48 @@
 
 #include "Graphics.h"
 
+#include <algorithm>
 #include <any>
 #include <cstdlib>
 #include <set>
+#include <unordered_set>
+#include <vector>
 
 #include "dpl/Opendp.h"
+#include "graphics/DplObserver.h"
 #include "gui/gui.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace dpl {
 
-using odb::dbBox;
-
 Graphics::Graphics(Opendp* dp,
-                   float min_displacement,
-                   const odb::dbInst* debug_instance)
+                   const odb::dbInst* debug_instance,
+                   bool paint_pixels,
+                   bool paint_negotiation_pixels)
     : dp_(dp),
       debug_instance_(debug_instance),
-      min_displacement_(min_displacement)
+      paint_pixels_(paint_pixels),
+      paint_negotiation_pixels_(paint_negotiation_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
+
+  gui::Gui* gui = gui::Gui::get();
+  if (violations_chart_ == nullptr) {
+    violations_chart_
+        = gui->addChart("DPL Negotiation",
+                        "Iteration",
+                        {"Violations", "Illegal Cells", "Illegal Sites"});
+    violations_chart_->setXAxisFormat("%d");
+    violations_chart_->setYAxisFormats({"%.0f", "%.0f", "%.0f"});
+    violations_chart_->setYAxisMin({0.0, 0.0, 0.0});
+  }
 }
 
 void Graphics::startPlacement(odb::dbBlock* block)
@@ -34,9 +52,10 @@ void Graphics::startPlacement(odb::dbBlock* block)
   block_ = block;
 }
 
-void Graphics::placeInstance(odb::dbInst* instance)
+void Graphics::drawSelected(odb::dbInst* instance, bool force)
 {
-  if (!instance || instance != debug_instance_) {
+  // When force is true always select and pause
+  if (!instance || (!force && instance != debug_instance_)) {
     return;
   }
 
@@ -44,6 +63,10 @@ void Graphics::placeInstance(odb::dbInst* instance)
 
   auto selected = gui->makeSelected(instance);
   gui->setSelected(selected);
+  odb::Rect bbox = instance->getBBox()->getBox();
+  odb::Rect view;
+  bbox.bloat(std::max(bbox.dx(), bbox.dy()), view);
+  gui->zoomTo(view);
   gui->redraw();
   gui->pause();
 }
@@ -78,10 +101,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     return;
   }
 
-  odb::Rect core = block_->getCoreArea();
-
   // Create a set of selected instances for fast lookup
-  std::set<odb::dbInst*> selected_insts;
+  odb::PtrSet<odb::dbInst> selected_insts;
   auto selection = gui::Gui::get()->selection();
   for (const auto& selected : selection) {
     if (selected.isInst()) {
@@ -90,16 +111,34 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   for (const auto& cell : dp_->network_->getNodes()) {
-    if (!cell->isPlaced() || !cell->getDbInst()) {
+    if (!cell->getDbInst()) {
       continue;
     }
 
-    DbuX lx{core.xMin() + cell->getLeft()};
-    DbuY ly{core.yMin() + cell->getBottom()};
+    if (!dp_->isUseNegotiationLegalizer()) {
+      if (!cell->isPlaced()) {
+        auto color = gui::Painter::kDarkMagenta;
+        painter.setPen(color);
+        painter.setBrush(color);
+        odb::Rect bbox;
+        bbox = cell->getDbInst()->getBBox()->getBox();
+        painter.drawRect(bbox);
+        continue;
+      }
+    }
 
-    dbBox* bbox = cell->getDbInst()->getBBox();
-    odb::Point initial_location(bbox->xMin(), bbox->yMin());
-    odb::Point final_location(lx.v, ly.v);
+    if (cell->getDbInst()->isFixed()) {
+      auto color = gui::Painter::kGray;
+      color.a = 100;
+      painter.setPen(color);
+      painter.setBrush(color);
+      odb::Rect bbox = cell->getDbInst()->getBBox()->getBox();
+      painter.drawRect(bbox);
+      continue;
+    }
+
+    odb::Point initial_location = dp_->getOdbLocation(cell.get());
+    odb::Point final_location = dp_->getDplLocation(cell.get());
     float len = odb::Point::squaredDistance(initial_location, final_location);
     if (len <= 0) {
       continue;
@@ -109,13 +148,41 @@ void Graphics::drawObjects(gui::Painter& painter)
     int dy = final_location.y() - initial_location.y();
     gui::Painter::Color line_color;
 
-    // Check if the instance is selected
     if (selected_insts.contains(cell->getDbInst())) {
       line_color = gui::Painter::kYellow;
-    } else if (std::abs(dx) > std::abs(dy)) {
-      line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
+
+      // Draw outline of instance at target location
+      odb::Rect bbox = cell->getDbInst()->getBBox()->getBox();
+      int width = bbox.dx();
+      int height = bbox.dy();
+      odb::Rect target_bbox(final_location.x(),
+                            final_location.y(),
+                            final_location.x() + width,
+                            final_location.y() + height);
+      auto outline_color = gui::Painter::kCyan;
+      painter.setPen(outline_color, /* cosmetic */ true);
+      painter.setBrush(gui::Painter::kTransparent);
+      painter.drawRect(target_bbox);
+
+      // Indicate orientation change at the target location with a corner notch
+      // (mirroring the ODB orientation marker style)
+      painter.setPen(outline_color, /* cosmetic */ true);
+      const int tag_size = std::min(width / 4, height / 8);
+      painter.drawLine(target_bbox.xMin() + tag_size,
+                       target_bbox.yMin(),
+                       target_bbox.xMin(),
+                       target_bbox.yMin() + tag_size * 2);
+    } else if (current_iter_movers_.empty()
+               || current_iter_movers_.contains(cell->getDbInst())) {
+      // Moved in the current iteration (or no iteration info yet).
+      if (std::abs(dx) > std::abs(dy)) {
+        line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
+      } else {
+        line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+      }
     } else {
-      line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+      // Moved in a previous iteration.
+      line_color = gui::Painter::kGray;
     }
 
     painter.setPen(line_color, /* cosmetic */ true);
@@ -127,12 +194,237 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawCircle(final_location.x(), final_location.y(), 100);
   }
 
+  // Diamond search range
   auto color = gui::Painter::kCyan;
+  color.a = 100;
   painter.setPen(color);
   painter.setBrush(color);
   for (auto& rect : searched_) {
     painter.drawRect(rect);
   }
+
+  if (paint_pixels_) {
+    const Grid* grid = dp_->grid_.get();
+    if (grid) {
+      const odb::Rect core = grid->getCore();
+      const DbuX site_width = grid->getSiteWidth();
+
+      auto color = gui::Painter::kOrange;
+      color.a = 100;
+      painter.setPen(color);
+      painter.setBrush(color);
+
+      for (GridY y{0}; y < grid->getRowCount(); y++) {
+        const DbuY y_dbu = grid->gridYToDbu(y);
+        const DbuY next_y_dbu = grid->gridYToDbu(y + 1);
+        for (GridX x{0}; x < grid->getRowSiteCount(); x++) {
+          const Pixel& pixel = grid->pixel(y, x);
+          if (pixel.cell != nullptr) {
+            const DbuX x_dbu = gridToDbu(x, site_width);
+            const DbuX next_x_dbu = gridToDbu(x + 1, site_width);
+
+            odb::Rect rect(core.xMin() + x_dbu.v,
+                           core.yMin() + y_dbu.v,
+                           core.xMin() + next_x_dbu.v,
+                           core.yMin() + next_y_dbu.v);
+            painter.drawRect(rect);
+          }
+        }
+      }
+    }
+  }
+
+  if (paint_negotiation_pixels_ && !negotiation_pixels_.empty()) {
+    const int sw = negotiation_site_width_;
+    for (int gy = 0; gy < negotiation_grid_h_; ++gy) {
+      const int y_lo = negotiation_die_ylo_ + negotiation_row_y_dbu_[gy];
+      const int y_hi = negotiation_die_ylo_ + negotiation_row_y_dbu_[gy + 1];
+      for (int gx = 0; gx < negotiation_grid_w_; ++gx) {
+        const auto state = negotiation_pixels_[gy * negotiation_grid_w_ + gx];
+        gui::Painter::Color c;
+        switch (state) {
+          case NegotiationPixelState::kNoRow:
+            c = gui::Painter::kBrown;
+            c.a = 60;
+            break;
+          case NegotiationPixelState::kFree:
+            c = gui::Painter::kGreen;
+            c.a = 100;
+            break;
+          case NegotiationPixelState::kOccupied:
+            c = gui::Painter::kWhite;
+            c.a = 100;
+            break;
+          case NegotiationPixelState::kOveruse:
+            c = gui::Painter::kRed;
+            c.a = 150;
+            break;
+          case NegotiationPixelState::kBlocked:
+            c = gui::Painter::kYellow;
+            c.a = 80;
+            break;
+          case NegotiationPixelState::kInvalid:
+            c = gui::Painter::kBlack;
+            c.a = 200;
+            break;
+          case NegotiationPixelState::kDrcViolation:
+            c = gui::Painter::Color{255, 140, 0, 200};  // orange
+            break;
+        }
+        painter.setPen(c);
+        painter.setBrush(c);
+        odb::Rect rect(negotiation_die_xlo_ + gx * sw,
+                       y_lo,
+                       negotiation_die_xlo_ + (gx + 1) * sw,
+                       y_hi);
+        painter.drawRect(rect);
+      }
+    }
+  }
+
+  if (!negotiation_search_windows_.empty()) {
+    painter.setBrush(gui::Painter::kTransparent);
+    for (const auto& sel : selection) {
+      if (!sel.isInst()) {
+        continue;
+      }
+      auto* inst = std::any_cast<odb::dbInst*>(sel.getObject());
+      auto it = negotiation_search_windows_.find(inst);
+      if (it == negotiation_search_windows_.end()) {
+        continue;
+      }
+      const auto& [init_win, curr_win] = it->second;
+
+      // Report the window bounds once per selection change (drawObjects runs
+      // on every repaint, so gate on the last-logged instance to avoid spam).
+      if (inst != last_logged_search_window_inst_) {
+        last_logged_search_window_inst_ = inst;
+        odb::dbBlock* block = inst->getBlock();
+        const double inst_area_um2
+            = block->dbuAreaToMicrons(inst->getBBox()->getBox().area());
+        const Grid* grid = dp_->grid_.get();
+        const odb::Rect core = grid->getCore();
+        auto windowSites = [&](const odb::Rect& win) {
+          return win.dx() / grid->getSiteWidth().v;
+        };
+        auto windowRows = [&](const odb::Rect& win) {
+          return (grid->gridRoundY(DbuY{win.yMax() - core.yMin()})
+                  - grid->gridRoundY(DbuY{win.yMin() - core.yMin()}))
+              .v;
+        };
+        dp_->logger_->report(
+            "Window for {}: ll ({}, {}) ur ({}, {}) dbu, {:.3f} x {:.3f} um "
+            "({} sites x {} rows), area {:.3f} um^2 (instance area {:.3f} "
+            "um^2).",
+            inst->getName(),
+            init_win.xMin(),
+            init_win.yMin(),
+            init_win.xMax(),
+            init_win.yMax(),
+            block->dbuToMicrons(init_win.dx()),
+            block->dbuToMicrons(init_win.dy()),
+            windowSites(init_win),
+            windowRows(init_win),
+            block->dbuAreaToMicrons(init_win.area()),
+            inst_area_um2);
+        if (!curr_win.isInverted() && curr_win.area() > 0) {
+          dp_->logger_->report(
+              "  current-position window ll ({}, {}) ur ({}, {}) dbu, "
+              "{:.3f} x {:.3f} um ({} sites x {} rows), area {:.3f} um^2.",
+              curr_win.xMin(),
+              curr_win.yMin(),
+              curr_win.xMax(),
+              curr_win.yMax(),
+              block->dbuToMicrons(curr_win.dx()),
+              block->dbuToMicrons(curr_win.dy()),
+              windowSites(curr_win),
+              windowRows(curr_win),
+              block->dbuAreaToMicrons(curr_win.area()));
+        }
+      }
+
+      // Init-position search window
+      auto init_color = gui::Painter::kCyan;
+      painter.setPen(init_color, /* cosmetic */ true);
+      painter.drawRect(init_win);
+
+      // Current-position window (only when the cell is displaced).
+      if (!curr_win.isInverted() && curr_win.area() > 0) {
+        auto curr_color = gui::Painter::kWhite;
+        curr_color.a = 200;
+        painter.setPen(curr_color, /* cosmetic */ true);
+        painter.drawRect(curr_win);
+      }
+    }
+  }
+}
+
+void Graphics::setNegotiationPixels(
+    const std::vector<NegotiationPixelState>& pixels,
+    int grid_w,
+    int grid_h,
+    int die_xlo,
+    int die_ylo,
+    int site_width,
+    const std::vector<int>& row_y_dbu)
+{
+  negotiation_pixels_ = pixels;
+  negotiation_grid_w_ = grid_w;
+  negotiation_grid_h_ = grid_h;
+  negotiation_die_xlo_ = die_xlo;
+  negotiation_die_ylo_ = die_ylo;
+  negotiation_site_width_ = site_width;
+  negotiation_row_y_dbu_ = row_y_dbu;
+}
+
+void Graphics::clearNegotiationPixels()
+{
+  negotiation_pixels_.clear();
+  negotiation_row_y_dbu_.clear();
+  negotiation_grid_w_ = 0;
+  negotiation_grid_h_ = 0;
+  negotiation_search_windows_.clear();
+}
+
+void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
+                                          const odb::Rect& init_window,
+                                          const odb::Rect& curr_window)
+{
+  negotiation_search_windows_[inst] = {init_window, curr_window};
+}
+
+void Graphics::clearNegotiationSearchWindows()
+{
+  negotiation_search_windows_.clear();
+  // Force the next drawObjects() call to re-log the window size, since a new
+  // iteration means the window for the selected instance may have changed.
+  last_logged_search_window_inst_ = nullptr;
+}
+
+void Graphics::addNegotiationViolationsPoint(int iter,
+                                             int violations,
+                                             int illegal_count,
+                                             int illegal_site_count)
+{
+  if (violations_chart_) {
+    violations_chart_->addPoint(iter,
+                                {static_cast<double>(violations),
+                                 static_cast<double>(illegal_count),
+                                 static_cast<double>(illegal_site_count)});
+  }
+}
+
+void Graphics::addNegotiationPhase2Marker(int iter)
+{
+  if (violations_chart_) {
+    violations_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  }
+}
+
+void Graphics::setCurrentIterMovers(
+    const std::unordered_set<odb::dbInst*>& movers)
+{
+  current_iter_movers_ = movers;
 }
 
 /* static */

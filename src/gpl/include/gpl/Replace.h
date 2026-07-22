@@ -37,6 +37,7 @@ class NesterovBaseCommon;
 class NesterovBase;
 class RouteBase;
 class TimingBase;
+class ClockBase;
 
 class InitialPlace;
 class NesterovPlace;
@@ -53,18 +54,28 @@ struct PlaceOptions
   float initialPlaceNetWeightScale = 800;
 
   bool skipIoMode = false;
+  bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
+  bool timingDrivenRepairTiming = false;
+  float timingDrivenRepairTnsEndPercent = 1.0;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
   float timingNetWeightMax = 5;
+  float timingDrivenNetsPercentage = 10;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
   // timing driven check overflow to keep resizer changes (non-virtual resizer)
   float keepResizeBelowOverflow = 1.0;
   bool routabilityUseRudy = true;
   bool disableRevertIfDiverge = false;
+  bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
+  bool virtualCtsMode = false;
+  // Maximum clock insertion delay as a fraction of the clock period.
+  // The MST leaf farthest from the virtual clock root gets this delay;
+  // all others are scaled proportionally.  Default: 10% of the period.
+  float virtualCtsMaxSkewFraction = 0.10f;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;
@@ -73,6 +84,8 @@ struct PlaceOptions
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;
+  int initialPlacePerturbationSeed = 1;
+  float initialPlacePerturbationDist = -1.0f;
 
   float routabilityCheckOverflow = 0.3;
   float routabilitySnapshotOverflow = 0.6;
@@ -142,7 +155,9 @@ class Replace
                 const std::string& images_path);
 
  private:
-  bool initNesterovPlace(const PlaceOptions& options, int threads);
+  bool initNesterovPlace(const PlaceOptions& options,
+                         int threads,
+                         bool check_density);
   void checkHasCoreRows();
 
   odb::dbDatabase* db_ = nullptr;
@@ -159,6 +174,7 @@ class Replace
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
+  std::shared_ptr<ClockBase> cb_;
 
   std::unique_ptr<InitialPlace> ip_;
   std::unique_ptr<NesterovPlace> np_;

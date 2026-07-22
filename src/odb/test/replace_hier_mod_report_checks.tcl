@@ -55,6 +55,7 @@ create_clock -period 0.3 clk
 
 # 7. OK
 report_checks
+set_debug_level ODB replace_design_check_sanity 1
 replace_hier_module bc1 inv_chain
 report_checks -through u1z
 replace_hier_module bc1 buffer_chain

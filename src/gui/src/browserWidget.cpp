@@ -27,6 +27,9 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
 #include "displayControls.h"
+#include "gui/gui.h"
+#include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -98,7 +101,7 @@ struct BrowserWidget::ModuleStats
 ///////
 
 BrowserWidget::BrowserWidget(
-    const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+    const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
         modulesettings,
     DisplayControls* controls,
     QWidget* parent)
@@ -662,11 +665,6 @@ void BrowserWidget::inDbInstCreate(odb::dbInst*)
   markModelModified();
 }
 
-void BrowserWidget::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
-{
-  markModelModified();
-}
-
 void BrowserWidget::inDbInstDestroy(odb::dbInst*)
 {
   markModelModified();
@@ -774,11 +772,7 @@ bool BrowserWidget::eventFilter(QObject* obj, QEvent* event)
   if (obj == view_->viewport()) {
     if (event->type() == QEvent::MouseButtonPress) {
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
-      if (mouse_event->button() == Qt::RightButton) {
-        ignore_selection_ = true;
-      } else {
-        ignore_selection_ = false;
-      }
+      ignore_selection_ = mouse_event->button() == Qt::RightButton;
     } else if (event->type() == QEvent::MouseButtonRelease) {
       ignore_selection_ = false;
     } else if (event->type() == QEvent::ContextMenu) {
@@ -854,18 +848,18 @@ void BrowserWidget::updateModuleColorIcon(odb::dbModule* module,
   }
 }
 
-std::set<odb::dbModule*> BrowserWidget::getChildren(odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getChildren(odb::dbModule* parent)
 {
-  std::set<odb::dbModule*> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : parent->getChildren()) {
     children.insert(child->getMaster());
   }
   return children;
 }
 
-std::set<odb::dbModule*> BrowserWidget::getAllChildren(odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getAllChildren(odb::dbModule* parent)
 {
-  std::set<odb::dbModule*> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : getChildren(parent)) {
     children.insert(child);
     const auto next_children = getAllChildren(child);

@@ -17,6 +17,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "domain.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
@@ -24,9 +25,11 @@
 #include "odb/isotropy.h"
 #include "power_cells.h"
 #include "rings.h"
+#include "shape.h"
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 
 namespace pdn {
 
@@ -61,12 +64,14 @@ std::vector<odb::dbNet*> Grid::getNets(bool starts_with_power) const
 std::string Grid::typeToString(Type type)
 {
   switch (type) {
-    case Core:
+    case kCore:
       return "Core";
-    case Instance:
+    case kInstance:
       return "Instance";
-    case Existing:
+    case kExisting:
       return "Existing";
+    case kDummy:
+      return "Dummy";
   }
 
   return "Unknown";
@@ -238,9 +243,9 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
         std::vector<int> grid = techlayer.getGrid();
         std::erase_if(grid, [&obs, is_horizontal](int pos) {
           if (is_horizontal) {
-            return !(obs.yMin() <= pos && pos <= obs.yMax());
+            return obs.yMin() > pos || pos > obs.yMax();
           }
-          return !(obs.xMin() <= pos && pos <= obs.xMax());
+          return obs.xMin() > pos || pos > obs.xMax();
         });
         // add by tracks
         const int min_width = techlayer.getMinWidth();
@@ -284,9 +289,27 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
              getLongName());
   // find vias that do not overlap completely
   // attempt to extend straps to fit (if owned by grid)
+  Shape::ShapeTreeMap search_shapes = getShapes();
+
+  odb::Rect search_area = getDomainBoundary();
+  for (const auto& [layer, shapes] : search_shapes) {
+    for (const auto& shape : shapes) {
+      search_area.merge(shape->getRect());
+    }
+  }
+
+  // populate shapes and obstructions
+  for (auto& [layer, layer_global_shape] : global_shapes) {
+    auto& shapes = search_shapes[layer];
+    for (auto it = layer_global_shape.qbegin(bgi::intersects(search_area));
+         it != layer_global_shape.qend();
+         it++) {
+      shapes.insert(*it);
+    }
+  }
 
   auto obs_filter = [this](const ShapePtr& other) -> bool {
-    if (other->shapeType() != Shape::GRID_OBS) {
+    if (other->shapeType() != Shape::kGridObs) {
       return true;
     }
     const GridObsShape* shape = static_cast<GridObsShape*>(other.get());
@@ -321,6 +344,7 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
       }
       auto new_lower
           = extend_test->extendTo(upper_shape->getRect(),
+                                  search_shapes[extend_test->getLayer()],
                                   obstructions[extend_test->getLayer()],
                                   lower_shape.get(),
                                   obs_filter);
@@ -336,6 +360,7 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
       }
       auto new_upper
           = extend_test->extendTo(lower_shape->getRect(),
+                                  search_shapes[extend_test->getLayer()],
                                   obstructions[extend_test->getLayer()],
                                   upper_shape.get(),
                                   obs_filter);
@@ -608,9 +633,9 @@ void Grid::ripup()
 void Grid::checkSetup() const
 {
   // check if follow pins have connect statements
-  std::set<odb::dbTechLayer*> follow_pin_layers;
+  odb::PtrSet<odb::dbTechLayer> follow_pin_layers;
   for (const auto& strap : straps_) {
-    if (strap->type() == Straps::Followpin) {
+    if (strap->type() == Straps::kFollowpin) {
       follow_pin_layers.insert(strap->getLayer());
     }
   }
@@ -679,7 +704,7 @@ void Grid::checkSetup() const
   }
 
   // Check connectivity
-  std::set<odb::dbTechLayer*> check_layers;
+  odb::PtrSet<odb::dbTechLayer> check_layers;
   for (const auto& ring : rings_) {
     for (auto* layer : ring->getLayers()) {
       check_layers.insert(layer);
@@ -702,7 +727,7 @@ void Grid::checkSetup() const
 
   // add instance layers
   const auto nets_vec = getNets();
-  const std::set<odb::dbNet*> nets(nets_vec.begin(), nets_vec.end());
+  const odb::PtrSet<odb::dbNet> nets(nets_vec.begin(), nets_vec.end());
 
   for (auto* inst : getInstances()) {
     if (!inst->isFixed()) {
@@ -819,14 +844,6 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
     }
   }
 
-  auto obs_filter = [this](const ShapePtr& other) -> bool {
-    if (other->shapeType() != Shape::GRID_OBS) {
-      return true;
-    }
-    const GridObsShape* shape = static_cast<GridObsShape*>(other.get());
-    return !shape->belongsTo(this);
-  };
-
   Shape::ObstructionTreeMap search_obstructions = obstructions;
   for (const auto& [layer, shapes] : search_shapes) {
     auto& obs = search_obstructions[layer];
@@ -849,12 +866,25 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   // remove vias with obstructions in their stack
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
-      auto& search_obs = search_obstructions[layer];
-      if (search_obs.qbegin(bgi::intersects(via->getArea())
-                            && bgi::satisfies(obs_filter))
+      const auto& search_obs = search_obstructions[layer];
+      if (search_obs.qbegin(
+              bgi::intersects(via->getArea())
+              && bgi::satisfies([this, layer](const ShapePtr& other) -> bool {
+                   if (other->shapeType() != Shape::kGridObs) {
+                     return true;
+                   }
+                   // only consider obstructions on routing layers as blocking
+                   // for grid obstructions
+                   if (layer->getType() != odb::dbTechLayerType::ROUTING) {
+                     return false;
+                   }
+                   const GridObsShape* shape
+                       = static_cast<GridObsShape*>(other.get());
+                   return !shape->belongsTo(this);
+                 }))
           != search_obs.qend()) {
         remove_vias.insert(via);
-        via->markFailed(failedViaReason::OBSTRUCTED);
+        via->markFailed(FailedViaReason::kObstructed);
         break;
       }
     }
@@ -901,7 +931,7 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
                }))
         != overlapping_via_tree.qend()) {
       remove_vias.insert(via);
-      via->markFailed(failedViaReason::OVERLAPPING);
+      via->markFailed(FailedViaReason::kOverlapping);
     }
   }
   debugPrint(getLogger(),
@@ -989,8 +1019,8 @@ void Grid::removeGridComponent(GridComponent* component)
 }
 
 std::map<Shape*, std::vector<odb::dbBox*>> Grid::writeToDb(
-    const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-    bool do_pins,
+    const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+    const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
     const Shape::ObstructionTreeMap& obstructions) const
 {
   // write vias first do shapes can be adjusted if needed
@@ -1026,10 +1056,10 @@ std::map<Shape*, std::vector<odb::dbBox*>> Grid::writeToDb(
 
   std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
 
-  std::set<odb::dbTechLayer*> pin_layers(pin_layers_.begin(),
-                                         pin_layers_.end());
+  odb::PtrSet<odb::dbTechLayer> pin_layers(pin_layers_.begin(),
+                                           pin_layers_.end());
   for (auto* component : getGridComponents()) {
-    const auto db_shapes = component->writeToDb(net_map, do_pins, pin_layers);
+    const auto db_shapes = component->writeToDb(net_map, bterm_map, pin_layers);
     shape_map.insert(db_shapes.begin(), db_shapes.end());
   }
 
@@ -1046,7 +1076,7 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
              getLongName());
   const odb::Rect core = getDomainArea();
 
-  std::set<odb::dbTechLayer*> layers;
+  odb::PtrSet<odb::dbTechLayer> layers;
 
   for (const auto& strap : straps_) {
     layers.insert(strap->getLayer());
@@ -1097,8 +1127,8 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
 
 void Grid::makeInitialObstructions(odb::dbBlock* block,
                                    ShapeVectorMap& obs,
-                                   const std::set<odb::dbInst*>& skip_insts,
-                                   const std::set<odb::dbNet*>& skip_nets,
+                                   const odb::PtrSet<odb::dbInst>& skip_insts,
+                                   const odb::PtrSet<odb::dbNet>& skip_nets,
                                    utl::Logger* logger)
 {
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - begin");
@@ -1116,12 +1146,12 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
     if (box->getTechLayer() == nullptr) {
       for (auto* layer : block->getDb()->getTech()->getLayers()) {
-        auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
+        auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::kBlockObs);
         obs[layer].push_back(std::move(shape));
       }
     } else {
       auto shape = std::make_shared<Shape>(
-          box->getTechLayer(), obs_rect, Shape::BLOCK_OBS);
+          box->getTechLayer(), obs_rect, Shape::kBlockObs);
       obs[box->getTechLayer()].push_back(std::move(shape));
     }
   }
@@ -1182,7 +1212,7 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
       for (auto* geom : bpin->getBoxes()) {
         auto* layer = geom->getTechLayer();
         auto shape
-            = std::make_shared<Shape>(layer, geom->getBox(), Shape::BLOCK_OBS);
+            = std::make_shared<Shape>(layer, geom->getBox(), Shape::kBlockObs);
         shape->generateObstruction();
         shape->setRect(shape->getRect());
         obs[layer].push_back(std::move(shape));
@@ -1204,10 +1234,10 @@ void Grid::makeInitialShapes(odb::dbBlock* block,
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial shapes - end");
 }
 
-std::set<odb::dbTechLayer*> Grid::connectableLayers(
+odb::PtrSet<odb::dbTechLayer> Grid::connectableLayers(
     odb::dbTechLayer* layer) const
 {
-  std::set<odb::dbTechLayer*> layers;
+  odb::PtrSet<odb::dbTechLayer> layers;
 
   for (const auto& connect : connect_) {
     if (connect->getLowerLayer() == layer) {
@@ -1225,12 +1255,12 @@ void Grid::setSwitchedPower(GridSwitchedPower* cell)
   cell->setGrid(this);
 }
 
-std::set<odb::dbInst*> Grid::getInstances() const
+odb::PtrSet<odb::dbInst> Grid::getInstances() const
 {
-  std::set<odb::dbInst*> insts;
+  odb::PtrSet<odb::dbInst> insts;
 
   for (auto* comp : getGridComponents()) {
-    if (comp->type() == GridComponent::PadConnect) {
+    if (comp->type() == GridComponent::kPadConnect) {
       auto* pad_connect = dynamic_cast<PadDirectConnectionStraps*>(comp);
       if (pad_connect != nullptr) {
         insts.insert(pad_connect->getITerm()->getInst());
@@ -1281,7 +1311,7 @@ odb::Rect CoreGrid::getDomainBoundary() const
 
   int follow_pin_width = 0;
   for (const auto& strap : getStraps()) {
-    if (strap->type() == GridComponent::Followpin) {
+    if (strap->type() == GridComponent::kFollowpin) {
       follow_pin_width = std::max(follow_pin_width, strap->getWidth());
     }
   }
@@ -1356,7 +1386,7 @@ void CoreGrid::cleanupShapes()
 
     for (auto* obs : inst->getMaster()->getObstructions()) {
       auto shape = std::make_shared<Shape>(
-          obs->getTechLayer(), outline, Shape::ShapeType::MACRO_OBS);
+          obs->getTechLayer(), outline, Shape::ShapeType::kMacroObs);
       shape->setObstruction(outline);
       macros[obs->getTechLayer()].insert(shape);
     }
@@ -1364,7 +1394,7 @@ void CoreGrid::cleanupShapes()
       for (auto* pin : term->getMPins()) {
         for (auto* geom : pin->getGeometry()) {
           auto shape = std::make_shared<Shape>(
-              geom->getTechLayer(), outline, Shape::ShapeType::MACRO_OBS);
+              geom->getTechLayer(), outline, Shape::ShapeType::kMacroObs);
           shape->setObstruction(outline);
           macros[geom->getTechLayer()].insert(shape);
         }
@@ -1400,16 +1430,12 @@ InstanceGrid::InstanceGrid(
     : Grid(domain, name, start_with_power, generate_obstructions), inst_(inst)
 {
   auto* halo = inst->getHalo();
-  if (halo != nullptr) {
-    odb::Rect halo_box = halo->getBox();
-
-    odb::Rect inst_box = inst->getBBox()->getBox();
+  if (halo != nullptr && !halo->isSoft()) {
+    odb::Rect halo_box = inst->getTransformedHalo();
 
     // copy halo from db
-    addHalo({halo_box.xMin() - inst_box.xMin(),
-             halo_box.yMin() - inst_box.yMin(),
-             inst_box.xMin() - halo_box.xMax(),
-             inst_box.yMin() - halo_box.yMax()});
+    addHalo(
+        {halo_box.xMin(), halo_box.yMin(), halo_box.xMax(), halo_box.yMax()});
   }
 }
 
@@ -1522,7 +1548,7 @@ ShapeVectorMap InstanceGrid::getInstanceObstructions(
     obs_rect.merge(spacing_rect);
 
     transform.apply(obs_rect);
-    auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
+    auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::kBlockObs);
 
     obs[layer].push_back(std::move(shape));
   }
@@ -1534,7 +1560,7 @@ ShapeVectorMap InstanceGrid::getInstanceObstructions(
     const bool is_vertical
         = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     for (const auto& pin_shape : pin_shapes) {
-      pin_shape->setShapeType(Shape::BLOCK_OBS);
+      pin_shape->setShapeType(Shape::kBlockObs);
       pin_shape->generateObstruction();
       pin_shape->setRect(applyHalo(
           pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
@@ -1596,7 +1622,7 @@ ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
             transform.apply(box_rect);
             auto shape = std::make_shared<Shape>(
                 via_box->getTechLayer(), net, box_rect);
-            shape->setShapeType(Shape::FIXED);
+            shape->setShapeType(Shape::kFixed);
             pins.push_back(std::move(shape));
           }
         } else {
@@ -1604,7 +1630,7 @@ ShapeVectorMap InstanceGrid::getInstancePins(odb::dbInst* inst)
           transform.apply(box_rect);
           auto shape
               = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
-          shape->setShapeType(Shape::FIXED);
+          shape->setShapeType(Shape::kFixed);
           pins.push_back(std::move(shape));
         }
       }
@@ -1642,9 +1668,9 @@ std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
 {
   auto nets = Grid::getNets(starts_with_power);
 
-  std::set<odb::dbNet*> connected_nets;
+  odb::PtrSet<odb::dbNet> connected_nets;
   for (auto* iterm : inst_->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
+    auto* net = iterm->getNet();
     if (net != nullptr) {
       connected_nets.insert(net);
     }
@@ -1685,9 +1711,132 @@ bool InstanceGrid::isValid() const
   return true;
 }
 
+bool InstanceGrid::hasHalo() const
+{
+  for (int margin : halos_) {
+    if (margin != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+InstanceGrid::Halo InstanceGrid::suggestHalo(
+    const std::vector<odb::Rect>& rows) const
+{
+  const odb::Rect inst_box = inst_->getBBox()->getBox();
+  const odb::Rect inst_halo = applyHalo(inst_box, halos_, true, true, true);
+
+  // Whether a row shares the instance's horizontal/vertical extent.  A row
+  // that does not overlap the instance shares at most one of the two, so it
+  // can always be separated from the instance along the other axis.
+  auto overlaps_x = [&inst_box](const odb::Rect& row) {
+    return row.xMax() > inst_box.xMin() && row.xMin() < inst_box.xMax();
+  };
+  auto overlaps_y = [&inst_box](const odb::Rect& row) {
+    return row.yMax() > inst_box.yMin() && row.yMin() < inst_box.yMax();
+  };
+
+  Halo suggested = halos_;
+
+  // First pass: rows beside the instance (sharing its vertical extent) can
+  // only be cleared horizontally; rows above/below it (sharing its horizontal
+  // extent) can only be cleared vertically.  Apply these forced reductions.
+  std::vector<odb::Rect> corner_rows;
+  for (const odb::Rect& row : rows) {
+    if (overlaps_y(row)) {
+      if (row.xMin() >= inst_box.xMax()) {  // right of the instance
+        suggested[2] = std::min(suggested[2], row.xMin() - inst_box.xMax());
+      } else {  // left of the instance
+        suggested[0] = std::min(suggested[0], inst_box.xMin() - row.xMax());
+      }
+    } else if (overlaps_x(row)) {
+      if (row.yMin() >= inst_box.yMax()) {  // above the instance
+        suggested[3] = std::min(suggested[3], row.yMin() - inst_box.yMax());
+      } else {  // below the instance
+        suggested[1] = std::min(suggested[1], inst_box.yMin() - row.yMax());
+      }
+    } else {
+      corner_rows.push_back(row);
+    }
+  }
+
+  // Second pass: corner rows can be cleared on either axis.  Many are already
+  // cleared by the forced reductions above; for any that remain, retract
+  // whichever side has to move the least.
+  for (const odb::Rect& row : corner_rows) {
+    if (!inst_halo.overlaps(row)) {
+      continue;
+    }
+    const bool right = row.xMin() >= inst_box.xMax();
+    const int x_side = right ? 2 : 0;
+    const int x_halo
+        = right ? row.xMin() - inst_box.xMax() : inst_box.xMin() - row.xMax();
+    const bool above = row.yMin() >= inst_box.yMax();
+    const int y_side = above ? 3 : 1;
+    const int y_halo
+        = above ? row.yMin() - inst_box.yMax() : inst_box.yMin() - row.yMax();
+    if (suggested[x_side] - x_halo <= suggested[y_side] - y_halo) {
+      suggested[x_side] = std::min(suggested[x_side], x_halo);
+    } else {
+      suggested[y_side] = std::min(suggested[y_side], y_halo);
+    }
+  }
+
+  return suggested;
+}
+
+void InstanceGrid::checkHalo() const
+{
+  if (!hasHalo() || inst_->getMaster()->isCover()) {
+    return;
+  }
+
+  const odb::Rect inst_box = inst_->getBBox()->getBox();
+  const odb::Rect halo_box = applyHalo(inst_box, true, true, true);
+
+  // Collect rows the halo intrudes into.  Rows the instance footprint itself
+  // overlaps are skipped: no halo adjustment can clear those (the instance is
+  // placed on top of them), so they are out of scope here.
+  std::vector<odb::Rect> overlapping_rows;
+  std::string first_row;
+  for (auto* row : getBlock()->getRows()) {
+    const odb::Rect row_box = row->getBBox();
+    if (!halo_box.overlaps(row_box) || inst_box.overlaps(row_box)) {
+      continue;
+    }
+    if (overlapping_rows.empty()) {
+      first_row = row->getName();
+    }
+    overlapping_rows.push_back(row_box);
+  }
+
+  if (overlapping_rows.empty()) {
+    return;
+  }
+
+  const Halo suggested = suggestHalo(overlapping_rows);
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  getLogger()->error(
+      utl::PDN,
+      8,
+      "{} halo overlaps row {} (and {} other row(s)); reduce the halo to at "
+      "most \"{:.4f} {:.4f} {:.4f} {:.4f}\".",
+      getLongName(),
+      first_row,
+      overlapping_rows.size() - 1,
+      suggested[0] / dbus,
+      suggested[1] / dbus,
+      suggested[2] / dbus,
+      suggested[3] / dbus);
+}
+
 void InstanceGrid::checkSetup() const
 {
   Grid::checkSetup();
+
+  checkHalo();
 
   // check blockages above pins
   const auto nets = getNets(startsWithPower());
@@ -1717,7 +1866,7 @@ void InstanceGrid::checkSetup() const
     if (top != nullptr) {
       const int top_idx = top->getNumber();
       std::map<odb::Rect, int64_t> overlap_area;
-      std::set<odb::dbTechLayer*> layers;
+      odb::PtrSet<odb::dbTechLayer> layers;
       for (auto* master_obs : inst_->getMaster()->getObstructions()) {
         auto* obs_layer = master_obs->getTechLayer();
         if (obs_layer == nullptr) {
@@ -1787,6 +1936,19 @@ void InstanceGrid::checkSetup() const
       }
     }
   }
+}
+
+////////
+
+DummyInstanceGrid::DummyInstanceGrid(VoltageDomain* domain,
+                                     const std::string& name)
+    : Grid(domain, name, true, {})
+{
+}
+
+std::string DummyInstanceGrid::getLongName() const
+{
+  return getName() + " - Dummy";
 }
 
 ////////
@@ -1874,7 +2036,7 @@ ExistingGrid::ExistingGrid(
     const std::vector<odb::dbTechLayer*>& generate_obstructions)
     : Grid(nullptr, name, false, generate_obstructions), domain_(nullptr)
 {
-  std::set<odb::dbNet*> nets;
+  odb::PtrSet<odb::dbNet> nets;
 
   for (odb::dbNet* net : block->getNets()) {
     if (!net->getSigType().isSupply()) {

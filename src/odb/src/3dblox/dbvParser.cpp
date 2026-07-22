@@ -25,10 +25,7 @@ DbvParser::DbvParser(utl::Logger* logger) : BaseParser(logger)
 DbvData DbvParser::parseFile(const std::string& filename)
 {
   current_file_path_ = filename;
-  std::ifstream file(filename);
-  if (!file.is_open()) {
-    logError("3DBV Parser Error: Cannot open file: " + filename);
-  }
+  std::ifstream file = openInputFile();
 
   std::stringstream buffer;
   buffer << file.rdbuf();
@@ -179,11 +176,11 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
         }
       }
     }
-    if (chiplet_node["external"]["DEF_file"]) {
-      extractValue(
-          chiplet_node["external"], "DEF_file", chiplet.external.def_file);
-      chiplet.external.def_file = resolvePath(chiplet.external.def_file);
-    }
+    const std::string context = "ChipletDef '" + chiplet.name + "'";
+    chiplet.external.def_file = extractSinglePathFromList(
+        chiplet_node["external"], "DEF_file", context);
+    chiplet.external.verilog_file = extractSinglePathFromList(
+        chiplet_node["external"], "verilog_file", context);
   }
 }
 
@@ -228,8 +225,20 @@ void DbvParser::parseRegion(ChipletRegion& region,
     extractValue(region_node, "gds_layer", region.gds_layer);
   }
 
-  if (region_node["coords"]) {
+  if (!region_node["coords"]) {
+    logError("3DBV region " + region.name + " must specify coords.");
+  } else {
     parseCoordinates(region.coords, region_node["coords"]);
+    if (region.coords.size() != 4) {
+      if (region.coords.size() > 4) {
+        logError("3DBV region " + region.name
+                 + " must have exactly 4 coordinates. Polygonal regions are "
+                   "not yet supported.");
+      } else {
+        logError("3DBV region " + region.name
+                 + " must have exactly 4 coordinates.");
+      }
+    }
   }
 }
 

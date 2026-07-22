@@ -17,7 +17,7 @@ BoxT getBoxFromRect(const odb::Rect& bounds)
 
 bool BoxOnLayer::isConnected(const BoxOnLayer& rhs) const
 {
-  return abs(rhs.getLayerIdx() - layer_idx_) < 2 && HasIntersectWith(rhs);
+  return abs(rhs.getLayerIdx() - layer_idx_) < 2 && hasIntersectWith(rhs);
 }
 
 std::ostream& operator<<(std::ostream& os, const BoxOnLayer& box)

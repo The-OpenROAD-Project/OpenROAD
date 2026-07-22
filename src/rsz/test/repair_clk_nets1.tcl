@@ -47,7 +47,6 @@ location wire1
 location u3
 
 puts "\n# Call sta::network_changed. Timing should be the same."
-sta::network_changed
 estimate_parasitics -placement
 report_checks -unconstrained -fields {input slew cap} -rise_to out1
 

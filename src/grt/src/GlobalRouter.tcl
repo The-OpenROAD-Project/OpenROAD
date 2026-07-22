@@ -146,23 +146,27 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
                                   [-critical_nets_percentage percent] \
+                                  [-res_aware_nets_percentage percent] \
                                   [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
+                                  [-snapshot_batched_width width] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental] \
                                   [-use_cugr] \
-                                  [-resistance_aware]
+                                  [-resistance_aware] \
+                                  [-infinite_cap]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -grid_origin -critical_nets_percentage -congestion_report_iter_step\
-          -skip_large_fanout_nets
+          -grid_origin -critical_nets_percentage -res_aware_nets_percentage \
+          -congestion_report_iter_step \
+          -skip_large_fanout_nets -snapshot_batched_width
          } \
-    flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental \
-          -use_cugr}
+    flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
+          -end_incremental -use_cugr}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -172,6 +176,16 @@ proc global_route { args } {
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error GRT 52 "Missing dbBlock."
+  }
+
+  # Only update the use_cugr flag when not in incremental start/end mode.
+  # During -start_incremental / -end_incremental, preserve the flag that was
+  # set during the initial global_route call.
+  set is_inc_start [info exists flags(-start_incremental)]
+  set is_inc_end [info exists flags(-end_incremental)]
+  set is_incremental_bracket [expr { $is_inc_start || $is_inc_end }]
+  if { !$is_incremental_bracket } {
+    grt::set_use_cugr [info exists flags(-use_cugr)]
   }
 
   grt::set_verbose [info exists flags(-verbose)]
@@ -192,6 +206,11 @@ proc global_route { args } {
     set iterations $keys(-congestion_iterations)
     sta::check_positive_integer "-congestion_iterations" $iterations
     grt::set_congestion_iterations $iterations
+  } elseif { [info exists flags(-use_cugr)] } {
+    # CUGR's rip-up and re-route loop saturates around iteration 5, and
+    # each iteration runs a full 3D maze pass, so the default budget is
+    # tighter than FastRoute's 50.
+    grt::set_congestion_iterations 5
   } else {
     grt::set_congestion_iterations 50
   }
@@ -214,8 +233,6 @@ proc global_route { args } {
     grt::set_critical_nets_percentage $percentage
   }
 
-  grt::set_use_cugr [info exists flags(-use_cugr)]
-
   if { [info exists keys(-skip_large_fanout_nets)] } {
     set fanout $keys(-skip_large_fanout_nets)
     sta::check_positive_integer "-skip_large_fanout_nets" $fanout
@@ -228,10 +245,36 @@ proc global_route { args } {
   set resistance_aware [info exists flags(-resistance_aware)]
   grt::set_resistance_aware $resistance_aware
 
+  if { [info exists keys(-res_aware_nets_percentage)] } {
+    set res_aware_percentage $keys(-res_aware_nets_percentage)
+    sta::check_percent "-res_aware_nets_percentage" $res_aware_percentage
+    grt::set_res_aware_nets_percentage $res_aware_percentage
+  }
+
+  if { [info exists keys(-snapshot_batched_width)] } {
+    set snapshot_batched_width $keys(-snapshot_batched_width)
+    sta::check_positive_integer "-snapshot_batched_width" \
+      $snapshot_batched_width
+  } else {
+    set snapshot_batched_width 0
+  }
+  grt::set_snapshot_batched_width $snapshot_batched_width
+
+  set infinite_cap [info exists flags(-infinite_cap)]
+  grt::set_infinite_cap $infinite_cap
+
   set start_incremental [info exists flags(-start_incremental)]
   set end_incremental [info exists flags(-end_incremental)]
 
-  grt::global_route $start_incremental $end_incremental
+  if { $start_incremental && $end_incremental } {
+    utl::error GRT 295 "Only one of -start_incremental or -end_incremental can be used."
+  } elseif { $start_incremental } {
+    grt::start_incremental
+  } elseif { $end_incremental } {
+    grt::end_incremental
+  } else {
+    grt::global_route
+  }
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
@@ -343,15 +386,14 @@ proc read_guides { args } {
   grt::read_guides $file_name
 }
 
-sta::define_cmd_args "draw_route_guides" { net_names \
-                                           [-show_segments]
+sta::define_cmd_args "draw_route_segments" { net_names \
                                            [-show_pin_locations] }
 
-proc draw_route_guides { args } {
-  sta::parse_key_args "draw_route_guides" args \
+proc draw_route_segments { args } {
+  sta::parse_key_args "draw_route_segments" args \
     keys {} \
-    flags {-show_pin_locations -show_segments}
-  sta::check_argc_eq1 "draw_route_guides" $args
+    flags {-show_pin_locations}
+  sta::check_argc_eq1 "draw_route_segments" $args
   set net_names [lindex $args 0]
   set block [ord::get_db_block]
   if { $block == "NULL" } {
@@ -360,10 +402,9 @@ proc draw_route_guides { args } {
 
   grt::clear_route_guides
   set show_pins [info exists flags(-show_pin_locations)]
-  set show_segments [info exists flags(-show_segments)]
   foreach net [get_nets $net_names] {
     if { $net != "NULL" } {
-      grt::highlight_net_route [sta::sta_to_db_net $net] $show_segments $show_pins
+      grt::highlight_net_route [sta::sta_to_db_net $net] $show_pins
     }
   }
 }
@@ -391,8 +432,9 @@ proc read_global_route_segments { args } {
 sta::define_cmd_args "global_route_debug" {
   [-st]       # Show the Steiner Tree generated by stt
   [-rst]      # Show the Rectilinear Steiner Tree generated by FastRoute
-  [-tree2D]   # Show the Rectilinear Steiner Tree generated by FastRoute after overflow iterations
+  [-tree2D]   # Show the Rectilinear Steiner Tree generated by FastRoute after congestion iterations
   [-tree3D]   # Show The Rectilinear Steiner Tree 3D after layer assignment
+  [-edges3D]  # Show edges being rerouted during maze route 3D
   [-saveSttInput file_name] # Save the stt input for a net on file_name
   [-net name]
 }
@@ -400,7 +442,7 @@ sta::define_cmd_args "global_route_debug" {
 proc global_route_debug { args } {
   sta::parse_key_args "global_route_debug" args \
     keys {-saveSttInput -net} \
-    flags {-st -rst -tree2D -tree3D}
+    flags {-st -rst -tree2D -tree3D -edges3D}
 
   sta::check_argc_eq0 "global_route_debug" $args
 
@@ -408,6 +450,7 @@ proc global_route_debug { args } {
   set rst [info exists flags(-rst)]
   set tree2D [info exists flags(-tree2D)]
   set tree3D [info exists flags(-tree3D)]
+  set edges3D [info exists flags(-edges3D)]
   set db_block [ord::get_db_block]
 
   if { [info exists keys(-net)] } {
@@ -415,7 +458,7 @@ proc global_route_debug { args } {
     if { $net == "NULL" } {
       utl::error GRT 231 "Net name not found."
     }
-    grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D
+    grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D $edges3D
     if { [info exists keys(-saveSttInput)] } {
       set file_name $keys(-saveSttInput)
       grt::set_global_route_debug_stt_input_filename $file_name

@@ -10,6 +10,7 @@
 #include <variant>
 
 #include "ClockDomain.hh"
+#include "ScanPin.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 

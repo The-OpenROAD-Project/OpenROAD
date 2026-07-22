@@ -3,11 +3,18 @@
 
 #pragma once
 
+#include <map>
+#include <set>
+#include <vector>
+
 #include "AntennaCheckerImpl.hh"
 #include "PinType.hh"
 #include "ant/AntennaChecker.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace ant {
 
@@ -20,16 +27,14 @@ using Point = gtl::polygon_traits<Polygon>::point_type;
 struct GraphNode
 {
   int id;
-  bool isVia;
+  bool is_via;
   Polygon pol;
   std::vector<int> low_adj;
   std::set<PinType, PinTypeCmp> gates;
   GraphNode() = default;
-  GraphNode(int id_, bool isVia_, const Polygon& pol_)
+  GraphNode(int id, bool is_via, const Polygon& pol)
+      : id(id), is_via(is_via), pol(pol)
   {
-    id = id_;
-    isVia = isVia_;
-    pol = pol_;
   }
 };
 
@@ -38,9 +43,9 @@ std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
                                            const Polygon& pol);
 void wiresToPolygonSetMap(
     odb::dbWire* wires,
-    std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
+    odb::PtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer);
 void avoidPinIntersection(
     odb::dbNet* db_net,
-    std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer);
+    odb::PtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer);
 
 }  // namespace ant

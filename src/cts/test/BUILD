@@ -1,8 +1,9 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -10,8 +11,10 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
+    "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",
@@ -23,6 +26,8 @@ COMPULSORY_TESTS = [
     "check_max_fanout2",
     "check_max_fanout3",
     "check_wire_rc_cts",
+    "clock_buffer_footprint",
+    "colocated_sinks",
     "dummy_load",
     "find_clock",
     "find_clock_pad",
@@ -43,17 +48,13 @@ COMPULSORY_TESTS = [
     "simple_test_clustered",
     "simple_test_clustered_max_cap",
     "simple_test_hier",
+    "sink_clustering_collision",
     "skip_nets",
     "twice",
+    "virtual_clock_latency",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "cts_man_tcl_check",
-    "cts_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -69,16 +70,10 @@ filegroup(
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
         "helpers.tcl",
-    ],
-)
-
-filegroup(
-    name = "ihp_resources",
-    srcs = [
-        "ihp-sg13g2_data/setRC.tcl",
-        "ihp-sg13g2_data/sg13g2_stdcell.lef",
-        "ihp-sg13g2_data/sg13g2_stdcell_typ_1p20V_25C.lib",
-        "ihp-sg13g2_data/sg13g2_tech.lef",
+        "ihp-sg13g2/setRC.tcl",
+        "ihp-sg13g2/sg13g2_stdcell.lef",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+        "ihp-sg13g2/sg13g2_tech.lef",
     ],
 )
 
@@ -106,6 +101,10 @@ filegroup(
                 "array_tile.lef",
                 "array_tile_ins_delay.lib",
             ],
+            "array_max_wl": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
             "array_no_blockages": [
                 "array_tile.lef",
                 "array_tile.lib",
@@ -113,6 +112,7 @@ filegroup(
             "array_repair_clock_nets": [
                 "array_tile.lef",
                 "array_tile.lib",
+                "array_max_wl.defok",
             ],
             "check_buffer_inference1": [
                 "ModNangate45/ModNangate45_typ.lib",
@@ -129,16 +129,29 @@ filegroup(
                 "16sinks.def",
             ],
             "check_max_fanout1": [
-                ":ihp_resources",
+                "ihp-sg13g2/setRC.tcl",
+                "ihp-sg13g2/sg13g2_stdcell.lef",
+                "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+                "ihp-sg13g2/sg13g2_tech.lef",
             ],
             "check_max_fanout2": [
                 "check_buffers.def",
             ],
             "check_max_fanout3": [
-                ":ihp_resources",
+                "ihp-sg13g2/setRC.tcl",
+                "ihp-sg13g2/sg13g2_stdcell.lef",
+                "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+                "ihp-sg13g2/sg13g2_tech.lef",
             ],
             "check_wire_rc_cts": [
                 "check_buffers.def",
+            ],
+            "clock_buffer_footprint": [
+                "ihp-sg13g2/setRC.tcl",
+                "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+                "ihp-sg13g2/sg13g2_tech.lef",
+                "ihp-sg13g2/sg13g2_stdcell.lef",
+                "check_max_fanout3.def",
             ],
             "dummy_load": [
                 "check_buffers.def",
@@ -147,7 +160,9 @@ filegroup(
                 "16sinks.def",
             ],
             "find_clock_pad": [
+                "Nangate45/Nangate45.lef",
                 "pad.lef",
+                "Nangate45/Nangate45_typ.lib",
                 "pad.lib",
             ],
             "gated_clock5": [
@@ -203,6 +218,9 @@ filegroup(
             "twice": [
                 "16sinks.def",
             ],
+            "virtual_clock_latency": [
+                "16sinks.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -212,7 +230,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -228,4 +246,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "cts_man_tcl_check",
+    srcs = ["cts_man_tcl_check.py"],
+    data = ["//src/cts:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "cts_readme_msgs_check",
+    data = [
+        "//src/cts:doc_files",
+        "//src/cts:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

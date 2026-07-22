@@ -27,12 +27,14 @@ To install Python packages:
 virtualenv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
 
 ### Build instructions for Pandoc manpages
 
 The `-j16` command is optional for speeding up the manpage compilation process by using multiple jobs
 based on the number of cores in your system.
 
+``` shell
 make clean
 
 # Note this step is important as it regenerates the documentation using latest sources.

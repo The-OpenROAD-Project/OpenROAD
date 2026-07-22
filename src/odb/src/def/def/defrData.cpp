@@ -29,6 +29,8 @@
 
 #include "defrData.hpp"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -36,6 +38,7 @@
 
 #include "defiKRDefs.hpp"
 #include "defrCallBacks.hpp"
+#include "defrReader.hpp"
 #include "defrSettings.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE

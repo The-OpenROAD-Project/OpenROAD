@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+# Test Parity Note: All C++ tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(
@@ -13,8 +16,8 @@ cc_test(
         "TestAbstractLef.cc",
     ],
     deps = [
-        "//src/odb",
-        "//src/tst",
+        "//src/odb/src/db",
+        "//src/odb/src/lefout",
         "//src/tst:sky130_fixture",
         "//src/utl",
         "@googletest//:gtest",
@@ -28,9 +31,8 @@ cc_test(
         "TestAccessPoint.cpp",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -43,9 +45,9 @@ cc_test(
         "TestCallBacks.cpp",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",
@@ -58,12 +60,10 @@ cc_test(
         "TestChips.cpp",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@spdlog",
     ],
 )
 
@@ -74,7 +74,8 @@ cc_test(
         "//src/odb/test/data/sky130hd:lef-test-data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -86,9 +87,8 @@ cc_test(
     name = "TestGCellGrid",
     srcs = ["TestGCellGrid.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -99,9 +99,10 @@ cc_test(
     srcs = ["TestGDSIn.cpp"],
     data = ["//src/odb/test:regression_resources"],
     deps = [
-        "//src/odb",
-        "//src/odb/test/cpp/helper",
-        "//src/tst",
+        "//src/odb/src/db",
+        "//src/odb/src/gdsin",
+        "//src/odb/src/gdsout",
+        "//src/tst:db_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -112,7 +113,7 @@ cc_test(
     name = "TestGeom",
     srcs = ["TestGeom.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -122,7 +123,7 @@ cc_test(
     name = "TestGroup",
     srcs = ["TestGroup.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -133,7 +134,7 @@ cc_test(
     name = "TestGuide",
     srcs = ["TestGuide.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -144,7 +145,7 @@ cc_test(
     name = "TestJournal",
     srcs = ["TestJournal.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -156,7 +157,11 @@ cc_test(
     srcs = ["TestLef58Properties.cpp"],
     data = ["//src/odb/test:regression_resources"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/defout",
+        "//src/odb/src/lefin",
+        "//src/odb/src/lefout",
         "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -167,7 +172,7 @@ cc_test(
     name = "TestMaster",
     srcs = ["TestMaster.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -178,7 +183,7 @@ cc_test(
     name = "TestModule",
     srcs = ["TestModule.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -189,8 +194,48 @@ cc_test(
     name = "TestNetTrack",
     srcs = ["TestNetTrack.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "OdbGTests",
+    srcs = [
+        "TestAbstractLef.cc",
+        "TestDbNet.cpp",
+        "TestDbWire.cc",
+        "TestDesignIsRouted.cpp",
+        "TestPolygonalFloorplan.cc",
+    ],
+    args = [],
+    data = [
+        "//src/odb/test:regression_resources",
+        "//src/odb/test/data/sky130hd:lef-test-data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/lefin",
+        "//src/odb/src/lefout",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/tst:sky130_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestObjectType",
+    srcs = ["TestObjectType.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -205,8 +250,8 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/odb",
-        "//src/tst",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",
@@ -223,11 +268,10 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/3dblox",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -237,15 +281,35 @@ cc_test(
     name = "Test3DBloxChecker",
     srcs = [
         "Test3DBloxChecker.cpp",
+        "Test3DBloxCheckerAlignmentMarkers.cpp",
+        "Test3DBloxCheckerBumps.cpp",
+        "Test3DBloxCheckerFixture.h",
+        "Test3DBloxCheckerLogicalConn.cpp",
     ],
     data = [
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/odb",
-        "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
+        "//src/odb/src/3dblox",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "Test3DBloxVerilogWriter",
+    srcs = [
+        "Test3DBloxVerilogWriter.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb/src/3dblox",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -260,16 +324,46 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb",
-        "//src/sta:opensta_lib",
-        "//src/tst",
+        "//src/odb/src/db",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
 )
 
-# TODO: more to come.
+cc_test(
+    name = "TestSwapMaster",
+    srcs = [
+        "TestSwapMaster.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSwapMasterUnusedPort",
+    srcs = [
+        "TestSwapMasterUnusedPort.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

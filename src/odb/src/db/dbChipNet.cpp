@@ -13,15 +13,19 @@
 #include "dbChipBumpInst.h"
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "utl/Logger.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbChipNet>;
 
 bool _dbChipNet::operator==(const _dbChipNet& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -33,6 +37,7 @@ bool _dbChipNet::operator==(const _dbChipNet& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipNet::operator<(const _dbChipNet& rhs) const
@@ -66,6 +71,9 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["name"].add(name_);
+  info.children["bump_insts_paths"].add(bump_insts_paths_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -74,7 +82,7 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipNet::getName() const
+const std::string& dbChipNet::getName() const
 {
   _dbChipNet* obj = (_dbChipNet*) this;
   return obj->name_;

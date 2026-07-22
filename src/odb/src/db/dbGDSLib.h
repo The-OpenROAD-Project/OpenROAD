@@ -9,7 +9,6 @@
 #include "dbCore.h"
 #include "dbGDSStructure.h"
 #include "dbHashTable.hpp"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 

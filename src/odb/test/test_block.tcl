@@ -22,7 +22,6 @@ proc setUp { } {
   set parentBlock [odb::dbBlock_create [$db getChip] "Parent"]
   set block [create2LevelBlock $db $lib $parentBlock]
   $block setCornerCount 4
-  set extcornerblock [$block createExtCornerBlock 1]
   odb::dbTechNonDefaultRule_create $block "non_default_1"
   set parentRegion [odb::dbRegion_create $block "parentRegion"]
   return [list $db $lib $block $parentBlock]
@@ -52,9 +51,6 @@ proc test_find { } {
   assertStringEq [[$iterm getInst] getName] "i1"
   assertStringEq [[$iterm getMTerm] getName] "o"
   assertObjIsNull [$block findITerm "i1\o"]
-  # extcornerblock
-  assertStringEq [[$block findExtCornerBlock 1] getName] "extCornerBlock__1"
-  assertObjIsNull [$block findExtCornerBlock 0]
   # nondefaultrule
   assertStringEq [[$block findNonDefaultRule "non_default_1"] getName] "non_default_1"
   assertObjIsNull [$block findNonDefaultRule "non_default_2"]
@@ -95,7 +91,16 @@ proc block_placement { block lib test_num flag } {
       0 4000 100 4100 "NONE"
   }
   if { ($flag && $test_num == 5) || (!$flag && $test_num >= 5) } {
-    # TODO ADD WIRE
+    set L1 [[$lib getTech] findLayer "L1"]
+    $L1 setWidth 200
+    set n_w [odb::dbNet_create $block "n_w"]
+    set wire [odb::dbWire_create $n_w]
+    set encoder [odb::dbWireEncoder]
+    $encoder begin $wire
+    $encoder newPath $L1 "ROUTED"
+    $encoder addPoint 0 4500
+    $encoder addPoint 3000 4500
+    $encoder end
   }
 }
 
@@ -147,11 +152,21 @@ proc test_bbox4 { } {
   tearDown $db
 }
 
+proc test_bbox5 { } {
+  lassign [setUp] db lib block parentBlock
+  set box [$block getBBox]
+  block_placement $block $lib 5 false
+  # xMax is 3100 (not 3000): wire endpoint is extended by half-width (100).
+  check_box_rect $block -1580 -1000 3100 4600
+  tearDown $db
+}
+
 test_find
 test_bbox0
 test_bbox1
 test_bbox2
 test_bbox3
 test_bbox4
+test_bbox5
 puts "pass"
 exit 0

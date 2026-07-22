@@ -16,7 +16,7 @@ proc read_lefs { } {
 }
 
 proc get_total_power { } {
-  return [lindex [sta::design_power [sta::corners]] 3]
+  return [lindex [sta::design_power [sta::scenes]] 3]
 }
 
 # Verify that pins have activity annotated from VCD

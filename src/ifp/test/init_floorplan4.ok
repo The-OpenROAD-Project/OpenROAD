@@ -1,4 +1,10 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING IFP-0028] Core area lower left (110.000, 110.000) snapped to (110.010, 110.600).
 [INFO IFP-0001] Added 563 rows of 4157 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 1000.000 1000.000 ) um
+[INFO IFP-0101] Core BBox: ( 110.010 110.600 ) ( 899.840 898.800 ) um
+[INFO IFP-0102] Core area:                       622544.006 um^2
+[INFO IFP-0103] Total instances area:                15.428 um^2
+[INFO IFP-0104] Effective utilization:                0.000
+[INFO IFP-0105] Number of instances:                      5
 No differences found.

@@ -2,4 +2,10 @@
 [INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.280, 100.640).
 [INFO IFP-0001] Added 110 rows of 651 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 500.000 500.000 ) um
+[INFO IFP-0101] Core BBox: ( 100.280 100.640 ) ( 399.740 399.840 ) um
+[INFO IFP-0102] Core area:                        89598.432 um^2
+[INFO IFP-0103] Total instances area:               245.235 um^2
+[INFO IFP-0104] Effective utilization:                0.003
+[INFO IFP-0105] Number of instances:                     35
 No differences found.

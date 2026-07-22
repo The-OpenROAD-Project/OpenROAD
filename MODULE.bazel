@@ -5,23 +5,69 @@ module(
     name = "openroad",
 )
 
-bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
-bazel_dep(name = "rules_cc", version = "0.1.2")
-bazel_dep(name = "rules_flex", version = "0.3.1")
-bazel_dep(name = "rules_bison", version = "0.3.1")
-bazel_dep(name = "rules_jvm_external", version = "6.4")
-bazel_dep(name = "rules_scala")
-git_override(
-    module_name = "rules_scala",
-    commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
-    remote = "https://github.com/bazelbuild/rules_scala",
+# --- Regular dependencies (propagated to downstream consumers via MVS) ---
+
+bazel_dep(name = "abc", version = "0.64-yosyshq.bcr.2")
+
+# Patch abc's non-readline prompt path to flush stdout and exit on EOF.
+# Without this, yosys's coprocess driver (which waits for the "abc NN> "
+# prompt over a pipe) deadlocks when abc is built with use_readline=false.
+# Drop this override once the fix is in a published BCR abc release.
+single_version_override(
+    module_name = "abc",
+    patch_strip = 1,
+    patches = [
+        "//bazel/abc-patches:0001-mainUtils-flush-prompt-and-handle-eof-without-readline.patch",
+    ],
 )
 
-bazel_dep(name = "rules_verilator", version = "0.1.0")
-bazel_dep(name = "verilator", version = "5.036.bcr.3")
+bazel_dep(name = "abseil-cpp", version = "20260107.1")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_bison", version = "0.3.1")
+bazel_dep(name = "rules_cc", version = "0.2.18")
+bazel_dep(name = "rules_flex", version = "0.3.1")
+
+# rules_go is transitive (or-tools, gazelle, grpc-java, rules_buf). The
+# MVS-selected 0.53.0 references the top-level CcInfo global that Bazel 9
+# removed (go/private/rules/cgo.bzl), breaking analysis. 0.59.0+ loads
+# CcInfo from @rules_cc; force a Bazel-9-compatible release.
+bazel_dep(name = "rules_go", version = "0.61.1")
+bazel_dep(name = "rules_pkg", version = "1.2.0")
+bazel_dep(name = "rules_pycross", version = "0.8.1")
+bazel_dep(name = "rules_python", version = "1.8.5")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "swig", version = "4.3.0.bcr.2")
+
+# bison is transitive (rules_bison -> bison). Same gnulib libc-header
+# shadowing class as sed/gawk/m4 under hermetic-llvm (BCR #7642).
+# 3.8.2.bcr.7 fixes lib/ but src/ still picks up raw libc headers; the
+# patch restores gnulib wrapper-header precedence via -I (to be proposed
+# upstream as 3.8.2.bcr.8, then drop).
+single_version_override(
+    module_name = "bison",
+    patch_strip = 1,
+    patches = [
+        "//bazel/bison-patches:0001-gnulib-wrapper-headers-use-I-not-isystem.patch",
+    ],
+    version = "3.8.2.bcr.7",
+)
 
 BOOST_VERSION = "1.89.0.bcr.2"
+
+# boost::icl's exclusive_less_than comparator violates strict weak ordering
+# (boostorg/icl#51); libc++'s std::map exposes it, leaving phantom intervals
+# after interval_set subtraction (boostorg/icl#55) — pad IO fillers were
+# placed on top of pads. Upstream fix boostorg/icl@7de3f55655 (#54), merged
+# after boost 1.90. Drop when a boost.icl release containing it lands in BCR.
+single_version_override(
+    module_name = "boost.icl",
+    patch_strip = 1,
+    patches = [
+        "//bazel/boost-icl-patches:0001-refactor-interval-lookup-operations-icl-54.patch",
+    ],
+)
 
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
 bazel_dep(name = "boost.asio", version = BOOST_VERSION)
@@ -30,7 +76,6 @@ bazel_dep(name = "boost.bind", version = BOOST_VERSION)
 bazel_dep(name = "boost.config", version = BOOST_VERSION)
 bazel_dep(name = "boost.container", version = BOOST_VERSION)
 bazel_dep(name = "boost.container_hash", version = BOOST_VERSION)
-bazel_dep(name = "boost.core", version = BOOST_VERSION)
 bazel_dep(name = "boost.format", version = BOOST_VERSION)
 bazel_dep(name = "boost.fusion", version = BOOST_VERSION)
 bazel_dep(name = "boost.geometry", version = BOOST_VERSION)
@@ -61,20 +106,73 @@ bazel_dep(name = "boost.thread", version = BOOST_VERSION)
 bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
 bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
-bazel_dep(name = "cudd", version = "3.0.0")
+bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
-bazel_dep(name = "or-tools", version = "9.14.bcr.1")
-bazel_dep(name = "spdlog", version = "1.15.1")
-bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
-bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
-bazel_dep(name = "yaml-cpp", version = "0.8.0")
+bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 
-# Use HEAD of master upstream to fix bugs such as missing stdint include
-git_override(
-    module_name = "yaml-cpp",
-    commit = "a83cd31548b19d50f3f983b069dceb4f4d50756d",
-    remote = "https://github.com/jbeder/yaml-cpp.git",
+# freetype reaches the build transitively (qt-bazel -> harfbuzz -> freetype).
+# freetype@2.13.3's BUILD overlay calls the native cc_library rule, which
+# Bazel 9 removed, so loading the package fails. 2.13.3.bcr.2 keeps the same
+# 2.13.3 source but its overlay loads cc_library from @rules_cc. This is a
+# direct bazel_dep rather than a single_version_override so the pin propagates
+# to downstream consumers via MVS (overrides only apply in the root module).
+bazel_dep(name = "freetype", version = "2.13.3.bcr.2")
+
+# gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
+# libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
+# hermetic-llvm's explicit libc -isystem entries (BCR #7642). 5.3.2.bcr.7
+# carries the upstream fix (BCR #7989).
+single_version_override(
+    module_name = "gawk",
+    version = "5.3.2.bcr.7",
 )
+
+bazel_dep(name = "git", version = "2.54.0")
+
+# We enable the external_include_paths feature globally (see .bazelrc), which
+# demotes a repo's own -iquote entries to -isystem. git relies on -iquote
+# precedence for its quoted includes (builtin/get-tar-commit-id.c includes
+# git's own tar.h, which must shadow glibc's <tar.h>); the patch re-adds the
+# repo root as -iquote in GIT_COPTS so those includes keep precedence.
+single_version_override(
+    module_name = "git",
+    patch_strip = 1,
+    patches = [
+        "//bazel/git-patches:0001-iquote-own-headers-over-external_include_paths.patch",
+    ],
+    version = "2.54.0",
+)
+
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+
+# m4 is transitive (rules_bison/rules_flex -> m4). Same gnulib libc-header
+# shadowing class as sed/gawk under hermetic-llvm (BCR #7642).
+single_version_override(
+    module_name = "m4",
+    version = "1.4.21.bcr.4",
+)
+
+bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
+bazel_dep(name = "or-tools", version = "9.15")
+
+# sed is transitive (abc -> ncurses -> sed). Its vendored gnulib headers
+# deliberately shadow libc headers (stdio.h, error.h); hermetic-llvm's
+# explicit libc -isystem entries outrank them and sed@4.9.bcr.3 fails to
+# compile (BCR #7642). 4.9.bcr.5 carries the upstream fix (BCR #7915).
+single_version_override(
+    module_name = "sed",
+    version = "4.9.bcr.5",
+)
+
+# spdlog < 1.16.0.bcr.2's BUILD.bazel calls the native cc_test rule, which
+# Bazel 9 removed; loading the package fails. 1.16.0.bcr.2+ loads cc_test
+# from @rules_cc.
+bazel_dep(name = "spdlog", version = "1.17.0")
+bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
+bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
+bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
+bazel_dep(name = "yaml-cpp", version = "0.9.0")
+bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
 
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
@@ -82,52 +180,160 @@ git_override(
 # allow openroad to link, but will search on the system at runtime for
 # the correct system libs.
 bazel_dep(name = "qt-bazel")
+
+# external_include_paths (see .bazelrc) moves Qt's external-repo include dirs
+# into compilation_context.external_includes. The moc rule at the older pin did
+# not gather those, so moc lost Qt's own header search paths and failed under
+# --config=lint (qtextimagehandler_p.h "Undefined interface", qfilesystemmodel.h
+# "Parse error at QT7_ONLY"). 541ebf6d teaches the moc rule to also collect
+# external_includes.
 git_override(
     module_name = "qt-bazel",
-    commit = "90cfbab79df93960c5493f8a75df6199fb80fe26",
+    commit = "541ebf6df76eef96c4de6343316b1c9d63e296f6",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
+## Lock the compiler version and avoid any local compiler.
+## Downstream consumers must configure their own C++ toolchain.
+##
+## hermetic-llvm (BCR module "llvm") provides statically linked LLVM
+## binaries and a zero-sysroot cc_toolchain: no host compiler, linker,
+## libxml2 or /usr/include involved, and it runs unmodified on distros
+## without FHS paths (e.g. NixOS).
+# NOTE when bumping: the LLVM release embedded in this module version is
+# hardcoded in .bazelrc's coverage:coverage --test_env=LLVM_PROFDATA/LLVM_COV
+# paths (external/llvm++llvm_toolchain_minimal+llvm-toolchain-minimal-<ver>-
+# linux-amd64/bin). Update those lines in the same commit, or the nightly
+# coverage job fails on its next run.
+bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
 
-bazel_dep(name = "abseil-cpp", version = "20240722.0", repo_name = "com_google_absl")
+# --- Dev dependencies (not propagated to downstream consumers) ---
 
-# Dependencies needed by one of the rules_hdl repos. Once they are on
-# BCR, they should depend on their own version.
-bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
+bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
+bazel_dep(name = "bant", version = "0.3.3", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
+bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
+bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
 
-## Lock the compiler version and avoid any local compiler
-bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+# JavaScript / web UI — only used for JS unit tests in src/web/test
+bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
+bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 
-# Configure and register the toolchain.
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(
-    llvm_version = "20.1.8",
+# ORFS
+bazel_dep(name = "bazel-orfs", dev_dependency = True)
+bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
+
+BAZEL_ORFS_COMMIT = "551d4c72749411c4b1168c0d12322a9c34817c91"
+
+BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+git_override(
+    module_name = "bazel-orfs",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
 )
-use_repo(llvm, "llvm_toolchain")
-# use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
-# FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
+git_override(
+    module_name = "bazel-orfs-verilog",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
+    strip_prefix = "verilog",
+)
+
+# @orfs marks non-root-only directives (qt-bazel/yosys-slang git_overrides,
+# orfs.default(), toolchain registration) as dev_dependency, so they are no-ops
+# here; its bazel-orfs bazel_dep is non-dev so @orfs//flow can load
+# @bazel-orfs//:openroad.bzl when consumed non-root.
+#
+# Use archive_override (HTTPS tarball) rather than git_override so the
+# build resolves on networks that block direct git access to github.com.
+ORFS_COMMIT = "afad87da8d1ebd6ef1bc94288b4204420975a549"
+
+bazel_dep(name = "orfs", dev_dependency = True)
+archive_override(
+    module_name = "orfs",
+    sha256 = "3b61b0cb106bb64d5cb453dff404a346b29a16bf3614166532ffa6ef733e1f65",
+    strip_prefix = "OpenROAD-flow-scripts-" + ORFS_COMMIT,
+    urls = ["https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/archive/" + ORFS_COMMIT + ".tar.gz"],
+)
+
+bazel_dep(name = "yosys", version = "0.64", dev_dependency = True)
+bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
+archive_override(
+    module_name = "yosys-slang",
+    sha256 = "34198f2ed7b2d3175c3ce3c9fb1c6c91f28dbcfe531d97b91d6b12c48431bdef",
+    strip_prefix = "sv-elab-6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20",
+    urls = ["https://github.com/povik/yosys-slang/archive/6760afa2c9b9ba231a9c6a9e94f0939dd39f0a20.tar.gz"],
+)
+
+# --- Extensions ---
+
 register_toolchains(
-    "@llvm_toolchain//:all",
+    "@llvm//toolchain:all",
     "@rules_verilator//verilator:verilator_toolchain",
+    dev_dependency = True,
 )
 
-bazel_dep(
-    name = "rules_python",
-    version = "1.2.0",
-    # reduce namespace collisions by prefixing with openroad
-    repo_name = "openroad_rules_python",
-)
+# hermetic-llvm ships a minimal macOS SDK subset (frameworks are opt-in).
+# Qt (qt-bazel) needs the desktop frameworks; the first six entries are
+# hermetic-llvm's defaults, which listing any framework replaces.
+osx = use_extension("@llvm//extensions:osx.bzl", "osx", dev_dependency = True)
+osx.frameworks(names = [
+    "CoreFoundation",
+    "Foundation",
+    "Kernel",
+    "OSLog",
+    "Security",
+    "SystemConfiguration",
+    "AppKit",
+    "ApplicationServices",
+    "CFNetwork",
+    "Carbon",
+    "Cocoa",
+    "ColorSync",
+    "CoreData",
+    "CoreGraphics",
+    "CoreImage",
+    "CoreServices",
+    "CoreText",
+    "CoreVideo",
+    "DiskArbitration",
+    # ATS (inside the ApplicationServices umbrella) has .tbd symlinks into
+    # the FontServices private framework; without it they dangle and bazel
+    # rejects the sysroot ("file type is not supported").
+    "FontServices",
+    "GSS",
+    "IOKit",
+    "IOSurface",
+    "ImageIO",
+    "Metal",
+    # MetalKit's MTKModel.h includes ModelIO/ModelIO.h.
+    "MetalKit",
+    "ModelIO",
+    "OpenGL",
+    # PrintCore is inside the ApplicationServices umbrella, but must be
+    # named for the SDK subset to keep usr/include/cups (its ObjC headers
+    # import <cups/ppd.h>).
+    "PrintCore",
+    "QuartzCore",
+    # AppKit reaches these on macOS: NSImageView.h includes Symbols
+    # unconditionally; NSText*.h take the non-UIKit branch into the
+    # UIFoundation private framework; NSSharingService pulls CloudKit.
+    "CloudKit",
+    "Symbols",
+    "UIFoundation",
+    "UniformTypeIdentifiers",
+])
 
-python = use_extension("@openroad_rules_python//python/extensions:python.bzl", "python")
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     ignore_root_user_error = True,
     python_version = "3.13",
 )
 use_repo(python, "python_3_13")
 
-pip = use_extension("@openroad_rules_python//python/extensions:pip.bzl", "pip")
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "openroad-pip",
     python_version = "3.13",
@@ -135,89 +341,76 @@ pip.parse(
 )
 use_repo(pip, "openroad-pip")
 
-bazel_dep(name = "bazel-orfs")
+# sv-lang pulls in rules_pycross, whose toolchain extension fails on Python
+# 3.8 (transitively registered via or-tools -> pybind11_abseil, dropped
+# from rules_python 2.0.0's MINOR_MAPPING). pycross.configure_environments
+# is root-honored only, so the workaround lives here.
+pycross = use_extension("@rules_pycross//pycross/extensions:pycross.bzl", "pycross")
+pycross.configure_environments(python_versions = ["3.13"])
 
-# To bump version, run: bazelisk run @bazel-orfs//:bump
-git_override(
-    module_name = "bazel-orfs",
-    commit = "0d60cb111de10491753102112223fb3799a98369",
-    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+node = use_extension(
+    "@rules_nodejs//nodejs:extensions.bzl",
+    "node",
+    dev_dependency = True,
 )
+node.toolchain(node_version = "22.14.0")
 
-orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+npm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "npm",
+    dev_dependency = True,
+)
+npm.npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//src/web/test:pnpm-lock.yaml",
+)
+use_repo(npm, "npm")
 
-# To bump version, run: bazelisk run @bazel-orfs//:bump
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
 orfs.default(
-    # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-4512-g528ad3d8a",
-    # Use OpenROAD of this repo instead of from the docker image
+    # Use OpenROAD of this repo instead of the one bundled with @orfs
     openroad = "//:openroad",
-    sha256 = "087122e12c90edcb3ebfc452a3238417fbc78e1135f5b43feaf7162d885cada1",
+    # Expose the yosys-slang plugin via YOSYS_PLUGIN_PATH so
+    # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
+    yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
 )
-use_repo(orfs, "com_github_nixos_patchelf_download")
-use_repo(orfs, "docker_orfs")
 
-SCALA_VERSION = "2.13.16"
+# --- External archives ---
 
-scala_config = use_extension(
-    "@rules_scala//scala/extensions:config.bzl",
-    "scala_config",
+# Alias @slang -> @sv-lang//:libsvlang so submodule BUILD files that
+# reference @slang resolve without modification. OpenROAD source uses
+# @sv-lang directly; this alias only exists for the slang-elab submodule.
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+new_local_repository(
+    name = "slang",
+    build_file_content = """\
+alias(
+    name = "slang",
+    actual = "@sv-lang//:libsvlang",
+    visibility = ["//visibility:public"],
 )
-scala_config.settings(
-    scala_version = SCALA_VERSION,
-)
-use_repo(scala_config, "rules_scala_config")
-
-scala_deps = use_extension(
-    "@rules_scala//scala/extensions:deps.bzl",
-    "scala_deps",
-)
-scala_deps.settings(
-    fetch_sources = True,
-)
-scala_deps.scala()
-scala_deps.scalatest()
-
-maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
-maven.install(
-    name = "maven",
-    artifacts = [
-    ],
-    # Update by running: bazelisk run @maven//:pin
-    lock_file = "//bazel:maven_install.json",
-    repositories = [
-        "https://repo1.maven.org/maven2",
-        "https://s01.oss.sonatype.org/content/repositories/releases",
-        "https://s01.oss.sonatype.org/content/repositories/snapshots",
-    ],
-)
-use_repo(maven, "maven")
-
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_archive(
-    name = "circt",
-    build_file_content = """
-exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
 """,
-    sha256 = "b1b57d1b76ceba2bb37229dab53839d5db6d61394149708c71f6265565991ce6",
-    strip_prefix = "firtool-1.108.0",
-    url = "https://github.com/llvm/circt/releases/download/firtool-1.108.0/firrtl-bin-linux-x64.tar.gz",
+    path = "bazel/slang-compat",
 )
 
-http_archive(
-    name = "openmp",
-    build_file = "//bazel/openmp:bundled.BUILD.bazel",
-    sha256 = "213d234659d90de46617bd49abe1a1fc65a605988e376f00145d246cac040af6",
-    strip_prefix = "openmp-20.1.0.src",
-    urls = [
-        "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
-    ],
-)
+# --- Overrides ---
 
 single_version_override(
     module_name = "boost.context",
     patch_strip = 1,
     patches = ["//bazel:boost_context_disable_parse_headers.patch"],
     version = BOOST_VERSION,
+)
+
+# scip 9.2.3's tinycthread uses bare C11 <threads.h> names. Backport
+# scipopt/scip@cc917e07 (TNY_ prefix) until a fixed release lands in BCR.
+# The .bcr.1 revision keeps the 9.2.3 source (patch still applies) but its
+# overlay BUILD loads cc_library/cc_binary from @rules_cc rather than the
+# native rules Bazel 9 removed.
+single_version_override(
+    module_name = "scip",
+    patch_strip = 1,
+    patches = ["//bazel:scip_tinycthread_tny_prefix.patch"],
+    version = "9.2.3.bcr.1",
 )

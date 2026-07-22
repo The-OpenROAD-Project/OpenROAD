@@ -9,6 +9,8 @@
 #include "dbCore.h"
 #include "odb/dbId.h"
 // User Code Begin Includes
+#include <cmath>
+
 #include "dbModuleBusPortModBTermItr.h"
 #include "dbVector.h"
 // User Code End Includes

@@ -3,6 +3,8 @@
 
 #include "rcx/extModelGen.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -17,6 +19,7 @@
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/util.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 
@@ -797,7 +800,7 @@ uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
 
 std::list<std::string> extModelGen::GetCornerNames(const char* filename,
                                                    double& version,
-                                                   Logger* logger)
+                                                   utl::Logger* logger)
 {
   bool dbg = false;
   std::list<std::string> corner_list;

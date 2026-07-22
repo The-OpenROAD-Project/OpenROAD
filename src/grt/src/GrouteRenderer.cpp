@@ -5,6 +5,7 @@
 
 #include "Net.h"
 #include "grt/GRoute.h"
+#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -17,12 +18,9 @@ GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
   gui::Gui::get()->registerRenderer(this);
 }
 
-void GrouteRenderer::highlightRoute(odb::dbNet* net,
-                                    bool show_segments,
-                                    bool show_pin_locations)
+void GrouteRenderer::highlightRoute(odb::dbNet* net, bool show_pin_locations)
 {
   nets_.insert(net);
-  show_segments_[net] = show_segments;
   show_pin_locations_[net] = show_pin_locations;
   redraw();
 }
@@ -53,16 +51,12 @@ void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       int layer1 = seg.init_layer;
       int layer2 = seg.final_layer;
       if (layer1 != layer2) {
-        if (show_segments_[net]) {
-          odb::dbTechLayer* via_layer1 = tech_->findRoutingLayer(layer1);
-          odb::dbTechLayer* via_layer2 = tech_->findRoutingLayer(layer2);
-          if (via_layer1 == layer) {
-            drawViaRect(seg, via_layer1, painter);
-          } else if (via_layer2 == layer) {
-            drawViaRect(seg, via_layer2, painter);
-          } else {
-            continue;
-          }
+        odb::dbTechLayer* via_layer1 = tech_->findRoutingLayer(layer1);
+        odb::dbTechLayer* via_layer2 = tech_->findRoutingLayer(layer2);
+        if (via_layer1 == layer) {
+          drawViaRect(seg, via_layer1, painter);
+        } else if (via_layer2 == layer) {
+          drawViaRect(seg, via_layer2, painter);
         } else {
           continue;
         }
@@ -71,17 +65,10 @@ void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       if (seg_layer != layer) {
         continue;
       }
-      if (show_segments_[net]) {
-        odb::Point pt1(seg.init_x, seg.init_y);
-        odb::Point pt2(seg.final_x, seg.final_y);
-        painter.setPenWidth(layer->getMinWidth() * 2);
-        painter.drawLine(pt1, pt2);
-      } else {
-        // Draw rect because drawLine does not have a way to set the pen
-        // thickness.
-        odb::Rect rect = groute_->globalRoutingToBox(seg);
-        painter.drawRect(rect);
-      }
+      odb::Point pt1(seg.init_x, seg.init_y);
+      odb::Point pt2(seg.final_x, seg.final_y);
+      painter.setPenWidth(layer->getMinWidth() * 2);
+      painter.drawLine(pt1, pt2);
     }
   }
 }

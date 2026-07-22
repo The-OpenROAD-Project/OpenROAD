@@ -14,6 +14,10 @@
 #include "sta/SearchPred.hh"
 #include "utl/Logger.h"
 
+namespace sta {
+class Mode;
+}
+
 namespace cut {
 
 // This class is an implementation of an sta::SearchPred that constrains
@@ -21,19 +25,17 @@ namespace cut {
 // particular class will not allow the iterator to walk through DFFs, latches
 // or any cell that is not supported by ABC. This allows our logic extractor
 // to only extract cells that we could reasonably put in ABC.
-class SearchPredNonReg2AbcSupport : public sta::SearchPredNonReg2
+class SearchPredCombAbcSupport : public sta::SearchPred1
 {
  public:
   // supported_liberty_cells is a set of cells that are supported by ABC.
-  SearchPredNonReg2AbcSupport(sta::dbSta* open_sta,
-                              AbcLibrary* abc_library,
-                              sta::Graph* graph)
-      : sta::SearchPredNonReg2(open_sta),
-        abc_library_(abc_library),
-        graph_(graph)
+  SearchPredCombAbcSupport(sta::dbSta* open_sta,
+                           AbcLibrary* abc_library,
+                           sta::Graph* graph)
+      : sta::SearchPred1(open_sta), abc_library_(abc_library), graph_(graph)
   {
   }
-  bool searchThru(sta::Edge* edge) override;
+  bool searchThru(sta::Edge* edge, const sta::Mode* mode) const override;
 
  private:
   AbcLibrary* abc_library_;

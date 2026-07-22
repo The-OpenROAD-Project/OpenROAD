@@ -6,17 +6,31 @@
 #include <algorithm>
 #include <any>
 #include <cmath>
+#include <memory>
 #include <set>
 #include <stdexcept>
 #include <vector>
 
+#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
+#include "gui/heatMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
+
+gui::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
+                                                   grt::GlobalRouter* grouter,
+                                                   odb::dbDatabase* db)
+{
+  return gui::registerHeatMapSource(
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger, grouter, db]() {
+        return std::make_shared<RUDYDataSource>(logger, grouter, db);
+      });
+}
 
 RUDYDataSource::RUDYDataSource(utl::Logger* logger,
                                grt::GlobalRouter* grouter,
@@ -121,7 +135,7 @@ bool RUDYDataSource::populateMap()
   }
 
   if (selection_only_ && gui::Gui::enabled()) {
-    std::set<odb::dbNet*> selection;
+    odb::PtrSet<odb::dbNet> selection;
     for (const gui::Selected& item : gui::Gui::get()->selection()) {
       if (item.isNet()) {
         selection.insert(std::any_cast<odb::dbNet*>(item.getObject()));
@@ -158,11 +172,6 @@ void RUDYDataSource::onHide()
 }
 
 void RUDYDataSource::inDbInstCreate(odb::dbInst*)
-{
-  destroyMap();
-}
-
-void RUDYDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
 {
   destroyMap();
 }

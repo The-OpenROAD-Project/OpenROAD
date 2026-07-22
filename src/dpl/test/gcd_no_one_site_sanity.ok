@@ -4,6 +4,23 @@
 [INFO ODB-0131]     Created 549 components and 2166 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 14266.91 um^2
+[INFO DPL-0007] Movable instances area: 569.77 um^2
+[INFO DPL-0008] Fixed instances area within core: 67.83 um^2
+[INFO DPL-0009] Utilization: 4.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 549 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement          0.1 u
@@ -14,6 +31,18 @@ legalized HPWL           7709.4 u
 delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 14266.91 um^2
+[INFO DPL-0007] Movable instances area: 569.77 um^2
+[INFO DPL-0008] Fixed instances area within core: 67.83 um^2
+[INFO DPL-0009] Utilization: 4.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 549 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
@@ -24,6 +53,18 @@ legalized HPWL           7709.4 u
 delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 14266.91 um^2
+[INFO DPL-0007] Movable instances area: 569.77 um^2
+[INFO DPL-0008] Fixed instances area within core: 67.83 um^2
+[INFO DPL-0009] Utilization: 4.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 549 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
@@ -34,6 +75,18 @@ legalized HPWL           7709.4 u
 delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 14266.91 um^2
+[INFO DPL-0007] Movable instances area: 569.77 um^2
+[INFO DPL-0008] Fixed instances area within core: 67.83 um^2
+[INFO DPL-0009] Utilization: 4.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 549 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
@@ -44,6 +97,18 @@ legalized HPWL           7709.4 u
 delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 14266.91 um^2
+[INFO DPL-0007] Movable instances area: 569.77 um^2
+[INFO DPL-0008] Fixed instances area within core: 67.83 um^2
+[INFO DPL-0009] Utilization: 4.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 549 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
@@ -54,6 +119,18 @@ legalized HPWL           7709.4 u
 delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 14266.91 um^2
+[INFO DPL-0007] Movable instances area: 569.77 um^2
+[INFO DPL-0008] Fixed instances area within core: 67.83 um^2
+[INFO DPL-0009] Utilization: 4.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 549 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u

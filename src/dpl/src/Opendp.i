@@ -4,6 +4,8 @@
 // clang-format off
 %{
 
+#include <sstream>
+
 #include "ord/OpenRoad.hh"
 #include "graphics/Graphics.h"
 #include "graphics/DplObserver.h"
@@ -24,9 +26,19 @@ namespace dpl {
 void
 detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
-                       const char* report_file_name){
+                       const char* report_file_name,
+                       bool incremental,
+                       bool use_diamond_legalizer,
+                       int site_search_window,
+                       int row_search_window,
+                       double drc_penalty,
+                       bool disable_window_extension){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name));
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y,
+                            std::string(report_file_name),
+                            incremental, use_diamond_legalizer,
+                            site_search_window, row_search_window,
+                            drc_penalty, disable_window_extension);
 }
 
 void
@@ -95,14 +107,34 @@ optimize_mirroring_cmd()
 
 void
 set_debug_cmd(float min_displacement,
-              const odb::dbInst* debug_instance)
+              const odb::dbInst* debug_instance,
+              int jump_moves,
+              bool iterative_placement,
+              bool deep_iterative_placement,
+              bool paint_pixels,
+              bool paint_negotiation_pixels)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setJumpMoves(jump_moves);
+  opendp->setIterativePlacement(iterative_placement);
+  opendp->setDeepIterativePlacement(deep_iterative_placement);
   if (dpl::Graphics::guiActive()) {
       std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
-          opendp, min_displacement, debug_instance);
+          opendp, debug_instance, paint_pixels, paint_negotiation_pixels);
       opendp->setDebug(graphics);
   }
+}
+
+void set_negotiation_debug_interval_cmd(int iterative_jump)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugInterval(iterative_jump);
+}
+
+void set_negotiation_debug_start_cmd(int iterative_start)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugStart(iterative_start);
 }
 
 void improve_placement_cmd(int seed,
@@ -111,6 +143,51 @@ void improve_placement_cmd(int seed,
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->improvePlacement(seed, max_displacement_x, max_displacement_y);
+}
+
+void reset_global_swap_params_cmd()
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->resetGlobalSwapParams();
+}
+
+void configure_global_swap_params_cmd(int passes,
+                                      double tolerance,
+                                      double tradeoff,
+                                      double area_weight,
+                                      double pin_weight,
+                                      double user_weight,
+                                      int sampling_moves,
+                                      int normalization_interval,
+                                      double profiling_excess,
+                                      const char* budget_multipliers_str)
+{
+  std::vector<double> budget_multipliers;
+  if (budget_multipliers_str != nullptr) {
+    std::stringstream ss(budget_multipliers_str);
+    double value;
+    while (ss >> value) {
+      budget_multipliers.push_back(value);
+    }
+  }
+
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->configureGlobalSwapParams(passes,
+                                    tolerance,
+                                    tradeoff,
+                                    area_weight,
+                                    pin_weight,
+                                    user_weight,
+                                    sampling_moves,
+                                    normalization_interval,
+                                    profiling_excess,
+                                    budget_multipliers);
+}
+
+void set_extra_dpl_cmd(bool enable)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setExtraDplEnabled(enable);
 }
 
 } // namespace

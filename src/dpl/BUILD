@@ -5,10 +5,35 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
+)
+
+# Headers owned by :dpl but also consumed by :ui. Kept package-private so
+# nothing outside //src/dpl can depend on them.
+cc_library(
+    name = "dpl_private_hdrs",
+    hdrs = [
+        "src/graphics/DplObserver.h",
+        "src/infrastructure/Coordinates.h",
+        "src/infrastructure/Grid.h",
+        "src/infrastructure/Objects.h",
+        "src/infrastructure/architecture.h",
+        "src/infrastructure/network.h",
+    ],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+    deps = [
+        # TODO: we use headers provided by :dpl, but that reveals cyclic dep
+        #":dpl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.icl",
+        "@boost.utility",
+    ],
 )
 
 cc_library(
@@ -17,6 +42,9 @@ cc_library(
         "src/CheckPlacement.cpp",
         "src/DecapPlacement.cpp",
         "src/FillerPlacement.cpp",
+        "src/NegotiationLegalizer.cpp",
+        "src/NegotiationLegalizer.h",
+        "src/NegotiationLegalizerPass.cpp",
         "src/Opendp.cpp",
         "src/OptMirror.cpp",
         "src/Optdp.cpp",
@@ -24,20 +52,14 @@ cc_library(
         "src/PlacementDRC.cpp",
         "src/PlacementDRC.h",
         "src/dbToOpendp.cpp",
-        "src/graphics/DplObserver.h",
-        "src/infrastructure/Coordinates.h",
         "src/infrastructure/DecapObjects.h",
         "src/infrastructure/Grid.cpp",
-        "src/infrastructure/Grid.h",
         "src/infrastructure/Objects.cpp",
-        "src/infrastructure/Objects.h",
         "src/infrastructure/Padding.cpp",
         "src/infrastructure/Padding.h",
         "src/infrastructure/architecture.cxx",
-        "src/infrastructure/architecture.h",
         "src/infrastructure/detailed_segment.h",
         "src/infrastructure/network.cxx",
-        "src/infrastructure/network.h",
         "src/legalize_shift.cxx",
         "src/legalize_shift.h",
         "src/objective/detailed_abu.cxx",
@@ -52,6 +74,8 @@ cc_library(
         "src/optimization/detailed_generator.h",
         "src/optimization/detailed_global.cxx",
         "src/optimization/detailed_global.h",
+        "src/optimization/detailed_global_legacy.cxx",
+        "src/optimization/detailed_global_legacy.h",
         "src/optimization/detailed_manager.cxx",
         "src/optimization/detailed_manager.h",
         "src/optimization/detailed_mis.cxx",
@@ -76,25 +100,20 @@ cc_library(
         "include/dpl/Opendp.h",
         "include/dpl/OptMirror.h",
     ],
-    copts = [
-        "-Isrc/dpl/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
-        "//src/odb",
+        ":dpl_private_hdrs",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
-        "@boost.icl",
         "@boost.polygon",
-        "@boost.property_tree",
         "@boost.random",
         "@boost.tokenizer",
-        "@boost.utility",
-        "@com_github_quantamhd_lemon//:lemon",
-        "@tk_tcl//:tcl",
+        "@coin-or-lemon//:lemon",
     ],
 )
 
@@ -102,14 +121,8 @@ cc_library(
     name = "ui",
     srcs = [
         "src/MakeOpendp.cpp",
-        "src/graphics/DplObserver.h",
         "src/graphics/Graphics.cpp",
         "src/graphics/Graphics.h",
-        "src/infrastructure/Coordinates.h",
-        "src/infrastructure/Grid.h",
-        "src/infrastructure/Objects.h",
-        "src/infrastructure/architecture.h",
-        "src/infrastructure/network.h",
         ":swig",
         ":tcl",
     ],
@@ -122,16 +135,15 @@ cc_library(
     ],
     deps = [
         ":dpl",
+        ":dpl_private_hdrs",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
-        "@boost.geometry",
         "@boost.icl",
-        "@boost.polygon",
         "@boost.stacktrace",
         "@boost.utility",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -176,5 +188,21 @@ python_wrap_cc(
     ],
     deps = [
         "//src/odb:swig-py",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Opendp.tcl",
+    ],
+    visibility = ["//src/dpl/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/dpl/test:__pkg__",
     ],
 )

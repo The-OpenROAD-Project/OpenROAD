@@ -221,7 +221,7 @@ std::vector<int> Refiner::FindBoundaryVertices(
   // Step 2: check all the non-fixed vertices
   std::vector<int> boundary_vertices;
   for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-    if (visited_vertices_flag[v] == true) {
+    if (visited_vertices_flag[v]) {
       continue;  // This vertex has been visited
     }
     for (const int edge_id : hgraph->Edges(v)) {
@@ -252,7 +252,7 @@ std::vector<int> Refiner::FindBoundaryVertices(
   // Step 2: check all the non-fixed vertices
   std::vector<int> boundary_vertices;
   for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-    if (visited_vertices_flag[v] == true) {
+    if (visited_vertices_flag[v]) {
       continue;
     }
     for (const int edge_id : hgraph->Edges(v)) {
@@ -274,7 +274,7 @@ std::vector<int> Refiner::FindNeighbors(
   std::set<int> neighbors;
   for (const int e : hgraph->Edges(vertex_id)) {
     for (const int v : hgraph->Vertices(e)) {
-      if (visited_vertices_flag[v] == false) {
+      if (!visited_vertices_flag[v]) {
         // This vertex has not been visited yet
         neighbors.insert(v);
       }
@@ -294,7 +294,7 @@ std::vector<int> Refiner::FindNeighbors(
   std::set<int> neighbors;
   for (const int e : hgraph->Edges(vertex_id)) {
     for (const int v : hgraph->Vertices(e)) {
-      if (visited_vertices_flag[v] == false
+      if (!visited_vertices_flag[v]
           && (solution[v] == partition_pair.first
               || solution[v] == partition_pair.second)) {
         // This vertex has not been visited yet
@@ -503,7 +503,7 @@ HyperedgeGainPtr Refiner::CalculateHyperedgeGain(
       }
     }
   }
-  if (vertices.empty() == true) {
+  if (vertices.empty()) {
     return std::make_shared<HyperedgeGain>(
         hyperedge_id, to_pid, score, delta_path_cost);
   }

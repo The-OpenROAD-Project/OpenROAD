@@ -14,6 +14,7 @@
 #include <cstdlib>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
@@ -21,7 +22,6 @@
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
@@ -32,6 +32,8 @@
 #include "dbModNet.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
+#include "dbSwapMasterSanityChecker.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -42,6 +44,7 @@ template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -68,6 +71,7 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModInst::operator<(const _dbModInst& rhs) const
@@ -410,7 +414,7 @@ void dbModInst::removeUnusedPortsAndPins()
 
   dbModule* module = this->getMaster();
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
-  std::set<dbModBTerm*> busmodbterms;  // harvest the bus modbterms
+  odb::PtrSet<dbModBTerm> busmodbterms;  // harvest the bus modbterms
 
   // 1. Traverse in modbterm order so we can skip over any unused pins in a bus.
   int bus_ix = 0;
@@ -437,7 +441,7 @@ void dbModInst::removeUnusedPortsAndPins()
   }
 
   // 2. Find unused ports that do not have internal connections
-  std::set<dbModITerm*> kill_set;
+  odb::PtrSet<dbModITerm> kill_set;
   for (dbModITerm* mod_iterm : getModITerms()) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     assert(mod_bterm != nullptr);
@@ -627,8 +631,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
     // If the flat net has external connection (external instance or BTerm),
     // it should be inserted into modbterm_name_flat_net_map.
-    bool has_external_connection = (flat_net->getBTerms().empty() == false);
-    if (has_external_connection == false) {
+    bool has_external_connection = (!flat_net->getBTerms().empty());
+    if (!has_external_connection) {
       for (dbITerm* iterm : flat_net->getITerms()) {
         if (!old_module->containsDbInst(iterm->getInst())) {
           has_external_connection = true;
@@ -773,6 +777,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
       std::ofstream outfile(filename);
       child_block->debugPrintContent(outfile);
     }
+  }
+
+  if (logger->debugCheck(utl::ODB, "replace_design_check_sanity", 1)) {
+    dbSwapMasterSanityChecker checker(new_mod_inst, new_module, logger);
+    checker.run();
   }
 
   return new_mod_inst;

@@ -187,8 +187,8 @@ uint32_t extSpef::getNodeCap(dbSet<dbRSeg>& rcSet,
   uint32_t cnt = 0;
   double cap[10];
   for (dbRSeg* rc : rcSet) {
-    if (!((rc->getTargetNode() == capNodeId)
-          || (rc->getSourceNode() == capNodeId))) {
+    if ((rc->getTargetNode() != capNodeId)
+        && (rc->getSourceNode() != capNodeId)) {
       continue;
     }
 
@@ -894,8 +894,8 @@ dbNet* extSpef::getDbNet(uint32_t* id, const uint32_t spefId)
 
 bool extSpef::isNetExcluded()
 {
-  if (!((_netSubWord == nullptr)
-        || (strstr(_tmpNetName, _netSubWord) != nullptr))) {
+  if ((_netSubWord != nullptr)
+      && (strstr(_tmpNetName, _netSubWord) == nullptr)) {
     return true;
   }
   if ((_netExcludeSubWord != nullptr)
@@ -1300,8 +1300,8 @@ uint32_t extSpef::diffGndCap(dbNet* net,
       printDiff(net, dbCap, _netGndCapTable[ii], "gndCapNode", ii, capId);
     }
   } else {
-    if (!((cap->getCapacitance(_db_ext_corner) == 0.0)
-          && (_netGndCapTable[_in_spef_corner] == 0.0))) {
+    if ((cap->getCapacitance(_db_ext_corner) != 0.0)
+        || (_netGndCapTable[_in_spef_corner] != 0.0)) {
       printDiff(net,
                 cap->getCapacitance(_db_ext_corner),
                 _netGndCapTable[_in_spef_corner],
@@ -1833,7 +1833,7 @@ uint32_t extSpef::readDNet(const uint32_t debug)
   }
   _tmpNetName = _nameMapTable->geti(_tmpNetSpefId);
 
-  _inputNet = (_tnetCnt == 0 || _d_net->isMarked()) ? true : false;
+  _inputNet = _tnetCnt == 0 || _d_net->isMarked();
 
   if (_diff) {
     diffNetCap(_d_corner_net);
@@ -2063,7 +2063,7 @@ uint32_t extSpef::readDNet(const uint32_t debug)
             return 0;
           }
 
-          if (fstRSegDone == false) {
+          if (!fstRSegDone) {
             fstRSegDone = true;
             zrseg->setTargetNode(srcCapNodeId);
             if (_readingNodeCoords == C_NONE) {
@@ -2687,7 +2687,7 @@ uint32_t extSpef::readBlock(const uint32_t debug,
     logger_->error(RCX, 52, "Unmatched spef and db!");
   }
 
-  rsegCoord = _readingNodeCoords == C_NONE ? false : true;
+  rsegCoord = _readingNodeCoords != C_NONE;
   return cnt;
 }
 

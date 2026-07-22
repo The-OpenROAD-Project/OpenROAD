@@ -10,6 +10,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "tst/fixture.h"
 
 namespace odb {
@@ -19,8 +20,10 @@ class TestSwapMasterFixture : public tst::Fixture
  protected:
   void SetUp() override
   {
-    const std::string nangate_lef = getFilePath("Nangate45/Nangate45.lef");
-    const std::string nangate_lib = getFilePath("Nangate45/Nangate45_typ.lib");
+    const std::string nangate_lef
+        = getFilePath("_main/test/Nangate45/Nangate45.lef");
+    const std::string nangate_lib
+        = getFilePath("_main/test/Nangate45/Nangate45_typ.lib");
 
     lib_ = loadTechAndLib("Nangate45", "Nangate45", nangate_lef);
     readLiberty(nangate_lib);

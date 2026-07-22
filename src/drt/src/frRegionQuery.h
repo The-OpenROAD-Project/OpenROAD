@@ -45,8 +45,6 @@ class frRegionQuery
   void addDRObj(frShape* shape);
   void addDRObj(frVia* via);
   void addMarker(frMarker* in);
-  void addGRObj(grShape* shape);
-  void addGRObj(grVia* via);
   void addBlockObj(frBlockObject* obj);
 
   // Queries
@@ -66,9 +64,6 @@ class frRegionQuery
   void queryOrigGuide(const odb::Rect& box,
                       frLayerNum layerNum,
                       Objects<frNet>& result) const;
-  void queryRPin(const odb::Rect& box,
-                 frLayerNum layerNum,
-                 Objects<frRPin>& result) const;
   void queryGRPin(const odb::Rect& box,
                   std::vector<frBlockObject*>& result) const;
   void queryDRObj(const box_t& boostb,
@@ -82,11 +77,6 @@ class frRegionQuery
                   std::vector<frBlockObject*>& result) const;
   void queryDRObj(const odb::Rect& box,
                   std::vector<frBlockObject*>& result) const;
-  void queryGRObj(const odb::Rect& box,
-                  frLayerNum layerNum,
-                  Objects<grBlockObject>& result) const;
-  void queryGRObj(const odb::Rect& box,
-                  std::vector<grBlockObject*>& result) const;
   void queryMarker(const odb::Rect& box,
                    frLayerNum layerNum,
                    std::vector<frMarker*>& result) const;
@@ -95,8 +85,6 @@ class frRegionQuery
   void clearGuides();
   void removeDRObj(frShape* shape);
   void removeDRObj(frVia* via);
-  void removeGRObj(grShape* shape);
-  void removeGRObj(grVia* via);
   void removeMarker(frMarker* in);
   void removeBlockObj(frBlockObject* obj);
 
@@ -105,15 +93,12 @@ class frRegionQuery
   void initGuide();
   void initOrigGuide(frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides);
   void initGRPin(std::vector<std::pair<frBlockObject*, odb::Point>>& in);
-  void initRPin();
   void initDRObj();
-  void initGRObj();
 
   // utility
   void print();
   void printGuide();
   void printDRObj();
-  void printGRObj();
 
  private:
   struct Impl;

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <map>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -28,6 +28,8 @@ class BaseParser
   // YAML helper methods
   template <typename T>
   void extractValue(const YAML::Node& node, const std::string& key, T& value);
+  template <typename T>
+  void extractValue(const YAML::Node& node, T& value);
   void parseCoordinate(Coordinate& coord, const YAML::Node& coord_node);
   void parseCoordinates(std::vector<Coordinate>& coords,
                         const YAML::Node& coords_node);
@@ -35,6 +37,21 @@ class BaseParser
   void parseDefines(std::string& content);
   std::string resolvePath(const std::string& path);
   void resolvePaths(const std::string& path, std::vector<std::string>& paths);
+  // Extracts a single resolved path from `parent[key]`, accepting either a
+  // scalar or a single-element list. Returns "" if the key is absent/empty and
+  // emits a parser error (terminal) when more than one entry is given, since
+  // these external fields are single-valued per the 3DBlox spec. `context`
+  // identifies the owning element in the error message.
+  std::string extractSinglePathFromList(const YAML::Node& parent,
+                                        const std::string& key,
+                                        const std::string& context);
+
+  // Opens an input file for reading after validating that the path exists and
+  // refers to a regular, readable file. On any failure this reports a clean
+  // logger error (which is non-returning) BEFORE the caller creates any DB
+  // objects, preventing downstream crashes on invalid/nonexistent paths.
+  // current_file_path_ must be set to the file path before calling.
+  std::ifstream openInputFile();
 
   // Utility methods
   void logError(const std::string& message);

@@ -17,13 +17,6 @@
 
 #include "detailed_mis.h"
 
-#include <lemon/cost_scaling.h>
-#include <lemon/cycle_canceling.h>
-#include <lemon/list_graph.h>
-#include <lemon/network_simplex.h>
-#include <lemon/preflow.h>
-#include <lemon/smart_graph.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -39,13 +32,22 @@
 
 #include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
+#include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"
+#include "lemon/core.h"
+#include "lemon/cost_scaling.h"
+#include "lemon/cycle_canceling.h"
+#include "lemon/list_graph.h"
+#include "lemon/network_simplex.h"
+#include "lemon/preflow.h"
+#include "lemon/smart_graph.h"
 #include "odb/geom.h"
 #include "util/color.h"
 #include "util/journal.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPL;

@@ -1,7 +1,9 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
-[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.120, 10.880).
-[INFO IFP-0001] Added 29 rows of 173 site unithd.
+[INFO ODB-0128] Design: top
+[INFO ODB-0252]     Updated 10 pins.
+[INFO ODB-0253]     Updated 28 components.
+[INFO ODB-0254]     Updated 31 nets and 100 connections.
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: _69_ (rising edge-triggered flip-flop clocked by clk)
 Endpoint: _68_ (rising edge-triggered flip-flop clocked by clk)

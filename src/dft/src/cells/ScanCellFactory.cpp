@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "OneBitScanCell.hh"
 #include "ScanCell.hh"
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
@@ -18,6 +19,7 @@
 #include "sta/Clock.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Sequential.hh"
 #include "utl/Logger.h"
@@ -52,8 +54,8 @@ sta::TestCell* GetTestCell(odb::dbMaster* master,
     return nullptr;
   }
   sta::TestCell* test_cell = liberty_cell->testCell();
-  if (test_cell && getLibertyScanIn(test_cell) != nullptr
-      && getLibertyScanEnable(test_cell) != nullptr) {
+  if (test_cell && db_network->getLibertyScanIn(test_cell) != nullptr
+      && db_network->getLibertyScanEnable(test_cell) != nullptr) {
     return test_cell;
   }
   return nullptr;
@@ -64,7 +66,7 @@ TypeOfCell IdentifyCell(odb::dbInst* inst, sta::dbSta* sta)
   sta::dbNetwork* db_network = sta->getDbNetwork();
   sta::LibertyCell* liberty_cell
       = GetLibertyCell(inst->getMaster(), db_network);
-  if (liberty_cell != nullptr && liberty_cell->hasSequentials()
+  if (liberty_cell != nullptr && liberty_cell->isSequential()
       && !inst->getMaster()->isBlock()) {
     // we assume that we are only dealing with one bit cells, but in the future
     // we could deal with multibit cells too
@@ -81,10 +83,10 @@ std::unique_ptr<ClockDomain> GetClockDomainFromClock(
   ClockEdge edge = ClockEdge::Rising;
   const sta::SequentialSeq& sequentials = liberty_cell->sequentials();
   // TODO: Other cells may have more than one sequential
-  for (const sta::Sequential* sequential : sequentials) {
+  for (const sta::Sequential& sequential : sequentials) {
     // If the clock has a left FuncExpr, then
-    sta::FuncExpr* left = sequential->clock()->left();
-    sta::FuncExpr* right = sequential->clock()->right();
+    sta::FuncExpr* left = sequential.clock()->left();
+    sta::FuncExpr* right = sequential.clock()->right();
     if (left && !right) {
       //  When operator is NOT, left is the only operand
       edge = ClockEdge::Falling;

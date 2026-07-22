@@ -3,9 +3,13 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
+#include <unordered_map>
 #include <vector>
 
 #include "ScanArchitectConfig.hh"

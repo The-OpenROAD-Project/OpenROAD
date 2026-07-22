@@ -16,8 +16,6 @@ class Logger;
 
 namespace rcx {
 
-using utl::Logger;
-
 class extRulesPat
 {
  public:

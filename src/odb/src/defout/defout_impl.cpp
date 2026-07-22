@@ -19,9 +19,11 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbObject.h"
@@ -45,6 +47,19 @@ std::string getPinName(dbBTerm* bterm)
 std::string getPinName(dbITerm* iterm)
 {
   return iterm->getMTerm()->getName();
+}
+
+// Format a scan chain start/stop pin for DEF output.
+// BTerm: "PIN <pinname>", ITerm: "<instname> <pinname>"
+std::string getScanPinDef(dbBTerm* bterm)
+{
+  return fmt::format("PIN {}", bterm->getName());
+}
+
+std::string getScanPinDef(dbITerm* iterm)
+{
+  return fmt::format(
+      "{} {}", iterm->getInst()->getName(), iterm->getMTerm()->getName());
 }
 
 static const int max_name_length = 256;
@@ -682,8 +697,8 @@ void DefOut::Impl::writeInst(dbInst* inst)
       int right = defdist(box->xMax());
       int top = defdist(box->yMax());
 
-      *_out << " + HALO " << left << " " << bottom << " " << right << " "
-            << top;
+      *_out << " + HALO " << (box->isSoft() ? "SOFT " : "") << left << " "
+            << bottom << " " << right << " " << top;
     }
   }
 
@@ -869,13 +884,15 @@ void DefOut::Impl::writeScanChains(dbBlock* block)
                 ? scan_chain->getName()
                 : fmt::format("{}_{}", scan_chain->getName(), chain_suffix);
 
-      const std::string start_pin_name = std::visit(
-          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanIn());
-      const std::string stop_pin_name = std::visit(
-          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanOut());
+      const std::string start_pin
+          = std::visit([](auto&& pin) { return getScanPinDef(pin); },
+                       scan_chain->getScanIn());
+      const std::string stop_pin
+          = std::visit([](auto&& pin) { return getScanPinDef(pin); },
+                       scan_chain->getScanOut());
 
       *_out << "- " << chain_name << "\n";
-      *_out << "+ START PIN " << start_pin_name << "\n";
+      *_out << "+ START " << start_pin << "\n";
 
       for (dbScanList* scan_list : scan_partition->getScanLists()) {
         dbSet<dbScanInst> scan_insts = scan_list->getScanInsts();
@@ -900,7 +917,7 @@ void DefOut::Impl::writeScanChains(dbBlock* block)
         }
       }
       *_out << "+ PARTITION " << scan_partition->getName() << "\n";
-      *_out << "+ STOP PIN " << stop_pin_name << " ;\n\n";
+      *_out << "+ STOP " << stop_pin << " ;\n\n";
       ++chain_suffix;
     }
   }
@@ -1286,6 +1303,14 @@ void DefOut::Impl::writeNets(dbBlock* block)
 
   auto sorted_nets = sortedSet(nets);
 
+  // Build map of mterm names and associated nets
+  std::unordered_map<std::string, odb::PtrSet<dbNet>> snet_term_map;
+  for (auto* inst : block->getInsts()) {
+    for (auto* iterm : inst->getITerms()) {
+      snet_term_map[iterm->getMTerm()->getName()].insert(iterm->getNet());
+    }
+  }
+
   for (dbNet* net : sorted_nets) {
     if (_select_net_map) {
       if (!(*_select_net_map)[net]) {
@@ -1319,7 +1344,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
         continue;
       }
       if (net->isSpecial()) {
-        writeSNet(net);
+        writeSNet(net, snet_term_map);
       }
     }
 
@@ -1341,7 +1366,9 @@ void DefOut::Impl::writeNets(dbBlock* block)
   *_out << "END NETS\n";
 }
 
-void DefOut::Impl::writeSNet(dbNet* net)
+void DefOut::Impl::writeSNet(
+    dbNet* net,
+    const std::unordered_map<std::string, odb::PtrSet<dbNet>>& snet_term_map)
 {
   std::string nname = net->getName();
   *_out << "    - " << nname;
@@ -1365,7 +1392,12 @@ void DefOut::Impl::writeSNet(dbNet* net)
     dbInst* inst = iterm->getInst();
     dbMTerm* mterm = iterm->getMTerm();
     char* mtname = mterm->getName(inst, &ttname[0]);
-    if (net->isWildConnected()) {
+    bool iswildcard = false;
+    if (snet_term_map.at(mterm->getName()).size() == 1) {
+      // mterm is unique to this net, so we can use wildcard
+      iswildcard = true;
+    }
+    if (iswildcard) {
       if (wild_names.find(mtname) == wild_names.end()) {
         *_out << " ( * " << mtname << " )";
         ++i;
@@ -1442,6 +1474,8 @@ void DefOut::Impl::writeWire(dbWire* wire)
   int path_cnt = 0;
   int prev_x = std::numeric_limits<int>::max();
   int prev_y = std::numeric_limits<int>::max();
+  int prev_junction_id = -1;
+  bool virtual_point = false;
 
   for (decode.begin(wire);;) {
     dbWireDecoder::OpCode opcode = decode.next();
@@ -1453,6 +1487,12 @@ void DefOut::Impl::writeWire(dbWire* wire)
       case dbWireDecoder::SHORT:
       case dbWireDecoder::VWIRE:
       case dbWireDecoder::JUNCTION: {
+        if (opcode == dbWireDecoder::VWIRE
+            && decode.getJunctionValue() == prev_junction_id) {
+          virtual_point = true;
+          break;
+        }
+
         layer = decode.getLayer();
         const std::string lname = layer->getName();
 
@@ -1473,6 +1513,8 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         prev_wire_type = wire_type;
         point_cnt = 0;
+        prev_junction_id = -1;
+        virtual_point = false;
         ++path_cnt;
         break;
       }
@@ -1485,6 +1527,15 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         if ((++point_cnt & 7) == 0) {
           *_out << "\n    ";
+        }
+
+        if (virtual_point) {
+          *_out << " VIRTUAL ( " << x << " " << y << " )";
+          virtual_point = false;
+          prev_x = x;
+          prev_y = y;
+          prev_junction_id = decode.getJunctionId();
+          break;
         }
 
         std::string mask_statement;
@@ -1502,6 +1553,7 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         prev_x = x;
         prev_y = y;
+        prev_junction_id = decode.getJunctionId();
         break;
       }
 
@@ -1516,6 +1568,15 @@ void DefOut::Impl::writeWire(dbWire* wire)
           *_out << "\n    ";
         }
 
+        if (virtual_point) {
+          *_out << " VIRTUAL ( " << x << " " << y << " )";
+          virtual_point = false;
+          prev_x = x;
+          prev_y = y;
+          prev_junction_id = decode.getJunctionId();
+          break;
+        }
+
         if (point_cnt == 1) {
           *_out << " ( " << x << " " << y << " " << ext << " )";
         } else if ((x == prev_x) && (y == prev_y)) {
@@ -1528,6 +1589,7 @@ void DefOut::Impl::writeWire(dbWire* wire)
 
         prev_x = x;
         prev_y = y;
+        prev_junction_id = decode.getJunctionId();
         break;
       }
 
@@ -2030,6 +2092,7 @@ void DefOut::Impl::writePropValue(dbProperty* prop)
       dbDoubleProperty* p = (dbDoubleProperty*) prop;
       double v = p->getValue();
       *_out << fmt::format("{:g} ", v);
+      break;
     }
 
     default:

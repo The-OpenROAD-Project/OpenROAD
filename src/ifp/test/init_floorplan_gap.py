@@ -1,14 +1,19 @@
 from openroad import Tech, Design
+import openroad
 import odb
 import helpers
 import ifp_helpers as ifph
+
+import ifp
+
+site_set = ifp.site_set
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("init_floorplan_gap.lef")
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readVerilog("reg1.v")
 design.link("top")
 
@@ -25,29 +30,33 @@ site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")
 additional_site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O_DoubleHeight")
 
 # Test non positive gap
+# initialize_floorplan -gap -1
 try:
-    floorplan.initFloorplan(
-        die, core, site, [additional_site], "NONE", [], design.micronToDBU(-1)
-    )
+    floorplan.makeDie(die)
+    floorplan.makeRows(core, site, [], "NONE", site_set(), design.micronToDBU(-1))
 except Exception:
     pass
+# initialize_floorplan -gap 0
 try:
-    floorplan.initFloorplan(
-        die, core, site, [additional_site], "NONE", [], design.micronToDBU(0)
-    )
+    floorplan.makeDie(die)
+    floorplan.makeRows(core, site, [], "NONE", site_set(), design.micronToDBU(0))
 except Exception:
     pass
+# make_rows -gap -1
 try:
-    floorplan.makeRows(core, site, [], "NONE", [], design.micronToDBU(-1))
+    floorplan.makeRows(core, site, [], "NONE", site_set(), design.micronToDBU(-1))
 except Exception:
     pass
+# make_rows -gap 0
 try:
-    floorplan.makeRows(core, site, [], "NONE", [], design.micronToDBU(0))
+    floorplan.makeRows(core, site, [], "NONE", site_set(), design.micronToDBU(0))
 except Exception:
     pass
 
-floorplan.initFloorplan(
-    die, core, site, [additional_site], "NONE", [], design.micronToDBU(2)
+# initialize_floorplan -gap 2
+floorplan.makeDie(die)
+floorplan.makeRows(
+    core, site, [additional_site], "NONE", site_set(), design.micronToDBU(2)
 )
 
 def_file = helpers.make_result_file("init_floorplan_gap.def")

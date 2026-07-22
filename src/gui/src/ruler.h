@@ -63,8 +63,7 @@ using Rulers = std::vector<std::unique_ptr<Ruler>>;
 class RulerDescriptor : public Descriptor
 {
  public:
-  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers,
-                  odb::dbDatabase* db);
+  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
@@ -85,7 +84,6 @@ class RulerDescriptor : public Descriptor
   static bool editPoint(const std::any& value, odb::Point& pt, bool is_x);
 
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
-  odb::dbDatabase* db_;
 };
 
 }  // namespace gui

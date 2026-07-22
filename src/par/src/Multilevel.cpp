@@ -10,6 +10,7 @@
 #include <queue>
 #include <random>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -22,7 +23,6 @@
 #include "KWayPMRefine.h"
 #include "Partitioner.h"
 #include "Utilities.h"
-#include "boost/random/uniform_int_distribution.hpp"
 #include "boost/range/iterator_range_core.hpp"
 #include "utl/Logger.h"
 
@@ -121,7 +121,7 @@ std::vector<int> MultilevelPartitioner::Partition(
   // The best_solution will be refined.
   // The initial value of best solution will be used to guide the coarsening
   // process and use as the initial solution
-  if (v_cycle_flag_ == true) {
+  if (v_cycle_flag_) {
     VcycleRefinement(
         hgraph, upper_block_balance, lower_block_balance, best_solution);
   }
@@ -272,8 +272,6 @@ void MultilevelPartitioner::InitialPartition(
              "Running Initial Partitioning...");
   std::mt19937 gen;
   gen.seed(seed_);
-  boost::random::uniform_int_distribution<> dist(
-      0, std::numeric_limits<int>::max());
   std::vector<float> initial_solutions_cost;
   std::vector<bool>
       initial_solutions_flag;  // if the solutions statisfy balance constraint
@@ -289,7 +287,9 @@ void MultilevelPartitioner::InitialPartition(
   k_way_fm_refiner_->SetMaxMove(hgraph->GetNumVertices());
   // generate random seed
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = dist(gen);
+    const int seed = static_cast<int>(gen()
+                                      & static_cast<std::mt19937::result_type>(
+                                          std::numeric_limits<int>::max()));
     auto& solution = initial_solutions[i];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -317,7 +317,9 @@ void MultilevelPartitioner::InitialPartition(
   }
   // generate random vile solution
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = dist(gen);
+    const int seed = static_cast<int>(gen()
+                                      & static_cast<std::mt19937::result_type>(
+                                          std::numeric_limits<int>::max()));
     auto& solution = initial_solutions[i + num_initial_random_solutions_];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -375,7 +377,7 @@ void MultilevelPartitioner::InitialPartition(
     int ilp_solution_id = 0;
     float ilp_solution_cost = std::numeric_limits<float>::max();
     for (auto id = 0; id < initial_solutions_cost.size(); id++) {
-      if (initial_solutions_flag[id] == true
+      if (initial_solutions_flag[id]
           && initial_solutions_cost[id] < ilp_solution_cost) {
         ilp_solution_id = id;
         ilp_solution_cost = initial_solutions_cost[id];
@@ -405,7 +407,8 @@ void MultilevelPartitioner::InitialPartition(
   std::iota(solution_ids.begin(), solution_ids.end(), 0);
   // define compare function
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
-    return initial_solutions_cost[x] < initial_solutions_cost[y];
+    return std::tie(initial_solutions_cost[x], x)
+           < std::tie(initial_solutions_cost[y], y);
   };
   std::ranges::sort(solution_ids, lambda_sort_criteria);
   // pick the top num_best_initial_solutions_ solutions
@@ -414,7 +417,7 @@ void MultilevelPartitioner::InitialPartition(
   float best_initial_cost = 0.0;
   std::vector<bool> visited_solution_flag(solution_ids.size(), false);
   for (auto id : solution_ids) {
-    if (initial_solutions_flag[id] == true) {
+    if (initial_solutions_flag[id]) {
       top_initial_solutions[num_chosen_best_init_solution]
           = initial_solutions[id];
       visited_solution_flag[id] = true;
@@ -430,7 +433,7 @@ void MultilevelPartitioner::InitialPartition(
 
   if (num_chosen_best_init_solution < num_best_initial_solutions_) {
     for (auto id : solution_ids) {
-      if (visited_solution_flag[id] == false) {
+      if (!visited_solution_flag[id]) {
         top_initial_solutions[num_chosen_best_init_solution]
             = initial_solutions[id];
         visited_solution_flag[id] = true;
@@ -575,7 +578,7 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
   std::vector<bool> hyperedge_mask(hgraph->GetNumHyperedges(), false);
   for (const auto& solution : top_solutions) {
     for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
-      if (hyperedge_mask[e] == true) {
+      if (hyperedge_mask[e]) {
         continue;  // This hyperedge has been cut
       }
 
@@ -595,11 +598,11 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
   auto lambda_detect_connected_components = [&](int v, int cluster_id) -> void {
     std::queue<int> wavefront;
     wavefront.push(v);
-    while (wavefront.empty() == false) {
+    while (!wavefront.empty()) {
       const int u = wavefront.front();
       wavefront.pop();
       for (const int e : hgraph->Edges(u)) {
-        if (hyperedge_mask[e] == true) {
+        if (hyperedge_mask[e]) {
           continue;  // this hyperedge has been cut
         }
         for (const int v_nbr : hgraph->Vertices(e)) {

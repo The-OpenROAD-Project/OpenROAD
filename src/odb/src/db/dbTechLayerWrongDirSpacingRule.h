@@ -12,9 +12,6 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
-// User Code Begin Classes
-class _dbTechLayer;
-// User Code End Classes
 
 struct dbTechLayerWrongDirSpacingRuleFlags
 {
@@ -41,10 +38,6 @@ class _dbTechLayerWrongDirSpacingRule : public _dbObject
   int noneol_width_;
   int length_;
   int prl_length_;
-
-  // User Code Begin Fields
-  dbId<_dbTechLayer> layer_;
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWrongDirSpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream,

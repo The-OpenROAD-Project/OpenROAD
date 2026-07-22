@@ -7,13 +7,14 @@
 #include <atomic>
 #include <iterator>
 #include <map>
-#include <mutex>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
@@ -51,7 +52,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   };
 
   template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
+  using LayerMap = odb::PtrMap<odb::dbTechLayer, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
@@ -67,7 +68,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   struct BBoxIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(T t) const { return t->getBBox()->getBox(); }
     odb::Rect operator()(const SNetValue<T>& t) const
     {
@@ -85,7 +86,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   struct FillIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbFill* t) const
     {
       odb::Rect fill;
@@ -313,13 +314,13 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     RtreeDBox<odb::dbBlockage*> blockages;
     RtreeRect<odb::dbRow*> rows;
 
-    std::mutex shapes_init_mutex;
-    std::mutex fills_init_mutex;
-    std::mutex insts_init_mutex;
-    std::mutex blockages_init_mutex;
-    std::mutex obstructions_init_mutex;
-    std::mutex rows_init_mutex;
-    std::mutex bpins_init_mutex;
+    absl::Mutex shapes_init_mutex;
+    absl::Mutex fills_init_mutex;
+    absl::Mutex insts_init_mutex;
+    absl::Mutex blockages_init_mutex;
+    absl::Mutex obstructions_init_mutex;
+    absl::Mutex rows_init_mutex;
+    absl::Mutex bpins_init_mutex;
 
     // The net is used for filter shapes by net type
     LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes;
@@ -340,7 +341,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     std::atomic_bool rows_init{false};
     std::atomic_bool bpins_init{false};
   };
-  std::map<odb::dbBlock*, BlockData> child_block_data_;
+  odb::PtrMap<odb::dbBlock, BlockData> child_block_data_;
   BlockData top_block_data_;
 };
 

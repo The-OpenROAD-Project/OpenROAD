@@ -3,7 +3,9 @@
 
 #include "db/drObj/drAccessPattern.h"
 
+#include "db/drObj/drBlockObject.h"
 #include "distributed/frArchive.h"
+#include "frBaseTypes.h"
 namespace drt {
 
 bool drAccessPattern::hasValidAccess(const frDirEnum& dir)

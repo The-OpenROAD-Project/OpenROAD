@@ -10,6 +10,7 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frMTerm.h"
 #include "db/obj/frNet.h"
+#include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "odb/geom.h"
 

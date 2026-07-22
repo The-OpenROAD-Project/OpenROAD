@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -24,9 +25,9 @@
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "sta/StringUtil.hh"
-#include "sta/Vector.hh"
 #include "upf/upf.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "utl/validation.h"
 
 namespace ifp {
@@ -36,8 +37,6 @@ using std::map;
 using std::round;
 using std::set;
 using std::string;
-
-using sta::StringVector;
 
 using utl::IFP;
 using utl::Logger;
@@ -106,9 +105,10 @@ void InitFloorplan::initFloorplan(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDieUtilization(utilization,
@@ -126,6 +126,7 @@ void InitFloorplan::initFloorplan(
                       row_parity,
                       flipped_sites,
                       gap);
+  logger_->info(IFP, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 // The base_site determines the single-height rows.  For hybrid rows it is
@@ -136,13 +137,15 @@ void InitFloorplan::initFloorplan(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDie(die);
   makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
+  logger_->info(IFP, 501, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void InitFloorplan::makeDieUtilization(double utilization,
@@ -162,6 +165,12 @@ void InitFloorplan::makeDieUtilization(double utilization,
                       core_space_left,
                       core_space_right);
   utilization /= 100;
+  logger_->info(
+      IFP,
+      107,
+      "Defining die area using utilization: {:.2f}\% and aspect ratio: {}.",
+      utilization * 100,
+      aspect_ratio);
   const double design_area = designArea();
   const double core_area = design_area / utilization;
   const int core_width = std::sqrt(core_area / aspect_ratio);
@@ -181,6 +190,16 @@ void InitFloorplan::makeDieUtilization(double utilization,
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
+  debugPrint(logger_,
+             IFP,
+             "init",
+             1,
+             "Defining die area: ({}, {}) to ({}, {}) DBU",
+             die.xMin(),
+             die.yMin(),
+             die.xMax(),
+             die.yMax());
+
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
@@ -193,10 +212,10 @@ void InitFloorplan::makeDie(const odb::Rect& die)
 void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
 {
   auto points = polygon.getPoints();
+  logger_->info(IFP, 106, "Initializing floorplan in polygon mode.");
 
   if (points.empty()) {
     logger_->error(IFP, 987, "No polygon vertices provided.");
-    return;
   }
 
   if (points.size() < 4) {
@@ -204,7 +223,6 @@ void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
                    988,
                    "Polygon must have at least 4 vertices. Got {} vertices.",
                    points.size());
-    return;
   }
 
   // Snap all coordinates to manufacturing grid
@@ -214,10 +232,35 @@ void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
     mfg_pts.emplace_back(snapToMfgGrid(p.x()), snapToMfgGrid(p.y()));
   }
 
-  // Set the die area using the polygon
-  block_->setDieArea(polygon);
+  // Set the die area using the snapped polygon
+  odb::Polygon snapped_polygon(mfg_pts);
+  block_->setDieArea(snapped_polygon);
 
   resetTracks();
+}
+
+InitFloorplan::SitesByName InitFloorplan::prepareSitesAndClearRows(
+    odb::dbSite* base_site,
+    const std::vector<odb::dbSite*>& additional_sites)
+{
+  SitesByName sites_by_name;
+  sites_by_name[base_site->getName()] = base_site;
+  if (base_site->hasRowPattern()) {
+    for (const auto& [site, orient] : base_site->getRowPattern()) {
+      sites_by_name[site->getName()] = site;
+    }
+  }
+  for (auto site : additional_sites) {
+    sites_by_name[site->getName()] = site;
+  }
+  addUsedSites(sites_by_name);
+
+  auto rows = block_->getRows();
+  for (auto row_itr = rows.begin(); row_itr != rows.end();) {
+    row_itr = dbRow::destroy(row_itr);
+  }
+
+  return sites_by_name;
 }
 
 void InitFloorplan::makePolygonRows(
@@ -225,7 +268,7 @@ void InitFloorplan::makePolygonRows(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
   checkGap(gap);
@@ -234,7 +277,6 @@ void InitFloorplan::makePolygonRows(
 
   if (points.empty()) {
     logger_->error(IFP, 991, "No core polygon vertices provided.");
-    return;
   }
 
   if (points.size() < 4) {
@@ -243,7 +285,6 @@ void InitFloorplan::makePolygonRows(
         992,
         "Core polygon must have at least 4 vertices. Got {} vertices.",
         points.size());
-    return;
   }
 
   // Snap all coordinates to manufacturing grid
@@ -257,7 +298,6 @@ void InitFloorplan::makePolygonRows(
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
     logger_->error(IFP, 1005, "Floorplan die area is 0. Cannot build rows.");
-    return;
   }
 
   // Create a polygon from the core vertices and get bounding box
@@ -267,29 +307,22 @@ void InitFloorplan::makePolygonRows(
   if (!block_die_area.contains(core_bbox)) {
     logger_->error(
         IFP, 1004, "Die area must contain the core polygon bounding box.");
-    return;
   }
 
   checkInstanceDimensions(core_bbox);
 
-  // Set up sites by name (same as original makeRows)
-  SitesByName sites_by_name;
-  sites_by_name[base_site->getName()] = base_site;
-  if (base_site->hasRowPattern()) {
-    for (const auto& [site, orient] : base_site->getRowPattern()) {
-      sites_by_name[site->getName()] = site;
-    }
-  }
-  for (auto site : additional_sites) {
-    sites_by_name[site->getName()] = site;
-  }
-  addUsedSites(sites_by_name);
+  debugPrint(logger_,
+             IFP,
+             "init",
+             1,
+             "Defining core area: ({}, {}) to ({}, {}) DBU",
+             core_bbox.xMin(),
+             core_bbox.yMin(),
+             core_bbox.xMax(),
+             core_bbox.yMax());
 
-  // Remove all existing rows
-  auto rows = block_->getRows();
-  for (auto row_itr = rows.begin(); row_itr != rows.end();) {
-    row_itr = dbRow::destroy(row_itr);
-  }
+  SitesByName sites_by_name
+      = prepareSitesAndClearRows(base_site, additional_sites);
 
   // Use the new scanline-based approach
   makePolygonRowsScanline(
@@ -299,6 +332,7 @@ void InitFloorplan::makePolygonRows(
                 997,
                 "Completed polygon-aware row generation using {} vertices",
                 points.size() - 1);
+  reportAreas();
 }
 
 double InitFloorplan::designArea()
@@ -351,6 +385,23 @@ static int divCeil(int dividend, int divisor)
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
+static int applyRowParity(int rows_y, const RowParity row_parity)
+{
+  switch (row_parity) {
+    case RowParity::kNone:
+      break;
+    case RowParity::kEven:
+      rows_y = (rows_y / 2) * 2;
+      break;
+    case RowParity::kOdd:
+      if (rows_y > 0 && rows_y % 2 == 0) {
+        rows_y--;
+      }
+      break;
+  }
+  return rows_y;
+}
+
 void InitFloorplan::makeRowsWithSpacing(
     int core_space_bottom,
     int core_space_top,
@@ -359,7 +410,7 @@ void InitFloorplan::makeRowsWithSpacing(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
   checkGap(gap);
@@ -398,10 +449,20 @@ void InitFloorplan::makeRows(const odb::Rect& core,
                              odb::dbSite* base_site,
                              const std::vector<odb::dbSite*>& additional_sites,
                              RowParity row_parity,
-                             const std::set<odb::dbSite*>& flipped_sites,
+                             const odb::PtrSet<odb::dbSite>& flipped_sites,
                              const int gap)
 {
   checkGap(gap);
+
+  debugPrint(logger_,
+             IFP,
+             "init",
+             1,
+             "Defining core area: ({}, {}) to ({}, {}) DBU",
+             core.xMin(),
+             core.yMin(),
+             core.xMax(),
+             core.yMax());
 
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
@@ -414,26 +475,8 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 
   checkInstanceDimensions(core);
 
-  // The same site can appear in more than one LEF file and therefore
-  // in more than one dbLib.  We merge them by name to avoid duplicate
-  // rows.
-  SitesByName sites_by_name;
-  sites_by_name[base_site->getName()] = base_site;
-  if (base_site->hasRowPattern()) {
-    for (const auto& [site, orient] : base_site->getRowPattern()) {
-      sites_by_name[site->getName()] = site;
-    }
-  }
-  for (auto site : additional_sites) {
-    sites_by_name[site->getName()] = site;
-  }
-  addUsedSites(sites_by_name);
-
-  // remove all rows
-  auto rows = block_->getRows();
-  for (auto row_itr = rows.begin(); row_itr != rows.end();) {
-    row_itr = dbRow::destroy(row_itr);
-  }
+  SitesByName sites_by_name
+      = prepareSitesAndClearRows(base_site, additional_sites);
 
   if (core.xMin() >= 0 && core.yMin() >= 0) {
     eval_upf(network_, logger_, block_);
@@ -461,7 +504,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
     }
 
     if (base_site->hasRowPattern()) {
-      if (row_parity != RowParity::NONE) {
+      if (row_parity != RowParity::kNone) {
         logger_->error(
             IFP,
             51,
@@ -487,6 +530,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
                /* halo_x */ 0,
                /* halo_y */ 0,
                logger_);
+  reportAreas();
 }
 
 // this function is used to create regions ( split overlapped rows and create
@@ -529,22 +573,23 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
       // gap calculation
       int min_site_dx = std::numeric_limits<int>::max();
       int min_site_dy = std::numeric_limits<int>::max();
-      std::vector<dbRow*>::iterator row_itr = rows.begin();
-      for (int row_processed = 0; row_processed < total_row_count;
-           row_processed++) {
-        dbRow* row = *row_itr;
+      for (dbRow* row : rows) {
         auto site = row->getSite();
-        int site_dy = site->getHeight();
-        min_site_dy = std::min(site_dy, min_site_dy);
-        int site_dx = site->getWidth();
-        min_site_dx = std::min(site_dx, min_site_dx);
+        min_site_dy = std::min(site->getHeight(), min_site_dy);
+        min_site_dx = std::min(site->getWidth(), min_site_dx);
       }
       // Default space is 6 times the minimum site height
       const int power_domain_y_space
           = (gap == std::numeric_limits<int32_t>::min()) ? 6 * min_site_dy
                                                          : gap;
 
-      row_itr = rows.begin();
+      // snap inward to site grid
+      domain_x_min = odb::makeSiteLoc(domain_x_min, min_site_dx, false, 0);
+      domain_x_max = odb::makeSiteLoc(domain_x_max, min_site_dx, true, 0);
+      domain_y_min = odb::makeSiteLoc(domain_y_min, min_site_dy, false, 0);
+      domain_y_max = odb::makeSiteLoc(domain_y_max, min_site_dy, true, 0);
+
+      auto row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
@@ -554,12 +599,6 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         auto site = row->getSite();
 
         int site_dx = site->getWidth();
-
-        // snap inward to site grid
-        domain_x_min = odb::makeSiteLoc(domain_x_min, min_site_dx, false, 0);
-        domain_x_max = odb::makeSiteLoc(domain_x_max, min_site_dx, true, 0);
-        domain_y_min = odb::makeSiteLoc(domain_y_min, min_site_dy, false, 0);
-        domain_y_max = odb::makeSiteLoc(domain_y_max, min_site_dy, true, 0);
 
         // check if the rows overlapped with the area of a defined voltage
         // domains + margin
@@ -656,7 +695,7 @@ void InitFloorplan::addUsedSites(
       auto site = master->getSite();
       if (site) {
         // Avoid adding a site with the same name (ie from two LEF files)
-        if (sites_by_name.find(site->getName()) == sites_by_name.end()) {
+        if (!sites_by_name.contains(site->getName())) {
           sites_by_name[site->getName()] = site;
         }
       } else {
@@ -671,35 +710,22 @@ void InitFloorplan::addUsedSites(
 }
 
 // Create the rows for the core area
-void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
-                                    const SitesByName& sites_by_name,
-                                    const odb::Rect& core,
-                                    RowParity row_parity,
-                                    const std::set<odb::dbSite*>& flipped_sites)
+void InitFloorplan::makeUniformRows(
+    odb::dbSite* base_site,
+    const SitesByName& sites_by_name,
+    const odb::Rect& core,
+    RowParity row_parity,
+    const odb::PtrSet<odb::dbSite>& flipped_sites)
 {
   const int core_dx = core.dx();
   const int core_dy = core.dy();
   const uint32_t site_dx = base_site->getWidth();
   const int rows_x = core_dx / site_dx;
 
-  auto make_rows = [&](dbSite* site) {
+  auto make_rows = [&](dbSite* site) -> int {
     const uint32_t site_dy = site->getHeight();
-    int rows_y = core_dy / site_dy;
-    bool flip = flipped_sites.find(site) != flipped_sites.end();
-    switch (row_parity) {
-      case RowParity::NONE:
-        break;
-      case RowParity::EVEN:
-        rows_y = (rows_y / 2) * 2;
-        break;
-      case RowParity::ODD:
-        if (rows_y > 0) {
-          rows_y = (rows_y % 2 == 0) ? rows_y - 1 : rows_y;
-        } else {
-          rows_y = 0;
-        }
-        break;
-    }
+    const int rows_y = applyRowParity(core_dy / site_dy, row_parity);
+    const bool flip = flipped_sites.contains(site);
 
     int y = core.yMin();
     for (int row = 0; row < rows_y; row++) {
@@ -717,13 +743,20 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
                     site_dx);
       y += site_dy;
     }
-    logger_->info(IFP,
-                  1,
-                  "Added {} rows of {} site {}.",
-                  rows_y,
-                  rows_x,
-                  site->getName());
+    if (rows_y == 0) {
+      logger_->warn(IFP, 61, "No rows created for site {}.", site->getName());
+    } else {
+      logger_->info(IFP,
+                    1,
+                    "Added {} rows of {} site {}.",
+                    rows_y,
+                    rows_x,
+                    site->getName());
+    }
+    return rows_y;
   };
+
+  int total_rows = 0;
   for (const auto& [name, site] : sites_by_name) {
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
@@ -735,9 +768,13 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
           base_site->getName(),
           block_->dbuToMicrons(base_site->getHeight()));
     }
-    make_rows(site);
+    total_rows += make_rows(site);
   }
   block_->setCoreArea(block_->computeCoreArea());
+
+  if (total_rows == 0) {
+    logger_->error(IFP, 65, "No rows created in the core area.");
+  }
 }
 
 int InitFloorplan::getOffset(dbSite* base_hybrid_site,
@@ -905,8 +942,8 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
                    tie_term->getName());
   }
   auto func_operation = lib_port->function()->op();
-  const bool is_zero = func_operation == sta::FuncExpr::op_zero;
-  const bool is_one = func_operation == sta::FuncExpr::op_one;
+  const bool is_zero = func_operation == sta::FuncExpr::Op::zero;
+  const bool is_one = func_operation == sta::FuncExpr::Op::one;
 
   odb::dbSigType look_for;
   if (is_zero) {
@@ -1119,7 +1156,7 @@ void InitFloorplan::makePolygonRowsScanline(
     odb::dbSite* base_site,
     const SitesByName& sites_by_name,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
   // Get the bounding box for the polygon
@@ -1257,32 +1294,14 @@ void InitFloorplan::makeUniformRowsPolygon(
     const odb::Polygon& core_polygon,
     const odb::Rect& core_bbox,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites)
+    const odb::PtrSet<odb::dbSite>& flipped_sites)
 {
   const uint32_t site_dx = site->getWidth();
   const uint32_t site_dy = site->getHeight();
   const int core_dy = core_bbox.dy();
 
-  // Calculate number of rows
-  int total_rows_y = core_dy / site_dy;
-  bool flip = flipped_sites.find(site) != flipped_sites.end();
-
-  // Apply row parity constraints
-  switch (row_parity) {
-    case RowParity::NONE:
-      break;
-    case RowParity::EVEN:
-      total_rows_y = (total_rows_y / 2) * 2;
-      break;
-    case RowParity::ODD:
-      if (total_rows_y > 0) {
-        total_rows_y
-            = (total_rows_y % 2 == 0) ? total_rows_y - 1 : total_rows_y;
-      } else {
-        total_rows_y = 0;
-      }
-      break;
-  }
+  const int total_rows_y = applyRowParity(core_dy / site_dy, row_parity);
+  const bool flip = flipped_sites.contains(site);
 
   int rows_created = 0;
   int y = core_bbox.yMin();
@@ -1341,6 +1360,52 @@ void InitFloorplan::makeUniformRowsPolygon(
                 "Added {} polygon-aware rows for site {}.",
                 rows_created,
                 site->getName());
+}
+
+void InitFloorplan::reportAreas()
+{
+  odb::Rect die = block_->getDieArea();
+  odb::Rect core = block_->getCoreArea();
+  logger_->info(IFP,
+                100,
+                "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+                "Die BBox:",
+                block_->dbuToMicrons(die.xMin()),
+                block_->dbuToMicrons(die.yMin()),
+                block_->dbuToMicrons(die.xMax()),
+                block_->dbuToMicrons(die.yMax()));
+  logger_->info(IFP,
+                101,
+                "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+                "Core BBox:",
+                block_->dbuToMicrons(core.xMin()),
+                block_->dbuToMicrons(core.yMin()),
+                block_->dbuToMicrons(core.xMax()),
+                block_->dbuToMicrons(core.yMax()));
+  logger_->info(IFP,
+                102,
+                "{:27} {:15.3f} um^2",
+                "Core area:",
+                block_->dbuAreaToMicrons(core.area()));
+  int64_t design_area = static_cast<int64_t>(designArea());
+  logger_->info(IFP,
+                103,
+                "{:27} {:15.3f} um^2",
+                "Total instances area:",
+                block_->dbuAreaToMicrons(design_area));
+  double core_area_um = block_->dbuAreaToMicrons(core.area());
+  if (core_area_um > 0) {
+    logger_->info(IFP,
+                  104,
+                  "{:27} {:15.3f}",
+                  "Effective utilization:",
+                  block_->dbuAreaToMicrons(design_area) / core_area_um);
+  }
+  logger_->info(IFP,
+                105,
+                "{:27} {:15d}",
+                "Number of instances:",
+                block_->getInsts().size());
 }
 
 }  // namespace ifp

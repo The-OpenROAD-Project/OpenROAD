@@ -5,7 +5,7 @@ read_lef Nangate45/Nangate45.lef
 read_def reg3.def
 
 set_wire_rc -layer metal3
-set corner [sta::cmd_corner]
+set corner [sta::cmd_scene]
 # ohm/meter -> kohm/micron
 set r [expr { [rsz::wire_signal_resistance $corner] * 1e-3 * 1e-6 }]
 # F/meter -> fF/micron

@@ -4,10 +4,13 @@
 # This file only currently supports the gui disabled.  More work
 # is needed to handle Qt and build a working gui.
 
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@qt-bazel//:build_defs.bzl", "qt6_library", "qt6_resource_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -17,20 +20,66 @@ package(
 cc_library(
     name = "gui",
     srcs = [
-        "src/stub.cpp",
-        "src/stub_heatMap.cpp",
+        "src/bufferTreeDescriptor.h",
+        "src/dbDescriptors.cpp",
+        "src/dbDescriptors.h",
+        "src/descriptor_registry.cpp",
+        "src/heatMapCore.cpp",
+        "src/heatMapPinDensity.cpp",
+        "src/heatMapPinDensity.h",
+        "src/heatMapPlacementDensity.cpp",
+        "src/heatMapPlacementDensity.h",
+        "src/init_descriptors.cpp",
+        "src/insertBufferDialog.h",
+        "src/staDescriptors.cpp",
+        "src/staDescriptors.h",
         ":tcl",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
+        "include/gui/descriptor_registry.h",
         "include/gui/gui.h",
         "include/gui/heatMap.h",
     ],
-    includes = ["include"],
+    includes = [
+        "include",
+        "src",
+    ],
     deps = [
-        "//src/odb",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.algorithm",
         "@boost.multi_array",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+# CLI-only stub implementations of GUI dispatch symbols (Gui::enabled,
+# startGui, initGui, Painter::getOptions, ...). Split out of :gui so
+# that :openroad-qt — which links //src/gui:gui_qt for the real Qt
+# implementations and pulls :gui transitively via :ui modules — does
+# NOT also link the stub. With --allow-multiple-definition in effect
+# (LLVM toolchain default), having both stub and gui_qt definitions
+# present at link time causes the stub to silently win for symbols
+# like Gui::enabled, and the GUI never opens at runtime.
+#
+# Only the CLI :openroad binary (and :_openroadpy.so) need to dep
+# :gui_stub explicitly to satisfy those undefined references in :gui's
+# heatMapCore.cpp et al.
+cc_library(
+    name = "gui_stub",
+    srcs = [
+        "src/bufferTreeDescriptor.h",
+        "src/stub.cpp",
+    ],
+    deps = [
+        ":gui",
+        "//src/odb/src/db",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -59,12 +108,14 @@ QT_GUI_PLATFORMS = {
         ],
         hdrs = [
             "include/gui/MakeGui.h",
+            "include/gui/descriptor_registry.h",
             "include/gui/gui.h",
             "include/gui/heatMap.h",
         ],
-        defines = [
-            "STATIC_QPA_PLUGIN_XCB=1",
-        ],
+        defines = select({
+            "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
+            "//conditions:default": [],
+        }),
         includes = [
             "include",
             "src",
@@ -78,16 +129,18 @@ QT_GUI_PLATFORMS = {
             "//:ord",
             "//src/dbSta",
             "//src/dbSta:dbNetwork",
-            "//src/odb",
+            "//src/odb/src/db",
+            "//src/odb/src/defout",
             "//src/sta:opensta_lib",
             "//src/utl",
             "//third-party/gif-h:gif_h",
+            "@abseil-cpp//absl/synchronization",
             "@boost.algorithm",
             "@boost.geometry",
             "@boost.multi_array",
             "@boost.stacktrace",
             "@spdlog",
-            "@tk_tcl//:tcl",
+            "@tcl_lang//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),
     )
     for platform, suffix in QT_GUI_PLATFORMS.items()
@@ -138,4 +191,46 @@ tcl_encode(
     ],
     char_array_name = "gui_tcl_inits",
     namespace = "gui",
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/gui.tcl",
+    ],
+    visibility = ["//src/gui/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/gui/test:__pkg__"],
+)
+
+# Desktop entry for GUI builds. Generated from the same template that the
+# CMake build configures (see src/gui/CMakeLists.txt). The install prefix is
+# not known at build time, so the icon path is left as a @OPENROAD_PREFIX@
+# placeholder that //bazel:install.sh substitutes at install time.
+expand_template(
+    name = "desktop_entry",
+    out = "openroad.desktop",
+    substitutions = {
+        "${OPENROAD_SHARE_GUI_DIR}": "@OPENROAD_PREFIX@/share/openroad/gui",
+    },
+    template = "resources/openroad.desktop.cmake",
+)
+
+# The desktop entry and its icon, laid out at the paths install.sh expects
+# inside the extracted tar. Pulled into //packaging:tarfile only when
+# --//:platform=gui is set.
+pkg_files(
+    name = "desktop_files",
+    srcs = [
+        "resources/icon.png",
+        ":openroad.desktop",
+    ],
+    renames = {
+        ":openroad.desktop": "share/applications/openroad.desktop",
+        "resources/icon.png": "share/openroad/gui/icon.png",
+    },
+    visibility = ["//packaging:__pkg__"],
 )

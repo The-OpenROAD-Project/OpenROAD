@@ -6,12 +6,14 @@
 #include "DensityFill.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace fin {
 
 ////////////////////////////////////////////////////////////////
 
-Finale::Finale(odb::dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
+Finale::Finale(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
 }
 

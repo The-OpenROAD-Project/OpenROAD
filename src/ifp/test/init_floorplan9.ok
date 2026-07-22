@@ -1,4 +1,10 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [INFO IFP-0001] Added 42 rows of 258 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 155.480 146.880 ) um
+[INFO IFP-0101] Core BBox: ( 18.400 16.320 ) ( 137.080 130.560 ) um
+[INFO IFP-0102] Core area:                        13558.003 um^2
+[INFO IFP-0103] Total instances area:                85.082 um^2
+[INFO IFP-0104] Effective utilization:                0.006
+[INFO IFP-0105] Number of instances:                      5
 No differences found.

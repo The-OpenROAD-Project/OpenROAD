@@ -12,8 +12,9 @@
 #include <QWidget>
 #include <functional>
 #include <memory>
-#include <mutex>
 
+#include "absl/synchronization/mutex.h"
+#include "spdlog/sinks/sink.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -124,7 +125,7 @@ class ScriptWidget : public QDockWidget
   template <typename Mutex>
   class GuiSink;
   std::shared_ptr<spdlog::sinks::sink> sink_;
-  std::mutex reporting_;
+  absl::Mutex reporting_;
   QString report_buffer_;
 
   // maximum number of character to display in a log line

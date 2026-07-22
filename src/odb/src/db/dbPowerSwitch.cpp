@@ -9,6 +9,7 @@
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMTerm.h"
@@ -16,17 +17,20 @@
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "utl/Logger.h"
 // User Code Begin Includes
+#include <vector>
+
 #include "dbCommon.h"
+#include "dbVector.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbPowerSwitch>;
 
 bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -44,6 +48,7 @@ bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbPowerSwitch::operator<(const _dbPowerSwitch& rhs) const
@@ -189,13 +194,14 @@ void _dbPowerSwitch::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["name"].add(name_);
   info.children["in_supply_port"].add(in_supply_port_);
   info.children["control_port"].add(control_port_);
   info.children["acknowledge_port"].add(acknowledge_port_);
   info.children["on_state"].add(on_state_);
   info.children["port_map"].add(port_map_);
+
+  // User Code Begin collectMemInfo
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

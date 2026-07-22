@@ -8,6 +8,7 @@
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/ext_options.h"
 #include "utl/Logger.h"
 
 using odb::dbBlock;
@@ -23,7 +24,7 @@ using utl::RCX;
 
 namespace rcx {
 
-void extMain::init(odb::dbDatabase* db, Logger* logger)
+void extMain::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   _db = db;
   _block = nullptr;
@@ -31,7 +32,21 @@ void extMain::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, Logger* logger)
+void extMain::setExtractionOptions(const ExtractOptions& options)
+{
+  _couplingFlag = options.cc_model;
+  _coupleThreshold = options.coupling_threshold;
+  _ccUp = options.cc_up;
+  _ccContextDepth = options.context_depth;
+  _mergeViaRes = !options.no_merge_via_res;
+  _mergeResBound = options.max_res;
+  _lef_res = options.lef_res;
+  _lefRC = options.lef_rc;
+  _dbgOption = options._dbg;
+  target_nets_names_ = options.net;
+}
+
+void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, utl::Logger* logger)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == nullptr) {
@@ -73,13 +88,13 @@ void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor)
   }
   double res_factor = resFactor / _resFactor;
   _resFactor = resFactor;
-  _resModify = resFactor == 1.0 ? false : true;
+  _resModify = resFactor != 1.0;
   double cc_factor = ccFactor / _ccFactor;
   _ccFactor = ccFactor;
-  _ccModify = ccFactor == 1.0 ? false : true;
+  _ccModify = ccFactor != 1.0;
   double gndc_factor = gndcFactor / _gndcFactor;
   _gndcFactor = gndcFactor;
-  _gndcModify = gndcFactor == 1.0 ? false : true;
+  _gndcModify = gndcFactor != 1.0;
   _block->adjustRC(res_factor, cc_factor, gndc_factor);
 }
 
@@ -376,37 +391,28 @@ double extMain::getResistance(const uint32_t level,
   return getLefResistance(level, width, len, model);
 }
 
-void extMain::setBlockFromChip()
+void extMain::setBlockFromChip(odb::dbChip* chip)
 {
-  if (_db->getChip() == nullptr) {
+  if (!chip) {
     logger_->error(RCX, 497, "No design is loaded.");
   }
-  _tech = _db->getTech();
-  _block = _db->getChip()->getBlock();
-  _blockId = _block->getId();
-  _prevControl = _block->getExtControl();
-  _block->setExtmi(this);
 
-  if (_spef != nullptr) {
-    _spef = nullptr;
-    _extracted = false;
+  _tech = chip->getTech();
+  _block = chip->getBlock();
+
+  if (!_block) {
+    logger_->error(RCX, 18, "Could not get the block from the chip.");
   }
 
-  _bufSpefCnt = 0;
-  _origSpefFilePrefix = nullptr;
-  _newSpefFilePrefix = nullptr;
-}
-
-void extMain::setBlock(dbBlock* block)
-{
-  _block = block;
+  _blockId = _block->getId();
   _prevControl = _block->getExtControl();
   _block->setExtmi(this);
-  _blockId = _block->getId();
+
   if (_spef) {
     _spef = nullptr;
     _extracted = false;
   }
+
   _bufSpefCnt = 0;
   _origSpefFilePrefix = nullptr;
   _newSpefFilePrefix = nullptr;
@@ -446,7 +452,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
 {
   double cap = frCap + ccCap - deltaFr;
 
-  double tot = rseg->getCapacitance(modelIndex);
+  double tot = rseg->getGroundCapacitance(modelIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, modelIndex);
@@ -511,7 +517,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
     }
 
     extDbIndex = getProcessCornerDbIndex(modelIndex);
-    tot = rseg->getCapacitance(extDbIndex);
+    tot = rseg->getGroundCapacitance(extDbIndex);
     tot += cap;
 
     rseg->setCapacitance(tot, extDbIndex);
@@ -520,7 +526,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
       continue;
     }
     getScaledGndC(sci, cap);
-    tot = rseg->getCapacitance(scDbIdx);
+    tot = rseg->getGroundCapacitance(scDbIdx);
     tot += cap;
     rseg->setCapacitance(tot, scDbIdx);
   }
@@ -684,7 +690,7 @@ void extMain::measureRC(CoupleOptions& options)
 
       _totCCcnt++;  // TO_TEST
 
-      if (m._rc[_minModelIndex]->coupling_ < _coupleThreshold) {  // TO_TEST
+      if (m._rc[0]->coupling_ < _coupleThreshold) {
         updateTotalCap(rseg1, &m, deltaFr, m._metRCTable.getCnt(), true);
         updateTotalCap(rseg2, &m, deltaFr, m._metRCTable.getCnt(), true);
 

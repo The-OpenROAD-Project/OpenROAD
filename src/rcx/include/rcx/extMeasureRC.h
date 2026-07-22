@@ -11,6 +11,9 @@
 #include "odb/util.h"
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
+#include "rcx/extSegment.h"
+#include "rcx/grids.h"
+#include "rcx/util.h"
 
 namespace rcx {
 
@@ -81,7 +84,7 @@ struct CouplingConfig
   void reset_calc_flow_flag(uint32_t level)
   {
     if (metal_flag > 0) {
-      new_calc_flow = level <= metal_flag ? true : false;
+      new_calc_flow = level <= metal_flag;
     }
   }
 

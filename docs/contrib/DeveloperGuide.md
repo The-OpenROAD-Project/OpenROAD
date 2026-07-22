@@ -143,15 +143,14 @@ manpages.
 
 ## Errors
 
-Tools should report errors to the user using the `ord::error` function
-defined in `include/openroad/Error.hh`. `ord::error` throws
-`ord::Exception`. The variables `ord::exit_on_error` and
-`ord::file_continue_on_error` control how the error is handled. If
-`ord::exit_on_error` is `true` then OpenROAD reports the error and exits. If
-the error is encountered while reading a file with the `source` or
-`read_sdc` commands and `ord::file_continue_on_error` is `false` then no
-other commands are read from the file. The default value is `false` for both
-variables.
+Tools should report errors to the user using the logging infrastructure
+described in the [Logger guide](Logger.md). The `utl::error` function
+throws an exception that is caught at the Tcl command level. The variables
+`exit_on_error` and `file_continue_on_error` control how the error is
+handled. If `exit_on_error` is `1` then OpenROAD reports the error and
+exits. If the error is encountered while reading a file with the `source`
+or `read_sdc` commands and `file_continue_on_error` is `0` then no other
+commands are read from the file.
 
 ## Test
 
@@ -199,9 +198,9 @@ Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
-The directory `OpenRoad/src/example` 
+The directory [src/exa](../main/src/exa/README.md)
 illustrates a tool named "Example" that uses the file structure described above.
- It defines a command to run the tool as illustrated below:
+It defines a command to run the tool as illustrated below:
 
 ```tcl
 > example_instance -name test
@@ -305,6 +304,23 @@ cmake . -B build  # generate build files
 ln -sf build/compile_commands.json .  # make compilation db visible
 /bin/sh etc/run-clang-tidy-cached.cc
 ```
+
+Alternatively, you can run `clang-tidy` hermetically through Bazel — no
+cmake configuration or Clang Tooling setup is required, and the toolchain
+matches what CI will use:
+
+```shell
+# Single module:
+bazel build --config=lint //src/<module>/...
+
+# Full lint scope (excludes upstream submodules):
+bazel build --config=lint -- //src/... //third-party/... \
+    -//src/sta/... -//third-party/abc/...
+```
+
+Reports land under `bazel-bin/<pkg>/<target>_rules_lint/` as
+`*.AspectRulesLintClangTidy.out` files. Generated files (SWIG, bison, flex)
+and targets tagged `no-lint` are skipped automatically.
 
 ## Doxygen
 

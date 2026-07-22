@@ -6,6 +6,3 @@ or_integration_tests(
     write_artnet
 )
 
-# Skipped
-#par_man_tcl_check
-#par_readme_msgs_check

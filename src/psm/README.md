@@ -194,6 +194,7 @@ The image below illustrate how they can be modeled, the red elements are the sou
 If you need to be able to disconnect some of the terminals in the design, such as in the case of "what-if" analysis or different chip packaging options.
 This can be done by assigning `PSM_DISCONNECT` to a terminal or shape in a terminal will cause PDNSim to leave that object disconnected from the analysis.
 
+<!-- checker: skip -->
 ```tcl
 # Assumes bpin is the block pin to be disconnected
 odb::dbBoolProperty_create $bpin PSM_DISCONNECT 1
@@ -231,11 +232,6 @@ Simply run the following script:
 
 ## Limitations
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+psm+in%3Atitle)
-about this tool.
-
 ## References
 
 1. PDNSIM [documentation](doc/PDNSim-documentation.pdf)
@@ -243,4 +239,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

@@ -40,6 +40,7 @@ class HeatMapSetup : public QDialog
   void updateRange();
   void updateGridSize();
   void updateWidgets();
+  void updateUseSelectedOnly(int option);
 
   void destroyMap();
 
@@ -64,6 +65,8 @@ class HeatMapSetup : public QDialog
   QCheckBox* show_maxs_;
 
   QSpinBox* alpha_selector_;
+
+  QCheckBox* use_selected_only_;
 
   QPushButton* rebuild_;
   QPushButton* close_;

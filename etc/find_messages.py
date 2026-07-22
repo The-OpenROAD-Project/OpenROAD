@@ -1,39 +1,7 @@
 #!/usr/bin/env python3
 
-############################################################################
-##
-## Copyright (c) 2021, The Regents of the University of California
-## All rights reserved.
-##
-## BSD 3-Clause License
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-############################################################################
+## SPDX-License-Identifier: BSD-3-Clause
+## Copyright (c) 2021-2026, The OpenROAD Authors
 
 # Usage:
 # cd src/<tool>
@@ -66,6 +34,11 @@ def parse_args():
         "--local",
         action="store_true",
         help="Look only at the local files and don't recurse",
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="Explicit file paths to scan (alternative to -d directory walking)",
     )
     args = parser.parse_args()
 
@@ -145,7 +118,15 @@ def main():
     # "tool id" -> "file:line message"
     msgs = defaultdict(set)
 
-    if args.local:  # no recursion
+    if args.files:
+        # Scan explicitly listed files (used by Bazel where sandbox
+        # visibility is determined by the declared srcs).
+        for f in args.files:
+            path = os.path.dirname(f) or "."
+            name = os.path.basename(f)
+            if re.search(r"\.(c|cc|cpp|cxx|h|hh|yy|ll|i|tcl)$", name):
+                scan_file(path, name, msgs)
+    elif args.local:  # no recursion
         files = [
             os.path.basename(file) for file in glob.glob(os.path.join(args.dir, "*"))
         ]

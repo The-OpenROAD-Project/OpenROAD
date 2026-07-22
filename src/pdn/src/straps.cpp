@@ -20,9 +20,11 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "pdn/PdnGen.hh"
 #include "renderer.h"
 #include "shape.h"
 #include "techlayer.h"
@@ -70,7 +72,7 @@ void Straps::checkLayerSpecifications() const
         layer_->getName());
   }
 
-  const TechLayer layer(layer_);
+  TechLayer layer(layer_);
 
   checkLayerWidth(layer_, width_, direction_);
   checkLayerSpacing(layer_, width_, spacing_, direction_);
@@ -78,6 +80,17 @@ void Straps::checkLayerSpecifications() const
   layer.checkIfManufacturingGrid(spacing_, getLogger(), "Spacing");
   layer.checkIfManufacturingGrid(pitch_, getLogger(), "Pitch");
   layer.checkIfManufacturingGrid(offset_, getLogger(), "Offset");
+
+  if (snap_) {
+    layer.populateGrid(getBlock(), direction_);
+    if (!layer.hasGrid()) {
+      getLogger()->error(utl::PDN,
+                         215,
+                         "Unable to snap strap on {} to grid, no routing grid "
+                         "defined for layer.",
+                         layer_->getName());
+    }
+  }
 
   const int strap_width = getStrapGroupWidth();
   if (pitch_ != 0) {
@@ -148,7 +161,7 @@ void Straps::setExtend(ExtensionMode mode)
 
 void Straps::setStrapStartEnd(int start, int end)
 {
-  extend_mode_ = FIXED;
+  extend_mode_ = kFixed;
   strap_start_ = start;
   strap_end_ = end;
 }
@@ -169,16 +182,16 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   odb::Rect boundary;
   const odb::Rect core = grid->getDomainArea();
   switch (extend_mode_) {
-    case CORE:
+    case kCore:
       boundary = grid->getDomainBoundary();
       break;
-    case RINGS:
+    case kRings:
       boundary = grid->getRingArea();
       break;
-    case BOUNDARY:
+    case kBoundary:
       boundary = grid->getGridBoundary();
       break;
-    case FIXED:
+    case kFixed:
       boundary = odb::Rect(strap_start_, strap_start_, strap_end_, strap_end_);
       break;
   }
@@ -448,15 +461,15 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const odb::Rect core = grid->getDomainArea();
   odb::Rect boundary;
   switch (getExtendMode()) {
-    case CORE:
-    case FIXED:
+    case kCore:
+    case kFixed:
       // use core area for follow pins
       boundary = grid->getDomainArea();
       break;
-    case RINGS:
+    case kRings:
       boundary = grid->getRingArea();
       break;
-    case BOUNDARY:
+    case kBoundary:
       boundary = grid->getGridBoundary();
       break;
   }
@@ -579,7 +592,7 @@ PadDirectConnectionStraps::PadDirectConnectionStraps(
 bool PadDirectConnectionStraps::canConnect() const
 {
   return pad_edge_ != odb::dbDirection::NONE && !pins_.empty()
-         && type_ != ConnectionType::None;
+         && type_ != ConnectionType::kNone;
 }
 
 void PadDirectConnectionStraps::initialize(ConnectionType type)
@@ -623,17 +636,17 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
              pad_edge_ == odb::dbDirection::WEST);
 
   switch (type) {
-    case ConnectionType::None:
+    case ConnectionType::kNone:
       pins_ = getPinsFacingCore();
       if (pins_.empty()) {
         // check if pins are accessible from above
         pins_ = getPinsFormingRing();
       }
       break;
-    case ConnectionType::Edge:
+    case ConnectionType::kEdge:
       pins_ = getPinsFacingCore();
       break;
-    case ConnectionType::OverPads:
+    case ConnectionType::kOverPads:
       pins_ = getPinsFormingRing();
       break;
   }
@@ -647,10 +660,10 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
              pins_.size());
 }
 
-std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>>
+odb::PtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>>
 PadDirectConnectionStraps::getPinsByLayer() const
 {
-  std::map<odb::dbTechLayer*, std::vector<odb::dbBox*>> pins;
+  odb::PtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>> pins;
 
   auto* mterm = iterm_->getMTerm();
   for (auto* pin : mterm->getMPins()) {
@@ -774,7 +787,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
   }
 
   if (!pins.empty()) {
-    type_ = ConnectionType::Edge;
+    type_ = ConnectionType::kEdge;
   }
   return pins;
 }
@@ -877,7 +890,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
   }
   setLayer(routing_layer);
   if (!pins.empty()) {
-    type_ = ConnectionType::OverPads;
+    type_ = ConnectionType::kOverPads;
   }
   return pins;
 }
@@ -890,18 +903,18 @@ void PadDirectConnectionStraps::report() const
   logger->report("    Pin: {}", getName());
   std::string connection_type = "Unknown";
   switch (type_) {
-    case ConnectionType::None:
+    case ConnectionType::kNone:
       connection_type = "None";
       break;
-    case ConnectionType::Edge:
+    case ConnectionType::kEdge:
       connection_type = "Edge";
       break;
-    case ConnectionType::OverPads:
+    case ConnectionType::kOverPads:
       connection_type = "Over pads";
       break;
   }
   logger->report("    Connection type: {}", connection_type);
-  if (type_ == ConnectionType::Edge) {
+  if (type_ == ConnectionType::kEdge) {
     logger->report("    Edge: {}", pad_edge_.getString());
   }
   logger->report("    Net: {}", iterm_->getNet()->getName());
@@ -930,12 +943,12 @@ void PadDirectConnectionStraps::makeShapes(
   target_shapes_.clear();
   target_pin_shape_.clear();
   switch (type_) {
-    case ConnectionType::None:
+    case ConnectionType::kNone:
       break;
-    case ConnectionType::Edge:
+    case ConnectionType::kEdge:
       makeShapesFacingCore(other_shapes);
       break;
-    case ConnectionType::OverPads:
+    case ConnectionType::kOverPads:
       makeShapesOverPads(other_shapes);
       break;
   }
@@ -1033,8 +1046,9 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
     return;
   }
 
-  std::set<odb::dbTechLayer*> pin_layers;
-  std::map<odb::dbTechLayer*, std::set<odb::dbTechLayer*>> connectable_layers;
+  odb::PtrSet<odb::dbTechLayer> pin_layers;
+  odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbTechLayer>>
+      connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& shape : shapes) {
       if (isTargetShape(shape.get())) {
@@ -1135,7 +1149,7 @@ PadDirectConnectionStraps::getAssociatedStraps() const
   const odb::dbInst* inst = iterm_->getInst();
   std::vector<PadDirectConnectionStraps*> straps;
   for (const auto& strap : getGrid()->getStraps()) {
-    if (strap->type() == GridComponent::PadConnect) {
+    if (strap->type() == GridComponent::kPadConnect) {
       PadDirectConnectionStraps* pad_strap
           = dynamic_cast<PadDirectConnectionStraps*>(strap.get());
       if (pad_strap != nullptr && pad_strap->getITerm()->getInst() == inst) {
@@ -1298,7 +1312,7 @@ bool PadDirectConnectionStraps::snapRectToClosestShape(
 void PadDirectConnectionStraps::getConnectableShapes(
     Shape::ShapeTreeMap& shapes) const
 {
-  if (type_ != ConnectionType::OverPads) {
+  if (type_ != ConnectionType::kOverPads) {
     return;
   }
 
@@ -1326,7 +1340,7 @@ void PadDirectConnectionStraps::cutShapes(
 {
   Straps::cutShapes(obstructions);
 
-  if (type_ != ConnectionType::OverPads) {
+  if (type_ != ConnectionType::kOverPads) {
     return;
   }
 
@@ -1359,18 +1373,18 @@ void PadDirectConnectionStraps::unifyConnectionTypes(
 {
   std::set<ConnectionType> types;
   for (auto* strap : straps) {
-    if (strap->getConnectionType() == ConnectionType::None) {
+    if (strap->getConnectionType() == ConnectionType::kNone) {
       continue;
     }
     types.insert(strap->getConnectionType());
   }
 
-  ConnectionType global_connection = ConnectionType::None;
+  ConnectionType global_connection = ConnectionType::kNone;
   if (types.size() == 1) {
     global_connection = *types.begin();
   } else {
     // Multiple methods found, pick Edge
-    global_connection = ConnectionType::Edge;
+    global_connection = ConnectionType::kEdge;
   }
 
   for (auto* strap : straps) {
@@ -1451,11 +1465,11 @@ bool PadDirectConnectionStraps::refineShapes(
     Shape::ShapeTreeMap& all_shapes,
     Shape::ObstructionTreeMap& all_obstructions)
 {
-  if (type_ != ConnectionType::OverPads) {
+  if (type_ != ConnectionType::kOverPads) {
     return GridComponent::refineShapes(all_shapes, all_obstructions);
   }
 
-  std::vector<Shape*> refine;
+  std::vector<ShapePtr> refine;
   for (const auto& [layer, shapes] : getShapes()) {
     for (const auto& shape : shapes) {
       if (!strapViaIsObstructed(
@@ -1463,7 +1477,7 @@ bool PadDirectConnectionStraps::refineShapes(
         continue;
       }
 
-      refine.push_back(shape.get());
+      refine.push_back(shape);
     }
   }
 
@@ -1474,37 +1488,24 @@ bool PadDirectConnectionStraps::refineShapes(
   const auto [first, last] = std::ranges::unique(refine.begin(), refine.end());
   refine.erase(first, last);
 
-  for (auto* refine_shape : refine) {
-    std::unique_ptr<Shape> shape = refine_shape->copy();
-    removeShape(refine_shape);
+  for (const auto& refine_shape : refine) {
+    std::unique_ptr<Shape> shape(refine_shape->copy());
+    const auto& target_pin = target_pin_shape_[refine_shape.get()];
+    removeShape(refine_shape.get());
 
-    // remove shape from all_shapes and all_obstructions
-    auto* layer = shape->getLayer();
-    auto find_shape = [&refine_shape](const ShapePtr& other) {
-      return other.get() == refine_shape;
-    };
     // remove from all_shapes
-    auto& layer_shapes = all_shapes[layer];
-    auto find_all_shapes_itr = layer_shapes.qbegin(bgi::satisfies(find_shape));
-    if (find_all_shapes_itr != layer_shapes.qend()) {
-      layer_shapes.remove(*find_all_shapes_itr);
-    }
-    // remove from all_obstructions
-    auto& layer_obstruction = all_obstructions[layer];
-    auto find_all_obstructions_itr
-        = layer_obstruction.qbegin(bgi::satisfies(find_shape));
-    if (find_all_obstructions_itr != layer_obstruction.qend()) {
-      layer_obstruction.remove(*find_all_obstructions_itr);
-    }
+    auto* layer = shape->getLayer();
+    all_shapes[layer].remove(refine_shape);
+    all_obstructions[layer].remove(refine_shape);
 
     const TechLayer tech_layer(layer);
     for (int width : {getWidth(), tech_layer.getMinWidth()}) {
       setWidth(width);
 
-      if (refineShape(shape.get(),
-                      target_pin_shape_[refine_shape],
-                      all_shapes,
-                      all_obstructions)) {
+      if (refineShape(shape.get(), target_pin, all_shapes, all_obstructions)) {
+        // add shape to all_shapes and all_obstructions
+        getObstructions(all_obstructions);
+        getShapes(all_shapes);
         break;
       }
     }
@@ -1516,8 +1517,8 @@ bool PadDirectConnectionStraps::refineShapes(
 bool PadDirectConnectionStraps::refineShape(
     Shape* shape,
     const odb::Rect& pin_shape,
-    Shape::ShapeTreeMap& all_shapes,
-    Shape::ObstructionTreeMap& all_obstructions)
+    const Shape::ShapeTreeMap& all_shapes,
+    const Shape::ObstructionTreeMap& all_obstructions)
 {
   const TechLayer tech_layer(shape->getLayer());
 
@@ -1548,7 +1549,7 @@ bool PadDirectConnectionStraps::refineShape(
       new_rect.set_xhi(check_loc + getWidth());
     }
 
-    std::unique_ptr<Shape> new_shape = shape->copy();
+    std::unique_ptr<Shape> new_shape(shape->copy());
     new_shape->setRect(new_rect);
 
     debugPrint(getLogger(),
@@ -1580,10 +1581,6 @@ bool PadDirectConnectionStraps::refineShape(
         continue;
       }
 
-      // add shape to all_shapes and all_obstructions
-      getObstructions(all_obstructions);
-      getShapes(all_shapes);
-
       return true;
     }
   }
@@ -1593,6 +1590,19 @@ bool PadDirectConnectionStraps::refineShape(
 
 bool PadDirectConnectionStraps::isTargetShape(const Shape* shape) const
 {
+  // Pad direct connections run from a pad pin toward the core power grid.  They
+  // must not target shapes that belong to an instance (macro) grid: those
+  // stripes sit inside the core over the macro, and snapping a pad connection
+  // to them drags the connection deep into the core (issue #10490).  Only
+  // shapes owned by core/existing grids are valid landing targets.
+  const auto* component = shape->getGridComponent();
+  if (component != nullptr) {
+    const auto* grid = component->getGrid();
+    if (grid != nullptr && grid->type() == Grid::kInstance) {
+      return false;
+    }
+  }
+
   if (target_shapes_type_) {
     return shape->getType() == target_shapes_type_.value();
   }
@@ -1624,7 +1634,7 @@ RepairChannelStraps::RepairChannelStraps(
     Straps* target,
     odb::dbTechLayer* connect_to,
     const Shape::ObstructionTreeMap& other_shapes,
-    const std::set<odb::dbNet*>& nets,
+    const odb::PtrSet<odb::dbNet>& nets,
     const odb::Rect& area,
     const odb::Rect& available_area,
     const odb::Rect& obs_check_area)
@@ -1898,7 +1908,7 @@ bool RepairChannelStraps::determineOffset(
   }
   check_layers.push_back(getLayer());
 
-  Shape estimated_shape(getLayer(), estimated_straps, Shape::SHAPE);
+  Shape estimated_shape(getLayer(), estimated_straps, Shape::kShape);
   estimated_shape.generateObstruction();
 
   bool has_obs = false;
@@ -2058,7 +2068,7 @@ void RepairChannelStraps::report() const
 
 Straps* RepairChannelStraps::getTargetStrap(Grid* grid, odb::dbTechLayer* layer)
 {
-  std::set<odb::dbTechLayer*> connects_to;
+  odb::PtrSet<odb::dbTechLayer> connects_to;
   for (const auto& connect : grid->getConnect()) {
     if (connect->getLowerLayer() == layer) {
       connects_to.insert(connect->getUpperLayer());
@@ -2072,7 +2082,7 @@ Straps* RepairChannelStraps::getTargetStrap(Grid* grid, odb::dbTechLayer* layer)
   Straps* lowest_target = nullptr;
 
   for (const auto& strap : grid->getStraps()) {
-    if (strap->type() != GridComponent::Strap) {
+    if (strap->type() != GridComponent::kStrap) {
       continue;
     }
 
@@ -2104,7 +2114,7 @@ odb::dbTechLayer* RepairChannelStraps::getHighestStrapLayer(Grid* grid)
 {
   odb::dbTechLayer* highest_layer = nullptr;
   for (const auto& strap : grid->getStraps()) {
-    if (strap->type() != GridComponent::Strap) {
+    if (strap->type() != GridComponent::kStrap) {
       // only look for straps
       continue;
     }
@@ -2160,13 +2170,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
     auto* grid_compomponent = shape->getGridComponent();
-    if (grid_compomponent->type() != GridComponent::Strap
-        && grid_compomponent->type() != GridComponent::Followpin) {
+    if (grid_compomponent->type() != GridComponent::kStrap
+        && grid_compomponent->type() != GridComponent::kFollowpin) {
       // only attempt to repair straps and followpins
       continue;
     }
 
-    if (grid_compomponent->type() == GridComponent::Strap) {
+    if (grid_compomponent->type() == GridComponent::kStrap) {
       if (shape->getNumberOfConnections() == 0
           || !shape->hasInternalConnections()) {
         // strap is floating and will be removed
@@ -2356,7 +2366,7 @@ void RepairChannelStraps::repairGridChannels(
   // check for recurring channels
   for (const auto& channel : channels) {
     for (const auto& strap : grid->getStraps()) {
-      if (strap->type() == GridComponent::RepairChannel) {
+      if (strap->type() == GridComponent::kRepairChannel) {
         RepairChannelStraps* repair_strap
             = dynamic_cast<RepairChannelStraps*>(strap.get());
         if (repair_strap == nullptr) {
@@ -2383,14 +2393,14 @@ void RepairChannelStraps::repairGridChannels(
   for (const auto& channel : channels) {
     bool dont_repair = false;
     for (const auto& other : areas_repaired) {
-      if (!(channel.area.xMax() <= other.xMin()
-            || channel.area.xMin() >= other.xMax())) {
+      if (channel.area.xMax() > other.xMin()
+          && channel.area.xMin() < other.xMax()) {
         // channels cover similar x regions
         dont_repair = true;
         break;
       }
-      if (!(channel.area.yMax() <= other.yMin()
-            || channel.area.yMin() >= other.yMax())) {
+      if (channel.area.yMax() > other.yMin()
+          && channel.area.yMin() < other.yMax()) {
         // channels cover similar y regions
         dont_repair = true;
         break;

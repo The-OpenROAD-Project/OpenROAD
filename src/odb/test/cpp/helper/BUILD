@@ -9,6 +9,7 @@ package(
 
 cc_library(
     name = "helper",
+    testonly = 1,
     srcs = [
         "helper.cpp",
     ],
@@ -18,8 +19,7 @@ cc_library(
     includes = ["."],  # not needed after no cmake
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb",
-        "//src/tst",
-        "//src/utl",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
     ],
 )

@@ -36,6 +36,12 @@ Instance: d4/_2_ -
  -> d4_out2 -> _3_
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.280, 100.640).
 [INFO IFP-0001] Added 110 rows of 651 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 500.000 500.000 ) um
+[INFO IFP-0101] Core BBox: ( 100.280 100.640 ) ( 399.740 399.840 ) um
+[INFO IFP-0102] Core area:                        89598.432 um^2
+[INFO IFP-0103] Total instances area:               155.149 um^2
+[INFO IFP-0104] Effective utilization:                0.002
+[INFO IFP-0105] Number of instances:                     22
 Instance: _1_ - () : sky130_fd_sc_hd__xnor2_1 
 Instance: _2_ - () : sky130_fd_sc_hd__xnor2_1 
 Instance: _3_ - () : sky130_fd_sc_hd__xnor2_1 

@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(features = ["layering_check"])
+
+# Headers that the slang-elab shared frontend code needs to find:
+# ir.h, backend_builder.h, log_stubs.h
+# This is a header-only target so the frontend can compile against
+# our ir:: types and backend interface.
+cc_library(
+    name = "elab_hdrs",
+    hdrs = [
+        "backend_builder.h",
+        "ir.h",
+        "log_stubs.h",
+    ],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/syn/src/ir",
+        # TODO: backend_builder.h includes slang_frontend.h, so we need
+        # :slang_frontend, but that indirectly depends on this, creating cycle.
+        # So can't add the following dependency right now.
+        #"//third-party/slang-elab/src:slang_frontend",
+        "@slang",
+    ],
+)
+
+# syn IR backend for slang-elab — full library with implementations
+cc_library(
+    name = "elab",
+    srcs = [
+        "abort_helpers.cc",
+        "backend_builder.cc",
+        "blackboxes.cc",
+        "driver.cc",
+        "error.cc",
+        "ir.cc",
+    ],
+    hdrs = [
+        "blackboxes.h",
+        "driver.h",
+    ],
+    defines = [
+        "SLANG_MUX_LOWERING",
+        "SLANG_NO_YOSYS",
+    ],
+    features = ["-layering_check"],  # Uses private headers
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":elab_hdrs",
+        "//src/dbSta",
+        "//src/sta:opensta_lib",
+        "//src/syn/src/ir",
+        "//src/utl",
+        "//third-party/slang-elab/src:slang_frontend",
+        "@fmt",
+        "@sv-lang//:libsvlang",
+    ],
+    alwayslink = True,
+)

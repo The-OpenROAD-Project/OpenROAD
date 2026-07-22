@@ -55,6 +55,7 @@ class Graph2D
   void init(int x_grid, int y_grid, int num_layers, utl::Logger* logger);
   void InitEstUsage();
   void InitLastUsage(int upType);
+  void copyRoutingStateFrom(const Graph2D& other, bool include_ndr_state);
   void clear();
   void clearUsed();
   bool hasEdges() const;
@@ -79,6 +80,7 @@ class Graph2D
 
   void addCapH(int x, int y, int cap);
   void addCapV(int x, int y, int cap);
+  void rebuildUsedGrids();
   void addEstUsageToUsage();
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);

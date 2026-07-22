@@ -52,7 +52,7 @@ tapcell
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ---------------------- | -------------------------------------- |
 | `[-cnrcap_nwin_master]` | Macro cell placed at the corners the core area according the row orientation. |
 | `[-cnrcap_nwout_master]` | Macro cell placed at the corners the core area according the row orientation. |
 | `[-disallow_one_site_gaps]` | Option is deprecated. |
@@ -91,7 +91,7 @@ cut_rows
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| --------------- | --------------------------------------------- |
 | `[-endcap_master]` | Master used as an endcap. |
 | `[-halo_width_x]` | Horizontal halo size (in microns) around macros during cut rows. |
 | `[-halo_width_y]` | Vertical halo size (in microns) around macros during cut rows. |
@@ -100,7 +100,7 @@ cut_rows
 ### Only adding boundary/endcap cells
 
 Place endcaps into the design, the naming for the arguments to `place_endcaps` is based on the 
-LEF58 `CLASS` specification foe endcaps.
+LEF58 `CLASS` specification for endcaps.
 
 ```tcl
 place_endcaps
@@ -127,7 +127,7 @@ place_endcaps
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| -------------------- | ---------------------------------------- |
 | `[-bottom_edge]` | List of masters for the bottom row endcaps. (overrides `-endcap_horizontal`). |
 | `[-corner]` | Master for the corner cells on the outer corners. |
 | `[-edge_corner]` | Master for the corner cells on the inner corners. |
@@ -178,7 +178,7 @@ tapcell_ripup
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| --------------- | --------------------------------------------- |
 | `[-endcap_prefix]` | Remove endcaps with said prefix. The default value is `PHY_`. |
 | `[-tap_prefix]` | Remove tapcells with said prefix. The default value is `TAP_`. |
 
@@ -203,11 +203,6 @@ Simply run the following script:
 
 ## Limitations
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+tap+in%3Atitle)
-about this tool.
-
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

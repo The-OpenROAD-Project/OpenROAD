@@ -1,30 +1,5 @@
-/* Author: Matt Liberty */
-/*
- * Copyright (c) 2020, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2026, The OpenROAD Authors
 
 #include "fixture.h"
 
@@ -36,16 +11,21 @@
 #include <vector>
 
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frBlockage.h"
+#include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frMPin.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
+#include "db/tech/frLookupTbl.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
@@ -195,8 +175,6 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   master->addTerm(std::move(uTerm));
   odb::dbSigType termType = odb::dbSigType::SIGNAL;
   term->setType(termType);
-  odb::dbIoType termDirection = odb::dbIoType::INPUT;
-  term->setDirection(termDirection);
   auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
   std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
@@ -308,6 +286,17 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
+void Fixture::makeSimpleSpacingConstraint(frLayerNum layer_num,
+                                          const frCoord spacing_value)
+{
+  auto con = std::make_unique<frSpacingConstraint>(spacing_value);
+
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->setMinSpacing(con.get());
+  tech->addUConstraint(std::move(con));
+}
+
 void Fixture::makeMinStepConstraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frMinStepConstraint>();
@@ -353,6 +342,33 @@ void Fixture::makeMinEnclosedAreaConstraint(frLayerNum layer_num)
   frLayer* layer = tech->getLayer(layer_num);
   layer->addMinEnclosedAreaConstraint(con.get());
   tech->addUConstraint(std::move(con));
+}
+
+odb::dbTechLayerAreaRule* Fixture::makeLef58AreaConstraint(
+    frLayerNum layer_num,
+    int64_t area,
+    int rect_width,
+    bool except_rectangle)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  odb::dbTechLayer* db_layer = db_tech->findLayer(layer->getName().c_str());
+
+  auto rule = odb::dbTechLayerAreaRule::create(db_layer);
+  rule->setArea(area);
+  if (rect_width > 0) {
+    rule->setRectWidth(rect_width);
+  }
+  rule->setExceptRectangle(except_rectangle);
+
+  auto con = std::make_unique<frLef58AreaConstraint>(rule);
+  if (rule->getRectWidth() > 0) {
+    layer->addLef58AreaConstraintRectWidth(con.get());
+  } else {
+    layer->addLef58AreaConstraint(con.get());
+  }
+  tech->addUConstraint(std::move(con));
+  return rule;
 }
 
 void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,

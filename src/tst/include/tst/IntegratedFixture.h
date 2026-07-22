@@ -13,7 +13,7 @@
 #include "rsz/Resizer.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/fixture.h"
-#include "utl/CallBackHandler.h"
+#include "utl/ServiceRegistry.h"
 
 namespace tst {
 
@@ -22,15 +22,17 @@ class IntegratedFixture : public tst::Fixture
  public:
   enum class Technology
   {
-    Nangate45,
-    Sky130hd
+    kNangate45,
+    kSky130hd
   };
 
   IntegratedFixture(Technology tech, const std::string& test_root_path);
   ~IntegratedFixture() override = default;
 
  protected:
-  void readVerilogAndSetup(const std::string& verilog_file);
+  void readVerilogAndSetup(const std::string& verilog_file,
+                           bool init_default_sdc = true);
+  void initStaDefaultSdc();
   void dumpVerilogAndOdb(const std::string& name) const;
   void removeFile(const std::string& path);
 
@@ -52,7 +54,7 @@ class IntegratedFixture : public tst::Fixture
   sta::dbNetwork* db_network_{nullptr};
 
   stt::SteinerTreeBuilder stt_;
-  utl::CallBackHandler callback_handler_;
+  utl::ServiceRegistry service_registry_;
   dpl::Opendp dp_;
   ant::AntennaChecker ant_;
   grt::GlobalRouter grt_;

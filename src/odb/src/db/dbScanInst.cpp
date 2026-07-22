@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
@@ -15,13 +16,19 @@
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <string_view>
+#include <variant>
+
+#include "dbBlock.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbScanInst>;
 
 bool _dbScanInst::operator==(const _dbScanInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (bits_ != rhs.bits_) {
     return false;
   }
@@ -45,6 +52,7 @@ bool _dbScanInst::operator==(const _dbScanInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanInst::operator<(const _dbScanInst& rhs) const
@@ -92,6 +100,8 @@ void _dbScanInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["scan_clock"].add(scan_clock_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -154,7 +164,8 @@ void dbScanInst::setScanEnable(dbBTerm* scan_enable)
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbBlock* block = (_dbBlock*) scan_inst->getOwner();
   dbDft* dft = (dbDft*) block->dft_tbl_->getPtr(block->dft_);
-  scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
+  scan_inst->scan_enable_
+      = dbScanPin::create(dft, scan_enable)->getImpl()->getOID();
 }
 
 void dbScanInst::setScanEnable(dbITerm* scan_enable)
@@ -162,7 +173,8 @@ void dbScanInst::setScanEnable(dbITerm* scan_enable)
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbBlock* block = (_dbBlock*) scan_inst->getOwner();
   dbDft* dft = (dbDft*) block->dft_tbl_->getPtr(block->dft_);
-  scan_inst->scan_enable_ = dbScanPin::create(dft, scan_enable);
+  scan_inst->scan_enable_
+      = dbScanPin::create(dft, scan_enable)->getImpl()->getOID();
 }
 
 std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
@@ -170,8 +182,8 @@ std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbBlock* block = (_dbBlock*) scan_inst->getOwner();
   _dbDft* dft = (_dbDft*) block->dft_tbl_->getPtr(block->dft_);
-  const dbScanPin* scan_enable = (dbScanPin*) dft->scan_pins_->getPtr(
-      (dbId<_dbScanPin>) scan_inst->scan_enable_);
+  const dbScanPin* scan_enable
+      = (dbScanPin*) dft->scan_pins_->getPtr(scan_inst->scan_enable_);
   return scan_enable->getPin();
 }
 
@@ -183,11 +195,12 @@ void dbScanInst::setAccessPins(const AccessPins& access_pins)
 
   std::visit(
       [&access_pins, scan_inst, dft](auto&& scan_in_pin) {
-        const dbId<dbScanPin> scan_in = dbScanPin::create(dft, scan_in_pin);
+        const dbId<_dbScanPin> scan_in
+            = dbScanPin::create(dft, scan_in_pin)->getImpl()->getOID();
         std::visit(
             [scan_inst, dft, &scan_in](auto&& scan_out_pin) {
-              const dbId<dbScanPin> scan_out
-                  = dbScanPin::create(dft, scan_out_pin);
+              const dbId<_dbScanPin> scan_out
+                  = dbScanPin::create(dft, scan_out_pin)->getImpl()->getOID();
               scan_inst->access_pins_ = std::make_pair(scan_in, scan_out);
             },
             access_pins.scan_out);
@@ -204,10 +217,8 @@ dbScanInst::AccessPins dbScanInst::getAccessPins() const
 
   const auto& [scan_in_id, scan_out_id] = scan_inst->access_pins_;
 
-  dbScanPin* scan_in
-      = (dbScanPin*) dft->scan_pins_->getPtr((dbId<_dbScanPin>) scan_in_id);
-  dbScanPin* scan_out
-      = (dbScanPin*) dft->scan_pins_->getPtr((dbId<_dbScanPin>) scan_out_id);
+  dbScanPin* scan_in = (dbScanPin*) dft->scan_pins_->getPtr(scan_in_id);
+  dbScanPin* scan_out = (dbScanPin*) dft->scan_pins_->getPtr(scan_out_id);
 
   access_pins.scan_in = scan_in->getPin();
   access_pins.scan_out = scan_out->getPin();
@@ -219,7 +230,7 @@ dbInst* dbScanInst::getInst() const
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   _dbBlock* block = (_dbBlock*) scan_inst->getOwner();
-  return (dbInst*) block->inst_tbl_->getPtr((dbId<_dbInst>) scan_inst->inst_);
+  return (dbInst*) block->inst_tbl_->getPtr(scan_inst->inst_);
 }
 
 void dbScanInst::insertAtFront(dbScanList* scan_list_)
@@ -247,7 +258,7 @@ dbScanInst* dbScanInst::create(dbScanList* scan_list, dbInst* inst)
   _dbBlock* block = (_dbBlock*) ((_dbInst*) inst)->getOwner();
   _dbScanInst* scan_inst = (_dbScanInst*) block->scan_inst_tbl_->create();
   uint32_t inst_id = ((_dbInst*) inst)->getId();
-  scan_inst->inst_ = (dbId<dbInst>) inst_id;
+  scan_inst->inst_ = inst_id;
   block->inst_scan_inst_map_[(dbId<_dbInst>) inst_id] = scan_inst->getId();
   return (dbScanInst*) scan_inst;
 }

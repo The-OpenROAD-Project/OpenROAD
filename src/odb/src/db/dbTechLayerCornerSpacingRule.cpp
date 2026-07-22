@@ -8,17 +8,22 @@
 #include <cstring>
 #include <utility>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <vector>
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerCornerSpacingRule>;
 
 bool _dbTechLayerCornerSpacingRule::operator==(
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.corner_type != rhs.flags_.corner_type) {
     return false;
   }
@@ -79,6 +84,7 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCornerSpacingRule::operator<(
@@ -401,6 +407,20 @@ bool dbTechLayerCornerSpacingRule::isCornerToCorner() const
   return obj->flags_.corner_to_corner;
 }
 
+dbTechLayerCornerSpacingRule* dbTechLayerCornerSpacingRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerCornerSpacingRule*)
+      _parent->corner_spacing_rules_tbl_->create();
+}
+void dbTechLayerCornerSpacingRule::destroy(dbTechLayerCornerSpacingRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->corner_spacing_rules_tbl_->destroy(
+      (_dbTechLayerCornerSpacingRule*) obj);
+}
 // User Code Begin dbTechLayerCornerSpacingRulePublicMethods
 void dbTechLayerCornerSpacingRule::addSpacing(uint32_t width,
                                               uint32_t spacing1,
@@ -438,16 +458,6 @@ dbTechLayerCornerSpacingRule::CornerType dbTechLayerCornerSpacingRule::getType()
 
   return (dbTechLayerCornerSpacingRule::CornerType) obj->flags_.corner_type;
 }
-
-dbTechLayerCornerSpacingRule* dbTechLayerCornerSpacingRule::create(
-    dbTechLayer* _layer)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerCornerSpacingRule* newrule
-      = layer->corner_spacing_rules_tbl_->create();
-  return ((dbTechLayerCornerSpacingRule*) newrule);
-}
-
 dbTechLayerCornerSpacingRule*
 dbTechLayerCornerSpacingRule::getTechLayerCornerSpacingRule(dbTechLayer* inly,
                                                             uint32_t dbid)
@@ -455,13 +465,6 @@ dbTechLayerCornerSpacingRule::getTechLayerCornerSpacingRule(dbTechLayer* inly,
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCornerSpacingRule*)
       layer->corner_spacing_rules_tbl_->getPtr(dbid);
-}
-void dbTechLayerCornerSpacingRule::destroy(dbTechLayerCornerSpacingRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->corner_spacing_rules_tbl_->destroy(
-      (_dbTechLayerCornerSpacingRule*) rule);
 }
 // User Code End dbTechLayerCornerSpacingRulePublicMethods
 }  // namespace odb

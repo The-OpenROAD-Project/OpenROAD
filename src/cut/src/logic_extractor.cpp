@@ -20,12 +20,20 @@
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/SearchPred.hh"
+#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 namespace cut {
 
-bool SearchPredNonReg2AbcSupport::searchThru(sta::Edge* edge)
+bool SearchPredCombAbcSupport::searchThru(sta::Edge* edge,
+                                          const sta::Mode* mode) const
 {
+  const sta::TimingRole* role = edge->role();
+  if (role->genericRole() == sta::TimingRole::regClkToQ()
+      || role->genericRole() == sta::TimingRole::latchDtoQ()) {
+    return false;
+  }
+
   sta::Vertex* to_vertex = edge->from(graph_);
   sta::Network* network = sta_->network();
   sta::Instance* to_instance = network->instance(to_vertex->pin());
@@ -41,7 +49,7 @@ bool SearchPredNonReg2AbcSupport::searchThru(sta::Edge* edge)
     return false;
   }
 
-  return sta::SearchPredNonReg2::searchThru(edge);
+  return sta::SearchPred1::searchThru(edge, mode);
 }
 
 LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
@@ -54,7 +62,7 @@ LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
 std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     AbcLibrary& abc_network)
 {
-  cut::SearchPredNonReg2AbcSupport pred(
+  cut::SearchPredCombAbcSupport pred(
       open_sta_, &abc_network, open_sta_->graph());
   sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, open_sta_);
   for (const auto& end_point : endpoints_) {
@@ -206,7 +214,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
       cut_vertex_set.insert(vertex);
 
       // Figure out if we should add the driver.
-      if (!vertex->isConstant()) {
+      if (!open_sta_->isConstant(pin, open_sta_->cmdMode())) {
         continue;
       }
 

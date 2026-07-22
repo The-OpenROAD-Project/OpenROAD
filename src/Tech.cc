@@ -9,9 +9,9 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "sta/Corner.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Scene.hh"
 #include "sta/Units.hh"
 #include "tcl.h"
 
@@ -65,15 +65,16 @@ void Tech::readLef(const std::string& file_name)
     lib_name.erase(lib_name.begin() + dot_pos, lib_name.end());
   }
 
+  const char* tech_name = make_tech ? lib_name.c_str() : "";
   app_->readLef(
-      file_name.c_str(), lib_name.c_str(), "", make_tech, make_library);
+      file_name.c_str(), lib_name.c_str(), tech_name, make_tech, make_library);
 }
 
 void Tech::readLiberty(const std::string& file_name)
 {
   // TODO: take corner & min/max args
   getSta()->readLiberty(file_name.c_str(),
-                        getSta()->cmdCorner(),
+                        getSta()->cmdScene(),
                         sta::MinMaxAll::all(),
                         true /* infer_latches */);
 }

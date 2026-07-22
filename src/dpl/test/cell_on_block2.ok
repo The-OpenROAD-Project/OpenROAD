@@ -5,13 +5,46 @@
 [INFO ODB-0130]     Created 201 pins.
 [INFO ODB-0131]     Created 11904 components and 90887 component-terminals.
 [INFO ODB-0133]     Created 31790 nets and 67032 connections.
+[INFO DPL-0006] Core area: 8048318.98 um^2
+[INFO DPL-0007] Movable instances area: 35719.26 um^2
+[INFO DPL-0008] Fixed instances area within core: 7065060.67 um^2
+[INFO DPL-0009] Utilization: 88.2%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (4 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 11766 cells
+[INFO DPL-0393]   height 15 row(s): 18 cells
+[INFO DPL-0393]   height 83 row(s): 108 cells
+[INFO DPL-0393]   height 174 row(s): 12 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |      10002 |       756 |      7506
+        1 |       8501 |       563 |      6147
+        2 |       6161 |       438 |      4906
+        3 |       4346 |       338 |      3652
+        4 |       3080 |       263 |      2673
+        5 |       2089 |       187 |      1851
+        6 |       1688 |       146 |      1542
+        7 |       1119 |       107 |      1006
+        8 |        810 |        84 |       726
+        9 |        623 |        63 |       560
+       10 |        354 |        44 |       295
+       20 |        139 |        15 |       124
+       30 |         51 |         7 |        44
+       34 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 34.
 Placement Analysis
 ---------------------------------
-total displacement     291565.6 u
-average displacement       24.5 u
-max displacement         1411.8 u
+total displacement     295763.0 u
+average displacement       25.1 u
+max displacement         1397.2 u
 original HPWL         1353118.6 u
-legalized HPWL        1391680.1 u
+legalized HPWL        1391930.2 u
 delta HPWL                    3 %
 
 No differences found.

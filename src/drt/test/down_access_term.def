@@ -1,0 +1,34 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 279960 280130 ) ;
+TRACKS X 240 DO 583 STEP 480 LAYER li1 ;
+TRACKS Y 185 DO 757 STEP 370 LAYER li1 ;
+TRACKS X 185 DO 757 STEP 370 LAYER met1 ;
+TRACKS Y 185 DO 757 STEP 370 LAYER met1 ;
+TRACKS X 240 DO 583 STEP 480 LAYER met2 ;
+TRACKS Y 240 DO 584 STEP 480 LAYER met2 ;
+TRACKS X 370 DO 378 STEP 740 LAYER met3 ;
+TRACKS Y 370 DO 379 STEP 740 LAYER met3 ;
+TRACKS X 480 DO 292 STEP 960 LAYER met4 ;
+TRACKS Y 480 DO 292 STEP 960 LAYER met4 ;
+TRACKS X 1850 DO 84 STEP 3330 LAYER met5 ;
+TRACKS Y 1850 DO 84 STEP 3330 LAYER met5 ;
+COMPONENTS 4 ;
+    - clkbuf_0_clk sky130_fd_sc_hs__buf_1 + PLACED ( 135360 156510 ) FS ;
+    - clkbuf_2_1__f_clk sky130_fd_sc_hs__buf_1 + PLACED ( 111840 153180 ) N ;
+    - clkbuf_2_2__f_clk sky130_fd_sc_hs__buf_1 + PLACED ( 144960 143190 ) FS ;
+    - clkbuf_2_3__f_clk sky130_fd_sc_hs__buf_1 + PLACED ( 144000 156510 ) FS ;
+END COMPONENTS
+PINS 1 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -1250 -1000 ) ( 1250 1000 )
+        + PLACED ( 1250 155030 ) N ;
+END PINS
+NETS 1 ;
+    - clk ( PIN clk ) ( clkbuf_0_clk A ) ( clkbuf_2_3__f_clk A ) ( clkbuf_2_2__f_clk A ) ( clkbuf_2_1__f_clk A ) + USE SIGNAL ;
+END NETS
+END DESIGN

@@ -32,7 +32,6 @@ class _dbObject;
 ///
 enum dbObjectType
 {
-
   // Design Objects
   dbGdsLibObj,
   dbBlockObj,
@@ -59,6 +58,7 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
+  dbAlignmentMarkerRuleObj,
   dbBusPortObj,
   dbCellEdgeSpacingObj,
   dbChipObj,
@@ -67,6 +67,7 @@ enum dbObjectType
   dbChipConnObj,
   dbChipInstObj,
   dbChipNetObj,
+  dbChipPathObj,
   dbChipRegionObj,
   dbChipRegionInstObj,
   dbDatabaseObj,
@@ -123,13 +124,18 @@ enum dbObjectType
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerSpacingTablePrlRuleObj,
   dbTechLayerTwoWiresForbiddenSpcRuleObj,
+  dbTechLayerVoltageSpacingObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
+  dbUnfoldedChipBumpInstObj,
+  dbUnfoldedChipConnObj,
+  dbUnfoldedChipInstObj,
+  dbUnfoldedChipNetObj,
+  dbUnfoldedChipRegionInstObj,
   // Generator Code End DbObjectType
 
   // Lib Objects
   dbLibObj,
-  dbGDSLibObj,
   dbSiteObj,
   dbMasterObj,
   dbMPinObj,

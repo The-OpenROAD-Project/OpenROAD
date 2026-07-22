@@ -1,0 +1,97 @@
+module top (clk1,
+    clk2,
+    in,
+    out,
+    out2,
+    bus_out);
+ input clk1;
+ input clk2;
+ input in;
+ output out;
+ output out2;
+ output [3:0] bus_out;
+
+ wire b1out;
+
+ block1 b1 (.in(in),
+    .clk(clk1),
+    .out(b1out),
+    .out2(out2));
+ block2 b2 (.in(b1out),
+    .clk(clk2),
+    .out(out));
+ block3 b3 (.in(out),
+    .clk(clk1),
+    .bus_out({bus_out[3],
+    bus_out[2],
+    bus_out[1],
+    bus_out[0]}));
+endmodule
+module block1 (in,
+    clk,
+    out,
+    out2);
+ input in;
+ input clk;
+ output out;
+ output out2;
+
+ wire r1q;
+ wire u1out;
+
+ DFF_X1 r1 (.Q(r1q),
+    .D(u1out),
+    .CK(clk));
+ BUF_X1 u1 (.Z(u1out),
+    .A(in));
+ BUF_X1 u2 (.Z(out),
+    .A(r1q));
+ BUF_X1 u3 (.Z(out2),
+    .A(out));
+endmodule
+module block2 (in,
+    clk,
+    out,
+    out2);
+ input in;
+ input clk;
+ output out;
+ output out2;
+
+ wire r1q;
+ wire u1out;
+
+ DFF_X1 r1 (.Q(r1q),
+    .D(u1out),
+    .CK(clk));
+ BUF_X1 u1 (.Z(u1out),
+    .A(in));
+ BUF_X1 u2 (.Z(out),
+    .A(r1q));
+ BUF_X1 u3 (.Z(out2),
+    .A(out));
+endmodule
+module block3 (in,
+    clk,
+    bus_out);
+ input in;
+ input clk;
+ output [3:0] bus_out;
+
+ wire r1q;
+ wire u1out;
+
+ DFF_X1 r1 (.Q(r1q),
+    .D(u1out),
+    .CK(clk));
+ BUF_X1 u1 (.Z(u1out),
+    .A(in));
+ BUF_X1 u2 (.Z(bus_out[0]),
+    .A(r1q));
+ BUF_X1 u3 (.Z(bus_out[1]),
+    .A(bus_out[0]));
+ BUF_X1 u4 (.Z(bus_out[2]),
+    .A(bus_out[1]));
+ BUF_X1 u5 (.Z(bus_out[3]),
+    .A(bus_out[2]));
+endmodule

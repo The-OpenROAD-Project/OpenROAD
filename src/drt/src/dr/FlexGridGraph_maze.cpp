@@ -11,9 +11,13 @@
 #include <string>
 #include <vector>
 
+#include "db/drObj/drPin.h"
+#include "db/tech/frLayer.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
+#include "dr/FlexWavefront.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -32,6 +36,7 @@ void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
   auto gridZ = currGrid.z();
   dir = (frDirEnum) (OPPOSITEDIR - (int) dir);
   bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
+  bool apCost = hasApCost(gridX, gridY, gridZ, dir);
   bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir, false);
   bool markerCost = hasMarkerCostAdj(gridX, gridY, gridZ, dir);
   bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir, false);
@@ -53,9 +58,11 @@ void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
       gridX,
       gridY);
   dump_file_ << fmt::format(
-      "gridCost {} drcCost {} markerCost {} shapeCost {} blockCost {} "
+      "gridCost {} apCost {} drcCost {} markerCost {} shapeCost {} blockCost "
+      "{} "
       "guideCost {} edgeLength {} ",
       gridCost,
+      apCost,
       drcCost,
       markerCost,
       shapeCost,
@@ -264,7 +271,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
     auto layerNum = (gridZ + 1) * 2;
     auto layer = getTech()->getLayer(layerNum);
     if (!router_cfg_->USENONPREFTRACKS || layer->isUnidirectional()) {
-      bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
+      bool isH = layer->isHorizontal();
       if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
         auto gap = abs(nextPoint.y() - dstPoint1.y());
         if (gap
@@ -538,6 +545,7 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
                                bool route_with_jumpers) const
 {
   bool gridCost = hasGridCost(gridX, gridY, gridZ, dir);
+  bool apCost = hasApCost(gridX, gridY, gridZ, dir);
   bool drcCost = hasRouteShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
   bool markerCost = hasMarkerCostAdj(gridX, gridY, gridZ, dir);
   bool shapeCost = hasFixedShapeCostAdj(gridX, gridY, gridZ, dir, considerNDR);
@@ -550,7 +558,7 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
 
   // temporarily disable guideCost
   return getEdgeLength(gridX, gridY, gridZ, dir)
-         + (gridCost ? router_cfg_->GRIDCOST * edgeLength : 0)
+         + (gridCost || apCost ? router_cfg_->GRIDCOST * edgeLength : 0)
          + (drcCost ? ggDRCCost_ * edgeLength : 0)
          + (markerCost ? ggMarkerCost_ * edgeLength : 0)
          + (shapeCost ? ggFixedShapeCost_ * edgeLength : 0)
@@ -679,7 +687,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     prevDir = currDir;
   }
   // trace back according to grid prev dir
-  while (isSrc(currX, currY, currZ) == false) {
+  while (!isSrc(currX, currY, currZ)) {
     // get last direction
     currDir = getPrevAstarNodeDir({currX, currY, currZ});
     root.emplace_back(currX, currY, currZ);

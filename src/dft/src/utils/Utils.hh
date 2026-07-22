@@ -4,9 +4,13 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
@@ -35,7 +39,8 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 
 // Checks if the given LibertyCell is really a Scan Cell with a Scan In and a
 // Scan Enable
-bool IsScanCell(const sta::LibertyCell* libertyCell);
+bool IsScanCell(const sta::dbNetwork* db_network,
+                const sta::LibertyCell* liberty_cell);
 
 // Convenience method to create a new port
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,

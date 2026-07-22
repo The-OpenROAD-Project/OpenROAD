@@ -11,7 +11,7 @@
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Network.hh"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -42,7 +42,7 @@ using TmpPinSet = PinSet;
 using ord::getResizer;
 using ord::ensureLinked;
 
-using sta::Corner;
+using sta::Scene;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
@@ -109,26 +109,24 @@ namespace rsz {
 void
 report_net_parasitic(Net *net)
 {
-  Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  Scene *corner = sta::Sta::sta()->cmdScene();
+  auto parasitics = corner->parasitics(sta::MinMax::max());
+  auto parasitic = parasitics->findParasiticNetwork(net);
   if (parasitic) {
-    resizer->parasitics()->report(parasitic);
+    parasitics->report(parasitic);
   }
 }
 
 float
 sum_parasitic_network_resist(Net *net)
 {
-  Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  Scene *corner = sta::Sta::sta()->cmdScene();
+  auto parasitics = corner->parasitics(sta::MinMax::max());
+  auto parasitic = parasitics->findParasiticNetwork(net);
   if (parasitic) {
     float ret = 0.0;
-    for (auto resist : resizer->parasitics()->resistors(parasitic)) {
-      ret += resizer->parasitics()->value(resist);
+    for (auto resist : parasitics->resistors(parasitic)) {
+      ret += parasitics->value(resist);
     }
     return ret;
   } else {
@@ -178,7 +176,6 @@ void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontUse(lib_cell, dont_use);
 }
@@ -186,7 +183,6 @@ set_dont_use(LibertyCell *lib_cell,
 void
 reset_dont_use()
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resetDontUse();
 }
@@ -313,6 +309,7 @@ repair_design_cmd(double max_length,
                   double cap_margin,
                   bool pre_placement,
                   bool match_cell_footprint,
+                  bool reroute,
                   bool verbose)
 {
   ensureLinked();
@@ -322,6 +319,7 @@ repair_design_cmd(double max_length,
                         cap_margin,
                         pre_placement,
                         match_cell_footprint,
+                        reroute,
                         verbose);
 }
 
@@ -368,9 +366,10 @@ repair_setup(double setup_margin,
              bool match_cell_footprint,
              bool verbose,
              std::vector<rsz::MoveType> sequence,
+             const char* phases,
              bool skip_pin_swap,
              bool skip_gate_cloning,
-             bool skip_size_down,
+             bool skip_size_down_fanout,
              bool skip_buffering,
              bool skip_buffer_removal,
              bool skip_last_gasp,
@@ -382,9 +381,9 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_iterations,
                        max_repairs_per_pass, match_cell_footprint,
-                       verbose, sequence,
+                       verbose, sequence, phases,
                        skip_pin_swap, skip_gate_cloning,
-                       skip_size_down,
+                       skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
 }
@@ -534,7 +533,7 @@ find_max_wire_length()
 
 double
 find_buffer_max_wire_length(LibertyCell *buffer_cell,
-                            const Corner *corner)
+                            const Scene *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -577,7 +576,9 @@ PinSet
 find_fanin_fanouts(PinSet* pins)
 {
   Resizer *resizer = getResizer();
-  return resizer->findFaninFanouts(*pins);
+  PinSet result = resizer->findFaninFanouts(*pins);
+  delete pins; // memory leak fix
+  return result;
 }
 
 void
@@ -618,6 +619,30 @@ void report_buffers_cmd(bool filtered)
   resizer->reportBuffers(filtered);
 }
 
+void report_delay_estimator_accuracy_cmd(Instance* inst,
+                                         LibertyCell* replacement,
+                                         const char* estimator,
+                                         int delay_levels)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportDelayEstimatorAccuracy(
+      inst, replacement, std::string(estimator), delay_levels);
+}
+
+bool is_valid_accuracy_estimator_cmd(const char* name)
+{
+  return Resizer::isValidDelayEstimatorName(std::string(name));
+}
+
+const char* accuracy_estimator_names_cmd()
+{
+  static const std::string names = []() {
+    return Resizer::delayEstimatorNames();
+  }();
+  return names.c_str();
+}
+
 void
 report_fast_buffer_sizes()
 {
@@ -656,6 +681,7 @@ fully_rebuffer(Pin *pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  resizer->resizeSlackPreamble();
   resizer->fullyRebuffer(pin);
 }
 
@@ -739,6 +765,87 @@ insert_buffer_before_loads_cmd(Net *net,
 
   delete pins;
   return inst;
+}
+
+void
+set_clock_buffer_string_cmd(const char* clk_str)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setClockBufferString(clk_str);
+}
+
+void
+set_clock_buffer_footprint_cmd(const char* footprint)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setClockBufferFootprint(footprint);
+}
+
+void
+reset_clock_buffer_pattern_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->resetClockBufferPattern();
+}
+
+bool
+has_clock_buffer_string_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->hasClockBufferString();
+}
+
+bool
+has_clock_buffer_footprint_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->hasClockBufferFootprint();
+}
+
+const char*
+get_clock_buffer_string_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->getClockBufferString().c_str();
+}
+
+const char*
+get_clock_buffer_footprint_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->getClockBufferFootprint().c_str();
+}
+
+void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const Scene *corner)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  std::map<const Pin*, float> load_pin_slew;
+  
+  ArcDelay old_delay[RiseFall::index_count];
+  ArcDelay new_delay[RiseFall::index_count];
+  Slew old_drvr_slew[RiseFall::index_count];
+  Slew new_drvr_slew[RiseFall::index_count];
+  float old_cap, new_cap;
+  resizer->resizeSlackPreamble();
+  if (!resizer->computeNewDelaysSlews(drvr_pin,
+                                      buffer_instance,
+                                      corner,
+                                      old_delay,
+                                      new_delay,
+                                      old_drvr_slew,
+                                      new_drvr_slew,
+                                      old_cap,
+                                      new_cap)) {  
+    return;
+  }
+  (void) resizer->estimateSlewsAfterBufferRemoval
+    (drvr_pin, buffer_instance, std::max(new_drvr_slew[RiseFall::riseIndex()],
+                                         new_drvr_slew[RiseFall::fallIndex()]),
+     corner, load_pin_slew);
 }
 
 } // namespace

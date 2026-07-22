@@ -189,7 +189,6 @@
   ],
   "cpp_includes": [
     "dbTable.h",
-    "dbTable.hpp",
     "dbNameCache.h",
     "dbBlockItr.h", 
     "dbBlock.h", 

@@ -3,14 +3,13 @@
 
 #include "baseWriter.h"
 
-#include <yaml-cpp/yaml.h>
-
 #include <cstddef>
 #include <fstream>
 #include <string>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 namespace odb {
 
 BaseWriter::BaseWriter(utl::Logger* logger, odb::dbDatabase* db)

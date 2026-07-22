@@ -1,0 +1,927 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: array_tile.lef, created 1 library cells
+[INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO ODB-0303] The initial 3528 rows (91728000 sites) were cut with 225 shapes for a total of 52263 rows (14219856 sites).
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 4940.000 4940.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 4940.000 4939.200 ) um
+[INFO IFP-0102] Core area:                     24399648.000 um^2
+[INFO IFP-0103] Total instances area:          20260174.500 um^2
+[INFO IFP-0104] Effective utilization:                0.830
+[INFO IFP-0105] Number of instances:                   2475
+[INFO CTS-0050] Root buffer is BUF_X4.
+[INFO CTS-0051] Sink buffer is BUF_X4.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    BUF_X4
+axis slews at BUF_X4
+1.174e-12 
+4.724e-12 
+1.719e-11 
+4.098e-11 
+7.806e-11 
+1.301e-10 
+1.985e-10 
+1.174e-12 
+4.724e-12 
+1.719e-11 
+4.098e-11 
+7.806e-11 
+1.301e-10 
+1.985e-10 
+axis loads at BUF_X4
+3.656e-16 
+7.572e-15 
+1.514e-14 
+3.029e-14 
+6.058e-14 
+1.212e-13 
+2.423e-13 
+3.656e-16 
+7.572e-15 
+1.514e-14 
+3.029e-14 
+6.058e-14 
+1.212e-13 
+2.423e-13 
+[INFO CTS-0049] Characterization buffer is BUF_X4.
+sorted slews axis
+1.174e-12 
+4.724e-12 
+1.719e-11 
+4.098e-11 
+7.806e-11 
+1.301e-10 
+1.985e-10 
+sorted loads axis
+3.656e-16 
+7.572e-15 
+1.514e-14 
+3.029e-14 
+6.058e-14 
+1.212e-13 
+2.423e-13 
+final slew/load values
+1.174e-12 
+4.724e-12 
+1.719e-11 
+4.098e-11 
+7.806e-11 
+1.301e-10 
+1.985e-10 
+final slew/load values
+3.656e-16 
+7.572e-15 
+1.514e-14 
+2.272e-14 
+3.029e-14 
+4.543e-14 
+6.058e-14 
+7.572e-14 
+8.329e-14 
+9.087e-14 
+1.060e-13 
+1.212e-13 
+1.363e-13 
+1.514e-13 
+1.666e-13 
+1.817e-13 
+1.969e-13 
+2.120e-13 
+2.272e-13 
+2.423e-13 
+[DEBUG CTS-tech char] Wirelength = 60000
+[DEBUG CTS-tech char] *createPatterns for #nodes = 1 #topologies = 2
+[DEBUG CTS-tech char] **topology 1
+[DEBUG CTS-tech char] ***wire at node : 0
+[DEBUG CTS-tech char] ***IN -- OUT
+[DEBUG CTS-tech char] **topology 2
+[DEBUG CTS-tech char] ***buffer buf_60000_00001_0 at node : 0
+[DEBUG CTS-tech char] ***IN -> OUT
+[DEBUG CTS-tech char] *genrate combinations for topology: 1 of 2
+[DEBUG CTS-tech char] *# bufs = 1; # nodes with buf = 0
+[DEBUG CTS-tech char] **monotonic
+[DEBUG CTS-tech char] **Monotonic entries: 1
+[DEBUG CTS-tech char] *genrate combinations for topology: 2 of 2
+[DEBUG CTS-tech char] *# bufs = 1; # nodes with buf = 1
+[DEBUG CTS-tech char] **0 monotonic
+[DEBUG CTS-tech char] **Monotonic entries: 1
+[DEBUG CTS-tech char] Wirelength = 120000
+[DEBUG CTS-tech char] *createPatterns for #nodes = 2 #topologies = 4
+[DEBUG CTS-tech char] **topology 1
+[DEBUG CTS-tech char] ***wire at node : 0
+[DEBUG CTS-tech char] ***wire at node : 1
+[DEBUG CTS-tech char] ***IN -- -- OUT
+[DEBUG CTS-tech char] **topology 2
+[DEBUG CTS-tech char] ***buffer buf_120000_00001_0 at node : 0
+[DEBUG CTS-tech char] ***wire at node : 1
+[DEBUG CTS-tech char] ***IN -> -- OUT
+[DEBUG CTS-tech char] **topology 3
+[DEBUG CTS-tech char] ***wire at node : 0
+[DEBUG CTS-tech char] ***buffer buf_120000_00010_0 at node : 1
+[DEBUG CTS-tech char] ***IN -- -> OUT
+[DEBUG CTS-tech char] **topology 4
+[DEBUG CTS-tech char] ***buffer buf_120000_00011_0 at node : 0
+[DEBUG CTS-tech char] ***buffer buf_120000_00011_1 at node : 1
+[DEBUG CTS-tech char] ***IN -> -> OUT
+[DEBUG CTS-tech char] *genrate combinations for topology: 1 of 4
+[DEBUG CTS-tech char] *# bufs = 1; # nodes with buf = 0
+[DEBUG CTS-tech char] **Monotonic entries are already hashed: 1
+[DEBUG CTS-tech char] *genrate combinations for topology: 2 of 4
+[DEBUG CTS-tech char] *# bufs = 1; # nodes with buf = 1
+[DEBUG CTS-tech char] **Monotonic entries are already hashed: 1
+[DEBUG CTS-tech char] *genrate combinations for topology: 3 of 4
+[DEBUG CTS-tech char] *# bufs = 1; # nodes with buf = 1
+[DEBUG CTS-tech char] **Monotonic entries are already hashed: 1
+[DEBUG CTS-tech char] *genrate combinations for topology: 4 of 4
+[DEBUG CTS-tech char] *# bufs = 1; # nodes with buf = 2
+[DEBUG CTS-tech char] **0 0 monotonic
+[DEBUG CTS-tech char] **Monotonic entries: 1
+[INFO CTS-0039] Number of created patterns = 840.
+[DEBUG CTS-tech char] Compiling LUT.
+Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
+4           8           1           20          1           7           
+[WARNING CTS-0043] 280 wires are pure wire and no slew degradation.
+TritonCTS forced slew degradation on these wires.
+[INFO CTS-0046]     Number of wire segments: 840.
+[INFO CTS-0047]     Number of keys in characterization LUT: 160.
+[INFO CTS-0048]     Actual min input cap: 1.
+[INFO CTS-0007] Net "clk" found for clock "clk".
+[INFO CTS-0011]  Clock net "clk" for macros has 225 sinks.
+[INFO CTS-0011]  Clock net "clk_regs" for registers has 2250 sinks.
+[INFO CTS-0008] TritonCTS found 2 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 225 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 225.
+[INFO CTS-0029]  Macro  sinks will be clustered in groups of up to 4 and with maximum cluster diameter of 600.0 um.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0204] A clustering solution was found from clustering size of 4 and clustering diameter of 600.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 120.
+[INFO CTS-0024]  Normalized sink region: [(1.09571, 44.4286), (661.096, 680.704)].
+[INFO CTS-0025]     Width:  660.0000.
+[INFO CTS-0026]     Height: 636.2757.
+ Level 1
+    Direction: Horizontal
+    Sinks per sub-region: 60
+    Sub-region size: 330.0000 X 636.2757
+[INFO CTS-0034]     Segment length (rounded): 164.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 0
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 8
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+ Level 2
+    Direction: Vertical
+    Sinks per sub-region: 30
+    Sub-region size: 330.0000 X 318.1379
+[INFO CTS-0034]     Segment length (rounded): 160.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+ Level 3
+    Direction: Horizontal
+    Sinks per sub-region: 15
+    Sub-region size: 165.0000 X 318.1379
+[INFO CTS-0034]     Segment length (rounded): 84.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+ Level 4
+    Direction: Vertical
+    Sinks per sub-region: 8
+    Sub-region size: 165.0000 X 159.0689
+[INFO CTS-0034]     Segment length (rounded): 80.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+ Level 5
+    Direction: Horizontal
+    Sinks per sub-region: 4
+    Sub-region size: 82.5000 X 159.0689
+[INFO CTS-0034]     Segment length (rounded): 40.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+ Level 6
+    Direction: Vertical
+    Sinks per sub-region: 2
+    Sub-region size: 82.5000 X 79.5345
+[INFO CTS-0034]     Segment length (rounded): 40.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+ Level 7
+    Direction: Horizontal
+    Sinks per sub-region: 1
+    Sub-region size: 41.2500 X 79.5345
+[INFO CTS-0034]     Segment length (rounded): 20.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 120.
+[INFO CTS-0201] 225 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk_regs.
+[INFO CTS-0028]  Total number of sinks: 2250.
+[INFO CTS-0059]  Register sinks will be clustered with maximum cluster diameter of 100.0 um and based on buffer max cap.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0204] A clustering solution was found from max clustering size of 20 and clustering diameter of 100.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 136.
+[INFO CTS-0024]  Normalized sink region: [(189.626, 2.41643), (661.055, 670.416)].
+[INFO CTS-0025]     Width:  471.4286.
+[INFO CTS-0026]     Height: 668.0000.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 68
+    Sub-region size: 471.4286 X 334.0000
+[INFO CTS-0034]     Segment length (rounded): 168.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 0
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 8
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+ Level 2
+    Direction: Horizontal
+    Sinks per sub-region: 34
+    Sub-region size: 235.7143 X 334.0000
+[INFO CTS-0034]     Segment length (rounded): 116.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+ Level 3
+    Direction: Vertical
+    Sinks per sub-region: 17
+    Sub-region size: 235.7143 X 167.0000
+[INFO CTS-0034]     Segment length (rounded): 84.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 8
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+ Level 4
+    Direction: Horizontal
+    Sinks per sub-region: 9
+    Sub-region size: 117.8572 X 167.0000
+[INFO CTS-0034]     Segment length (rounded): 60.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 8
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+ Level 5
+    Direction: Vertical
+    Sinks per sub-region: 5
+    Sub-region size: 117.8572 X 83.5000
+[INFO CTS-0034]     Segment length (rounded): 40.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+ Level 6
+    Direction: Horizontal
+    Sinks per sub-region: 3
+    Sub-region size: 58.9286 X 83.5000
+[INFO CTS-0034]     Segment length (rounded): 28.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 16 inSlew: 1 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 4
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+ Level 7
+    Direction: Vertical
+    Sinks per sub-region: 2
+    Sub-region size: 58.9286 X 41.7500
+[INFO CTS-0034]     Segment length (rounded): 20.
+[DEBUG CTS-tech char] slew threshold = 4
+[DEBUG CTS-tech char] wirelength threshold = 23
+[DEBUG CTS-tech char] curr wl = 16
+[DEBUG CTS-tech char]     Key: 19 inSlew: 2 inCap: 1 outSlew: 1 load: 1 length: 8 wl2fistyBuf: 4 lastWL: 4 delay: 7
+[DEBUG CTS-tech char]       location: 0.5 buffer: BUF_X4
+[DEBUG CTS-tech char] curr wl = 4
+[DEBUG CTS-tech char]     Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 wl2fistyBuf: 8 lastWL: 8 delay: 0
+[DEBUG CTS-tech char] curr wl = 12
+[DEBUG CTS-tech char]     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 wl2fistyBuf: 4 lastWL: 4 delay: 0
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 136.
+[INFO CTS-0018]     Created 641 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 37.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 37.
+[INFO CTS-0015]     Created 641 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:131, 2:107..
+[INFO CTS-0017]     Max level of the clock tree: 7.
+[INFO CTS-0018]     Created 546 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 32.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 32.
+[INFO CTS-0015]     Created 546 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:92, 2:20, 4:1, 5:2, 10:44, 20:90..
+[INFO CTS-0017]     Max level of the clock tree: 7.
+[INFO CTS-0098] Clock net "clk"
+[INFO CTS-0099]  Sinks 225
+[INFO CTS-0100]  Leaf buffers 120
+[INFO CTS-0101]  Average sink wire length 10285.15 um
+[INFO CTS-0102]  Path depth 37 - 37
+[INFO CTS-0207]  Dummy loads inserted 2
+[INFO CTS-0098] Clock net "clk_regs"
+[INFO CTS-0099]  Sinks 2289
+[INFO CTS-0100]  Leaf buffers 136
+[INFO CTS-0101]  Average sink wire length 4872.77 um
+[INFO CTS-0102]  Path depth 30 - 32
+[INFO CTS-0207]  Dummy loads inserted 39
+[INFO CTS-0033] Balancing latency for clock clk
+[INFO CTS-0036]  inserted 1 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 1
+[INFO RSZ-0058] Using max wire length 693um.
+[INFO RSZ-0047] Found 57 long wires.
+[INFO RSZ-0048] Inserted 75 buffers in 57 nets.
+[INFO DPL-0006] Core area: 24399648.00 um^2
+[INFO DPL-0007] Movable instances area: 12834.77 um^2
+[INFO DPL-0008] Fixed instances area within core: 20250000.00 um^2
+[INFO DPL-0009] Utilization: 83.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 3555 cells
+[INFO DPL-0393]   height 215 row(s): 225 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |         40 |         4 |        36
+        1 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 1.
+Placement Analysis
+---------------------------------
+total displacement       7944.3 u
+average displacement        2.1 u
+max displacement          122.8 u
+original HPWL          286637.4 u
+legalized HPWL         287053.5 u
+delta HPWL                    0 %
+
+Clock clk
+   1.43 source latency inst_12_2/clk ^
+  -1.54 target latency inst_13_2/clk ^
+   0.00 CRPR
+--------------
+  -0.11 setup skew
+
+Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock source latency
+   0.00    0.00 ^ clk (in)
+   0.05    0.05 ^ wire7/Z (BUF_X16)
+   0.05    0.10 ^ wire6/Z (BUF_X16)
+   0.06    0.16 ^ wire5/Z (BUF_X32)
+   0.06    0.22 ^ wire4/Z (BUF_X32)
+   0.06    0.28 ^ wire3/Z (BUF_X8)
+   0.03    0.31 ^ wire2/Z (BUF_X16)
+   0.06    0.37 ^ wire1/Z (BUF_X16)
+   0.06    0.43 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.03    0.46 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.03    0.49 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.02    0.52 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.03    0.54 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.03    0.57 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.02    0.59 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.03    0.61 ^ clkbuf_1_0_6_clk/Z (BUF_X4)
+   0.02    0.64 ^ clkbuf_1_0_7_clk/Z (BUF_X4)
+   0.03    0.67 ^ clkbuf_1_0_8_clk/Z (BUF_X4)
+   0.04    0.72 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    0.74 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    0.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    0.85 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.03    0.88 ^ clkbuf_2_0_6_clk/Z (BUF_X4)
+   0.03    0.91 ^ clkbuf_2_0_7_clk/Z (BUF_X4)
+   0.03    0.93 ^ clkbuf_2_0_8_clk/Z (BUF_X4)
+   0.03    0.96 ^ clkbuf_2_0_9_clk/Z (BUF_X4)
+   0.03    1.00 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.03    1.02 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    1.05 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.02    1.07 ^ clkbuf_3_0_3_clk/Z (BUF_X4)
+   0.03    1.10 ^ clkbuf_3_0_4_clk/Z (BUF_X4)
+   0.03    1.14 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    1.17 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    1.19 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    1.22 ^ clkbuf_4_0_3_clk/Z (BUF_X4)
+   0.03    1.25 ^ clkbuf_4_0_4_clk/Z (BUF_X4)
+   0.03    1.27 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.03    1.30 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
+   0.02    1.32 ^ clkbuf_5_0_2_clk/Z (BUF_X4)
+   0.03    1.35 ^ clkbuf_6_0_0_clk/Z (BUF_X4)
+   0.03    1.38 ^ clkbuf_6_0_1_clk/Z (BUF_X4)
+   0.03    1.41 ^ clkbuf_7_1_0_clk/Z (BUF_X4)
+   0.04    1.45 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
+   0.00    1.45 ^ inst_1_1/clk (array_tile)
+   0.21    1.67 ^ inst_1_1/e_out (array_tile)
+   0.00    1.67 ^ inst_2_1/w_in (array_tile)
+           1.67   data arrival time
+
+   5.00    5.00   clock clk (rise edge)
+   0.00    5.00   clock source latency
+   0.00    5.00 ^ clk (in)
+   0.05    5.05 ^ wire7/Z (BUF_X16)
+   0.05    5.10 ^ wire6/Z (BUF_X16)
+   0.06    5.16 ^ wire5/Z (BUF_X32)
+   0.06    5.22 ^ wire4/Z (BUF_X32)
+   0.06    5.28 ^ wire3/Z (BUF_X8)
+   0.03    5.31 ^ wire2/Z (BUF_X16)
+   0.06    5.37 ^ wire1/Z (BUF_X16)
+   0.06    5.43 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.03    5.46 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.03    5.49 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.02    5.52 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.03    5.54 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.03    5.57 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.02    5.59 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.03    5.61 ^ clkbuf_1_0_6_clk/Z (BUF_X4)
+   0.02    5.64 ^ clkbuf_1_0_7_clk/Z (BUF_X4)
+   0.03    5.67 ^ clkbuf_1_0_8_clk/Z (BUF_X4)
+   0.04    5.72 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    5.74 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    5.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    5.85 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.03    5.88 ^ clkbuf_2_0_6_clk/Z (BUF_X4)
+   0.03    5.91 ^ clkbuf_2_0_7_clk/Z (BUF_X4)
+   0.03    5.93 ^ clkbuf_2_0_8_clk/Z (BUF_X4)
+   0.03    5.96 ^ clkbuf_2_0_9_clk/Z (BUF_X4)
+   0.03    6.00 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.03    6.02 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    6.05 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.02    6.07 ^ clkbuf_3_0_3_clk/Z (BUF_X4)
+   0.03    6.10 ^ clkbuf_3_0_4_clk/Z (BUF_X4)
+   0.03    6.14 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    6.17 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    6.19 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    6.22 ^ clkbuf_4_0_3_clk/Z (BUF_X4)
+   0.03    6.25 ^ clkbuf_4_0_4_clk/Z (BUF_X4)
+   0.03    6.27 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.03    6.30 ^ clkbuf_5_1_1_clk/Z (BUF_X4)
+   0.03    6.33 ^ clkbuf_5_1_2_clk/Z (BUF_X4)
+   0.03    6.36 ^ clkbuf_6_2_0_clk/Z (BUF_X4)
+   0.03    6.38 ^ clkbuf_6_2_1_clk/Z (BUF_X4)
+   0.03    6.42 ^ clkbuf_7_4_0_clk/Z (BUF_X4)
+   0.03    6.45 ^ clkbuf_leaf_60_clk/Z (BUF_X4)
+   0.00    6.45 ^ inst_2_1/clk (array_tile)
+   0.00    6.45   clock reconvergence pessimism
+  -0.05    6.40   library setup time
+           6.40   data required time
+---------------------------------------------------------
+           6.40   data required time
+          -1.67   data arrival time
+---------------------------------------------------------
+           4.73   slack (MET)
+
+
+Startpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: inst_3_1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock source latency
+   0.00    0.00 ^ clk (in)
+   0.05    0.05 ^ wire7/Z (BUF_X16)
+   0.05    0.10 ^ wire6/Z (BUF_X16)
+   0.06    0.16 ^ wire5/Z (BUF_X32)
+   0.06    0.22 ^ wire4/Z (BUF_X32)
+   0.06    0.28 ^ wire3/Z (BUF_X8)
+   0.03    0.31 ^ wire2/Z (BUF_X16)
+   0.06    0.37 ^ wire1/Z (BUF_X16)
+   0.06    0.43 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.03    0.46 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.03    0.49 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.02    0.52 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.03    0.54 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.03    0.57 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.02    0.59 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.03    0.61 ^ clkbuf_1_0_6_clk/Z (BUF_X4)
+   0.02    0.64 ^ clkbuf_1_0_7_clk/Z (BUF_X4)
+   0.03    0.67 ^ clkbuf_1_0_8_clk/Z (BUF_X4)
+   0.04    0.72 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    0.74 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    0.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    0.85 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.03    0.88 ^ clkbuf_2_0_6_clk/Z (BUF_X4)
+   0.03    0.91 ^ clkbuf_2_0_7_clk/Z (BUF_X4)
+   0.03    0.93 ^ clkbuf_2_0_8_clk/Z (BUF_X4)
+   0.03    0.96 ^ clkbuf_2_0_9_clk/Z (BUF_X4)
+   0.03    1.00 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.03    1.02 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    1.05 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.02    1.07 ^ clkbuf_3_0_3_clk/Z (BUF_X4)
+   0.03    1.10 ^ clkbuf_3_0_4_clk/Z (BUF_X4)
+   0.03    1.14 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    1.17 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    1.19 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    1.22 ^ clkbuf_4_0_3_clk/Z (BUF_X4)
+   0.03    1.25 ^ clkbuf_4_0_4_clk/Z (BUF_X4)
+   0.03    1.27 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.03    1.30 ^ clkbuf_5_1_1_clk/Z (BUF_X4)
+   0.03    1.33 ^ clkbuf_5_1_2_clk/Z (BUF_X4)
+   0.03    1.36 ^ clkbuf_6_2_0_clk/Z (BUF_X4)
+   0.03    1.38 ^ clkbuf_6_2_1_clk/Z (BUF_X4)
+   0.03    1.42 ^ clkbuf_7_4_0_clk/Z (BUF_X4)
+   0.03    1.45 ^ clkbuf_leaf_60_clk/Z (BUF_X4)
+   0.00    1.45 ^ inst_2_1/clk (array_tile)
+   0.21    1.66 ^ inst_2_1/e_out (array_tile)
+   0.00    1.66 ^ inst_3_1/w_in (array_tile)
+           1.66   data arrival time
+
+   5.00    5.00   clock clk (rise edge)
+   0.00    5.00   clock source latency
+   0.00    5.00 ^ clk (in)
+   0.05    5.05 ^ wire7/Z (BUF_X16)
+   0.05    5.10 ^ wire6/Z (BUF_X16)
+   0.06    5.16 ^ wire5/Z (BUF_X32)
+   0.06    5.22 ^ wire4/Z (BUF_X32)
+   0.06    5.28 ^ wire3/Z (BUF_X8)
+   0.03    5.31 ^ wire2/Z (BUF_X16)
+   0.06    5.37 ^ wire1/Z (BUF_X16)
+   0.06    5.43 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.03    5.46 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.03    5.49 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.02    5.52 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.03    5.54 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.03    5.57 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.02    5.59 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.03    5.61 ^ clkbuf_1_0_6_clk/Z (BUF_X4)
+   0.02    5.64 ^ clkbuf_1_0_7_clk/Z (BUF_X4)
+   0.03    5.67 ^ clkbuf_1_0_8_clk/Z (BUF_X4)
+   0.04    5.72 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.03    5.74 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.03    5.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    5.85 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.03    5.88 ^ clkbuf_2_0_6_clk/Z (BUF_X4)
+   0.03    5.91 ^ clkbuf_2_0_7_clk/Z (BUF_X4)
+   0.03    5.93 ^ clkbuf_2_0_8_clk/Z (BUF_X4)
+   0.03    5.96 ^ clkbuf_2_0_9_clk/Z (BUF_X4)
+   0.03    6.00 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.03    6.02 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.03    6.05 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.02    6.07 ^ clkbuf_3_0_3_clk/Z (BUF_X4)
+   0.03    6.10 ^ clkbuf_3_0_4_clk/Z (BUF_X4)
+   0.03    6.14 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    6.17 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    6.19 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    6.22 ^ clkbuf_4_0_3_clk/Z (BUF_X4)
+   0.03    6.25 ^ clkbuf_4_0_4_clk/Z (BUF_X4)
+   0.03    6.27 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.03    6.30 ^ clkbuf_5_1_1_clk/Z (BUF_X4)
+   0.03    6.33 ^ clkbuf_5_1_2_clk/Z (BUF_X4)
+   0.03    6.35 ^ clkbuf_6_3_0_clk/Z (BUF_X4)
+   0.02    6.38 ^ clkbuf_6_3_1_clk/Z (BUF_X4)
+   0.03    6.41 ^ clkbuf_7_7_0_clk/Z (BUF_X4)
+   0.04    6.45 ^ clkbuf_leaf_118_clk/Z (BUF_X4)
+   0.00    6.45 ^ inst_3_1/clk (array_tile)
+   0.00    6.45   clock reconvergence pessimism
+  -0.05    6.40   library setup time
+           6.40   data required time
+---------------------------------------------------------
+           6.40   data required time
+          -1.66   data arrival time
+---------------------------------------------------------
+           4.74   slack (MET)
+
+
+No differences found.

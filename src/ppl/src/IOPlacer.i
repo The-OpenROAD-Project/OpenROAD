@@ -20,19 +20,23 @@ using ppl::PinList;
 using std::vector;
 using std::set;
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 template <class TYPE>
 vector<TYPE> *
 tclListStdSeq(Tcl_Obj *const source,
               swig_type_info *swig_type,
               Tcl_Interp *interp)
 {
-  int argc;
+  Tcl_Size argc;
   Tcl_Obj **argv;
 
   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
       && argc > 0) {
     vector<TYPE> *seq = new vector<TYPE>;
-    for (int i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
       void *obj;
       // Ignore returned TCL_ERROR because can't get swig_type_info.
       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
@@ -50,13 +54,13 @@ tclSetStdSeq(Tcl_Obj *const source,
         swig_type_info *swig_type,
         Tcl_Interp *interp)
 {
-  int argc;
+  Tcl_Size argc;
   Tcl_Obj **argv;
 
   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
       && argc > 0) {
     set<TYPE> *seq = new set<TYPE>;
-    for (int i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
       void *obj;
       // Ignore returned TCL_ERROR because can't get swig_type_info.
       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);

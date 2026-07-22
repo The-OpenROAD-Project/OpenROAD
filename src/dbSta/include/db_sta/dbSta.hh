@@ -3,22 +3,30 @@
 
 #pragma once
 
+#include <cstdint>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
+#include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
+#include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
+#include "odb/dbObject.h"
+#include "sta/Clock.hh"
+#include "sta/Delay.hh"
+#include "sta/GraphClass.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Sta.hh"
+#include "utl/Logger.h"
 
 namespace ord {
 class OpenRoad;
-}
-
-namespace utl {
-class Logger;
 }
 
 namespace sta {
@@ -78,21 +86,9 @@ class dbSta;
 class dbNetwork;
 class dbStaReport;
 class dbStaCbk;
+class DbStaLevelizeObserver;
 class PatternMatch;
 class TestCell;
-
-using utl::Logger;
-
-using odb::dbBlock;
-using odb::dbBlockCallBackObj;
-using odb::dbBTerm;
-using odb::dbDatabase;
-using odb::dbInst;
-using odb::dbITerm;
-using odb::dbLib;
-using odb::dbMaster;
-using odb::dbNet;
-using odb::dbTech;
 
 // Handles registering and unregistering with dbSta
 class dbStaState : public sta::StaState
@@ -103,23 +99,6 @@ class dbStaState : public sta::StaState
 
  protected:
   dbSta* sta_ = nullptr;
-};
-
-enum BufferUse
-{
-  DATA,
-  CLOCK
-};
-
-class BufferUseAnalyser
-{
- public:
-  BufferUseAnalyser();
-
-  BufferUse getBufferUse(sta::LibertyCell* buffer);
-
- private:
-  std::unique_ptr<sta::PatternMatch> clkbuf_pattern_;
 };
 
 class dbSta : public Sta, public odb::dbDatabaseObserver
@@ -177,11 +156,11 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   // this dbSta instance (e.g. TCL interpreter, units, etc.)
   std::unique_ptr<dbSta> makeBlockSta(odb::dbBlock* block);
 
-  dbDatabase* db() { return db_; }
+  odb::dbDatabase* db() { return db_; }
   dbNetwork* getDbNetwork() { return db_network_; }
   dbStaReport* getDbReport() { return db_report_; }
 
-  Slack netSlack(const dbNet* net, const MinMax* min_max);
+  float slack(const odb::dbNet* net, const MinMax* min_max);
 
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
@@ -190,8 +169,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void postRead3Dbx(odb::dbChip* chip) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
-  std::set<dbNet*> findClkNets();
-  std::set<dbNet*> findClkNets(const Clock* clk);
+  odb::PtrSet<odb::dbNet> findClkNets();
+  odb::PtrSet<odb::dbNet> findClkNets(const Clock* clk);
 
   void deleteInstance(Instance* inst) override;
   void deleteNet(Net* net) override;
@@ -211,20 +190,28 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                        const char* stage_name);
   void countInstancesByType(odb::dbModule* module,
                             InstTypeMap& inst_type_stats,
-                            std::vector<dbInst*>& insts);
+                            std::vector<odb::dbInst*>& insts);
   void countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
-                                        std::vector<dbInst*>& insts);
+                                        std::vector<odb::dbInst*>& insts);
   void addInstanceByTypeInstance(odb::dbInst* inst,
                                  InstTypeMap& inst_type_stats);
 
-  void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
+  // bin_size: fixed bin width in user time units (e.g., ns).
+  //           If 0.0, num_bins is used to determine bin width automatically.
+  void reportTimingHistogram(int num_bins,
+                             const MinMax* min_max,
+                             float bin_size = 0.0) const;
 
   // Create a logic depth histogram report.
   void reportLogicDepthHistogram(int num_bins,
                                  bool exclude_buffers,
                                  bool exclude_inverters) const;
 
-  BufferUse getBufferUse(sta::LibertyCell* buffer);
+  // Get the levels of logic for all endpoints.
+  std::vector<int> levelsOfLogic(bool exclude_buffers,
+                                 bool exclude_inverters) const;
+
+  utl::Logger* getLogger() { return logger_; }
 
   // Sanity checkers
   int checkSanity();
@@ -240,33 +227,36 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void dumpModInstGraphConnections(const char* mod_inst_name,
                                    const char* filename);
 
-  using Sta::netSlack;
   using Sta::replaceCell;
+  using Sta::slack;
+
+  // Drivers sorted by (level, name) for determinism.
+  const VertexSeq& levelizedDrvrVertices();
+  // Discard the cached driver-vertex list. Callers that mutate the timing
+  // graph outside the LevelizeObserver path (e.g. dbStaCbk on dbInst
+  // create/destroy) must invalidate so the next query rebuilds.
+  void invalidateLevelizedDrvrVertices();
 
  private:
   void makeReport() override;
   void makeNetwork() override;
   void makeSdcNetwork() override;
+  void makeObservers() override;
 
   void replaceCell(Instance* inst,
                    Cell* to_cell,
                    LibertyCell* to_lib_cell) override;
 
-  dbDatabase* db_ = nullptr;
-  Logger* logger_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
   std::set<dbStaState*> sta_states_;
 
-  std::unique_ptr<BufferUseAnalyser> buffer_use_analyser_;
+  VertexSeq levelized_drvr_vertices_;
+  bool drvr_vertices_level_valid_ = false;
 };
-
-// Utilities for TestCell
-
-sta::LibertyPort* getLibertyScanEnable(const LibertyCell* lib_cell);
-sta::LibertyPort* getLibertyScanIn(const LibertyCell* lib_cell);
-sta::LibertyPort* getLibertyScanOut(const LibertyCell* lib_cell);
 
 }  // namespace sta

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -674,11 +676,11 @@ dbRSeg* extMain::addRSeg(dbNet* net,
     }
     logger_->warn(RCX,
                   111,
-                  "Net {} {} has a loop at x={} y={} {}.",
+                  "Net {} {} has a loop at x={:.2f}um y={:.2f}um {}.",
                   net->getId(),
                   net->getConstName(),
-                  pshape.point.getX(),
-                  pshape.point.getY(),
+                  _block->dbuToMicrons(pshape.point.getX()),
+                  _block->dbuToMicrons(pshape.point.getY()),
                   tname);
     return nullptr;
   }
@@ -725,7 +727,7 @@ dbRSeg* extMain::addRSeg(dbNet* net,
                rsid,
                srcId,
                dstId,
-               rc->getCapacitance(0));
+               rc->getGroundCapacitance(0));
   }
 
   srcId = dstId;
@@ -810,7 +812,7 @@ uint32_t extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
   }
 
   _netGndcCalibFactor = net->getGndcCalibFactor();
-  _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
+  _netGndcCalibration = _netGndcCalibFactor != 1.0;
 
   _rsegJid.clear();
   _shortSrcJid.clear();
@@ -831,7 +833,7 @@ uint32_t extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
   uint32_t srcJid;
   dbWire* wire = net->getWire();
   dbWirePathItr pitr;
-  if (_mergeResBound != 0.0 || _mergeViaRes) {
+  {
     dbWirePath path;
     for (pitr.begin(wire); pitr.getNextPath(path);) {
       if (!path.bterm && !path.iterm && path.is_branch && path.junction_id) {
@@ -1068,72 +1070,6 @@ void extMain::removeExt(std::vector<dbNet*>& nets)
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
 
-int extMain::setMinTypMax(bool min,
-                          bool typ,
-                          bool max,
-                          int setMin,
-                          int setTyp,
-                          int setMax,
-                          uint32_t extDbCnt)
-{
-  _modelMap.resetCnt(0);
-  _metRCTable.resetCnt(0);
-  _currentModel = nullptr;
-  if (extDbCnt > 1) {  // extract first <extDbCnt>
-    _block->setCornerCount(extDbCnt);
-    _extDbCnt = extDbCnt;
-
-    _modelMap.add(_minModelIndex);
-
-    _modelMap.add(_typModelIndex);
-
-    if (extDbCnt > 2) {
-      _modelMap.add(_maxModelIndex);
-    }
-  } else if (min || max || typ) {
-    if (min) {
-      _modelMap.add(_minModelIndex);
-    }
-    if (typ) {
-      _modelMap.add(_typModelIndex);
-    }
-    if (max) {
-      _modelMap.add(_maxModelIndex);
-    }
-    _extDbCnt = _modelMap.getCnt();
-
-    _block->setCornerCount(_extDbCnt);
-  } else if ((setMin >= 0) || (setMax >= 0) || (setTyp >= 0)) {
-    if (setMin >= 0) {
-      _modelMap.add(setMin);
-    }
-    if (setTyp >= 0) {
-      _modelMap.add(setTyp);
-    }
-    if (setMax >= 0) {
-      _modelMap.add(setMax);
-    }
-    _extDbCnt = _modelMap.getCnt();
-
-    _block->setCornerCount(_extDbCnt);
-  } else if (extDbCnt == 1) {  // extract first <extDbCnt>
-    _block->setCornerCount(extDbCnt);
-    _extDbCnt = extDbCnt;
-    _modelMap.add(0);
-  }
-
-  if (_currentModel == nullptr) {
-    _currentModel = getRCmodel(0);
-    for (uint32_t ii = 0; ii < _modelMap.getCnt(); ii++) {
-      uint32_t jj = _modelMap.get(ii);
-      _metRCTable.add(_currentModel->getMetRCTable(jj));
-    }
-  }
-  _cornerCnt = _extDbCnt;  // the Cnt's are the same in the old flow
-
-  return 0;
-}
-
 extCorner::extCorner()
 {
   _name = nullptr;
@@ -1147,127 +1083,25 @@ extCorner::extCorner()
 
 void extMain::getExtractedCorners()
 {
-  if (_prevControl == nullptr) {
-    return;
-  }
-  if (_prevControl->_extractedCornerList.empty()) {
-    return;
-  }
   if (_processCornerTable != nullptr) {
     return;
   }
 
-  Parser parser(logger_);
-  uint32_t pCornerCnt
-      = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
-  if (pCornerCnt <= 0) {
+  if (!_block) {
+    return;
+  }
+
+  const int corner_count = _block->getCornerCount();
+  if (corner_count <= 0) {
     return;
   }
 
   _processCornerTable = new Array1D<extCorner*>();
-
-  uint32_t cornerCnt = 0;
-  uint32_t ii, jj;
-  std::string cName;
-  for (ii = 0; ii < pCornerCnt; ii++) {
-    extCorner* t = new extCorner();
-    t->_model = parser.getInt(ii);
-
-    t->_dbIndex = cornerCnt++;
-    _processCornerTable->add(t);
-  }
-
-  if (_prevControl->_derivedCornerList.empty()) {
-    makeCornerMapFromExtControl();
-    return;
-  }
-
-  uint32_t sCornerCnt
-      = parser.mkWords(_prevControl->_derivedCornerList.c_str(), " ");
-  if (sCornerCnt <= 0) {
-    return;
-  }
-
-  if (_scaledCornerTable == nullptr) {
-    _scaledCornerTable = new Array1D<extCorner*>();
-  }
-
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = new extCorner();
-    t->_model = parser.getInt(ii);
-    for (jj = 0; jj < pCornerCnt; jj++) {
-      if (t->_model != _processCornerTable->get(jj)->_model) {
-        continue;
-      }
-      t->_extCornerPtr = _processCornerTable->get(jj);
-      break;
-    }
-    cName = _block->getExtCornerName(pCornerCnt + ii);
-    if (jj == pCornerCnt) {
-      logger_->warn(RCX,
-                    120,
-                    "No matching process corner for scaled corner {}, model {}",
-                    cName,
-                    t->_model);
-    }
-    t->_dbIndex = cornerCnt++;
-    _scaledCornerTable->add(t);
-  }
-  Array1D<double> A;
-
-  parser.mkWords(_prevControl->_resFactorList.c_str(), " ");
-  parser.getDoubleArray(&A, 0);
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = _scaledCornerTable->get(ii);
-    t->_resFactor = A.get(ii);
-  }
-  parser.mkWords(_prevControl->_ccFactorList.c_str(), " ");
-  A.resetCnt();
-  parser.getDoubleArray(&A, 0);
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = _scaledCornerTable->get(ii);
-    t->_ccFactor = A.get(ii);
-  }
-  parser.mkWords(_prevControl->_gndcFactorList.c_str(), " ");
-  A.resetCnt();
-  parser.getDoubleArray(&A, 0);
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = _scaledCornerTable->get(ii);
-    t->_gndFactor = A.get(ii);
-  }
-  makeCornerMapFromExtControl();
-}
-
-void extMain::makeCornerMapFromExtControl()
-{
-  if (_prevControl->_cornerIndexList.empty()) {
-    return;
-  }
-  if (_processCornerTable == nullptr) {
-    return;
-  }
-
-  Parser parser(logger_);
-  uint32_t wordCnt
-      = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
-  if (wordCnt <= 0) {
-    return;
-  }
-
-  std::string cName;
-  for (uint32_t ii = 0; ii < wordCnt; ii++) {
-    int index = parser.getInt(ii);
-    extCorner* t = nullptr;
-    if (index > 0) {  // extracted corner
-      t = _processCornerTable->get(index - 1);
-      t->_dbIndex = ii;
-    } else {
-      t = _scaledCornerTable->get((-index) - 1);
-    }
-    t->_dbIndex = ii;
-    cName = _block->getExtCornerName(ii);
-    free(t->_name);
-    t->_name = strdup(cName.c_str());
+  for (int corner = 0; corner < corner_count; corner++) {
+    extCorner* process_corner = new extCorner();
+    process_corner->_dbIndex = corner;
+    process_corner->_name = strdup(_block->getExtCornerName(corner).c_str());
+    _processCornerTable->add(process_corner);
   }
 }
 
@@ -1538,66 +1372,36 @@ int extMain::getDbCornerModel(const char* name)
 
 void extMain::makeCornerNameMap()
 {
-  // This function updates the dbExtControl object and
-  // creates the corner information to be stored at dbBlock object
+  // Stores the corner names and count on the dbBlock.
+  if (!_block) {
+    logger_->error(
+        utl::RCX, 12, "Could not make corner name map. No block found.");
+  }
 
-  int A[128];
+  if (_cornerCnt == 0) {
+    logger_->error(
+        utl::RCX,
+        13,
+        "Could not make corner name map. The number of corners is undefined.");
+  }
+
   extCorner** map = new extCorner*[_cornerCnt];
   for (uint32_t jj = 0; jj < _cornerCnt; jj++) {
     map[jj] = nullptr;
-    A[jj] = 0;
   }
-
-  char cornerList[128];
-  strcpy(cornerList, "");
 
   if (_scaledCornerTable != nullptr) {
-    char buf[128];
-    std::string extList;
-    std::string resList;
-    std::string ccList;
-    std::string gndcList;
     for (uint32_t ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
-
       map[s->_dbIndex] = s;
-      A[s->_dbIndex] = -(ii + 1);
-
-      sprintf(buf, " %d", s->_model);
-      extList += buf;
-      sprintf(buf, " %g", s->_resFactor);
-      resList += buf;
-      sprintf(buf, " %g", s->_ccFactor);
-      ccList += buf;
-      sprintf(buf, " %g", s->_gndFactor);
-      gndcList += buf;
     }
-    _prevControl->_derivedCornerList = extList;
-    _prevControl->_resFactorList = resList;
-    _prevControl->_ccFactorList = ccList;
-    _prevControl->_gndcFactorList = gndcList;
   }
   if (_processCornerTable != nullptr) {
-    std::string extList;
-    char buf[128];
-
     for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
-
-      A[s->_dbIndex] = ii + 1;
       map[s->_dbIndex] = s;
-
-      sprintf(buf, " %d", s->_model);
-      extList += buf;
     }
-    _prevControl->_extractedCornerList = extList;
   }
-  std::string aList;
-
-  for (uint32_t k = 0; k < _cornerCnt; k++) {
-    aList += " " + std::to_string(A[k]);
-  }
-  _prevControl->_cornerIndexList = aList;
 
   std::string buff;
   if (map[0] == nullptr) {
@@ -1623,91 +1427,121 @@ void extMain::makeCornerNameMap()
   updatePrevControl();
 }
 
-bool extMain::setCorners(const char* rulesFileName)
+std::unique_ptr<extRCModel> parseRules(
+    odb::dbTech* tech,
+    const Array1D<extCorner*>* extractor_corner_table,
+    bool is_v2,
+    utl::Logger* logger)
 {
-  _modelMap.resetCnt(0);
-  _metRCTable.resetCnt(0);
+  // Rules files are written assuming this DBU-per-micron resolution; the
+  // tech may use a finer one, in which case rules-file values are scaled
+  // up when read.
+  constexpr int rules_file_dbu_per_micron = 1000;
+  const int tech_dbu_per_micron = tech->getDbUnitsPerMicron();
+  double rules_to_dbu_scale = 1.0;
 
-  if (rulesFileName != nullptr) {  // read rules
+  if (tech_dbu_per_micron > rules_file_dbu_per_micron) {
+    rules_to_dbu_scale
+        = static_cast<double>(tech_dbu_per_micron) / rules_file_dbu_per_micron;
+  }
 
-    int dbunit = _block->getDbUnitsPerMicron();
-    double dbFactor = 1;
-    if (dbunit > 1000) {
-      dbFactor = dbunit * 0.001;
-    }
+  auto model = std::make_unique<extRCModel>("MINTYPMAX", logger);
 
-    extRCModel* m = new extRCModel("MINTYPMAX", logger_);
-    _modelTable->add(m);
-
-    uint32_t cornerTable[10];
-    uint32_t extDbCnt = 0;
-
-    _minModelIndex = 0;
-    _maxModelIndex = 0;
-    _typModelIndex = 0;
-    if (_processCornerTable != nullptr) {
-      for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
-        extCorner* s = _processCornerTable->get(ii);
-        cornerTable[extDbCnt++] = s->_model;
-        _modelMap.add(ii);
-      }
-    }
-
-    logger_->info(
-        RCX, 435, "Reading extraction model file {} ...", rulesFileName);
-
-    FILE* rules_file = fopen(rulesFileName, "r");
-    if (rules_file == nullptr) {
-      logger_->error(
-          RCX, 468, "Can't open extraction model file {}", rulesFileName);
-    }
-    fclose(rules_file);
-    bool v2_rules_file = m->isRulesFile_v2((char*) rulesFileName, false);
-
-    if (_v2 || v2_rules_file) {
-      m->_v2_flow = _v2;
-
-      if (!(m->readRules((char*) rulesFileName,
-                         false,
-                         true,
-                         true,
-                         true,
-                         true,
-                         extDbCnt,
-                         cornerTable,
-                         dbFactor))) {
-        return false;
-      }
-    } else {
-      if (!(m->readRules_v1((char*) rulesFileName,
-                            false,
-                            true,
-                            true,
-                            true,
-                            true,
-                            extDbCnt,
-                            cornerTable,
-                            dbFactor))) {
-        return false;
-      }
-    }
-    int modelCnt = getRCmodel(0)->getModelCnt();
-
-    // If RCX reads wrong extRules file format
-    if (modelCnt == 0) {
-      logger_->error(RCX,
-                     487,
-                     "No RC model read from the extraction model! "
-                     "Ensure the right extRules file is used!");
-    }
-    if (_processCornerTable == nullptr) {
-      for (int ii = 0; ii < modelCnt; ii++) {
-        addRCCorner(nullptr, ii, 0);
-        _modelMap.add(ii);
-      }
+  std::vector<uint32_t> corner_table;
+  if (extractor_corner_table) {
+    for (uint32_t ii = 0; ii < extractor_corner_table->getCnt(); ii++) {
+      extCorner* corner = extractor_corner_table->get(ii);
+      corner_table.push_back(corner->_model);
     }
   }
+
+  const std::string rules_file = tech->getExtractionRulesFile();
+  if (rules_file.empty()) {
+    logger->error(RCX,
+                  17,
+                  "Could not parse extraction rules. No extraction rules file "
+                  "specified. Use set_extraction_rules_file to specify it.");
+  }
+
+  logger->info(RCX, 435, "Reading extraction model file {} ...", rules_file);
+
+  FILE* file = fopen(rules_file.c_str(), "r");
+  if (file == nullptr) {
+    logger->error(RCX, 468, "Can't open extraction model file {}", rules_file);
+  }
+
+  fclose(file);
+
+  const bool is_v2_rules_file
+      = model->isRulesFile_v2((char*) rules_file.c_str(), false);
+
+  if (is_v2 || is_v2_rules_file) {
+    model->_v2_flow = is_v2;
+    if (!model->readRules((char*) rules_file.c_str(),
+                          false,
+                          true,
+                          true,
+                          true,
+                          true,
+                          corner_table.size(),
+                          corner_table.data(),
+                          rules_to_dbu_scale)) {
+      logger->error(
+          RCX, 14, "Failed to parse extraction model file {}", rules_file);
+    }
+  } else {
+    if (!model->readRules_v1((char*) rules_file.c_str(),
+                             false,
+                             true,
+                             true,
+                             true,
+                             true,
+                             corner_table.size(),
+                             corner_table.data(),
+                             rules_to_dbu_scale)) {
+      logger->error(
+          RCX, 15, "Failed to parse extraction model file {}", rules_file);
+    }
+  }
+
+  if (model->getModelCnt() == 0) {
+    logger->error(RCX,
+                  487,
+                  "No RC model read from the extraction model! "
+                  "Ensure the right extRules file is used!");
+  }
+
+  return model;
+}
+
+void extMain::registerRulesModel(extRCModel* rules_model)
+{
+  // Differently from the other corner-related structures, the
+  // list of models is cleared at the end of the extraction flow.
+  _modelTable->add(rules_model);
+
+  // Clear rules data per corner.
+  _metRCTable.resetCnt(0);
+
+  // Clear corner -> model mapping.
+  _modelMap.resetCnt(0);
+
+  if (_processCornerTable != nullptr) {
+    for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+      _modelMap.add(ii);
+    }
+  }
+
+  if (_processCornerTable == nullptr) {
+    const int modelCnt = getRCmodel(0)->getModelCnt();
+    for (int ii = 0; ii < modelCnt; ii++) {
+      addRCCorner(nullptr, ii, 0);
+      _modelMap.add(ii);
+    }
+  }
+
   _currentModel = getRCmodel(0);
+
   if (_v2) {
     if (_processCornerTable != nullptr && _couplingFlag > 0) {
       for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
@@ -1723,18 +1557,8 @@ bool extMain::setCorners(const char* rulesFileName)
       _metRCTable.add(_currentModel->getMetRCTable(jj));
     }
   }
+
   _extDbCnt = _processCornerTable->getCnt();
-
-#ifndef NDEBUG
-  uint32_t scaleCornerCnt = 0;
-  if (_scaledCornerTable != nullptr) {
-    scaleCornerCnt = _scaledCornerTable->getCnt();
-  }
-  assert(_cornerCnt == _extDbCnt + scaleCornerCnt);
-#endif
-
-  _block->setCornerCount(_cornerCnt, _extDbCnt, nullptr);
-  return true;
 }
 
 void extMain::addDummyCorners(uint32_t cornerCnt)
@@ -1749,7 +1573,6 @@ void extMain::updatePrevControl()
   _prevControl->_foreign = _foreign;
   _prevControl->_rsegCoord = _rsegCoord;
   _prevControl->_extracted = _extracted;
-  _prevControl->_cornerCnt = _cornerCnt;
   _prevControl->_ccUp = _ccUp;
   _prevControl->_couplingFlag = _couplingFlag;
   _prevControl->_coupleThreshold = _coupleThreshold;
@@ -1770,10 +1593,18 @@ void extMain::getPrevControl()
   if (!_prevControl) {
     return;
   }
+
+  if (!_block) {
+    logger_->error(
+        utl::RCX,
+        6,
+        "Could not access previous extraction control. No block found.");
+  }
+
   _foreign = _prevControl->_foreign;
   _rsegCoord = _prevControl->_rsegCoord;
   _extracted = _prevControl->_extracted;
-  _cornerCnt = _prevControl->_cornerCnt;
+  _cornerCnt = _block->getCornerCount();
   _ccUp = _prevControl->_ccUp;
   _couplingFlag = _prevControl->_couplingFlag;
   _coupleThreshold = _prevControl->_coupleThreshold;
@@ -1785,10 +1616,10 @@ void extMain::getPrevControl()
   _ccNoPowerTarget = _prevControl->_ccNoPowerTarget;
   _usingMetalPlanes = _prevControl->_usingMetalPlanes;
 }
-bool extMain::modelExists(const char* extRules)
+bool extMain::modelExists()
 {
   if ((_prevControl->_ruleFileName.empty()) && (getRCmodel(0) == nullptr)
-      && (extRules == nullptr)) {
+      && (_block->getTech()->getExtractionRulesFile().empty())) {
     logger_->warn(RCX,
                   127,
                   "No RC model was read with command <load_model>, "
@@ -1798,50 +1629,35 @@ bool extMain::modelExists(const char* extRules)
   return true;
 }
 
-void extMain::makeBlockRCsegs(const char* netNames,
-                              uint32_t cc_up,
-                              uint32_t ccFlag,
-                              double resBound,
-                              bool mergeViaRes,
-                              double ccThres,
-                              int contextDepth,
-                              const char* extRules)
+void extMain::setCornerCount()
 {
-  if (!modelExists(extRules)) {
-    return;
+  uint32_t scaled_corner_count = 0;
+  if (_scaledCornerTable != nullptr) {
+    scaled_corner_count = _scaledCornerTable->getCnt();
   }
 
-  uint32_t debugNetId = 0;
+  if (_cornerCnt != _extDbCnt + scaled_corner_count) {
+    logger_->error(RCX,
+                   16,
+                   "Corner count invariant violated: total corners ({}) != "
+                   "process corners ({}) + scaled corners ({})",
+                   _cornerCnt,
+                   _extDbCnt,
+                   scaled_corner_count);
+  }
 
+  _block->setCornerCount(_cornerCnt, _extDbCnt, nullptr);
+}
+
+void extMain::run()
+{
   _diagFlow = true;
-  _couplingFlag = ccFlag;
-  _coupleThreshold = ccThres;
   _usingMetalPlanes = true;
-  _ccUp = cc_up;
-  _couplingFlag = ccFlag;
-  _ccContextDepth = contextDepth;
-  _mergeViaRes = mergeViaRes;
-  _mergeResBound = resBound;
-
-  if ((_processCornerTable != nullptr)
-      || ((_processCornerTable == nullptr) && (extRules != nullptr))) {
-    const char* rulesfile
-        = extRules ? extRules : _prevControl->_ruleFileName.c_str();
-
-    // Reading model file
-    if (!setCorners(rulesfile)) {
-      logger_->info(RCX, 128, "skipping Extraction ...");
-      return;
-    }
-  } else if (setMinTypMax(false, false, false, -1, -1, -1, 1) < 0) {
-    logger_->warn(RCX, 129, "Wrong combination of corner related options!");
-    return;
-  }
 
   _foreign = false;  // extract after read_spef
 
   std::vector<dbNet*> inets;
-  _allNet = !findSomeNet(_block, netNames, inets, logger_);
+  _allNet = !findSomeNet(_block, target_nets_names_, inets, logger_);
   for (auto net : inets) {
     net->setMark(true);
   }
@@ -1970,12 +1786,10 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
     m._debugFP = nullptr;
     m._netId = 0;
-    debugNetId = 0;
-    if (debugNetId > 0) {
-      m._netId = debugNetId;
-      char bufName[32];
-      sprintf(bufName, "%d", debugNetId);
-      m._debugFP = fopen(bufName, "w");
+
+    if (_debug_net_id > 0) {
+      m._netId = _debug_net_id;
+      m._debugFP = fopen(std::to_string(m._netId).c_str(), "w");
     }
 
     getPeakMemory("Start CouplingFlow");
@@ -2247,7 +2061,7 @@ void extMain::writeSPEF(char* filename,
   }
   _spef->_termJxy = termJxy;
 
-  _writeNameMap = noNameMap ? false : true;
+  _writeNameMap = !noNameMap;
   _spef->_writeNameMap = _writeNameMap;
   _spef->setUseIdsFlag(false);
   int cntnet, cntrseg, cntcapn, cntcc;

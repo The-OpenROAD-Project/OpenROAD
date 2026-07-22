@@ -28,6 +28,8 @@
 // *****************************************************************************
 #include "lefrReader.hpp"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -140,11 +142,7 @@ bool validateMaskNumber(int num)
     num = num / 10;
   }
 
-  if (index > 3) {
-    return false;
-  }
-
-  return true;
+  return index <= 3;
 }
 
 // *****************************************************************************s

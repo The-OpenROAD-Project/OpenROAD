@@ -363,13 +363,13 @@ bool parse(
     odb::lefinReader* lefinReader,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<std::string::const_iterator, space_type> ORTHOGONAL
+  qi::rule<std::string::const_iterator, space_type> orthogonal_rule
       = (lit("SPACINGTABLE") >> lit("ORTHOGONAL")
          >> +(lit("WITHIN") >> double_ >> lit("SPACING") >> double_)
          >> lit(";"))[boost::bind(
           &createOrthongonalSubRule, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> LAYER
+  qi::rule<std::string::const_iterator, space_type> layer_rule
       = (lit("LAYER") >> _string[boost::bind(
              &setLayer, _1, parser, boost::ref(incomplete_props))]
          >> -lit("NOSTACK")[boost::bind(&setNoStack, parser)]
@@ -378,21 +378,21 @@ bool parse(
                  >> +(_string >> lit("TO") >> _string))[boost::bind(
                   &setPrlForAlignedCut, _1, parser)]));
 
-  qi::rule<std::string::const_iterator, space_type> CENTERTOCENTER
+  qi::rule<std::string::const_iterator, space_type> center_to_center_rule
       = (lit("CENTERTOCENTER")
          >> +(_string >> lit("TO")
               >> _string))[boost::bind(&setCenterToCenter, _1, parser)];
 
-  qi::rule<std::string::const_iterator, space_type> CENTERANDEDGE
+  qi::rule<std::string::const_iterator, space_type> center_and_edge_rule
       = (lit("CENTERANDEDGE") >> -lit("NOPRL")[boost::bind(&setNoPrl, parser)]
          >> (+(_string >> lit("TO")
                >> _string))[boost::bind(&setCenterAndEdge, _1, parser)]);
-  qi::rule<std::string::const_iterator, space_type> PRL
+  qi::rule<std::string::const_iterator, space_type> prl_rule
       = (lit("PRL") >> double_ >> -(string("HORIZONTAL") | string("VERTICAL"))
          >> -string("MAXXY")
          >> *(_string >> lit("TO") >> _string
               >> double_))[boost::bind(&setPRL, _1, parser, lefinReader)];
-  qi::rule<std::string::const_iterator, space_type> EXTENSION
+  qi::rule<std::string::const_iterator, space_type> extension_rule
       = ((lit("ENDEXTENSION") >> double_
           >> *(lit("TO") >> _string >> double_))[boost::bind(
              &setEndExtension, _1, parser, lefinReader)]
@@ -400,24 +400,25 @@ bool parse(
               >> +(lit("TO") >> _string >> double_))[boost::bind(
              &setSideExtension, _1, parser, lefinReader)]);
 
-  qi::rule<std::string::const_iterator, space_type> EXACTALIGNEDSPACING
+  qi::rule<std::string::const_iterator, space_type> exact_aligned_spacing_rule
       = (lit("EXACTALIGNEDSPACING")
          >> -(string("HORIZONTAL") | string("VERTICAL"))
          >> +(_string >> double_))[boost::bind(
           &setExactAlignedSpacing, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> NONOPPOSITEENCLOSURESPACING
+  qi::rule<std::string::const_iterator, space_type>
+      non_opposite_enclosure_spacing_rule
       = (lit("NONOPPOSITEENCLOSURESPACING")
          >> +(_string >> double_))[boost::bind(
           &setNonOppositeEnclosureSpacing, _1, parser, lefinReader)];
 
   qi::rule<std::string::const_iterator, space_type>
-      OPPOSITEENCLOSURERESIZESPACING
+      opposite_enclosure_resize_spacing_rule
       = (lit("OPPOSITEENCLOSURERESIZESPACING")
          >> +(_string >> double_ >> double_ >> double_))[boost::bind(
           &setOppositeEnclosureResizeSpacing, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> CUTCLASS
+  qi::rule<std::string::const_iterator, space_type> cut_class_rule
       = (lit("CUTCLASS")
          >> +(_string
               >> -(string("SIDE")
@@ -430,7 +431,7 @@ bool parse(
                        | double_)))  // REMAINING ROWS (3rd and below)
          )[boost::bind(&setCutClass, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> DEFAULT
+  qi::rule<std::string::const_iterator, space_type> default_rule
       = (lit("SPACINGTABLE")[boost::bind(&createDefSubRule, parser)]
          >> -(lit("DEFAULT")
               >> double_[boost::bind(&setDefault, _1, parser, lefinReader)])
@@ -438,13 +439,15 @@ bool parse(
          >> -(lit("SAMENET")[boost::bind(&setSameNet, parser)]
               | lit("SAMEMETAL")[boost::bind(&setSameMetal, parser)]
               | lit("SAMEVIA")[boost::bind(&setSameVia, parser)])
-         >> -LAYER >> -CENTERTOCENTER >> -CENTERANDEDGE >> -PRL >> -EXTENSION
-         >> -EXACTALIGNEDSPACING >> -NONOPPOSITEENCLOSURESPACING
-         >> -OPPOSITEENCLOSURERESIZESPACING >> CUTCLASS >> lit(";"));
+         >> -layer_rule >> -center_to_center_rule >> -center_and_edge_rule
+         >> -prl_rule >> -extension_rule >> -exact_aligned_spacing_rule
+         >> -non_opposite_enclosure_spacing_rule
+         >> -opposite_enclosure_resize_spacing_rule >> cut_class_rule
+         >> lit(";"));
 
-  qi::rule<std::string::const_iterator, space_type> LEF58_SPACINGTABLE
-      = (+(ORTHOGONAL | DEFAULT));
-  bool valid = qi::phrase_parse(first, last, LEF58_SPACINGTABLE, space)
+  qi::rule<std::string::const_iterator, space_type> lef58_spacing_table_rule
+      = (+(orthogonal_rule | default_rule));
+  bool valid = qi::phrase_parse(first, last, lef58_spacing_table_rule, space)
                && first == last;
   if (!valid && parser->curRule != nullptr) {
     if (!incomplete_props.empty()

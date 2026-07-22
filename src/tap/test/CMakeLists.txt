@@ -11,6 +11,10 @@ or_integration_tests(
     boundary_macros_tapcell
     cut_rows
     cut_rows_halo
+    cut_rows_min_step_bottom_left
+    cut_rows_min_step_bottom_right
+    cut_rows_min_step_top_left
+    cut_rows_min_step_top_right
     cut_rows_min_width
     cut_rows_with_endcaps
     disallow_one_site_gaps
@@ -20,6 +24,7 @@ or_integration_tests(
     endcap_autoselection_error3
     endcap_autoselection_error4
     endcap_corners
+    endcap_separate_edges
     gcd_asap7
     gcd_fakeram
     gcd_nangate45
@@ -33,9 +38,8 @@ or_integration_tests(
     no_endcap
     overlap_cover
     region1
+    single_row_macros
+    single_row_macros_offset
     symmetry
 )
 
-# Skipped
-#tap_man_tcl_check
-#tap_readme_msgs_check

@@ -3,10 +3,13 @@
 
 #include "dbRegion.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbBox.h"
@@ -19,11 +22,11 @@
 #include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace odb {
 
@@ -181,6 +184,30 @@ dbSet<dbBox> dbRegion::getBoundaries()
   return dbSet<dbBox>(region, block->box_itr_);
 }
 
+int64_t dbRegion::getOverlapArea(const Rect& r)
+{
+  auto boundaries = getBoundaries();
+  std::vector<Rect> intersections;
+  int64_t area = 0;
+  if (!boundaries.empty()) {
+    for (auto bound : boundaries) {
+      Rect intersection;
+      bound->getBox().intersection(r, intersection);
+      intersections.push_back(intersection);
+      area += intersection.area();
+    }
+  }
+  // Remove overlapping area between boundaries
+  for (auto i = 0; i < intersections.size(); i++) {
+    for (auto j = i + 1; j < intersections.size(); j++) {
+      Rect intersection;
+      intersections[i].intersection(r, intersections[j]);
+      area -= intersection.area();
+    }
+  }
+  return area;
+}
+
 void dbRegion::addInst(dbInst* inst_)
 {
   _dbRegion* region = (_dbRegion*) this;
@@ -236,6 +263,7 @@ void dbRegion::removeInst(dbInst* inst_)
 
   inst->region_ = 0;
 }
+
 void dbRegion::removeGroup(dbGroup* group)
 {
   _dbRegion* region = (_dbRegion*) this;

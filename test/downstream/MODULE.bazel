@@ -1,0 +1,80 @@
+# Mock downstream project to verify that OpenROAD's public API surface
+# and dev_dependency isolation work correctly for external consumers.
+module(name = "downstream-test")
+
+bazel_dep(name = "openroad")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_python", version = "1.8.5")
+
+local_path_override(
+    module_name = "openroad",
+    path = "../..",
+)
+
+# qt-bazel is not in BCR and uses git_override in OpenROAD's MODULE.bazel.
+# git_override is root-module-only, so downstream consumers must repeat it.
+bazel_dep(name = "qt-bazel")
+git_override(
+    module_name = "qt-bazel",
+    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
+    remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
+)
+
+# The C++ toolchain is a dev_dependency in OpenROAD, so the root module
+# must configure its own. hermetic-llvm provides a statically linked,
+# zero-sysroot LLVM toolchain.
+bazel_dep(name = "llvm", version = "0.8.11")
+
+register_toolchains(
+    "@llvm//toolchain:all",
+)
+
+# hermetic-llvm ships a minimal macOS SDK subset (frameworks are opt-in).
+# The root MODULE.bazel selects the desktop frameworks Qt needs, but it does
+# so on a dev_dependency extension, which does not apply when OpenROAD is
+# consumed as a dependency -- so a downstream macOS consumer building the Qt
+# GUI must repeat the selection here, just like the qt-bazel git_override
+# above. Keep this list in sync with osx.frameworks(...) in ../../MODULE.bazel.
+osx = use_extension("@llvm//extensions:osx.bzl", "osx")
+osx.frameworks(names = [
+    "CoreFoundation",
+    "Foundation",
+    "Kernel",
+    "OSLog",
+    "Security",
+    "SystemConfiguration",
+    "AppKit",
+    "ApplicationServices",
+    "CFNetwork",
+    "Carbon",
+    "Cocoa",
+    "ColorSync",
+    "CoreData",
+    "CoreGraphics",
+    "CoreImage",
+    "CoreServices",
+    "CoreText",
+    "CoreVideo",
+    "DiskArbitration",
+    "FontServices",
+    "GSS",
+    "IOKit",
+    "IOSurface",
+    "ImageIO",
+    "Metal",
+    "MetalKit",
+    "ModelIO",
+    "OpenGL",
+    "PrintCore",
+    "QuartzCore",
+    "CloudKit",
+    "Symbols",
+    "UIFoundation",
+    "UniformTypeIdentifiers",
+])
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    ignore_root_user_error = True,
+    python_version = "3.13",
+)

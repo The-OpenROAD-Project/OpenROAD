@@ -6,6 +6,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <span>
 #include <string>
 
 #include "utl/Logger.h"
@@ -54,7 +57,7 @@ std::string GetContents(FILE* file, Logger* logger)
   return result;
 }
 
-void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger)
+void WriteAll(FILE* file, std::span<const uint8_t> data, Logger* logger)
 {
   size_t total_written = 0;
   while (total_written < data.size()) {
@@ -73,6 +76,22 @@ void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger)
     }
     total_written += written;
   }
+}
+
+std::ifstream OpenInputStream(const std::string& filename, Logger* logger)
+{
+  // is_regular_file() returns false for a nonexistent path, a directory, or any
+  // other non-regular file, so a single check rejects all the cases where a
+  // plain ifstream would otherwise open (or appear to open) and read nothing.
+  std::error_code ec;
+  if (!std::filesystem::is_regular_file(filename, ec)) {
+    logger->error(UTL, 15, "{} is not a readable file", filename);
+  }
+  std::ifstream stream(filename);
+  if (!stream.is_open()) {
+    logger->error(UTL, 16, "failed to open file {}", filename);
+  }
+  return stream;
 }
 
 }  // namespace utl

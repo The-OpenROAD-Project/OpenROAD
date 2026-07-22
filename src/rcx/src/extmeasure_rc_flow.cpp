@@ -186,7 +186,7 @@ bool extMeasureRC::measureRC_res_init(uint32_t rsegId)
 
   bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
 
-  if (!(!rvia1 && rseg1 != nullptr)) {
+  if (rvia1 || rseg1 == nullptr) {
     return false;
   }
 

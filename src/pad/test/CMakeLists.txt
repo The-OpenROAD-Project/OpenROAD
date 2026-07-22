@@ -19,6 +19,7 @@ or_integration_tests(
     place_bondpad_stagger
     place_corners_avoid_bumps
     place_corners_avoid_overlap
+    place_corners_avoid_overlap_with_overlapobs
     place_io_terminals_empty_call
     place_pad
     place_pad_hv
@@ -31,6 +32,7 @@ or_integration_tests(
     place_pads_bumps_strategy
     place_pad_wrong_master
     place_pads_bumps
+    place_pads_placer_fullyblocked
     place_pads_too_many
     place_pads_uniform
     place_pads_uniform_slip
@@ -45,10 +47,12 @@ or_integration_tests(
     rdl_route_bump_to_bump_only
     rdl_route_bump_via
     rdl_route_failed
+    rdl_route_fixed
     rdl_route_invalid
     rdl_route_keep_existing
     rdl_route_max_iterations
     rdl_route_ports
+    rdl_route_probe
     rdl_route_single_target
     rdl_route_skip_iterm
     rdl_route_via
@@ -56,7 +60,3 @@ or_integration_tests(
     skywater130_coyote_tc
     skywater130_overlapping_filler
 )
-
-# Skipped
-#pad_man_tcl_check
-#pad_readme_msgs_check

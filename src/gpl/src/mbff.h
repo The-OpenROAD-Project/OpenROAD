@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "odb/db.h"
-#include "sta/Corner.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 
 namespace utl {
@@ -27,9 +27,12 @@ class dbSta;
 class FuncExpr;
 class LibertyCell;
 class LibertyPort;
+class Scene;
 }  // namespace sta
 
 namespace gpl {
+
+inline constexpr const char* kOrigNameProp = "orig_name";
 
 struct Point;
 struct Tray;
@@ -53,6 +56,7 @@ class MBFF
 
   ~MBFF();
   void Run(int mx_sz, float alpha, float beta);
+  bool IsValidTray(odb::dbInst* tray);
 
  private:
   enum PortName
@@ -89,48 +93,27 @@ class MBFF
     std::string to_string() const;
     bool operator<(const Mask& rhs) const;
   };
-  using DataToOutputsMap = std::map<const sta::LibertyPort*, FlopOutputs>;
+  using DataToOutputsMap
+      = std::map<const sta::LibertyPort*, FlopOutputs, sta::LibertyPortLess>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
+  struct TrayCandidate
+  {
+    odb::dbMaster* master;
+    float area;
+    float leakage;
+    float internal_energy;
+    float width;
+    DataToOutputsMap pin_mapping;
+    std::vector<float> slot_x;
+    std::vector<float> slot_y;
+  };
+
   // MBFF functions
-  const sta::LibertyCell* getLibertyCell(const sta::Cell* cell);
   float GetDist(const Point& a, const Point& b);
   float GetDistAR(const Point& a, const Point& b, float AR);
-  int GetRows(int slot_cnt, const Mask& array_mask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
-
-  // clock pin functions
-  bool IsClockPin(odb::dbITerm* iterm);
-  bool ClockOn(odb::dbInst* inst);
-
-  // d pin functions
-  bool IsDPin(odb::dbITerm* iterm);
-  int GetNumD(odb::dbInst* inst);
-
-  // q(n) pin functions
-  bool IsQPin(odb::dbITerm* iterm);
-  bool IsInvertingQPin(odb::dbITerm* iterm);
-  int GetNumQ(odb::dbInst* inst);
-
-  // clear/preset pin functions
-  bool HasClear(odb::dbInst* inst);
-  bool IsClearPin(odb::dbITerm* iterm);
-  bool HasPreset(odb::dbInst* inst);
-  bool IsPresetPin(odb::dbITerm* iterm);
-
-  // scan cell/pin functions
-  bool IsScanCell(odb::dbInst* inst);
-  bool IsScanIn(odb::dbITerm* iterm);
-  odb::dbITerm* GetScanIn(odb::dbInst* inst);
-  bool IsScanEnable(odb::dbITerm* iterm);
-  odb::dbITerm* GetScanEnable(odb::dbInst* inst);
-
-  // supply pin functions
-  bool IsSupplyPin(odb::dbITerm* iterm);
-
-  bool IsValidFlop(odb::dbInst* FF);
-  bool IsValidTray(odb::dbInst* tray);
 
   // (MB)FF funcs
   PortName PortType(const sta::LibertyPort* lib_port, odb::dbInst* inst);
@@ -147,8 +130,7 @@ class MBFF
   Point GetTrayCenter(const Mask& array_mask, int idx);
   // get slots w.r.t. tray center
   void GetSlots(const Point& tray,
-                int rows,
-                int cols,
+                int bit_cnt,
                 std::vector<Point>& slots,
                 const Mask& array_mask);
 
@@ -225,17 +207,25 @@ class MBFF
   void ReadFFs();
   void ReadPaths();
   void ReadLibs();
+  void SelectBestTrays(const Mask& mask, float activity);
   void SetTrayNames();
 
   void displayFlopClusters(const char* stage,
                            std::vector<std::vector<Flop>>& clusters);
+
+  float getLeakage(odb::dbMaster* master);
+  float getInternalEnergy(odb::dbInst* inst);
+  float clockActivity() const;
+  float getClockPeriod(odb::dbInst* ff_inst);
+  std::vector<float> precomputeClockPeriods(
+      const std::vector<std::vector<Flop>>& FFs);
 
   // OpenROAD vars
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
-  sta::Corner* corner_;
+  sta::Scene* corner_;
   std::unique_ptr<AbstractGraphics> graphics_;
   utl::Logger* log_;
   rsz::Resizer* resizer_;
@@ -252,6 +242,8 @@ class MBFF
   float single_bit_height_;
   float single_bit_width_;
   float single_bit_power_;
+  float clock_period_;
+  odb::dbMaster* single_bit_master_;
 
   // launch-capture FF-pair vars
   std::map<std::string, int> name_to_idx_;
@@ -268,9 +260,11 @@ class MBFF
   ArrayMaskVector<DataToOutputsMap> pin_mappings_;
   ArrayMaskVector<float> tray_area_;
   ArrayMaskVector<float> tray_power_;
+  ArrayMaskVector<float> tray_internal_energy_;
   ArrayMaskVector<float> tray_width_;
   ArrayMaskVector<std::vector<float>> slot_to_tray_x_;
   ArrayMaskVector<std::vector<float>> slot_to_tray_y_;
+  ArrayMaskVector<std::vector<TrayCandidate>> tray_candidates_;
   std::vector<float> norm_area_;
   std::vector<float> norm_power_;
   std::vector<int> unused_;

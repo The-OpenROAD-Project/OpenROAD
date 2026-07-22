@@ -26,7 +26,8 @@ add_library(dpl_lib
   src/DecapPlacement.cpp
   src/OptMirror.cpp
   src/PlacementDRC.cpp
-
+  src/NegotiationLegalizer.cpp
+  src/NegotiationLegalizerPass.cpp
   src/Optdp.cpp
   src/infrastructure/architecture.cxx
   src/util/color.cxx
@@ -38,6 +39,7 @@ add_library(dpl_lib
   src/optimization/detailed_mis.cxx
   src/optimization/detailed_reorder.cxx
   src/optimization/detailed_global.cxx
+  src/optimization/detailed_global_legacy.cxx
   src/optimization/detailed_vertical.cxx
   src/objective/detailed_displacement.cxx
   src/objective/detailed_hpwl.cxx

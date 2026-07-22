@@ -7,16 +7,15 @@ Die Area: (0.00, 0.00) (220.02, 221.20),  Floorplan Area: (0.00, 0.00) (220.02, 
 	Number of std cell instances: 150
 	Area of std cell instances: 678.30
 	Number of macros: 2
+	Macros to be placed: 1
 	Area of macros: 20000.00
-	Halo width: 0.30
-	Halo height: 0.30
-	Area of macros with halos: 10120.36
+	Base halo (L, B, R, T): (0.00, 0.00, 0.00, 0.00)
+	Area of macros with halos: 10000.00
 	Area of std cell instances + Area of macros: 20678.30
 	Floorplan area: 48668.42
 	Design Utilization: 0.42
 	Floorplan Utilization: 0.02
 	Manufacturing Grid: 10
 
-[WARNING MPL-0014] No Liberty data found for std cells. Continuing without dataflow.
 [WARNING MPL-0026] Design has no IO pins!
 No differences found.

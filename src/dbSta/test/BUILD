@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
@@ -19,12 +22,19 @@ ALL_TESTS = [
     "get_ports1",
     "get_ports1_hier",
     "hier2",
+    "hier3",
+    "hier_escape_port",
     "hierclock",
     "hierwrite",
     "hier_deep",
+    "hier_highest_connected_net",
+    "hier_weird_port",
+    "levelize_drvr_vertices1",
     "make_port",
+    "modnet_port_alias",
     "network_edit1",
     "power1",
+    "read_def_bus_port",
     "read_liberty1",
     "read_vcd",
     "read_verilog1",
@@ -49,13 +59,17 @@ ALL_TESTS = [
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
+    "sdc_modinst_slash",
     "sdc_names1",
     "sdc_names2",
+    "spef_def_names",
     "sta1",
     "sta2",
     "sta3",
     "sta4",
     "sta5",
+    "sta_to_db1",
+    "sta_to_db1_hier",
     "write_sdc1",
     "write_verilog1",
     "write_verilog2",
@@ -113,6 +127,10 @@ filegroup(
                 "example1.lef",
                 "hier2_out.vok",
             ],
+            "hier3": [
+                "example1_typ.lib",
+                "example1.lef",
+            ],
             "hier_deep": [
                 "example1_typ.lib",
                 "example1.lef",
@@ -120,6 +138,16 @@ filegroup(
             "hierclock": [
                 "hierclock_gate.v",
                 "hierclock_out.vok",
+            ],
+            "levelize_drvr_vertices1": [
+                "gcd_asap7.v",
+                "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
             ],
             "network_edit1": [
                 "reg3.def",
@@ -189,6 +217,10 @@ filegroup(
             "sdc_names1": [
                 "hier1.def",
             ],
+            "spef_def_names": [
+                "example1_slow.lib",
+                "example1.lef",
+            ],
             "sta1": [
                 "example1_slow.lib",
                 "example1.def",
@@ -219,6 +251,16 @@ filegroup(
                 "example1_typ.lib",
                 "example1.def",
                 "example1.lef",
+            ],
+            "sta_to_db1": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta_to_db1_hier": [
+                "example1_typ.lib",
+                "example1.lef",
+                "hier3.v",
             ],
             "write_sdc1": [
                 "hier1.sdc",
@@ -268,7 +310,8 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
@@ -284,14 +327,37 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestDbSta_0.v",
+        "cpp/TestDbSta_StalePrevPath.v",
     ],
     deps = [
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
-        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_read_verilog",
+    srcs = ["cpp/TestReadVerilog.cpp"],
+    data = glob(["cpp/TestReadVerilog*.v"]),
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_write_verilog",
+    srcs = ["cpp/TestWriteVerilog.cpp"],
+    data = glob(["cpp/TestWriteVerilog*.v"]),
+    deps = [
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

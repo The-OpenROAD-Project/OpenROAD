@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <unistd.h>
-
-#include <filesystem>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
-#include "gmock/gmock.h"
 #include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
@@ -21,18 +16,15 @@
 #include "odb/geom.h"
 #include "odb/lefin.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
-#include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
-#include "sta/PathAnalysisPt.hh"
-#include "sta/Search.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sta.hh"
-#include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "tst/fixture.h"
 #include "tst/nangate45_fixture.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/deleter.h"
 
 namespace rsz {
@@ -44,18 +36,18 @@ class BufRemTest : public tst::Nangate45Fixture
  protected:
   BufRemTest()
       :  // initializer resizer
-        stt_(db_.get(), &logger_),
-        callback_handler_(&logger_),
+        stt_(&logger_),
+        service_registry_(&logger_),
         dp_(db_.get(), &logger_),
         ant_(db_.get(), &logger_),
         grt_(&logger_,
-             &callback_handler_,
+             &service_registry_,
              &stt_,
              db_.get(),
              sta_.get(),
              &ant_,
              &dp_),
-        ep_(&logger_, &callback_handler_, db_.get(), sta_.get(), &stt_, &grt_),
+        ep_(&logger_, &service_registry_, db_.get(), sta_.get(), &stt_, &grt_),
         resizer_(&logger_, db_.get(), sta_.get(), &stt_, &grt_, &dp_, &ep_)
   {
     library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
@@ -106,35 +98,30 @@ class BufRemTest : public tst::Nangate45Fixture
     makeInst("BUF_X8", "b4", {400, 400}, "n3", "out1");
     makeInst("BUF_X8", "b5", {500, 500}, "n1", "out2");
 
-    // initialize STA
-    sta::Corner* corner = sta_->cmdCorner();
-    sta::PathAPIndex pathAPIndex
-        = corner->findPathAnalysisPt(sta::MinMax::max())->index();
-    sta::Corners* corners = sta_->search()->corners();
-    pathAnalysisPt_ = corners->findPathAnalysisPt(pathAPIndex);
     sta::Graph* graph = sta_->ensureGraph();
     sta::Pin* outStaPin = db_network_->dbToSta(outPort);
     outVertex_ = graph->pinLoadVertex(outStaPin);
   }
 
   stt::SteinerTreeBuilder stt_;
-  utl::CallBackHandler callback_handler_;
+  utl::ServiceRegistry service_registry_;
   dpl::Opendp dp_;
   ant::AntennaChecker ant_;
   grt::GlobalRouter grt_;
   est::EstimateParasitics ep_;
-  rsz::Resizer resizer_;
+  Resizer resizer_;
 
   sta::LibertyLibrary* library_{nullptr};
   sta::dbNetwork* db_network_{nullptr};
-  sta::PathAnalysisPt* pathAnalysisPt_{nullptr};
   sta::Vertex* outVertex_{nullptr};
 };
 
 TEST_F(BufRemTest, SlackImproves)
 {
-  const float origArrival
-      = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+  const float origArrival = sta_->arrival(outVertex_,
+                                          sta::RiseFallBoth::riseFall(),
+                                          sta_->scenes(),
+                                          sta::MinMax::max());
 
   // Remove buffers 'b2' and 'b3' from the buffer chain
   resizer_.initBlock();
@@ -156,15 +143,19 @@ TEST_F(BufRemTest, SlackImproves)
     insts->emplace_back(sta_inst2);
 
     resizer_.removeBuffers(*insts);
-    const float newArrival = sta_->vertexArrival(
-        outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+    const float newArrival = sta_->arrival(outVertex_,
+                                           sta::RiseFallBoth::riseFall(),
+                                           sta_->scenes(),
+                                           sta::MinMax::max());
 
     EXPECT_LT(newArrival, origArrival);
     resizer_.journalRestoreTest();
   }
 
-  const float restoredArrival
-      = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+  const float restoredArrival = sta_->arrival(outVertex_,
+                                              sta::RiseFallBoth::riseFall(),
+                                              sta_->scenes(),
+                                              sta::MinMax::max());
 
   EXPECT_EQ(restoredArrival, origArrival);
 }

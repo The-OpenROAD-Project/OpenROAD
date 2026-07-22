@@ -10,7 +10,13 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/taObj/taFig.h"
+#include "db/taObj/taPin.h"
+#include "db/taObj/taShape.h"
+#include "db/taObj/taVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
@@ -77,13 +83,12 @@ void FlexTAWorker::modMinSpacingCostPlanar(const odb::Rect& box,
               lNum,
               idx1,
               idx2);
-
-  odb::Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
   frCoord dx, dy;
   auto& trackLocs = getTrackLocs(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
+    odb::Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
     odb::dbTransform xform(odb::Point(boxLeft, trackLoc));
     xform.apply(box2);
     box2boxDistSquare(box1, box2, dx, dy);
@@ -566,7 +571,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
                                             int& idx1,
                                             int& idx2)
 {
-  lNum = iroute->getGuide()->getBeginLayerNum();
+  lNum = iroute->getGuide()->getLayerNum();
   auto [gbp, gep] = iroute->getGuide()->getPoints();
   odb::Point gIdx = getDesign()->getTopBlock()->getGCellIdx(gbp);
   odb::Rect gBox = getDesign()->getTopBlock()->getGCellBox(gIdx);
@@ -661,7 +666,7 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
 
     // add cost to locations that will cause forbidden via spacing to
     // boundary pin
-    auto layerNum = iroute->getGuide()->getBeginLayerNum();
+    auto layerNum = iroute->getGuide()->getLayerNum();
     auto layer = getTech()->getLayer(layerNum);
 
     if (layer->isUnidirectional()) {
@@ -917,7 +922,7 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
                                            frUInt4& outDrcCost)
 {
   frCoord irouteLayerPitch
-      = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
+      = getTech()->getLayer(iroute->getGuide()->getLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
   int drcCost = (isInitTA()) ? (0.05 * outDrcCost)
                              : (router_cfg_->TADRCCOST * outDrcCost);

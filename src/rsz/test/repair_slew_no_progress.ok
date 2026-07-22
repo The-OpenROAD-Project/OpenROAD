@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: long_wire
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 12 components and 48 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 24 connections.
+[INFO ODB-0133]     Created 4 nets and 14 connections.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        13
+[WARNING RSZ-0170] Cannot repair slew on net n2 driven by u2/Z: driver resistance x repeater pin capacitance (1.38e-12) already meets or exceeds the slew budget (6.44e-12). Net left unrepaired on this segment.
+    final |   +108.3% |       2 |      11 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 2 slew violations.
+[INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0038] Inserted 11 buffers in 1 nets.
+repair_design completed

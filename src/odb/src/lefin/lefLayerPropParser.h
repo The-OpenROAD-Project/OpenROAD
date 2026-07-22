@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <tuple>
@@ -18,7 +19,13 @@
 namespace utl {
 class Logger;
 }
+
+namespace LefParser {
+class lefiLayer;
+}  // namespace LefParser
+
 namespace odb {
+
 class lefTechLayerSpacingEolParser
 {
  public:
@@ -77,6 +84,12 @@ class lefTechLayerRightWayOnGridOnlyParser
 };
 
 class lefTechLayerRectOnlyParser
+{
+ public:
+  static bool parse(const std::string&, dbTechLayer*, lefinReader*);
+};
+
+class lefTechLayerBacksideParser
 {
  public:
   static bool parse(const std::string&, dbTechLayer*, lefinReader*);
@@ -179,9 +192,12 @@ class lefTechLayerAreaRuleParser
       const std::string&,
       odb::dbTechLayer* layer,
       std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props);
-  void setInt(double val,
-              odb::dbTechLayerAreaRule* rule,
-              void (odb::dbTechLayerAreaRule::*func)(int));
+  void setDist(double val,
+               odb::dbTechLayerAreaRule* rule,
+               void (odb::dbTechLayerAreaRule::*func)(int));
+  void setArea(double val,
+               odb::dbTechLayerAreaRule* rule,
+               void (odb::dbTechLayerAreaRule::*func)(int64_t));
   void setExceptEdgeLengths(const boost::fusion::vector<double, double>& params,
                             odb::dbTechLayerAreaRule* rule);
   void setExceptMinSize(const boost::fusion::vector<double, double>& params,
@@ -359,6 +375,48 @@ class MaxSpacingParser
 
  private:
   void setMaxSpacing(dbTechLayerMaxSpacingRule*, double);
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class lefTechLayerVoltageSpacing
+{
+ public:
+  lefTechLayerVoltageSpacing(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class AntennaGatePlusDiffParser
+{
+ public:
+  AntennaGatePlusDiffParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class MinWidthParser
+{
+ public:
+  MinWidthParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
   dbTechLayer* layer_;
   lefinReader* lefin_;
 };

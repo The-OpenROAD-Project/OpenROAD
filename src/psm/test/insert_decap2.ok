@@ -10,12 +10,12 @@
 ########## IR report #################
 Net              : VDD
 Corner           : default
-Total power      : 4.03e-04 W
+Total power      : 4.04e-04 W
 Supply voltage   : 1.40e+00 V
 Worstcase voltage: 1.40e+00 V
 Average voltage  : 1.40e+00 V
-Average IR drop  : 4.19e-05 V
-Worstcase IR drop: 7.39e-05 V
+Average IR drop  : 4.20e-05 V
+Worstcase IR drop: 7.42e-05 V
 Percentage drop  : 0.01 %
 ######################################
 [INFO DPL-0056] Placed 4 decap cells. Total capacitance: 0.000010

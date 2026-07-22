@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -107,9 +108,9 @@ class GridSwitchedPower
   struct InstanceInfo
   {
     std::set<int> sites;
-    std::set<odb::dbRow*> rows;
+    odb::PtrSet<odb::dbRow> rows;
   };
-  std::map<odb::dbInst*, InstanceInfo> insts_;
+  odb::PtrMap<odb::dbInst, InstanceInfo> insts_;
 
   Straps* getLowestStrap() const;
 
@@ -119,7 +120,7 @@ class GridSwitchedPower
 
   struct InstIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbInst* inst) const
     {
       return inst->getBBox()->getBox();
@@ -136,21 +137,21 @@ class GridSwitchedPower
 
   struct RowIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbRow* row) const { return row->getBBox(); }
   };
   using RowTree
       = bgi::rtree<odb::dbRow*, bgi::quadratic<16>, RowIndexableGetter>;
   RowTree buildRowTree() const;
-  std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst,
-                                        const RowTree& row_search) const;
+  odb::PtrSet<odb::dbRow> getInstanceRows(odb::dbInst* inst,
+                                          const RowTree& row_search) const;
 
   bool checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const;
   void updateControlNetwork();
   void updateControlNetworkSTAR();
   void updateControlNetworkDAISY(bool order_by_x);
 
-  static constexpr const char* inst_prefix_ = "PSW_";
+  static constexpr const char* kInstPrefix = "PSW_";
 };
 
 }  // namespace pdn

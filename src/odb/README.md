@@ -112,49 +112,6 @@ create_child_physical_clusters
 | `top_module` | TBC. |
 | `-modinst` | TBC. |
 
-### Set NDR Layer Rule
-
-Description TBC.
-
-```tcl
-set_ndr_layer_rule  
-    tech
-    ndr
-    layerName
-    input
-    isSpacing
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `tech` | TBC. |
-| `ndr` | TBC. |
-| `values` | TBC. |
-| `isSpacing` | TBC. |
-
-### Set NDR Rules
-
-Description TBC.
-
-```tcl
-set_ndr_rules
-    tech
-    ndr
-    values
-    isSpacing
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `tech` | TBC. |
-| `ndr` | TBC. |
-| `layerName` | TBC. |
-| `input` | TBC. |
-
 ### Create NDR
 
 Description TBC.
@@ -175,6 +132,73 @@ create_ndr
 | `-spacing` | TBC. |
 | `-width` | TBC. |
 | `-via` | TBC. |
+
+### Set NDR Layer Rule
+
+This command sets a non-default rule (NDR) for a specific routing layer.
+
+<!-- checker: skip -->
+```tcl
+set_ndr_layer_rule
+    tech
+    ndr
+    layerName
+    input
+    isSpacing
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `tech` | Technology database object. |
+| `ndr` | NDR database object to apply the rule to. |
+| `layerName` | Name of the routing layer. |
+| `input` | Spacing or width value (absolute in microns, or multiplier using `*N` syntax). |
+| `isSpacing` | Boolean — `1` to set spacing, `0` to set width. |
+
+### Set NDR Rules
+
+This command sets non-default rules for spacing or width across all or a range of routing layers.
+
+<!-- checker: skip -->
+```tcl
+set_ndr_rules
+    tech
+    ndr
+    values
+    isSpacing
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `tech` | Technology database object. |
+| `ndr` | NDR database object to apply the rules to. |
+| `values` | Single value (applied to all layers) or a list of `{layer value}` pairs. |
+| `isSpacing` | Boolean — `1` to set spacing, `0` to set width. |
+
+### Set Routing Auto-Taper
+
+This command controls the detailed router's auto-taper behavior on a per-net basis. By default the detailed router tapers non-default-rule (NDR, i.e. wide) nets down to minimum width near pin connections so that they fit the pin access geometry. For some nets (for example wide analog/pad traces) this
+tapering is undesirable and the net must keep its full NDR width all the way to the pin. The setting is stored on `dbNet` and honored by the detailed
+router. It only affects nets that have an NDR assigned.
+
+```tcl
+set_routing_auto_taper
+    (-net name | -all_clocks)
+    (-enable | -disable)
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Name of the net to mark. Mutually exclusive with `-all_clocks`. |
+| `-all_clocks` | Apply to all clock nets. Mutually exclusive with `-net`. |
+| `-disable` | Disable auto-taper for the selected net(s), keeping the full NDR width all the way to the pin. |
+| `-enable` | Enable auto-taper for the selected net(s), restoring the default behavior. Exactly one of `-enable` or `-disable` must be given. |
 
 ### Create Voltage Domain
 
@@ -387,26 +411,6 @@ design_is_routed [-verbose]
 | `verbose` | Flag that allow the command to show all the nets that are not routed. |
 
 
-### Replace Design
-
-This command swaps a hierarchical module with another module.
-Two modules must have identical number of ports and port names must match.
-Functional equivalence is not required.
-New module is not allowed to have multiple levels of hierarchy for now.
-Newly instantiated module is uniquified.
-
-```tcl
-replace_design instance_name module_name
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `instance_name` | Name of a hierarchical instance for which the module swap needs to happen.  For example, 'l1/l2/U3' |
-| `module_name`   | Name of a new module that needs to be swapped in.  |
-
-
 ### Create Blockage
 
 This command provides a unified interface for creating placement blockages. The command supports hard, soft, and partial blockages with flexible configuration options.
@@ -482,6 +486,50 @@ This command checks if the IO pins of the design have a placement status of `PLA
 all_pins_placed
 ```
 
+### Add 3DBlox Alignment Marker Rule
+
+This command registers a 3DBlox alignment marker rule between two cell masters. The 3DBlox checker uses these rules to verify that paired alignment marker instances on bonded chiplets are co-located and (optionally) match a relative orientation constraint.
+
+```tcl
+add_3dblox_alignment_marker_rule
+    [-lib_a lib_a]
+    -master_a master_a
+    [-lib_b lib_b]
+    -master_b master_b
+    [-tolerance tolerance_um]
+    [-relative_orientations relative_orientations]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-lib_a` | Optional library to scope `-master_a` lookup. Required only when the master name is ambiguous across libraries. |
+| `-master_a` | Cell master used as side A of the alignment pair. |
+| `-lib_b` | Optional library to scope `-master_b` lookup. |
+| `-master_b` | Cell master used as side B of the alignment pair. |
+| `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
+| `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
+
+### Set Extraction Rules File
+
+Sets the path to the parasitics extraction rules file. For a design in which
+multiple technologies are used, the user must specify the technology for which
+they want to set the rules path.
+
+```tcl
+set_extraction_rules_file
+    [-tech tech_name]
+    rules_file
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-tech` | Technology for which to set the extraction rules path. |
+| `rules_file` | Path to the extraction rules file. |
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
@@ -549,13 +597,6 @@ DRC on the whole chip).
 
 ## Limitations
 
-## FAQs
-
-Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+odb+in%3Atitle)
-about this tool.
-
-
 ## LICENSE
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

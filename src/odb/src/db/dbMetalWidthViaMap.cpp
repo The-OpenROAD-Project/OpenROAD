@@ -6,9 +6,9 @@
 
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
@@ -21,6 +21,7 @@ template class dbTable<_dbMetalWidthViaMap>;
 
 bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (via_cut_class_ != rhs.via_cut_class_) {
     return false;
   }
@@ -47,6 +48,7 @@ bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbMetalWidthViaMap::operator<(const _dbMetalWidthViaMap& rhs) const
@@ -95,9 +97,7 @@ void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["via_name"].add(via_name_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -185,7 +185,7 @@ void dbMetalWidthViaMap::setViaName(const std::string& via_name)
   obj->via_name_ = via_name;
 }
 
-std::string dbMetalWidthViaMap::getViaName() const
+const std::string& dbMetalWidthViaMap::getViaName() const
 {
   _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
   return obj->via_name_;
@@ -209,6 +209,9 @@ bool dbMetalWidthViaMap::isPgVia() const
 dbTechLayer* dbMetalWidthViaMap::getCutLayer() const
 {
   _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
+  if (!obj->cut_layer_.isValid()) {
+    return nullptr;
+  }
   dbTech* tech = (dbTech*) obj->getOwner();
   return dbTechLayer::getTechLayer(tech, obj->cut_layer_);
 }

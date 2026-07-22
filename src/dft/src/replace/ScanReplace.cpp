@@ -46,8 +46,7 @@ sta::LibertyPort* FindEquivalentPortInScanCell(
         && scan_cell_port->function() == nullptr) {
       // input ports do not have a function
       port_equiv
-          = port_equiv
-            && strcmp(non_scan_cell_port->name(), scan_cell_port->name()) == 0;
+          = port_equiv && non_scan_cell_port->name() == scan_cell_port->name();
     } else {
       port_equiv = port_equiv
                    && sta::FuncExpr::equiv(non_scan_cell_port->function(),
@@ -279,7 +278,7 @@ void ScanReplace::collectScanCellAvailable()
       }
 
       // We only care about sequential cells in DFT
-      if (!liberty_cell->hasSequentials()) {
+      if (!liberty_cell->isSequential()) {
         continue;
       }
 
@@ -293,7 +292,7 @@ void ScanReplace::collectScanCellAvailable()
         continue;
       }
 
-      if (utils::IsScanCell(liberty_cell)) {
+      if (utils::IsScanCell(db_network, liberty_cell)) {
         available_scan_lib_cells_.insert(liberty_cell);
       } else {
         non_scan_cells.push_back(liberty_cell);
@@ -341,7 +340,7 @@ void ScanReplace::scanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   scanReplace(chip->getBlock());
-  sta_->networkChanged();
+  sta_->networkChangedNonSdc();
 }
 
 // Recursive function that iterates over a block (and the blocks inside this
@@ -390,7 +389,7 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
       continue;
     }
 
-    if (!from_liberty_cell->hasSequentials()
+    if (!from_liberty_cell->isSequential()
         || from_liberty_cell->isClockGate()) {
       // If the cell is not sequential, then there is nothing to replace
       continue;
@@ -452,7 +451,7 @@ void ScanReplace::rollbackScanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   rollbackScanReplace(chip->getBlock());
-  sta_->networkChanged();
+  sta_->networkChangedNonSdc();
 }
 
 void ScanReplace::rollbackScanReplace(odb::dbBlock* block)

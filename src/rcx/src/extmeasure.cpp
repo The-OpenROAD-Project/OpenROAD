@@ -15,6 +15,7 @@
 #include "odb/dbTypes.h"
 #include "rcx/array1.h"
 #include "rcx/dbUtil.h"
+#include "rcx/ext2dBox.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
@@ -471,7 +472,7 @@ uint32_t extMeasure::defineBox(CoupleOptions& options)
   }
   dbTechLayer* layer = _extMain->_tech->findRoutingLayer(_met);
   _minWidth = layer->getWidth();
-  _toHi = (options[11] > 0) ? true : false;
+  _toHi = options[11] > 0;
 
   return _len;
 }
@@ -1850,17 +1851,16 @@ double extMain::updateTotalCap(dbRSeg* rseg, double cap, uint32_t modelIndex)
 
   int extDbIndex, sci, scDbIndex;
   extDbIndex = getProcessCornerDbIndex(modelIndex);
-  double tot = rseg->getCapacitance(extDbIndex);
+  double tot = rseg->getGroundCapacitance(extDbIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, extDbIndex);
-  // return rseg->getCapacitance(extDbIndex);
   getScaledCornerDbIndex(modelIndex, sci, scDbIndex);
   if (sci == -1) {
     return tot;
   }
   getScaledGndC(sci, cap);
-  double tots = rseg->getCapacitance(scDbIndex);
+  double tots = rseg->getGroundCapacitance(scDbIndex);
   tots += cap;
   rseg->setCapacitance(tots, scDbIndex);
   return tot;
@@ -1907,11 +1907,7 @@ bool extMeasure::isConnectedToBterm(dbRSeg* rseg1)
     return true;
   }
   dbCapNode* node2 = rseg1->getSourceCapNode();
-  if (node2->isBTerm()) {
-    return true;
-  }
-
-  return false;
+  return node2->isBTerm();
 }
 
 dbCCSeg* extMeasure::makeCcap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
@@ -2268,7 +2264,7 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
 
   bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
 
-  if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
+  if ((lenOverSub <= 0) && (res_lenOverSub <= 0)) {
     return;
   }
 
@@ -2349,7 +2345,7 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
   bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
   bool rvia2 = rseg2 != nullptr && isVia(rseg2->getId());
 
-  if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
+  if ((lenOverSub <= 0) && (res_lenOverSub <= 0)) {
     return;
   }
   _underMet = 0;
@@ -2573,9 +2569,10 @@ void extMeasure::measureRC(CoupleOptions& options)
               " ---------------------------------------------------------------"
               "------------------\n");
     }
-    double deltaRes[10];
+
+    double base_resistances[10];
     for (uint32_t jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      deltaRes[jj] = 0.0;
+      base_resistances[jj] = 0.0;
     }
 
     SEQ* s = addSeq(_ll, _ur);
@@ -2587,15 +2584,18 @@ void extMeasure::measureRC(CoupleOptions& options)
       len_covered += len_down_not_coupled;
     }
     if (len_covered > 0) {
-      calcRes0(deltaRes, _met, len_covered);
+      calcRes0(base_resistances, _met, len_covered);
     }
 
     for (uint32_t jj = 0; jj < _metRCTable.getCnt(); jj++) {
-      double totR1 = _rc[jj]->res_;
-      if (totR1 > 0) {
-        totR1 -= deltaRes[jj];
-        if (totR1 != 0.0) {
-          _extMain->updateRes(rseg1, totR1, jj);
+      const double total_resistance = _rc[jj]->res_;
+
+      if (total_resistance > 0) {
+        const double neighboring_adjustment
+            = total_resistance - base_resistances[jj];
+
+        if (neighboring_adjustment != 0.0) {
+          _extMain->updateRes(rseg1, neighboring_adjustment, jj);
         }
       }
     }

@@ -38,7 +38,7 @@
 [INFO CTS-0034]     Segment length (rounded): 2.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(3.358, 6.302)]=>[(3.571, 6.277)] parentPt:[(7.358, 6.064)] new branchPt is outside blockage
-[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(3.757, 7.904)]=>[(3.800, 8.048)] parentPt:[(3.571, 6.277)] new branchPt is outside blockage
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(3.752, 7.909)]=>[(3.800, 8.048)] parentPt:[(3.571, 6.277)] new branchPt is outside blockage
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(11.178, 8.122)]=>[(11.095, 7.800)] parentPt:[(11.358, 6.064)] new branchPt is outside blockage
 [DEBUG CTS-legalizer] createClockSubNets: root clkbuf_0: [(7.358, 6.064)]
 [DEBUG CTS-legalizer] createClockSubNets level 1 clk_buf_1_0_ : [(3.571, 6.277)]

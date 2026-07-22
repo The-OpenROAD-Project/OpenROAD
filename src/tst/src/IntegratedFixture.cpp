@@ -3,8 +3,6 @@
 
 #include "tst/IntegratedFixture.h"
 
-#include <gtest/gtest.h>
-
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -13,11 +11,13 @@
 
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Clock.hh"
 #include "sta/Graph.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
@@ -31,23 +31,23 @@ namespace tst {
 
 IntegratedFixture::IntegratedFixture(Technology tech,
                                      const std::string& test_root_path)
-    : stt_(db_.get(), &logger_),
-      callback_handler_(&logger_),
+    : stt_(&logger_),
+      service_registry_(&logger_),
       dp_(db_.get(), &logger_),
       ant_(db_.get(), &logger_),
       grt_(&logger_,
-           &callback_handler_,
+           &service_registry_,
            &stt_,
            db_.get(),
            sta_.get(),
            &ant_,
            &dp_),
-      ep_(&logger_, &callback_handler_, db_.get(), sta_.get(), &stt_, &grt_),
+      ep_(&logger_, &service_registry_, db_.get(), sta_.get(), &stt_, &grt_),
       resizer_(&logger_, db_.get(), sta_.get(), &stt_, &grt_, &dp_, &ep_),
       test_root_path_(test_root_path)
 {
   switch (tech) {
-    case Technology::Nangate45: {
+    case Technology::kNangate45: {
       const std::string nangate45_tech_path = "_main/test/Nangate45/";
       readLiberty(getFilePath(nangate45_tech_path + "Nangate45_typ.lib"));
       lib_ = loadTechAndLib("Nangate45",
@@ -56,7 +56,7 @@ IntegratedFixture::IntegratedFixture(Technology tech,
       break;
     }
 
-    case Technology::Sky130hd: {
+    case Technology::kSky130hd: {
       const std::string sky130hd_tech_path = "_main/test/sky130hd/";
       readLiberty(getFilePath(sky130hd_tech_path + "sky130_fd_sc_hd_tt.lib"));
       lib_ = loadTechAndLib(
@@ -72,7 +72,8 @@ IntegratedFixture::IntegratedFixture(Technology tech,
   db_network_->setHierarchy();
 }
 
-void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
+void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file,
+                                            bool init_default_sdc)
 {
   ord::dbVerilogNetwork verilog_network(sta_.get());
   sta::VerilogReader verilog_reader(&verilog_network);
@@ -89,6 +90,13 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
   sta_->postReadDef(block_);
 
+  if (init_default_sdc) {
+    initStaDefaultSdc();
+  }
+}
+
+void IntegratedFixture::initStaDefaultSdc()
+{
   // Timing setup
   sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
   ASSERT_NE(top_cell, nullptr);
@@ -97,27 +105,24 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
     sta::Pin* clk_pin
         = db_network_->findPin(db_network_->topInstance(), clk_port);
 
-    // STA frees the 'clk_pins' after use.
-    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-    sta::PinSet* clk_pins = new sta::PinSet(db_network_);
-    clk_pins->insert(clk_pin);
+    sta::PinSet clk_pins(db_network_);
+    clk_pins.insert(clk_pin);
 
     // Clock period = 0.5ns
     double period = sta_->units()->timeUnit()->userToSta(0.5);
-    // STA takes the ownership of 'waveform'.
-    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-    sta::FloatSeq* waveform = new sta::FloatSeq;
-    waveform->push_back(0);
-    waveform->push_back(period / 2.0);
+    sta::FloatSeq waveform;
+    waveform.push_back(0);
+    waveform.push_back(period / 2.0);
 
     sta_->makeClock("clk",
                     clk_pins,
                     /*add_to_pins=*/false,
                     /*period=*/period,
                     waveform,
-                    /*comment=*/nullptr);
+                    /*comment=*/"",
+                    /*mode=*/sta_->cmdMode());
 
-    sta::Sdc* sdc = sta_->sdc();
+    sta::Sdc* sdc = sta_->cmdMode()->sdc();
     const sta::RiseFallBoth* rf = sta::RiseFallBoth::riseFall();
     sta::Clock* clk = sdc->findClock("clk");
     const sta::RiseFall* clk_rf = sta::RiseFall::rise();
@@ -142,7 +147,8 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
                             false,
                             sta::MinMaxAll::all(),
                             true,
-                            0.0);
+                            0.0,
+                            sta_->cmdMode()->sdc());
       } else if (io_type == odb::dbIoType::OUTPUT) {
         sta_->setOutputDelay(pin,
                              rf,
@@ -153,7 +159,8 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
                              false,
                              sta::MinMaxAll::all(),
                              true,
-                             0.0);
+                             0.0,
+                             sta_->cmdMode()->sdc());
       }
     }
   }

@@ -14,6 +14,7 @@
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

@@ -1,0 +1,53 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Created 231 sinks total
+Each group has 10 sinks symmetrically placed + 1 sink at centroid
+The centroid sink causes collision with cluster buffer
+[INFO CTS-0050] Root buffer is CLKBUF_X3.
+[INFO CTS-0051] Sink buffer is CLKBUF_X3.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    CLKBUF_X3
+[INFO CTS-0049] Characterization buffer is CLKBUF_X3.
+[INFO CTS-0007] Net "clk" found for clock "clk".
+[INFO CTS-0010]  Clock net "clk" has 231 sinks.
+[INFO CTS-0008] TritonCTS found 1 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 231.
+[INFO CTS-0029]  Register sinks will be clustered in groups of up to 11 and with maximum cluster diameter of 60.0 um.
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0204] A clustering solution was found from clustering size of 11 and clustering diameter of 60.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 21.
+[INFO CTS-0024]  Normalized sink region: [(7.37357, 7.23071), (50.2308, 78.6593)].
+[INFO CTS-0025]     Width:  42.8572.
+[INFO CTS-0026]     Height: 71.4286.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 11
+    Sub-region size: 42.8572 X 35.7143
+[INFO CTS-0034]     Segment length (rounded): 18.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 21.
+[INFO CTS-0018]     Created 24 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
+[INFO CTS-0015]     Created 24 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 9:1, 11:21, 12:1..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0098] Clock net "clk"
+[INFO CTS-0099]  Sinks 232
+[INFO CTS-0100]  Leaf buffers 21
+[INFO CTS-0101]  Average sink wire length 339.16 um
+[INFO CTS-0102]  Path depth 2 - 3
+[INFO CTS-0207]  Dummy loads inserted 1
+Total number of Clock Roots: 1.
+Total number of Buffers Inserted: 24.
+Total number of Clock Subnets: 24.
+Total number of Sinks: 231.
+Cells used:
+  CLKBUF_X3: 24
+Dummys used:
+  INV_X2: 1

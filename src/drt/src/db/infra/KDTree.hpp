@@ -13,37 +13,34 @@
 
 namespace drt {
 
-using odb::Orientation2D;
-using odb::Point;
-
 struct KDTreeNode
 {
   int id;
-  Point point;
+  odb::Point point;
   std::unique_ptr<KDTreeNode> left;
   std::unique_ptr<KDTreeNode> right;
 
-  KDTreeNode(const int idIn, const Point& pt) : id(idIn), point(pt) {}
+  KDTreeNode(const int idIn, const odb::Point& pt) : id(idIn), point(pt) {}
 };
 
 class KDTree
 {
  public:
-  KDTree(const std::vector<Point>& points);
+  KDTree(const std::vector<odb::Point>& points);
 
   ~KDTree() = default;
 
-  std::vector<int> radiusSearch(const Point& target, int radius) const;
+  std::vector<int> radiusSearch(const odb::Point& target, int radius) const;
 
  private:
   std::unique_ptr<KDTreeNode> buildTree(
-      const std::vector<std::pair<int, Point>>& points,
-      const Orientation2D& orient);
+      const std::vector<std::pair<int, odb::Point>>& points,
+      const odb::Orientation2D& orient);
 
   void radiusSearchHelper(KDTreeNode* node,
-                          const Point& target,
+                          const odb::Point& target,
                           frSquaredDistance radius_square,
-                          const Orientation2D& orient,
+                          const odb::Orientation2D& orient,
                           std::vector<int>& result) const;
 
   std::unique_ptr<KDTreeNode> root_;

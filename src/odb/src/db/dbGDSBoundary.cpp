@@ -9,16 +9,21 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSStructure.h"
+#include "odb/geom.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSBoundary>;
 
 bool _dbGDSBoundary::operator==(const _dbGDSBoundary& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (layer_ != rhs.layer_) {
     return false;
   }
@@ -27,6 +32,7 @@ bool _dbGDSBoundary::operator==(const _dbGDSBoundary& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSBoundary::operator<(const _dbGDSBoundary& rhs) const
@@ -63,8 +69,9 @@ void _dbGDSBoundary::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["xy"].add(xy_);
+
+  // User Code Begin collectMemInfo
   info.children["propattr"].add(propattr_);
   for (auto& [i, s] : propattr_) {
     info.children["propattr"].add(s);
@@ -124,10 +131,17 @@ const std::vector<Point>& dbGDSBoundary::getXY()
   return obj->xy_;
 }
 
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSBoundary::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSBoundary::getPropattr() const
 {
   auto* obj = (_dbGDSBoundary*) this;
   return obj->propattr_;
+}
+
+void dbGDSBoundary::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSBoundary*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSBoundary* dbGDSBoundary::create(dbGDSStructure* structure)

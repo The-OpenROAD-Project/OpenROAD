@@ -13,7 +13,6 @@
 #include "dbSBox.h"
 #include "dbSBoxItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
@@ -133,6 +132,12 @@ dbNet* dbSWire::getNet()
   _dbSWire* wire = (_dbSWire*) this;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   return (dbNet*) block->net_tbl_->getPtr(wire->net_);
+}
+
+void dbSWire::setWireType(dbWireType type)
+{
+  _dbSWire* wire = (_dbSWire*) this;
+  wire->flags_.wire_type = type.getValue();
 }
 
 dbWireType dbSWire::getWireType()

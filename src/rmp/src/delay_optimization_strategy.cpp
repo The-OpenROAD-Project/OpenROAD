@@ -3,9 +3,13 @@
 
 #include "delay_optimization_strategy.h"
 
-#include <cstring>
-#include <mutex>
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
+#include <cstring>
+
+#include "absl/base/attributes.h"
+#include "absl/base/const_init.h"
+#include "absl/synchronization/mutex.h"
 #include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
 #include "map/mio/mio.h"
@@ -16,6 +20,7 @@
 #include "utl/deleter.h"
 
 namespace abc {
+// NOLINTBEGIN(readability-identifier-naming)
 extern Abc_Ntk_t* Abc_NtkMap(Abc_Ntk_t* pNtk,
                              Mio_Library_t* userLib,
                              double DelayTarget,
@@ -33,6 +38,7 @@ extern Abc_Ntk_t* Abc_NtkMap(Abc_Ntk_t* pNtk,
                              int fVerbose);
 extern void Abc_FrameSetLibGen(void* pLib);
 extern void Abc_FrameSetDrivingCell(char* pName);
+// NOLINTEND(readability-identifier-naming)
 }  // namespace abc
 
 namespace rmp {
@@ -76,7 +82,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
 }
 
 // Exclusive lock to protect the as of yet static unsafe ABC functions.
-std::mutex abc_library_mutex;
+ABSL_CONST_INIT static absl::Mutex abc_library_mutex(absl::kConstInit);
 
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
     const abc::Abc_Ntk_t* ntk,
@@ -97,7 +103,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
                                               /*fUpdateLevel=*/true));
   {
     // Lock the tech mapping and buffer since they rely on static variables.
-    const std::lock_guard<std::mutex> lock(abc_library_mutex);
+    const absl::MutexLock lock(&abc_library_mutex);
 
     auto library = static_cast<abc::Mio_Library_t*>(ntk->pManFunc);
 

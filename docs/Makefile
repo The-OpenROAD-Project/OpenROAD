@@ -9,9 +9,28 @@
 # | |  / ____ \| |\  | |__| | |__| | |____ 
 # |_| /_/    \_\_| \_|_____/ \____/ \_____|
 
+# Render the man pages in a UTF-8 locale so groff/preconv and col treat page
+# bytes as UTF-8 rather than Latin-1. Without this, non-ASCII characters in the
+# READMEs (e.g. accented author names) render as mojibake or trigger troff
+# "character with input code N not defined" warnings on the 7-bit ascii device.
+# Detect an installed UTF-8 locale instead of hard-coding one (C.UTF-8 is not
+# present on every host, e.g. stock macOS); fall back to the user's locale if
+# none is found rather than exporting an invalid LC_ALL.
+UTF8_LOCALE := $(shell locale -a 2>/dev/null | grep -iE '^(C|en_US)\.utf-?8$$' | head -1)
+ifeq ($(UTF8_LOCALE),)
+UTF8_LOCALE := $(shell locale -a 2>/dev/null | grep -iE 'utf-?8$$' | head -1)
+endif
+ifneq ($(UTF8_LOCALE),)
+export LC_ALL := $(UTF8_LOCALE)
+endif
+
 # Define variables
 PANDOC = pandoc
-NROFF = nroff
+GROFF ?= groff
+# Roff snippet injected into every man page to remap Pandoc's Courier-based
+# code/verbatim fonts on devices that lack them, silencing troff "cannot
+# select font" warnings (see the file for details).
+FONTFIX = src/man_fontfix.tmac
 SRC_DIR = md
 MAN_ROOT_DIR = man
 HTML_ROOT_DIR = html
@@ -92,12 +111,12 @@ $(CAT3_DIR):
 	mkdir -p $(CAT3_DIR)
 
 # Rule to generate a roff file from a corresponding Markdown file
-$(MAN1_DIR)/%.1: $(SRC1_DIR)/%.md | $(MAN1_DIR)
-	$(PANDOC) -s -t man $< -o $@ --quiet
-$(MAN2_DIR)/%.2: $(SRC2_DIR)/%.md | $(MAN2_DIR)
-	$(PANDOC) -s -t man $< -o $@ --quiet
-$(MAN3_DIR)/%.3: $(SRC3_DIR)/%.md | $(MAN3_DIR)
-	$(PANDOC) -s -t man $< -o $@ --quiet
+$(MAN1_DIR)/%.1: $(SRC1_DIR)/%.md $(FONTFIX) | $(MAN1_DIR)
+	$(PANDOC) -s -t man --include-in-header=$(FONTFIX) $< -o $@ --quiet
+$(MAN2_DIR)/%.2: $(SRC2_DIR)/%.md $(FONTFIX) | $(MAN2_DIR)
+	$(PANDOC) -s -t man --include-in-header=$(FONTFIX) $< -o $@ --quiet
+$(MAN3_DIR)/%.3: $(SRC3_DIR)/%.md $(FONTFIX) | $(MAN3_DIR)
+	$(PANDOC) -s -t man --include-in-header=$(FONTFIX) $< -o $@ --quiet
 
 # Rule to generate a html file from a corresponding roff file
 $(HTML1_DIR)/%.html: $(MAN1_DIR)/%.1 | $(HTML1_DIR)
@@ -107,13 +126,19 @@ $(HTML2_DIR)/%.html: $(MAN2_DIR)/%.2 | $(HTML2_DIR)
 $(HTML3_DIR)/%.html: $(MAN3_DIR)/%.3 | $(HTML3_DIR)
 	$(PANDOC) -s -o html $< -o $@ --quiet
 
-# Rule to generate a cat file from a corresponding roff file
+# Rule to generate a cat file from a corresponding roff file.
+# -t runs the tbl preprocessor so the OPTIONS tables (the '\" t directive in
+# the Pandoc output) render instead of warning about missing TW registers.
+# -Kutf8 runs preconv to decode UTF-8 input and -Tutf8 emits UTF-8, so non-ASCII
+# characters render correctly instead of warning/mangling on the ascii device.
+# -rIN=4n narrows the body indent (default 7n) so Pandoc's full-width tables fit
+# within the line length, avoiding "table wider than line length" warnings.
 $(CAT1_DIR)/%.md: $(MAN1_DIR)/%.1 | $(CAT1_DIR)
-	nroff -man $< | col -b > $@
+	$(GROFF) -Kutf8 -t -man -Tutf8 -rIN=4n $< | col -b > $@
 $(CAT2_DIR)/%.md: $(MAN2_DIR)/%.2 | $(CAT2_DIR)
-	nroff -man $< | col -b > $@
+	$(GROFF) -Kutf8 -t -man -Tutf8 -rIN=4n $< | col -b > $@
 $(CAT3_DIR)/%.md: $(MAN3_DIR)/%.3 | $(CAT3_DIR)
-	nroff -man $< | col -b > $@
+	$(GROFF) -Kutf8 -t -man -Tutf8 -rIN=4n $< | col -b > $@
 #$(PANDOC) -s -o markdown $< -o $@
 #sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
 
@@ -124,8 +149,13 @@ $(CAT2_DIR)/%.2: $(CAT2_DIR)/%.md
 $(CAT3_DIR)/%.3: $(CAT3_DIR)/%.md
 	mv $< $@
 
+# Single-invocation target used by //docs:man_pages (Bazel). Chains the
+# preprocessing step (README symlinks + roff-compat conversion) with the
+# cat and web outputs that the Bazel rule copies into its declared outputs.
+bazel-manpages: preprocess cat web
+
 # Phony targets
-.PHONY: all 
+.PHONY: all bazel-manpages preprocess
 
 #   _____ _____  _    _ _____ _   ___   __
 #  / ____|  __ \| |  | |_   _| \ | \ \ / /

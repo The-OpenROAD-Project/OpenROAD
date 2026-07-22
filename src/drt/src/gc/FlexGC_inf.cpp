@@ -10,10 +10,13 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/obj/frMarker.h"
+#include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
+#include "gc/FlexGC.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -128,12 +131,30 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
 }
 bool compareVertical(gcRect* r1, gcRect* r2)
 {
-  return (gtl::yl(*r1) < gtl::yl(*r2));
+  if (gtl::yl(*r1) != gtl::yl(*r2)) {
+    return gtl::yl(*r1) < gtl::yl(*r2);
+  }
+  if (gtl::xl(*r1) != gtl::xl(*r2)) {
+    return gtl::xl(*r1) < gtl::xl(*r2);
+  }
+  if (gtl::yh(*r1) != gtl::yh(*r2)) {
+    return gtl::yh(*r1) < gtl::yh(*r2);
+  }
+  return gtl::xh(*r1) < gtl::xh(*r2);
 }
 
 bool compareHorizontal(gcRect* r1, gcRect* r2)
 {
-  return (gtl::xl(*r1) < gtl::xl(*r2));
+  if (gtl::xl(*r1) != gtl::xl(*r2)) {
+    return gtl::xl(*r1) < gtl::xl(*r2);
+  }
+  if (gtl::yl(*r1) != gtl::yl(*r2)) {
+    return gtl::yl(*r1) < gtl::yl(*r2);
+  }
+  if (gtl::xh(*r1) != gtl::xh(*r2)) {
+    return gtl::xh(*r1) < gtl::xh(*r2);
+  }
+  return gtl::yh(*r1) < gtl::yh(*r2);
 }
 
 void FlexGCWorker::Impl::checkRectMetSpcTblInf(

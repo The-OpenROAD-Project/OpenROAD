@@ -18,15 +18,16 @@
 #include "ir_network.h"
 #include "ir_solver.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shape.h"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
 
 namespace psm {
 
 SolverDescriptor::SolverDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : solvers_(solvers)
 {
 }
@@ -54,7 +55,7 @@ IRSolver* SolverDescriptor::getSolver(Connection* connection) const
 /////////////////////////////////////
 
 NodeDescriptor::NodeDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : SolverDescriptor(solvers)
 {
 }
@@ -85,7 +86,7 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(
     return props;
   }
 
-  std::vector<sta::Corner*> corners;
+  std::vector<sta::Scene*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
     props.push_back({"Net", gui->makeSelected(solver->getNet())});
@@ -138,7 +139,7 @@ bool NodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<Node*>(l);
   auto r_node = std::any_cast<Node*>(r);
-  return l_node->compare(r_node);
+  return l_node->compare(r_node) < 0;
 }
 
 void NodeDescriptor::highlight(const std::any& object,
@@ -152,7 +153,7 @@ void NodeDescriptor::highlight(const std::any& object,
 /////////////////////////////////////
 
 ITermNodeDescriptor::ITermNodeDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : NodeDescriptor(solvers)
 {
 }
@@ -195,7 +196,7 @@ bool ITermNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<ITermNode*>(l);
   auto r_node = std::any_cast<ITermNode*>(r);
-  return l_node->compare(r_node);
+  return l_node->compare(r_node) < 0;
 }
 
 void ITermNodeDescriptor::highlight(const std::any& object,
@@ -208,7 +209,7 @@ void ITermNodeDescriptor::highlight(const std::any& object,
 /////////////////////////////////////
 
 BPinNodeDescriptor::BPinNodeDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : NodeDescriptor(solvers)
 {
 }
@@ -251,7 +252,7 @@ bool BPinNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<BPinNode*>(l);
   auto r_node = std::any_cast<BPinNode*>(r);
-  return l_node->compare(r_node);
+  return l_node->compare(r_node) < 0;
 }
 
 void BPinNodeDescriptor::highlight(const std::any& object,
@@ -264,7 +265,7 @@ void BPinNodeDescriptor::highlight(const std::any& object,
 /////////////////////////////////////
 
 ConnectionDescriptor::ConnectionDescriptor(
-    const std::map<odb::dbNet*, std::unique_ptr<IRSolver>>& solvers)
+    const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers)
     : SolverDescriptor(solvers)
 {
 }
@@ -297,7 +298,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
     return props;
   }
 
-  std::vector<sta::Corner*> corners;
+  std::vector<sta::Scene*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
     props.push_back({"Net", gui->makeSelected(solver->getNet())});
@@ -423,7 +424,7 @@ void DebugGui::populate()
     nodes_[layer] = NodeTree(values.begin(), values.end());
   }
 
-  std::map<odb::dbTechLayer*, std::vector<ITermNode*>> iterms;
+  odb::PtrMap<odb::dbTechLayer, std::vector<ITermNode*>> iterms;
   for (const auto& node : network_->getITermNodes()) {
     iterms[node->getLayer()].emplace_back(node.get());
   }
@@ -432,7 +433,7 @@ void DebugGui::populate()
   }
   iterms.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<BPinNode*>> bpins;
+  odb::PtrMap<odb::dbTechLayer, std::vector<BPinNode*>> bpins;
   for (const auto& node : network_->getBPinNodes()) {
     bpins[node->getLayer()].emplace_back(node.get());
   }
@@ -441,7 +442,7 @@ void DebugGui::populate()
   }
   bpins.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<ConnectionValue>> conns;
+  odb::PtrMap<odb::dbTechLayer, std::vector<ConnectionValue>> conns;
   for (const auto& conn : network_->getConnections()) {
     const odb::Point& pt0 = conn->getNode0()->getPoint();
     const odb::Point& pt1 = conn->getNode1()->getPoint();
@@ -611,6 +612,16 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       drawSource(*node_itr, painter);
     }
   }
+
+  gui::DiscreteLegend legend;
+  legend.addLegendKey(shape_color_, "Shape");
+  legend.addLegendKey(node_color_, "Node");
+  legend.addLegendKey(iterm_node_color_, "ITerm Node");
+  legend.addLegendKey(bpin_node_color_, "BPin Node");
+  legend.addLegendKey(connection_color_, "Connection");
+  legend.addLegendKey(term_connection_color_, "Terminal Connection");
+  legend.addLegendKey(src_node_color_, "Source Node/Shape");
+  legend.draw(painter);
 }
 
 gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
@@ -700,7 +711,7 @@ void DebugGui::setSources(const SourceNodes& sources)
 {
   sources_.clear();
 
-  std::map<odb::dbTechLayer*, std::vector<Node*>> srcs;
+  odb::PtrMap<odb::dbTechLayer, std::vector<Node*>> srcs;
   for (const auto& node : sources) {
     srcs[node->getLayer()].emplace_back(node->getSource());
   }

@@ -3,8 +3,13 @@
 
 #pragma once
 
+#include <vector>
+
 #include "ResizerObserver.hh"
 #include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "rsz/Resizer.hh"
 
 namespace rsz {
 

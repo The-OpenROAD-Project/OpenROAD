@@ -49,8 +49,8 @@ PINS 8 ;
         + FIXED ( 1000 335 ) N ;
 END PINS
 SPECIALNETS 2 ;
-    - VDD ( * VDD ) + USE POWER ;
-    - VSS ( * VSS ) + USE GROUND ;
+    - VDD ( r1 VDD ) ( r2 VDD ) ( r3 VDD ) ( u1 VDD ) ( u2 VDD ) + USE POWER ;
+    - VSS ( r1 VSS ) ( r2 VSS ) ( r3 VSS ) ( u1 VSS ) ( u2 VSS ) + USE GROUND ;
 END SPECIALNETS
 NETS 15 ;
     - clk1 ( PIN clk1 ) ( r1 CK ) + USE SIGNAL ;

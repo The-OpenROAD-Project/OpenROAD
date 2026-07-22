@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -227,13 +229,7 @@ class AthList
 
     T getVal() { return ptr_to_elem->m_data; }
 
-    bool end()
-    {
-      if (ptr_to_elem) {
-        return false;
-      }
-      return true;
-    }
+    bool end() { return ptr_to_elem == nullptr; }
   };
   iterator start()
   {

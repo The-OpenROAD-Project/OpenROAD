@@ -12,7 +12,6 @@
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"

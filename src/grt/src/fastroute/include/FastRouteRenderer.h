@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "AbstractFastRouteRenderer.h"
+#include "DataType.h"
 #include "FastRoute.h"
 #include "gui/gui.h"
 #include "odb/db.h"

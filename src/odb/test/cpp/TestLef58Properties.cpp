@@ -77,6 +77,7 @@ TEST_F(Fixture, test_default)
 
   auto dbTech = db2->getTech();
   double distFactor = 2000;
+  double areaFactor = 2000 * 2000;
   auto layer = dbTech->findLayer("metal1");
   EXPECT_EQ(layer->getLef58Type(), odb::dbTechLayer::LEF58_TYPE::MIMCAP);
   auto rules = layer->getTechLayerSpacingEolRules();
@@ -228,7 +229,7 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(minCutRule->getNumCuts(), 2);
   EXPECT_EQ(minCutRule->getWithinCutDist(), 0.05 * distFactor);
   EXPECT_EQ(minCutRule->getWidth(), 0.09 * distFactor);
-  EXPECT_EQ(minCutRule->getArea(), 2.0 * distFactor);
+  EXPECT_EQ(minCutRule->getArea(), 2.0 * areaFactor);
 
   auto cutLayer = dbTech->findLayer("via1");
 
@@ -393,15 +394,15 @@ TEST_F(Fixture, test_default)
   int cnt = 0;
   for (odb::dbTechLayerAreaRule* subRule : areaRules) {
     if (cnt == 0) {
-      EXPECT_EQ(subRule->getArea(), 0.044 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.044 * areaFactor);
       EXPECT_EQ(subRule->getMask(), 2);
     }
     if (cnt == 1) {
-      EXPECT_EQ(subRule->getArea(), 0.34 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.34 * areaFactor);
       EXPECT_EQ(subRule->getRectWidth(), 0.12 * distFactor);
     }
     if (cnt == 2) {
-      EXPECT_EQ(subRule->getArea(), 1.01 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 1.01 * areaFactor);
       EXPECT_EQ(subRule->getExceptMinWidth(), 0.09 * distFactor);
       EXPECT_EQ(subRule->getExceptMinSize().first, 0.1 * distFactor);
       EXPECT_EQ(subRule->getExceptMinSize().second, 0.3 * distFactor);
@@ -410,16 +411,16 @@ TEST_F(Fixture, test_default)
       EXPECT_EQ(subRule->getExceptEdgeLength(), 0.8 * distFactor);
     }
     if (cnt == 3) {
-      EXPECT_EQ(subRule->getArea(), 0.101 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.101 * areaFactor);
       EXPECT_EQ(subRule->getTrimLayer()->getName(), "metal1");
       EXPECT_EQ(subRule->getOverlap(), 1);
     }
     if (cnt == 4) {
-      EXPECT_EQ(subRule->getArea(), 2.34 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 2.34 * areaFactor);
       EXPECT_TRUE(subRule->isExceptRectangle());
     }
     if (cnt == 5) {
-      EXPECT_EQ(subRule->getArea(), 0.78 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.78 * areaFactor);
       EXPECT_EQ(subRule->getExceptEdgeLengths().first, 0.3 * distFactor);
       EXPECT_EQ(subRule->getExceptEdgeLengths().second, 0.7 * distFactor);
     }
@@ -543,5 +544,137 @@ TEST_F(Fixture, test_default)
   EXPECT_TRUE(!edge_spc->isExact() && !edge_spc->isExceptAbutted()
               && !edge_spc->isExceptNonFillerInBetween()
               && !edge_spc->isOptional() && !edge_spc->isSoft());
+
+  // LEF57_ANTENNAGATEPLUSDIFF
+  layer = dbTech->findLayer("via1");
+  EXPECT_TRUE(layer->hasDefaultAntennaRule());
+  EXPECT_EQ(layer->getDefaultAntennaRule()->getGatePlusDiffFactor(), 2.0);
+
+  layer = dbTech->findLayer("metal2");
+  EXPECT_TRUE(layer->hasDefaultAntennaRule());
+  EXPECT_EQ(layer->getDefaultAntennaRule()->getGatePlusDiffFactor(), 4.0);
+
+  // LEF58_VOLTAGESPACINGTABLE
+  layer = dbTech->findLayer("metal2");
+  auto voltage_spacing_table = layer->getTechLayerVoltageSpacings();
+  EXPECT_EQ(voltage_spacing_table.size(), 2);
+  auto voltage_spacing_itr = voltage_spacing_table.begin();
+  auto voltage_spacing = *voltage_spacing_itr;
+  EXPECT_FALSE(voltage_spacing->isTocutBelow());
+  EXPECT_FALSE(voltage_spacing->isTocutAbove());
+  auto voltage_table = voltage_spacing->getTable();
+  EXPECT_EQ(voltage_table.size(), 5);
+  EXPECT_EQ(voltage_table.at(1.2), 150);
+  EXPECT_EQ(voltage_table.at(1.8), 150);
+  EXPECT_EQ(voltage_table.at(2.5), 150);
+  EXPECT_EQ(voltage_table.at(3.3), 300);
+  EXPECT_EQ(voltage_table.at(5.0), 300);
+  voltage_spacing = *(++voltage_spacing_itr);
+  EXPECT_TRUE(voltage_spacing->isTocutBelow());
+  EXPECT_TRUE(voltage_spacing->isTocutAbove());
+  voltage_table = voltage_spacing->getTable();
+  EXPECT_EQ(voltage_table.size(), 3);
+  EXPECT_EQ(voltage_table.at(1.2), 150);
+  EXPECT_EQ(voltage_table.at(3.3), 300);
+  EXPECT_EQ(voltage_table.at(5.0), 600);
+
+  layer = dbTech->findLayer("metal1");
+  voltage_spacing_table = layer->getTechLayerVoltageSpacings();
+  EXPECT_EQ(voltage_spacing_table.size(), 1);
+  voltage_spacing_itr = voltage_spacing_table.begin();
+  voltage_spacing = *voltage_spacing_itr;
+  EXPECT_FALSE(voltage_spacing->isTocutBelow());
+  EXPECT_FALSE(voltage_spacing->isTocutAbove());
+  voltage_table = voltage_spacing->getTable();
+  EXPECT_EQ(voltage_table.size(), 5);
+  EXPECT_EQ(voltage_table.at(1.2), 130);
+  EXPECT_EQ(voltage_table.at(1.8), 130);
+  EXPECT_EQ(voltage_table.at(2.5), 130);
+  EXPECT_EQ(voltage_table.at(3.3), 260);
+  EXPECT_EQ(voltage_table.at(5.0), 520);
+
+  layer = dbTech->findLayer("metal3");
+  voltage_spacing_table = layer->getTechLayerVoltageSpacings();
+  EXPECT_EQ(voltage_spacing_table.size(), 1);
+  voltage_spacing_itr = voltage_spacing_table.begin();
+  voltage_spacing = *voltage_spacing_itr;
+  EXPECT_TRUE(voltage_spacing->isTocutBelow());
+  EXPECT_FALSE(voltage_spacing->isTocutAbove());
+  voltage_table = voltage_spacing->getTable();
+  EXPECT_EQ(voltage_table.size(), 5);
+  EXPECT_EQ(voltage_table.at(1.2), 140);
+  EXPECT_EQ(voltage_table.at(1.8), 140);
+  EXPECT_EQ(voltage_table.at(2.5), 140);
+  EXPECT_EQ(voltage_table.at(3.3), 280);
+  EXPECT_EQ(voltage_table.at(5.0), 420);
+
+  // LEF58_MINWIDTH
+  layer = dbTech->findLayer("metal3");
+  EXPECT_EQ(layer->getMinWidth(), 140);
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 140);
+
+  layer = dbTech->findLayer("metal4");
+  EXPECT_EQ(layer->getMinWidth(), 280);
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
+
+  layer = dbTech->findLayer("metal5");
+  EXPECT_EQ(layer->getMinWidth(), 280);
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
 }
+TEST_F(Fixture, TestLef58AntennaGatePlusDiff)
+{
+  const char* libname = "lef58_antennagateplusdiff.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_antennagateplusdiff.lef");
+
+  dbTech* tech = db_->getTech();
+  auto layer = tech->findLayer("metal1");
+  EXPECT_TRUE(layer);
+
+  auto rule1 = layer->getDefaultAntennaRule();
+  EXPECT_TRUE(rule1);
+  EXPECT_EQ(rule1->getGatePlusDiffFactor(), 0.5);
+
+  auto rule2 = layer->getOxide2AntennaRule();
+  EXPECT_TRUE(rule2);
+  auto pwl = rule2->getGatePlusDiffPWL();
+  EXPECT_EQ(pwl.indices.size(), 2);
+  EXPECT_EQ(pwl.indices[0], 1.0);
+  EXPECT_EQ(pwl.ratios[0], 2.0);
+  EXPECT_EQ(pwl.indices[1], 3.0);
+  EXPECT_EQ(pwl.ratios[1], 4.0);
+}
+
+// Regression test for issue #10668: a CELLEDGESPACINGTABLE EDGETYPE group name
+// that is numeric or a single character (e.g. "1") must parse correctly and
+// must not trigger ODB-0299 (parse mismatch).
+TEST_F(Fixture, TestLef58CellEdgeSpacingNumericEdgeType)
+{
+  const char* libname = "lef58_celledgespacing_numeric.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_celledgespacing_numeric.lef");
+
+  dbTech* tech = db_->getTech();
+  auto cell_edge_spacing_tbl = tech->getCellEdgeSpacingTable();
+  // All three entries must be parsed (numeric, mixed numeric/alpha, and alpha).
+  EXPECT_EQ(cell_edge_spacing_tbl.size(), 3);
+
+  auto it = cell_edge_spacing_tbl.begin();
+  auto edge_spc = *it;
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.4 * 1000);
+
+  edge_spc = *(++it);
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "G2");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.2 * 1000);
+
+  // Alpha/multi-char group names (the pre-existing form) must still work.
+  edge_spc = *(++it);
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "G1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "G1");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.1 * 1000);
+}
+
 }  // namespace odb

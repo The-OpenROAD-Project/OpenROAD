@@ -509,13 +509,13 @@ std::map<std::pair<int, int>, float> GoldenEvaluator::GetMatchingConnectivity(
         bool block_b_flag = false;  // the hyperedge intersects with block_b
         for (const int vertex_id : hgraph->Vertices(e)) {
           const int block_id = solution[vertex_id];
-          if (block_a_flag == false && block_id == block_a) {
+          if (!block_a_flag && block_id == block_a) {
             block_a_flag = true;
           }
-          if (block_b_flag == false && block_id == block_b) {
+          if (!block_b_flag && block_id == block_b) {
             block_b_flag = true;
           }
-          if (block_a_flag == true && block_b_flag == true) {
+          if (block_a_flag && block_b_flag) {
             score += CalculateHyperedgeCost(e, hgraph);
             break;
           }
@@ -624,7 +624,7 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
     }
   }
 
-  if (print_flag == true && logger_->debugCheck(PAR, "evaluation", 1)) {
+  if (print_flag && logger_->debugCheck(PAR, "evaluation", 1)) {
     logger_->report("\nConstraints and Cut Evaluation\n");
     logger_->report("Satisfy the balance constraint : {}",
                     balance_satisfied_flag);
@@ -814,7 +814,7 @@ void GoldenEvaluator::WriteWeightedHypergraph(const HGraphPtr& hgraph,
 {
   std::ofstream file_output;
   file_output.open(file_name);
-  if (with_weight_flag == true) {
+  if (with_weight_flag) {
     file_output << hgraph->GetNumHyperedges() << "  "
                 << hgraph->GetNumVertices() << " 11\n";
   } else {
@@ -823,7 +823,7 @@ void GoldenEvaluator::WriteWeightedHypergraph(const HGraphPtr& hgraph,
   }
   // write hyperedge weight and hyperedge first
   for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
-    if (with_weight_flag == true) {
+    if (with_weight_flag) {
       file_output << CalculateHyperedgeCost(e, hgraph) << "  ";
     }
     for (const int vertex : hgraph->Vertices(e)) {
@@ -832,7 +832,7 @@ void GoldenEvaluator::WriteWeightedHypergraph(const HGraphPtr& hgraph,
     file_output << '\n';
   }
   // write vertex weight
-  if (with_weight_flag == true) {
+  if (with_weight_flag) {
     for (int v = 0; v < hgraph->GetNumVertices(); v++) {
       file_output << GetVertexWeightNorm(v, hgraph) << '\n';
     }

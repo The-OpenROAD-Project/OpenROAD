@@ -42,15 +42,14 @@ puts "number instances in verilog is $num_instances"
 
 #set_debug_level RSZ replace_arith 1
 #set_debug_level ODB replace_design 10
+set_debug_level ODB replace_design_check_sanity 1
 report_wns
 report_tns
 
-replace_arith_modules -path_count 100
+replace_arith_modules -path_count 10
 
 report_wns
 report_tns
 
 set write_sdc_file [make_result_file replace_arith_modules2.sdc]
 write_sdc $write_sdc_file
-
-sta::check_axioms

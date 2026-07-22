@@ -32,31 +32,40 @@
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphCmp.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/LevelizeObserver.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/ObjectId.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
-#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
+#include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
+#include "utl/validation.h"
 
 ////////////////////////////////////////////////////////////////
 
@@ -109,40 +118,27 @@ class dbStaReport : public sta::ReportTcl
   explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
-  void warn(int id, const char* fmt, ...) override
-      __attribute__((format(printf, 3, 4)));
-  void fileWarn(int id,
-                const char* filename,
-                int line,
-                const char* fmt,
-                ...) override __attribute__((format(printf, 5, 6)));
-  void vfileWarn(int id,
-                 const char* filename,
-                 int line,
-                 const char* fmt,
-                 va_list args) override;
-
-  void error(int id, const char* fmt, ...) override
-      __attribute__((format(printf, 3, 4)));
-  void fileError(int id,
-                 const char* filename,
-                 int line,
-                 const char* fmt,
-                 ...) override __attribute__((format(printf, 5, 6)));
-  void vfileError(int id,
-                  const char* filename,
-                  int line,
-                  const char* fmt,
-                  va_list args) override;
-
-  void critical(int id, const char* fmt, ...) override
-      __attribute__((format(printf, 3, 4)));
+  void warnMsg(int id, const std::string& formatted_msg) override;
+  void fileWarnMsg(int id,
+                   std::string_view filename,
+                   int line,
+                   const std::string& formatted_msg) override;
+  void errorMsg(int id, const std::string& formatted_msg) override;
+  void fileErrorMsg(int id,
+                    std::string_view filename,
+                    int line,
+                    const std::string& formatted_msg) override;
+  void criticalMsg(int id, const std::string& formatted_msg) override;
+  void fileCriticalMsg(int id,
+                       std::string_view filename,
+                       int line,
+                       const std::string& formatted_msg) override;
   size_t printString(const char* buffer, size_t length) override;
 
   // Redirect output to filename until redirectFileEnd is called.
-  void redirectFileBegin(const char* filename) override;
+  void redirectFileBegin(std::string_view filename) override;
   // Redirect append output to filename until redirectFileEnd is called.
-  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileAppendBegin(std::string_view filename) override;
   void redirectFileEnd() override;
   // Redirect output to a string until redirectStringEnd is called.
   void redirectStringBegin() override;
@@ -152,37 +148,43 @@ class dbStaReport : public sta::ReportTcl
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
+  std::string redirect_string_result_;
 };
 
-class dbStaCbk : public dbBlockCallBackObj
+class dbStaCbk : public odb::dbBlockCallBackObj
 {
  public:
   dbStaCbk(dbSta* sta);
   void setNetwork(dbNetwork* network);
-  void inDbInstCreate(dbInst* inst) override;
-  void inDbInstDestroy(dbInst* inst) override;
-  void inDbModuleCreate(dbModule* module) override;
-  void inDbModuleDestroy(dbModule* module) override;
-  void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override;
-  void inDbInstSwapMasterAfter(dbInst* inst) override;
-  void inDbNetDestroy(dbNet* net) override;
-  void inDbModNetDestroy(dbModNet* modnet) override;
-  void inDbITermPostConnect(dbITerm* iterm) override;
-  void inDbITermPreDisconnect(dbITerm* iterm) override;
-  void inDbITermDestroy(dbITerm* iterm) override;
-  void inDbModITermPostConnect(dbModITerm* moditerm) override;
-  void inDbModITermPreDisconnect(dbModITerm* moditerm) override;
-  void inDbModITermDestroy(dbModITerm* moditerm) override;
-  void inDbBTermPostConnect(dbBTerm* bterm) override;
-  void inDbBTermPreDisconnect(dbBTerm* bterm) override;
-  void inDbBTermCreate(dbBTerm*) override;
-  void inDbBTermDestroy(dbBTerm* bterm) override;
-  void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
-  void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
-  void inDbModInstCreate(dbModInst* modinst) override;
-  void inDbModInstDestroy(dbModInst* modinst) override;
-  void inDbModBTermPostConnect(dbModBTerm* modbterm) override;
-  void inDbModBTermPreDisconnect(dbModBTerm* modbterm) override;
+  void inDbInstCreate(odb::dbInst* inst) override;
+  void inDbInstDestroy(odb::dbInst* inst) override;
+  void inDbPostInstRename(odb::dbInst* inst, const char* old_name) override;
+  void inDbPostInstParentChange(odb::dbInst* inst) override;
+  void inDbModuleCreate(odb::dbModule* module) override;
+  void inDbModuleDestroy(odb::dbModule* module) override;
+  void inDbInstSwapMasterBefore(odb::dbInst* inst,
+                                odb::dbMaster* master) override;
+  void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
+  void inDbNetDestroy(odb::dbNet* net) override;
+  void inDbModNetDestroy(odb::dbModNet* modnet) override;
+  void inDbITermPostConnect(odb::dbITerm* iterm) override;
+  void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
+  void inDbITermDestroy(odb::dbITerm* iterm) override;
+  void inDbModITermPostConnect(odb::dbModITerm* moditerm) override;
+  void inDbModITermPreDisconnect(odb::dbModITerm* moditerm) override;
+  void inDbModITermDestroy(odb::dbModITerm* moditerm) override;
+  void inDbBTermPostConnect(odb::dbBTerm* bterm) override;
+  void inDbBTermPreDisconnect(odb::dbBTerm* bterm) override;
+  void inDbBTermCreate(odb::dbBTerm*) override;
+  void inDbBTermDestroy(odb::dbBTerm* bterm) override;
+  void inDbBTermSetIoType(odb::dbBTerm* bterm,
+                          const odb::dbIoType& io_type) override;
+  void inDbBTermSetSigType(odb::dbBTerm* bterm,
+                           const odb::dbSigType& sig_type) override;
+  void inDbModInstCreate(odb::dbModInst* modinst) override;
+  void inDbModInstDestroy(odb::dbModInst* modinst) override;
+  void inDbModBTermPostConnect(odb::dbModBTerm* modbterm) override;
+  void inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm) override;
 
  private:
   // for inDbInstSwapMasterBefore/inDbInstSwapMasterAfter
@@ -190,6 +192,8 @@ class dbStaCbk : public dbBlockCallBackObj
 
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
+  // Cached so the per-edit callbacks don't pay a dynamic_cast each time.
+  dbSdcNetwork* sdc_network_ = nullptr;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -244,7 +248,6 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = std::make_unique<dbStaCbk>(this);
-  buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
 void dbSta::updateComponentsState()
@@ -294,14 +297,81 @@ void dbSta::makeSdcNetwork()
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
-void dbSta::postReadLef(dbTech* tech, dbLib* library)
+// Extend the default StaLevelizeObserver (Search + GraphDelayCalc forwarding)
+// to also invalidate dbSta's driver-vertex cache.
+class DbStaLevelizeObserver : public StaLevelizeObserver
+{
+ public:
+  DbStaLevelizeObserver(dbSta* sta, Search* search, GraphDelayCalc* gdc)
+      : StaLevelizeObserver(search, gdc), sta_(sta)
+  {
+  }
+  void levelsChangedBefore() override
+  {
+    StaLevelizeObserver::levelsChangedBefore();
+    sta_->invalidateLevelizedDrvrVertices();
+  }
+  void levelChangedBefore(Vertex* vertex) override
+  {
+    StaLevelizeObserver::levelChangedBefore(vertex);
+    sta_->invalidateLevelizedDrvrVertices();
+  }
+
+ private:
+  dbSta* sta_;
+};
+
+void dbSta::makeObservers()
+{
+  Sta::makeObservers();
+  setLevelizeObserver(
+      new DbStaLevelizeObserver(this, search_, graph_delay_calc_));
+}
+
+void dbSta::invalidateLevelizedDrvrVertices()
+{
+  if (drvr_vertices_level_valid_) {
+    drvr_vertices_level_valid_ = false;
+    levelized_drvr_vertices_.clear();
+  }
+}
+
+const VertexSeq& dbSta::levelizedDrvrVertices()
+{
+  ensureLevelized();
+  if (!drvr_vertices_level_valid_) {
+    Graph* g = graph();
+    // Approx half of vertices are drivers.
+    levelized_drvr_vertices_.reserve(g->vertexCount() / 2);
+    Network* net = network();
+    VertexIterator vertex_iter(g);
+    while (vertex_iter.hasNext()) {
+      Vertex* vertex = vertex_iter.next();
+      if (vertex->isDriver(net)) {
+        levelized_drvr_vertices_.push_back(vertex);
+      }
+    }
+    VertexNameLess name_less(net);
+    std::ranges::sort(levelized_drvr_vertices_,
+                      [&name_less](const Vertex* a, const Vertex* b) {
+                        if (a->level() != b->level()) {
+                          return a->level() < b->level();
+                        }
+                        return name_less(a, b);
+                      });
+    drvr_vertices_level_valid_ = true;
+  }
+  return levelized_drvr_vertices_;
+}
+
+void dbSta::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 {
   if (library) {
     db_network_->readLefAfter(library);
   }
 }
 
-void dbSta::postReadDef(dbBlock* block)
+void dbSta::postReadDef(odb::dbBlock* block)
 {
   // If this is the top block of the main chip:
   if (!block->getParent() && block->getChip() == block->getDb()->getChip()) {
@@ -316,7 +386,7 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   // TODO: we are not ready to do timing on chiplets yet
 }
 
-void dbSta::postReadDb(dbDatabase* db)
+void dbSta::postReadDb(odb::dbDatabase* db)
 {
   db_network_->readDbAfter(db);
   odb::dbChip* chip = db_->getChip();
@@ -329,21 +399,22 @@ void dbSta::postReadDb(dbDatabase* db)
   }
 }
 
-Slack dbSta::netSlack(const dbNet* db_net, const MinMax* min_max)
+float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
-  return netSlack(net, min_max);
+  return slack(net, min_max);
 }
 
-std::set<dbNet*> dbSta::findClkNets()
+odb::PtrSet<odb::dbNet> dbSta::findClkNets()
 {
-  ensureClkNetwork();
-  std::set<dbNet*> clk_nets;
-  for (Clock* clk : sdc_->clks()) {
-    const PinSet* clk_pins = pins(clk);
+  sta::Mode* mode = cmdMode();
+  ensureClkNetwork(mode);
+  odb::PtrSet<odb::dbNet> clk_nets;
+  for (Clock* clk : mode->sdc()->clocks()) {
+    const PinSet* clk_pins = pins(clk, mode);
     if (clk_pins) {
       for (const Pin* pin : *clk_pins) {
-        dbNet* db_net = nullptr;
+        odb::dbNet* db_net = nullptr;
         sta::dbNetwork* db_network = getDbNetwork();
         db_net = db_network->flatNet(pin);
         if (db_net) {
@@ -355,14 +426,15 @@ std::set<dbNet*> dbSta::findClkNets()
   return clk_nets;
 }
 
-std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
+odb::PtrSet<odb::dbNet> dbSta::findClkNets(const Clock* clk)
 {
-  ensureClkNetwork();
-  std::set<dbNet*> clk_nets;
-  const PinSet* clk_pins = pins(clk);
+  sta::Mode* mode = cmdMode();
+  ensureClkNetwork(mode);
+  odb::PtrSet<odb::dbNet> clk_nets;
+  const PinSet* clk_pins = pins(clk, mode);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
-      dbNet* db_net = nullptr;
+      odb::dbNet* db_net = nullptr;
       sta::dbNetwork* db_network = getDbNetwork();
       // hierarchical fix
       if (db_network->hasHierarchy()) {
@@ -542,7 +614,7 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   if (lib_cell->isLevelShifter()) {
     return STD_LEVEL_SHIFT;
   }
-  if (lib_cell->hasSequentials()) {
+  if (lib_cell->isSequential()) {
     return STD_SEQUENTIAL;
   }
   if (lib_cell->portCount() == 0) {
@@ -564,7 +636,7 @@ void dbSta::addInstanceByTypeInstance(odb::dbInst* inst,
 
 void dbSta::countInstancesByType(odb::dbModule* module,
                                  InstTypeMap& inst_type_stats,
-                                 std::vector<dbInst*>& insts)
+                                 std::vector<odb::dbInst*>& insts)
 {
   for (auto inst : module->getLeafInsts()) {
     addInstanceByTypeInstance(inst, inst_type_stats);
@@ -573,7 +645,7 @@ void dbSta::countInstancesByType(odb::dbModule* module,
 }
 
 void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
-                                             std::vector<dbInst*>& insts)
+                                             std::vector<odb::dbInst*>& insts)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   for (auto inst : block->getInsts()) {
@@ -599,7 +671,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
                             const char* stage_name)
 {
   InstTypeMap instances_types;
-  std::vector<dbInst*> insts;
+  std::vector<odb::dbInst*> insts;
   countInstancesByType(module, instances_types, insts);
   auto block = db_->getChip()->getBlock();
   const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
@@ -649,7 +721,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    std::map<dbMaster*, TypeStats> usage_count;
+    odb::PtrMap<odb::dbMaster, TypeStats> usage_count;
     for (auto inst : insts) {
       auto master = inst->getMaster();
       auto& stats = usage_count[master];
@@ -665,7 +737,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   std::string file(file_name);
   if (!file.empty()) {
     std::map<std::string, CellUsageInfo> name_to_cell_usage_info;
-    for (const dbInst* inst : insts) {
+    for (const odb::dbInst* inst : insts) {
       const std::string& cell_name = inst->getMaster()->getName();
       auto [it, inserted] = name_to_cell_usage_info.insert(
           {cell_name,
@@ -700,37 +772,66 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   }
 }
 
-void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+// bin_size: fixed bin width in user time units (e.g., ns).
+//           If 0.0, num_bins is used to determine bin width automatically.
+void dbSta::reportTimingHistogram(int num_bins,
+                                  const MinMax* min_max,
+                                  float bin_size) const
 {
-  utl::Histogram<float> histogram(logger_);
+  utl::Validator validator(logger_, utl::STA);
+  validator.check_non_negative("bin_size", bin_size, 71);
+  if (bin_size == 0.0) {
+    validator.check_positive("num_bins", num_bins, 70);
+  }
 
   sta::Unit* time_unit = sta_->units()->timeUnit();
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
-    float slack = sta_->vertexSlack(vertex, min_max);
+  utl::Histogram<float> histogram(logger_);
+  for (sta::Vertex* vertex : sta_->endpoints()) {
+    float slack
+        = sta::delayAsFloat(sta_->slack(vertex, min_max), min_max, sta_);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
       histogram.addData(time_unit->staToUser(slack));
     }
   }
 
-  histogram.generateBins(num_bins);
+  if (!histogram.hasData()) {
+    logger_->warn(utl::STA, 72, "No constrained paths found.");
+    return;
+  }
+
+  if (bin_size > 0.0) {
+    const float min_slack = histogram.getMinValue();
+    const float max_slack = histogram.getMaxValue();
+    const float hist_min = std::floor(min_slack / bin_size) * bin_size;
+    const float hist_max = std::ceil(max_slack / bin_size) * bin_size;
+    int actual_num_bins
+        = static_cast<int>(std::ceil((hist_max - hist_min) / bin_size));
+    if (actual_num_bins <= 0) {
+      actual_num_bins = 1;
+    }
+    histogram.generateBins(actual_num_bins, hist_min, bin_size);
+  } else {
+    histogram.generateBins(num_bins);
+  }
+
   histogram.report(/*precision=*/3);
 }
 
-void dbSta::reportLogicDepthHistogram(int num_bins,
-                                      bool exclude_buffers,
+std::vector<int> dbSta::levelsOfLogic(bool exclude_buffers,
                                       bool exclude_inverters) const
 {
-  utl::Histogram<int> histogram(logger_);
-
+  std::vector<int> depths;
+  depths.reserve(sta_->endpoints().size());
   sta_->worstSlack(MinMax::max());  // Update timing.
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
+  for (sta::Vertex* vertex : sta_->endpoints()) {
     int path_length = 0;
     Path* path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
-    dbInst* prev_inst = nullptr;  // Used to count only unique OR instances.
+    odb::dbInst* prev_inst
+        = nullptr;  // Used to count only unique OR instances.
     while (path) {
       Pin* pin = path->vertex(sta_)->pin();
       Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
-      dbInst* inst = db_network_->staToDb(sta_inst);
+      odb::dbInst* inst = db_network_->staToDb(sta_inst);
       if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
         prev_inst = inst;
         LibertyCell* lib_cell = db_network_->libertyCell(inst);
@@ -741,9 +842,19 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
       }
       path = path->prevPath();
     }
-    histogram.addData(path_length);
+    depths.push_back(path_length);
   }
+  return depths;
+}
 
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
+{
+  utl::Histogram<int> histogram(logger_);
+  for (int depth : levelsOfLogic(exclude_buffers, exclude_inverters)) {
+    histogram.addData(depth);
+  }
   histogram.generateBins(num_bins);
   histogram.report();
 }
@@ -783,7 +894,7 @@ void dbSta::checkSanityDrvrVertexEdges(const odb::dbObject* term) const
 
 void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
 {
-  if (pin == nullptr || db_network_->isDriver(pin) == false) {
+  if (pin == nullptr || !db_network_->isDriver(pin)) {
     return;
   }
 
@@ -922,11 +1033,6 @@ void dbSta::checkSanityDrvrVertexEdges() const
   }
 }
 
-BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
-{
-  return buffer_use_analyser_->getBufferUse(buffer);
-}
-
 ////////////////////////////////////////////////////////////////
 
 // Network edit functions.
@@ -991,105 +1097,55 @@ size_t dbStaReport::printString(const char* buffer, size_t length)
   return length;
 }
 
-void dbStaReport::warn(int id, const char* fmt, ...)
+void dbStaReport::warnMsg(int id, const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->warn(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileWarn(int id,
-                           const char* filename,
-                           int line,
-                           const char* fmt,
-                           ...)
+void dbStaReport::fileWarnMsg(int id,
+                              std::string_view filename,
+                              int line,
+                              const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->warn(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::vfileWarn(int id,
-                            const char* filename,
-                            int line,
-                            const char* fmt,
-                            va_list args)
+void dbStaReport::errorMsg(int id, const std::string& formatted_msg)
 {
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
+  logger_->error(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::error(int id, const char* fmt, ...)
+void dbStaReport::fileErrorMsg(int id,
+                               std::string_view filename,
+                               int line,
+                               const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, buffer_);
-  va_end(args);
+  logger_->error(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::fileError(int id,
-                            const char* filename,
-                            int line,
-                            const char* fmt,
-                            ...)
+void dbStaReport::criticalMsg(int id, const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->critical(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::vfileError(int id,
-                             const char* filename,
-                             int line,
-                             const char* fmt,
-                             va_list args)
+void dbStaReport::fileCriticalMsg(int id,
+                                  std::string_view filename,
+                                  int line,
+                                  const std::string& formatted_msg)
 {
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, "{}", buffer_);
+  logger_->critical(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::critical(int id, const char* fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->critical(STA, id, "{}", buffer_);
-  va_end(args);
-}
-
-void dbStaReport::redirectFileBegin(const char* filename)
+void dbStaReport::redirectFileBegin(std::string_view filename)
 {
   flush();
-  logger_->redirectFileBegin(filename);
+  logger_->redirectFileBegin(std::string(filename));
 }
 
-void dbStaReport::redirectFileAppendBegin(const char* filename)
+void dbStaReport::redirectFileAppendBegin(std::string_view filename)
 {
   flush();
-  logger_->redirectFileAppendBegin(filename);
+  logger_->redirectFileAppendBegin(std::string(filename));
 }
 
 void dbStaReport::redirectFileEnd()
@@ -1107,8 +1163,8 @@ void dbStaReport::redirectStringBegin()
 const char* dbStaReport::redirectStringEnd()
 {
   flush();
-  const std::string string = logger_->redirectStringEnd();
-  return stringPrintTmp("%s", string.c_str());
+  redirect_string_result_ = logger_->redirectStringEnd();
+  return redirect_string_result_.c_str();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1124,35 +1180,74 @@ dbStaCbk::dbStaCbk(dbSta* sta) : sta_(sta)
 void dbStaCbk::setNetwork(dbNetwork* network)
 {
   network_ = network;
+  sdc_network_ = dynamic_cast<dbSdcNetwork*>(sta_->sdcNetwork());
 }
 
-void dbStaCbk::inDbInstCreate(dbInst* inst)
+// Keep the dbSdcNetwork's lazy literal-lookup map consistent across
+// hierarchy edits. Incremental updates avoid the O(N) DFS rebuild that
+// blanket invalidation forced on every edit — the create-then-query
+// loop in repair_timing used to be O(N^2) here.
+
+void dbStaCbk::inDbInstCreate(odb::dbInst* inst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstCreated(network_->dbToSta(inst));
+  }
   sta_->makeInstanceAfter(network_->dbToSta(inst));
+  // New driver vertices may exist; invalidate cached driver-vertex list.
+  sta_->invalidateLevelizedDrvrVertices();
 }
 
-void dbStaCbk::inDbInstDestroy(dbInst* inst)
+void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstDestroyed(network_->dbToSta(inst));
+  }
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
+  // Sta::deleteLeafInstanceBefore calls Levelize::deleteVertexBefore
+  // directly (bypassing the LevelizeObserver), so the dbSta cache must be
+  // invalidated explicitly here to avoid a dangling Vertex* on next query.
+  sta_->invalidateLevelizedDrvrVertices();
 }
 
-void dbStaCbk::inDbModuleCreate(dbModule* module)
+void dbStaCbk::inDbPostInstRename(odb::dbInst* inst, const char* /*old_name*/)
+{
+  if (sdc_network_) {
+    sdc_network_->onInstRenamed(network_->dbToSta(inst));
+  }
+}
+
+void dbStaCbk::inDbPostInstParentChange(odb::dbInst*)
+{
+  // Reparenting moves a whole subtree at once and can flip descendants'
+  // pathological status. Drop the cache; reparent is rare.
+  if (sdc_network_) {
+    sdc_network_->invalidateSdcPathToInstMap();
+  }
+}
+
+void dbStaCbk::inDbModuleCreate(odb::dbModule* module)
 {
   network_->registerHierModule(network_->dbToSta(module));
 }
 
-void dbStaCbk::inDbModuleDestroy(dbModule* module)
+void dbStaCbk::inDbModuleDestroy(odb::dbModule* module)
 {
   network_->unregisterHierModule(network_->dbToSta(module));
 }
 
-void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
+void dbStaCbk::inDbInstSwapMasterBefore(odb::dbInst* inst,
+                                        odb::dbMaster* master)
 {
   LibertyCell* to_lib_cell = network_->libertyCell(network_->dbToSta(master));
   LibertyCell* from_lib_cell = network_->libertyCell(inst);
   Instance* sta_inst = network_->dbToSta(inst);
+
+  if (!to_lib_cell && !from_lib_cell) {
+    return;  // sta is oblivious
+  }
 
   swap_master_arcs_equiv_ = sta::equivCellsArcs(from_lib_cell, to_lib_cell);
 
@@ -1163,9 +1258,13 @@ void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
   }
 }
 
-void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
+void dbStaCbk::inDbInstSwapMasterAfter(odb::dbInst* inst)
 {
   Instance* sta_inst = network_->dbToSta(inst);
+
+  if (!network_->libertyCell(sta_inst)) {
+    return;  // sta is oblivious
+  }
 
   if (swap_master_arcs_equiv_) {
     sta_->replaceEquivCellAfter(sta_inst);
@@ -1174,184 +1273,130 @@ void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
   }
 }
 
-void dbStaCbk::inDbNetDestroy(dbNet* db_net)
+void dbStaCbk::inDbNetDestroy(odb::dbNet* db_net)
 {
   Net* net = network_->dbToSta(db_net);
   sta_->deleteNetBefore(net);
   network_->deleteNetBefore(net);
 }
 
-void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
+void dbStaCbk::inDbModNetDestroy(odb::dbModNet* modnet)
 {
   Net* net = network_->dbToSta(modnet);
   network_->deleteNetBefore(net);
 }
 
-void dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
+void dbStaCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   Pin* pin = network_->dbToSta(iterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
 }
 
-void dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
+void dbStaCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
   Pin* pin = network_->dbToSta(iterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
-void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
+void dbStaCbk::inDbITermDestroy(odb::dbITerm* iterm)
 {
   sta_->deletePinBefore(network_->dbToSta(iterm));
 }
 
-void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
+void dbStaCbk::inDbModITermPostConnect(odb::dbModITerm* moditerm)
 {
   Pin* pin = network_->dbToSta(moditerm);
   network_->connectPinAfter(pin);
-  // Connection is made by dbITerm callbacks. Calling this causes problem.
+  // Connection is made by odb::dbITerm callbacks. Calling this causes problem.
   // sta_->connectPinAfter(pin);
 }
 
-void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
+void dbStaCbk::inDbModITermPreDisconnect(odb::dbModITerm* moditerm)
 {
   Pin* pin = network_->dbToSta(moditerm);
-  // Connection is made by dbITerm callbacks. Calling this causes problem.
+  // Connection is made by odb::dbITerm callbacks. Calling this causes problem.
   // sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
-void dbStaCbk::inDbModITermDestroy(dbModITerm* moditerm)
+void dbStaCbk::inDbModITermDestroy(odb::dbModITerm* moditerm)
 {
   sta_->deletePinBefore(network_->dbToSta(moditerm));
 }
 
-void dbStaCbk::inDbBTermPostConnect(dbBTerm* bterm)
+void dbStaCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 {
   Pin* pin = network_->dbToSta(bterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
 }
 
-void dbStaCbk::inDbBTermPreDisconnect(dbBTerm* bterm)
+void dbStaCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
   Pin* pin = network_->dbToSta(bterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
-void dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
+void dbStaCbk::inDbBTermCreate(odb::dbBTerm* bterm)
 {
   sta_->getDbNetwork()->makeTopPort(bterm);
   Pin* pin = network_->dbToSta(bterm);
   sta_->makePortPinAfter(pin);
 }
 
-void dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)
+void dbStaCbk::inDbBTermDestroy(odb::dbBTerm* bterm)
 {
   sta_->disconnectPin(network_->dbToSta(bterm));
   // sta::NetworkEdit does not support port removal.
 }
 
-void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
+void dbStaCbk::inDbBTermSetIoType(odb::dbBTerm* bterm,
+                                  const odb::dbIoType& io_type)
 {
   sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
 }
 
-void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
+void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
+                                   const odb::dbSigType& sig_type)
 {
   // sta can't handle such changes, see OpenROAD#6025, so just reset the whole
   // thing.
-  sta_->networkChanged();
+  sta_->networkChangedNonSdc();
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
 }
 
-void dbStaCbk::inDbModInstCreate(dbModInst* modinst)
+void dbStaCbk::inDbModInstCreate(odb::dbModInst* modinst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstCreated(network_->dbToSta(modinst));
+  }
   sta_->makeInstanceAfter(network_->dbToSta(modinst));
 }
 
-void dbStaCbk::inDbModInstDestroy(dbModInst* modinst)
+void dbStaCbk::inDbModInstDestroy(odb::dbModInst* modinst)
 {
+  // A modInst destroy takes its whole subtree with it. Surgical erase
+  // would need to walk every cached descendant entry; full invalidate.
+  if (sdc_network_) {
+    sdc_network_->invalidateSdcPathToInstMap();
+  }
   sta_->deleteInstanceBefore(network_->dbToSta(modinst));
 }
 
-void dbStaCbk::inDbModBTermPostConnect(dbModBTerm* modbterm)
+void dbStaCbk::inDbModBTermPostConnect(odb::dbModBTerm* modbterm)
 {
 }
 
-void dbStaCbk::inDbModBTermPreDisconnect(dbModBTerm* modbterm)
+void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 {
 }
 
 ////////////////////////////////////////////////////////////////
-
-BufferUseAnalyser::BufferUseAnalyser()
-{
-  clkbuf_pattern_
-      = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
-                                            /* is_regexp */ true,
-                                            /* nocase */ true,
-                                            /* Tcl_interp* */ nullptr);
-}
-
-BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
-{
-  // is_clock_cell is a custom lib attribute that may not exist,
-  // so we also use the name pattern to help
-  if (buffer->isClockCell() || clkbuf_pattern_->match(buffer->name())) {
-    return CLOCK;
-  }
-
-  return DATA;
-}
-
-////////////////////////////////////////////////////////////////
-
-sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::enable
-        || signal_type == sta::ScanSignalType::enable_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::input
-        || signal_type == sta::ScanSignalType::input_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::output
-        || signal_type == sta::ScanSignalType::output_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
 
 void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
                                  const char* filename,
@@ -1382,7 +1427,8 @@ void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
           continue;
         }
         Pin* pin = db_network_->dbToSta(iterm);
-        float slack = pinSlack(pin, min_max);
+        float slack = this->slack(
+            pin, sta::RiseFallBoth::riseFall(), scenes(), min_max);
         float arrival = 0.0;
         float required = 0.0;
 
@@ -1393,17 +1439,17 @@ void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
         }
         if (vertex) {
           float min_s = 1e30;
-          for (Corner* corner : *corners()) {
-            PathAnalysisPt* path_ap = corner->findPathAnalysisPt(min_max);
-            if (!path_ap) {
-              continue;
-            }
+          for (Scene* corner : scenes()) {
             for (const RiseFall* rf : RiseFall::range()) {
-              float s = vertexSlack(vertex, rf, path_ap);
+              SceneSeq corner1{corner};
+              float s
+                  = this->slack(vertex, rf->asRiseFallBoth(), corner1, min_max);
               if (s < min_s) {
                 min_s = s;
-                arrival = vertexArrival(vertex, rf, path_ap);
-                required = vertexRequired(vertex, rf, path_ap);
+                arrival = this->arrival(
+                    vertex, rf->asRiseFallBoth(), corner1, min_max);
+                required = this->required(
+                    vertex, rf->asRiseFallBoth(), corner1, min_max);
               }
             }
           }
@@ -1412,21 +1458,16 @@ void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
         float cap = 0.0;
         float res = 0.0;
         Net* net = network()->net(pin);
-        if (net) {
-          Parasitics* parasitics = this->parasitics();
-          Corner* corner = corners()->findCorner(0);
-
-          if (parasitics && corner) {
-            const ParasiticAnalysisPt* ap
-                = corner->findParasiticAnalysisPt(MinMax::max());
-            if (ap) {
-              Parasitic* p = parasitics->findParasiticNetwork(net, ap);
-              if (p) {
-                cap = parasitics->capacitance(p);
-                ParasiticResistorSeq resistors = parasitics->resistors(p);
-                for (ParasiticResistor* r : resistors) {
-                  res += parasitics->value(r);
-                }
+        Scene* corner = cmdScene();
+        if (net && corner) {
+          Parasitics* parasitics = corner->parasitics(MinMax::max());
+          if (parasitics) {
+            Parasitic* p = parasitics->findParasiticNetwork(net);
+            if (p) {
+              cap = parasitics->capacitance(p);
+              ParasiticResistorSeq resistors = parasitics->resistors(p);
+              for (ParasiticResistor* r : resistors) {
+                res += parasitics->value(r);
               }
             }
           }
@@ -1561,7 +1602,7 @@ void dbSta::dumpModInstGraphConnections(const char* mod_inst_name,
 
         bool is_external = false;
         if (from_pin) {
-          std::string_view pin_name = network()->name(from_pin);
+          std::string pin_name = network()->name(from_pin);
           std::string mod_prefix = db_mod_inst->getName();
           mod_prefix += "/";  // e.g., "_202_/"
           if (!pin_name.starts_with(mod_prefix)) {

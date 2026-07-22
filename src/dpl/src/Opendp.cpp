@@ -10,23 +10,27 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "NegotiationLegalizer.h"
 #include "PlacementDRC.h"
-#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/predicates.hpp"
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
-#include "infrastructure/DecapObjects.h"
+#include "infrastructure/DecapObjects.h"  // NOLINT(misc-include-cleaner) Needed for DecapCell/GapInfo completeness in ~Opendp()
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace dpl {
 
@@ -47,14 +51,17 @@ bool Opendp::isMultiRow(const Node* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-Opendp::Opendp(odb::dbDatabase* db, Logger* logger) : logger_(logger), db_(db)
+Opendp::Opendp(odb::dbDatabase* db, utl::Logger* logger)
+    : logger_(logger), db_(db)
 {
   dummy_cell_ = std::make_unique<Node>();
   dummy_cell_->setPlaced(true);
+  dummy_cell_->setFixed(true);
   padding_ = std::make_shared<Padding>();
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
   network_ = std::make_unique<Network>();
+  network_->init(logger);
   arch_ = std::make_unique<Architecture>();
 }
 
@@ -80,6 +87,34 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
   debug_observer_ = std::move(observer);
 }
 
+void Opendp::setJumpMoves(const int jump_moves)
+{
+  jump_moves_ = jump_moves;
+}
+
+void Opendp::setIterativePlacement(const bool iterative)
+{
+  iterative_debug_ = iterative;
+}
+
+void Opendp::setDeepIterativePlacement(const bool deep_iterative)
+{
+  deep_iterative_debug_ = deep_iterative;
+  if (deep_iterative) {
+    iterative_debug_ = true;
+  }
+}
+
+void Opendp::setNegotiationDebugInterval(const int iterative_jump)
+{
+  negotiation_debug_interval_ = std::max(1, iterative_jump);
+}
+
+void Opendp::setNegotiationDebugStart(const int iterative_start)
+{
+  negotiation_debug_start_ = std::max(0, iterative_start);
+}
+
 void Opendp::setJournal(Journal* journal)
 {
   journal_ = journal;
@@ -92,13 +127,24 @@ Journal* Opendp::getJournal() const
 
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
-                               const std::string& report_file_name)
+                               const std::string& report_file_name,
+                               bool incremental,
+                               const bool use_diamond_legalizer,
+                               const int site_search_window,
+                               const int row_search_window,
+                               const double drc_penalty,
+                               const bool disable_window_extension)
 {
+  utl::Timer timer;
+  incremental_ = incremental;
+  use_diamond_legalizer_ |= use_diamond_legalizer;
   importDb();
   adjustNodesOrient();
-  for (const auto& node : network_->getNodes()) {
-    if (node->getType() == Node::CELL && !node->isFixed()) {
-      node->setPlaced(false);
+  if (!incremental_) {
+    for (const auto& node : network_->getNodes()) {
+      if (node->getType() == Node::CELL && !node->isFixed()) {
+        node->setPlaced(false);
+      }
     }
   }
 
@@ -106,8 +152,59 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
   }
 
+  {
+    const int64_t core_area
+        = static_cast<int64_t>(core_.dx()) * static_cast<int64_t>(core_.dy());
+    int64_t inst_area = 0;
+    for (const auto& node : network_->getNodes()) {
+      if (node->getType() == Node::CELL && !node->isFixed()) {
+        inst_area += static_cast<int64_t>(node->getWidth().v)
+                     * static_cast<int64_t>(node->getHeight().v);
+      }
+    }
+    // Area of fixed instances (macros, pads, endcaps, ...) clipped to the
+    // core: only the part that overlaps the core blocks placement sites.
+    int64_t fixed_area = 0;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      if (!inst->isFixed()) {
+        continue;
+      }
+      const odb::Rect bbox = inst->getBBox()->getBox();
+      if (!bbox.intersects(core_)) {
+        continue;
+      }
+      const odb::Rect overlap = bbox.intersect(core_);
+      fixed_area += overlap.area();
+    }
+
+    const int64_t used_area = inst_area + fixed_area;
+    const double utilization = core_area > 0
+                                   ? (static_cast<double>(used_area)
+                                      / static_cast<double>(core_area))
+                                         * 100.0
+                                   : 0.0;
+    logger_->info(
+        DPL, 6, "Core area: {:.2f} um^2", block_->dbuAreaToMicrons(core_area));
+    logger_->info(DPL,
+                  7,
+                  "Movable instances area: {:.2f} um^2",
+                  block_->dbuAreaToMicrons(inst_area));
+    logger_->info(DPL,
+                  8,
+                  "Fixed instances area within core: {:.2f} um^2",
+                  block_->dbuAreaToMicrons(fixed_area));
+    logger_->info(DPL, 9, "Utilization: {:.1f}%", utilization);
+    logger_->metric("utilization__before__dpl", utilization);
+    if (utilization > 100.0) {
+      logger_->error(
+          DPL, 38, "Utilization greater than 100%, impossible to legalize");
+    }
+  }
+
+  odb::WireLengthEvaluator eval(block_);
+  hpwl_before_ = eval.hpwl();
+
   if (max_displacement_x == 0 || max_displacement_y == 0) {
-    // defaults
     max_displacement_x_ = 500;
     max_displacement_y_ = 100;
   } else {
@@ -115,27 +212,82 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     max_displacement_y_ = max_displacement_y;
   }
 
-  odb::WireLengthEvaluator eval(block_);
-  hpwl_before_ = eval.hpwl();
-  detailedPlacement();
-  // Save displacement stats before updating instance DB locations.
-  findDisplacementStats();
-  updateDbInstLocations();
-  if (!placement_failures_.empty()) {
-    logger_->info(DPL,
-                  34,
-                  "Detailed placement failed on the following {} instances:",
-                  placement_failures_.size());
-    for (auto cell : placement_failures_) {
-      logger_->info(DPL, 35, " {}", cell->name());
+  logger_->info(DPL,
+                5,
+                "Diamond search max displacement: +/- {} sites horizontally, "
+                "+/- {} rows vertically.",
+                max_displacement_x_,
+                max_displacement_y_);
+
+  if (use_diamond_legalizer_) {
+    logger_->info(DPL, 1101, "Legalizing using diamond search.");
+    diamondDPL();
+    findDisplacementStats();
+    updateDbInstLocations();
+    if (!placement_failures_.empty()) {
+      logger_->info(DPL,
+                    34,
+                    "Detailed placement failed on the following {} instances:",
+                    placement_failures_.size());
+      for (auto cell : placement_failures_) {
+        logger_->info(DPL, 35, " {}", cell->name());
+      }
+
+      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
+      if (!report_file_name.empty()) {
+        writeJsonReport(report_file_name);
+      }
+      logger_->error(DPL, 36, "Detailed placement failed inside DPL.");
+    }
+  } else {
+    initGrid();
+    setFixedGridCells();
+    // Populate pixel->group for each fence region so diamondRecovery's
+    // underlying diamondSearch correctly enforces region constraints.
+    if (!arch_->getRegions().empty()) {
+      groupInitPixels2();
+      groupInitPixels();
+    }
+    logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
+
+    NegotiationLegalizer negotiation(this,
+                                     db_,
+                                     logger_,
+                                     padding_.get(),
+                                     debug_observer_.get(),
+                                     network_.get());
+    negotiation.setDisableWindowExtension(disable_window_extension);
+    if (site_search_window >= 0) {
+      negotiation.setSiteSearchWindow(site_search_window);
+    }
+    if (row_search_window >= 0) {
+      negotiation.setRowSearchWindow(row_search_window);
+    }
+    if (drc_penalty >= 0.0) {
+      negotiation.setDrcPenalty(drc_penalty);
+    }
+    negotiation.legalize();
+    negotiation.commitNegotiationPosToDpl();
+
+    if (negotiation.numViolations() > 0) {
+      logger_->warn(DPL,
+                    701,
+                    "NegotiationLegalizer did not fully converge. "
+                    "Violations remain: {}",
+                    negotiation.numViolations());
+      logger_->metric("NL__no__converge__final_violations",
+                      negotiation.numViolations());
+      const auto illegal_nodes = negotiation.getIllegalNodes();
+      saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {});
+      if (!report_file_name.empty()) {
+        writeJsonReport(report_file_name);
+      }
     }
 
-    saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
-    if (!report_file_name.empty()) {
-      writeJsonReport(report_file_name);
-    }
-    logger_->error(DPL, 36, "Detailed placement failed.");
+    findDisplacementStats();
+    updateDbInstLocations();
   }
+  logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void Opendp::updateDbInstLocations()
@@ -188,6 +340,8 @@ void Opendp::reportLegalizationStats() const
             : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
+  logger_->metric("dpl__hpwl__delta", hpwl_legal - hpwl_before_);
+  logger_->metric("dpl__hpwl__delta__percent", hpwl_delta);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -218,6 +372,67 @@ void Opendp::optimizeMirroring()
 {
   OptimizeMirroring opt(logger_, db_);
   opt.run();
+}
+
+void Opendp::resetGlobalSwapParams()
+{
+  global_swap_params_ = GlobalSwapParams();
+}
+
+void Opendp::configureGlobalSwapParams(
+    int passes,
+    double tolerance,
+    double tradeoff,
+    double area_weight,
+    double pin_weight,
+    double user_weight,
+    int sampling_moves,
+    int normalization_interval,
+    double profiling_excess,
+    const std::vector<double>& budget_multipliers)
+{
+  if (passes > 0) {
+    global_swap_params_.passes = passes;
+  }
+  if (tolerance > 0.0) {
+    global_swap_params_.tolerance = tolerance;
+  }
+  if (tradeoff >= 0.0) {
+    global_swap_params_.tradeoff = std::max(0.0, std::min(1.0, tradeoff));
+  }
+  if (area_weight >= 0.0) {
+    global_swap_params_.area_weight = area_weight;
+  }
+  if (pin_weight >= 0.0) {
+    global_swap_params_.pin_weight = pin_weight;
+  }
+  if (user_weight > 0.0) {
+    global_swap_params_.user_congestion_weight = user_weight;
+  }
+  if (sampling_moves > 0) {
+    global_swap_params_.sampling_moves = sampling_moves;
+  }
+  if (normalization_interval > 0) {
+    global_swap_params_.normalization_interval = normalization_interval;
+  }
+  if (profiling_excess > 0.0) {
+    global_swap_params_.profiling_excess = profiling_excess;
+  }
+  if (!budget_multipliers.empty()) {
+    global_swap_params_.budget_multipliers = budget_multipliers;
+  }
+  if (global_swap_params_.budget_multipliers.empty()) {
+    global_swap_params_.budget_multipliers = {1.0};
+  }
+  if (global_swap_params_.area_weight < 0.0
+      || global_swap_params_.pin_weight < 0.0) {
+    logger_->error(DPL, 1280, "Utilization weights must be non-negative.");
+  }
+  if (global_swap_params_.area_weight == 0.0
+      && global_swap_params_.pin_weight == 0.0) {
+    logger_->error(
+        DPL, 1281, "At least one utilization weight must be greater than 0.");
+  }
 }
 
 int Opendp::disp(const Node* cell) const
@@ -263,6 +478,78 @@ void Opendp::findOverlapInRtree(const bgBox& queryBox,
   overlaps.clear();
   regions_rtree_.query(boost::geometry::index::intersects(queryBox),
                        std::back_inserter(overlaps));
+}
+
+void Opendp::setInitialGridCells()
+{
+  std::unordered_set<Node*> conflicted;
+  const DbuX site_width = grid_->getSiteWidth();
+
+  // Check which cells are missaligned with rows
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+      const GridX x = grid_->gridX(node.get());
+      const GridY y = grid_->gridSnapDownY(node.get());
+      if (node->getLeft() != gridToDbu(x, site_width)
+          || node->getBottom() != grid_->gridYToDbu(y)
+          || !canBePlaced(node.get(), x, y)) {
+        conflicted.insert(node.get());
+      }
+    }
+  }
+
+  // Check which cells are overlapping with other cells
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+      if (conflicted.contains(node.get())) {
+        continue;
+      }
+
+      bool node_conflicted = false;
+      grid_->visitCellPixels(
+          *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
+            if (pixel->cell != nullptr && pixel->cell != node.get()) {
+              node_conflicted = true;
+              if (!pixel->cell->isFixed()) {
+                conflicted.insert(pixel->cell);
+              }
+            } else {
+              pixel->cell = node.get();
+            }
+          });
+
+      if (node_conflicted) {
+        conflicted.insert(node.get());
+      }
+    }
+  }
+
+  for (GridY y{0}; y < grid_->getRowCount(); y++) {
+    for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
+      Pixel& pixel = grid_->pixel(y, x);
+      if (pixel.cell != nullptr && !pixel.cell->isFixed()) {
+        pixel.cell = nullptr;
+      }
+    }
+  }
+
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+      if (conflicted.find(node.get()) == conflicted.end()) {
+        // This cell is perfectly legal and has no conflicts.
+        grid_->visitCellPixels(
+            *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
+              pixel->cell = node.get();
+              pixel->util = 1.0;
+            });
+        grid_->paintCellPadding(node.get());
+      } else {
+        // This cell is either illegal or was part of an overlap conflict.
+        // Unplace it.
+        unplaceCell(node.get());
+      }
+    }
+  }
 }
 
 void Opendp::setFixedGridCells()
@@ -482,6 +769,19 @@ void Opendp::groupInitPixels()
       }
     }
   }
+}
+
+odb::Point Opendp::getOdbLocation(const Node* cell) const
+{
+  odb::dbBox* odb_bbox = cell->getDbInst()->getBBox();
+  return {odb_bbox->xMin(), odb_bbox->yMin()};
+}
+
+odb::Point Opendp::getDplLocation(const Node* cell) const
+{
+  DbuX final_x{core_.xMin() + cell->getLeft()};
+  DbuY final_y{core_.yMin() + cell->getBottom()};
+  return {final_x.v, final_y.v};
 }
 
 int divRound(const int dividend, const int divisor)

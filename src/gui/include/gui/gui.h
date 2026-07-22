@@ -39,9 +39,6 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
-class PinDensityDataSource;
-class PlacementDensityDataSource;
-class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -292,7 +289,7 @@ class Painter
   }
 
   double getPixelsPerDBU() { return pixels_per_dbu_; }
-  Options* getOptions() { return options_; }
+  Options* getOptions();
   const odb::Rect& getBounds() { return bounds_; }
 
  protected:
@@ -651,6 +648,54 @@ class SpectrumGenerator
  private:
   static const unsigned char kSpectrum[256][3];
   double scale_;
+  static constexpr int kLegendColorIncrement = 2;
+};
+
+class Legend
+{
+ public:
+  virtual ~Legend() = default;
+
+  virtual void draw(Painter& painter) const = 0;
+
+ protected:
+  Legend() = default;
+};
+
+// A legend for a linear spectrum of colors
+// The colors are specified as continuous from low to high
+// For example, a heat map legend
+class LinearLegend : public Legend
+{
+ public:
+  LinearLegend(const std::vector<Painter::Color>& colors);
+
+  // Set the legend key as a vector of (color, text) pairs
+  void setLegendKey(
+      const std::vector<std::pair<Painter::Color, std::string>>& legend_key);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<Painter::Color> colors_;
+  std::vector<std::pair<Painter::Color, std::string>> legend_key_;
+};
+
+// A legend for discrete colors
+// Each color is associated with a text label
+// For example, a timing path legend
+class DiscreteLegend : public Legend
+{
+ public:
+  DiscreteLegend() = default;
+
+  // Add a (color, text) entry to the legend
+  void addLegendKey(const Painter::Color& color, const std::string& text);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<std::pair<Painter::Color, std::string>> color_key_;
 };
 
 // A chart with a single X axis and potentially multiple Y axes
@@ -672,6 +717,52 @@ class Chart
 
  protected:
   Chart() = default;
+};
+
+// Optional backend plugged in when the Qt GUI is not running (e.g. the web
+// viewer).  Lets Gui::enabled/redraw/pause work without Qt so that debug
+// graphics (gpl, cts, drt, mpl, ...) light up in headless contexts.
+// Installed via Gui::setHeadlessViewer.  The Qt GUI, when present, always
+// takes precedence: the viewer is only consulted when main_window is null.
+class HeadlessViewer
+{
+ public:
+  virtual ~HeadlessViewer() = default;
+
+  // Called by Renderer::redraw() / Gui::redraw().  Typically broadcasts
+  // a refresh notification to connected clients.
+  virtual void redraw() = 0;
+
+  // Called by Gui::pause().  Should block the calling thread until some
+  // external signal (e.g. a client click) releases it, or until timeout_ms
+  // expires.  timeout_ms == 0 means wait indefinitely.
+  virtual void pause(int timeout_ms) = 0;
+
+  // True while pause() is blocking.  Consumers (like the web tile renderer)
+  // can use this to gate unsafe cross-thread reads of renderer state.
+  virtual bool isPaused() const = 0;
+
+  // Display-control accessors consulted by Gui::*DisplayControls* when the Qt
+  // GUI (and its DisplayControls widget) is absent.  Default implementations
+  // assume "everything visible, nothing selectable" so headless renderers draw
+  // by default without a Qt widget.  Viewers that track their own visibility
+  // model (e.g. the web viewer) may override these.
+  virtual bool checkDisplayControlVisible(const std::string& /* name */)
+  {
+    return true;
+  }
+  virtual bool checkDisplayControlSelectable(const std::string& /* name */)
+  {
+    return false;
+  }
+  virtual void setDisplayControlVisible(const std::string& /* name */,
+                                        bool /* value */)
+  {
+  }
+  virtual void setDisplayControlSelectable(const std::string& /* name */,
+                                           bool /* value */)
+  {
+  }
 };
 
 // This is the API for the rest of the program to interact with the
@@ -780,7 +871,7 @@ class Gui
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
                           const std::string& filename,
-                          const std::string& corner = "",
+                          const std::string& scene = "",
                           int width_px = 0,
                           int height_px = 0);
   void selectClockviewerClock(const std::string& clock_name,
@@ -954,20 +1045,44 @@ class Gui
 
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);
-  const std::set<HeatMapDataSource*>& getHeatMaps() { return heat_maps_; }
+  const std::set<HeatMapDataSource*>& getHeatMaps();
   HeatMapDataSource* getHeatMap(const std::string& name);
 
   // returns the Gui singleton
   static Gui* get();
 
-  // Will return true if the GUI is active, false otherwise
+  // Will return true if any GUI backend is active (Qt or headless).
+  // Tool renderers should use this to decide whether debug graphics
+  // are available.
   static bool enabled();
+
+  // Will return true only when the Qt main window is running.
+  // Tcl commands that need Qt widgets (selection, zoom, labels, …)
+  // should gate on this rather than enabled().
+  static bool hasUI();
+
+  // Install / inspect a HeadlessViewer (used when the Qt GUI is not
+  // running).  See the HeadlessViewer class comment for semantics.
+  void setHeadlessViewer(HeadlessViewer* viewer);
+  HeadlessViewer* getHeadlessViewer() const { return headless_viewer_; }
+
+  // Factory for gui::Chart instances when the Qt GUI is not running.
+  // The web viewer installs a factory that returns WebChart*.  When the
+  // Qt GUI is running, the main window's ChartsWidget is used instead
+  // and this factory is ignored.
+  using ChartFactory
+      = std::function<Chart*(const std::string& name,
+                             const std::string& x_label,
+                             const std::vector<std::string>& y_labels)>;
+  void setChartFactory(ChartFactory factory);
+  const ChartFactory& getChartFactory() const { return chart_factory_; }
 
   // initialize the GUI
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
  private:
   Gui();
+  void syncHeatMapChips();
 
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);
@@ -985,49 +1100,24 @@ class Gui
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
-  // There are RTTI implementation differences between libstdc++ and libc++,
-  // where the latter seems to generate multiple typeids for classes including
-  // but not limited to sta::Instance* in different compile units. We have been
-  // unable to remedy this.
-  //
-  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
-  // and comparing are done on the type's name instead, which adds a negligible
-  // performance penalty but has the distinct advantage of not crashing when an
-  // Instance is clicked in the GUI.
-  //
-  // In the event the RTTI issue is ever resolved, the following two structs may
-  // be removed.
-  struct TypeInfoHasher
-  {
-    std::size_t operator()(const std::type_index& x) const;
-  };
-  struct TypeInfoComparator
-  {
-    bool operator()(const std::type_index& a, const std::type_index& b) const;
-  };
-
-  // Maps types to descriptors
-  std::unordered_map<std::type_index,
-                     std::unique_ptr<const Descriptor>,
-                     TypeInfoHasher,
-                     TypeInfoComparator>
-      descriptors_;
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
+  std::map<HeatMapDataSource*, std::unique_ptr<Renderer>> heat_map_renderers_;
+  std::vector<std::shared_ptr<HeatMapDataSource>> owned_heat_maps_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
 
-  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
-  std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
-  std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
-
   std::vector<std::unique_ptr<GIF>> gifs_;
   static constexpr int kDefaultGifDelay = 250;
 
   std::string main_window_title_ = "OpenROAD";
+
+  // Used when Qt GUI is not active.  Installed by the web viewer.
+  HeadlessViewer* headless_viewer_ = nullptr;
+  ChartFactory chart_factory_;
 };
 
 // The main entry point

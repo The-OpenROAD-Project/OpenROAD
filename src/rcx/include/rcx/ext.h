@@ -14,22 +14,17 @@
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
 #include "rcx/ext_options.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace rcx {
-
-using utl::Logger;
 
 class Ext
 {
  public:
-  Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version);
+  Ext(odb::dbDatabase* db, utl::Logger* logger, const char* spef_version);
   ~Ext();
 
-  void setLogger(Logger* logger);
+  void setLogger(utl::Logger* logger);
 
   void bench_wires_gen(const PatternOptions& opt);
 
@@ -41,7 +36,7 @@ class Ext
                      int pattern);
   bool define_rcx_corners(const std::string& corner_list);
   static bool get_model_corners(const std::string& ext_model_file,
-                                Logger* logger);
+                                utl::Logger* logger);
   bool rc_estimate(const std::string& ext_model_file,
                    const std::string& out_file_prefix);
 
@@ -104,7 +99,7 @@ class Ext
   odb::dbDatabase* _db = nullptr;
   // ::unique_ptr<extMain> _ext;
   extMain* _ext = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   const char* spef_version_ = nullptr;
 };  // namespace rcx
 

@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <list>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <queue>
 #include <set>
@@ -14,7 +13,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/asio/thread_pool.hpp"
+#include "drt/PinAccessService.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -27,7 +28,7 @@ class dbWire;
 
 namespace utl {
 class Logger;
-class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace stt {
@@ -43,7 +44,6 @@ namespace drt {
 class frDesign;
 class frInst;
 class DesignCallBack;
-class PACallBack;
 class FlexDR;
 class FlexPA;
 class FlexTA;
@@ -60,8 +60,7 @@ struct ParamStruct
 {
   std::string outputMazeFile;
   std::string outputDrcFile;
-  std::optional<int> drcReportIterStep;
-  std::string outputCmapFile;
+  int drcReportIterStep = 0;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;
   bool enableViaGen = false;
@@ -78,18 +77,20 @@ struct ParamStruct
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
-  int num_threads;
+  int num_threads = 1;
 };
 
-class TritonRoute
+class TritonRoute : public PinAccessService
 {
  public:
   TritonRoute(odb::dbDatabase* db,
               utl::Logger* logger,
-              utl::CallBackHandler* callback_handler,
+              utl::ServiceRegistry* service_registry,
               dst::Distributed* dist,
               stt::SteinerTreeBuilder* stt_builder);
-  ~TritonRoute();
+  ~TritonRoute() override;
+
+  void updateDirtyPinAccess() override;
 
   void initGraphics(std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
@@ -192,10 +193,10 @@ class TritonRoute
   std::unique_ptr<frDesign> design_;
   std::unique_ptr<frDebugSettings> debug_;
   std::unique_ptr<DesignCallBack> db_callback_;
-  std::unique_ptr<PACallBack> pa_callback_;
   std::unique_ptr<RouterConfiguration> router_cfg_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
+  utl::ServiceRegistry* service_registry_{nullptr};
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_{nullptr};
   int num_drvs_{-1};
@@ -205,7 +206,7 @@ class TritonRoute
   uint16_t dist_port_{0};
   std::string shared_volume_;
   std::vector<std::pair<int, std::string>> workers_results_;
-  std::mutex results_mutex_;
+  absl::Mutex results_mutex_;
   int results_sz_{0};
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
@@ -214,7 +215,6 @@ class TritonRoute
 
   void initDesign();
   void initGraphics();
-  void gr();
   void ta();
   void dr();
   void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);

@@ -6,6 +6,7 @@
 #include <memory>
 #include <utility>
 
+#include "db/drObj/drPin.h"
 #include "db/drObj/drRef.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexMazeTypes.h"

@@ -9,19 +9,21 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include "dbGDSLib.h"
+#include "odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSSRef>;
 
 bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (origin_ != rhs.origin_) {
     return false;
   }
@@ -30,6 +32,7 @@ bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSSRef::operator<(const _dbGDSSRef& rhs) const
@@ -78,7 +81,7 @@ void _dbGDSSRef::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSSRef::setOrigin(Point origin)
+void dbGDSSRef::setOrigin(const Point& origin)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 
@@ -117,10 +120,17 @@ dbGDSStructure* dbGDSSRef::getStructure() const
   return (dbGDSStructure*) lib->gdsstructure_tbl_->getPtr(obj->structure_);
 }
 
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSSRef::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSSRef::getPropattr() const
 {
   auto* obj = (_dbGDSSRef*) this;
   return obj->propattr_;
+}
+
+void dbGDSSRef::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSSRef*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSSRef* dbGDSSRef::create(dbGDSStructure* parent, dbGDSStructure* child)

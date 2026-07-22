@@ -2,14 +2,26 @@
 [INFO ODB-0227] LEF file: obstruction1.lef, created 1 library cells
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0131]     Created 121 components and 621 component-terminals.
+[INFO DPL-0006] Core area: 160139.98 um^2
+[INFO DPL-0007] Movable instances area: 118.10 um^2
+[INFO DPL-0008] Fixed instances area within core: 57683.98 um^2
+[INFO DPL-0009] Utilization: 36.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 117 cells
 Placement Analysis
 ---------------------------------
-total displacement         47.3 u
-average displacement        0.4 u
-max displacement            0.7 u
+total displacement        120.9 u
+average displacement        1.0 u
+max displacement            2.3 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
-[INFO DPL-0001] Placed 19647 filler instances.
+[INFO DPL-0001] Placed 19644 filler instances.
 No differences found.

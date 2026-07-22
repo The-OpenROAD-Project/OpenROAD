@@ -11,6 +11,9 @@
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+// User Code Begin Includes
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -36,6 +39,8 @@ class _dbChipRegion : public _dbObject
   uint8_t side_;
   dbId<_dbTechLayer> layer_;
   Rect box_;
+  int z_min_;
+  int z_max_;
   dbTable<_dbChipBump>* chip_bump_tbl_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj);

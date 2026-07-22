@@ -4,7 +4,7 @@
 #pragma once
 
 #include "base/abc/abc.h"
-#include "db_sta/dbSta.hh"
+#include "cut/abc_library_factory.h"
 #include "logic_optimization_strategy.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"

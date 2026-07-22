@@ -4252,7 +4252,11 @@ PINS 141 ;
         + FIXED ( 3640000 5240000 ) N ;
 END PINS
 SPECIALNETS 143 ;
-    - DVDD ( * DVDD ) + USE POWER ;
+    - DVDD ( u_vdd_16 DVDD ) ( u_vdd_17 DVDD ) ( u_vdd_18 DVDD ) ( u_vdd_19 DVDD ) ( u_vdd_20 DVDD ) ( u_vdd_21 DVDD ) ( u_vdd_22 DVDD )
+      ( u_vdd_23 DVDD ) ( u_vdd_24 DVDD ) ( u_vdd_25 DVDD ) ( u_vdd_26 DVDD ) ( u_vdd_27 DVDD ) ( u_vdd_28 DVDD ) ( u_vdd_29 DVDD ) ( u_vdd_30 DVDD )
+      ( u_vdd_31 DVDD ) ( u_vdd_32 DVDD ) ( u_vss_16 DVDD ) ( u_vss_17 DVDD ) ( u_vss_18 DVDD ) ( u_vss_19 DVDD ) ( u_vss_20 DVDD ) ( u_vss_21 DVDD )
+      ( u_vss_22 DVDD ) ( u_vss_23 DVDD ) ( u_vss_24 DVDD ) ( u_vss_25 DVDD ) ( u_vss_26 DVDD ) ( u_vss_27 DVDD ) ( u_vss_28 DVDD ) ( u_vss_29 DVDD )
+      ( u_vss_30 DVDD ) ( u_vss_31 DVDD ) ( u_vss_32 DVDD ) + USE POWER ;
     - DVDD_0 ( PIN DVDD_0 ) ( u_v18_33 DVDD ) ( u_vzz_33 DVDD ) ( u_vss_15 DVDD ) ( u_vdd_15 DVDD ) ( u_v18_32 DVDD ) ( u_vzz_32 DVDD )
       ( u_v18_31 DVDD ) ( u_vzz_31 DVDD ) ( u_vss_14 DVDD ) ( u_vdd_14 DVDD ) ( u_v18_30 DVDD ) ( u_vzz_30 DVDD ) ( u_v18_29 DVDD ) ( u_vzz_29 DVDD )
       ( u_vss_13 DVDD ) ( u_vdd_13 DVDD ) ( u_v18_28 DVDD ) ( u_vzz_28 DVDD ) ( u_v18_27 DVDD ) ( u_vzz_27 DVDD ) ( u_v18_26 DVDD ) ( u_vzz_26 DVDD )
@@ -4379,7 +4383,11 @@ SPECIALNETS 143 ;
       NEW metal10 20000 + SHAPE STRIPE ( 2900000 5020000 ) ( 2900000 5635000 )
       NEW metal10 20000 + SHAPE STRIPE ( 2900000 5635000 ) ( 2950000 5685000 )
       NEW metal10 20000 + SHAPE STRIPE ( 2950000 5685000 ) ( 2950000 5825000 ) ;
-    - DVSS ( * DVSS ) + USE GROUND ;
+    - DVSS ( u_vdd_16 DVSS ) ( u_vdd_17 DVSS ) ( u_vdd_18 DVSS ) ( u_vdd_19 DVSS ) ( u_vdd_20 DVSS ) ( u_vdd_21 DVSS ) ( u_vdd_22 DVSS )
+      ( u_vdd_23 DVSS ) ( u_vdd_24 DVSS ) ( u_vdd_25 DVSS ) ( u_vdd_26 DVSS ) ( u_vdd_27 DVSS ) ( u_vdd_28 DVSS ) ( u_vdd_29 DVSS ) ( u_vdd_30 DVSS )
+      ( u_vdd_31 DVSS ) ( u_vdd_32 DVSS ) ( u_vss_16 DVSS ) ( u_vss_17 DVSS ) ( u_vss_18 DVSS ) ( u_vss_19 DVSS ) ( u_vss_20 DVSS ) ( u_vss_21 DVSS )
+      ( u_vss_22 DVSS ) ( u_vss_23 DVSS ) ( u_vss_24 DVSS ) ( u_vss_25 DVSS ) ( u_vss_26 DVSS ) ( u_vss_27 DVSS ) ( u_vss_28 DVSS ) ( u_vss_29 DVSS )
+      ( u_vss_30 DVSS ) ( u_vss_31 DVSS ) ( u_vss_32 DVSS ) + USE GROUND ;
     - DVSS_0 ( PIN DVSS_0 ) ( u_v18_33 DVSS ) ( u_vzz_33 DVSS ) ( u_vss_15 DVSS ) ( u_vdd_15 DVSS ) ( u_v18_32 DVSS ) ( u_vzz_32 DVSS )
       ( u_v18_31 DVSS ) ( u_vzz_31 DVSS ) ( u_vss_14 DVSS ) ( u_vdd_14 DVSS ) ( u_v18_30 DVSS ) ( u_vzz_30 DVSS ) ( u_v18_29 DVSS ) ( u_vzz_29 DVSS )
       ( u_vss_13 DVSS ) ( u_vdd_13 DVSS ) ( u_v18_28 DVSS ) ( u_vzz_28 DVSS ) ( u_v18_27 DVSS ) ( u_vzz_27 DVSS ) ( u_v18_26 DVSS ) ( u_vzz_26 DVSS )

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -16,12 +17,16 @@
 #include "Objects.h"
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
+#include "utl/Logger.h"
 
 namespace dpl {
+
+class Network;
 
 struct GridIntervalX
 {
@@ -45,6 +50,13 @@ struct Pixel
   uint8_t blocked_layers = 0;
   // Cell that reserved this pixel for padding
   Node* padding_reserved_by = nullptr;
+
+  // Hybrid negotiation data
+  int capacity = 0;  // 1 if site exists, 0 if blockage
+  int usage = 0;
+  double hist_cost = 1.0;
+
+  [[nodiscard]] int overuse() const { return std::max(usage - capacity, 0); }
 };
 
 // Return value for grid searches.
@@ -65,7 +77,7 @@ class PixelPt
 class Grid
 {
  public:
-  void init(Logger* logger) { logger_ = logger; }
+  void init(utl::Logger* logger) { logger_ = logger; }
   void setCore(const odb::Rect& core) { core_ = core; }
   void initGrid(odb::dbDatabase* db,
                 odb::dbBlock* block,
@@ -155,9 +167,17 @@ class Grid
 
   bool isMultiHeight(odb::dbMaster* master) const;
 
+  // Utilization-aware placement support
+  void computeUtilizationMap(Network* network,
+                             float area_weight,
+                             float pin_weight);
+  void updateUtilizationMap(Node* node, DbuX x, DbuY y, bool add);
+  float getUtilizationDensity(int pixel_idx) const;
+  void normalizeUtilization();
+
  private:
   // Maps a site to the right orientation to use in a given row
-  using SiteToOrientation = std::map<odb::dbSite*, odb::dbOrientType>;
+  using SiteToOrientation = odb::PtrMap<odb::dbSite, odb::dbOrientType>;
 
   // Used to combine the SiteToOrientation for two intervals when merged
   template <typename MapType>
@@ -190,7 +210,7 @@ class Grid
   void visitDbRows(odb::dbBlock* block,
                    const std::function<void(odb::dbRow*)>& func) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
   Pixels pixels_;
@@ -211,6 +231,28 @@ class Grid
 
   GridY row_count_{0};
   GridX row_site_count_{0};
+
+  // Utilization density map
+  std::vector<float> utilization_density_;
+  std::vector<float> total_area_;
+  std::vector<float> total_pins_;
+  float area_weight_ = 0.0f;
+  float pin_weight_ = 0.0f;
+  bool utilization_dirty_ = false;
+  float last_max_area_ = 1.0f;
+  float last_max_pins_ = 1.0f;
+  float last_max_utilization_ = 1.0f;
+
+  int countValidPixels(GridX x_begin,
+                       GridY y_begin,
+                       GridX x_end,
+                       GridY y_end) const;
+  void applyCellContribution(Node* node,
+                             GridX x_begin,
+                             GridY y_begin,
+                             GridX x_end,
+                             GridY y_end,
+                             float scale);
 };
 
 }  // namespace dpl

@@ -40,7 +40,6 @@ Pin Access arguments
 detailed_route 
     [-output_maze filename]
     [-output_drc filename]
-    [-output_cmap filename]
     [-output_guide_coverage filename]
     [-drc_report_iter_step step]
     [-db_process_node name]
@@ -73,7 +72,6 @@ detailed_route
 | ----- | ----- |
 | `-output_maze` | Path to output maze log file (e.g. `output_maze.log`). |
 | `-output_drc` | Path to output DRC report file (e.g. `output_drc.rpt`). |
-| `-output_cmap` | Path to output congestion map file (e.g. `output.cmap`). |
 | `-output_guide_coverage` | Path to output guide coverage file (e.g. `sample_coverage.csv`). |
 | `-drc_report_iter_step` | Report DRC on each iteration which is a multiple of this step. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-db_process_node` | Specify the process node. |
@@ -100,7 +98,7 @@ detailed_route
 
 #### Developer arguments
 
-Some arguments that are helpful for developers are listed here. 
+Some arguments that are helpful for developers are listed here.  
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -257,11 +255,6 @@ Simply run the following script:
 
 ## Limitations
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+tritonroute+in%3Atitle)
-about this tool.
-
 ## References
 
 Please cite the following paper(s) for publication:
@@ -281,4 +274,4 @@ Bangqi Xu from UC San Diego, and serves as the detailed router in the
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

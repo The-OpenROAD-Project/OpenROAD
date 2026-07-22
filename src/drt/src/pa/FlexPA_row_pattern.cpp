@@ -13,10 +13,12 @@
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frVia.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
+#include "distributed/paUpdate.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
@@ -472,9 +474,9 @@ int FlexPA::getEdgeCost(FlexDPNode* prev_node,
   if (!has_vio) {
     const int prev_node_cost = prev_node->getNodeCost();
     const int curr_node_cost = curr_node->getNodeCost();
-    edge_cost = (prev_node_cost + curr_node_cost) / 2;
+    edge_cost = prev_node_cost + curr_node_cost;
   } else {
-    edge_cost = 1000;
+    edge_cost = kViolationCost;
   }
 
   return edge_cost;

@@ -30,7 +30,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
-#include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
@@ -52,7 +51,7 @@ using cut::AbcLibraryFactory;
 using cut::LogicCut;
 using cut::LogicExtractorFactory;
 
-static const std::string prefix("_main/src/rmp/test/");
+static const std::string kPrefix("_main/src/rmp/test/");
 
 std::once_flag init_abc_flag;
 
@@ -63,12 +62,12 @@ class AbcTest : public tst::Fixture
   {
     std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 
-    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
+    library_ = readLiberty(kPrefix + "Nangate45/Nangate45_typ.lib");
 
     odb::dbTech* tech
-        = loadTechLef("nangate45", prefix + "Nangate45/Nangate45_tech.lef");
+        = loadTechLef("nangate45", kPrefix + "Nangate45/Nangate45_tech.lef");
     loadLibaryLef(
-        tech, "nangate45", prefix + "Nangate45/Nangate45_stdcell.lef");
+        tech, "nangate45", kPrefix + "Nangate45/Nangate45_stdcell.lef");
   }
 
   void LoadVerilog(const std::string& file_name, const std::string& top = "top")
@@ -92,21 +91,22 @@ class AbcTest : public tst::Fixture
     sta::Port* clk_port = network->findPort(top_cell, "clk");
     sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
 
-    sta::PinSet* pinset = new sta::PinSet(network);
-    pinset->insert(clk_pin);
+    sta::PinSet pinset(network);
+    pinset.insert(clk_pin);
 
     // 0.5ns
     double period = sta_->units()->timeUnit()->userToSta(0.5);
-    sta::FloatSeq* waveform = new sta::FloatSeq;
-    waveform->push_back(0);
-    waveform->push_back(period / 2.0);
+    sta::FloatSeq waveform;
+    waveform.push_back(0);
+    waveform.push_back(period / 2.0);
 
     sta_->makeClock("core_clock",
                     pinset,
                     /*add_to_pins=*/false,
                     /*period=*/period,
                     waveform,
-                    /*comment=*/nullptr);
+                    /*comment=*/"",
+                    /*mode=*/sta_->cmdMode());
 
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -133,11 +133,11 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
+  LoadVerilog(kPrefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
+  for (sta::Vertex* vertex : sta_->endpoints()) {
     if (std::string(vertex->name(network)) == "_33122_/D") {
       flop_input_vertex = vertex;
     }
@@ -162,7 +162,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
 
 TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
 {
-  LoadVerilog(prefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
+  LoadVerilog(kPrefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
 
   utl::UniqueName name_generator;
   ZeroSlackStrategy zero_slack;

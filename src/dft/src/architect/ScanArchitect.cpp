@@ -16,8 +16,10 @@
 
 #include "ClockDomain.hh"
 #include "ClockDomainHash.hh"
+#include "ScanArchitectConfig.hh"
 #include "ScanArchitectHeuristic.hh"
 #include "ScanCell.hh"
+#include "ScanChain.hh"
 #include "utl/Logger.h"
 
 namespace dft {

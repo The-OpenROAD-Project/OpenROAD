@@ -3,16 +3,16 @@
 
 #include "dbvWriter.h"
 
-#include <yaml-cpp/yaml.h>
-
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "baseWriter.h"
 #include "odb/db.h"
-#include "odb/defout.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 namespace odb {
 
 DbvWriter::DbvWriter(utl::Logger* logger, odb::dbDatabase* db)
@@ -164,6 +164,9 @@ void DbvWriter::writeRegion(YAML::Node& region_node, odb::dbChipRegion* region)
       region_node["side"] = "internal_ext";
       break;
   }
+  std::string bmap_file = std::string(region->getChip()->getName()) + "_"
+                          + region->getName() + ".bmap";
+  region_node["bmap"] = bmap_file;
   if (auto layer = region->getLayer(); layer != nullptr) {
     region_node["layer"] = layer->getName();
   }
@@ -175,8 +178,10 @@ void DbvWriter::writeExternal(YAML::Node& external_node, odb::dbChip* chiplet)
 {
   if (chiplet->getChipType() != odb::dbChip::ChipType::HIER) {
     writeLef(external_node, chiplet);
-    if (chiplet->getBlock() != nullptr) {
-      writeDef(external_node, chiplet);
+    // Per the 3DBlox standard the DEF file is attached to a chiplet instance,
+    // so it is emitted in the .3dbx (by the DbxWriter), not here in the .3dbv.
+    if (auto prop = odb::dbStringProperty::find(chiplet, "verilog_file")) {
+      external_node["verilog_file"] = prop->getValue();
     }
   }
 }
@@ -218,21 +223,18 @@ void DbvWriter::writeLef(YAML::Node& external_node, odb::dbChip* chiplet)
     YAML::Node list_node;
     list_node.SetStyle(YAML::EmitterStyle::Flow);
     external_node["LEF_file"] = list_node;
+    // Sort so the output is deterministic regardless of the (unordered) set
+    // iteration order.
+    std::vector<std::string> lef_files;
+    lef_files.reserve(libs.size());
     for (auto lib : libs) {
-      std::string lef_file = std::string(lib->getName()) + "_lib.lef";
+      lef_files.push_back(std::string(lib->getName()) + "_lib.lef");
+    }
+    std::ranges::sort(lef_files);
+    for (const auto& lef_file : lef_files) {
       external_node["LEF_file"].push_back(lef_file);
     }
   }
-}
-
-void DbvWriter::writeDef(YAML::Node& external_node, odb::dbChip* chiplet)
-{
-  std::string def_file = std::string(chiplet->getName()) + ".def";
-  std::string def_file_path = current_dir_path_ + def_file;
-  odb::DefOut def_writer(logger_);
-  auto block = chiplet->getBlock();
-  def_writer.writeBlock(block, def_file_path.c_str());
-  external_node["DEF_file"] = def_file;
 }
 
 }  // namespace odb

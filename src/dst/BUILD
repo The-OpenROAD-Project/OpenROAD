@@ -4,6 +4,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -35,8 +36,9 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",
         "@boost.serialization",
@@ -51,7 +53,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/dst/Distributed.h",
         "src/MakeDistributed.cc",
         ":swig",
         ":tcl",
@@ -63,12 +64,11 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dst",
         "//:ord",
-        "//src/odb",
         "//src/utl",
-        "@boost.asio",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -96,4 +96,8 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

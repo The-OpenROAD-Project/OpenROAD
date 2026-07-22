@@ -20,14 +20,26 @@
 [DEBUG ODB-dbReadVerilog] Created int prop src_file_id 0
 [DEBUG ODB-dbReadVerilog] Created int prop src_file_line 15
 [DEBUG ODB-dbReadVerilog] created mod_net 'in' (id=1) in module 'top'
-[DEBUG ODB-dbReadVerilog] created mod_net 'in' (id=2) in module 'block1'
-[DEBUG ODB-dbReadVerilog] created mod_net 'clk1' (id=3) in module 'top'
-[DEBUG ODB-dbReadVerilog] created mod_net 'clk' (id=4) in module 'block1'
-[DEBUG ODB-dbReadVerilog] created mod_net 'b1out' (id=5) in module 'top'
+[DEBUG ODB-dbReadVerilog] created mod_net 'clk1' (id=2) in module 'top'
+[DEBUG ODB-dbReadVerilog] created mod_net 'b1out' (id=3) in module 'top'
+[DEBUG ODB-dbReadVerilog] created mod_net 'in' (id=4) in module 'block1'
+[DEBUG ODB-dbReadVerilog] created mod_net 'clk' (id=5) in module 'block1'
 [DEBUG ODB-dbReadVerilog] created mod_net 'out' (id=6) in module 'block1'
-[DEBUG ODB-dbReadVerilog] created mod_net 'in' (id=7) in module 'block1_b2'
-[DEBUG ODB-dbReadVerilog] created mod_net 'clk2' (id=8) in module 'top'
-[DEBUG ODB-dbReadVerilog] created mod_net 'clk' (id=9) in module 'block1_b2'
-[DEBUG ODB-dbReadVerilog] created mod_net 'out' (id=10) in module 'top'
+[DEBUG ODB-dbReadVerilog] created mod_net 'clk2' (id=7) in module 'top'
+[DEBUG ODB-dbReadVerilog] created mod_net 'out' (id=8) in module 'top'
+[DEBUG ODB-dbReadVerilog] created mod_net 'in' (id=9) in module 'block1_b2'
+[DEBUG ODB-dbReadVerilog] created mod_net 'clk' (id=10) in module 'block1_b2'
 [DEBUG ODB-dbReadVerilog] created mod_net 'out' (id=11) in module 'block1_b2'
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING ORD-2056] The following 11 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  snl_ff2x1
+  snl_invx2
+  snl_lenqnx1
+  snl_lqx1
+  snl_mux21x1
+  snl_nand02x1
+  snl_nand02x2
+  snl_oa012x1
+  snl_or02x1
+  snl_tbufx1
+  snl_xor2x1

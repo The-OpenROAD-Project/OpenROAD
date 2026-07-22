@@ -3,6 +3,7 @@
 
 #include "est/SteinerTree.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <string>
@@ -10,8 +11,11 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/geom.h"
+#include "sta/Hash.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
+#include "sta/StringUtil.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -23,14 +27,13 @@ using std::string;
 using utl::EST;
 
 using sta::NetConnectedPinIterator;
-using sta::stringPrintTmp;
 
 void SteinerTree::setTree(const stt::Tree& tree)
 {
   tree_ = tree;
 
   // Find driver steiner point.
-  drvr_steiner_pt_ = null_pt;
+  drvr_steiner_pt_ = kNullPt;
   const odb::Point drvr_loc = drvr_location_;
   const int drvr_x = drvr_loc.getX();
   const int drvr_y = drvr_loc.getY();
@@ -44,14 +47,14 @@ void SteinerTree::setTree(const stt::Tree& tree)
   }
 }
 
-SteinerTree::SteinerTree(const Pin* drvr_pin,
+SteinerTree::SteinerTree(const sta::Pin* drvr_pin,
                          sta::dbNetwork* db_network,
-                         Logger* logger)
+                         utl::Logger* logger)
     : drvr_location_(db_network->location(drvr_pin)), logger_(logger)
 {
 }
 
-SteinerTree::SteinerTree(odb::Point drvr_location, Logger* logger)
+SteinerTree::SteinerTree(odb::Point drvr_location, utl::Logger* logger)
     : drvr_location_(drvr_location), logger_(logger)
 {
 }
@@ -75,9 +78,21 @@ int SteinerTree::branchCount() const
   return tree_.branchCount();
 }
 
-void SteinerTree::locAddPin(const odb::Point& loc, const Pin* pin)
+void SteinerTree::locAddPin(const odb::Point& loc, const sta::Pin* pin)
 {
   loc_pin_map_[loc].push_back(pin);
+}
+
+int SteinerTree::getMaxIndex() const
+{
+  int max_index = -1;
+  for (int i = 0; i < branchCount(); i++) {
+    const stt::Branch& branch_pt = tree_.branch[i];
+    max_index = std::max(max_index, i);
+    max_index = std::max({max_index, branch_pt.n});
+  }
+
+  return max_index;
 }
 
 void SteinerTree::branch(int index,
@@ -98,7 +113,7 @@ void SteinerTree::branch(int index,
       = abs(branch_pt1.x - branch_pt2.x) + abs(branch_pt1.y - branch_pt2.y);
 }
 
-void SteinerTree::report(Logger* logger, const Network* network)
+void SteinerTree::report(utl::Logger* logger, const sta::Network* network)
 {
   const int branch_count = branchCount();
   for (int i = 0; i < branch_count; i++) {
@@ -116,28 +131,29 @@ void SteinerTree::report(Logger* logger, const Network* network)
   }
 }
 
-const char* SteinerTree::name(const SteinerPt pt, const Network* network)
+std::string SteinerTree::name(const SteinerPt pt, const sta::Network* network)
 {
-  if (pt == null_pt) {
+  if (pt == kNullPt) {
     return "NULL";
   }
-  const PinSeq* pt_pins = pins(pt);
+  const sta::PinSeq* pt_pins = pins(pt);
   if (pt_pins) {
     string pin_names;
     bool first = true;
-    for (const Pin* pin : *pt_pins) {
+    for (const sta::Pin* pin : *pt_pins) {
       if (!first) {
         pin_names += " ";
       }
       pin_names += network->pathName(pin);
       first = false;
     }
-    return stringPrintTmp("%s", pin_names.c_str());
+    return pin_names;
   }
-  return stringPrintTmp("S%d", pt);
+  std::string pt_name = "S" + std::to_string(pt);
+  return pt_name;
 }
 
-const PinSeq* SteinerTree::pins(const SteinerPt pt) const
+const sta::PinSeq* SteinerTree::pins(const SteinerPt pt) const
 {
   if (pt < tree_.deg) {
     auto loc_pins = loc_pin_map_.find(location(pt));
@@ -163,7 +179,7 @@ SteinerPt SteinerTree::top() const
 {
   const SteinerPt driver = drvrPt();
   SteinerPt top = left(driver);
-  if (top == SteinerNull) {
+  if (top == kSteinerNull) {
     top = right(driver);
   }
   return top;
@@ -172,7 +188,7 @@ SteinerPt SteinerTree::top() const
 SteinerPt SteinerTree::left(const SteinerPt pt) const
 {
   if (pt >= (int) left_.size()) {
-    return SteinerNull;
+    return kSteinerNull;
   }
   return left_[pt];
 }
@@ -180,7 +196,7 @@ SteinerPt SteinerTree::left(const SteinerPt pt) const
 SteinerPt SteinerTree::right(const SteinerPt pt) const
 {
   if (pt >= (int) right_.size()) {
-    return SteinerNull;
+    return kSteinerNull;
   }
   return right_[pt];
 }
@@ -200,26 +216,26 @@ void SteinerTree::validatePoint(const SteinerPt pt) const
 void SteinerTree::populateSides()
 {
   const int branch_count = branchCount();
-  left_.resize(branch_count, SteinerNull);
-  right_.resize(branch_count, SteinerNull);
-  std::vector<SteinerPt> adj1(branch_count, SteinerNull);
-  std::vector<SteinerPt> adj2(branch_count, SteinerNull);
-  std::vector<SteinerPt> adj3(branch_count, SteinerNull);
+  left_.resize(branch_count, kSteinerNull);
+  right_.resize(branch_count, kSteinerNull);
+  std::vector<SteinerPt> adj1(branch_count, kSteinerNull);
+  std::vector<SteinerPt> adj2(branch_count, kSteinerNull);
+  std::vector<SteinerPt> adj3(branch_count, kSteinerNull);
   for (int i = 0; i < branch_count; i++) {
     const stt::Branch& branch_pt = tree_.branch[i];
     const SteinerPt j = branch_pt.n;
     if (j != i) {
-      if (adj1[i] == SteinerNull) {
+      if (adj1[i] == kSteinerNull) {
         adj1[i] = j;
-      } else if (adj2[i] == SteinerNull) {
+      } else if (adj2[i] == kSteinerNull) {
         adj2[i] = j;
       } else {
         adj3[i] = j;
       }
 
-      if (adj1[j] == SteinerNull) {
+      if (adj1[j] == kSteinerNull) {
         adj1[j] = i;
-      } else if (adj2[j] == SteinerNull) {
+      } else if (adj2[j] == kSteinerNull) {
         adj2[j] = i;
       } else {
         adj3[j] = i;
@@ -257,21 +273,21 @@ void SteinerTree::populateSides(const SteinerPt from,
                                 const std::vector<SteinerPt>& adj2,
                                 const std::vector<SteinerPt>& adj3)
 {
-  if (adj != from && adj != SteinerNull) {
+  if (adj != from && adj != kSteinerNull) {
     if (adj == to) {
       logger_->error(EST, 92, "Steiner tree creation error.");
     }
-    if (left_[to] == SteinerNull) {
+    if (left_[to] == kSteinerNull) {
       left_[to] = adj;
       populateSides(to, adj, adj1, adj2, adj3);
-    } else if (right_[to] == SteinerNull) {
+    } else if (right_[to] == kSteinerNull) {
       right_[to] = adj;
       populateSides(to, adj, adj1, adj2, adj3);
     }
   }
 }
 
-const Pin* SteinerTree::pin(const SteinerPt pt) const
+const sta::Pin* SteinerTree::pin(const SteinerPt pt) const
 {
   validatePoint(pt);
   if (pt < (int) pinlocs_.size()) {
@@ -285,8 +301,8 @@ const Pin* SteinerTree::pin(const SteinerPt pt) const
 size_t PointHash::operator()(const odb::Point& pt) const
 {
   size_t hash = sta::hash_init_value;
-  hashIncr(hash, pt.x());
-  hashIncr(hash, pt.y());
+  sta::hashIncr(hash, pt.x());
+  sta::hashIncr(hash, pt.y());
   return hash;
 }
 

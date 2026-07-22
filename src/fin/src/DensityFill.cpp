@@ -18,6 +18,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "polygon.h"
 #include "utl/Logger.h"
 
 namespace fin {

@@ -4,6 +4,7 @@
 #include "grt/Rudy.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <optional>
 #include <set>
@@ -11,6 +12,7 @@
 
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -29,7 +31,8 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     int min_layer, max_layer;
     grouter_->setDbBlock(block);
     grouter_->getMinMaxLayer(min_layer, max_layer);
-    grouter_->initFastRoute(min_layer, max_layer);
+    // Designs with invalid pin placement can still be evaluated by RUDY.
+    grouter_->initFastRoute(min_layer, max_layer, false);
   }
 
   // The wire width is the harmonic average pitch divided by the number of
@@ -104,13 +107,16 @@ void Rudy::getResourceReductions()
       Tile& tile = getEditableTile(x, y);
       uint8_t tile_cap = cap_usage_data[x][y].capacity;
       float tile_reduction = cap_usage_data[x][y].reduction;
+      if (tile_cap == 0) {
+        continue;
+      }
       float cap_usage_data = tile_reduction / tile_cap;
       tile.addRudy(cap_usage_data * 100);
     }
   }
 }
 
-void Rudy::calculateRudy(std::optional<std::set<odb::dbNet*>*> selection)
+void Rudy::calculateRudy(std::optional<odb::PtrSet<odb::dbNet>*> selection)
 {
   // Clear previous computation
   for (auto& grid_column : grid_) {
@@ -143,6 +149,9 @@ void Rudy::processNet(odb::dbNet* net)
 
 void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
 {
+  if (net_rect.isInverted()) {
+    return;
+  }
   const auto net_area = net_rect.area();
   if (net_area == 0) {
     // TODO: handle nets with 0 area from getTermBBox()

@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -20,15 +21,15 @@ cc_library(
     name = "utl",
     srcs = [
         "src/CFileUtils.cpp",
-        "src/CallBack.cpp",
-        "src/CallBackHandler.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
         "src/Logger.cpp",
         "src/Metrics.cpp",
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
+        "src/ServiceRegistry.cpp",
         "src/SuppressStdout.cpp",
+        "src/ThreadPool.cpp",
         "src/decode.cpp",
         "src/histogram.cpp",
         "src/mem_stats.cpp",
@@ -38,16 +39,17 @@ cc_library(
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
-        "include/utl/CallBack.h",
-        "include/utl/CallBackHandler.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
         "include/utl/Progress.h",
         "include/utl/ScopedTemporaryFile.h",
+        "include/utl/ServiceRegistry.h",
         "include/utl/SuppressStdout.h",
+        "include/utl/ThreadPool.h",
         "include/utl/algorithms.h",
         "include/utl/decode.h",
         "include/utl/deleter.h",
+        "include/utl/env.h",
         "include/utl/exception.h",
         "include/utl/histogram.h",
         "include/utl/mem_stats.h",
@@ -72,6 +74,7 @@ cc_library(
         "include/utl/prometheus/text_serializer.h",
         "include/utl/prometheus/time_window_quantiles.h",
         "include/utl/scope.h",
+        "include/utl/spatialIndex.h",
         "include/utl/timer.h",
         "include/utl/unionFind.h",
         "include/utl/unique_name.h",
@@ -82,16 +85,16 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/sta:opensta_lib",
+        "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.asio",
         "@boost.beast",
-        "@boost.core",
+        "@boost.geometry",
         "@boost.iostreams",
         "@boost.iterator",
         "@boost.random",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -100,16 +103,21 @@ cc_library(
 cc_binary(
     name = "_utl.so",
     srcs = [
+        "src/LoggerCommon.cpp",
         "src/LoggerCommon.h",
         ":swig-py",
     ],
-    defines = [PYTHON_STABLE_API_DEFINE],
+    defines = [
+        "BAZEL=1",
+        PYTHON_STABLE_API_DEFINE,
+    ],
     includes = ["src"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
         "//src/utl",
         "@boost.stacktrace",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -137,24 +145,16 @@ cc_library(
     hdrs = [
         "include/utl/MakeLogger.h",
     ],
-    copts = [
-        "-Isrc/utl/src",
+    includes = [
+        "include",
+        "src",
     ],
-    includes = ["include"],
     deps = [
         ":utl",
         "//:ord",
-        "//src/sta:opensta_lib",
-        "@boost.asio",
-        "@boost.beast",
-        "@boost.core",
-        "@boost.iostreams",
-        "@boost.iterator",
-        "@boost.random",
         "@boost.stacktrace",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
-        "@spdlog",
-        "@tk_tcl//:tcl",
+        "@rules_python//python/cc:current_py_cc_headers",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -199,4 +199,20 @@ python_wrap_cc(
         "src",
     ],
     visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Utl.tcl",
+    ],
+    visibility = ["//src/utl/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/utl/test:__pkg__",
+    ],
 )

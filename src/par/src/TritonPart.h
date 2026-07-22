@@ -229,7 +229,7 @@ class TritonPart
   float computeMicronArea(odb::dbInst* inst);
 
   // private member functions
-  ord::dbNetwork* network_ = nullptr;
+  sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   sta::dbSta* sta_ = nullptr;

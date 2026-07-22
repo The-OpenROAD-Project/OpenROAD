@@ -9,6 +9,7 @@
 
 #include "dbBlock.h"
 #include "dbBusPort.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
@@ -16,7 +17,6 @@
 #include "dbModNet.h"
 #include "dbModule.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <string>
@@ -33,6 +33,7 @@ template class dbTable<_dbModBTerm>;
 
 bool _dbModBTerm::operator==(const _dbModBTerm& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -65,6 +66,7 @@ bool _dbModBTerm::operator==(const _dbModBTerm& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModBTerm::operator<(const _dbModBTerm& rhs) const

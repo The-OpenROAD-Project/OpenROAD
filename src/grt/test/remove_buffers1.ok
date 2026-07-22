@@ -43,7 +43,7 @@ metal8     Vertical          992           432          56.45%
 [INFO GRT-0112] Final usage 3D: 117
 
 [INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
 metal2             576            17            2.95%             0 /  0 /  0

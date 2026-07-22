@@ -3,6 +3,8 @@
 
 #include "definRow.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cassert>
 #include <cctype>
 #include <cstdio>
@@ -10,6 +12,7 @@
 #include <cstring>
 #include <vector>
 
+#include "definTypes.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"

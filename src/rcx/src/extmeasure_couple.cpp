@@ -14,6 +14,7 @@
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSegment.h"
+#include "rcx/grids.h"
 #include "utl/Logger.h"
 
 #ifdef HI_ACC_1

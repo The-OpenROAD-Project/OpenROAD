@@ -19,7 +19,6 @@
 #include "dbPropertyItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"

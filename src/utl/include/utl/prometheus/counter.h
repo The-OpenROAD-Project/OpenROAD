@@ -27,6 +27,7 @@
 
 #include "utl/prometheus/atomic_floating.h"
 #include "utl/prometheus/builder.h"
+#include "utl/prometheus/client_metric.h"
 #include "utl/prometheus/family.h"
 #include "utl/prometheus/prometheus_metric.h"
 

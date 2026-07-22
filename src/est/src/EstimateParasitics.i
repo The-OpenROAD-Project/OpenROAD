@@ -11,20 +11,21 @@
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Network.hh"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
 #include "est/EstimateParasitics.h"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 namespace ord {
 // Defined in OpenRoad.i
-est::EstimateParasitics *
-getEstimateParasitics();
-utl::Logger*
-getLogger();
-void
-ensureLinked();
+est::EstimateParasitics* getEstimateParasitics();
+utl::Logger* getLogger();
+void ensureLinked();
 }
 
 namespace sta {
@@ -40,7 +41,7 @@ using TmpPinSet = PinSet;
 using ord::getEstimateParasitics;
 using ord::ensureLinked;
 
-using sta::Corner;
+using sta::Scene;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
@@ -86,16 +87,16 @@ using est::ParasiticsSrc;
 }
 
 %typemap(in) ParasiticsSrc {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   if (stringEq(arg, "placement"))
-    $1 = ParasiticsSrc::placement;
+    $1 = ParasiticsSrc::kPlacement;
   else if (stringEq(arg, "global_routing"))
-    $1 = ParasiticsSrc::global_routing;
+    $1 = ParasiticsSrc::kGlobalRouting;
   else if (stringEq(arg, "detailed_routing"))
-    $1 = ParasiticsSrc::detailed_routing;
+    $1 = ParasiticsSrc::kDetailedRouting;
   else {
-    Logger* logger = ord::getLogger();
+    utl::Logger* logger = ord::getLogger();
     try {
       logger->error(utl::EST, 19, "Unknown parasitics source '{}'.", arg);
     } catch (const std::exception &e) {
@@ -120,7 +121,7 @@ namespace est {
 
 void
 set_layer_rc_cmd(odb::dbTechLayer *layer,
-                 const Corner *corner,
+                 const Scene *corner,
                  float res,
                  float cap)
 {
@@ -144,7 +145,7 @@ add_signal_layer_cmd(odb::dbTechLayer *layer)
 
 double
 layer_resistance(odb::dbTechLayer *layer,
-                 const Corner *corner)
+                 const Scene *corner)
 {
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   double res, cap;
@@ -154,7 +155,7 @@ layer_resistance(odb::dbTechLayer *layer,
 
 double
 layer_capacitance(odb::dbTechLayer *layer,
-                  const Corner *corner)
+                  const Scene *corner)
 {
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   double res, cap;
@@ -163,7 +164,7 @@ layer_capacitance(odb::dbTechLayer *layer,
 }
 
 void
-set_h_wire_signal_rc_cmd(const Corner *corner,
+set_h_wire_signal_rc_cmd(const Scene *corner,
                          float res,
                          float cap)
 {
@@ -173,7 +174,7 @@ set_h_wire_signal_rc_cmd(const Corner *corner,
 }
 
 void
-set_v_wire_signal_rc_cmd(const Corner *corner,
+set_v_wire_signal_rc_cmd(const Scene *corner,
                          float res,
                          float cap)
 {
@@ -183,7 +184,7 @@ set_v_wire_signal_rc_cmd(const Corner *corner,
 }
 
 void
-set_h_wire_clk_rc_cmd(const Corner *corner,
+set_h_wire_clk_rc_cmd(const Scene *corner,
                       float res,
                       float cap)
 {
@@ -193,7 +194,7 @@ set_h_wire_clk_rc_cmd(const Corner *corner,
 }
 
 void
-set_v_wire_clk_rc_cmd(const Corner *corner,
+set_v_wire_clk_rc_cmd(const Scene *corner,
                       float res,
                       float cap)
 {
@@ -204,7 +205,7 @@ set_v_wire_clk_rc_cmd(const Corner *corner,
 
 // ohms/meter
 double
-wire_signal_resistance(const Corner *corner)
+wire_signal_resistance(const Scene *corner)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
@@ -212,7 +213,7 @@ wire_signal_resistance(const Corner *corner)
 }
 
 double
-wire_clk_resistance(const Corner *corner)
+wire_clk_resistance(const Scene *corner)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
@@ -221,7 +222,7 @@ wire_clk_resistance(const Corner *corner)
 
 // farads/meter
 double
-wire_signal_capacitance(const Corner *corner)
+wire_signal_capacitance(const Scene *corner)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
@@ -229,7 +230,7 @@ wire_signal_capacitance(const Corner *corner)
 }
 
 double
-wire_clk_capacitance(const Corner *corner)
+wire_clk_capacitance(const Scene *corner)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
@@ -242,13 +243,13 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
-  std::map<Corner*, std::ostream*> spef_files;
+  std::map<Scene*, std::ostream*> spef_files;
   if (path != nullptr && std::strlen(path) > 0) {
     std::string file_path(path);
     if (!file_path.empty()) {
-      for (Corner* corner : *estimate_parasitics->getDbNetwork()->corners()) {
+      for (Scene* corner : estimate_parasitics->getDbNetwork()->scenes()) {
         file_path = path;
-        if (estimate_parasitics->getDbNetwork()->corners()->count() > 1) {
+        if (estimate_parasitics->getDbNetwork()->scenes().size() > 1) {
           std::string suffix("_");
           suffix.append(corner->name());
           if (file_path.find(".spef") != std::string::npos
@@ -264,7 +265,7 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
         if (file->is_open()) {
           spef_files[corner] = std::move(file);
         } else {
-          Logger* logger = ord::getLogger();
+          utl::Logger* logger = ord::getLogger();
           logger->error(utl::EST,
                         7,
                         "Can't open file " + file_path);

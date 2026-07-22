@@ -120,6 +120,28 @@ dbIStream& operator>>(dbIStream& stream, Point3D& p)
   return stream;
 }
 
+dbOStream& operator<<(dbOStream& stream, const Cuboid& c)
+{
+  stream << c.xlo_;
+  stream << c.ylo_;
+  stream << c.zlo_;
+  stream << c.xhi_;
+  stream << c.yhi_;
+  stream << c.zhi_;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, Cuboid& c)
+{
+  stream >> c.xlo_;
+  stream >> c.ylo_;
+  stream >> c.zlo_;
+  stream >> c.xhi_;
+  stream >> c.yhi_;
+  stream >> c.zhi_;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const Oct& o)
 {
   stream << o.center_high_;

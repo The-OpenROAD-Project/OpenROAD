@@ -1,6 +1,13 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
 [INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO IFP-0107] Defining die area using utilization: 10.00% and aspect ratio: 1.
 [INFO IFP-0001] Added 2 rows of 17 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) (  3.260  3.260 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) (  3.230  2.800 ) um
+[INFO IFP-0102] Core area:                            9.044 um^2
+[INFO IFP-0103] Total instances area:                 1.064 um^2
+[INFO IFP-0104] Effective utilization:                0.118
+[INFO IFP-0105] Number of instances:                      2
 [INFO DRT-0167] List of default vias:
   Layer via2
     default via: via2_5

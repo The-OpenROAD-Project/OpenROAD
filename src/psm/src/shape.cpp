@@ -15,6 +15,8 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "connection.h"
+#include "ir_network.h"
 #include "node.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -42,7 +44,6 @@ Connections Shape::connectNodes(const IRNetwork::NodeTree& layer_nodes)
 
   for (auto* node : sorted_nodes) {
     const auto& pt = node->getPoint();
-    const IRNetwork::Point point(pt.x(), pt.y());
 
     std::vector<Node*> ordered_neighbors;
 
@@ -50,7 +51,7 @@ Connections Shape::connectNodes(const IRNetwork::NodeTree& layer_nodes)
 
     tree.query(boost::geometry::index::satisfies([&](const auto value) {
                  return used.find(value) == used.end();
-               }) && boost::geometry::index::nearest(point, 1),
+               }) && boost::geometry::index::nearest(pt, 1),
                std::back_inserter(ordered_neighbors));
 
     for (Node* other : ordered_neighbors) {

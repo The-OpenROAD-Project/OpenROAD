@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -28,7 +29,7 @@
 #include "dbModNet.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -106,7 +107,7 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
   return strcmp(lhs_mterm->name_, rhs_mterm->name_) < 0;
 }
 
-_dbMTerm* _dbITerm::getMTerm() const
+void _dbITerm::resolveMTerm()
 {
   _dbBlock* block = (_dbBlock*) getOwner();
   _dbInst* inst = block->inst_tbl_->getPtr(inst_);
@@ -115,7 +116,12 @@ _dbMTerm* _dbITerm::getMTerm() const
   _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->lib_);
   _dbMaster* master = lib->master_tbl_->getPtr(inst_hdr->master_);
   dbId<_dbMTerm> mterm = inst_hdr->mterms_[flags_.mterm_idx];
-  return master->mterm_tbl_->getPtr(mterm);
+  mterm_ = master->mterm_tbl_->getPtr(mterm);
+}
+
+_dbMTerm* _dbITerm::getMTerm() const
+{
+  return mterm_;
 }
 
 _dbInst* _dbITerm::getInst() const
@@ -159,14 +165,7 @@ dbNet* dbITerm::getNet() const
 dbMTerm* dbITerm::getMTerm() const
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  _dbInst* inst = block->inst_tbl_->getPtr(iterm->inst_);
-  _dbInstHdr* inst_hdr = block->inst_hdr_tbl_->getPtr(inst->inst_hdr_);
-  _dbDatabase* db = iterm->getDatabase();
-  _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->lib_);
-  _dbMaster* master = lib->master_tbl_->getPtr(inst_hdr->master_);
-  dbId<_dbMTerm> mterm = inst_hdr->mterms_[iterm->flags_.mterm_idx];
-  return (dbMTerm*) master->mterm_tbl_->getPtr(mterm);
+  return (dbMTerm*) iterm->mterm_;
 }
 
 dbBTerm* dbITerm::getBTerm()
@@ -205,9 +204,9 @@ void dbITerm::setClocked(bool v)
 
 bool dbITerm::isClocked()
 {
-  bool masterFlag = getMTerm()->getSigType() == dbSigType::CLOCK ? true : false;
+  bool masterFlag = getMTerm()->getSigType() == dbSigType::CLOCK;
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->flags_.clocked > 0 || masterFlag ? true : false;
+  return iterm->flags_.clocked > 0 || masterFlag;
 }
 
 void dbITerm::setMark(uint32_t v)
@@ -219,7 +218,7 @@ void dbITerm::setMark(uint32_t v)
 bool dbITerm::isSetMark()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->flags_.mark > 0 ? true : false;
+  return iterm->flags_.mark > 0;
 }
 
 bool dbITerm::isSpecial()
@@ -249,7 +248,7 @@ void dbITerm::setSpef(uint32_t v)
 bool dbITerm::isSpef()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return (iterm->flags_.spef > 0) ? true : false;
+  return iterm->flags_.spef > 0;
 }
 
 void dbITerm::setExtId(uint32_t v)
@@ -746,6 +745,9 @@ Rect dbITerm::getBBox()
 {
   dbMTerm* term = getMTerm();
   Rect bbox = term->getBBox();
+  if (bbox.isInverted()) {
+    return bbox;
+  }
   const odb::dbTransform inst_xfm = getInst()->getTransform();
   inst_xfm.apply(bbox);
   return bbox;
@@ -803,7 +805,9 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   if (ap != nullptr) {
     iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
     _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-    _ap->iterms_.push_back(iterm->getOID());
+    auto& iterms = _ap->iterms_;
+    auto pos = std::lower_bound(iterms.begin(), iterms.end(), iterm->getOID());
+    iterms.insert(pos, iterm->getOID());
   } else {
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
   }
@@ -814,12 +818,13 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   }
 }
 
-std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
+odb::PtrMap<dbMPin, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints()
+    const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   auto mterm = getMTerm();
   uint32_t pin_access_idx = getInst()->getPinAccessIdx();
-  std::map<dbMPin*, std::vector<dbAccessPoint*>> aps;
+  odb::PtrMap<dbMPin, std::vector<dbAccessPoint*>> aps;
   for (auto mpin : mterm->getMPins()) {
     _dbMPin* pin = (_dbMPin*) mpin;
     if (pin->aps_.size() > pin_access_idx) {
@@ -863,8 +868,16 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 void dbITerm::clearPrefAccessPoints()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  // Clear aps_ map instead of destroying dbAccessPoint object to prevent
-  // destroying APs of other iterms.
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  // Remove this iterm from each AP's back-reference list before clearing.
+  for (auto& [pin_id, ap_id] : iterm->aps_) {
+    if (ap_id.isValid()) {
+      auto* ap = block->ap_tbl_->getPtr(ap_id);
+      auto& iterms = ap->iterms_;
+      iterms.erase(std::remove(iterms.begin(), iterms.end(), iterm->getOID()),
+                   iterms.end());
+    }
+  }
   iterm->aps_.clear();
 }
 

@@ -15,6 +15,7 @@
 
 #include "CtsObserver.h"
 #include "Util.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
@@ -40,7 +41,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
     DUMMY,
     TREE
   };
-  using MasterCount = std::map<odb::dbMaster*, int>;
+  using MasterCount = odb::PtrMap<odb::dbMaster, int>;
 
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
       : logger_(logger), sttBuilder_(sttBuildder)
@@ -84,15 +85,12 @@ class CtsOptions : public odb::dbBlockCallBackObj
 
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
   bool getSinkClustering() const { return sinkClusteringEnable_; }
-  void setSinkClusteringUseMaxCap(bool useMaxCap)
-  {
-    sinkClusteringUseMaxCap_ = useMaxCap;
-  }
-  bool getSinkClusteringUseMaxCap() const { return sinkClusteringUseMaxCap_; }
   void setNumMaxLeafSinks(unsigned numSinks) { numMaxLeafSinks_ = numSinks; }
   unsigned getNumMaxLeafSinks() const { return numMaxLeafSinks_; }
   void setMaxSlew(unsigned slew) { maxSlew_ = slew; }
   unsigned getMaxSlew() const { return maxSlew_; }
+  void setMaxWl(int wl) { maxWl_ = wl; }
+  int getMaxWl() const { return maxWl_; }
   void setMaxCharSlew(double slew) { maxCharSlew_ = slew; }
   double getMaxCharSlew() const { return maxCharSlew_; }
   void setMaxCharCap(double cap) { maxCharCap_ = cap; }
@@ -209,38 +207,26 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setMaxDiameter(double distance)
   {
     maxDiameter_ = distance;
-    sinkClusteringUseMaxCap_ = false;
     maxDiameterSet_ = true;
   }
   void resetMaxDiameter()
   {
     maxDiameter_ = 50;
-    sinkClusteringUseMaxCap_ = true;
     maxDiameterSet_ = false;
   }
   bool isMaxDiameterSet() const { return maxDiameterSet_; }
-  const std::vector<unsigned>& getSinkClusteringDiameters()
-  {
-    return sinkClusteringDiameters_;
-  }
   unsigned getSinkClusteringSize() const { return sinkClustersSize_; }
   void setSinkClusteringSize(unsigned size)
   {
     sinkClustersSize_ = size;
-    sinkClusteringUseMaxCap_ = false;
     sinkClustersSizeSet_ = true;
   }
   void resetSinkClusteringSize()
   {
-    sinkClustersSize_ = 20;
-    sinkClusteringUseMaxCap_ = true;
+    sinkClustersSize_ = 30;
     sinkClustersSizeSet_ = false;
   }
   bool isSinkClusteringSizeSet() const { return sinkClustersSizeSet_; }
-  const std::vector<unsigned>& getSinkClusteringSizes()
-  {
-    return sinkClusteringSizes_;
-  }
   void limitSinkClusteringSizes(unsigned limit);
   unsigned getSinkClusteringLevels() const { return sinkClusteringLevels_; }
   void setSinkClusteringLevels(unsigned levels)
@@ -329,7 +315,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
 
   // Callbacks
   void inDbInstCreate(odb::dbInst* inst) override;
-  void inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region) override;
 
   void setRepairClockNets(bool value) { repairClockNets_ = value; }
   bool getRepairClockNets() { return repairClockNets_; }
@@ -363,7 +348,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
   bool sinkClusteringEnable_ = true;
-  bool sinkClusteringUseMaxCap_ = true;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
   std::unique_ptr<CtsObserver> observer_;
@@ -374,12 +358,13 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned numMaxLeafSinks_ = 15;
   unsigned maxFanout_ = 0;
   unsigned maxSlew_ = 4;
+  int maxWl_ = 0;
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
-  double sinkBufferInputCap_ = 0;
   int capSteps_ = 20;
   int slewSteps_ = 7;
   unsigned charWirelengthIterations_ = 4;
+  double sinkBufferInputCap_ = 0;
   unsigned clockTreeMaxDepth_ = 100;
   bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;
@@ -390,10 +375,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
   int sinks_ = 0;
   double maxDiameter_ = 50;
   bool maxDiameterSet_ = false;
-  std::vector<unsigned> sinkClusteringDiameters_ = {50, 100, 200};
-  unsigned sinkClustersSize_ = 20;
+  unsigned sinkClustersSize_ = 30;
   bool sinkClustersSizeSet_ = false;
-  std::vector<unsigned> sinkClusteringSizes_ = {10, 20, 30};
   double macroMaxDiameter_ = 50;
   bool macroMaxDiameterSet_ = false;
   unsigned macroSinkClustersSize_ = 4;

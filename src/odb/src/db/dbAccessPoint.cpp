@@ -10,13 +10,13 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "dbBPin.h"
@@ -30,6 +30,7 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -37,6 +38,7 @@ template class dbTable<_dbAccessPoint>;
 
 bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (point_ != rhs.point_) {
     return false;
   }
@@ -55,8 +57,15 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   if (bpin_ != rhs.bpin_) {
     return false;
   }
+  if (low_type_ != rhs.low_type_) {
+    return false;
+  }
+  if (high_type_ != rhs.high_type_) {
+    return false;
+  }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
@@ -77,6 +86,12 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
     return false;
   }
   if (bpin_ >= rhs.bpin_) {
+    return false;
+  }
+  if (low_type_ >= rhs.low_type_) {
+    return false;
+  }
+  if (high_type_ >= rhs.high_type_) {
     return false;
   }
 
@@ -140,13 +155,14 @@ void _dbAccessPoint::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["iterms"].add(iterms_);
+  info.children["path_segs"].add(path_segs_);
+
+  // User Code Begin collectMemInfo
   MemInfo& via_info = info.children["vias"];
   for (const auto& v : vias_) {
     via_info.add(v);
   }
-  info.children["path_segs"].add(path_segs_);
   // User Code End collectMemInfo
 }
 
@@ -168,7 +184,7 @@ void _dbAccessPoint::setMPin(_dbMPin* mpin)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbAccessPoint::setPoint(Point point)
+void dbAccessPoint::setPoint(const Point& point)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
 
@@ -186,6 +202,16 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
 
   obj->layer_ = layer->getImpl()->getOID();
+}
+
+dbBPin* dbAccessPoint::getBPin() const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  if (obj->bpin_ == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (dbBPin*) par->bpin_tbl_->getPtr(obj->bpin_);
 }
 
 // User Code Begin dbAccessPointPublicMethods
@@ -309,15 +335,6 @@ dbMPin* dbAccessPoint::getMPin() const
   return (dbMPin*) master->mpin_tbl_->getPtr(obj->mpin_);
 }
 
-dbBPin* dbAccessPoint::getBPin() const
-{
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  if (!obj->bpin_.isValid()) {
-    return nullptr;
-  }
-  _dbBlock* block = (_dbBlock*) obj->getOwner();
-  return (dbBPin*) block->bpin_tbl_->getPtr(obj->bpin_);
-}
 std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;

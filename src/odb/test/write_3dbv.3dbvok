@@ -15,10 +15,19 @@ ChipletDef:
     external:
       APR_tech_file: [Nangate45_tech.lef]
       LEF_file: [fake_bumps_lib.lef, fake_macros_lib.lef]
-      DEF_file: SoC.def
     regions:
-      r1:
+      back_reg:
+        side: back
+        bmap: SoC_back_reg.bmap
+        layer: metal1
+        coords:
+          - [0, 0]
+          - [955, 0]
+          - [955, 1082]
+          - [0, 1082]
+      front_reg:
         side: front
+        bmap: SoC_front_reg.bmap
         coords:
           - [0, 0]
           - [955, 0]

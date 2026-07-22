@@ -1,6 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -55,6 +57,7 @@ COMPULSORY_TESTS = [
     "annealing_mirrored3",
     "annealing_mirrored4",
     "annealing_mirrored5",
+    "annealing_mirrored_hang",
     "blocked_region",
     "cells_not_placed",
     "exclude1",
@@ -130,13 +133,7 @@ COMPULSORY_TESTS = [
     "write_pin_placement6",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "ppl_man_tcl_check",
-    "ppl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -190,3 +187,20 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "ppl_man_tcl_check",
+    srcs = ["ppl_man_tcl_check.py"],
+    data = ["//src/ppl:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "ppl_readme_msgs_check",
+    data = [
+        "//src/ppl:doc_files",
+        "//src/ppl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

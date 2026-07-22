@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "GeoTypes.h"
@@ -41,7 +42,7 @@ class CUGRPin
     odb::dbBTerm* bterm;
   };
   std::vector<BoxOnLayer> pin_shapes_;
-  const int index_;
+  int index_;
   const bool is_port_;
 };
 
@@ -58,9 +59,13 @@ class CUGRNet
   int getNumPins() const { return pins_.size(); }
   std::string getName() const { return db_net_->getName(); }
   LayerRange getLayerRange() const { return layer_range_; }
+  void setPins(std::vector<CUGRPin> pins) { pins_ = std::move(pins); }
+  void setLayerRange(LayerRange layer_range) { layer_range_ = layer_range; }
+  void invalidate() { db_net_ = nullptr; }
+  bool isValid() const { return db_net_ != nullptr; }
 
  private:
-  const int index_;
+  int index_;
   odb::dbNet* db_net_;
   std::vector<CUGRPin> pins_;
   LayerRange layer_range_;

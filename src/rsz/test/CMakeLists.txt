@@ -28,6 +28,7 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gain_buffering2
+    gain_buffering3
     gcd_resize
     insert_buffer
     insert_buffer_hier
@@ -35,6 +36,7 @@ or_integration_tests(
     pin_swap1
     pinswap_flat
     pinswap_hier
+    swap_pins_dont_touch
     rebuffer1
     rebuffer1_hier
     recover_power_verbose
@@ -58,6 +60,8 @@ or_integration_tests(
     repair_design3_verbose
     repair_design4
     repair_design5
+    repair_design6
+    repair_design_outside_core
     repair_fanout1
     repair_fanout2
     repair_fanout3
@@ -83,9 +87,41 @@ or_integration_tests(
     repair_hold13
     repair_hold14
     repair_hold15
-    repair_setup_sizedown
+    repair_hold_multi_output_load
+    repair_setup_buffer_legacy_basic
+    repair_setup_clone_legacy_flat
+    repair_setup_clone_high_fanout
+    repair_setup_crit_vt_asap7
+    repair_setup_default_nangate45
+    repair_setup_dont_touch_sizeup
+    repair_setup_endpoint_fanin_only
+    repair_setup_gcd
+    repair_setup_invalid_phase
+    repair_setup_move_tracker_level1
+    repair_setup_pin_command
+    repair_setup_reroute1
+    repair_setup_reroute2
+    repair_setup_size_down_fanout_only
+    repair_setup_sizeup_match_only
+    repair_setup_split_load_hier_only
+    repair_setup_startpoint_fanout_only
+    repair_setup_swap_pins_dont_touch_sequence
+    repair_setup_max_iter
+    repair_setup_tns
+    repair_setup_wns_guard
+    repair_setup_wns_last_gasp_noop
+    repair_setup_size_down_fanout
+    repair_setup_size_down_fanout_legacy_basic
     repair_setup_sizeup_match
+    repair_setup_sizeup_legacy_basic
+    repair_setup_sizeup_match_inverter
+    repair_setup_sizeup_match_prev_fanout
+    repair_setup_splitload_legacy_basic
+    repair_setup_swappins_legacy_flat
+    repair_setup_unbuffer_legacy_bufx2
+    repair_setup_unbuffer_legacy_bufx8
     repair_setup1
+    repair_setup2
     repair_setup3
     repair_setup4
     repair_setup4_flat
@@ -99,6 +135,12 @@ or_integration_tests(
     repair_setup8
     repair_setup9
     repair_setup9_hier
+    repair_setup_phase_endpoint_fanin
+    repair_setup_phase_startpoint_fanout
+    repair_setup_phase_tns
+    repair_setup_phase_wns_cone
+    repair_setup_phase_wns_path
+    repair_setup_phases_order
     repair_setup_undo1
     repair_setup_undo2
     repair_slew1
@@ -118,6 +160,7 @@ or_integration_tests(
     repair_slew15
     repair_slew16
     repair_slew17
+    repair_slew_no_progress
     repair_tie1
     repair_tie2
     repair_tie3
@@ -130,6 +173,7 @@ or_integration_tests(
     repair_tie10_hier
     repair_tie11_hier
     repair_tie12_hier
+    repair_tie13_hier
     repair_wire1
     repair_wire2
     repair_wire3
@@ -148,6 +192,8 @@ or_integration_tests(
     report_floating_nets1
     report_floating_nets2
     report_floating_nets3
+    report_move_tracker
+    repair_setup_legacy_mt_tracker
     report_overdriven_nets1
     report_overdriven_nets2
     report_overdriven_nets3
@@ -179,21 +225,30 @@ or_integration_tests(
     replace_arith_modules2
     replace_arith_modules3
     report_buffers_asap7
+    report_buffers_asap7_augmented
     report_buffers_nangate45
     report_buffers_ihp
     report_buffers_sky130hs
     report_buffers_sky130hd
     report_buffers_gf180
+    report_buffers_no_lef
     repair_setup_vt_swap
+    repair_setup_vtswap_legacy_asap7
     repair_setup_vt_swap2
+    measured_vt_swap
     repair_fanout7_skip_pin_swap
+    global_sizing
+    global_sizing_threads
+    global_sizing_presize
+    inferred_clock_gator_time_borrow
+    inferred_clock_gator_time_borrow_covered
+    inferred_clock_gator_time_borrow_repair_pin
+    inferred_clock_gator_time_borrow_tns
+    latch_borrow_chain
   PASSFAIL_TESTS
+    repair_setup_legacy_mt
+    repair_setup_mt1
     cpp_tests
 )
-
-# Skipped
-#rsz_man_tcl_check
-#rsz_readme_msgs_check
-#repair_setup2
 
 add_subdirectory(cpp)

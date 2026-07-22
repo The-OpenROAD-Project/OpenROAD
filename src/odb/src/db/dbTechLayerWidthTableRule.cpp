@@ -7,17 +7,21 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <vector>
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerWidthTableRule>;
 
 bool _dbTechLayerWidthTableRule::operator==(
     const _dbTechLayerWidthTableRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.wrong_direction != rhs.flags_.wrong_direction) {
     return false;
   }
@@ -26,6 +30,7 @@ bool _dbTechLayerWidthTableRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerWidthTableRule::operator<(
@@ -64,9 +69,7 @@ void _dbTechLayerWidthTableRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["width_tbl"].add(width_tbl_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

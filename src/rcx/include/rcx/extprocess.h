@@ -7,21 +7,16 @@
 #include <cstdio>
 
 #include "rcx/array1.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace rcx {
-
-using utl::Logger;
 
 class extProcess;
 class Parser;
 
 class extConductor
 {
-  extConductor(Logger* logger);
+  extConductor(utl::Logger* logger);
 
   void printConductor(FILE* fp, Parser* parse);
   bool readConductor(Parser* parser);
@@ -67,7 +62,7 @@ class extConductor
   double _max_ct_del;
   double _min_ca;
   double _max_ca;
-  Logger* logger_;
+  utl::Logger* logger_;
 
   friend class extSolverGen;
   friend class extRCModel;
@@ -77,7 +72,7 @@ class extConductor
 
 class extDielectric
 {
-  extDielectric(Logger* logger);
+  extDielectric(utl::Logger* logger);
   bool readDielectric(Parser* parser);
   void printDielectric(FILE* fp, Parser* parse);
   void printDielectric(FILE* fp, float planeWidth, float planeThickness);
@@ -122,7 +117,7 @@ class extDielectric
   int _met;
   int _nextMet;
 
-  Logger* logger_;
+  utl::Logger* logger_;
 
   friend class extProcess;
   friend class extMasterConductor;
@@ -222,7 +217,7 @@ class extMasterConductor
   extMasterConductor(uint32_t condId,
                      extConductor* cond,
                      double prevHeight,
-                     Logger* logger);
+                     utl::Logger* logger);
   extMasterConductor(uint32_t dielId,
                      extDielectric* diel,
                      double xlo,
@@ -231,10 +226,10 @@ class extMasterConductor
                      double dx2,
                      double h,
                      double th,
-                     Logger* logger);
+                     utl::Logger* logger);
 
   uint32_t _conformalId[3];
-  Logger* logger_;
+  utl::Logger* logger_;
   uint32_t _condId;
   double _loLeft[3];
   double _loRight[3];
@@ -298,7 +293,7 @@ class extVariation
   double getThicknessR(double w, uint32_t dIndex);
   double getP(double w);
   double interpolate(double w, Array1D<double>* X, Array1D<double>* Y);
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
 
  private:
   extVarTable* _hiWidthC;
@@ -309,7 +304,7 @@ class extVariation
   extVarTable* _thicknessR;
   extVarTable* _p;
 
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 class extProcess
@@ -337,7 +332,7 @@ class extProcess
                                      double& height_ceiling,
                                      bool diag = false);
 
-  extProcess(uint32_t condCnt, uint32_t dielCnt, Logger* logger);
+  extProcess(uint32_t condCnt, uint32_t dielCnt, utl::Logger* logger);
 
   FILE* openFile(const char* filename, const char* permissions);
   uint32_t readProcess(const char* name, char* filename);
@@ -437,7 +432,7 @@ class extProcess
   bool getThickVarFlag();
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
 
   uint32_t _condctorCnt;
   uint32_t _dielectricCnt;

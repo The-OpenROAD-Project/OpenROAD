@@ -3,11 +3,14 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 namespace dft {

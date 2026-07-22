@@ -4,6 +4,11 @@
 %{
 #include <map>
 #include <string>
+
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 %}
 
 %include "std_string.i"
@@ -12,7 +17,7 @@
 // Used to convert the keys & flags from tcl into a map:
 //   swig_wrapper_cmd [array get keys] [array get flags]
 %typemap(in) const std::map<std::string, std::string>& (std::map<std::string, std::string> temp) {
-    int len;
+    Tcl_Size len;
     Tcl_Obj **elemObjv;
 
     // 1. Check if input is a valid list
@@ -27,7 +32,7 @@
     }
 
     // 3. Iterate and populate the temp map
-    for (int i = 0; i < len; i += 2) {
+    for (Tcl_Size i = 0; i < len; i += 2) {
         char *key = Tcl_GetString(elemObjv[i]);
         char *value = Tcl_GetString(elemObjv[i+1]);
         temp[key] = value;

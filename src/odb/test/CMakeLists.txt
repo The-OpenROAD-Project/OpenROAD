@@ -12,11 +12,6 @@ or_integration_tests(
     create_sboxes
     def_dup_net
     def_parser
-    design_is_routed1
-    design_is_routed2
-    design_is_routed3
-    design_is_routed_fail1
-    design_is_routed_fail2
     dont_touch
     dump_netlists
     dump_netlists_withfill
@@ -30,9 +25,11 @@ or_integration_tests(
     floorplan_initialize3
     gcd_abstract_lef
     gcd_abstract_lef_with_power
+    gcd_abstract_lef_via_only_layer
     gcd_def_access
     gcd_pdn_def_access
     import_package
+    lef58_backside_bridge
     lef_data_access
     lef_mask
     multi_tech
@@ -43,6 +40,7 @@ or_integration_tests(
     read_3dbx
     read_db
     read_def
+    read_def_virtual
     read_def58
     read_lef
     read_zipped
@@ -57,6 +55,7 @@ or_integration_tests(
     row_settings
     sky130hd_multi_patterned
     smash_vias
+    swap_master
     transform
     wire_encoder
     write_cdl
@@ -69,6 +68,9 @@ or_integration_tests(
     write_macro_placement
   PASSFAIL_TESTS
     cpp_tests
+    read_3dbv_fail
+    read_3dbx_fail
+    read_def_virtual_invalid
     test_block
     test_bterm
     test_destroy
@@ -80,8 +82,5 @@ or_integration_tests(
     test_wire_codec
 )
 
-# Skipped
-#odb_man_tcl_check
-#odb_readme_msgs_check
 
 add_subdirectory(cpp)

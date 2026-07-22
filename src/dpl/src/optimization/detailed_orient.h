@@ -8,6 +8,8 @@
 
 #include <string>
 #include <vector>
+
+#include "odb/db.h"
 namespace dpl {
 class Node;
 class Architecture;
@@ -30,7 +32,8 @@ class DetailedOrient
 
   // Other.
   unsigned orientFind(Node* ndi, int row);
-  bool isLegalSym(unsigned rowOri, unsigned siteSym, unsigned cellOri);
+  static bool isLegalSym(unsigned siteSym, unsigned cellOri);
+  static unsigned getMasterSymmetry(odb::dbMaster* master);
 
  private:
   Architecture* arch_;

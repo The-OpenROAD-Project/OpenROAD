@@ -7,9 +7,9 @@
 #include <string>
 #include <unordered_map>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
@@ -17,14 +17,18 @@
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipInst>;
 
 bool _dbChipInst::operator==(const _dbChipInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -45,6 +49,7 @@ bool _dbChipInst::operator==(const _dbChipInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipInst::operator<(const _dbChipInst& rhs) const
@@ -93,6 +98,9 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["name"].add(name_);
+  info.children["region_insts_map"].add(region_insts_map_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -101,10 +109,17 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipInst::getName() const
+const std::string& dbChipInst::getName() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   return obj->name_;
+}
+
+void dbChipInst::setOrient(dbOrientType3D orient)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+
+  obj->orient_ = orient;
 }
 
 dbOrientType3D dbChipInst::getOrient() const
@@ -139,13 +154,6 @@ dbTransform dbChipInst::getTransform() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   return dbTransform(obj->orient_, obj->origin_);
-}
-
-void dbChipInst::setOrient(dbOrientType3D orient)
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-
-  obj->orient_ = orient;
 }
 
 void dbChipInst::setLoc(const Point3D& loc)

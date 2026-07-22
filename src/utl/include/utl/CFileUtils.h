@@ -5,9 +5,10 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <fstream>
+#include <span>
 #include <string>
 
-#include "boost/core/span.hpp"
 #include "utl/Logger.h"
 
 namespace utl {
@@ -33,6 +34,13 @@ std::string GetContents(FILE* file, Logger* logger);
 //
 // "logger" is used to flag any errors in the writing process. Returns when all
 // of "data" has been written successfully.
-void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger);
+void WriteAll(FILE* file, std::span<const uint8_t> data, Logger* logger);
+
+// Opens "filename" as a text input stream after validating that it refers to an
+// existing regular file. std::ifstream::is_open() alone is insufficient: on
+// Linux it succeeds for directories (and other non-regular files), so the
+// caller would silently read empty content. On failure logger->error is used to
+// throw.
+std::ifstream OpenInputStream(const std::string& filename, Logger* logger);
 
 }  // namespace utl

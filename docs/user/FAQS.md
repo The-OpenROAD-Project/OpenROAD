@@ -11,4 +11,4 @@ the appropriate repository or start a discussion.
 ## How can I contribute?
 
 Thank you for your willingness to contribute. Please see the
-[Getting Involved](../contrib/GettingInvolved) guide.
+[Getting Involved](../contrib/GettingInvolved.md) guide.

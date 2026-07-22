@@ -54,7 +54,7 @@ bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
   odb::dbMaster* master = instance->getMaster();
   sta::Cell* master_cell = db_network->dbToSta(master);
   sta::LibertyCell* liberty_cell = db_network->libertyCell(master_cell);
-  return liberty_cell->hasSequentials();
+  return liberty_cell->isSequential();
 }
 
 odb::dbInst* ReplaceCell(
@@ -116,24 +116,25 @@ std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst)
 std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
 {
   const sta::dbNetwork* db_network = sta->getDbNetwork();
-  const sta::ClockSet clock_set = sta->clocks(db_network->dbToSta(iterm));
+  const sta::ClockSet clock_set
+      = sta->clocks(db_network->dbToSta(iterm), sta->cmdMode());
 
-  sta::ClockSet::ConstIterator iter(clock_set);
-  if (!iter.container()->empty()) {
+  if (!clock_set.empty()) {
     // Returns the first clock for the given iterm, TODO can we have more than
     // one clock driver?
-    return *iter.container()->begin();
+    return *clock_set.begin();
   }
 
   return std::nullopt;
 }
 
-bool IsScanCell(const sta::LibertyCell* liberty_cell)
+bool IsScanCell(const sta::dbNetwork* db_network,
+                const sta::LibertyCell* liberty_cell)
 {
   const sta::TestCell* test_cell = liberty_cell->testCell();
   if (test_cell) {
-    return getLibertyScanIn(test_cell) != nullptr
-           && getLibertyScanEnable(test_cell) != nullptr;
+    return db_network->getLibertyScanIn(test_cell) != nullptr
+           && db_network->getLibertyScanEnable(test_cell) != nullptr;
   }
   return false;
 }

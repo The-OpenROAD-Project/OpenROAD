@@ -55,13 +55,16 @@ Legend:
 
 | Operating System | Local Installation | Prebuilt Binaries | Docker Installation | Windows Subsystem for Linux | 
 | --- | --- | --- | --- | --- |
-| Ubuntu 20.04 | `Y` | `Y` | `Y` | `-` |  
-| Ubuntu 22.04 | `Y` | `Y` | `Y` | `-` |
-| CentOS 8     | `Y` | `-` | `Y` | `-` |
-| Debian 11    | `Y` | `Y` | `Y` | `-` |
-| RHEL         | `Y` | `-` | `Y` | `-` |
+| Debian 12            | `Y` | `Y` | `Y` | `-` |
+| Debian 13            | `Y` | `Y` | `Y` | `-` |
+| Ubuntu 22.04         | `Y` | `Y` | `Y` | `-` |
+| Ubuntu 24.04         | `Y` | `Y` | `Y` | `-` |
+| Ubuntu 26.04         | `Y` | `Y` | `Y` | `-` |
+| RHEL 8/9             | `Y` | `-` | `Y` | `-` |
+| Rocky 8              | `Y` | `-` | `Y` | `-` |
+| Rocky 9              | `Y` | `-` | `Y` | `-` |
+| macOS                | `Y` | `-` | `Y` | `-` |
 | Windows 10 and above | `-` | `-` | `Y` | `Y` |
-| macOS        | `Y` | `-` | `Y` | `-` |
 
 
 ## Code of conduct

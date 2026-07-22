@@ -8,6 +8,7 @@
 #include "rcx/array1.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
+#include "rcx/extRCap.h"
 #include "rcx/extSegment.h"
 #include "utl/Logger.h"
 

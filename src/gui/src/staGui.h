@@ -20,17 +20,16 @@
 #include <QWidget>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
-#include "sta/PathExpanded.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "staGuiInterface.h"
@@ -234,7 +233,7 @@ class TimingPathRenderer : public gui::Renderer
     odb::dbObject* sink;
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
-  std::mutex rendering_;
+  absl::Mutex rendering_;
 
   static const gui::Painter::Color kInstHighlightColor;
   static const gui::Painter::Color kPathInstColor;
@@ -246,6 +245,7 @@ class TimingPathRenderer : public gui::Renderer
   static constexpr const char* kDataPathLabel = "Data path";
   static constexpr const char* kLaunchClockLabel = "Launch clock";
   static constexpr const char* kCaptureClockLabel = "Capture clock";
+  static constexpr const char* kLegendLabel = "Legend";
 };
 
 class TimingConeRenderer : public gui::Renderer
@@ -410,8 +410,8 @@ class TimingControlsDialog : public QDialog
 
   const sta::Pin* convertTerm(Gui::Term term) const;
 
-  sta::Corner* getCorner() const { return sta_->getCorner(); }
-  void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }
+  sta::Scene* getScene() const { return sta_->getScene(); }
+  void setScene(sta::Scene* scene) { sta_->setScene(scene); }
 
  signals:
   void inspect(const Selected& selected);
@@ -429,7 +429,7 @@ class TimingControlsDialog : public QDialog
   QFormLayout* layout_;
 
   QSpinBox* path_count_spin_box_;
-  QComboBox* corner_box_;
+  QComboBox* scene_box_;
   DropdownCheckboxes* clock_box_;
 
   QCheckBox* unconstrained_;

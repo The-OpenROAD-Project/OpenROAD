@@ -8,9 +8,10 @@
 #include <cstring>
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 namespace odb {
@@ -19,6 +20,7 @@ template class dbTable<_dbTechLayerKeepOutZoneRule>;
 bool _dbTechLayerKeepOutZoneRule::operator==(
     const _dbTechLayerKeepOutZoneRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.same_mask != rhs.flags_.same_mask) {
     return false;
   }
@@ -66,6 +68,7 @@ bool _dbTechLayerKeepOutZoneRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerKeepOutZoneRule::operator<(
@@ -130,10 +133,8 @@ void _dbTechLayerKeepOutZoneRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["first_cut_class"].add(first_cut_class_);
   info.children["second_cut_class"].add(second_cut_class_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -150,7 +151,7 @@ void dbTechLayerKeepOutZoneRule::setFirstCutClass(
   obj->first_cut_class_ = first_cut_class;
 }
 
-std::string dbTechLayerKeepOutZoneRule::getFirstCutClass() const
+const std::string& dbTechLayerKeepOutZoneRule::getFirstCutClass() const
 {
   _dbTechLayerKeepOutZoneRule* obj = (_dbTechLayerKeepOutZoneRule*) this;
   return obj->first_cut_class_;
@@ -164,7 +165,7 @@ void dbTechLayerKeepOutZoneRule::setSecondCutClass(
   obj->second_cut_class_ = second_cut_class;
 }
 
-std::string dbTechLayerKeepOutZoneRule::getSecondCutClass() const
+const std::string& dbTechLayerKeepOutZoneRule::getSecondCutClass() const
 {
   _dbTechLayerKeepOutZoneRule* obj = (_dbTechLayerKeepOutZoneRule*) this;
   return obj->second_cut_class_;
@@ -346,24 +347,18 @@ bool dbTechLayerKeepOutZoneRule::isExceptAlignedEnd() const
   return obj->flags_.except_aligned_end;
 }
 
-// User Code Begin dbTechLayerKeepOutZoneRulePublicMethods
-
 dbTechLayerKeepOutZoneRule* dbTechLayerKeepOutZoneRule::create(
-    dbTechLayer* _layer)
+    dbTechLayer* parent)
 {
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerKeepOutZoneRule* newrule
-      = layer->keepout_zone_rules_tbl_->create();
-  return ((dbTechLayerKeepOutZoneRule*) newrule);
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerKeepOutZoneRule*)
+      _parent->keepout_zone_rules_tbl_->create();
 }
-
-void dbTechLayerKeepOutZoneRule::destroy(dbTechLayerKeepOutZoneRule* rule)
+void dbTechLayerKeepOutZoneRule::destroy(dbTechLayerKeepOutZoneRule* obj)
 {
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->keepout_zone_rules_tbl_->destroy((_dbTechLayerKeepOutZoneRule*) rule);
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->keepout_zone_rules_tbl_->destroy((_dbTechLayerKeepOutZoneRule*) obj);
 }
-
-// User Code End dbTechLayerKeepOutZoneRulePublicMethods
 }  // namespace odb
    // Generator Code End Cpp
