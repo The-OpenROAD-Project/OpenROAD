@@ -22,11 +22,15 @@ function makeModal(title, extraClass = '') {
             <div class="modal-buttons"></div>
         </div>`;
     document.body.appendChild(overlay);
-    const close = () => overlay.remove();
+    function onKey(e) {
+        if (e.key === 'Escape') close();
+    }
+    const close = () => {
+        overlay.remove();
+        document.removeEventListener('keydown', onKey);
+    };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-    document.addEventListener('keydown', function onKey(e) {
-        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
-    });
+    document.addEventListener('keydown', onKey);
     return {
         overlay,
         body: overlay.querySelector('.modal-body'),

@@ -1475,6 +1475,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
     if (!gif->encoder.begin(gif->filename, w, h, d)) {
       logger_->error(
           utl::WEB, 55, "Failed to open GIF file {}.", gif->filename);
+      gifs_[idx].reset();
       return;
     }
   } else if (w != gif->width || h != gif->height) {
