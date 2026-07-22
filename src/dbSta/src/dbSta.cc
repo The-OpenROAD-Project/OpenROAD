@@ -26,6 +26,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "boost/json.hpp"
@@ -383,7 +384,59 @@ void dbSta::postReadDef(odb::dbBlock* block)
 
 void dbSta::postRead3Dbx(odb::dbChip* chip)
 {
-  // TODO: we are not ready to do timing on chiplets yet
+  if (chip == nullptr) {
+    return;
+  }
+  // Timing-precondition policy first: on an unsupported or malformed
+  // configuration, warn and decline the 3DIC timing network -- never abort
+  // the read (this callback also fires in pure-odb structural flows). The
+  // structural 3DBlox model stays intact either way.
+  if (!db_network_->isChipSupportedForTiming(chip)) {
+    logger_->warn(utl::STA,
+                  3000,
+                  "3DIC timing network not created for chip {} (see prior "
+                  "warnings). Structural 3DBlox data is unaffected.",
+                  chip->getName());
+    return;
+  }
+  // The unfolded model is already built before this callback fires
+  // (dbDatabase::triggerPostRead3Dbx constructs it before notifying
+  // observers), so STA can consume it directly here.
+  db_network_->setTopChip(chip);
+  if (!db_network_->has3DicChip()) {
+    // Leaf/flat chip (own dbBlock): routed through the single-block path;
+    // no chiplet callbacks to hook.
+    return;
+  }
+
+  // dbBlockCallBackObj is single-owner (addOwner removes the previous owner).
+  // The 3DIC top has no own dbBlock; callbacks must hook every chiplet's
+  // dbBlock, so allocate one dbStaCbk per chiplet block rather than reusing
+  // db_cbk_ (which would unhook all but the last chiplet).
+  chiplet_cbks_.clear();
+  // Dedupe by block: hook one dbStaCbk per distinct chiplet dbBlock. A dbBlock
+  // holds a LIST of callbacks, so hooking one per chip-inst would register
+  // redundant live callbacks. setTopChip has already declined hierarchical
+  // (STA-3001) and duplicated (STA-3004) masters, so every chip-inst here has
+  // a distinct, own dbBlock; the dedupe set is defensive.
+  odb::PtrSet<odb::dbBlock> hooked_blocks;
+  for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
+    odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst);
+    if (chiplet_block == nullptr) {
+      continue;
+    }
+    if (!hooked_blocks.insert(chiplet_block).second) {
+      continue;  // already hooked
+    }
+    auto cbk = std::make_unique<dbStaCbk>(this);
+    cbk->setNetwork(db_network_);
+    cbk->addOwner(chiplet_block);
+    chiplet_cbks_.push_back(std::move(cbk));
+  }
+
+  // No unconditional INFO banner here: read_3dbx runs on pure-odb flows too,
+  // and announcing "STA active" on every read is noise. The structural
+  // counts are available on demand via report_3dic_summary.
 }
 
 void dbSta::postReadDb(odb::dbDatabase* db)
