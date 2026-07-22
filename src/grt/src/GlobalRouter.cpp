@@ -5629,6 +5629,17 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
   } else {
+    // Both pins are in the same gcell, but the two routes may reach it on
+    // disjoint layer ranges. Bridge any layer gap with vias.
+    const auto [min1, max1] = findLayerRangeOverPosition(pin_pos1, net1_route);
+    const auto [min2, max2] = findLayerRangeOverPosition(pin_pos1, net2_route);
+    if (max1 != -1 && max2 != -1) {
+      if (max1 < min2) {
+        insertViasForConnection(net1_route, pin_pos1, max1, min2);
+      } else if (max2 < min1) {
+        insertViasForConnection(net1_route, pin_pos1, max2, min1);
+      }
+    }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   }
 
@@ -5677,6 +5688,26 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
                    "pin position.");
   }
   return top_layer;
+}
+
+// Layer range of the segments that cover the position. Returns
+// {INT_MAX, -1} when no segment covers it.
+std::pair<int, int> GlobalRouter::findLayerRangeOverPosition(
+    const odb::Point& pos,
+    const GRoute& route)
+{
+  int min_layer = std::numeric_limits<int>::max();
+  int max_layer = -1;
+  for (const GSegment& seg : route) {
+    const auto [min_x, max_x] = std::minmax(seg.init_x, seg.final_x);
+    const auto [min_y, max_y] = std::minmax(seg.init_y, seg.final_y);
+    if (min_x <= pos.getX() && pos.getX() <= max_x && min_y <= pos.getY()
+        && pos.getY() <= max_y) {
+      min_layer = std::min({min_layer, seg.init_layer, seg.final_layer});
+      max_layer = std::max({max_layer, seg.init_layer, seg.final_layer});
+    }
+  }
+  return {min_layer, max_layer};
 }
 
 std::vector<GSegment> GlobalRouter::createConnectionForPositions(

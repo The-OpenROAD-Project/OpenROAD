@@ -255,6 +255,8 @@ class GlobalRouter
                              odb::Point& pin_pos1,
                              odb::Point& pin_pos2);
   int findTopLayerOverPosition(const odb::Point& pin_pos, const GRoute& route);
+  std::pair<int, int> findLayerRangeOverPosition(const odb::Point& pos,
+                                                 const GRoute& route);
   std::vector<GSegment> createConnectionForPositions(const odb::Point& pin_pos1,
                                                      const odb::Point& pin_pos2,
                                                      int layer1,
