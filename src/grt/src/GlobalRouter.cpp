@@ -3482,6 +3482,10 @@ AdjacencyList GlobalRouter::buildNetGraph(odb::dbNet* net)
 bool GlobalRouter::isConnected(odb::dbNet* net)
 {
   int total_segments = routes_[net].size();
+  // An empty route has no segments that could be disconnected.
+  if (total_segments == 0) {
+    return true;
+  }
   std::vector<int> parent(total_segments), rank(total_segments, 0);
   for (int i = 0; i < total_segments; i++) {
     parent[i] = i;
@@ -3536,6 +3540,35 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     }
   }
   return (initialized_groups == 1);
+}
+
+// Debug aid: report each connected component of the net's segments.
+void GlobalRouter::reportDisconnectedComponents(odb::dbNet* db_net)
+{
+  const GRoute& segments = routes_[db_net];
+  const AdjacencyList graph = buildNetGraph(db_net);
+  std::vector<bool> visited(segments.size(), false);
+  int component = 0;
+  for (int start = 0; start < static_cast<int>(segments.size()); start++) {
+    if (visited[start]) {
+      continue;
+    }
+    component++;
+    logger_->report("Net {} component {}:", db_net->getName(), component);
+    std::vector<int> stack = {start};
+    visited[start] = true;
+    while (!stack.empty()) {
+      const int seg = stack.back();
+      stack.pop_back();
+      printSegment(segments[seg]);
+      for (const int neighbor : graph[seg]) {
+        if (!visited[neighbor]) {
+          visited[neighbor] = true;
+          stack.push_back(neighbor);
+        }
+      }
+    }
+  }
 }
 
 bool GlobalRouter::segmentsConnect(const GSegment& segment1,
@@ -5550,8 +5583,9 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     net2->setMergedNet(db_net1);
     saveGuides({db_net1});
   } else {
-    // After failing to connect the routing, the survivor net still have
-    // uncovered pins and needs to be re-routed
+    // The survivor net's routing could not be validated as a single connected
+    // component covering all pins (uncovered pins and/or disconnected
+    // segments), so it needs to be re-routed from scratch.
     net1->setDirtyNet(true);
   }
 }
@@ -5645,7 +5679,19 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 
   updateNetPins(net1);
   std::string dump;
-  return netIsCovered(db_net1, dump);
+  if (!netIsCovered(db_net1, dump)) {
+    return false;
+  }
+  // netIsCovered() alone allows two disjoint clusters that each cover their own
+  // pins, so the merged routing must also form a single connected component.
+  if (!isConnected(db_net1)) {
+    reportDisconnectedComponents(db_net1);
+    logger_->error(GRT,
+                   298,
+                   "Net {} has disconnected segments after merge.",
+                   net1->getName());
+  }
+  return true;
 }
 
 void GlobalRouter::findBufferPinPostions(Net* net1,
