@@ -174,7 +174,8 @@ class dbNetwork : public ConcreteNetwork
   odb::dbBlock* blockOf(odb::dbChipInst* chip_inst) const;
   // True when chip_inst's master block is placed by exactly one chip-inst.
   // Gates descent into the master body — shared masters alias inner dbInsts
-  // and would break STA's per-pin Vertex assumption (see Track A5 guard).
+  // and would break STA's per-pin Vertex assumption (duplicated masters are
+  // rejected up front with STA-3004).
   bool blockOwnedUniquelyBy(odb::dbChipInst* chip_inst) const;
 
   // Encode/decode chip db objects as STA handles. A chip-bump Pin is the

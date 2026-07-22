@@ -2,12 +2,12 @@
 [INFO ODB-0227] LEF file: ../../odb/test/Nangate45/Nangate45_stdcell.lef, created 135 library cells
 [INFO ODB-0227] LEF file: ../../odb/test/Nangate45/fake_bumps.lef, created 1 library cells
 [INFO ODB-0128] Design: flop_chip_a
-[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0252]     Updated 3 pins.
 [INFO ODB-0131]     Created 3 components and 14 component-terminals.
 [INFO ODB-0133]     Created 5 nets and 7 connections.
 [WARNING STA-1140] ../../odb/test/Nangate45/Nangate45_typ.lib line 37, library NangateOpenCellLibrary already exists.
 [INFO ODB-0128] Design: flop_chip_b
-[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0252]     Updated 3 pins.
 [INFO ODB-0131]     Created 3 components and 14 component-terminals.
 [INFO ODB-0133]     Created 5 nets and 7 connections.
 3DIC summary for chip top:

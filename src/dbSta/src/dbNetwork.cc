@@ -358,12 +358,13 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
     dbSet<odb::dbChipInst> chip_insts = network->topChip()->getChipInsts();
     chipinst_iter_ = chip_insts.begin();
     chipinst_end_ = chip_insts.end();
-    // TODO(A'): inner dbInsts are enumerated directly (UnfoldedModel doesn't
-    // unfold leaf cells yet). When a per-path dbUnfoldedInst exists, move this
-    // into the UnfoldedModel and drop the blockOwnedUniquelyBy filter -- that
-    // also enables duplicated-master interior timing. (Bumps already route via
-    // the UnfoldedModel.) Track B (multi-hier) separately needs chip-inst
-    // Instance* to become path-aware (dbUnfoldedChipInst*).
+    // TODO: inner dbInsts are enumerated directly (the unfolded model doesn't
+    // unfold leaf cells yet). When a per-path unfolded instance object exists,
+    // move this into the unfolded model and drop the blockOwnedUniquelyBy
+    // filter -- that also enables duplicated-master interior timing. (Bumps
+    // already route via the unfolded model.) Multi-level chip hierarchy
+    // separately needs chip-inst Instance* to become path-aware
+    // (dbUnfoldedChipInst*).
     for (odb::dbChipInst* chip_inst : chip_insts) {
       if (network->blockOwnedUniquelyBy(chip_inst)) {
         if (dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
@@ -676,6 +677,15 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
     if (odb::dbUnfoldedChipInst* uci = network_->unfoldedChipInst(chip_inst)) {
       for (odb::dbUnfoldedChipRegionInst* region : uci->getRegions()) {
         for (odb::dbUnfoldedChipBumpInst* bump : region->getBumps()) {
+          // Spare bumps (no bound bterm -- e.g. unconnected mechanical /
+          // reserved pads, the majority on real F2F stacks) are not logical
+          // endpoints: no boundary to bridge, nothing to time. Keep them out
+          // of the pin set so they never become graph vertices. Connected
+          // bumps are guaranteed a bterm by STA-3005.
+          odb::dbChipBump* cb = bump->getChipBumpInst()->getChipBump();
+          if (cb->getBTerm() == nullptr) {
+            continue;
+          }
           chip_bumps_.push_back(bump);
         }
       }
@@ -1018,7 +1028,7 @@ void dbNetwork::setTopChip(odb::dbChip* chip)
   // placed by >1 chip-inst would alias its inner dbInsts across placements,
   // and much downstream code assumes a chiplet block is placed once. Refuse
   // rather than build a wrong graph. (Real duplicated-master support needs
-  // per-unfold-path identity -- dbUnfoldedInst, Track A'.)
+  // per-unfold-path instance identity in the unfolded model.)
   for (auto& [block, count] : block_refs) {
     if (count > 1) {
       logger_->error(utl::STA,
@@ -1027,6 +1037,59 @@ void dbNetwork::setTopChip(odb::dbChip* chip)
                      "more than once yet ({} placements of one master block). "
                      "Each chiplet master must be instantiated exactly once.",
                      count);
+    }
+  }
+
+  // A dbChipBump is the chiplet's external logical connection endpoint,
+  // merging a boundary bterm and a bump-pad inst/iterm into one point. The
+  // 3dblox "blackbox" stage allows these bindings to be loose, but the 3D
+  // network cannot be built on a loose endpoint, so enforce here (not at
+  // parse time, where blackbox-stage designs are legal), for every bump that
+  // PARTICIPATES IN A CHIP-NET -- those are the ones STA bridges. Spare
+  // bumps (no port/net, e.g. unconnected mechanical/reserved pads -- the
+  // majority on real F2F stacks) are exempt and are filtered out of pin
+  // enumeration instead:
+  //  (a) a connected bump has a bound bterm -- term() bridges through it; an
+  //      unbound one would silently drop paths and null-deref in make_graph.
+  //  (b) a connected bump's inst has exactly one iterm -- the unique
+  //      physical endpoint the bump represents (a passive bump pad;
+  //      parasitic/endpoint resolution is ambiguous otherwise).
+  for (odb::dbChipNet* chip_net : chip->getChipNets()) {
+    const uint32_t n_bumps = chip_net->getNumBumpInsts();
+    for (uint32_t i = 0; i < n_bumps; ++i) {
+      std::vector<odb::dbChipInst*> path;
+      odb::dbChipBumpInst* bump_inst = chip_net->getBumpInst(i, path);
+      if (bump_inst == nullptr) {
+        continue;
+      }
+      odb::dbChipBump* chip_bump = bump_inst->getChipBump();
+      odb::dbInst* pad_inst = chip_bump->getInst();
+      const std::string bump_name
+          = pad_inst ? pad_inst->getName() : std::string("<no inst>");
+      odb::dbChip* master = chip_bump->getChip();
+      if (chip_bump->getBTerm() == nullptr) {
+        logger_->error(utl::STA,
+                       3005,
+                       "3DIC chip bump {} of chiplet master {} is connected "
+                       "to chip net {} but has no bound boundary bterm. STA "
+                       "requires every connected bump bound to a bterm to "
+                       "bridge the chiplet boundary.",
+                       bump_name,
+                       master->getName(),
+                       chip_net->getName());
+      }
+      if (pad_inst == nullptr || pad_inst->getITerms().size() != 1) {
+        logger_->error(utl::STA,
+                       3006,
+                       "3DIC chip bump {} of chiplet master {} (on chip net "
+                       "{}) must have an associated inst with exactly one "
+                       "iterm (found {}). The bump's single iterm is its "
+                       "physical connection endpoint.",
+                       bump_name,
+                       master->getName(),
+                       chip_net->getName(),
+                       pad_inst ? pad_inst->getITerms().size() : 0);
+      }
     }
   }
 
@@ -1076,6 +1139,9 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
       for (odb::dbChipBump* bump : region->getChipBumps()) {
         odb::dbBTerm* bterm = bump->getBTerm();
         if (bterm == nullptr) {
+          // Spare bump (no port/net binding): not a logical endpoint, no
+          // Port to synthesize. Connected bumps are guaranteed a bterm by
+          // STA-3005; spares are likewise filtered out of pin enumeration.
           continue;
         }
         Port* port = makePort(master_cell, bterm->getConstName());
@@ -2155,14 +2221,9 @@ Term* dbNetwork::term(const Pin* pin) const
   // inner dbBTerm bound to its bump, so visitConnectedPins can descend into
   // the chiplet's internal net.
   if (odb::dbUnfoldedChipBumpInst* ub = staToUnfoldedBump(pin)) {
-    odb::dbChipBumpInst* bump = ub->getChipBumpInst();
-    odb::dbChipBump* cb = bump ? bump->getChipBump() : nullptr;
-    if (cb != nullptr) {
-      if (odb::dbBTerm* inner = cb->getBTerm()) {
-        return dbToStaTerm(inner);
-      }
-    }
-    return nullptr;
+    // Bump -> bound bterm is guaranteed by STA-3005 (setTopChip); the source
+    // chip-bump chain is structural (built by dbUnfoldedBuilder).
+    return dbToStaTerm(ub->getChipBumpInst()->getChipBump()->getBTerm());
   }
 
   dbITerm* iterm = nullptr;
@@ -2190,17 +2251,14 @@ Port* dbNetwork::port(const Pin* pin) const
   // A chip-bump pin's port is the matching Port on the chiplet master's
   // synthetic Cell (named after the bump's inner bterm).
   if (odb::dbUnfoldedChipBumpInst* ub = staToUnfoldedBump(pin)) {
-    odb::dbChipBumpInst* bump = ub->getChipBumpInst();
-    odb::dbChipBump* cb = bump ? bump->getChipBump() : nullptr;
-    if (cb == nullptr) {
-      return nullptr;
-    }
-    odb::dbBTerm* inner = cb->getBTerm();
+    // Bound bterm guaranteed by STA-3005; the master cell + its per-bterm
+    // ports were synthesized for every master in makeTopCellForChip.
+    odb::dbChipBump* cb = ub->getChipBumpInst()->getChipBump();
     auto it = chip_master_cells_.find(cb->getChip());
-    if (inner == nullptr || it == chip_master_cells_.end()) {
+    if (it == chip_master_cells_.end()) {
       return nullptr;
     }
-    return findPort(it->second, inner->getConstName());
+    return findPort(it->second, cb->getBTerm()->getConstName());
   }
 
   dbITerm* iterm;
@@ -2254,6 +2312,13 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
   // driver and a load, so makeWireEdgesFromPin forms wire edges across the
   // boundary regardless of the inner bterm's IoType, and a clock seeded on
   // it propagates through the fat-net model.
+  // NB (measured): with real direction from the bound bterm IoType instead,
+  // cross-chiplet DATA edges still form (path + slack identical); only a
+  // clock anchored ON a bump pin breaks -- both clk bumps become pure loads,
+  // the clk fat-net has no driver, and the seeded arrival sits on an
+  // edgeless vertex. Dropping BIDIRECT needs port-style driver semantics for
+  // boundary pins (input boundary pin = driver, as 2D top ports do), or the
+  // bump pad iterm's real LEF INOUT once bump pins map to the pad iterm.
   if (staToUnfoldedBump(pin) != nullptr) {
     return PortDirection::bidirect();
   }
@@ -2666,10 +2731,11 @@ void dbNetwork::visitConnectedPins(const Net* net,
         Pin* bump_pin = dbToSta(bump);
         visitor(bump_pin);
         // Descend through the boundary bridge into the chiplet's inner net.
-        if (Term* inner_term = term(bump_pin)) {
-          if (Net* inner_net = this->net(inner_term)) {
-            visitConnectedPins(inner_net, visitor, visited_nets);
-          }
+        // term() is non-null for every bump (bound bterm, STA-3005); the
+        // bterm may still be unconnected inside the chiplet (no inner net).
+        Term* inner_term = term(bump_pin);
+        if (Net* inner_net = this->net(inner_term)) {
+          visitConnectedPins(inner_net, visitor, visited_nets);
         }
       }
     }

@@ -5,5 +5,5 @@ source "helpers.tcl"
 # descending a block placed more than once would alias its inner dbInsts
 # across placements, and downstream code assumes a chiplet block is placed
 # once. read_3dbx must abort with STA-3004 rather than build a wrong graph.
-# (Real duplicated-master support needs per-unfold-path identity -- Track A'.)
+# (Real duplicated-master support needs per-unfold-path instance identity.)
 catch { read_3dbx ../../odb/test/data/example.3dbx }
