@@ -5622,12 +5622,9 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   // Try to connect the routing of the two nets.
   // For CUGR, connectRouting also performs the CUGR-specific capacity check
   // and populates connection_segs so that the CUGR tree can be updated.
-  std::vector<GSegment> connection_segs;
-  if (connectRouting(db_net1, db_net2, &connection_segs)) {
+  if (connectRouting(db_net1, db_net2)) {
     saveGuides({db_net1});
-    if (use_cugr_) {
-      cugr_->mergeNet(db_net1, db_net2, connection_segs);
-    } else {
+    if (!use_cugr_) {
       net1->setIsMergedNet(true);
       net1->setMergedNet(db_net2);
       net1->setDirtyNet(false);
@@ -5646,9 +5643,7 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   }
 }
 
-bool GlobalRouter::connectRouting(odb::dbNet* db_net1,
-                                  odb::dbNet* db_net2,
-                                  std::vector<GSegment>* connection_out)
+bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
@@ -5754,8 +5749,8 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1,
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
-    if (connection_out != nullptr) {
-      *connection_out = connection;
+    if (use_cugr_) {
+      cugr_->mergeNet(db_net1, db_net2, connection);
     }
   } else {
     // Both pins are in the same gcell, but the two routes may reach it on
