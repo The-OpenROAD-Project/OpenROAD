@@ -5630,14 +5630,9 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     net2->setIsMergedNet(true);
     net2->setMergedNet(db_net1);
   } else {
-    if (use_cugr_) {
-      // Fall back to a full dirty-net reroute on the CUGR path.
-      addDirtyNet(db_net1);
-    } else {
-      // After failing to connect the routing, the survivor net still has
-      // uncovered pins and needs to be re-routed
-      net1->setDirtyNet(true);
-    }
+    // After failing to connect the routing, the survivor net still has
+    // uncovered pins and needs to be re-routed
+    addDirtyNet(db_net1);
   }
 }
 
