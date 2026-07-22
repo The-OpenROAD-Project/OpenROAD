@@ -165,6 +165,14 @@ class dbNetwork : public ConcreteNetwork
   // ---- 3DIC (3DBlox) cross-chiplet STA ----
   // Top dbChip when a 3Dbx design is active; null otherwise.
   odb::dbChip* topChip() const { return top_chip_; }
+  // Timing preconditions for building the 3DIC network (read-only; warns
+  // STA-3001..3006 per problem and returns the verdict). Callers decline the
+  // network on false rather than aborting -- the checks also run in pure-odb
+  // structural flows via the read_3dbx observer callback.
+  bool isChipSupportedForTiming(odb::dbChip* chip) const;
+  // Install the (validated) top chip: build the per-block maps, index the
+  // unfolded model, synthesize the top/master cells. Pure mechanism -- no
+  // policy checks; callers gate on isChipSupportedForTiming first.
   void setTopChip(odb::dbChip* chip);
   // True when top_chip_ is a hierarchical chip (no own dbBlock, owns
   // dbChipInsts). Chip-aware iterators/accessors gate on this first.
@@ -178,27 +186,27 @@ class dbNetwork : public ConcreteNetwork
   // rejected up front with STA-3004).
   bool blockOwnedUniquelyBy(odb::dbChipInst* chip_inst) const;
 
-  // Encode/decode chip db objects as STA handles. A chip-bump Pin is the
-  // per-unfold-path dbUnfoldedChipBumpInst (so duplicated chiplet masters get
-  // distinct bump vertices), tagged in the low-3-bit pointer tag
-  // (kDbChipBumpInst — needs 8-byte alignment). A dbChipInst (Instance) /
-  // dbChipNet (Net) is a plain reinterpret_cast, discriminated at decode by
-  // dbObject::getObjectType().
-  Pin* dbToSta(odb::dbUnfoldedChipBumpInst* bump_inst) const;
+  // Encode/decode chip db objects as STA handles. A bump's Pin is its pad
+  // inst's single dbITerm (ordinary iterm encoding). A dbChipInst (Instance)
+  // / dbChipNet (Net) is a plain reinterpret_cast, discriminated at decode
+  // by dbObject::getObjectType().
   Instance* dbToSta(odb::dbChipInst* chip_inst) const;
   Net* dbToSta(odb::dbChipNet* chip_net) const;
-  odb::dbUnfoldedChipBumpInst* staToUnfoldedBump(const Pin* pin) const;
   odb::dbChipInst* staToDbChipInst(const Instance* instance) const;
   odb::dbChipNet* staToDbChipNet(const Net* net) const;
+  // A bump's timing pin is its pad inst's single dbITerm (flat model);
+  // nullptr for spare (unbound) bumps.
+  odb::dbITerm* bumpPadITerm(odb::dbUnfoldedChipBumpInst* bump) const;
   // Raw chip-inst / chip-net -> their per-unfold-path objects (built in
   // setTopChip). Used by the chip-aware iterators to enumerate unfolded bumps.
   odb::dbUnfoldedChipInst* unfoldedChipInst(odb::dbChipInst* chip_inst) const;
   odb::dbUnfoldedChipNet* unfoldedChipNet(odb::dbChipNet* chip_net) const;
 
   // Synthesize the top Cell for a hierarchical chip plus one plain Cell per
-  // chiplet master (a Port per chip-bump bterm). No LibertyCell binding, so
-  // chip-inst/chip-bump property queries have a non-null Cell*/Port* and
-  // chip-bump pins read as BIDIRECT (clock propagates via the fat-net model).
+  // chiplet master (a descriptive Port per bound chip-bump bterm), so
+  // cell(chip_inst) is non-null for naming, and as the binding point for a
+  // vendor ETM LibertyCell later. Bump timing pins are the bumps' pad
+  // iterms, not these ports.
   void makeTopCellForChip(odb::dbChip* chip);
 
   // dbStaCbk::inDbBTermCreate
@@ -560,7 +568,6 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBCHIPINST_ID = 0x9;
   static constexpr unsigned DBCHIPBUMP_INST_ID = 0xA;
   static constexpr unsigned DBCHIPNET_ID = 0xB;
-  static constexpr unsigned DBUNFOLDEDCHIPBUMP_INST_ID = 0xC;
   static constexpr unsigned CONCRETE_OBJECT_ID = 0xF;
   // Number of lower bits used
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
@@ -609,19 +616,14 @@ class dbNetwork : public ConcreteNetwork
   // owning libraries).
   odb::PtrMap<odb::dbChip, Cell*> chip_master_cells_;
   Library* chip_master_lib_ = nullptr;
-  // STA vertex-id for chip-bump pins, keyed by the per-unfold-path
-  // dbUnfoldedChipBumpInst (no sta_vertex_id_ field on the odb object yet).
-  // Reset on clear() and on an unfolded-model rebuild (keys change).
-  mutable odb::PtrMap<odb::dbUnfoldedChipBumpInst, VertexId>
-      chip_bump_vertex_ids_;
   // Reverse lookups derived from the unfolded model (lazily refreshed by
   // ensureUnfoldedMapsFresh when the top chip-net count changes — picks up
   // Tcl-created chip-nets after read_3dbx):
-  //   unfolded bump -> owning chip-net (for net(pin))
+  //   bump pad iterm -> owning chip-net (the ascent key: an inner-net walk
+  //     that meets a connected pad iterm crosses into its chip-net)
   //   raw chip-inst -> its unfolded chip-inst (for the pin iterator)
   //   raw chip-net  -> its unfolded chip-net  (for the net-pin iterator)
-  mutable odb::PtrMap<odb::dbUnfoldedChipBumpInst, odb::dbChipNet*>
-      bump_to_chip_net_;
+  mutable odb::PtrMap<odb::dbITerm, odb::dbChipNet*> bump_to_chip_net_;
   mutable odb::PtrMap<odb::dbChipInst, odb::dbUnfoldedChipInst*>
       chip_inst_to_unfolded_;
   mutable odb::PtrMap<odb::dbChipNet, odb::dbUnfoldedChipNet*>

@@ -31,10 +31,10 @@ Path Type: max
    0.09    0.09 ^ chipA/ff/Q (DFF_X1)
    0.01    0.09 v chipA/inv/ZN (INV_X1)
    0.02    0.11 v chipA/buf/Z (BUF_X1)
-   0.02    0.13 v chipB/buf/Z (BUF_X1)
-   0.01    0.14 ^ chipB/inv/ZN (INV_X1)
-   0.00    0.14 ^ chipB/ff/D (DFF_X1)
-           0.14   data arrival time
+   0.02    0.14 v chipB/buf/Z (BUF_X1)
+   0.01    0.15 ^ chipB/inv/ZN (INV_X1)
+   0.00    0.15 ^ chipB/ff/D (DFF_X1)
+           0.15   data arrival time
 
    1.00    1.00   clock clk (rise edge)
    0.00    1.00   clock network delay (ideal)
@@ -44,9 +44,9 @@ Path Type: max
            0.97   data required time
 ---------------------------------------------------------
            0.97   data required time
-          -0.14   data arrival time
+          -0.15   data arrival time
 ---------------------------------------------------------
-           0.83   slack (MET)
+           0.82   slack (MET)
 
 
 Summary 5 / 5 (100% pass)

@@ -66,7 +66,73 @@ support is Track A' (`dbUnfoldedInst`); nested is Track B.
 iteration (`3dic_cross.tcl`); (ii) duplicated-master design asserting the A5
 `STA-3004` hard-error (`3dic_get_cells.tcl`). Register in CMake + Bazel.
 
-### Track A' (deferred — gated on `dbUnfoldedInst`)
+### Post-review additions — landed 2026-07-22
+
+**A7. Bump endpoint checks (a)/(b) — DONE.**
+`setTopChip` enforces, for every bump **connected to a chip-net** (walk
+`chip->getChipNets() → getBumpInst(i) → getChipBump()`):
+(a) bound bterm — `STA-3005`; (b) associated inst with exactly one iterm —
+`STA-3006`. Enforced at network creation, NOT parse time (blackbox-stage
+designs stay legal in pure-odb flows). (b) doubles as the type-check of the
+**passive-bump contract**: an active (multi-iterm) bump fails by construction;
+active elements are interior IO leaf cells.
+
+**A8. Spare bumps — DONE.**
+Real F2F stacks are mostly spare pads (ASAP7: 3887 of 4225 bumps have no
+port/net). Spares are exempt from A7 and **filtered out of pin enumeration**
+(`DbInstancePinIterator` skips bumps with no bound bterm) and out of
+`makeTopCellForChip` port synthesis. First cut errored on ALL unbound bumps —
+rejected every real design; synthetic fixture (zero spares) never caught it.
+
+**A9. Fixture fix for the #10077 read order — DONE.**
+Master's `a16670034d` reads chiplet DEFs AFTER bmap parse; a bmap row with
+net `-` can no longer late-bind its bterm (defin never rebinds bump↔bterm) →
+silent unbound bump. `3dic_cross_flop_{a,b}.bmap` col6 now names the net
+(matches ASAP7 convention: col6 always populated). NB: defin-side rebinding
+is a possible odb ask if `-` bmaps must keep working.
+
+### Flat bump-pin redesign (NEXT, replaces the synthetic bump model)
+
+Decision (agreed with the odb architect, 2026-07-22): the synthetic bump `Pin*` is neither
+"flat" (real leaf iterm vertex) nor "modular" (transparent modBTerm-style
+boundary) — an invented third category. Adopt **flat**: the bump pin IS the
+pad inst's single `dbITerm` (guaranteed by A7(b)). Key facts measured:
+- Pad iterms are ALREADY graph pins via the flat inner-inst walk — the
+  synthetic bump pins are a duplicate layer (root cause of E7's off-arc pins).
+- Direction: pad MTerm is LEF INOUT (verified on all 4225 ASAP7 bumps) →
+  bidirect **derived**, not forced. Data edges survive real direction; only
+  clock-anchored-on-bump needs the INOUT (measured in prototype).
+- Modular/transparent rejected: bumps are electrically real (future RC cap
+  nodes bind there); no shared flat net exists across blocks.
+
+**F1. Delete the synthetic layer.** Tag 4 encode/decode, side-map
+`chip_bump_vertex_ids_` (+ its rebuild-reattach), forced-BIDIRECT branch,
+synthetic Ports, bump special-cases in term/port/instance/net/vertexId.
+**F2. Re-point chip-net pins.** `DbNetPinIterator(chip_net)` yields bound pad
+iterms (`getConnectedBumps → getChipBumpInst → getChipBump → getInst → iterm`).
+The chip-inst itself is PIN-LESS — a pin listed under two instances (pad inst
++ chip-inst) gets seeded twice by `Graph::makeWireEdges` (the seed driver is
+never marked visited), duplicating wire edges → `makeLoadPinIndexMap`
+index-overflow abort. Does NOT fix E7 (see below).
+**F3. Fat-net descent without the Term hop.** Pad iterm sits directly on the
+inner net (bmap connects it); `visitConnectedPins(chip_net)` descends
+pad-iterm → inner net. bterm keeps naming/direction role only.
+**F4. Validate.** `3dic_cross` golden = referee: clock anchored on chip-net
+pins (INOUT pad iterms) still propagates; path + slack unchanged; ASAP7
+read.tcl clean.
+Survives `dbUnfoldedInst`+family: identity swap raw→unfolded iterm is the
+same swap all interior iterms undergo (bump no longer special). Small rework
+when the odb bump-elimination lands (bump = dbInst; this IS that end-state
+adopted early).
+
+### Track A' (deferred — gated on `dbUnfoldedInst` + family)
+
+NB (odb architect, 2026-07-22): `dbUnfoldedInst` alone is not enough — dbSta cares
+about iterm/bterm/net, so duplicated-interior support drags the whole family:
+`dbUnfoldedITerm`, `dbUnfoldedBTerm`, `dbUnfoldedNet`. Vertex ids live on the
+unfolded ITERM (mirrors `_dbITerm`), not the inst. Also revives R3 hard:
+unfolded objects are rebuilt-on-read, so vertex-id homes there need the
+rebuild-notification hook.
 
 **A'1. Vertex-id field on `dbUnfoldedInst`.**
 Add `sta_vertex_id_` (mirror `_dbITerm`) to the per-`(path, interior dbInst)`
@@ -125,6 +191,14 @@ net2 now has a real driver (IO_driver1 out) and real load (IO_receiver1 in)
 one bridge hop inside each chiplet. Check whether v1's BIDIRECT-bump
 workaround is still needed on net2 or can be dropped where real direction
 exists.
+**MEASURED (2026-07-22 prototype, pre-Track-F):** real direction from the
+bound bterm IoType → cross-chiplet DATA edges still form (path + slack
+identical); the ONLY break is a clock anchored directly on a bump pin (both
+clk bumps become pure loads → driverless clk fat-net → edgeless vertex).
+Resolution: the flat bump-pin redesign makes bump pins the pad iterms, whose LEF direction is
+INOUT (verified all 4225 ASAP7 bumps) → bidirect *derived* from the term,
+forced override gone, clock-on-bump keeps working. C2 then reduces to
+validating directed-IO fixtures.
 
 **C3. Active-interconnect regression.**
 Fixture matching boundary.png (IO cells inside chiplets). Assert constrained
@@ -157,9 +231,10 @@ Compare slack vs zero-delay baseline; delta matches analytic RC delay. Extend
 
 ## Track E — Hardening (as needed, pull forward if blocking)
 
-- **E1.** STA-gated structural-integrity checks (orphan chip-nets, unbound
-  bumps) — filter unbound bumps out of pin enumeration to kill null-deref
-  crash (`3DIC_TODO.md` TODO 5).
+- **E1.** ~~STA-gated structural-integrity checks (orphan chip-nets, unbound
+  bumps)~~ **DONE (2026-07-22, A7/A8):** connected bumps validated
+  (STA-3005/3006); unbound spares filtered from pin enumeration. Orphan
+  chip-net diagnostic still open (minor).
 - **E2.** Callback-driven `bump_to_chip_net_` invalidation (TODO 4).
 - **E3.** ETM-bound chiplets — real vendor `.lib` when present (TODO 3).
 - **E4.** Internally-hierarchical chiplets under flat top (TODO 6).
@@ -175,6 +250,13 @@ Compare slack vs zero-delay baseline; delta matches analytic RC delay. Extend
   `-through` an f2f net finds nothing while `-through` the interior receiver iterm
   works. Surface the bridged interior iterms (or give the bump pin the on-arc
   vertex). dbSta-only; no `src/sta/` change. (2026-07-03 field test.)
+  **→ Sharpened by the flat redesign (still open):** chip-net pins are now
+  the pad iterms, but a passive pad with no Liberty can never be a
+  through-vertex — its bidirect load/drvr vertex halves have no internal arc
+  (OpenSTA adds that hop edge only for top-level ports), so the fat-net
+  clique routes around the pad. Closing E7 needs one of: fat pin enumeration
+  on the chip-net (surface adjacent interior iterms), a pad-through hop edge,
+  or an ETM/Liberty arc on the pad.
 
 ---
 

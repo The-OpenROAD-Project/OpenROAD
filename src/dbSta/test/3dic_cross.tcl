@@ -30,12 +30,15 @@ proc cell_names { } {
 check "flat cell set" { cell_names } {chipA chipA/buf chipA/bump_clk\
   chipA/bump_d chipA/bump_q chipA/ff chipA/inv chipB chipB/buf\
   chipB/bump_clk chipB/bump_d chipB/bump_q chipB/ff chipB/inv}
-# DbInstancePinIterator yields one bump Pin per chip-inst bump.
+# A bump's pin is its pad inst's single iterm (the chip-inst itself is
+# pin-less) -- query pins through the pad leaf insts.
 check "chipA bump-pin count" {
-  llength [get_pins -of_objects [get_cells chipA]]
+  llength [get_pins -of_objects \
+    [get_cells {chipA/bump_clk chipA/bump_d chipA/bump_q}]]
 } 3
 check "chipB bump-pin count" {
-  llength [get_pins -of_objects [get_cells chipB]]
+  llength [get_pins -of_objects \
+    [get_cells {chipB/bump_clk chipB/bump_d chipB/bump_q}]]
 } 3
 
 proc chip_net_names { } {
@@ -46,13 +49,15 @@ proc chip_net_names { } {
   return [lsort $names]
 }
 check "chip-net set" { chip_net_names } {bridge clk_top in_top out_top}
+# A chip-net's pins are the bump pad iterms; each pad inst belongs to its
+# chiplet, so the net provably spans BOTH chiplets.
 check "bridge spans both chiplets" {
   set insts {}
   foreach pin [get_pins -of_objects [get_nets bridge]] {
     lappend insts [get_full_name [$pin instance]]
   }
   lsort -unique $insts
-} {chipA chipB}
+} {chipA/bump_q chipB/bump_d}
 
 # Anchor the clock on the chip-bump pins of clk_top — the natural form
 # users will write. Each chip-bump pin reports BIDIRECT (dbNetwork::

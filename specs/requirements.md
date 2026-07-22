@@ -33,6 +33,15 @@ cells alike.
   codegen/serialization is consistent) vs an STA-side `(dbUnfoldedChipInst,
   dbInst)` → record map. (c) vertex-id field on it, odb- or dbSta-owned.
 - Without this, duplicated-master timing collapses — the headline goal.
+- **Scope grown (odb architect, 2026-07-22):** `dbUnfoldedInst` alone is insufficient
+  — dbSta keys timing on iterm/bterm/net, not the inst (vertex ids live on
+  iterms). Duplicated-interior support pulls the whole family:
+  **`dbUnfoldedITerm`, `dbUnfoldedBTerm`, `dbUnfoldedNet`**, with the
+  vertex-id field on the unfolded ITERM (mirror `_dbITerm`). This also makes
+  R3(a) (rebuild hook) a hard dependency — vertex-id homes on rebuilt-on-read
+  objects need invalidation signaling. NB: the flat bump-pin redesign
+  (roadmap) survives the family unchanged — bump identity migrates
+  raw→unfolded iterm with the same swap as every interior iterm.
 
 ### R3. Stable identity / rebuild contract for unfolded objects — PARTIAL
 **Resolved (verified in code):** model is rebuilt on read (`operator>>` →
@@ -71,6 +80,21 @@ nets twice with the correct per-placement bumps; cross-level nets resolve via
 ---
 
 ## IMPORTANT — needed for top-level active-IO + RC (Tracks C/D)
+
+### R5a. Bump endpoint contract — RESOLVED (2026-07-22; implemented)
+Per the odb architect: `dbChipBump` is a **purely logical construct** — the
+chiplet's external interface merging bterm + iterm into one endpoint. The
+loose bindings (optional bterm; inst-but-not-iterm reference) are tightened by
+two STA-side network-creation checks (implemented in `setTopChip`, scoped to
+bumps **connected to a chip-net**; parse stays permissive for blackbox-stage):
+- (a) connected bump must have a bound bterm → `STA-3005`.
+- (b) connected bump's inst has exactly **one iterm** → `STA-3006`. This is
+  the type-check of the **passive-bump contract**: bumps are passive INOUT
+  pads (verified: all 4225 ASAP7 bumps single INOUT PAD pin); active elements
+  are interior IO leaf cells with directed pins (TSV_mod etc.). An "active
+  bump" is modeled as interior IO cell + passive bump, never by relaxing (b).
+- **Spare bumps** (no port/net — 3887/4225 on ASAP7) are legal, exempt, and
+  filtered out of pin enumeration.
 
 ### R5. Driver/load (direction) at the bump boundary
 `dbUnfoldedChipNet::getConnectedBumps()` returns a flat bump vector with no
@@ -179,11 +203,12 @@ that fire on `dbChipNet` / bump mutation (create/destroy/addBumpInst/
 removeBumpInst) (`3DIC_TODO.md` TODO 4). NB: bump-inst object type shifts with
 the elimination (bump → `dbInst`); hook on whatever survives.
 
-### R9. Unbound-bump query — AVAILABLE (STA-side work remains)
-Query exists: `dbChipBump::getBTerm() == nullptr` (and `dbBTerm::getChipBump()`)
-tells whether a bump is bound. No Osama ask. Remaining is **STA-side** (Track
-E1): filter unbound bumps out of pin enumeration before they crash
-`make_graph` (TODO 5). Orphan-net case is diagnostic-only.
+### R9. Unbound-bump query — DONE (2026-07-22)
+Query exists: `dbChipBump::getBTerm() == nullptr`. STA-side work landed:
+connected bumps validated (STA-3005/3006, see R5a); unbound spares filtered
+out of `DbInstancePinIterator` and `makeTopCellForChip`. The `make_graph`
+null-deref class is closed. Orphan-net case remains diagnostic-only (open,
+minor).
 
 ### R10. `dbMarker` source-type support for chip objects — STILL MISSING
 Verified: `src/odb/src/db/dbMarker.cpp` has no `dbChipNetObj` / `dbChipObj`
@@ -216,11 +241,12 @@ inline in their sections.
 
 | # | Status | Decision still needed | Owner |
 |---|--------|-----------------------|-------|
-| R1+R2 | **OPEN (blocker)** | Shared `dbUnfoldedInst` (path-qualified inst, bumps+interior) + its `sta_vertex_id_` — landed with bump-elimination? owner? | Osama |
-| R3 | **OPEN (partial)** | Rebuild-notification hook; persist-vs-rebuild (save/restore) | Osama |
-| R5 | open (flow) | bump→`dbBTerm` binding reliably populated post-unfold? | Osama/flow |
+| R1+R2 | **OPEN (blocker)** | Unfolded FAMILY (`dbUnfoldedInst` + `dbUnfoldedITerm`/`BTerm`/`Net`), vertex id on unfolded ITERM — landed with bump-elimination? owner? | Osama |
+| R3 | **OPEN (hardened)** | Rebuild-notification hook — now a hard dep of the unfolded family (vertex ids on rebuilt objects); persist-vs-rebuild (save/restore) | Osama |
+| R5 | open (flow) | bump→`dbBTerm` binding reliably populated post-unfold? NB: #10077 read order makes net-less bmap rows silently unbindable — defin-side rebind is a possible ask (see A9) | Osama/flow |
+| R5a | RESOLVED (implemented) | connected-bump checks STA-3005/3006; passive-bump contract; spares exempt + filtered | — |
 | R6 | RESOLVED | new `dbChipRSeg`/`dbChipCapNode`/`dbChipCCSeg` (Arthur+Matt, impl started); STA writes a new translator | Arthur |
 | R7 | RESOLVED | IO cells interior; remaining: confirm RCX targets net2 → SPEF | Arthur |
-| R4 · R9 · R11 | RESOLVED | net enumeration done; unbound-bump query exists; ETM `.lib` already loaded — remaining work is STA-side | — |
+| R4 · R9 · R11 | RESOLVED/DONE | net enumeration done; unbound-bump handling implemented (R9 DONE); ETM `.lib` already loaded — remaining ETM work is STA-side | — |
 | R8 · R10 | nice-to-have | callbacks (TODO 4); `dbMarker` chip cases (TODO 5) | Osama |
 | R12 | nice-to-have | 3dbv glob: warn on 0-match / support multi-`*` (field test) | Osama |

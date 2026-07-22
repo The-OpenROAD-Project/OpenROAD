@@ -72,7 +72,26 @@ becomes just a `dbInst`.** Consequences for STA (drive the re-frame in
   classes. Do not hard-code against `dbChipBumpInst*` identity; design Track A
   around path-qualified `dbInst` identity so it survives the elimination.
 
-## dbNetwork adapter mechanisms (from PR #10417 — UNMERGED, to PORT)
+## DECIDED 2026-07-22: flat bump-pin model (replaces the synthetic bump Pin)
+
+The odb architect's critique (accepted): the synthetic bump `Pin*` (tagged
+`dbUnfoldedChipBumpInst*`, forced BIDIRECT, vertex-id side-map) is neither
+"flat" (real leaf iterm as vertex) nor "modular" (transparent modBTerm-style
+boundary) — an invented third category, and the forced BIDIRECT is the tell.
+**Adopt flat: the bump pin IS the pad inst's single `dbITerm`** (guaranteed by
+STA-3006), plain `kDbIterm`, vertex id via `iterm->staVertexId()`, direction
+from the pad MTerm (LEF INOUT — verified on all 4225 ASAP7 bumps → bidirect
+*derived*, not forced). Modular/transparent rejected: bumps are electrically
+real (inter-chip RC cap nodes bind there, Track D); no shared flat net spans
+blocks. Pad iterms are already graph pins via the flat inner-inst walk — the
+synthetic layer was a duplicate (and the root cause of the `-through` E7 gap).
+The whole synthetic apparatus (tag 4, side-map, BIDIRECT branch, synthetic
+Ports, bump accessor special-cases) is **deleted**, not kept in parallel.
+Survives the coming unfolded family (identity swaps raw→`dbUnfoldedITerm`
+like every interior iterm) and IS the bump-elimination end-state (bump =
+`dbInst`) adopted early. See the roadmap's flat bump-pin redesign section.
+
+## dbNetwork adapter mechanisms (from PR #10417 — UNMERGED, ported; synthetic bump parts now superseded by the flat bump-pin redesign)
 
 These mechanisms are **not in HEAD** — they live on the `3dic-sta-v1` branch
 (PR #10417). `dbSta::postRead3Dbx` on HEAD is an empty stub and `dbNetwork.cc`
