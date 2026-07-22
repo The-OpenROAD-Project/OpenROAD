@@ -5624,13 +5624,11 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   // and populates connection_segs so that the CUGR tree can be updated.
   if (connectRouting(db_net1, db_net2)) {
     saveGuides({db_net1});
-    if (!use_cugr_) {
-      net1->setIsMergedNet(true);
-      net1->setMergedNet(db_net2);
-      net1->setDirtyNet(false);
-      net2->setIsMergedNet(true);
-      net2->setMergedNet(db_net1);
-    }
+    net1->setIsMergedNet(true);
+    net1->setMergedNet(db_net2);
+    net1->setDirtyNet(false);
+    net2->setIsMergedNet(true);
+    net2->setMergedNet(db_net1);
   } else {
     if (use_cugr_) {
       // Fall back to a full dirty-net reroute on the CUGR path.
