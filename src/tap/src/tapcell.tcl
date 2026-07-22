@@ -72,7 +72,7 @@ proc tapcell { args } {
   if { [info exists keys(-row_min_width)] } {
     set row_min_width $keys(-row_min_width)
   }
-  
+
   set row_min_height 0
   if { [info exists keys(-row_min_height)] } {
     set row_min_height $keys(-row_min_height)
@@ -172,7 +172,7 @@ proc tapcell { args } {
     }
   }
 
-  tap::run $endcap_master $halo_x $halo_y $row_min_width $cnrcap_nwin_master \
+  tap::run $endcap_master $halo_x $halo_y $row_min_width $row_min_height $cnrcap_nwin_master \
     $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master \
     $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master \
     $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master \
