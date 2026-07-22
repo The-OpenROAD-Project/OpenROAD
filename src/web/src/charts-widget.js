@@ -5,6 +5,7 @@
 
 import { getThemeColors } from './theme.js';
 import { isStaticMode } from './ui-utils.js';
+import { downloadCsv } from './image-export.js';
 
 // Layout margins (pixels)
 export const kLeftMargin = 60;
@@ -193,10 +194,17 @@ export class ChartsWidget {
             this._updateBtn.style.display = 'none';
         }
 
+        this._csvBtn = document.createElement('button');
+        this._csvBtn.className = 'timing-btn';
+        this._csvBtn.textContent = 'CSV';
+        this._csvBtn.title = 'Export the current chart data as CSV';
+        this._csvBtn.addEventListener('click', () => this._exportCsv());
+
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
 
         toolbar.appendChild(this._updateBtn);
+        toolbar.appendChild(this._csvBtn);
         toolbar.appendChild(this._statusLabel);
         el.appendChild(toolbar);
 
@@ -707,6 +715,36 @@ export class ChartsWidget {
         } catch (err) {
             console.error('Fanout bin select failed:', err);
         }
+    }
+
+    // ---- CSV export ----
+
+    // Export the currently displayed chart's data as CSV: the active debug
+    // line chart (x + each series), or the slack/fanout histogram bins.
+    _exportCsv() {
+        if (this._activeDebugChart >= 0) {
+            const chart = this._debugCharts[this._activeDebugChart];
+            if (!chart || !chart.points) { return; }
+            const header = [chart.x_label || 'x',
+                            ...(chart.y_labels || []).map(String)];
+            const rows = [header];
+            for (const pt of chart.points) {
+                rows.push([pt.x, ...(pt.ys || [])]);
+            }
+            downloadCsv(rows, (chart.name || 'chart') + '.csv');
+            return;
+        }
+
+        const bins = this._histogramData?.bins;
+        if (!bins || bins.length === 0) { return; }
+        const unit = this._histogramData.time_unit || '';
+        const lowerCol = unit ? `lower (${unit})` : 'lower';
+        const upperCol = unit ? `upper (${unit})` : 'upper';
+        const rows = [[lowerCol, upperCol, 'count']];
+        for (const bin of bins) {
+            rows.push([bin.lower, bin.upper, bin.count]);
+        }
+        downloadCsv(rows, 'histogram.csv');
     }
 
     // ---- Debug line charts (GPL HPWL, density, etc.) ----

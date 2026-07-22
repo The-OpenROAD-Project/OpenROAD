@@ -3,6 +3,7 @@
 
 #include "web_viewer_hook.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -13,7 +14,11 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/array.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
 #include "gui/gui.h"
+#include "utl/Logger.h"
 #include "web_chart.h"
 
 namespace web {
@@ -310,6 +315,181 @@ std::vector<WebChart*> WebViewerHook::charts() const
     out.push_back(c.get());
   }
   return out;
+}
+
+//------------------------------------------------------------------------------
+// Custom UI registry
+//------------------------------------------------------------------------------
+
+template <class T>
+std::string WebViewerHook::registerCustom(std::vector<T>& vec,
+                                          int& next_id,
+                                          const char* prefix,
+                                          const std::string& name,
+                                          T item,
+                                          bool* is_duplicate)
+{
+  *is_duplicate = false;
+  std::string key = name;
+  std::string json;
+  {
+    std::lock_guard<std::mutex> lock(custom_ui_mutex_);
+    const auto exists = [&vec](const std::string& k) {
+      return std::any_of(
+          vec.begin(), vec.end(), [&k](const T& e) { return e.key == k; });
+    };
+    if (key.empty()) {
+      // Auto-generate a unique key, mirroring gui::MainWindow.
+      do {
+        key = prefix + std::to_string(next_id++);
+      } while (exists(key));
+    } else if (exists(key)) {
+      // Leave the caller to log the tool-specific error (with a literal id).
+      *is_duplicate = true;
+      return key;
+    }
+    item.key = key;
+    vec.push_back(std::move(item));
+    json = customUiJsonLocked();
+  }
+  // Broadcast outside the lock: it synchronously invokes session send
+  // callbacks, which must not run under custom_ui_mutex_.
+  sessions_.broadcast(json);
+  return key;
+}
+
+template <class T>
+void WebViewerHook::removeCustom(std::vector<T>& vec, const std::string& name)
+{
+  std::string json;
+  bool changed = false;
+  {
+    std::lock_guard<std::mutex> lock(custom_ui_mutex_);
+    const auto before = vec.size();
+    vec.erase(std::remove_if(vec.begin(),
+                             vec.end(),
+                             [&name](const T& e) { return e.key == name; }),
+              vec.end());
+    changed = vec.size() != before;  // idempotent
+    if (changed) {
+      json = customUiJsonLocked();
+    }
+  }
+  if (changed) {
+    sessions_.broadcast(json);  // outside the lock (see registerCustom)
+  }
+}
+
+std::string WebViewerHook::addToolbarButton(utl::Logger* logger,
+                                            const std::string& name,
+                                            const std::string& text,
+                                            const std::string& script,
+                                            const std::string& icon,
+                                            const std::string& tooltip,
+                                            bool toggle,
+                                            const std::string& script_off,
+                                            bool echo)
+{
+  bool is_duplicate = false;
+  const std::string key = registerCustom(custom_buttons_,
+                                         next_button_id_,
+                                         "button",
+                                         name,
+                                         CustomButton{.key = {},
+                                                      .text = text,
+                                                      .script = script,
+                                                      .icon = icon,
+                                                      .tooltip = tooltip,
+                                                      .script_off = script_off,
+                                                      .toggle = toggle,
+                                                      .echo = echo},
+                                         &is_duplicate);
+  if (is_duplicate) {
+    logger->error(utl::WEB, 51, "Toolbar button {} already defined.", key);
+  }
+  return key;
+}
+
+void WebViewerHook::removeToolbarButton(const std::string& name)
+{
+  removeCustom(custom_buttons_, name);
+}
+
+std::string WebViewerHook::addMenuItem(utl::Logger* logger,
+                                       const std::string& name,
+                                       const std::string& path,
+                                       const std::string& text,
+                                       const std::string& script,
+                                       const std::string& shortcut,
+                                       bool echo)
+{
+  bool is_duplicate = false;
+  // Default menu path mirrors gui::MainWindow ("Custom Scripts").
+  const std::string menu_path = path.empty() ? "Custom Scripts" : path;
+  const std::string key = registerCustom(custom_menu_items_,
+                                         next_menu_id_,
+                                         "action",
+                                         name,
+                                         CustomMenuItem{.key = {},
+                                                        .path = menu_path,
+                                                        .text = text,
+                                                        .script = script,
+                                                        .shortcut = shortcut,
+                                                        .echo = echo},
+                                         &is_duplicate);
+  if (is_duplicate) {
+    logger->error(utl::WEB, 52, "Menu item {} already defined.", key);
+  }
+  return key;
+}
+
+void WebViewerHook::removeMenuItem(const std::string& name)
+{
+  removeCustom(custom_menu_items_, name);
+}
+
+std::string WebViewerHook::customUiJson() const
+{
+  std::lock_guard<std::mutex> lock(custom_ui_mutex_);
+  return customUiJsonLocked();
+}
+
+std::string WebViewerHook::customUiJsonLocked() const
+{
+  boost::json::object root;
+  root["type"] = "custom_ui";
+
+  boost::json::array menu;
+  menu.reserve(custom_menu_items_.size());
+  for (const auto& m : custom_menu_items_) {
+    boost::json::object o;
+    o["key"] = m.key;
+    o["path"] = m.path;
+    o["text"] = m.text;
+    o["script"] = m.script;
+    o["shortcut"] = m.shortcut;
+    o["echo"] = m.echo;
+    menu.emplace_back(std::move(o));
+  }
+  root["menu"] = std::move(menu);
+
+  boost::json::array toolbar;
+  toolbar.reserve(custom_buttons_.size());
+  for (const auto& b : custom_buttons_) {
+    boost::json::object o;
+    o["key"] = b.key;
+    o["text"] = b.text;
+    o["script"] = b.script;
+    o["icon"] = b.icon;
+    o["tooltip"] = b.tooltip;
+    o["toggle"] = b.toggle;
+    o["script_off"] = b.script_off;
+    o["echo"] = b.echo;
+    toolbar.emplace_back(std::move(o));
+  }
+  root["toolbar"] = std::move(toolbar);
+
+  return boost::json::serialize(root);
 }
 
 }  // namespace web

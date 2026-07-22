@@ -3309,4 +3309,358 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
   return resp;
 }
 
+// ─── EditHandler: Global Connect + Insert Buffer ─────────────────────────────
+
+namespace {
+// Classify a net terminal as a driver, mirroring the Qt Insert Buffer dialog
+// (dbDescriptors.cpp): output/inout iterms and input/inout/feedthru bterms
+// drive the net.
+bool itermIsDriver(odb::dbITerm* iterm)
+{
+  const odb::dbIoType io = iterm->getIoType();
+  return io == odb::dbIoType::OUTPUT || io == odb::dbIoType::INOUT;
+}
+bool btermIsDriver(odb::dbBTerm* bterm)
+{
+  const odb::dbIoType io = bterm->getIoType();
+  return io == odb::dbIoType::INPUT || io == odb::dbIoType::INOUT
+         || io == odb::dbIoType::FEEDTHRU;
+}
+
+// Stable string id for a net pin, used to reference it across requests.
+std::string itermId(odb::dbITerm* it)
+{
+  return "I:" + it->getInst()->getName() + "/" + it->getMTerm()->getName();
+}
+std::string btermId(odb::dbBTerm* bt)
+{
+  return "B:" + bt->getName();
+}
+}  // namespace
+
+EditHandler::EditHandler(std::shared_ptr<TileGenerator> gen,
+                         std::shared_ptr<TclEvaluator> tcl_eval)
+    : gen_(std::move(gen)), tcl_eval_(std::move(tcl_eval))
+{
+}
+
+void EditHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("global_connect_info",
+        WebSocketRequest::kGlobalConnectInfo,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGlobalConnectInfo(req);
+        });
+  d.add("global_connect_delete",
+        WebSocketRequest::kGlobalConnectDelete,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGlobalConnectDelete(req);
+        });
+  d.add("global_connect_apply",
+        WebSocketRequest::kGlobalConnectApply,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGlobalConnectApply(req);
+        });
+  d.add("buffer_info",
+        WebSocketRequest::kBufferInfo,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleBufferInfo(req);
+        });
+  d.add("insert_buffer",
+        WebSocketRequest::kInsertBuffer,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleInsertBuffer(req);
+        });
+}
+
+WebSocketResponse EditHandler::handleGlobalConnectInfo(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    boost::json::object root;
+    boost::json::array rules;
+    boost::json::array nets;
+    boost::json::array regions;
+    if (block != nullptr) {
+      for (auto* gc : block->getGlobalConnects()) {
+        boost::json::object o;
+        o["inst"] = gc->getInstPattern();
+        o["pin"] = gc->getPinPattern();
+        odb::dbNet* net = gc->getNet();
+        o["net"] = net != nullptr ? net->getName() : std::string();
+        odb::dbRegion* region = gc->getRegion();
+        o["region"] = region != nullptr ? std::string(region->getName())
+                                        : std::string();
+        rules.emplace_back(std::move(o));
+      }
+      // Net combo lists only special (power/ground) nets, like the Qt dialog.
+      for (auto* net : block->getNets()) {
+        if (net->isSpecial()) {
+          nets.emplace_back(net->getName());
+        }
+      }
+      for (auto* region : block->getRegions()) {
+        regions.emplace_back(std::string(region->getName()));
+      }
+    }
+    root["rules"] = std::move(rules);
+    root["nets"] = std::move(nets);
+    root["regions"] = std::move(regions);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err
+        = std::string("global_connect_info error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleGlobalConnectDelete(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    // Identify the rule by its (inst, pin, net, region) fields rather than a
+    // positional index, so a concurrent add/delete can't shift indices and
+    // make us destroy the wrong rule.
+    const std::string inst = std::string(req.json.at("inst").as_string());
+    const std::string pin = std::string(req.json.at("pin").as_string());
+    const std::string net = std::string(req.json.at("net").as_string());
+    const std::string region = std::string(req.json.at("region").as_string());
+    boost::json::object root;
+    root["ok"] = 0;
+    if (block != nullptr) {
+      for (auto* gc : block->getGlobalConnects()) {
+        odb::dbNet* gc_net = gc->getNet();
+        odb::dbRegion* gc_region = gc->getRegion();
+        const std::string gc_net_name
+            = gc_net != nullptr ? gc_net->getName() : std::string();
+        const std::string gc_region_name
+            = gc_region != nullptr ? std::string(gc_region->getName())
+                                   : std::string();
+        if (gc->getInstPattern() == inst && gc->getPinPattern() == pin
+            && gc_net_name == net && gc_region_name == region) {
+          odb::dbGlobalConnect::destroy(gc);
+          root["ok"] = 1;
+          break;
+        }
+      }
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err
+        = std::string("global_connect_delete error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleGlobalConnectApply(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    const bool force
+        = req.json.contains("force") && req.json.at("force").as_bool();
+    boost::json::object root;
+    // Guard the empty case ourselves so the client shows a friendly message
+    // instead of the raw ODB-0378 "Global connections are not set up." warning.
+    if (block == nullptr || block->getGlobalConnects().empty()) {
+      root["ok"] = true;
+      root["had_rules"] = false;
+      root["connected"] = 0;
+    } else {
+      const int connected = block->globalConnect(force, /*verbose=*/false);
+      root["ok"] = true;
+      root["had_rules"] = true;
+      root["connected"] = connected;
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err
+        = std::string("global_connect_apply error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleBufferInfo(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    const std::string net_name = std::string(req.json.at("net").as_string());
+    boost::json::object root;
+    boost::json::array drivers;
+    boost::json::array loads;
+    odb::dbNet* net = block ? block->findNet(net_name.c_str()) : nullptr;
+    if (net == nullptr) {
+      root["can_buffer"] = false;
+      root["error"] = "Net not found: " + net_name;
+      writePayload(resp, root);
+      return resp;
+    }
+    for (auto* iterm : net->getITerms()) {
+      boost::json::object p;
+      const std::string id = itermId(iterm);
+      const bool drv = itermIsDriver(iterm);
+      p["id"] = id;
+      p["label"] = id.substr(2) + (drv ? " (Driver)" : " (Load)");
+      (drv ? drivers : loads).emplace_back(std::move(p));
+    }
+    for (auto* bterm : net->getBTerms()) {
+      boost::json::object p;
+      p["id"] = btermId(bterm);
+      const bool drv = btermIsDriver(bterm);
+      p["label"] = bterm->getName() + (drv ? " (Driver Port)" : " (Load Port)");
+      (drv ? drivers : loads).emplace_back(std::move(p));
+    }
+
+    // Buffer masters = db masters mapping to a Liberty buffer cell.
+    boost::json::array masters;
+    sta::dbSta* sta = gen_->getSta();
+    sta::dbNetwork* network = sta != nullptr ? sta->getDbNetwork() : nullptr;
+    if (network != nullptr) {
+      std::vector<std::string> names;
+      for (auto* lib : gen_->getDb()->getLibs()) {
+        for (auto* master : lib->getMasters()) {
+          sta::LibertyCell* cell
+              = network->libertyCell(network->dbToSta(master));
+          if (cell != nullptr && cell->isBuffer()) {
+            names.push_back(master->getName());
+          }
+        }
+      }
+      std::sort(names.begin(), names.end());
+      for (const auto& n : names) {
+        masters.emplace_back(n);
+      }
+    }
+
+    root["can_buffer"] = drivers.size() <= 1;
+    root["drivers"] = std::move(drivers);
+    root["loads"] = std::move(loads);
+    root["masters"] = std::move(masters);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("buffer_info error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse EditHandler::handleInsertBuffer(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    // Serialize this DB mutation against the Tcl write path and other edits.
+    std::lock_guard<std::mutex> db_lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    const std::string net_name = std::string(req.json.at("net").as_string());
+    const std::string mode = std::string(req.json.at("mode").as_string());
+    const std::string master_name
+        = std::string(req.json.at("master").as_string());
+    const std::string buf_name
+        = req.json.contains("buf_name")
+              ? std::string(req.json.at("buf_name").as_string())
+              : "";
+    const std::string new_net_name
+        = req.json.contains("net_name")
+              ? std::string(req.json.at("net_name").as_string())
+              : "";
+
+    odb::dbNet* net = block ? block->findNet(net_name.c_str()) : nullptr;
+    if (net == nullptr) {
+      throw std::runtime_error("Net not found: " + net_name);
+    }
+
+    // Resolve the master by name (odb searches across all libs).
+    odb::dbMaster* master = gen_->getDb()->findMaster(master_name.c_str());
+    if (master == nullptr) {
+      throw std::runtime_error("Buffer master not found: " + master_name);
+    }
+
+    // Build id → terminal map for this net (same ids as buffer_info).
+    std::map<std::string, odb::dbObject*> pin_map;
+    for (auto* iterm : net->getITerms()) {
+      pin_map[itermId(iterm)] = iterm;
+    }
+    for (auto* bterm : net->getBTerms()) {
+      pin_map[btermId(bterm)] = bterm;
+    }
+
+    const auto& pins = req.json.at("pins").as_array();
+    const char* buf_base
+        = buf_name.empty() ? kDefaultBufBaseName : buf_name.c_str();
+    const char* net_base
+        = new_net_name.empty() ? kDefaultNetBaseName : new_net_name.c_str();
+
+    odb::dbInst* inst = nullptr;
+    if (mode == "driver") {
+      if (pins.empty()) {
+        throw std::runtime_error("No driver pin selected.");
+      }
+      auto it = pin_map.find(std::string(pins.front().as_string()));
+      if (it == pin_map.end()) {
+        throw std::runtime_error("Driver pin not on net.");
+      }
+      inst = net->insertBufferAfterDriver(it->second,
+                                          master,
+                                          nullptr,
+                                          buf_base,
+                                          net_base,
+                                          odb::dbNameUniquifyType::IF_NEEDED);
+    } else {
+      std::vector<odb::dbObject*> loads;
+      for (const auto& pin : pins) {
+        auto it = pin_map.find(std::string(pin.as_string()));
+        if (it != pin_map.end()) {
+          loads.push_back(it->second);
+        }
+      }
+      if (loads.empty()) {
+        throw std::runtime_error("No load pins selected.");
+      }
+      inst = net->insertBufferBeforeLoads(loads,
+                                          master,
+                                          nullptr,
+                                          buf_base,
+                                          net_base,
+                                          odb::dbNameUniquifyType::IF_NEEDED);
+    }
+
+    // The buffer is left PLACED at the pin (insertBuffer*'s default) so it
+    // renders immediately — the web tile index only draws placed instances
+    // (search.cpp).  PLACED does not pin it: detailed_placement still
+    // legalizes/moves it (only LOCKED/FIRM are fixed).
+
+    boost::json::object root;
+    root["ok"] = inst != nullptr;
+    root["inst"] = inst != nullptr ? inst->getName() : std::string();
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("insert_buffer error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 }  // namespace web

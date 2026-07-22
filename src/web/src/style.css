@@ -193,8 +193,28 @@ html, body {
     z-index: 10002;
     padding: 4px 0;
 }
-#menu-bar .menu-label.open .menu-dropdown {
+/* Only the top-level dropdown opens with its label; nested submenus
+   (deeper .menu-dropdown) are governed by the hover rule below. */
+#menu-bar .menu-label.open > .menu-dropdown {
     display: block;
+}
+/* Nested submenu: flies out to the right of its parent row on hover. */
+#menu-bar .menu-item.submenu-item {
+    position: relative;
+}
+#menu-bar .menu-dropdown.submenu {
+    top: -4px;
+    left: 100%;
+}
+#menu-bar .menu-item.submenu-item:hover > .menu-dropdown.submenu {
+    display: block;
+}
+#menu-bar .submenu-arrow {
+    margin-left: 24px;
+    color: var(--fg-muted);
+}
+#menu-bar .menu-item:hover > .submenu-arrow {
+    color: var(--fg-secondary);
 }
 #menu-bar .menu-item {
     display: flex;
@@ -227,6 +247,53 @@ html, body {
     height: 1px;
     background: var(--border);
     margin: 4px 8px;
+}
+
+/* Toolbar (Tcl-registered custom buttons via create_toolbar_button) */
+#toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--bg-input);
+    z-index: 10000;
+}
+/* Collapse entirely when no buttons are registered. */
+#toolbar:empty {
+    display: none;
+}
+#toolbar .toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 10px;
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+#toolbar .toolbar-button:hover {
+    background: var(--bg-hover);
+}
+#toolbar .toolbar-button.active {
+    background: var(--bg-selected);
+    color: var(--fg-white);
+    border-color: var(--bg-selected);
+}
+#toolbar .toolbar-button .toolbar-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+#toolbar .toolbar-button .toolbar-icon img {
+    width: 14px;
+    height: 14px;
+    display: block;
 }
 
 /* Modal dialog (Open/Save DB) */
@@ -302,6 +369,46 @@ html, body {
     opacity: 0.5;
     cursor: default;
 }
+
+/* Editing-utility dialogs (Global Connect / Insert Buffer) */
+.gc-dialog, .buf-dialog { min-width: 520px; max-width: 680px; }
+.edit-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    font-size: 12px;
+}
+.edit-field > span { min-width: 96px; color: var(--fg-muted); }
+.edit-field input, .edit-field select { flex: 1; }
+.gc-table {
+    display: flex;
+    flex-direction: column;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--bg-input);
+    margin-bottom: 8px;
+}
+.gc-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.5fr 1fr 24px;
+    gap: 6px;
+    padding: 3px 6px;
+    align-items: center;
+    font-size: 12px;
+}
+.gc-row.gc-head { background: var(--bg-header); color: var(--fg-muted); font-weight: bold; }
+.gc-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-form { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--bg-input); padding-top: 8px; }
+.gc-invalid { outline: 1px solid var(--error); }
+.buf-pins {
+    flex: 1;
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--bg-input);
+    padding: 4px;
+}
+.buf-pin { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 0; }
 
 /* File browser dialog */
 .file-browser-dialog {

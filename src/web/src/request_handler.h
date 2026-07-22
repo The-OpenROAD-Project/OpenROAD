@@ -70,6 +70,16 @@ struct TclEvaluator
     Result r;
     r.result = Tcl_GetStringResult(interp);
     r.is_error = (rc != TCL_OK);
+    // Flush Tcl stdout/stderr so `puts` output — which sta::ReportTcl
+    // encapsulates into utl::Logger — reaches WebLogSink and the browser
+    // console.  The web eval path has no Tcl event loop to flush the channel
+    // buffer like the CLI/GUI do, so a `puts` would otherwise never surface.
+    if (Tcl_Channel out = Tcl_GetStdChannel(TCL_STDOUT)) {
+      Tcl_Flush(out);
+    }
+    if (Tcl_Channel err = Tcl_GetStdChannel(TCL_STDERR)) {
+      Tcl_Flush(err);
+    }
     if (drain_output) {
       drain_output();
     }
@@ -123,6 +133,12 @@ struct WebSocketRequest
     kDebugCharts,
     kGet3DData,
     kOverlayTile,
+    kCustomUi,
+    kGlobalConnectInfo,
+    kGlobalConnectDelete,
+    kGlobalConnectApply,
+    kBufferInfo,
+    kInsertBuffer,
     kUnknown
   };
 
@@ -264,6 +280,31 @@ class TclHandler
   WebSocketResponse handleTclComplete(const WebSocketRequest& req);
 
  private:
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles DB-editing utilities: Global Connect (list/delete rules; add/apply/
+// clear go through existing Tcl commands via TCL_EVAL) and Insert Buffer
+// (list pins/masters + perform the insertion through the odb API).
+class EditHandler
+{
+ public:
+  EditHandler(std::shared_ptr<TileGenerator> gen,
+              std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  // Global Connect
+  WebSocketResponse handleGlobalConnectInfo(const WebSocketRequest& req);
+  WebSocketResponse handleGlobalConnectDelete(const WebSocketRequest& req);
+  WebSocketResponse handleGlobalConnectApply(const WebSocketRequest& req);
+  // Insert Buffer
+  WebSocketResponse handleBufferInfo(const WebSocketRequest& req);
+  WebSocketResponse handleInsertBuffer(const WebSocketRequest& req);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  // Serializes DB access against the Tcl write path (and other edits); the
+  // same mutex TclEvaluator holds while running commands that mutate odb.
   std::shared_ptr<TclEvaluator> tcl_eval_;
 };
 

@@ -402,6 +402,18 @@ class TileGenerator
                  double dbu_per_pixel,
                  const TileVisibility& vis) const;
 
+  // Composite the design (or region) into a top-down RGBA8 pixel buffer and
+  // report its dimensions via out_w/out_h.  This is the shared core of
+  // saveImage (which then PNG-encodes) and animated-GIF frame capture (which
+  // feeds the buffer to the GIF encoder).  Returns an empty buffer and leaves
+  // out_w/out_h at 0 on error (no design / invalid dimensions).
+  std::vector<unsigned char> renderImageBuffer(const odb::Rect& region,
+                                               int width_px,
+                                               double dbu_per_pixel,
+                                               const TileVisibility& vis,
+                                               int& out_w,
+                                               int& out_h) const;
+
   // Render timing path overlay (colored rects + flight lines) to PNG bytes.
   std::vector<unsigned char> renderOverlayPng(
       int width_px,

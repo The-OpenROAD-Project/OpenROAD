@@ -11,6 +11,7 @@ globalThis.window = dom.window;
 globalThis.Event = dom.window.Event;
 globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.HTMLCanvasElement = dom.window.HTMLCanvasElement;
+globalThis.XMLSerializer = dom.window.XMLSerializer;
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.localStorage = dom.window.localStorage;
 globalThis.matchMedia = globalThis.matchMedia || (() => ({

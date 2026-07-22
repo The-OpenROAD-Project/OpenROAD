@@ -4,6 +4,14 @@
 // NetlistsVG is used to render a Yosys-compatible JSON netlist into an SVG.
 // It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
 
+import {
+    downloadBlob,
+    svgToString,
+    rasterizeSvg,
+    downloadUrl,
+    copyPngToClipboard,
+} from './image-export.js';
+
 export class SchematicWidget {
     constructor(container, appState) {
         this.container = container;
@@ -29,6 +37,9 @@ export class SchematicWidget {
             '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
             '<button id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
             '<button id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
+            '<button id="schematic-save-svg" title="Save schematic as SVG (vector)">SVG</button>' +
+            '<button id="schematic-save-png" title="Save schematic as PNG (2x)">PNG</button>' +
+            '<button id="schematic-copy" title="Copy schematic image to clipboard">Copy</button>' +
             '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>';
         this.element.appendChild(this.controls);
 
@@ -47,6 +58,9 @@ export class SchematicWidget {
         this.controls.querySelector('#schematic-zoom-out').addEventListener('click', () => this._zoomStep(1 / 1.5));
         this.controls.querySelector('#schematic-select').addEventListener('click', () => this._toggleSelectMode());
         this.controls.querySelector('#schematic-zoom-to').addEventListener('click', () => this._zoomToSelected());
+        this.controls.querySelector('#schematic-save-svg').addEventListener('click', () => this._exportSvg());
+        this.controls.querySelector('#schematic-save-png').addEventListener('click', () => this._exportPng());
+        this.controls.querySelector('#schematic-copy').addEventListener('click', () => this._copyImage());
 
         this.appState.schematicWidget = this;
 
@@ -343,6 +357,37 @@ export class SchematicWidget {
 
     setStatus(msg) {
         this.controls.querySelector('#schematic-status').textContent = msg;
+    }
+
+    // ── Image export ───────────────────────────────────────────────────────────
+
+    _exportSvg() {
+        if (!this._svgEl) { this.setStatus('No schematic to export.'); return; }
+        const svg = svgToString(this._svgEl);
+        downloadBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }),
+                     'schematic.svg');
+    }
+
+    async _exportPng() {
+        if (!this._svgEl) { this.setStatus('No schematic to export.'); return; }
+        try {
+            const url = await rasterizeSvg(this._svgEl, 2);
+            downloadUrl(url, 'schematic.png');
+        } catch (e) {
+            this.setStatus('PNG export failed.');
+        }
+    }
+
+    async _copyImage() {
+        if (!this._svgEl) { this.setStatus('No schematic to export.'); return; }
+        try {
+            const url = await rasterizeSvg(this._svgEl, 2);
+            const ok = await copyPngToClipboard(url);
+            this.setStatus(ok ? 'Schematic copied to clipboard.'
+                              : 'Clipboard not available.');
+        } catch (e) {
+            this.setStatus('Copy failed.');
+        }
     }
 
     // ── Render ───────────────────────────────────────────────────────────────
