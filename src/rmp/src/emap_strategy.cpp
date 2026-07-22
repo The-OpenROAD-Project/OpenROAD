@@ -284,10 +284,7 @@ void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
       // If pin isn't a primary input or output add to deleted list. The only
       // way this can happen is if a net is only used within the cutset, and
       // in that case we want to delete it.
-      sta::Instance* inst = db_network->instance(pin);
-      sta::LibertyCell* cell = db_network->libertyCell(inst);
-      if (!primary_input_or_output_nets.contains(connected_net)
-          && (!cell || cell->isSequential())) {
+      if (!primary_input_or_output_nets.contains(connected_net)) {
         db_network->deleteNet(connected_net);
       }
     }
