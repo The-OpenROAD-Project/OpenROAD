@@ -1,4 +1,3 @@
-import utl
 import rcx
 
 # Thin wrapper over api defined in ext.i (and reused by ext-py.i)
@@ -30,7 +29,9 @@ def extract_parasitics(
 
     opts = rcx.ExtractOptions()
 
-    opts.ext_model_file = ext_model_file
+    if ext_model_file is not None:
+        opts.ext_model_file = ext_model_file
+
     opts.corner_cnt = corner_cnt
     opts.corner = corner
     opts.max_res = max_res

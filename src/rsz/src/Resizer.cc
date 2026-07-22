@@ -44,6 +44,7 @@
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -202,7 +203,7 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
                                 sta::LibertyPort* input_port,
                                 LibertyPortVec& ports)
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }
@@ -354,7 +355,7 @@ Resizer::Resizer(utl::Logger* logger,
   estimate_parasitics_ = estimate_parasitics;
   db_network_ = sta->getDbNetwork();
   resized_multi_output_insts_ = sta::InstanceSet(db_network_);
-  db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
+  db_cbk_ = std::make_unique<OdbCallBack>(this, db_network_);
 
   db_network_->addObserver(this);
 
@@ -1573,7 +1574,7 @@ bool Resizer::isCombinational(sta::LibertyCell* cell) const
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials());
+          && !cell->isSequential());
 }
 
 std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
@@ -1716,6 +1717,7 @@ void Resizer::resizePreamble()
   findBuffers();
   findTargetLoads();
   findFastBuffers();
+  computeSlewShapeFactor();
 }
 
 void Resizer::runRepairSetupPreamble()
@@ -3334,7 +3336,7 @@ bool Resizer::isRegister(sta::Vertex* vertex)
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    return cell && cell->hasSequentials();
+    return cell && cell->isSequential();
   }
   return false;
 }
@@ -4810,6 +4812,7 @@ void Resizer::repairDesign(double max_wire_length,
                            double cap_margin,
                            double buffer_gain,
                            bool match_cell_footprint,
+                           bool reroute,
                            bool verbose)
 {
   utl::Timer timer;
@@ -4822,6 +4825,7 @@ void Resizer::repairDesign(double max_wire_length,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
+  utl::SetAndRestore set_reroute(repair_design_->reroute_, reroute);
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
   logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
@@ -4830,6 +4834,90 @@ void Resizer::repairDesign(double max_wire_length,
 int Resizer::repairDesignBufferCount() const
 {
   return repair_design_->insertedBufferCount();
+}
+
+float Resizer::getRerouteResistanceReduction()
+{
+  return kMinResistanceReduction;
+}
+
+bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
+{
+  // Res-aware rerouting only makes sense with global-routing parasitics.
+  if (estimate_parasitics_->getParasiticsSrc()
+      != est::ParasiticsSrc::kGlobalRouting) {
+    return false;
+  }
+
+  sta::Net* net = network_->net(drvr_pin);
+  if (net == nullptr || dontTouch(drvr_pin)) {
+    return false;
+  }
+
+  odb::dbNet* db_net = db_network_->flatNet(net);
+  if (db_net == nullptr || db_net->isSpecial()) {
+    return false;
+  }
+
+  // Already scheduled for res-aware routing in a prior iteration.
+  if (global_router_->isNetResAware(db_net)) {
+    return false;
+  }
+
+  // Unconstrained nets have no timing path; res-aware routing will waste
+  // valuable resources.
+  const sta::Slack slack = sta_->slack(graph_->pinDrvrVertex(drvr_pin), max_);
+  if (slack == sta::INF) {
+    return false;
+  }
+
+  // Short nets (<=3 gcells) have negligible resistance; skip the reroute.
+  const int kShortNetGCellThreshold = 3;
+  const int tile_size = global_router_->getTileSize();
+  if (tile_size > 0) {
+    const grt::NetRouteMap& routes = global_router_->getRoutes();
+    auto it = routes.find(db_net);
+    if (it != routes.end()) {
+      int gcell_length = 0;
+      for (const grt::GSegment& seg : it->second) {
+        if (!seg.isVia()) {
+          gcell_length += seg.length() / tile_size;
+        }
+      }
+      if (gcell_length <= kShortNetGCellThreshold) {
+        return false;
+      }
+    }
+  }
+
+  // Only reroute if moving to the lowest-resistance layer saves enough
+  // resistance to justify the disruption.
+  const float resistance = global_router_->getFRNetResistance(db_net);
+  const float estimated_resistance
+      = global_router_->getFRNetResistanceOnMinResistanceLayer(db_net);
+  float reduction_ratio = 0.0f;
+  if (resistance > 0.0f) {
+    reduction_ratio = (resistance - estimated_resistance) / resistance;
+  }
+
+  if (reduction_ratio < kMinResistanceReduction) {
+    return false;
+  }
+
+  global_router_->setResistanceAware(true);
+  global_router_->addDirtyNet(db_net);
+  global_router_->setNetIsResAware(db_net, true);
+  estimate_parasitics_->parasiticsInvalid(db_net);
+
+  debugPrint(logger_,
+             utl::RSZ,
+             "reroute",
+             1,
+             "RepairDesign rerouting net {} (resistance {} -> {} estimated)",
+             db_net->getName(),
+             resistance,
+             estimated_resistance);
+  return true;
 }
 
 void Resizer::repairNet(sta::Net* net,
@@ -6538,9 +6626,50 @@ void Resizer::inferClockBufferList(const char* lib_name,
   }
 }
 
-float Resizer::getSlewRCFactor() const
+// Compute a slew shape factor for Elmore approximation
+void Resizer::computeSlewShapeFactor()
 {
-  return repair_design_->getSlewRCFactor();
+  using sta::RiseFall;
+  const sta::LibertyLibrary* library = network_->defaultLibertyLibrary();
+  float factor = 0.0;
+  for (auto rf : RiseFall::range()) {
+    // cast both rise and fall into 1->0 transition
+    float th_low, th_high;
+    if (rf == RiseFall::rise()) {
+      // flip
+      th_low = 1.0 - library->slewUpperThreshold(rf);
+      th_high = 1.0 - library->slewLowerThreshold(rf);
+    } else {
+      th_low = library->slewLowerThreshold(rf);
+      th_high = library->slewUpperThreshold(rf);
+    }
+    // compute crossing times assuming RC=1 where R is driving resistance and C
+    // is load
+    float t_high = -log(th_high);
+    float t_low = -log(th_low);
+    // scale by slew derate
+    float rf_factor = (t_low - t_high) / library->slewDerateFromLibrary();
+    // check the factor has the right order of magnitude
+    if (!(rf_factor >= 0.1 && rf_factor <= 10.0)) {
+      logger_->error(
+          RSZ,
+          101,
+          "Elmore slew modeling shape factor is out of range: {:.3e} for {}",
+          rf_factor,
+          rf->name());
+    }
+    debugPrint(logger_,
+               RSZ,
+               "lib_preprocessing",
+               1,
+               "transition {} shape factor {:.3e}",
+               rf->name(),
+               rf_factor);
+    factor = std::max(factor, rf_factor);
+  }
+  // Apply 10% modeling pessmism
+  const float pessimism = 0.10;
+  slew_shape_factor_ = factor * (1 + pessimism);
 }
 
 sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
@@ -6664,6 +6793,9 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
 
   BnetPtr tree1 = makeBufferedNet(drvr_pin, corner);
   BnetPtr tree2 = makeBufferedNet(buffer_drvr_pin, corner);
+  if (!tree1 || !tree2) {
+    return false;
+  }
   BnetPtr stitched_tree = stitchTrees(tree1, buffer_load_pin, tree2);
 
   if (stitched_tree == tree1) {
@@ -6812,8 +6944,7 @@ bool Resizer::estimateSlewsInTree(
           case BnetType::via: {
             double r_via
                 = node->viaResistance(corner, this, estimate_parasitics_);
-            double t_via = r_via * node->ref()->cap()
-                           * repair_design_->slew_rc_factor_.value();
+            double t_via = r_via * node->ref()->cap() * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",
@@ -6835,7 +6966,7 @@ bool Resizer::estimateSlewsInTree(
                 corner, this, estimate_parasitics_, unit_res, unit_cap);
             double t_wire = length * unit_res
                             * (node->ref()->cap() + length * unit_cap / 2)
-                            * repair_design_->slew_rc_factor_.value();
+                            * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",

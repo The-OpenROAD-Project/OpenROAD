@@ -123,11 +123,6 @@ Simply run the following script:
 
 ## Limitations
 
-## FAQs
-
-Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+utl) about this tool.
-
 ## References
 
 ## Authors

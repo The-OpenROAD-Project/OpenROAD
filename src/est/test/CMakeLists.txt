@@ -26,7 +26,7 @@ target_link_libraries(TestEstimateParasitics
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 

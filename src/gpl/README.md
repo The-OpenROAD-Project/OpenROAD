@@ -299,11 +299,6 @@ There are some useful Python functions located in the file
 [grt_aux.py](test/grt_aux.py) but these are not considered a part of the *final*
 API and they may change.
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+replace+in%3Atitle)
-about this tool.
-
 ## References
 
 -   C.-K. Cheng, A. B. Kahng, I. Kang and L. Wang, "RePlAce: Advancing

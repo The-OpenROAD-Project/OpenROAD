@@ -149,6 +149,7 @@ repair_design
     [-pre_placement]
     [-buffer_gain float_value] (deprecated)
     [-match_cell_footprint]
+    [-reroute]
     [-verbose]
 ```
 
@@ -163,6 +164,7 @@ repair_design
 | `-pre_placement` | Enables performing an initial pre-placement sizing and buffering round. |
 | `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
+| `-reroute` | Enable resistance-aware wire rerouting to fix slew violations post-GRT (experimental). |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 #### Instance Name Prefixes
@@ -779,11 +781,6 @@ There are also some useful `Python` functions located in the
 wrappers with unit conversions (microns → metres, nanoseconds → seconds,
 percentages → fractions), but these are not considered part of the *final*
 API and may be subject to change.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
-about this tool.
 
 ## License
 

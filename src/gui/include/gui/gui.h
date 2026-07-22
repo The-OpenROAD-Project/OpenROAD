@@ -741,6 +741,28 @@ class HeadlessViewer
   // True while pause() is blocking.  Consumers (like the web tile renderer)
   // can use this to gate unsafe cross-thread reads of renderer state.
   virtual bool isPaused() const = 0;
+
+  // Display-control accessors consulted by Gui::*DisplayControls* when the Qt
+  // GUI (and its DisplayControls widget) is absent.  Default implementations
+  // assume "everything visible, nothing selectable" so headless renderers draw
+  // by default without a Qt widget.  Viewers that track their own visibility
+  // model (e.g. the web viewer) may override these.
+  virtual bool checkDisplayControlVisible(const std::string& /* name */)
+  {
+    return true;
+  }
+  virtual bool checkDisplayControlSelectable(const std::string& /* name */)
+  {
+    return false;
+  }
+  virtual void setDisplayControlVisible(const std::string& /* name */,
+                                        bool /* value */)
+  {
+  }
+  virtual void setDisplayControlSelectable(const std::string& /* name */,
+                                           bool /* value */)
+  {
+  }
 };
 
 // This is the API for the rest of the program to interact with the
@@ -1023,7 +1045,7 @@ class Gui
 
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);
-  const std::set<HeatMapDataSource*>& getHeatMaps() { return heat_maps_; }
+  const std::set<HeatMapDataSource*>& getHeatMaps();
   HeatMapDataSource* getHeatMap(const std::string& name);
 
   // returns the Gui singleton
@@ -1060,6 +1082,7 @@ class Gui
 
  private:
   Gui();
+  void syncHeatMapChips();
 
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);

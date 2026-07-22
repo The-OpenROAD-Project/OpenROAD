@@ -20,6 +20,11 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/syn/src/ir",
+        # TODO: backend_builder.h includes slang_frontend.h, so we need
+        # :slang_frontend, but that indirectly depends on this, creating cycle.
+        # So can't add the following dependency right now.
+        #"//third-party/slang-elab/src:slang_frontend",
+        "@slang",
     ],
 )
 

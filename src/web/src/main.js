@@ -189,6 +189,8 @@ const visibility = {
     // Blockages
     placement_blockages: true,
     routing_obstructions: true,
+    // Metal fill (dbFill) — off by default, matching GUI
+    fills: false,
     // Rows (off by default, matching GUI)
     rows: false,
     // Tracks (off by default, matching GUI)

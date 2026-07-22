@@ -179,6 +179,27 @@ set_ndr_rules
 | `values` | Single value (applied to all layers) or a list of `{layer value}` pairs. |
 | `isSpacing` | Boolean — `1` to set spacing, `0` to set width. |
 
+### Set Routing Auto-Taper
+
+This command controls the detailed router's auto-taper behavior on a per-net basis. By default the detailed router tapers non-default-rule (NDR, i.e. wide) nets down to minimum width near pin connections so that they fit the pin access geometry. For some nets (for example wide analog/pad traces) this
+tapering is undesirable and the net must keep its full NDR width all the way to the pin. The setting is stored on `dbNet` and honored by the detailed
+router. It only affects nets that have an NDR assigned.
+
+```tcl
+set_routing_auto_taper
+    (-net name | -all_clocks)
+    (-enable | -disable)
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Name of the net to mark. Mutually exclusive with `-all_clocks`. |
+| `-all_clocks` | Apply to all clock nets. Mutually exclusive with `-net`. |
+| `-disable` | Disable auto-taper for the selected net(s), keeping the full NDR width all the way to the pin. |
+| `-enable` | Enable auto-taper for the selected net(s), restoring the default behavior. Exactly one of `-enable` or `-disable` must be given. |
+
 ### Create Voltage Domain
 
 Description TBC.
@@ -490,6 +511,25 @@ add_3dblox_alignment_marker_rule
 | `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
 | `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
 
+### Set Extraction Rules File
+
+Sets the path to the parasitics extraction rules file. For a design in which
+multiple technologies are used, the user must specify the technology for which
+they want to set the rules path.
+
+```tcl
+set_extraction_rules_file
+    [-tech tech_name]
+    rules_file
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-tech` | Technology for which to set the extraction rules path. |
+| `rules_file` | Path to the extraction rules file. |
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
@@ -556,13 +596,6 @@ batch mode operation (route the whole chip, extract the whole chip, run
 DRC on the whole chip).
 
 ## Limitations
-
-## FAQs
-
-Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+odb+in%3Atitle)
-about this tool.
-
 
 ## LICENSE
 

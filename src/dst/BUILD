@@ -67,7 +67,6 @@ cc_library(
         ":dst",
         "//:ord",
         "//src/utl",
-        "@boost.asio",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

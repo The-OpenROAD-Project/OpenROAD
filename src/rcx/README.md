@@ -50,7 +50,7 @@ returned.
 
 ```tcl
 extract_parasitics
-    [-ext_model_file filename]      
+    [-ext_model_file filename]
     [-corner cornerIndex]
     [-corner_cnt count]            
     [-max_res ohms]               
@@ -70,7 +70,7 @@ extract_parasitics
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-ext_model_file` | Specify the Extraction Rules file used for the extraction. |
+| `-ext_model_file` | Deprecated. Use the `set_extraction_rules_file` command instead. |
 | `-corner cornerIndex` | Corner to extract.  Default -1. |
 | `-corner_cnt` | Defines the number of corners used during the parasitic extraction. |
 | `-max_res` | Combines resistors in series up to the threshold value. |
@@ -518,11 +518,6 @@ process node and corner automatically.
 The detailed documentation can be found [here](doc/calibration.md).
 
 ## Limitations
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+rcx)
-about this tool.
 
 ## License
 
