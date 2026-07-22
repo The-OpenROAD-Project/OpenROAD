@@ -99,7 +99,7 @@ dbChipRSeg* dbChipRSeg::create(dbChipNet* chip_net_,
 
   if (!source_cap_node_ || !target_cap_node_) {
     logger->error(utl::ODB,
-                  535,
+                  552,
                   "Cannot create chip r-seg on net {} with a null cap node.",
                   chip_net_->getName());
   }
@@ -107,7 +107,7 @@ dbChipRSeg* dbChipRSeg::create(dbChipNet* chip_net_,
   if (source_cap_node_ == target_cap_node_) {
     logger->error(
         utl::ODB,
-        536,
+        553,
         "Cannot create chip r-seg on net {} between a cap node and itself.",
         chip_net_->getName());
   }
@@ -115,7 +115,7 @@ dbChipRSeg* dbChipRSeg::create(dbChipNet* chip_net_,
   if (source_cap_node_->getChipNet() != chip_net_
       || target_cap_node_->getChipNet() != chip_net_) {
     logger->error(utl::ODB,
-                  537,
+                  554,
                   "Cannot create chip r-seg on net {}: its source and target "
                   "cap nodes must belong to that net.",
                   chip_net_->getName());
