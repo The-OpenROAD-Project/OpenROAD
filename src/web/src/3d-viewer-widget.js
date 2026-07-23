@@ -4,6 +4,7 @@
 import * as THREE from 'https://esm.sh/three@0.160.0';
 
 import {getThemeColors, setCookie} from './theme.js';
+import {downloadUrl, copyPngToClipboard} from './image-export.js';
 
 // Camera navigation tuning constants
 const kRotationSensitivity = 2.0;
@@ -115,7 +116,10 @@ export class ThreeDViewerWidget {
     this._camera.position.set(0, 0, 1000);
 
     try {
-      this._renderer = new THREE.WebGLRenderer({antialias : true});
+      // preserveDrawingBuffer keeps the framebuffer readable after render so
+      // toDataURL() can capture it for PNG export.
+      this._renderer = new THREE.WebGLRenderer(
+          {antialias : true, preserveDrawingBuffer : true});
     } catch (err) {
       // WebGL context creation can fail when the browser has no working GPU
       // (software renderer + sandbox limits, GPU process crash, too many
@@ -294,7 +298,52 @@ export class ThreeDViewerWidget {
     trueZLabel.appendChild(trueZCb);
     trueZLabel.appendChild(document.createTextNode('True Z (no stacking)'));
     overlay.appendChild(trueZLabel);
+
+    // PNG export (2x) + copy-to-clipboard of the current 3D view.
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'margin-top:4px; display:flex; gap:4px;';
+    const savePng = document.createElement('button');
+    savePng.textContent = 'Save PNG';
+    savePng.title = 'Save the 3D view as a PNG image (2x resolution)';
+    savePng.addEventListener('click', () => this._exportPng(2));
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Copy';
+    copyBtn.title = 'Copy the 3D view image to the clipboard';
+    copyBtn.addEventListener('click', () => this._copyImage(2));
+    btnRow.appendChild(savePng);
+    btnRow.appendChild(copyBtn);
+    overlay.appendChild(btnRow);
     return overlay;
+  }
+
+  // Render at `scale`x the current pixel ratio into the WebGL buffer and
+  // return a PNG data URL (restoring the ratio afterwards).
+  _capturePng(scale = 2) {
+    if (!this._renderer) return null;
+    const r = this._renderer;
+    const w = r.domElement.clientWidth || r.domElement.width;
+    const h = r.domElement.clientHeight || r.domElement.height;
+    const prevRatio = r.getPixelRatio();
+    try {
+      r.setPixelRatio(prevRatio * scale);
+      r.setSize(w, h, false);
+      this.render();
+      return r.domElement.toDataURL('image/png');
+    } finally {
+      r.setPixelRatio(prevRatio);
+      r.setSize(w, h, false);
+      this.render();
+    }
+  }
+
+  _exportPng(scale = 2) {
+    const url = this._capturePng(scale);
+    if (url) downloadUrl(url, '3d-view.png');
+  }
+
+  async _copyImage(scale = 2) {
+    const url = this._capturePng(scale);
+    if (url) await copyPngToClipboard(url);
   }
 
   _setRaycasterFromEvent(event) {

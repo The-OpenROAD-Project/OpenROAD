@@ -46,6 +46,7 @@ DOM_TEST_DATA = [
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":gif_test",
         ":request_handler_test",
         ":tile_generator_test",
     ],
@@ -150,6 +151,27 @@ js_test(
 )
 
 js_test(
+    name = "toolbar_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-toolbar.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "image_export_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-image-export.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "edit_dialogs_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-edit-dialogs.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
@@ -182,6 +204,22 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "gif_test",
+    srcs = ["cpp/TestGif.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -13,6 +13,8 @@ import { createInspectorPanel } from './inspector.js';
 import { isStaticMode } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
+import { createToolbar } from './toolbar.js';
+import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
@@ -963,9 +965,48 @@ app.toggleShowDbu = function() {
     if (app.refreshInspector) app.refreshInspector();
 };
 
-// ─── Menu Bar ────────────────────────────────────────────────────────────────
+// ─── Menu Bar & Toolbar ──────────────────────────────────────────────────────
+
+// Shared entry point for running a Tcl script from a custom menu item or
+// toolbar button: optionally echo the command to the console (like the Qt
+// GUI's -echo), run it, and surface the result/errors in the console.
+app.echoTcl = (cmd) => tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
+app.runTclScript = (script, echo) => {
+    if (!script) return Promise.resolve();
+    if (echo) app.echoTcl(script);
+    return app.websocketManager.request({ type: 'tcl_eval', cmd: script })
+        .then(data => {
+            if (data && data.result) {
+                tclAppend(data.result + '\n',
+                          data.is_error ? 'tcl-error' : '');
+            }
+            return data;
+        })
+        .catch(err => { tclAppend(`Error: ${err}\n`, 'tcl-error'); });
+};
+
+// Apply a custom-UI registry snapshot (from the custom_ui request on connect
+// or a live server push) and re-render the menu bar and toolbar.
+function applyCustomUi(data) {
+    if (!data) return;
+    app.customMenu = data.menu || [];
+    app.customToolbar = data.toolbar || [];
+    if (app.rebuildMenuBar) app.rebuildMenuBar();
+    if (app.rebuildToolbar) app.rebuildToolbar();
+}
+
+app.customMenu = [];
+app.customToolbar = [];
+
+// Editing-utility dialogs (Global Connect / Insert Buffer). Exposed so the
+// Tools menu and the inspector's per-net action button can open them; both
+// need scheduleRedrawAllLayers to refresh the layout after a DB edit.
+app.scheduleRedrawAllLayers = scheduleRedrawAllLayers;
+app.showGlobalConnectDialog = () => showGlobalConnectDialog(app);
+app.showInsertBufferDialog = (netName) => showInsertBufferDialog(app, netName);
 
 createMenuBar(app);
+createToolbar(app);
 
 // Debug-graphics pause affordance: appended lazily when the first
 // debug_paused push arrives.  Clicking "Continue" tells the server to
@@ -1032,6 +1073,10 @@ app.websocketManager.onPush = (msg) => {
         let text = msg.text;
         if (text.endsWith('\n')) text = text.slice(0, -1);
         if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'custom_ui') {
+        // Tcl-registered menu items / toolbar buttons changed (e.g. a
+        // create_toolbar_button typed in any client's console). Re-render.
+        applyCustomUi(msg);
     } else if (msg.type === 'shutdown') {
         // Server is stopping intentionally (web_server -stop).
         // Disable auto-reconnect and show a clear message. Note that
@@ -1055,6 +1100,12 @@ app.websocketManager.readyPromise.then(async () => {
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
         updateDocumentTitle(techData.block_name);
+
+        // Fetch any Tcl-registered custom menu items / toolbar buttons so
+        // they survive a page reload and appear for late-connecting clients.
+        app.websocketManager.request({ type: 'custom_ui' })
+            .then(applyCustomUi)
+            .catch(() => {});
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;

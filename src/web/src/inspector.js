@@ -62,6 +62,13 @@ const CHEVRON_RIGHT_SVG =
     '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>' +
     '</svg>';
 
+// Insert-buffer: buffer gate triangle + "+", matching the Qt GUI's buffer.png.
+const BUFFER_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M4 4 L4 20 L17 12 Z"/>' +
+    '<path d="M19 3 h2 v2 h2 v2 h-2 v2 h-2 v-2 h-2 v-2 h2 z"/>' +
+    '</svg>';
+
 export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
@@ -567,6 +574,18 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 guideBtn.innerHTML = isShowing ? HIDE_ROUTE_GUIDE_SVG : ROUTE_GUIDE_SVG;
                 guideBtn.addEventListener('click', () => toggleRouteGuides(data.name));
                 toolbar.appendChild(guideBtn);
+            }
+
+            // Insert Buffer button for Net objects (mirrors the Qt dbNet
+            // descriptor action). The dialog fetches buffer_info and gates
+            // itself (drivers<=1), so it is always offered for a Net here.
+            if (data.type === 'Net' && data.name && app.showInsertBufferDialog) {
+                const bufBtn = document.createElement('button');
+                bufBtn.className = 'inspector-btn';
+                bufBtn.title = 'Insert buffer';
+                bufBtn.innerHTML = BUFFER_SVG;
+                bufBtn.addEventListener('click', () => app.showInsertBufferDialog(data.name));
+                toolbar.appendChild(bufBtn);
             }
 
             // Clear all focus nets button

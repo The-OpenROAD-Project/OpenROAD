@@ -9,6 +9,19 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Run a Tcl script from a custom menu item / toolbar button: prefer the
+// console-aware app.runTclScript (echo + result in the console), falling back
+// to a bare tcl_eval request when it isn't wired (e.g. in unit tests).
+export function runTclScript(app, script, echo) {
+    if (!script) return Promise.resolve();
+    if (typeof app.runTclScript === 'function') {
+        return app.runTclScript(script, echo);
+    }
+    if (echo && typeof app.echoTcl === 'function') app.echoTcl(script);
+    return app.websocketManager.request({ type: 'tcl_eval', cmd: script })
+        .catch(() => {});
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

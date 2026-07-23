@@ -23,6 +23,8 @@
 #include "request_handler.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "utl/Logger.h"
+#include "web_viewer_hook.h"
 
 namespace web {
 namespace {
@@ -1833,6 +1835,299 @@ TEST_F(SchematicHandlerTest, MuxAndUnknownCellsHaveNoKindHint)
   auto& cell = cells.at("g_mux").as_object();
   EXPECT_EQ(std::string(cell.at("type").as_string()), "MUX2_X1");
   EXPECT_FALSE(cell.contains("gate_kind"));
+}
+
+// ─── Custom UI registry (create_menu_item / create_toolbar_button) ───────────
+
+// No design needed: the registry lives entirely in WebViewerHook and only
+// uses a Logger to report duplicate-name errors.
+class CustomUiTest : public ::testing::Test
+{
+ protected:
+  utl::Logger* getLogger() { return &logger_; }
+  boost::json::object registry(const WebViewerHook& hook)
+  {
+    return boost::json::parse(hook.customUiJson()).as_object();
+  }
+
+  utl::Logger logger_;
+};
+
+TEST_F(CustomUiTest, AutoGeneratesSequentialKeys)
+{
+  WebViewerHook hook;
+  EXPECT_EQ(hook.addToolbarButton(
+                getLogger(), "", "A", "sa", "", "", false, "", false),
+            "button0");
+  EXPECT_EQ(hook.addToolbarButton(
+                getLogger(), "", "B", "sb", "", "", false, "", false),
+            "button1");
+  EXPECT_EQ(hook.addMenuItem(getLogger(), "", "", "M", "sm", "", false),
+            "action0");
+  EXPECT_EQ(hook.addMenuItem(getLogger(), "", "", "N", "sn", "", false),
+            "action1");
+
+  boost::json::object root = registry(hook);
+  EXPECT_EQ(root.at("toolbar").as_array().size(), 2u);
+  EXPECT_EQ(root.at("menu").as_array().size(), 2u);
+}
+
+TEST_F(CustomUiTest, DefaultMenuPathAndFieldsSerialized)
+{
+  WebViewerHook hook;
+  hook.addMenuItem(getLogger(),
+                   "m1",
+                   /*path=*/"",
+                   "Hello",
+                   "puts hi",
+                   "Ctrl+H",
+                   /*echo=*/true);
+  boost::json::object item
+      = registry(hook).at("menu").as_array().at(0).as_object();
+  EXPECT_EQ(std::string(item.at("key").as_string()), "m1");
+  EXPECT_EQ(std::string(item.at("path").as_string()), "Custom Scripts");
+  EXPECT_EQ(std::string(item.at("text").as_string()), "Hello");
+  EXPECT_EQ(std::string(item.at("script").as_string()), "puts hi");
+  EXPECT_EQ(std::string(item.at("shortcut").as_string()), "Ctrl+H");
+  EXPECT_TRUE(item.at("echo").as_bool());
+}
+
+TEST_F(CustomUiTest, ToggleButtonFieldsSerialized)
+{
+  WebViewerHook hook;
+  hook.addToolbarButton(getLogger(),
+                        "freeze",
+                        "Freeze",
+                        "on",
+                        "🔍",
+                        "tip",
+                        /*toggle=*/true,
+                        /*script_off=*/"off",
+                        /*echo=*/false);
+  boost::json::object b
+      = registry(hook).at("toolbar").as_array().at(0).as_object();
+  EXPECT_EQ(std::string(b.at("icon").as_string()), "🔍");
+  EXPECT_EQ(std::string(b.at("tooltip").as_string()), "tip");
+  EXPECT_TRUE(b.at("toggle").as_bool());
+  EXPECT_EQ(std::string(b.at("script_off").as_string()), "off");
+}
+
+TEST_F(CustomUiTest, DuplicateNameErrors)
+{
+  WebViewerHook hook;
+  hook.addToolbarButton(getLogger(), "dup", "A", "s", "", "", false, "", false);
+  EXPECT_THROW(hook.addToolbarButton(
+                   getLogger(), "dup", "B", "s", "", "", false, "", false),
+               std::runtime_error);
+
+  hook.addMenuItem(getLogger(), "mdup", "", "A", "s", "", false);
+  EXPECT_THROW(hook.addMenuItem(getLogger(), "mdup", "", "B", "s", "", false),
+               std::runtime_error);
+}
+
+TEST_F(CustomUiTest, RemoveIsIdempotent)
+{
+  WebViewerHook hook;
+  hook.addToolbarButton(getLogger(), "b", "A", "s", "", "", false, "", false);
+  hook.addMenuItem(getLogger(), "m", "", "A", "s", "", false);
+
+  hook.removeToolbarButton("nope");  // no-op, must not throw
+  hook.removeMenuItem("nope");
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 1u);
+
+  hook.removeToolbarButton("b");
+  hook.removeMenuItem("m");
+  boost::json::object root = registry(hook);
+  EXPECT_EQ(root.at("toolbar").as_array().size(), 0u);
+  EXPECT_EQ(root.at("menu").as_array().size(), 0u);
+}
+
+// ─── EditHandler: Global Connect + Insert Buffer ─────────────────────────────
+
+class EditHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    // No STA/liberty in this fixture, so buffer_info's master list is empty;
+    // driver/load classification and the odb insert path still work.
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<EditHandler>(gen_, tcl_eval_);
+  }
+
+  odb::dbInst* placeInst(const char* master_name, const char* inst_name)
+  {
+    odb::dbMaster* master = lib_->findMaster(master_name);
+    EXPECT_NE(master, nullptr) << master_name;
+    odb::dbInst* inst = odb::dbInst::create(block_, master, inst_name);
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    return inst;
+  }
+
+  // Build a net driven by drv/Z with one load ld/A.  Returns the net name.
+  std::string makeSimpleNet(const char* name)
+  {
+    odb::dbInst* drv = placeInst("BUF_X1", "drv");
+    odb::dbInst* ld = placeInst("BUF_X1", "ld");
+    odb::dbNet* net = odb::dbNet::create(block_, name);
+    drv->findITerm("Z")->connect(net);
+    ld->findITerm("A")->connect(net);
+    return name;
+  }
+
+  boost::json::object callObj(const WebSocketResponse& resp)
+  {
+    return parseObj(payloadStr(resp));
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<EditHandler> handler_;
+};
+
+TEST_F(EditHandlerTest, GlobalConnectInfoListsRulesNetsRegions)
+{
+  odb::dbNet* vdd = odb::dbNet::create(block_, "VDD");
+  vdd->setSpecial();
+  vdd->setSigType(odb::dbSigType::POWER);
+  odb::dbGlobalConnect::create(vdd, nullptr, ".*", "^VDD$");
+
+  WebSocketRequest req;
+  req.json = parseObj("{}");
+  boost::json::object root = callObj(handler_->handleGlobalConnectInfo(req));
+
+  ASSERT_EQ(root.at("rules").as_array().size(), 1u);
+  const auto& rule = root.at("rules").as_array().at(0).as_object();
+  EXPECT_EQ(std::string(rule.at("net").as_string()), "VDD");
+  EXPECT_EQ(std::string(rule.at("pin").as_string()), "^VDD$");
+  // VDD is special → present in the nets list.
+  bool found = false;
+  for (const auto& n : root.at("nets").as_array()) {
+    if (std::string(n.as_string()) == "VDD") {
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+}
+
+TEST_F(EditHandlerTest, GlobalConnectDeleteRemovesRuleByFields)
+{
+  odb::dbNet* vdd = odb::dbNet::create(block_, "VDD");
+  vdd->setSpecial();
+  odb::dbGlobalConnect::create(vdd, nullptr, ".*", "^VDD$");
+  ASSERT_EQ(block_->getGlobalConnects().size(), 1u);
+
+  // Match by fields (inst/pin/net/region), not a positional index.
+  WebSocketRequest req;
+  req.json = parseObj(R"({"inst":".*","pin":"^VDD$","net":"VDD","region":""})");
+  boost::json::object root = callObj(handler_->handleGlobalConnectDelete(req));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(block_->getGlobalConnects().size(), 0u);
+}
+
+TEST_F(EditHandlerTest, GlobalConnectDeleteNoMatchIsNoop)
+{
+  odb::dbNet* vdd = odb::dbNet::create(block_, "VDD");
+  vdd->setSpecial();
+  odb::dbGlobalConnect::create(vdd, nullptr, ".*", "^VDD$");
+
+  WebSocketRequest req;
+  req.json
+      = parseObj(R"({"inst":".*","pin":"^NOPE$","net":"VDD","region":""})");
+  boost::json::object root = callObj(handler_->handleGlobalConnectDelete(req));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_EQ(block_->getGlobalConnects().size(), 1u);
+}
+
+TEST_F(EditHandlerTest, GlobalConnectApplyWithoutRulesReportsNoRules)
+{
+  // No rules defined: must report had_rules=false and avoid the ODB-0378
+  // "Global connections are not set up." warning path being surfaced.
+  WebSocketRequest req;
+  req.json = parseObj(R"({"force":true})");
+  boost::json::object root = callObj(handler_->handleGlobalConnectApply(req));
+  EXPECT_TRUE(root.at("ok").as_bool());
+  EXPECT_FALSE(root.at("had_rules").as_bool());
+  EXPECT_EQ(root.at("connected").as_int64(), 0);
+}
+
+TEST_F(EditHandlerTest, GlobalConnectApplyWithRules)
+{
+  odb::dbNet* vdd = odb::dbNet::create(block_, "VDD");
+  vdd->setSpecial();
+  vdd->setSigType(odb::dbSigType::POWER);
+  odb::dbGlobalConnect::create(vdd, nullptr, ".*", "^VDD$");
+
+  WebSocketRequest req;
+  req.json = parseObj(R"({"force":true})");
+  boost::json::object root = callObj(handler_->handleGlobalConnectApply(req));
+  EXPECT_TRUE(root.at("ok").as_bool());
+  EXPECT_TRUE(root.at("had_rules").as_bool());
+}
+
+TEST_F(EditHandlerTest, BufferInfoClassifiesDriverAndLoad)
+{
+  makeSimpleNet("n1");
+  WebSocketRequest req;
+  req.json = parseObj(R"({"net":"n1"})");
+  boost::json::object root = callObj(handler_->handleBufferInfo(req));
+
+  EXPECT_TRUE(root.at("can_buffer").as_bool());
+  ASSERT_EQ(root.at("drivers").as_array().size(), 1u);
+  EXPECT_EQ(root.at("loads").as_array().size(), 1u);
+  EXPECT_EQ(
+      std::string(
+          root.at("drivers").as_array().at(0).as_object().at("id").as_string()),
+      "I:drv/Z");
+}
+
+TEST_F(EditHandlerTest, BufferInfoUnknownNet)
+{
+  WebSocketRequest req;
+  req.json = parseObj(R"({"net":"nope"})");
+  boost::json::object root = callObj(handler_->handleBufferInfo(req));
+  EXPECT_FALSE(root.at("can_buffer").as_bool());
+}
+
+TEST_F(EditHandlerTest, InsertBufferAfterDriver)
+{
+  makeSimpleNet("n1");
+  WebSocketRequest req;
+  req.json = parseObj(
+      R"({"net":"n1","mode":"driver","pins":["I:drv/Z"],"master":"BUF_X1"})");
+  boost::json::object root = callObj(handler_->handleInsertBuffer(req));
+  EXPECT_TRUE(root.at("ok").as_bool());
+  EXPECT_FALSE(std::string(root.at("inst").as_string()).empty());
+}
+
+TEST_F(EditHandlerTest, InsertBufferUnknownMasterErrors)
+{
+  makeSimpleNet("n1");
+  WebSocketRequest req;
+  req.json = parseObj(
+      R"({"net":"n1","mode":"driver","pins":["I:drv/Z"],"master":"NOPE"})");
+  WebSocketResponse resp = handler_->handleInsertBuffer(req);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+}
+
+TEST_F(EditHandlerTest, InsertBufferIsPlacedSoItRenders)
+{
+  makeSimpleNet("n1");
+  WebSocketRequest req;
+  req.json = parseObj(
+      R"({"net":"n1","mode":"driver","pins":["I:drv/Z"],"master":"BUF_X1"})");
+  boost::json::object root = callObj(handler_->handleInsertBuffer(req));
+  ASSERT_TRUE(root.at("ok").as_bool());
+
+  odb::dbInst* buf
+      = block_->findInst(std::string(root.at("inst").as_string()).c_str());
+  ASSERT_NE(buf, nullptr);
+  // The buffer is placed at the pin so the web tile index (which only draws
+  // placed instances) renders it; detailed_placement still legalizes it.
+  EXPECT_TRUE(buf->isPlaced());
 }
 
 }  // namespace

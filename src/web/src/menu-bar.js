@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
+// Creates a menu bar in #menu-bar.  The static menus below are merged with
+// custom items registered from Tcl (`create_menu_item`, delivered in
+// app.customMenu); call app.rebuildMenuBar() after updating app.customMenu to
+// re-render live.
+import { runTclScript } from './ui-utils.js';
+
 export function createMenuBar(app) {
-    const menus = [
+    const staticMenus = [
         { label: 'File', items: [
             { label: 'Open DB...', action: () => showPathDialog(app, 'Open DB', 'read_db'),
               enabledWhen: () => !app.designScale },
@@ -27,6 +32,10 @@ export function createMenuBar(app) {
               action: () => { if (app.rulerManager) app.rulerManager.toggleRulerMode(); } },
             { label: 'Clear Rulers', shortcut: 'Shift+K',
               action: () => { if (app.rulerManager) app.rulerManager.clearAllRulers(); } },
+            { type: 'separator' },
+            { label: 'Global Connect...',
+              action: () => { if (app.showGlobalConnectDialog) app.showGlobalConnectDialog(); },
+              enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },
@@ -56,15 +65,59 @@ export function createMenuBar(app) {
         }
     }
 
-    for (const menu of menus) {
-        const label = document.createElement('div');
-        label.className = 'menu-label';
-        label.textContent = menu.label;
+    // \u2500\u2500 Merge static menus with Tcl-registered custom items \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // A menu node is { label, items: [...] }; an item is a leaf (with action)
+    // a separator, or a submenu (with its own `submenu` node).  `-path` from
+    // create_menu_item is '/'-separated; the first segment maps to a
+    // top-level menu (created on demand), deeper segments nest as submenus \u2014
+    // the client mirror of gui::MainWindow::findMenu.
+    function buildMenuTree() {
+        // Deep-ish clone of the static menus so a rebuild starts fresh.
+        const tree = staticMenus.map(m => ({
+            label: m.label,
+            items: m.items.slice(),
+        }));
 
-        const dropdown = document.createElement('div');
-        dropdown.className = 'menu-dropdown';
+        const topByLabel = new Map(tree.map(m => [m.label, m]));
+        function getOrCreateTop(label) {
+            let node = topByLabel.get(label);
+            if (!node) {
+                node = { label, items: [] };
+                topByLabel.set(label, node);
+                tree.push(node);
+            }
+            return node;
+        }
+        function getOrCreateSub(parent, label) {
+            let entry = parent.items.find(
+                it => it.submenu && it.label === label);
+            if (!entry) {
+                entry = { label, submenu: { label, items: [] } };
+                parent.items.push(entry);
+            }
+            return entry.submenu;
+        }
 
-        for (const item of menu.items) {
+        for (const item of (app.customMenu || [])) {
+            const segments = String(item.path || 'Custom Scripts')
+                .split('/').map(s => s.trim()).filter(Boolean);
+            if (segments.length === 0) segments.push('Custom Scripts');
+            let node = getOrCreateTop(segments[0]);
+            for (let i = 1; i < segments.length; i++) {
+                node = getOrCreateSub(node, segments[i]);
+            }
+            node.items.push({
+                label: item.text,
+                shortcut: item.shortcut,
+                action: () => runTclScript(app, item.script, item.echo),
+            });
+        }
+        return tree;
+    }
+
+    // Build one dropdown's rows (recursing into submenus).
+    function renderItems(dropdown, items) {
+        for (const item of items) {
             if (item.type === 'separator') {
                 const sep = document.createElement('div');
                 sep.className = 'menu-separator';
@@ -74,14 +127,33 @@ export function createMenuBar(app) {
 
             const row = document.createElement('div');
             row.className = 'menu-item';
+
+            // Submenu: a row that opens a nested dropdown on hover (CSS).
+            if (item.submenu) {
+                row.classList.add('submenu-item');
+                const text = document.createElement('span');
+                text.textContent = item.label;
+                row.appendChild(text);
+                const arrow = document.createElement('span');
+                arrow.className = 'submenu-arrow';
+                arrow.textContent = '\u25b8';  // \u25b8
+                row.appendChild(arrow);
+
+                const sub = document.createElement('div');
+                sub.className = 'menu-dropdown submenu';
+                renderItems(sub, item.submenu.items);
+                row.appendChild(sub);
+                dropdown.appendChild(row);
+                continue;
+            }
+
             if (item.disabled) row.classList.add('disabled');
             // Track items with dynamic enabled state for refresh on open.
             if (item.enabledWhen) row._enabledWhen = item.enabledWhen;
 
             // Checkmark indicator for toggle items.
-            let checkEl = null;
             if (item.checked) {
-                checkEl = document.createElement('span');
+                const checkEl = document.createElement('span');
                 checkEl.className = 'menu-check';
                 checkEl.textContent = item.checked() ? '\u2713' : '';
                 row.appendChild(checkEl);
@@ -110,45 +182,65 @@ export function createMenuBar(app) {
 
             dropdown.appendChild(row);
         }
-
-        label.appendChild(dropdown);
-
-        function refreshDynamicItems() {
-            for (const row of dropdown.querySelectorAll('.menu-item')) {
-                if (row._enabledWhen) {
-                    row.classList.toggle('disabled', !row._enabledWhen());
-                }
-                if (row._checkedFn) {
-                    const check = row.querySelector('.menu-check');
-                    if (check) check.textContent = row._checkedFn() ? '\u2713' : '';
-                }
-            }
-        }
-
-        label.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (openMenu === label) {
-                closeAll();
-            } else {
-                closeAll();
-                refreshDynamicItems();
-                label.classList.add('open');
-                openMenu = label;
-            }
-        });
-
-        // Hover-open when another menu is already open
-        label.addEventListener('mouseenter', () => {
-            if (openMenu && openMenu !== label) {
-                closeAll();
-                refreshDynamicItems();
-                label.classList.add('open');
-                openMenu = label;
-            }
-        });
-
-        bar.appendChild(label);
     }
+
+    function render() {
+        bar.innerHTML = '';
+        openMenu = null;
+
+        for (const menu of buildMenuTree()) {
+            const label = document.createElement('div');
+            label.className = 'menu-label';
+            label.textContent = menu.label;
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'menu-dropdown';
+            renderItems(dropdown, menu.items);
+            label.appendChild(dropdown);
+
+            // Refresh dynamic (checked/enabledWhen) rows across the whole
+            // subtree \u2014 querySelectorAll finds hidden submenu rows too.
+            function refreshDynamicItems() {
+                for (const row of dropdown.querySelectorAll('.menu-item')) {
+                    if (row._enabledWhen) {
+                        row.classList.toggle('disabled', !row._enabledWhen());
+                    }
+                    if (row._checkedFn) {
+                        const check = row.querySelector('.menu-check');
+                        if (check) check.textContent = row._checkedFn() ? '\u2713' : '';
+                    }
+                }
+            }
+
+            label.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (openMenu === label) {
+                    closeAll();
+                } else {
+                    closeAll();
+                    refreshDynamicItems();
+                    label.classList.add('open');
+                    openMenu = label;
+                }
+            });
+
+            // Hover-open when another menu is already open
+            label.addEventListener('mouseenter', () => {
+                if (openMenu && openMenu !== label) {
+                    closeAll();
+                    refreshDynamicItems();
+                    label.classList.add('open');
+                    openMenu = label;
+                }
+            });
+
+            bar.appendChild(label);
+        }
+    }
+
+    render();
+    // Exposed so main.js can re-render when a custom_ui push arrives.
+    app.rebuildMenuBar = render;
 
     document.addEventListener('click', closeAll);
 }

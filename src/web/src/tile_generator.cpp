@@ -2833,16 +2833,20 @@ static void compositePixel(unsigned char* dst, const unsigned char* src)
   dst[3] = out_a;
 }
 
-void TileGenerator::saveImage(const std::string& filename,
-                              const odb::Rect& region,
-                              const int width_px,
-                              const double dbu_per_pixel,
-                              const TileVisibility& vis) const
+std::vector<unsigned char> TileGenerator::renderImageBuffer(
+    const odb::Rect& region,
+    const int width_px,
+    const double dbu_per_pixel,
+    const TileVisibility& vis,
+    int& out_w,
+    int& out_h) const
 {
+  out_w = 0;
+  out_h = 0;
   odb::dbBlock* block = getBlock();
   if (!block) {
     logger_->error(utl::WEB, 20, "No design loaded.");
-    return;
+    return {};
   }
 
   // Determine rendering region (DBU).
@@ -2874,7 +2878,7 @@ void TileGenerator::saveImage(const std::string& filename,
 
   if (img_w <= 0 || img_h <= 0) {
     logger_->error(utl::WEB, 21, "Invalid image dimensions.");
-    return;
+    return {};
   }
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
@@ -2991,6 +2995,25 @@ void TileGenerator::saveImage(const std::string& filename,
         std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
       }
     }
+  }
+
+  out_w = final_w;
+  out_h = final_h;
+  return final_buf;
+}
+
+void TileGenerator::saveImage(const std::string& filename,
+                              const odb::Rect& region,
+                              const int width_px,
+                              const double dbu_per_pixel,
+                              const TileVisibility& vis) const
+{
+  int final_w = 0;
+  int final_h = 0;
+  const std::vector<unsigned char> final_buf = renderImageBuffer(
+      region, width_px, dbu_per_pixel, vis, final_w, final_h);
+  if (final_buf.empty()) {
+    return;  // renderImageBuffer already logged the error.
   }
 
   // Encode to PNG and save.

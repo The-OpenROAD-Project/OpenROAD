@@ -41,6 +41,9 @@ genrule(
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
+        "src/toolbar.js",
+        "src/image-export.js",
+        "src/edit-dialogs.js",
         "src/title.js",
         "src/clock-tree-widget.js",
         "src/schematic-widget.js",
@@ -67,6 +70,9 @@ genrule(
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/toolbar.js)" +
+          " $(location src/image-export.js)" +
+          " $(location src/edit-dialogs.js)" +
           " $(location src/title.js)" +
           " $(location src/clock-tree-widget.js)" +
           " $(location src/schematic-widget.js)" +
@@ -94,6 +100,9 @@ _WEB_ASSET_FILES = [
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/menu-bar.js",
+    "src/toolbar.js",
+    "src/image-export.js",
+    "src/edit-dialogs.js",
     "src/title.js",
     "src/clock-tree-widget.js",
     "src/schematic-widget.js",
@@ -141,6 +150,8 @@ cc_library(
         "src/web.cpp",
         "src/web_assets.h",
         "src/web_chart.cpp",
+        "src/web_gif.cpp",
+        "src/web_gif.h",
         "src/web_painter.cpp",
         "src/web_serve.cpp",
         "src/web_viewer_hook.cpp",
@@ -181,6 +192,7 @@ cc_library(
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party/gif-h:gif_h",
         "//third-party/lodepng",
         "//third-party/stb_truetype",
         "@boost.asio",

@@ -5,6 +5,8 @@
 
 #include <netinet/in.h>
 
+#include <algorithm>
+#include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
@@ -47,6 +49,7 @@
 #include "utl/Logger.h"
 #include "web_assets.h"
 #include "web_chart.h"
+#include "web_gif.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -134,6 +137,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   ClockTreeHandler clock_tree_handler_;
   TileHandler tile_handler_;
   DRCHandler drc_handler_;
+  EditHandler edit_handler_;
 
   // Registration-based request dispatcher (replaces parse/dispatch switches)
   RequestDispatcher dispatcher_;
@@ -237,6 +241,7 @@ WebSocketSession::WebSocketSession(
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
       drc_handler_(generator),
+      edit_handler_(generator, tcl_eval),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator)),
       viewer_hook_(viewer_hook),
@@ -264,6 +269,7 @@ WebSocketSession::WebSocketSession(
   clock_tree_handler_.registerRequests(dispatcher_);
   tile_handler_.registerRequests(dispatcher_);
   drc_handler_.registerRequests(dispatcher_);
+  edit_handler_.registerRequests(dispatcher_);
 
   // Free function handler
   dispatcher_.add("list_dir",
@@ -337,6 +343,25 @@ WebSocketSession::WebSocketSession(
         root["charts"] = std::move(charts);
         std::string s = boost::json::serialize(root);
         resp.payload.assign(s.begin(), s.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  // Serves the current custom-UI registry (Tcl-registered menu items /
+  // toolbar buttons) to a client on connect.  Live updates arrive later as
+  // {"type":"custom_ui",...} server-push broadcasts from WebViewerHook.
+  dispatcher_.add(
+      "custom_ui",
+      WebSocketRequest::kCustomUi,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = viewer_hook_ != nullptr
+                                     ? viewer_hook_->customUiJson()
+                                     : R"({"type":"custom_ui","menu":[],)"
+                                       R"("toolbar":[]})";
+        resp.payload.assign(json.begin(), json.end());
         return resp;
       },
       /*run_inline=*/true);
@@ -1289,6 +1314,66 @@ import * as THREE from 'https://esm.sh/three@0.160.0';
   logger_->info(utl::WEB, 32, "Saved timing report to {}", filename);
 }
 
+namespace {
+// Nearest-neighbor resample of a top-down RGBA8 buffer into a dw x dh canvas,
+// preserving aspect ratio (fit + center, black letterbox) — matches the Qt
+// GUI's QImage::scaled(..., KeepAspectRatio).  Used to fit later GIF frames
+// into the dimensions locked by the first frame without distortion.
+std::vector<unsigned char> resampleRgba(const std::vector<unsigned char>& src,
+                                        int sw,
+                                        int sh,
+                                        int dw,
+                                        int dh)
+{
+  // Opaque-black background (GIF ignores alpha, so use RGB black + full alpha).
+  std::vector<unsigned char> dst(4UL * dw * dh, 0);
+  for (size_t i = 3; i < dst.size(); i += 4) {
+    dst[i] = 255;
+  }
+  if (sw <= 0 || sh <= 0) {
+    return dst;
+  }
+  // Largest integer size that fits in dw x dh while preserving aspect.
+  const double scale
+      = std::min(static_cast<double>(dw) / sw, static_cast<double>(dh) / sh);
+  const int fw = std::clamp(static_cast<int>(std::lround(sw * scale)), 1, dw);
+  const int fh = std::clamp(static_cast<int>(std::lround(sh * scale)), 1, dh);
+  const int off_x = (dw - fw) / 2;
+  const int off_y = (dh - fh) / 2;
+  for (int y = 0; y < fh; ++y) {
+    const int sy = std::min(sh - 1, y * sh / fh);
+    for (int x = 0; x < fw; ++x) {
+      const int sx = std::min(sw - 1, x * sw / fw);
+      const size_t s = (static_cast<size_t>(sy) * sw + sx) * 4;
+      const size_t d = (static_cast<size_t>(off_y + y) * dw + (off_x + x)) * 4;
+      for (int c = 0; c < 4; ++c) {
+        dst[d + c] = src[s + c];
+      }
+    }
+  }
+  return dst;
+}
+
+// Parse the visibility JSON produced by the Tcl layer (shared by saveImage
+// and gifAddFrame).
+TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
+{
+  TileVisibility vis;
+  if (!vis_json.empty()) {
+    try {
+      boost::json::value v = boost::json::parse(vis_json);
+      if (auto* obj = v.if_object()) {
+        vis.parseFromJson(*obj);
+      }
+    } catch (const std::exception& e) {
+      logger->warn(
+          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
+    }
+  }
+  return vis;
+}
+}  // namespace
+
 void WebServer::saveImage(const std::string& filename,
                           const int x0,
                           const int y0,
@@ -1305,19 +1390,167 @@ void WebServer::saveImage(const std::string& filename,
   generator_->eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
-  TileVisibility vis;
-  if (!vis_json.empty()) {
-    try {
-      boost::json::value v = boost::json::parse(vis_json);
-      if (auto* obj = v.if_object()) {
-        vis.parseFromJson(*obj);
-      }
-    } catch (const std::exception& e) {
-      logger_->warn(
-          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
-    }
-  }
+  const TileVisibility vis = parseVis(vis_json, logger_);
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+}
+
+// One open animated-GIF stream.  Defined here (not in web.h) so the public
+// header stays free of the GifEncoder type.
+struct WebGif
+{
+  std::string filename;
+  GifEncoder encoder;
+  int width = -1;
+  int height = -1;
+  int frame_count = 0;
+};
+
+namespace {
+// Resolve a GIF stream by key (default = most-recent).  Reports the resolved
+// index via *out_idx and returns nullptr when the key is out of range or the
+// slot was closed; the caller logs the error (with a literal message id).
+WebGif* resolveGif(std::vector<std::unique_ptr<WebGif>>& gifs,
+                   std::optional<int> key,
+                   int* out_idx)
+{
+  const int idx = key.value_or(static_cast<int>(gifs.size()) - 1);
+  *out_idx = idx;
+  if (idx < 0 || idx >= static_cast<int>(gifs.size()) || !gifs[idx]) {
+    return nullptr;
+  }
+  return gifs[idx].get();
+}
+}  // namespace
+
+int WebServer::gifStart(const std::string& filename)
+{
+  if (filename.empty()) {
+    logger_->error(utl::WEB, 53, "GIF filename is empty.");
+    return -1;
+  }
+  auto gif = std::make_unique<WebGif>();
+  gif->filename = filename;
+  gifs_.push_back(std::move(gif));
+  return static_cast<int>(gifs_.size()) - 1;
+}
+
+void WebServer::gifAddFrame(std::optional<int> key,
+                            const odb::Rect& region,
+                            const int width_px,
+                            const double dbu_per_pixel,
+                            std::optional<int> delay,
+                            const std::string& vis_json)
+{
+  int idx = 0;
+  WebGif* gif = resolveGif(gifs_, key, &idx);
+  if (gif == nullptr) {
+    logger_->error(utl::WEB, 54, "No active GIF for key {}.", idx);
+    return;
+  }
+
+  // Create generator on demand (server may not be running).  eagerInit()
+  // rebuilds the spatial index, so run it only once per stream (first frame);
+  // the design is static across a GIF's frames.
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+  }
+  if (gif->frame_count == 0) {
+    generator_->eagerInit();
+  }
+
+  const TileVisibility vis = parseVis(vis_json, logger_);
+  int w = 0;
+  int h = 0;
+  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
+      region, width_px, dbu_per_pixel, vis, w, h);
+  if (rgba.empty()) {
+    return;  // renderImageBuffer already logged the error.
+  }
+
+  const int d = delay.value_or(kDefaultGifDelay);
+  if (gif->frame_count == 0) {
+    // First frame locks the GIF dimensions.
+    gif->width = w;
+    gif->height = h;
+    if (!gif->encoder.begin(gif->filename, w, h, d)) {
+      logger_->error(
+          utl::WEB, 55, "Failed to open GIF file {}.", gif->filename);
+      gifs_[idx].reset();
+      return;
+    }
+  } else if (w != gif->width || h != gif->height) {
+    // Later frames are scaled to match the first (like gui's QImage::scaled).
+    rgba = resampleRgba(rgba, w, h, gif->width, gif->height);
+  }
+
+  if (!gif->encoder.addFrame(rgba, gif->width, gif->height, d)) {
+    logger_->error(utl::WEB, 56, "Failed to write GIF frame.");
+    return;
+  }
+  ++gif->frame_count;
+}
+
+void WebServer::gifEnd(std::optional<int> key)
+{
+  int idx = 0;
+  WebGif* gif = resolveGif(gifs_, key, &idx);
+  if (gif == nullptr) {
+    logger_->error(utl::WEB, 57, "No active GIF for key {}.", idx);
+    return;
+  }
+  if (gif->frame_count == 0) {
+    logger_->warn(
+        utl::WEB, 58, "GIF {} has no frames; nothing written.", gif->filename);
+    gifs_[idx].reset();
+    return;
+  }
+  gif->encoder.end();
+  logger_->info(utl::WEB,
+                59,
+                "Saved animated GIF ({} frames) to {}.",
+                gif->frame_count,
+                gif->filename);
+  gifs_[idx].reset();
+}
+
+std::string WebServer::addToolbarButton(const std::string& name,
+                                        const std::string& text,
+                                        const std::string& script,
+                                        const std::string& icon,
+                                        const std::string& tooltip,
+                                        const bool toggle,
+                                        const std::string& script_off,
+                                        const bool echo)
+{
+  // Ensure the hook exists even when called from a startup script before
+  // serve() (initLogger() is idempotent and creates viewer_hook_).
+  initLogger();
+  return viewer_hook_->addToolbarButton(
+      logger_, name, text, script, icon, tooltip, toggle, script_off, echo);
+}
+
+void WebServer::removeToolbarButton(const std::string& name)
+{
+  initLogger();
+  viewer_hook_->removeToolbarButton(name);
+}
+
+std::string WebServer::addMenuItem(const std::string& name,
+                                   const std::string& path,
+                                   const std::string& text,
+                                   const std::string& script,
+                                   const std::string& shortcut,
+                                   const bool echo)
+{
+  initLogger();
+  return viewer_hook_->addMenuItem(
+      logger_, name, path, text, script, shortcut, echo);
+}
+
+void WebServer::removeMenuItem(const std::string& name)
+{
+  initLogger();
+  viewer_hook_->removeMenuItem(name);
 }
 
 ListenerHandle createAndRunListener(
