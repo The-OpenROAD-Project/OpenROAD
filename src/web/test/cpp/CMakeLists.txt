@@ -115,6 +115,45 @@ gtest_discover_tests(TestSnap
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+add_executable(TestTimingCone TestTimingCone.cpp)
+
+target_link_libraries(TestTimingCone ${TEST_LIBS})
+
+target_include_directories(TestTimingCone
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestTimingCone
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_executable(TestCharts TestCharts.cpp)
+
+target_link_libraries(TestCharts ${TEST_LIBS})
+
+target_include_directories(TestCharts
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestCharts
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_executable(TestLabels TestLabels.cpp)
+
+target_link_libraries(TestLabels ${TEST_LIBS})
+
+target_include_directories(TestLabels
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestLabels
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 add_dependencies(build_and_test
   TestTileGenerator
   TestRequestHandler
@@ -124,4 +163,7 @@ add_dependencies(build_and_test
   TestClockTreeReport
   TestSaveImage
   TestSnap
+  TestTimingCone
+  TestCharts
+  TestLabels
 )

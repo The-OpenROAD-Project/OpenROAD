@@ -918,6 +918,7 @@ export function populateDisplayControls(app, visibility, selectability,
             { key: 'blockages', label: 'Blockages' },
         ]},
         { key: 'rulers', label: 'Rulers' },
+        { key: 'labels', label: 'Labels' },
         { key: 'scale_bar', label: 'Scale bar' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });

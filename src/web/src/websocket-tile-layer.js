@@ -158,6 +158,8 @@ export function createOverlayTileLayer(visibility, app) {
             x: coords.x,
             y: coords.y,
             debug_renderers: !!visibility.debug_renderers,
+            // User labels (2.12) are server-drawn; honor the "Labels" toggle.
+            draw_labels: visibility.labels !== false,
         };
         // Pass visible layers so route guides respect layer visibility.
         if (app && app.visibleLayerNames) {

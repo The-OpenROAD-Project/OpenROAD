@@ -92,11 +92,14 @@ struct WebSocketRequest
     kTclComplete,
     kTimingReport,
     kTimingHighlight,
+    kTimingCone,
     kClockTree,
     kClockTreeHighlight,
     kSlackHistogram,
     kFanoutHistogram,
+    kNetLengthHistogram,
     kSelectFanoutBin,
+    kSelectNetLengthBin,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
@@ -123,6 +126,11 @@ struct WebSocketRequest
     kDebugCharts,
     kGet3DData,
     kOverlayTile,
+    kAddLabel,
+    kDeleteLabel,
+    kUpdateLabel,
+    kClearLabels,
+    kListLabels,
     kUnknown
   };
 
@@ -192,6 +200,15 @@ struct SessionState
   std::vector<ColoredRect> drc_rects;  // filled rect shapes for overlay
   std::vector<FlightLine> drc_lines;   // line/X shapes for overlay
 
+  // Timing-cone overlay (fanin/fanout).  cone_rects highlights instances,
+  // cone_lines are the slack-colored flight lines and cone_labels are the
+  // per-pin logic-depth annotations.  Populated by handleTimingCone and merged
+  // into the overlay by handleOverlayTile.
+  std::mutex cone_mutex;
+  std::vector<ColoredRect> cone_rects;
+  std::vector<FlightLine> cone_lines;
+  std::vector<TextLabel> cone_labels;
+
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
@@ -235,6 +252,8 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleSelectNetLengthBin(const WebSocketRequest& req,
+                                             SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
   WebSocketResponse handleSelectNext(const WebSocketRequest& req,
@@ -249,6 +268,14 @@ class SelectHandler
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);
 
  private:
+  // Build a multi-selection from `matched` nets: caps the count, writes count/
+  // truncated/selection_* into `root`, and updates `state` (selection set,
+  // highlights, inspector).  Shared by handleSelectFanoutBin and
+  // handleSelectNetLengthBin.  Caller must hold tcl_eval_->mutex.
+  void selectMatchedNets(std::vector<odb::dbNet*>& matched,
+                         SessionState& state,
+                         boost::json::object& root);
+
   std::shared_ptr<TileGenerator> gen_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
 };
@@ -279,8 +306,11 @@ class TimingHandler
   WebSocketResponse handleTimingReport(const WebSocketRequest& req);
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleTimingCone(const WebSocketRequest& req,
+                                     SessionState& state);
   WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
   WebSocketResponse handleFanoutHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleNetLengthHistogram(const WebSocketRequest& req);
   WebSocketResponse handleChartFilters(const WebSocketRequest& req);
 
  private:
@@ -321,6 +351,13 @@ class TileHandler
   WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
                                       SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
+  // User text labels (2.12).  Labels live in the shared TileGenerator, so all
+  // clients and save_image see them.
+  WebSocketResponse handleAddLabel(const WebSocketRequest& req);
+  WebSocketResponse handleDeleteLabel(const WebSocketRequest& req);
+  WebSocketResponse handleUpdateLabel(const WebSocketRequest& req);
+  WebSocketResponse handleClearLabels(const WebSocketRequest& req);
+  WebSocketResponse handleListLabels(const WebSocketRequest& req);
   WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
                                           SessionState& state);
   WebSocketResponse handleHeatMaps(const WebSocketRequest& req,

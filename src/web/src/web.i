@@ -3,6 +3,7 @@
 
 %{
 #include <cstdlib>
+#include <string>
 
 #include "ord/OpenRoad.hh"
 #include "web/web.h"
@@ -57,6 +58,32 @@ save_report_cmd(const char* filename,
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
   server->saveReport(filename, max_setup, max_hold);
+}
+
+const char*
+add_label_cmd(int x, int y, const char* text,
+              const char* anchor, const char* color, int size,
+              const char* name)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  static std::string result;
+  result = server->addLabel(x, y, text ? text : "", anchor ? anchor : "",
+                            color ? color : "", size, name ? name : "");
+  return result.c_str();
+}
+
+void
+delete_label_cmd(const char* name)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->deleteLabel(name ? name : "");
+}
+
+void
+clear_labels_cmd()
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->clearLabels();
 }
 
 } // namespace web

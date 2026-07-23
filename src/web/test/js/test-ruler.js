@@ -114,6 +114,20 @@ function makeManager(appOverrides = {}) {
 
 // ─── State machine ───────────────────────────────────────────────────────────
 
+describe('RulerManager default style (2.12)', () => {
+    it('new rulers are euclidian by default', () => {
+        const { mgr } = makeManager();
+        const r = mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 200 });
+        assert.equal(r.euclidian, true);
+    });
+
+    it('honors app.rulerStyle = manhattan for new rulers', () => {
+        const { mgr } = makeManager({ rulerStyle: 'manhattan' });
+        const r = mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 200 });
+        assert.equal(r.euclidian, false);
+    });
+});
+
 describe('RulerManager state machine', () => {
     it('starts in IDLE', () => {
         const { mgr } = makeManager();
