@@ -3508,8 +3508,13 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     return parent[x];
   };
 
-  std::function<void(int, int)> uniteGroups = [&](int u, int v) {
+  // Unites the groups of u and v, returning true only when they were in
+  // different groups.
+  std::function<bool(int, int)> uniteGroups = [&](int u, int v) -> bool {
     int root_u = find(u), root_v = find(v);
+    if (root_u == root_v) {
+      return false;
+    }
     if (rank[root_u] > rank[root_v]) {
       parent[root_v] = root_u;
     } else if (rank[root_u] < rank[root_v]) {
@@ -3518,6 +3523,7 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
       parent[root_v] = root_u;
       rank[root_u]++;
     }
+    return true;
   };
 
   for (int i = 1; i < total_segments; i++) {
@@ -3533,8 +3539,8 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     initialized_groups++;
 
     for (int j = i - 1; j >= 0 && initialized_groups > 1; --j) {
-      if (segmentsConnect(routes_[net][i], routes_[net][j])) {
-        uniteGroups(i, j);
+      if (segmentsConnect(routes_[net][i], routes_[net][j])
+          && uniteGroups(i, j)) {
         initialized_groups--;
       }
     }

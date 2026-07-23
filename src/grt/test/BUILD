@@ -75,6 +75,7 @@ TESTS = [
     "read_segments_error3",
     "read_segments_error4",
     "read_segments_error5",
+    "read_segments_error6",
     "region_adjustment",
     "remove_buffers1",
     "remove_buffers2",
