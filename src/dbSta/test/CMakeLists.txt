@@ -72,6 +72,7 @@ or_integration_tests(
     write_verilog8
     write_verilog9
     write_verilog9_hier
+    write_verilog10
 )
 
 if(ENABLE_TESTS)
