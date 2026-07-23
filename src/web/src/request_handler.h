@@ -121,6 +121,7 @@ struct WebSocketRequest
     kSelectPrev,
     kDebugContinue,
     kDebugCharts,
+    kSetDisplayState,
     kGet3DData,
     kOverlayTile,
     kUnknown

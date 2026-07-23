@@ -289,6 +289,9 @@ export class ThreeDViewerWidget {
     trueZCb.addEventListener('change', () => {
       this._app.useTrueZ = trueZCb.checked;
       setCookie('or_use_true_z', trueZCb.checked ? '1' : '0');
+      // or_use_true_z is part of the saved display state and no redraw
+      // path pushes it (in static/saved-report mode the sync no-ops).
+      this._app.syncDisplayState();
       this.refreshSceneForOptions();
     });
     trueZLabel.appendChild(trueZCb);

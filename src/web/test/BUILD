@@ -47,6 +47,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":request_handler_test",
+        ":save_display_controls_test",
         ":tile_generator_test",
     ],
 )
@@ -55,6 +56,13 @@ js_test(
     name = "coordinates_test",
     data = JS_FILES,
     entry_point = "js/test-coordinates.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "ui_utils_test",
+    data = JS_FILES,
+    entry_point = "js/test-ui-utils.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -295,6 +303,22 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "save_display_controls_test",
+    srcs = ["cpp/TestSaveDisplayControls.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

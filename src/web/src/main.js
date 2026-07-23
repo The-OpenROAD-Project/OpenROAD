@@ -10,14 +10,14 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, computeScaleBar, rafCoalesce } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
-import { getCookie, setCookie, applyGLTheme } from './theme.js';
+import { getCookie, setCookie, deleteCookie, applyGLTheme } from './theme.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 
@@ -201,6 +201,10 @@ const visibility = {
     // Misc
     rulers: true,
     scale_bar: true,
+    // Route guides of focused nets — off by default, matching GUI
+    focused_nets_guides: false,
+    // Highlight of the current selection — on by default, matching GUI
+    highlight_selected: true,
     // Debug
     debug: false,
 };
@@ -388,16 +392,8 @@ function refreshOverlay() {
         app.overlayLayer.refreshTiles();
     }
 }
+const scheduleRefreshOverlay = rafCoalesce(refreshOverlay);
 app.refreshOverlay = scheduleRefreshOverlay;
-
-let _overlayRAF = null;
-function scheduleRefreshOverlay() {
-    if (_overlayRAF !== null) return;
-    _overlayRAF = requestAnimationFrame(() => {
-        _overlayRAF = null;
-        refreshOverlay();
-    });
-}
 
 function redrawAllLayers() {
     // Persist visibility and selectability state to cookies so they survive
@@ -405,6 +401,8 @@ function redrawAllLayers() {
     setCookie('or_visibility', encodeURIComponent(JSON.stringify(visibility)));
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
+    // Keep the server's saved-state snapshot current for save_display_controls.
+    scheduleSyncDisplayState();
 
     // Show/hide modules layer based on module_view visibility
     if (app.modulesLayer) {
@@ -428,6 +426,22 @@ function redrawAllLayers() {
     if (app.heatMapLayer) {
         app.heatMapLayer.refreshTiles();
     }
+    // Keep the client-side selection outline in sync with the "Highlight
+    // selected" toggle: detach it when off, re-attach it when back on (the
+    // rectangle object is preserved so the current selection survives an
+    // off→on round trip; the server-side highlight is gated by the overlay
+    // refresh below).  An in-flight selection pulse is cancelled on off.
+    if (app.highlightRect) {
+        const showHighlight = visibility.highlight_selected !== false;
+        if (!showHighlight && app.map.hasLayer(app.highlightRect)) {
+            app.map.removeLayer(app.highlightRect);
+        } else if (showHighlight && !app.map.hasLayer(app.highlightRect)) {
+            app.highlightRect.addTo(app.map);
+        }
+    }
+    if (!visibility.highlight_selected && app.clearSelectionPulse) {
+        app.clearSelectionPulse();
+    }
     // Overlay layer must also refresh on structural changes (e.g. design
     // reload changes the coordinate space).
     refreshOverlay();
@@ -442,13 +456,74 @@ function redrawAllLayers() {
 
 // Debounced wrapper: coalesces back-to-back server pushes (e.g.
 // debug_refresh + debug_paused) into a single redrawAllLayers() call.
-let _redrawRAF = null;
-function scheduleRedrawAllLayers() {
-    if (_redrawRAF !== null) return;
-    _redrawRAF = requestAnimationFrame(() => {
-        _redrawRAF = null;
-        redrawAllLayers();
-    });
+const scheduleRedrawAllLayers = rafCoalesce(redrawAllLayers);
+
+// Cookies that together capture the full display-controls state.  The
+// individual controls already persist to these keys, so serializing them
+// lets `save_display_controls`/`restore_display_controls` (Tcl) round-trip
+// the entire panel through the normal page-init path — no parallel apply
+// logic to drift out of sync with the controls.
+const DISPLAY_STATE_COOKIES = [
+    'or_visibility',
+    'or_selectability',
+    'or_hidden_layers',
+    'or_nonselectable_layers',
+    'or_hidden_chiplets',
+    'or_bg_color',
+    'or_show_dbu',
+    'or_theme',
+    'or_use_true_z',
+];
+
+// Snapshot the current display state as a plain object for the server to
+// persist.  Only non-empty cookies are included so restore can tell "unset"
+// (use default) from "set".
+function serializeDisplayState() {
+    const cookies = {};
+    for (const key of DISPLAY_STATE_COOKIES) {
+        const value = getCookie(key);
+        if (value) cookies[key] = value;
+    }
+    return { version: 1, cookies };
+}
+
+// Push the current display state to the server (coalesced via rAF) so the
+// Tcl save_display_controls command has an up-to-date snapshot to write.
+const scheduleSyncDisplayState = rafCoalesce(() => {
+    if (!app.websocketManager || isStaticMode(app)) return;
+    app.websocketManager.request({
+        type: 'set_display_state',
+        state: serializeDisplayState(),
+    }).catch(() => { /* server offline / not ready — ignore */ });
+});
+app.syncDisplayState = scheduleSyncDisplayState;
+
+// Apply a saved display state (from restore_display_controls) by writing
+// the cookies back and reloading, so the well-tested init path rebuilds the
+// panel consistently.  The current camera is preserved across the reload.
+function applyDisplayState(state) {
+    if (!state || typeof state !== 'object') return;
+    const cookies = state.cookies;
+    if (!cookies || typeof cookies !== 'object') return;
+    for (const key of DISPLAY_STATE_COOKIES) {
+        const value = cookies[key];
+        if (value === undefined || value === null || value === '') {
+            // Absent in the saved state → clear so the reload uses defaults.
+            deleteCookie(key);
+        } else {
+            setCookie(key, String(value));
+        }
+    }
+    // Preserve the current view so restoring controls doesn't move the map.
+    try {
+        if (app.map && typeof sessionStorage !== 'undefined') {
+            const c = app.map.getCenter();
+            sessionStorage.setItem('or_restore_view',
+                JSON.stringify({ lat: c.lat, lng: c.lng,
+                                 zoom: app.map.getZoom() }));
+        }
+    } catch (_) { /* ignore */ }
+    window.location.reload();
 }
 
 function createLayoutViewer(container) {
@@ -494,25 +569,44 @@ function createLayoutViewer(container) {
     });
     app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
 
-    // Scale bar overlay (bottom-left, above coord bar).
+    // Scale bar overlay (bottom-left, above coord bar).  Content is an
+    // inline SVG rebuilt on each update (bracket + ticks + 0/total labels).
     const scaleBar = document.createElement('div');
     scaleBar.id = 'scale-bar';
     mapDiv.appendChild(scaleBar);
-    const scaleBarLine = document.createElement('div');
-    scaleBarLine.className = 'scale-bar-line';
-    scaleBar.appendChild(scaleBarLine);
-    const scaleBarLabel = document.createElement('span');
-    scaleBarLabel.className = 'scale-bar-label';
-    scaleBar.appendChild(scaleBarLabel);
 
-    // Round to the nearest 1/2/5 × 10^n value (e.g. 1, 2, 5, 10, 20, …).
-    function niceRound(value) {
-        const mag = Math.pow(10, Math.floor(Math.log10(value)));
-        const residual = value / mag;
-        if (residual < 1.5) return 1 * mag;
-        if (residual < 3.5) return 2 * mag;
-        if (residual < 7.5) return 5 * mag;
-        return 10 * mag;
+    const SB_H = 22;       // svg height
+    const SB_BAR_H = 8;    // bracket height
+    const SB_PAD = 22;     // horizontal room for end labels overflowing the bar
+
+    function renderScaleBar(barPx, label, segments) {
+        const top = 2;
+        const base = top + SB_BAR_H;
+        const x0 = SB_PAD;
+        const x1 = SB_PAD + barPx;
+        const labelY = SB_H - 2;
+        const wide = barPx >= 40;  // hide "0"/ticks on very short bars
+        const parts = [];
+        // Bracket: |_| (left/right verticals + baseline, open top).
+        parts.push(`<path d="M${x0} ${top} V${base} H${x1} V${top}" `
+            + `fill="none" stroke="currentColor" stroke-width="2"/>`);
+        // Interior ticks (half height), only when the bar is wide enough.
+        if (wide && segments > 1) {
+            for (let i = 1; i < segments; i++) {
+                const tx = x0 + (barPx * i) / segments;
+                parts.push(`<line x1="${tx}" y1="${base - SB_BAR_H / 2}" `
+                    + `x2="${tx}" y2="${base}" stroke="currentColor" stroke-width="1"/>`);
+            }
+        }
+        // Labels: "0" at the left end, the total at the right end.
+        if (wide) {
+            parts.push(`<text x="${x0}" y="${labelY}" text-anchor="middle" `
+                + `class="scale-bar-text">0</text>`);
+        }
+        parts.push(`<text x="${x1}" y="${labelY}" text-anchor="middle" `
+            + `class="scale-bar-text">${label}</text>`);
+        scaleBar.innerHTML =
+            `<svg width="${x1 + SB_PAD}" height="${SB_H}">${parts.join('')}</svg>`;
     }
 
     function updateScaleBar() {
@@ -520,39 +614,30 @@ function createLayoutViewer(container) {
             scaleBar.style.display = 'none';
             return;
         }
-        scaleBar.style.display = '';
-
         // Pixels per DBU at current zoom: designScale * 2^zoom.
-        const zoom = app.map.getZoom();
-        const pxPerDbu = app.designScale * Math.pow(2, zoom);
-
+        const pxPerDbu = app.designScale * Math.pow(2, app.map.getZoom());
         // Target bar width: ~15% of the map container width.
         const containerWidth = app.map.getContainer().clientWidth || 400;
-        const targetPx = containerWidth * 0.15;
-
-        let barPx, label;
-        if (app.showDbu) {
-            const niceDbu = Math.max(1, niceRound(targetPx / pxPerDbu));
-            barPx = Math.round(niceDbu * pxPerDbu);
-            label = String(Math.round(niceDbu));
-        } else {
-            const dbuPerUm = app.techData?.dbu_per_micron || 1000;
-            const pxPerUm = pxPerDbu * dbuPerUm;
-            const niceUm = niceRound(targetPx / pxPerUm);
-
-            barPx = Math.round(niceUm * pxPerUm);
-
-            // Format with appropriate units.
-            if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
-            else if (niceUm >= 1) label = niceUm + ' \u00b5m';
-            else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
-            else label = (niceUm * 1e6) + ' pm';
+        const sb = computeScaleBar({
+            targetPx: containerWidth * 0.15,
+            pxPerDbu,
+            dbuPerMicron: app.techData?.dbu_per_micron,
+            showDbu: app.showDbu,
+        });
+        if (!sb) {
+            scaleBar.style.display = 'none';
+            return;
         }
-
-        scaleBarLine.style.width = barPx + 'px';
-        scaleBarLabel.textContent = label;
+        scaleBar.style.display = '';
+        renderScaleBar(sb.barPx, sb.label, sb.segments);
     }
-    app.map.on('zoomend moveend resize', updateScaleBar);
+
+    // Coalesce updates during continuous zoom gestures so the bar tracks
+    // the animation instead of only snapping at gesture end.  Pan doesn't
+    // change the bar (geometry depends only on zoom and container width),
+    // so 'move'/'moveend' are deliberately not listened to.
+    const scheduleUpdateScaleBar = rafCoalesce(updateScaleBar);
+    app.map.on('zoom zoomend resize', scheduleUpdateScaleBar);
     app.updateScaleBar = updateScaleBar;
 
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
@@ -672,6 +757,9 @@ function createTclConsole(container) {
 
 // ─── Inspector Panel ────────────────────────────────────────────────────────
 
+// Expose visibility so the inspector can honor the "Highlight selected"
+// toggle when drawing its client-side selection outline/pulse.
+app.visibility = visibility;
 const inspector = createInspectorPanel(app, redrawAllLayers, scheduleRefreshOverlay);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
@@ -948,6 +1036,7 @@ app.toggleTheme = function() {
     // Re-render canvas-based widgets that read theme colors.
     if (app.chartsWidget) app.chartsWidget.render();
     if (app.clockTreeWidget) app.clockTreeWidget.render();
+    scheduleSyncDisplayState();
 };
 
 app.toggleShowDbu = function() {
@@ -961,6 +1050,7 @@ app.toggleShowDbu = function() {
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
     if (app.refreshInspector) app.refreshInspector();
+    scheduleSyncDisplayState();
 };
 
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
@@ -1032,6 +1122,9 @@ app.websocketManager.onPush = (msg) => {
         let text = msg.text;
         if (text.endsWith('\n')) text = text.slice(0, -1);
         if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'restore_display_state') {
+        // restore_display_controls (Tcl) broadcast a saved state — apply it.
+        applyDisplayState(msg.state);
     } else if (msg.type === 'shutdown') {
         // Server is stopping intentionally (web_server -stop).
         // Disable auto-reconnect and show a clear message. Note that
@@ -1108,6 +1201,20 @@ app.websocketManager.readyPromise.then(async () => {
                     }
                 };
             }
+
+            // Restore the pre-reload camera saved by applyDisplayState so
+            // restore_display_controls doesn't move the view.
+            try {
+                const raw = sessionStorage.getItem('or_restore_view');
+                if (raw) {
+                    sessionStorage.removeItem('or_restore_view');
+                    const v = JSON.parse(raw);
+                    if (v && isFinite(v.lat) && isFinite(v.lng)
+                        && isFinite(v.zoom)) {
+                        app.map.setView([v.lat, v.lng], v.zoom);
+                    }
+                }
+            } catch (_) { /* ignore */ }
         }
 
         // Click-to-select: convert click position to DBU and query server
@@ -1272,6 +1379,11 @@ app.websocketManager.readyPromise.then(async () => {
         if (hasDesign && !boundsData.shapes_ready) {
             document.getElementById('loading-overlay').style.display = 'flex';
         }
+
+        // Seed the server's display-state cache with the cookie-restored
+        // state, so save_display_controls works before any interaction
+        // (otherwise it would warn or write a previous session's state).
+        scheduleSyncDisplayState();
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }
