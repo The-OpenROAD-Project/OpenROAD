@@ -90,6 +90,10 @@ float dbChipCapNode::getCapacitance() const
 // User Code Begin dbChipCapNodePublicMethods
 dbChipCapNode* dbChipCapNode::create(dbChipNet* chip_net_)
 {
+  if (!chip_net_) {
+    return nullptr;
+  }
+
   _dbChipNet* chip_net = (_dbChipNet*) chip_net_;
   _dbChip* chip = (_dbChip*) chip_net_->getChip();
 
@@ -167,7 +171,13 @@ dbBTerm* dbChipCapNode::getBTerm() const
   if (!chip_bump_inst) {
     return nullptr;
   }
-  return chip_bump_inst->getChipBump()->getBTerm();
+
+  dbChipBump* chip_bump = chip_bump_inst->getChipBump();
+  if (!chip_bump) {
+    return nullptr;
+  }
+
+  return chip_bump->getBTerm();
 }
 
 // User Code End dbChipCapNodePublicMethods

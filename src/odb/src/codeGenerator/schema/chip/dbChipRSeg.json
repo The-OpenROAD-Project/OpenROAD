@@ -10,6 +10,13 @@
     ],
     "fields": [
         {
+            "name": "chip_net_",
+            "type": "dbId<_dbChipNet>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
             "name": "next_chip_r_seg_",
             "type": "dbId<_dbChipRSeg>",
             "flags": [

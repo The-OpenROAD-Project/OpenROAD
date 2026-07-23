@@ -18,6 +18,9 @@ template class dbTable<_dbChipRSeg>;
 bool _dbChipRSeg::operator==(const _dbChipRSeg& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
+  if (chip_net_ != rhs.chip_net_) {
+    return false;
+  }
   if (next_chip_r_seg_ != rhs.next_chip_r_seg_) {
     return false;
   }
@@ -47,6 +50,7 @@ _dbChipRSeg::_dbChipRSeg(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbChipRSeg& obj)
 {
+  stream >> obj.chip_net_;
   stream >> obj.next_chip_r_seg_;
   stream >> obj.source_cap_node_;
   stream >> obj.target_cap_node_;
@@ -56,6 +60,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRSeg& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbChipRSeg& obj)
 {
+  stream << obj.chip_net_;
   stream << obj.next_chip_r_seg_;
   stream << obj.source_cap_node_;
   stream << obj.target_cap_node_;
@@ -93,6 +98,10 @@ dbChipRSeg* dbChipRSeg::create(dbChipNet* chip_net_,
                                dbChipCapNode* source_cap_node_,
                                dbChipCapNode* target_cap_node_)
 {
+  if (!chip_net_) {
+    return nullptr;
+  }
+
   _dbChipNet* chip_net = (_dbChipNet*) chip_net_;
   _dbChip* chip = (_dbChip*) chip_net_->getChip();
   utl::Logger* logger = chip->getLogger();
@@ -122,6 +131,7 @@ dbChipRSeg* dbChipRSeg::create(dbChipNet* chip_net_,
   }
 
   _dbChipRSeg* r_seg = chip->chip_r_seg_tbl_->create();
+  r_seg->chip_net_ = chip_net->getOID();
   r_seg->source_cap_node_ = source_cap_node_->getImpl()->getOID();
   r_seg->target_cap_node_ = target_cap_node_->getImpl()->getOID();
 
@@ -137,9 +147,7 @@ void dbChipRSeg::destroy(dbChipRSeg* r_seg_)
   _dbChipRSeg* r_seg = (_dbChipRSeg*) r_seg_;
   _dbChip* chip = (_dbChip*) r_seg->getOwner();
   _dbDatabase* db = chip->getDatabase();
-  _dbChipCapNode* target_cap_node
-      = chip->chip_cap_node_tbl_->getPtr(r_seg->target_cap_node_);
-  _dbChipNet* chip_net = db->chip_net_tbl_->getPtr(target_cap_node->chip_net_);
+  _dbChipNet* chip_net = db->chip_net_tbl_->getPtr(r_seg->chip_net_);
 
   // Remove the deleted r-seg from the chip net's r-seg list
   if (chip_net->first_r_seg_ == r_seg->getOID()) {
@@ -181,7 +189,11 @@ dbChipCapNode* dbChipRSeg::getTargetCapNode() const
 
 dbChipNet* dbChipRSeg::getChipNet() const
 {
-  return getTargetCapNode()->getChipNet();
+  _dbChipRSeg* r_seg = (_dbChipRSeg*) this;
+  _dbChip* chip = (_dbChip*) r_seg->getOwner();
+  _dbDatabase* db = chip->getDatabase();
+  _dbChipNet* chip_net = db->chip_net_tbl_->getPtr(r_seg->chip_net_);
+  return (dbChipNet*) chip_net;
 }
 // User Code End dbChipRSegPublicMethods
 }  // namespace odb

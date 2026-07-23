@@ -13,6 +13,7 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
+class _dbChipNet;
 class _dbChipCapNode;
 
 class _dbChipRSeg : public _dbObject
@@ -25,6 +26,7 @@ class _dbChipRSeg : public _dbObject
   bool operator<(const _dbChipRSeg& rhs) const;
   void collectMemInfo(MemInfo& info);
 
+  dbId<_dbChipNet> chip_net_;
   dbId<_dbChipRSeg> next_chip_r_seg_;
   dbId<_dbChipCapNode> source_cap_node_;
   dbId<_dbChipCapNode> target_cap_node_;

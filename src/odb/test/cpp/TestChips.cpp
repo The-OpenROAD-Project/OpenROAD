@@ -512,11 +512,30 @@ TEST_F(ChipHierarchyFixture, test_chip_parasitics)
   dbChipCapNode* other_cap_node = dbChipCapNode::create(other_net);
   EXPECT_THROW(dbChipRSeg::create(net, source, other_cap_node), std::exception);
 
+  // A null net returns null rather than dereferencing it.
+  EXPECT_EQ(dbChipCapNode::create(nullptr), nullptr);
+  EXPECT_EQ(dbChipRSeg::create(nullptr, source, target), nullptr);
+
   // destroy() unlinks from the net's lists.
   dbChipRSeg::destroy(r_seg);
   EXPECT_EQ(net->getChipRSegs().size(), 0);
   dbChipCapNode::destroy(source);
   EXPECT_EQ(net->getChipCapNodes().size(), 1);
+}
+
+TEST_F(ChipHierarchyFixture, test_chip_rseg_outlives_cap_node)
+{
+  dbChipNet* net = dbChipNet::create(system_chip, "net1");
+  dbChipCapNode* source = dbChipCapNode::create(net);
+  dbChipCapNode* target = dbChipCapNode::create(net);
+  dbChipRSeg* r_seg = dbChipRSeg::create(net, source, target);
+
+  // A cap node freed before the r-seg must not corrupt destroy()/getChipNet():
+  // both resolve the net directly, not through the (now gone) cap node.
+  dbChipCapNode::destroy(source);
+  EXPECT_EQ(r_seg->getChipNet(), net);
+  dbChipRSeg::destroy(r_seg);
+  EXPECT_EQ(net->getChipRSegs().size(), 0);
 }
 
 TEST_F(SimpleDbFixture, test_chip_parasitics_serialization)
