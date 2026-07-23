@@ -356,7 +356,38 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat)
         break;
       }
       if (c1->getCuboid().overlaps(c2->getCuboid())) {
-        overlaps.emplace_back(c1, c2);
+        const Rect overlap
+            = c1->getCuboid().intersect(c2->getCuboid()).getEnclosingRect();
+        bool embedded_chiplet = false;
+        for (const auto* conn : db_->getUnfoldedChipConns()) {
+          const auto* bot_region = conn->getBottomRegion();
+          const auto* top_region = conn->getTopRegion();
+          if (bot_region == nullptr || top_region == nullptr) {
+            continue;
+          }
+          const auto* bot_chip = bot_region->getParentChip();
+          const auto* top_chip = top_region->getParentChip();
+          if (!((bot_chip == c1 && top_chip == c2)
+                || (bot_chip == c2 && top_chip == c1))) {
+            continue;
+          }
+          if (bot_region->getChipRegionInst()->getChipRegion()->getSide()
+                  != odb::dbChipRegion::Side::INTERNAL_EXT
+              && top_region->getChipRegionInst()->getChipRegion()->getSide()
+                     != odb::dbChipRegion::Side::INTERNAL_EXT) {
+            continue;
+          }
+          const Rect conn_rect
+              = bot_region->getCuboid().getEnclosingRect().intersect(
+                  top_region->getCuboid().getEnclosingRect());
+          if (conn_rect.contains(overlap)) {
+            embedded_chiplet = true;
+            break;
+          }
+        }
+        if (!embedded_chiplet) {
+          overlaps.emplace_back(c1, c2);
+        }
       }
     }
   }

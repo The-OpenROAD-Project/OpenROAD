@@ -233,7 +233,7 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   if ((side == dbChipRegion::Side::INTERNAL_EXT
        || side == dbChipRegion::Side::INTERNAL)
       && (chip->getChipType() != dbChip::ChipType::RDL
-          || chip->getChipType() != dbChip::ChipType::SUBSTRATE)) {
+          && chip->getChipType() != dbChip::ChipType::SUBSTRATE)) {
     logger->error(utl::ODB,
                   566,
                   "Cannot create chip region {} of type INTERNAL/INTERNAL_EXT "
