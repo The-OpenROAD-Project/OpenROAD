@@ -3531,7 +3531,7 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
 
   // Unites the groups of u and v, returning true only when they were in
   // different groups.
-  std::function<bool(int, int)> uniteGroups = [&](int u, int v) -> bool {
+  auto uniteGroups = [&](int u, int v) -> bool {
     int root_u = find(u), root_v = find(v);
     if (root_u == root_v) {
       return false;
