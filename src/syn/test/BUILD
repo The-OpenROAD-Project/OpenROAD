@@ -128,7 +128,6 @@ cc_test(
         "//src/dbSta",
         "//src/sta:opensta_lib",
         "//src/syn",
-        "//src/syn/src/ir",
         "//src/tst",
         "@googletest//:gtest",
     ],
