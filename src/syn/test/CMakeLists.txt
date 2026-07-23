@@ -5,6 +5,8 @@ include("openroad")
 
 or_integration_tests(
   "syn"
+  TESTS
+    acd_resynth
 )
 
 set(_syn_test_libs
@@ -43,6 +45,13 @@ foreach(_t abc_test sm_test cm_test)
   gtest_discover_tests(${_t} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
   add_dependencies(build_and_test ${_t})
 endforeach()
+
+# No GTest::gtest_main: ABC ships its own main() that wins over gtest_main;
+# acd_test.cc defines its own.
+add_executable(acd_test acd_test.cc)
+target_link_libraries(acd_test GTest::gtest syn_flow syn_lib syn_ir tst)
+gtest_discover_tests(acd_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_dependencies(build_and_test acd_test)
 
 add_executable(elab_test elab_test.cc)
 target_link_libraries(elab_test ${_syn_test_libs} syn_elab syn_flow syn_lib syn_ir tst)
