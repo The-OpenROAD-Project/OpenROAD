@@ -9,6 +9,31 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Serialize the layer/selectability visibility flags the way the server
+// parses them: each visibility key as a boolean, each selectability key with
+// an `s_` prefix.  Callers add request-specific fields (visible_layers,
+// selectable_layers, visible_chiplets) on top.  Shared by the tile requests,
+// click-select, and the Save export so the columns can't drift.
+export function buildVisibilityFlags(visibility, selectability) {
+    const vf = {};
+    for (const [k, v] of Object.entries(visibility || {})) {
+        vf[k] = !!v;
+    }
+    for (const [k, v] of Object.entries(selectability || {})) {
+        vf['s_' + k] = !!v;
+    }
+    return vf;
+}
+
+// Sync the client-side selection type flags from a server response so the
+// context menu can enable/disable items by selection type.
+export function applySelectionFlags(app, resp) {
+    if (resp && typeof resp.sel_has_inst === 'boolean') {
+        app.selHasInst = resp.sel_has_inst;
+        app.selHasNet = !!resp.sel_has_net;
+    }
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

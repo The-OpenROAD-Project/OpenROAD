@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "boost/json/object.hpp"
@@ -1186,6 +1187,100 @@ TEST_F(SelectHandlerTest, SelectNextRestoresSelectionSetHighlights)
   }
   EXPECT_TRUE(found_current);
   EXPECT_TRUE(found_previous);
+}
+
+//------------------------------------------------------------------------------
+// Find (name/glob search) tests.  The gui descriptors are not registered in
+// this unit context, so makeSelected() yields empty Selecteds and inserting
+// more than one into the SelectionSet would dereference a null descriptor in
+// the comparator.  We therefore assert the match `count` for patterns matching
+// at most one object — enough to exercise the glob (*, ?), exact-match and
+// case-folding logic plus the error path.  Multi-match selection and the
+// sel_has_inst/sel_has_net flags are covered by the WebSocket end-to-end tests.
+//------------------------------------------------------------------------------
+
+class FindHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+  }
+
+  void placeInst(const char* master_name, const char* inst_name, int x, int y)
+  {
+    odb::dbMaster* master = lib_->findMaster(master_name);
+    ASSERT_NE(master, nullptr) << master_name;
+    odb::dbInst* inst = odb::dbInst::create(block_, master, inst_name);
+    inst->setLocation(x, y);
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
+  void runFind(const std::string& obj_type,
+               const std::string& pattern,
+               bool match_case = false)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kFind;
+    boost::json::object json;
+    json["obj_type"] = obj_type;
+    json["pattern"] = pattern;
+    json["match_case"] = match_case;
+    req.json = std::move(json);
+    last_resp_ = handler_->handleFind(req, state_);
+  }
+
+  int64_t findCount(const std::string& obj_type,
+                    const std::string& pattern,
+                    bool match_case = false)
+  {
+    runFind(obj_type, pattern, match_case);
+    return parseObj(payloadStr(last_resp_)).at("count").as_int64();
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<SelectHandler> handler_;
+  SessionState state_;
+  WebSocketResponse last_resp_;
+};
+
+TEST_F(FindHandlerTest, InstGlobExactAndNoMatch)
+{
+  placeInst("BUF_X16", "u_buf0", 0, 0);
+  placeInst("BUF_X16", "reg_a", 1000, 0);
+
+  EXPECT_EQ(findCount("inst", "u_*"), 1);     // glob '*'
+  EXPECT_EQ(findCount("inst", "u_bu?0"), 1);  // glob '?'
+  EXPECT_EQ(findCount("inst", "u_buf0"), 1);  // exact
+  EXPECT_EQ(findCount("inst", "zzz*"), 0);    // no match
+}
+
+TEST_F(FindHandlerTest, RespectsMatchCase)
+{
+  placeInst("BUF_X16", "MixedCase", 0, 0);
+
+  EXPECT_EQ(findCount("inst", "mixedcase", /*match_case=*/false), 1);
+  EXPECT_EQ(findCount("inst", "mixedcase", /*match_case=*/true), 0);
+}
+
+TEST_F(FindHandlerTest, NetByName)
+{
+  odb::dbNet::create(block_, "clk");
+
+  EXPECT_EQ(findCount("net", "cl*"), 1);
+  EXPECT_EQ(findCount("net", "nope"), 0);
+}
+
+TEST_F(FindHandlerTest, UnknownTypeReturnsError)
+{
+  runFind("bogus", "*");
+  EXPECT_EQ(last_resp_.type, WebSocketResponse::kError);
 }
 
 //------------------------------------------------------------------------------

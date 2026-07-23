@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import { latLngToDbu } from './coordinates.js';
+import { latLngToDbu, dbuRectToBounds } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
@@ -10,7 +10,7 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, buildVisibilityFlags, applySelectionFlags } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -20,6 +20,9 @@ import { TclCompleter } from './tcl-completer.js';
 import { getCookie, setCookie, applyGLTheme } from './theme.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
+import { ContextMenu } from './context-menu.js';
+import { showFindDialog, showGotoDialog } from './search-nav.js';
+import { captureLayout } from './capture.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -72,6 +75,9 @@ function updateStatus() {
 const app = {
     map: null,
     fitBounds: null,
+    lastSelectionBounds: null,  // Leaflet bounds of the last selected object
+    selHasInst: false,          // selection contains any instance
+    selHasNet: false,           // selection contains any net
     displayControlsEl: null,
     allLayers: [],
     designScale: null,   // pixels-per-DBU for coordinate conversion
@@ -260,6 +266,11 @@ const selectability = {
     placement_blockages: true,
     routing_obstructions: true,
 };
+
+// Expose the live visibility/selectability so the context menu "Save" can
+// serialize the same payload the tile requests use (visibility-aware export).
+app.visibility = visibility;
+app.selectability = selectability;
 
 try {
     const saved = getCookie('or_selectability');
@@ -451,6 +462,13 @@ function scheduleRedrawAllLayers() {
     });
 }
 
+// Expose so the context menu can refresh base + overlay tiles after a
+// server-side context_action (e.g. Select → Connected).
+app.redrawAllLayers = redrawAllLayers;
+
+// Expose the WYSIWYG capture so the context menu "Save" can grab the scene.
+app.captureLayout = (opts = {}) => captureLayout(app, opts);
+
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
     mapDiv.className = 'layout-viewer';
@@ -474,6 +492,26 @@ function createLayoutViewer(container) {
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';
+
+    // "Fit" button below the default zoom (+/-) control, top-left.
+    const FitControl = L.Control.extend({
+        onAdd: function() {
+            const c = L.DomUtil.create(
+                'div', 'leaflet-bar leaflet-control leaflet-control-fit');
+            const a = L.DomUtil.create('a', '', c);
+            a.href = '#';
+            a.title = 'Fit';
+            a.setAttribute('role', 'button');
+            a.setAttribute('aria-label', 'Fit');
+            a.textContent = '⤢';
+            L.DomEvent.on(a, 'click', L.DomEvent.stop)
+                .on(a, 'click', () => {
+                    if (app.fitBounds) app.map.fitBounds(app.fitBounds);
+                });
+            return c;
+        },
+    });
+    new FitControl({ position: 'topleft' }).addTo(app.map);
 
     new ResizeObserver(() => {
         app.map.invalidateSize({ animate: false });
@@ -967,6 +1005,9 @@ app.toggleShowDbu = function() {
 
 createMenuBar(app);
 
+// Canvas right-click context menu ("Select →" connected objects).
+app.contextMenu = new ContextMenu(app);
+
 // Debug-graphics pause affordance: appended lazily when the first
 // debug_paused push arrives.  Clicking "Continue" tells the server to
 // release the placer thread.
@@ -1115,22 +1156,20 @@ app.websocketManager.readyPromise.then(async () => {
             // Hide loading overlay — shapes are always ready in static mode.
             document.getElementById('loading-overlay').style.display = 'none';
         }
-        if (!staticCache) app.map.on('click', (e) => {
-            if (!app.designScale) return;
-            if (app.rulerManager && app.rulerManager.isActive()) return;
+        // Shared select-at-point logic used by left-click and right-click.
+        // Returns the server response (or null).  `focusInspector` switches the
+        // panel to the Inspector (left-click); right-click keeps the current
+        // panel and only updates the selection so the context menu can reflect
+        // the object under the cursor.
+        function selectAtLatLng(latlng, opts = {}) {
+            const { addToSelection = false, focusInspector = true,
+                    context = false } = opts;
+            if (!app.designScale) return Promise.resolve(null);
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
-                e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
+                latlng.lat, latlng.lng, app.designScale, app.designMaxDXDY,
                 app.designOriginX, app.designOriginY);
 
-            const vf = {};
-            for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = !!v;
-            }
-            // Selectability is sent with `s_` prefix to mirror the flat
-            // visibility key scheme; the server parses both columns.
-            for (const [k, v] of Object.entries(selectability)) {
-                vf['s_' + k] = !!v;
-            }
+            const vf = buildVisibilityFlags(visibility, selectability);
             const selectRequest = {
                 type: 'select',
                 dbu_x,
@@ -1141,16 +1180,21 @@ app.websocketManager.readyPromise.then(async () => {
                 use_dbu: app.showDbu,
                 ...vf,
             };
-            if (e.originalEvent && e.originalEvent.shiftKey) {
+            if (addToSelection) {
                 selectRequest.add_to_selection = true;
+            }
+            if (context) {
+                selectRequest.context = true;
             }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
-            app.websocketManager.request(selectRequest)
+            return app.websocketManager.request(selectRequest)
                 .then(data => {
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
+                    // Type flags so the context menu can enable items by type.
+                    applySelectionFlags(app, data);
                     if (data.selected && data.selected.length > 0) {
                         const inst = data.selected[0];
                         if (inst.type === 'Inst') {
@@ -1160,28 +1204,45 @@ app.websocketManager.readyPromise.then(async () => {
                             }
                         }
                         updateInspector(data);
-                        focusComponent('Inspector');
-                        // Highlight selected instance bbox
+                        if (focusInspector) focusComponent('Inspector');
+                        // Highlight selected object's bbox (skipped for nets,
+                        // whose trace is already shown by the overlay).
                         if (inst.bbox) {
                             highlightBBox(inst.bbox[0], inst.bbox[1],
-                                          inst.bbox[2], inst.bbox[3]);
-                            pulseHighlight(inst.bbox);
+                                          inst.bbox[2], inst.bbox[3], inst.type);
+                            pulseHighlight(inst.bbox, inst.type);
+                            // Remember bounds for "Zoom to Selection".
+                            app.lastSelectionBounds = dbuRectToBounds(
+                                inst.bbox[0], inst.bbox[1],
+                                inst.bbox[2], inst.bbox[3],
+                                app.designScale, app.designMaxDXDY,
+                                app.designOriginX, app.designOriginY);
                         }
-                    } else if (!selectRequest.add_to_selection) {
-                        // Shift+click on empty space preserves the existing
-                        // multi-selection on the server, so leave the
-                        // inspector/navigation controls and highlight intact.
+                    } else if (!addToSelection && !context) {
+                        // Empty left-click: clear inspector/highlight.  An empty
+                        // right-click (context) keeps the current selection.
                         updateInspector(null);
                         if (app.highlightRect) {
                             app.map.removeLayer(app.highlightRect);
                             app.highlightRect = null;
                         }
+                        app.lastSelectionBounds = null;
                     }
                     refreshOverlay();
+                    return data;
                 })
                 .catch(err => {
                     console.error('Select failed:', err);
+                    return null;
                 });
+        }
+        app.selectAtLatLng = selectAtLatLng;
+
+        if (!staticCache) app.map.on('click', (e) => {
+            if (app.rulerManager && app.rulerManager.isActive()) return;
+            selectAtLatLng(e.latlng, {
+                addToSelection: !!(e.originalEvent && e.originalEvent.shiftKey),
+            });
         });
 
         // ─── Right-click rubber-band zoom ──────────────────────────────
@@ -1230,18 +1291,33 @@ app.websocketManager.readyPromise.then(async () => {
                 rbStart = null;
                 app.map.dragging.enable();
 
-                if (!wasShowing) return;
-
-                // Convert the two screen corners to lat/lng and zoom
                 const rect = container.getBoundingClientRect();
-                const p1 = app.map.containerPointToLatLng([
-                    start.x - rect.left, start.y - rect.top]);
-                const p2 = app.map.containerPointToLatLng([
+
+                if (wasShowing) {
+                    // Drag — rubber-band zoom.
+                    const p1 = app.map.containerPointToLatLng([
+                        start.x - rect.left, start.y - rect.top]);
+                    const p2 = app.map.containerPointToLatLng([
+                        e.clientX - rect.left, e.clientY - rect.top]);
+                    app.map.fitBounds([
+                        [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
+                        [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
+                    ]);
+                    return;
+                }
+
+                // Pure click — select the object under the cursor, then show
+                // the context menu contextualized on it (Qt-like).  Only over
+                // the map and not while a ruler is being placed.
+                const overMap = e.clientX >= rect.left && e.clientX <= rect.right
+                             && e.clientY >= rect.top  && e.clientY <= rect.bottom;
+                if (!overMap) return;
+                if (app.rulerManager && app.rulerManager.isActive()) return;
+
+                const latlng = app.map.containerPointToLatLng([
                     e.clientX - rect.left, e.clientY - rect.top]);
-                app.map.fitBounds([
-                    [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
-                    [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
-                ]);
+                app.selectAtLatLng(latlng, { context: true, focusInspector: false })
+                    .then(() => app.contextMenu.show({ originalEvent: e }));
             });
         }
 
@@ -1305,6 +1381,12 @@ document.addEventListener('keydown', (e) => {
         } else {
             app.map.zoomOut();
         }
+    } else if (key === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Ctrl/Cmd+F: Find (prevent the browser's own find bar).
+        e.preventDefault();
+        if (app.designScale) showFindDialog(app);
+    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (app.designScale) showGotoDialog(app);
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();
     }
