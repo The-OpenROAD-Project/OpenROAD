@@ -538,6 +538,22 @@ TEST_F(ChipHierarchyFixture, test_chip_rseg_outlives_cap_node)
   EXPECT_EQ(net->getChipRSegs().size(), 0);
 }
 
+TEST_F(ChipHierarchyFixture, test_chip_net_destroys_parasitics)
+{
+  dbChipNet* net = dbChipNet::create(system_chip, "net1");
+  dbChipCapNode* source = dbChipCapNode::create(net);
+  dbChipCapNode* target = dbChipCapNode::create(net);
+  dbChipRSeg::create(net, source, target);
+
+  EXPECT_EQ(system_chip->getChipCapNodes().size(), 2);
+  EXPECT_EQ(system_chip->getChipRSegs().size(), 1);
+
+  dbChipNet::destroy(net);
+
+  EXPECT_EQ(system_chip->getChipCapNodes().size(), 0);
+  EXPECT_EQ(system_chip->getChipRSegs().size(), 0);
+}
+
 TEST_F(SimpleDbFixture, test_chip_parasitics_serialization)
 {
   createSimpleDB();

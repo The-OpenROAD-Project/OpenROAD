@@ -200,6 +200,16 @@ void dbChipNet::destroy(dbChipNet* net)
   _dbDatabase* db = (_dbDatabase*) _net->getOwner();
   _dbChip* chip = (_dbChip*) net->getChip();
 
+  // Destroy the net's parasitics.
+  dbSet<dbChipRSeg> r_segs = net->getChipRSegs();
+  while (r_segs.begin() != r_segs.end()) {
+    dbChipRSeg::destroy(*r_segs.begin());
+  }
+  dbSet<dbChipCapNode> cap_nodes = net->getChipCapNodes();
+  while (cap_nodes.begin() != cap_nodes.end()) {
+    dbChipCapNode::destroy(*cap_nodes.begin());
+  }
+
   // Remove from chip's net list
   if (chip->nets_ == _net->getOID()) {
     chip->nets_ = _net->chip_net_next_;
