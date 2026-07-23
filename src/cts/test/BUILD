@@ -49,6 +49,7 @@ COMPULSORY_TESTS = [
     "simple_test_clustered_max_cap",
     "simple_test_hier",
     "sink_clustering_collision",
+    "sink_clustering_single_sink",
     "skip_nets",
     "twice",
     "virtual_clock_latency",
