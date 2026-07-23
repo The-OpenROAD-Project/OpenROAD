@@ -5745,10 +5745,8 @@ std::pair<int, int> GlobalRouter::findLayerRangeOverPosition(
   int min_layer = std::numeric_limits<int>::max();
   int max_layer = -1;
   for (const GSegment& seg : route) {
-    const auto [min_x, max_x] = std::minmax(seg.init_x, seg.final_x);
-    const auto [min_y, max_y] = std::minmax(seg.init_y, seg.final_y);
-    if (min_x <= pos.getX() && pos.getX() <= max_x && min_y <= pos.getY()
-        && pos.getY() <= max_y) {
+    const odb::Rect seg_box(seg.init_x, seg.init_y, seg.final_x, seg.final_y);
+    if (seg_box.intersects(pos)) {
       min_layer = std::min({min_layer, seg.init_layer, seg.final_layer});
       max_layer = std::max({max_layer, seg.init_layer, seg.final_layer});
     }
