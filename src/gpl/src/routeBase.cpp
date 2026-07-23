@@ -406,7 +406,8 @@ void RouteBase::calculateRudyTiles()
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
 
     // update inflation Ratio
-    if (ratio >= rbVars_.minCongestionForInflation) {
+    if (rbVars_.minCongestionForInflation > 0.0f
+        && ratio >= rbVars_.minCongestionForInflation) {
       float inflationRatio = std::pow(ratio / rbVars_.minCongestionForInflation,
                                       rbVars_.inflationRatioCoef);
       inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
@@ -567,7 +568,8 @@ void RouteBase::updateGrtRoute()
         ratio = 0.0;
       }
       //  update inflation Ratio
-      if (ratio >= rbVars_.minCongestionForInflation) {
+      if (rbVars_.minCongestionForInflation > 0.0f
+          && ratio >= rbVars_.minCongestionForInflation) {
         float inflationRatio
             = std::pow(ratio / rbVars_.minCongestionForInflation,
                        rbVars_.inflationRatioCoef);
