@@ -1092,10 +1092,14 @@ void RouteBase::printGCellInflation() const
 {
   std::vector<float> cell_inflation_ratios;
   for (auto& gCell : nbc_->getGCells()) {
-    if (!gCell->isStdInstance()) {
+    if (!gCell->isStdInstance() || gCell->insts().empty() || !gCell->insts()[0]
+        || !gCell->insts()[0]->dbInst()) {
       continue;
     }
     auto master = gCell->insts()[0]->dbInst()->getMaster();
+    if (!master) {
+      continue;
+    }
     int64_t orig_cell_area = static_cast<int64_t>(master->getWidth())
                              * static_cast<int64_t>(master->getHeight());
 
