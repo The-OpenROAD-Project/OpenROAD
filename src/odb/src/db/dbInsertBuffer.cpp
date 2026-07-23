@@ -277,6 +277,9 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
   dbMTerm* input_mterm = nullptr;
   dbMTerm* output_mterm = nullptr;
   for (dbMTerm* mterm : const_cast<dbMaster*>(buffer_master_)->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
     if (mterm->getIoType() == dbIoType::INPUT) {
       if (input_mterm != nullptr) {
         logger_->warn(utl::ODB,
@@ -539,9 +542,10 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const char* suffix) const
 {
   // insertBuffer only punches scalar hierarchy ports, never bus ports.
-  std::string scalar_base_name = replaceBracketsWithUnderscores(base_name);
-  std::string name
-      = (suffix == nullptr) ? scalar_base_name : scalar_base_name + suffix;
+  std::string name = replaceBracketsWithUnderscores(base_name);
+  if (suffix != nullptr) {
+    name += suffix;
+  }
   std::string full = block_->makeNewNetName(
       module, name.c_str(), dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   return std::string(block_->getBaseName(full.c_str()));

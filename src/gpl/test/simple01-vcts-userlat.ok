@@ -7,6 +7,7 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] Core area:                     953.876 um^2
 [INFO GPL-0036] Movable instances area:        553.280 um^2
 [INFO GPL-0037] Total instances area:          553.280 um^2
 [INFO GPL-0035] Pin density area adjust:        47.712 um^2
@@ -17,9 +18,8 @@
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                    356
 [INFO GPL-0011] Number of pins:                   1106
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                   953.876 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -91,34 +91,34 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
       192 |     +0.0% |       0 |        0 |       128
       224 |     +0.0% |       0 |        0 |        96
       256 |     +0.0% |       0 |        0 |        64
-      288 |     +0.2% |       0 |        1 |        32
-    final |     +0.9% |       0 |        5 |         0
+      288 |     +0.0% |       0 |        0 |        32
+    final |     +0.0% |       0 |        0 |         0
 -------------------------------------------------------
-[INFO GPL-0106] Timing-driven: worst slack 1.0516449e-09
-[INFO GPL-0107] Timing-driven: repair_design delta area: 5.054 um^2 (+0.84%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 5 (+1.75%)
-[INFO GPL-0109] Timing-driven: repair_design, gcells created: 5, deleted: 0
-[INFO GPL-0110] Timing-driven: new target density: 0.70529836
+[INFO GPL-0106] Timing-driven: worst slack 1.0490306e-09
+[INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 0, deleted: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.7
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      220 |   0.6571 |  2.228428e+03 |   +3.34% |  2.46e-09 |      
-      230 |   0.6113 |  2.256053e+03 |   +1.24% |  4.01e-09 |      
-      240 |   0.5715 |  2.309666e+03 |   +2.38% |  6.53e-09 |      
-      250 |   0.5206 |  2.352689e+03 |   +1.86% |  1.06e-08 |      
-      260 |   0.4634 |  2.389762e+03 |   +1.58% |  1.73e-08 |      
-      270 |   0.4047 |  2.407610e+03 |   +0.75% |  2.82e-08 |      
-      280 |   0.3395 |  2.439829e+03 |   +1.34% |  4.60e-08 |      
-      290 |   0.3022 |  2.446367e+03 |   +0.27% |  6.77e-08 |      
-      300 |   0.2577 |  2.452820e+03 |   +0.26% |  9.98e-08 |      
-      310 |   0.2179 |  2.492006e+03 |   +1.60% |  1.47e-07 |      
-      320 |   0.2016 |  2.517619e+03 |   +1.03% |  2.16e-07 |      
+      220 |   0.6618 |  2.205894e+03 |   +2.29% |  2.46e-09 |      
+      230 |   0.6129 |  2.240711e+03 |   +1.58% |  4.01e-09 |      
+      240 |   0.5712 |  2.293534e+03 |   +2.36% |  6.53e-09 |      
+      250 |   0.5216 |  2.317802e+03 |   +1.06% |  1.06e-08 |      
+      260 |   0.4602 |  2.342101e+03 |   +1.05% |  1.73e-08 |      
+      270 |   0.3960 |  2.352317e+03 |   +0.44% |  2.82e-08 |      
+      280 |   0.3253 |  2.381207e+03 |   +1.23% |  4.51e-08 |      
+      290 |   0.2906 |  2.405788e+03 |   +1.03% |  6.64e-08 |      
+      300 |   0.2477 |  2.424287e+03 |   +0.77% |  9.78e-08 |      
+      310 |   0.2228 |  2.445192e+03 |   +0.86% |  1.44e-07 |      
+      320 |   0.1953 |  2.473475e+03 |   +1.16% |  2.12e-07 |      
 [INFO GPL-0162] Virtual CTS: set 33 virtual clock insertion delays.
-[INFO GPL-0164] Virtual CTS iteration 2, overflow: 0.194.
+[INFO GPL-0164] Virtual CTS iteration 2, overflow: 0.191.
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
-[INFO GPL-0101]    Iter: 325, overflow: 0.194, keep resizer changes at: 1, HPWL: 5053377
+[INFO GPL-0101]    Iter: 322, overflow: 0.191, keep resizer changes at: 1, HPWL: 4954440
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
-        0 |     +0.0% |       0 |       0 |             0 |       361
+        0 |     +0.0% |       0 |       0 |             0 |       356
     final |     +0.0% |       0 |       0 |             0 |         0
 ---------------------------------------------------------------------
    Iter   |    Area   | Removed | Inserted |   Pins
@@ -132,32 +132,32 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
       160 |     +0.0% |       0 |        0 |       160
       192 |     +0.0% |       0 |        0 |       128
       224 |     +0.0% |       0 |        0 |        96
-      256 |     +0.1% |       0 |        1 |        64
-      288 |     +0.1% |       1 |        2 |        32
-    final |     +0.1% |       5 |        6 |         0
+      256 |     +0.0% |       0 |        0 |        64
+      288 |     +0.0% |       0 |        0 |        32
+    final |     +0.0% |       0 |        0 |         0
 -------------------------------------------------------
-[INFO GPL-0106] Timing-driven: worst slack 1.0311315e-09
-[INFO GPL-0107] Timing-driven: repair_design delta area: 0.798 um^2 (+0.13%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 1 (+0.34%)
-[INFO GPL-0109] Timing-driven: repair_design, gcells created: 6, deleted: 5
-[INFO GPL-0110] Timing-driven: new target density: 0.706135
+[INFO GPL-0106] Timing-driven: worst slack 1.0381815e-09
+[INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 0, deleted: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.7
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      330 |   0.1823 |  2.550497e+03 |   +1.31% |  3.19e-07 |      
-      340 |   0.1609 |  2.584829e+03 |   +1.35% |  4.70e-07 |      
-      350 |   0.1366 |  2.604175e+03 |   +0.75% |  6.92e-07 |      
-      360 |   0.1176 |  2.608838e+03 |   +0.18% |  1.02e-06 |      
-      370 |   0.0983 |  2.613256e+03 |   +0.17% |  1.50e-06 |      
-      370 |   0.0983 |  2.613256e+03 |          |  1.56e-06 |      
+      330 |   0.1819 |  2.481514e+03 |   +0.33% |  3.13e-07 |      
+      340 |   0.1588 |  2.504807e+03 |   +0.94% |  4.60e-07 |      
+      350 |   0.1330 |  2.515325e+03 |   +0.42% |  6.78e-07 |      
+      360 |   0.1164 |  2.527740e+03 |   +0.49% |  9.99e-07 |      
+      370 |   0.0984 |  2.537630e+03 |   +0.39% |  1.47e-06 |      
+      370 |   0.0984 |  2.537630e+03 |          |  1.53e-06 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 370
-[INFO GPL-1002] Placed Cell Area              606.8444
+[INFO GPL-1002] Placed Cell Area              600.9924
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6400 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.7069
-[INFO GPL-1008]     - For 80% usage of free space: 0.7952
+[INFO GPL-1007]     - For 90% usage of free space: 0.7001
+[INFO GPL-1008]     - For 80% usage of free space: 0.7876
 [INFO GPL-1011] Original area (um^2): 600.99
-[INFO GPL-1013] Total timing-driven delta area: 5.85 (+0.97%)
-[INFO GPL-1014] Final placement area: 606.84 (+0.97%)
+[INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1014] Final placement area: 600.99 (+0.00%)
 worst slack max 1.02

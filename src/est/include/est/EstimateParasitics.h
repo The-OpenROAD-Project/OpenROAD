@@ -205,6 +205,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void removeDbCbkOwner();
 
   void initBlock();
+  void initChip(odb::dbChip* chip);
 
   utl::Logger* getLogger() { return logger_; }
 

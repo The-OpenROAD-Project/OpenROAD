@@ -120,6 +120,9 @@ TESTS = [
     "tracks3",
     "unplaced_inst",
     "upper_layer_net",
+    "via_geometry_cugr",
+    "via_multirect_cugr",
+    "via_priority_cugr",
     "write_segments1",
     "write_segments2",
 ]

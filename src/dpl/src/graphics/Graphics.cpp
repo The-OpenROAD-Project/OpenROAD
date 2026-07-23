@@ -20,6 +20,7 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace dpl {
 
@@ -62,6 +63,10 @@ void Graphics::drawSelected(odb::dbInst* instance, bool force)
 
   auto selected = gui->makeSelected(instance);
   gui->setSelected(selected);
+  odb::Rect bbox = instance->getBBox()->getBox();
+  odb::Rect view;
+  bbox.bloat(std::max(bbox.dx(), bbox.dy()), view);
+  gui->zoomTo(view);
   gui->redraw();
   gui->pause();
 }
@@ -110,14 +115,16 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    if (!cell->isPlaced()) {
-      auto color = gui::Painter::kDarkMagenta;
-      painter.setPen(color);
-      painter.setBrush(color);
-      odb::Rect bbox;
-      bbox = cell->getDbInst()->getBBox()->getBox();
-      painter.drawRect(bbox);
-      continue;
+    if (!dp_->isUseNegotiationLegalizer()) {
+      if (!cell->isPlaced()) {
+        auto color = gui::Painter::kDarkMagenta;
+        painter.setPen(color);
+        painter.setBrush(color);
+        odb::Rect bbox;
+        bbox = cell->getDbInst()->getBBox()->getBox();
+        painter.drawRect(bbox);
+        continue;
+      }
     }
 
     if (cell->getDbInst()->isFixed()) {
@@ -237,7 +244,7 @@ void Graphics::drawObjects(gui::Painter& painter)
         gui::Painter::Color c;
         switch (state) {
           case NegotiationPixelState::kNoRow:
-            c = gui::Painter::kDarkGray;
+            c = gui::Painter::kBrown;
             c.a = 60;
             break;
           case NegotiationPixelState::kFree:
@@ -287,6 +294,54 @@ void Graphics::drawObjects(gui::Painter& painter)
         continue;
       }
       const auto& [init_win, curr_win] = it->second;
+
+      // Report the window bounds once per selection change (drawObjects runs
+      // on every repaint, so gate on the last-logged instance to avoid spam).
+      if (inst != last_logged_search_window_inst_) {
+        last_logged_search_window_inst_ = inst;
+        odb::dbBlock* block = inst->getBlock();
+        const double inst_area_um2
+            = block->dbuAreaToMicrons(inst->getBBox()->getBox().area());
+        const Grid* grid = dp_->grid_.get();
+        const odb::Rect core = grid->getCore();
+        auto windowSites = [&](const odb::Rect& win) {
+          return win.dx() / grid->getSiteWidth().v;
+        };
+        auto windowRows = [&](const odb::Rect& win) {
+          return (grid->gridRoundY(DbuY{win.yMax() - core.yMin()})
+                  - grid->gridRoundY(DbuY{win.yMin() - core.yMin()}))
+              .v;
+        };
+        dp_->logger_->report(
+            "Window for {}: ll ({}, {}) ur ({}, {}) dbu, {:.3f} x {:.3f} um "
+            "({} sites x {} rows), area {:.3f} um^2 (instance area {:.3f} "
+            "um^2).",
+            inst->getName(),
+            init_win.xMin(),
+            init_win.yMin(),
+            init_win.xMax(),
+            init_win.yMax(),
+            block->dbuToMicrons(init_win.dx()),
+            block->dbuToMicrons(init_win.dy()),
+            windowSites(init_win),
+            windowRows(init_win),
+            block->dbuAreaToMicrons(init_win.area()),
+            inst_area_um2);
+        if (!curr_win.isInverted() && curr_win.area() > 0) {
+          dp_->logger_->report(
+              "  current-position window ll ({}, {}) ur ({}, {}) dbu, "
+              "{:.3f} x {:.3f} um ({} sites x {} rows), area {:.3f} um^2.",
+              curr_win.xMin(),
+              curr_win.yMin(),
+              curr_win.xMax(),
+              curr_win.yMax(),
+              block->dbuToMicrons(curr_win.dx()),
+              block->dbuToMicrons(curr_win.dy()),
+              windowSites(curr_win),
+              windowRows(curr_win),
+              block->dbuAreaToMicrons(curr_win.area()));
+        }
+      }
 
       // Init-position search window
       auto init_color = gui::Painter::kCyan;
@@ -341,6 +396,9 @@ void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
 void Graphics::clearNegotiationSearchWindows()
 {
   negotiation_search_windows_.clear();
+  // Force the next drawObjects() call to re-log the window size, since a new
+  // iteration means the window for the selected instance may have changed.
+  last_logged_search_window_inst_ = nullptr;
 }
 
 void Graphics::addNegotiationViolationsPoint(int iter,
