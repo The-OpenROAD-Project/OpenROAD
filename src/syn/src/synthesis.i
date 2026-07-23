@@ -144,6 +144,17 @@ gate_fuse_opt_cmd()
 }
 
 void
+acd_resynth_cmd(int max_leaves, int max_intermediate_leaves, int max_cells,
+                int max_outerfans, bool exclude_buffers, bool allow_lateral,
+                float effort, bool apply)
+{
+  syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
+  synthesis->acdResynth(max_leaves, max_intermediate_leaves, max_cells,
+                        max_outerfans, exclude_buffers, allow_lateral, effort,
+                        apply);
+}
+
+void
 liveness_opt_cmd(bool replace_combinational = false)
 {
   syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
