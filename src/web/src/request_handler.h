@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <array>
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -119,6 +121,15 @@ struct WebSocketRequest
     kDrcHighlight,
     kSelectNext,
     kSelectPrev,
+    kSetProperty,
+    kTriggerAction,
+    kHighlight,
+    kUnhighlight,
+    kClearHighlights,
+    kListSelection,
+    kInspectSelection,
+    kInspectGroup,
+    kDeselect,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
@@ -161,9 +172,19 @@ struct WebSocketResponse
 // Handlers receive a reference; WebSocketSession owns the instance.
 struct SessionState
 {
+  // Raised by the session's odb destroy callbacks when any selectable
+  // object type is destroyed (by trigger_action or a Tcl command).  The
+  // Selected wrappers below hold raw odb pointers, so the whole selection
+  // state must be dropped before the next dereference; handlers consume
+  // the flag via consumeStaleSelection() before touching any Selected.
+  std::atomic<bool> selection_stale{false};
+
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;
+  // Flight lines emitted by selection highlights (unrouted nets draw
+  // driver→sink lines); rendered in the overlay next to timing lines.
+  std::vector<FlightLine> highlight_lines;
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;
@@ -177,6 +198,18 @@ struct SessionState
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
   gui::SelectionSet selection_set;
   gui::SelectionSet::const_iterator selection_itr = selection_set.end();
+
+  // Color-coded highlight groups (mirrors Qt GUI's HighlightSet: 16 fixed
+  // groups colored by gui::Painter::kHighlightColors).  An object lives in
+  // at most one group.  highlight_group_rects is the derived overlay
+  // snapshot, rebuilt on every mutation (not per tile).  Both guarded by
+  // selection_mutex.
+  std::array<gui::SelectionSet, gui::kNumHighlightSet> highlight_groups;
+  std::vector<ColoredRect> highlight_group_rects;
+  // Flight lines emitted by group members whose highlight() draws lines
+  // (e.g. unrouted nets), tinted with the group color.  Guarded by
+  // selection_mutex, rebuilt with highlight_group_rects.
+  std::vector<FlightLine> highlight_group_lines;
 
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
@@ -215,6 +248,12 @@ T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
   return default_val;
 }
 
+// Drops the entire selection state (selectables, inspected object,
+// history, selection set, highlight/hover shapes) when a destroy callback
+// flagged it stale.  Must be called before dereferencing any stored
+// gui::Selected.  Returns true when the state was cleared.
+bool consumeStaleSelection(SessionState& state);
+
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
 {
@@ -222,6 +261,15 @@ class SelectHandler
   SelectHandler(std::shared_ptr<TileGenerator> gen,
                 std::shared_ptr<TclEvaluator> tcl_eval);
   void registerRequests(RequestDispatcher& dispatcher);
+
+  // Called after a request mutates the database (e.g. an accepted
+  // set_property) so every connected client re-renders.  The session
+  // wires this to SessionRegistry::broadcast; invoked with the STA lock
+  // released.
+  void setBroadcastFn(std::function<void(const std::string&)> fn)
+  {
+    broadcast_fn_ = std::move(fn);
+  }
 
   WebSocketResponse handleSelect(const WebSocketRequest& req,
                                  SessionState& state);
@@ -241,6 +289,24 @@ class SelectHandler
                                      SessionState& state);
   WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
                                      SessionState& state);
+  WebSocketResponse handleSetProperty(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleTriggerAction(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleHighlight(const WebSocketRequest& req,
+                                    SessionState& state);
+  WebSocketResponse handleUnhighlight(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleClearHighlights(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleListSelection(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleInspectSelection(const WebSocketRequest& req,
+                                           SessionState& state);
+  WebSocketResponse handleInspectGroup(const WebSocketRequest& req,
+                                       SessionState& state);
+  WebSocketResponse handleDeselect(const WebSocketRequest& req,
+                                   SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
@@ -251,6 +317,7 @@ class SelectHandler
  private:
   std::shared_ptr<TileGenerator> gen_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::function<void(const std::string&)> broadcast_fn_;
 };
 
 // Handles TCL_EVAL requests.

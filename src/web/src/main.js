@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import { latLngToDbu } from './coordinates.js';
+import { latLngToDbu, dbuToLatLng } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
@@ -10,7 +10,9 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode } from './ui-utils.js';
+import { SelectionBrowser } from './selection-browser.js';
+import { isStaticMode, computeBoundsTransforms, boundsEqual, showToast }
+    from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -397,6 +399,10 @@ function scheduleRefreshOverlay() {
         _overlayRAF = null;
         refreshOverlay();
     });
+    // Every selection/highlight mutation refreshes the overlay, so this
+    // single hook keeps the selection browser in sync (it debounces and
+    // skips fetches while hidden).
+    if (app.selectionBrowser) app.selectionBrowser.scheduleRefresh();
 }
 
 function redrawAllLayers() {
@@ -680,6 +686,8 @@ const pulseHighlight = inspector.pulseHighlight;
 app.updateInspector = updateInspector;
 app.navigateInspector = inspector.navigateInspector;
 app.refreshInspector = inspector.refreshInspector;
+app.animateSelection = inspector.animateSelection;
+app.stopSelectionAnimation = inspector.stopSelectionAnimation;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -714,6 +722,8 @@ function createHelpWidget(container) {
         '<tr><td><kbd>scroll</kbd></td><td>Zoom in/out</td></tr>' +
         '<tr><td><kbd>drag</kbd></td><td>Pan the view</td></tr>' +
         '<tr><td><kbd>right-drag</kbd></td><td>Rubber-band zoom</td></tr>' +
+        '<tr><td><kbd>Shift+click</kbd></td><td>Add object to selection</td></tr>' +
+        '<tr><td><kbd>Ctrl/Cmd+click</kbd></td><td>Select object and its connected nets</td></tr>' +
         '<tr><td><kbd>k</kbd></td><td>Toggle ruler mode</td></tr>' +
         '<tr><td><kbd>Shift+K</kbd></td><td>Clear all rulers</td></tr>' +
         '<tr><td><kbd>Escape</kbd></td><td>Cancel ruler (when building)</td></tr>' +
@@ -722,8 +732,8 @@ function createHelpWidget(container) {
 }
 
 function createSelectHighlight(container) {
-    createStubPanel(container, 'Selection',
-        'Selection and highlight browser.');
+    app.selectionBrowser
+        = new SelectionBrowser(container, app, scheduleRefreshOverlay);
 }
 
 function createSchematicWidget(container) {
@@ -815,6 +825,11 @@ const defaultLayoutConfig = {
                     },
                     {
                         type: 'component',
+                        componentType: 'SelectHighlight',
+                        title: 'Select Highlight',
+                    },
+                    {
+                        type: 'component',
                         componentType: 'ClockWidget',
                         title: 'Clock Tree',
                     },
@@ -853,7 +868,8 @@ app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 3;
+// v4: SelectHighlight (selection browser) added to the default layout.
+const LAYOUT_VERSION = 4;
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
@@ -865,6 +881,12 @@ if (staticCache) {
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    // On reconnect the server may have been restarted (possibly with a
+    // different design) — resync the coordinate transforms; a bounds
+    // change here reloads through the boot path.
+    app.websocketManager.onReconnected = () => {
+        resyncBounds(null, { reloadOnChange: true }).catch(() => {});
+    };
 }
 
 // Check initial connection status
@@ -988,11 +1010,97 @@ function ensureDebugContinueButton() {
     return btn;
 }
 
+// ─── Bounds / coordinate-transform sync ─────────────────────────────────────
+// The server's getBounds() is dynamic: DB edits (moving an instance
+// outside the block bbox, deleting an edge instance) change the tile
+// georeference.  The transforms below are applied at boot and re-synced
+// whenever the server reports different bounds — otherwise every later
+// click and highlight lands offset from the re-rendered tiles.
+
+function applyBounds(designBounds) {
+    const t = computeBoundsTransforms(designBounds);
+    if (!t) return false;
+    app.currentBounds = designBounds;
+    app.designScale = t.scale;
+    app.designMaxDXDY = t.maxDXDY;
+    app.designOriginX = t.originX;
+    app.designOriginY = t.originY;
+    app.fitBounds = t.fitBounds;
+    return true;
+}
+
+async function resyncBounds(inlineBounds, { reloadOnChange = false } = {}) {
+    // Returns true when it already redrew the layers (bounds changed), so
+    // callers can avoid a second redundant redraw.
+    if (isStaticMode(app) || !app.map) return false;
+    let designBounds = inlineBounds;
+    if (!designBounds) {
+        try {
+            const data = await app.websocketManager.request({ type: 'bounds' });
+            designBounds = data.bounds;
+        } catch (err) {
+            return false;
+        }
+    }
+    if (!designBounds || boundsEqual(app.currentBounds, designBounds)) {
+        return false;
+    }
+
+    if (reloadOnChange) {
+        // After a reconnect, different bounds usually mean a different
+        // design — rebuild everything through the well-tested boot path.
+        window.location.reload();
+        return true;
+    }
+
+    // Keep the DBU point at the center of the view where it is.
+    const hadDesign = !!app.designScale;
+    const center = hadDesign
+        ? latLngToDbu(app.map.getCenter().lat, app.map.getCenter().lng,
+                      app.designScale, app.designMaxDXDY,
+                      app.designOriginX, app.designOriginY)
+        : null;
+    if (!applyBounds(designBounds)) return false;
+    if (center) {
+        const ll = dbuToLatLng(center.dbuX, center.dbuY, app.designScale,
+                               app.designMaxDXDY, app.designOriginX,
+                               app.designOriginY);
+        app.map.setView(ll, app.map.getZoom(), { animate: false });
+    }
+    // Client-side rectangles hold latlngs from the old transforms.
+    if (app.highlightRect) {
+        app.map.removeLayer(app.highlightRect);
+        app.highlightRect = null;
+    }
+    redrawAllLayers();
+    return true;
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
-        redrawAllLayers();
+        // An edit may have changed the design bounds (and with them the
+        // tile georeference); resync transforms before/along the redraw.
+        // resyncBounds already redraws when the bounds changed, so only
+        // redraw here when it didn't (same bounds, edited geometry).
+        resyncBounds(msg.bounds)
+            .then((redrew) => { if (!redrew) redrawAllLayers(); })
+            .catch(() => redrawAllLayers());
+        // The design may have been edited by another session's
+        // set_property; refresh the inspected object's properties.
+        if (app.refreshInspector) app.refreshInspector();
+    } else if (msg.type === 'selection_invalidated') {
+        // A design object was destroyed (trigger_action or Tcl); the
+        // server dropped this session's selection state.  Clear the
+        // inspector and stale highlights.
+        if (app.updateInspector) app.updateInspector(null);
+        if (app.stopSelectionAnimation) app.stopSelectionAnimation();
+        if (app.highlightRect && app.map) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        scheduleRefreshOverlay();
     } else if (msg.type === 'drcUpdated') {
         if (app._drcUpdateTimeout) {
             clearTimeout(app._drcUpdateTimeout);
@@ -1059,29 +1167,9 @@ app.websocketManager.readyPromise.then(async () => {
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
 
-        const minY = designBounds[0][0];
-        const minX = designBounds[0][1];
-        const maxY = designBounds[1][0];
-        const maxX = designBounds[1][1];
-
-        const designWidth = maxX - minX;
-        const designHeight = maxY - minY;
-
         // No design loaded — skip map setup, let user open a DB via menu.
-        const hasDesign = designWidth > 0 && designHeight > 0;
+        const hasDesign = applyBounds(designBounds);
         if (hasDesign) {
-            const tileSize = 256;
-            const maxDXDY = Math.max(designWidth, designHeight);
-            const scale = tileSize / maxDXDY;
-            app.designScale = scale;
-            app.designMaxDXDY = maxDXDY;
-            app.designOriginX = minX;
-            app.designOriginY = minY;
-
-            app.fitBounds = [
-                [-maxDXDY * scale, 0],
-                [(designHeight - maxDXDY) * scale, designWidth * scale]
-            ];
             app.map.fitBounds(app.fitBounds);
 
             if (staticCache) {
@@ -1144,6 +1232,14 @@ app.websocketManager.readyPromise.then(async () => {
             if (e.originalEvent && e.originalEvent.shiftKey) {
                 selectRequest.add_to_selection = true;
             }
+            // Ctrl+click: Qt parity (selectHighlightConnectedNets) — also
+            // pull the clicked instance's SIGNAL nets into the selection.
+            // Accept Cmd+click too: on macOS Ctrl+click is the context-menu
+            // gesture, so metaKey is the reachable modifier there.
+            if (e.originalEvent
+                && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {
+                selectRequest.show_connectivity = true;
+            }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
@@ -1166,6 +1262,12 @@ app.websocketManager.readyPromise.then(async () => {
                             highlightBBox(inst.bbox[0], inst.bbox[1],
                                           inst.bbox[2], inst.bbox[3]);
                             pulseHighlight(inst.bbox);
+                        }
+                        if (selectRequest.show_connectivity
+                            && data.connected_added > 0) {
+                            showToast(`Selected ${data.connected_added} `
+                                      + 'connected net'
+                                      + (data.connected_added > 1 ? 's' : ''));
                         }
                     } else if (!selectRequest.add_to_selection) {
                         // Shift+click on empty space preserves the existing

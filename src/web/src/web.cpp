@@ -216,6 +216,36 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
     resp.payload.assign(json.begin(), json.end());
     queue_response(resp);
   }
+
+  // Destroying any selectable object (via trigger_action or a Tcl
+  // command) leaves the session's stored gui::Selected wrappers holding
+  // dangling odb pointers.  Raise the staleness flag — handlers drop the
+  // whole selection state via consumeStaleSelection() before the next
+  // dereference — and tell the client once so it clears its inspector.
+  // Deliberately coarse: destroys are rare interactive events and
+  // membership testing against indirect references (e.g. an ITerm of a
+  // destroyed inst) is error-prone.
+  void invalidateSelection()
+  {
+    if (state_.selection_stale.exchange(true)) {
+      return;  // already pending (debounces mass deletes)
+    }
+    WebSocketResponse resp;
+    resp.type = WebSocketResponse::kJson;
+    const std::string json = R"({"type":"selection_invalidated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbInstDestroy(odb::dbInst*) override { invalidateSelection(); }
+  void inDbNetDestroy(odb::dbNet*) override { invalidateSelection(); }
+  void inDbITermDestroy(odb::dbITerm*) override { invalidateSelection(); }
+  void inDbBTermDestroy(odb::dbBTerm*) override { invalidateSelection(); }
+  void inDbBlockageDestroy(odb::dbBlockage*) override { invalidateSelection(); }
+  void inDbObstructionDestroy(odb::dbObstruction*) override
+  {
+    invalidateSelection();
+  }
 };
 
 WebSocketSession::WebSocketSession(
@@ -256,6 +286,14 @@ WebSocketSession::WebSocketSession(
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
   }
+
+  // DB-mutating requests (set_property) notify every connected client so
+  // all views re-render.  Fire-and-forget; safe from any thread.
+  select_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
+    if (hook != nullptr) {
+      hook->sessions().broadcast(j);
+    }
+  });
 
   // Register all handler request types with the dispatcher.
   select_handler_.registerRequests(dispatcher_);

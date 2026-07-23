@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <any>
+#include <atomic>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -16,7 +17,9 @@
 
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
+#include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
+#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -77,6 +80,82 @@ class FakeDescriptor : public gui::Descriptor
   {
     painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
   }
+};
+
+// Highlights with a flight line instead of a rect — exercises
+// ShapeCollector::drawLine (unrouted nets / net-to-sink paths).
+class LineFakeDescriptor : public FakeDescriptor
+{
+ public:
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
+    painter.drawLine(b.ll(), b.ur());
+  }
+};
+
+// Minimal odb descriptors so DescriptorRegistry::makeSelected() works on
+// real dbInst/dbNet objects inside the unit tests — the production set
+// lives in the full gui library, which the web test does not link.
+class TestInstDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbInst*>(object)->getName();
+  }
+  std::string getTypeName() const override { return "Inst"; }
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  {
+    bbox = std::any_cast<odb::dbInst*>(object)->getBBox()->getBox();
+    return true;
+  }
+  bool isInst(const std::any&) const override { return true; }
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+  Properties getProperties(const std::any&) const override { return {}; }
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(std::any_cast<odb::dbInst*>(object), this);
+  }
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbInst*>(l)->getId()
+           < std::any_cast<odb::dbInst*>(r)->getId();
+  }
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
+  }
+};
+
+class TestNetDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbNet*>(object)->getName();
+  }
+  std::string getTypeName() const override { return "Net"; }
+  bool getBBox(const std::any&, odb::Rect&) const override { return false; }
+  bool isNet(const std::any&) const override { return true; }
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+  Properties getProperties(const std::any&) const override { return {}; }
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(std::any_cast<odb::dbNet*>(object), this);
+  }
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbNet*>(l)->getId()
+           < std::any_cast<odb::dbNet*>(r)->getId();
+  }
+  void highlight(const std::any&, gui::Painter&) const override {}
 };
 
 class LazyMetadataHeatMap : public gui::HeatMapDataSource
@@ -196,6 +275,25 @@ TEST_F(TileHandlerTest, TechReturnsJson)
   EXPECT_NE(json.find("\"metal1\""), std::string::npos);
   EXPECT_NE(json.find("\"sites\""), std::string::npos);
   EXPECT_NE(json.find("\"has_liberty\""), std::string::npos);
+}
+
+TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
+{
+  WebSocketRequest req;
+  req.id = 8;
+  req.type = WebSocketRequest::kTech;
+
+  auto resp = handler_->handleTile(req, state_);
+  auto root = parseObj(payloadStr(resp));
+  ASSERT_TRUE(root.if_contains("highlight_colors"));
+  const auto& colors = root.at("highlight_colors").as_array();
+  ASSERT_EQ(colors.size(), static_cast<size_t>(gui::kNumHighlightSet));
+  // Group 0 is kGreen with the Qt highlight alpha (100).
+  const auto& first = colors[0].as_array();
+  EXPECT_EQ(first[0].as_int64(), 0);
+  EXPECT_EQ(first[1].as_int64(), 255);
+  EXPECT_EQ(first[2].as_int64(), 0);
+  EXPECT_EQ(first[3].as_int64(), 100);
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -438,6 +536,18 @@ class SelectHandlerTest : public tst::Nangate45Fixture
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+    // The registry owns registered descriptors (unique_ptr) — heap-only.
+    auto* registry = gui::DescriptorRegistry::instance();
+    registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
+    registry->registerDescriptor<odb::dbNet*>(new TestNetDescriptor);
+  }
+
+  void TearDown() override
+  {
+    auto* registry = gui::DescriptorRegistry::instance();
+    registry->unregisterDescriptor<odb::dbInst*>();
+    registry->unregisterDescriptor<odb::dbNet*>();
+    tst::Nangate45Fixture::TearDown();
   }
 
   gui::Selected makeFakeSelected(FakeInspectable* object)
@@ -526,6 +636,109 @@ TEST_F(SelectHandlerTest, SelectWithMissingFieldReturnsError)
   auto resp = handler_->handleSelect(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
   EXPECT_NE(payloadStr(resp).find("server error"), std::string::npos);
+}
+
+// Ctrl+click parity (Qt selectHighlightConnectedNets): show_connectivity
+// expands the selection with the SIGNAL nets on the picked instance's
+// ITerms and reports how many were added.
+TEST_F(SelectHandlerTest, SelectWithConnectivityAddsSignalNets)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* in_net = odb::dbNet::create(block_, "n_in");
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_out");
+  ASSERT_NE(inst->findITerm("A"), nullptr);
+  ASSERT_NE(inst->findITerm("Z"), nullptr);
+  inst->findITerm("A")->connect(in_net);
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 20;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[],)"
+                 R"("show_connectivity":true})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  auto root = parseObj(payloadStr(resp));
+  EXPECT_EQ(root.at("connected_added").as_int64(), 2) << payloadStr(resp);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 3);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.selection_set.size(), 3u);
+  }
+}
+
+// Non-SIGNAL nets (power/ground) are never pulled into the selection.
+TEST_F(SelectHandlerTest, SelectConnectivityIgnoresNonSignalNets)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* in_net = odb::dbNet::create(block_, "n_pwr");
+  in_net->setSigType(odb::dbSigType::POWER);
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_sig");
+  inst->findITerm("A")->connect(in_net);
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 21;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[],)"
+                 R"("show_connectivity":true})");
+
+  auto root = parseObj(payloadStr(handler_->handleSelect(req, state_)));
+  EXPECT_EQ(root.at("connected_added").as_int64(), 1)
+      << boost::json::serialize(root);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+}
+
+// Without the flag a plain click never expands the selection, and the
+// response carries no connected_added field.
+TEST_F(SelectHandlerTest, SelectWithoutConnectivityFlagAddsNothing)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_out");
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 22;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[]})");
+
+  auto root = parseObj(payloadStr(handler_->handleSelect(req, state_)));
+  EXPECT_FALSE(root.contains("connected_added"))
+      << boost::json::serialize(root);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+}
+
+// Flight lines emitted by a descriptor's highlight() are collected into
+// the session so the overlay can render them alongside timing lines.
+TEST_F(SelectHandlerTest, InspectCollectsHighlightLines)
+{
+  LineFakeDescriptor line_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {gui::Selected(&fake_current_, &line_descriptor)};
+  }
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    ASSERT_EQ(state_.highlight_lines.size(), 1u);
+    EXPECT_EQ(state_.highlight_lines[0].p1, fake_current_.bbox.ll());
+    EXPECT_EQ(state_.highlight_lines[0].p2, fake_current_.bbox.ur());
+    EXPECT_TRUE(state_.highlight_rects.empty());
+  }
 }
 
 TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
@@ -1186,6 +1399,830 @@ TEST_F(SelectHandlerTest, SelectNextRestoresSelectionSetHighlights)
   }
   EXPECT_TRUE(found_current);
   EXPECT_TRUE(found_previous);
+}
+
+//------------------------------------------------------------------------------
+// set_property tests (descriptor editors)
+//------------------------------------------------------------------------------
+
+// FakeDescriptor with descriptor editors, mirroring the shapes found in
+// dbDescriptors.cpp: a string editor (Name), a bool editor (Dont Touch),
+// a number editor (Weight), an option-list editor (Orientation), and a
+// string editor that exercises Property::convert_string (Location).
+class EditableFakeDescriptor : public FakeDescriptor
+{
+ public:
+  enum class EditMode
+  {
+    kAccept,
+    kReject,
+    kThrow
+  };
+  EditMode edit_mode = EditMode::kAccept;
+  mutable std::any last_value;
+  mutable int edit_calls = 0;
+  mutable int location_dbu = -1;
+  mutable bool location_ok = false;
+
+  Properties getProperties(const std::any& object) const override
+  {
+    auto* fake = std::any_cast<FakeInspectable*>(object);
+    return {{"Name", fake->name},
+            {"Dont Touch", false},
+            {"Weight", 42},
+            {"Orientation", std::string("R0")},
+            {"Location", std::string("0")}};
+  }
+
+  // Action test hooks: "Jump" selects jump_target, "Refresh" keeps the
+  // selection, "Explode" throws, "Delete" simulates an odb destroy by
+  // raising *stale_flag (what the session's inDb*Destroy callback does),
+  // "Insert Buffer" must be suppressed, and "deselect" is the reserved
+  // lifecycle callback.
+  FakeInspectable* jump_target = nullptr;
+  std::atomic<bool>* stale_flag = nullptr;
+  mutable int deselect_calls = 0;
+
+  Actions getActions(const std::any& object) const override
+  {
+    Actions actions;
+    actions.push_back({std::string(gui::Descriptor::kDeselectAction),
+                       [this]() -> gui::Selected {
+                         ++deselect_calls;
+                         return {};
+                       }});
+    actions.push_back({"Jump", [this]() -> gui::Selected {
+                         return gui::Selected(jump_target, this);
+                       }});
+    actions.push_back({"Refresh", [this, object]() -> gui::Selected {
+                         return gui::Selected(object, this);
+                       }});
+    actions.push_back({"Explode", []() -> gui::Selected {
+                         throw std::runtime_error("action exploded");
+                       }});
+    actions.push_back({"Insert Buffer", []() -> gui::Selected { return {}; }});
+    actions.push_back({"Delete", [this]() -> gui::Selected {
+                         if (stale_flag != nullptr) {
+                           *stale_flag = true;
+                         }
+                         return {};
+                       }});
+    return actions;
+  }
+
+  Editors getEditors(const std::any& object) const override
+  {
+    auto* fake = std::any_cast<FakeInspectable*>(object);
+    Editors editors;
+    editors.emplace("Name", makeEditor([this, fake](const std::any& value) {
+                      return commit(value, [&] {
+                        fake->name = std::any_cast<std::string>(value);
+                      });
+                    }));
+    editors.emplace("Dont Touch", makeEditor([this](const std::any& value) {
+                      return commit(value, [&] { std::any_cast<bool>(value); });
+                    }));
+    editors.emplace("Weight", makeEditor([this](const std::any& value) {
+                      return commit(value,
+                                    [&] { std::any_cast<double>(value); });
+                    }));
+    editors.emplace(
+        "Orientation",
+        makeEditor([this](const std::any& value) { return commit(value); },
+                   {{"R0", 0}, {"R90", 90}, {"R180", 180}}));
+    editors.emplace(
+        "Location", makeEditor([this](const std::any& value) {
+          return commit(value, [&] {
+            location_dbu = gui::Descriptor::Property::convert_string(
+                std::any_cast<std::string>(value), &location_ok);
+          });
+        }));
+    return editors;
+  }
+
+ private:
+  bool commit(const std::any& value,
+              const std::function<void()>& apply = nullptr) const
+  {
+    ++edit_calls;
+    last_value = value;
+    if (edit_mode == EditMode::kThrow) {
+      throw std::runtime_error("edit exploded");
+    }
+    if (edit_mode == EditMode::kReject) {
+      return false;
+    }
+    if (apply) {
+      apply();
+    }
+    return true;
+  }
+};
+
+class SetPropertyTest : public SelectHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SelectHandlerTest::SetUp();
+    handler_->setBroadcastFn(
+        [this](const std::string& json) { broadcasts_.push_back(json); });
+    editable_descriptor_.jump_target = &fake_previous_;
+    editable_descriptor_.stale_flag = &state_.selection_stale;
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected
+        = gui::Selected(&fake_current_, &editable_descriptor_);
+  }
+
+  boost::json::object setProperty(const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 77;
+    req.type = WebSocketRequest::kSetProperty;
+    req.json = parseObj(request_json);
+    auto resp = handler_->handleSetProperty(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+
+  EditableFakeDescriptor editable_descriptor_;
+  std::vector<std::string> broadcasts_;
+};
+
+TEST_F(SetPropertyTest, InspectPayloadCarriesEditors)
+{
+  WebSocketRequest req;
+  req.id = 70;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+
+  std::map<std::string, boost::json::object> by_name;
+  for (const auto& p : root.at("properties").as_array()) {
+    const auto& obj = p.as_object();
+    by_name[std::string(obj.at("name").as_string())] = obj;
+  }
+  ASSERT_TRUE(by_name.count("Name"));
+  EXPECT_TRUE(by_name["Name"].at("editable").as_bool());
+  EXPECT_EQ(by_name["Name"].at("editor").as_object().at("type").as_string(),
+            "string");
+  EXPECT_EQ(
+      by_name["Dont Touch"].at("editor").as_object().at("type").as_string(),
+      "bool");
+  EXPECT_EQ(by_name["Weight"].at("editor").as_object().at("type").as_string(),
+            "number");
+  const auto& orient = by_name["Orientation"].at("editor").as_object();
+  EXPECT_EQ(orient.at("type").as_string(), "list");
+  const auto& options = orient.at("options").as_array();
+  ASSERT_EQ(options.size(), 3u);
+  EXPECT_EQ(options[1].as_string(), "R90");
+}
+
+TEST_F(SetPropertyTest, StringEditAcceptedAndBroadcast)
+{
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(fake_current_.name, "renamed");
+  // Payload is rebuilt after the edit, reflecting the new value.
+  EXPECT_EQ(root.at("name").as_string(), "renamed");
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  auto push = parseObj(broadcasts_[0]);
+  EXPECT_EQ(push.at("type").as_string(), "refresh");
+  // Edits can change the design bounds (and with them the tile
+  // georeference); the push carries the current bounds so clients can
+  // resync their coordinate transforms without an extra round-trip.
+  ASSERT_TRUE(push.if_contains("bounds"));
+  const auto expected = serializeBoundsResponse(*gen_, gen_->shapesReady());
+  EXPECT_EQ(boost::json::serialize(push.at("bounds")),
+            boost::json::serialize(expected.at("bounds")));
+}
+
+// Documents the dynamic-bounds behavior the client resync exists for:
+// content added or moved outside the current block bbox changes the
+// served bounds (block bbox + pin-label margin).
+TEST_F(SetPropertyTest, BoundsFollowBlockBBoxChanges)
+{
+  const auto before = boost::json::serialize(
+      serializeBoundsResponse(*gen_, true).at("bounds"));
+  placeInst("BUF_X16", "far_away", -200000, -200000);
+  const auto after = boost::json::serialize(
+      serializeBoundsResponse(*gen_, true).at("bounds"));
+  EXPECT_NE(before, after);
+}
+
+TEST_F(SetPropertyTest, RejectedEditReportsErrorWithoutBroadcast)
+{
+  editable_descriptor_.edit_mode = EditableFakeDescriptor::EditMode::kReject;
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("rejected"),
+            std::string::npos);
+  EXPECT_EQ(fake_current_.name, "current");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(SetPropertyTest, ThrowingEditIsContained)
+{
+  editable_descriptor_.edit_mode = EditableFakeDescriptor::EditMode::kThrow;
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_EQ(root.at("error").as_string(), "edit exploded");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(SetPropertyTest, ListEditCommitsOptionValueByIndex)
+{
+  auto root = setProperty(
+      R"({"name":"Orientation","option_index":1,"option_name":"R90"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  // The callback must receive the option's exact std::any (int 90 here).
+  EXPECT_EQ(std::any_cast<int>(editable_descriptor_.last_value), 90);
+}
+
+TEST_F(SetPropertyTest, ListEditRejectsBadIndexAndStaleName)
+{
+  auto root = setProperty(
+      R"({"name":"Orientation","option_index":7,"option_name":"R270"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("option index"),
+            std::string::npos);
+
+  root = setProperty(
+      R"({"name":"Orientation","option_index":1,"option_name":"R180"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("options changed"),
+            std::string::npos);
+  EXPECT_EQ(editable_descriptor_.edit_calls, 0);
+}
+
+TEST_F(SetPropertyTest, BoolAndNumberMarshalling)
+{
+  setProperty(R"({"name":"Dont Touch","value":true})");
+  EXPECT_TRUE(std::any_cast<bool>(editable_descriptor_.last_value));
+
+  // JSON integers arrive at the callback as double (Qt delegate parity).
+  setProperty(R"({"name":"Weight","value":5})");
+  EXPECT_DOUBLE_EQ(std::any_cast<double>(editable_descriptor_.last_value), 5.0);
+}
+
+TEST_F(SetPropertyTest, UnknownPropertyOrNothingInspected)
+{
+  auto root = setProperty(R"({"name":"Nope","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("not editable"),
+            std::string::npos);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  root = setProperty(R"({"name":"Name","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("nothing"),
+            std::string::npos);
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+// The scoped unit format must install a working Property::convert_string
+// for the duration of the edit: in micron mode "1.5" is 1.5 µm (Nangate45:
+// 2000 DBU/µm → 3000); in DBU mode only integers parse.  The library
+// default (restored afterwards) returns 0 without setting the ok flag.
+TEST_F(SetPropertyTest, ConvertStringInstalledDuringEdit)
+{
+  auto root = setProperty(R"({"name":"Location","value":"1.5"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 3000);
+
+  root = setProperty(
+      R"({"name":"Location","value":"12.34 µm","use_dbu":false})");
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 24680);
+
+  root = setProperty(R"({"name":"Location","value":"1.5","use_dbu":true})");
+  EXPECT_FALSE(editable_descriptor_.location_ok);
+  root = setProperty(R"({"name":"Location","value":"150","use_dbu":true})");
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 150);
+
+  // Restored default after the handler: returns 0, never touches ok.
+  bool ok = false;
+  EXPECT_EQ(gui::Descriptor::Property::convert_string("5", &ok), 0);
+  EXPECT_FALSE(ok);
+}
+
+//------------------------------------------------------------------------------
+// trigger_action tests (descriptor actions)
+//------------------------------------------------------------------------------
+
+class TriggerActionTest : public SetPropertyTest
+{
+ protected:
+  boost::json::object triggerAction(const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 88;
+    req.type = WebSocketRequest::kTriggerAction;
+    req.json = parseObj(request_json);
+    auto resp = handler_->handleTriggerAction(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+};
+
+TEST_F(TriggerActionTest, PayloadFiltersSuppressedAndReservedActions)
+{
+  WebSocketRequest req;
+  req.id = 80;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+
+  ASSERT_TRUE(root.if_contains("actions"));
+  std::set<std::string> names;
+  for (const auto& a : root.at("actions").as_array()) {
+    names.emplace(a.as_string());
+  }
+  EXPECT_EQ(names,
+            (std::set<std::string>{"Jump", "Refresh", "Explode", "Delete"}));
+  // "Insert Buffer" (Qt dialog), "deselect" (reserved), and the universal
+  // "Zoom to" (client-side button exists) must not be offered.
+}
+
+TEST_F(TriggerActionTest, ActionChangingSelectionUpdatesStateAndHistory)
+{
+  auto root = triggerAction(R"({"name":"Jump"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("deleted").as_int64(), 0);
+  EXPECT_EQ(root.at("name").as_string(), "previous");
+  EXPECT_EQ(root.at("can_navigate_back").as_int64(), 1);
+  // The old object's reserved deselect callback ran.
+  EXPECT_EQ(editable_descriptor_.deselect_calls, 1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_TRUE(state_.current_inspected
+                == gui::Selected(&fake_previous_, &editable_descriptor_));
+    ASSERT_EQ(state_.navigation_history.size(), 1u);
+  }
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+}
+
+TEST_F(TriggerActionTest, ActionKeepingSelectionRefreshesPayload)
+{
+  auto root = triggerAction(R"({"name":"Refresh"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("name").as_string(), "current");
+  EXPECT_EQ(editable_descriptor_.deselect_calls, 0);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.current_inspected
+              == gui::Selected(&fake_current_, &editable_descriptor_));
+}
+
+TEST_F(TriggerActionTest, DeleteClearsSelectionStateAndReportsDeleted)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.navigation_history.emplace_back(&fake_previous_,
+                                           &editable_descriptor_);
+    state_.selection_set.insert(state_.current_inspected);
+    state_.selection_itr = state_.selection_set.begin();
+    state_.highlight_rects.push_back(fake_current_.bbox);
+  }
+
+  auto root = triggerAction(R"({"name":"Delete"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("deleted").as_int64(), 1);
+  EXPECT_EQ(root.at("can_navigate_back").as_int64(), 0);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 0);
+  EXPECT_FALSE(root.if_contains("properties"));
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.current_inspected);
+    EXPECT_TRUE(state_.navigation_history.empty());
+    EXPECT_TRUE(state_.selection_set.empty());
+    EXPECT_TRUE(state_.highlight_rects.empty());
+  }
+  EXPECT_FALSE(state_.selection_stale.load());
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+}
+
+TEST_F(TriggerActionTest, ThrowingActionIsContained)
+{
+  auto root = triggerAction(R"({"name":"Explode"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_EQ(root.at("error").as_string(), "action exploded");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(TriggerActionTest, UnknownSuppressedAndReservedNamesAreRefused)
+{
+  auto root = triggerAction(R"({"name":"Nope"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("no longer"),
+            std::string::npos);
+
+  root = triggerAction(R"({"name":"Insert Buffer"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("not available"),
+            std::string::npos);
+
+  root = triggerAction(R"({"name":"deselect"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(TriggerActionTest, StaleSelectionIsDroppedBeforeUse)
+{
+  // Simulate a destroy from another session / a Tcl command.
+  state_.selection_stale = true;
+
+  // set_property refuses with a specific reason.
+  auto root = setProperty(R"({"name":"Name","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("invalidated"),
+            std::string::npos);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.current_inspected);
+  }
+
+  // Inspect of the (now cleared) state degrades to the empty payload.
+  state_.selection_stale = true;
+  WebSocketRequest req;
+  req.id = 81;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+  EXPECT_TRUE(root.if_contains("error"));
+  EXPECT_FALSE(state_.selection_stale.load());
+}
+
+//------------------------------------------------------------------------------
+// Highlight-group tests (16 color-coded groups, Qt GUI parity)
+//------------------------------------------------------------------------------
+
+class HighlightGroupTest : public SelectHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SelectHandlerTest::SetUp();
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+  }
+
+  boost::json::object send(WebSocketRequest::Type type,
+                           const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 90;
+    req.type = type;
+    req.json = parseObj(request_json);
+    WebSocketResponse resp;
+    switch (type) {
+      case WebSocketRequest::kHighlight:
+        resp = handler_->handleHighlight(req, state_);
+        break;
+      case WebSocketRequest::kUnhighlight:
+        resp = handler_->handleUnhighlight(req, state_);
+        break;
+      default:
+        resp = handler_->handleClearHighlights(req, state_);
+        break;
+    }
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+
+  size_t groupSize(int group)
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    return state_.highlight_groups[group].size();
+  }
+};
+
+TEST_F(HighlightGroupTest, HighlightAddsToGroupAndReportsIt)
+{
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 4);
+  EXPECT_EQ(groupSize(4), 1u);
+
+  // Overlay shapes carry group 4's palette color (kRed, alpha 100).
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+  const auto& cr = state_.highlight_group_rects[0];
+  EXPECT_TRUE(cr.filled);
+  EXPECT_EQ(cr.rect, fake_current_.bbox);
+  EXPECT_EQ(cr.color.r, 255);
+  EXPECT_EQ(cr.color.g, 0);
+  EXPECT_EQ(cr.color.b, 0);
+  EXPECT_EQ(cr.color.a, 100);
+}
+
+TEST_F(HighlightGroupTest, HighlightCollectsGroupFlightLines)
+{
+  // A member whose highlight() draws lines (e.g. an unrouted net) must
+  // still appear in the overlay, tinted with the group color.
+  LineFakeDescriptor line_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected(&fake_current_, &line_descriptor);
+  }
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+  ASSERT_EQ(state_.highlight_group_lines.size(), 1u);
+  const auto& line = state_.highlight_group_lines[0];
+  EXPECT_EQ(line.p1, fake_current_.bbox.ll());
+  EXPECT_EQ(line.p2, fake_current_.bbox.ur());
+  EXPECT_EQ(line.color.r, 255);
+  EXPECT_EQ(line.color.g, 0);
+  EXPECT_EQ(line.color.b, 0);
+  EXPECT_EQ(line.color.a, 100);
+}
+
+TEST_F(HighlightGroupTest, HighlightMovesBetweenGroupsUniquely)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":7})");
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 7);
+  EXPECT_EQ(groupSize(2), 0u);
+  EXPECT_EQ(groupSize(7), 1u);
+}
+
+TEST_F(HighlightGroupTest, UnhighlightRemovesFromAnyGroup)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":3})");
+  auto root = send(WebSocketRequest::kUnhighlight, R"({})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("highlight_group").as_int64(), -1);
+  EXPECT_EQ(groupSize(3), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+TEST_F(HighlightGroupTest, InvalidGroupIsRejected)
+{
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":16})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("invalid"),
+            std::string::npos);
+  root = send(WebSocketRequest::kHighlight, R"({"group":-1})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+
+  root = send(WebSocketRequest::kClearHighlights, R"({"group":16})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(HighlightGroupTest, HighlightWithNothingInspectedFails)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":0})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("nothing"),
+            std::string::npos);
+}
+
+TEST_F(HighlightGroupTest, ClearOneGroupOrAll)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  {
+    // A second object in another group, inserted directly.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[5].insert(makeFakeSelected(&fake_previous_));
+  }
+
+  auto root = send(WebSocketRequest::kClearHighlights, R"({"group":2})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("cleared").as_int64(), 1);
+  EXPECT_EQ(groupSize(2), 0u);
+  EXPECT_EQ(groupSize(5), 1u);
+
+  // Default group (-1) clears everything left.
+  root = send(WebSocketRequest::kClearHighlights, R"({})");
+  EXPECT_EQ(root.at("cleared").as_int64(), 1);
+  EXPECT_EQ(groupSize(5), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+TEST_F(HighlightGroupTest, InspectPayloadCarriesHighlightGroup)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":9})");
+
+  WebSocketRequest req;
+  req.id = 91;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 9);
+}
+
+TEST_F(HighlightGroupTest, OverlayRendersGroupShapes)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":0})");
+
+  TileHandler tile_handler(gen_);
+  WebSocketRequest req;
+  req.id = 92;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  auto resp = tile_handler.handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(HighlightGroupTest, StalenessClearsHighlightGroups)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":6})");
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 93;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  handler_->handleInspect(req, state_);
+
+  EXPECT_EQ(groupSize(6), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+//------------------------------------------------------------------------------
+// Selection-browser tests (list_selection / inspect_* / deselect)
+//------------------------------------------------------------------------------
+
+class SelectionBrowserTest : public HighlightGroupTest
+{
+ protected:
+  boost::json::object listSelection()
+  {
+    WebSocketRequest req;
+    req.id = 95;
+    req.type = WebSocketRequest::kListSelection;
+    req.json = parseObj(R"({})");
+    auto resp = handler_->handleListSelection(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+};
+
+TEST_F(SelectionBrowserTest, ListEmptyState)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  auto root = listSelection();
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection").as_array().size(), 0u);
+  ASSERT_EQ(root.at("groups").as_array().size(),
+            static_cast<size_t>(gui::kNumHighlightSet));
+  EXPECT_FALSE(root.at("truncated").as_bool());
+}
+
+TEST_F(SelectionBrowserTest, ListSelectionAndGroups)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    // populateSelectionSet points current_inspected at whichever object
+    // sorts first (pointer order); pin it so the highlight is
+    // deterministic.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+  }
+  // fake_current_ into group 4 via the real handler.
+  send(WebSocketRequest::kHighlight, R"({"group":4})");
+
+  auto root = listSelection();
+  const auto& selection = root.at("selection").as_array();
+  ASSERT_EQ(selection.size(), 2u);
+  std::set<std::string> names;
+  std::set<std::string> types;
+  for (const auto& row : selection) {
+    names.emplace(row.as_object().at("name").as_string());
+    types.emplace(row.as_object().at("type").as_string());
+    EXPECT_TRUE(row.as_object().if_contains("bbox"));
+  }
+  EXPECT_EQ(names, (std::set<std::string>{"current", "previous"}));
+  EXPECT_EQ(types, (std::set<std::string>{"FakeCurrent", "FakePrevious"}));
+
+  const auto& groups = root.at("groups").as_array();
+  ASSERT_EQ(groups[4].as_array().size(), 1u);
+  EXPECT_EQ(groups[4].as_array()[0].as_object().at("name").as_string(),
+            "current");
+  EXPECT_EQ(groups[0].as_array().size(), 0u);
+}
+
+TEST_F(SelectionBrowserTest, InspectSelectionRowByIndex)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+
+  WebSocketRequest req;
+  req.id = 96;
+  req.type = WebSocketRequest::kInspectSelection;
+  req.json = parseObj(R"({"index":1})");
+  auto root
+      = parseObj(payloadStr(handler_->handleInspectSelection(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  // Row 1 = second element in set order; verify state followed the payload.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(std::string(root.at("name").as_string()),
+              state_.current_inspected.getName());
+    EXPECT_TRUE(state_.selection_itr != state_.selection_set.end());
+  }
+  EXPECT_EQ(root.at("selection_index").as_int64(), 1);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+
+  req.json = parseObj(R"({"index":7})");
+  root = parseObj(payloadStr(handler_->handleInspectSelection(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("row index"),
+            std::string::npos);
+}
+
+TEST_F(SelectionBrowserTest, InspectGroupRowByIndex)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":9})");
+  {
+    // Move inspection elsewhere so the row click has to switch it back.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_previous_);
+  }
+
+  WebSocketRequest req;
+  req.id = 97;
+  req.type = WebSocketRequest::kInspectGroup;
+  req.json = parseObj(R"({"group":9,"index":0})");
+  auto root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("name").as_string(), "current");
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 9);
+
+  req.json = parseObj(R"({"group":16,"index":0})");
+  root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+
+  req.json = parseObj(R"({"group":9,"index":3})");
+  root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(SelectionBrowserTest, DeselectRemovesRowAndRederivesHighlights)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+
+  WebSocketRequest req;
+  req.id = 98;
+  req.type = WebSocketRequest::kDeselect;
+  req.json = parseObj(R"({"index":0})");
+  auto root = parseObj(payloadStr(handler_->handleDeselect(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.selection_set.size(), 1u);
+    EXPECT_TRUE(state_.selection_itr != state_.selection_set.end());
+    // Multi-highlight shapes re-derived from the remaining member.
+    EXPECT_EQ(state_.highlight_rects.size(), 1u);
+  }
+
+  req.json = parseObj(R"({"index":5})");
+  root = parseObj(payloadStr(handler_->handleDeselect(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(SelectionBrowserTest, StalenessClearsBeforeListing)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  state_.selection_stale = true;
+
+  auto root = listSelection();
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection").as_array().size(), 0u);
+  EXPECT_EQ(root.at("groups").as_array()[2].as_array().size(), 0u);
 }
 
 //------------------------------------------------------------------------------

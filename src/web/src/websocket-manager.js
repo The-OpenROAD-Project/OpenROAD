@@ -120,6 +120,8 @@ export class WebSocketManager {
 
         this.socket.onopen = () => {
             console.log('WebSocket connected');
+            const isReconnect = this._everConnected === true;
+            this._everConnected = true;
             this._isConnected = true;
             this.reconnectDelay = 1000;
             this._lastRecvAt = (typeof performance !== 'undefined')
@@ -127,6 +129,12 @@ export class WebSocketManager {
             this.readyResolve();
             this.onStatusChange();
             this._pump(); // flush anything queued before the socket opened
+            // A reconnect may be talking to a restarted server (possibly
+            // serving a different design) — let the app resync any state
+            // derived from server responses (e.g. coordinate transforms).
+            if (isReconnect && this.onReconnected) {
+                this.onReconnected();
+            }
         };
 
         this.socket.onmessage = (event) => {

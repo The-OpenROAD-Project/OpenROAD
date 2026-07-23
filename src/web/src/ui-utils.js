@@ -9,6 +9,111 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Transient notice near the bottom of the viewport (e.g. why a property
+// edit was rejected).  Repeated calls replace the current message and
+// restart the timer.
+let toastTimer = null;
+export function showToast(message, durationMs = 4000) {
+    let toast = document.getElementById('or-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'or-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('visible');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('visible'), durationMs);
+    return toast;
+}
+
+// Themed confirmation dialog.  Resolves true when confirmed, false when
+// cancelled (button, Escape, or clicking outside the box).  Focus starts
+// on Cancel — the safe choice for destructive confirmations.
+export function showConfirmModal({ title, message, confirmLabel = 'OK',
+                                   danger = false }) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'or-modal-overlay';
+        const box = document.createElement('div');
+        box.className = 'or-modal';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'or-modal-title';
+        titleEl.textContent = title;
+        const msgEl = document.createElement('div');
+        msgEl.className = 'or-modal-message';
+        msgEl.textContent = message;
+
+        const buttons = document.createElement('div');
+        buttons.className = 'or-modal-buttons';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'or-modal-btn';
+        cancelBtn.textContent = 'Cancel';
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'or-modal-btn'
+            + (danger ? ' or-modal-btn-danger' : '');
+        confirmBtn.textContent = confirmLabel;
+
+        const close = (result) => {
+            document.removeEventListener('keydown', onKey, true);
+            overlay.remove();
+            resolve(result);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') { e.stopPropagation(); close(false); }
+        };
+        cancelBtn.addEventListener('click', () => close(false));
+        confirmBtn.addEventListener('click', () => close(true));
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close(false);
+        });
+        document.addEventListener('keydown', onKey, true);
+
+        buttons.appendChild(cancelBtn);
+        buttons.appendChild(confirmBtn);
+        box.appendChild(titleEl);
+        box.appendChild(msgEl);
+        box.appendChild(buttons);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        cancelBtn.focus();
+    });
+}
+
+// Coordinate transforms derived from a server bounds response
+// ([[yMin, xMin], [yMax, xMax]], the tile-grid georeference).  Pure so it
+// can be unit-tested; returns null when the design is empty.
+export function computeBoundsTransforms(designBounds, tileSize = 256) {
+    if (!designBounds) return null;
+    const minY = designBounds[0][0];
+    const minX = designBounds[0][1];
+    const maxY = designBounds[1][0];
+    const maxX = designBounds[1][1];
+    const width = maxX - minX;
+    const height = maxY - minY;
+    if (!(width > 0) || !(height > 0)) return null;
+    const maxDXDY = Math.max(width, height);
+    const scale = tileSize / maxDXDY;
+    return {
+        scale,
+        maxDXDY,
+        originX: minX,
+        originY: minY,
+        fitBounds: [
+            [-maxDXDY * scale, 0],
+            [(height - maxDXDY) * scale, width * scale],
+        ],
+    };
+}
+
+// True when two bounds responses describe the same rectangle.
+export function boundsEqual(a, b) {
+    return !!a && !!b
+        && a[0][0] === b[0][0] && a[0][1] === b[0][1]
+        && a[1][0] === b[1][0] && a[1][1] === b[1][1];
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

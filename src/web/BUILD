@@ -47,6 +47,7 @@ genrule(
         "src/charts-widget.js",
         "src/timing-widget.js",
         "src/drc-widget.js",
+        "src/selection-browser.js",
         "src/main.js",
     ],
     outs = ["src/report_assets.cpp"],
@@ -73,6 +74,7 @@ genrule(
           " $(location src/charts-widget.js)" +
           " $(location src/timing-widget.js)" +
           " $(location src/drc-widget.js)" +
+          " $(location src/selection-browser.js)" +
           " $(location src/main.js)",
     tools = [":embed_report_assets"],
 )
@@ -101,6 +103,7 @@ _WEB_ASSET_FILES = [
     "src/charts-widget.js",
     "src/timing-widget.js",
     "src/drc-widget.js",
+    "src/selection-browser.js",
     "src/main.js",
 ]
 
