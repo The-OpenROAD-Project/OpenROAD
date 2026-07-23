@@ -574,7 +574,7 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
           utl::ODB,
           564,
           "3DBV Parser Error: region {} of type {} is not allowed for "
-          "chiplet {} (only for RTL/SUBSTRATE chiplets)",
+          "chiplet {} (only for RDL/SUBSTRATE chiplets)",
           region.name,
           region.side,
           chip->getName());

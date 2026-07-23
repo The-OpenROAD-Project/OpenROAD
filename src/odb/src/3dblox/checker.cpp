@@ -347,6 +347,28 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat)
     return a->getCuboid().xMin() < b->getCuboid().xMin();
   });
 
+  // An embedded chiplet may only intrude within the mating cavity declared by
+  // an internal_ext connection. Precompute the cavity footprint(s) for every
+  // chip pair once, keyed by an order-independent pair, so the overlap scan is
+  // a lookup instead of a rescan of all connections per pair.
+  auto pair_key = [](dbUnfoldedChipInst* a, dbUnfoldedChipInst* b) {
+    return a->getId() < b->getId() ? std::pair(a, b) : std::pair(b, a);
+  };
+  std::map<std::pair<dbUnfoldedChipInst*, dbUnfoldedChipInst*>,
+           std::vector<Rect>>
+      cavities;
+  for (dbUnfoldedChipConn* conn : db_->getUnfoldedChipConns()) {
+    auto* bot = conn->getBottomRegion();
+    auto* top = conn->getTopRegion();
+    if (!bot || !top || (!bot->isInternalExt() && !top->isInternalExt())) {
+      continue;
+    }
+    const Rect cavity = bot->getCuboid().getEnclosingRect().intersect(
+        top->getCuboid().getEnclosingRect());
+    cavities[pair_key(bot->getParentChip(), top->getParentChip())].push_back(
+        cavity);
+  }
+
   std::vector<std::pair<dbUnfoldedChipInst*, dbUnfoldedChipInst*>> overlaps;
   for (size_t i = 0; i < chips.size(); ++i) {
     auto* c1 = chips[i];
@@ -355,39 +377,19 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat)
       if (c2->getCuboid().xMin() >= c1->getCuboid().xMax()) {
         break;
       }
-      if (c1->getCuboid().overlaps(c2->getCuboid())) {
-        const Rect overlap
-            = c1->getCuboid().intersect(c2->getCuboid()).getEnclosingRect();
-        bool embedded_chiplet = false;
-        for (const auto* conn : db_->getUnfoldedChipConns()) {
-          const auto* bot_region = conn->getBottomRegion();
-          const auto* top_region = conn->getTopRegion();
-          if (bot_region == nullptr || top_region == nullptr) {
-            continue;
-          }
-          const auto* bot_chip = bot_region->getParentChip();
-          const auto* top_chip = top_region->getParentChip();
-          if (!((bot_chip == c1 && top_chip == c2)
-                || (bot_chip == c2 && top_chip == c1))) {
-            continue;
-          }
-          if (bot_region->getChipRegionInst()->getChipRegion()->getSide()
-                  != odb::dbChipRegion::Side::INTERNAL_EXT
-              && top_region->getChipRegionInst()->getChipRegion()->getSide()
-                     != odb::dbChipRegion::Side::INTERNAL_EXT) {
-            continue;
-          }
-          const Rect conn_rect
-              = bot_region->getCuboid().getEnclosingRect().intersect(
-                  top_region->getCuboid().getEnclosingRect());
-          if (conn_rect.contains(overlap)) {
-            embedded_chiplet = true;
-            break;
-          }
-        }
-        if (!embedded_chiplet) {
-          overlaps.emplace_back(c1, c2);
-        }
+      if (!c1->getCuboid().overlaps(c2->getCuboid())) {
+        continue;
+      }
+      const Rect overlap
+          = c1->getCuboid().intersect(c2->getCuboid()).getEnclosingRect();
+      auto it = cavities.find(pair_key(c1, c2));
+      const bool embedded_chiplet
+          = it != cavities.end()
+            && std::ranges::any_of(it->second, [&](const Rect& cavity) {
+                 return cavity.contains(overlap);
+               });
+      if (!embedded_chiplet) {
+        overlaps.emplace_back(c1, c2);
       }
     }
   }

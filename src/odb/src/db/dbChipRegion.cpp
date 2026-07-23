@@ -237,7 +237,7 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
     logger->error(utl::ODB,
                   566,
                   "Cannot create chip region {} of type INTERNAL/INTERNAL_EXT "
-                  "for chip {}(allowed only for RDL or SUBSTRATE)",
+                  "for chip {} (allowed only for RDL or SUBSTRATE)",
                   name,
                   chip->getName());
   }
