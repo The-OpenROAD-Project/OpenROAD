@@ -223,6 +223,24 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
         name,
         chip->getName());
   }
+  if (chip->getChipType() == dbChip::ChipType::HIER) {
+    logger->error(utl::ODB,
+                  565,
+                  "Cannot create chip region {} for hierarchical chip {}",
+                  name,
+                  chip->getName());
+  }
+  if ((side == dbChipRegion::Side::INTERNAL_EXT
+       || side == dbChipRegion::Side::INTERNAL)
+      && (chip->getChipType() != dbChip::ChipType::RDL
+          || chip->getChipType() != dbChip::ChipType::SUBSTRATE)) {
+    logger->error(utl::ODB,
+                  566,
+                  "Cannot create chip region {} of type INTERNAL/INTERNAL_EXT "
+                  "for chip {}(allowed only for RDL or SUBSTRATE)",
+                  name,
+                  chip->getName());
+  }
 
   // Create a new chip region
   _dbChipRegion* chip_region = _chip->chip_region_tbl_->create();

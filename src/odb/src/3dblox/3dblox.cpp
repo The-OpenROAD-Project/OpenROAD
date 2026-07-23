@@ -564,8 +564,25 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
       layer = tech->findLayer(region.layer.c_str());
     }
   }
-  dbChipRegion* chip_region = dbChipRegion::create(
-      chip, region.name, getChipRegionSide(region.side, logger_), layer);
+  const auto side = getChipRegionSide(region.side, logger_);
+  if (side == odb::dbChipRegion::Side::INTERNAL
+      || side == odb::dbChipRegion::Side::INTERNAL_EXT) {
+    const auto chip_type = chip->getChipType();
+    if (chip_type != odb::dbChip::ChipType::RDL
+        && chip_type != odb::dbChip::ChipType::SUBSTRATE) {
+      logger_->error(
+          utl::ODB,
+          564,
+          "3DBV Parser Error: region {} of type {} is not allowed for "
+          "chiplet {} (only for RTL/SUBSTRATE chiplets)",
+          region.name,
+          region.side,
+          chip->getName());
+    }
+  }
+  dbChipRegion* chip_region
+      = dbChipRegion::create(chip, region.name, side, layer);
+
   Rect box;
   box.mergeInit();
   const int dbu_per_micron = db_->getDbuPerMicron();
