@@ -1282,17 +1282,10 @@ void dbNetwork::findInstNetsMatching(const Instance* instance,
                                      const PatternMatch* pattern,
                                      NetSeq& nets) const
 {
-  if (pattern->hasWildcards()) {
-    std::unique_ptr<InstanceNetIterator> net_iter{netIterator(instance)};
-    while (net_iter->hasNext()) {
-      Net* net = net_iter->next();
-      if (pattern->match(name(net))) {
-        nets.push_back(net);
-      }
-    }
-  } else {
-    Net* net = findNet(instance, pattern->pattern());
-    if (net) {
+  std::unique_ptr<InstanceNetIterator> net_iter{netIterator(instance)};
+  while (net_iter->hasNext()) {
+    Net* net = net_iter->next();
+    if (pattern->match(name(net))) {
       nets.push_back(net);
     }
   }
