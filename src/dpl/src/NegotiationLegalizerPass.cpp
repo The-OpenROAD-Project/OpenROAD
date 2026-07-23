@@ -978,6 +978,10 @@ void NegotiationLegalizer::updateHistoryCosts(
   // one of them is illegal (hence active). Dedupe shared pixels so each is
   // bumped once.
   ++hist_gen_;
+  if (hist_gen_ == 0) {
+    std::fill(hist_seen_stamp_.begin(), hist_seen_stamp_.end(), 0);
+    hist_gen_ = 1;
+  }
   for (int idx : activeCells) {
     const NegCell& cell = cells_[idx];
     if (cell.fixed) {
