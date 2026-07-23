@@ -744,7 +744,6 @@ std::pair<bool, bool> RouteBase::routability(
       inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;
     }
 
-
     if (log_->debugCheck(GPL, "rudy", 1)) {
       printGCellInflation();
     }
