@@ -190,6 +190,7 @@ class GlobalRouter
   bool segmentCoversPin(const GSegment& segment, const Pin& pin);
   AdjacencyList buildNetGraph(odb::dbNet* net);
   bool isConnected(odb::dbNet* net);
+  void reportDisconnectedComponents(odb::dbNet* db_net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer,
@@ -256,6 +257,8 @@ class GlobalRouter
                              odb::Point& pin_pos1,
                              odb::Point& pin_pos2);
   int findTopLayerOverPosition(const odb::Point& pin_pos, const GRoute& route);
+  std::pair<int, int> findLayerRangeOverPosition(const odb::Point& pos,
+                                                 const GRoute& route);
   std::vector<GSegment> createConnectionForPositions(const odb::Point& pin_pos1,
                                                      const odb::Point& pin_pos2,
                                                      int layer1,
