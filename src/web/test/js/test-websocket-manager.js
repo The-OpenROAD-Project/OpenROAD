@@ -259,7 +259,8 @@ describe('WebSocketManager flow control', () => {
         // The critical regression: cancelling already-sent requests must NOT
         // pump new ones (the bytes are committed; the server still has to
         // process them). Doing so re-floods the socket — the original bug.
-        assert.equal(mgr.socket.sent.length, firstBurst,
+        const tileRequests = mgr.socket.sent.filter(msg => JSON.parse(msg).type !== 'cancel').length;
+        assert.equal(tileRequests, firstBurst,
             'cancel must not trigger new sends');
         assert.equal(mgr._inFlight, firstBurst,
             'cancel must not free wire slots');
@@ -269,7 +270,8 @@ describe('WebSocketManager flow control', () => {
             deliverReply(mgr, id);
         }
         assert.equal(mgr._inFlight, firstBurst, 'refilled to the cap');
-        assert.equal(mgr.socket.sent.length, firstBurst * 2,
+        const finalTileRequests = mgr.socket.sent.filter(msg => JSON.parse(msg).type !== 'cancel').length;
+        assert.equal(finalTileRequests, firstBurst * 2,
             'replies — not cancels — drive the next burst');
     });
 
