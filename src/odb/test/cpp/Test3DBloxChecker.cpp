@@ -184,9 +184,10 @@ TEST_F(CheckerFixture, test_z_separation_no_overlap)
   EXPECT_TRUE(getMarkers(overlapping_chips_category).empty());
 }
 
-TEST_F(CheckerFixture, test_overlap_despite_valid_connection)
+TEST_F(CheckerFixture, test_embedded_chiplet_masks_overlap)
 {
-  // Create INTERNAL_EXT regions for masking
+  // Chips connected through an INTERNAL_EXT region are an embedded chiplet;
+  // their geometric overlap is expected and must not be flagged.
   auto r1_int = dbChipRegion::create(
       chip1_, "r1_int", dbChipRegion::Side::INTERNAL_EXT, nullptr);
   r1_int->setBox(Rect(0, 0, 2000, 2000));
@@ -210,12 +211,14 @@ TEST_F(CheckerFixture, test_overlap_despite_valid_connection)
   conn->setThickness(0);
 
   check();
-  EXPECT_EQ(getMarkers(overlapping_chips_category).size(), 1);
+  EXPECT_TRUE(getMarkers(overlapping_chips_category).empty());
 }
 
-TEST_F(CheckerFixture, test_overlap_partially_covered_by_connection)
+TEST_F(CheckerFixture, test_embedded_chiplet_partial_cavity_flags_overlap)
 {
-  // Create small INTERNAL_EXT regions that don't cover the full overlap
+  // The INTERNAL_EXT cavity only excuses overlap within its footprint. A cavity
+  // far smaller than the actual overlap leaves a real collision that must still
+  // be flagged.
   auto r1_int = dbChipRegion::create(
       chip1_, "r1_int_small", dbChipRegion::Side::INTERNAL_EXT, nullptr);
   r1_int->setBox(Rect(0, 0, 50, 50));
@@ -229,10 +232,9 @@ TEST_F(CheckerFixture, test_overlap_partially_covered_by_connection)
   inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
-  inst2->setLoc(Point3D(0, 0, 0));  // Full overlap of chip2 inside chip1
+  inst2->setLoc(Point3D(0, 0, 0));  // Overlap far exceeds the 50x50 cavity
   inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
-  // Connect them with small regions
   auto* ri1 = inst1->findChipRegionInst("r1_int_small");
   auto* ri2 = inst2->findChipRegionInst("r2_int_small");
   auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
