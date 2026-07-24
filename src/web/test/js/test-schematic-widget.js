@@ -124,6 +124,30 @@ const netlist = {
     },
 };
 
+describe('SchematicWidget SVG content bounds', () => {
+    it('measures cell groups without also measuring their child shapes', () => {
+        const { widget, container } = makeWidget();
+        const svg = document.createElementNS(svgNS, 'svg');
+        const cellGroup = document.createElementNS(svgNS, 'g');
+        const cellPath = document.createElementNS(svgNS, 'path');
+        const cellLabel = document.createElementNS(svgNS, 'text');
+        const wireGroup = document.createElementNS(svgNS, 'g');
+        const wire = document.createElementNS(svgNS, 'path');
+        const topLabel = document.createElementNS(svgNS, 'text');
+
+        cellGroup.id = 'cell_u1';
+        cellGroup.append(cellPath, cellLabel);
+        wireGroup.appendChild(wire);
+        svg.append(cellGroup, wireGroup, topLabel);
+        widget.svgContainer.replaceChildren(svg);
+        widget._svgEl = svg;
+
+        const elements = Array.from(widget._svgContentElements());
+        assert.deepEqual(elements, [cellGroup, wire, topLabel]);
+        container.element.remove();
+    });
+});
+
 describe('SchematicWidget schematic navigation', () => {
     it('expands the current schematic from a double-clicked cell shape', async () => {
         const requests = [];
@@ -245,14 +269,19 @@ describe('SchematicWidget schematic navigation', () => {
         const currentNetlist = {
             modules: {
                 top: {
+                    attributes: { source_line: 9000 },
+                    ports: {
+                        in: { direction: 'input', bits: [2], offset: 100 },
+                    },
                     cells: {
                         u1: {
                             type: 'existing',
+                            parameters: { WIDTH: 512 },
                             connections: { Z: [2] },
                         },
                     },
                     netnames: {
-                        n1: { hide_name: 0, bits: [2], attributes: {} },
+                        n1: { hide_name: 0, bits: [2], attributes: { width: 1024 } },
                     },
                 },
             },

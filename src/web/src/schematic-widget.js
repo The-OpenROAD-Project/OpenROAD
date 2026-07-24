@@ -521,19 +521,19 @@ export class SchematicWidget {
         top.netnames = top.netnames || {};
     }
 
-    _collectSchematicBits(value, bits) {
-        if (Array.isArray(value)) {
-            value.forEach((item) => this._collectSchematicBits(item, bits));
-            return;
-        }
-        if (value && typeof value === 'object') {
-            Object.values(value)
-                .forEach((item) => this._collectSchematicBits(item, bits));
-            return;
-        }
-        if (Number.isInteger(value)) {
-            bits.add(value);
-        }
+    _collectSchematicBits(top, bits) {
+        const addBits = (values) => {
+            if (!Array.isArray(values)) return;
+            values.forEach((bit) => {
+                if (Number.isInteger(bit)) bits.add(bit);
+            });
+        };
+
+        Object.values(top.netnames || {}).forEach((net) => addBits(net.bits));
+        Object.values(top.ports || {}).forEach((port) => addBits(port.bits));
+        Object.values(top.cells || {}).forEach((cell) => {
+            Object.values(cell.connections || {}).forEach(addBits);
+        });
     }
 
     _remapSchematicBits(value, bitRemap) {
@@ -1457,7 +1457,11 @@ export class SchematicWidget {
             'polyline',
             'polygon',
         ];
-        return this._svgEl.querySelectorAll(selectors.join(','));
+        return Array.from(this._svgEl.querySelectorAll(selectors.join(',')))
+            .filter((element) => {
+                const cellGroup = element.closest('g[id^="cell_"]');
+                return !cellGroup || cellGroup === element;
+            });
     }
 
     _svgContentBoundsFromSvgBBox() {
