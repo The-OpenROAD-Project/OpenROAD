@@ -2750,18 +2750,19 @@ void LayoutScroll::keyPressEvent(QKeyEvent* event)
 
   if (!event->isAutoRepeat()) {
     // First press of a key
-    currentKey = key;
-    accelCounter = 0;
+    current_key_ = key;
+    accel_counter_ = 0;
   }
 
   int multiplier = 1;
   if (arrow_keys_scroll_accel_()) {
-    if (accelCounter < accelCounterMax) {
-      accelCounter++;
+    if (accel_counter_ < kAccelCounterMax) {
+      accel_counter_++;
     }
     // Achieve gentle exponential scaling by dividing
     // the exponent and using 1.25 as the base
-    multiplier = std::pow(1.25, accelCounter / 2);
+    multiplier = static_cast<int>(
+                   std::round(std::pow(1.15, accel_counter_ / 2.0)));
   }
 
   scrollByKey(key, multiplier);
