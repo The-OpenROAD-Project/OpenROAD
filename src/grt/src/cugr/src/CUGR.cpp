@@ -1738,7 +1738,25 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
         // everything alive.
       }
 
-      // Build chain of nodes for connection segments
+      // Build chain of nodes for connection segments and commit their
+      // demand to the GridGraph so that congestion accounting reflects
+      // the stitched edges immediately.  We construct a temporary
+      // mini-tree rooted at node_a, add its usage, then build the
+      // real chain that gets embedded into the preserved tree.
+      auto conn_root = std::make_shared<GRTreeNode>(
+          target_layer_a, target_x_a, target_y_a);
+      {
+        auto conn_curr = conn_root;
+        for (const auto& seg : connection) {
+          const int f_layer = seg.final_layer - 1;
+          const int f_x = dbu_to_tile(seg.final_x, true);
+          const int f_y = dbu_to_tile(seg.final_y, false);
+          conn_curr->addChild(std::make_shared<GRTreeNode>(f_layer, f_x, f_y));
+          conn_curr = conn_curr->getChildren().back();
+        }
+      }
+      grid_graph_->addTreeUsage(conn_root, preserved_gr->getNdrCosts());
+
       std::shared_ptr<GRTreeNode> curr = node_a;
       for (const auto& seg : connection) {
         const int f_layer = seg.final_layer - 1;
