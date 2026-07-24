@@ -2759,7 +2759,7 @@ void LayoutScroll::keyPressEvent(QKeyEvent* event)
     if (accelCounter < accelCounterMax) {
       accelCounter++;
     }
-    // Achieve gentle exponenrial scaling by dividing
+    // Achieve gentle exponential scaling by dividing
     // the exponent and using 1.25 as the base
     multiplier = std::pow(1.25, accelCounter / 2);
   }
