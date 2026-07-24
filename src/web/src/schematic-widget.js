@@ -63,6 +63,8 @@ export class SchematicWidget {
         this.netlistsvg = null;
         this.skin = null;
         this._svgEl = null;
+        // Store the unmodified server netlist so view toggles and double-click
+        // expansion can rerender or merge from the same schematic state.
         this._currentNetlist = null;
 
         // Pan/zoom state
@@ -162,6 +164,8 @@ export class SchematicWidget {
         }
     }
 
+    // Click events often target a skin child path/text or the transparent hit
+    // rect, so resolve either an SVG id or class token back to a cell id.
     _cellIdFromElement(el) {
         if (!el) {
             return null;
@@ -549,6 +553,9 @@ export class SchematicWidget {
         return value;
     }
 
+    // Double-click expansion returns a separate cone. Merge it into the displayed
+    // netlist while remapping numeric bits so new local nets cannot collide with
+    // bits already used by the current schematic.
     _mergeSchematicNetlists(baseNetlist, addedNetlist) {
         const baseTop = this._topModule(baseNetlist);
         const addedTop = this._topModule(addedNetlist);
@@ -590,6 +597,7 @@ export class SchematicWidget {
             let mergedBits = null;
             if (Object.prototype.hasOwnProperty.call(mergedTop.netnames, netName)
                 && Array.isArray(mergedTop.netnames[netName].bits)) {
+                // Same net name means the added cone touches an existing wire.
                 mergedBits = mergedTop.netnames[netName].bits;
             } else {
                 const copiedNet = addedNet;
@@ -1290,7 +1298,8 @@ export class SchematicWidget {
                 const overlap = occupiedRects.reduce(
                     (sum, occupied) => sum + this._rectOverlapArea(rect, occupied),
                     0);
-                // Pick the label position with the least wire/text overlap.
+                // Prefer avoiding wires first, then labels/cell bodies; placement
+                // preference only breaks ties between similarly clear positions.
                 const score = wireOverlap * 1000 + overlap * 100 + candidate.preference;
                 if (!best || score < best.score) best = { candidate, score };
                 if (wireOverlap === 0 && overlap === 0 && score === candidate.preference) {
@@ -1473,7 +1482,8 @@ export class SchematicWidget {
         return bounds;
     }
 
-    // Repositioned labels may extend outside NetlistSVG's original viewBox.
+    // Repositioned labels may extend outside NetlistSVG's original viewBox, so
+    // recompute content bounds after label layout before fitting the schematic.
     _padSvgToContent() {
         if (!this._svgEl) return;
 
@@ -1486,6 +1496,8 @@ export class SchematicWidget {
                 right: bbox.x + bbox.width,
                 bottom: bbox.y + bbox.height,
             });
+            // Combine SVG-space and screen-space measurements because browser
+            // text layout and transformed skin geometry are exposed differently.
             bounds = this._unionSvgRect(bounds, this._svgContentBoundsFromSvgBBox());
             bounds = this._unionSvgRect(bounds, this._openRoadLabelBounds());
             bounds = this._unionSvgRect(bounds, this._svgContentBoundsFromScreen());
