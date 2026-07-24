@@ -96,6 +96,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
           [this]() -> bool { return default_mouse_wheel_zoom_->isChecked(); },
+          [this]() -> bool { return arrow_keys_scroll_accel_->isChecked(); },
           [this]() -> int { return arrow_keys_scroll_step_; },
           this)),
       selection_browser_(
@@ -436,6 +437,11 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
         settings
             .value("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked())
             .toBool());
+    arrow_keys_scroll_accel_->setChecked(
+        settings
+            .value("arrow_keys_scroll_accel",
+                   arrow_keys_scroll_accel_->isChecked())
+            .toBool());
     arrow_keys_scroll_step_
         = settings.value("arrow_keys_scroll_step", arrow_keys_scroll_step_)
               .toInt();
@@ -743,6 +749,11 @@ void MainWindow::createActions()
   default_mouse_wheel_zoom_->setCheckable(true);
   default_mouse_wheel_zoom_->setChecked(false);
 
+  arrow_keys_scroll_accel_
+      = new QAction("Arrow keys scroll acceleration", this);
+  arrow_keys_scroll_accel_->setCheckable(true);
+  arrow_keys_scroll_accel_->setChecked(false);
+
   arrow_keys_scroll_step_dialog_ = new QAction("Arrow keys scroll step", this);
   arrow_keys_scroll_step_ = 20;
 
@@ -895,6 +906,7 @@ void MainWindow::createMenus()
   option_menu->addAction(show_dbu_);
   option_menu->addAction(default_ruler_style_);
   option_menu->addAction(default_mouse_wheel_zoom_);
+  option_menu->addAction(arrow_keys_scroll_accel_);
   option_menu->addAction(arrow_keys_scroll_step_dialog_);
   option_menu->addAction(font_);
   option_menu->addAction(show_poly_decomp_view_);
@@ -1625,6 +1637,8 @@ void MainWindow::saveSettings()
   settings.setValue("use_dbu", show_dbu_->isChecked());
   settings.setValue("ruler_style", default_ruler_style_->isChecked());
   settings.setValue("mouse_wheel_zoom", default_mouse_wheel_zoom_->isChecked());
+  settings.setValue("arrow_keys_scroll_accel",
+                    arrow_keys_scroll_accel_->isChecked());
   settings.setValue("arrow_keys_scroll_step", arrow_keys_scroll_step_);
   script_->writeSettings(&settings);
   controls_->writeSettings(&settings);

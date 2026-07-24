@@ -467,6 +467,7 @@ class LayoutScroll : public QScrollArea
  public:
   LayoutScroll(LayoutViewer* viewer,
                const std::function<bool()>& default_mouse_wheel_zoom,
+               const std::function<bool()>& arrow_keys_scroll_accel,
                const std::function<int()>& arrow_keys_scroll_step,
                QWidget* parent = nullptr);
   bool isScrollingWithCursor();
@@ -486,9 +487,16 @@ class LayoutScroll : public QScrollArea
   void keyPressEvent(QKeyEvent* event) override;
 
  private:
+  bool isScrollKey(Qt::Key key) const;
+  void scrollByKey(Qt::Key key, int multiplier);
   std::function<bool()> default_mouse_wheel_zoom_;
+  std::function<bool()> arrow_keys_scroll_accel_;
   std::function<int()> arrow_keys_scroll_step_;
   LayoutViewer* viewer_;
+
+  Qt::Key currentKey = Qt::Key_unknown;
+  int accelCounter = 0;
+  static constexpr int accelCounterMax = 20;
 
   bool scrolling_with_cursor_;
 };
