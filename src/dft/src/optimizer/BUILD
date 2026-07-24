@@ -9,18 +9,15 @@ package(
 )
 
 cc_library(
-    name = "architect",
+    name = "optimizer",
     srcs = [
-        "NNReorder.cpp",
-        "ScanArchitect.cpp",
-        "ScanArchitectHeuristic.cpp",
-        "ScanChain.cpp",
+        "OdbScanCellAdapter.cpp",
+        "Opt.cpp",
     ],
     hdrs = [
-        "NNReorder.hh",
-        "ScanArchitect.hh",
-        "ScanArchitectHeuristic.hh",
-        "ScanChain.hh",
+        "KMeans.hh",
+        "OdbScanCellAdapter.hh",
+        "Opt.hh",
     ],
     includes = [
         ".",
@@ -28,8 +25,7 @@ cc_library(
     deps = [
         "//src/dft/src/cells",
         "//src/dft/src/clock_domain",
-        "//src/dft/src/config",
-        "//src/dft/src/utils",
+        "//src/odb",
         "//src/utl",
         "@boost.geometry",
     ],
