@@ -5758,6 +5758,12 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
       }
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+    // For CUGR: transfer tree ownership and mark removed_net in merged_nets_
+    // so that the net-destroy callback does not subtract the removed net's
+    // tree usage from GridGraph (the wires were folded into net1_route above).
+    if (use_cugr_) {
+      cugr_->mergeNet(db_net1, db_net2, /*connection=*/{});
+    }
   }
 
   updateNetPins(net1);
