@@ -442,6 +442,69 @@ TEST_F(TileGeneratorTest, GetLayers)
   EXPECT_EQ(layers.back(), "OVERLAP");
 }
 
+// The per-layer "pattern" request field maps to TileVisibility::fill_pattern,
+// with out-of-range values clamped to solid so a bad payload can't index
+// outside the FillPattern enum.
+TEST_F(TileGeneratorTest, FillPatternParsingClampsToEnum)
+{
+  // Absent → solid (the historical default).
+  TileVisibility vis_default;
+  vis_default.parseFromJson(parseObj(R"({})"));
+  EXPECT_EQ(vis_default.fill_pattern, FillPattern::kSolid);
+
+  // In-range values map straight through.
+  TileVisibility vis_none;
+  vis_none.parseFromJson(parseObj(R"({"pattern":0})"));
+  EXPECT_EQ(vis_none.fill_pattern, FillPattern::kNone);
+
+  TileVisibility vis_dots;
+  vis_dots.parseFromJson(parseObj(R"({"pattern":4})"));
+  EXPECT_EQ(vis_dots.fill_pattern, FillPattern::kDots);
+
+  // Out-of-range (above and below) clamps back to solid.
+  TileVisibility vis_high;
+  vis_high.parseFromJson(parseObj(R"({"pattern":99})"));
+  EXPECT_EQ(vis_high.fill_pattern, FillPattern::kSolid);
+
+  TileVisibility vis_neg;
+  vis_neg.parseFromJson(parseObj(R"({"pattern":-1})"));
+  EXPECT_EQ(vis_neg.fill_pattern, FillPattern::kSolid);
+}
+
+// A non-solid fill pattern thins a layer's own shapes (fewer painted pixels
+// than solid, but still some), and kNone paints nothing.  Uses a large metal1
+// BTerm as the only content so the pixel counts reflect just the pattern.
+TEST_F(TileGeneratorTest, FillPatternControlsShapeCoverage)
+{
+  makeBTermAtEdge("pad", "metal1", 30000, 30000, 40000, 40000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  auto paintedPixels = [&](const FillPattern pattern) {
+    TileVisibility vis;
+    vis.fill_pattern = pattern;
+    const auto png = tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+    unsigned w = 0, h = 0;
+    const auto px = decodePng(png, w, h);
+    size_t painted = 0;
+    for (size_t i = 3; i < px.size(); i += 4) {
+      if (px[i] > 0) {
+        ++painted;
+      }
+    }
+    return painted;
+  };
+
+  const size_t solid = paintedPixels(FillPattern::kSolid);
+  const size_t diagonal = paintedPixels(FillPattern::kDiagonal);
+  const size_t none = paintedPixels(FillPattern::kNone);
+
+  EXPECT_GT(solid, 0u) << "solid fill should paint the shape";
+  EXPECT_EQ(none, 0u) << "kNone should paint nothing";
+  EXPECT_GT(diagonal, 0u) << "a hatch should still paint some pixels";
+  EXPECT_LT(diagonal, solid) << "a hatch should paint fewer pixels than solid";
+}
+
 // Layer colors must mirror gui::DisplayControls::techInit so the GUI and the
 // web frontend show the same color for the same layer.  Nangate45 only has 10
 // routing + 9 cut layers, all within the 14-entry built-in palettes, so we
