@@ -43,6 +43,9 @@ COMPULSORY_TESTS = [
     "max_cap",
     "no_clocks",
     "no_sinks",
+    "report_clock_tree",
+    "num_max_leaf_sinks",
+    "num_max_leaf_sinks_default",
     "post_cts_opt",
     "simple_test",
     "simple_test_clustered",
@@ -196,8 +199,17 @@ filegroup(
             "no_clocks": [
                 "no_clock.def",
             ],
+            "num_max_leaf_sinks": [
+                "16sinks.def",
+            ],
+            "num_max_leaf_sinks_default": [
+                "16sinks.def",
+            ],
             "post_cts_opt": [
                 "cts-helpers.tcl",
+            ],
+            "report_clock_tree": [
+                "16sinks.def",
             ],
             "simple_test": [
                 "16sinks.def",
