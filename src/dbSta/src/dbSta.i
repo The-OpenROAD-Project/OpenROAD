@@ -324,9 +324,10 @@ check_ip_cmd(const char* master_name,
 {
   ord::OpenRoad* openroad = ord::getOpenRoad();
   odb::dbDatabase* db = openroad->getDb();
+  sta::dbSta* sta = openroad->getSta();
   utl::Logger* logger = openroad->getLogger();
 
-  sta::IpChecker checker(db, logger);
+  sta::IpChecker checker(db, sta, logger);
   checker.setMaxPolygons(max_polygons);
   checker.setVerbose(verbose);
 
