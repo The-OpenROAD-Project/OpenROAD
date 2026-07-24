@@ -5664,6 +5664,9 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 
     if (use_cugr_) {
       // Capacity check using the CUGR GridGraph instead of FastRoute.
+      // Use the survivor net's per-layer NDR demand so that NDR nets with
+      // a demand factor > 1 are not incorrectly accepted on tight edges.
+      const std::vector<double> ndr_costs = cugr_->getNdrCosts(db_net1);
       auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
         return (dbu_coord - (is_x ? grid_->getXMin() : grid_->getYMin()))
                / grid_->getTileSize();
@@ -5674,15 +5677,23 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
           const int y1 = dbu_to_tile(std::min(seg.init_y, seg.final_y), false);
           const int x2 = dbu_to_tile(std::max(seg.init_x, seg.final_x), true);
           const int y2 = dbu_to_tile(std::max(seg.init_y, seg.final_y), false);
+          // layer_index is 1-based; ndr_costs is 0-based.
+          const int layer_0 = seg.init_layer - 1;
+          const double demand
+              = (layer_0 >= 0 && layer_0 < static_cast<int>(ndr_costs.size()))
+                    ? ndr_costs[layer_0]
+                    : 1.0;
           if (y1 == y2) {  // horizontal
             for (int x = x1; x < x2; x++) {
-              if (!cugr_->hasAvailableResources(seg.init_layer, x, y1)) {
+              if (!cugr_->hasAvailableResources(
+                      seg.init_layer, x, y1, demand)) {
                 return false;
               }
             }
           } else {  // vertical
             for (int y = y1; y < y2; y++) {
-              if (!cugr_->hasAvailableResources(seg.init_layer, x1, y)) {
+              if (!cugr_->hasAvailableResources(
+                      seg.init_layer, x1, y, demand)) {
                 return false;
               }
             }

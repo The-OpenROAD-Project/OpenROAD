@@ -1775,7 +1775,21 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   merged_nets_.insert(removed_net);
 }
 
-bool CUGR::hasAvailableResources(int layer_index, int tile_x, int tile_y) const
+std::vector<double> CUGR::getNdrCosts(odb::dbNet* db_net) const
+{
+  auto it = db_net_map_.find(db_net);
+  if (it == db_net_map_.end()) {
+    // Net not found; return a unit-demand vector so the caller uses 1.0.
+    const int num_layers = grid_graph_ ? grid_graph_->getNumLayers() : 0;
+    return std::vector<double>(num_layers, 1.0);
+  }
+  return it->second->getNdrCosts();
+}
+
+bool CUGR::hasAvailableResources(int layer_index,
+                                 int tile_x,
+                                 int tile_y,
+                                 double demand) const
 {
   if (!grid_graph_) {
     return false;
@@ -1789,7 +1803,7 @@ bool CUGR::hasAvailableResources(int layer_index, int tile_x, int tile_y) const
                    "Invalid layer index {} in hasAvailableResources.",
                    layer_index);
   }
-  return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= 1.0;
+  return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= demand;
 }
 
 }  // namespace grt
