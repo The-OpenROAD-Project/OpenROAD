@@ -265,6 +265,73 @@ proc write_db { args } {
   ord::write_db_cmd $filename
 }
 
+# ECO (Engineering Change Order) capture / replay.
+#
+# The odb journaling layer records every netlist edit (instance create/destroy,
+# connect/disconnect, master swap, placement changes, ...) made while an ECO is
+# active.  write_eco serializes that journal to a file; read_eco replays it onto
+# a pristine copy of the original design.  This lets a designer snapshot a
+# placed/routed netlist, run targeted timing fixes (e.g. repair_timing), and
+# capture just the delta as a portable ECO that can be replayed later -- the
+# incremental closure loop instead of re-running the whole flow.
+#
+# Typical usage:
+#   read_def placed.def
+#   begin_eco                ;# start recording netlist edits
+#   repair_timing -setup
+#   write_eco fix.eco        ;# persist the delta
+# and later, on the original (unmodified) netlist:
+#   read_def placed.def
+#   read_eco fix.eco         ;# replay the delta -> matches the modified design
+
+proc ord_eco_block { cmd } {
+  set db [ord::get_db]
+  if { $db eq "NULL" } {
+    utl::error ORD 1060 "no database is loaded; $cmd requires a design."
+  }
+  set chip [$db getChip]
+  if { $chip eq "NULL" } {
+    utl::error ORD 1061 "no chip is loaded; $cmd requires a design."
+  }
+  set block [$chip getBlock]
+  if { $block eq "NULL" } {
+    utl::error ORD 1062 "no block is loaded; $cmd requires a design."
+  }
+  return $block
+}
+
+sta::define_cmd_args "begin_eco" {}
+
+proc begin_eco { args } {
+  sta::check_argc_eq0 "begin_eco" $args
+  set block [ord_eco_block "begin_eco"]
+  odb::dbDatabase_beginEco $block
+}
+
+sta::define_cmd_args "write_eco" {filename}
+
+proc write_eco { args } {
+  sta::check_argc_eq1 "write_eco" $args
+  set block [ord_eco_block "write_eco"]
+  set filename [file nativename [lindex $args 0]]
+  odb::dbDatabase_writeEco $block $filename
+}
+
+sta::define_cmd_args "read_eco" {filename}
+
+proc read_eco { args } {
+  sta::check_argc_eq1 "read_eco" $args
+  set block [ord_eco_block "read_eco"]
+  set filename [file nativename [lindex $args 0]]
+  if { ![file exists $filename] } {
+    utl::error ORD 1063 "$filename does not exist."
+  }
+  if { ![file readable $filename] } {
+    utl::error ORD 1064 "$filename is not readable."
+  }
+  odb::dbDatabase_readEco $block $filename
+}
+
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
 
 proc assign_ndr { args } {
