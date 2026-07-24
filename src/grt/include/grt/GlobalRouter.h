@@ -489,7 +489,7 @@ class GlobalRouter
 
   // incremental funcions
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
-  std::vector<Net*> updateDirtyRoutesCugr();
+  std::vector<Net*> updateDirtyRoutesCugr(bool save_guides);
   std::vector<Net*> updateDirtyRoutesFastRoute(bool save_guides);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
