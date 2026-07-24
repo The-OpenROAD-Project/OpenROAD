@@ -41,18 +41,43 @@ void ScanArchitectHeuristic::architect()
         current_chain->add(std::move(scan_cell));
       }
 
-      current_chain->sortScanCells(
-          [this](std::vector<std::unique_ptr<ScanCell>>& falling,
-                 std::vector<std::unique_ptr<ScanCell>>& rising,
-                 std::vector<std::unique_ptr<ScanCell>>& sorted) {
+      debugPrint(logger_,
+                 utl::DFT,
+                 "scan_architect",
+                 1,
+                 "Starting nearest-neighbor sort for chain {}",
+                 current_chain->getName());
+
+      auto total_wire_length = current_chain->sortScanCells(
+          [&](std::vector<std::unique_ptr<ScanCell>>& falling,
+              std::vector<std::unique_ptr<ScanCell>>& rising,
+              std::vector<std::unique_ptr<ScanCell>>& sorted) {
             sorted.reserve(falling.size() + rising.size());
             // Sort to reduce wire length
-            OptimizeScanWirelength(falling, logger_);
-            OptimizeScanWirelength(rising, logger_);
-            // Falling edge first
+            auto falling_wire_length
+                = OptimizeScanWirelengthNN(falling, logger_);
+            auto rising_wire_length = OptimizeScanWirelengthNN(rising, logger_);
+            int64_t distance_between_falling_and_rising = 0;
+            if (rising.size() && falling.size()) {
+              distance_between_falling_and_rising
+                  = odb::Point::manhattanDistance(
+                      falling[falling.size() - 1]->getOrigin(),
+                      rising[0]->getOrigin());
+            }
+            // Falling edges first
             std::ranges::move(falling, std::back_inserter(sorted));
             std::ranges::move(rising, std::back_inserter(sorted));
+            return falling_wire_length + distance_between_falling_and_rising
+                   + rising_wire_length;
           });
+
+      debugPrint(logger_,
+                 utl::DFT,
+                 "scan_architect",
+                 1,
+                 "Concluded nearest-neighbor sort for chain {} with TWL {}",
+                 current_chain->getName(),
+                 total_wire_length);
     }
   }
 }
