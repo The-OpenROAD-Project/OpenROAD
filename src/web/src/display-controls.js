@@ -127,16 +127,21 @@ export function populateDisplayControls(app, visibility, selectability,
     } catch (_) { /* ignore */ }
 
     // Restore saved per-layer fill patterns (raw layer name → FillPattern int).
+    // Kept in sessionStorage alongside the visibility/selectability sets so a
+    // pattern survives the open-database reload but starts fresh in a new
+    // session, matching the Qt GUI (review feedback on #10795).
     try {
-        const raw = getCookie('or_layer_patterns');
-        if (raw) Object.assign(app.layerPatterns, JSON.parse(decodeURIComponent(raw)));
+        const raw = window.sessionStorage.getItem('or_layer_patterns');
+        if (raw) Object.assign(app.layerPatterns, JSON.parse(raw));
     } catch (_) { /* ignore */ }
 
     // Persist only non-solid patterns; setting a layer back to Solid drops it.
     function persistLayerPatterns() {
-        setCookie('or_layer_patterns',
-            encodeURIComponent(JSON.stringify(
-                nonSolidPatterns(app.layerPatterns))));
+        try {
+            window.sessionStorage.setItem(
+                'or_layer_patterns',
+                JSON.stringify(nonSolidPatterns(app.layerPatterns)));
+        } catch (_) { /* ignore */ }
     }
 
     // Apply a fill pattern to one layer and re-render just that layer's tiles.
