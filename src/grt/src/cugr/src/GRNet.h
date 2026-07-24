@@ -142,6 +142,15 @@ class GRNet
   {
     return iterm_to_ap_;
   }
+  // Terminals keyed by the pin index that also keys getPinAccessPoints().
+  const std::map<int, odb::dbBTerm*>& getBTermsByPinIndex() const
+  {
+    return pin_index_to_bterm_;
+  }
+  const std::map<int, odb::dbITerm*>& getITermsByPinIndex() const
+  {
+    return pin_index_to_iterm_;
+  }
   bool isLocal() const;
 
  private:
