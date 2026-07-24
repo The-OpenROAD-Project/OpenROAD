@@ -267,6 +267,11 @@ void Gui::gifAddFrame(std::optional<int> key,
 {
 }
 
+std::string Gui::loadExternalHeatMap(const std::string& /* file_path */)
+{
+  return "";
+}
+
 void Gui::deleteLabel(const std::string& name)
 {
 }
