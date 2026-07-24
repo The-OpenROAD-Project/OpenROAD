@@ -171,19 +171,60 @@ path, rect, circle, polygon {
     <g s:x="24" s:y="10" s:pid="Y"/>
   </g>
 
-  <g s:type="dff" transform="translate(350,150)" s:width="30" s:height="40">
+  <!-- dff -->
+  <g s:type="dff" transform="translate(350,150)" s:width="46" s:height="44">
+    <s:alias val="dff"/>
     <s:alias val="$dff"/>
     <s:alias val="$_DFF_"/>
     <s:alias val="$_DFF_P_"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">dff</text>
+    <text x="23" y="-4" class="nodelabel $cell_id" s:attribute="ref">dff</text>
 
-    <rect width="30" height="40" x="0" y="0" class="$cell_id"/>
-    <path d="M0,35 L5,30 L0,25" class="$cell_id"/>
+    <rect width="46" height="44" x="0" y="0" class="$cell_id"/>
+    <path d="M0,25 L7,30 L0,35 Z" class="$cell_id"
+          style="fill:none;stroke-linejoin:miter;"/>
 
-    <g s:x="30" s:y="10" s:pid="Q"/>
+    <g s:x="0" s:y="12" s:pid="D"/>
     <g s:x="0" s:y="30" s:pid="CLK"/>
     <g s:x="0" s:y="30" s:pid="C"/>
-    <g s:x="0" s:y="10" s:pid="D"/>
+    <g s:x="46" s:y="12" s:pid="Q"/>
+    <g s:x="46" s:y="32" s:pid="QN"/>
+  </g>
+
+  <!-- Reset/set DFF variants are not in upstream netlistsvg's skin. -->
+  <g s:type="dffr" transform="translate(480,150)" s:width="50" s:height="54">
+    <s:alias val="dffr"/>
+    <s:alias val="$dffr"/>
+    <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffr</text>
+
+    <rect width="50" height="54" x="0" y="0" class="$cell_id"/>
+    <path d="M0,23 L7,28 L0,33 Z" class="$cell_id"
+          style="fill:none;stroke-linejoin:miter;"/>
+    <circle cx="3" cy="44" r="3" class="$cell_id"/>
+
+    <g s:x="0" s:y="12" s:pid="D"/>
+    <g s:x="0" s:y="28" s:pid="CLK"/>
+    <g s:x="0" s:y="28" s:pid="C"/>
+    <g s:x="0" s:y="44" s:pid="RN"/>
+    <g s:x="50" s:y="12" s:pid="Q"/>
+    <g s:x="50" s:y="34" s:pid="QN"/>
+  </g>
+
+  <g s:type="dffs" transform="translate(550,150)" s:width="50" s:height="54">
+    <s:alias val="dffs"/>
+    <s:alias val="$dffs"/>
+    <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffs</text>
+
+    <rect width="50" height="54" x="0" y="0" class="$cell_id"/>
+    <path d="M0,23 L7,28 L0,33 Z" class="$cell_id"
+          style="fill:none;stroke-linejoin:miter;"/>
+    <circle cx="3" cy="44" r="3" class="$cell_id"/>
+
+    <g s:x="0" s:y="12" s:pid="D"/>
+    <g s:x="0" s:y="28" s:pid="CLK"/>
+    <g s:x="0" s:y="28" s:pid="C"/>
+    <g s:x="0" s:y="44" s:pid="SN"/>
+    <g s:x="50" s:y="12" s:pid="Q"/>
+    <g s:x="50" s:y="34" s:pid="QN"/>
   </g>
 
   <g s:type="inputExt" transform="translate(50,250)" s:width="30" s:height="20">
@@ -592,450 +633,6 @@ path, rect, circle, polygon {
     <g s:x="3" s:y="30" s:pid="C"/>
     <g s:x="3" s:y="42" s:pid="D"/>
     <g s:x="38" s:y="24" s:pid="Y"/>
-  </g>
-
-  <!-- OpenROAD schematic symbols preserved from the original web schematic
-       implementation. The widget maps Liberty-classified cells to these types
-       while still using this shared skin file as the drawing source. -->
-  <g s:type="openroad_buffer" transform="translate(0,0)" s:width="30" s:height="20">
-    <s:alias val="openroad_buffer"/>
-    <text x="10" y="-4" class="nodelabel $cell_id" s:attribute="ref">buffer</text>
-    <path d="M0,0 L0,20 L20,10 Z" class="$cell_id"/>
-    <g transform="translate(0, 10)" s:x="0" s:y="10" s:pid="A">
-      <text x="-3" y="-4" data-openroad-port="A" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A</text>
-    </g>
-    <g transform="translate(20, 10)" s:x="20" s:y="10" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_inverter" transform="translate(0,0)" s:width="25" s:height="20">
-    <s:alias val="openroad_inverter"/>
-    <text x="12.5" y="-4" class="nodelabel $cell_id" s:attribute="ref">inverter</text>
-    <path d="M0,0 L0,20 L20,10 Z" class="$cell_id"/>
-    <circle cx="23" cy="10" r="3" class="$cell_id"/>
-    <g transform="translate(0, 10)" s:x="0" s:y="10" s:pid="A">
-      <text x="-3" y="-4" data-openroad-port="A" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A</text>
-    </g>
-    <g transform="translate(25, 10)" s:x="25" s:y="10" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_dff" transform="translate(0,0)" s:width="46" s:height="44">
-    <s:alias val="openroad_dff"/>
-    <text x="23" y="-4" class="nodelabel $cell_id" s:attribute="ref">dff</text>
-    <rect x="0" y="0" width="46" height="44" class="$cell_id"/>
-    <path d="M0,30 L7,34 L0,38 Z" class="$cell_id" style="stroke-linejoin:miter;"/>
-    <g transform="translate(0, 12)" s:x="0" s:y="12" s:pid="D">
-      <text x="-3" y="-4" data-openroad-port="D" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">D</text>
-    </g>
-    <g transform="translate(0, 34)" s:x="0" s:y="34" s:pid="CK">
-      <text x="-3" y="-4" data-openroad-port="CK" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">CK</text>
-    </g>
-    <g transform="translate(46, 12)" s:x="46" s:y="12" s:pid="Q">
-      <text x="4" y="-4" data-openroad-port="Q" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Q</text>
-    </g>
-    <g transform="translate(46, 32)" s:x="46" s:y="32" s:pid="QN">
-      <text x="4" y="-4" data-openroad-port="QN" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">QN</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_dffr" transform="translate(0,0)" s:width="50" s:height="54">
-    <s:alias val="openroad_dffr"/>
-    <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffr</text>
-    <rect x="0" y="0" width="50" height="54" class="$cell_id"/>
-    <path d="M0,24 L7,28 L0,32 Z" class="$cell_id" style="stroke-linejoin:miter;"/>
-    <circle cx="3" cy="44" r="3" class="$cell_id"/>
-    <g transform="translate(0, 12)" s:x="0" s:y="12" s:pid="D">
-      <text x="-3" y="-4" data-openroad-port="D" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">D</text>
-    </g>
-    <g transform="translate(0, 28)" s:x="0" s:y="28" s:pid="CK">
-      <text x="-3" y="-4" data-openroad-port="CK" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">CK</text>
-    </g>
-    <g transform="translate(0, 44)" s:x="0" s:y="44" s:pid="RN">
-      <text x="-3" y="-4" data-openroad-port="RN" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">RN</text>
-    </g>
-    <g transform="translate(50, 12)" s:x="50" s:y="12" s:pid="Q">
-      <text x="4" y="-4" data-openroad-port="Q" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Q</text>
-    </g>
-    <g transform="translate(50, 34)" s:x="50" s:y="34" s:pid="QN">
-      <text x="4" y="-4" data-openroad-port="QN" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">QN</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_dffs" transform="translate(0,0)" s:width="50" s:height="54">
-    <s:alias val="openroad_dffs"/>
-    <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffs</text>
-    <rect x="0" y="0" width="50" height="54" class="$cell_id"/>
-    <path d="M0,24 L7,28 L0,32 Z" class="$cell_id" style="stroke-linejoin:miter;"/>
-    <circle cx="3" cy="44" r="3" class="$cell_id"/>
-    <g transform="translate(0, 12)" s:x="0" s:y="12" s:pid="D">
-      <text x="-3" y="-4" data-openroad-port="D" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">D</text>
-    </g>
-    <g transform="translate(0, 28)" s:x="0" s:y="28" s:pid="CK">
-      <text x="-3" y="-4" data-openroad-port="CK" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">CK</text>
-    </g>
-    <g transform="translate(0, 44)" s:x="0" s:y="44" s:pid="SN">
-      <text x="-3" y="-4" data-openroad-port="SN" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">SN</text>
-    </g>
-    <g transform="translate(50, 12)" s:x="50" s:y="12" s:pid="Q">
-      <text x="4" y="-4" data-openroad-port="Q" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Q</text>
-    </g>
-    <g transform="translate(50, 34)" s:x="50" s:y="34" s:pid="QN">
-      <text x="4" y="-4" data-openroad-port="QN" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">QN</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_and2" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_and2"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">and2</text>
-    <path d="M0,0 L15,0 C23.284,0 30,6.716 30,15 C30,23.284 23.284,30 15,30 L0,30 Z" class="$cell_id"/>
-    <g transform="translate(0, 7)" s:x="0" s:y="7" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 23)" s:x="0" s:y="23" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(30, 15)" s:x="30" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_nand2" transform="translate(0,0)" s:width="34" s:height="30">
-    <s:alias val="openroad_nand2"/>
-    <text x="17" y="-4" class="nodelabel $cell_id" s:attribute="ref">nand2</text>
-    <path d="M0,0 L14,0 C21.732,0 28,6.716 28,15 C28,23.284 21.732,30 14,30 L0,30 Z" class="$cell_id"/>
-    <circle cx="31" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(0, 7)" s:x="0" s:y="7" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 23)" s:x="0" s:y="23" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(34, 15)" s:x="34" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_or2" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_or2"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">or2</text>
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <g transform="translate(3, 7)" s:x="3" s:y="7" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(3, 23)" s:x="3" s:y="23" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(30, 15)" s:x="30" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_nor2" transform="translate(0,0)" s:width="37" s:height="30">
-    <s:alias val="openroad_nor2"/>
-    <text x="18.5" y="-4" class="nodelabel $cell_id" s:attribute="ref">nor2</text>
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="34" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(3, 7)" s:x="3" s:y="7" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(3, 23)" s:x="3" s:y="23" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(37, 15)" s:x="37" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_xor2" transform="translate(0,0)" s:width="33" s:height="30">
-    <s:alias val="openroad_xor2"/>
-    <text x="16.5" y="-4" class="nodelabel $cell_id" s:attribute="ref">xor2</text>
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <g transform="translate(0, 7)" s:x="0" s:y="7" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 23)" s:x="0" s:y="23" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(33, 15)" s:x="33" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_xnor2" transform="translate(0,0)" s:width="40" s:height="30">
-    <s:alias val="openroad_xnor2"/>
-    <text x="20" y="-4" class="nodelabel $cell_id" s:attribute="ref">xnor2</text>
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="37" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(0, 7)" s:x="0" s:y="7" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 23)" s:x="0" s:y="23" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(40, 15)" s:x="40" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_and3" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_and3"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">and3</text>
-    <path d="M0,0 L15,0 C23.284,0 30,6.716 30,15 C30,23.284 23.284,30 15,30 L0,30 Z" class="$cell_id"/>
-    <g transform="translate(0, 6)" s:x="0" s:y="6" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 15)" s:x="0" s:y="15" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 24)" s:x="0" s:y="24" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(30, 15)" s:x="30" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_nand3" transform="translate(0,0)" s:width="34" s:height="30">
-    <s:alias val="openroad_nand3"/>
-    <text x="17" y="-4" class="nodelabel $cell_id" s:attribute="ref">nand3</text>
-    <path d="M0,0 L14,0 C21.732,0 28,6.716 28,15 C28,23.284 21.732,30 14,30 L0,30 Z" class="$cell_id"/>
-    <circle cx="31" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(0, 6)" s:x="0" s:y="6" s:pid="A1">
-      <text x="-3" y="-2" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 15)" s:x="0" s:y="15" s:pid="A2">
-      <text x="-3" y="-2" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 24)" s:x="0" s:y="24" s:pid="A3">
-      <text x="-3" y="-2" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(34, 15)" s:x="34" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_or3" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_or3"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">or3</text>
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <g transform="translate(3, 6)" s:x="3" s:y="6" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(3, 15)" s:x="3" s:y="15" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(3, 24)" s:x="3" s:y="24" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(30, 15)" s:x="30" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_nor3" transform="translate(0,0)" s:width="37" s:height="30">
-    <s:alias val="openroad_nor3"/>
-    <text x="18.5" y="-4" class="nodelabel $cell_id" s:attribute="ref">nor3</text>
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="34" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(3, 6)" s:x="3" s:y="6" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(3, 15)" s:x="3" s:y="15" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(3, 24)" s:x="3" s:y="24" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(37, 15)" s:x="37" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_xor3" transform="translate(0,0)" s:width="33" s:height="30">
-    <s:alias val="openroad_xor3"/>
-    <text x="16.5" y="-4" class="nodelabel $cell_id" s:attribute="ref">xor3</text>
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <g transform="translate(0, 6)" s:x="0" s:y="6" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 15)" s:x="0" s:y="15" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 24)" s:x="0" s:y="24" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(33, 15)" s:x="33" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_xnor3" transform="translate(0,0)" s:width="40" s:height="30">
-    <s:alias val="openroad_xnor3"/>
-    <text x="20" y="-4" class="nodelabel $cell_id" s:attribute="ref">xnor3</text>
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="37" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(0, 6)" s:x="0" s:y="6" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 15)" s:x="0" s:y="15" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 24)" s:x="0" s:y="24" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(40, 15)" s:x="40" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_and4" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_and4"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">and4</text>
-    <path d="M0,0 L15,0 C23.284,0 30,6.716 30,15 C30,23.284 23.284,30 15,30 L0,30 Z" class="$cell_id"/>
-    <g transform="translate(0, 5)" s:x="0" s:y="5" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 11.5)" s:x="0" s:y="11.5" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 18.5)" s:x="0" s:y="18.5" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(0, 25)" s:x="0" s:y="25" s:pid="A4">
-      <text x="-3" y="-4" data-openroad-port="A4" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A4</text>
-    </g>
-    <g transform="translate(30, 15)" s:x="30" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_nand4" transform="translate(0,0)" s:width="34" s:height="30">
-    <s:alias val="openroad_nand4"/>
-    <text x="17" y="-4" class="nodelabel $cell_id" s:attribute="ref">nand4</text>
-    <path d="M0,0 L14,0 C21.732,0 28,6.716 28,15 C28,23.284 21.732,30 14,30 L0,30 Z" class="$cell_id"/>
-    <circle cx="31" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(0, 5)" s:x="0" s:y="5" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 11.5)" s:x="0" s:y="11.5" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 18.5)" s:x="0" s:y="18.5" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(0, 25)" s:x="0" s:y="25" s:pid="A4">
-      <text x="-3" y="-4" data-openroad-port="A4" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A4</text>
-    </g>
-    <g transform="translate(34, 15)" s:x="34" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_or4" transform="translate(0,0)" s:width="30" s:height="30">
-    <s:alias val="openroad_or4"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">or4</text>
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <g transform="translate(3, 5)" s:x="3" s:y="5" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(3, 11.5)" s:x="3" s:y="11.5" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(3, 18.5)" s:x="3" s:y="18.5" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(3, 25)" s:x="3" s:y="25" s:pid="A4">
-      <text x="-3" y="-4" data-openroad-port="A4" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A4</text>
-    </g>
-    <g transform="translate(30, 15)" s:x="30" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_nor4" transform="translate(0,0)" s:width="37" s:height="30">
-    <s:alias val="openroad_nor4"/>
-    <text x="18.5" y="-4" class="nodelabel $cell_id" s:attribute="ref">nor4</text>
-    <path d="M0,30 L15,30 A15 15 0 0 0 15,0 L0,0" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="34" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(3, 5)" s:x="3" s:y="5" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(3, 11.5)" s:x="3" s:y="11.5" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(3, 18.5)" s:x="3" s:y="18.5" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(3, 25)" s:x="3" s:y="25" s:pid="A4">
-      <text x="-3" y="-4" data-openroad-port="A4" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A4</text>
-    </g>
-    <g transform="translate(37, 15)" s:x="37" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_xor4" transform="translate(0,0)" s:width="33" s:height="30">
-    <s:alias val="openroad_xor4"/>
-    <text x="16.5" y="-4" class="nodelabel $cell_id" s:attribute="ref">xor4</text>
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <g transform="translate(0, 5)" s:x="0" s:y="5" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 11.5)" s:x="0" s:y="11.5" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 18.5)" s:x="0" s:y="18.5" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(0, 25)" s:x="0" s:y="25" s:pid="A4">
-      <text x="-3" y="-4" data-openroad-port="A4" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A4</text>
-    </g>
-    <g transform="translate(33, 15)" s:x="33" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
-  </g>
-
-  <g s:type="openroad_xnor4" transform="translate(0,0)" s:width="40" s:height="30">
-    <s:alias val="openroad_xnor4"/>
-    <text x="20" y="-4" class="nodelabel $cell_id" s:attribute="ref">xnor4</text>
-    <path d="M3,30 L18,30 A15 15 0 0 0 18,0 L3,0" class="$cell_id"/>
-    <path d="M3,0 A30 30 0 0 1 3,30" class="$cell_id"/>
-    <path d="M0,0 A30 30 0 0 1 0,30" class="$cell_id"/>
-    <circle cx="37" cy="15" r="3" class="$cell_id"/>
-    <g transform="translate(0, 5)" s:x="0" s:y="5" s:pid="A1">
-      <text x="-3" y="-4" data-openroad-port="A1" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A1</text>
-    </g>
-    <g transform="translate(0, 11.5)" s:x="0" s:y="11.5" s:pid="A2">
-      <text x="-3" y="-4" data-openroad-port="A2" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A2</text>
-    </g>
-    <g transform="translate(0, 18.5)" s:x="0" s:y="18.5" s:pid="A3">
-      <text x="-3" y="-4" data-openroad-port="A3" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A3</text>
-    </g>
-    <g transform="translate(0, 25)" s:x="0" s:y="25" s:pid="A4">
-      <text x="-3" y="-4" data-openroad-port="A4" data-openroad-port-side="left" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:end;pointer-events:none;">A4</text>
-    </g>
-    <g transform="translate(40, 15)" s:x="40" s:y="15" s:pid="Y">
-      <text x="0" y="-4" data-openroad-port="Y" data-openroad-port-side="right" style="fill:#000;stroke:none;font-size:10px;font-family:&quot;Courier New&quot;,monospace;font-weight:bold;text-anchor:start;pointer-events:none;">Y</text>
-    </g>
   </g>
 
 </svg>

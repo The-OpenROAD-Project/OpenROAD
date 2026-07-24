@@ -1700,6 +1700,8 @@ TEST_F(SchematicHandlerTest, GateKeepsMasterNameAndRealPins)
 
 TEST_F(SchematicHandlerTest, GatePortsPreserveSymbolPinOrder)
 {
+  // The frontend rewrites real Liberty pins to skin pids (A/B/Y); this verifies
+  // the backend still emits that mapping for non-Yosys cell pins.
   makeGate("NAND2_X1", "g_nand", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
 
   boost::json::object cells = fullCells();

@@ -73,8 +73,6 @@ export class SchematicWidget {
         // Select mode state
         this._selectMode = false;
         this._selectedCell = null;
-        this._lastDoubleClickTime = 0;
-        this._svgCellHitRecords = [];
 
         // Map from SVG element id → ODB instance name.
         // netlistsvg prefixes instance names (e.g. "load2" → id="cell_load2"),
@@ -105,11 +103,10 @@ export class SchematicWidget {
             this._applyTransform();
         }, { passive: false });
 
-        c.addEventListener('dblclick', (e) => this._handleCellDoubleClick(e));
-
         c.addEventListener('mousedown', (e) => {
             if (!this._svgEl || e.button !== 0) return;
-            if (e.detail >= 2 && this._handleCellDoubleClick(e)) {
+            if (e.detail >= 2) {
+                this._handleCellDoubleClick(e);
                 return;
             }
             if (this._selectMode) {
@@ -169,9 +166,7 @@ export class SchematicWidget {
         if (!el) {
             return null;
         }
-        if (el.id
-            && (this._svgIdToInstName.has(el.id)
-                || el.id.startsWith('cell_'))) {
+        if (el.id && this._svgIdToInstName.has(el.id)) {
             return el.id;
         }
 
@@ -180,9 +175,7 @@ export class SchematicWidget {
             return null;
         }
         for (const token of classAttr.split(/\s+/)) {
-            if (token
-                && (this._svgIdToInstName.has(token)
-                    || token.startsWith('cell_'))) {
+            if (token && this._svgIdToInstName.has(token)) {
                 return token;
             }
         }
@@ -214,7 +207,7 @@ export class SchematicWidget {
         return byClass ? this._closestGroup(byClass) : null;
     }
 
-    _cellHitFromEventTarget(target) {
+    _cellHitFromTarget(target) {
         if (!this._svgEl) {
             return null;
         }
@@ -230,66 +223,6 @@ export class SchematicWidget {
                 };
             }
             el = el.parentElement;
-        }
-        return null;
-    }
-
-    _rectContainsPoint(rect, x, y) {
-        return rect
-            && rect.width >= 0
-            && rect.height >= 0
-            && x >= rect.left
-            && x <= rect.right
-            && y >= rect.top
-            && y <= rect.bottom;
-    }
-
-    _cellHitFromPoint(clientX, clientY) {
-        if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) {
-            return null;
-        }
-
-        let best = null;
-        for (const record of this._svgCellHitRecords) {
-            for (const element of record.hitElements) {
-                const rect = element.getBoundingClientRect();
-                if (!this._rectContainsPoint(rect, clientX, clientY)) {
-                    continue;
-                }
-
-                const area = Math.max(rect.width, 1) * Math.max(rect.height, 1);
-                if (!best || area < best.area) {
-                    best = { ...record, area };
-                }
-            }
-        }
-        return best;
-    }
-
-    _cellHitFromEvent(e) {
-        return this._cellHitFromEventTarget(e.target)
-            || this._cellHitFromPoint(e.clientX, e.clientY);
-    }
-
-    _instanceNameForCellId(cellId) {
-        if (!cellId) {
-            return null;
-        }
-        if (this._svgIdToInstName.has(cellId)) {
-            return this._svgIdToInstName.get(cellId);
-        }
-
-        const cells = this._currentNetlist && this._currentNetlist.modules
-                    && this._currentNetlist.modules.top
-                    && this._currentNetlist.modules.top.cells || {};
-        if (cellId.startsWith('cell_')) {
-            const instName = cellId.slice('cell_'.length);
-            if (Object.prototype.hasOwnProperty.call(cells, instName)) {
-                return instName;
-            }
-        }
-        if (Object.prototype.hasOwnProperty.call(cells, cellId)) {
-            return cellId;
         }
         return null;
     }
@@ -326,15 +259,11 @@ export class SchematicWidget {
     _handleSelectClick(e) {
         if (!this._svgEl) return;
 
-        // netlistsvg renders each cell as <g id="cell_instName" transform="...">
-        // Walk up from the click target to the first <g> whose id maps to a
-        // known ODB instance (i.e. is present in _svgIdToInstName).
-        // This ensures we never try to inspect port/net/wire groups, which
-        // would either give "Instance not found" or an unexpected request type.
-        const hit = this._cellHitFromEvent(e);
+        // Resolve a clicked cell group or skin child shape to an ODB instance.
+        const hit = this._cellHitFromTarget(e.target);
         if (!hit) return;
 
-        const name = this._instanceNameForCellId(hit.cellId);
+        const name = this._svgIdToInstName.get(hit.cellId);
         if (!name) return;
 
         this._highlightCellGroup(hit.group);
@@ -347,22 +276,15 @@ export class SchematicWidget {
             return false;
         }
 
-        const hit = this._cellHitFromEvent(e);
+        const hit = this._cellHitFromTarget(e.target);
         if (!hit) {
             return false;
         }
 
-        const name = this._instanceNameForCellId(hit.cellId);
+        const name = this._svgIdToInstName.get(hit.cellId);
         if (!name) {
             return false;
         }
-
-        const now = e.timeStamp || performance.now();
-        if (this._lastDoubleClickTime
-            && now - this._lastDoubleClickTime < 250) {
-            return false;
-        }
-        this._lastDoubleClickTime = now;
 
         e.preventDefault();
         e.stopPropagation();
@@ -463,12 +385,12 @@ export class SchematicWidget {
             }
             this.netlistsvg = window.netlistsvg;
 
-            // Load OpenROAD's custom skin (served as a local asset).  It defines
+            // Load OpenROAD's skin (served as a local asset).  It defines
             // proper gate symbols with correctly-placed ports and instance-name
             // labels; renderNetlist() rewrites cell types to match it (see
             // canonicalizeForSkin).  render() passes the skin to onml.p(), which
             // expects a raw XML string, so fetch it as text.
-            const resp = await fetch('openroad_skin.svg');
+            const resp = await fetch('openroad_skin.svg', { cache: 'no-store' });
             if (!resp.ok) {
                 throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
             }
@@ -523,6 +445,7 @@ export class SchematicWidget {
                 }));
     }
 
+    // Shared by refresh and double-click expansion.
     _schematicDepths() {
         const faninRaw = parseInt(
             this.controls.querySelector('#schematic-fanin-depth').value,
@@ -646,7 +569,12 @@ export class SchematicWidget {
 
         const usedBits = new Set();
         this._collectSchematicBits(mergedTop, usedBits);
-        let nextBit = Math.max(1, ...usedBits);
+        let nextBit = 1;
+        for (const bit of usedBits) {
+            if (bit > nextBit) {
+                nextBit = bit;
+            }
+        }
         const allocateBit = () => {
             nextBit += 1;
             while (usedBits.has(nextBit)) {
@@ -664,7 +592,7 @@ export class SchematicWidget {
                 && Array.isArray(mergedTop.netnames[netName].bits)) {
                 mergedBits = mergedTop.netnames[netName].bits;
             } else {
-                const copiedNet = this._cloneJson(addedNet);
+                const copiedNet = addedNet;
                 mergedBits = addedBits.map((bit) =>
                     Number.isInteger(bit) && bit > 1 ? allocateBit() : bit);
                 copiedNet.bits = mergedBits;
@@ -684,7 +612,7 @@ export class SchematicWidget {
             if (Object.prototype.hasOwnProperty.call(mergedTop.ports, portName)) {
                 continue;
             }
-            const copiedPort = this._cloneJson(port);
+            const copiedPort = port;
             if (Array.isArray(copiedPort.bits)) {
                 copiedPort.bits = this._remapSchematicBits(copiedPort.bits, bitRemap);
             }
@@ -695,7 +623,7 @@ export class SchematicWidget {
             if (Object.prototype.hasOwnProperty.call(mergedTop.cells, cellName)) {
                 continue;
             }
-            const copiedCell = this._cloneJson(cell);
+            const copiedCell = cell;
             if (copiedCell.connections) {
                 copiedCell.connections = this._remapSchematicBits(
                     copiedCell.connections,
@@ -726,88 +654,58 @@ export class SchematicWidget {
             return null;
         }
 
+        // netlistsvg usually emits cell groups as "cell_<instance>".
         const prefixed = 'cell_' + instName;
-        const byId =
-            this._svgEl.querySelector(`#${CSS.escape(prefixed)}`)
-            || this._svgEl.querySelector(`#${CSS.escape(instName)}`);
-        if (byId) {
-            return this._closestGroup(byId) || byId;
-        }
-
-        const byClass =
-            this._svgEl.querySelector(`.${CSS.escape(prefixed)}`)
-            || this._svgEl.querySelector(`.${CSS.escape(instName)}`);
-        return byClass ? this._closestGroup(byClass) : null;
+        return this._cellGroupForSvgId(prefixed)
+            || this._cellGroupForSvgId(instName);
     }
 
-    _cellClassIdsForGroup(group, instName) {
-        const cellIds = new Set();
-        if (!group) {
-            return cellIds;
+    _addCellHitTarget(group, cellId) {
+        let bbox;
+        try {
+            bbox = this._groupBoundsWithoutText(group);
+        } catch (_) {
+            return;
         }
-        const prefixed = 'cell_' + instName;
-        if (group.id && (group.id === prefixed || group.id === instName)) {
-            cellIds.add(group.id);
+
+        if (!bbox
+            || bbox.width <= 0
+            || bbox.height <= 0
+            || !Number.isFinite(bbox.x)
+            || !Number.isFinite(bbox.y)) {
+            return;
         }
-        const classAttr = group.getAttribute && group.getAttribute('class');
-        if (classAttr) {
-            classAttr.split(/\s+/)
-                .filter(Boolean)
-                .filter((token) => token === prefixed || token === instName)
-                .forEach((token) => cellIds.add(token));
-        }
-        return cellIds;
+
+        // Capture clicks inside open gate shapes without scanning coordinates.
+        const hitTarget = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        hitTarget.setAttribute('x', String(bbox.x));
+        hitTarget.setAttribute('y', String(bbox.y));
+        hitTarget.setAttribute('width', String(bbox.width));
+        hitTarget.setAttribute('height', String(bbox.height));
+        hitTarget.setAttribute('fill', 'transparent');
+        hitTarget.setAttribute('stroke', 'none');
+        hitTarget.setAttribute('pointer-events', 'all');
+        hitTarget.setAttribute('class', cellId);
+        hitTarget.setAttribute('data-openroad-hit-target', 'cell');
+        group.insertBefore(hitTarget, group.firstChild);
     }
 
-    _hitElementsForCell(group, cellIds) {
-        const hitElements = new Set();
-        const shapeSelector = 'path,rect,circle,ellipse,polygon,polyline,line';
-        if (group) {
-            group.querySelectorAll(shapeSelector)
-                .forEach((el) => hitElements.add(el));
-        }
-        for (const cellId of cellIds) {
-            this._svgEl.querySelectorAll(`.${CSS.escape(cellId)}`)
-                .forEach((el) => {
-                    if (el.matches(shapeSelector)) {
-                        hitElements.add(el);
-                    }
-                    el.querySelectorAll(shapeSelector)
-                        .forEach((shape) => hitElements.add(shape));
-                });
-        }
-        if (hitElements.size === 0 && group) {
-            hitElements.add(group);
-        }
-        return Array.from(hitElements);
-    }
-
-    _registerSvgCellHitRecord(instName, group) {
+    _registerSvgCellHitTarget(instName, group) {
         if (!this._svgEl || !instName || !group) {
             return;
         }
 
+        // Map both id forms back to the real ODB instance name.
         const prefixed = 'cell_' + instName;
-        const cellIds = this._cellClassIdsForGroup(group, instName);
-        cellIds.add(prefixed);
-        cellIds.add(instName);
-
-        for (const cellId of cellIds) {
-            this._svgIdToInstName.set(cellId, instName);
-        }
-
-        const hitElements = this._hitElementsForCell(group, cellIds);
-        this._svgCellHitRecords.push({
-            instName,
-            cellId: Array.from(cellIds)[0] || prefixed,
-            group,
-            hitElements,
-        });
+        this._svgIdToInstName.set(prefixed, instName);
+        this._svgIdToInstName.set(instName, instName);
+        this._addCellHitTarget(group, prefixed);
     }
 
     async renderNetlist(yosysJson) {
         try {
             this.setStatus('Rendering…');
+            // Keep the original netlist for view toggles and cone expansion.
             this._currentNetlist = yosysJson;
 
             // Debug aid: the last netlist rendered is exposed so it can be
@@ -816,9 +714,8 @@ export class SchematicWidget {
             //   copy(JSON.stringify(window.__lastSchematic))
             if (typeof window !== 'undefined') window.__lastSchematic = yosysJson;
 
-            // Rewrite recognised logic gates to the canonical types our custom
-            // skin draws (proper gate symbols with correctly-placed ports), so
-            // netlistsvg renders and routes them natively.
+            // Rewrite recognised logic gates to skin types so netlistsvg can
+            // place and route the upstream symbols natively.
             const renderJson = this._netlistForView(yosysJson);
 
             // netlistsvg.render() is Promise-based in v1.x (async ELK layout),
@@ -846,7 +743,6 @@ export class SchematicWidget {
             this._selectedCell = null;
             this.controls.querySelector('#schematic-zoom-to').disabled = true;
             this._svgIdToInstName.clear();
-            this._svgCellHitRecords = [];
             this.svgContainer.innerHTML = svgString;
             this._svgEl = this.svgContainer.querySelector('svg');
             this._scopeSkinStyles();
@@ -863,7 +759,7 @@ export class SchematicWidget {
             const cells = yosysJson.modules && yosysJson.modules.top
                         && yosysJson.modules.top.cells || {};
             for (const instName of Object.keys(cells)) {
-                this._registerSvgCellHitRecord(
+                this._registerSvgCellHitTarget(
                     instName,
                     this._cellGroupForInstance(instName));
             }
@@ -888,15 +784,18 @@ export class SchematicWidget {
                 this.fitView();
             }));
 
-            const cellCount = Object.keys(yosysJson.modules.top.cells).length;
+            const cellCount = Object.keys(cells).length;
             this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);
+            return true;
         } catch (err) {
             console.error('NetlistSVG render failed:', err);
             this.setStatus(`Render error: ${err.message || err}`);
+            return false;
         }
     }
 
     _svgSkinAttribute(el, attrName) {
+        // Browser SVG parsers may expose netlistsvg's `s:*` attributes either way.
         const netlistsvgNS = 'https://github.com/nturley/netlistsvg';
         return el.getAttribute(`s:${attrName}`)
             || el.getAttributeNS(netlistsvgNS, attrName);
@@ -904,30 +803,15 @@ export class SchematicWidget {
 
     _openRoadPortLabelMap(cell) {
         const labels = new Map();
-        if (cell.port_labels && typeof cell.port_labels === 'object') {
-            for (const [symbolPort, realPort] of Object.entries(cell.port_labels)) {
-                labels.set(symbolPort, realPort);
-            }
+        if (!cell.port_labels
+            || typeof cell.port_labels !== 'object'
+            || Array.isArray(cell.port_labels)) {
             return labels;
         }
 
-        const attributes = cell.attributes || {};
-        const inputPorts = Array.isArray(attributes.openroad_input_ports)
-            ? attributes.openroad_input_ports
-            : (attributes.openroad_input_port ? [attributes.openroad_input_port] : []);
-        inputPorts.forEach((port, index) => {
-            const normalized = inputPorts.length === 1 ? 'A' : `A${index + 1}`;
-            labels.set(normalized, port);
-        });
-
-        if (attributes.openroad_output_port) {
-            labels.set('Y', attributes.openroad_output_port);
-            labels.set('Q', attributes.openroad_output_port);
+        for (const [symbolPort, realPort] of Object.entries(cell.port_labels)) {
+            labels.set(symbolPort, realPort);
         }
-        if (attributes.openroad_data_port) labels.set('D', attributes.openroad_data_port);
-        if (attributes.openroad_clock_port) labels.set('CK', attributes.openroad_clock_port);
-        if (attributes.openroad_clear_port) labels.set('RN', attributes.openroad_clear_port);
-        if (attributes.openroad_preset_port) labels.set('SN', attributes.openroad_preset_port);
         return labels;
     }
 
@@ -997,6 +881,7 @@ export class SchematicWidget {
     }
 
     _groupBoundsWithoutText(group) {
+        // Measure the symbol body, not labels that may be moved around it.
         const hiddenText = [];
         for (const label of group.querySelectorAll('text')) {
             hiddenText.push([label, label.getAttribute('display')]);
@@ -1026,6 +911,16 @@ export class SchematicWidget {
         return Number.isFinite(parsed) ? parsed : null;
     }
 
+    _parseSvgTranslate(transform) {
+        const match = (transform || '').match(
+            /translate\(\s*([-+]?\d*\.?\d+)(?:[,\s]+([-+]?\d*\.?\d+))?/);
+        if (!match) return null;
+
+        const x = this._parseSvgNumber(match[1]);
+        const y = this._parseSvgNumber(match[2] !== undefined ? match[2] : '0');
+        return x !== null && y !== null ? { x, y } : null;
+    }
+
     _portMarkerForLabel(group, normalizedPort) {
         for (const marker of group.querySelectorAll('g')) {
             if (this._svgSkinAttribute(marker, 'pid') === normalizedPort) {
@@ -1035,39 +930,29 @@ export class SchematicWidget {
         return null;
     }
 
-    _portMarkerPosition(marker) {
+    _portMarkerPosition(marker, rootGroup) {
         let x = this._parseSvgNumber(this._svgSkinAttribute(marker, 'x'));
         let y = this._parseSvgNumber(this._svgSkinAttribute(marker, 'y'));
-        if (x !== null && y !== null) return { x, y };
-
-        const transform = marker.getAttribute('transform') || '';
-        const match = transform.match(
-            /translate\(\s*([-+]?\d*\.?\d+)(?:[,\s]+([-+]?\d*\.?\d+))?/);
-        if (match) {
-            x = x !== null ? x : this._parseSvgNumber(match[1]);
-            y = y !== null
-                ? y
-                : this._parseSvgNumber(match[2] !== undefined ? match[2] : '0');
+        const markerTranslate = this._parseSvgTranslate(marker.getAttribute('transform'));
+        if (markerTranslate) {
+            x = x !== null ? x : markerTranslate.x;
+            y = y !== null ? y : markerTranslate.y;
         }
 
-        return x !== null && y !== null ? { x, y } : null;
-    }
+        if (x === null || y === null) return null;
 
-    _openRoadPortLabelSide(pin, bodyBounds) {
-        const centerX = bodyBounds.x + bodyBounds.width / 2;
-        const centerY = bodyBounds.y + bodyBounds.height / 2;
-        const pinInsideX = pin.x >= bodyBounds.x && pin.x <= bodyBounds.right;
-        const pinInsideY = pin.y >= bodyBounds.y && pin.y <= bodyBounds.bottom;
-        const edgeTolerance = 1;
-
-        if (pinInsideX && pin.y <= bodyBounds.y + edgeTolerance) return 'top';
-        if (pinInsideX && pin.y >= bodyBounds.bottom - edgeTolerance) return 'bottom';
-        if (!pinInsideY) {
-            return Math.abs(pin.x - centerX) > Math.abs(pin.y - centerY)
-                ? (pin.x < centerX ? 'left' : 'right')
-                : (pin.y < centerY ? 'top' : 'bottom');
+        // Labels are appended to the outer cell group, but skin pin markers can
+        // be nested under translated helper groups.
+        for (let el = marker.parentElement; el && el !== rootGroup; el = el.parentElement) {
+            const translate = this._parseSvgTranslate(
+                el.getAttribute && el.getAttribute('transform'));
+            if (translate) {
+                x += translate.x;
+                y += translate.y;
+            }
         }
-        return pin.x < centerX ? 'left' : 'right';
+
+        return { x, y };
     }
 
     _ensureOpenRoadPortLabelElement(group, normalizedPort) {
@@ -1078,73 +963,25 @@ export class SchematicWidget {
         const marker = this._portMarkerForLabel(group, normalizedPort);
         if (!marker) return null;
 
-        let side = 'right';
-        const pin = this._portMarkerPosition(marker);
-        if (pin) {
-            try {
-                side = this._openRoadPortLabelSide(pin, this._groupBoundsWithoutText(group));
-            } catch (_) {
-                side = 'right';
-            }
-        }
-
         const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         label.setAttribute('data-openroad-port', normalizedPort);
-        label.setAttribute('data-openroad-port-side', side);
-        if (side === 'left') {
-            label.setAttribute('class', 'inputPortLabel');
-            label.setAttribute('x', '-3');
-            label.setAttribute('y', '-4');
-        } else if (side === 'right') {
-            label.setAttribute('x', '0');
-            label.setAttribute('y', '-4');
-        } else if (side === 'top') {
-            label.setAttribute('x', '0');
-            label.setAttribute('y', '-5');
-        } else {
-            label.setAttribute('x', '0');
-            label.setAttribute('y', '10');
-        }
-        marker.appendChild(label);
+        group.appendChild(label);
         return label;
     }
 
-    _positionOpenRoadPortLabel(group, label, normalizedPort) {
+    _positionOpenRoadPortLabel(group, label, normalizedPort, direction) {
         const marker = this._portMarkerForLabel(group, normalizedPort);
         if (!marker) return false;
 
-        const pin = this._portMarkerPosition(marker);
+        const pin = this._portMarkerPosition(marker, group);
         if (!pin) return false;
 
-        let side = label.getAttribute('data-openroad-port-side');
-        if (!side) {
-            try {
-                side = this._openRoadPortLabelSide(pin, this._groupBoundsWithoutText(group));
-            } catch (_) {
-                side = 'right';
-            }
-        }
-
-        let anchor = 'middle';
-        if (side === 'left') anchor = 'end';
-        else if (side === 'right') anchor = 'start';
-
-        const labelIsInsideMarker = marker.contains(label);
-        if (labelIsInsideMarker
-            && this._parseSvgNumber(label.getAttribute('x')) !== null
-            && this._parseSvgNumber(label.getAttribute('y')) !== null) {
-            label.setAttribute('data-openroad-port-side', side);
-            label.setAttribute('text-anchor', anchor);
-            label.style.textAnchor = anchor;
-            return true;
-        }
-
-        let x = pin.x;
-        let y = pin.y - 4;
-        if (side === 'left') x = pin.x - 3;
-        else if (side === 'right') x = pin.x + 4;
-        else if (side === 'top') y = pin.y - 5;
-        else if (side === 'bottom') y = pin.y + 10;
+        // Match upstream placement: inputs sit left of the marker, outputs right.
+        const isInput = direction === 'input';
+        const anchor = isInput ? 'end' : 'start';
+        const x = pin.x + (isInput ? -3 : 4);
+        const y = pin.y - 4;
+        const side = isInput ? 'left' : 'right';
 
         label.setAttribute('x', String(x));
         label.setAttribute('y', String(y));
@@ -1152,34 +989,6 @@ export class SchematicWidget {
         label.setAttribute('text-anchor', anchor);
         label.style.textAnchor = anchor;
         return true;
-    }
-
-    _avoidOpenRoadPortLabelShape(group, label) {
-        let bodyBounds;
-        try {
-            bodyBounds = this._groupBoundsWithoutText(group);
-        } catch (_) {
-            return;
-        }
-
-        const bbox = this._textBBox(label);
-        if (this._rectOverlapArea(bbox, bodyBounds) === 0) return;
-
-        const gap = 2;
-        const side = label.getAttribute('data-openroad-port-side') || 'right';
-        let dx = 0;
-        let dy = 0;
-        if (side === 'left') dx = bodyBounds.x - gap - bbox.right;
-        else if (side === 'right') dx = bodyBounds.right + gap - bbox.x;
-        else if (side === 'top') dy = bodyBounds.y - gap - bbox.bottom;
-        else if (side === 'bottom') dy = bodyBounds.bottom + gap - bbox.y;
-
-        if (dx !== 0 || dy !== 0) {
-            const x = parseFloat(label.getAttribute('x') || '0') || 0;
-            const y = parseFloat(label.getAttribute('y') || '0') || 0;
-            label.setAttribute('x', String(x + dx));
-            label.setAttribute('y', String(y + dy));
-        }
     }
 
     _normalizeSchematicPortText() {
@@ -1193,6 +1002,7 @@ export class SchematicWidget {
 
     _updateOpenRoadPortLabels(group, cell) {
         const labels = this._openRoadPortLabelMap(cell);
+        const dirs = cell.port_directions || {};
         for (const normalizedPort of labels.keys()) {
             this._ensureOpenRoadPortLabelElement(group, normalizedPort);
         }
@@ -1200,13 +1010,14 @@ export class SchematicWidget {
         for (const label of group.querySelectorAll('text[data-openroad-port]')) {
             const normalizedPort = label.getAttribute('data-openroad-port');
             label.textContent = labels.get(normalizedPort) || normalizedPort;
-            this._stylePortLabel(label);
-            const positioned = this._positionOpenRoadPortLabel(group, label, normalizedPort);
-            this._stylePortLabel(label);
-            if (!positioned) this._avoidOpenRoadPortLabelShape(group, label);
+            this._positionOpenRoadPortLabel(
+                group, label, normalizedPort, dirs[normalizedPort]);
+            this._stylePortLabel(label, 5);
         }
     }
 
+    // The OpenROAD skin supplies geometry/ports; real instance and Liberty
+    // pin names are added after render.
     _ensureOpenRoadSymbolLabels(netlist) {
         if (!this._svgEl) return;
 
@@ -1218,20 +1029,14 @@ export class SchematicWidget {
         this._normalizeSchematicPortText();
 
         for (const [instName, cell] of Object.entries(cells)) {
-            if (!cell.port_labels
-                && (typeof cell.type !== 'string' || !cell.type.startsWith('openroad_'))) {
-                continue;
-            }
+            if (!cell.port_labels) continue;
             const displayName = (cell.attributes && cell.attributes.ref) || instName;
             const group = this._cellGroupForInstance(instName);
             if (!group) continue;
 
             let label = null;
             for (const text of group.querySelectorAll('text')) {
-                const skinAttribute = text.getAttribute('s:attribute')
-                    || text.getAttributeNS(netlistsvgNS, 'attribute');
-                if (skinAttribute === 'ref'
-                    || text.getAttribute('data-openroad-label') === 'instance') {
+                if (this._isInstanceLabel(text)) {
                     label = text;
                     break;
                 }
@@ -1239,8 +1044,7 @@ export class SchematicWidget {
 
             if (!label) {
                 label = document.createElementNS(svgNS, 'text');
-                const symbolWidth = parseFloat(group.getAttribute('s:width')
-                    || group.getAttributeNS(netlistsvgNS, 'width'));
+                const symbolWidth = parseFloat(this._svgSkinAttribute(group, 'width'));
                 label.setAttribute('x', Number.isFinite(symbolWidth)
                     ? String(symbolWidth / 2)
                     : '15');
@@ -1429,6 +1233,8 @@ export class SchematicWidget {
             }));
     }
 
+    // NetlistSVG uses fixed skin label locations; reposition instance labels
+    // after layout so names stay readable near ports, wires, and other text.
     _layoutInstanceLabels(netlist) {
         if (!this._svgEl) return;
 
@@ -1446,6 +1252,7 @@ export class SchematicWidget {
         const cellGroups = records.map(({ group }) => group);
         const wireRects = this._wireObstacleRects(cellGroups);
         const movableLabels = new Set(records.map(({ label }) => label));
+        // Treat existing text, wires, and cell bodies as label obstacles.
         const occupiedRects = Array.from(this._svgEl.querySelectorAll('text'))
             .filter((text) => !movableLabels.has(text))
             .map((text) => this._expandedScreenRect(text, 2))
@@ -1483,6 +1290,7 @@ export class SchematicWidget {
                 const overlap = occupiedRects.reduce(
                     (sum, occupied) => sum + this._rectOverlapArea(rect, occupied),
                     0);
+                // Pick the label position with the least wire/text overlap.
                 const score = wireOverlap * 1000 + overlap * 100 + candidate.preference;
                 if (!best || score < best.score) best = { candidate, score };
                 if (wireOverlap === 0 && overlap === 0 && score === candidate.preference) {
@@ -1516,22 +1324,30 @@ export class SchematicWidget {
         return bounds;
     }
 
-    _screenRectToSvgRect(screenRect) {
-        const ctm = this._svgEl && this._svgEl.getScreenCTM();
-        if (!ctm || screenRect.width <= 0 || screenRect.height <= 0) return null;
+    _rectToSvgRect(rect, transform) {
+        if (!this._svgEl
+            || !transform
+            || !rect
+            || !Number.isFinite(rect.x)
+            || !Number.isFinite(rect.y)
+            || !Number.isFinite(rect.width)
+            || !Number.isFinite(rect.height)
+            || rect.width <= 0
+            || rect.height <= 0) {
+            return null;
+        }
 
         try {
-            const inverse = ctm.inverse();
             const point = this._svgEl.createSVGPoint();
             const corners = [
-                [screenRect.left, screenRect.top],
-                [screenRect.right, screenRect.top],
-                [screenRect.right, screenRect.bottom],
-                [screenRect.left, screenRect.bottom],
+                [rect.x, rect.y],
+                [rect.x + rect.width, rect.y],
+                [rect.x + rect.width, rect.y + rect.height],
+                [rect.x, rect.y + rect.height],
             ].map(([x, y]) => {
                 point.x = x;
                 point.y = y;
-                return point.matrixTransform(inverse);
+                return point.matrixTransform(transform);
             });
             const xs = corners.map((corner) => corner.x);
             const ys = corners.map((corner) => corner.y);
@@ -1546,42 +1362,29 @@ export class SchematicWidget {
         }
     }
 
+    _screenRectToSvgRect(screenRect) {
+        const ctm = this._svgEl && this._svgEl.getScreenCTM();
+        if (!ctm || !screenRect) return null;
+
+        try {
+            return this._rectToSvgRect({
+                x: screenRect.left,
+                y: screenRect.top,
+                width: screenRect.width,
+                height: screenRect.height,
+            }, ctm.inverse());
+        } catch (_) {
+            return null;
+        }
+    }
+
     _localRectToSvgRect(element, rect) {
         const svgCtm = this._svgEl && this._svgEl.getCTM();
         const elementCtm = element.getCTM && element.getCTM();
-        if (!svgCtm
-            || !elementCtm
-            || !rect
-            || !Number.isFinite(rect.x)
-            || !Number.isFinite(rect.y)
-            || !Number.isFinite(rect.width)
-            || !Number.isFinite(rect.height)
-            || rect.width <= 0
-            || rect.height <= 0) {
-            return null;
-        }
+        if (!svgCtm || !elementCtm) return null;
 
         try {
-            const elementToSvg = svgCtm.inverse().multiply(elementCtm);
-            const point = this._svgEl.createSVGPoint();
-            const corners = [
-                [rect.x, rect.y],
-                [rect.x + rect.width, rect.y],
-                [rect.x + rect.width, rect.y + rect.height],
-                [rect.x, rect.y + rect.height],
-            ].map(([x, y]) => {
-                point.x = x;
-                point.y = y;
-                return point.matrixTransform(elementToSvg);
-            });
-            const xs = corners.map((corner) => corner.x);
-            const ys = corners.map((corner) => corner.y);
-            return {
-                x: Math.min(...xs),
-                y: Math.min(...ys),
-                right: Math.max(...xs),
-                bottom: Math.max(...ys),
-            };
+            return this._rectToSvgRect(rect, svgCtm.inverse().multiply(elementCtm));
         } catch (_) {
             return null;
         }
@@ -1631,8 +1434,8 @@ export class SchematicWidget {
         return bounds;
     }
 
-    _svgContentBoundsFromSvgBBox() {
-        if (!this._svgEl) return null;
+    _svgContentElements() {
+        if (!this._svgEl) return [];
 
         const selectors = [
             'g[id^="cell_"]',
@@ -1645,8 +1448,14 @@ export class SchematicWidget {
             'polyline',
             'polygon',
         ];
+        return this._svgEl.querySelectorAll(selectors.join(','));
+    }
+
+    _svgContentBoundsFromSvgBBox() {
+        if (!this._svgEl) return null;
+
         let bounds = null;
-        for (const element of this._svgEl.querySelectorAll(selectors.join(','))) {
+        for (const element of this._svgContentElements()) {
             bounds = this._unionSvgRect(bounds, this._elementBBoxToSvgRect(element));
         }
         return bounds;
@@ -1655,19 +1464,8 @@ export class SchematicWidget {
     _svgContentBoundsFromScreen() {
         if (!this._svgEl) return null;
 
-        const selectors = [
-            'g[id^="cell_"]',
-            'text',
-            'path',
-            'rect',
-            'circle',
-            'ellipse',
-            'line',
-            'polyline',
-            'polygon',
-        ];
         let bounds = null;
-        for (const element of this._svgEl.querySelectorAll(selectors.join(','))) {
+        for (const element of this._svgContentElements()) {
             const screenRect = element.getBoundingClientRect();
             const svgRect = this._screenRectToSvgRect(screenRect);
             bounds = this._unionSvgRect(bounds, svgRect);
@@ -1675,6 +1473,7 @@ export class SchematicWidget {
         return bounds;
     }
 
+    // Repositioned labels may extend outside NetlistSVG's original viewBox.
     _padSvgToContent() {
         if (!this._svgEl) return;
 
@@ -1765,19 +1564,32 @@ export function scopeCssSelector(selectorText, scope) {
 
 // ── Skin canonicalization ──────────────────────────────────────────────────
 //
-// The server tags recognised combinational cells with `gate_kind`. Before
-// rendering we rewrite simple gates to OpenROAD's skin symbols and remap their
-// pins to the symbol's port ids. Compound AOI/OAI cells intentionally stay as
-// labelled boxes so this viewer matches the original OpenROAD schematic style.
+// The server tags recognised combinational/register cells with `gate_kind`.
+// Before rendering we rewrite them to the gate types drawn by openroad_skin.svg
+// and remap real Liberty pins to the skin's port ids.
 
-// gate_kind -> OpenROAD skin symbol type for one-input gates.
+// gate_kind -> skin symbol type (a Yosys primitive alias the skin recognises).
 const SKIN_SIMPLE_TYPE = {
-    not: 'openroad_inverter',
-    buf: 'openroad_buffer',
+    and: '$_AND_', nand: '$_NAND_', or: '$_OR_', nor: '$_NOR_',
+    xor: '$_XOR_', xnor: '$_XNOR_', not: '$_NOT_', buf: '$_BUF_',
 };
 
-const SKIN_GATE_KINDS = new Set(['and', 'nand', 'or', 'nor', 'xor', 'xnor']);
-const SKIN_REGISTER_KINDS = new Set(['dff', 'dffr', 'dffs']);
+const SKIN_COMPOUND_TYPES = new Set([
+    'aoi21', 'aoi22', 'aoi211', 'aoi221', 'aoi222', 'aoi33',
+    'oai21', 'oai22', 'oai211', 'oai221', 'oai222', 'oai33',
+]);
+
+const SKIN_MULTI_TYPES = new Set([
+    'and3', 'and4', 'or3', 'or4', 'nand3', 'nand4', 'nor3', 'nor4',
+]);
+
+const SKIN_REGISTER_TYPE = {
+    dff: '$_DFF_',
+    dffr: '$dffr',
+    dffs: '$dffs',
+};
+const SKIN_REGISTER_TYPES = new Set(Object.keys(SKIN_REGISTER_TYPE));
+const PID_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 function normalizedPortMap(cell) {
     const ports = cell && cell.gate_ports;
@@ -1794,14 +1606,82 @@ function normalizedPortMap(cell) {
     return Object.keys(map).length > 0 ? map : null;
 }
 
-// Rewrite one cell to a custom-skin gate symbol when it carries a recognised
+function isDffFamilyType(cell) {
+    const type = cell && cell.type;
+    if (typeof type !== 'string') return false;
+    const upper = type.toUpperCase();
+    return upper.startsWith('DFF')
+        || upper.includes('_DFF')
+        || upper.includes('$DFF');
+}
+
+// Some rendered cones contain DFF-shaped cells without backend gate_kind.  Use
+// the DFF skin when the visible D/clock/Q pins are present; for DFF-family cell
+// names, ignore extra input controls such as enables so the shape still reads as
+// a flip-flop instead of a plain box.  Keep this name-gated so unrelated cells
+// retain netlistsvg's generic-box fallback.
+function inferredRegisterPortMap(cell) {
+    const conns = cell && cell.connections;
+    const dirs = cell && cell.port_directions;
+    if (!conns || !dirs) return null;
+
+    const hasPort = (port) => Object.prototype.hasOwnProperty.call(conns, port);
+    const isInput = (port) => hasPort(port) && dirs[port] === 'input';
+    const isOutput = (port) => hasPort(port) && dirs[port] === 'output';
+    const clock = ['CK', 'CLK', 'C'].find((port) => isInput(port));
+    if (!isInput('D') || !clock || (!isOutput('Q') && !isOutput('QN'))) {
+        return null;
+    }
+
+    const reset = isInput('RN') ? 'RN' : null;
+    const set = isInput('SN') ? 'SN' : null;
+    if (reset && set) return null;
+
+    const allowed = new Set(['D', clock, 'Q', 'QN']);
+    if (reset) allowed.add(reset);
+    if (set) allowed.add(set);
+    const allowExtraInputs = isDffFamilyType(cell);
+    for (const port of Object.keys(conns)) {
+        if (allowed.has(port)) continue;
+        if (dirs[port] === 'input' && allowExtraInputs) {
+            continue;
+        }
+        if (dirs[port] === 'input' || dirs[port] === 'output') {
+            return null;
+        }
+    }
+
+    const ports = { D: 'D', CK: clock };
+    if (reset) ports.RN = reset;
+    if (set) ports.SN = set;
+    if (isOutput('Q')) ports.Q = 'Q';
+    if (isOutput('QN')) ports.QN = 'QN';
+
+    return {
+        kind: reset ? 'dffr' : (set ? 'dffs' : 'dff'),
+        ports,
+    };
+}
+
+function skinPidForGatePort(symbolPort) {
+    const inputMatch = /^A([1-6])$/.exec(symbolPort);
+    if (inputMatch) return PID_LETTERS[Number(inputMatch[1]) - 1] || symbolPort;
+    if (symbolPort === 'CK' || symbolPort === 'CLK') return 'C';
+    return symbolPort;
+}
+
+// Rewrite one cell to an OpenROAD skin gate symbol when it carries a recognised
 // `gate_kind`: set its `type` to the canonical symbol name and remap its
 // `connections`/`port_directions` keys to the symbol's port ids.  Pins not part
 // of the gate (power/ground) are dropped.  Cells that aren't recognised — or
 // whose computed type has no symbol — are returned unchanged so they render as
 // a labelled generic box with their real pin names.
 export function canonicalizeCell(cell) {
-    const kind = cell && cell.gate_kind;
+    const inferredRegister = cell && !cell.gate_kind
+        ? inferredRegisterPortMap(cell)
+        : null;
+    const kind = cell && (cell.gate_kind
+        || (inferredRegister && inferredRegister.kind));
     if (!kind) return cell;
 
     const dirs = cell.port_directions || {};
@@ -1814,37 +1694,55 @@ export function canonicalizeCell(cell) {
 
     let type;
     const pidOf = {};  // real pin name -> symbol port id
-    const gatePorts = normalizedPortMap(cell);
+    const gatePorts = normalizedPortMap(cell)
+        || (inferredRegister && inferredRegister.ports);
+    const mapGatePorts = () => {
+        for (const [symbolPort, realPort] of Object.entries(gatePorts || {})) {
+            pidOf[realPort] = skinPidForGatePort(symbolPort);
+        }
+    };
 
-    const n = inPins.length;
-    if (SKIN_REGISTER_KINDS.has(kind)) {
+    if (SKIN_REGISTER_TYPES.has(kind)) {
         if (!gatePorts) return cell;
-        type = `openroad_${kind}`;
-        for (const [symbolPort, realPort] of Object.entries(gatePorts)) {
-            pidOf[realPort] = symbolPort;
-        }
-    } else if (kind === 'not' || kind === 'buf') {
-        type = SKIN_SIMPLE_TYPE[kind];
-        if (gatePorts) {
-            for (const [symbolPort, realPort] of Object.entries(gatePorts)) {
-                pidOf[realPort] = symbolPort;
+        // Registers use explicit skin aliases; plain dff/dffr/dffs can render
+        // as generic boxes in some netlistsvg paths.
+        type = SKIN_REGISTER_TYPE[kind];
+        mapGatePorts();
+    } else if (kind === 'aoi' || kind === 'oai') {
+        const terms = Array.isArray(cell.gate_terms) ? cell.gate_terms : [];
+        if (!terms.length) return cell;
+        const sizes = terms.map((t) => t.length);
+        type = kind + sizes.slice().sort((a, b) => b - a).join('');
+        if (!SKIN_COMPOUND_TYPES.has(type)) return cell;
+        // Match the skin's AOI/OAI port layout: single-literal terms use A first.
+        const ordered = terms.map((t) => t.slice())
+            .sort((a, b) => a.length - b.length);
+        let i = 0;
+        for (const term of ordered) {
+            for (const pin of term) {
+                pidOf[pin] = PID_LETTERS[i] || ('I' + i);
+                i++;
             }
-        } else {
-            if (n !== 1) return cell;
-            pidOf[inPins[0]] = 'A';
-        }
-    } else if (SKIN_GATE_KINDS.has(kind)) {
-        if (n < 2 || n > 4) return cell;
-        type = `openroad_${kind}${n}`;
-        if (gatePorts) {
-            for (const [symbolPort, realPort] of Object.entries(gatePorts)) {
-                pidOf[realPort] = symbolPort;
-            }
-        } else {
-            inPins.forEach((pin, idx) => { pidOf[pin] = `A${idx + 1}`; });
         }
     } else {
-        return cell;
+        const n = inPins.length;
+        if (kind === 'not' || kind === 'buf') {
+            type = SKIN_SIMPLE_TYPE[kind];
+        } else if (n <= 2) {
+            type = SKIN_SIMPLE_TYPE[kind];
+        } else {
+            type = kind + n;
+            if (!SKIN_MULTI_TYPES.has(type)) return cell;
+        }
+        if (!type) return cell;
+        if (gatePorts) {
+            // Backend gate_ports use A1/A2/CK ids; upstream skin pids are A/B/C.
+            mapGatePorts();
+        } else {
+            inPins.forEach((pin, idx) => {
+                pidOf[pin] = PID_LETTERS[idx] || ('I' + idx);
+            });
+        }
     }
     if (outPin !== null && !pidOf[outPin]) pidOf[outPin] = 'Y';
 
@@ -1869,7 +1767,7 @@ export function canonicalizeCell(cell) {
 }
 
 // Return a copy of the netlist with recognised logic gates rewritten to the
-// custom skin's gate symbols.  Cell keys (instance names) are preserved so
+// OpenROAD skin's gate symbols.  Cell keys (instance names) are preserved so
 // selection/inspect keep working.
 export function canonicalizeForSkin(json) {
     const top = json && json.modules && json.modules.top;
