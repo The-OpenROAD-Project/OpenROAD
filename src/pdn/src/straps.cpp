@@ -99,8 +99,9 @@ void Straps::checkLayerSpecifications() const
       getLogger()->error(
           utl::PDN,
           175,
-          "Pitch {:.4f} is too small for, must be atleast {:.4f}",
+          "Pitch {:.4f} is too small for {}, must be at least {:.4f}",
           layer.dbuToMicron(pitch_),
+          layer_->getName(),
           layer.dbuToMicron(min_pitch));
     }
   }
