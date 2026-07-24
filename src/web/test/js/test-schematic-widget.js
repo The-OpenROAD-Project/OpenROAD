@@ -24,6 +24,8 @@ function cell(extra) {
     }, extra);
 }
 
+// jsdom does not compute SVG layout, so tests stub getBoundingClientRect()
+// with this DOMRect-like helper when checking schematic click targets.
 function rect(left, top, right, bottom) {
     return {
         left,
