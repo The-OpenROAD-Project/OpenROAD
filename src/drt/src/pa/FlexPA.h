@@ -724,6 +724,7 @@ class FlexPA
    *
    * @param unique_inst unique inst
    */
+  bool instPrefersHorizontal(frInst* unique_inst);
   void prepPatternInst(frInst* unique_inst);
 
   /**

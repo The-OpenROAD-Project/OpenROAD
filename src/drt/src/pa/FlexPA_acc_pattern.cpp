@@ -82,14 +82,42 @@ void FlexPA::addToInstsSet(frInst* inst)
   insts_set_.insert(inst);
 }
 
+bool FlexPA::instPrefersHorizontal(frInst* unique_inst)
+{
+  const int pin_access_idx = unique_inst->getPinAccessIdx();
+  // Positive if most access points are on Horizontal layers, Negative if on
+  // Vertical Layers
+  if (pin_access_idx < 0) {
+    return true;
+  }
+  int layer_direction_bias = 0;
+  const auto tech = getDesign()->getTech();
+  for (auto& inst_term : unique_inst->getInstTerms()) {
+    if (isSkipInstTerm(inst_term.get())) {
+      continue;
+    }
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      for (auto& ap : pin->getPinAccess(pin_access_idx)->getAccessPoints()) {
+        if (tech->getLayer(ap->getLayerNum())->isHorizontal()) {
+          layer_direction_bias++;
+        } else {
+          layer_direction_bias--;
+        }
+      }
+    }
+  }
+  return layer_direction_bias >= 0;
+}
+
 void FlexPA::prepPatternInst(frInst* unique_inst)
 {
-  int num_valid_pattern = prepPatternInstHelper(unique_inst, true);
+  const bool prefer_x = !instPrefersHorizontal(unique_inst);
+  int num_valid_pattern = prepPatternInstHelper(unique_inst, prefer_x);
 
   if (num_valid_pattern > 0) {
     return;
   }
-  num_valid_pattern = prepPatternInstHelper(unique_inst, false);
+  num_valid_pattern = prepPatternInstHelper(unique_inst, !prefer_x);
 
   if (num_valid_pattern == 0) {
     logger_->warn(DRT,
