@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: lvf_lib.lef, created 2 layers, 4 library cells
+has_lvf: 1
+lg_sigma_gt_sm_sigma: 1
+both_sigma_nonzero: 1
+lg_margin_gt_sm_margin: 1
+reset_mean_unchanged: 1
