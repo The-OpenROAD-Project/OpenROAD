@@ -12,6 +12,11 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "aes_annealing",
+    "aes_asap7",
+    "aes_donttouch_nangate45",
+    "aes_dontuse_nangate45",
+    "aes_genetic",
     "aes_nangate45",
     "blif_reader",
     "blif_reader_const",
@@ -22,17 +27,15 @@ COMPULSORY_TESTS = [
     "blif_writer_input_output",
     "blif_writer_sequential",
     "const_cell_removal",
-    "gcd_restructure",
-    "aes_asap7",
-    "gcd_asap7",
-    "memory_nangate45",
-    "aes_dontuse_nangate45",
-    "aes_donttouch_nangate45",
-    "aes_annealing",
+    "emap_aes_asap7",
+    "emap_gcd_asap7",
+    "emap_jpeg_sky130hd",
     "gcd_annealing1",
     "gcd_annealing2",
-    "aes_genetic",
+    "gcd_asap7",
     "gcd_genetic",
+    "gcd_restructure",
+    "memory_nangate45",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -99,9 +102,13 @@ filegroup(
         "gcd_asap7.v",
         "gcd_placed.def",
         "helpers.tcl",
+        "jpeg_sky130hd.sdc",
+        "jpeg_sky130hd.v",
         "rcon.def",
         "rcon.sdc",
+        "sky130/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib",
+        "sky130/sky130hd.rc",
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
     ],
@@ -129,6 +136,7 @@ LONG_RUNNING_TESTS = [
     "aes_annealing",
     "gcd_annealing1",
     "gcd_annealing2",
+    "emap_jpeg_sky130hd",
 ]
 
 [

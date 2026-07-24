@@ -1,0 +1,358 @@
+[INFO ODB-0227] LEF file: ./sky130/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: ./sky130/sky130hd_std_cell.lef, created 437 library cells
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+-- Before --
+
+Cell type report:                       Count       Area
+  Buffer                                 1561    5880.64
+  Inverter                               9945   37329.55
+  Sequential cell                        4380   88011.91
+  Multi-Input combinational cell        29747  315847.92
+  Total                                 45633  447070.03
+Startpoint: rst (input port clocked by core_clock)
+Endpoint: _99163_ (recovery check against rising-edge clock core_clock)
+Path Group: asynchronous
+Path Type: max
+Corner: fast
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+  16.00   16.00 ^ input external delay
+   0.00   16.00 ^ rst (in)
+   0.00   16.00 ^ _99163_/SET_B (sky130_fd_sc_hd__dfstp_2)
+          16.00   data arrival time
+
+  80.00   80.00   clock core_clock (rise edge)
+   0.00   80.00   clock network delay (ideal)
+   0.00   80.00   clock reconvergence pessimism
+          80.00 ^ _99163_/CLK (sky130_fd_sc_hd__dfstp_2)
+   0.08   80.08   library recovery time
+          80.08   data required time
+---------------------------------------------------------
+          80.08   data required time
+         -16.00   data arrival time
+---------------------------------------------------------
+          64.08   slack (MET)
+
+
+Startpoint: _99172_ (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: _96135_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ _99172_/CLK (sky130_fd_sc_hd__dfrtp_1)
+   1.44    1.44 ^ _99172_/Q (sky130_fd_sc_hd__dfrtp_1)
+   1.09    2.53 ^ _53663_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.27    3.80 ^ _53664_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.29    5.09 ^ _53665_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.20    6.29 ^ _53666_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.24    7.53 ^ _55623_/X (sky130_fd_sc_hd__clkbuf_1)
+   0.72    8.24 v _55663_/Y (sky130_fd_sc_hd__nand2_1)
+   2.18   10.42 v _85728_/COUT (sky130_fd_sc_hd__fa_1)
+   2.65   13.07 v _85736_/SUM (sky130_fd_sc_hd__fa_1)
+   2.60   15.66 ^ _85737_/SUM (sky130_fd_sc_hd__fa_1)
+   0.11   15.77 v _78485_/Y (sky130_fd_sc_hd__inv_1)
+   1.41   17.18 v _92463_/SUM (sky130_fd_sc_hd__ha_1)
+   2.47   19.65 v _85738_/SUM (sky130_fd_sc_hd__fa_1)
+   2.63   22.28 v _85739_/SUM (sky130_fd_sc_hd__fa_1)
+   1.48   23.76 v _92464_/SUM (sky130_fd_sc_hd__ha_1)
+   0.50   24.26 v _62570_/Y (sky130_fd_sc_hd__nor2b_1)
+   0.51   24.77 ^ _62571_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.35   25.12 v _62572_/Y (sky130_fd_sc_hd__nand2b_1)
+   0.68   25.81 v _62573_/X (sky130_fd_sc_hd__a21o_1)
+   0.69   26.50 v _62574_/X (sky130_fd_sc_hd__a21o_1)
+   0.66   27.16 v _62575_/X (sky130_fd_sc_hd__a21o_1)
+   0.68   27.84 v _62576_/X (sky130_fd_sc_hd__a21o_1)
+   0.65   28.49 v _62577_/X (sky130_fd_sc_hd__a21o_1)
+   0.69   29.18 v _62578_/X (sky130_fd_sc_hd__a21o_1)
+   2.03   31.21 v _85820_/COUT (sky130_fd_sc_hd__fa_1)
+   0.66   31.87 ^ _62567_/Y (sky130_fd_sc_hd__xnor2_1)
+   0.29   32.16 v _62569_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00   32.16 v _96135_/D (sky130_fd_sc_hd__dfxtp_1)
+          32.16   data arrival time
+
+  80.00   80.00   clock core_clock (rise edge)
+   0.00   80.00   clock network delay (ideal)
+   0.00   80.00   clock reconvergence pessimism
+          80.00 ^ _96135_/CLK (sky130_fd_sc_hd__dfxtp_1)
+  -0.87   79.13   library setup time
+          79.13   data required time
+---------------------------------------------------------
+          79.13   data required time
+         -32.16   data arrival time
+---------------------------------------------------------
+          46.97   slack (MET)
+
+
+wns max 0.00
+tns max 0.00
+-- After emap --
+
+[i] WARNING: library does not contain cells that could match the delay of output pin 0 of multi-output cell sky130_fd_sc_hd__fahcin_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fahcin_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 0 of multi-output cell sky130_fd_sc_hd__fahcon_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fahcon_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__ha_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__ha_2
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__ha_4
+[i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
+Extended technology mapping stats:
+	area: 314862.562
+	delay: 2558.510
+	power: 0.000
+	inverters: 0
+	multioutput gates: 6902
+
+[i] Report cells usage:
+[i] _const1_                 	 Instance =          1	 Area =         0.00     0.00 %
+[i] sky130_fd_sc_hd__a2111o_1	 Instance =          3	 Area =        33.78     0.01 %
+[i] sky130_fd_sc_hd__a2111oi_0	 Instance =         31	 Area =       271.56     0.09 %
+[i] sky130_fd_sc_hd__a211o_1 	 Instance =          4	 Area =        35.04     0.01 %
+[i] sky130_fd_sc_hd__a211oi_1	 Instance =         95	 Area =       713.45     0.23 %
+[i] sky130_fd_sc_hd__a21boi_0	 Instance =         77	 Area =       578.27     0.18 %
+[i] sky130_fd_sc_hd__a21o_1  	 Instance =        674	 Area =      5061.74     1.61 %
+[i] sky130_fd_sc_hd__a21oi_1 	 Instance =       2608	 Area =     13040.00     4.14 %
+[i] sky130_fd_sc_hd__a221o_1 	 Instance =        380	 Area =      3803.80     1.21 %
+[i] sky130_fd_sc_hd__a221oi_1	 Instance =         21	 Area =       183.96     0.06 %
+[i] sky130_fd_sc_hd__a222oi_1	 Instance =        551	 Area =      5515.51     1.75 %
+[i] sky130_fd_sc_hd__a22o_1  	 Instance =         87	 Area =       762.12     0.24 %
+[i] sky130_fd_sc_hd__a22oi_1 	 Instance =        360	 Area =      2703.60     0.86 %
+[i] sky130_fd_sc_hd__a2bb2oi_1	 Instance =         54	 Area =       473.04     0.15 %
+[i] sky130_fd_sc_hd__a311oi_1	 Instance =         16	 Area =       140.16     0.04 %
+[i] sky130_fd_sc_hd__a31o_1  	 Instance =         11	 Area =        96.36     0.03 %
+[i] sky130_fd_sc_hd__a31oi_1 	 Instance =        211	 Area =      1320.86     0.42 %
+[i] sky130_fd_sc_hd__a32o_1  	 Instance =          4	 Area =        40.04     0.01 %
+[i] sky130_fd_sc_hd__a32oi_1 	 Instance =         22	 Area =       192.72     0.06 %
+[i] sky130_fd_sc_hd__a41oi_1 	 Instance =         45	 Area =       394.20     0.13 %
+[i] sky130_fd_sc_hd__and2_0  	 Instance =        684	 Area =      4281.84     1.36 %
+[i] sky130_fd_sc_hd__and3_1  	 Instance =         55	 Area =       344.30     0.11 %
+[i] sky130_fd_sc_hd__and4_1  	 Instance =          7	 Area =        61.32     0.02 %
+[i] sky130_fd_sc_hd__and4b_1 	 Instance =          1	 Area =        10.01     0.00 %
+[i] sky130_fd_sc_hd__buf_1   	 Instance =          1	 Area =         3.75     0.00 %
+[i] sky130_fd_sc_hd__clkinv_1	 Instance =       3812	 Area =     14295.00     4.54 %
+[i] sky130_fd_sc_hd__fa_1    	 Instance =       5232	 Area =    104744.64    33.27 %
+[i] sky130_fd_sc_hd__fa_2    	 Instance =       1299	 Area =     29253.48     9.29 %
+[i] sky130_fd_sc_hd__fahcon_1	 Instance =        318	 Area =     10742.04     3.41 %
+[i] sky130_fd_sc_hd__ha_1    	 Instance =         53	 Area =       663.03     0.21 %
+[i] sky130_fd_sc_hd__maj3_1  	 Instance =        290	 Area =      2902.90     0.92 %
+[i] sky130_fd_sc_hd__mux2_1  	 Instance =        619	 Area =      6969.94     2.21 %
+[i] sky130_fd_sc_hd__mux2i_1 	 Instance =         62	 Area =       620.62     0.20 %
+[i] sky130_fd_sc_hd__nand2_1 	 Instance =       7521	 Area =     28203.75     8.96 %
+[i] sky130_fd_sc_hd__nand2b_1	 Instance =         95	 Area =       594.70     0.19 %
+[i] sky130_fd_sc_hd__nand3_1 	 Instance =        235	 Area =      1175.00     0.37 %
+[i] sky130_fd_sc_hd__nand3b_1	 Instance =         15	 Area =       112.65     0.04 %
+[i] sky130_fd_sc_hd__nand4_1 	 Instance =        114	 Area =       713.64     0.23 %
+[i] sky130_fd_sc_hd__nand4b_1	 Instance =          5	 Area =        43.80     0.01 %
+[i] sky130_fd_sc_hd__nor2_1  	 Instance =       5645	 Area =     21168.75     6.72 %
+[i] sky130_fd_sc_hd__nor2b_1 	 Instance =         94	 Area =       588.44     0.19 %
+[i] sky130_fd_sc_hd__nor3_1  	 Instance =        280	 Area =      1400.00     0.44 %
+[i] sky130_fd_sc_hd__nor3b_1 	 Instance =         18	 Area =       135.18     0.04 %
+[i] sky130_fd_sc_hd__nor4_1  	 Instance =         49	 Area =       306.74     0.10 %
+[i] sky130_fd_sc_hd__nor4b_1 	 Instance =          5	 Area =        43.80     0.01 %
+[i] sky130_fd_sc_hd__o2111a_1	 Instance =          2	 Area =        22.52     0.01 %
+[i] sky130_fd_sc_hd__o2111ai_1	 Instance =         15	 Area =       131.40     0.04 %
+[i] sky130_fd_sc_hd__o211a_1 	 Instance =          1	 Area =        10.01     0.00 %
+[i] sky130_fd_sc_hd__o211ai_1	 Instance =        128	 Area =       961.28     0.31 %
+[i] sky130_fd_sc_hd__o21a_1  	 Instance =        385	 Area =      2891.35     0.92 %
+[i] sky130_fd_sc_hd__o21ai_0 	 Instance =       4203	 Area =     21015.00     6.67 %
+[i] sky130_fd_sc_hd__o21ba_1 	 Instance =          3	 Area =        30.03     0.01 %
+[i] sky130_fd_sc_hd__o21bai_1	 Instance =        119	 Area =       893.69     0.28 %
+[i] sky130_fd_sc_hd__o221a_1 	 Instance =          3	 Area =        33.78     0.01 %
+[i] sky130_fd_sc_hd__o221ai_1	 Instance =        185	 Area =      1620.60     0.51 %
+[i] sky130_fd_sc_hd__o22a_1  	 Instance =         49	 Area =       429.24     0.14 %
+[i] sky130_fd_sc_hd__o22ai_1 	 Instance =       1190	 Area =      7449.40     2.37 %
+[i] sky130_fd_sc_hd__o2bb2ai_1	 Instance =         97	 Area =       849.72     0.27 %
+[i] sky130_fd_sc_hd__o311a_1 	 Instance =          2	 Area =        20.02     0.01 %
+[i] sky130_fd_sc_hd__o311ai_0	 Instance =          7	 Area =        61.32     0.02 %
+[i] sky130_fd_sc_hd__o31a_1  	 Instance =          4	 Area =        35.04     0.01 %
+[i] sky130_fd_sc_hd__o31ai_1 	 Instance =         47	 Area =       352.97     0.11 %
+[i] sky130_fd_sc_hd__o32a_1  	 Instance =          8	 Area =        80.08     0.03 %
+[i] sky130_fd_sc_hd__o32ai_1 	 Instance =          2	 Area =        17.52     0.01 %
+[i] sky130_fd_sc_hd__o41a_1  	 Instance =          1	 Area =        11.26     0.00 %
+[i] sky130_fd_sc_hd__o41ai_1 	 Instance =          5	 Area =        43.80     0.01 %
+[i] sky130_fd_sc_hd__or2_0   	 Instance =        115	 Area =       719.90     0.23 %
+[i] sky130_fd_sc_hd__or3_1   	 Instance =         46	 Area =       287.96     0.09 %
+[i] sky130_fd_sc_hd__or4_1   	 Instance =         15	 Area =       112.65     0.04 %
+[i] sky130_fd_sc_hd__or4b_1  	 Instance =          1	 Area =        10.01     0.00 %
+[i] sky130_fd_sc_hd__xnor2_1 	 Instance =        942	 Area =      8251.92     2.62 %
+[i] sky130_fd_sc_hd__xnor3_1 	 Instance =          1	 Area =        22.52     0.01 %
+[i] sky130_fd_sc_hd__xor2_1  	 Instance =        429	 Area =      3758.04     1.19 %
+[i] TOTAL                    	 Instance =      39769	 Area =    314862.56   100.00 %
+[i] Report stats: area = 314862.56; delay = 2558.51;
+Cell type report:                       Count       Area
+  Buffer                                    2      11.26
+  Inverter                               3812   14308.72
+  Sequential cell                        4380   88011.91
+  Multi-Input combinational cell        35958  300637.08
+  Total                                 44152  402968.98
+[-113.607,  -94.420): ************************************************** (2744)
+[ -94.420,  -75.234): ** (132)
+[ -75.234,  -56.047):  (0)
+[ -56.047,  -36.860):  (0)
+[ -36.860,  -17.673): * (27)
+[ -17.673,    1.514): * (3)
+[   1.514,   20.701): **************** (871)
+[  20.701,   39.888): * (6)
+[  39.888,   59.075): * (14)
+[  59.075,   78.262]: ************ (674)
+Startpoint: rst (input port clocked by core_clock)
+Endpoint: _99163_ (recovery check against rising-edge clock core_clock)
+Path Group: asynchronous
+Path Type: max
+Corner: fast
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+  16.00   16.00 ^ input external delay
+   0.00   16.00 ^ rst (in)
+   0.00   16.00 ^ _99163_/SET_B (sky130_fd_sc_hd__dfstp_2)
+          16.00   data arrival time
+
+  80.00   80.00   clock core_clock (rise edge)
+   0.00   80.00   clock network delay (ideal)
+   0.00   80.00   clock reconvergence pessimism
+          80.00 ^ _99163_/CLK (sky130_fd_sc_hd__dfstp_2)
+   0.08   80.08   library recovery time
+          80.08   data required time
+---------------------------------------------------------
+          80.08   data required time
+         -16.00   data arrival time
+---------------------------------------------------------
+          64.08   slack (MET)
+
+
+Startpoint: ena (input port clocked by core_clock)
+Endpoint: _96203_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+  16.00   16.00 v input external delay
+   0.00   16.00 v ena (in)
+ 115.32  131.32 ^ n_4439/Y (sky130_fd_sc_hd__clkinv_1)
+  48.14  179.46 v n_14294/Y (sky130_fd_sc_hd__nor4_1)
+   9.37  188.83 ^ n_14295/Y (sky130_fd_sc_hd__a32oi_1)
+   0.00  188.83 ^ _96203_/D (sky130_fd_sc_hd__dfxtp_1)
+         188.83   data arrival time
+
+  80.00   80.00   clock core_clock (rise edge)
+   0.00   80.00   clock network delay (ideal)
+   0.00   80.00   clock reconvergence pessimism
+          80.00 ^ _96203_/CLK (sky130_fd_sc_hd__dfxtp_1)
+  -4.78   75.22   library setup time
+          75.22   data required time
+---------------------------------------------------------
+          75.22   data required time
+        -188.83   data arrival time
+---------------------------------------------------------
+        -113.61   slack (VIOLATED)
+
+
+wns max -113.61
+tns max -293313.00
+-- After repair --
+
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 2903 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 2903 out of 2903 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -113.607 |     -124.8 |  -293313.0 |   2903 | _96203_/D
+    1200* |       0 |       8 |        0 |      2 |     0 |    +0.0% |    1.211 |        0.0 |        0.0 |   2903 | _99178_/D
+    final |       0 |       8 |        0 |      2 |     0 |    +0.0% |    1.211 |        0.0 |        0.0 |      0 | _99178_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 8 instances: 8 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0049] Cloned 2 instances.
+[INFO RSZ-0033] No hold violations found.
+Cell type report:                       Count       Area
+  Buffer                                    2      11.26
+  Inverter                               3812   14322.49
+  Timing Repair inverter                    2       7.51
+  Sequential cell                        4380   88011.91
+  Multi-Input combinational cell        35958  300644.59
+  Total                                 44154  402997.76
+[ 1.211,  8.916): ***************** (958)
+[ 8.916, 16.621): ************************************************** (2792)
+[16.621, 24.326):  (0)
+[24.326, 32.031): * (2)
+[32.031, 39.736): * (31)
+[39.736, 47.441):  (0)
+[47.441, 55.146): * (4)
+[55.146, 62.852): ********** (573)
+[62.852, 70.557): ** (110)
+[70.557, 78.262]: * (1)
+Startpoint: rst (input port clocked by core_clock)
+Endpoint: _99163_ (recovery check against rising-edge clock core_clock)
+Path Group: asynchronous
+Path Type: max
+Corner: fast
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+  16.00   16.00 ^ input external delay
+   0.00   16.00 ^ rst (in)
+   0.00   16.00 ^ _99163_/SET_B (sky130_fd_sc_hd__dfstp_2)
+          16.00   data arrival time
+
+  80.00   80.00   clock core_clock (rise edge)
+   0.00   80.00   clock network delay (ideal)
+   0.00   80.00   clock reconvergence pessimism
+          80.00 ^ _99163_/CLK (sky130_fd_sc_hd__dfstp_2)
+   0.08   80.08   library recovery time
+          80.08   data required time
+---------------------------------------------------------
+          80.08   data required time
+         -16.00   data arrival time
+---------------------------------------------------------
+          64.08   slack (MET)
+
+
+Startpoint: ena (input port clocked by core_clock)
+Endpoint: _99178_ (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+  16.00   16.00 v input external delay
+   0.00   16.00 v ena (in)
+  42.27   58.27 ^ n_4901/Y (sky130_fd_sc_hd__nand2b_1)
+  17.45   75.72 v n_43948/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00   75.72 v _99178_/D (sky130_fd_sc_hd__dfrtp_1)
+          75.72   data arrival time
+
+  80.00   80.00   clock core_clock (rise edge)
+   0.00   80.00   clock network delay (ideal)
+   0.00   80.00   clock reconvergence pessimism
+          80.00 ^ _99178_/CLK (sky130_fd_sc_hd__dfrtp_1)
+  -3.07   76.93   library setup time
+          76.93   data required time
+---------------------------------------------------------
+          76.93   data required time
+         -75.72   data arrival time
+---------------------------------------------------------
+           1.21   slack (MET)
+
+
+wns max 0.00
+tns max 0.00

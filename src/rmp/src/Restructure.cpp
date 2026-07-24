@@ -28,6 +28,7 @@
 #include "cut/abc_init.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
+#include "emap_strategy.h"
 #include "genetic_strategy.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
@@ -84,16 +85,16 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::resynth(sta::Scene* corner)
+void Restructure::resynth(sta::Scene* scene)
 {
-  ZeroSlackStrategy zero_slack_strategy(corner);
+  ZeroSlackStrategy zero_slack_strategy(scene);
   zero_slack_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
-void Restructure::resynthAnnealing(sta::Scene* corner)
+void Restructure::resynthAnnealing(sta::Scene* scene)
 {
-  AnnealingStrategy annealing_strategy(corner,
+  AnnealingStrategy annealing_strategy(scene,
                                        slack_threshold_,
                                        annealing_seed_,
                                        annealing_temp_,
@@ -104,9 +105,9 @@ void Restructure::resynthAnnealing(sta::Scene* corner)
       open_sta_, name_generator_, resizer_, logger_);
 }
 
-void Restructure::resynthGenetic(sta::Scene* corner)
+void Restructure::resynthGenetic(sta::Scene* scene)
 {
-  GeneticStrategy genetic_strategy(corner,
+  GeneticStrategy genetic_strategy(scene,
                                    slack_threshold_,
                                    genetic_seed_,
                                    genetic_population_size_,
@@ -725,4 +726,18 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
   }
   return status;
 }
+
+void Restructure::resynthEmap(sta::Scene* scene)
+{
+  EmapStrategy emap_strategy(scene,
+                             emap_map_multioutput_,
+                             emap_verbose_,
+                             emap_create_po_buffers_,
+                             emap_insert_buffers_,
+                             emap_min_drive_resistance_,
+                             emap_max_drive_resistance_);
+
+  emap_strategy.OptimizeDesign(open_sta_, name_generator_, resizer_, logger_);
+}
+
 }  // namespace rmp
