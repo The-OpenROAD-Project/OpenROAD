@@ -1,0 +1,57 @@
+{
+    "name": "dbChipRSeg",
+    "type": "dbObject",
+    "description": [
+        "A resistor segment connecting two dbChipCapNodes (source and target) in",
+        "the inter-chip parasitic network of a dbChipNet, the inter-chip analog",
+        "of dbRSeg. Together with dbChipCapNodes it models the RC of the vertical",
+        "connections between stacked chips; a single bump is typically a pi",
+        "network -- a series dbChipRSeg with a shunt dbChipCapNode at each end."
+    ],
+    "fields": [
+        {
+            "name": "chip_net_",
+            "type": "dbId<_dbChipNet>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "next_chip_r_seg_",
+            "type": "dbId<_dbChipRSeg>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "source_cap_node_",
+            "type": "dbId<_dbChipCapNode>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "target_cap_node_",
+            "type": "dbId<_dbChipCapNode>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "resistance_",
+            "type": "float",
+            "default": "0.0"
+        }
+    ],
+    "h_includes": [
+        "odb/dbId.h"
+    ],
+    "cpp_includes": [
+        "dbChip.h",
+        "dbChipCapNode.h",
+        "dbChipNet.h",
+        "dbDatabase.h",
+        "dbTable.h",
+        "utl/Logger.h"
+    ]
+}

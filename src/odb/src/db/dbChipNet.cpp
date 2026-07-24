@@ -18,6 +18,8 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbChipNetCapNodeItr.h"
+#include "dbChipNetRSegItr.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -33,6 +35,12 @@ bool _dbChipNet::operator==(const _dbChipNet& rhs) const
     return false;
   }
   if (chip_net_next_ != rhs.chip_net_next_) {
+    return false;
+  }
+  if (first_cap_node_ != rhs.first_cap_node_) {
+    return false;
+  }
+  if (first_r_seg_ != rhs.first_r_seg_) {
     return false;
   }
 
@@ -55,6 +63,12 @@ dbIStream& operator>>(dbIStream& stream, _dbChipNet& obj)
   stream >> obj.chip_;
   stream >> obj.chip_net_next_;
   stream >> obj.bump_insts_paths_;
+  if (obj.getDatabase()->isSchema(kSchemaChipParasitics)) {
+    stream >> obj.first_cap_node_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaChipParasitics)) {
+    stream >> obj.first_r_seg_;
+  }
   return stream;
 }
 
@@ -64,6 +78,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipNet& obj)
   stream << obj.chip_;
   stream << obj.chip_net_next_;
   stream << obj.bump_insts_paths_;
+  stream << obj.first_cap_node_;
+  stream << obj.first_r_seg_;
   return stream;
 }
 
@@ -94,6 +110,20 @@ dbChip* dbChipNet::getChip() const
   _dbChipNet* obj = (_dbChipNet*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
   return (dbChip*) db->chip_tbl_->getPtr(obj->chip_);
+}
+
+dbSet<dbChipCapNode> dbChipNet::getChipCapNodes() const
+{
+  _dbChipNet* chip_net = (_dbChipNet*) this;
+  _dbChip* chip = (_dbChip*) getChip();
+  return dbSet<dbChipCapNode>(chip_net, chip->chip_net_cap_node_itr_);
+}
+
+dbSet<dbChipRSeg> dbChipNet::getChipRSegs() const
+{
+  _dbChipNet* chip_net = (_dbChipNet*) this;
+  _dbChip* chip = (_dbChip*) getChip();
+  return dbSet<dbChipRSeg>(chip_net, chip->chip_net_r_seg_itr_);
 }
 
 uint32_t dbChipNet::getNumBumpInsts() const
@@ -169,6 +199,16 @@ void dbChipNet::destroy(dbChipNet* net)
   _dbChipNet* _net = (_dbChipNet*) net;
   _dbDatabase* db = (_dbDatabase*) _net->getOwner();
   _dbChip* chip = (_dbChip*) net->getChip();
+
+  // Destroy the net's parasitics.
+  dbSet<dbChipRSeg> r_segs = net->getChipRSegs();
+  while (r_segs.begin() != r_segs.end()) {
+    dbChipRSeg::destroy(*r_segs.begin());
+  }
+  dbSet<dbChipCapNode> cap_nodes = net->getChipCapNodes();
+  while (cap_nodes.begin() != cap_nodes.end()) {
+    dbChipCapNode::destroy(*cap_nodes.begin());
+  }
 
   // Remove from chip's net list
   if (chip->nets_ == _net->getOID()) {

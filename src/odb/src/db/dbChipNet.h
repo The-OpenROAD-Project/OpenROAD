@@ -19,6 +19,8 @@ class _dbDatabase;
 class _dbChip;
 class _dbChipInst;
 class _dbChipBumpInst;
+class _dbChipCapNode;
+class _dbChipRSeg;
 
 class _dbChipNet : public _dbObject
 {
@@ -35,6 +37,8 @@ class _dbChipNet : public _dbObject
   dbId<_dbChipNet> chip_net_next_;
   std::vector<std::pair<std::vector<dbId<_dbChipInst>>, dbId<_dbChipBumpInst>>>
       bump_insts_paths_;
+  dbId<_dbChipCapNode> first_cap_node_;
+  dbId<_dbChipRSeg> first_r_seg_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipNet& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChipNet& obj);

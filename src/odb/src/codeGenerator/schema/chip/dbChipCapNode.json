@@ -1,0 +1,50 @@
+{
+    "name": "dbChipCapNode",
+    "type": "dbObject",
+    "description": [
+        "A capacitance node in the inter-chip parasitic network of a dbChipNet,",
+        "the inter-chip analog of dbCapNode. It is an electrical node of the",
+        "network carrying a lumped capacitance to ground. A terminal node",
+        "corresponds to a bump landing and references the dbChipBumpInst where",
+        "the vertical connection meets a die or RDL pin; this is how the per-die",
+        "parasitic networks are stitched together across the stack at the bumps."
+    ],
+    "fields": [
+        {
+            "name": "chip_net_",
+            "type": "dbId<_dbChipNet>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "next_chip_cap_node_",
+            "type": "dbId<_dbChipCapNode>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "chip_bump_inst_",
+            "type": "dbId<_dbChipBumpInst>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "capacitance_",
+            "type": "float",
+            "default": "0.0"
+        }
+    ],
+    "h_includes": [
+        "odb/dbId.h"
+    ],
+    "cpp_includes": [
+        "dbChip.h",
+        "dbChipNet.h",
+        "dbChipBumpInst.h",
+        "dbDatabase.h",
+        "dbTable.h"
+    ]
+}
