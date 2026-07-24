@@ -5617,28 +5617,22 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
 
 void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
-  if (use_cugr_) {
-    // TODO: Fully support merging nets in CUGR.
-    // For now, we simply rip up and add the base net to the dirty list
-    // to be completely re-routed from scratch.
-    addDirtyNet(db_net1);
-    return;
-  }
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
-  // Try to connect the routing of the two nets
+  // Try to connect the routing of the two nets.
+  // For CUGR, connectRouting also performs the CUGR-specific capacity check
+  // and populates connection_segs so that the CUGR tree can be updated.
   if (connectRouting(db_net1, db_net2)) {
+    saveGuides({db_net1});
     net1->setIsMergedNet(true);
     net1->setMergedNet(db_net2);
     net1->setDirtyNet(false);
     net2->setIsMergedNet(true);
     net2->setMergedNet(db_net1);
-    saveGuides({db_net1});
   } else {
-    // The survivor net's routing could not be validated as a single connected
-    // component covering all pins (uncovered pins and/or disconnected
-    // segments), so it needs to be re-routed from scratch.
-    net1->setDirtyNet(true);
+    // After failing to connect the routing, the survivor net still has
+    // uncovered pins and needs to be re-routed
+    addDirtyNet(db_net1);
   }
 }
 
@@ -5657,26 +5651,71 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 
   GRoute& net1_route = routes_[db_net1];
   GRoute& net2_route = routes_[db_net2];
+
+  if (net1_route.empty() || net2_route.empty()) {
+    return false;
+  }
+
   if (pin_pos1 != pin_pos2) {
     const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
     std::vector<GSegment> connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
-    for (const GSegment& seg : connection) {
-      const int x1 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
-                     / grid_->getTileSize();
-      const int y1 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
-                     / grid_->getTileSize();
-      const int x2 = (std::max(seg.init_x, seg.final_x) - grid_->getXMin())
-                     / grid_->getTileSize();
-      const int y2 = (std::max(seg.init_y, seg.final_y) - grid_->getYMin())
-                     / grid_->getTileSize();
-      const int layer = seg.init_layer;
-      if (!seg.isVia()) {
-        if (!fastroute_->hasAvailableResources(
-                x1, y1, x2, y2, layer, db_net1)) {
-          return false;
+    if (use_cugr_) {
+      // Capacity check using the CUGR GridGraph instead of FastRoute.
+      // Use the survivor net's per-layer NDR demand so that NDR nets with
+      // a demand factor > 1 are not incorrectly accepted on tight edges.
+      const std::vector<double> ndr_costs = cugr_->getNdrCosts(db_net1);
+      auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
+        return (dbu_coord - (is_x ? grid_->getXMin() : grid_->getYMin()))
+               / grid_->getTileSize();
+      };
+      for (const GSegment& seg : connection) {
+        if (!seg.isVia()) {
+          const int x1 = dbu_to_tile(std::min(seg.init_x, seg.final_x), true);
+          const int y1 = dbu_to_tile(std::min(seg.init_y, seg.final_y), false);
+          const int x2 = dbu_to_tile(std::max(seg.init_x, seg.final_x), true);
+          const int y2 = dbu_to_tile(std::max(seg.init_y, seg.final_y), false);
+          // layer_index is 1-based; ndr_costs is 0-based.
+          const int layer_0 = seg.init_layer - 1;
+          const double demand
+              = (layer_0 >= 0 && layer_0 < static_cast<int>(ndr_costs.size()))
+                    ? ndr_costs[layer_0]
+                    : 1.0;
+          if (y1 == y2) {  // horizontal
+            for (int x = x1; x < x2; x++) {
+              if (!cugr_->hasAvailableResources(
+                      seg.init_layer, x, y1, demand)) {
+                return false;
+              }
+            }
+          } else {  // vertical
+            for (int y = y1; y < y2; y++) {
+              if (!cugr_->hasAvailableResources(
+                      seg.init_layer, x1, y, demand)) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (const GSegment& seg : connection) {
+        const int x1 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
+                       / grid_->getTileSize();
+        const int y1 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
+                       / grid_->getTileSize();
+        const int x2 = (std::max(seg.init_x, seg.final_x) - grid_->getXMin())
+                       / grid_->getTileSize();
+        const int y2 = (std::max(seg.init_y, seg.final_y) - grid_->getYMin())
+                       / grid_->getTileSize();
+        const int layer = seg.init_layer;
+        if (!seg.isVia()) {
+          if (!fastroute_->hasAvailableResources(
+                  x1, y1, x2, y2, layer, db_net1)) {
+            return false;
+          }
         }
       }
     }
@@ -5714,6 +5753,9 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
+    if (use_cugr_) {
+      cugr_->mergeNet(db_net1, db_net2, connection);
+    }
   } else {
     // Both pins are in the same gcell, but the two routes may reach it on
     // disjoint layer ranges. Bridge any layer gap with vias.
@@ -5727,6 +5769,12 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
       }
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+    // For CUGR: transfer tree ownership and mark removed_net in merged_nets_
+    // so that the net-destroy callback does not subtract the removed net's
+    // tree usage from GridGraph (the wires were folded into net1_route above).
+    if (use_cugr_) {
+      cugr_->mergeNet(db_net1, db_net2, /*connection=*/{});
+    }
   }
 
   updateNetPins(net1);
