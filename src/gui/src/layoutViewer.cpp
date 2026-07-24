@@ -2654,10 +2654,12 @@ void LayoutViewer::resetCache()
 LayoutScroll::LayoutScroll(
     LayoutViewer* viewer,
     const std::function<bool()>& default_mouse_wheel_zoom,
+    const std::function<bool()>& arrow_keys_scroll_accel,
     const std::function<int()>& arrow_keys_scroll_step,
     QWidget* parent)
     : QScrollArea(parent),
       default_mouse_wheel_zoom_(default_mouse_wheel_zoom),
+      arrow_keys_scroll_accel_(arrow_keys_scroll_accel),
       arrow_keys_scroll_step_(arrow_keys_scroll_step),
       viewer_(viewer),
       scrolling_with_cursor_(false)
@@ -2738,25 +2740,60 @@ bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
 
 void LayoutScroll::keyPressEvent(QKeyEvent* event)
 {
-  switch (event->key()) {
+  Qt::Key key = static_cast<Qt::Key>(event->key());
+
+  if (!isScrollKey(key)) {
+    QScrollArea::keyPressEvent(event);
+    return;
+  }
+
+
+  if (!event->isAutoRepeat()) {
+    // First press of a key
+    current_key_ = key;
+    accel_counter_ = 0;
+  }
+
+  int multiplier = 1;
+  if (arrow_keys_scroll_accel_()) {
+    if (accel_counter_ < kAccelCounterMax) {
+      accel_counter_++;
+    }
+    // Achieve gentle exponential scaling by dividing
+    // the exponent and using 1.25 as the base
+    multiplier = static_cast<int>(
+                   std::round(std::pow(1.15, accel_counter_ / 2.0)));
+  }
+
+  scrollByKey(key, multiplier);
+  event->accept();
+}
+
+bool LayoutScroll::isScrollKey(Qt::Key key) const
+{
+  return key == Qt::Key_Up || key == Qt::Key_Down || key == Qt::Key_Left
+         || key == Qt::Key_Right;
+}
+
+void LayoutScroll::scrollByKey(Qt::Key key, int multiplier)
+{
+  int step = arrow_keys_scroll_step_() * multiplier;
+
+  switch (key) {
     case Qt::Key_Up:
-      verticalScrollBar()->setValue(verticalScrollBar()->value()
-                                    - arrow_keys_scroll_step_());
+      verticalScrollBar()->setValue(verticalScrollBar()->value() - step);
       break;
     case Qt::Key_Down:
-      verticalScrollBar()->setValue(verticalScrollBar()->value()
-                                    + arrow_keys_scroll_step_());
+      verticalScrollBar()->setValue(verticalScrollBar()->value() + step);
       break;
     case Qt::Key_Left:
-      horizontalScrollBar()->setValue(horizontalScrollBar()->value()
-                                      - arrow_keys_scroll_step_());
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() - step);
       break;
     case Qt::Key_Right:
-      horizontalScrollBar()->setValue(horizontalScrollBar()->value()
-                                      + arrow_keys_scroll_step_());
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() + step);
       break;
     default:
-      QScrollArea::keyPressEvent(event);
+      break;
   }
 }
 
