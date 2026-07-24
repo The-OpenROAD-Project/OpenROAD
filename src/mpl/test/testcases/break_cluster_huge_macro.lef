@@ -1,0 +1,105 @@
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO LARGE_MACRO_CELL
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SYMMETRY X Y ;
+  SIZE 10000 BY 10000 ;
+  PIN p
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 0 10 10 ;
+    END
+  END p
+  PIN p0
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 20 10 30 ;
+    END
+  END p0
+  PIN p1
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 40 10 50 ;
+    END
+  END p1
+  PIN p2
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 60 10 70 ;
+    END
+  END p2
+  PIN p3
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 80 10 90 ;
+    END
+  END p3
+  PIN p4
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 100 10 110 ;
+    END
+  END p4
+  PIN p5
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 120 10 130 ;
+    END
+  END p5
+  PIN p6
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 140 10 150 ;
+    END
+  END p6
+  PIN p7
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 160 10 170 ;
+    END
+  END p7
+  PIN p8
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 180 10 190 ;
+    END
+  END p8
+  PIN p9
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 200 10 210 ;
+    END
+  END p9
+  OBS
+      LAYER metal3 ;
+        RECT 0 0 10000 10000 ;
+  END
+END LARGE_MACRO_CELL
+
+MACRO SMALL_STDCELL_CELL
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1 BY 1 ;
+  SYMMETRY X Y ;
+  PIN a
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 0 0.2 0.2 ;
+    END
+  END a
+END SMALL_STDCELL_CELL
