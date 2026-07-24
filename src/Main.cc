@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <system_error>
+#include <unordered_set>
 
 #include "absl/base/no_destructor.h"
 #include "boost/stacktrace/stacktrace.hpp"
@@ -92,6 +93,101 @@ FOREACH_TOOL(X)
 #undef X
 }
 #endif
+
+namespace {
+
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+typedef int Tcl_Size;
+#endif
+
+struct CommandTraceData
+{
+  utl::Logger* logger;
+  std::unordered_set<std::string> whitelist;
+};
+
+int logCommandCallback(ClientData clientData,
+                       Tcl_Interp* interp,
+                       int level,
+                       const char* command,
+                       Tcl_Command commandInfo,
+                       int objc,
+                       Tcl_Obj* const objv[])
+{
+  (void) interp;
+  (void) level;
+  (void) command;
+  (void) commandInfo;
+  auto* data = static_cast<CommandTraceData*>(clientData);
+  if (objc <= 0 || data == nullptr || data->logger == nullptr) {
+    return TCL_OK;
+  }
+  const char* cmd_name = Tcl_GetString(objv[0]);
+  if (cmd_name == nullptr) {
+    return TCL_OK;
+  }
+  if (std::strncmp(cmd_name, "::", 2) == 0) {
+    cmd_name += 2;
+  }
+  if (data->whitelist.count(cmd_name) == 0) {
+    return TCL_OK;
+  }
+  Tcl_DString ds;
+  Tcl_DStringInit(&ds);
+  for (int i = 0; i < objc; ++i) {
+    Tcl_DStringAppendElement(&ds, Tcl_GetString(objv[i]));
+  }
+  data->logger->report("cmd: {}", Tcl_DStringValue(&ds));
+  Tcl_DStringFree(&ds);
+  return TCL_OK;
+}
+
+void deleteCommandTrace(ClientData clientData)
+{
+  delete static_cast<CommandTraceData*>(clientData);
+}
+
+std::unordered_set<std::string> getTclCommands(Tcl_Interp* interp)
+{
+  std::unordered_set<std::string> cmds;
+  if (Tcl_Eval(interp, "info commands") == TCL_OK) {
+    Tcl_Obj* cmd_list = Tcl_GetObjResult(interp);
+    Tcl_Size objc = 0;
+    Tcl_Obj** objv = nullptr;
+    if (Tcl_ListObjGetElements(interp, cmd_list, &objc, &objv) == TCL_OK) {
+      for (Tcl_Size i = 0; i < objc; ++i) {
+        cmds.insert(Tcl_GetString(objv[i]));
+      }
+    }
+  }
+  Tcl_ResetResult(interp);
+  return cmds;
+}
+
+void setupCommandTrace(Tcl_Interp* interp,
+                       const std::unordered_set<std::string>& initial_cmds,
+                       const char* log_filename)
+{
+  if (log_filename == nullptr) {
+    return;
+  }
+  const auto all_cmds = getTclCommands(interp);
+  auto* trace_data = new CommandTraceData;
+  trace_data->logger = ord::OpenRoad::openRoad()->getLogger();
+  for (const auto& cmd : all_cmds) {
+    if (initial_cmds.find(cmd) == initial_cmds.end()) {
+      trace_data->whitelist.insert(cmd);
+    }
+  }
+  Tcl_CreateObjTrace(interp,
+                     0,
+                     TCL_ALLOW_INLINE_COMPILATION,
+                     logCommandCallback,
+                     trace_data,
+                     deleteCommandTrace);
+}
+
+}  // namespace
 
 int cmd_argc;
 char** cmd_argv;
@@ -275,7 +371,9 @@ int main(int argc, char* argv[])
         = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
     ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
     const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
+    auto initial_cmds = getTclCommands(interp);
     ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
+    setupCommandTrace(interp, initial_cmds, log_filename);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
       showSplash();
     }
@@ -377,8 +475,10 @@ static int tclAppInit(int& argc,
       printf("Failed to set up tclreadline shim\n");
     }
 
+    auto initial_cmds = getTclCommands(interp);
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
+    setupCommandTrace(interp, initial_cmds, log_filename);
 
     // Register the web server's log sink early (before splash/thread output
     // and read_db) so the WebLogSink captures all startup messages for the
