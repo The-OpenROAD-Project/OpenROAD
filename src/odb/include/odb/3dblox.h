@@ -23,6 +23,7 @@ class dbChipRegion;
 class dbBlock;
 class dbBTerm;
 class dbInst;
+class dbMaster;
 class dbTech;
 class dbLib;
 
@@ -58,6 +59,7 @@ class ThreeDBlox
   void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
   std::pair<dbInst*, dbBTerm*> createBump(const BumpMapEntry& entry,
                                           dbBlock* block);
+  void warnIfMultiPinBumpMaster(dbMaster* master);
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);
@@ -73,5 +75,7 @@ class ThreeDBlox
   // Master chips that have already consumed their single allowed DEF file;
   // see readDefForChip.
   std::unordered_set<odb::dbChip*> chips_with_def_;
+  // Bump masters already reported for violating the single-pin assumption.
+  std::unordered_set<odb::dbMaster*> multi_pin_warned_masters_;
 };
 }  // namespace odb

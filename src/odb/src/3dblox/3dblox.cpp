@@ -585,6 +585,21 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
   }
 }
 
+void ThreeDBlox::warnIfMultiPinBumpMaster(dbMaster* master)
+{
+  // Downstream code (net hookup, bpin creation, face inference) assumes a
+  // bump cell exposes exactly one pin.
+  if (master->getMTermCount() != 1
+      && multi_pin_warned_masters_.insert(master).second) {
+    logger_->warn(utl::ODB,
+                  557,
+                  "Bump cell {} has {} pins; bump cells are expected to have "
+                  "exactly one pin",
+                  master->getName(),
+                  master->getMTermCount());
+  }
+}
+
 void ThreeDBlox::createBump(const BumpMapEntry& entry,
                             dbChipRegion* chip_region)
 {
@@ -612,6 +627,7 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     }
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
+  warnIfMultiPinBumpMaster(inst->getMaster());
   auto bump = dbChipBump::create(chip_region, inst);
   const int dbu_per_micron = db_->getDbuPerMicron();
 
@@ -927,6 +943,7 @@ std::pair<dbInst*, odb::dbBTerm*> ThreeDBlox::createBump(
     }
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
+  warnIfMultiPinBumpMaster(inst->getMaster());
   inst->setOrigin(std::round(entry.x * dbus), std::round(entry.y * dbus));
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
 
