@@ -6,9 +6,11 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "boost/container_hash/hash.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db/drObj/drFig.h"
 #include "db/drObj/drNet.h"
@@ -722,33 +724,52 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
   }
 }
 namespace {
-bool isPolygonCorner(const frCoord x,
-                     const frCoord y,
-                     const gtl::polygon_90_set_data<frCoord>& poly_set)
+// Collect every (x, y) vertex (outer boundary + holes) of a fixed polygon set
+// into a hash set. This materializes the polygon set exactly once so that
+// repeated corner membership tests become O(1) hash lookups instead of
+// re-running poly_set.get() (a full boost::polygon scanline reconstruction)
+// for every corner. Behaviour is identical to calling isPolygonCorner() per
+// corner: a point is a polygon corner iff it equals some boundary/hole vertex.
+void collectPolygonCorners(
+    const gtl::polygon_90_set_data<frCoord>& poly_set,
+    std::unordered_set<std::pair<frCoord, frCoord>,
+                       boost::hash<std::pair<frCoord, frCoord>>>& corners)
 {
-  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+  // Reuse a per-thread scratch buffer across calls instead of allocating a
+  // fresh vector each time. boost::polygon's get() appends to the output
+  // container, so we must clear() first; the buffer is then fully overwritten
+  // on every call, so no stale state leaks between calls (bit-identical).
+  // FlexGC runs one worker per thread, so thread_local keeps per-worker
+  // correctness.
+  thread_local std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
+  polygons.clear();
   poly_set.get(polygons);
   for (const auto& polygon : polygons) {
     for (const auto& pt : polygon) {
-      if (pt.x() == x && pt.y() == y) {
-        return true;
-      }
+      corners.emplace(pt.x(), pt.y());
     }
     for (auto hole_itr = polygon.begin_holes(); hole_itr != polygon.end_holes();
          ++hole_itr) {
       for (const auto& pt : (*hole_itr)) {
-        if (pt.x() == x && pt.y() == y) {
-          return true;
-        }
+        corners.emplace(pt.x(), pt.y());
       }
     }
   }
-  return false;
 }
 }  // namespace
 void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
                                                             gcPin* pin)
 {
+  // For metal layers, isPolygonCorner() membership is tested once per corner
+  // against the net's fixed polygon set on the corner's layer. Materializing
+  // that set (poly_set.get()) per corner is the dominant GC-init cost, so
+  // precompute the fixed-polygon vertex set per layer once and reuse it. The
+  // map is keyed by layerNum and populated lazily; for a single pin all edge
+  // groups share the pin's layer, so this is at most one materialization.
+  std::map<frLayerNum,
+           std::unordered_set<std::pair<frCoord, frCoord>,
+                              boost::hash<std::pair<frCoord, frCoord>>>>
+      fixedCornerCache;
   for (auto& edges : pin->getPolygonEdges()) {
     std::vector<std::unique_ptr<gcCorner>> tmpCorners;
     auto prevEdge = edges.back().get();
@@ -821,9 +842,16 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
         }
 
       } else {
-        currCorner->setFixed(isPolygonCorner(currCorner->x(),
-                                             currCorner->y(),
-                                             net->getPolygons(true)[layerNum]));
+        auto it = fixedCornerCache.find(layerNum);
+        if (it == fixedCornerCache.end()) {
+          it = fixedCornerCache
+                   .emplace(layerNum,
+                            decltype(fixedCornerCache)::mapped_type())
+                   .first;
+          collectPolygonCorners(net->getPolygons(true)[layerNum], it->second);
+        }
+        currCorner->setFixed(
+            it->second.count({currCorner->x(), currCorner->y()}) != 0);
       }
       // currCorner->setFixed(prevEdge->isFixed() && nextEdge->isFixed());
 
