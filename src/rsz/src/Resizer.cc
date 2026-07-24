@@ -5225,6 +5225,20 @@ int Resizer::holdBufferCount() const
   return repair_hold_->holdBufferCount();
 }
 
+void Resizer::resetSearchAfterRepair()
+{
+  // Workaround for #10210; the root fix belongs in OpenSTA. repair_timing's
+  // incremental updates recycle the per-vertex Path arena, but a CRPR clock
+  // path cached in an interned ClkInfo/Tag keeps a raw prev_path_ into the
+  // freed slot, so a later CheckCrpr::findCrpr (e.g. report_metrics) walks a
+  // dangling chain and aborts. Drop the interned search state so the next
+  // analysis rebuilds clean; graph/parasitics/delays are kept, only arrivals
+  // are recomputed. Proper fix: findCrpr should re-resolve clock-path nodes
+  // from stable graph ids, not raw prev_path_. TODO(#10210): remove when fixed.
+  search_->clear();
+  sta_->updateTiming(/*full=*/true);
+}
+
 ////////////////////////////////////////////////////////////////
 bool Resizer::recoverPower(float recover_power_percent,
                            bool match_cell_footprint,
