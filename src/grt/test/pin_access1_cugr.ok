@@ -72,7 +72,7 @@ met5       Horizontal       3108          1554          50.00%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           2841
-Total via count:       180
+Total via count:       182
 Total congestion:      0
 Min resource:          1
 Bottleneck:            (5, 0, 0)

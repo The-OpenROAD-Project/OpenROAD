@@ -695,6 +695,15 @@ bool GridGraph::findODBAccessPoints(
   std::vector<odb::dbAccessPoint*> access_points;
   odb::dbNet* db_net = net->getDbNet();
 
+  // The set is keyed by cell only; union the layer intervals of pins that
+  // share a cell so the routing tree honors every pin's connection layers.
+  auto emplace_union = [&](const AccessPoint& selected_ap) {
+    auto [it, inserted] = selected_access_points.emplace(selected_ap);
+    if (!inserted) {
+      it->layers = it->layers.unionWith(selected_ap.layers);
+    }
+  };
+
   for (odb::dbBTerm* bterm : db_net->getBTerms()) {
     for (const odb::dbBPin* bpin : bterm->getBPins()) {
       const std::vector<odb::dbAccessPoint*>& bpin_pas
@@ -707,7 +716,7 @@ bool GridGraph::findODBAccessPoints(
     access_points.clear();
     if (!aps_on_grid.empty()) {
       AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
-      selected_access_points.emplace(selected_ap);
+      emplace_union(selected_ap);
       net->addBTermAccessPoint(bterm, selected_ap);
       has_aps = true;
     }
@@ -733,7 +742,7 @@ bool GridGraph::findODBAccessPoints(
         = translateAccessPointsToGrid(access_points, odb::Point(x, y));
     if (!aps_on_grid.empty()) {
       AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
-      selected_access_points.emplace(selected_ap);
+      emplace_union(selected_ap);
       net->addITermAccessPoint(iterm, selected_ap);
       access_points.clear();
       has_aps = true;
