@@ -2944,9 +2944,8 @@ void NesterovBase::initDensity1()
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& gCell : nb_gcells_) {
     updateDensityCoordiLayoutInside(gCell);
-    // nb_gcells_ is std::vector (contiguous container),
-    // so we can calculate the index with pointer arithmetic
-    size_t idx = &gCell - &nb_gcells_[0];
+
+    size_t idx = &gCell - nb_gcells_.data();
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
 
