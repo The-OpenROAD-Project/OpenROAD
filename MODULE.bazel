@@ -89,6 +89,7 @@ bazel_dep(name = "boost.iterator", version = BOOST_VERSION)
 bazel_dep(name = "boost.json", version = BOOST_VERSION)
 bazel_dep(name = "boost.lambda", version = BOOST_VERSION)
 bazel_dep(name = "boost.lexical_cast", version = BOOST_VERSION)
+bazel_dep(name = "boost.math", version = BOOST_VERSION)
 bazel_dep(name = "boost.multi_array", version = BOOST_VERSION)
 bazel_dep(name = "boost.optional", version = BOOST_VERSION)
 bazel_dep(name = "boost.phoenix", version = BOOST_VERSION)
@@ -335,6 +336,9 @@ use_repo(python, "python_3_13")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
+    extra_pip_args = [
+        "--index-url=https://pypi.org/simple",
+    ],
     hub_name = "openroad-pip",
     python_version = "3.13",
     requirements_lock = "//bazel:requirements_lock_3_13.txt",
