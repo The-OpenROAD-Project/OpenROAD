@@ -6,7 +6,7 @@ load("@rules_python//python:defs.bzl", "py_library", "py_test")
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
-load("//test:regression.bzl", "doc_check_test", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "openroad_py_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -26,7 +26,7 @@ py_library(
     imports = ["."],
 )
 
-py_test(
+openroad_py_test(
     name = "test_block",
     srcs = [
         "test_block.py",
@@ -39,7 +39,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_bterm",
     srcs = [
         "test_bterm.py",
@@ -52,7 +52,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_destroy",
     srcs = [
         "test_destroy.py",
@@ -65,7 +65,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_group",
     srcs = [
         "test_group.py",
@@ -78,7 +78,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_inst",
     srcs = [
         "test_inst.py",
@@ -91,7 +91,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_iterm",
     srcs = [
         "test_iterm.py",
@@ -104,7 +104,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_module",
     srcs = [
         "test_module.py",
@@ -117,7 +117,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_net",
     srcs = [
         "test_net.py",
@@ -130,7 +130,7 @@ py_test(
     ],
 )
 
-py_test(
+openroad_py_test(
     name = "test_wire_codec",
     srcs = [
         "test_wire_codec.py",
