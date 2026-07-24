@@ -3,9 +3,108 @@
 #include "gtest/gtest.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
+#include "odb/poly_decomp.h"
 
 namespace odb {
 namespace {
+
+// Even-odd point-in-polygon test on the polygon interior (using the sample
+// point's center).  Used to validate that the rectangle decomposition covers
+// the same area as the source polygon.
+bool pointInPolygon(const std::vector<Point>& poly, double x, double y)
+{
+  bool inside = false;
+  const int n = static_cast<int>(poly.size());
+  for (int i = 0, j = n - 1; i < n; j = i++) {
+    const double xi = poly[i].x(), yi = poly[i].y();
+    const double xj = poly[j].x(), yj = poly[j].y();
+    if (((yi > y) != (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+bool pointInRects(const std::vector<Rect>& rects, int x, int y)
+{
+  for (const Rect& r : rects) {
+    if (x >= r.xMin() && x < r.xMax() && y >= r.yMin() && y < r.yMax()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// A simple rectangle decomposes to itself.
+TEST(geom, decompose_rectangle)
+{
+  const std::vector<Point> rect = {{0, 0}, {100, 0}, {100, 50}, {0, 50}};
+  std::vector<Rect> rects;
+  decompose_polygon(rect, rects);
+
+  ASSERT_EQ(rects.size(), 1u);
+  EXPECT_EQ(rects[0], Rect(0, 0, 100, 50));
+}
+
+// A rectilinear (Manhattan) L-shape still uses the exact polygon_90 path and
+// decomposes into two rectangles, unchanged by the non-rectilinear support.
+TEST(geom, decompose_rectilinear_l_shape)
+{
+  const std::vector<Point> l_shape
+      = {{0, 0}, {20, 0}, {20, 10}, {10, 10}, {10, 20}, {0, 20}};
+  std::vector<Rect> rects;
+  decompose_polygon(l_shape, rects);
+
+  ASSERT_EQ(rects.size(), 2u);
+  EXPECT_EQ(rects[0], Rect(0, 0, 20, 10));
+  EXPECT_EQ(rects[1], Rect(0, 10, 10, 20));
+}
+
+// Regression for OpenROAD #10256: a 45-degree (octagonal) polygon, like the
+// pad geometry in sky130/gscl45 IO cells, must be decomposed into rectangles
+// that fully cover the polygon.  The previous polygon_90-only implementation
+// corrupted the shape, leaving real metal uncovered (which manifested as
+// missing obstructions/pins -> shorts) and filling empty corners.
+TEST(geom, decompose_octagon_covers_polygon)
+{
+  // gscl45nm_polygon.lef metal5 PAD octagon, scaled to integer DBU.
+  const std::vector<Point> octagon = {{1450, 542},
+                                      {542, 1450},
+                                      {-542, 1450},
+                                      {-1450, 542},
+                                      {-1450, -542},
+                                      {-542, -1450},
+                                      {542, -1450},
+                                      {1450, -542}};
+
+  std::vector<Rect> rects;
+  decompose_polygon(octagon, rects);
+
+  // The decomposition must produce geometry (the bug dropped/corrupted it).
+  ASSERT_FALSE(rects.empty());
+
+  // Every point inside the octagon must be covered by some rectangle
+  // (no under-coverage), and no point outside it should be covered
+  // (no over-coverage).
+  int undercovered = 0;
+  int overcovered = 0;
+  for (int y = -1450; y < 1450; y += 11) {
+    for (int x = -1450; x < 1450; x += 11) {
+      const bool in_poly = pointInPolygon(octagon, x + 0.5, y + 0.5);
+      const bool in_rects = pointInRects(rects, x, y);
+      if (in_poly && !in_rects) {
+        ++undercovered;
+      }
+      if (!in_poly && in_rects) {
+        ++overcovered;
+      }
+    }
+  }
+
+  EXPECT_EQ(undercovered, 0);
+  EXPECT_EQ(overcovered, 0);
+}
 
 TEST(geom, test_oct)
 {
