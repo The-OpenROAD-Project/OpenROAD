@@ -49,6 +49,30 @@ or_integration_tests(
     incremental02
 )
 
+# Long-running placement tests, the same set as ./regression-large
+# (regression_tests_large.tcl). Off by default so that bare `ctest` and
+# coverage runs are unaffected; configure with -DGPL_LARGE_TESTS=ON to
+# register them, then run e.g.:
+#   ctest -R "gpl\.(macro|medium|large)"
+option(GPL_LARGE_TESTS "Register the long-running gpl placement tests in ctest" OFF)
+if(GPL_LARGE_TESTS)
+  or_integration_tests(
+    "gpl"
+    TESTS
+      macro01
+      macro02
+      macro03
+      medium01
+      medium02
+      medium03
+      medium04
+      medium05
+      medium06
+      large01
+      large02
+  )
+endif()
+
 # On an ENABLE_GPU=ON build the gpl FFT defaults to the GPU PoissonSolver,
 # which is not bit-identical to the CPU Ooura FFT (~1e-4 relative divergence).
 # The integration tests above use exact-text golden comparison, so they must
