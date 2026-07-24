@@ -2004,18 +2004,27 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
       const Color obs_color = color.lighter();
 
-      // Clip a shape's bbox to this tile and paint it as a solid rect.  Shared
-      // by every per-layer shape below (routing wires/vias, special-net vias,
-      // master obstructions, cell-pin boxes, pin-direction boxes, fills): they
-      // all do overlaps -> intersect -> toPixels -> drawFilledRect.
-      auto draw_box_in_tile = [&](const odb::Rect& box, const Color& c) {
-        if (!box.overlaps(dbu_tile)) {
-          return;
-        }
-        drawFilledRect(image_buffer,
-                       toPixels(scale, box.intersect(dbu_tile), dbu_tile),
-                       c);
-      };
+      // Clip a shape's bbox to this tile and paint it.  Shared by every
+      // per-layer shape below (routing wires/vias, special-net vias, master
+      // obstructions, cell-pin boxes, pin-direction boxes, fills): they all do
+      // overlaps -> intersect -> toPixels -> drawFilledRect.  pattern defaults
+      // to solid; the shapes that honor the layer fill pattern (routing,
+      // special-net, pins) pass layer_pattern, while OBS, fills and markers
+      // stay solid by omitting it.
+      auto draw_box_in_tile
+          = [&](const odb::Rect& box,
+                const Color& c,
+                const FillPattern pattern = FillPattern::kSolid) {
+              if (!box.overlaps(dbu_tile)) {
+                return;
+              }
+              drawFilledRect(image_buffer,
+                             toPixels(scale, box.intersect(dbu_tile), dbu_tile),
+                             c,
+                             pattern,
+                             pat_ox,
+                             pat_oy);
+            };
 
       // Special "_modules" layer: draw filled module-colored rectangles
       const bool modules_layer
@@ -2510,18 +2519,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     }
                     odb::Rect box = geom->getBox();
                     inst->getTransform().apply(box);
-                    if (!box.overlaps(dbu_tile)) {
-                      continue;
-                    }
-                    const odb::Rect overlap = box.intersect(dbu_tile);
-                    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-                    drawFilledRect(image_buffer,
-                                   draw,
-                                   color,
-                                   layer_pattern,
-                                   pat_ox,
-                                   pat_oy);
+                    draw_box_in_tile(box, color, layer_pattern);
                   }
                 }
               }
@@ -2638,14 +2636,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             const odb::Rect& box = std::get<0>(shape);
-            if (!box.overlaps(dbu_tile)) {
-              continue;
-            }
-            const odb::Rect overlap = box.intersect(dbu_tile);
-            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-            drawFilledRect(
-                image_buffer, draw, color, layer_pattern, pat_ox, pat_oy);
+            draw_box_in_tile(box, color, layer_pattern);
           }
         }
 
@@ -2719,13 +2710,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
               odb::Rect box = vbox->getBox();
               box.moveDelta(origin.x(), origin.y());
-              if (!box.overlaps(dbu_tile)) {
-                continue;
-              }
-              const odb::Rect overlap = box.intersect(dbu_tile);
-              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-              drawFilledRect(
-                  image_buffer, draw, color, layer_pattern, pat_ox, pat_oy);
+              draw_box_in_tile(box, color, layer_pattern);
             }
           }
         }
@@ -2776,13 +2761,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 odb::Rect box = vbox->getBox();
                 box.moveDelta(origin.x(), origin.y());
-                if (!box.overlaps(dbu_tile)) {
-                  continue;
-                }
-                const odb::Rect overlap = box.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-                drawFilledRect(
-                    image_buffer, draw, color, layer_pattern, pat_ox, pat_oy);
+                draw_box_in_tile(box, color, layer_pattern);
               }
             }
           }
