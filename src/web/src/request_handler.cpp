@@ -46,6 +46,7 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sequential.hh"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
@@ -1193,9 +1194,13 @@ static const char* ioTypeToDirection(odb::dbIoType io_type)
 struct GateClass
 {
   // "and"/"nand"/"or"/"nor"/"xor"/"xnor"/"not"/"buf" for simple gates,
-  // "aoi"/"oai" for compound and/or-invert gates, or "" when the cell is not a
-  // recognised combinational gate.
+  // "aoi"/"oai" for compound and/or-invert gates,
+  // "dff"/"dffr"/"dffs" for supported registers, or "" when the cell is not a
+  // recognised schematic gate.
   std::string kind;
+  // Symbol port id -> real Liberty/dbMTerm pin name, used by the viewer to route
+  // skin symbols while keeping the design's original pin labels.
+  std::map<std::string, std::string> ports;
   // For "aoi"/"oai" only: the input pin names of each first-level term (e.g.
   // AOI21 -> {{"A"}, {"B1", "B2"}}).  A one-pin term is a literal fed straight
   // into the second-level gate; multi-pin terms become an AND (aoi) or OR (oai)
@@ -1269,6 +1274,225 @@ static std::vector<std::vector<std::string>> classifyAoiOai(
   return groups;
 }
 
+// Check that every connected signal pin is represented by the chosen symbol.
+static bool usesExactlyIterms(const std::vector<odb::dbITerm*>& connected,
+                              const std::vector<odb::dbITerm*>& symbol_iterms)
+{
+  if (connected.size() != symbol_iterms.size()) {
+    return false;
+  }
+
+  for (odb::dbITerm* iterm : connected) {
+    if (std::find(symbol_iterms.begin(), symbol_iterms.end(), iterm)
+        == symbol_iterms.end()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Return the Liberty port for a direct port expression.
+static sta::LibertyPort* simplePortExpr(const sta::FuncExpr* expr)
+{
+  if (expr != nullptr && expr->op() == sta::FuncExpr::Op::port) {
+    return expr->port();
+  }
+  return nullptr;
+}
+
+// Return the Liberty port for an active-low expression, e.g. !RN.
+static sta::LibertyPort* activeLowPortExpr(const sta::FuncExpr* expr)
+{
+  if (expr != nullptr && expr->op() == sta::FuncExpr::Op::not_) {
+    return simplePortExpr(expr->left());
+  }
+  return nullptr;
+}
+
+// Find the connected instance terminal matching a Liberty port.
+static odb::dbITerm* findConnectedItermForPort(
+    const std::vector<odb::dbITerm*>& iterms,
+    const sta::LibertyPort* port,
+    sta::dbNetwork* network)
+{
+  if (port == nullptr) {
+    return nullptr;
+  }
+
+  for (odb::dbITerm* iterm : iterms) {
+    if (network->libertyPort(network->dbToSta(iterm)) == port) {
+      return iterm;
+    }
+  }
+  return nullptr;
+}
+
+// Find the register definition referenced by this output function.
+static sta::Sequential* sequentialForOutputPort(sta::LibertyCell* cell,
+                                                sta::LibertyPort* output_port)
+{
+  sta::FuncExpr* function
+      = output_port != nullptr ? output_port->function() : nullptr;
+  if (function == nullptr) {
+    return nullptr;
+  }
+
+  for (sta::LibertyPort* function_port : function->ports()) {
+    sta::Sequential* sequential = cell->outputPortSequential(function_port);
+    if (sequential != nullptr && sequential->isRegister()) {
+      return sequential;
+    }
+  }
+  return nullptr;
+}
+
+// Check whether an output function references the Q or QN state.
+static bool outputPortReferencesState(sta::LibertyPort* output_port,
+                                      const sta::LibertyPort* state_port)
+{
+  const sta::FuncExpr* function
+      = output_port != nullptr ? output_port->function() : nullptr;
+  return state_port != nullptr && function != nullptr
+         && function->hasPort(state_port);
+}
+
+// Classify DFF-like sequentials that match OpenROAD's register symbols.
+// Unsupported cells fall back to generic boxes.
+static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
+{
+  GateClass result;
+  if (network == nullptr) {
+    return result;
+  }
+
+  sta::LibertyCell* cell = network->libertyCell(inst);
+  if (cell == nullptr || !cell->hasSequentials()
+      || cell->sequentials().size() != 1) {
+    return result;
+  }
+
+  // Ignore supplies and unconnected pins; only visible signal wiring matters.
+  std::vector<odb::dbITerm*> connected_inputs;
+  std::vector<odb::dbITerm*> connected_outputs;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getSigType().isSupply() || iterm->getNet() == nullptr) {
+      continue;
+    }
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      connected_inputs.push_back(iterm);
+    } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      connected_outputs.push_back(iterm);
+    }
+  }
+
+  if (connected_inputs.empty() || connected_outputs.empty()) {
+    return result;
+  }
+
+  // All connected outputs must refer to the same Liberty register definition.
+  sta::Sequential* sequential = nullptr;
+  for (odb::dbITerm* output_iterm : connected_outputs) {
+    sta::LibertyPort* output_port
+        = network->libertyPort(network->dbToSta(output_iterm));
+    sta::Sequential* output_seq = sequentialForOutputPort(cell, output_port);
+    if (output_seq == nullptr) {
+      continue;
+    }
+    if (sequential != nullptr && sequential != output_seq) {
+      return {};
+    }
+    sequential = output_seq;
+  }
+
+  if (sequential == nullptr) {
+    return {};
+  }
+
+  // Require direct data and clock ports.
+  odb::dbITerm* data = findConnectedItermForPort(
+      connected_inputs, simplePortExpr(sequential->data()), network);
+  odb::dbITerm* clock = findConnectedItermForPort(
+      connected_inputs, simplePortExpr(sequential->clock()), network);
+  if (data == nullptr || clock == nullptr) {
+    return {};
+  }
+
+  // Support one active-low async control: reset or set, not both.
+  sta::LibertyPort* clear_port = activeLowPortExpr(sequential->clear());
+  sta::LibertyPort* preset_port = activeLowPortExpr(sequential->preset());
+  odb::dbITerm* clear
+      = findConnectedItermForPort(connected_inputs, clear_port, network);
+  odb::dbITerm* preset
+      = findConnectedItermForPort(connected_inputs, preset_port, network);
+  if ((sequential->clear() != nullptr
+       && (clear_port == nullptr || clear == nullptr))
+      || (sequential->preset() != nullptr
+          && (preset_port == nullptr || preset == nullptr))) {
+    return {};
+  }
+  if (clear != nullptr && preset != nullptr) {
+    return {};
+  }
+
+  std::vector<odb::dbITerm*> symbol_inputs{data, clock};
+  if (clear != nullptr) {
+    symbol_inputs.push_back(clear);
+  }
+  if (preset != nullptr) {
+    symbol_inputs.push_back(preset);
+  }
+  if (!usesExactlyIterms(connected_inputs, symbol_inputs)) {
+    return {};
+  }
+
+  // Map the connected outputs to Q/QN.
+  odb::dbITerm* output = nullptr;
+  odb::dbITerm* output_inv = nullptr;
+  for (odb::dbITerm* output_iterm : connected_outputs) {
+    sta::LibertyPort* output_port
+        = network->libertyPort(network->dbToSta(output_iterm));
+    if (outputPortReferencesState(output_port, sequential->output())) {
+      output = output_iterm;
+    } else if (outputPortReferencesState(output_port,
+                                         sequential->outputInv())) {
+      output_inv = output_iterm;
+    }
+  }
+  if (output == nullptr && output_inv == nullptr) {
+    return {};
+  }
+
+  std::vector<odb::dbITerm*> symbol_outputs;
+  if (output != nullptr) {
+    symbol_outputs.push_back(output);
+  }
+  if (output_inv != nullptr) {
+    symbol_outputs.push_back(output_inv);
+  }
+  if (!usesExactlyIterms(connected_outputs, symbol_outputs)) {
+    return {};
+  }
+
+  result.kind
+      = clear != nullptr ? "dffr" : (preset != nullptr ? "dffs" : "dff");
+  result.ports["D"] = data->getMTerm()->getName();
+  result.ports["CK"] = clock->getMTerm()->getName();
+  if (clear != nullptr) {
+    result.ports["RN"] = clear->getMTerm()->getName();
+  }
+  if (preset != nullptr) {
+    result.ports["SN"] = preset->getMTerm()->getName();
+  }
+  if (output != nullptr) {
+    result.ports["Q"] = output->getMTerm()->getName();
+  }
+  if (output_inv != nullptr) {
+    result.ports["QN"] = output_inv->getMTerm()->getName();
+  }
+  return result;
+}
+
 // Classify a leaf instance into a schematic gate symbol using its Liberty
 // function, so the web schematic viewer can draw a recognisable gate outline
 // (AND/OR/XOR/inverter/buffer, plus compound AOI/OAI) around the cell.
@@ -1337,6 +1561,8 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
   // Single input: buffer (Y = A) or inverter (Y = !A).
   if (func->op() == sta::FuncExpr::Op::port) {
     result.kind = inverting ? "not" : "buf";
+    result.ports["A"] = func->port()->name();
+    result.ports["Y"] = out_port->name();
     return result;
   }
 
@@ -1359,14 +1585,19 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
       switch (top) {
         case sta::FuncExpr::Op::and_:
           result.kind = inverting ? "nand" : "and";
-          return result;
+          break;
         case sta::FuncExpr::Op::or_:
           result.kind = inverting ? "nor" : "or";
-          return result;
+          break;
         default:  // xor_
           result.kind = inverting ? "xnor" : "xor";
-          return result;
+          break;
       }
+      for (size_t i = 0; i < operands.size(); ++i) {
+        result.ports["A" + std::to_string(i + 1)] = operands[i]->port()->name();
+      }
+      result.ports["Y"] = out_port->name();
+      return result;
     }
   }
 
@@ -1380,6 +1611,7 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
     if (!terms.empty()) {
       result.kind = (func->op() == sta::FuncExpr::Op::or_) ? "aoi" : "oai";
       result.terms = std::move(terms);
+      result.ports["Y"] = out_port->name();
     }
   }
   return result;
@@ -1404,9 +1636,19 @@ static void emitSchematicCell(boost::json::object& cells,
   cell["attributes"] = boost::json::object{};
   cell["parameters"] = boost::json::object{};
 
-  const GateClass gate = classifyGate(network, inst);
+  GateClass gate = classifyRegister(network, inst);
+  if (gate.kind.empty()) {
+    gate = classifyGate(network, inst);
+  }
   if (!gate.kind.empty()) {
     cell["gate_kind"] = gate.kind;
+    if (!gate.ports.empty()) {
+      boost::json::object gate_ports;
+      for (const auto& [symbol_port, real_port] : gate.ports) {
+        gate_ports[symbol_port] = real_port;
+      }
+      cell["gate_ports"] = std::move(gate_ports);
+    }
     if (!gate.terms.empty()) {
       boost::json::array terms;
       for (const std::vector<std::string>& group : gate.terms) {

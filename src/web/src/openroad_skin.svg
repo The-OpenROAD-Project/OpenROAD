@@ -171,19 +171,60 @@ path, rect, circle, polygon {
     <g s:x="24" s:y="10" s:pid="Y"/>
   </g>
 
-  <g s:type="dff" transform="translate(350,150)" s:width="30" s:height="40">
+  <!-- dff -->
+  <g s:type="dff" transform="translate(350,150)" s:width="46" s:height="44">
+    <s:alias val="dff"/>
     <s:alias val="$dff"/>
     <s:alias val="$_DFF_"/>
     <s:alias val="$_DFF_P_"/>
-    <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">dff</text>
+    <text x="23" y="-4" class="nodelabel $cell_id" s:attribute="ref">dff</text>
 
-    <rect width="30" height="40" x="0" y="0" class="$cell_id"/>
-    <path d="M0,35 L5,30 L0,25" class="$cell_id"/>
+    <rect width="46" height="44" x="0" y="0" class="$cell_id"/>
+    <path d="M0,25 L7,30 L0,35 Z" class="$cell_id"
+          style="fill:none;stroke-linejoin:miter;"/>
 
-    <g s:x="30" s:y="10" s:pid="Q"/>
+    <g s:x="0" s:y="12" s:pid="D"/>
     <g s:x="0" s:y="30" s:pid="CLK"/>
     <g s:x="0" s:y="30" s:pid="C"/>
-    <g s:x="0" s:y="10" s:pid="D"/>
+    <g s:x="46" s:y="12" s:pid="Q"/>
+    <g s:x="46" s:y="32" s:pid="QN"/>
+  </g>
+
+  <!-- Reset/set DFF variants are not in upstream netlistsvg's skin. -->
+  <g s:type="dffr" transform="translate(480,150)" s:width="50" s:height="54">
+    <s:alias val="dffr"/>
+    <s:alias val="$dffr"/>
+    <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffr</text>
+
+    <rect width="50" height="54" x="0" y="0" class="$cell_id"/>
+    <path d="M0,23 L7,28 L0,33 Z" class="$cell_id"
+          style="fill:none;stroke-linejoin:miter;"/>
+    <circle cx="3" cy="44" r="3" class="$cell_id"/>
+
+    <g s:x="0" s:y="12" s:pid="D"/>
+    <g s:x="0" s:y="28" s:pid="CLK"/>
+    <g s:x="0" s:y="28" s:pid="C"/>
+    <g s:x="0" s:y="44" s:pid="RN"/>
+    <g s:x="50" s:y="12" s:pid="Q"/>
+    <g s:x="50" s:y="34" s:pid="QN"/>
+  </g>
+
+  <g s:type="dffs" transform="translate(550,150)" s:width="50" s:height="54">
+    <s:alias val="dffs"/>
+    <s:alias val="$dffs"/>
+    <text x="25" y="-4" class="nodelabel $cell_id" s:attribute="ref">dffs</text>
+
+    <rect width="50" height="54" x="0" y="0" class="$cell_id"/>
+    <path d="M0,23 L7,28 L0,33 Z" class="$cell_id"
+          style="fill:none;stroke-linejoin:miter;"/>
+    <circle cx="3" cy="44" r="3" class="$cell_id"/>
+
+    <g s:x="0" s:y="12" s:pid="D"/>
+    <g s:x="0" s:y="28" s:pid="CLK"/>
+    <g s:x="0" s:y="28" s:pid="C"/>
+    <g s:x="0" s:y="44" s:pid="SN"/>
+    <g s:x="50" s:y="12" s:pid="Q"/>
+    <g s:x="50" s:y="34" s:pid="QN"/>
   </g>
 
   <g s:type="inputExt" transform="translate(50,250)" s:width="30" s:height="20">

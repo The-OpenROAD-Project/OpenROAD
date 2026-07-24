@@ -60,7 +60,8 @@ js_test(
 
 js_test(
     name = "schematic_widget_test",
-    data = JS_FILES,
+    # Imports setup-dom.js, so it needs jsdom in addition to the web JS sources.
+    data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
     no_copy_to_bin = JS_FILES,
 )
