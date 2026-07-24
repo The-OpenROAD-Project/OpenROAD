@@ -1666,22 +1666,85 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
 
   if (preserved_tree && removed_tree) {
     if (connection.empty()) {
-      preserved_tree->addChild(removed_tree);
+      // Find intersection node
+      std::shared_ptr<GRTreeNode> node_a = nullptr;
+      std::shared_ptr<GRTreeNode> node_b = nullptr;
+      GRTreeNode::preorder(
+          preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n1) {
+            if (node_a) {
+              return;
+            }
+            GRTreeNode::preorder(
+                removed_tree, [&](const std::shared_ptr<GRTreeNode>& n2) {
+                  if (node_a) {
+                    return;
+                  }
+                  if (n1->getLayerIdx() == n2->getLayerIdx()
+                      && n1->x() == n2->x() && n1->y() == n2->y()) {
+                    node_a = n1;
+                    node_b = n2;
+                  }
+                });
+          });
+      if (node_a && node_b) {
+        // Reroot removed_tree at node_b
+        std::function<bool(std::shared_ptr<GRTreeNode>,
+                           std::vector<std::shared_ptr<GRTreeNode>>&)>
+            find_path;
+        find_path
+            = [&](std::shared_ptr<GRTreeNode> curr,
+                  std::vector<std::shared_ptr<GRTreeNode>>& path) -> bool {
+          path.push_back(curr);
+          if (curr == node_b) {
+            return true;
+          }
+          for (auto& child : curr->getChildren()) {
+            if (find_path(child, path)) {
+              return true;
+            }
+          }
+          path.pop_back();
+          return false;
+        };
+        std::vector<std::shared_ptr<GRTreeNode>> path;
+        if (find_path(removed_tree, path)) {
+          for (size_t i = 0; i < path.size() - 1; ++i) {
+            path[i]->removeChild(path[i + 1]);
+            path[i + 1]->addChild(path[i]);
+          }
+        }
+        node_a->addChild(node_b);
+      } else {
+        preserved_tree->addChild(removed_tree);
+      }
     } else {
       auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
         const int min_coord = grid_graph_->getGridline(is_x ? 0 : 1, 0);
         return (dbu_coord - min_coord) / design_->getGridlineSize();
       };
 
-      std::shared_ptr<GRTreeNode> node_a = nullptr;
-      const int target_layer_a = connection.front().init_layer - 1;
-      const int target_x_a = dbu_to_tile(connection.front().init_x, true);
-      const int target_y_a = dbu_to_tile(connection.front().init_y, false);
+      // 1. Build adjacency list of connection segments
+      using Coord = std::tuple<int, int, int>;  // layer, x, y
+      std::map<Coord, std::vector<Coord>> adj;
+      for (const auto& seg : connection) {
+        Coord u(seg.init_layer - 1,
+                dbu_to_tile(seg.init_x, true),
+                dbu_to_tile(seg.init_y, false));
+        Coord v(seg.final_layer - 1,
+                dbu_to_tile(seg.final_x, true),
+                dbu_to_tile(seg.final_y, false));
+        if (u != v) {
+          adj[u].push_back(v);
+          adj[v].push_back(u);
+        }
+      }
 
+      // 2. Find intersection between preserved_tree and connection
+      std::shared_ptr<GRTreeNode> node_a = nullptr;
       GRTreeNode::preorder(
           preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-            if (!node_a && n->getLayerIdx() == target_layer_a
-                && n->x() == target_x_a && n->y() == target_y_a) {
+            if (!node_a
+                && adj.find({n->getLayerIdx(), n->x(), n->y()}) != adj.end()) {
               node_a = n;
             }
           });
@@ -1689,15 +1752,12 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
         node_a = preserved_tree;
       }
 
+      // 3. Find intersection between removed_tree and connection
       std::shared_ptr<GRTreeNode> node_b = nullptr;
-      const int target_layer_b = connection.back().final_layer - 1;
-      const int target_x_b = dbu_to_tile(connection.back().final_x, true);
-      const int target_y_b = dbu_to_tile(connection.back().final_y, false);
-
       GRTreeNode::preorder(
           removed_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-            if (!node_b && n->getLayerIdx() == target_layer_b
-                && n->x() == target_x_b && n->y() == target_y_b) {
+            if (!node_b
+                && adj.find({n->getLayerIdx(), n->x(), n->y()}) != adj.end()) {
               node_b = n;
             }
           });
@@ -1705,7 +1765,7 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
         node_b = removed_tree;
       }
 
-      // Reroot removed_tree at node_b
+      // 4. Reroot removed_tree at node_b
       std::function<bool(std::shared_ptr<GRTreeNode>,
                          std::vector<std::shared_ptr<GRTreeNode>>&)>
           find_path;
@@ -1723,52 +1783,56 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
         path.pop_back();
         return false;
       };
-
       std::vector<std::shared_ptr<GRTreeNode>> path;
       if (find_path(removed_tree, path)) {
         for (size_t i = 0; i < path.size() - 1; ++i) {
-          auto parent = path[i];
-          auto child = path[i + 1];
-          parent->removeChild(child);
-          child->addChild(parent);
-        }
-        // The removed tree is now physically rerooted at node_b, but the GRNet
-        // might still hold the old root. For ownership purposes during merge,
-        // it's fine since we attach node_b to preserved_tree, keeping
-        // everything alive.
-      }
-
-      // Build chain of nodes for connection segments and commit their
-      // demand to the GridGraph so that congestion accounting reflects
-      // the stitched edges immediately.  We construct a temporary
-      // mini-tree rooted at node_a, add its usage, then build the
-      // real chain that gets embedded into the preserved tree.
-      auto conn_root = std::make_shared<GRTreeNode>(
-          target_layer_a, target_x_a, target_y_a);
-      {
-        auto conn_curr = conn_root;
-        for (const auto& seg : connection) {
-          const int f_layer = seg.final_layer - 1;
-          const int f_x = dbu_to_tile(seg.final_x, true);
-          const int f_y = dbu_to_tile(seg.final_y, false);
-          conn_curr->addChild(std::make_shared<GRTreeNode>(f_layer, f_x, f_y));
-          conn_curr = conn_curr->getChildren().back();
+          path[i]->removeChild(path[i + 1]);
+          path[i + 1]->addChild(path[i]);
         }
       }
-      grid_graph_->addTreeUsage(conn_root, preserved_gr->getNdrCosts());
 
-      std::shared_ptr<GRTreeNode> curr = node_a;
-      for (const auto& seg : connection) {
-        const int f_layer = seg.final_layer - 1;
-        const int f_x = dbu_to_tile(seg.final_x, true);
-        const int f_y = dbu_to_tile(seg.final_y, false);
-        auto next = std::make_shared<GRTreeNode>(f_layer, f_x, f_y);
-        curr->addChild(next);
-        curr = next;
-      }
+      // 5. DFS to build connection tree and commit demand
+      std::set<Coord> visited;
+      const auto& ndr = preserved_gr->getNdrCosts();
+      std::function<void(Coord, std::shared_ptr<GRTreeNode>)> build_tree;
+      build_tree = [&](Coord curr, std::shared_ptr<GRTreeNode> parent_node) {
+        visited.insert(curr);
+        if (curr
+            == std::make_tuple(
+                node_b->getLayerIdx(), node_b->x(), node_b->y())) {
+          if (parent_node != node_b) {
+            parent_node->addChild(node_b);
+          }
+        }
+        for (const auto& next : adj[curr]) {
+          if (visited.find(next) == visited.end()) {
+            std::shared_ptr<GRTreeNode> child_node;
+            if (next
+                == std::make_tuple(
+                    node_b->getLayerIdx(), node_b->x(), node_b->y())) {
+              child_node = node_b;
+            } else {
+              child_node = std::make_shared<GRTreeNode>(
+                  std::get<0>(next), std::get<1>(next), std::get<2>(next));
+            }
+            parent_node->addChild(child_node);
 
-      // Attach the rerooted removed_tree to the end of the connection chain
-      curr->addChild(node_b);
+            // Commit grid usage if it's a wire (same layer)
+            if (std::get<0>(curr) == std::get<0>(next)) {
+              auto temp = std::make_shared<GRTreeNode>(
+                  std::get<0>(curr), std::get<1>(curr), std::get<2>(curr));
+              temp->addChild(std::make_shared<GRTreeNode>(
+                  std::get<0>(next), std::get<1>(next), std::get<2>(next)));
+              grid_graph_->addTreeUsage(temp, ndr);
+            }
+
+            build_tree(next, child_node);
+          }
+        }
+      };
+
+      Coord start_coord(node_a->getLayerIdx(), node_a->x(), node_a->y());
+      build_tree(start_coord, node_a);
     }
   }
 
