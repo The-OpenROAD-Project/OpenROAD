@@ -1,0 +1,35 @@
+# BufferToInvertersMove fixture: a single buffer drives a long wire to a far flop.
+# Splitting that wire with two cascaded inverters at 1/3 and 2/3 of the
+# driver-to-load span shortens each segment enough that the cell-delay cost
+# of the extra inverter is paid back many times over in wire-delay savings.
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN reg1 ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 100000 3000000 ) ;
+
+COMPONENTS 3 ;
+- r1 DFF_X1 + PLACED   ( 50000 2900000 ) N ;
+- u1 BUF_X4 + PLACED   ( 50000 2850000 ) N ;
+- r2 DFF_X1 + PLACED   ( 50000  100000 ) N ;
+END COMPONENTS
+
+PINS 1 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 10000 3333 ) N + LAYER metal2 ( 0 0 ) ( 0 0 ) ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 3 ;
+- clk ( PIN clk ) ( r1 CK ) ( r2 CK ) + USE SIGNAL ;
+- r1q ( r1 Q ) ( u1 A ) + USE SIGNAL ;
+- u1z ( u1 Z ) ( r2 D ) + USE SIGNAL ;
+END NETS
+
+END DESIGN
