@@ -1011,6 +1011,7 @@ export function populateDisplayControls(app, visibility, selectability,
             { key: 'inst_pin_names', label: 'Pin Names', disabledBy: 'inst_pins' },
             { key: 'blockages', label: 'Blockages' },
         ]},
+        { key: 'detailed', label: 'Detailed view' },
         { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
     ]});

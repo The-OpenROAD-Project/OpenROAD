@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 366 components and 1951 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+max slew
+
+Pin                                     Limit     Slew    Slack
+---------------------------------------------------------------
+_396_/A                               320.000 1844.544 -1524.544 (VIOLATED)
+
+max capacitance
+
+Pin                                     Limit      Cap    Slack
+---------------------------------------------------------------
+place86/Y                              92.160  152.951  -60.791 (VIOLATED)
+
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       419
+    final |   +115.5% |       4 |     215 |           132 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 132 slew violations.
+[INFO RSZ-0036] Found 58 capacitance violations.
+[INFO RSZ-0039] Resized 4 instances.
+[INFO RSZ-0044] Rerouted 102 nets.
+[INFO RSZ-0038] Inserted 215 buffers in 132 nets.
+max slew
+
+Pin                                     Limit     Slew    Slack
+---------------------------------------------------------------
+_548_/B                               320.000  317.570    2.430 (MET)
+
+max capacitance
+
+Pin                                     Limit      Cap    Slack
+---------------------------------------------------------------
+_575_/CON                              23.040   17.020    6.020 (MET)
+

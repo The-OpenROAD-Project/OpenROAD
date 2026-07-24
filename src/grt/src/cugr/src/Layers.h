@@ -21,6 +21,9 @@ class MetalLayer
   int getDirection() const { return direction_; }
   int getWidth() const { return width_; }
   int getPitch() const { return pitch_; }
+  // Min spacing to a neighbour on this layer; used for the via-demand model.
+  int getSpacing() const { return spacing_; }
+  odb::dbTechLayer* getTechLayer() const { return tech_layer_; }
   // Sheet resistance (ohms/square) of this routing layer.
   double getResistance() const { return resistance_; }
   // Per-cut resistance (ohms) of the via layer just above this routing
@@ -39,11 +42,13 @@ class MetalLayer
   void setAdjustment(float adjustment) { adjustment_ = adjustment; }
 
  private:
+  odb::dbTechLayer* tech_layer_ = nullptr;
   std::string name_;
   int index_;
   int direction_;
   int width_;
   int min_width_;
+  int spacing_ = 0;
   double resistance_ = 0.0;
   double via_resistance_ = 0.0;
 

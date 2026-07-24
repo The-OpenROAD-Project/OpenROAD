@@ -29,7 +29,11 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
+        # TODO: we use headers provided by :cts, but that reveals cyclic dep
+        #":cts",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/utl",
         "@boost.container_hash",
         "@boost.unordered",
     ],
@@ -39,7 +43,6 @@ cc_library(
     name = "cts",
     srcs = [
         "src/Clock.cpp",
-        "src/Clock.h",
         "src/Clustering.cpp",
         "src/CtsOptions.cpp",
         "src/HTreeBuilder.cpp",

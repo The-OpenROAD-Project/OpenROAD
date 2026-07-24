@@ -72,9 +72,11 @@ or_integration_tests(
     read_segments_error3
     read_segments_error4
     read_segments_error5
+    read_segments_error6
     region_adjustment
     remove_buffers1
     remove_buffers2
+    remove_buffers3
     repair_antennas1
     repair_antennas2
     repair_antennas3
@@ -115,6 +117,9 @@ or_integration_tests(
     tracks3
     unplaced_inst
     upper_layer_net
+    via_geometry_cugr
+    via_multirect_cugr
+    via_priority_cugr
     write_segments1
     write_segments2
   PASSFAIL_TESTS

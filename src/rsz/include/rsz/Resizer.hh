@@ -427,8 +427,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
       bool match_cell_footprint,
+      bool reroute,
       bool verbose);
   int repairDesignBufferCount() const;
+  // Try to reroute the net driven by drvr_pin to a lower-resistance layer.
+  // Returns true if the reroute was accepted (net marked dirty for incremental
+  // global re-routing and parasitics invalidated).  Returns false if the net
+  // was already rerouted, doesn't exist, or the expected resistance reduction
+  // is below the threshold.
+  bool tryRerouteNet(const sta::Pin* drvr_pin);
   // for debugging
   void repairNet(sta::Net* net,
                  double max_wire_length,  // meters
@@ -552,7 +559,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
   // Compute slew RC factor based on library slew thresholds
-  float getSlewRCFactor() const;
+  float getSlewRCFactor() const { return slew_shape_factor_; }
 
   sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
                                   float load,
@@ -760,6 +767,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      // Return values.
                      sta::Delay& delay,
                      sta::Slew& slew);
+  float getRerouteResistanceReduction();
 
  protected:
   void makeWireParasitic(sta::Net* net,
@@ -931,6 +939,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isRegOutput(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
 
+  void computeSlewShapeFactor();
+  ////////////////////////////////////////////////////////////////
+
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
@@ -1048,8 +1059,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   std::shared_ptr<ResizerObserver> graphics_;
 
+  // Reroute
+  const float kMinResistanceReduction = 0.50f;
+
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
+
+  // For Elmore slew modeling, see computeSlewShapeFactor()
+  float slew_shape_factor_ = 0.0;
 
   friend class BufferedNet;
   friend class GateCloner;

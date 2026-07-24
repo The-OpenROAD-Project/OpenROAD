@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
+#include <numbers>
 #include <set>
 #include <string>
 #include <string_view>
@@ -14,6 +18,7 @@
 #include "boost/json/serialize.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -28,6 +33,206 @@ namespace {
 boost::json::object parseObj(std::string_view json)
 {
   return boost::json::parse(json).as_object();
+}
+
+// Fixed tile dimensions produced by TileGenerator (kTileSizeInPixel).
+constexpr int kTileSize = 256;
+// Square die side used by the tile-seam tests (DBU; 45 um at 2000 dbu/um).
+constexpr int kSeamDieSide = 90000;
+
+enum class Axis
+{
+  kColumn,
+  kRow
+};
+
+// Minimal concrete heat map with a single populated bin, used to exercise
+// number rendering across tile boundaries (issue #10925).  getBounds() returns
+// the block bbox passed by the caller (which the tests align to a tile seam);
+// the tile grid uses TileGenerator::getBounds(), which adds a symmetric
+// pin-label margin, so the seam stays at the bbox center where the bin sits.
+class BoundaryHeatMap : public gui::HeatMapDataSource
+{
+ public:
+  BoundaryHeatMap(utl::Logger* logger,
+                  const odb::Rect& bounds,
+                  const odb::Rect& cell)
+      : gui::HeatMapDataSource(logger,
+                               "Boundary HM",
+                               "BoundaryHM",
+                               "BoundaryHM"),
+        bounds_(bounds),
+        cell_(cell)
+  {
+  }
+
+  odb::Rect getBounds() const override { return bounds_; }
+
+  // The label text is hardcoded here, so the numeric bin value is arbitrary --
+  // it only needs to mark the bin populated (see populateMap).
+  std::string formatValue(double /*value*/, bool /*legend*/) const override
+  {
+    return "29.89";
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    // A sub-rectangle strictly inside the target bin, so addToMap (which marks
+    // every bin returned by getMapView, including zero-overlap neighbors)
+    // populates only that single bin.  The value is arbitrary (see
+    // formatValue).
+    addToMap(odb::Rect(cell_.xMin() + 1,
+                       cell_.yMin() + 1,
+                       cell_.xMax() - 1,
+                       cell_.yMax() - 1),
+             1.0);
+    return true;
+  }
+
+  void combineMapData(bool /*base_has_value*/,
+                      double& base,
+                      double new_data,
+                      double /*data_area*/,
+                      double /*intersection_area*/,
+                      double /*rect_area*/) override
+  {
+    base = new_data;
+  }
+
+ private:
+  odb::Rect bounds_;
+  odb::Rect cell_;
+};
+
+// Return the set of columns (Axis::kColumn) or rows (Axis::kRow) where two RGBA
+// tile buffers differ.  Toggling "show numbers" leaves the bin fill untouched,
+// so the diff isolates the rendered text pixels regardless of the fill color.
+std::set<int> textPixels(const std::vector<unsigned char>& a,
+                         const std::vector<unsigned char>& b,
+                         Axis axis)
+{
+  EXPECT_EQ(a.size(), b.size());
+  std::set<int> result;
+  const size_t num_pixels = std::min(a.size(), b.size()) / 4;
+  for (size_t p = 0; p < num_pixels; ++p) {
+    const size_t i = p * 4;
+    if (std::memcmp(&a[i], &b[i], 4) != 0) {
+      result.insert(axis == Axis::kColumn ? static_cast<int>(p % kTileSize)
+                                          : static_cast<int>(p / kTileSize));
+    }
+  }
+  return result;
+}
+
+constexpr double kPi = std::numbers::pi;
+
+// Fraction of AC energy that sits in the moiré "beat band" (spatial periods
+// 16..128 px), computed from the per-column and per-row alpha profiles (max of
+// the two, so vertical/horizontal/diagonal beats are all caught).  A real beat
+// concentrates energy at long periods → high fraction; a finely-resolved grid
+// concentrates at short periods → low fraction.  This is the metric that
+// distinguishes aliasing from legitimate detail (block-CV alone cannot).
+double beatBandFraction1D(const std::vector<double>& sig)
+{
+  const int n = static_cast<int>(sig.size());
+  if (n < 4) {
+    return 0.0;
+  }
+  double mean = 0.0;
+  for (const double v : sig) {
+    mean += v;
+  }
+  mean /= n;
+  double total = 0.0;
+  double band = 0.0;
+  for (int k = 1; k <= n / 2; ++k) {
+    double re = 0.0;
+    double im = 0.0;
+    for (int x = 0; x < n; ++x) {
+      const double ang = -2.0 * kPi * k * x / n;
+      const double centered = sig[x] - mean;
+      re += centered * std::cos(ang);
+      im += centered * std::sin(ang);
+    }
+    const double power = re * re + im * im;
+    total += power;
+    const double period = static_cast<double>(n) / k;
+    if (period >= 16.0 && period <= 128.0) {
+      band += power;
+    }
+  }
+  return total > 0.0 ? band / total : 0.0;
+}
+
+// Beat-band fraction measured over a sub-window of the tile.  Measuring a
+// central macro-uniform window (rather than the whole tile) avoids the
+// low-frequency envelope from the array's outer edge / surrounding empty
+// margin, which would otherwise masquerade as a beat.  (x0,y0)-(x1,y1) half-
+// open in pixels.
+double beatFracWindow(const std::vector<unsigned char>& rgba,
+                      int w,
+                      int x0,
+                      int y0,
+                      int x1,
+                      int y1)
+{
+  const int ww = x1 - x0;
+  const int hh = y1 - y0;
+  std::vector<double> cols(ww, 0.0);
+  std::vector<double> rows(hh, 0.0);
+  for (int y = y0; y < y1; ++y) {
+    for (int x = x0; x < x1; ++x) {
+      const double a = rgba[(static_cast<size_t>(y) * w + x) * 4 + 3];
+      cols[x - x0] += a;
+      rows[y - y0] += a;
+    }
+  }
+  for (double& v : cols) {
+    v /= hh;
+  }
+  for (double& v : rows) {
+    v /= ww;
+  }
+  return std::max(beatBandFraction1D(cols), beatBandFraction1D(rows));
+}
+
+// Coefficient of variation of per-block mean alpha.  High when the image has
+// structure at the block scale (a resolved grid); ~0 for a uniform tint.
+double blockAlphaCV(const std::vector<unsigned char>& rgba,
+                    int w,
+                    int h,
+                    int block)
+{
+  std::vector<double> means;
+  for (int by = 0; by + block <= h; by += block) {
+    for (int bx = 0; bx + block <= w; bx += block) {
+      double s = 0.0;
+      for (int y = by; y < by + block; ++y) {
+        for (int x = bx; x < bx + block; ++x) {
+          s += rgba[(static_cast<size_t>(y) * w + x) * 4 + 3];
+        }
+      }
+      means.push_back(s / (block * block));
+    }
+  }
+  if (means.empty()) {
+    return 0.0;
+  }
+  double mean = 0.0;
+  for (const double v : means) {
+    mean += v;
+  }
+  mean /= means.size();
+  if (mean <= 0.0) {
+    return 0.0;
+  }
+  double var = 0.0;
+  for (const double v : means) {
+    var += (v - mean) * (v - mean);
+  }
+  var /= means.size();
+  return std::sqrt(var) / mean;
 }
 
 class TileGeneratorTest : public tst::Nangate45Fixture
@@ -122,7 +327,59 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 
+  // Build a square design whose z=1 tile seam is centered on the die, attach a
+  // single-bin heat map (bin grid over the block bbox) whose populated bin is
+  // `cell`, and stash it in heatmap_.  Invoke via ASSERT_NO_FATAL_FAILURE so a
+  // geometry-assert failure aborts the caller.
+  void buildSeamDesign(const odb::Rect& cell)
+  {
+    odb::dbMaster* master = lib_->findMaster("BUF_X16");
+    ASSERT_NE(master, nullptr);
+    const int w = master->getWidth();
+    const int h = master->getHeight();
+    block_->setDieArea(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide));
+    placeInst("BUF_X16", "buf_ll", 0, 0);
+    placeInst("BUF_X16", "buf_ur", kSeamDieSide - w, kSeamDieSide - h);
+
+    makeTileGen();
+    // The bin grid uses the (clean) block bbox; the tile grid uses getBounds(),
+    // which adds a symmetric pin-label margin, so both seams stay at the bbox
+    // center -- where the target bin is centered -- and bins/tiles agree there.
+    const odb::Rect blk = block_->getBBox()->getBox();
+    ASSERT_EQ(blk.xMin(), 0);
+    ASSERT_EQ(blk.yMin(), 0);
+    ASSERT_EQ(blk.xMax(), kSeamDieSide);
+    ASSERT_EQ(blk.yMax(), kSeamDieSide);
+    const odb::Rect bounds = tile_gen_->getBounds();
+    ASSERT_EQ(bounds.dx(), bounds.dy());  // square => seams at center...
+    ASSERT_EQ(bounds.xMin() + bounds.xMax(), kSeamDieSide);  // ...x = kSide/2
+    ASSERT_EQ(bounds.yMin() + bounds.yMax(), kSeamDieSide);  // ...y = kSide/2
+
+    heatmap_ = std::make_unique<BoundaryHeatMap>(getLogger(), blk, cell);
+    heatmap_->setChip(chip_);
+    heatmap_->setGridSizes(15.0, 15.0);  // 15 um bins -> 30000 DBU (3x3 grid)
+    // Never gate the bin out of the visible map on value range.
+    heatmap_->setDrawBelowRangeMin(true);
+    heatmap_->setDrawAboveRangeMax(true);
+  }
+
+  // Render tile (zoom,x,y) of heatmap_ with numbers on and off and return the
+  // columns/rows (per `axis`) whose pixels the label adds.
+  std::set<int> seamTextPixels(int zoom, int x, int y, Axis axis)
+  {
+    unsigned width = 0;
+    unsigned height = 0;
+    heatmap_->setShowNumbers(true);
+    const std::vector<unsigned char> on = decodePng(
+        tile_gen_->generateHeatMapTile(*heatmap_, zoom, x, y), width, height);
+    heatmap_->setShowNumbers(false);
+    const std::vector<unsigned char> off = decodePng(
+        tile_gen_->generateHeatMapTile(*heatmap_, zoom, x, y), width, height);
+    return textPixels(on, off, axis);
+  }
+
   std::unique_ptr<TileGenerator> tile_gen_;
+  std::unique_ptr<BoundaryHeatMap> heatmap_;
 };
 
 TEST_F(TileGeneratorTest, HasStaFalseWhenNull)
@@ -1277,6 +1534,513 @@ TEST_F(TileGeneratorTest, LayerHierarchyNoBacksideCategory)
     EXPECT_NE(inst.as_object().at("name").as_string(), "Backside")
         << "Backside category should not appear when no layers are backside";
   }
+}
+
+// ─── Anti-moiré band-limit (issue #10463) ────────────────────────────────
+
+// Build a dense periodic array of small cells whose OUTPUT pitch lands in the
+// sub-pixel regime that aliases into a moiré beat without band-limiting.  N
+// cells per row over the die => output pitch ~ 256/N px at z=0.
+class MoireArrayTest : public TileGeneratorTest
+{
+ protected:
+  // Returns the cell pitch in DBU.
+  int buildArray(int n)
+  {
+    odb::dbMaster* m = lib_->findMaster("INV_X1");
+    EXPECT_NE(m, nullptr);
+    const int pitch = 2 * std::max(m->getWidth(), m->getHeight());
+    const int die = n * pitch;
+    block_->setDieArea(odb::Rect(0, 0, die, die));
+    int id = 0;
+    for (int iy = 0; iy < n; ++iy) {
+      for (int ix = 0; ix < n; ++ix) {
+        odb::dbInst* inst = odb::dbInst::create(
+            block_, m, ("d" + std::to_string(id++)).c_str());
+        inst->setLocation(ix * pitch, iy * pitch);
+        inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      }
+    }
+    return pitch;
+  }
+
+  // Build an n x n bump array (master tagged COVER_BUMP) sized so each bump
+  // renders ~target_px CSS px at z=0 (where bounds ~= die, so output size =
+  // cell*256/die).  Used to land bump sizes inside the LOD crossfade band.
+  void buildBumpArrayTargetPx(int n, double target_px)
+  {
+    odb::dbMaster* m = lib_->findMaster("INV_X1");
+    EXPECT_NE(m, nullptr);
+    m->setType(odb::dbMasterType::COVER_BUMP);
+    const int cell = std::max(m->getWidth(), m->getHeight());
+    const int die = static_cast<int>(cell * 256.0 / target_px);
+    const int pitch = die / n;  // output pitch = 256/n px; > cell ⇒ gaps
+    block_->setDieArea(odb::Rect(0, 0, die, die));
+    int id = 0;
+    for (int iy = 0; iy < n; ++iy) {
+      for (int ix = 0; ix < n; ++ix) {
+        odb::dbInst* inst = odb::dbInst::create(
+            block_, m, ("b" + std::to_string(id++)).c_str());
+        inst->setLocation(ix * pitch, iy * pitch);
+        inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      }
+    }
+  }
+};
+
+TEST_F(MoireArrayTest, DenseArraySubPixelHasNoBeat)
+{
+  buildArray(/*n=*/128);  // output pitch ~2 px — the regime that aliases
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+  EXPECT_EQ(w, 256u);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+  // Measure the central macro-uniform window: the full-tile profile is
+  // dominated by the array's outer edge / surrounding margin (a legitimate
+  // low-frequency envelope, not a beat).  In the interior the supersample +
+  // Lanczos-2 decimation must keep the beat band nearly empty — round-8 (1px
+  // coverage) measured ~0.2-0.3 here; the fix drives it to <0.01.
+  const double beat
+      = beatFracWindow(pixels, iw, iw / 4, ih / 4, 3 * iw / 4, 3 * ih / 4);
+  EXPECT_LT(beat, 0.06) << "moiré beat present in dense sub-pixel bump array";
+}
+
+TEST_F(MoireArrayTest, DenseBumpArrayOffGridPitchHasNoBeat)
+{
+  // Property guard: a kPhysBump array whose super-pixel pitch (512/n at z=0)
+  // is off an integer (n=126 → 4.063, etc.) must stay beat-free.  NOTE: this
+  // synthetic (INV_X1-as-bump) does NOT reproduce the strong beat seen on
+  // real designs — that needed large near-pitch footprints whose floor/ceil
+  // rounding closed the sub-pixel gaps (→ sheet) and jittered ±1 px (→ beat).
+  // The AUTHORITATIVE regression check for this fix was a visual A/B on the
+  // real multi_tech_stack.3dbx (RODADA 18): RODADA-17 rendered SUB_M2 as
+  // solid blue sheets; exact-area coverage renders faithful discrete dots / a
+  // faint tint with no beat.  Keep this as a cheap lower-bound guard; the
+  // real gate stays visual (see plan).  Exact area coverage integrates each
+  // pixel independent of sub-pixel phase → no jitter → no beat for any
+  // off-grid pitch.
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  m->setType(odb::dbMasterType::COVER_BUMP);
+
+  for (const int n : {126, 127, 130}) {  // super-pitch 4.063 / 4.031 / 3.938
+    std::vector<odb::dbInst*> existing;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      existing.push_back(inst);
+    }
+    for (odb::dbInst* inst : existing) {
+      odb::dbInst::destroy(inst);
+    }
+    buildArray(n);
+    makeTileGen();
+    unsigned w = 0;
+    unsigned h = 0;
+    auto pixels
+        = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+    const int iw = static_cast<int>(w);
+    const int ih = static_cast<int>(h);
+    const double beat
+        = beatFracWindow(pixels, iw, iw / 4, ih / 4, 3 * iw / 4, 3 * ih / 4);
+    EXPECT_LT(beat, 0.06) << "moiré beat at off-grid bump array n=" << n;
+  }
+}
+
+TEST_F(MoireArrayTest, ResolvedArrayStaysSharp)
+{
+  // Same array, but viewed zoomed-in (z=3) so the pitch resolves to ~16 px.
+  // Band-limiting must NOT smear it into a flat tint: structure (high block
+  // CV) survives while the beat band stays empty.
+  buildArray(/*n=*/128);
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  // Central tile at z=3 (8x8 tiles); guaranteed to sit inside the array.
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 3, 4, 4), w, h);
+  // The resolved grid's fundamental (~16 px pitch) legitimately lives in the
+  // beat band, so beatFrac is NOT a valid check here — the point is only that
+  // the structure survived (high block-CV), i.e. it wasn't smeared to a tint.
+  EXPECT_GT(blockAlphaCV(pixels, w, h, 8), 0.10)
+      << "resolved grid was over-blurred into a flat tint";
+}
+
+TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsCulled)
+{
+  // Mark the small master as a bump so classifyInstance() returns kPhysBump
+  // (the fixture has no STA, so it falls back to the COVER_BUMP master type).
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  m->setType(odb::dbMasterType::COVER_BUMP);
+
+  buildArray(
+      /*n=*/128);  // bumps render ~1 px at z=0 → below the cull threshold
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+
+  // Sub-resolution geometry (a dense bump array whose cells render ~1 px) is
+  // culled at the RTree level by searchInsts(size_limit_dbu), matching the Qt
+  // GUI: below the viewable threshold it is dropped entirely rather than drawn
+  // as a faint coverage tint or a merged opaque sheet.  So the central
+  // interior stays fully transparent — no tint, no sheet, no beat.  The
+  // above-threshold and resolved-zoom regimes are guarded by
+  // BandRendersDiscreteBumpsNotSlab / ResolvedArrayStaysSharp.
+  const int x0 = iw / 4;
+  const int x1 = 3 * iw / 4;
+  const int y0 = ih / 4;
+  const int y1 = 3 * ih / 4;
+  double alpha_sum = 0.0;
+  int n_px = 0;
+  for (int y = y0; y < y1; ++y) {
+    for (int x = x0; x < x1; ++x) {
+      alpha_sum += pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3];
+      ++n_px;
+    }
+  }
+  const double mean_alpha = alpha_sum / n_px;
+  EXPECT_EQ(mean_alpha, 0.0)
+      << "sub-resolution bump array was not culled (Qt parity: it must vanish "
+         "at zoom-out, not render a coverage tint or an opaque sheet)";
+}
+
+TEST_F(MoireArrayTest, DetailedViewRendersSubResolutionInstances)
+{
+  // With "Detailed view" on, the sub-resolution cull is relaxed
+  // (instance_size_limit_dbu == 0, mirroring the Qt GUI's instanceSizeLimit()
+  // in detailed view), so the same dense bump array that vanishes at zoom-out
+  // by default is drawn instead.  Off by default so the moiré fix is
+  // unchanged in the normal view.
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  m->setType(odb::dbMasterType::COVER_BUMP);
+
+  buildArray(
+      /*n=*/128);  // bumps render ~1 px at z=0 → below the cull threshold
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.detailed = true;
+
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels
+      = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0, vis), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+
+  const int x0 = iw / 4;
+  const int x1 = 3 * iw / 4;
+  const int y0 = ih / 4;
+  const int y1 = 3 * ih / 4;
+  double alpha_sum = 0.0;
+  int n_px = 0;
+  for (int y = y0; y < y1; ++y) {
+    for (int x = x0; x < x1; ++x) {
+      alpha_sum += pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3];
+      ++n_px;
+    }
+  }
+  const double mean_alpha = alpha_sum / n_px;
+  EXPECT_GT(mean_alpha, 0.0)
+      << "detailed view must render sub-resolution instances that the default "
+         "view culls (Qt parity: instanceSizeLimit() == 0)";
+}
+
+TEST_F(MoireArrayTest, BandRendersDiscreteBumpsNotSlab)
+{
+  // A bump that renders just below the LOD threshold (~6 px) is drawn as a
+  // single discrete coverage mark at its real footprint — NOT a slab covering
+  // the inter-bump gaps.  So the interior shows solid bumps separated by
+  // transparent gaps: moderate coverage (well under a slab's ~full fill) with
+  // some near-opaque bump pixels present.
+  buildBumpArrayTargetPx(/*n=*/16, /*target_px=*/6.0);
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+  int nonzero = 0;
+  int total = 0;
+  int max_alpha = 0;
+  for (int y = ih / 4; y < 3 * ih / 4; ++y) {
+    for (int x = iw / 4; x < 3 * iw / 4; ++x) {
+      ++total;
+      const int a = pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3];
+      if (a > 0) {
+        ++nonzero;
+      }
+      max_alpha = std::max(max_alpha, a);
+    }
+  }
+  const double coverage = static_cast<double>(nonzero) / total;
+  // ~6 px bumps on a ~16 px pitch fill ~14% of the area: discrete, with gaps.
+  EXPECT_GT(coverage, 0.03) << "bumps were not drawn (empty interior)";
+  EXPECT_LT(coverage, 0.5) << "interior was slabbed over the gaps (merged "
+                              "sheet, not discrete bumps)";
+  EXPECT_GT(max_alpha, 100)
+      << "bumps are not drawn solid (expected discrete near-opaque marks)";
+}
+
+TEST_F(MoireArrayTest, BumpArrayBelowThresholdCulledUniformlyAcrossTileSeam)
+{
+  // The sub-resolution cull must apply uniformly across tile boundaries: a
+  // below-threshold bump array is dropped in every tile, so neither the tile
+  // interior nor the shared-seam neighborhood shows partial coverage.  Guards
+  // against a boundary-only rendering artifact (e.g. a stray black/edge seam)
+  // once the global edge-snap was removed in favor of the Qt-parity cull.
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  m->setType(odb::dbMasterType::COVER_BUMP);
+
+  buildArray(/*n=*/128);
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  // Two horizontally adjacent z=1 tiles sharing a boundary inside the array.
+  auto left = decodePng(tile_gen_->generateTile("_instances", 1, 0, 0), w, h);
+  auto right = decodePng(tile_gen_->generateTile("_instances", 1, 1, 0), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+
+  auto coverage = [&](const std::vector<unsigned char>& px, int xa, int xb) {
+    int nz = 0;
+    int tot = 0;
+    for (int y = 0; y < ih; ++y) {
+      for (int x = xa; x < xb; ++x) {
+        ++tot;
+        if (px[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
+          ++nz;
+        }
+      }
+    }
+    return tot > 0 ? static_cast<double>(nz) / tot : 0.0;
+  };
+
+  // Interior coverage vs the seam neighborhood: a few columns on each side of
+  // the shared edge.  Under the sub-resolution cull both must be empty — the
+  // array is dropped consistently, with no partial coverage leaking at the
+  // boundary.
+  const double interior = coverage(left, iw / 4, 3 * iw / 4);
+  int seam_nz = 0;
+  int seam_tot = 0;
+  for (int y = 0; y < ih; ++y) {
+    for (int x = iw - 4; x < iw; ++x) {  // left tile, right edge
+      ++seam_tot;
+      if (left[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
+        ++seam_nz;
+      }
+    }
+    for (int x = 0; x < 4; ++x) {  // right tile, left edge
+      ++seam_tot;
+      if (right[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
+        ++seam_nz;
+      }
+    }
+  }
+  const double seam = static_cast<double>(seam_nz) / seam_tot;
+  EXPECT_EQ(interior, 0.0)
+      << "sub-resolution bump array was not culled in the tile interior";
+  EXPECT_EQ(seam, 0.0)
+      << "partial coverage leaked at the tile seam (cull not uniform across "
+         "adjacent tiles)";
+}
+
+TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  // dpr=2 → the tile is rendered at 256*2 physical pixels so it maps 1:1 onto
+  // a HiDPI device grid (no browser resampling → no re-aliased moiré).
+  auto png = tile_gen_->generateTile("_instances",
+                                     0,
+                                     0,
+                                     0,
+                                     /*vis=*/{},
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     /*focus_net_ids=*/nullptr,
+                                     /*route_guide_net_ids=*/nullptr,
+                                     /*dpr=*/2.0);
+  auto pixels = decodePng(png, w, h);
+  EXPECT_EQ(w, 512u);
+  EXPECT_EQ(h, 512u);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
+{
+  makeTileGen();
+  constexpr size_t kCap = 512;  // mirrors TileGenerator::kTileCacheCap
+  for (size_t i = 0; i < kCap + 10; ++i) {
+    tile_gen_->tileCachePut("k" + std::to_string(i),
+                            {static_cast<unsigned char>(i & 0xff),
+                             static_cast<unsigned char>((i >> 8) & 0xff)});
+  }
+  EXPECT_EQ(tile_gen_->tileCacheSize(), kCap);
+
+  std::vector<unsigned char> out;
+  // The 10 oldest keys (k0..k9) were evicted.
+  EXPECT_FALSE(tile_gen_->tileCacheGet("k0", out));
+  EXPECT_FALSE(tile_gen_->tileCacheGet("k9", out));
+  // A recent key still returns its exact bytes.
+  ASSERT_TRUE(tile_gen_->tileCacheGet("k" + std::to_string(kCap + 9), out));
+  EXPECT_EQ(out.size(), 2u);
+
+  // Promotion (LRU): touch the oldest survivor (k10), then overflow by one.
+  // k10 must survive because the touch made it most-recently-used; the next
+  // oldest (k11) is evicted instead.
+  ASSERT_TRUE(tile_gen_->tileCacheGet("k10", out));
+  tile_gen_->tileCachePut("knew", {7});
+  EXPECT_TRUE(tile_gen_->tileCacheGet("k10", out));
+  EXPECT_FALSE(tile_gen_->tileCacheGet("k11", out));
+
+  // Design reload clears the cache.
+  tile_gen_->eagerInit();
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u);
+}
+
+// Heat-map value labels must render across tile boundaries.  A bin whose center
+// falls on a tile seam previously had its number drawn only in the tile
+// containing the center, clipping the digits on the other side (e.g. "29.89"
+// showing as ".89").  See issue #10925.
+TEST_F(TileGeneratorTest, HeatMapNumbersRenderAcrossTileBoundary)
+{
+  // Center column [30000,60000] is centered on the vertical seam (x=45000);
+  // bottom row [0,30000] sits inside a single tile row (maps to tile y=1).
+  ASSERT_NO_FATAL_FAILURE(buildSeamDesign(
+      odb::Rect(kSeamDieSide / 3, 0, 2 * kSeamDieSide / 3, kSeamDieSide / 3)));
+
+  const std::set<int> left = seamTextPixels(1, 0, 1, Axis::kColumn);
+  const std::set<int> right = seamTextPixels(1, 1, 1, Axis::kColumn);
+
+  // Regression check: the left tile (which does NOT contain the bin center)
+  // must still render the leading digits.  Before the fix it drew nothing.
+  ASSERT_FALSE(left.empty())
+      << "left tile has no number pixels: leading digits were clipped";
+  ASSERT_FALSE(right.empty()) << "right tile has no number pixels";
+
+  // The left tile's text hugs its right edge and the right tile's hugs its left
+  // edge -- together they form the full label across the seam.
+  EXPECT_GE(*left.begin(), kTileSize / 2);
+  EXPECT_LT(*right.rbegin(), kTileSize / 2);
+}
+
+// Same as above but for the horizontal seam: the fix clips the text box in y
+// symmetrically with x, so a bin centered on a horizontal tile boundary must
+// render its label in both vertically-adjacent tiles.
+TEST_F(TileGeneratorTest, HeatMapNumbersRenderAcrossHorizontalTileBoundary)
+{
+  // Center row [30000,60000] is centered on the horizontal seam (y=45000);
+  // left column [0,30000] sits inside a single tile column (tile x=0).
+  ASSERT_NO_FATAL_FAILURE(buildSeamDesign(
+      odb::Rect(0, kSeamDieSide / 3, kSeamDieSide / 3, 2 * kSeamDieSide / 3)));
+
+  const std::set<int> top = seamTextPixels(1, 0, 0, Axis::kRow);
+  const std::set<int> bottom = seamTextPixels(1, 0, 1, Axis::kRow);
+
+  // Regression check: the bottom tile (whose DBU range excludes the bin center
+  // at y=45000) must still render its half of the label.
+  ASSERT_FALSE(bottom.empty())
+      << "bottom tile has no number pixels: label was clipped at the seam";
+  ASSERT_FALSE(top.empty()) << "top tile has no number pixels";
+
+  // The top tile's text hugs its bottom edge and the bottom tile's hugs its top
+  // edge -- together they form the full label across the seam.
+  EXPECT_GE(*top.begin(), kTileSize / 2);
+  EXPECT_LT(*bottom.rbegin(), kTileSize / 2);
+}
+
+TEST_F(TileGeneratorTest, InPlaceDesignEditInvalidatesTileCache)
+{
+  // A geometry edit that happens without a full reload (e.g. an instance moved
+  // by placement) must drop the cached PNGs and notify clients — otherwise the
+  // web viewer serves stale tiles.  This is maliberty's cache-invalidation
+  // note.
+  odb::dbInst* inst = placeInst("INV_X1", "i1", 10000, 10000);
+  ASSERT_NE(inst, nullptr);
+  makeTileGen();
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  // Build the instance R-tree so the edit is a valid→invalid transition:
+  // Search::announceModified debounces and only fires once the index exists.
+  tile_gen_->generateTile("_instances", 0, 0, 0);
+
+  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  ASSERT_GT(tile_gen_->tileCacheSize(), 0u);
+
+  // Move the placed instance: odb fires inDbPostMoveInst → Search::clearInsts →
+  // announceModified → TileGenerator::onDesignChanged.
+  inst->setLocation(20000, 20000);
+
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "in-place design edit left stale PNGs in the tile cache";
+  EXPECT_GE(refresh_calls, 1)
+      << "design edit did not notify clients to re-request tiles";
+}
+
+TEST_F(TileGeneratorTest, DieAreaChangeInvalidatesTileCache)
+{
+  // A die-area resize moves the tile bounds (getBounds), so every cached PNG
+  // (keyed by z/x/y) is stale afterwards.  It reaches Search only via
+  // inDbBlockSetDieArea, whose setTopChip early-returns on the unchanged chip;
+  // Search::notifyModified must still fire so the cache is dropped and clients
+  // are told to re-request.  (Instance moves are covered separately; this
+  // guards the geometry edits that don't map to a spatial index.)
+  placeInst("INV_X1", "i1", 10000, 10000);
+  makeTileGen();
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  ASSERT_GT(tile_gen_->tileCacheSize(), 0u);
+
+  block_->setDieArea(odb::Rect(0, 0, 120000, 120000));
+
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "die-area change left stale PNGs in the tile cache";
+  EXPECT_GE(refresh_calls, 1)
+      << "die-area change did not notify clients to re-request tiles";
+}
+
+TEST_F(TileGeneratorTest, EagerInitReindexDoesNotSpuriouslyNotify)
+{
+  // eagerInit() clears the cache itself and drives its own client refresh, so
+  // its bulk reindex must NOT fire the design-changed callback again.
+  placeInst("INV_X1", "i1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->generateTile("_instances", 0, 0, 0);  // build the index once
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  // Prove the callback is actually wired: a real design edit fires it.  Without
+  // this, the test below could pass simply because the callback was never
+  // installed.
+  block_->setDieArea(odb::Rect(0, 0, 120000, 120000));
+  ASSERT_GE(refresh_calls, 1);
+
+  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  refresh_calls = 0;
+  tile_gen_->eagerInit();
+
+  EXPECT_EQ(refresh_calls, 0)
+      << "eagerInit reindex fired the design-changed callback";
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "eagerInit did not clear the tile cache";
 }
 
 }  // namespace

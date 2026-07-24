@@ -2,8 +2,19 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
+
+regression_test(
+    name = "acd_resynth",
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "acd_resynth.ok",
+        "gcd.v",
+    ],
+)
 
 # No gtest_main on ir/graph/opt tests: ABC (via //src/syn/src/ir →
 # TritModel) ships its own main() that wins over gtest_main; each TU
@@ -42,7 +53,7 @@ cc_test(
     # No gtest_main: ABC ships its own main() that wins over gtest_main;
     # the TU defines its own.
     deps = [
-        "//src/syn",
+        "//src/syn",  # buildcleaner: keep: needs fixing syn layering first.
         "//src/syn/src/ir",
         "//src/utl",
         "@googletest//:gtest",
@@ -104,6 +115,19 @@ cc_test(
     deps = [
         "//src/syn",
         "//src/syn/src/ir",
+        "//src/tst",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "acd_test",
+    srcs = ["acd_test.cc"],
+    data = ["cm_test_cells.lib"],
+    deps = [
+        "//src/dbSta",
+        "//src/sta:opensta_lib",
+        "//src/syn",
         "//src/tst",
         "@googletest//:gtest",
     ],
