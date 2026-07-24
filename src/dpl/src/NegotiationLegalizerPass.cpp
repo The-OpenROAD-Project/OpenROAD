@@ -977,7 +977,11 @@ void NegotiationLegalizer::updateHistoryCosts(
   // pixel whose hist_cost is read has >= 2 overlapping cells, and at least
   // one of them is illegal (hence active). Dedupe shared pixels so each is
   // bumped once.
-  hist_seen_pixels_.clear();
+  ++hist_gen_;
+  if (hist_gen_ == 0) {
+    std::fill(hist_seen_stamp_.begin(), hist_seen_stamp_.end(), 0);
+    hist_gen_ = 1;
+  }
   for (int idx : activeCells) {
     const NegCell& cell = cells_[idx];
     if (cell.fixed) {
@@ -991,9 +995,11 @@ void NegotiationLegalizer::updateHistoryCosts(
         if (!gridExists(gx, gy)) {
           continue;
         }
-        if (!hist_seen_pixels_.insert(gy * grid_w_ + gx).second) {
+        const int pid = gy * grid_w_ + gx;
+        if (hist_seen_stamp_[pid] == hist_gen_) {
           continue;
         }
+        hist_seen_stamp_[pid] = hist_gen_;
         Pixel& g = gridAt(gx, gy);
         const int ov = g.overuse();
         if (ov > 0) {
