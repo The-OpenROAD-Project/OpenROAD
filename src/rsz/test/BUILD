@@ -266,6 +266,7 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+    "repair_setup_stage_delay",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -559,6 +560,39 @@ cc_test(
         "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSetupLegacyBase",
+    srcs = ["cpp/TestSetupLegacyBase.cc"],
+    copts = [
+        "-Isrc/rsz/src",
+        "-Isrc/rsz/src/move",
+        "-Isrc/rsz/src/policy",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "cpp/TestSetupLegacyBase_StageDelay.v",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",

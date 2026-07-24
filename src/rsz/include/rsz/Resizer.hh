@@ -356,7 +356,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
-                   bool skip_crit_vt_swap);
+                   bool skip_crit_vt_swap,
+                   bool use_stage_delay_ranking = false);
   // For testing.
   void repairSetup(const sta::Pin* end_pin);
   // For testing.

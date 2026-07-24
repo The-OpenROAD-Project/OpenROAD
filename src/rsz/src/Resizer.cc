@@ -5084,7 +5084,8 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_buffer_removal,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
-                          bool skip_crit_vt_swap)
+                          bool skip_crit_vt_swap,
+                          bool use_stage_delay_ranking)
 {
   utl::Timer timer;
   OptimizerRunConfig config;
@@ -5106,6 +5107,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+  config.use_stage_delay_ranking = use_stage_delay_ranking;
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);

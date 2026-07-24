@@ -394,12 +394,15 @@ std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
     const sta::Scene* corner,
     const int lib_ap) const
 {
-  vector<pair<int, sta::Delay>> load_delays;
+  const bool use_stage_delay = config_.use_stage_delay_ranking;
+  vector<pair<int, sta::Delay>> stage_delays;
   const int start_index = expanded.startIndex();
   const int path_length = expanded.size();
 
-  // Rank driver stages by load-dependent delay so the noisiest points on the
-  // expanded path get first crack at the repair budget.
+  // Rank driver stages by delay so the noisiest points on the expanded path
+  // get first crack at the repair budget.  When use_stage_delay_ranking is
+  // enabled the ranking key is load_delay + wire_delay (stage delay); otherwise
+  // only the load-dependent delay is used (legacy behaviour).
   for (int i = start_index; i < path_length; i++) {
     const sta::Path* path_vertex_path = expanded.path(i);
     sta::Vertex* path_vertex = path_vertex_path->vertex(sta_);
@@ -413,16 +416,28 @@ std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
           = graph_->arcDelay(
                 prev_edge, prev_arc, corner->dcalcAnalysisPtIndex(max_))
             - corner_arc->intrinsicDelay();
-      load_delays.emplace_back(i, load_delay);
+
+      sta::Delay wire_delay = 0.0;
+      if (use_stage_delay && i + 1 < path_length) {
+        const sta::Path* next_node = expanded.path(i + 1);
+        sta::Edge* net_edge = next_node->prevEdge(sta_);
+        const sta::TimingArc* net_arc = next_node->prevArc(sta_);
+        if (net_edge != nullptr && net_edge->isWire()) {
+          wire_delay = graph_->arcDelay(
+              net_edge, net_arc, corner->dcalcAnalysisPtIndex(max_));
+        }
+      }
+
+      stage_delays.emplace_back(i, load_delay + wire_delay);
     }
   }
 
   std::ranges::sort(
-      load_delays, [](pair<int, sta::Delay> lhs, pair<int, sta::Delay> rhs) {
+      stage_delays, [](pair<int, sta::Delay> lhs, pair<int, sta::Delay> rhs) {
         return lhs.second > rhs.second
                || (lhs.second == rhs.second && lhs.first > rhs.first);
       });
-  return load_delays;
+  return stage_delays;
 }
 
 int SetupLegacyBase::repairBudget(const sta::Slack path_slack,
