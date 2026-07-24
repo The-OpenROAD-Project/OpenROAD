@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 
 namespace odb {
@@ -234,6 +235,63 @@ class ModuleFixture : public SimpleDbFixture
   dbLib* lib_;
   dbBlock* block_;
 };
+
+class ParentChangeCallback : public dbBlockCallBackObj
+{
+ public:
+  void inDbPostInstParentChange(dbInst* inst) override
+  {
+    calls++;
+    observed_module = inst->getModule();
+  }
+
+  int calls = 0;
+  dbModule* observed_module = nullptr;
+};
+
+TEST_F(ModuleFixture, reparent_updates_index_and_fires_callback)
+{
+  dbModule* top = block_->getTopModule();
+  dbModule* child = dbModule::create(block_, "child");
+  dbInst* inst = dbInst::create(block_, lib_->findMaster("and2"), "inst");
+  ASSERT_NE(inst, nullptr);
+  ASSERT_EQ(top->findDbInst("inst"), inst);
+
+  ParentChangeCallback callback;
+  callback.addOwner(block_);
+
+  child->addInst(inst);
+  EXPECT_EQ(callback.calls, 1);
+  EXPECT_EQ(callback.observed_module, child);
+  EXPECT_EQ(inst->getModule(), child);
+  EXPECT_EQ(top->findDbInst("inst"), nullptr);
+  EXPECT_EQ(child->findDbInst("inst"), inst);
+
+  child->addInst(inst);
+  EXPECT_EQ(callback.calls, 1);
+
+  top->addInst(inst);
+  EXPECT_EQ(callback.calls, 2);
+  EXPECT_EQ(callback.observed_module, top);
+  EXPECT_EQ(child->findDbInst("inst"), nullptr);
+  EXPECT_EQ(top->findDbInst("inst"), inst);
+}
+
+TEST_F(ModuleFixture, rename_updates_module_index)
+{
+  dbModule* top = block_->getTopModule();
+  dbInst* inst = dbInst::create(block_, lib_->findMaster("and2"), "old_name");
+  ASSERT_NE(inst, nullptr);
+  ASSERT_EQ(top->findDbInst("old_name"), inst);
+
+  ASSERT_TRUE(inst->rename("new_name"));
+  EXPECT_EQ(top->findDbInst("old_name"), nullptr);
+  EXPECT_EQ(top->findDbInst("new_name"), inst);
+
+  dbInst::destroy(inst);
+  EXPECT_EQ(top->findDbInst("old_name"), nullptr);
+  EXPECT_EQ(top->findDbInst("new_name"), nullptr);
+}
 
 TEST_F(ModuleFixture, test_default)
 {
