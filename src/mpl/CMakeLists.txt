@@ -40,6 +40,7 @@ target_link_libraries(mpl_pusher
 
 add_library(mpl_lib
   src/rtl_mp.cpp
+  src/report.cpp
   src/hier_rtlmp.cpp
   src/SimulatedAnnealingCore.cpp
   src/SACoreHardMacro.cpp

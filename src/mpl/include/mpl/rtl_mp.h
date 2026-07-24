@@ -65,6 +65,8 @@ class MacroPlacer
              const char* report_directory,
              bool keep_clustering_data);
   void blockMacroChannels();
+  // Read-only post-placement QoR report. Does not modify the database.
+  void reportMacroPlacement();
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
                   const float& y_origin,

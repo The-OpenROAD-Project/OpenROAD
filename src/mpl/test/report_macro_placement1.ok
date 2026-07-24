@@ -1,0 +1,47 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[WARNING STA-1171] ./testcases/macro_only.lib line 32, default_max_transition is 0.0.
+[INFO ODB-0128] Design: macro_only
+[INFO ODB-0253]     Updated 10 components.
+Die Area: (0.00, 0.00) (450.00, 450.00),  Floorplan Area: (4.94, 4.20) (444.98, 443.80)
+	Number of std cell instances: 0
+	Area of std cell instances: 0.00
+	Number of macros: 10
+	Macros to be placed: 10
+	Area of macros: 166000.00
+	Base halo (L, B, R, T): (0.00, 0.00, 0.00, 0.00)
+	Area of macros with halos: 166000.00
+	Area of std cell instances + Area of macros: 166000.00
+	Floorplan area: 193441.58
+	Design Utilization: 0.86
+	Floorplan Utilization: 0.00
+	Manufacturing Grid: 10
+
+[WARNING MPL-0026] Design has no IO pins!
+[WARNING MPL-0025] Design has no standard cells!
+[WARNING MPL-0027] Design has only macros!
+Macro Placement Report
+======================
+  Placed macros            : 10
+  Total macro area         : 166000.000 um^2
+  Macro bounding-box area  : 172012.000 um^2
+  Dead space in bbox       : 6012.000 um^2
+  Packing efficiency       : 96.5 %
+  Total design HPWL        : 800.240 um
+  Macro-net HPWL           : 800.240 um (12 nets)
+  Min boundary spacing     : 0.000 um
+  Avg boundary spacing     : 51.877 um
+  Min macro-to-macro gap   : 0.000 um (2 overlapping pair(s))
+
+  Macro                           llx(um)    lly(um)    urx(um)    ury(um) orient   area(um^2)
+  U1                              304.940      4.245    404.940    434.245   R180    43000.000
+  U10                             104.940    104.315    204.940    204.315     MY    10000.000
+  U2                              204.940    204.205    304.940    304.205   R180    10000.000
+  U3                              204.940      4.215    304.940    104.215     MY    10000.000
+  U4                              204.940    304.305    304.940    404.305   R180    10000.000
+  U5                              204.940    104.315    304.940    204.315     MY    10000.000
+  U6                                4.940      4.245    104.940    434.245   R180    43000.000
+  U7                              104.940    204.205    204.940    304.205   R180    10000.000
+  U8                              104.940      4.215    204.940    104.215     MY    10000.000
+  U9                              104.940    304.305    204.940    404.305   R180    10000.000
+No differences found.
