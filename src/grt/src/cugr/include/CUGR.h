@@ -130,8 +130,17 @@ class CUGR
                 const std::vector<GSegment>& connection);
   // Returns true if the edge on (layer_index, tile_x, tile_y) has at least
   // one unit of remaining capacity -- the CUGR analog of
+  // Returns the per-layer NDR demand vector for db_net, or all-ones if the
+  // net is not found.  Used by GlobalRouter to pass the correct demand into
+  // hasAvailableResources() when checking capacity for NDR nets.
+  std::vector<double> getNdrCosts(odb::dbNet* db_net) const;
+
   // FastRouteCore::hasAvailableResources.
-  bool hasAvailableResources(int layer_index, int tile_x, int tile_y) const;
+  // demand is the per-edge demand to check against (default 1.0 for non-NDR).
+  bool hasAvailableResources(int layer_index,
+                             int tile_x,
+                             int tile_y,
+                             double demand = 1.0) const;
   void routeIncremental();
   // Adopts an externally restored routing (journal restore): rebuilds the
   // net's routing tree from the segments and swaps the grid-graph demand
