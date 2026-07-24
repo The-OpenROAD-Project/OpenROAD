@@ -1,0 +1,93 @@
+# closure.def -- unified pessimism-recovery closure regression design.
+#
+# Engineered to exhibit ALL THREE endpoint classes for report_closure under
+# OCV derate (so CPPR/CRPR is active):
+#
+#  (1) CPPR-recoverable artifact  -- reg2/D
+#      A reconvergent clock tree clk -> ckbuf1 -> {reg1/CK, ckbuf2 -> reg2/CK}
+#      makes the reg1 -> reg2 check share the clk -> ckbuf1 segment. Under OCV
+#      that common segment is double-counted; the reg1 -> reg2 data path is
+#      tuned so the endpoint fails under the raw (no-CRPR) slack but the CPPR
+#      common-path credit clears it. PBA recovery on this short single-buffer
+#      path is ~0, so it is cleared by CPPR alone.
+#
+#  (2) PBA-recoverable artifact   -- reg3/D
+#      A long AND2 combinational chain (g1..g8) drives reg3/D. reg3 is clocked
+#      off the SAME leaf as reg1 (clk_buf1, no reconvergence vs its launch),
+#      so it gets ~0 CPPR credit. The many gate stages accumulate gate-slew
+#      pessimism that PBA recovers; the chain length / period are tuned so the
+#      endpoint fails raw but the PBA gate-slew recovery clears it.
+#
+#  (3) Genuine violation          -- out1
+#      The reg2 -> out1 output path (large set_output_delay) fails by a wide
+#      margin and has neither a reconvergent clock credit nor enough gate
+#      stages to recover, so it stays failing after BOTH recoveries.
+VERSION 5.8 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN closure_unified ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+
+COMPONENTS 19 ;
+- ckbuf1 CLKBUF_X1 + PLACED ( 1000 1000 ) N ;
+- ckbuf2 CLKBUF_X1 + PLACED ( 3000 1000 ) N ;
+- and1 AND2_X1 + PLACED ( 5000 5000 ) N ;
+- buf1 BUF_X1 + PLACED ( 7000 5000 ) N ;
+- reg1 DFF_X1 + PLACED ( 9000 5000 ) N ;
+- buf2 BUF_X1 + PLACED ( 11000 5000 ) N ;
+- reg2 DFF_X1 + PLACED ( 13000 5000 ) N ;
+- g1 AND2_X1 + PLACED ( 5000 9000 ) N ;
+- g2 AND2_X1 + PLACED ( 7000 9000 ) N ;
+- g3 AND2_X1 + PLACED ( 9000 9000 ) N ;
+- g4 AND2_X1 + PLACED ( 11000 9000 ) N ;
+- g5 AND2_X1 + PLACED ( 13000 9000 ) N ;
+- g6 AND2_X1 + PLACED ( 15000 9000 ) N ;
+- g7 AND2_X1 + PLACED ( 17000 9000 ) N ;
+- reg3 DFF_X1 + PLACED ( 19000 9000 ) N ;
+- sbuf0 BUF_X1 + PLACED ( 3000 13000 ) N ;
+- sbuf1 BUF_X1 + PLACED ( 5000 13000 ) N ;
+- sbuf2 BUF_X1 + PLACED ( 7000 13000 ) N ;
+- sbuf3 BUF_X1 + PLACED ( 9000 13000 ) N ;
+- sbuf4 BUF_X1 + PLACED ( 11000 13000 ) N ;
+END COMPONENTS
+
+PINS 5 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL + PLACED ( 0 1000 ) N ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + PLACED ( 0 5000 ) N ;
+- in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + PLACED ( 0 6000 ) N ;
+- in3 + NET in3 + DIRECTION INPUT + USE SIGNAL + PLACED ( 0 9000 ) N ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 40000 5000 ) N ;
+END PINS
+
+NETS 27 ;
+- clk ( PIN clk ) ( ckbuf1 A ) ;
+- clk_buf1 ( ckbuf1 Z ) ( ckbuf2 A ) ( reg1 CK ) ( reg3 CK ) ;
+- clk_buf2 ( ckbuf2 Z ) ( reg2 CK ) ;
+- in1 ( PIN in1 ) ( and1 A1 ) ;
+- in2 ( PIN in2 ) ( and1 A2 ) ;
+- n1 ( and1 ZN ) ( buf1 A ) ;
+- n2 ( buf1 Z ) ( reg1 D ) ;
+- n3 ( reg1 Q ) ( buf2 A ) ;
+- n4 ( buf2 Z ) ( reg2 D ) ;
+- out1 ( reg2 Q ) ( PIN out1 ) ;
+- in3 ( PIN in3 ) ( g1 A1 ) ( sbuf0 A ) ;
+- s0 ( sbuf0 Z ) ( sbuf1 A ) ;
+- s1 ( sbuf1 Z ) ( sbuf2 A ) ;
+- s2 ( sbuf2 Z ) ( sbuf3 A ) ;
+- s3 ( sbuf3 Z ) ( sbuf4 A ) ;
+- s4 ( sbuf4 Z ) ( g1 A2 ) ( g2 A2 ) ( g3 A2 ) ( g4 A2 ) ( g5 A2 ) ( g6 A2 ) ( g7 A2 ) ;
+- c1 ( g1 ZN ) ( g2 A1 ) ;
+- c2 ( g2 ZN ) ( g3 A1 ) ;
+- c3 ( g3 ZN ) ( g4 A1 ) ;
+- c4 ( g4 ZN ) ( g5 A1 ) ;
+- c5 ( g5 ZN ) ( g6 A1 ) ;
+- c6 ( g6 ZN ) ( g7 A1 ) ;
+- c7 ( g7 ZN ) ( reg3 D ) ;
+END NETS
+
+END DESIGN

@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: search_crpr
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 7 components and 33 component-terminals.
+[INFO ODB-0133]     Created 10 nets and 17 connections.
+[WARNING STA-1556] multiple scenes reference mode func
+[WARNING STA-1556] multiple scenes reference mode test
+two modes active: 1
+all four scenes listed: 1
+limiting (mode, corner) shown:  1
+per-mode setup limited by slow corner: 1
+cross-mode endpoints > 0: 1
+cross worst limited by (test, test_slow): 1
+cross worst == min over all scenes: 1
+test mode worst 0.1ns tighter than func: 1
+slice-1 worst slack unchanged by mode dimension: 1

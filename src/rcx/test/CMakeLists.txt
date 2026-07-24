@@ -2,6 +2,7 @@ or_integration_tests(
   "rcx"
   TESTS
     45_gcd
+    coupling_si_miller
     ext_pattern
     gcd
     generate_pattern
@@ -12,6 +13,12 @@ or_integration_tests(
     short_resover
   PASSFAIL_TESTS
     rcx_unit_test
+    coupling_si_window
+    coupling_si_noise
+    coupling_si_noise_timing
+    coupling_xtalk_delay
+    coupling_xtalk_direction
+    coupling_xtalk_hold
 )
 
 #generate_rules
