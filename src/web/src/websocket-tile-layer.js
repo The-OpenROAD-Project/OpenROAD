@@ -47,6 +47,15 @@ export function buildTileRequest(coords, layerName, ctx) {
     if (app && app.visibleChiplets instanceof Set) {
         req.visible_chiplets = [...app.visibleChiplets];
     }
+    // Per-layer fill pattern (int matching the server's FillPattern enum;
+    // 1 = solid). Read lazily so a change via the layer context menu is
+    // picked up on the next refresh without rebuilding the layer.
+    if (app && app.layerPatterns) {
+        const p = app.layerPatterns[layerName];
+        if (p !== undefined && p !== 1) {
+            req.pattern = p;
+        }
+    }
     return req;
 }
 

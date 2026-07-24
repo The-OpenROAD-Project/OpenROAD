@@ -105,6 +105,23 @@ describe('buildTileRequest', () => {
             globalThis.window = saved;
         }
     });
+
+    it('omits pattern when the layer is solid or unset', () => {
+        // No app → no pattern field.
+        assert.equal('pattern' in buildTileRequest(
+            { z: 0, x: 0, y: 0 }, 'M1', ctx), false);
+
+        // app.layerPatterns present but M1 solid (default) → still omitted.
+        const solidCtx = { ...ctx, app: { layerPatterns: { M2: 2 } } };
+        assert.equal('pattern' in buildTileRequest(
+            { z: 0, x: 0, y: 0 }, 'M1', solidCtx), false);
+    });
+
+    it('carries the per-layer fill pattern when non-solid', () => {
+        const patCtx = { ...ctx, app: { layerPatterns: { M1: 3 } } };
+        const req = buildTileRequest({ z: 0, x: 0, y: 0 }, 'M1', patCtx);
+        assert.equal(req.pattern, 3);
+    });
 });
 
 describe('WebSocketManager.cancel', () => {
