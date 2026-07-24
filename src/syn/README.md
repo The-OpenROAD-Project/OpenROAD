@@ -19,6 +19,7 @@ The `synthesize` command synthesizes a previously elaborated design, i.e. it imp
 ```tcl
 synthesize
     [-reduce_name_loss]
+    [-naming_threshold fanout_size]
 ```
 
 #### Options
@@ -26,6 +27,7 @@ synthesize
 | Switch Name | Description |
 | --------------- | --------------------------------------------- |
 | `-reduce_name_loss` | Disable any optimization steps which would cause mass loss of intermediate signal names. This option trades away quality of results for interpretability. |
+| `-naming_threshold fanout_size` | When using optimization steps which would cause mass loss of intermediate signal names, try to preserve names on nets the fanout of which meets the given threshold. Like `-reduce_name_loss`, this option trades away quality of result for interpretability but to a less extent. The higher the given threshold, the fewer names will be preserved and the less degree to which quality is affected. This option is without effect when combined with `-reduce_name_loss` |
 
 ## Limitations
 

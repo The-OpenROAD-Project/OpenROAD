@@ -17,6 +17,19 @@ export function layerRangeSet(center, lower, upper, count) {
     return indices;
 }
 
+// Reduce a layer-name → FillPattern-int map to only the non-solid entries so
+// the cookie stays small and Solid (the default) never needs persisting.
+// Values mirror the server's FillPattern enum (1 = solid).
+export function nonSolidPatterns(patterns) {
+    const out = {};
+    for (const [name, value] of Object.entries(patterns || {})) {
+        if (value !== 1) {
+            out[name] = value;
+        }
+    }
+    return out;
+}
+
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
 // `chipletData` entry comes from the backend serializeTechResponse and
 // has shape { path, name, parent, master, depth }.  `savedHidden` is the
@@ -95,19 +108,64 @@ export function populateDisplayControls(app, visibility, selectability,
     let chipletModel = null;
 
     // Restore saved hidden-layers and non-selectable-layers sets.
+    // Per-layer visibility/selectability intentionally live in
+    // sessionStorage, not cookies: they must survive the page reload that
+    // opening a database triggers, but start fresh in a new session — the
+    // Qt GUI does not persist layer options between sessions either
+    // (review feedback on #10795).
     let savedHiddenLayers = new Set();
     let savedNonSelectableLayers = new Set();
     try {
-        const raw = getCookie('or_hidden_layers');
-        if (raw) savedHiddenLayers = new Set(JSON.parse(decodeURIComponent(raw)));
+        const raw = window.sessionStorage.getItem('or_hidden_layers');
+        if (raw) savedHiddenLayers = new Set(JSON.parse(raw));
     } catch (_) { /* ignore */ }
     try {
-        const raw = getCookie('or_nonselectable_layers');
+        const raw = window.sessionStorage.getItem('or_nonselectable_layers');
         if (raw) {
-            savedNonSelectableLayers
-                = new Set(JSON.parse(decodeURIComponent(raw)));
+            savedNonSelectableLayers = new Set(JSON.parse(raw));
         }
     } catch (_) { /* ignore */ }
+
+    // Restore saved per-layer fill patterns (raw layer name → FillPattern int).
+    // Kept in sessionStorage alongside the visibility/selectability sets so a
+    // pattern survives the open-database reload but starts fresh in a new
+    // session, matching the Qt GUI (review feedback on #10795).
+    try {
+        const raw = window.sessionStorage.getItem('or_layer_patterns');
+        if (raw) Object.assign(app.layerPatterns, JSON.parse(raw));
+    } catch (_) { /* ignore */ }
+
+    // Persist only non-solid patterns; setting a layer back to Solid drops it.
+    function persistLayerPatterns() {
+        try {
+            window.sessionStorage.setItem(
+                'or_layer_patterns',
+                JSON.stringify(nonSolidPatterns(app.layerPatterns)));
+        } catch (_) { /* ignore */ }
+    }
+
+    // Apply a fill pattern to one layer and re-render just that layer's tiles.
+    function setLayerPattern(name, layer, value) {
+        if (value === 1) {
+            delete app.layerPatterns[name];
+        } else {
+            app.layerPatterns[name] = value;
+        }
+        persistLayerPatterns();
+        if (layer && typeof layer.refreshTiles === 'function') {
+            layer.refreshTiles();
+        }
+    }
+
+    // Fill-pattern choices for the layer context menu (values match the
+    // server's FillPattern enum: kNone=0, kSolid=1, kDiagonal=2, …).
+    const PATTERN_OPTIONS = [
+        { label: 'Solid', value: 1 },
+        { label: 'Diagonal', value: 2 },
+        { label: 'Cross', value: 3 },
+        { label: 'Dots', value: 4 },
+        { label: 'None (no fill)', value: 0 },
+    ];
 
     // Global counter so each layer (across the whole hierarchy) gets a unique
     // z-index and palette slot regardless of which chiplet it belongs to.
@@ -155,6 +213,13 @@ export function populateDisplayControls(app, visibility, selectability,
         }
 
         const nodeData = { name: hierarchyNode.name, isInstance: true };
+        // Review feedback on #10795: the Implant and Other categories
+        // start collapsed (they are rarely-used layer groups).
+        if (hierarchyNode.type === 'category'
+            && (hierarchyNode.name === 'Implant'
+                || hierarchyNode.name === 'Other')) {
+            nodeData.startCollapsed = true;
+        }
         // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
         // backend emits in layer_hierarchy; it matches ChipletNode::path
         // exactly so toggling this node can drive app.visibleChiplets.
@@ -292,8 +357,10 @@ export function populateDisplayControls(app, visibility, selectability,
         }
 
         const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));
-        setCookie('or_hidden_layers',
-                  encodeURIComponent(JSON.stringify(hiddenNodes)));
+        try {
+            window.sessionStorage.setItem(
+                'or_hidden_layers', JSON.stringify(hiddenNodes));
+        } catch (_) { /* ignore */ }
 
         // Mirror chiplet toggles into the Chiplets panel.  Toggling
         // wrapper_1 in the Layers tree must also remove its path from
@@ -346,8 +413,10 @@ export function populateDisplayControls(app, visibility, selectability,
         syncLayerSelDom();
         const nonSel
             = techData.layers.filter(n => !app.selectableLayers.has(n));
-        setCookie('or_nonselectable_layers',
-                  encodeURIComponent(JSON.stringify(nonSel)));
+        try {
+            window.sessionStorage.setItem(
+                'or_nonselectable_layers', JSON.stringify(nonSel));
+        } catch (_) { /* ignore */ }
     });
     layerSelModel.addFromSpec(layerSelSpec);
 
@@ -380,6 +449,20 @@ export function populateDisplayControls(app, visibility, selectability,
 
     function hideContextMenu() {
         contextMenu.style.display = 'none';
+    }
+
+    // Append a clickable row to the layer context menu.  onClick runs, then the
+    // menu closes.  Shared by the visibility-range items and the fill-pattern
+    // items so both stay in sync.
+    function addContextMenuItem(label, onClick) {
+        const div = document.createElement('div');
+        div.className = 'context-menu-item';
+        div.textContent = label;
+        div.addEventListener('click', () => {
+            onClick();
+            hideContextMenu();
+        });
+        contextMenu.appendChild(div);
     }
 
     const n = leafletLayers.length;
@@ -444,15 +527,25 @@ export function populateDisplayControls(app, visibility, selectability,
                 e.stopPropagation();
                 contextMenu.innerHTML = '';
                 for (const item of menuItems) {
-                    const div = document.createElement('div');
-                    div.className = 'context-menu-item';
-                    div.textContent = item.label;
-                    div.addEventListener('click', () => {
-                        showOnlyLayers(item.fn(index));
-                        hideContextMenu();
-                    });
-                    contextMenu.appendChild(div);
+                    addContextMenuItem(item.label,
+                        () => showOnlyLayers(item.fn(index)));
                 }
+
+                // Fill-pattern submenu: choosing one re-renders only this
+                // layer's tiles and persists the choice.
+                const sep = document.createElement('div');
+                sep.className = 'context-menu-separator';
+                sep.style.borderTop = '1px solid #555';
+                sep.style.margin = '4px 0';
+                contextMenu.appendChild(sep);
+                const current = app.layerPatterns[name] ?? 1;
+                for (const opt of PATTERN_OPTIONS) {
+                    const marker = current === opt.value ? '● ' : '   ';
+                    addContextMenuItem(
+                        marker + 'Fill: ' + opt.label,
+                        () => setLayerPattern(name, node.data.layer, opt.value));
+                }
+
                 contextMenu.style.left = e.clientX + 'px';
                 contextMenu.style.top = e.clientY + 'px';
                 contextMenu.style.display = 'block';
@@ -509,6 +602,12 @@ export function populateDisplayControls(app, visibility, selectability,
                 kids.appendChild(buildLayerDOM(child, false));
             }
             group.appendChild(kids);
+
+            // Categories flagged startCollapsed (Implant/Other) open folded.
+            if (node.data && node.data.startCollapsed) {
+                kids.classList.add('collapsed');
+                arrow.textContent = '▶';
+            }
 
             // Toggle collapse
             arrow.addEventListener('click', (e) => {
@@ -917,6 +1016,7 @@ export function populateDisplayControls(app, visibility, selectability,
             { key: 'inst_pin_names', label: 'Pin Names', disabledBy: 'inst_pins' },
             { key: 'blockages', label: 'Blockages' },
         ]},
+        { key: 'detailed', label: 'Detailed view' },
         { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
     ]});

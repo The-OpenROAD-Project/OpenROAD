@@ -136,7 +136,12 @@ class Replace
                       const PlaceOptions& options = {},
                       int start_iter = 0);
 
-  void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
+  void runMBFF(int max_sz,
+               float alpha,
+               float beta,
+               int threads,
+               int num_paths,
+               float clock_power_weight);
 
   void addPlacementCluster(const Cluster& cluster);
 

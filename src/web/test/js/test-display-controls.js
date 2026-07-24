@@ -3,7 +3,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { layerRangeSet } from '../../src/display-controls.js';
+import { layerRangeSet, nonSolidPatterns }
+    from '../../src/display-controls.js';
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
 const COUNT = 10;
@@ -57,5 +58,22 @@ describe('layerRangeSet', () => {
     it('range up at last layer returns only last', () => {
         const s = layerRangeSet(9, 0, 1, COUNT);
         assert.deepEqual(s, new Set([9]));
+    });
+});
+
+describe('nonSolidPatterns', () => {
+    it('drops solid (value 1) entries and keeps the rest', () => {
+        const out = nonSolidPatterns(
+            { metal1: 1, metal2: 2, metal3: 0, metal4: 4 });
+        assert.deepEqual(out, { metal2: 2, metal3: 0, metal4: 4 });
+    });
+
+    it('returns an empty object when everything is solid', () => {
+        assert.deepEqual(nonSolidPatterns({ a: 1, b: 1 }), {});
+    });
+
+    it('tolerates null/undefined input', () => {
+        assert.deepEqual(nonSolidPatterns(null), {});
+        assert.deepEqual(nonSolidPatterns(undefined), {});
     });
 });

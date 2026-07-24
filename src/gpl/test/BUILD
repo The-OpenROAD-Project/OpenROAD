@@ -19,6 +19,8 @@ TESTS = [
     "incremental01",
     "mbff_hier",
     "mbff_orig_name",
+    "mbff_clock_power_off",
+    "mbff_clock_power_on",
     "nograd01",
     "simple01",
     "simple01-obs",
