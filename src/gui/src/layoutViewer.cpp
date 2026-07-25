@@ -2738,14 +2738,13 @@ bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
   return QScrollArea::eventFilter(object, event);
 }
 
-std::array<int, LayoutScroll::kAccelLutSize> LayoutScroll::accel_lut_
-    = []() {
-        std::array<int, kAccelLutSize> lut;
-        for (int i = 0; i < kAccelLutSize; ++i) {
-          lut[i] = static_cast<int>(std::round(std::pow(1.15, i / 2.0)));
-        }
-        return lut;
-      }();
+std::array<int, LayoutScroll::kAccelLutSize> LayoutScroll::accel_lut_ = []() {
+  std::array<int, kAccelLutSize> lut;
+  for (int i = 0; i < kAccelLutSize; ++i) {
+    lut[i] = static_cast<int>(std::round(std::pow(1.15, i / 2.0)));
+  }
+  return lut;
+}();
 
 void LayoutScroll::keyPressEvent(QKeyEvent* event)
 {
