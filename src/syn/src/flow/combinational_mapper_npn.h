@@ -119,6 +119,8 @@ struct NPN
            | input_complement[3] << 4 | input_complement[4] << 5
            | input_complement[5] << 6;
   }
+
+  bool isPermutation() const { return cFingerprint() == 0; }
 };
 
 extern const Truth6 cofactor_masks[6];

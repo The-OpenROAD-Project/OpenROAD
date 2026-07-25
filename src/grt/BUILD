@@ -221,6 +221,7 @@ cc_library(
     includes = [
         "include",
         "src",
+        "src/fastroute/include",
     ],
     deps = [
         ":abstract-fastroute",

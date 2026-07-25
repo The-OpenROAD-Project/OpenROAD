@@ -15,6 +15,9 @@ The `set_wire_rc` command sets the resistance and capacitance used to estimate
 delay of routing wires.  Separate values can be specified for clock and data
 nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
+In 3D designs the values can be targeted at a technology with the `-tech` and
+`-redistribution_layer` selectors; without a selector the values are the
+defaults used by chips whose technology has no specific values.
 
 ```
 # Either run 
@@ -31,6 +34,8 @@ set_wire_rc
     [-data]
     [-corner corner]
     [-layers layers_list]
+    [-tech tech]
+    [-redistribution_layer]
 
 or 
 set_wire_rc
@@ -38,6 +43,8 @@ set_wire_rc
     [-h_capacitance cap]
     [-v_resistance res]
     [-v_capacitance cap]
+    [-tech tech]
+    [-redistribution_layer]
 
 or
 set_wire_rc 
@@ -46,10 +53,14 @@ set_wire_rc
     [-data]
     [-corner corner]
     [-layer layer_name]
+    [-tech tech]
+    [-redistribution_layer]
 or 
 set_wire_rc
     [-resistance res]
     [-capacitance cap]
+    [-tech tech]
+    [-redistribution_layer]
 ```
 
 #### Options
@@ -66,6 +77,13 @@ set_wire_rc
 | `-h_capacitance` | Capacitance per unit length for horizontal wires, units are from the first Liberty file read. |
 | `-v_resistance` | Resistance per unit length for vertical wires, units are from the first Liberty file read. |
 | `-v_capacitance` | Capacitance per unit length for vertical wires, units are from the first Liberty file read. |
+| `-tech` | Apply the values to the named technology (3D designs). Layers given with `-layer`/`-layers` are looked up in this technology. |
+| `-redistribution_layer` | Apply the values to the technology of every RDL chip in the design. Warns and does nothing when the design has none, so shared scripts work across designs. `-layer`/`-layers` require the RDL chips to share one technology; with mixed RDL technologies set each one separately with `-tech`. |
+
+Without `-tech` or `-redistribution_layer` the values are the defaults used by
+every chip whose technology has no specific values. Signal values, clock values
+and routing layers fall back to the defaults independently, so a technology with
+only specific signal values still uses the default clock values.
 
 ### Set Layer RC
 

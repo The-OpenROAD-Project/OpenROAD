@@ -60,10 +60,7 @@ qt6_library = (
     cc_library(
         name = name,
         srcs = srcs,
-        hdrs = hdrs + moc_hdrs + [
-            uisrc.rsplit("/", 1)[0] + "/ui_" + uisrc.rsplit("/", 1)[1][0:-3] + ".h"
-            for uisrc in uic_srcs
-        ],
+        hdrs = hdrs + moc_hdrs,
         includes = includes,
         deps = deps,
     ),
