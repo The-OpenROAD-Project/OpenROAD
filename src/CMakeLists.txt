@@ -170,8 +170,11 @@ add_compile_options(
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  # All FreeBSD libraries installed by the user are in /usr/local
+  # tests fail to link if this is not specified
   link_directories(/usr/local/lib)
-  include_directories(/usr/local/include /usr/local/include/tcl8.6)
+  # cmake can't find the tcl header, include manually
+  include_directories(/usr/local/include/tcl8.6)
 endif()
 
 if (ASAN)
@@ -311,6 +314,8 @@ target_compile_options(openroad
 
 # Needed for boost stacktrace
 if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  target_compile_definitions(openroad PUBLIC _GNU_SOURCE)
+  # Propagate the flag to other targets (PUBLIC is not enough)
   add_compile_definitions(_GNU_SOURCE)
 endif()
 
