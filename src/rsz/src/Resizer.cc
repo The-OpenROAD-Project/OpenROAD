@@ -2782,6 +2782,11 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
   sta::Net* input_net = db_network_->net(input_pin);
   sta::Net* output_net = db_network_->net(output_pin);
+  odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
+  odb::dbModNet* output_modnet = db_network_->hierNet(output_pin);
+  if (input_modnet != output_modnet) {
+    return false;
+  }
   odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
   odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
   if ((input_db_net != nullptr && input_db_net->isDoNotTouch())
@@ -2902,7 +2907,8 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
 
   sta_->disconnectPin(input_pin);
   sta_->disconnectPin(output_pin);
-  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+  if (survivor_modnet != nullptr && removed_modnet != nullptr
+      && survivor_modnet != removed_modnet) {
     survivor_modnet->mergeModNet(removed_modnet);
   } else if (survivor_modnet != nullptr) {
     survivor_modnet->connectTermsOf(db_removed);
