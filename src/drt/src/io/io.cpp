@@ -1366,15 +1366,19 @@ void io::Parser::setMarkers(odb::dbBlock* block)
     }
     // Use the layer recheck constraint so the detailed router re-runs its own
     // DRC engine over the marked region and reroutes it, instead of trusting
-    // the imported violation geometry directly.
-    auto* recheck = layer->getRecheckConstraint();
-    if (recheck == nullptr) {
+    // the imported violation geometry directly. Cut layers have no recheck
+    // constraint, so fall back to their short constraint.
+    frConstraint* constraint = layer->getRecheckConstraint();
+    if (constraint == nullptr) {
+      constraint = layer->getShortConstraint();
+    }
+    if (constraint == nullptr) {
       continue;
     }
     auto marker = std::make_unique<frMarker>();
     marker->setBBox(db_marker->getBBox());
     marker->setLayerNum(layer->getLayerNum());
-    marker->setConstraint(recheck);
+    marker->setConstraint(constraint);
     for (auto src : db_marker->getSources()) {
       if (src->getObjectType() != odb::dbNetObj) {
         continue;

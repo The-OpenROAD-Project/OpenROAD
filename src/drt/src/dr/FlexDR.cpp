@@ -2139,7 +2139,14 @@ int FlexDR::main()
   // solution's violations.
   const int num_db_markers = getDesign()->getTopBlock()->getNumMarkers();
   if (num_db_markers > 0) {
-    iter_ = router_cfg_->REROUTE_VIOLATIONS_START_ITER;
+    iter_ = std::max(0, router_cfg_->REROUTE_VIOLATIONS_START_ITER);
+    // gcell2BoundaryPin_ is only consumed by iteration 0 and is normally freed
+    // at the end of that iteration. When resuming past iteration 0 that cleanup
+    // never runs, so release it now to avoid holding the memory for the whole
+    // routing.
+    if (iter_ > 0) {
+      removeGCell2BoundaryPin();
+    }
     if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     627,
@@ -2162,7 +2169,7 @@ int FlexDR::main()
       = strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST);
   // iter_ may start > 0 when resuming from imported DRC markers; index the
   // strategy table by iter_ so the per-iteration parameters stay aligned.
-  while (iter_ < static_cast<int>(search_repair_args.size())) {
+  while (iter_ >= 0 && iter_ < static_cast<int>(search_repair_args.size())) {
     if (iter_ > router_cfg_->END_ITERATION) {
       break;
     }
