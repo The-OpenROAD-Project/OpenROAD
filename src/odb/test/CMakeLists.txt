@@ -12,11 +12,6 @@ or_integration_tests(
     create_sboxes
     def_dup_net
     def_parser
-    design_is_routed1
-    design_is_routed2
-    design_is_routed3
-    design_is_routed_fail1
-    design_is_routed_fail2
     dont_touch
     dump_netlists
     dump_netlists_withfill

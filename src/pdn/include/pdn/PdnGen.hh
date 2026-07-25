@@ -83,7 +83,8 @@ class PdnGen
 
   // Grids
   void buildGrids(bool trim);
-  std::vector<Grid*> findGrid(const std::string& name) const;
+  std::vector<Grid*> findGrid(const std::string& name,
+                              bool error = false) const;
   void makeCoreGrid(VoltageDomain* domain,
                     const std::string& name,
                     StartsWith starts_with,
@@ -103,6 +104,8 @@ class PdnGen
       bool default_grid,
       const std::vector<odb::dbTechLayer*>& generate_obstructions,
       bool is_bump);
+  void makeDummyInstanceGrid(VoltageDomain* domain, const std::string& name);
+  void removeDummyInstanceGrid(const std::string& name);
   void makeExistingGrid(
       const std::string& name,
       const std::vector<odb::dbTechLayer*>& generate_obstructions);
@@ -180,6 +183,7 @@ class PdnGen
                          const std::vector<int>& metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
+  std::vector<Grid*> getGrids(bool exclude_dummy = false) const;
   PDNRenderer* getDebugRenderer() const { return debug_renderer_.get(); }
 
  private:
@@ -189,7 +193,6 @@ class PdnGen
 
   void checkDesign(odb::dbBlock* block) const;
 
-  std::vector<Grid*> getGrids() const;
   Grid* instanceGrid(odb::dbInst* inst) const;
 
   VoltageDomain* getCoreDomain() const;

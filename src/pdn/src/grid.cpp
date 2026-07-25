@@ -70,6 +70,8 @@ std::string Grid::typeToString(Type type)
       return "Instance";
     case kExisting:
       return "Existing";
+    case kDummy:
+      return "Dummy";
   }
 
   return "Unknown";
@@ -1709,9 +1711,132 @@ bool InstanceGrid::isValid() const
   return true;
 }
 
+bool InstanceGrid::hasHalo() const
+{
+  for (int margin : halos_) {
+    if (margin != 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+InstanceGrid::Halo InstanceGrid::suggestHalo(
+    const std::vector<odb::Rect>& rows) const
+{
+  const odb::Rect inst_box = inst_->getBBox()->getBox();
+  const odb::Rect inst_halo = applyHalo(inst_box, halos_, true, true, true);
+
+  // Whether a row shares the instance's horizontal/vertical extent.  A row
+  // that does not overlap the instance shares at most one of the two, so it
+  // can always be separated from the instance along the other axis.
+  auto overlaps_x = [&inst_box](const odb::Rect& row) {
+    return row.xMax() > inst_box.xMin() && row.xMin() < inst_box.xMax();
+  };
+  auto overlaps_y = [&inst_box](const odb::Rect& row) {
+    return row.yMax() > inst_box.yMin() && row.yMin() < inst_box.yMax();
+  };
+
+  Halo suggested = halos_;
+
+  // First pass: rows beside the instance (sharing its vertical extent) can
+  // only be cleared horizontally; rows above/below it (sharing its horizontal
+  // extent) can only be cleared vertically.  Apply these forced reductions.
+  std::vector<odb::Rect> corner_rows;
+  for (const odb::Rect& row : rows) {
+    if (overlaps_y(row)) {
+      if (row.xMin() >= inst_box.xMax()) {  // right of the instance
+        suggested[2] = std::min(suggested[2], row.xMin() - inst_box.xMax());
+      } else {  // left of the instance
+        suggested[0] = std::min(suggested[0], inst_box.xMin() - row.xMax());
+      }
+    } else if (overlaps_x(row)) {
+      if (row.yMin() >= inst_box.yMax()) {  // above the instance
+        suggested[3] = std::min(suggested[3], row.yMin() - inst_box.yMax());
+      } else {  // below the instance
+        suggested[1] = std::min(suggested[1], inst_box.yMin() - row.yMax());
+      }
+    } else {
+      corner_rows.push_back(row);
+    }
+  }
+
+  // Second pass: corner rows can be cleared on either axis.  Many are already
+  // cleared by the forced reductions above; for any that remain, retract
+  // whichever side has to move the least.
+  for (const odb::Rect& row : corner_rows) {
+    if (!inst_halo.overlaps(row)) {
+      continue;
+    }
+    const bool right = row.xMin() >= inst_box.xMax();
+    const int x_side = right ? 2 : 0;
+    const int x_halo
+        = right ? row.xMin() - inst_box.xMax() : inst_box.xMin() - row.xMax();
+    const bool above = row.yMin() >= inst_box.yMax();
+    const int y_side = above ? 3 : 1;
+    const int y_halo
+        = above ? row.yMin() - inst_box.yMax() : inst_box.yMin() - row.yMax();
+    if (suggested[x_side] - x_halo <= suggested[y_side] - y_halo) {
+      suggested[x_side] = std::min(suggested[x_side], x_halo);
+    } else {
+      suggested[y_side] = std::min(suggested[y_side], y_halo);
+    }
+  }
+
+  return suggested;
+}
+
+void InstanceGrid::checkHalo() const
+{
+  if (!hasHalo() || inst_->getMaster()->isCover()) {
+    return;
+  }
+
+  const odb::Rect inst_box = inst_->getBBox()->getBox();
+  const odb::Rect halo_box = applyHalo(inst_box, true, true, true);
+
+  // Collect rows the halo intrudes into.  Rows the instance footprint itself
+  // overlaps are skipped: no halo adjustment can clear those (the instance is
+  // placed on top of them), so they are out of scope here.
+  std::vector<odb::Rect> overlapping_rows;
+  std::string first_row;
+  for (auto* row : getBlock()->getRows()) {
+    const odb::Rect row_box = row->getBBox();
+    if (!halo_box.overlaps(row_box) || inst_box.overlaps(row_box)) {
+      continue;
+    }
+    if (overlapping_rows.empty()) {
+      first_row = row->getName();
+    }
+    overlapping_rows.push_back(row_box);
+  }
+
+  if (overlapping_rows.empty()) {
+    return;
+  }
+
+  const Halo suggested = suggestHalo(overlapping_rows);
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  getLogger()->error(
+      utl::PDN,
+      8,
+      "{} halo overlaps row {} (and {} other row(s)); reduce the halo to at "
+      "most \"{:.4f} {:.4f} {:.4f} {:.4f}\".",
+      getLongName(),
+      first_row,
+      overlapping_rows.size() - 1,
+      suggested[0] / dbus,
+      suggested[1] / dbus,
+      suggested[2] / dbus,
+      suggested[3] / dbus);
+}
+
 void InstanceGrid::checkSetup() const
 {
   Grid::checkSetup();
+
+  checkHalo();
 
   // check blockages above pins
   const auto nets = getNets(startsWithPower());
@@ -1811,6 +1936,19 @@ void InstanceGrid::checkSetup() const
       }
     }
   }
+}
+
+////////
+
+DummyInstanceGrid::DummyInstanceGrid(VoltageDomain* domain,
+                                     const std::string& name)
+    : Grid(domain, name, true, {})
+{
+}
+
+std::string DummyInstanceGrid::getLongName() const
+{
+  return getName() + " - Dummy";
 }
 
 ////////

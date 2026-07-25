@@ -1282,19 +1282,11 @@ void dbNetwork::findInstNetsMatching(const Instance* instance,
                                      const PatternMatch* pattern,
                                      NetSeq& nets) const
 {
-  if (instance == top_instance_) {
-    if (pattern->hasWildcards()) {
-      for (dbNet* dnet : block_->getNets()) {
-        const char* net_name = dnet->getConstName();
-        if (pattern->match(net_name)) {
-          nets.push_back(dbToSta(dnet));
-        }
-      }
-    } else {
-      dbNet* dnet = block_->findNet(pattern->pattern().c_str());
-      if (dnet) {
-        nets.push_back(dbToSta(dnet));
-      }
+  std::unique_ptr<InstanceNetIterator> net_iter{netIterator(instance)};
+  while (net_iter->hasNext()) {
+    Net* net = net_iter->next();
+    if (pattern->match(name(net))) {
+      nets.push_back(net);
     }
   }
 }
@@ -5603,7 +5595,7 @@ bool dbNetwork::isValidFlop(odb::dbInst* FF) const
     return false;
   }
   const LibertyCell* lib_cell = testCell(cell);
-  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
+  if (lib_cell == nullptr || !lib_cell->isSequential()) {
     return false;
   }
 
@@ -5634,47 +5626,6 @@ bool dbNetwork::isValidFlop(odb::dbInst* FF) const
   return getNumD(FF) == 1
          && clock + q + qn + scan + supply + preset + clear + 1
                 == FF->getITerms().size();
-}
-
-bool dbNetwork::isValidTray(odb::dbInst* tray) const
-{
-  const Cell* cell = dbToSta(tray->getMaster());
-  if (cell == nullptr) {
-    return false;
-  }
-  const LibertyCell* lib_cell = testCell(cell);
-  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
-    return false;
-  }
-
-  // We don't want the test_cell which lacks global properties
-  const LibertyCell* base_cell = libertyCell(cell);
-  if (base_cell->isClockGate() || base_cell->dontUse()) {
-    return false;
-  }
-
-  int q = 0;
-  int qn = 0;
-  int scan = 0;
-  int supply = 0;
-  int preset = 0;
-  int clear = 0;
-  int clock = 0;
-
-  for (odb::dbITerm* iterm : tray->getITerms()) {
-    q += (isQPin(iterm) && !isInvertingQPin(iterm));
-    qn += (isQPin(iterm) && isInvertingQPin(iterm));
-    scan += (isScanIn(iterm) || isScanEnable(iterm));
-    supply += (isSupplyPin(iterm));
-    preset += (isPresetPin(iterm));
-    clear += (isClearPin(iterm));
-    clock += (isClockPin(iterm));
-  }
-
-  // #D = max(q, qn)
-  return std::max(q, qn) >= 2 && getNumD(tray) == std::max(q, qn)
-         && clock + q + qn + scan + supply + preset + clear + std::max(q, qn)
-                == tray->getITerms().size();
 }
 
 sta::LibertyPort* dbNetwork::getLibertyScanEnable(

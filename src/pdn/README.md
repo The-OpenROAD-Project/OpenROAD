@@ -472,10 +472,6 @@ Currently the following assumptions are made:
 1. The input floorplan includes the stdcell rows, placement of all macro blocks and IO pins.
 1. The stdcells rows will be cut around macro placements
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+pdn) about this tool.
-
 ## License
 
 BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

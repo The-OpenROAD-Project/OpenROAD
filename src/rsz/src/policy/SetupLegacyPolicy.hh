@@ -56,8 +56,7 @@ class SetupLegacyPolicy : public SetupLegacyBase
   {
     return "LEGACY Phase Endpoint Profiler";
   }
-  bool pathImproved(int end_index,
-                    sta::Slack end_slack,
+  bool pathImproved(sta::Slack end_slack,
                     sta::Slack worst_slack,
                     sta::Slack prev_end_slack,
                     sta::Slack prev_worst_slack) const;

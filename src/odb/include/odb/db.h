@@ -2513,6 +2513,16 @@ class dbNet : public dbObject
   void setJumpers(bool has_jumpers);
 
   ///
+  /// When enabled (the default), the detailed router may auto-taper this
+  /// net down to minimum width near pin connections.  Disable it for
+  /// wide/NDR (e.g. analog) nets that must keep their full width all the
+  /// way to the pin.
+  ///
+  bool isAutoTaperEnabled();
+
+  void setAutoTaper(bool enable = true);
+
+  ///
   /// Return true if the input net is in higher hierarchy than this net
   /// e.g., If this net name = "a/b/c" and input `net` name = "a/d",
   ///       this API returns true.
@@ -5109,6 +5119,11 @@ class dbRegion : public dbObject
   dbSet<dbBox> getBoundaries();
 
   ///
+  /// Get the overlap area between the region and a rectangle
+  ///
+  int64_t getOverlapArea(const Rect& r);
+
+  ///
   /// Add this instance to the region
   ///
   void addInst(dbInst* inst);
@@ -5888,6 +5903,10 @@ class dbTech : public dbObject
   /// Get the tech name.
   ///
   std::string getName();
+
+  void setExtractionRulesFile(const std::string& path);
+
+  std::string getExtractionRulesFile();
 
   ///
   /// Get the Database units per micron.
@@ -7614,6 +7633,8 @@ class dbDatabase : public dbObject
 
   void setHierarchy(bool value);
   bool hasHierarchy() const;
+
+  bool hasHierarchicalChip() const;
 
   void setTopChip(dbChip* chip);
   ///

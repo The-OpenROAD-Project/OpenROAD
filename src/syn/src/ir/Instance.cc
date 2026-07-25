@@ -674,7 +674,7 @@ bool Instance::hasState() const
     case EntryType::kOther:
       return true;
     case EntryType::kTarget:
-      return static_cast<const Target*>(this)->cell()->hasSequentials();
+      return static_cast<const Target*>(this)->cell()->isSequential();
     default:
       return false;
   }

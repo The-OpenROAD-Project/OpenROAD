@@ -4,6 +4,12 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
+package(
+    features = [
+        "layering_check",
+    ],
+)
+
 cc_library(
     name = "mockturtle",
     hdrs = glob(["include/mockturtle/**/*.hpp"]) + glob([
@@ -20,16 +26,19 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/container:flat_hash_map",
-        "@abseil-cpp//absl/random:random",
-        "@spdlog",
+        "@fmt",
     ],
 )
 
 cc_test(
     name = "mockturtle_emap_test",
     srcs = ["test/algorithms/emap.cpp"],
+    # Vendored mockturtle headers narrow ints in braced initializer lists,
+    # which clang treats as an error by default (-Wc++11-narrowing).
+    copts = [
+        "-Wno-c++11-narrowing",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":mockturtle",

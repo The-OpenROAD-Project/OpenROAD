@@ -37,30 +37,31 @@ met5       Horizontal       3108          1413          54.54%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Stage 2: Pattern routing with detours.
-Stage 3: Maze routing on sparsified graph.
+Stage 3: Pattern routing with detours.
+Stage 4: Maze routing on sparsified graph.
+Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 1/5
 [WARNING GRT-0305] Demoted 2 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
 [INFO GRT-0117] Start extra iteration 2/5
 [INFO GRT-0306] Iterative RRR soft-demoted 2 NDR net(s) total.
 Routing statistics
 Wire length:           2918
-Total via count:       138
+Total via count:       137
 Total congestion:      0
-Min resource:          0.8611112303204012
+Min resource:          0.9013890080981781
 Bottleneck:            (3, 15, 21)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1             13777           199            1.44%             0 /  0 /  0
-met2             10786           129            1.20%             0 /  0 /  0
-met3              4207            25            0.59%             0 /  0 /  0
-met4              3241            13            0.40%             0 /  0 /  0
+met1             13777           187            1.36%             0 /  0 /  0
+met2             10786           128            1.19%             0 /  0 /  0
+met3              4207            24            0.57%             0 /  0 /  0
+met4              3241            12            0.37%             0 /  0 /  0
 met5              1413             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            33424           366            1.10%             0 /  0 /  0
+Total            33424           351            1.05%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 1641 um
 [INFO GRT-0014] Routed nets: 15

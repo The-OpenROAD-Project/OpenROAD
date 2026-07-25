@@ -54,11 +54,9 @@ cc_library(
     deps = [
         ":dft",
         "//:ord",
-        "//src/dbSta",
         "//src/dft/src/architect",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

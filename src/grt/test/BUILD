@@ -75,9 +75,11 @@ TESTS = [
     "read_segments_error3",
     "read_segments_error4",
     "read_segments_error5",
+    "read_segments_error6",
     "region_adjustment",
     "remove_buffers1",
     "remove_buffers2",
+    "remove_buffers3",
     "repair_antennas1",
     "repair_antennas2",
     "repair_antennas3",
@@ -97,6 +99,11 @@ TESTS = [
     "report_wire_length6",
     "report_wire_length7",
     "report_wire_length8",
+    "resistance_aware_asap7_cong_cugr",
+    "resistance_aware_asap7_cugr",
+    "resistance_aware_asap7_fr",
+    "resistance_aware_cugr",
+    "resistance_aware_highres_cugr",
     "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",
@@ -104,6 +111,7 @@ TESTS = [
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
     "soft_ndr_4w_6s_cugr",
+    "soft_ndr_reset_cap",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",
@@ -112,6 +120,9 @@ TESTS = [
     "tracks3",
     "unplaced_inst",
     "upper_layer_net",
+    "via_geometry_cugr",
+    "via_multirect_cugr",
+    "via_priority_cugr",
     "write_segments1",
     "write_segments2",
 ]
@@ -134,14 +145,9 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-]
-
 [regression_test(
     name = test_name,
     data = [":test_resources"],
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
 regression_test(

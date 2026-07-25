@@ -25,6 +25,14 @@ Bundle::Bundle(BundleView bv) : tag_(kEmpty), width_(0), net_(Net::zero())
     net_ = bv[0];
     return;
   }
+
+  if (bv.isGuaranteedConsecutive()) {
+    tag_ = kConsecutive;
+    width_ = bv.width();
+    net_ = bv[0];
+    return;
+  }
+
   std::vector<Net> nets;
   nets.reserve(bv.width());
   for (uint32_t i = 0; i < bv.width(); i++) {

@@ -61,12 +61,9 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/cgt",
     "//src/cts",
     "//src/cts:ui",
-    "//src/cut",
     "//src/dbSta",
     "//src/dbSta:dbNetwork",
     "//src/dbSta:dbReadVerilog",
-    "//src/dbSta:IpChecker",
-    "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",
     "//src/dft",
     "//src/dft:ui",
@@ -96,7 +93,6 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/odb/src/defout",
     "//src/odb/src/lefin",
     "//src/odb/src/lefout",
-    "//src/odb/src/swig:swig_common",
     "//src/odb:ui",
     "//src/pad",
     "//src/par",
@@ -111,19 +107,16 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/rmp:ui",
     "//src/rsz",
     "//src/rsz:ui",
-    "//src/stt",
     "//src/stt:ui",
     "//src/syn",
     "//src/syn:ui",
     "//src/tap",
     "//src/tap:ui",
-    "//src/upf",
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
     "//src/web",
     "//src/web:ui",
-    "@abc",
     ":ord",
 ]
 
@@ -316,6 +309,7 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//src/sta:opensta_lib",
         "@abseil-cpp//absl/synchronization",
         "@tcl_lang//:tcl",
     ],
@@ -584,10 +578,14 @@ sh_test(
 sh_binary(
     name = "tidy_tcl",
     srcs = ["//bazel:tcl_tidy.sh"],
-    args = ["$(rootpath //bazel:tclfmt)"],
+    args = [
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath @git)",
+    ],
     data = [
         "tclint.toml",
         "//bazel:tclfmt",
+        "@git",
     ],
 )
 
@@ -633,9 +631,13 @@ sh_test(
 sh_binary(
     name = "tidy_bzl",
     srcs = ["//bazel:bzl_tidy.sh"],
-    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    args = [
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
+    ],
     data = [
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
 )
 
@@ -666,6 +668,7 @@ sh_binary(
         "$(rootpath @buildifier_prebuilt//:buildifier)",
         "$(rootpath //bazel:bzl_lint_test.sh)",
         "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
     ],
     data = [
         "MODULE.bazel",
@@ -677,5 +680,6 @@ sh_binary(
         "//bazel:tclfmt",
         "//bazel:tclint",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
 )

@@ -19,6 +19,7 @@ COMPULSORY_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",
+    "ndr_no_auto_taper",
     "obstruction",
     "single_step",
     "ta_ap_aligned",
@@ -37,6 +38,7 @@ ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 BIG_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
+    "ndr_no_auto_taper",
 ]
 
 PY_TESTS = [
@@ -163,14 +165,14 @@ cc_test(
         "fixture.h",
         "gcTest.cpp",
     ],
-    features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
         "../src",
     ],
     deps = [
-        "//src/drt",  # build_cleaner: keep for private headers
+        "//src/drt",  # buildcleaner: keep for private headers
         "//src/drt:base_types",
         "//src/drt:db_hdrs",
+        "//src/drt:drt_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -190,14 +192,15 @@ cc_test(
         "fixture.h",
         "taTest.cpp",
     ],
-    features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
         "../src",
     ],
     deps = [
-        "//src/drt",
+        # drt only exports header TritonRoute.h, but we need other symbols
+        "//src/drt",  # buildcleaner: keep
         "//src/drt:base_types",
         "//src/drt:db_hdrs",
+        "//src/drt:drt_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",

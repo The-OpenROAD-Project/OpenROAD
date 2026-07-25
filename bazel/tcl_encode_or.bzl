@@ -23,7 +23,10 @@ def _tcl_encode_or_impl(ctx):
         outputs = [output_file],
         inputs = ctx.files.srcs,
         arguments = [args],
-        tools = [ctx.executable._encode_script],
+        tools = depset(
+            direct = [ctx.executable._encode_script],
+            transitive = [ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.files] if ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime and ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.files else [],
+        ),
         executable = ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.interpreter,
     )
     return [DefaultInfo(files = depset([output_file]))]

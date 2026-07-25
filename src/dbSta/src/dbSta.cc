@@ -614,7 +614,7 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   if (lib_cell->isLevelShifter()) {
     return STD_LEVEL_SHIFT;
   }
-  if (lib_cell->hasSequentials()) {
+  if (lib_cell->isSequential()) {
     return STD_SEQUENTIAL;
   }
   if (lib_cell->portCount() == 0) {

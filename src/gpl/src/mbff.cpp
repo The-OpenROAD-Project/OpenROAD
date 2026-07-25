@@ -1989,7 +1989,14 @@ void MBFF::SetRatios(const Mask& array_mask)
         const float tray_total
             = tray_power_[array_mask][i]
               + tray_internal_energy_[array_mask][i] * activity;
-        norm_power_[i] = (tray_total / slot_cnt) / single_bit_power_;
+        // Credit clock-tree power saved by banking. An N-bit tray presents one
+        // clock sink instead of N, so the per-sink clock-tree power p_ct is
+        // added to both the tray (one sink) and the single-bit baseline (one
+        // sink). With p_ct = 0 this reduces to the legacy ratio; with p_ct > 0
+        // larger trays become relatively cheaper, promoting higher banking.
+        const float p_ct = clock_power_weight_ * single_bit_power_;
+        norm_power_[i]
+            = ((tray_total + p_ct) / slot_cnt) / (single_bit_power_ + p_ct);
         debugPrint(log_,
                    GPL,
                    "mbff",
@@ -2079,8 +2086,19 @@ void MBFF::SetTrayNames()
   }
 }
 
-void MBFF::Run(const int mx_sz, const float alpha, const float beta)
+void MBFF::Run(const int mx_sz,
+               const float alpha,
+               const float beta,
+               const float clock_power_weight)
 {
+  // Validate here (the common entry for Tcl, Python and direct C++ callers) so
+  // no caller can feed a negative weight, which would make the SetRatios
+  // denominator (single_bit_power_ * (1 + clock_power_weight_)) zero or
+  // negative and corrupt the ILP cost model.
+  if (clock_power_weight < 0) {
+    log_->error(GPL, 115, "-clock_power_weight must be non-negative.");
+  }
+  clock_power_weight_ = clock_power_weight;
   std::srand(1);
   omp_set_num_threads(num_threads_);
 
@@ -2176,6 +2194,47 @@ Point MBFF::GetTrayCenter(const Mask& array_mask, const int idx)
   return Point{tray_center_x, tray_center_y};
 }
 
+bool MBFF::IsValidTray(dbInst* tray)
+{
+  const sta::Cell* cell = network_->dbToSta(tray->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
+  if (lib_cell == nullptr || !lib_cell->isSequential()) {
+    return false;
+  }
+
+  // We don't want the test_cell which lacks global properties
+  const sta::LibertyCell* base_cell = network_->libertyCell(cell);
+  if (base_cell->isClockGate() || resizer_->dontUse(base_cell)) {
+    return false;
+  }
+
+  int q = 0;
+  int qn = 0;
+  int scan = 0;
+  int supply = 0;
+  int preset = 0;
+  int clear = 0;
+  int clock = 0;
+
+  for (dbITerm* iterm : tray->getITerms()) {
+    q += (network_->isQPin(iterm) && !network_->isInvertingQPin(iterm));
+    qn += (network_->isQPin(iterm) && network_->isInvertingQPin(iterm));
+    scan += (network_->isScanIn(iterm) || network_->isScanEnable(iterm));
+    supply += (network_->isSupplyPin(iterm));
+    preset += (network_->isPresetPin(iterm));
+    clear += (network_->isClearPin(iterm));
+    clock += (network_->isClockPin(iterm));
+  }
+
+  // #D = max(q, qn)
+  return std::max(q, qn) >= 2 && network_->getNumD(tray) == std::max(q, qn)
+         && clock + q + qn + scan + supply + preset + clear + std::max(q, qn)
+                == tray->getITerms().size();
+}
+
 void MBFF::ReadLibs()
 {
   test_idx_ = 0;
@@ -2184,7 +2243,7 @@ void MBFF::ReadLibs()
       const std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
       dbInst* tmp_tray = dbInst::create(block_, master, tray_name.c_str());
 
-      if (!network_->isValidTray(tmp_tray)) {
+      if (!IsValidTray(tmp_tray)) {
         dbInst::destroy(tmp_tray);
         --test_idx_;
         continue;
@@ -2445,6 +2504,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       single_bit_width_(0.0),
       single_bit_power_(0.0),
       clock_period_(0.0),
+      clock_power_weight_(0.0),
       single_bit_master_(nullptr),
       test_idx_(-1)
 {

@@ -20,6 +20,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         60.382 um^2
 [INFO GPL-0037] Total instances area:           60.382 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -30,9 +31,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -48,26 +48,32 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000007 HPWL: 79932
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000001 HPWL: 80607
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 80632
-[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 60.38 um^2, Utilization: 0.1%
+[INFO DPL-0006] Core area: 47872.02 um^2
+[INFO DPL-0007] Movable instances area: 60.38 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 0.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      21
-Diamond Move Success:             21 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 21 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |         69 |        15 |        43
+        1 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
-total displacement        113.6 u
-average displacement        5.4 u
-max displacement            7.6 u
+total displacement        110.4 u
+average displacement        5.3 u
+max displacement           10.3 u
 original HPWL               6.7 u
-legalized HPWL            112.1 u
-delta HPWL                 1569 %
+legalized HPWL            119.1 u
+delta HPWL                 1673 %
 
 ### Initial bc1 is buffer_chain ###
 Cell type report for bc1 (buffer_chain)
@@ -83,13 +89,13 @@ Net u1z
  Number of pins: 5
 
 Driver pins
- u1/Z output (BUF_X1) (4, 603)
+ u1/Z output (BUF_X1) (0, 590)
 
 Load pins
- bc1/u2/A input (BUF_X1) 0.906-0.983 (4, 597)
- bc2/u2/A input (BUF_X1) 0.906-0.983 (7, 600)
- ic1/u4/A input (INV_X1) 1.598-1.720 (7, 600)
- ic2/u4/A input (INV_X1) 1.598-1.720 (4, 597)
+ bc1/u2/A input (BUF_X1) 0.906-0.983 (0, 608)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (1, 600)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (0, 604)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (0, 596)
 
 Net u3z
  Pin capacitance: 1.096-1.158
@@ -100,7 +106,7 @@ Net u3z
  Number of pins: 2
 
 Driver pins
- bc1/u3/Z output (BUF_X1) (4, 603)
+ bc1/u3/Z output (BUF_X1) (0, 592)
 
 Load pins
  r2/D input (DFF_X1) 1.096-1.158 (1, 604)
@@ -116,24 +122,24 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.265    0.265 v r1/Q (DFF_X1)
-   0.110    0.375 v u1/Z (BUF_X1)
-   0.088    0.463 v bc1/u2/Z (BUF_X1)
-   0.084    0.547 v bc1/u3/Z (BUF_X1)
-   0.000    0.547 v r2/D (DFF_X1)
-            0.547   data arrival time
+   0.364    0.364 ^ r1/Q (DFF_X1)
+   0.136    0.500 ^ u1/Z (BUF_X1)
+   0.086    0.586 ^ bc1/u2/Z (BUF_X1)
+   0.070    0.656 ^ bc1/u3/Z (BUF_X1)
+   0.000    0.656 ^ r2/D (DFF_X1)
+            0.656   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.157    0.143   library setup time
-            0.143   data required time
+  -0.075    0.225   library setup time
+            0.225   data required time
 -----------------------------------------------------------
-            0.143   data required time
-           -0.547   data arrival time
+            0.225   data required time
+           -0.656   data arrival time
 -----------------------------------------------------------
-           -0.404   slack (VIOLATED)
+           -0.431   slack (VIOLATED)
 
 
 Equivalence check - pre
@@ -145,6 +151,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         59.850 um^2
 [INFO GPL-0037] Total instances area:           59.850 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -155,9 +162,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -170,11 +176,11 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 2	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000005 HPWL: 2671580
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 270429
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 269080
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 269080
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000005 HPWL: 269080
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 2624080
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 240541
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000001 HPWL: 238780
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000001 HPWL: 238520
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 238515
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.0111
 [INFO GPL-0024] Movable insts average area:      2.598 um^2
@@ -188,44 +194,44 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.4016 |  9.022550e+01 |   +0.00% |  1.61e-13 |      
-       10 |   0.4016 |  9.080650e+01 |   +0.64% |  2.62e-13 |      
-       20 |   0.4016 |  9.081600e+01 |   +0.01% |  4.27e-13 |      
-       30 |   0.4016 |  9.081850e+01 |   +0.00% |  6.95e-13 |      
-       40 |   0.4016 |  9.082100e+01 |   +0.00% |  1.13e-12 |      
-       50 |   0.4016 |  9.082350e+01 |   +0.00% |  1.84e-12 |      
-       60 |   0.4016 |  9.082600e+01 |   +0.00% |  3.00e-12 |      
-       70 |   0.4016 |  9.082850e+01 |   +0.00% |  4.89e-12 |      
-       80 |   0.4016 |  9.083100e+01 |   +0.00% |  7.97e-12 |      
-       90 |   0.4016 |  9.083350e+01 |   +0.00% |  1.30e-11 |      
-      100 |   0.4016 |  9.083550e+01 |   +0.00% |  2.11e-11 |      
-      110 |   0.4016 |  9.082550e+01 |   -0.01% |  3.44e-11 |      
-      120 |   0.4016 |  9.093800e+01 |   +0.12% |  5.61e-11 |      
-      130 |   0.4016 |  9.417500e+01 |   +3.56% |  9.14e-11 |      
-      140 |   0.4016 |  9.790300e+01 |   +3.96% |  1.49e-10 |      
-      150 |   0.4016 |  1.026840e+02 |   +4.88% |  2.42e-10 |      
-      160 |   0.4016 |  1.091895e+02 |   +6.34% |  3.95e-10 |      
-      170 |   0.4016 |  1.141005e+02 |   +4.50% |  6.43e-10 |      
-      180 |   0.4016 |  1.116865e+02 |   -2.12% |  1.05e-09 |      
-      190 |   0.4016 |  1.051335e+02 |   -5.87% |  1.71e-09 |      
-      200 |   0.4014 |  1.181445e+02 |  +12.38% |  2.78e-09 |      
-      210 |   0.4016 |  1.110485e+02 |   -6.01% |  4.53e-09 |      
-      220 |   0.4016 |  1.093320e+02 |   -1.55% |  7.38e-09 |      
-      230 |   0.4016 |  1.095505e+02 |   +0.20% |  1.20e-08 |      
-      240 |   0.4016 |  1.017260e+02 |   -7.14% |  1.96e-08 |      
-      250 |   0.4013 |  9.227250e+01 |   -9.29% |  3.19e-08 |      
-      260 |   0.4010 |  9.355250e+01 |   +1.39% |  5.19e-08 |      
-      270 |   0.4003 |  9.605900e+01 |   +2.68% |  8.46e-08 |      
-      280 |   0.3994 |  1.001120e+02 |   +4.22% |  1.38e-07 |      
-      290 |   0.3979 |  1.068305e+02 |   +6.71% |  2.24e-07 |      
+        0 |   0.4016 |  9.678100e+01 |   +0.00% |  1.54e-13 |      
+       10 |   0.4016 |  9.887450e+01 |   +2.16% |  2.51e-13 |      
+       20 |   0.4016 |  9.890750e+01 |   +0.03% |  4.10e-13 |      
+       30 |   0.4016 |  9.891200e+01 |   +0.00% |  6.67e-13 |      
+       40 |   0.4016 |  9.891500e+01 |   +0.00% |  1.09e-12 |      
+       50 |   0.4016 |  9.891800e+01 |   +0.00% |  1.77e-12 |      
+       60 |   0.4016 |  9.892100e+01 |   +0.00% |  2.88e-12 |      
+       70 |   0.4016 |  9.892450e+01 |   +0.00% |  4.70e-12 |      
+       80 |   0.4016 |  9.892750e+01 |   +0.00% |  7.65e-12 |      
+       90 |   0.4016 |  9.893050e+01 |   +0.00% |  1.25e-11 |      
+      100 |   0.4016 |  9.893350e+01 |   +0.00% |  2.03e-11 |      
+      110 |   0.4016 |  9.893700e+01 |   +0.00% |  3.31e-11 |      
+      120 |   0.4016 |  9.894000e+01 |   +0.00% |  5.39e-11 |      
+      130 |   0.4016 |  9.893850e+01 |   -0.00% |  8.77e-11 |      
+      140 |   0.4016 |  9.881650e+01 |   -0.12% |  1.43e-10 |      
+      150 |   0.4016 |  1.023180e+02 |   +3.54% |  2.33e-10 |      
+      160 |   0.4016 |  1.348840e+02 |  +31.83% |  3.79e-10 |      
+      170 |   0.4016 |  1.306140e+02 |   -3.17% |  6.18e-10 |      
+      180 |   0.4016 |  1.141400e+02 |  -12.61% |  1.01e-09 |      
+      190 |   0.4016 |  1.290410e+02 |  +13.06% |  1.64e-09 |      
+      200 |   0.4016 |  1.376680e+02 |   +6.69% |  2.67e-09 |      
+      210 |   0.4016 |  1.245470e+02 |   -9.53% |  4.35e-09 |      
+      220 |   0.4016 |  1.223230e+02 |   -1.79% |  7.08e-09 |      
+      230 |   0.4016 |  1.263020e+02 |   +3.25% |  1.15e-08 |      
+      240 |   0.4016 |  1.107405e+02 |  -12.32% |  1.88e-08 |      
+      250 |   0.4013 |  9.967450e+01 |   -9.99% |  3.06e-08 |      
+      260 |   0.4010 |  1.015590e+02 |   +1.89% |  4.99e-08 |      
+      270 |   0.4004 |  1.040510e+02 |   +2.45% |  8.12e-08 |      
+      280 |   0.3995 |  1.081540e+02 |   +3.94% |  1.32e-07 |      
+      290 |   0.3980 |  1.150865e+02 |   +6.41% |  2.15e-07 |      
 [WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
-      310 |   0.1395 |  2.582950e+02 | +141.78% |  5.50e-07 |      
-      312 |   0.0783 |  2.618560e+02 |          |  6.18e-07 |      
+      310 |   0.1280 |  2.494715e+02 | +116.77% |  5.28e-07 |      
+      311 |   0.0936 |  2.598415e+02 |          |  5.71e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 312
+[INFO GPL-1001] Global placement finished at iteration 311
 [INFO GPL-1002] Placed Cell Area               54.5513
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -234,26 +240,26 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 59.85 um^2, Utilization: 0.1%
+[INFO DPL-0006] Core area: 47872.02 um^2
+[INFO DPL-0007] Movable instances area: 59.85 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 0.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      21
-Diamond Move Success:             21 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 21 cells
 Placement Analysis
 ---------------------------------
-total displacement         11.6 u
-average displacement        0.6 u
+total displacement         17.2 u
+average displacement        0.8 u
 max displacement            1.8 u
-original HPWL             262.3 u
-legalized HPWL            266.3 u
-delta HPWL                    2 %
+original HPWL             260.2 u
+legalized HPWL            262.7 u
+delta HPWL                    1 %
 
 Cell type report for bc1 (inv_chain_bc1)
 Cell type report:                       Count       Area
@@ -268,13 +274,13 @@ Net u1z
  Number of pins: 5
 
 Driver pins
- u1/Z output (BUF_X1) (19, 593)
+ u1/Z output (BUF_X1) (19, 594)
 
 Load pins
- bc1/u4/A input (INV_X1) 1.598-1.720 (21, 610)
- bc2/u2/A input (BUF_X1) 0.906-0.983 (19, 576)
- ic1/u4/A input (INV_X1) 1.598-1.720 (19, 601)
- ic2/u4/A input (INV_X1) 1.598-1.720 (19, 576)
+ bc1/u4/A input (INV_X1) 1.598-1.720 (19, 601)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (19, 607)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (19, 583)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (19, 579)
 
 Net u3z
  Pin capacitance: 1.096-1.158
@@ -285,10 +291,10 @@ Net u3z
  Number of pins: 2
 
 Driver pins
- bc1/u5/ZN output (INV_X1) (18, 620)
+ bc1/u5/ZN output (INV_X1) (18, 607)
 
 Load pins
- r2/D input (DFF_X1) 1.096-1.158 (19, 627)
+ r2/D input (DFF_X1) 1.096-1.158 (19, 613)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -301,24 +307,24 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.405    0.405 ^ r1/Q (DFF_X1)
-   0.164    0.569 ^ u1/Z (BUF_X1)
-   0.038    0.607 v bc1/u4/ZN (INV_X1)
-   0.041    0.648 ^ bc1/u5/ZN (INV_X1)
-   0.000    0.648 ^ r2/D (DFF_X1)
-            0.648   data arrival time
+   0.399    0.399 ^ r1/Q (DFF_X1)
+   0.158    0.557 ^ u1/Z (BUF_X1)
+   0.035    0.591 v bc1/u4/ZN (INV_X1)
+   0.039    0.631 ^ bc1/u5/ZN (INV_X1)
+   0.000    0.631 ^ r2/D (DFF_X1)
+            0.631   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.074    0.226   library setup time
-            0.226   data required time
+  -0.073    0.227   library setup time
+            0.227   data required time
 -----------------------------------------------------------
-            0.226   data required time
-           -0.648   data arrival time
+            0.227   data required time
+           -0.631   data arrival time
 -----------------------------------------------------------
-           -0.422   slack (VIOLATED)
+           -0.404   slack (VIOLATED)
 
 
 Equivalence check - swap (buffer_chain -> inv_chain)
@@ -330,6 +336,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         60.382 um^2
 [INFO GPL-0037] Total instances area:           60.382 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -340,9 +347,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -355,11 +361,11 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 2	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3015660
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 590714
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000001 HPWL: 591490
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 591231
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 591185
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3019360
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 576716
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 576986
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 576698
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 576698
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.0112
 [INFO GPL-0024] Movable insts average area:      2.623 um^2
@@ -373,8 +379,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0875 |  2.617095e+02 |   +0.00% |  9.43e-13 |      
-        0 |   0.0875 |  2.617095e+02 |          |  9.81e-13 |      
+        0 |   0.0997 |  2.562050e+02 |   +0.00% |  8.26e-13 |      
+        0 |   0.0997 |  2.562050e+02 |          |  8.59e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               55.0833
@@ -387,55 +393,55 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
-       10 |   0.4174 |  3.761700e+01 |  -85.63% |  1.27e-12 |      
-       20 |   0.4170 |  2.949300e+01 |  -21.60% |  1.69e-12 |      
-       30 |   0.4016 |  2.584900e+01 |  -12.36% |  2.25e-12 |      
-       40 |   0.3975 |  2.324900e+01 |  -10.06% |  3.00e-12 |      
-       50 |   0.4005 |  2.270250e+01 |   -2.35% |  4.00e-12 |      
-       60 |   0.3983 |  2.288150e+01 |   +0.79% |  5.33e-12 |      
-       70 |   0.3949 |  2.274000e+01 |   -0.62% |  7.10e-12 |      
-       80 |   0.3968 |  2.326900e+01 |   +2.33% |  9.46e-12 |      
-       90 |   0.3969 |  2.388500e+01 |   +2.65% |  1.26e-11 |      
-      100 |   0.3960 |  2.456750e+01 |   +2.86% |  1.68e-11 |      
-      110 |   0.3954 |  2.556600e+01 |   +4.06% |  2.24e-11 |      
-      120 |   0.3961 |  2.718600e+01 |   +6.34% |  2.98e-11 |      
-      130 |   0.3980 |  2.952050e+01 |   +8.59% |  3.97e-11 |      
-      140 |   0.4004 |  3.255150e+01 |  +10.27% |  5.29e-11 |      
-      150 |   0.4027 |  3.631500e+01 |  +11.56% |  7.05e-11 |      
-      160 |   0.4049 |  4.088850e+01 |  +12.59% |  9.39e-11 |      
-      170 |   0.4074 |  4.629650e+01 |  +13.23% |  1.25e-10 |      
-      180 |   0.4106 |  5.223200e+01 |  +12.82% |  1.67e-10 |      
-      190 |   0.4142 |  5.808400e+01 |  +11.20% |  2.22e-10 |      
-      200 |   0.4174 |  6.247600e+01 |   +7.56% |  2.96e-10 |      
-      210 |   0.4206 |  6.308150e+01 |   +0.97% |  3.94e-10 |      
-      220 |   0.4240 |  5.836450e+01 |   -7.48% |  5.25e-10 |      
-      230 |   0.4266 |  5.408100e+01 |   -7.34% |  6.99e-10 |      
-      240 |   0.4278 |  6.191000e+01 |  +14.48% |  9.32e-10 |      
-      250 |   0.4298 |  6.908300e+01 |  +11.59% |  1.24e-09 |      
-      260 |   0.4343 |  6.437400e+01 |   -6.82% |  1.65e-09 |      
-      270 |   0.4358 |  6.829950e+01 |   +6.10% |  2.20e-09 |      
-      280 |   0.4250 |  5.997800e+01 |  -12.18% |  2.94e-09 |      
-      290 |   0.4256 |  7.158400e+01 |  +19.35% |  3.91e-09 |      
-      300 |   0.4165 |  6.433650e+01 |  -10.12% |  5.21e-09 |      
-      310 |   0.4048 |  6.640000e+01 |   +3.21% |  6.94e-09 |      
-      320 |   0.4043 |  6.461400e+01 |   -2.69% |  9.25e-09 |      
-      330 |   0.4030 |  6.224550e+01 |   -3.67% |  1.23e-08 |      
-      340 |   0.3965 |  6.551850e+01 |   +5.26% |  1.64e-08 |      
-      350 |   0.3870 |  7.080800e+01 |   +8.07% |  2.19e-08 |      
-      360 |   0.3629 |  7.646400e+01 |   +7.99% |  2.91e-08 |      
-      370 |   0.3223 |  8.202250e+01 |   +7.27% |  3.88e-08 |      
-      380 |   0.3067 |  8.505250e+01 |   +3.69% |  5.17e-08 |      
-      390 |   0.2701 |  9.178100e+01 |   +7.91% |  6.89e-08 |      
-      400 |   0.2386 |  1.018735e+02 |  +11.00% |  9.18e-08 |      
-      410 |   0.2108 |  1.076275e+02 |   +5.65% |  1.22e-07 |      
-      420 |   0.1634 |  1.208430e+02 |  +12.28% |  1.63e-07 |      
-      430 |   0.1288 |  1.296700e+02 |   +7.30% |  2.17e-07 |      
-      440 |   0.1228 |  1.359470e+02 |   +4.84% |  2.89e-07 |      
-      450 |   0.1082 |  1.431875e+02 |   +5.33% |  3.85e-07 |      
-      460 |   0.1014 |  1.384905e+02 |   -3.28% |  5.13e-07 |      
-      462 |   0.0998 |  1.371810e+02 |          |  5.60e-07 |      
+       10 |   0.4167 |  3.478000e+01 |  -86.42% |  1.11e-12 |      
+       20 |   0.4091 |  2.735050e+01 |  -21.36% |  1.48e-12 |      
+       30 |   0.3991 |  2.442600e+01 |  -10.69% |  1.97e-12 |      
+       40 |   0.3970 |  2.252800e+01 |   -7.77% |  2.63e-12 |      
+       50 |   0.3989 |  2.221250e+01 |   -1.40% |  3.50e-12 |      
+       60 |   0.3974 |  2.229750e+01 |   +0.38% |  4.67e-12 |      
+       70 |   0.3949 |  2.241100e+01 |   +0.51% |  6.22e-12 |      
+       80 |   0.3960 |  2.291050e+01 |   +2.23% |  8.28e-12 |      
+       90 |   0.3962 |  2.338850e+01 |   +2.09% |  1.10e-11 |      
+      100 |   0.3956 |  2.394650e+01 |   +2.39% |  1.47e-11 |      
+      110 |   0.3954 |  2.481450e+01 |   +3.62% |  1.96e-11 |      
+      120 |   0.3961 |  2.618350e+01 |   +5.52% |  2.61e-11 |      
+      130 |   0.3976 |  2.815600e+01 |   +7.53% |  3.48e-11 |      
+      140 |   0.3995 |  3.074050e+01 |   +9.18% |  4.63e-11 |      
+      150 |   0.4015 |  3.394200e+01 |  +10.41% |  6.17e-11 |      
+      160 |   0.4035 |  3.789100e+01 |  +11.63% |  8.22e-11 |      
+      170 |   0.4059 |  4.267950e+01 |  +12.64% |  1.10e-10 |      
+      180 |   0.4090 |  4.811000e+01 |  +12.72% |  1.46e-10 |      
+      190 |   0.4126 |  5.377300e+01 |  +11.77% |  1.94e-10 |      
+      200 |   0.4160 |  5.851050e+01 |   +8.81% |  2.59e-10 |      
+      210 |   0.4189 |  6.084300e+01 |   +3.99% |  3.45e-10 |      
+      220 |   0.4221 |  5.831850e+01 |   -4.15% |  4.60e-10 |      
+      230 |   0.4252 |  5.276550e+01 |   -9.52% |  6.13e-10 |      
+      240 |   0.4270 |  5.488550e+01 |   +4.02% |  8.16e-10 |      
+      250 |   0.4283 |  6.447900e+01 |  +17.48% |  1.09e-09 |      
+      260 |   0.4318 |  6.425400e+01 |   -0.35% |  1.45e-09 |      
+      270 |   0.4384 |  6.160650e+01 |   -4.12% |  1.93e-09 |      
+      280 |   0.4302 |  6.452550e+01 |   +4.74% |  2.57e-09 |      
+      290 |   0.4277 |  6.292400e+01 |   -2.48% |  3.43e-09 |      
+      300 |   0.4210 |  6.598700e+01 |   +4.87% |  4.56e-09 |      
+      310 |   0.4106 |  6.550700e+01 |   -0.73% |  6.08e-09 |      
+      320 |   0.4038 |  6.227250e+01 |   -4.94% |  8.10e-09 |      
+      330 |   0.4039 |  6.274700e+01 |   +0.76% |  1.08e-08 |      
+      340 |   0.3988 |  6.580150e+01 |   +4.87% |  1.44e-08 |      
+      350 |   0.3920 |  6.918800e+01 |   +5.15% |  1.92e-08 |      
+      360 |   0.3753 |  7.465350e+01 |   +7.90% |  2.55e-08 |      
+      370 |   0.3354 |  8.169750e+01 |   +9.44% |  3.40e-08 |      
+      380 |   0.3137 |  8.298850e+01 |   +1.58% |  4.53e-08 |      
+      390 |   0.2896 |  8.598900e+01 |   +3.62% |  6.04e-08 |      
+      400 |   0.2531 |  9.646000e+01 |  +12.18% |  8.04e-08 |      
+      410 |   0.2250 |  1.010380e+02 |   +4.75% |  1.07e-07 |      
+      420 |   0.1836 |  1.121210e+02 |  +10.97% |  1.43e-07 |      
+      430 |   0.1457 |  1.256280e+02 |  +12.05% |  1.90e-07 |      
+      440 |   0.1253 |  1.335710e+02 |   +6.32% |  2.53e-07 |      
+      450 |   0.1169 |  1.402060e+02 |   +4.97% |  3.37e-07 |      
+      460 |   0.1045 |  1.387125e+02 |   -1.07% |  4.50e-07 |      
+      467 |   0.0999 |  1.335910e+02 |          |  5.66e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 462
+[INFO GPL-1001] Global placement finished at iteration 467
 [INFO GPL-1002] Placed Cell Area               55.0833
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -444,26 +450,31 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
-[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 60.38 um^2, Utilization: 0.1%
+[INFO DPL-0006] Core area: 47872.02 um^2
+[INFO DPL-0007] Movable instances area: 60.38 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 0.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      21
-Diamond Move Success:             21 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 21 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         29.1 u
-average displacement        1.4 u
-max displacement            3.4 u
-original HPWL             137.1 u
-legalized HPWL            145.2 u
-delta HPWL                    6 %
+total displacement         34.9 u
+average displacement        1.7 u
+max displacement            4.3 u
+original HPWL             133.5 u
+legalized HPWL            154.2 u
+delta HPWL                   15 %
 
 Cell type report for bc1 (buffer_chain)
 Cell type report:                       Count       Area
@@ -481,10 +492,10 @@ Driver pins
  u1/Z output (BUF_X1) (19, 603)
 
 Load pins
- bc1/u2/A input (BUF_X1) 0.906-0.983 (17, 611)
- bc2/u2/A input (BUF_X1) 0.906-0.983 (18, 611)
- ic1/u4/A input (INV_X1) 1.598-1.720 (17, 610)
- ic2/u4/A input (INV_X1) 1.598-1.720 (21, 613)
+ bc1/u2/A input (BUF_X1) 0.906-0.983 (19, 608)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (19, 611)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (21, 613)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (17, 610)
 
 Net u3z
  Pin capacitance: 1.096-1.158
@@ -495,10 +506,10 @@ Net u3z
  Number of pins: 2
 
 Driver pins
- bc1/u3/Z output (BUF_X1) (17, 612)
+ bc1/u3/Z output (BUF_X1) (19, 612)
 
 Load pins
- r2/D input (DFF_X1) 1.096-1.158 (19, 610)
+ r2/D input (DFF_X1) 1.096-1.158 (19, 614)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -512,23 +523,23 @@ Corner: slow
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
    0.383    0.383 ^ r1/Q (DFF_X1)
-   0.139    0.522 ^ u1/Z (BUF_X1)
-   0.075    0.598 ^ bc1/u2/Z (BUF_X1)
-   0.059    0.657 ^ bc1/u3/Z (BUF_X1)
-   0.000    0.657 ^ r2/D (DFF_X1)
-            0.657   data arrival time
+   0.138    0.521 ^ u1/Z (BUF_X1)
+   0.077    0.598 ^ bc1/u2/Z (BUF_X1)
+   0.058    0.656 ^ bc1/u3/Z (BUF_X1)
+   0.000    0.656 ^ r2/D (DFF_X1)
+            0.656   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.073    0.227   library setup time
-            0.227   data required time
+  -0.072    0.228   library setup time
+            0.228   data required time
 -----------------------------------------------------------
-            0.227   data required time
-           -0.657   data arrival time
+            0.228   data required time
+           -0.656   data arrival time
 -----------------------------------------------------------
-           -0.429   slack (VIOLATED)
+           -0.428   slack (VIOLATED)
 
 
 Equivalence check - swap for rollback (inv_chain -> buffer_chain)
@@ -540,6 +551,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         59.850 um^2
 [INFO GPL-0037] Total instances area:           59.850 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -550,9 +562,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -565,11 +576,11 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 2	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 2835100
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 348005
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 345034
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 344591
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 344608
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 2860960
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 371872
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 365675
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 364501
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 364523
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.0111
 [INFO GPL-0024] Movable insts average area:      2.598 um^2
@@ -583,8 +594,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0929 |  1.391735e+02 |   +0.00% |  7.27e-13 |      
-        0 |   0.0929 |  1.391735e+02 |          |  7.56e-13 |      
+        0 |   0.0854 |  1.495255e+02 |   +0.00% |  7.94e-13 |      
+        0 |   0.0854 |  1.495255e+02 |          |  8.26e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               54.5513
@@ -597,55 +608,55 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
-       10 |   0.3890 |  3.246200e+01 |  -76.68% |  9.79e-13 |      
-       20 |   0.3929 |  2.432500e+01 |  -25.07% |  1.30e-12 |      
-       30 |   0.3926 |  2.256900e+01 |   -7.22% |  1.74e-12 |      
-       40 |   0.3922 |  2.172350e+01 |   -3.75% |  2.31e-12 |      
-       50 |   0.3922 |  2.154900e+01 |   -0.80% |  3.08e-12 |      
-       60 |   0.3922 |  2.153350e+01 |   -0.07% |  4.11e-12 |      
-       70 |   0.3922 |  2.176050e+01 |   +1.05% |  5.47e-12 |      
-       80 |   0.3922 |  2.206650e+01 |   +1.41% |  7.29e-12 |      
-       90 |   0.3921 |  2.252350e+01 |   +2.07% |  9.71e-12 |      
-      100 |   0.3921 |  2.316650e+01 |   +2.85% |  1.29e-11 |      
-      110 |   0.3920 |  2.401650e+01 |   +3.67% |  1.72e-11 |      
-      120 |   0.3921 |  2.520800e+01 |   +4.96% |  2.30e-11 |      
-      130 |   0.3930 |  2.679000e+01 |   +6.28% |  3.06e-11 |      
-      140 |   0.3941 |  2.887250e+01 |   +7.77% |  4.08e-11 |      
-      150 |   0.3955 |  3.154400e+01 |   +9.25% |  5.43e-11 |      
-      160 |   0.3973 |  3.491700e+01 |  +10.69% |  7.24e-11 |      
-      170 |   0.3995 |  3.912400e+01 |  +12.05% |  9.64e-11 |      
-      180 |   0.4023 |  4.408950e+01 |  +12.69% |  1.28e-10 |      
-      190 |   0.4056 |  4.943700e+01 |  +12.13% |  1.71e-10 |      
-      200 |   0.4090 |  5.452550e+01 |  +10.29% |  2.28e-10 |      
-      210 |   0.4120 |  5.809450e+01 |   +6.55% |  3.04e-10 |      
-      220 |   0.4147 |  5.851850e+01 |   +0.73% |  4.05e-10 |      
-      230 |   0.4185 |  5.384650e+01 |   -7.98% |  5.39e-10 |      
-      240 |   0.4232 |  4.900850e+01 |   -8.98% |  7.18e-10 |      
-      250 |   0.4269 |  5.844950e+01 |  +19.26% |  9.57e-10 |      
-      260 |   0.4280 |  6.692800e+01 |  +14.51% |  1.28e-09 |      
-      270 |   0.4282 |  6.062650e+01 |   -9.42% |  1.70e-09 |      
-      280 |   0.4331 |  6.480000e+01 |   +6.88% |  2.26e-09 |      
-      290 |   0.4293 |  6.306600e+01 |   -2.68% |  3.02e-09 |      
-      300 |   0.4213 |  6.616750e+01 |   +4.92% |  4.02e-09 |      
-      310 |   0.4122 |  6.500150e+01 |   -1.76% |  5.35e-09 |      
-      320 |   0.4018 |  6.412650e+01 |   -1.35% |  7.13e-09 |      
-      330 |   0.4005 |  6.267300e+01 |   -2.27% |  9.50e-09 |      
-      340 |   0.4003 |  6.295200e+01 |   +0.45% |  1.27e-08 |      
-      350 |   0.3966 |  6.506250e+01 |   +3.35% |  1.69e-08 |      
-      360 |   0.3828 |  6.998000e+01 |   +7.56% |  2.25e-08 |      
-      370 |   0.3585 |  7.613950e+01 |   +8.80% |  2.99e-08 |      
-      380 |   0.3209 |  8.150250e+01 |   +7.04% |  3.99e-08 |      
-      390 |   0.2997 |  8.435850e+01 |   +3.50% |  5.31e-08 |      
-      400 |   0.2705 |  9.227650e+01 |   +9.39% |  7.08e-08 |      
-      410 |   0.2425 |  1.021830e+02 |  +10.74% |  9.43e-08 |      
-      420 |   0.2121 |  1.075475e+02 |   +5.25% |  1.26e-07 |      
-      430 |   0.1708 |  1.153745e+02 |   +7.28% |  1.67e-07 |      
-      440 |   0.1405 |  1.259420e+02 |   +9.16% |  2.23e-07 |      
-      450 |   0.1201 |  1.369780e+02 |   +8.76% |  2.97e-07 |      
-      460 |   0.1053 |  1.403445e+02 |   +2.46% |  3.96e-07 |      
-      464 |   0.0992 |  1.415540e+02 |          |  4.57e-07 |      
+       10 |   0.3890 |  3.681500e+01 |  -75.38% |  1.07e-12 |      
+       20 |   0.3904 |  2.598750e+01 |  -29.41% |  1.42e-12 |      
+       30 |   0.3937 |  2.306950e+01 |  -11.23% |  1.90e-12 |      
+       40 |   0.3922 |  2.212850e+01 |   -4.08% |  2.53e-12 |      
+       50 |   0.3922 |  2.163450e+01 |   -2.23% |  3.37e-12 |      
+       60 |   0.3922 |  2.164650e+01 |   +0.06% |  4.49e-12 |      
+       70 |   0.3922 |  2.179200e+01 |   +0.67% |  5.98e-12 |      
+       80 |   0.3921 |  2.210250e+01 |   +1.42% |  7.97e-12 |      
+       90 |   0.3921 |  2.259350e+01 |   +2.22% |  1.06e-11 |      
+      100 |   0.3921 |  2.325300e+01 |   +2.92% |  1.41e-11 |      
+      110 |   0.3920 |  2.414100e+01 |   +3.82% |  1.88e-11 |      
+      120 |   0.3924 |  2.533300e+01 |   +4.94% |  2.51e-11 |      
+      130 |   0.3933 |  2.692400e+01 |   +6.28% |  3.34e-11 |      
+      140 |   0.3944 |  2.901150e+01 |   +7.75% |  4.45e-11 |      
+      150 |   0.3959 |  3.169700e+01 |   +9.26% |  5.93e-11 |      
+      160 |   0.3978 |  3.508550e+01 |  +10.69% |  7.91e-11 |      
+      170 |   0.4002 |  3.926150e+01 |  +11.90% |  1.05e-10 |      
+      180 |   0.4032 |  4.410300e+01 |  +12.33% |  1.40e-10 |      
+      190 |   0.4067 |  4.913600e+01 |  +11.41% |  1.87e-10 |      
+      200 |   0.4100 |  5.363600e+01 |   +9.16% |  2.49e-10 |      
+      210 |   0.4128 |  5.638750e+01 |   +5.13% |  3.32e-10 |      
+      220 |   0.4158 |  5.554700e+01 |   -1.49% |  4.42e-10 |      
+      230 |   0.4199 |  5.027400e+01 |   -9.49% |  5.89e-10 |      
+      240 |   0.4246 |  4.853200e+01 |   -3.47% |  7.85e-10 |      
+      250 |   0.4277 |  6.032250e+01 |  +24.29% |  1.05e-09 |      
+      260 |   0.4283 |  6.366350e+01 |   +5.54% |  1.39e-09 |      
+      270 |   0.4290 |  5.806600e+01 |   -8.79% |  1.86e-09 |      
+      280 |   0.4310 |  6.440000e+01 |  +10.91% |  2.47e-09 |      
+      290 |   0.4285 |  6.003600e+01 |   -6.78% |  3.29e-09 |      
+      300 |   0.4188 |  6.554550e+01 |   +9.18% |  4.39e-09 |      
+      310 |   0.4102 |  6.093800e+01 |   -7.03% |  5.85e-09 |      
+      320 |   0.3989 |  6.307900e+01 |   +3.51% |  7.79e-09 |      
+      330 |   0.4003 |  6.412250e+01 |   +1.65% |  1.04e-08 |      
+      340 |   0.3993 |  6.578100e+01 |   +2.59% |  1.38e-08 |      
+      350 |   0.3937 |  6.863500e+01 |   +4.34% |  1.84e-08 |      
+      360 |   0.3766 |  7.325800e+01 |   +6.74% |  2.45e-08 |      
+      370 |   0.3474 |  7.968150e+01 |   +8.77% |  3.27e-08 |      
+      380 |   0.3141 |  8.357000e+01 |   +4.88% |  4.36e-08 |      
+      390 |   0.2939 |  8.898150e+01 |   +6.48% |  5.80e-08 |      
+      400 |   0.2618 |  9.599800e+01 |   +7.89% |  7.73e-08 |      
+      410 |   0.2339 |  1.041540e+02 |   +8.50% |  1.03e-07 |      
+      420 |   0.1988 |  1.124520e+02 |   +7.97% |  1.37e-07 |      
+      430 |   0.1591 |  1.211110e+02 |   +7.70% |  1.83e-07 |      
+      440 |   0.1319 |  1.318185e+02 |   +8.84% |  2.44e-07 |      
+      450 |   0.1174 |  1.389845e+02 |   +5.44% |  3.25e-07 |      
+      460 |   0.0999 |  1.457850e+02 |   +4.89% |  4.32e-07 |      
+      460 |   0.0999 |  1.457850e+02 |          |  4.45e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 464
+[INFO GPL-1001] Global placement finished at iteration 460
 [INFO GPL-1002] Placed Cell Area               54.5513
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -654,26 +665,31 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 59.85 um^2, Utilization: 0.1%
+[INFO DPL-0006] Core area: 47872.02 um^2
+[INFO DPL-0007] Movable instances area: 59.85 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 0.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      21
-Diamond Move Success:             21 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 21 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         26.1 u
-average displacement        1.2 u
-max displacement            3.3 u
-original HPWL             141.7 u
-legalized HPWL            155.0 u
-delta HPWL                    9 %
+total displacement         34.8 u
+average displacement        1.7 u
+max displacement            5.0 u
+original HPWL             145.7 u
+legalized HPWL            154.0 u
+delta HPWL                    6 %
 
 Cell type report for bc1 (inv_chain_bc1_1)
 Cell type report:                       Count       Area
@@ -688,13 +704,13 @@ Net u1z
  Number of pins: 5
 
 Driver pins
- u1/Z output (BUF_X1) (19, 604)
+ u1/Z output (BUF_X1) (19, 603)
 
 Load pins
- bc1/u4/A input (INV_X1) 1.598-1.720 (21, 611)
- bc2/u2/A input (BUF_X1) 0.906-0.983 (18, 611)
- ic1/u4/A input (INV_X1) 1.598-1.720 (21, 613)
- ic2/u4/A input (INV_X1) 1.598-1.720 (16, 608)
+ bc1/u4/A input (INV_X1) 1.598-1.720 (17, 610)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (19, 611)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (22, 613)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (17, 608)
 
 Net u3z
  Pin capacitance: 1.096-1.158
@@ -705,10 +721,10 @@ Net u3z
  Number of pins: 2
 
 Driver pins
- bc1/u5/ZN output (INV_X1) (17, 611)
+ bc1/u5/ZN output (INV_X1) (21, 614)
 
 Load pins
- r2/D input (DFF_X1) 1.096-1.158 (19, 611)
+ r2/D input (DFF_X1) 1.096-1.158 (18, 610)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -721,24 +737,24 @@ Corner: slow
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.384    0.384 ^ r1/Q (DFF_X1)
-   0.145    0.529 ^ u1/Z (BUF_X1)
-   0.032    0.561 v bc1/u4/ZN (INV_X1)
-   0.035    0.596 ^ bc1/u5/ZN (INV_X1)
-   0.000    0.596 ^ r2/D (DFF_X1)
-            0.596   data arrival time
+   0.382    0.382 ^ r1/Q (DFF_X1)
+   0.145    0.528 ^ u1/Z (BUF_X1)
+   0.034    0.562 v bc1/u4/ZN (INV_X1)
+   0.039    0.600 ^ bc1/u5/ZN (INV_X1)
+   0.000    0.600 ^ r2/D (DFF_X1)
+            0.600   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.072    0.228   library setup time
-            0.228   data required time
+  -0.073    0.227   library setup time
+            0.227   data required time
 -----------------------------------------------------------
-            0.228   data required time
-           -0.596   data arrival time
+            0.227   data required time
+           -0.600   data arrival time
 -----------------------------------------------------------
-           -0.368   slack (VIOLATED)
+           -0.374   slack (VIOLATED)
 
 
 Equivalence check - redo swap (buffer_chain -> inv_chain)

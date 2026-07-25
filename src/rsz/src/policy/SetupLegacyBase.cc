@@ -88,6 +88,7 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
   }
 
   initializeSetupServices();
+  target_collector_->init(config_.setup_slack_margin);
   setup_context_.max_repairs_per_pass = 1;
 
   sta::Vertex* end_vertex = graph_->pinLoadVertex(end_pin);
@@ -451,8 +452,29 @@ bool SetupLegacyBase::makePinTargetOnPath(const sta::Pin* pin,
     return false;
   }
 
+  // Search the main path first, then the latch D fanin path of a
+  // latch-through path.
   sta::PathExpanded expanded(path, sta_);
-  for (int index = expanded.startIndex(); index < expanded.size(); index++) {
+  return visitPathSegments(
+      path,
+      expanded,
+      sta_,
+      [&](const sta::Path* seg_path, sta::PathExpanded& seg_expanded) {
+        return makePinTargetInExpandedPath(
+            pin, vertex, seg_path, seg_expanded, focus_slack, target);
+      });
+}
+
+bool SetupLegacyBase::makePinTargetInExpandedPath(const sta::Pin* pin,
+                                                  sta::Vertex* vertex,
+                                                  const sta::Path* path,
+                                                  sta::PathExpanded& expanded,
+                                                  const sta::Slack focus_slack,
+                                                  Target& target) const
+{
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
+  for (int index = start_index; index < path_count; index++) {
     const sta::Path* driver_path = expanded.path(index);
     sta::Vertex* path_vertex = driver_path->vertex(sta_);
     const sta::Pin* path_pin = driver_path->pin(sta_);
@@ -726,7 +748,6 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
     return false;
   }
 
-  const sta::Scene* corner = path->scene(sta_);
   if (path->minMax(sta_) != resizer_.max_) {
     logger_->error(utl::RSZ,
                    kMsgRepairSetupExpectedMaxPath,
@@ -734,27 +755,50 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
     return false;
   }
 
-  const auto load_delays
-      = rankPathDrivers(expanded, corner, corner->libertyIndex(resizer_.max_));
   const int repairs_per_pass = repairBudget(path_slack, force_single_repair);
+
+  // Rank drivers on the main path and, for latch-through paths, on the latch
+  // D fanin path, then merge both segments into a single ranking.
+  std::vector<std::pair<Target, sta::Delay>> ranked_targets;
+  visitPathSegments(
+      path,
+      expanded,
+      sta_,
+      [&](const sta::Path* seg_path, sta::PathExpanded& seg_expanded) {
+        const sta::Scene* seg_corner = seg_path->scene(sta_);
+        const std::vector<std::pair<int, sta::Delay>> load_delays
+            = rankPathDrivers(seg_expanded,
+                              seg_corner,
+                              seg_corner->libertyIndex(resizer_.max_));
+        ranked_targets.reserve(ranked_targets.size() + load_delays.size());
+        for (const std::pair<int, sta::Delay>& load_delay : load_delays) {
+          Target target;
+          makePathDriverTarget(
+              seg_path, seg_expanded, load_delay.first, path_slack, target);
+          ranked_targets.emplace_back(std::move(target), load_delay.second);
+        }
+        return false;
+      });
 
   debugPrint(logger_,
              RSZ,
              "repair_setup",
              3,
-             "Path slack: {}, repairs: {}, load_delays: {}",
+             "Path slack: {}, repairs: {}, ranked_targets: {}",
              delayAsString(path_slack, 3, sta_),
              repairs_per_pass,
-             load_delays.size());
+             ranked_targets.size());
 
-  // Construct target vector
+  std::ranges::stable_sort(ranked_targets,
+                           [](const std::pair<Target, sta::Delay>& lhs,
+                              const std::pair<Target, sta::Delay>& rhs) {
+                             return lhs.second > rhs.second;
+                           });
+
   std::vector<Target> targets;
-  targets.reserve(load_delays.size());
-  for (const auto& [drvr_index, ignored] : load_delays) {
-    static_cast<void>(ignored);
-    Target target;
-    makePathDriverTarget(path, expanded, drvr_index, path_slack, target);
-    targets.push_back(std::move(target));
+  targets.reserve(ranked_targets.size());
+  for (std::pair<Target, sta::Delay>& ranked_target : ranked_targets) {
+    targets.push_back(std::move(ranked_target.first));
   }
 
   // Prewarm for legacy MT policy

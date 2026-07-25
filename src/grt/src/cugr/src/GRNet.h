@@ -46,6 +46,14 @@ class GRNet
   float getSlack() const { return slack_; }
   void setCritical(bool is_critical) { is_critical_ = is_critical; }
   bool isCritical() const { return is_critical_; }
+
+  // Resistance-aware state for the PatternRoute cost term and getResAwareScore.
+  void setResAware(bool res_aware) { is_res_aware_ = res_aware; }
+  bool isResAware() const { return is_res_aware_; }
+  void setResistance(float resistance) { resistance_ = resistance; }
+  float getResistance() const { return resistance_; }
+  void setNetLength(int net_length) { net_length_ = net_length; }
+  int getNetLength() const { return net_length_; }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
 
@@ -73,6 +81,24 @@ class GRNet
 
   const std::vector<double>& getNdrCosts() const { return ndr_costs_; }
 
+  void setNdrWidths(std::vector<int> widths)
+  {
+    ndr_widths_ = std::move(widths);
+  }
+
+  // Effective wire width (DBU) on a layer: the NDR width if set, else 0 (use
+  // the layer default).
+  int getNdrWidth(int layer_index) const
+  {
+    if (layer_index < 0
+        || std::cmp_greater_equal(layer_index, ndr_widths_.size())) {
+      return 0;
+    }
+    return ndr_widths_[layer_index];
+  }
+
+  const std::vector<int>& getNdrWidths() const { return ndr_widths_; }
+
   /**
    * @brief Checks whether the net has an active demand-scaling NDR.
    *
@@ -98,6 +124,9 @@ class GRNet
   {
     soft_ndr_ = true;
     std::ranges::fill(ndr_costs_, 1.0);
+    // Drop the NDR width too, so the res-aware cost reverts to the default
+    // wire width after demotion (keeps getNdrWidth in sync with hasNdr).
+    std::ranges::fill(ndr_widths_, 0);
   }
 
   bool isSoftNdr() const { return soft_ndr_; }
@@ -128,7 +157,11 @@ class GRNet
   LayerRange layer_range_;
   float slack_;
   bool is_critical_;
+  bool is_res_aware_ = false;
+  float resistance_ = 0.0f;
+  int net_length_ = 0;
   std::vector<double> ndr_costs_;
+  std::vector<int> ndr_widths_;
   bool soft_ndr_ = false;
 };
 

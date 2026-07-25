@@ -450,7 +450,7 @@ void Restructure::removeConstCells()
     auto master = inst->getMaster();
     sta::LibertyCell* cell = open_sta_->getDbNetwork()->libertyCell(
         open_sta_->getDbNetwork()->dbToSta(master));
-    if (cell->hasSequentials()) {
+    if (cell->isSequential()) {
       continue;
     }
 

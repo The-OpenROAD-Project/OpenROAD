@@ -465,12 +465,6 @@ the current `C++` / `Python` API, that might be an issue to deal
 with. There are also some useful `Python` functions located in the `grt_aux.py` [file](./test/grt_aux.py)
 but these are not considered a part of the *final* API and may be subject to change.
 
-## FAQs
-
-Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+fastroute+in%3Atitle)
-about this tool.
-
 ## References
 
 -   Database comes from [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB)
