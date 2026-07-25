@@ -496,7 +496,10 @@ class LayoutScroll : public QScrollArea
 
   Qt::Key current_key_ = Qt::Key_unknown;
   int accel_counter_ = 0;
-  static constexpr int kAccelCounterMax = 20;
+  static constexpr int kAccelLutSize = 20;
+  static constexpr int kAccelCounterMax = kAccelLutSize - 1;
+  static std::array<int, kAccelLutSize> accel_lut_;
+  int getScrollAcceleration() const { return accel_lut_[accel_counter_]; };
 
   bool scrolling_with_cursor_;
 };

@@ -2738,6 +2738,15 @@ bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
   return QScrollArea::eventFilter(object, event);
 }
 
+std::array<int, LayoutScroll::kAccelLutSize> LayoutScroll::accel_lut_
+    = []() {
+        std::array<int, kAccelLutSize> lut;
+        for (int i = 0; i < kAccelLutSize; ++i) {
+          lut[i] = static_cast<int>(std::round(std::pow(1.15, i / 2.0)));
+        }
+        return lut;
+      }();
+
 void LayoutScroll::keyPressEvent(QKeyEvent* event)
 {
   Qt::Key key = static_cast<Qt::Key>(event->key());
@@ -2746,7 +2755,6 @@ void LayoutScroll::keyPressEvent(QKeyEvent* event)
     QScrollArea::keyPressEvent(event);
     return;
   }
-
 
   if (!event->isAutoRepeat()) {
     // First press of a key
@@ -2759,10 +2767,8 @@ void LayoutScroll::keyPressEvent(QKeyEvent* event)
     if (accel_counter_ < kAccelCounterMax) {
       accel_counter_++;
     }
-    // Achieve gentle exponential scaling by dividing
-    // the exponent and using 1.25 as the base
-    multiplier = static_cast<int>(
-                   std::round(std::pow(1.15, accel_counter_ / 2.0)));
+
+    multiplier = getScrollAcceleration();
   }
 
   scrollByKey(key, multiplier);
