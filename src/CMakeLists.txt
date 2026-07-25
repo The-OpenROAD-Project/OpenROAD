@@ -169,6 +169,11 @@ add_compile_options(
   $<$<BOOL:${UBSAN}>:-fno-omit-frame-pointer>
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  link_directories(/usr/local/lib)
+  include_directories(/usr/local/include /usr/local/include/tcl8.6)
+endif()
+
 if (ASAN)
   add_link_options(-fsanitize=address)
   message(STATUS "Address Sanitizer is enabled")
@@ -305,8 +310,8 @@ target_compile_options(openroad
 )
 
 # Needed for boost stacktrace
-if(APPLE)
-  target_compile_definitions(openroad PUBLIC "-D_GNU_SOURCE")
+if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  add_compile_definitions(_GNU_SOURCE)
 endif()
 
 

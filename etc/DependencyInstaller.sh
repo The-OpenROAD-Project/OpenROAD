@@ -1196,6 +1196,17 @@ EOF
 }
 
 # ------------------------------------------------------------------------------
+# FreeBSD
+# ------------------------------------------------------------------------------
+_install_freebsd_packages() {
+    log "Install FreeBSD base packages using pkg (-base or -all)"
+    _execute "Updating the repository..." pkg update
+    _execute "Installing base packages..." pkg install -y \
+        bison boost-libs cmake coin-or-lemon cudd eigen gmake groff googletest \
+        or-tools pcre2 qt5 spdlog swig tcl86 yaml-cpp
+}
+
+# ------------------------------------------------------------------------------
 # Debian
 # ------------------------------------------------------------------------------
 _install_debian_packages() {
@@ -1399,6 +1410,9 @@ main() {
             fi
             os="Darwin"
             ;;
+        "FreeBSD")
+            os="FreeBSD"
+            ;;
         *)
             error "${platform} is not supported. We only officially support Linux at the moment."
             ;;
@@ -1484,6 +1498,13 @@ main() {
 To install or run OpenROAD, update your path with:
     export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk@8)/bin:\${PATH}"
     export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
+EOF
+            ;;
+        "FreeBSD")
+            _install_freebsd_packages
+	    cat <<EOF
+FreeBSD installs \`tclsh\` binary as \`tclsh86\` and any python 3 version as \`python3.XX\`,
+not \`python3\`, you'll have to make symlinks to those programs yourself.
 EOF
             ;;
         "openSUSE Leap")
