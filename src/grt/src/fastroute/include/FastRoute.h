@@ -127,7 +127,7 @@ class FastRouteCore
   void init3DEdges();
   void initLowerBoundCapacities();
   void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int capacity);
-  void setMaxSoftNDRResets(int resets) { max_soft_ndr_resets_ = resets; }
+  void setMaxSoftNDRResets(int resets) { max_soft_ndr_resets_ = std::max(0, resets); }
   int getMaxSoftNDRResets() const { return max_soft_ndr_resets_; }
   int getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer);
   void initEdgesCapacityPerLayer();

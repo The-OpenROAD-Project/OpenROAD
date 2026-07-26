@@ -219,7 +219,7 @@ proc global_route { args } {
 
   if { [info exists keys(-max_soft_ndr_resets)] } {
     set resets $keys(-max_soft_ndr_resets)
-    sta::check_integer "-max_soft_ndr_resets" $resets
+    sta::check_positive_integer "-max_soft_ndr_resets" $resets
     grt::set_max_soft_ndr_resets $resets
   } else {
     grt::set_max_soft_ndr_resets 4
