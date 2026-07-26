@@ -2148,7 +2148,6 @@ NetRouteMap FastRouteCore::run()
   // number of restarts; once exceeded we disable every remaining congested
   // NDR net in a single batch instead of one-per-restart.
   int soft_ndr_resets = 0;
-  constexpr int max_soft_ndr_resets = 4;
   float overflow_reduction_percent = -1;
   // Minimum overflow stagnation
   int minofl_stagnant = 0;
@@ -2399,7 +2398,7 @@ NetRouteMap FastRouteCore::run()
 
         std::vector<int> net_ids;
 
-        if (soft_ndr_resets >= max_soft_ndr_resets) {
+        if (soft_ndr_resets >= max_soft_ndr_resets_) {
           // We have already restarted the overflow loop many times, disabling
           // NDR nets one (or a few) at a time. Disabling nets individually with
           // a full loop reset per restart is O(N) full overflow loops, which

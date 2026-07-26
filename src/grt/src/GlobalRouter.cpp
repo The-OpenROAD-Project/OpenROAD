@@ -1720,6 +1720,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
   int min_degree, max_degree;
   computeNetDegree(nets, min_degree, max_degree);
   fastroute_->setMaxNetDegree(max_degree);
+  fastroute_->setMaxSoftNDRResets(max_soft_ndr_resets_);
   reportNetDegree(nets);
 
   // Add resources for pin access in macro/pad pins after defining their on grid

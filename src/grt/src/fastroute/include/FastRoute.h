@@ -127,6 +127,8 @@ class FastRouteCore
   void init3DEdges();
   void initLowerBoundCapacities();
   void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int capacity);
+  void setMaxSoftNDRResets(int resets) { max_soft_ndr_resets_ = resets; }
+  int getMaxSoftNDRResets() const { return max_soft_ndr_resets_; }
   int getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer);
   void initEdgesCapacityPerLayer();
   void setNumAdjustments(int nAdjustments);
@@ -877,6 +879,7 @@ class FastRouteCore
   multi_array<int, 3> path_len_3D_;
   double snapshot_batch_sync_time_ = 0.0;
   double snapshot_batch_route_time_ = 0.0;
+
   double snapshot_batch_apply_time_ = 0.0;
   int snapshot_batch_count_ = 0;
   int snapshot_batch_net_count_ = 0;
@@ -884,6 +887,7 @@ class FastRouteCore
   bool snapshot_batch_disabled_for_run_ = false;
   bool snapshot_cleanup_active_ = false;
   bool has_non_soft_ndr_nets_ = false;
+  int max_soft_ndr_resets_ = 4;
   int detour_penalty_;
 };
 

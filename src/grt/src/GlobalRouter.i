@@ -82,6 +82,12 @@ set_congestion_iterations(int iterations)
 }
 
 void
+set_max_soft_ndr_resets(int resets)
+{
+  getGlobalRouter()->setMaxSoftNdrResets(resets);
+}
+
+void
 set_congestion_report_iter_step(int congestion_report_iter_step)
 {
   getGlobalRouter()->setCongestionReportIterStep(congestion_report_iter_step);

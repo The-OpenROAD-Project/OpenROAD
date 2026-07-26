@@ -149,6 +149,7 @@ class GlobalRouter
                            float reduction_percentage);
   void setVerbose(bool v);
   void setCongestionIterations(int iterations);
+  void setMaxSoftNdrResets(int resets) { max_soft_ndr_resets_ = resets; }
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
@@ -579,6 +580,7 @@ class GlobalRouter
   std::vector<RegionAdjustment> region_adjustments_;
 
   bool verbose_;
+  int max_soft_ndr_resets_ = 4;
 
   // variables for random grt
   int seed_;

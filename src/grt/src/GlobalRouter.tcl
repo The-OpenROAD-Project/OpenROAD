@@ -142,6 +142,7 @@ proc set_global_routing_random { args } {
 
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
+                                  [-max_soft_ndr_resets resets] \
                                   [-congestion_report_file file_name] \
                                   [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
@@ -160,7 +161,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-guide_file -congestion_iterations -congestion_report_file \
+    keys {-guide_file -congestion_iterations -max_soft_ndr_resets \
+          -congestion_report_file \
           -grid_origin -critical_nets_percentage -res_aware_nets_percentage \
           -congestion_report_iter_step \
           -skip_large_fanout_nets -snapshot_batched_width
@@ -213,6 +215,14 @@ proc global_route { args } {
     grt::set_congestion_iterations 5
   } else {
     grt::set_congestion_iterations 50
+  }
+
+  if { [info exists keys(-max_soft_ndr_resets)] } {
+    set resets $keys(-max_soft_ndr_resets)
+    sta::check_integer "-max_soft_ndr_resets" $resets
+    grt::set_max_soft_ndr_resets $resets
+  } else {
+    grt::set_max_soft_ndr_resets 4
   }
 
   if { [info exists keys(-congestion_report_file)] } {

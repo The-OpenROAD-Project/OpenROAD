@@ -20,6 +20,7 @@ You may also choose to use incremental global routing using `-start_incremental`
 global_route 
     [-guide_file out_file]
     [-congestion_iterations iterations]
+    [-max_soft_ndr_resets resets]
     [-congestion_report_file file_name]
     [-congestion_report_iter_step steps]
     [-grid_origin {x y}]
@@ -42,6 +43,7 @@ global_route
 | ----- | ----- |
 | `-guide_file` | Set the output guides file name (e.g., `route.guide`). |
 | `-congestion_iterations` | Set the number of iterations made to remove the congestion of the routing. The default value is `50` for FastRoute and `5` when `-use_cugr` is set; the allowed values are integers `[0, MAX_INT]`. |
+| `-max_soft_ndr_resets` | Set the maximum number of restart passes allowed when demoting congested soft-NDR nets individually before demoting all remaining congested soft-NDR nets in a single batch. The default value is `4`; allowed values are non-negative integers `[0, MAX_INT]`. Setting `0` demotes all congested soft-NDR nets in a single batch on the first reset pass. |
 | `-congestion_report_file` | Set the file name to save the congestion report. The file generated can be read by the DRC viewer in the GUI (e.g., `report_file.rpt`). |
 | `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
