@@ -156,6 +156,9 @@ cc_library(
         ":ui/ui_highlightGroupDlg.h",
         ":ui/ui_selectedWidget.h",
     ],
+    includes = [
+        "ui",
+    ],
 )
 
 qt6_resource_library(
