@@ -1985,7 +1985,6 @@ NetRouteMap FastRouteCore::run()
   int max_adj;
   int long_edge_len = 40;
   int short_edge_len = 12;
-  const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
@@ -2144,11 +2143,11 @@ NetRouteMap FastRouteCore::run()
   // iterations. Each restart re-runs up to overflow_iterations_ rounds, so
   // disabling NDR nets one at a time with a full reset per net is O(N) full
   // loops. When many clock nets carry an (auto-applied) NDR that cannot be
-  // honored, this caused a severe runtime regression (issue #8466). Bound the
-  // number of restarts; once exceeded we disable every remaining congested
-  // NDR net in a single batch instead of one-per-restart.
+  // honored, this caused a severe runtime regression (issue #8466). To bound
+  // the number of restarts we escalate the batch size: the first restart
+  // disables half of the congested NDR nets and any subsequent restart
+  // disables all of the remaining ones.
   int soft_ndr_resets = 0;
-  constexpr int max_soft_ndr_resets = 4;
   float overflow_reduction_percent = -1;
   // Minimum overflow stagnation
   int minofl_stagnant = 0;
@@ -2397,33 +2396,18 @@ NetRouteMap FastRouteCore::run()
         // Compute all the NDR nets involved in congestion
         computeCongestedNDRnets();
 
-        std::vector<int> net_ids;
-
-        if (soft_ndr_resets >= max_soft_ndr_resets) {
-          // We have already restarted the overflow loop many times, disabling
-          // NDR nets one (or a few) at a time. Disabling nets individually with
-          // a full loop reset per restart is O(N) full overflow loops, which
-          // caused a severe runtime regression when many clock nets carry an
-          // (auto-applied) NDR that cannot be honored (issue #8466). Once the
-          // restart budget is exhausted, disable every remaining congested NDR
-          // net in a single batch so the loop is guaranteed to make progress
-          // and terminate.
-          const auto congested_ndrs = graph2d_.getCongestedNDRnets();
-          net_ids.reserve(congested_ndrs.size());
-          for (const auto& ndr : congested_ndrs) {
-            net_ids.push_back(ndr.net_id);
-          }
-        } else if (total_overflow_ < soft_ndr_overflow_th) {
-          // If the congestion is not that high (note that the overflow is
-          // inflated by 100x when there is no capacity available for a NDR net
-          // in a specific edge), select one NDR net to be disabled.
-          int net_id = graph2d_.getOneCongestedNDRnet();
-          if (net_id != -1) {
-            net_ids.push_back(net_id);
-          }
-        } else {  // Select multiple NDR nets
-          net_ids = graph2d_.getMultipleCongestedNDRnet();
-        }
+        // Escalating soft-NDR batches. Disabling NDR nets a few at a time with
+        // a full overflow-loop reset per restart is O(N) full loops, a severe
+        // runtime regression when many clock nets carry an (auto-applied) NDR
+        // that cannot be honored. To bound the number of
+        // restarts, disable half of the congested NDR nets on the first
+        // restart and all of the remaining ones on any subsequent restart.
+        // This keeps the restart count small while still demoting as few NDR
+        // nets as possible, and guarantees termination: once every congested
+        // NDR net is soft-demoted, computeCongestedNDRnets() finds none left.
+        const double demote_fraction = (soft_ndr_resets == 0) ? 0.5 : 1.0;
+        std::vector<int> net_ids
+            = graph2d_.getCongestedNDRnetsByFraction(demote_fraction);
 
         // Only apply soft NDR if there is NDR nets involved in congestion
         if (!net_ids.empty()) {

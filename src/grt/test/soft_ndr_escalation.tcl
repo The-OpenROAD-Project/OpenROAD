@@ -1,12 +1,13 @@
-# Exercises the soft-NDR overflow-loop restart cap (max_soft_ndr_resets, #8466).
+# Exercises the escalating soft-NDR overflow-loop escape valve.
 #
 # Aggressive custom NDRs on every clock net, with tightened routing resources,
 # force global routing to disable congested NDR nets to relieve overflow.
-# Without the cap each disable triggers a full overflow-loop restart, one net
-# at a time (O(N) restarts). The cap bounds the one-at-a-time disables and then
-# disables every remaining congested NDR net in a single batch, so the loop
-# terminates in a bounded number of restarts. This test checks that the flow
-# completes and produces a stable result under that condition.
+# Disabling NDR nets a few at a time with a full overflow-loop restart per net
+# is O(N) restarts. To bound the restarts, the escape valve escalates the batch
+# size: the first restart disables half of the congested NDR nets and any
+# subsequent restart disables all of the remaining ones, so the loop terminates
+# in at most two restarts. This test checks that the flow completes and produces
+# a stable result under that condition.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
@@ -40,7 +41,7 @@ set_routing_layers -signal met1-met5 -clock met3-met4
 
 global_route -verbose -allow_congestion
 
-set guide_file [make_result_file soft_ndr_reset_cap.guide]
+set guide_file [make_result_file soft_ndr_escalation.guide]
 write_guides $guide_file
 
-diff_file soft_ndr_reset_cap.guideok $guide_file
+diff_file soft_ndr_escalation.guideok $guide_file
