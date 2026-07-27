@@ -1835,5 +1835,43 @@ TEST_F(SchematicHandlerTest, MuxAndUnknownCellsHaveNoKindHint)
   EXPECT_FALSE(cell.contains("gate_kind"));
 }
 
+// ─── Render cancellation (issue #10463 perf) ─────────────────────────────
+
+TEST_F(TileHandlerTest, CancelSkipsQueuedTileRender)
+{
+  // Client abandons request id=99 (it panned/zoomed away).
+  WebSocketRequest cancel;
+  cancel.id = 200;
+  cancel.type = WebSocketRequest::kCancel;
+  cancel.json = parseObj(R"({"cancel_id":99})");
+  auto ack = handler_->handleCancel(cancel, state_);
+  EXPECT_EQ(ack.type, WebSocketResponse::kJson);
+
+  // The matching queued tile render is skipped (best-effort).
+  WebSocketRequest tile;
+  tile.id = 99;
+  tile.type = WebSocketRequest::kTile;
+  tile.json
+      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
+  auto resp = handler_->handleTile(tile, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+
+  // The cancellation is consumed: re-issuing the same id now renders.
+  auto resp2 = handler_->handleTile(tile, state_);
+  EXPECT_EQ(resp2.type, WebSocketResponse::kPng);
+}
+
+TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
+{
+  WebSocketRequest cancel;
+  cancel.id = 201;
+  cancel.type = WebSocketRequest::kCancel;
+  cancel.json = parseObj(R"({"cancel_ids":[5,6]})");
+  handler_->handleCancel(cancel, state_);
+  std::lock_guard<std::mutex> lock(state_.cancelled_mutex);
+  EXPECT_EQ(state_.cancelled_ids.count(5), 1u);
+  EXPECT_EQ(state_.cancelled_ids.count(6), 1u);
+}
+
 }  // namespace
 }  // namespace web

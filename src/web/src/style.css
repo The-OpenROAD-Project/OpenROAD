@@ -450,7 +450,11 @@ html, body {
     cursor: grabbing !important;
 }
 
-/* Leaflet tiles */
+/* Leaflet tiles.
+   Keep `auto` (bilinear): tiles are band-limited server-side and displayed
+   1:1 at rest (integer zoom) and HiDPI-exact (256*dpr image in a 256 CSS-px
+   box), so the only resampling is benign upscaling during zoom animation,
+   where bilinear is correct.  `pixelated` would block-up that upscale. */
 .leaflet-tile {
     image-rendering: auto;
 }
