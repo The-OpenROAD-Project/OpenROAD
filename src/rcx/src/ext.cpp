@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <list>
+#include <memory>
 #include <string>
 
 #include "odb/db.h"
