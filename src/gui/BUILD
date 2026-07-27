@@ -159,6 +159,10 @@ cc_library(
     includes = [
         "ui",
     ],
+    deps = [
+        "@qt-bazel//qt_source:core",
+        "@qt-bazel//qt_source:widgets",
+    ],
 )
 
 qt6_resource_library(
