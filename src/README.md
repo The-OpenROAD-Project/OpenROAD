@@ -389,11 +389,6 @@ place_inst -name inst_name \
 | `-status` | The placement status of the instance. Default is PLACED |
 
 
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+openroad+in%3Atitle)
-about this tool.
-
 ## License
 
 BSD 3-Clause License.

@@ -22,6 +22,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO GPL-0016] Core area:                   11467.248 um^2
 [INFO GPL-0036] Movable instances area:        158.902 um^2
 [INFO GPL-0037] Total instances area:          158.902 um^2
 [INFO GPL-0035] Pin density area adjust:        16.145 um^2
@@ -32,9 +33,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                    24
 [INFO GPL-0010] Number of nets:                     26
 [INFO GPL-0011] Number of pins:                     65
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] Placement BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 11467.248 um^2
 [INFO GPL-0017] Fixed instances area:         4684.493 um^2
@@ -49,9 +49,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     26
 [INFO GPL-0011] Number of pins:                     65
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] Placement BBox: (  2.300  2.720 ) ( 57.500 19.040 ) um
 [INFO GPL-0014] Region name: PD_D1.
 [INFO GPL-0015] Region area:                   900.864 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -66,9 +65,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     26
 [INFO GPL-0011] Number of pins:                     65
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] Placement BBox: (  2.300 92.480 ) ( 57.500 108.800 ) um
 [INFO GPL-0014] Region name: PD_D2.
 [INFO GPL-0015] Region area:                   900.864 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2

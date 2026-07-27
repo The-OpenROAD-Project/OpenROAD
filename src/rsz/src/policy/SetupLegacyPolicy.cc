@@ -352,6 +352,12 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
           "{}{} Phase Time: {{}}", phaseName(), main_state.phase_marker));
   for (const pair<sta::Vertex*, sta::Slack>& end_original_slack :
        violating_ends) {
+    // Stop before starting a new endpoint after reaching the global limit.
+    if (reachedIterationLimit(main_state.opto_iteration,
+                              config_.max_iterations)) {
+      break;
+    }
+
     EndpointRepairState endpoint_state;
     if (!beginEndpointRepair(end_original_slack, main_state, endpoint_state)) {
       break;

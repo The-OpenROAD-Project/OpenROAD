@@ -58,7 +58,7 @@ generate_ram [-mask_size bits]
 #### Options
 
 | Switch Name | Description | 
-| ----- | ----- |
+| ---------------------- | -------------------------------------- |
 | `-mask_size` | Determines the number of bits which are grouped together for masking during writes. For example, a mask size of `8` will enable each 8 bits of the word to be masked when writing (commonly known as byte masking). A mask size of `1` will enable each bit to be individually masked. The write enable signal for each port will be `(word_size / mask_size)` bits wide. The word size must be a multiple of the mask size. Default: equal to `-word_size`. |
 | `-word_size` | Size of each word in bits. |
 | `-num_words` | Number of words in the array. |
@@ -97,11 +97,6 @@ Simply run the following script:
 ## Limitations
 
 This is an experimental module and many basic features may not work yet. Please see [#9392](https://github.com/The-OpenROAD-Project/OpenROAD/issues/9392) for ongoing and future work.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+ram+in%3Atitle)
-about this tool.
 
 ## Authors
 

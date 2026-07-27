@@ -156,31 +156,16 @@ build:profile --linkopt=-gz=zlib
 # its own private test suite) and drt's unused global-routing code. Third-party
 # deps live under external repos / //third-party and are simply never matched
 # by //src, so they need no explicit exclusion.
-#
-# The hermetic-llvm cc_toolchain implements no coverage feature: it applies
-# zero instrumentation flags under `bazel coverage` and its declared gcov tool
-# (a symlink onto the multiplexed `llvm` binary) is broken/undeclared, so both
-# the gcov and the default LLVM paths silently produce empty reports. Hence:
-#   - instrument explicitly with clang source-based coverage
-#     (-fprofile-instr-generate -fcoverage-mapping); gcov-style -fprofile-arcs
-#     is not an option, its objects break ld.lld ('.eh_frame: relocation is
-#     not in any piece' as of LLVM 22.1.8);
-#   - point the collector at llvm-profdata/llvm-cov via --test_env (the
-#     toolchain does not export them; keep the path in sync with the `llvm`
-#     bazel_dep version in MODULE.bazel);
-#   - run test actions unsandboxed (--strategy=TestRunner=local): the sandbox
-#     omits the coverage tools because the toolchain never declares them as
-#     test inputs. Compile actions stay sandboxed.
+# Instrumentation and the coverage tools come from the toolchain; requires
+# llvm >= 0.8.14 (see the bazel_dep note in MODULE.bazel).
 coverage:coverage --combined_report=lcov
 coverage:coverage --instrumentation_filter=//src[/:],-//src/sta[/:],-//src/drt/src/gr[/:],-//src/drt/src/db/grObj[/:]
-coverage:coverage --copt=-fprofile-instr-generate
-coverage:coverage --copt=-fcoverage-mapping
-coverage:coverage --linkopt=-fprofile-instr-generate
 coverage:coverage --experimental_generate_llvm_lcov
 coverage:coverage --experimental_use_llvm_covmap
-coverage:coverage --strategy=TestRunner=local
-coverage:coverage --test_env=LLVM_PROFDATA=external/llvm++llvm_toolchain_minimal+llvm-toolchain-minimal-22.1.8-linux-amd64/bin/llvm-profdata
-coverage:coverage --test_env=LLVM_COV=external/llvm++llvm_toolchain_minimal+llvm-toolchain-minimal-22.1.8-linux-amd64/bin/llvm-cov
+# Skip the raw per-test coverage outputs: rules_cc leaves a dangling `gcov`
+# symlink there and fetching them fails. Drop once rules_cc >= 0.2.23
+# (bazelbuild/rules_cc#795) is released.
+coverage:coverage --noexperimental_fetch_all_coverage_outputs
 
 # Improve hermeticity by disallowing user envars and network access
 build --incompatible_strict_action_env

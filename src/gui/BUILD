@@ -156,6 +156,13 @@ cc_library(
         ":ui/ui_highlightGroupDlg.h",
         ":ui/ui_selectedWidget.h",
     ],
+    includes = [
+        "ui",
+    ],
+    deps = [
+        "@qt-bazel//qt_source:core",
+        "@qt-bazel//qt_source:widgets",
+    ],
 )
 
 qt6_resource_library(

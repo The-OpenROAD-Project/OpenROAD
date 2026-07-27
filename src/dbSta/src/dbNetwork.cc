@@ -1282,19 +1282,11 @@ void dbNetwork::findInstNetsMatching(const Instance* instance,
                                      const PatternMatch* pattern,
                                      NetSeq& nets) const
 {
-  if (instance == top_instance_) {
-    if (pattern->hasWildcards()) {
-      for (dbNet* dnet : block_->getNets()) {
-        const char* net_name = dnet->getConstName();
-        if (pattern->match(net_name)) {
-          nets.push_back(dbToSta(dnet));
-        }
-      }
-    } else {
-      dbNet* dnet = block_->findNet(pattern->pattern().c_str());
-      if (dnet) {
-        nets.push_back(dbToSta(dnet));
-      }
+  std::unique_ptr<InstanceNetIterator> net_iter{netIterator(instance)};
+  while (net_iter->hasNext()) {
+    Net* net = net_iter->next();
+    if (pattern->match(name(net))) {
+      nets.push_back(net);
     }
   }
 }

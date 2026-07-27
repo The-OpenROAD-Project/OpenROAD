@@ -3503,6 +3503,10 @@ AdjacencyList GlobalRouter::buildNetGraph(odb::dbNet* net)
 bool GlobalRouter::isConnected(odb::dbNet* net)
 {
   int total_segments = routes_[net].size();
+  // An empty route has no segments that could be disconnected.
+  if (total_segments == 0) {
+    return true;
+  }
   std::vector<int> parent(total_segments), rank(total_segments, 0);
   for (int i = 0; i < total_segments; i++) {
     parent[i] = i;
@@ -3525,8 +3529,13 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     return parent[x];
   };
 
-  std::function<void(int, int)> uniteGroups = [&](int u, int v) {
+  // Unites the groups of u and v, returning true only when they were in
+  // different groups.
+  auto uniteGroups = [&](int u, int v) -> bool {
     int root_u = find(u), root_v = find(v);
+    if (root_u == root_v) {
+      return false;
+    }
     if (rank[root_u] > rank[root_v]) {
       parent[root_v] = root_u;
     } else if (rank[root_u] < rank[root_v]) {
@@ -3535,6 +3544,7 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
       parent[root_v] = root_u;
       rank[root_u]++;
     }
+    return true;
   };
 
   for (int i = 1; i < total_segments; i++) {
@@ -3550,13 +3560,42 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     initialized_groups++;
 
     for (int j = i - 1; j >= 0 && initialized_groups > 1; --j) {
-      if (segmentsConnect(routes_[net][i], routes_[net][j])) {
-        uniteGroups(i, j);
+      if (segmentsConnect(routes_[net][i], routes_[net][j])
+          && uniteGroups(i, j)) {
         initialized_groups--;
       }
     }
   }
   return (initialized_groups == 1);
+}
+
+// Debug aid: report each connected component of the net's segments.
+void GlobalRouter::reportDisconnectedComponents(odb::dbNet* db_net)
+{
+  const GRoute& segments = routes_[db_net];
+  const AdjacencyList graph = buildNetGraph(db_net);
+  std::vector<bool> visited(segments.size(), false);
+  int component = 0;
+  for (int start = 0; start < static_cast<int>(segments.size()); start++) {
+    if (visited[start]) {
+      continue;
+    }
+    component++;
+    logger_->report("Net {} component {}:", db_net->getName(), component);
+    std::vector<int> stack = {start};
+    visited[start] = true;
+    while (!stack.empty()) {
+      const int seg = stack.back();
+      stack.pop_back();
+      printSegment(segments[seg]);
+      for (const int neighbor : graph[seg]) {
+        if (!visited[neighbor]) {
+          visited[neighbor] = true;
+          stack.push_back(neighbor);
+        }
+      }
+    }
+  }
 }
 
 bool GlobalRouter::segmentsConnect(const GSegment& segment1,
@@ -5596,8 +5635,9 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     net2->setMergedNet(db_net1);
     saveGuides({db_net1});
   } else {
-    // After failing to connect the routing, the survivor net still have
-    // uncovered pins and needs to be re-routed
+    // The survivor net's routing could not be validated as a single connected
+    // component covering all pins (uncovered pins and/or disconnected
+    // segments), so it needs to be re-routed from scratch.
     net1->setDirtyNet(true);
   }
 }
@@ -5675,12 +5715,35 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
   } else {
+    // Both pins are in the same gcell, but the two routes may reach it on
+    // disjoint layer ranges. Bridge any layer gap with vias.
+    const auto [min1, max1] = findLayerRangeOverPosition(pin_pos1, net1_route);
+    const auto [min2, max2] = findLayerRangeOverPosition(pin_pos1, net2_route);
+    if (max1 != -1 && max2 != -1) {
+      if (max1 < min2) {
+        insertViasForConnection(net1_route, pin_pos1, max1, min2);
+      } else if (max2 < min1) {
+        insertViasForConnection(net1_route, pin_pos1, max2, min1);
+      }
+    }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   }
 
   updateNetPins(net1);
   std::string dump;
-  return netIsCovered(db_net1, dump);
+  if (!netIsCovered(db_net1, dump)) {
+    return false;
+  }
+  // netIsCovered() alone allows two disjoint clusters that each cover their own
+  // pins, so the merged routing must also form a single connected component.
+  if (!isConnected(db_net1)) {
+    reportDisconnectedComponents(db_net1);
+    logger_->error(GRT,
+                   298,
+                   "Net {} has disconnected segments after merge.",
+                   net1->getName());
+  }
+  return true;
 }
 
 void GlobalRouter::findBufferPinPostions(Net* net1,
@@ -5723,6 +5786,24 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
                    "pin position.");
   }
   return top_layer;
+}
+
+// Layer range of the segments that cover the position. Returns
+// {INT_MAX, -1} when no segment covers it.
+std::pair<int, int> GlobalRouter::findLayerRangeOverPosition(
+    const odb::Point& pos,
+    const GRoute& route)
+{
+  int min_layer = std::numeric_limits<int>::max();
+  int max_layer = -1;
+  for (const GSegment& seg : route) {
+    const odb::Rect seg_box(seg.init_x, seg.init_y, seg.final_x, seg.final_y);
+    if (seg_box.intersects(pos)) {
+      min_layer = std::min({min_layer, seg.init_layer, seg.final_layer});
+      max_layer = std::max({max_layer, seg.init_layer, seg.final_layer});
+    }
+  }
+  return {min_layer, max_layer};
 }
 
 std::vector<GSegment> GlobalRouter::createConnectionForPositions(

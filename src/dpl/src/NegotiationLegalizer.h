@@ -74,6 +74,7 @@ struct FenceRegion
 struct NegCell
 {
   odb::dbInst* db_inst{nullptr};
+  Node* node{nullptr};  // cached network_->getNode(db_inst)
 
   int init_x{0};     // position after global placement (sites)
   int init_y{0};     // position after global placement (rows)
@@ -164,8 +165,12 @@ class NegotiationLegalizer
   void place(int cell_idx, int x, int y);
   [[nodiscard]] std::pair<int, int> findBestLocation(int cell_idx,
                                                      int iter = 0) const;
-  [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double negotiationCost(int cell_idx,
+                                       int x,
+                                       int y,
+                                       double abort_bound) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double targetCostFromDisp(int disp) const;
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
@@ -180,9 +185,7 @@ class NegotiationLegalizer
       const std::unordered_map<int, int>& no_cand_by_height,
       const std::unordered_map<int, int>& same_pos_by_height) const;
 
-  // Post-optimisation
-  void greedyImprove(int passes);
-  void cellSwap();
+  // Stall recovery
   void diamondRecovery(const std::vector<int>& activeCells);
 
   // Constraint helpers
