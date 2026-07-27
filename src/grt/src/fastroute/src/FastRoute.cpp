@@ -2139,12 +2139,9 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
-  // Soft-NDR demotion schedule. Demoting congested NDR nets only on
-  // convergence failure and restarting the whole overflow loop per demotion is
-  // O(N) restarts, a severe runtime regression on large designs where many
-  // (auto-applied) clock-net NDRs cannot be honored (issue #8466). Instead we
-  // demote on a fixed iteration schedule, escalating the batch size, and only
-  // restart the loop on the final disable-everything step:
+  // Soft-NDR demotion schedule. Demote a growing fraction of the congested NDR
+  // nets on a fixed iteration schedule, restarting the loop only on the final
+  // disable-everything step:
   //   iteration 5  -> demote 10% of the congested NDR nets, keep iterating
   //   iteration 10 -> demote 50% of the congested NDR nets, keep iterating
   //   iteration 15 -> demote all remaining congested NDR nets and restart
@@ -2154,8 +2151,6 @@ NetRouteMap FastRouteCore::run()
   constexpr int kSoftNdrDemote50Iter = 10;
   constexpr int kSoftNdrDemoteAllIter = 15;
   float overflow_reduction_percent = -1;
-  // Minimum overflow stagnation
-  int minofl_stagnant = 0;
   {
     const DebugScopedTimer timer(timings.overflow_iterations,
                                  logger_,
@@ -2254,9 +2249,6 @@ NetRouteMap FastRouteCore::run()
       if (minofl > past_cong) {
         minofl = past_cong;
         minoflrnd = i;
-        minofl_stagnant = 0;
-      } else {
-        minofl_stagnant++;
       }
 
       if (i == 8) {
@@ -2349,7 +2341,6 @@ NetRouteMap FastRouteCore::run()
             if (minofl > past_cong) {
               minofl = past_cong;
               minoflrnd = i;
-              minofl_stagnant = 0;
             }
           }
         } else {
@@ -2428,7 +2419,6 @@ NetRouteMap FastRouteCore::run()
           if (restart_loop) {
             // Reset loop parameters
             overflow_increases = 0;
-            minofl_stagnant = 0;
             i = 1;
             costheight_ = COSHEIGHT;
             enlarge_ = ENLARGE;

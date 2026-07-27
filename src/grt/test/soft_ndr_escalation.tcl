@@ -3,9 +3,9 @@
 # Aggressive custom NDRs on every clock net, with tightened routing resources,
 # force global routing to disable congested NDR nets to relieve overflow.
 # Restarting the whole overflow loop once per demotion is O(N) restarts, so the
-# demotion instead follows a fixed iteration schedule: 10% of the congested NDR
-# nets are disabled at iteration 5, 50% at iteration 10, and all remaining ones
-# at iteration 15, with only the final step restarting the loop. This test
+# demotion instead escalates on a fixed iteration schedule: 10% of the congested
+# NDR nets are disabled at iteration 5, 50% at iteration 10, and all remaining
+# ones at iteration 15, with only the final step restarting the loop. This test
 # checks that the flow completes and produces a stable result under that
 # condition.
 source "helpers.tcl"
