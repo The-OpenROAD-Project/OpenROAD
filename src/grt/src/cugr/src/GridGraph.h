@@ -327,9 +327,8 @@ class GridGraph
   AccessPoint selectAccessPoint(
       const std::vector<AccessPoint>& access_points) const;
   // Insert into the cell-keyed set, unioning layer intervals on collision.
-  AccessPointSet::iterator insertOrUnionAccessPoint(
-      AccessPointSet& selected_access_points,
-      const AccessPoint& ap) const;
+  void insertOrUnionAccessPoint(AccessPointSet& selected_access_points,
+                                const AccessPoint& ap) const;
   // Select APs from DRT-created ODB access points; returns the pin indices
   // that have none, for the shape-derived fallback.
   std::vector<int> findODBAccessPoints(

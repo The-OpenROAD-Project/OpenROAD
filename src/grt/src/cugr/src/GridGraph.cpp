@@ -689,15 +689,13 @@ AccessPoint GridGraph::selectAccessPoint(
 
 // The set is keyed by cell only; union the layer intervals of pins that
 // share a cell so the routing tree honors every pin's connection layers.
-AccessPointSet::iterator GridGraph::insertOrUnionAccessPoint(
-    AccessPointSet& selected_access_points,
-    const AccessPoint& ap) const
+void GridGraph::insertOrUnionAccessPoint(AccessPointSet& selected_access_points,
+                                         const AccessPoint& ap) const
 {
   auto [it, inserted] = selected_access_points.emplace(ap);
   if (!inserted) {
     it->layers = it->layers.unionWith(ap.layers);
   }
-  return it;
 }
 
 std::vector<int> GridGraph::findODBAccessPoints(
@@ -815,10 +813,11 @@ void GridGraph::selectShapeAccessPoint(
     }
   }
 
-  auto it = insertOrUnionAccessPoint(
-      selected_access_points,
-      {.point = selected_point, .layers = fixed_layer_interval});
-  net->addPreferredAccessPoint(pin_idx, *it);
+  // Union goes into the routing-tree set; the terminal keeps its own
+  // layers so downstream consumers see the pin's real connection layer.
+  const AccessPoint ap{.point = selected_point, .layers = fixed_layer_interval};
+  insertOrUnionAccessPoint(selected_access_points, ap);
+  net->addPreferredAccessPoint(pin_idx, ap);
 }
 
 AccessPointSet GridGraph::selectAccessPoints(GRNet* net) const
