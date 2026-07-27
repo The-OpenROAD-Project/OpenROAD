@@ -26,7 +26,7 @@ web_server
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ---------- | -------------------------------------------------- |
 | `-port` | TCP port to listen on. Default: `8080`. |
 | `-dir` | Path to the document root directory containing the web assets (`index.html`, `*.js`, `*.css`). |
 
@@ -49,7 +49,7 @@ save_image
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| -------------- | ---------------------------------------------- |
 | `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
 | `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: die area (with 5% margin in `-web` mode). |
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
@@ -122,7 +122,7 @@ web_save_report
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ----------- | ------------------------------------------------- |
 | `-setup_paths` | Maximum number of setup timing paths to include. Default: `100`. |
 | `-hold_paths` | Maximum number of hold timing paths to include. Default: `100`. |
 | `path` | Output HTML file path. |

@@ -80,6 +80,13 @@ js_test(
 )
 
 js_test(
+    name = "websocket_tile_layer_test",
+    data = JS_FILES,
+    entry_point = "js/test-websocket-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "checkbox_tree_model_test",
     data = JS_FILES,
     entry_point = "js/test-checkbox-tree-model.js",
@@ -212,6 +219,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",

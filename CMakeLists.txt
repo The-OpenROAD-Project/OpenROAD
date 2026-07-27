@@ -183,6 +183,25 @@ if (LINK_TIME_OPTIMIZATION AND NOT LTO_UNSUPPORTED_OS)
 endif()
 message(STATUS "LTO/IPO is ${LTO_STATUS}")
 
+# Compress DWARF debug sections in builds that emit debug info. This is a
+# large on-disk win for template-heavy C++ (debug info dominates these
+# binaries) and is transparent to gdb/readelf/addr2line/lldb. It is a no-op
+# for builds without -g (e.g. Release), so it is safe to apply globally.
+# Excluded on Apple platforms: Mach-O does not support -gz=zlib and AppleClang
+# (which CMAKE_CXX_COMPILER_ID matches as "Clang") would fail the build.
+# The compile flag is scoped to C/C++: -gz is a GCC/Clang host-compiler flag
+# that nvcc does not accept (it would need explicit -Xcompiler forwarding), so
+# applying it directory-wide would break CUDA (ENABLE_GPU) debug builds where
+# gpl marks GPU sources as LANGUAGE CUDA. The link flag needs no such guard:
+# linking is driven by the host C++ compiler.
+if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   AND NOT APPLE)
+  set(DEBUG_CONFIG_GENEX "$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>")
+  add_compile_options(
+    "$<$<AND:${DEBUG_CONFIG_GENEX},$<COMPILE_LANGUAGE:CXX,C>>:-gz=zlib>")
+  add_link_options("$<${DEBUG_CONFIG_GENEX}:-gz=zlib>")
+endif()
+
 # configure a header file to pass some of the CMake settings
 configure_file(
   ${OPENROAD_HOME}/include/ord/Version.hh.cmake

@@ -277,6 +277,9 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
   dbMTerm* input_mterm = nullptr;
   dbMTerm* output_mterm = nullptr;
   for (dbMTerm* mterm : const_cast<dbMaster*>(buffer_master_)->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
     if (mterm->getIoType() == dbIoType::INPUT) {
       if (input_mterm != nullptr) {
         logger_->warn(utl::ODB,

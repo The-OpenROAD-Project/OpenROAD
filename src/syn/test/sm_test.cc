@@ -130,6 +130,71 @@ TEST_F(SmTest, DffWithSet)
 )");
 }
 
+TEST_F(SmTest, DffWithNegatedSet)
+{
+  Graph g;
+  Bundle a = g.add<Input>("a", 1);
+  Bundle clk = g.add<Input>("clk", 1);
+  Bundle set = g.add<Input>("set", 1);
+  Bundle dff = g.add<Dff>(a,
+                          ControlNet::pos(clk[0]),
+                          ControlNet::pos(set[0]),
+                          ControlNet::zero(),
+                          ControlNet::one(),
+                          Const::undef(1),
+                          Const::undef(1),
+                          Const::ones(1));
+  g.add<Output>("out", dff);
+
+  EXPECT_EQ(mapAndDump(g), R"(%3:1 = input "a"
+%4:1 = input "clk"
+%5:1 = input "set"
+%6:0 = output "out" %7
+%7:1 = target "DFFRSN" {
+  input "D" = %8
+  input "CLK" = %4
+  input "RST_N" = %9
+  input "SET_N" = 1
+  %7:1 = output "QN"
+}
+%8:1 = not %3
+%9:1 = not %5
+)");
+}
+
+TEST_F(SmTest, DffWithNegatedSetAndNegatedClk)
+{
+  Graph g;
+  Bundle a = g.add<Input>("a", 1);
+  Bundle clk = g.add<Input>("clk", 1);
+  Bundle set = g.add<Input>("set", 1);
+  Bundle dff = g.add<Dff>(a,
+                          ControlNet::neg(clk[0]),
+                          ControlNet::pos(set[0]),
+                          ControlNet::zero(),
+                          ControlNet::one(),
+                          Const::undef(1),
+                          Const::undef(1),
+                          Const::ones(1));
+  g.add<Output>("out", dff);
+
+  EXPECT_EQ(mapAndDump(g), R"(%3:1 = input "a"
+%4:1 = input "clk"
+%5:1 = input "set"
+%6:0 = output "out" %7
+%7:1 = target "DFFRSN" {
+  input "D" = %8
+  input "CLK" = %9
+  input "RST_N" = %10
+  input "SET_N" = 1
+  %7:1 = output "QN"
+}
+%8:1 = not %3
+%9:1 = not %4
+%10:1 = not %5
+)");
+}
+
 }  // namespace syn
 
 int main(int argc, char** argv)

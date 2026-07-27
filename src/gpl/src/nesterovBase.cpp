@@ -2859,11 +2859,14 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
 
   FloatPoint electroForce;
 
+  const int bin_cnt_x = getBinCntX();
+  const auto& bins = bg_.getBinsConst();
+  const float scale = gCell->getDensityScale();
+
   for (int i = pairX.first; i < pairX.second; i++) {
     for (int j = pairY.first; j < pairY.second; j++) {
-      const Bin& bin = bg_.getBinsConst()[j * getBinCntX() + i];
-      float overlapArea
-          = getOverlapDensityArea(bin, gCell) * gCell->getDensityScale();
+      const Bin& bin = bins[j * bin_cnt_x + i];
+      float overlapArea = getOverlapDensityArea(bin, gCell) * scale;
 
       electroForce.x += overlapArea * bin.electroFieldX();
       electroForce.y += overlapArea * bin.electroFieldY();

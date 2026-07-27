@@ -881,7 +881,34 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
-  std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
+  const auto shape_less = [](const Shape* lhs, const Shape* rhs) {
+    const int lhs_layer = lhs->getLayer()->getNumber();
+    const int rhs_layer = rhs->getLayer()->getNumber();
+    if (lhs_layer != rhs_layer) {
+      return lhs_layer < rhs_layer;
+    }
+
+    auto* lhs_net = lhs->getNet();
+    auto* rhs_net = rhs->getNet();
+    if (lhs_net != rhs_net) {
+      if (lhs_net == nullptr) {
+        return true;
+      }
+      if (rhs_net == nullptr) {
+        return false;
+      }
+      const auto lhs_net_id = lhs_net->getId();
+      const auto rhs_net_id = rhs_net->getId();
+      if (lhs_net_id != rhs_net_id) {
+        return lhs_net_id < rhs_net_id;
+      }
+    }
+
+    return lhs->getRect() < rhs->getRect();
+  };
+
+  std::map<Shape*, std::vector<odb::dbBox*>, decltype(shape_less)> shape_map(
+      shape_less);
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
       const auto db_shapes
@@ -892,7 +919,7 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
-  // Cleanup floating shapes due to failed vias
+  // Cleanup floating shapes due to failed vias.
   for (const auto& [shape, db_shapes] : shape_map) {
     if (!shape->isLocked() && !shape->hasInternalConnections()) {
       for (odb::dbBox* db_box : db_shapes) {

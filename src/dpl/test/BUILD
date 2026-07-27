@@ -23,6 +23,10 @@ COMPULSORY_TESTS = [
     "check7",
     "check8",
     "check9",
+    "diamond01",
+    "diamond_multi_height",
+    "diamond_one_site_gap",
+    "diamond_regions",
     "fence01",
     "fence02",
     "fence03",
@@ -54,11 +58,8 @@ COMPULSORY_TESTS = [
     "mirror2",
     "mirror3",
     "multi_height_one_site_gap_disallow",
+    "multi_height_power_align",
     "multi_height_rows",
-    "negotiation01",
-    "negotiation_multi_height",
-    "negotiation_one_site_gap",
-    "negotiation_regions",
     "obstruction1",
     "obstruction2",
     "one_site_gap_disallow",
@@ -150,6 +151,19 @@ filegroup(
             ],
             "check9": [
                 "extra.lef",
+            ],
+            "diamond01": [
+                "gcd_replace.def",
+            ],
+            "diamond_multi_height": [
+                "Nangate45/fake_macros.lef",
+                "multi_height_rows.def",
+            ],
+            "diamond_one_site_gap": [
+                "one_site_gap_disallow.def",
+            ],
+            "diamond_regions": [
+                "regions1.def",
             ],
             "edge_spacing": [
                 "multi_height_rows.def",
@@ -252,19 +266,6 @@ filegroup(
             ],
             "multi_height_rows": [
                 "Nangate45/fake_macros.lef",
-            ],
-            "negotiation01": [
-                "gcd_replace.def",
-            ],
-            "negotiation_multi_height": [
-                "Nangate45/fake_macros.lef",
-                "multi_height_rows.def",
-            ],
-            "negotiation_one_site_gap": [
-                "one_site_gap_disallow.def",
-            ],
-            "negotiation_regions": [
-                "regions1.def",
             ],
             "obstruction2": [
                 "Nangate45/fakeram45_64x7.lib",

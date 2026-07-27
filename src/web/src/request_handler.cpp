@@ -167,6 +167,27 @@ class [[nodiscard]] ScopedDbuFormat
  private:
   gui::DBUToString saved_;
 };
+// Clamp + quantize the client's devicePixelRatio so the server renders tiles
+// at a stable 256*dpr and the tile cache has few buckets.  Snaps to the common
+// HiDPI ratios; anything outside [1,3] or non-finite falls back to 1.0.
+static double quantizeDpr(const double raw)
+{
+  if (!std::isfinite(raw) || raw <= 1.0) {
+    return 1.0;
+  }
+  const double clamped = std::min(raw, 3.0);
+  constexpr double kSteps[] = {1.0, 1.25, 1.5, 2.0, 3.0};
+  double best = 1.0;
+  double best_err = std::numeric_limits<double>::max();
+  for (const double step : kSteps) {
+    const double err = std::abs(step - clamped);
+    if (err < best_err) {
+      best_err = err;
+      best = step;
+    }
+  }
+  return best;
+}
 
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
@@ -454,7 +475,8 @@ WebSocketResponse TileHandler::renderTile(
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
     const std::set<uint32_t>* focus_net_ids,
-    const std::set<uint32_t>* route_guide_net_ids)
+    const std::set<uint32_t>* route_guide_net_ids,
+    const double dpr)
 {
   WebSocketResponse resp;
   resp.id = id;
@@ -470,7 +492,8 @@ WebSocketResponse TileHandler::renderTile(
                                   flight_lines,
                                   module_colors,
                                   focus_net_ids,
-                                  route_guide_net_ids);
+                                  route_guide_net_ids,
+                                  dpr);
   return resp;
 }
 
@@ -2227,6 +2250,15 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  // run_inline so the cancel runs on the read thread, ahead of the posted
+  // tile render it is meant to abort.
+  d.add(
+      "cancel",
+      WebSocketRequest::kCancel,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleCancel(req, state);
+      },
+      /*run_inline=*/true);
   d.add("module_hierarchy",
         WebSocketRequest::kModuleHierarchy,
         [this](const WebSocketRequest& req, SessionState&) {
@@ -2295,6 +2327,19 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     }
   }
 
+  // Skip a render the client abandoned while it sat queued (best-effort).
+  {
+    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
+    if (state.cancelled_ids.erase(req.id) > 0) {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kError;
+      const std::string msg = "cancelled";
+      resp.payload.assign(msg.begin(), msg.end());
+      return resp;
+    }
+  }
+
   TileVisibility vis;
   vis.parseFromJson(req.json);
 
@@ -2324,20 +2369,67 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   static const std::vector<ColoredRect> no_colored;
   static const std::vector<FlightLine> no_lines;
 
-  return renderTile(req.id,
-                    std::string(req.json.at("layer").as_string()),
-                    static_cast<int>(req.json.at("z").as_int64()),
-                    static_cast<int>(req.json.at("x").as_int64()),
-                    static_cast<int>(req.json.at("y").as_int64()),
-                    vis,
-                    *gen_,
-                    no_rects,
-                    no_polys,
-                    no_colored,
-                    no_lines,
-                    mod_ptr,
-                    focus_ptr,
-                    nullptr);
+  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+
+  // A tile is cacheable only when it depends solely on the static design +
+  // visibility + dpr — i.e. no per-session overlays are active.  That keeps
+  // the cache session-independent and correct; overlay tiles render fresh.
+  const bool cacheable = mod_ptr == nullptr && focus_ptr == nullptr
+                         && !vis.debug && !vis.debug_renderers
+                         && !vis.debug_live;
+
+  std::string cache_key;
+  if (cacheable) {
+    // Key = the full render determinant: the request JSON minus the per-call
+    // id, with dpr pinned to the quantized value actually rendered.
+    // Selectability (the s_* flags and selectable_layers) does NOT affect the
+    // rendered tile, so it is excluded — toggling "selectable" must not
+    // invalidate the cache.
+    boost::json::object key_obj = req.json;
+    key_obj.erase("id");
+    key_obj.erase("selectable_layers");
+    std::vector<std::string> sel_keys;
+    for (const auto& kv : key_obj) {
+      const std::string_view k = kv.key();
+      if (k.size() >= 2 && k[0] == 's' && k[1] == '_') {
+        sel_keys.emplace_back(k);
+      }
+    }
+    for (const std::string& k : sel_keys) {
+      key_obj.erase(k);
+    }
+    key_obj["dpr"] = dpr;
+    cache_key = boost::json::serialize(key_obj);
+    std::vector<unsigned char> cached;
+    if (gen_->tileCacheGet(cache_key, cached)) {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kPng;
+      resp.payload = std::move(cached);
+      return resp;
+    }
+  }
+
+  WebSocketResponse resp
+      = renderTile(req.id,
+                   std::string(req.json.at("layer").as_string()),
+                   static_cast<int>(req.json.at("z").as_int64()),
+                   static_cast<int>(req.json.at("x").as_int64()),
+                   static_cast<int>(req.json.at("y").as_int64()),
+                   vis,
+                   *gen_,
+                   no_rects,
+                   no_polys,
+                   no_colored,
+                   no_lines,
+                   mod_ptr,
+                   focus_ptr,
+                   nullptr,
+                   dpr);
+  if (cacheable && resp.type == WebSocketResponse::kPng) {
+    gen_->tileCachePut(std::move(cache_key), resp.payload);
+  }
+  return resp;
 }
 
 WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
@@ -2415,6 +2507,37 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                   route_guide_ptr,
                                   has_vis_layers,
                                   vis_layers);
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleCancel(const WebSocketRequest& req,
+                                            SessionState& state)
+{
+  // Cap so a long browsing session whose cancels never match a queued render
+  // can't grow the set without bound; trimming the oldest (lowest) ids only
+  // costs an occasional missed cancel (the render proceeds, which is correct).
+  constexpr size_t kCancelledCap = 4096;
+  {
+    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
+    if (const auto* ids = req.json.if_contains("cancel_ids")) {
+      for (const auto& v : ids->as_array()) {
+        state.cancelled_ids.insert(static_cast<uint32_t>(v.as_int64()));
+      }
+    } else {
+      state.cancelled_ids.insert(
+          static_cast<uint32_t>(jsonOr<int64_t>(req.json, "cancel_id", 0)));
+    }
+    while (state.cancelled_ids.size() > kCancelledCap) {
+      state.cancelled_ids.erase(state.cancelled_ids.begin());
+    }
+  }
+  // Minimal ack.  The client does not track the cancel message in `pending`,
+  // so this response is harmlessly ignored.
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  const std::string ok = "{\"cancelled\":1}";
+  resp.payload.assign(ok.begin(), ok.end());
   return resp;
 }
 

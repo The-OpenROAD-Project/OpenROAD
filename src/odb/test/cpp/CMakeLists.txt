@@ -1,23 +1,11 @@
 include(openroad)
 
-set(TEST_LIBS
-        odb
-        lef
-        defin
-        defout
-        lefin
-        lefout
-        cdl
-        3dblox
-        ${TCL_LIBRARY}
-        Boost::boost
-        utl_lib
-        odb_test_helper
-        gdsin
-        tst
+# Each executable links only the libraries it actually needs to avoid bloated
+# binaries. src/odb/test/cpp/BUILD is the reference for the minimal dependency
+# set of each test. GTEST_LIBS is the one group shared by every test.
+set(GTEST_LIBS
         GTest::gtest
         GTest::gtest_main
-        GTest::gmock
 )
 
 add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc)
@@ -42,27 +30,132 @@ add_executable(TestSwapMasterUnusedPort TestSwapMasterUnusedPort.cpp)
 add_executable(TestWriteReadDbHier TestWriteReadDbHier.cpp)
 add_executable(TestObjectType TestObjectType.cpp)
 
-target_link_libraries(OdbGTests ${TEST_LIBS})
-target_link_libraries(TestCallBacks ${TEST_LIBS})
-target_link_libraries(TestGeom ${TEST_LIBS})
-target_link_libraries(TestModule ${TEST_LIBS})
-target_link_libraries(TestLef58Properties ${TEST_LIBS})
-target_link_libraries(TestGroup ${TEST_LIBS})
-target_link_libraries(TestGCellGrid ${TEST_LIBS})
-target_link_libraries(TestJournal ${TEST_LIBS})
-target_link_libraries(TestAccessPoint ${TEST_LIBS})
-target_link_libraries(TestGuide ${TEST_LIBS})
-target_link_libraries(TestNetTrack ${TEST_LIBS})
-target_link_libraries(TestMaster ${TEST_LIBS})
-target_link_libraries(TestGDSIn ${TEST_LIBS})
-target_link_libraries(TestChips ${TEST_LIBS})
-target_link_libraries(Test3DBloxParser ${TEST_LIBS})
-target_link_libraries(Test3DBloxChecker ${TEST_LIBS})
-target_link_libraries(Test3DBloxVerilogWriter ${TEST_LIBS})
-target_link_libraries(TestSwapMaster ${TEST_LIBS})
-target_link_libraries(TestSwapMasterUnusedPort ${TEST_LIBS})
-target_link_libraries(TestWriteReadDbHier ${TEST_LIBS})
-target_link_libraries(TestObjectType ${TEST_LIBS})
+target_link_libraries(OdbGTests
+        db
+        defin
+        lefin
+        lefout
+        OpenSTA
+        tst
+        utl_lib
+        GTest::gmock
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestCallBacks
+        db
+        odb_test_helper
+        tst_base
+        spdlog::spdlog
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestGeom
+        db
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestModule
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestLef58Properties
+        db
+        defin
+        defout
+        lefin
+        lefout
+        tst
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestGroup
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestGCellGrid
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestJournal
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestAccessPoint
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestGuide
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestNetTrack
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestMaster
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestGDSIn
+        db
+        gdsin
+        gdsout
+        tst_base
+        utl_lib
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestChips
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(Test3DBloxParser
+        3dblox
+        db
+        odb_test_helper
+        tst_base
+        ${GTEST_LIBS}
+)
+target_link_libraries(Test3DBloxChecker
+        3dblox
+        db
+        tst_base
+        ${GTEST_LIBS}
+)
+target_link_libraries(Test3DBloxVerilogWriter
+        3dblox
+        db
+        tst_base
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestSwapMaster
+        db
+        dbSta_lib
+        tst
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestSwapMasterUnusedPort
+        db
+        dbSta_lib
+        tst
+        utl_lib
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestWriteReadDbHier
+        db
+        tst_integrated_fixture
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestObjectType
+        db
+        tst_base
+        ${GTEST_LIBS}
+)
 
 # Skip the tests from being registered here, since they are called via
 # cpp_tests.tcl and don't need to be executed twice. The cpp_tests.tcl

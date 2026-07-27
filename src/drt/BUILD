@@ -101,6 +101,8 @@ cc_library(
     visibility = ["//src/drt:__subpackages__"],
     deps = [
         ":base_types",
+        # TODO: need :drt_private_hdrs, but that reveals a cylcic dependency
+        #":drt_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.polygon",

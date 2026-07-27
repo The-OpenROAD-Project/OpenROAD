@@ -14,10 +14,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Greet First-Time Contributor
-        uses: actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d  # v3.1.0
+        uses: actions/first-interaction@34f15e814fe48ac9312ccf29db4e74fa767cbab7  # v1.3.0
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          issue_message: |
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
             Welcome to OpenROAD! Thanks for opening your first issue.
             To get started:
             - Build Instructions: https://openroad.readthedocs.io/en/latest/contrib/BuildWithCMake.html
@@ -25,7 +25,7 @@ jobs:
 
             Please search existing issues before submitting to avoid duplicates.
             A maintainer will get back to you soon!
-          pr_message: |
+          pr-message: |
             Welcome to OpenROAD! Thanks for opening your first PR.
             Before we review:
             - Contribution Guide: https://openroad.readthedocs.io/en/latest/contrib/contributing.html

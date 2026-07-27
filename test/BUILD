@@ -209,5 +209,5 @@ py_test(
 test_suite(
     name = "flow_tests",
     tags = ["manual"],
-    tests = [test_name + "-tcl" for test_name in BIG_TESTS],
+    tests = [test_name + "-tcl_test" for test_name in BIG_TESTS],
 )

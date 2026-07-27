@@ -20,6 +20,7 @@ cc_library(
     name = "gpl_private_hdrs",
     hdrs = [
         "src/fft.h",
+        "src/fftBackend.h",
         "src/nesterovBase.h",
         "src/nesterovPlace.h",
         "src/placerBase.h",
@@ -32,8 +33,11 @@ cc_library(
         "//visibility:private",
     ],
     deps = [
+        # TODO: we use headers provided by :gpl, but that reveals cyclic dep
+        #":gpl",
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.random",
         "@boost.unordered",
     ],
 )
@@ -48,7 +52,6 @@ cc_library(
         "src/densityGradient.cpp",
         "src/densityGradientBackend.h",
         "src/fft.cpp",
-        "src/fftBackend.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
         "src/gpu/deviceState.h",

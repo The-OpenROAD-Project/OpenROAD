@@ -4,13 +4,17 @@
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
-import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
+import {
+    createWebSocketTileLayer,
+    createOverlayTileLayer,
+    floorClampZoom,
+} from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, buildMapOptions } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -103,6 +107,10 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
+    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
+    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // display-controls.js and read lazily by websocket-tile-layer.js.
+    layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
     showDbu: getCookie('or_show_dbu') === '1',
     selectableLayers: new Set(),
@@ -199,6 +207,7 @@ const visibility = {
     // Module view
     module_view: false,
     // Misc
+    detailed: false,
     rulers: true,
     scale_bar: true,
     // Debug
@@ -287,6 +296,13 @@ const HeatMapTileLayer = L.GridLayer.extend({
         this._websocketManager = websocketManager;
         this._appState = appState;
         L.GridLayer.prototype.initialize.call(this, options);
+    },
+
+    // Upscale-only display, same as the layout tile layer: the map rests on
+    // integer zoom so heatmap tiles show 1:1 with no fractional rescaling.
+    _clampZoom: function(zoom) {
+        return L.GridLayer.prototype._clampZoom.call(
+            this, floorClampZoom(this, zoom));
     },
 
     createTile: function(coords, done) {
@@ -464,13 +480,7 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
-    app.map = L.map(mapDiv, {
-        crs: L.CRS.Simple,
-        zoom: 1,
-        zoomSnap: 0,
-        fadeAnimation: false,
-        attributionControl: false,
-    });
+    app.map = L.map(mapDiv, buildMapOptions());
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';

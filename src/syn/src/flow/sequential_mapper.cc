@@ -63,6 +63,13 @@ struct FeatureSet
     return r;
   }
 
+  FeatureSet complementClock() const
+  {
+    FeatureSet r = *this;
+    r.clock_polarity = !r.clock_polarity;
+    return r;
+  }
+
   bool operator==(const FeatureSet& o) const
   {
     return clock_polarity == o.clock_polarity && has_clear == o.has_clear
@@ -426,28 +433,40 @@ void mapSequentials(Graph& g,
       FeatureSet feats;
       feats.clock_polarity = dff->clock().isPositive();
 
-      bool clear_is_set = false;
-      bool complement_clear = false;
+      bool arst_is_set = false;
       if (!dff->clear().isAlways(false)) {
         Net cv = dff->clearValue()[i];
         if (cv == Net::zero()) {
           feats.has_clear = true;
           feats.clear_polarity = dff->clear().isPositive();
         } else if (cv == Net::one()) {
-          clear_is_set = true;
+          arst_is_set = true;
           feats.has_set = true;
           feats.set_polarity = dff->clear().isPositive();
         }
       }
 
-      auto it = classes.find(feats);
-      if (it == classes.end()) {
-        it = classes.find(clear_is_set ? feats.complementSet()
-                                       : feats.complementClear());
-        complement_clear = true;
+      auto target = classes.find(feats);
+
+      // Target not found, try complementing reset
+      if (target == classes.end()) {
+        target = classes.find(arst_is_set ? feats.complementSet()
+                                          : feats.complementClear());
       }
 
-      if (it == classes.end()) {
+      // Still not found, try complementing clock
+      if (target == classes.end()) {
+        target = classes.find(feats.complementClock());
+      }
+
+      // Still not found, try complementing both clock and reset
+      if (target == classes.end()) {
+        auto feats1
+            = arst_is_set ? feats.complementSet() : feats.complementClear();
+        target = classes.find(feats1.complementClock());
+      }
+
+      if (target == classes.end()) {
         auto polString = [](bool has, bool polarity) {
           if (!has) {
             return "none";
@@ -463,23 +482,29 @@ void mapSequentials(Graph& g,
                       polString(feats.has_clear, feats.clear_polarity),
                       polString(feats.has_set, feats.set_polarity));
       }
-      const MapTarget& mt = it->second;
+      const MapTarget& mt = target->second;
+
+      ControlNet mapped_clk = dff->clock();
+      ControlNet mapped_arst = dff->clear();
+      if (!target->first.clock_polarity) {
+        mapped_clk = !mapped_clk;
+      }
+      if (arst_is_set ? !target->first.set_polarity
+                      : !target->first.clear_polarity) {
+        mapped_arst = !mapped_arst;
+      }
 
       Bundle inputs = buildDefaultInputs(mt);
-      inputs.mutableNet(mt.pins.clock_in) = dff->clock().net();
+      inputs.mutableNet(mt.pins.clock_in) = mapped_clk.emitNet(g);
       inputs.mutableNet(mt.pins.data_in)
           = mt.data_negated ? g.add<Not>(BundleView(dff->data()[i]))[0]
                             : dff->data()[i];
 
       if (!dff->clear().isAlways(false)) {
-        if (!clear_is_set) {
-          inputs.mutableNet(mt.pins.clear_in)
-              = complement_clear ? g.add<Not>(dff->clear().net()).asNet()
-                                 : dff->clear().net();
+        if (!arst_is_set) {
+          inputs.mutableNet(mt.pins.clear_in) = mapped_arst.emitNet(g);
         } else {
-          inputs.mutableNet(mt.pins.set_in)
-              = complement_clear ? g.add<Not>(dff->clear().net()).asNet()
-                                 : dff->clear().net();
+          inputs.mutableNet(mt.pins.set_in) = mapped_arst.emitNet(g);
         }
       }
 

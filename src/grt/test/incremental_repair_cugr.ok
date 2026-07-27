@@ -23,7 +23,7 @@
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
 Design statistics
-Nets:                579
+Nets:                563
 Special nets:        0
 Routing layers:      10
 
@@ -91,18 +91,18 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     +0.0% |       0 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
-[INFO DPL-0006] Core area: 6286.11 um^2, Instances area: 756.24 um^2, Utilization: 12.0%
+[INFO DPL-0006] Core area: 6286.11 um^2
+[INFO DPL-0007] Movable instances area: 711.55 um^2
+[INFO DPL-0008] Fixed instances area within core: 44.69 um^2
+[INFO DPL-0009] Utilization: 12.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                     508
-Diamond Move Success:            508 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 676 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
@@ -115,18 +115,18 @@ delta HPWL                    0 %
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0098] No setup violations found
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
-[INFO DPL-0006] Core area: 6286.11 um^2, Instances area: 756.24 um^2, Utilization: 12.0%
+[INFO DPL-0006] Core area: 6286.11 um^2
+[INFO DPL-0007] Movable instances area: 711.55 um^2
+[INFO DPL-0008] Fixed instances area within core: 44.69 um^2
+[INFO DPL-0009] Utilization: 12.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                     508
-Diamond Move Success:            508 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 676 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u

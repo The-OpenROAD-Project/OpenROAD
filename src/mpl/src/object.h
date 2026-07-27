@@ -254,6 +254,11 @@ class HardMacro
 
     Halo() = default;
 
+    Halo(int spacing)
+        : left(spacing), bottom(spacing), right(spacing), top(spacing)
+    {
+    }
+
     Halo(int left, int bottom, int right, int top)
         : left(left), bottom(bottom), right(right), top(top)
     {
