@@ -21,6 +21,7 @@ ALL_TESTS = [
     "escape_slash_hier",
     "find_clks1",
     "find_clks2",
+    "get_nets1_hier",
     "get_ports1",
     "get_ports1_hier",
     "hier2",
@@ -132,6 +133,9 @@ filegroup(
             "find_clks1": [
                 "pad.lef",
                 "pad.lib",
+            ],
+            "get_nets1_hier": [
+                "hier1.v",
             ],
             "get_ports1_hier": [
                 "get_ports1.v",

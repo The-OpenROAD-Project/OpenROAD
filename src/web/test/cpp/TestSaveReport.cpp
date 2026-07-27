@@ -378,6 +378,19 @@ TEST_F(SaveReportTest, SerializeTechResponse)
   EXPECT_TRUE(contains(json, "\"dbu_per_micron\":"));
 }
 
+// Non-routing tech layers (Nangate45's MASTERSLICE poly/active and OVERLAP)
+// are grouped into an "Other" category node in the layer hierarchy, mirroring
+// the Qt GUI's displayControls grouping.
+TEST_F(SaveReportTest, SerializeTechResponseGroupsOtherLayers)
+{
+  TileGenerator gen(getDb(), /*sta=*/nullptr, getLogger());
+  const std::string json = boost::json::serialize(serializeTechResponse(gen));
+
+  EXPECT_TRUE(contains(json, "\"layer_hierarchy\":"));
+  EXPECT_TRUE(contains(json, "\"type\":\"category\""));
+  EXPECT_TRUE(contains(json, "\"name\":\"Other\""));
+}
+
 TEST_F(SaveReportTest, SerializeBoundsShapesReady)
 {
   TileGenerator gen(getDb(), /*sta=*/nullptr, getLogger());

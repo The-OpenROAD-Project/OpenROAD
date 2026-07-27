@@ -238,6 +238,17 @@ void WebServer::serve(int port)
           }
         });
 
+    // After a design edit invalidates the tile cache, push a refresh so every
+    // connected client re-requests its tiles (mirrors the Qt GUI's repaint on
+    // Search::modified).  Fired on the design-mutation thread; broadcast() is
+    // safe from any thread (it posts writes onto each session's strand).
+    generator_->setDesignChangedCallback([hook = viewer_hook_.get()]() {
+      if (hook == nullptr) {
+        return;
+      }
+      hook->sessions().broadcast(R"({"type":"refresh"})");
+    });
+
     auto const address = net::ip::make_address("0.0.0.0");
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
@@ -393,6 +404,9 @@ void WebServer::stop()
 
   if (viewer_hook_) {
     TileGenerator::setDebugOverlayCallback({});
+    if (generator_) {
+      generator_->setDesignChangedCallback({});
+    }
     if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
       gui::Gui::get()->setHeadlessViewer(nullptr);
     }

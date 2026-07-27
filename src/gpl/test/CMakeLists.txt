@@ -9,6 +9,8 @@ or_integration_tests(
     cluster_place01
     mbff_hier
     mbff_orig_name
+    mbff_clock_power_off
+    mbff_clock_power_on
     convergence01
     core01
     density01
