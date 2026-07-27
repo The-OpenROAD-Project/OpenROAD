@@ -77,16 +77,6 @@ void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
   }
 }
 
-void GRNet::addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap)
-{
-  bterm_to_ap_[bterm] = ap;
-}
-
-void GRNet::addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap)
-{
-  iterm_to_ap_[iterm] = ap;
-}
-
 bool GRNet::isLocal() const
 {
   PointT first_ap;

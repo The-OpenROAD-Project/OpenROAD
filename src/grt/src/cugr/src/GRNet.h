@@ -132,8 +132,6 @@ class GRNet
   bool isSoftNdr() const { return soft_ndr_; }
 
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
-  void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
-  void addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap);
   const odb::PtrMap<odb::dbBTerm, AccessPoint>& getBTermAccessPoints() const
   {
     return bterm_to_ap_;

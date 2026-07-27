@@ -687,21 +687,26 @@ AccessPoint GridGraph::selectAccessPoint(
   return best_ap;
 }
 
+// The set is keyed by cell only; union the layer intervals of pins that
+// share a cell so the routing tree honors every pin's connection layers.
+AccessPointSet::iterator GridGraph::insertOrUnionAccessPoint(
+    AccessPointSet& selected_access_points,
+    const AccessPoint& ap) const
+{
+  auto [it, inserted] = selected_access_points.emplace(ap);
+  if (!inserted) {
+    it->layers = it->layers.unionWith(ap.layers);
+  }
+  return it;
+}
+
 std::vector<int> GridGraph::findODBAccessPoints(
     GRNet* net,
     AccessPointSet& selected_access_points) const
 {
   std::vector<int> pins_without_aps;
+  pins_without_aps.reserve(net->getNumPins());
   std::vector<odb::dbAccessPoint*> access_points;
-
-  // The set is keyed by cell only; union the layer intervals of pins that
-  // share a cell so the routing tree honors every pin's connection layers.
-  auto emplace_union = [&](const AccessPoint& selected_ap) {
-    auto [it, inserted] = selected_access_points.emplace(selected_ap);
-    if (!inserted) {
-      it->layers = it->layers.unionWith(selected_ap.layers);
-    }
-  };
 
   for (const auto& [pin_idx, bterm] : net->getBTermsByPinIndex()) {
     for (const odb::dbBPin* bpin : bterm->getBPins()) {
@@ -715,8 +720,8 @@ std::vector<int> GridGraph::findODBAccessPoints(
     access_points.clear();
     if (!aps_on_grid.empty()) {
       AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
-      emplace_union(selected_ap);
-      net->addBTermAccessPoint(bterm, selected_ap);
+      insertOrUnionAccessPoint(selected_access_points, selected_ap);
+      net->addPreferredAccessPoint(pin_idx, selected_ap);
     } else {
       pins_without_aps.push_back(pin_idx);
     }
@@ -740,11 +745,11 @@ std::vector<int> GridGraph::findODBAccessPoints(
     iterm->getInst()->getLocation(x, y);
     std::vector<AccessPoint> aps_on_grid
         = translateAccessPointsToGrid(access_points, odb::Point(x, y));
+    access_points.clear();
     if (!aps_on_grid.empty()) {
       AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
-      emplace_union(selected_ap);
-      net->addITermAccessPoint(iterm, selected_ap);
-      access_points.clear();
+      insertOrUnionAccessPoint(selected_access_points, selected_ap);
+      net->addPreferredAccessPoint(pin_idx, selected_ap);
     } else {
       pins_without_aps.push_back(pin_idx);
     }
@@ -755,10 +760,9 @@ std::vector<int> GridGraph::findODBAccessPoints(
 void GridGraph::selectShapeAccessPoint(
     GRNet* net,
     const int pin_idx,
+    const PointT& net_center,
     AccessPointSet& selected_access_points) const
 {
-  const auto& bounding_box = net->getBoundingBox();
-  const PointT net_center(bounding_box.cx(), bounding_box.cy());
   const std::vector<GRPoint>& access_points
       = net->getPinAccessPoints()[pin_idx];
   std::pair<int, int> best_access_dist = {0, std::numeric_limits<int>::max()};
@@ -804,15 +808,16 @@ void GridGraph::selectShapeAccessPoint(
   }
 
   const PointT selected_point = access_points[best_index];
-  const AccessPoint ap{.point = selected_point, .layers = {}};
-  auto it = selected_access_points.emplace(ap).first;
-  IntervalT& fixed_layer_interval = it->layers;
+  IntervalT fixed_layer_interval;
   for (const auto& point : access_points) {
     if (point.x() == selected_point.x() && point.y() == selected_point.y()) {
       fixed_layer_interval.update(point.getLayerIdx());
     }
   }
 
+  auto it = insertOrUnionAccessPoint(
+      selected_access_points,
+      {.point = selected_point, .layers = fixed_layer_interval});
   net->addPreferredAccessPoint(pin_idx, *it);
 }
 
@@ -822,10 +827,12 @@ AccessPointSet GridGraph::selectAccessPoints(GRNet* net) const
   AccessPointSet selected_access_points(0, hasher);
   // cell hash (2d) -> access point, fixed layer interval
   selected_access_points.reserve(net->getNumPins());
+  const auto& bounding_box = net->getBoundingBox();
+  const PointT net_center(bounding_box.cx(), bounding_box.cy());
   // Prefer DRT-created ODB access points; pins without them fall back to
   // shape-derived cells so they are never dropped from the routing tree.
   for (const int pin_idx : findODBAccessPoints(net, selected_access_points)) {
-    selectShapeAccessPoint(net, pin_idx, selected_access_points);
+    selectShapeAccessPoint(net, pin_idx, net_center, selected_access_points);
   }
   return selected_access_points;
 }
