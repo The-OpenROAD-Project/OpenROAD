@@ -9,6 +9,7 @@ or_integration_tests(
     escape_slash_hier
     find_clks1
     find_clks2
+    get_nets1_hier
     get_ports1
     get_ports1_hier
     hier2

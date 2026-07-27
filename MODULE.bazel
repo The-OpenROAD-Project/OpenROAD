@@ -200,17 +200,14 @@ git_override(
 ## binaries and a zero-sysroot cc_toolchain: no host compiler, linker,
 ## libxml2 or /usr/include involved, and it runs unmodified on distros
 ## without FHS paths (e.g. NixOS).
-# NOTE when bumping: the LLVM release embedded in this module version is
-# hardcoded in .bazelrc's coverage:coverage --test_env=LLVM_PROFDATA/LLVM_COV
-# paths (external/llvm++llvm_toolchain_minimal+llvm-toolchain-minimal-<ver>-
-# linux-amd64/bin). Update those lines in the same commit, or the nightly
-# coverage job fails on its next run.
-bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
+## Keep >= 0.8.14: earlier releases silently produce empty `bazel coverage`
+## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
+bazel_dep(name = "llvm", version = "0.8.14", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
-bazel_dep(name = "bant", version = "0.3.0", dev_dependency = True)
+bazel_dep(name = "bant", version = "0.3.4", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
