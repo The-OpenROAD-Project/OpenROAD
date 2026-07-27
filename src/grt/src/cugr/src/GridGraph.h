@@ -27,7 +27,8 @@ class GridGraphView;
 struct AccessPoint
 {
   PointT point;
-  IntervalT layers;
+  // mutable: not part of hash/equality, updated in place on cell collision
+  mutable IntervalT layers;
   bool operator==(const AccessPoint& ap) const
   {
     return point == ap.point && layers == ap.layers;
