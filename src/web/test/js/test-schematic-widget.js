@@ -264,6 +264,204 @@ describe('SchematicWidget schematic navigation', () => {
         container.element.remove();
     });
 
+    it('goes back to the previous schematic after a double-click expansion', async () => {
+        const requests = [];
+        const currentNetlist = {
+            modules: {
+                top: {
+                    attributes: {},
+                    ports: {},
+                    cells: {
+                        u1: {
+                            type: 'BUF_X1',
+                            connections: { Z: [5] },
+                        },
+                    },
+                    netnames: {
+                        shared: { hide_name: 0, bits: [5], attributes: {} },
+                    },
+                },
+            },
+        };
+        const expandedCone = {
+            modules: {
+                top: {
+                    attributes: {},
+                    ports: {},
+                    cells: {
+                        u2: {
+                            type: 'BUF_X1',
+                            connections: { A: [2], Z: [3] },
+                        },
+                    },
+                    netnames: {
+                        shared: { hide_name: 0, bits: [2], attributes: {} },
+                        added: { hide_name: 0, bits: [3], attributes: {} },
+                    },
+                },
+            },
+        };
+        const appState = {
+            selectedInstanceName: 'u1',
+            showDbu: false,
+            websocketManager: {
+                readyPromise: Promise.resolve(),
+                request: (request) => {
+                    requests.push(request);
+                    if (request.type === 'schematic_cone') {
+                        return Promise.resolve(expandedCone);
+                    }
+                    return Promise.resolve({ selected: [{ name: request.inst_name }] });
+                },
+            },
+        };
+        const { widget, container } = makeWidget(appState);
+        const { path } = makeInteractiveCell(widget, 'u2');
+        const rendered = [];
+        const backButton = widget.controls.querySelector('#schematic-back');
+
+        widget._netlistsvgReady = true;
+        widget._currentNetlist = currentNetlist;
+        widget.renderNetlist = async (data) => {
+            rendered.push(data);
+            widget._currentNetlist = data;
+            return true;
+        };
+
+        assert.equal(backButton.disabled, true);
+
+        const didExpand = await widget._handleCellDoubleClick(doubleClickEvent(path));
+
+        assert.equal(didExpand, true);
+        assert.equal(backButton.disabled, false);
+        assert.equal(widget._schematicHistory.length, 1);
+        assert.equal(appState.selectedInstanceName, 'u2');
+
+        const didGoBack = await widget._goBackSchematic();
+
+        assert.equal(didGoBack, true);
+        assert.equal(backButton.disabled, true);
+        assert.equal(widget._schematicHistory.length, 0);
+        assert.equal(appState.selectedInstanceName, 'u1');
+        assert.deepEqual(rendered[1], currentNetlist);
+        assert.deepEqual(requests[2], {
+            type: 'schematic_inspect',
+            inst_name: 'u1',
+            use_dbu: false,
+        });
+        container.element.remove();
+    });
+
+    it('does not add history when a double-click expansion returns no cells', async () => {
+        const currentNetlist = {
+            modules: {
+                top: {
+                    cells: {
+                        u1: {},
+                    },
+                },
+            },
+        };
+        const emptyCone = {
+            modules: {
+                top: {
+                    cells: {},
+                },
+            },
+        };
+        const appState = {
+            selectedInstanceName: 'u1',
+            websocketManager: {
+                readyPromise: Promise.resolve(),
+                request: (request) => {
+                    if (request.type === 'schematic_cone') {
+                        return Promise.resolve(emptyCone);
+                    }
+                    return Promise.resolve({ selected: [{ name: request.inst_name }] });
+                },
+            },
+        };
+        const { widget, container } = makeWidget(appState);
+        const { path } = makeInteractiveCell(widget, 'u2');
+        const backButton = widget.controls.querySelector('#schematic-back');
+        let renderCalls = 0;
+
+        widget._netlistsvgReady = true;
+        widget._currentNetlist = currentNetlist;
+        widget.renderNetlist = async () => {
+            renderCalls += 1;
+            return true;
+        };
+
+        const didExpand = await widget._handleCellDoubleClick(doubleClickEvent(path));
+
+        assert.equal(didExpand, false);
+        assert.equal(renderCalls, 0);
+        assert.equal(widget._schematicHistory.length, 0);
+        assert.equal(backButton.disabled, true);
+        container.element.remove();
+    });
+
+    it('clears schematic back history after refresh renders a fresh cone', async () => {
+        const requests = [];
+        const previousNetlist = {
+            modules: {
+                top: {
+                    cells: {
+                        u1: {},
+                    },
+                },
+            },
+        };
+        const refreshedNetlist = {
+            modules: {
+                top: {
+                    cells: {
+                        u3: {},
+                    },
+                },
+            },
+        };
+        const appState = {
+            selectedInstanceName: 'u3',
+            websocketManager: {
+                readyPromise: Promise.resolve(),
+                request: (request) => {
+                    requests.push(request);
+                    return Promise.resolve(refreshedNetlist);
+                },
+            },
+        };
+        const { widget, container } = makeWidget(appState);
+        const backButton = widget.controls.querySelector('#schematic-back');
+
+        widget._netlistsvgReady = true;
+        widget._currentNetlist = previousNetlist;
+        widget._pushSchematicHistory({
+            netlist: previousNetlist,
+            selectedInstanceName: 'u1',
+        });
+        widget.renderNetlist = async (data) => {
+            widget._currentNetlist = data;
+            return true;
+        };
+
+        assert.equal(backButton.disabled, false);
+
+        const didRefresh = await widget.refresh();
+
+        assert.equal(didRefresh, true);
+        assert.equal(backButton.disabled, true);
+        assert.equal(widget._schematicHistory.length, 0);
+        assert.deepEqual(requests[0], {
+            type: 'schematic_cone',
+            inst_name: 'u3',
+            fanin_depth: 1,
+            fanout_depth: 1,
+        });
+        container.element.remove();
+    });
+
     it('keeps existing cells when an expanded cone overlaps the current schematic', () => {
         const { widget, container } = makeWidget();
         const currentNetlist = {

@@ -29,6 +29,7 @@ export class SchematicWidget {
             '<option value="boxes">Boxes</option>' +
             '</select>' +
             '<button id="schematic-refresh">Refresh</button>' +
+            '<button id="schematic-back" title="Go back to previous schematic" disabled>Back</button>' +
             '<button id="schematic-fit">Fit</button>' +
             '<button id="schematic-zoom-in"  title="Zoom in">+</button>'  +
             '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
@@ -47,6 +48,7 @@ export class SchematicWidget {
 
         // Button listeners
         this.controls.querySelector('#schematic-refresh').addEventListener('click', () => this.refresh());
+        this.controls.querySelector('#schematic-back').addEventListener('click', () => this._goBackSchematic());
         this.controls.querySelector('#schematic-view-style').addEventListener('change', () => {
             if (this._currentNetlist) {
                 this.renderNetlist(this._currentNetlist);
@@ -75,6 +77,8 @@ export class SchematicWidget {
         // Select mode state
         this._selectMode = false;
         this._selectedCell = null;
+        this._schematicHistory = [];
+        this._maxSchematicHistory = 50;
 
         // Map from SVG element id → ODB instance name.
         // netlistsvg prefixes instance names (e.g. "load2" → id="cell_load2"),
@@ -147,6 +151,68 @@ export class SchematicWidget {
         this._panY = cy + (this._panY - cy) * factor;
         this._scale *= factor;
         this._applyTransform();
+    }
+
+    _setBackButtonEnabled() {
+        this.controls.querySelector('#schematic-back').disabled
+            = this._schematicHistory.length === 0;
+    }
+
+    _clearSchematicHistory() {
+        this._schematicHistory = [];
+        this._setBackButtonEnabled();
+    }
+
+    _currentSchematicSnapshot() {
+        if (!this._currentNetlist) {
+            return null;
+        }
+
+        return {
+            netlist: this._cloneJson(this._currentNetlist),
+            selectedInstanceName: this.appState.selectedInstanceName || null,
+        };
+    }
+
+    _pushSchematicHistory(snapshot) {
+        if (!snapshot || !snapshot.netlist) {
+            return;
+        }
+
+        this._schematicHistory.push({
+            netlist: snapshot.netlist,
+            selectedInstanceName: snapshot.selectedInstanceName || null,
+        });
+        while (this._schematicHistory.length > this._maxSchematicHistory) {
+            this._schematicHistory.shift();
+        }
+        this._setBackButtonEnabled();
+    }
+
+    _goBackSchematic() {
+        const snapshot = this._schematicHistory.pop();
+        this._setBackButtonEnabled();
+        if (!snapshot) {
+            this.setStatus('No previous schematic.');
+            return Promise.resolve(false);
+        }
+
+        this.appState.selectedInstanceName = snapshot.selectedInstanceName;
+        return Promise.resolve(this.renderNetlist(this._cloneJson(snapshot.netlist)))
+            .then((didRender) => {
+                if (didRender === false) {
+                    this._schematicHistory.push(snapshot);
+                    this._setBackButtonEnabled();
+                    return false;
+                }
+
+                if (!snapshot.selectedInstanceName) {
+                    return true;
+                }
+
+                return this._fetchInspect(snapshot.selectedInstanceName)
+                    .then(() => true);
+            });
     }
 
     _toggleSelectMode() {
@@ -292,10 +358,12 @@ export class SchematicWidget {
 
         e.preventDefault();
         e.stopPropagation();
+        // Save the current view so Back can restore it after expansion.
+        const previousSnapshot = this._currentSchematicSnapshot();
         this.appState.selectedInstanceName = name;
         this._highlightCellGroup(hit.group);
         this._fetchInspect(name);
-        return this._expandFromInstance(name);
+        return this._expandFromInstance(name, previousSnapshot);
     }
 
     _fetchInspect(instName) {
@@ -441,7 +509,14 @@ export class SchematicWidget {
                         this.setStatus('No cells found for selected instance.');
                         return false;
                     }
-                    return this.renderNetlist(data).then(() => true);
+                    return Promise.resolve(this.renderNetlist(data)).then((didRender) => {
+                        if (didRender === false) {
+                            return false;
+                        }
+                        // A fresh refresh replaces the expansion history.
+                        this._clearSchematicHistory();
+                        return true;
+                    });
                 })
                 .catch(err => {
                     this.setStatus(`Error: ${err}`);
@@ -463,7 +538,7 @@ export class SchematicWidget {
         };
     }
 
-    _expandFromInstance(instName) {
+    _expandFromInstance(instName, previousSnapshot = null) {
         if (!instName) {
             return Promise.resolve(false);
         }
@@ -496,7 +571,15 @@ export class SchematicWidget {
                     const netlist = this._currentNetlist
                         ? this._mergeSchematicNetlists(this._currentNetlist, data)
                         : data;
-                    return this.renderNetlist(netlist).then(() => true);
+                    return Promise.resolve(this.renderNetlist(netlist))
+                        .then((didRender) => {
+                            if (didRender === false) {
+                                return false;
+                            }
+                            // Record Back history only after expansion renders.
+                            this._pushSchematicHistory(previousSnapshot);
+                            return true;
+                        });
                 })
                 .catch(err => {
                     this.setStatus(`Error: ${err}`);
