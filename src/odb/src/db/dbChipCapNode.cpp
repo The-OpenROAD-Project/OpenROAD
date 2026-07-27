@@ -20,7 +20,7 @@ bool _dbChipCapNode::operator==(const _dbChipCapNode& rhs) const
   if (chip_net_ != rhs.chip_net_) {
     return false;
   }
-  if (next_chip_cap_node_ != rhs.next_chip_cap_node_) {
+  if (next_chip_net_cap_node_ != rhs.next_chip_net_cap_node_) {
     return false;
   }
   if (chip_bump_inst_ != rhs.chip_bump_inst_) {
@@ -47,7 +47,7 @@ _dbChipCapNode::_dbChipCapNode(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbChipCapNode& obj)
 {
   stream >> obj.chip_net_;
-  stream >> obj.next_chip_cap_node_;
+  stream >> obj.next_chip_net_cap_node_;
   stream >> obj.chip_bump_inst_;
   stream >> obj.capacitance_;
   return stream;
@@ -56,7 +56,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipCapNode& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbChipCapNode& obj)
 {
   stream << obj.chip_net_;
-  stream << obj.next_chip_cap_node_;
+  stream << obj.next_chip_net_cap_node_;
   stream << obj.chip_bump_inst_;
   stream << obj.capacitance_;
   return stream;
@@ -101,7 +101,7 @@ dbChipCapNode* dbChipCapNode::create(dbChipNet* chip_net_)
   cap_node->chip_net_ = chip_net->getOID();
 
   // Add to the chip net's cap node list
-  cap_node->next_chip_cap_node_ = chip_net->first_cap_node_;
+  cap_node->next_chip_net_cap_node_ = chip_net->first_cap_node_;
   chip_net->first_cap_node_ = cap_node->getOID();
 
   return (dbChipCapNode*) cap_node;
@@ -116,7 +116,7 @@ void dbChipCapNode::destroy(dbChipCapNode* chip_cap_node_)
 
   // Remove the deleted cap node from the chip net's cap node list
   if (chip_net->first_cap_node_ == chip_cap_node->getOID()) {
-    chip_net->first_cap_node_ = chip_cap_node->next_chip_cap_node_;
+    chip_net->first_cap_node_ = chip_cap_node->next_chip_net_cap_node_;
   } else {
     _dbChipCapNode* previous_cap_node = nullptr;
     _dbChipCapNode* current_cap_node
@@ -124,11 +124,11 @@ void dbChipCapNode::destroy(dbChipCapNode* chip_cap_node_)
     while (current_cap_node && current_cap_node != chip_cap_node) {
       previous_cap_node = current_cap_node;
       current_cap_node = chip->chip_cap_node_tbl_->getPtr(
-          current_cap_node->next_chip_cap_node_);
+          current_cap_node->next_chip_net_cap_node_);
     }
     if (current_cap_node && previous_cap_node) {
-      previous_cap_node->next_chip_cap_node_
-          = current_cap_node->next_chip_cap_node_;
+      previous_cap_node->next_chip_net_cap_node_
+          = current_cap_node->next_chip_net_cap_node_;
     }
   }
 

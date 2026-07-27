@@ -37,9 +37,9 @@ void dbChipNetRSegItr::reverse(dbObject* parent)
 
   while (current_id != 0) {
     _dbChipRSeg* current_r_seg = chip_r_seg_tbl_->getPtr(current_id);
-    const uint32_t next_id = current_r_seg->next_chip_r_seg_;
+    const uint32_t next_id = current_r_seg->next_chip_net_r_seg_;
 
-    current_r_seg->next_chip_r_seg_ = new_head;
+    current_r_seg->next_chip_net_r_seg_ = new_head;
     new_head = current_id;
     current_id = next_id;
   }
@@ -84,7 +84,7 @@ uint32_t dbChipNetRSegItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbChipRSeg* current_r_seg = chip_r_seg_tbl_->getPtr(id);
-  return (uint32_t) current_r_seg->next_chip_r_seg_;
+  return (uint32_t) current_r_seg->next_chip_net_r_seg_;
   // User Code End next
 }
 

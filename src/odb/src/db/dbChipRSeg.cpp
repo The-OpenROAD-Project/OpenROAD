@@ -21,7 +21,7 @@ bool _dbChipRSeg::operator==(const _dbChipRSeg& rhs) const
   if (chip_net_ != rhs.chip_net_) {
     return false;
   }
-  if (next_chip_r_seg_ != rhs.next_chip_r_seg_) {
+  if (next_chip_net_r_seg_ != rhs.next_chip_net_r_seg_) {
     return false;
   }
   if (source_cap_node_ != rhs.source_cap_node_) {
@@ -51,7 +51,7 @@ _dbChipRSeg::_dbChipRSeg(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbChipRSeg& obj)
 {
   stream >> obj.chip_net_;
-  stream >> obj.next_chip_r_seg_;
+  stream >> obj.next_chip_net_r_seg_;
   stream >> obj.source_cap_node_;
   stream >> obj.target_cap_node_;
   stream >> obj.resistance_;
@@ -61,7 +61,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRSeg& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbChipRSeg& obj)
 {
   stream << obj.chip_net_;
-  stream << obj.next_chip_r_seg_;
+  stream << obj.next_chip_net_r_seg_;
   stream << obj.source_cap_node_;
   stream << obj.target_cap_node_;
   stream << obj.resistance_;
@@ -136,7 +136,7 @@ dbChipRSeg* dbChipRSeg::create(dbChipNet* chip_net_,
   r_seg->target_cap_node_ = target_cap_node_->getImpl()->getOID();
 
   // Add to the chip net's r-seg list
-  r_seg->next_chip_r_seg_ = chip_net->first_r_seg_;
+  r_seg->next_chip_net_r_seg_ = chip_net->first_r_seg_;
   chip_net->first_r_seg_ = r_seg->getOID();
 
   return (dbChipRSeg*) r_seg;
@@ -151,7 +151,7 @@ void dbChipRSeg::destroy(dbChipRSeg* r_seg_)
 
   // Remove the deleted r-seg from the chip net's r-seg list
   if (chip_net->first_r_seg_ == r_seg->getOID()) {
-    chip_net->first_r_seg_ = r_seg->next_chip_r_seg_;
+    chip_net->first_r_seg_ = r_seg->next_chip_net_r_seg_;
   } else {
     _dbChipRSeg* previous_r_seg = nullptr;
     _dbChipRSeg* current_r_seg
@@ -159,10 +159,11 @@ void dbChipRSeg::destroy(dbChipRSeg* r_seg_)
     while (current_r_seg && current_r_seg != r_seg) {
       previous_r_seg = current_r_seg;
       current_r_seg
-          = chip->chip_r_seg_tbl_->getPtr(current_r_seg->next_chip_r_seg_);
+          = chip->chip_r_seg_tbl_->getPtr(current_r_seg->next_chip_net_r_seg_);
     }
     if (current_r_seg && previous_r_seg) {
-      previous_r_seg->next_chip_r_seg_ = current_r_seg->next_chip_r_seg_;
+      previous_r_seg->next_chip_net_r_seg_
+          = current_r_seg->next_chip_net_r_seg_;
     }
   }
 

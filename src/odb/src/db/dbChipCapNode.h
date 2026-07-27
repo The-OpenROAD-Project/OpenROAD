@@ -27,7 +27,7 @@ class _dbChipCapNode : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbChipNet> chip_net_;
-  dbId<_dbChipCapNode> next_chip_cap_node_;
+  dbId<_dbChipCapNode> next_chip_net_cap_node_;
   dbId<_dbChipBumpInst> chip_bump_inst_;
   float capacitance_;
 };

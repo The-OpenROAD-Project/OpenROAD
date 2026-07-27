@@ -17,7 +17,7 @@
             ]
         },
         {
-            "name": "next_chip_r_seg_",
+            "name": "next_chip_net_r_seg_",
             "type": "dbId<_dbChipRSeg>",
             "flags": [
                 "private"

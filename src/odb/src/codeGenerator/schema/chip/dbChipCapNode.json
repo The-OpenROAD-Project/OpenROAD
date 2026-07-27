@@ -18,7 +18,7 @@
             ]
         },
         {
-            "name": "next_chip_cap_node_",
+            "name": "next_chip_net_cap_node_",
             "type": "dbId<_dbChipCapNode>",
             "flags": [
                 "private"

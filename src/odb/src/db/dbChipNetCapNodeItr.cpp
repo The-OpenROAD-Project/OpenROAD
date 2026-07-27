@@ -37,9 +37,9 @@ void dbChipNetCapNodeItr::reverse(dbObject* parent)
 
   while (current_id != 0) {
     _dbChipCapNode* current_cap_node = chip_cap_node_tbl_->getPtr(current_id);
-    const uint32_t next_id = current_cap_node->next_chip_cap_node_;
+    const uint32_t next_id = current_cap_node->next_chip_net_cap_node_;
 
-    current_cap_node->next_chip_cap_node_ = new_head;
+    current_cap_node->next_chip_net_cap_node_ = new_head;
     new_head = current_id;
     current_id = next_id;
   }
@@ -84,7 +84,7 @@ uint32_t dbChipNetCapNodeItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbChipCapNode* current_cap_node = chip_cap_node_tbl_->getPtr(id);
-  return (uint32_t) current_cap_node->next_chip_cap_node_;
+  return (uint32_t) current_cap_node->next_chip_net_cap_node_;
   // User Code End next
 }
 
