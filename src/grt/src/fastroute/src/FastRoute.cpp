@@ -2139,15 +2139,20 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
-  // Number of times the soft-NDR disable path has restarted the overflow
-  // iterations. Each restart re-runs up to overflow_iterations_ rounds, so
-  // disabling NDR nets one at a time with a full reset per net is O(N) full
-  // loops. When many clock nets carry an (auto-applied) NDR that cannot be
-  // honored, this caused a severe runtime regression (issue #8466). To bound
-  // the number of restarts we escalate the batch size: the first restart
-  // disables half of the congested NDR nets and any subsequent restart
-  // disables all of the remaining ones.
-  int soft_ndr_resets = 0;
+  // Soft-NDR demotion schedule. Demoting congested NDR nets only on
+  // convergence failure and restarting the whole overflow loop per demotion is
+  // O(N) restarts, a severe runtime regression on large designs where many
+  // (auto-applied) clock-net NDRs cannot be honored (issue #8466). Instead we
+  // demote on a fixed iteration schedule, escalating the batch size, and only
+  // restart the loop on the final disable-everything step:
+  //   iteration 5  -> demote 10% of the congested NDR nets, keep iterating
+  //   iteration 10 -> demote 50% of the congested NDR nets, keep iterating
+  //   iteration 15 -> demote all remaining congested NDR nets and restart
+  // Not restarting on the 10%/50% steps lets the maze router absorb the freed
+  // capacity in place instead of paying for a full restart each time.
+  constexpr int kSoftNdrDemote10Iter = 5;
+  constexpr int kSoftNdrDemote50Iter = 10;
+  constexpr int kSoftNdrDemoteAllIter = 15;
   float overflow_reduction_percent = -1;
   // Minimum overflow stagnation
   int minofl_stagnant = 0;
@@ -2388,49 +2393,56 @@ NetRouteMap FastRouteCore::run()
             max_overflow_increases);
       }
 
-      // Try disabling NDR nets to fix congestion
+      // Try disabling NDR nets to fix congestion following the fixed demotion
+      // schedule described where the constants are defined: demote 10% of the
+      // congested NDR nets at iteration 5, 50% at iteration 10, and all of the
+      // remaining ones at iteration 15. Only the final step restarts the loop.
       if (total_overflow_ > 0
-          && (i == overflow_iterations_
-              || overflow_increases == max_overflow_increases
-              || minofl_stagnant >= 10)) {
-        // Compute all the NDR nets involved in congestion
+          && (i == kSoftNdrDemote10Iter || i == kSoftNdrDemote50Iter
+              || i == kSoftNdrDemoteAllIter)) {
+        // Recompute the NDR nets currently involved in congestion (nets already
+        // demoted to soft-NDR are skipped).
         computeCongestedNDRnets();
 
-        // Escalating soft-NDR batches. Disabling NDR nets a few at a time with
-        // a full overflow-loop reset per restart is O(N) full loops, a severe
-        // runtime regression when many clock nets carry an (auto-applied) NDR
-        // that cannot be honored. To bound the number of
-        // restarts, disable half of the congested NDR nets on the first
-        // restart and all of the remaining ones on any subsequent restart.
-        // This keeps the restart count small while still demoting as few NDR
-        // nets as possible, and guarantees termination: once every congested
-        // NDR net is soft-demoted, computeCongestedNDRnets() finds none left.
-        const double demote_fraction = (soft_ndr_resets == 0) ? 0.5 : 1.0;
+        double demote_fraction;
+        bool restart_loop;
+        if (i == kSoftNdrDemote10Iter) {
+          demote_fraction = 0.1;
+          restart_loop = false;
+        } else if (i == kSoftNdrDemote50Iter) {
+          demote_fraction = 0.5;
+          restart_loop = false;
+        } else {  // kSoftNdrDemoteAllIter
+          demote_fraction = 1.0;
+          restart_loop = true;
+        }
+
         std::vector<int> net_ids
             = graph2d_.getCongestedNDRnetsByFraction(demote_fraction);
 
-        // Only apply soft NDR if there is NDR nets involved in congestion
+        // Only apply soft NDR if there are NDR nets involved in congestion
         if (!net_ids.empty()) {
           // Apply the soft NDR to the selected list of nets
           applySoftNDR(net_ids);
-          soft_ndr_resets++;
 
-          // Reset loop parameters
-          overflow_increases = 0;
-          minofl_stagnant = 0;
-          i = 1;
-          costheight_ = COSHEIGHT;
-          enlarge_ = ENLARGE;
-          ripup_threshold = Ripvalue;
-          minofl = total_overflow_;
-          bmfl = minofl;
-          stopDEC = false;
+          if (restart_loop) {
+            // Reset loop parameters
+            overflow_increases = 0;
+            minofl_stagnant = 0;
+            i = 1;
+            costheight_ = COSHEIGHT;
+            enlarge_ = ENLARGE;
+            ripup_threshold = Ripvalue;
+            minofl = total_overflow_;
+            bmfl = minofl;
+            stopDEC = false;
 
-          slope = 20;
-          L = 1;
+            slope = 20;
+            L = 1;
 
-          // Increase maze route 3D threshold to fix bad routes
-          long_edge_len = BIG_INT;
+            // Increase maze route 3D threshold to fix bad routes
+            long_edge_len = BIG_INT;
+          }
         }
       }
 

@@ -1,13 +1,13 @@
-# Exercises the escalating soft-NDR overflow-loop escape valve.
+# Exercises the escalating soft-NDR demotion schedule.
 #
 # Aggressive custom NDRs on every clock net, with tightened routing resources,
 # force global routing to disable congested NDR nets to relieve overflow.
-# Disabling NDR nets a few at a time with a full overflow-loop restart per net
-# is O(N) restarts. To bound the restarts, the escape valve escalates the batch
-# size: the first restart disables half of the congested NDR nets and any
-# subsequent restart disables all of the remaining ones, so the loop terminates
-# in at most two restarts. This test checks that the flow completes and produces
-# a stable result under that condition.
+# Restarting the whole overflow loop once per demotion is O(N) restarts, so the
+# demotion instead follows a fixed iteration schedule: 10% of the congested NDR
+# nets are disabled at iteration 5, 50% at iteration 10, and all remaining ones
+# at iteration 15, with only the final step restarting the loop. This test
+# checks that the flow completes and produces a stable result under that
+# condition.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
