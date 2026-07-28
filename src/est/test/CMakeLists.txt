@@ -11,6 +11,7 @@ or_integration_tests(
     make_parasitics6
     make_parasitics7
     set_bump_rc1
+    set_bump_rc2
     set_wire_rc_tech
     set_wire_rc_tech_errors
     set_wire_rc_rdl_ignored
