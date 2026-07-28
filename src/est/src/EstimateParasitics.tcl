@@ -392,7 +392,13 @@ proc set_bump_rc { args } {
     keys {-corner -resistance -capacitance} \
     flags {}
 
-  set corner [sta::parse_scene_or_null keys]
+  set corners [sta::parse_scenes_or_all keys]
+
+  if {
+    ![info exists keys(-resistance)] && ![info exists keys(-capacitance)]
+  } {
+    utl::error EST 33 "missing -resistance or -capacitance argument."
+  }
   ord::ensure_units_initialized
 
   # lumped values per bump: ohms and farads, not per unit length
@@ -411,10 +417,6 @@ proc set_bump_rc { args } {
 
   sta::check_argc_eq0 "set_bump_rc" $args
 
-  set corners $corner
-  if { $corner == "NULL" } {
-    set corners [sta::scenes]
-  }
   foreach corner $corners {
     est::set_bump_rc_cmd $corner $bump_res $bump_cap
   }

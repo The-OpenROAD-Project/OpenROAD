@@ -6,32 +6,5 @@
 [INFO ODB-0133]     Created 8 nets and 14 connections.
 [ERROR STA-0572] -resistance '-1' is not a positive float.
 STA-0572
-Startpoint: r2 (rising edge-triggered flip-flop clocked by clk)
-Endpoint: r3 (rising edge-triggered flip-flop clocked by clk)
-Path Group: clk
-Path Type: max
-
-  Delay    Time   Description
----------------------------------------------------------
-   0.00    0.00   clock clk (rise edge)
-   0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ r2/CK (DFF_X1)
-   0.14    0.14 ^ r2/Q (DFF_X1)
-   0.22    0.36 ^ u1/Z (BUF_X1)
-   0.15    0.52 ^ u2/ZN (AND2_X1)
-   0.00    0.52 ^ r3/D (DFF_X1)
-           0.52   data arrival time
-
-  10.00   10.00   clock clk (rise edge)
-   0.00   10.00   clock network delay (ideal)
-   0.00   10.00   clock reconvergence pessimism
-          10.00 ^ r3/CK (DFF_X1)
-  -0.05    9.95   library setup time
-           9.95   data required time
----------------------------------------------------------
-           9.95   data required time
-          -0.52   data arrival time
----------------------------------------------------------
-           9.44   slack (MET)
-
-
+[ERROR EST-0033] missing -resistance or -capacitance argument.
+EST-0033
