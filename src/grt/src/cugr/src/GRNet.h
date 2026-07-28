@@ -12,7 +12,6 @@
 #include "GridGraph.h"
 #include "Netlist.h"
 #include "geo.h"
-#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -131,14 +130,15 @@ class GRNet
 
   bool isSoftNdr() const { return soft_ndr_; }
 
-  void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
-  const odb::PtrMap<odb::dbBTerm, AccessPoint>& getBTermAccessPoints() const
+  void addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
   {
-    return bterm_to_ap_;
+    preferred_aps_[pin_index] = ap;
   }
-  const odb::PtrMap<odb::dbITerm, AccessPoint>& getITermAccessPoints() const
+  // Selected AP per pin, keyed like getPinAccessPoints(); pins that have no
+  // AP yet are absent.
+  const std::map<int, AccessPoint>& getPreferredAccessPoints() const
   {
-    return iterm_to_ap_;
+    return preferred_aps_;
   }
   // Terminals keyed by the pin index that also keys getPinAccessPoints().
   const std::map<int, odb::dbBTerm*>& getBTermsByPinIndex() const
@@ -157,8 +157,7 @@ class GRNet
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
-  odb::PtrMap<odb::dbBTerm, AccessPoint> bterm_to_ap_;
-  odb::PtrMap<odb::dbITerm, AccessPoint> iterm_to_ap_;
+  std::map<int, AccessPoint> preferred_aps_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;

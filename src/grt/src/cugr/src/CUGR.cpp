@@ -1317,7 +1317,13 @@ void CUGR::getITermsAccessPoints(
     return;
   }
   GRNet* gr_net = it->second;
-  for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
+  const auto& preferred_aps = gr_net->getPreferredAccessPoints();
+  for (const auto& [pin_idx, iterm] : gr_net->getITermsByPinIndex()) {
+    auto ap_it = preferred_aps.find(pin_idx);
+    if (ap_it == preferred_aps.end()) {
+      continue;
+    }
+    const AccessPoint& ap = ap_it->second;
     const int x = grid_graph_->getGridline(0, ap.point.x());
     const int y = grid_graph_->getGridline(1, ap.point.y());
     access_points[iterm] = odb::Point3D(x, y, ap.layers.high() + 1);
@@ -1333,7 +1339,13 @@ void CUGR::getBTermsAccessPoints(
     return;
   }
   GRNet* gr_net = it->second;
-  for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
+  const auto& preferred_aps = gr_net->getPreferredAccessPoints();
+  for (const auto& [pin_idx, bterm] : gr_net->getBTermsByPinIndex()) {
+    auto ap_it = preferred_aps.find(pin_idx);
+    if (ap_it == preferred_aps.end()) {
+      continue;
+    }
+    const AccessPoint& ap = ap_it->second;
     const int x = grid_graph_->getGridline(0, ap.point.x());
     const int y = grid_graph_->getGridline(1, ap.point.y());
     access_points[bterm] = odb::Point3D(x, y, ap.layers.high() + 1);
