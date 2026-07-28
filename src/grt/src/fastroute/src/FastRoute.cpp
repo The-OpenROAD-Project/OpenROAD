@@ -2388,19 +2388,20 @@ NetRouteMap FastRouteCore::run()
       // schedule described where the constants are defined: demote 10% of the
       // congested NDR nets at iteration 5, 50% at iteration 10, and all of the
       // remaining ones at iteration 15. Only the final step restarts the loop.
+      const int iter = i - 1;
       if (total_overflow_ > 0
-          && (i == kSoftNdrDemote10Iter || i == kSoftNdrDemote50Iter
-              || i == kSoftNdrDemoteAllIter)) {
+          && (iter == kSoftNdrDemote10Iter || iter == kSoftNdrDemote50Iter
+              || iter == kSoftNdrDemoteAllIter)) {
         // Recompute the NDR nets currently involved in congestion (nets already
         // demoted to soft-NDR are skipped).
         computeCongestedNDRnets();
 
         double demote_fraction;
         bool restart_loop;
-        if (i == kSoftNdrDemote10Iter) {
+        if (iter == kSoftNdrDemote10Iter) {
           demote_fraction = 0.1;
           restart_loop = false;
-        } else if (i == kSoftNdrDemote50Iter) {
+        } else if (iter == kSoftNdrDemote50Iter) {
           demote_fraction = 0.5;
           restart_loop = false;
         } else {  // kSoftNdrDemoteAllIter
