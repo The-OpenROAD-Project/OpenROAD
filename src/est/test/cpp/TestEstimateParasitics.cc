@@ -214,10 +214,10 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   sta::Net* net = flatNet(scan_clk_pin);
   ASSERT_NE(net, nullptr);
 
-  // Make scan_reg a bump: pad-class master wrapped by a dbChipBump.
+  // Make scan_reg a chip bump; the bump association alone classifies the
+  // port-to-bump net as a pad net.
   odb::dbInst* scan_reg = block_->findInst("scan_reg");
   ASSERT_NE(scan_reg, nullptr);
-  scan_reg->getMaster()->setType(odb::dbMasterType::COVER_BUMP);
   odb::dbChipRegion* region = odb::dbChipRegion::create(
       db_->getChip(), "f2f", odb::dbChipRegion::Side::FRONT, nullptr);
   ASSERT_NE(region, nullptr);

@@ -131,11 +131,6 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void setBumpRC(const sta::Scene* scene,
                  double res,   // ohms
                  double cap);  // farads
-  // Returns false when no bump RC values have been set.
-  bool bumpRC(const sta::Scene* scene,
-              // Return values.
-              double& res,
-              double& cap) const;
   // ohms/meter, farads/meter
   void wireSignalRC(const sta::Scene* scene,
                     // Return values.
@@ -236,6 +231,12 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
     std::vector<ParasiticsResistance> clk_res;      // ohms/meter
     std::vector<ParasiticsCapacitance> clk_cap;     // Farads/meter
   };
+  // Lumped bump RC; zeros until set_bump_rc
+  struct BumpRC
+  {
+    double res = 0.0;  // ohms
+    double cap = 0.0;  // farads
+  };
 
   odb::dbTech* currentTech() const;
   WireRC& wireRC(odb::dbTech* tech) { return wire_rc_[tech]; }
@@ -249,11 +250,14 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
                                     sta::SpefWriter* spef_writer);
-  bool isChipBumpPin(const sta::Pin* pin) const;
+  // Zeros when no bump RC values have been set for the corner.
+  BumpRC bumpRC(const sta::Scene* scene) const;
   void makePadParasitic(const sta::Net* net, sta::SpefWriter* spef_writer);
   bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;
+  bool isChipBumpPin(const sta::Pin* pin) const;
+  bool isChipBump(const sta::Instance* inst) const;
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
   double computeAverageCutResistance(sta::Scene* scene);
   void parasiticNodeConnectPins(sta::Parasitics* parasitics,
@@ -301,11 +305,6 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // chips whose technology has no specific values
   std::unordered_map<odb::dbTech*, WireRC> wire_rc_;
   // Lumped bump RC indexed by corner->index(); empty until set_bump_rc
-  struct BumpRC
-  {
-    double res = 0.0;  // ohms
-    double cap = 0.0;  // farads
-  };
   std::vector<BumpRC> bump_rc_;
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::kNone;

@@ -376,19 +376,14 @@ void EstimateParasitics::setBumpRC(const sta::Scene* scene,
   bump_rc_[scene->index()].cap = cap;
 }
 
-bool EstimateParasitics::bumpRC(const sta::Scene* scene,
-                                // Return values.
-                                double& res,
-                                double& cap) const
+EstimateParasitics::BumpRC EstimateParasitics::bumpRC(
+    const sta::Scene* scene) const
 {
-  if (bump_rc_.empty()) {
-    res = 0.0;
-    cap = 0.0;
-    return false;
+  const size_t corner_idx = scene->index();
+  if (corner_idx < bump_rc_.size()) {
+    return bump_rc_[corner_idx];
   }
-  res = bump_rc_[scene->index()].res;
-  cap = bump_rc_[scene->index()].cap;
-  return true;
+  return {};
 }
 
 ////////////////////////////////////////////////////////////////
@@ -778,23 +773,10 @@ bool EstimateParasitics::isPadNet(const sta::Net* net) const
   const sta::Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
   return pin1 && pin2
-         && ((network_->isTopLevelPort(pin1) && isPadPin(pin2))
-             || (network_->isTopLevelPort(pin2) && isPadPin(pin1)));
-}
-
-bool EstimateParasitics::isChipBumpPin(const sta::Pin* pin) const
-{
-  if (pin == nullptr || network_->isTopLevelPort(pin)) {
-    return false;
-  }
-  sta::Instance* inst = network_->instance(pin);
-  if (inst == nullptr) {
-    return false;
-  }
-  dbInst* db_inst;
-  dbModInst* mod_inst;
-  db_network_->staToDb(inst, db_inst, mod_inst);
-  return db_inst != nullptr && db_inst->getChipBump() != nullptr;
+         && ((network_->isTopLevelPort(pin1)
+              && (isPadPin(pin2) || isChipBumpPin(pin2)))
+             || (network_->isTopLevelPort(pin2)
+                 && (isPadPin(pin1) || isChipBumpPin(pin1))));
 }
 
 void EstimateParasitics::makePadParasitic(const sta::Net* net,
@@ -802,7 +784,8 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
 {
   const sta::Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
-  const bool is_bump = isChipBumpPin(pin1) || isChipBumpPin(pin2);
+  const bool is_bump
+      = !bump_rc_.empty() && (isChipBumpPin(pin1) || isChipBumpPin(pin2));
   for (sta::Scene* corner : sta_->scenes()) {
     sta::Parasitics* parasitics = corner->parasitics(max_);
     sta::Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
@@ -815,15 +798,17 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
     double res = 0.001;
     double cap = 0.0;
     if (is_bump) {
-      double bump_res, bump_cap;
-      if (bumpRC(corner, bump_res, bump_cap)) {
-        res = std::max(bump_res, res);
-        cap = bump_cap;
-      }
+      const BumpRC bump = bumpRC(corner);
+      res = std::max(bump.res, res);
+      cap = bump.cap;
     }
-    parasitics->incrCap(n1, cap / 2.0);
+    if (cap > 0.0) {
+      parasitics->incrCap(n1, cap / 2.0);
+    }
     parasitics->makeResistor(parasitic, 1, res, n1, n2);
-    parasitics->incrCap(n2, cap / 2.0);
+    if (cap > 0.0) {
+      parasitics->incrCap(n2, cap / 2.0);
+    }
     if (spef_writer) {
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
@@ -1205,6 +1190,20 @@ bool EstimateParasitics::isPadPin(const sta::Pin* pin) const
 {
   sta::Instance* inst = network_->instance(pin);
   return inst && !network_->isTopInstance(inst) && isPad(inst);
+}
+
+bool EstimateParasitics::isChipBumpPin(const sta::Pin* pin) const
+{
+  sta::Instance* inst = network_->instance(pin);
+  return inst && !network_->isTopInstance(inst) && isChipBump(inst);
+}
+
+bool EstimateParasitics::isChipBump(const sta::Instance* inst) const
+{
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  return db_inst != nullptr && db_inst->getChipBump() != nullptr;
 }
 
 bool EstimateParasitics::isPad(const sta::Instance* inst) const

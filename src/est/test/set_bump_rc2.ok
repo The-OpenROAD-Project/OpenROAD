@@ -41,7 +41,7 @@ Path Type: max
            0.00    0.00    0.00   clock clk (rise edge)
                    0.00    0.00   clock network delay (ideal)
                    0.00    0.00 v input external delay
-   1.06    0.00    0.00    0.00 v in2 (in)
+  41.08    0.00    0.00    0.00 v in2 (in)
            0.00    0.00    0.00 v r2/D (DFF_X1)
                            0.00   data arrival time
 

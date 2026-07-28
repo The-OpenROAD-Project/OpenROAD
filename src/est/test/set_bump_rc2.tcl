@@ -8,11 +8,10 @@ create_clock -period 10 clk
 set_input_delay -clock clk 0 in1
 set_input_delay -clock clk 0 in2
 
-# make r1 a chip bump: bump-class master wrapped by a dbChipBump, so the
-# two-pin in1 -> r1 net is a pad net that takes the lumped bump RC
+# make r1 a chip bump, so the two-pin in1 -> r1 net is a pad net that takes
+# the lumped bump RC
 set block [ord::get_db_block]
 set r1 [$block findInst r1]
-[$r1 getMaster] setType "COVER_BUMP"
 set chip [[ord::get_db] getChip]
 set region [odb::dbChipRegion_create $chip "f2f" $odb::dbChipRegion_Side_FRONT \
   "NULL"]
@@ -36,6 +35,5 @@ estimate_parasitics -placement
 
 # in1 -> r1 carries the lumped bump RC
 report_checks -from in1 -to r1 -fields {capacitance slew} -format full
-# in2 -> r2 shares the bump-class master but has no dbChipBump: it keeps the
-# small connectivity resistor instead of the bump RC
+# in2 -> r2 has no chip bump and keeps the estimated wire parasitics
 report_checks -from in2 -to r2 -fields {capacitance slew} -format full
