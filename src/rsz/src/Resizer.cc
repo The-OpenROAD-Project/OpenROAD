@@ -2869,10 +2869,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
+  const bool creates_feedthrough
+      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!bufferRemovalCreatesFeedthrough(input_modnet, output_modnet)
-      && !db_network_->hasPort(input_net) && db_network_->hasPort(output_net)) {
+  if (!creates_feedthrough && !db_network_->hasPort(input_net)
+      && db_network_->hasPort(output_net)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
@@ -2895,7 +2897,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   std::optional<std::string> new_modnet_name;
   if (db_survivor->isDeeperThan(db_removed)) {
     new_net_name = db_removed->getName();
-    if (removed_modnet != nullptr) {
+    // The rename exists to keep the ModNet name in sync with the flat net
+    // name.  Feedthrough is the exception: removed_modnet is the output
+    // ModNet, so syncing would name the ModNet after the output port and
+    // write_verilog would then drop the assign statement.  On a feedthrough
+    // the ModNet name must always stay the input port name.
+    if (removed_modnet != nullptr && !creates_feedthrough) {
       new_modnet_name = removed_modnet->getName();
     }
   }

@@ -727,7 +727,7 @@ Search::Search(utl::Logger* logger,
   // is assumed by the symmetry class processing below and by initilization
   // of `next_var_`.
   for (int i = 0; i < problem_.numInputs(); i++) {
-    assert(problem_.function.variable(i) == i);
+    assert(problem_.getFunction().variable(i) == i);
   }
 
   if (timing_) {
