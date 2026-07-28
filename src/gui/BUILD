@@ -30,7 +30,6 @@ cc_library(
         "src/heatMapPlacementDensity.cpp",
         "src/heatMapPlacementDensity.h",
         "src/init_descriptors.cpp",
-        "src/insertBufferDialog.h",
         "src/staDescriptors.cpp",
         "src/staDescriptors.h",
         ":tcl",
@@ -158,6 +157,10 @@ cc_library(
     ],
     includes = [
         "ui",
+    ],
+    deps = [
+        "@qt-bazel//qt_source:core",
+        "@qt-bazel//qt_source:widgets",
     ],
 )
 

@@ -48,6 +48,8 @@ tcl_encode_sta = genrule(
 )
 
 # gist extracted from @qt-bazel//:build_defs.bzl
+qt_internal_library = bant_forward_args(cc_library())
+
 qt6_library = (
     [
         genrule(
@@ -65,7 +67,12 @@ qt6_library = (
             for uisrc in uic_srcs
         ],
         includes = includes,
-        deps = deps,
+        deps = deps + [
+            "@qt-bazel//qt_source:core",
+            "@qt-bazel//qt_source:widgets",
+            "@qt-bazel//qt_source:charts",
+            "@qt-bazel//qt_source:gui",
+        ],
     ),
 )
 

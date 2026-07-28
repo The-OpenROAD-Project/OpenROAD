@@ -80,27 +80,27 @@ Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 3/5
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (83).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (68).
 Routing statistics
-Wire length:           50966
-Total via count:       2490
-Total congestion:      83
-Min resource:          -1.2447224073939824
-Bottleneck:            (1, 25, 10)
+Wire length:           50070
+Total via count:       2514
+Total congestion:      68
+Min resource:          -1.0695835063440944
+Bottleneck:            (1, 14, 15)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              6126          1069           17.45%             1 /  0 / 32
-met2              5000          1017           20.34%             0 /  1 / 24
-met3              3248           522           16.07%             1 /  0 / 26
-met4              2496           342           13.70%             0 /  0 /  0
+met1              6126          1082           17.66%             1 /  0 / 28
+met2              5000           960           19.20%             0 /  1 / 20
+met3              3248           517           15.92%             1 /  0 / 17
+met4              2496           346           13.86%             0 /  1 /  2
 met5              1640            19            1.16%             0 /  0 /  1
 ---------------------------------------------------------------------------------------
-Total            18510          2969           16.04%             2 /  1 / 83
+Total            18510          2924           15.80%             2 /  2 / 68
 
-[INFO GRT-0018] Total wirelength: 25992 um
+[INFO GRT-0018] Total wirelength: 25632 um
 [INFO GRT-0014] Routed nets: 348
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.
