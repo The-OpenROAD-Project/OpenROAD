@@ -818,7 +818,9 @@ AccessPointMap GridGraph::selectAccessPoints(GRNet* net) const
   selected_access_points.reserve(net->getNumPins());
   // Prefer DRT-created ODB access points; pins without them fall back to
   // shape-derived cells so they are never dropped from the routing tree.
-  for (const int pin_idx : findODBAccessPoints(net, selected_access_points)) {
+  const std::vector<int> pins_without_aps
+      = findODBAccessPoints(net, selected_access_points);
+  for (const int pin_idx : pins_without_aps) {
     selectShapeAccessPoint(net, pin_idx, selected_access_points);
   }
   return selected_access_points;
