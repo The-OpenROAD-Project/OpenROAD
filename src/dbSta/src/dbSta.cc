@@ -182,6 +182,9 @@ class dbStaCbk : public odb::dbBlockCallBackObj
                           const odb::dbIoType& io_type) override;
   void inDbBTermSetSigType(odb::dbBTerm* bterm,
                            const odb::dbSigType& sig_type) override;
+  // 3DIC: warn + skip for chiplet boundary-port edits (not supported for
+  // incremental timing). Returns true when the edit was declined.
+  bool decline3DicBoundaryEdit(odb::dbBTerm* bterm, const char* what);
   void inDbModInstCreate(odb::dbModInst* modinst) override;
   void inDbModInstDestroy(odb::dbModInst* modinst) override;
   void inDbModBTermPostConnect(odb::dbModBTerm* modbterm) override;
@@ -1393,8 +1396,33 @@ void dbStaCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
   network_->disconnectPinBefore(pin);
 }
 
+// 3DIC: these callbacks are hooked on chiplet blocks, whose bterms are
+// chiplet boundary ports, NOT top-level ports -- they own no Port on the
+// synthesized top cell and no graph vertex (the bump's pad iterm is the
+// boundary pin). Routing them through the 2D top-port path would mutate the
+// wrong cell (or null-deref in setTopPortDirection). Incremental editing of
+// a chiplet boundary is not supported yet: warn loudly and skip, so a future
+// edit flow fails visibly instead of silently going stale.
+bool dbStaCbk::decline3DicBoundaryEdit(odb::dbBTerm* bterm, const char* what)
+{
+  if (!network_->has3DicChip()) {
+    return false;
+  }
+  network_->getLogger()->warn(
+      utl::STA,
+      3007,
+      "3DIC: {} of chiplet boundary port {} is not supported for incremental "
+      "timing; re-read the design to re-time.",
+      what,
+      bterm->getName());
+  return true;
+}
+
 void dbStaCbk::inDbBTermCreate(odb::dbBTerm* bterm)
 {
+  if (decline3DicBoundaryEdit(bterm, "creation")) {
+    return;
+  }
   sta_->getDbNetwork()->makeTopPort(bterm);
   Pin* pin = network_->dbToSta(bterm);
   sta_->makePortPinAfter(pin);
@@ -1402,6 +1430,9 @@ void dbStaCbk::inDbBTermCreate(odb::dbBTerm* bterm)
 
 void dbStaCbk::inDbBTermDestroy(odb::dbBTerm* bterm)
 {
+  if (decline3DicBoundaryEdit(bterm, "destruction")) {
+    return;
+  }
   sta_->disconnectPin(network_->dbToSta(bterm));
   // sta::NetworkEdit does not support port removal.
 }
@@ -1409,12 +1440,18 @@ void dbStaCbk::inDbBTermDestroy(odb::dbBTerm* bterm)
 void dbStaCbk::inDbBTermSetIoType(odb::dbBTerm* bterm,
                                   const odb::dbIoType& io_type)
 {
+  if (decline3DicBoundaryEdit(bterm, "direction change")) {
+    return;
+  }
   sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
 }
 
 void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
                                    const odb::dbSigType& sig_type)
 {
+  if (decline3DicBoundaryEdit(bterm, "signal-type change")) {
+    return;
+  }
   // sta can't handle such changes, see OpenROAD#6025, so just reset the whole
   // thing.
   sta_->networkChangedNonSdc();

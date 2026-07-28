@@ -1789,6 +1789,10 @@ Instance* dbNetwork::findChild(const Instance* parent,
   std::string name_str(name);
   const char* name_cstr = name_str.c_str();
   if (parent == top_instance_) {
+    // 3DIC top has no block; its named children are the chip-insts.
+    if (has3DicChip()) {
+      return dbToSta(top_chip_->findChipInst(name_cstr));
+    }
     dbInst* inst = block_->findInst(name_cstr);
     if (!inst) {
       dbModule* top_module = block_->getTopModule();
@@ -1796,6 +1800,14 @@ Instance* dbNetwork::findChild(const Instance* parent,
       return dbToSta(mod_inst);
     }
     return dbToSta(inst);
+  }
+  // 3DIC: a chip-inst's children are its chiplet master block's insts.
+  if (odb::dbChipInst* chip_inst = staToDbChipInst(parent)) {
+    odb::dbBlock* chiplet_block = blockOf(chip_inst);
+    if (chiplet_block != nullptr) {
+      return dbToSta(chiplet_block->findInst(name_cstr));
+    }
+    return nullptr;
   }
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
@@ -1822,8 +1834,31 @@ Pin* dbNetwork::findPin(const Instance* instance,
   std::string port_name_str(port_name);
   const char* port_name_cstr = port_name_str.c_str();
   if (instance == top_instance_) {
+    // 3DIC top has no block and no ports of its own.
+    if (has3DicChip()) {
+      return nullptr;
+    }
     dbBTerm* bterm = block_->findBTerm(port_name_cstr);
     return dbToSta(bterm);
+  }
+  // 3DIC: a chip-inst's named "port" is a chiplet boundary bterm; its pin is
+  // the bound bump's pad iterm (the bump's timing pin in the flat model).
+  if (odb::dbChipInst* chip_inst = staToDbChipInst(instance)) {
+    odb::dbBlock* chiplet_block = blockOf(chip_inst);
+    if (chiplet_block == nullptr) {
+      return nullptr;
+    }
+    dbBTerm* bterm = chiplet_block->findBTerm(port_name_cstr);
+    if (bterm == nullptr) {
+      return nullptr;
+    }
+    odb::dbChipBump* bump = bterm->getChipBump();
+    odb::dbInst* pad_inst = bump ? bump->getInst() : nullptr;
+    if (pad_inst == nullptr) {
+      return nullptr;
+    }
+    dbSet<dbITerm> iterms = pad_inst->getITerms();
+    return iterms.empty() ? nullptr : dbToSta(*iterms.begin());
   }
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
@@ -1860,6 +1895,22 @@ Net* dbNetwork::findNetAllScopes(std::string_view net_name) const
 {
   std::string net_sname(net_name);
   const char* net_cname = net_sname.c_str();
+  // 3DIC: no top block; the scopes are the top-level chip-nets and each
+  // chiplet master block.
+  if (has3DicChip()) {
+    if (Net* chip_net = findNet(top_instance_, net_name)) {
+      return chip_net;
+    }
+    for (const auto& [chiplet_block, chip_inst] : block_to_chip_inst_) {
+      if (dbNet* dnet = chiplet_block->findNet(net_cname)) {
+        return dbToSta(dnet);
+      }
+    }
+    return nullptr;
+  }
+  if (block_ == nullptr) {
+    return nullptr;
+  }
   for (dbModule* dbm : block_->getModules()) {
     dbNet* dnet = block_->findNet(net_cname);
     if (dnet) {
@@ -1902,16 +1953,31 @@ Net* dbNetwork::findNet(const Instance* instance,
     return nullptr;
   }
 
+  // 3DIC: a chip-inst scopes its chiplet master block's nets ("chipA/n1"
+  // resolves n1 inside chipA's block). The legacy path below assumes the
+  // top block (block_), which a hierarchical 3DIC top does not have.
+  if (odb::dbChipInst* chip_inst = staToDbChipInst(instance)) {
+    odb::dbBlock* chiplet_block = blockOf(chip_inst);
+    if (chiplet_block != nullptr) {
+      if (dbNet* chiplet_net = chiplet_block->findNet(net_cname)) {
+        return dbToSta(chiplet_net);
+      }
+    }
+    return nullptr;
+  }
+
   dbInst* db_inst = nullptr;
   odb::dbModInst* mod_inst = nullptr;
   staToDb(instance, db_inst, mod_inst);
 
   // check to see if net is in flat space
-  std::string flat_net_name = pathName(instance);
-  flat_net_name += pathDivider() + net_sname;
-  dbNet* dnet = block_->findNet(flat_net_name.c_str());
-  if (dnet) {
-    return dbToSta(dnet);
+  if (block_ != nullptr) {
+    std::string flat_net_name = pathName(instance);
+    flat_net_name += pathDivider() + net_sname;
+    dbNet* dnet = block_->findNet(flat_net_name.c_str());
+    if (dnet) {
+      return dbToSta(dnet);
+    }
   }
 
   if (mod_inst) {
@@ -2452,6 +2518,15 @@ std::string dbNetwork::pathName(const Net* net) const
   staToDb(net, dnet, modnet);
 
   if (dnet && modnet == nullptr) {
+    // 3DIC: a net inside a chiplet block is path-qualified by the chip-inst
+    // that placed the block (mirrors inner-instance attribution).
+    if (has3DicChip()) {
+      auto it = block_to_chip_inst_.find(dnet->getBlock());
+      if (it != block_to_chip_inst_.end()) {
+        return std::string(it->second->getName()) + pathDivider()
+               + dnet->getConstName();
+      }
+    }
     return dnet->getConstName();
   }
 
@@ -4642,6 +4717,20 @@ bool dbNetwork::isConnected(const Pin* source_pin, const Pin* dest_pin) const
 
 bool dbNetwork::isConnected(const Net* net, const Pin* pin) const
 {
+  // 3DIC: a chip-net's member pins are its bumps' pad iterms.
+  if (odb::dbChipNet* chip_net = staToDbChipNet(net)) {
+    dbITerm* iterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModITerm* moditerm = nullptr;
+    staToDb(pin, iterm, bterm, moditerm);
+    if (iterm == nullptr) {
+      return false;
+    }
+    ensureUnfoldedMapsFresh();
+    auto it = bump_to_chip_net_.find(iterm);
+    return it != bump_to_chip_net_.end() && it->second == chip_net;
+  }
+
   dbNet* dbnet;
   odb::dbModNet* modnet;
   staToDb(net, dbnet, modnet);

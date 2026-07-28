@@ -41,6 +41,22 @@ check "chipB bump-pin count" {
     [get_cells {chipB/bump_clk chipB/bump_d chipB/bump_q}]]
 } 3
 
+# Literal-path resolution: a chip-inst scopes its chiplet master block, so
+# "chipA/<name>" queries resolve inside chipA's block via findChild/findNet
+# (and must not fall into the top-block path -- the 3DIC top has no block).
+check "interior net by literal path" {
+  llength [get_nets chipA/n1]
+} 1
+check "interior net full name" {
+  get_full_name [lindex [get_nets chipA/n1] 0]
+} chipA/n1
+check "interior cell by literal path" {
+  get_full_name [lindex [get_cells chipA/ff] 0]
+} chipA/ff
+check "boundary port pin resolves to pad iterm" {
+  get_full_name [lindex [get_pins chipA/clk] 0]
+} chipA/bump_clk/PAD
+
 proc chip_net_names { } {
   set names {}
   foreach n [get_nets *] {
