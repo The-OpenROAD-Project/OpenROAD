@@ -244,6 +244,15 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   parasitics->piModel(pi, c2, rpi, c1);
   EXPECT_FLOAT_EQ(rpi, 2.5f);
   EXPECT_NEAR(c2 + c1 - pin_caps, 4.0e-14, 1.0e-16);
+
+  // A bump resistance below the connectivity floor is used as given.
+  ep_.setBumpRC(scene, 5.0e-4, 4.0e-14);
+  ep_.estimateWireParasitic(net);
+  pi = parasitics->findPiElmore(
+      scan_clk_pin, sta::RiseFall::rise(), sta::MinMax::max());
+  ASSERT_NE(pi, nullptr);
+  parasitics->piModel(pi, c2, rpi, c1);
+  EXPECT_FLOAT_EQ(rpi, 5.0e-4f);
 }
 
 // Verifies that wire RC values are stored per chip: chip-specific values take

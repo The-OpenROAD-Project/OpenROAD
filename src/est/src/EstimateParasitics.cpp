@@ -799,7 +799,9 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
     double cap = 0.0;
     if (is_bump) {
       const BumpRC bump = bumpRC(corner);
-      res = std::max(bump.res, res);
+      if (bump.res > 0.0) {
+        res = bump.res;
+      }
       cap = bump.cap;
     }
     if (cap > 0.0) {
