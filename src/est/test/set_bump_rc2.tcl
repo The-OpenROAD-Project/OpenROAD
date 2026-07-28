@@ -15,7 +15,8 @@ set r1 [$block findInst r1]
 set chip [[ord::get_db] getChip]
 set region [odb::dbChipRegion_create $chip "f2f" $odb::dbChipRegion_Side_FRONT \
   "NULL"]
-odb::dbChipBump_create $region $r1
+set bump [odb::dbChipBump_create $region $r1]
+$bump setNet [$block findNet in1]
 
 set_bump_rc -resistance 2 -capacitance 100
 

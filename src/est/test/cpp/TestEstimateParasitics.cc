@@ -253,6 +253,31 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   ASSERT_NE(pi, nullptr);
   parasitics->piModel(pi, c2, rpi, c1);
   EXPECT_FLOAT_EQ(rpi, 5.0e-4f);
+
+  // A bump with a recorded net is a bump terminal only on that net: with the
+  // bump net pointing elsewhere, scan_clk is no longer a pad net, so the new
+  // bump values are not applied and the stale annotation survives.
+  odb::dbChipBump* bump = scan_reg->getChipBump();
+  ASSERT_NE(bump, nullptr);
+  odb::dbNet* d_net = scan_reg->findITerm("D")->getNet();
+  ASSERT_NE(d_net, nullptr);
+  bump->setNet(d_net);
+  ep_.setBumpRC(scene, 7.5, 8.0e-14);
+  ep_.estimateWireParasitic(net);
+  pi = parasitics->findPiElmore(
+      scan_clk_pin, sta::RiseFall::rise(), sta::MinMax::max());
+  ASSERT_NE(pi, nullptr);
+  parasitics->piModel(pi, c2, rpi, c1);
+  EXPECT_FLOAT_EQ(rpi, 5.0e-4f);
+
+  // On the recorded bump net the new lumped RC applies.
+  bump->setNet(db_network_->staToDb(net));
+  ep_.estimateWireParasitic(net);
+  pi = parasitics->findPiElmore(
+      scan_clk_pin, sta::RiseFall::rise(), sta::MinMax::max());
+  ASSERT_NE(pi, nullptr);
+  parasitics->piModel(pi, c2, rpi, c1);
+  EXPECT_FLOAT_EQ(rpi, 7.5f);
 }
 
 // Verifies that wire RC values are stored per chip: chip-specific values take

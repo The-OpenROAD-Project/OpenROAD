@@ -1197,15 +1197,26 @@ bool EstimateParasitics::isPadPin(const sta::Pin* pin) const
 bool EstimateParasitics::isChipBumpPin(const sta::Pin* pin) const
 {
   sta::Instance* inst = network_->instance(pin);
-  return inst && !network_->isTopInstance(inst) && isChipBump(inst);
-}
-
-bool EstimateParasitics::isChipBump(const sta::Instance* inst) const
-{
+  if (inst == nullptr || network_->isTopInstance(inst)) {
+    return false;
+  }
   dbInst* db_inst;
   dbModInst* mod_inst;
   db_network_->staToDb(inst, db_inst, mod_inst);
-  return db_inst != nullptr && db_inst->getChipBump() != nullptr;
+  odb::dbChipBump* bump = db_inst ? db_inst->getChipBump() : nullptr;
+  if (bump == nullptr) {
+    return false;
+  }
+  // A multi-pin bump cell is a bump terminal only on its recorded bump net.
+  odb::dbNet* bump_net = bump->getNet();
+  if (bump_net == nullptr) {
+    return true;
+  }
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  odb::dbModITerm* moditerm;
+  db_network_->staToDb(pin, iterm, bterm, moditerm);
+  return iterm != nullptr && iterm->getNet() == bump_net;
 }
 
 bool EstimateParasitics::isPad(const sta::Instance* inst) const

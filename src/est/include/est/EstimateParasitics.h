@@ -257,7 +257,6 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;
   bool isChipBumpPin(const sta::Pin* pin) const;
-  bool isChipBump(const sta::Instance* inst) const;
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
   double computeAverageCutResistance(sta::Scene* scene);
   void parasiticNodeConnectPins(sta::Parasitics* parasitics,
