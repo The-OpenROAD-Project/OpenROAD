@@ -155,8 +155,8 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     return nullptr;
   }
 
-  // Evaluate stronger equivalent cells first so the search stops on the best
-  // local replacement.
+  // Evaluate weaker equivalent cells first so the search stops on the smallest
+  // local size-up step.
   const std::string& in_port_name = in_port->name();
   const std::string& drvr_port_name = drvr_port->name();
   std::ranges::sort(
@@ -164,7 +164,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
       swappable_cells.end(),
       [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
                                       const sta::LibertyCell* cell2) {
-        return strongerCellLess(cell1, cell2, drvr_port_name, lib_ap);
+        return weakerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
       });
 
   const sta::LibertyPort* scene_drvr_port
@@ -175,12 +175,12 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     return nullptr;
   }
 
-  const float drive = scene_drvr_port->driveResistance();
+  const float drive_r = scene_drvr_port->driveResistance();
   const float delay = resizer_.gateDelay(drvr_port, load_cap, scene, min_max)
                       + prev_drive * scene_input_port->capacitance();
 
-  // Accept the first cell that improves both drive resistance and estimated
-  // stage delay.
+  // Accept the first cell that does not weaken drive resistance and improves
+  // estimated stage delay.
   for (sta::LibertyCell* swappable : swappable_cells) {
     sta::LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
     if (swappable_corner == nullptr) {
@@ -193,11 +193,11 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     if (swappable_drvr == nullptr || swappable_input == nullptr) {
       continue;
     }
-    const float swappable_drive = swappable_drvr->driveResistance();
+    const float swappable_drive_r = swappable_drvr->driveResistance();
     const float swappable_delay
         = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
           + prev_drive * swappable_input->capacitance();
-    if (swappable_drive < drive && swappable_delay < delay) {
+    if (swappable_drive_r <= drive_r && swappable_delay < delay) {
       return swappable;
     }
   }

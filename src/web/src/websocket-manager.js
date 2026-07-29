@@ -318,11 +318,24 @@ export class WebSocketManager {
             this.onStatusChange();
             return;
         }
+        
         // Already sent: stop tracking the reply, but do NOT free the wire slot
         // or pump — the server still has to process those bytes, and the slot
         // frees only when its (now stale) reply arrives. Freeing it here would
         // let cancellation churn re-flood the socket.
-        this.pending.delete(id);
+        const had = this.pending.delete(id);
+        // Tell the server to skip the now-obsolete tile render so fast
+        // pan/zoom doesn't pile up stale work (and the 'pending' set drains).
+        // Fire-and-forget: the cancel message gets its own id but is NOT
+        // tracked in `pending`, so any stray ack is harmlessly ignored.
+        if (had && !this._cache && this.socket
+                && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify({
+                type: 'cancel',
+                cancel_id: id,
+                id: this.nextId++,
+            }));
+        }
         this.onStatusChange();
     }
 

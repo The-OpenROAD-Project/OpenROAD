@@ -191,16 +191,6 @@ void NegotiationLegalizer::legalize()
 
   debugPause("Pause after negotiation pass");
 
-  // --- Part 3: Post-optimisation ------------------------------------------
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation",
-             1,
-             "NegotiationLegalizer: post-optimisation.");
-  // greedyImprove(5);
-  // cellSwap();
-  // greedyImprove(1);
-
   const double avgDisp = avgDisplacement();
   const int maxDisp = maxDisplacement();
   const int nViol = numViolations();
@@ -286,7 +276,7 @@ void NegotiationLegalizer::pushNegotiationPixels()
       if (cell.fixed) {
         continue;
       }
-      Node* node = network_->getNode(cell.db_inst);
+      Node* node = cell.node;
       if (node == nullptr) {
         continue;
       }
@@ -334,34 +324,23 @@ void NegotiationLegalizer::commitNegotiationPosToDpl()
   if (!network_) {
     return;
   }
-  std::unordered_map<odb::dbInst*, Node*> inst_to_node;
-  inst_to_node.reserve(network_->getNodes().size());
-  for (const auto& node_ptr : network_->getNodes()) {
-    if (node_ptr->getDbInst()) {
-      inst_to_node[node_ptr->getDbInst()] = node_ptr.get();
-    }
-  }
-
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.db_inst == nullptr) {
+    if (cell.fixed || cell.db_inst == nullptr || cell.node == nullptr) {
       continue;
     }
-    auto it = inst_to_node.find(cell.db_inst);
-    if (it != inst_to_node.end()) {
-      const int coreX = cell.x * site_width_;
-      const int coreY = opendp_->grid_->gridYToDbu(GridY{cell.y}).v;
-      it->second->setLeft(DbuX(coreX));
-      it->second->setBottom(DbuY(coreY));
-      it->second->setPlaced(true);
+    const int coreX = cell.x * site_width_;
+    const int coreY = opendp_->grid_->gridYToDbu(GridY{cell.y}).v;
+    cell.node->setLeft(DbuX(coreX));
+    cell.node->setBottom(DbuY(coreY));
+    cell.node->setPlaced(true);
 
-      // Update orientation to match the row.
-      odb::dbSite* site = cell.db_inst->getMaster()->getSite();
-      if (site != nullptr) {
-        auto orient = opendp_->grid_->getSiteOrientation(
-            GridX{cell.x}, GridY{cell.y}, site);
-        if (orient.has_value()) {
-          it->second->setOrient(orient.value());
-        }
+    // Update orientation to match the row.
+    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
+    if (site != nullptr) {
+      auto orient = opendp_->grid_->getSiteOrientation(
+          GridX{cell.x}, GridY{cell.y}, site);
+      if (orient.has_value()) {
+        cell.node->setOrient(orient.value());
       }
     }
   }
@@ -422,6 +401,7 @@ bool NegotiationLegalizer::initFromDb()
 
     NegCell cell;
     cell.db_inst = db_inst;
+    cell.node = network_ ? network_->getNode(db_inst) : nullptr;
     cell.fixed = status.isFixed();
 
     int db_x = 0;
@@ -606,7 +586,7 @@ bool NegotiationLegalizer::initFromDb()
             const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
             if (!debug_inst || cell.db_inst == debug_inst) {
               if (network_) {
-                if (Node* node = network_->getNode(cell.db_inst)) {
+                if (Node* node = cell.node) {
                   node->setLeft(DbuX(cell.x * site_width_));
                   node->setBottom(DbuY(dpl_grid->gridYToDbu(GridY{cell.y}).v));
                   node->setPlaced(true);
@@ -815,7 +795,7 @@ void NegotiationLegalizer::syncCellToDplGrid(int cell_idx)
   if (neg_cell.db_inst == nullptr) {
     return;
   }
-  Node* node = network_->getNode(neg_cell.db_inst);
+  Node* node = neg_cell.node;
   if (node == nullptr) {
     return;
   }
@@ -846,7 +826,7 @@ void NegotiationLegalizer::eraseCellFromDplGrid(int cell_idx)
   if (neg_cell.db_inst == nullptr) {
     return;
   }
-  Node* node = network_->getNode(neg_cell.db_inst);
+  Node* node = neg_cell.node;
   if (node == nullptr) {
     return;
   }
@@ -869,7 +849,7 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
     if (neg_cell.fixed || neg_cell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(neg_cell.db_inst);
+    Node* node = neg_cell.node;
     if (node == nullptr) {
       continue;
     }
@@ -882,7 +862,7 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
     if (neg_cell.fixed || neg_cell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(neg_cell.db_inst);
+    Node* node = neg_cell.node;
     if (node == nullptr) {
       continue;
     }
@@ -906,7 +886,7 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
     if (!cell.fixed || cell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(cell.db_inst);
+    Node* node = cell.node;
     if (node == nullptr) {
       continue;
     }
@@ -953,7 +933,7 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
         return false;
       }
     }
-    Node* node = network_->getNode(cell.db_inst);
+    Node* node = cell.node;
     if (node != nullptr && node->getMaster()->isMultiRow()
         && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
       return false;
@@ -1100,7 +1080,7 @@ bool NegotiationLegalizer::isCellLegal(int cell_idx) const
   // Check placement DRCs (edge spacing, blocked layers, padding,
   // one-site gaps) against neighbours on the DPL Grid.
   if (opendp_ && opendp_->drc_engine_ && network_) {
-    Node* node = network_->getNode(cell.db_inst);
+    Node* node = cell.node;
     if (node != nullptr
         && !opendp_->drc_engine_->checkDRC(
             node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
@@ -1171,7 +1151,7 @@ std::vector<Node*> NegotiationLegalizer::getIllegalNodes() const
   }
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed && !isCellLegal(i)) {
-      if (Node* node = network_->getNode(cells_[i].db_inst)) {
+      if (Node* node = cells_[i].node) {
         illegal.push_back(node);
       }
     }

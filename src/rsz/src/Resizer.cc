@@ -1717,6 +1717,7 @@ void Resizer::resizePreamble()
   findBuffers();
   findTargetLoads();
   findFastBuffers();
+  computeSlewShapeFactor();
 }
 
 void Resizer::runRepairSetupPreamble()
@@ -2868,10 +2869,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
+  const bool creates_feedthrough
+      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!bufferRemovalCreatesFeedthrough(input_modnet, output_modnet)
-      && !db_network_->hasPort(input_net) && db_network_->hasPort(output_net)) {
+  if (!creates_feedthrough && !db_network_->hasPort(input_net)
+      && db_network_->hasPort(output_net)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
@@ -2894,7 +2897,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   std::optional<std::string> new_modnet_name;
   if (db_survivor->isDeeperThan(db_removed)) {
     new_net_name = db_removed->getName();
-    if (removed_modnet != nullptr) {
+    // The rename exists to keep the ModNet name in sync with the flat net
+    // name.  Feedthrough is the exception: removed_modnet is the output
+    // ModNet, so syncing would name the ModNet after the output port and
+    // write_verilog would then drop the assign statement.  On a feedthrough
+    // the ModNet name must always stay the input port name.
+    if (removed_modnet != nullptr && !creates_feedthrough) {
       new_modnet_name = removed_modnet->getName();
     }
   }
@@ -6718,9 +6726,50 @@ void Resizer::inferClockBufferList(const char* lib_name,
   }
 }
 
-float Resizer::getSlewRCFactor() const
+// Compute a slew shape factor for Elmore approximation
+void Resizer::computeSlewShapeFactor()
 {
-  return repair_design_->getSlewRCFactor();
+  using sta::RiseFall;
+  const sta::LibertyLibrary* library = network_->defaultLibertyLibrary();
+  float factor = 0.0;
+  for (auto rf : RiseFall::range()) {
+    // cast both rise and fall into 1->0 transition
+    float th_low, th_high;
+    if (rf == RiseFall::rise()) {
+      // flip
+      th_low = 1.0 - library->slewUpperThreshold(rf);
+      th_high = 1.0 - library->slewLowerThreshold(rf);
+    } else {
+      th_low = library->slewLowerThreshold(rf);
+      th_high = library->slewUpperThreshold(rf);
+    }
+    // compute crossing times assuming RC=1 where R is driving resistance and C
+    // is load
+    float t_high = -log(th_high);
+    float t_low = -log(th_low);
+    // scale by slew derate
+    float rf_factor = (t_low - t_high) / library->slewDerateFromLibrary();
+    // check the factor has the right order of magnitude
+    if (!(rf_factor >= 0.1 && rf_factor <= 10.0)) {
+      logger_->error(
+          RSZ,
+          101,
+          "Elmore slew modeling shape factor is out of range: {:.3e} for {}",
+          rf_factor,
+          rf->name());
+    }
+    debugPrint(logger_,
+               RSZ,
+               "lib_preprocessing",
+               1,
+               "transition {} shape factor {:.3e}",
+               rf->name(),
+               rf_factor);
+    factor = std::max(factor, rf_factor);
+  }
+  // Apply 10% modeling pessmism
+  const float pessimism = 0.10;
+  slew_shape_factor_ = factor * (1 + pessimism);
 }
 
 sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
@@ -6844,6 +6893,9 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
 
   BnetPtr tree1 = makeBufferedNet(drvr_pin, corner);
   BnetPtr tree2 = makeBufferedNet(buffer_drvr_pin, corner);
+  if (!tree1 || !tree2) {
+    return false;
+  }
   BnetPtr stitched_tree = stitchTrees(tree1, buffer_load_pin, tree2);
 
   if (stitched_tree == tree1) {
@@ -6992,8 +7044,7 @@ bool Resizer::estimateSlewsInTree(
           case BnetType::via: {
             double r_via
                 = node->viaResistance(corner, this, estimate_parasitics_);
-            double t_via = r_via * node->ref()->cap()
-                           * repair_design_->slew_rc_factor_.value();
+            double t_via = r_via * node->ref()->cap() * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",
@@ -7015,7 +7066,7 @@ bool Resizer::estimateSlewsInTree(
                 corner, this, estimate_parasitics_, unit_res, unit_cap);
             double t_wire = length * unit_res
                             * (node->ref()->cap() + length * unit_cap / 2)
-                            * repair_design_->slew_rc_factor_.value();
+                            * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",

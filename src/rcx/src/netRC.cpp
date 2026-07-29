@@ -1651,8 +1651,6 @@ void extMain::setCornerCount()
 
 void extMain::run()
 {
-  uint32_t debugNetId = 0;
-
   _diagFlow = true;
   _usingMetalPlanes = true;
 
@@ -1788,12 +1786,10 @@ void extMain::run()
 
     m._debugFP = nullptr;
     m._netId = 0;
-    debugNetId = 0;
-    if (debugNetId > 0) {
-      m._netId = debugNetId;
-      char bufName[32];
-      sprintf(bufName, "%d", debugNetId);
-      m._debugFP = fopen(bufName, "w");
+
+    if (_debug_net_id > 0) {
+      m._netId = _debug_net_id;
+      m._debugFP = fopen(std::to_string(m._netId).c_str(), "w");
     }
 
     getPeakMemory("Start CouplingFlow");
