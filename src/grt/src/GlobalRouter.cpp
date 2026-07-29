@@ -3257,12 +3257,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide2 = odb::dbGuide::create(
                 db_net, layer2, layer1, box, guide_is_congested);
 
-            RoutePt route_pt1(
-                segment.init_x, segment.init_y, segment.init_layer);
-            RoutePt route_pt2(
-                segment.final_x, segment.final_y, segment.final_layer);
-            addPinsConnectedToGuides(point_to_pins, route_pt1, guide1);
-            addPinsConnectedToGuides(point_to_pins, route_pt2, guide2);
+            addPinsConnectedToGuides(point_to_pins, segment, guide1, guide2);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
@@ -3272,12 +3267,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide = odb::dbGuide::create(
                 db_net, layer, via_layer, box, guide_is_congested);
 
-            RoutePt route_pt1(
-                segment.init_x, segment.init_y, segment.init_layer);
-            RoutePt route_pt2(
-                segment.final_x, segment.final_y, segment.final_layer);
-            addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-            addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
+            addPinsConnectedToGuides(point_to_pins, segment, guide, guide);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -3299,11 +3289,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             jumper_count++;
           }
 
-          RoutePt route_pt1(segment.init_x, segment.init_y, segment.init_layer);
-          RoutePt route_pt2(
-              segment.final_x, segment.final_y, segment.final_layer);
-          addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-          addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
+          addPinsConnectedToGuides(point_to_pins, segment, guide, guide);
         }
       }
     }
@@ -3346,6 +3332,17 @@ void GlobalRouter::addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
     itr->second.connected = true;
     guide->setIsConnectedToTerm(true);
   }
+}
+
+void GlobalRouter::addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                                            const GSegment& segment,
+                                            odb::dbGuide* init_guide,
+                                            odb::dbGuide* final_guide)
+{
+  RoutePt init_pt(segment.init_x, segment.init_y, segment.init_layer);
+  RoutePt final_pt(segment.final_x, segment.final_y, segment.final_layer);
+  addPinsConnectedToGuides(point_to_pins, init_pt, init_guide);
+  addPinsConnectedToGuides(point_to_pins, final_pt, final_guide);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)

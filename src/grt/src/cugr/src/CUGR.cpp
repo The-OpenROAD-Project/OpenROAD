@@ -643,6 +643,9 @@ void CUGR::route(bool incremental)
   // The incremental scope comes exclusively from nets_to_route_; without it
   // the fallback below would treat the whole design as dirty.
   if (incremental && nets_to_route_.empty()) {
+    // Keep the wrapper-era coverage: restore/remove-only rounds still get
+    // their demand round-trip checked even though nothing reroutes.
+    verifyDemandConsistency("incremental");
     return;
   }
 

@@ -484,6 +484,10 @@ class GlobalRouter
   void addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
                                 const RoutePt& route_pt,
                                 odb::dbGuide* guide);
+  void addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                                const GSegment& segment,
+                                odb::dbGuide* init_guide,
+                                odb::dbGuide* final_guide);
 
   // check functions
   void checkPinPlacement();
