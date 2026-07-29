@@ -16,4 +16,3 @@ report_3dic_summary
 create_clock -name clk -period 1.0 \
   [get_pins -of_objects [get_nets clk_top]]
 report_checks -path_delay max
-

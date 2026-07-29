@@ -123,6 +123,9 @@ filegroup(
                 "3dic_cross_flop_b.def",
                 "3dic_cross_top.v",
             ],
+            "3dic_get_cells": [
+                "//src/odb/test:regression_resources",
+            ],
             "3dic_read_db": [
                 "//src/odb/test:regression_resources",
                 "3dic_cross_flop.3dbv",
@@ -131,9 +134,6 @@ filegroup(
                 "3dic_cross_flop_b.bmap",
                 "3dic_cross_flop_b.def",
                 "3dic_cross_top.v",
-            ],
-            "3dic_get_cells": [
-                "//src/odb/test:regression_resources",
             ],
             "block_sta1": [
                 "example1_typ.lib",
