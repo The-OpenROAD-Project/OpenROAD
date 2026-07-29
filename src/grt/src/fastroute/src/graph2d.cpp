@@ -558,11 +558,12 @@ void Graph2D::sortCongestedNDRnets()
 std::vector<int> Graph2D::getCongestedNDRnetsByFraction(const double fraction)
 {
   std::vector<int> net_ids;
-  const int count
-      = std::min<int>(std::ceil((double) congested_ndrs_.size() * fraction),
-                      congested_ndrs_.size());
+  const double clamped_fraction = std::clamp(fraction, 0.0, 1.0);
+  const size_t count
+      = std::min<size_t>(std::ceil(congested_ndrs_.size() * clamped_fraction),
+                         congested_ndrs_.size());
   net_ids.reserve(count);
-  for (int i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     net_ids.push_back(congested_ndrs_[i].net_id);
   }
   return net_ids;
