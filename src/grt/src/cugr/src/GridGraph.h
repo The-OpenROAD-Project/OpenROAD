@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -273,6 +274,25 @@ class GridGraph
   void restoreDemand(
       const std::vector<std::vector<std::vector<CapacityT>>>& snap);
 
+  // Accumulates a tree's via-stub demand into a flat [layer][x][y] map
+  // (see edgeFlatIndex), mirroring commitVia's deposits; used to attribute
+  // demand for reporting.
+  void accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
+                           const std::vector<double>& net_costs,
+                           std::vector<CapacityT>& via_demand) const;
+
+  size_t edgeFlatIndex(const int layer, const int x, const int y) const
+  {
+    return (static_cast<size_t>(layer) * x_size_ + x) * y_size_ + y;
+  }
+
+  // Non-template forEachViaFlankEdge for callers outside GridGraph.cpp.
+  void forEachViaFlankEdge(
+      int layer_index,
+      PointT loc,
+      const std::vector<double>& net_costs,
+      const std::function<void(int, PointT, CapacityT, double)>& fn) const;
+
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
   {
@@ -361,6 +381,15 @@ class GridGraph
                   const std::vector<double>& net_costs = {});
   // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
   CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
+  // Enumerates the flanking edges a via at `loc` (between `layer_index` and
+  // `layer_index + 1`) deposits demand on, with the layer's NDR factor:
+  // fn(l, edge_lower_point, demand, layer_factor).
+  // Defined in GridGraph.cpp; all instantiations live there.
+  template <typename F>
+  void forEachViaFlankEdgeImpl(int layer_index,
+                               PointT loc,
+                               const std::vector<double>& net_costs,
+                               F&& fn) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;
