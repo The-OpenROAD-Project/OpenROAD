@@ -859,6 +859,15 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
         }
 
+        // Set when the source subtree expansion exhausts the priority queue
+        // before reaching the destination subtree, i.e. no path could be
+        // found within the search region. This can happen during incremental
+        // routing after antenna repair, where jumper/diode insertion modifies
+        // a net and the constrained reroute region offers no legal path. In
+        // that case we keep the net's original route via recoverEdge() instead
+        // of aborting the flow.
+        bool heap_underflow = false;
+
         while (
             !pop_heap2_3D_[ind1])  // stop until the grid position been popped
                                    // out from both src_heap_3D and dest_heap_3D
@@ -1182,10 +1191,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
 
           if (src_heap_3D_.empty()) {
-            logger_->error(GRT,
-                           183,
-                           "Net {}: heap underflow during 3D maze routing.",
-                           nets_[netID]->getName());
+            // No legal path was found from the source subtree to the
+            // destination subtree within the search region. Recover the
+            // edge's original route below instead of treating this as a
+            // fatal error (GRT-0183).
+            heap_underflow = true;
+            break;
           }
           // update ind1 for next loop
           ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
@@ -1193,6 +1204,19 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
         for (auto& i : dest_heap_3D_) {
           pop_heap2_3D_[i - &d2_3D_[0][0][0]] = false;
+        }
+
+        if (heap_underflow) {
+          debugPrint(logger_,
+                     GRT,
+                     "maze_3d",
+                     1,
+                     "Net {}: no 3D maze path found for edge {}; "
+                     "recovering original route.",
+                     nets_[netID]->getName(),
+                     edgeID);
+          recoverEdge(netID, edgeID);
+          continue;
         }
         // get the new route for the edge and store it in gridsX[] and
         // gridsY[] temporarily
