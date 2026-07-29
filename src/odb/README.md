@@ -516,7 +516,8 @@ add_3dblox_alignment_marker_rule
 Sets the path to the parasitics extraction rules file. For a 3D design in which
 multiple technologies are used, the user must specify the technology for which
 they want to set the rules path as well as the assembly design kit extraction
-rules for the inter-chip parasitics with `-assembly`.
+rules for the inter-chip parasitics with `-assembly`. The parasitics extractor
+only supports 3D designs with two chips and no RDL.
 
 ```tcl
 set_extraction_rules_file

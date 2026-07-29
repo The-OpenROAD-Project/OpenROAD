@@ -686,12 +686,30 @@ const std::string& dbChip::getAssemblyExtractionRulesFile() const
 void dbChip::setAssemblyExtractionRulesFile(const std::string& rules_file_path)
 {
   _dbChip* chip = (_dbChip*) this;
+  utl::Logger* logger = chip->getLogger();
 
   if (getChipType() != ChipType::HIER) {
-    chip->getLogger()->error(utl::ODB,
-                             1220,
-                             "The assembly extraction rules file can only be "
-                             "set on a hierarchical chip.");
+    logger->error(utl::ODB,
+                  1220,
+                  "Could not set assembly extraction rules file. Design is "
+                  "not 3D.");
+  }
+
+  dbSet<dbChipInst> chip_insts = getChipInsts();
+
+  if (chip_insts.size() != 2) {
+    logger->error(utl::ODB,
+                  1223,
+                  "3D-IC extraction with more than 2 dies is not supported.");
+  }
+
+  for (dbChipInst* chip_inst : chip_insts) {
+    if (chip_inst->getMasterChip()->getChipType() == ChipType::HIER) {
+      logger->error(utl::ODB,
+                    1224,
+                    "3D-IC extraction with nested hierarchy is not "
+                    "supported.");
+    }
   }
 
   chip->assembly_extraction_rules_file_ = rules_file_path;

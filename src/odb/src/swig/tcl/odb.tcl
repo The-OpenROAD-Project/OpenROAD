@@ -1259,14 +1259,14 @@ proc set_extraction_rules_file { args } {
       utl::error ODB 1221 "-assembly cannot be used with -tech."
     }
 
-    set hier_chip [$db getHierarchicalChip]
+    set top_chip [$db getChip]
 
-    if { $hier_chip == "NULL" } {
+    if { $top_chip == "NULL" } {
       utl::error ODB 1222 "Could not set assembly extraction rules file.\
-        No hierarchical chip found."
+        No chip found."
     }
 
-    $hier_chip setAssemblyExtractionRulesFile [lindex $args 0]
+    $top_chip setAssemblyExtractionRulesFile [lindex $args 0]
     return
   }
 

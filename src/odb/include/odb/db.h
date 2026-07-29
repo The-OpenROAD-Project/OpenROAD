@@ -7705,8 +7705,6 @@ class dbDatabase : public dbObject
 
   bool hasHierarchicalChip() const;
 
-  dbChip* getHierarchicalChip() const;
-
   void setTopChip(dbChip* chip);
   ///
   /// Return the libs contained in the database. A database can contain
