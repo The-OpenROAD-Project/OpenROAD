@@ -115,12 +115,14 @@ class dbCellEdgeSpacing;
 class dbChip;
 class dbChipBump;
 class dbChipBumpInst;
+class dbChipCapNode;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
 class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
+class dbChipRSeg;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -7333,6 +7335,10 @@ class dbChip : public dbObject
 
   dbSet<dbChipRegion> getChipRegions() const;
 
+  dbSet<dbChipCapNode> getChipCapNodes() const;
+
+  dbSet<dbChipRSeg> getChipRSegs() const;
+
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
   dbSet<dbChipPath> getChipPaths() const;
@@ -7422,6 +7428,34 @@ class dbChipBumpInst : public dbObject
   // User Code End dbChipBumpInst
 };
 
+// A capacitance node in the inter-chip parasitic network of a dbChipNet,
+// the inter-chip analog of dbCapNode. It is an electrical node of the
+// network carrying a lumped capacitance to ground. A terminal node
+// corresponds to a bump landing and references the dbChipBumpInst where
+// the vertical connection meets a die or RDL pin; this is how the per-die
+// parasitic networks are stitched together across the stack at the bumps.
+class dbChipCapNode : public dbObject
+{
+ public:
+  void setCapacitance(float capacitance);
+
+  float getCapacitance() const;
+
+  // User Code Begin dbChipCapNode
+  dbChipNet* getChipNet() const;
+
+  dbChipBumpInst* getChipBumpInst() const;
+
+  void setChipBumpInst(dbChipBumpInst* chip_bump_inst);
+
+  dbBTerm* getBTerm() const;
+
+  static dbChipCapNode* create(dbChipNet* chip_net);
+
+  static void destroy(dbChipCapNode* chip_cap_node);
+  // User Code End dbChipCapNode
+};
+
 class dbChipConn : public dbObject
 {
  public:
@@ -7500,6 +7534,10 @@ class dbChipNet : public dbObject
 
   // User Code Begin dbChipNet
   dbChip* getChip() const;
+
+  dbSet<dbChipCapNode> getChipCapNodes() const;
+
+  dbSet<dbChipRSeg> getChipRSegs() const;
 
   uint32_t getNumBumpInsts() const;
 
@@ -7592,6 +7630,33 @@ class dbChipRegionInst : public dbObject
   dbSet<dbChipBumpInst> getChipBumpInsts() const;
 
   // User Code End dbChipRegionInst
+};
+
+// A resistor segment connecting two dbChipCapNodes (source and target) in
+// the inter-chip parasitic network of a dbChipNet, the inter-chip analog
+// of dbRSeg. Together with dbChipCapNodes it models the RC of the vertical
+// connections between stacked chips; a single bump is typically a pi
+// network -- a series dbChipRSeg with a shunt dbChipCapNode at each end.
+class dbChipRSeg : public dbObject
+{
+ public:
+  void setResistance(float resistance);
+
+  float getResistance() const;
+
+  // User Code Begin dbChipRSeg
+  dbChipNet* getChipNet() const;
+
+  dbChipCapNode* getSourceCapNode() const;
+
+  dbChipCapNode* getTargetCapNode() const;
+
+  static dbChipRSeg* create(dbChipNet* chip_net,
+                            dbChipCapNode* source_cap_node,
+                            dbChipCapNode* target_cap_node);
+
+  static void destroy(dbChipRSeg* r_seg);
+  // User Code End dbChipRSeg
 };
 
 class dbDatabase : public dbObject
