@@ -7366,7 +7366,7 @@ class dbChip : public dbObject
 
   dbTech* getTech() const;
 
-  std::string getAssemblyExtractionRulesFile() const;
+  const std::string& getAssemblyExtractionRulesFile() const;
 
   void setAssemblyExtractionRulesFile(const std::string& rules_file_path);
 

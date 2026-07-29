@@ -669,7 +669,7 @@ dbChip::ChipType dbChip::getChipType() const
   return (dbChip::ChipType) obj->type_;
 }
 
-std::string dbChip::getAssemblyExtractionRulesFile() const
+const std::string& dbChip::getAssemblyExtractionRulesFile() const
 {
   _dbChip* chip = (_dbChip*) this;
 

@@ -1262,7 +1262,7 @@ proc set_extraction_rules_file { args } {
     set hier_chip [$db getHierarchicalChip]
 
     if { $hier_chip == "NULL" } {
-      utl::error ODB 481 "Could not set assembly extraction rules file.\
+      utl::error ODB 1222 "Could not set assembly extraction rules file.\
         No hierarchical chip found."
     }
 
