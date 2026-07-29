@@ -452,6 +452,13 @@ void dbSta::postReadDb(odb::dbDatabase* db)
       db_cbk_->addOwner(block);
       db_cbk_->setNetwork(db_network_);
     }
+    // A restored 3DIC database (write_db/read_db round-trip) arrives through
+    // this callback, not postRead3Dbx. The structural chip data is intact
+    // and odb rebuilt the unfolded model during the read; run the same 3DIC
+    // timing initialization so the restored design is timeable.
+    if (dbNetwork::is3DicTopChip(chip)) {
+      postRead3Dbx(chip);
+    }
   }
 }
 

@@ -1284,15 +1284,27 @@ proc report_3dic_summary { args } {
   set chip_insts [$chip getChipInsts]
   set chip_nets [$chip getChipNets]
   set chip_conns [$chip getChipConns]
-  set bump_inst_count 0
+  # Connected bumps sit on top-level chip-nets; total counts every pad of
+  # every placement (spare/reserved pads included -- often the majority).
+  set connected_bump_count 0
   foreach n $chip_nets {
-    incr bump_inst_count [$n getNumBumpInsts]
+    incr connected_bump_count [$n getNumBumpInsts]
+  }
+  set bump_pad_count 0
+  foreach ci $chip_insts {
+    set master [$ci getMasterChip]
+    if { $master == "NULL" } {
+      continue
+    }
+    foreach region [$master getChipRegions] {
+      incr bump_pad_count [llength [$region getChipBumps]]
+    }
   }
   utl::report "3DIC summary for chip [$chip getName]:"
   utl::report "  chiplets        : [llength $chip_insts]"
   utl::report "  top-level nets  : [llength $chip_nets]"
   utl::report "  3D bond regions : [llength $chip_conns]"
-  utl::report "  bump pads       : $bump_inst_count"
+  utl::report "  bump pads       : $bump_pad_count ($connected_bump_count connected)"
   if { [llength $chip_insts] > 0 } {
     utl::report "  chiplet instances:"
     foreach ci $chip_insts {

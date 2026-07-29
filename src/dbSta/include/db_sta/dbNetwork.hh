@@ -177,14 +177,12 @@ class dbNetwork : public ConcreteNetwork
   // True when top_chip_ is a hierarchical chip (no own dbBlock, owns
   // dbChipInsts). Chip-aware iterators/accessors gate on this first.
   bool has3DicChip() const;
+  // The one definition of "a 3DIC top": a block-less chip that owns
+  // chip-insts. Usable before setTopChip (e.g. on the read_db restore path).
+  static bool is3DicTopChip(odb::dbChip* chip);
   // Master block of a chiplet instance; null if the master chip is itself
   // hierarchical (no own dbBlock).
   odb::dbBlock* blockOf(odb::dbChipInst* chip_inst) const;
-  // True when chip_inst's master block is placed by exactly one chip-inst.
-  // Gates descent into the master body — shared masters alias inner dbInsts
-  // and would break STA's per-pin Vertex assumption (duplicated masters are
-  // rejected up front with STA-3004).
-  bool blockOwnedUniquelyBy(odb::dbChipInst* chip_inst) const;
 
   // Encode/decode chip db objects as STA handles. A bump's Pin is its pad
   // inst's single dbITerm (ordinary iterm encoding). A dbChipInst (Instance)
@@ -453,6 +451,9 @@ class dbNetwork : public ConcreteNetwork
   void mergeInto(Net* net, Net* into_net) override;
   Net* mergedInto(Net* net) override;
   double dbuToMeters(int dist) const;
+  // Per-tech overload: chiplets in a 3DIC stack may use different
+  // technologies, so multi-tech-safe callers pass the owning block's tech.
+  double dbuToMeters(int dist, odb::dbTech* tech) const;
   int metersToDbu(double dist) const;
 
   ////////////////////////////////////////////////////////////////

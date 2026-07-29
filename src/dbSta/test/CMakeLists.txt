@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     3dic_cross
     3dic_get_cells
+    3dic_read_db
     block_sta1
     check_axioms
     clock_pin

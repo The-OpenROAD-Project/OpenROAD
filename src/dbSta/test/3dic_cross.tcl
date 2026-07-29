@@ -53,6 +53,22 @@ check "interior net full name" {
 check "interior cell by literal path" {
   get_full_name [lindex [get_cells chipA/ff] 0]
 } chipA/ff
+# Chiplet-scoped wildcard: enumerates the master block's nets
+# (clk d n1 n2 q).
+check "interior nets by scoped wildcard" {
+  llength [get_nets chipA/*]
+} 5
+# Chiplet-scoped cell wildcards: the SDC path walk descends chip-insts
+# (real hierarchy), so patterns with dividers match interior instances.
+check "interior cells by scoped wildcard" {
+  llength [get_cells chipA/*]
+} 6
+check "bump insts by scoped wildcard" {
+  llength [get_cells chipA/bump_*]
+} 3
+check "cross-chiplet cell wildcard" {
+  llength [get_cells */ff]
+} 2
 check "boundary port pin resolves to pad iterm" {
   get_full_name [lindex [get_pins chipA/clk] 0]
 } chipA/bump_clk/PAD

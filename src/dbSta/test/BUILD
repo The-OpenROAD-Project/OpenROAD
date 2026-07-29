@@ -13,6 +13,7 @@ package(features = ["layering_check"])
 ALL_TESTS = [
     "3dic_cross",
     "3dic_get_cells",
+    "3dic_read_db",
     "block_sta1",
     "check_axioms",
     "clock_pin",
@@ -114,6 +115,15 @@ filegroup(
             ],
         ) + {
             "3dic_cross": [
+                "//src/odb/test:regression_resources",
+                "3dic_cross_flop.3dbv",
+                "3dic_cross_flop_a.bmap",
+                "3dic_cross_flop_a.def",
+                "3dic_cross_flop_b.bmap",
+                "3dic_cross_flop_b.def",
+                "3dic_cross_top.v",
+            ],
+            "3dic_read_db": [
                 "//src/odb/test:regression_resources",
                 "3dic_cross_flop.3dbv",
                 "3dic_cross_flop_a.bmap",
