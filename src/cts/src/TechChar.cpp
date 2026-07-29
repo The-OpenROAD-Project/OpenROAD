@@ -825,7 +825,7 @@ static bool containsIgnoreCase(const std::string& str,
 
 void TechChar::createDelayBufList()
 {
-  /*if (options_->isBufferListInferred()) {
+  if (options_->isBufferListInferred()) {
     const char* lib_name
         = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
     std::vector<std::string> footprintClkDly;
@@ -870,27 +870,17 @@ void TechChar::createDelayBufList()
     if (!footprintClkDly.empty()) {
       options_->setDlyBufferList(footprintClkDly);
       logger_->report("Using footpring for clkdly");
-      return;
-    }
-
-    if (!nameClkDly.empty()) {
+    } else if (!nameClkDly.empty()) {
       options_->setDlyBufferList(nameClkDly);
       logger_->report("Using name for clkdly");
-      return;
-    }
-
-    if (!footprintDly.empty()) {
+    } else if (!footprintDly.empty()) {
       options_->setDlyBufferList(footprintDly);
       logger_->report("Using footpring for dly");
-      return;
-    }
-
-    if (!nameDly.empty()) {
+    } else if (!nameDly.empty()) {
       options_->setDlyBufferList(nameDly);
       logger_->report("Using name for dly");
-      return;
     }
-  }*/
+  }
 
   bool drvrRes = true;
   std::vector<std::string> delay_buffers;
