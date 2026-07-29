@@ -264,12 +264,10 @@ void cutRows(dbBlock* block,
   for (dbRow* row : rows) {
     vector<std::pair<int, int>> row_blockage_xs;
     const Rect row_box = row->getBBox();
-    bool has_actual_blockage = false;
 
     for (Rect blockage : effective_blockages) {
       if (row_box.overlaps(blockage)) {
         row_blockage_xs.emplace_back(blockage.xMin(), blockage.xMax());
-        has_actual_blockage = true;
       }
     }
     for (const auto& narrow_region : narrow_regions) {
@@ -282,8 +280,7 @@ void cutRows(dbBlock* block,
       continue;
     }
 
-    if (has_actual_blockage
-        && placed_row_insts.find(row) != placed_row_insts.end()) {
+    if (placed_row_insts.find(row) != placed_row_insts.end()) {
       logger->warn(utl::ODB,
                    386,
                    "{} contains {} placed instances and will not be cut.",
