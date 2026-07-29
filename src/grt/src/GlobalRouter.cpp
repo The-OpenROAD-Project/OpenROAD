@@ -494,10 +494,7 @@ void GlobalRouter::globalRoute(bool save_guides)
       if (verbose_) {
         reportResources();
       }
-      cugr_->route();
-      routes_ = cugr_->getRoutes();
-      updatePinAccessPoints();
-      addRemainingGuides(routes_, nets, min_layer, max_layer);
+      findRoutingCugr(nets, /*incremental=*/false);
     } else {
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
       if (verbose_) {
@@ -1585,6 +1582,29 @@ void GlobalRouter::updatePinAccessPoints()
   for (const auto& [db_net, net] : db_net_map_) {
     updatePinAccessPoints(net, db_net);
   }
+}
+
+// CUGR analog of findRouting(): route, then export into routes_ in place so
+// incremental callers merge instead of replace. The mode is explicit since
+// is_incremental_ is unset on the IncrementalGRoute path.
+void GlobalRouter::findRoutingCugr(std::vector<Net*>& nets, bool incremental)
+{
+  cugr_->route(incremental);
+  for (Net* net : nets) {
+    odb::dbNet* db_net = net->getDbNet();
+    GRoute route = cugr_->getNetRoute(db_net);
+    if (route.empty()) {
+      // CUGR exports nothing for local and < 2-pin nets; drop stale
+      // entries and let addRemainingGuides rebuild the local ones.
+      routes_.erase(db_net);
+    } else {
+      routes_[db_net] = std::move(route);
+    }
+    updatePinAccessPoints(net, db_net);
+  }
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  addRemainingGuides(routes_, nets, min_layer, max_layer);
 }
 
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
@@ -3710,6 +3730,9 @@ void GlobalRouter::connectTopLevelPins(odb::dbNet* db_net, GRoute& route)
   }
 }
 
+// Synthesize via-stack routes for local nets (neither engine exports them)
+// and connect pins above the max routing layer; nets left route-less here
+// have no guides and antenna checking fails design-wide (ANT-0008).
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       std::vector<Net*>& nets,
                                       int min_routing_layer,
@@ -6528,21 +6551,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
   }
 
   dirty_nets_.clear();
-  cugr_->routeIncremental();
-  // Patch only the rerouted nets into routes_ and sync their pin access
-  // points (full route syncs all). Nets CUGR skipped (< 2 pins, local)
-  // yield an empty route and empty access-point maps, clearing any stale
-  // entry.
-  for (Net* net : dirty_nets) {
-    odb::dbNet* db_net = net->getDbNet();
-    GRoute route = cugr_->getNetRoute(db_net);
-    if (route.empty()) {
-      routes_.erase(db_net);
-    } else {
-      routes_[db_net] = std::move(route);
-    }
-    updatePinAccessPoints(net, db_net);
-  }
+  findRoutingCugr(dirty_nets, /*incremental=*/true);
   // Restored nets keep their guide-derived route; sync pins to the access
   // points restoreNetRoute recorded so later dirty rounds compare cleanly.
   for (odb::dbNet* db_net : restored_nets) {

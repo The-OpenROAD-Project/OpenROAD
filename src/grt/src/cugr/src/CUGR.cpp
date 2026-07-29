@@ -704,6 +704,7 @@ void CUGR::route(bool incremental)
   if (incremental) {
     incremental_routing_ = false;
     incremental_candidates_.clear();
+    verifyDemandConsistency("incremental");
     return;
   }
 
@@ -1812,12 +1813,6 @@ void CUGR::saveCongestion()
       }
     }
   }
-}
-
-void CUGR::routeIncremental()
-{
-  route(/*incremental=*/true);
-  verifyDemandConsistency("incremental");
 }
 
 void CUGR::verifyDemandConsistency(const char* tag)

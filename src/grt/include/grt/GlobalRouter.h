@@ -434,6 +434,7 @@ class GlobalRouter
                                 bool has_access_points);
   void updatePinAccessPoints();
   void updatePinAccessPoints(Net* net, odb::dbNet* db_net);
+  void findRoutingCugr(std::vector<Net*>& nets, bool incremental);
   void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
