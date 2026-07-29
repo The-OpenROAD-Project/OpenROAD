@@ -5,6 +5,7 @@ package(features = ["layering_check"])
 
 TESTS = [
     "bus_route",
+    "check_antennas_cugr",
     "clock_route",
     "clock_route_cugr",
     "clock_route_cugr2",

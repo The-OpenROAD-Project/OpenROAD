@@ -2,6 +2,7 @@ or_integration_tests(
   "grt"
   TESTS
     bus_route
+    check_antennas_cugr
     clock_route
     clock_route_alpha
     clock_route_cugr

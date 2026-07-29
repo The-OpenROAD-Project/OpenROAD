@@ -136,4 +136,6 @@ original HPWL            6591.3 u
 legalized HPWL           6591.3 u
 delta HPWL                    0 %
 
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
 pass

@@ -47,4 +47,8 @@ detailed_placement
 check_placement -verbose
 global_route -end_incremental
 
+# 6. Antenna checking reads the guides; every net rerouted incrementally
+#    (including local resizer-created nets) must still have them.
+check_antennas
+
 puts "pass"
