@@ -66,8 +66,8 @@ tapcell
 | `[-incnrcap_nwin_master]` | Master cell placed at the corners of macros, according the row orientation. |
 | `[-incnrcap_nwout_master]` | Master cell placed at the corners of macros, according the row orientation. |
 | `[-no_cell_at_top_bottom]` | Option is deprecated. |
-| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. Default value is 2 * endcap_width. |
-| `[-row_min_height]` | Minimum height (in microns) that stacked rows must have during cut rows. Default value is 2 * endcap_height. |
+| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. Default value is 2 * endcap_width or 0 if no endcap cell is set. |
+| `[-row_min_height]` | Minimum height (in microns) that stacked rows must have during cut rows. Default value is 2 * endcap_height + max_cell_height or 2 * max_cell_height if no endcap cell is set. |
 | `[-tap_nwin2_master]` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwintie_master` |
 | `[-tap_nwin3_master]` | Master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwin2_master`. |
 | `[-tap_nwintie_master]` | Master cell placed at the top and bottom of macros and the core area according the row orientation. |
@@ -98,8 +98,8 @@ cut_rows
 | `[-endcap_master]` | Master used as an endcap. |
 | `[-halo_width_x]` | Horizontal halo size (in microns) around macros during cut rows. |
 | `[-halo_width_y]` | Vertical halo size (in microns) around macros during cut rows. |
-| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. Default value is 2 * endcap_width. |
-| `[-row_min_height]` | Minimum height (in microns) that stacked rows must have during cut rows. Default value is 2 * endcap_height. |
+| `[-row_min_width]` | Minimum width (in microns) that a row must have during cut rows. Default value is 2 * endcap_width or 0 if no endcap cell is set. |
+| `[-row_min_height]` | Minimum height (in microns) that stacked rows must have during cut rows. Default value is 2 * endcap_height + max_cell_height or 2 * max_cell_height if no endcap cell is set. |
 
 ### Only adding boundary/endcap cells
 
