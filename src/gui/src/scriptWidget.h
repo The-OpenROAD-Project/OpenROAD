@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "absl/synchronization/mutex.h"
+#include "spdlog/sinks/sink.h"
 #include "utl/Logger.h"
 
 namespace odb {

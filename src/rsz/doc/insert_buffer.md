@@ -175,7 +175,7 @@ odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_pin,
                                     = odb::dbNameUniquifyType::ALWAYS);
 
 odb::dbInst* insertBufferBeforeLoads(odb::dbNet* net,
-                                     const std::set<odb::dbObject*>& loads,
+                                     const odb::OdbPtrSet<odb::dbObject>& loads,
                                      odb::dbMaster* buffer_cell,
                                      const Point* loc = nullptr,
                                      const char* new_buf_base_name = "buf",
@@ -207,8 +207,8 @@ odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_input_term,
                                     const odb::dbNameUniquifyType& uniquify
                                     = odb::dbNameUniquifyType::ALWAYS);
 
-// std::set overload
-odb::dbInst* insertBufferBeforeLoads(const std::set<odb::dbObject*>& load_pins,
+// OdbPtrSet overload
+odb::dbInst* insertBufferBeforeLoads(const odb::OdbPtrSet<odb::dbObject>& load_pins,
                                      const odb::dbMaster* buffer_master,
                                      const odb::Point* loc = nullptr,
                                      const char* new_buf_base_name = "buf",
@@ -281,7 +281,7 @@ odb::dbITerm* iterm = inst->findITerm("A");
 odb::dbInst* buf = db_net->insertBufferBeforeLoad(iterm, master);
 
 // 3. Before Multiple Loads
-std::set<odb::dbObject*> loads;
+odb::OdbPtrSet<odb::dbObject> loads;
 loads.insert(iterm1);
 loads.insert(iterm2);
 odb::dbInst* buf = db_net->insertBufferBeforeLoads(loads, master);

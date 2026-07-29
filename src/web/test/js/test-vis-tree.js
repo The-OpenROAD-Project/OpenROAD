@@ -12,12 +12,13 @@ globalThis.document = dom.window.document;
 const { VisTree } = await import('../../src/vis-tree.js');
 
 describe('VisTree', () => {
-    let visibility, changes, tree;
+    let visibility, selectability, changes, tree;
 
     beforeEach(() => {
         visibility = {};
+        selectability = {};
         changes = 0;
-        tree = new VisTree(visibility, () => { changes++; });
+        tree = new VisTree(visibility, selectability, () => { changes++; });
     });
 
     describe('leaf nodes', () => {
@@ -230,4 +231,166 @@ describe('VisTree', () => {
             assert.ok(pinNamesLabel.classList.contains('disabled'));
         });
     });
+
+    describe('selectability column', () => {
+        it('no second checkbox when addSelectable not set', () => {
+            visibility.a = true;
+            tree.add({ label: 'Group', children: [
+                { key: 'a', label: 'A' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            // Only visibility checkbox on the leaf (plus parent header cb).
+            const leafLabel = container.querySelector('.vis-group-children label');
+            assert.equal(leafLabel.querySelectorAll('input[type=checkbox]').length, 1);
+            // selectability state untouched for keys without selectable column.
+            assert.equal(selectability.a, undefined);
+        });
+
+        it('renders second checkbox on group when addSelectable is true', () => {
+            visibility.a = true;
+            tree.add({ label: 'Group', addSelectable: true, children: [
+                { key: 'a', label: 'A' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            const leafLabel = container.querySelector('.vis-group-children label');
+            const inputs = leafLabel.querySelectorAll('input[type=checkbox]');
+            assert.equal(inputs.length, 2);
+            // The header (group) also gets a selectability checkbox.
+            const headerInputs = container.querySelectorAll(
+                '.vis-group-header input[type=checkbox]');
+            assert.equal(headerInputs.length, 2);
+        });
+
+        it('toggling selectability checkbox updates selectability object', () => {
+            visibility.a = true;
+            selectability.a = true;
+            tree.add({ label: 'Group', addSelectable: true, children: [
+                { key: 'a', label: 'A' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            const leafLabel = container.querySelector('.vis-group-children label');
+            const [, selCb] = leafLabel.querySelectorAll('input[type=checkbox]');
+            selCb.checked = false;
+            selCb.dispatchEvent(new dom.window.Event('change'));
+            assert.equal(selectability.a, false);
+        });
+
+        it('parent selectability checkbox tri-states from children', () => {
+            visibility.a = true;
+            visibility.b = true;
+            selectability.a = true;
+            selectability.b = true;
+            tree.add({ label: 'Group', addSelectable: true, children: [
+                { key: 'a', label: 'A' },
+                { key: 'b', label: 'B' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            // Uncheck child A's selectability.
+            const leaves = container.querySelectorAll('.vis-group-children label');
+            const [, aSel] = leaves[0].querySelectorAll('input[type=checkbox]');
+            aSel.checked = false;
+            aSel.dispatchEvent(new dom.window.Event('change'));
+            // Parent header sel checkbox becomes indeterminate.
+            const headerInputs = container.querySelectorAll(
+                '.vis-group-header input[type=checkbox]');
+            const parentSel = headerInputs[1];
+            assert.equal(parentSel.indeterminate, true);
+        });
+
+        it('unchecking visibility disables selectability checkbox', () => {
+            visibility.a = true;
+            selectability.a = true;
+            tree.add({ label: 'Group', addSelectable: true, children: [
+                { key: 'a', label: 'A' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            const leafLabel = container.querySelector('.vis-group-children label');
+            const [visCb, selCb] = leafLabel.querySelectorAll(
+                'input[type=checkbox]');
+            assert.equal(selCb.disabled, false);
+            visCb.checked = false;
+            visCb.dispatchEvent(new dom.window.Event('change'));
+            assert.equal(selCb.disabled, true);
+        });
+
+        it('toggling parent propagates to all selectable descendants', () => {
+            visibility.a = true;
+            visibility.b = true;
+            visibility.c = true;
+            selectability.a = true;
+            selectability.b = true;
+            selectability.c = true;
+            tree.add({ label: 'Group', addSelectable: true, children: [
+                { label: 'Sub', children: [
+                    { key: 'a', label: 'A' },
+                    { key: 'b', label: 'B' },
+                ]},
+                { key: 'c', label: 'C' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            // The outer "Group" header has [vis, sel] checkboxes.
+            const headerInputs = container.querySelectorAll(
+                '.vis-group-header')[0].querySelectorAll(
+                'input[type=checkbox]');
+            const groupSel = headerInputs[1];
+            groupSel.checked = false;
+            groupSel.dispatchEvent(new dom.window.Event('change'));
+            assert.equal(selectability.a, false);
+            assert.equal(selectability.b, false);
+            assert.equal(selectability.c, false);
+        });
+
+        it('same-labeled groups under different parents stay independent', () => {
+            // Regression: two "Instances" groups (top-level and under Misc)
+            // used to collide on the model node id, so toggling the parent
+            // resolved to the wrong subtree.
+            visibility.a = true;
+            visibility.b = true;
+            selectability.a = true;
+            selectability.b = true;
+            tree.add({ label: 'Instances', addSelectable: true, children: [
+                { key: 'a', label: 'A' },
+            ]});
+            tree.add({ label: 'Misc', children: [
+                { label: 'Instances', children: [
+                    { key: 'b', label: 'B', selectable: true },
+                ]},
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            // The first '.vis-group-header' belongs to the top-level Instances.
+            const topHeader = container.querySelectorAll(
+                '.vis-group-header')[0];
+            const [, topSel] = topHeader.querySelectorAll(
+                'input[type=checkbox]');
+            topSel.checked = false;
+            topSel.dispatchEvent(new dom.window.Event('change'));
+            assert.equal(selectability.a, false);
+            // The unrelated Misc/Instances leaf should be untouched.
+            assert.equal(selectability.b, true);
+        });
+
+        it('leaf with selectable: true opts in without addSelectable', () => {
+            visibility.a = true;
+            selectability.a = true;
+            tree.add({ label: 'Group', children: [
+                { key: 'a', label: 'A', selectable: true },
+                { key: 'b', label: 'B' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            const leaves = container.querySelectorAll('.vis-group-children label');
+            assert.equal(
+                leaves[0].querySelectorAll('input[type=checkbox]').length, 2);
+            assert.equal(
+                leaves[1].querySelectorAll('input[type=checkbox]').length, 1);
+        });
+    });
+
 });

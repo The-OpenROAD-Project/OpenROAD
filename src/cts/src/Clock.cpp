@@ -29,7 +29,7 @@ Clock::Clock(const std::string& netName,
   // Hierarchy delimiters in the net name must be escape.  We use
   // the name to construct buffer names later and the delimiters
   // will confuse downstream tools like read_spef.
-  netName_ = sta::escapeChars(netName.c_str(), '/', '\0', '\\');
+  netName_ = sta::escapeChars(netName, '/', '\0', '\0', '\\');
 }
 
 void Clock::report(utl::Logger* logger) const

@@ -200,6 +200,109 @@ void SinkClustering::run(const unsigned groupSize,
   }
 }
 
+void SinkClustering::repairClusteringSolution(
+    const unsigned groupSize,
+    vector<vector<Point<double>>>& solutionPoints,
+    vector<vector<unsigned>>& solutionPointsIdx,
+    vector<vector<unsigned>>& solutions,
+    int& single_cluster_count,
+    int& solved_cluster_count)
+{
+  int cluster_num = solutions.size();
+  for (int c = 0; c < cluster_num; ++c) {
+    // only clusters with a single sink
+    if (solutionPoints[c].size() == 1) {
+      single_cluster_count++;
+      // get info of the single sink
+      const unsigned idx = solutionPointsIdx[c][0];
+      const Point<double>& p = points_[idx];
+      // init variables to repair
+      double min_dist_to_add = maxInternalDiameter_;
+      int min_sink_idx_to_add = -1, min_cluster_idx_to_add = -1;
+      double min_dist_to_merge = maxInternalDiameter_;
+      int cluster_idx_to_merge = -1;
+      // Find cluster to add one sink
+      for (int k = 0; k < cluster_num; ++k) {
+        if (k == c) {
+          continue;
+        }
+        // iter all sinks of candidate cluster
+        unsigned pointIdx = 0;
+        double distanceCost = 0;
+        double capCost = pointsCap_[idx];
+        for (const auto& comparisonPoint : solutionPoints[k]) {
+          const double cost = HTree_->computeDist(p, comparisonPoint);
+          const double cap_cost
+              = pointsCap_[idx]
+                + (cost * capPerUnit_
+                   + pointsCap_[solutionPointsIdx[k][pointIdx]]);
+          if (solutionPoints[k].size() > 2 && cost < min_dist_to_add
+              && !isLimitExceeded(2, cost, cap_cost, groupSize)) {
+            min_dist_to_add = cost;
+            min_sink_idx_to_add = pointIdx;
+            min_cluster_idx_to_add = k;
+          }
+          if (useMaxCapLimit_) {
+            capCost += cost * capPerUnit_
+                       + pointsCap_[solutionPointsIdx[k][pointIdx]];
+          }
+          pointIdx++;
+          distanceCost = std::max(cost, distanceCost);
+        }
+
+        if (!isLimitExceeded(
+                solutionPoints[k].size(), distanceCost, capCost, groupSize)
+            && distanceCost < min_dist_to_merge) {
+          cluster_idx_to_merge = k;
+          min_dist_to_merge = distanceCost;
+        }
+      }
+      // cluster found to merge the single cluster
+      if (cluster_idx_to_merge != -1) {
+        solved_cluster_count++;
+        // Add sink to found cluster
+        solutionPoints[cluster_idx_to_merge].push_back(p);
+        solutionPointsIdx[cluster_idx_to_merge].push_back(idx);
+        solutions[cluster_idx_to_merge].push_back(idx);
+        // move cluster to the last to remove it from the vectors
+        std::swap(solutionPoints[c], solutionPoints[cluster_num - 1]);
+        solutionPoints.pop_back();
+        std::swap(solutionPointsIdx[c], solutionPointsIdx[cluster_num - 1]);
+        solutionPointsIdx.pop_back();
+        std::swap(solutions[c], solutions[cluster_num - 1]);
+        solutions.pop_back();
+        cluster_num--;
+        if (c < cluster_num && solutionPoints[c].size() == 1) {
+          c--;
+        }
+      }
+      // if it can not be added on cluster near and there is a sink near, then
+      // add the sink on cluster
+      else if (min_cluster_idx_to_add != -1) {
+        solved_cluster_count++;
+        // add the more nearby sink on cluster
+        const unsigned idx_p
+            = solutionPointsIdx[min_cluster_idx_to_add][min_sink_idx_to_add];
+        solutionPoints[c].push_back(points_[idx_p]);
+        solutionPointsIdx[c].push_back(idx_p);
+        solutions[c].push_back(idx_p);
+        // delete the sink of old cluster
+        const unsigned old_size = solutionPoints[min_cluster_idx_to_add].size();
+        std::swap(solutionPoints[min_cluster_idx_to_add][min_sink_idx_to_add],
+                  solutionPoints[min_cluster_idx_to_add][old_size - 1]);
+        solutionPoints[min_cluster_idx_to_add].pop_back();
+        std::swap(
+            solutionPointsIdx[min_cluster_idx_to_add][min_sink_idx_to_add],
+            solutionPointsIdx[min_cluster_idx_to_add][old_size - 1]);
+        solutionPointsIdx[min_cluster_idx_to_add].pop_back();
+        std::swap(solutions[min_cluster_idx_to_add][min_sink_idx_to_add],
+                  solutions[min_cluster_idx_to_add][old_size - 1]);
+        solutions[min_cluster_idx_to_add].pop_back();
+      }
+    }
+  }
+}
+
 bool SinkClustering::findBestMatching(const unsigned groupSize)
 {
   // Counts how many clusters are in each solution.
@@ -212,12 +315,12 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
   // Has the max size of each solution.
   vector<unsigned> max_size(groupSize, 0);
   // Has the points for each cluster of each solution.
-  vector<vector<vector<Point<double>>>> solutionPoints;
+  vector<vector<vector<Point<double>>>> solutionPoints(groupSize);
   // Has the points index for each cluster of each solution.
   // example: solutionsPointsIdx[solutionId][clusterIdx][pointIdx]
-  vector<vector<vector<unsigned>>> solutionPointsIdx;
+  vector<vector<vector<unsigned>>> solutionPointsIdx(groupSize);
   // Has the sink indexes for each cluster of each solution.
-  vector<vector<vector<unsigned>>> solutions;
+  vector<vector<vector<unsigned>>> solutions(groupSize);
 
   if (useMaxCapLimit_) {
     debugPrint(logger_,
@@ -227,108 +330,27 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                "Clustering with max cap limit of {:.3e}",
                options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
-  // Iterates over the theta vector.
-  for (unsigned i = 0; i < thetaIndexVector_.size(); ++i) {
-    // The - groupSize is because each solution will start on a different index.
-    // There is groupSize solutions.
-    for (unsigned j = 0; j < groupSize; ++j) {
-      if ((i + j) < thetaIndexVector_.size()) {
-        // Add vectors in case they are no allocated yet.
-        if (solutions.size() < (j + 1)) {
-          solutions.emplace_back();
-          solutionPoints.emplace_back();
-          solutionPointsIdx.emplace_back();
-        }
-        if (solutions[j].size() < (clusters[j] + 1)) {
-          solutions[j].emplace_back();
-          solutionPoints[j].emplace_back();
-          solutionPointsIdx[j].emplace_back();
-        }
-        // Get the current point
-        const unsigned idx = thetaIndexVector_[i + j].second;
-        const Point<double>& p = points_[idx];
-        double distanceCost = 0;
-        double capCost = pointsCap_[idx];
-        unsigned pointIdx = 0;
-        // Check the distance from the current point to others in the cluster,
-        // if there are any.
-        for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]) {
-          const double cost = HTree_->computeDist(p, comparisonPoint);
-          if (useMaxCapLimit_) {
-            capCost
-                += cost * capPerUnit_
-                   + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
-          }
-          pointIdx++;
-          distanceCost = std::max(cost, distanceCost);
-        }
-        // If the cluster size is higher than groupSize,
-        // or the distance is higher than maxInternalDiameter_
-        //-> start another cluster and save the cost of the current one.
-        if (isLimitExceeded(solutionPoints[j][clusters[j]].size(),
-                            distanceCost,
-                            capCost,
-                            groupSize)) {
-          debugPrint(logger_,
-                     CTS,
-                     "Stree",
-                     4,
-                     "Created cluster of size {}, dia {:.3}, cap {:.3e}",
-                     solutionPoints[j][clusters[j]].size(),
-                     distanceCost,
-                     capCost);
-          max_diameter[j] = std::max(max_diameter[j], previousCosts[j]);
-          max_size[j] = std::max(
-              max_size[j], (unsigned) solutionPoints[j][clusters[j]].size());
-          // The cost is computed as the highest cost found on the current
-          // cluster
-          if (previousCosts[j] == 0) {
-            previousCosts[j] = maxInternalDiameter_;
-          }
-          costs[j] += previousCosts[j];
-          // A new cluster is defined
-          clusters[j] = clusters[j] + 1;
-          // The cost was already saved, so the same structure can be used for
-          // the next cluster.
-          previousCosts[j] = 0;
-        } else {
-          // Node will be a part of the current cluster, thus, save the highest
-          // cost.
-          previousCosts[j] = std::max(distanceCost, previousCosts[j]);
-        }
-        // Add vectors in case they are no allocated yet. (Depends if a new
-        // cluster was defined above)
-        if (solutions[j].size() < (clusters[j] + 1)) {
-          solutions[j].emplace_back();
-          solutionPoints[j].emplace_back();
-          solutionPointsIdx[j].emplace_back();
-        }
-        // Save the current Point in it's respective cluster. (Depends if a new
-        // cluster was defined above)
-        solutionPoints[j][clusters[j]].push_back(p);
-        solutionPointsIdx[j][clusters[j]].push_back(idx);
-        solutions[j][clusters[j]].push_back(idx);
-      }
-    }
+  const unsigned sinks_num = thetaIndexVector_.size();
+  if (sinks_num == 0) {
+    return false;
   }
-
-  // Same computation as above, however, only for the first groupSize Points.
-  for (unsigned i = 0; i < groupSize; ++i) {
-    // This is because every solution after the first one skips a Point (starts
-    // one late).
-    for (unsigned j = (i + 1); j < groupSize; ++j) {
-      if (solutions[j].size() < (clusters[j] + 1)) {
+  for (unsigned j = 0; j < groupSize; ++j) {
+    for (unsigned i = 0; i < sinks_num; ++i) {
+      if (solutions[j].empty()) {
+        // Create first cluster on vector
         solutions[j].emplace_back();
         solutionPoints[j].emplace_back();
         solutionPointsIdx[j].emplace_back();
       }
-      // Thus here we will assign the Points missing from those solutions.
-      const unsigned idx = thetaIndexVector_[i].second;
+      // Get the current point
+      const unsigned idx = thetaIndexVector_[(i + j) % sinks_num].second;
       const Point<double>& p = points_[idx];
-      unsigned pointIdx = 0;
       double distanceCost = 0;
       double capCost = pointsCap_[idx];
-      for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]) {
+      unsigned pointIdx = 0;
+      // Check the distance from the current point to others in the cluster,
+      // if there are any.
+      for (const auto& comparisonPoint : solutionPoints[j][clusters[j]]) {
         const double cost = HTree_->computeDist(p, comparisonPoint);
         if (useMaxCapLimit_) {
           capCost += cost * capPerUnit_
@@ -337,7 +359,9 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         pointIdx++;
         distanceCost = std::max(cost, distanceCost);
       }
-
+      // If the cluster size is higher than groupSize,
+      // or the distance is higher than maxInternalDiameter_
+      //-> start another cluster and save the cost of the current one.
       if (isLimitExceeded(solutionPoints[j][clusters[j]].size(),
                           distanceCost,
                           capCost,
@@ -353,20 +377,31 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         max_diameter[j] = std::max(max_diameter[j], previousCosts[j]);
         max_size[j] = std::max(
             max_size[j], (unsigned) solutionPoints[j][clusters[j]].size());
+        // The cost is computed as the highest cost found on the current
+        // cluster
         if (previousCosts[j] == 0) {
           previousCosts[j] = maxInternalDiameter_;
         }
         costs[j] += previousCosts[j];
+        // A new cluster is defined
         clusters[j] = clusters[j] + 1;
+        // The cost was already saved, so the same structure can be used for
+        // the next cluster.
         previousCosts[j] = 0;
       } else {
+        // Node will be a part of the current cluster, thus, save the highest
+        // cost.
         previousCosts[j] = std::max(distanceCost, previousCosts[j]);
       }
+      // Add vectors in case they are no allocated yet. (Depends if a new
+      // cluster was defined above)
       if (solutions[j].size() < (clusters[j] + 1)) {
         solutions[j].emplace_back();
         solutionPoints[j].emplace_back();
         solutionPointsIdx[j].emplace_back();
       }
+      // Save the current Point in it's respective cluster. (Depends if a new
+      // cluster was defined above)
       solutionPoints[j][clusters[j]].push_back(p);
       solutionPointsIdx[j][clusters[j]].push_back(idx);
       solutions[j][clusters[j]].push_back(idx);
@@ -398,6 +433,22 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
              bestSolutionCost_);
   // Save the solution for the Tree Builder.
   if (bestSolutionFound) {
+    // Repair single sink on cluster
+    int single_cluster_count = 0;
+    int solved_cluster_count = 0;
+    repairClusteringSolution(groupSize,
+                             solutionPoints[bestSolution],
+                             solutionPointsIdx[bestSolution],
+                             solutions[bestSolution],
+                             single_cluster_count,
+                             solved_cluster_count);
+    if (logger_->debugCheck(CTS, "clustering", 2)) {
+      logger_->report(
+          "Best solution has {} clusters with single sink, {} clusters move to "
+          "nearby cluster",
+          single_cluster_count,
+          solved_cluster_count);
+    }
     bestSolution_ = solutions[bestSolution];
     // Calculate max diameter to save
     double span;

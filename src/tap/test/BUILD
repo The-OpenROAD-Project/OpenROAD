@@ -40,11 +40,14 @@ COMPULSORY_TESTS = [
     "gcd_sky130",
     "gcd_sky130_separate",
     "invalid_cells",
+    "invalid_master_class",
     "jpeg_gf180",
     "multiple_calls",
     "no_endcap",
     "overlap_cover",
     "region1",
+    "single_row_macros",
+    "single_row_macros_offset",
     "symmetry",
 ]
 
@@ -159,6 +162,8 @@ filegroup(
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
             "overlap_cover": ["sky130hs_data/cover.lef"],
+            "single_row_macros": [],
+            "single_row_macros_offset": [],
         }.get(
             test_name,
             ["boundary_macros.def"],

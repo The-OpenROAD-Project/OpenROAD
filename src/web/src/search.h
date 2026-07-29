@@ -4,8 +4,10 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <limits>
 #include <map>
+#include <mutex>
 #include <set>
 #include <shared_mutex>
 #include <string>
@@ -16,6 +18,7 @@
 
 #include "boost/asio/post.hpp"
 #include "boost/asio/thread_pool.hpp"
+#include "odb/PtrSetMap.h"
 
 namespace utl {
 class Logger;
@@ -60,7 +63,7 @@ class Search : public odb::dbBlockCallBackObj
   };
 
   template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
+  using LayerMap = odb::PtrMap<odb::dbTechLayer, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
@@ -147,11 +150,23 @@ class Search : public odb::dbBlockCallBackObj
   // Pre-build all R-tree indices in parallel.
   void eagerInit(odb::dbBlock* block);
 
-  // Returns true once shape R-trees are built.
-  bool shapesReady() const { return top_block_data_.shapes_init.load(); }
+  // Returns true once shape R-trees are built for the active design.
+  // For 3DBX/multi-die designs the top dbChip is a HIER container with
+  // no block, so top_block_data_ never receives geometry — shapes live
+  // in chiplet master blocks under child_block_data_.  We consider the
+  // search "ready" as soon as any indexed block has populated its
+  // shape R-tree, otherwise the frontend would stay frozen on
+  // "Loading shapes…".
+  bool shapesReady() const;
 
   // Build the structure for the given chip.
   void setTopChip(odb::dbChip* chip);
+
+  // Install a callback fired (debounced) whenever a design edit invalidates
+  // one of the spatial indices — i.e. the same valid→invalid transition that
+  // Qt's Search emits `modified()` on.  TileGenerator uses it to drop its PNG
+  // tile cache and push a redraw to connected clients.  Pass `{}` to clear.
+  void setOnModified(std::function<void()> cb);
 
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -313,11 +328,21 @@ class Search : public odb::dbBlockCallBackObj
   void clear();
 
   void announceModified(std::atomic_bool& flag);
+  // Fire on_modified_ unconditionally (no per-index debounce).  Used for design
+  // edits that change rendering but not a spatial index (die/core area, region
+  // boxes), which announceModified's flag-based path would otherwise miss.
+  void notifyModified();
   BlockData& getData(odb::dbBlock* block);
 
   utl::Logger* logger_;
   odb::dbChip* top_chip_{nullptr};
   boost::asio::thread_pool pool_{std::thread::hardware_concurrency()};
+
+  // Fired by announceModified() on a valid→invalid index transition (see
+  // setOnModified).  Set once at server startup; read on the design-mutation
+  // thread — guarded by on_modified_mutex_.
+  std::function<void()> on_modified_;
+  mutable std::mutex on_modified_mutex_;
 
   struct BlockData
   {
@@ -349,7 +374,13 @@ class Search : public odb::dbBlockCallBackObj
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
   };
-  std::map<odb::dbBlock*, BlockData> child_block_data_;
+  // child_block_data_ is pre-populated in setTopChip().  After that,
+  // getData() may still insert entries for blocks reached only via db
+  // callbacks (rare but legal).  child_block_data_mutex_ guards the
+  // map's structure (insert/clear), not the BlockData inside — those
+  // each have their own per-category mutexes.
+  mutable std::shared_mutex child_block_data_mutex_;
+  odb::PtrMap<odb::dbBlock, BlockData> child_block_data_;
   BlockData top_block_data_;
 };
 

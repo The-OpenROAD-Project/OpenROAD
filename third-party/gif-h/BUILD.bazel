@@ -6,6 +6,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 cc_library(
     name = "gif_h",
     hdrs = ["gif.h"],
+    tags = ["no-lint"],
     visibility = ["//visibility:public"],
     alwayslink = True,
 )

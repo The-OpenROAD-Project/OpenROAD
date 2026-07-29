@@ -50,6 +50,7 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -99,7 +100,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_.special = 0;
   flags_.wild_connect = 0;
   flags_.wire_ordered = 0;
-  flags_.unused2 = 0;
+  flags_.disable_auto_taper = 0;
   flags_.disconnected = 0;
   flags_.spef = 0;
   flags_.select = 0;
@@ -214,6 +215,10 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (flags_.wire_ordered != rhs.flags_.wire_ordered) {
+    return false;
+  }
+
+  if (flags_.disable_auto_taper != rhs.flags_.disable_auto_taper) {
     return false;
   }
 
@@ -1263,10 +1268,6 @@ dbITerm* dbNet::getFirstOutput() const
       continue;
     }
 
-    if (tr->isClocked()) {
-      continue;
-    }
-
     if (tr->getIoType() != dbIoType::OUTPUT) {
       continue;
     }
@@ -1813,7 +1814,7 @@ void dbNet::destroyCCSegs()
 
 void dbNet::getCouplingNets(const uint32_t corner,
                             const double ccThreshold,
-                            std::set<dbNet*>& cnets)
+                            odb::PtrSet<dbNet>& cnets)
 {
   std::vector<dbNet*> inets;
   std::vector<double> netccap;
@@ -2443,6 +2444,18 @@ void dbNet::setJumpers(bool has_jumpers)
   }
 }
 
+bool dbNet::isAutoTaperEnabled()
+{
+  _dbNet* net = (_dbNet*) this;
+  return net->flags_.disable_auto_taper == 0;
+}
+
+void dbNet::setAutoTaper(bool enable)
+{
+  _dbNet* net = (_dbNet*) this;
+  net->flags_.disable_auto_taper = enable ? 0 : 1;
+}
+
 void dbNet::checkSanity() const
 {
   // Check net itself
@@ -2483,7 +2496,7 @@ dbModule* dbNet::findMainParentModule() const
   return getBlock()->getTopModule();
 }
 
-bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
+bool dbNet::findRelatedModNets(odb::PtrSet<dbModNet>& modnet_set) const
 {
   modnet_set.clear();
 
@@ -2565,7 +2578,7 @@ void dbNet::dump(bool show_modnets) const
   logger->report("--------------------------------------------------");
 
   if (show_modnets) {
-    std::set<dbModNet*> modnets;
+    odb::PtrSet<dbModNet> modnets;
     findRelatedModNets(modnets);
     for (dbModNet* modnet : modnets) {
       modnet->dump();
@@ -2596,7 +2609,7 @@ bool dbNet::isDeeperThan(const dbNet* net) const
 
 dbModNet* dbNet::findModNetInHighestHier() const
 {
-  std::set<dbModNet*> modnets;
+  odb::PtrSet<dbModNet> modnets;
   if (!findRelatedModNets(modnets)) {
     return nullptr;
   }
@@ -2654,26 +2667,26 @@ void dbNet::checkSanityModNetConsistency() const
   utl::Logger* logger = getImpl()->getLogger();
 
   // 1. Find all related dbModNets with this dbNet.
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<dbModNet> related_modnets;
   findRelatedModNets(related_modnets);
   if (related_modnets.empty()) {
     return;
   }
 
   // 2. Find all ITerms and BTerms connected with this dbNet.
-  std::set<dbITerm*> flat_iterms;
+  odb::PtrSet<dbITerm> flat_iterms;
   for (dbITerm* iterm : getITerms()) {
     flat_iterms.insert(iterm);
   }
 
-  std::set<dbBTerm*> flat_bterms;
+  odb::PtrSet<dbBTerm> flat_bterms;
   for (dbBTerm* bterm : getBTerms()) {
     flat_bterms.insert(bterm);
   }
 
   // 3. Find all ITerms and BTerms connected with all the related dbModNets.
-  std::set<dbITerm*> hier_iterms;
-  std::set<dbBTerm*> hier_bterms;
+  odb::PtrSet<dbITerm> hier_iterms;
+  odb::PtrSet<dbBTerm> hier_bterms;
   for (dbModNet* modnet : related_modnets) {
     for (dbITerm* iterm : modnet->getITerms()) {
       hier_iterms.insert(iterm);
@@ -2783,7 +2796,7 @@ void dbNet::checkSanityNameCollision() const
   // Check if this flat net is associated with the colliding ModNet
   // by traversing the hierarchy. If any related ModNet has the same
   // name in the same module, it's the same logical signal.
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<dbModNet> related_modnets;
   findRelatedModNets(related_modnets);
   for (dbModNet* mn : related_modnets) {
     if (mn->getParent() == module
@@ -2847,7 +2860,7 @@ void dbNet::dumpConnectivity(int level) const
   std::set<const dbObject*> visited;
   _dbNet::dumpNetConnectivity(this, level, 1, visited, logger);
 
-  std::set<dbModNet*> modnets;
+  odb::PtrSet<dbModNet> modnets;
   if (findRelatedModNets(modnets)) {
     for (dbModNet* modnet : modnets) {
       _dbNet::dumpModNetConnectivity(modnet, level, 1, visited, logger);
@@ -3112,7 +3125,7 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
                                                uniquify);
 }
 
-dbInst* dbNet::insertBufferBeforeLoads(const std::set<dbObject*>& load_pins,
+dbInst* dbNet::insertBufferBeforeLoads(const odb::PtrSet<dbObject>& load_pins,
                                        const dbMaster* buffer_master,
                                        const Point* loc,
                                        const char* new_buf_base_name,
@@ -3138,7 +3151,7 @@ dbInst* dbNet::insertBufferBeforeLoads(const std::vector<dbObject*>& load_pins,
                                        const dbNameUniquifyType& uniquify,
                                        bool loads_on_diff_nets)
 {
-  std::set<dbObject*> load_pins_set(load_pins.begin(), load_pins.end());
+  odb::PtrSet<dbObject> load_pins_set(load_pins.begin(), load_pins.end());
   return insertBufferBeforeLoads(load_pins_set,
                                  buffer_master,
                                  loc,

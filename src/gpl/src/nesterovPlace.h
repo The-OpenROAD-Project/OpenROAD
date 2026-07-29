@@ -30,6 +30,7 @@ class PlacerBaseCommon;
 class Instance;
 class RouteBase;
 class TimingBase;
+class ClockBase;
 
 class NesterovPlace
 {
@@ -42,6 +43,7 @@ class NesterovPlace
                 std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                 std::shared_ptr<RouteBase> rb,
                 std::shared_ptr<TimingBase> tb,
+                std::shared_ptr<ClockBase> cb,
                 std::unique_ptr<AbstractGraphics> graphics,
                 utl::Logger* log);
   ~NesterovPlace();
@@ -91,7 +93,8 @@ class NesterovPlace
                        int routability_driven_count,
                        int& timing_driven_count,
                        int64_t& td_accumulated_delta_area,
-                       bool is_routability_gpl_iter);
+                       bool is_routability_gpl_iter,
+                       int& virtual_cts_count);
   bool isDiverged(float& diverge_snapshot_WlCoefX,
                   float& diverge_snapshot_WlCoefY,
                   bool& is_diverge_snapshot_saved);
@@ -128,6 +131,7 @@ class NesterovPlace
   utl::Logger* log_ = nullptr;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
+  std::shared_ptr<ClockBase> cb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<AbstractGraphics> graphics_;
 

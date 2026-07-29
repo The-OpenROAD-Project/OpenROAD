@@ -8,7 +8,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -19,6 +18,7 @@
 #include "boost/polygon/polygon_90_with_holes_data.hpp"
 #include "boost/polygon/rectangle_concept.hpp"
 #include "boost/polygon/rectangle_data.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -49,7 +49,13 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
         const auto rhs_dist = odb::Point::squaredDistance(
             iterm_center, rhs->getBBox().center());
         // sort non-cover terms first
-        return std::tie(lhs_cover, lhs_dist) < std::tie(rhs_cover, rhs_dist);
+        if (lhs_cover != rhs_cover) {
+          return lhs_cover < rhs_cover;
+        }
+        if (lhs_dist != rhs_dist) {
+          return lhs_dist < rhs_dist;
+        }
+        return lhs->getId() < rhs->getId();
       });
 
   resetRoute();
@@ -88,8 +94,7 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
                                     rhs_shortest->getBBox().center());
 
   if (lhs_dist == rhs_dist) {
-    // if distances are equal, use id for stable sorting
-    return compare_by_id(getTerminal(), other->getTerminal());
+    return getTerminal()->getId() < other->getTerminal()->getId();
   }
 
   return lhs_dist > rhs_dist;
@@ -313,7 +318,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
     return;
   }
 
-  std::map<odb::dbITerm*, Polygon90Set> iterms_geoms;
+  odb::PtrMap<odb::dbITerm, Polygon90Set> iterms_geoms;
 
   // Create geom of all shapes
   for (odb::dbITerm* iterm : terminals_) {
@@ -376,13 +381,13 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
   }
 }
 
-std::set<odb::dbITerm*> RDLRoute::getRoutedTerminals() const
+odb::PtrSet<odb::dbITerm> RDLRoute::getRoutedTerminals() const
 {
   if (!routed_terminals_.empty()) {
     return routed_terminals_;
   }
 
-  std::set<odb::dbITerm*> terms;
+  odb::PtrSet<odb::dbITerm> terms;
   if (route_source_) {
     terms.insert(route_source_->terminal);
   }

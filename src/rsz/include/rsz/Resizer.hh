@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -25,10 +26,12 @@
 #include "est/EstimateParasitics.h"
 #include "est/SteinerTree.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -84,7 +87,12 @@ class RegisterOdbCallbackGuard;
 class NetHash
 {
  public:
-  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
+  // Pointer hashing is nondeterministic across runs. Switch to
+  // Network::id(net) when a Network handle is available here.
+  size_t operator()(const sta::Net* net) const
+  {
+    return std::hash<const sta::Net*>()(net);
+  }
 };
 
 using CellTargetLoadMap = std::map<sta::LibertyCell*, float>;
@@ -96,7 +104,7 @@ enum class MoveType : uint8_t
   kClone,
   kSizeUp,
   kSizeUpMatch,
-  kSizeDown,
+  kSizeDownFanout,
   kSwapPins,
   kVtSwap,
   kUnbuffer,
@@ -154,7 +162,7 @@ struct LibraryAnalysisData
   // Cell footprint distribution (footprint_name -> count)
   std::map<std::string, int> cells_by_footprint;
   // LEF site usage distribution (site -> count)
-  std::map<odb::dbSite*, int> cells_by_site;
+  odb::PtrMap<odb::dbSite, int> cells_by_site;
   // VT categories sorted by VT type for HVT/RVT/LVT/uLVT ordering
   std::vector<std::pair<VTCategory, VTLeakageStats>> sorted_vt_categories;
 
@@ -208,6 +216,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     return estimate_parasitics_;
   }
   bool& matchCellFootprint() { return match_cell_footprint_; }
+  const GlobalSizingConfig& globalSizingConfig() const
+  {
+    return global_sizing_config_;
+  }
   Rebuffer& rebuffer() const { return *rebuffer_; }
   bool isRegister(sta::Vertex* vertex);
 
@@ -293,7 +305,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       bool loads_on_diff_nets = false);
   odb::dbInst* insertBufferBeforeLoads(
       odb::dbNet* net,
-      const std::set<odb::dbObject*>& loads,
+      const odb::PtrSet<odb::dbObject>& loads,
       odb::dbMaster* buffer_cell,
       const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -339,7 +351,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    const char* phases,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
-                   bool skip_size_down,
+                   bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
@@ -415,8 +427,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
       bool match_cell_footprint,
+      bool reroute,
       bool verbose);
   int repairDesignBufferCount() const;
+  // Try to reroute the net driven by drvr_pin to a lower-resistance layer.
+  // Returns true if the reroute was accepted (net marked dirty for incremental
+  // global re-routing and parasitics invalidated).  Returns false if the net
+  // was already rerouted, doesn't exist, or the expected resistance reduction
+  // is below the threshold.
+  bool tryRerouteNet(const sta::Pin* drvr_pin);
   // for debugging
   void repairNet(sta::Net* net,
                  double max_wire_length,  // meters
@@ -483,7 +502,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks(bool run_journal_restore);
+  void findResizeSlacks(bool run_journal_restore,
+                        bool run_repair_timing = false,
+                        float repair_tns_end_percent = 0.01);
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -538,7 +559,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
   // Compute slew RC factor based on library slew thresholds
-  float getSlewRCFactor() const;
+  float getSlewRCFactor() const { return slew_shape_factor_; }
 
   sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
                                   float load,
@@ -593,7 +614,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
-                  const std::set<odb::dbSite*>& base_sites);
+                  const odb::PtrSet<odb::dbSite>& base_sites);
 
  public:
   //==============================
@@ -640,7 +661,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const sta::Pin* drvr_pin);
+  int resizeToTargetSlew(const sta::Pin* drvr_pin,
+                         std::optional<float> load_cap_hint = std::nullopt);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.
@@ -689,6 +711,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
                   sta::Slew slews[sta::RiseFall::index_count]);
+  // Worker-safe overload: uses the caller-provided ArcDelayCalc instead of the
+  // shared member, so the table-model lookup can run concurrently.
+  void gateDelays(const sta::LibertyPort* drvr_port,
+                  float load_cap,
+                  const sta::Scene* scene,
+                  const sta::MinMax* min_max,
+                  sta::ArcDelayCalc* arc_delay_calc,
+                  // Return values.
+                  sta::ArcDelay delays[sta::RiseFall::index_count],
+                  sta::Slew slews[sta::RiseFall::index_count]);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Slew in_slews[sta::RiseFall::index_count],
@@ -701,6 +733,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                           float load_cap,
                           const sta::Scene* scene,
                           const sta::MinMax* min_max);
+  // Worker-safe overload (see gateDelays above).
+  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
+                          float load_cap,
+                          const sta::Scene* scene,
+                          const sta::MinMax* min_max,
+                          sta::ArcDelayCalc* arc_delay_calc);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           const sta::RiseFall* rf,
                           float load_cap,
@@ -729,6 +767,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      // Return values.
                      sta::Delay& delay,
                      sta::Slew& slew);
+  float getRerouteResistanceReduction();
 
  protected:
   void makeWireParasitic(sta::Net* net,
@@ -900,6 +939,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isRegOutput(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
 
+  void computeSlewShapeFactor();
+  ////////////////////////////////////////////////////////////////
+
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
@@ -995,6 +1037,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool sizing_keep_vt_ = false;
   bool disable_buffer_pruning_ = false;
 
+  // Global sizing config consumed by GlobalSizingPolicy. Populated by
+  // initBlock() from `set_global_sizing_config` dbProperties; in-struct
+  // defaults apply when no property is present.
+  GlobalSizingConfig global_sizing_config_;
+
   // Clock buffer pattern configuration
   std::string clock_buffer_string_;
   std::string clock_buffer_footprint_;
@@ -1012,8 +1059,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   std::shared_ptr<ResizerObserver> graphics_;
 
+  // Reroute
+  const float kMinResistanceReduction = 0.50f;
+
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
+
+  // For Elmore slew modeling, see computeSlewShapeFactor()
+  float slew_shape_factor_ = 0.0;
 
   friend class BufferedNet;
   friend class GateCloner;
@@ -1027,6 +1080,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class OdbCallBack;
   friend class SetupLegacyBase;
   friend class RepairTargetCollector;
+  friend class LRSubproblem;
   friend class DelayEstimatorReporter;
 };
 

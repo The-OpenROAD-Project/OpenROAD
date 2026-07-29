@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "GlobalSizingPolicy.hh"
 #include "MeasuredVtSwapPolicy.hh"
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
@@ -141,6 +142,10 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<MeasuredVtSwapPolicy>(
         resizer_, committer_, setup_context, config_);
   }
+  if (phase_name == "GLOBAL_SIZING") {
+    return std::make_unique<GlobalSizingPolicy>(
+        resizer_, committer_, setup_context, config_);
+  }
   // Only public phase names are listed; experimental top-level tokens
   // (LEGACY_MT, MT1, MEASURED_VT_SWAP) are accepted but undocumented.
   resizer_.logger()->error(
@@ -148,7 +153,7 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
       217,
       "Unknown phase name '{}'. Valid phase names are: LEGACY, WNS, "
       "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
-      "LAST_GASP, CRIT_VT_SWAP, REROUTE",
+      "LAST_GASP, CRIT_VT_SWAP, REROUTE, GLOBAL_SIZING",
       phase_name);
   return nullptr;
 }
@@ -182,7 +187,7 @@ bool Optimizer::run()
         223,
         "No phase names specified. Valid phase names are: LEGACY, WNS, "
         "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
-        "LAST_GASP, CRIT_VT_SWAP, REROUTE");
+        "LAST_GASP, CRIT_VT_SWAP, REROUTE, GLOBAL_SIZING");
   }
   const int phase_count = phase_names.size();
 
@@ -220,7 +225,7 @@ bool Optimizer::repairSetup(const sta::Pin* const end_pin)
   config.match_cell_footprint = resizer_.matchCellFootprint();
   config.sequence = {MoveType::kUnbuffer,
                      MoveType::kVtSwap,
-                     MoveType::kSizeDown,
+                     MoveType::kSizeDownFanout,
                      MoveType::kSizeUp,
                      MoveType::kSwapPins,
                      MoveType::kBuffer,

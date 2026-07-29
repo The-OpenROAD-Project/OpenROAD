@@ -210,6 +210,39 @@ proc create_ndr { args } {
   }
 }
 
+sta::define_cmd_args "set_routing_auto_taper" \
+  { (-net name | -all_clocks) (-enable | -disable) }
+
+# Per-net control of the detailed router's auto-taper behavior.  By default
+# the detailed router tapers NDR (wide) nets down to minimum width near pin
+# connections.  Some nets (e.g. wide analog/NDR traces) must keep their full
+# width all the way to the pin; use -disable to suppress auto-taper for those
+# nets without recompiling.  Use -enable to restore the default behavior.
+proc set_routing_auto_taper { args } {
+  sta::parse_key_args "set_routing_auto_taper" args \
+    keys {-net} flags {-all_clocks -enable -disable}
+  if { !([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
+    utl::error ODB 1023 "Exactly one of -net or -all_clocks must be specified."
+  }
+  if { !([info exists flags(-enable)] ^ [info exists flags(-disable)]) } {
+    utl::error ODB 1024 "Exactly one of -enable or -disable must be specified."
+  }
+  set enable [info exists flags(-enable)]
+  set block [ord::get_db_block]
+  if { [info exists keys(-net)] } {
+    set netName $keys(-net)
+    set net [$block findNet $netName]
+    if { $net == "NULL" } {
+      utl::error ODB 1025 "No net named ${netName} found."
+    }
+    $net setAutoTaper $enable
+  } else {
+    foreach net [sta::find_all_clk_nets] {
+      $net setAutoTaper $enable
+    }
+  }
+}
+
 sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
 
 proc create_voltage_domain { args } {
@@ -1163,7 +1196,111 @@ proc all_pins_placed { args } {
   return 1
 }
 
+sta::define_cmd_args "add_3dblox_alignment_marker_rule" \
+  {[-lib_a lib_a] -master_a master_a \
+   [-lib_b lib_b] -master_b master_b \
+   [-tolerance tolerance_um] \
+   [-relative_orientations relative_orientations]}
+
+proc add_3dblox_alignment_marker_rule { args } {
+  sta::parse_key_args "add_3dblox_alignment_marker_rule" args \
+    keys {-lib_a -master_a -lib_b -master_b -tolerance -relative_orientations} \
+    flags {}
+  sta::check_argc_eq0 "add_3dblox_alignment_marker_rule" $args
+
+  foreach req {-master_a -master_b} {
+    if { ![info exists keys($req)] } {
+      utl::error ODB 475 "$req is required"
+    }
+  }
+
+  set lib_a ""
+  if { [info exists keys(-lib_a)] } {
+    set lib_a $keys(-lib_a)
+  }
+  set lib_b ""
+  if { [info exists keys(-lib_b)] } {
+    set lib_b $keys(-lib_b)
+  }
+
+  set master_a [odb::resolve_master $keys(-master_a) $lib_a]
+  set master_b [odb::resolve_master $keys(-master_b) $lib_b]
+
+  set rule [odb::dbAlignmentMarkerRule_create $master_a $master_b]
+
+  if { [info exists keys(-tolerance)] } {
+    set tol $keys(-tolerance)
+    sta::check_positive_float "-tolerance" $tol
+    set db [ord::get_db]
+    set tol_dbu [expr { int(round($tol * [$db getDbuPerMicron])) }]
+    $rule setTolerance $tol_dbu
+  }
+
+  if { [info exists keys(-relative_orientations)] } {
+    foreach o $keys(-relative_orientations) {
+      $rule addRelativeOrientation $o
+    }
+  }
+}
+
+sta::define_cmd_args "set_extraction_rules_file" {
+    [-tech tech_name] rules_file
+}
+
+proc set_extraction_rules_file { args } {
+  sta::parse_key_args "set_extraction_rules_file" args \
+    keys {-tech} flags {}
+  sta::check_argc_eq1 "set_extraction_rules_file" $args
+
+  set db [ord::get_db]
+  if { [info exists keys(-tech)] } {
+    set tech [$db findTech $keys(-tech)]
+  } elseif { [$db hasHierarchicalChip] } {
+    utl::error ODB 478 "Could not set extraction rules file.\
+      Use -tech to specify a technology in a 3D design."
+  } else {
+    set tech [$db getTech]
+  }
+
+  if { $tech == "NULL" } {
+    utl::error ODB 477 "Could not set extraction rules file. Tech not found."
+  }
+
+  $tech setExtractionRulesFile [lindex $args 0]
+}
+
 namespace eval odb {
+proc resolve_master { cell { lib_name "" } } {
+  set db [ord::get_db]
+  if { $lib_name ne "" } {
+    set lib [$db findLib $lib_name]
+    if { $lib == "NULL" } {
+      utl::error ODB 473 "Library '$lib_name' not found"
+    }
+    set m [$lib findMaster $cell]
+    if { $m == "NULL" } {
+      utl::error ODB 474 "Master '$cell' not found in library '$lib_name'"
+    }
+    return $m
+  }
+  set matches {}
+  foreach lib [$db getLibs] {
+    set m [$lib findMaster $cell]
+    if { $m != "NULL" } {
+      lappend matches [list [$lib getName] $m]
+    }
+  }
+  if { [llength $matches] == 0 } {
+    utl::error ODB 472 "Master '$cell' not found in any library"
+  }
+  if { [llength $matches] > 1 } {
+    set libs [join [lmap p $matches { lindex $p 0 }] ", "]
+    utl::error ODB 412 \
+      "Master '$cell' is ambiguous (found in: $libs). Use -lib_<side>."
+  }
+  return [lindex [lindex $matches 0] 1]
+}
+
 proc add_direction_constraint { dir edge begin end } {
   set block [get_block]
 

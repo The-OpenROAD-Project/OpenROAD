@@ -4,14 +4,12 @@
       {
         "name":"layer_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"datatype_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"origin_",
@@ -20,22 +18,19 @@
       {
         "name":"propattr_",
         "type":"std::vector<std::pair<std::int16_t, std::string>>",
-        "flags":["no-template", "no-get", "no-set"]
+        "flags":["no-template", "no-get", "no-set", "no-meminfo"]
       },
       {
         "name":"presentation_",
-        "type":"dbGDSTextPres",
-        "flags":[]
+        "type":"dbGDSTextPres"
       },
       {
         "name":"transform_",
-        "type":"dbGDSSTrans",
-        "flags":[]
+        "type":"dbGDSSTrans"
       },
       {
         "name":"text_",
-        "type":"std::string",
-        "flags":[]
+        "type":"std::string"
       }
     ],
     "h_includes": [

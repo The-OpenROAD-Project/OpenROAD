@@ -14,25 +14,30 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
 [INFO RSZ-0032] Inserted 6 hold buffers.
 Repair timing output passed/skipped equivalence test
 worst slack min 0.21
-[INFO DPL-0006] Core area: 231206.75 um^2, Instances area: 210.20 um^2, Utilization: 0.1%
+[INFO DPL-0006] Core area: 231206.75 um^2
+[INFO DPL-0007] Movable instances area: 210.20 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 0.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      21
-Diamond Move Success:             21 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 21 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement          8.7 u
-average displacement        0.4 u
-max displacement            3.2 u
+total displacement         28.2 u
+average displacement        1.3 u
+max displacement            5.4 u
 original HPWL            6886.7 u
-legalized HPWL           6887.7 u
+legalized HPWL           6891.4 u
 delta HPWL                    0 %
 
-worst slack min 0.22
+worst slack min 0.20

@@ -88,7 +88,7 @@ cc_library(
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -116,7 +116,7 @@ cc_library(
         ":rmp",
         "//:ord",
         "//src/cut",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
@@ -138,7 +138,8 @@ cc_binary(
         ":rmp",
         "//:ord",
         "//src/cut",
-        "//src/odb",
+        "//src/dbSta",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
@@ -213,5 +214,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/rmp/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rmp/test:__pkg__",
+    ],
 )

@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",
@@ -50,6 +51,7 @@ COMPULSORY_TESTS = [
     "sink_clustering_collision",
     "skip_nets",
     "twice",
+    "virtual_clock_latency",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -216,6 +218,9 @@ filegroup(
             "twice": [
                 "16sinks.def",
             ],
+            "virtual_clock_latency": [
+                "16sinks.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -234,9 +239,9 @@ filegroup(
 cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
-    features = ["-layering_check"],  # TODO: accesses private headers
     deps = [
         "//src/cts",
+        "//src/cts:private_hdrs",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

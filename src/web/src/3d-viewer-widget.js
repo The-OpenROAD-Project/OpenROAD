@@ -3,7 +3,7 @@
 
 import * as THREE from 'https://esm.sh/three@0.160.0';
 
-import {getThemeColors} from './theme.js';
+import {getThemeColors, setCookie} from './theme.js';
 
 // Camera navigation tuning constants
 const kRotationSensitivity = 2.0;
@@ -19,6 +19,7 @@ const kMinZNear = 10.0;
 const kZFarSafetyMargin = 10000;
 const kStackGapFactor = 0.15;
 const kDrcBlinkIntervalMs = 300;
+const kDrcBlinkToggles = 6;
 const DEG2RAD = Math.PI / 180;
 
 // Distinct color palette for chiplets (saturated, good contrast in 3D)
@@ -93,6 +94,9 @@ export class ThreeDViewerWidget {
     this._tooltip = document.createElement('div');
     this._tooltip.className = 'three-d-tooltip';
     this._canvasContainer.appendChild(this._tooltip);
+
+    this._optionsOverlay = this._createOptionsOverlay();
+    this._canvasContainer.appendChild(this._optionsOverlay);
 
     this._raycaster = new THREE.Raycaster();
 
@@ -250,6 +254,11 @@ export class ThreeDViewerWidget {
 
     canvas.addEventListener('dblclick', (e) => {
       e.preventDefault();
+      const markerId = this._pickDrcMarkerId(e);
+      if (markerId != null && this._app.drcWidget) {
+        this._app.drcWidget.highlightMarkerById(markerId, true);
+        return;
+      }
       this.resetCamera();
     });
 
@@ -265,19 +274,45 @@ export class ThreeDViewerWidget {
     canvas.addEventListener('mouseleave', () => { this._hideTooltip(); });
   }
 
+  // Options overlay (top-left): toggles like "True Z" that affect how the
+  // scene is rendered.  Mirrors app.useTrueZ so the cookie is the single
+  // source of truth across page reloads.
+  _createOptionsOverlay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'three-d-options';
+    const trueZLabel = document.createElement('label');
+    trueZLabel.title = 'Render chiplets at their true Z '
+        + '(disable stacking offset for overlapping chiplets at same Z).';
+    const trueZCb = document.createElement('input');
+    trueZCb.type = 'checkbox';
+    trueZCb.checked = !!this._app.useTrueZ;
+    trueZCb.addEventListener('change', () => {
+      this._app.useTrueZ = trueZCb.checked;
+      setCookie('or_use_true_z', trueZCb.checked ? '1' : '0');
+      this.refreshSceneForOptions();
+    });
+    trueZLabel.appendChild(trueZCb);
+    trueZLabel.appendChild(document.createTextNode('True Z (no stacking)'));
+    overlay.appendChild(trueZLabel);
+    return overlay;
+  }
+
+  _setRaycasterFromEvent(event) {
+    const canvas = this._renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -(((event.clientY - rect.top) / rect.height) * 2 - 1));
+    this._raycaster.setFromCamera(ndc, this._camera);
+  }
+
   _updateTooltip(event) {
     if (!this._chipletMeshes.length) {
       this._hideTooltip();
       return;
     }
 
-    const canvas = this._renderer.domElement;
-    const rect = canvas.getBoundingClientRect();
-    const ndc = new THREE.Vector2(
-        ((event.clientX - rect.left) / rect.width) * 2 - 1,
-        -(((event.clientY - rect.top) / rect.height) * 2 - 1));
-
-    this._raycaster.setFromCamera(ndc, this._camera);
+    this._setRaycasterFromEvent(event);
     const meshes = this._chipletMeshes.map((m) => m.mesh);
     const hits = this._raycaster.intersectObjects(meshes, false);
     if (hits.length === 0) {
@@ -304,6 +339,16 @@ export class ThreeDViewerWidget {
     if (this._tooltip) {
       this._tooltip.style.display = 'none';
     }
+  }
+
+  _pickDrcMarkerId(event) {
+    if (!this._drcHitboxMesh || !this._drcHitboxMarkerIds) return null;
+    this._setRaycasterFromEvent(event);
+    const hits = this._raycaster.intersectObject(this._drcHitboxMesh, false);
+    if (hits.length === 0) return null;
+    const instanceId = hits[0].instanceId;
+    if (instanceId == null) return null;
+    return this._drcHitboxMarkerIds[instanceId] ?? null;
   }
 
   // Quaternion-based rotation: axis perpendicular to mouse movement in
@@ -399,6 +444,7 @@ export class ThreeDViewerWidget {
     this._loading = false;
 
     this.clearHighlightDRC();
+    this._lastSceneData = null;
 
     if (this._themeObserver) {
       this._themeObserver.disconnect();
@@ -580,6 +626,7 @@ export class ThreeDViewerWidget {
   buildScene(data) {
     if (this._destroyed)
       return;
+    this._lastSceneData = data;
     this._clearScene();
 
     if (!data || !data.chiplets || data.chiplets.length === 0)
@@ -626,8 +673,11 @@ export class ThreeDViewerWidget {
     }
 
     // Separate chiplets that share the same Z and overlap in XY by stacking
-    // them in slots. See computeZOffsetSlots().
-    const zOffsets = computeZOffsetSlots(chiplets);
+    // them in slots. See computeZOffsetSlots(). When app.useTrueZ is on, skip
+    // the offset so chiplets render at their actual Z (may overlap).
+    const zOffsets = this._app.useTrueZ
+        ? new Array(chiplets.length).fill(0)
+        : computeZOffsetSlots(chiplets);
 
     chiplets.forEach((chiplet, idx) => {
       const width = chiplet.width / dbu;
@@ -730,6 +780,16 @@ export class ThreeDViewerWidget {
         this._drcMaterial.dispose();
         this._drcMaterial = null;
       }
+      if (this._drcHitboxMaterial) {
+        this._drcHitboxMaterial.dispose();
+        this._drcHitboxMaterial = null;
+      }
+      // InstancedMesh shares one BoxGeometry across all hitboxes; the
+      // forEach above already disposed it (via the InstancedMesh.geometry
+      // entry).  Drop the references so a stale pick can't reach freed
+      // data.
+      this._drcHitboxMesh = null;
+      this._drcHitboxMarkerIds = null;
       this._drcMeshGroup = null;
       this.render();
     }
@@ -764,20 +824,29 @@ export class ThreeDViewerWidget {
       depthWrite : false
     });
 
+    this._drcHitboxMaterial = new THREE.MeshBasicMaterial({
+      transparent : true,
+      opacity : 0,
+      depthWrite : false,
+    });
+
+    // Two-pass: gather every rect first so we know how many InstancedMesh
+    // slots to allocate.  Hitboxes go into one InstancedMesh (single draw
+    // call, single shared geometry) keyed by instanceId → markerId; edges
+    // stay as per-rect LineSegments because Three.js has no line-instancing
+    // primitive that preserves edge crispness under non-uniform scaling.
+    const entries = [];
     for (const violation of violations) {
       const rects = (violation.rects && violation.rects.length > 0)
                         ? violation.rects
                         : [ violation.bbox ];
-
       for (const rect of rects) {
         const [x1, y1, x2, y2, z1, z2] = rect;
         const width = Math.max((x2 - x1) / dbu, 0.001);
         const height = Math.max((y2 - y1) / dbu, 0.001);
-
         let currentZMin = zMin;
         let currentDepth = depth;
         let czOffset = 0;
-
         if (rect.length >= 6 && z1 !== undefined && z2 !== undefined) {
           currentZMin = (z1 / dbu) * kZScale;
           const z2Scaled = (z2 / dbu) * kZScale;
@@ -785,19 +854,47 @@ export class ThreeDViewerWidget {
           czOffset = this._stackOffsetForPoint(
               z1, (x1 + x2) / 2, (y1 + y2) / 2, dbu);
         }
-
         const cx = (x1 / dbu) + width / 2;
         const cy = (y1 / dbu) + height / 2;
         const cz = currentZMin + currentDepth / 2 + czOffset;
+        entries.push({
+          cx, cy, cz, width, height, depth: currentDepth,
+          markerId: violation.id,
+        });
+      }
+    }
 
-        const boxGeometry = new THREE.BoxGeometry(width, height, currentDepth);
+    if (entries.length > 0) {
+      // Shared unit box; per-instance non-uniform scale + position encoded
+      // in matrix.  Disposed via the children.forEach() in clearHighlightDRC.
+      const unitBox = new THREE.BoxGeometry(1, 1, 1);
+      this._drcHitboxMesh = new THREE.InstancedMesh(
+          unitBox, this._drcHitboxMaterial, entries.length);
+      this._drcHitboxMarkerIds = new Array(entries.length);
+      const scratch = new THREE.Matrix4();
+      const scale = new THREE.Vector3();
+      const pos = new THREE.Vector3();
+      const quat = new THREE.Quaternion();
+      entries.forEach((e, i) => {
+        pos.set(e.cx, e.cy, e.cz);
+        scale.set(e.width, e.height, e.depth);
+        scratch.compose(pos, quat, scale);
+        this._drcHitboxMesh.setMatrixAt(i, scratch);
+        this._drcHitboxMarkerIds[i] = e.markerId;
+
+        // Edges still rendered per-rect (see comment above).
+        const boxGeometry
+            = new THREE.BoxGeometry(e.width, e.height, e.depth);
         const edgesGeometry = new THREE.EdgesGeometry(boxGeometry);
         boxGeometry.dispose();
-        const line = new THREE.LineSegments(edgesGeometry, this._drcMaterial);
-        line.position.set(cx, cy, cz);
+        const line
+            = new THREE.LineSegments(edgesGeometry, this._drcMaterial);
+        line.position.set(e.cx, e.cy, e.cz);
         line.renderOrder = 999;
         this._drcMeshGroup.add(line);
-      }
+      });
+      this._drcHitboxMesh.instanceMatrix.needsUpdate = true;
+      this._drcMeshGroup.add(this._drcHitboxMesh);
     }
 
     this._drcMeshGroup.renderOrder = 999;
@@ -805,12 +902,30 @@ export class ThreeDViewerWidget {
     this.render();
 
     let visible = true;
+    let toggles = 0;
     this._drcBlinkInterval = setInterval(() => {
-      if (this._drcMeshGroup && this._drcMaterial) {
-        visible = !visible;
-        this._drcMaterial.opacity = visible ? 1.0 : 0.2;
+      if (!this._drcMeshGroup || !this._drcMaterial)
+        return;
+      toggles += 1;
+      if (toggles >= kDrcBlinkToggles) {
+        this._drcMaterial.opacity = 1.0;
         this.render();
+        clearInterval(this._drcBlinkInterval);
+        this._drcBlinkInterval = null;
+        return;
       }
+      visible = !visible;
+      this._drcMaterial.opacity = visible ? 1.0 : 0.2;
+      this.render();
     }, kDrcBlinkIntervalMs);
+  }
+
+  refreshSceneForOptions() {
+    if (this._destroyed)
+      return;
+    if (this._lastSceneData) {
+      this.clearHighlightDRC();
+      this.buildScene(this._lastSceneData);
+    }
   }
 }

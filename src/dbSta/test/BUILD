@@ -19,6 +19,7 @@ ALL_TESTS = [
     "escape_slash_hier",
     "find_clks1",
     "find_clks2",
+    "get_nets1_hier",
     "get_ports1",
     "get_ports1_hier",
     "hier2",
@@ -27,9 +28,11 @@ ALL_TESTS = [
     "hierclock",
     "hierwrite",
     "hier_deep",
+    "hier_highest_connected_net",
     "hier_weird_port",
     "levelize_drvr_vertices1",
     "make_port",
+    "modnet_port_alias",
     "network_edit1",
     "power1",
     "read_def_bus_port",
@@ -57,6 +60,7 @@ ALL_TESTS = [
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
+    "sdc_modinst_slash",
     "sdc_names1",
     "sdc_names2",
     "spef_def_names",
@@ -65,6 +69,8 @@ ALL_TESTS = [
     "sta3",
     "sta4",
     "sta5",
+    "sta_to_db1",
+    "sta_to_db1_hier",
     "write_sdc1",
     "write_verilog1",
     "write_verilog2",
@@ -113,6 +119,9 @@ filegroup(
             "find_clks1": [
                 "pad.lef",
                 "pad.lib",
+            ],
+            "get_nets1_hier": [
+                "hier1.v",
             ],
             "get_ports1_hier": [
                 "get_ports1.v",
@@ -247,6 +256,16 @@ filegroup(
                 "example1.def",
                 "example1.lef",
             ],
+            "sta_to_db1": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta_to_db1_hier": [
+                "example1_typ.lib",
+                "example1.lef",
+                "hier3.v",
+            ],
             "write_sdc1": [
                 "hier1.sdc",
                 "hier1.v",
@@ -295,7 +314,8 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
@@ -315,7 +335,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -328,7 +348,7 @@ cc_test(
     srcs = ["cpp/TestReadVerilog.cpp"],
     data = glob(["cpp/TestReadVerilog*.v"]),
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

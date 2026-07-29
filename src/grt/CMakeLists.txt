@@ -42,7 +42,6 @@ target_link_libraries(grt_lib
     ant_lib
     dpl_lib
     dbSta_lib
-    gui_heatmap_core
     stt_lib
     rsz_lib
     OpenSTA
@@ -70,6 +69,7 @@ target_link_libraries(grt
     grt_lib
     dbSta
     gui
+    gui_heatmap_core
     stt
     rsz
 )

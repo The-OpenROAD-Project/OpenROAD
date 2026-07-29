@@ -8,6 +8,7 @@ or_integration_tests(
     ndr_vias1
     ndr_vias2
     ndr_vias3
+    ndr_no_auto_taper
     obstruction
     single_step
     ta_ap_aligned
@@ -16,11 +17,12 @@ or_integration_tests(
     top_level_term2
     via_access_layer
   PASSFAIL_TESTS
-    gc_test
+    cpp_tests
 )
 
 set_tests_properties(
   drt.ndr_vias1.tcl
   drt.ndr_vias2.tcl
-  PROPERTIES TIMEOUT 180
+  drt.ndr_no_auto_taper.tcl
+  PROPERTIES TIMEOUT 900
 )

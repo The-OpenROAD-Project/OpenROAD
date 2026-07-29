@@ -179,15 +179,14 @@ void Pusher::pushMacroClusterToCoreBoundaries(
   }
 
   std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
+  // Check based on the shape of the macro cluster to avoid iterating each
+  // of its HardMacros.
+  odb::Rect cluster_box = macro_cluster->getBBox();
 
   for (const auto& [boundary, distance] : boundaries_distance) {
     if (distance == 0) {
       continue;
     }
-
-    // Check based on the shape of the macro cluster to avoid iterating each
-    // of its HardMacros.
-    odb::Rect cluster_box = macro_cluster->getBBox();
 
     moveMacroClusterBox(cluster_box, boundary, distance);
 

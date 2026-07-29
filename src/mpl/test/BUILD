@@ -1,4 +1,3 @@
-load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -6,6 +5,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "halos2",
     "halos3",
     "halos4",
+    "halos5",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -127,6 +128,10 @@ filegroup(
                 ],
                 "halos4": [
                     "testcases/halo3.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos5": [
+                    "testcases/halos1.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
@@ -256,7 +261,7 @@ cc_test(
     ],
     deps = [
         "//src/mpl:snapper",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -272,7 +277,7 @@ cc_test(
     ],
     deps = [
         "//src/mpl",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -288,7 +293,7 @@ cc_test(
     ],
     deps = [
         "//src/mpl:pusher",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",

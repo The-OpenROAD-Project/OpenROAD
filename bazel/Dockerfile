@@ -19,16 +19,53 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 
 RUN apt-get -y update \
     && apt-get -y install --no-install-recommends \
+      bsdextrautils \
       build-essential \
       clang \
       containerd.io \
       docker-buildx-plugin \
       docker-ce \
       docker-ce-cli \
+      groff \
+      lcov \
       openjdk-21-jre-headless \
+      pandoc \
+      parallel \
       python3 \
       python3-yaml \
+      tcl \
       time
+
+# Runtime X11/xcb libraries for the Qt GUI build (--//:platform=gui).
+# Qt itself is hermetic (qt-bazel prebuilts), but the linked openroad binary
+# still resolves libX11/libxcb/libxkbcommon from the system at load time, so
+# without these every test against the gui binary dies at ld.so with
+# "libX11-xcb.so.1: cannot open shared object file". This is the runtime
+# (non -dev) subset of etc/DependencyInstaller.sh's GUI xcb list.
+RUN apt-get -y update \
+    && apt-get -y install --no-install-recommends \
+      libx11-6 \
+      libx11-xcb1 \
+      libsm6 \
+      libice6 \
+      libxcb1 \
+      libxcb-cursor0 \
+      libxcb-icccm4 \
+      libxcb-image0 \
+      libxcb-keysyms1 \
+      libxcb-randr0 \
+      libxcb-render0 \
+      libxcb-render-util0 \
+      libxcb-shape0 \
+      libxcb-shm0 \
+      libxcb-sync1 \
+      libxcb-util1 \
+      libxcb-xfixes0 \
+      libxcb-xkb1 \
+      libdbus-1-3 \
+      libfontconfig1 \
+      libxkbcommon0 \
+      libxkbcommon-x11-0
 
 RUN groupadd -g 9000 user \
     && useradd -u 9000 -g 9000 -m -s /bin/bash user

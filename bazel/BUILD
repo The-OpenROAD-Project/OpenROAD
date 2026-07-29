@@ -49,20 +49,12 @@ pkg_files(
     strip_prefix = strip_prefix.from_root(),
 )
 
-pkg_files(
-    name = "tclreadline_files",
-    srcs = ["@tclreadline//:tclreadline_scripts"],
-    prefix = "tclreadline",
-    strip_prefix = strip_prefix.from_root(),
-)
-
 # Packaging up all tcl resources to one complete zip file. It can be
 # directly embedded in Tcl9 in a //zipfs:/ vfs.
 pkg_zip(
     name = "tcl_resources_zip",
     srcs = [
         ":tcl_core_files",
-        ":tclreadline_files",
     ],
 )
 

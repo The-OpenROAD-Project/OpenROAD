@@ -12,6 +12,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
+[INFO GPL-0016] Core area:                     750.720 um^2
 [INFO GPL-0036] Movable instances area:          3.754 um^2
 [INFO GPL-0037] Total instances area:          102.598 um^2
 [INFO GPL-0035] Pin density area adjust:         0.000 um^2
@@ -22,9 +23,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                      2
 [INFO GPL-0011] Number of pins:                      4
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 34.165 54.885 ) um
-[INFO GPL-0013] Core BBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
-[INFO GPL-0016] Core area:                     750.720 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 34.165 54.885 ) um
+[INFO GPL-0013] Placement BBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                   750.720 um^2
 [INFO GPL-0017] Fixed instances area:           98.845 um^2
@@ -53,8 +53,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0000 |  8.458500e+01 |   +0.00% |  1.04e-16 |      
-        0 |   0.0000 |  8.458500e+01 |          |  1.08e-16 |      
+        0 |   0.0000 |  8.458500e+01 |   +0.00% |  4.60e-17 |      
+        0 |   0.0000 |  8.458500e+01 |          |  4.79e-17 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area                3.7536

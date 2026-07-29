@@ -39,13 +39,16 @@ function installCanvasStubs() {
     };
 }
 
-function createWidgetApp() {
+function createWidgetApp(responses = {}) {
     const requests = [];
     return {
         requests,
         websocketManager: {
             request(msg) {
                 requests.push(msg);
+                if (responses[msg.type]) {
+                    return Promise.resolve(responses[msg.type]);
+                }
                 if (msg.type === 'timing_report') {
                     return Promise.resolve({ paths: [] });
                 }
@@ -59,9 +62,9 @@ function createWidgetApp() {
     };
 }
 
-function createWidget() {
+function createWidget(responses) {
     installCanvasStubs();
-    const app = createWidgetApp();
+    const app = createWidgetApp(responses);
     const widget = new ChartsWidget(app, () => {});
     document.body.appendChild(widget.element);
     widget.element.getBoundingClientRect = () => ({
@@ -295,5 +298,112 @@ describe('ChartsWidget debug charts', () => {
             y_labels: ['hpwl'],
             points: [{ x: 5, ys: [42] }],
         }]);
+    });
+});
+
+describe('ChartsWidget fanout tab', () => {
+    const fanoutResponse = {
+        bins: [
+            { lower: 0, upper: 1, count: 3 },
+            { lower: 1, upper: 2, count: 12 },
+            { lower: 2, upper: 3, count: 5 },
+        ],
+        total_nets: 20,
+    };
+
+    it('requests fanout_histogram with no slack filters', async () => {
+        const { app, widget } = createWidget({
+            fanout_histogram: fanoutResponse,
+        });
+        widget._selectTab('fanout');
+        await widget.update();
+        const fanoutReqs = app.requests.filter(
+            (r) => r.type === 'fanout_histogram');
+        assert.equal(fanoutReqs.length >= 1, true,
+            'fanout_histogram is requested');
+        // Filters should not be fetched on fanout tab.
+        assert.equal(
+            app.requests.filter((r) => r.type === 'chart_filters').length, 0);
+        // Slack histogram should not be requested while on fanout tab.
+        assert.equal(
+            app.requests.filter((r) => r.type === 'slack_histogram').length, 0);
+    });
+
+    it('reports net count in the status label', async () => {
+        const { widget } = createWidget({ fanout_histogram: fanoutResponse });
+        widget._selectTab('fanout');
+        await widget.update();
+        assert.match(widget._statusLabel.textContent, /20 nets/);
+    });
+
+    it('does not invoke timing drilldown when a fanout bar is clicked',
+        async () => {
+            const { app, widget } = createWidget({
+                fanout_histogram: fanoutResponse,
+            });
+            widget._selectTab('fanout');
+            await widget.update();
+            // Force a bar to exist and be hit.
+            widget._bars = [{
+                x: 0, y: 0, width: 160, height: 120,
+                count: 12, lower: 1, upper: 2,
+            }];
+            widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
+            await widget._handleClick({ clientX: 50, clientY: 50 });
+            assert.equal(
+                app.requests.filter((r) => r.type === 'timing_report').length,
+                0);
+        });
+
+    it('forwards the Show DBU flag when selecting a fanout bin',
+        async () => {
+            const { app, widget } = createWidget({
+                fanout_histogram: fanoutResponse,
+            });
+            app.showDbu = true;
+            widget._selectTab('fanout');
+            await widget.update();
+            widget._bars = [{
+                x: 0, y: 0, width: 160, height: 120,
+                count: 12, lower: 1, upper: 2,
+            }];
+            widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
+            await widget._handleDblClick({ clientX: 50, clientY: 50 });
+            const sel = app.requests.find(
+                (r) => r.type === 'select_fanout_bin');
+            assert.ok(sel, 'select_fanout_bin is requested');
+            assert.equal(sel.use_dbu, true);
+        });
+
+    it('discards a histogram response after the tab changes', async () => {
+        // A request whose resolution we control, so we can switch tabs while
+        // it is still in flight.
+        let resolveReq;
+        const requests = [];
+        const app = {
+            requests,
+            websocketManager: {
+                request(msg) {
+                    requests.push(msg);
+                    return new Promise((resolve) => { resolveReq = resolve; });
+                },
+            },
+            focusComponent() {},
+        };
+        installCanvasStubs();
+        const widget = new ChartsWidget(app, () => {});
+        document.body.appendChild(widget.element);
+
+        widget._currentTab = 'fanout';
+        const pending = widget._fetchHistogram();
+        // User switches back to Setup before the fanout response arrives.
+        widget._currentTab = 'setup';
+        resolveReq(fanoutResponse);
+        await pending;
+
+        // The stale fanout payload must not be adopted as the active data,
+        // nor reported in the (now Setup) status label.
+        assert.notEqual(widget._histogramData, fanoutResponse);
+        assert.doesNotMatch(widget._statusLabel.textContent, /20 nets/);
     });
 });

@@ -71,7 +71,7 @@ target_link_libraries(TestBufferRemoval3
         dpl_lib
         stt_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -100,7 +100,8 @@ target_link_libraries(TestResizer
         dpl_lib
         stt_lib
         odb
-        tst
+        defin
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -127,7 +128,7 @@ target_link_libraries(TestInsertBuffer
         rsz_lib
         odb
         odb_test_helper
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -143,6 +144,36 @@ gtest_discover_tests(TestInsertBuffer
 add_dependencies(build_and_test TestInsertBuffer
 )
 
+add_executable(TestNestedJournal TestNestedJournal.cc)
+target_link_libraries(TestNestedJournal
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst_integrated_fixture
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestNestedJournal
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/move
+)
+
+gtest_discover_tests(TestNestedJournal
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestNestedJournal
+)
+
 add_executable(TestResizerMt TestResizerMt.cc)
 target_link_libraries(TestResizerMt
         OpenSTA
@@ -153,7 +184,7 @@ target_link_libraries(TestResizerMt
         utl_lib
         rsz_lib
         odb
-        tst
+        tst_integrated_fixture
         ${TCL_LIBRARY}
 )
 
@@ -169,4 +200,33 @@ gtest_discover_tests(TestResizerMt
 )
 
 add_dependencies(build_and_test TestResizerMt
+)
+
+add_executable(TestRepairHoldRollback TestRepairHoldRollback.cc)
+target_link_libraries(TestRepairHoldRollback
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst_integrated_fixture
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestRepairHoldRollback
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+)
+
+gtest_discover_tests(TestRepairHoldRollback
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestRepairHoldRollback
 )

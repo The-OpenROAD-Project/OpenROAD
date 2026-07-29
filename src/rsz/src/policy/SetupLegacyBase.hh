@@ -140,6 +140,12 @@ class SetupLegacyBase : public OptimizationPolicy
                            const sta::Path* path,
                            sta::Slack focus_slack,
                            Target& target) const;
+  bool makePinTargetInExpandedPath(const sta::Pin* pin,
+                                   sta::Vertex* vertex,
+                                   const sta::Path* path,
+                                   sta::PathExpanded& expanded,
+                                   sta::Slack focus_slack,
+                                   Target& target) const;
   bool makePinTarget(const sta::Pin* pin,
                      sta::Slack focus_slack,
                      Target& target) const;
@@ -165,11 +171,11 @@ class SetupLegacyBase : public OptimizationPolicy
                            sta::Slack path_slack,
                            int repairs_per_pass,
                            int& changed);
-  bool trySizeDownBatch(MoveGenerator& generator,
-                        const Target& target,
-                        int repairs_per_pass,
-                        int& changed,
-                        std::optional<MoveType>& accepted_type);
+  bool trySizeDownFanoutBatch(MoveGenerator& generator,
+                              const Target& target,
+                              int repairs_per_pass,
+                              int& changed,
+                              std::optional<MoveType>& accepted_type);
   bool tryCandidateSequence(MoveGenerator& generator,
                             const Target& target,
                             int repairs_per_pass,

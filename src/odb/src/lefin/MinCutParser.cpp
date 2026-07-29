@@ -43,7 +43,7 @@ void MinCutParser::setLengthWithin(double within)
 
 void MinCutParser::setArea(double area)
 {
-  rule_->setArea(lefin_->dbdist(area));
+  rule_->setArea(lefin_->dbarea(area));
   rule_->setAreaValid(true);
 }
 

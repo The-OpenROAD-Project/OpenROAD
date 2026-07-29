@@ -1,76 +1,10 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 1 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
-[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO IFP-0102] Core area:                        47872.020 um^2
-[INFO IFP-0103] Total instances area:              1357.116 um^2
-[INFO IFP-0104] Effective utilization:                0.028
-[INFO IFP-0105] Number of instances:                    279
-[WARNING PPL-0015] Macro inst_0 is not placed.
-Found 0 macro blocks.
-Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of available slots 8754
-[INFO PPL-0002] Number of I/O             1
-[INFO PPL-0003] Number of I/O w/sink      1
-[INFO PPL-0004] Number of I/O w/o sink    0
-[INFO PPL-0005] Slots per section         200
-[INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 20.11 um.
-[INFO GPL-0001] ---- Initialize GPL Main Data Structures
-[INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
-[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0036] Movable instances area:       1357.116 um^2
-[INFO GPL-0037] Total instances area:         1357.116 um^2
-[INFO GPL-0035] Pin density area adjust:        83.644 um^2
-[INFO GPL-0032] ---- Initialize Region: Top-level
-[INFO GPL-0006] Number of instances:               279
-[INFO GPL-0007] Movable instances:                 279
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                      1
-[INFO GPL-0011] Number of pins:                    280
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
-[INFO GPL-0014] Region name: top-level.
-[INFO GPL-0015] Region area:                 47872.020 um^2
-[INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:       1440.760 um^2
-[INFO GPL-0019] Utilization:                     3.010 %
-[INFO GPL-0020] Standard cells area:          1350.510 um^2
-[INFO GPL-0021] Large instances area:           90.250 um^2
-[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
-[INFO GPL-0051] Source of initial instance position counters:
-	Odb location = 0	Core center = 279	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 1220290
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 1229790
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 1229790
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 1229790
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 1229790
-[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 1357.12 um^2, Utilization: 2.8%
-[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                     278
-Diamond Move Success:            278 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
-Placement Analysis
----------------------------------
-total displacement       9387.3 u
-average displacement       33.6 u
-max displacement           51.8 u
-original HPWL             605.0 u
-legalized HPWL            641.4 u
-delta HPWL                    6 %
-
+[INFO ODB-0128] Design: multi_sink
+[INFO ODB-0252]     Updated 1 pins.
+[INFO ODB-0253]     Updated 279 components.
+[INFO ODB-0254]     Updated 1 nets and 279 connections.
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
@@ -97,7 +31,7 @@ delta HPWL                    6 %
     Sinks per sub-region: 1
     Sub-region size: 0.0000 X 0.0000
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 1.
 [INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
@@ -109,15 +43,15 @@ delta HPWL                    6 %
 [INFO CTS-0204] A clustering solution was found from clustering size of 10 and clustering diameter of 60.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 28.
-[INFO CTS-0024]  Normalized sink region: [(0.369143, 0.371964), (5.02957, 6.24)].
-[INFO CTS-0025]     Width:  4.6604.
-[INFO CTS-0026]     Height: 5.8680.
+[INFO CTS-0024]  Normalized sink region: [(0.806143, 0.417571), (4.959, 6.37757)].
+[INFO CTS-0025]     Width:  4.1529.
+[INFO CTS-0026]     Height: 5.9600.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 14
-    Sub-region size: 4.6604 X 2.9340
+    Sub-region size: 4.1529 X 2.9800
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 28.
 [INFO CTS-0018]     Created 2 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
@@ -136,7 +70,7 @@ delta HPWL                    6 %
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 280
 [INFO CTS-0100]  Leaf buffers 28
-[INFO CTS-0101]  Average sink wire length 31.00 um
+[INFO CTS-0101]  Average sink wire length 27.32 um
 [INFO CTS-0102]  Path depth 2 - 3
 [INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0033] Balancing latency for clock core

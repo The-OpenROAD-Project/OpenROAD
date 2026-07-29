@@ -23,9 +23,17 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/grt",
         "//src/grt:groute",
+        "//src/grt:route_pt",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
-    ],
+    ] + select({
+        "//:platform_cli": ["//src/gui"],
+        "//:platform_gui": ["//src/gui:gui_qt"],
+    }),
 )
 
 # Abstract service interface published through utl::ServiceRegistry.
@@ -60,11 +68,10 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/grt:groute",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
-        "@spdlog",
     ],
 )
 
@@ -91,16 +98,12 @@ cc_library(
         ":est",
         ":private_hdrs",
         "//:ord",
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/grt",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
-        "//src/stt",
         "//src/utl",
         "@boost.stacktrace",
-        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )

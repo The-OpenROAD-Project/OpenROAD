@@ -208,7 +208,7 @@ void addAreaSubRule(double value,
 {
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::AREA);
-  parser->curRule->setCutArea(lefinReader->dbdist(value));
+  parser->curRule->setCutArea(lefinReader->dbarea(value));
 }
 
 void setConcaveCornerWidth(

@@ -13,6 +13,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
@@ -184,11 +185,11 @@ GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
   return row_search;
 }
 
-std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(
+odb::PtrSet<odb::dbRow> GridSwitchedPower::getInstanceRows(
     odb::dbInst* inst,
     const RowTree& row_search) const
 {
-  std::set<odb::dbRow*> rows;
+  odb::PtrSet<odb::dbRow> rows;
 
   odb::Rect box = inst->getBBox()->getBox();
 

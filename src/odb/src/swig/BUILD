@@ -84,7 +84,6 @@ filegroup(
 cc_library(
     name = "ui",
     srcs = [
-        "common/swig_common.h",
         "tcl/MakeOdb.cpp",
         ":swig",
         ":tcl",
@@ -99,11 +98,10 @@ cc_library(
         "common",
     ],
     deps = [
+        ":swig_common",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.polygon",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
