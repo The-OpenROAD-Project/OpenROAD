@@ -3219,10 +3219,9 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
     }
     Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
-    RoutePointToPinsMap point_to_pins;
-    if (!use_cugr_) {
-      point_to_pins = findRoutePtPins(net);
-    }
+    // The is-connected-to-term guide flags set below feed ant::WireBuilder's
+    // pin binding; without them antenna checking computes no gate data.
+    RoutePointToPinsMap point_to_pins = findRoutePtPins(net);
 
     int jumper_count = 0;
     if (!route.empty()) {
@@ -3248,14 +3247,12 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide2 = odb::dbGuide::create(
                 db_net, layer2, layer1, box, guide_is_congested);
 
-            if (!use_cugr_) {
-              RoutePt route_pt1(
-                  segment.init_x, segment.init_y, segment.init_layer);
-              RoutePt route_pt2(
-                  segment.final_x, segment.final_y, segment.final_layer);
-              addPinsConnectedToGuides(point_to_pins, route_pt1, guide1);
-              addPinsConnectedToGuides(point_to_pins, route_pt2, guide2);
-            }
+            RoutePt route_pt1(
+                segment.init_x, segment.init_y, segment.init_layer);
+            RoutePt route_pt2(
+                segment.final_x, segment.final_y, segment.final_layer);
+            addPinsConnectedToGuides(point_to_pins, route_pt1, guide1);
+            addPinsConnectedToGuides(point_to_pins, route_pt2, guide2);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
@@ -3265,14 +3262,12 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide = odb::dbGuide::create(
                 db_net, layer, via_layer, box, guide_is_congested);
 
-            if (!use_cugr_) {
-              RoutePt route_pt1(
-                  segment.init_x, segment.init_y, segment.init_layer);
-              RoutePt route_pt2(
-                  segment.final_x, segment.final_y, segment.final_layer);
-              addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-              addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
-            }
+            RoutePt route_pt1(
+                segment.init_x, segment.init_y, segment.init_layer);
+            RoutePt route_pt2(
+                segment.final_x, segment.final_y, segment.final_layer);
+            addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
+            addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -3294,14 +3289,11 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             jumper_count++;
           }
 
-          if (!use_cugr_) {
-            RoutePt route_pt1(
-                segment.init_x, segment.init_y, segment.init_layer);
-            RoutePt route_pt2(
-                segment.final_x, segment.final_y, segment.final_layer);
-            addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-            addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
-          }
+          RoutePt route_pt1(segment.init_x, segment.init_y, segment.init_layer);
+          RoutePt route_pt2(
+              segment.final_x, segment.final_y, segment.final_layer);
+          addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
+          addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
         }
       }
     }
