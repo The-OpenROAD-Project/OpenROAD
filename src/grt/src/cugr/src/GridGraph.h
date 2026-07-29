@@ -34,31 +34,18 @@ struct AccessPoint
   }
 };
 
-// Only hash and compare on the point, not the layers
-class AccessPointHash
+struct PointTHash
 {
- public:
-  AccessPointHash(int y_size) : y_size_(y_size) {}
-
-  std::size_t operator()(const AccessPoint& ap) const
+  std::size_t operator()(const PointT& point) const
   {
-    return robin_hood::hash_int(ap.point.x() * y_size_ + ap.point.y());
-  }
-
- private:
-  const uint64_t y_size_;
-};
-
-struct AccessPointEqual
-{
-  bool operator()(const AccessPoint& lhs, const AccessPoint& rhs) const
-  {
-    return lhs.point == rhs.point;
+    return robin_hood::hash_int((static_cast<uint64_t>(point.x()) << 32)
+                                | static_cast<uint32_t>(point.y()));
   }
 };
 
-using AccessPointSet
-    = robin_hood::unordered_set<AccessPoint, AccessPointHash, AccessPointEqual>;
+// Selected access cell -> union of the fixed layer intervals of the pins
+// that share it, so the routing tree honors every pin's connection layers.
+using AccessPointMap = robin_hood::unordered_map<PointT, IntervalT, PointTHash>;
 
 struct GraphEdge
 {
@@ -238,7 +225,7 @@ class GridGraph
                       double threshold) const;
 
   // Misc
-  AccessPointSet selectAccessPoints(GRNet* net) const;
+  AccessPointMap selectAccessPoints(GRNet* net) const;
 
   // Methods for updating demands - Public API.
 
@@ -330,8 +317,16 @@ class GridGraph
       const odb::Point& inst_location) const;
   AccessPoint selectAccessPoint(
       const std::vector<AccessPoint>& access_points) const;
-  bool findODBAccessPoints(GRNet* net,
-                           AccessPointSet& selected_access_points) const;
+  // Select APs from DRT-created ODB access points; returns the pin indices
+  // that have none, for the shape-derived fallback.
+  std::vector<int> findODBAccessPoints(
+      GRNet* net,
+      AccessPointMap& selected_access_points) const;
+  // Shape-derived AP selection for one pin: pick the most accessible cell
+  // closest to the net center among the cells the pin shapes touch.
+  void selectShapeAccessPoint(GRNet* net,
+                              int pin_idx,
+                              AccessPointMap& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
