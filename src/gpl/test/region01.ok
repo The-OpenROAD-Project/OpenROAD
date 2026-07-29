@@ -30,6 +30,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
+[INFO GPL-0016] Core area:                  139017.078 um^2
 [INFO GPL-0036] Movable instances area:       6974.189 um^2
 [INFO GPL-0037] Total instances area:         6974.189 um^2
 [INFO GPL-0035] Pin density area adjust:       477.053 um^2
@@ -40,9 +41,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                   103
 [INFO GPL-0010] Number of nets:                    666
 [INFO GPL-0011] Number of pins:                   2059
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
-[INFO GPL-0016] Core area:                  139017.078 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO GPL-0013] Placement BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                139017.078 um^2
 [INFO GPL-0017] Fixed instances area:        68045.261 um^2
@@ -57,9 +57,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                    666
 [INFO GPL-0011] Number of pins:                   2059
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
-[INFO GPL-0016] Core area:                  139017.078 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO GPL-0013] Placement BBox: ( 40.000 40.000 ) ( 250.000 150.000 ) um
 [INFO GPL-0014] Region name: spm_inst_0_domain.
 [INFO GPL-0015] Region area:                 23100.000 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -74,9 +73,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                    666
 [INFO GPL-0011] Number of pins:                   2059
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
-[INFO GPL-0016] Core area:                  139017.078 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO GPL-0013] Placement BBox: ( 40.000 210.000 ) ( 250.000 320.000 ) um
 [INFO GPL-0014] Region name: spm_inst_1_domain.
 [INFO GPL-0015] Region area:                 23100.000 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2

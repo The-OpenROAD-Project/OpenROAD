@@ -20,6 +20,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         60.382 um^2
 [INFO GPL-0037] Total instances area:           60.382 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -30,9 +31,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -151,6 +151,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         59.850 um^2
 [INFO GPL-0037] Total instances area:           59.850 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -161,9 +162,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -336,6 +336,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         60.382 um^2
 [INFO GPL-0037] Total instances area:           60.382 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -346,9 +347,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
@@ -551,6 +551,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
 [INFO GPL-0036] Movable instances area:         59.850 um^2
 [INFO GPL-0037] Total instances area:           59.850 um^2
 [INFO GPL-0035] Pin density area adjust:        -5.299 um^2
@@ -561,9 +562,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     11
 [INFO GPL-0011] Number of pins:                     38
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2

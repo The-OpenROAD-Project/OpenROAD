@@ -156,6 +156,9 @@ class Tapcell
                                       InstIndexableGetter>;
 
   std::vector<odb::dbBox*> findBlockages();
+  void checkPlaceable(odb::dbMaster* master, const std::string& option) const;
+  void checkPlaceable(const Options& options) const;
+  void checkPlaceable(const EndcapCellOptions& options) const;
   bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
   odb::dbInst* makeInstance(odb::dbBlock* block,
                             odb::dbMaster* master,

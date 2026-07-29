@@ -9,6 +9,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <mutex>
 #include <set>
@@ -165,21 +166,24 @@ void Search::inDbObstructionDestroy(odb::dbObstruction* obs)
 void Search::inDbBlockSetDieArea(odb::dbBlock* block)
 {
   setTopChip(block->getChip());
+  // setTopChip only clears/announces on a chip swap; a die-area resize on the
+  // unchanged chip still moves the tile bounds, so notify unconditionally.
+  notifyModified();
 }
 
 void Search::inDbBlockSetCoreArea(odb::dbBlock* block)
 {
-  // emit modified();
+  notifyModified();
 }
 
 void Search::inDbRegionAddBox(odb::dbRegion*, odb::dbBox*)
 {
-  // emit modified();
+  notifyModified();
 }
 
 void Search::inDbRegionDestroy(odb::dbRegion* region)
 {
-  // emit modified();
+  notifyModified();
 }
 
 void Search::inDbRowCreate(odb::dbRow* row)
@@ -259,12 +263,31 @@ bool Search::shapesReady() const
   return false;
 }
 
+void Search::setOnModified(std::function<void()> cb)
+{
+  std::lock_guard lock(on_modified_mutex_);
+  on_modified_ = std::move(cb);
+}
+
+void Search::notifyModified()
+{
+  std::function<void()> cb;
+  {
+    std::lock_guard lock(on_modified_mutex_);
+    cb = on_modified_;
+  }
+  if (cb) {
+    cb();
+  }
+}
+
 void Search::announceModified(std::atomic_bool& flag)
 {
   const bool prev_flag = flag.exchange(false);
 
   if (prev_flag) {
     // emit modified();
+    notifyModified();
   }
 }
 
