@@ -1716,9 +1716,8 @@ TEST_F(SchematicHandlerTest, GatePortsPreserveSymbolPinOrder)
 
 TEST_F(SchematicHandlerTest, DffGetsRegisterKindAndGatePorts)
 {
-  makeGate("DFF_X1",
-           "g_dff",
-           {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+  makeGate(
+      "DFF_X1", "g_dff", {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
 
   boost::json::object cells = fullCells();
   auto& cell = cells.at("g_dff").as_object();
@@ -1730,7 +1729,8 @@ TEST_F(SchematicHandlerTest, DffGetsRegisterKindAndGatePorts)
   EXPECT_EQ(std::string(gate_ports.at("CK").as_string()), "CK");
   EXPECT_EQ(std::string(gate_ports.at("Q").as_string()), "Q");
   EXPECT_EQ(std::string(gate_ports.at("QN").as_string()), "QN");
-  EXPECT_FALSE(cell.at("attributes").as_object().contains("openroad_symbol_type"));
+  EXPECT_FALSE(
+      cell.at("attributes").as_object().contains("openroad_symbol_type"));
 }
 
 TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)

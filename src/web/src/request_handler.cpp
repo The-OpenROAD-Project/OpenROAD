@@ -1175,8 +1175,8 @@ struct GateClass
   // "dff"/"dffr"/"dffs" for supported registers, or "" when the cell is not a
   // recognised schematic gate.
   std::string kind;
-  // Symbol port id -> real Liberty/dbMTerm pin name, used by the viewer to route
-  // skin symbols while keeping the design's original pin labels.
+  // Symbol port id -> real Liberty/dbMTerm pin name, used by the viewer to
+  // route skin symbols while keeping the design's original pin labels.
   std::map<std::string, std::string> ports;
   // For "aoi"/"oai" only: the input pin names of each first-level term (e.g.
   // AOI21 -> {{"A"}, {"B1", "B2"}}).  A one-pin term is a literal fed straight
@@ -1571,7 +1571,10 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
           break;
       }
       for (size_t i = 0; i < operands.size(); ++i) {
-        result.ports["A" + std::to_string(i + 1)] = operands[i]->port()->name();
+        sta::LibertyPort* port = operands[i]->port();
+        if (port != nullptr) {
+          result.ports["A" + std::to_string(i + 1)] = port->name();
+        }
       }
       result.ports["Y"] = out_port->name();
       return result;
