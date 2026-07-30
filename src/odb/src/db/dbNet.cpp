@@ -100,7 +100,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_.special = 0;
   flags_.wild_connect = 0;
   flags_.wire_ordered = 0;
-  flags_.unused2 = 0;
+  flags_.disable_auto_taper = 0;
   flags_.disconnected = 0;
   flags_.spef = 0;
   flags_.select = 0;
@@ -215,6 +215,10 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (flags_.wire_ordered != rhs.flags_.wire_ordered) {
+    return false;
+  }
+
+  if (flags_.disable_auto_taper != rhs.flags_.disable_auto_taper) {
     return false;
   }
 
@@ -2438,6 +2442,18 @@ void dbNet::setJumpers(bool has_jumpers)
   if (db->isSchema(kSchemaHasJumpers)) {
     net->flags_.has_jumpers = has_jumpers ? 1 : 0;
   }
+}
+
+bool dbNet::isAutoTaperEnabled()
+{
+  _dbNet* net = (_dbNet*) this;
+  return net->flags_.disable_auto_taper == 0;
+}
+
+void dbNet::setAutoTaper(bool enable)
+{
+  _dbNet* net = (_dbNet*) this;
+  net->flags_.disable_auto_taper = enable ? 0 : 1;
 }
 
 void dbNet::checkSanity() const

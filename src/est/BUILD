@@ -30,7 +30,10 @@ cc_library(
         "//src/grt:route_pt",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
-    ],
+    ] + select({
+        "//:platform_cli": ["//src/gui"],
+        "//:platform_gui": ["//src/gui:gui_qt"],
+    }),
 )
 
 # Abstract service interface published through utl::ServiceRegistry.

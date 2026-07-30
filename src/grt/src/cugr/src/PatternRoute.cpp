@@ -84,9 +84,8 @@ void PatternRoute::constructSteinerTree()
 
   const int degree = selected_access_points.size();
   if (degree == 1) {
-    const auto& access_point = *selected_access_points.begin();
-    steiner_tree_ = std::make_shared<SteinerTreeNode>(access_point.point,
-                                                      access_point.layers);
+    const auto& [point, layers] = *selected_access_points.begin();
+    steiner_tree_ = std::make_shared<SteinerTreeNode>(point, layers);
     return;
   }
 
@@ -94,8 +93,8 @@ void PatternRoute::constructSteinerTree()
   // output when equal-coordinate points exist across different STL builds.
   std::vector<std::pair<int, int>> sorted_points;
   sorted_points.reserve(selected_access_points.size());
-  for (auto& access_point : selected_access_points) {
-    sorted_points.emplace_back(access_point.point.x(), access_point.point.y());
+  for (const auto& [point, layers] : selected_access_points) {
+    sorted_points.emplace_back(point.x(), point.y());
   }
   std::ranges::stable_sort(sorted_points);
 
@@ -148,11 +147,10 @@ void PatternRoute::constructSteinerTree()
           construct_tree(current, cur_index, next_index);
         }
         // Set fixed layer interval
-        const AccessPoint current_pt{.point = {current->x(), current->y()},
-                                     .layers = {}};
-        if (auto it = selected_access_points.find(current_pt);
+        if (auto it
+            = selected_access_points.find(PointT(current->x(), current->y()));
             it != selected_access_points.end()) {
-          current->setFixedLayers(it->layers);
+          current->setFixedLayers(it->second);
         }
         // Connect current to parent
         if (parent == nullptr) {

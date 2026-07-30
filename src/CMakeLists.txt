@@ -151,7 +151,7 @@ add_compile_options(
   -Wredundant-decls
   -Wformat-security
   -Wno-sign-compare
-  -Wp,-D_GLIBCXX_ASSERTIONS
+  -D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   # Needed for floating point stability in FFT (fft_test will check this).
   # See also https://kristerw.github.io/2021/11/09/fp-contract/
