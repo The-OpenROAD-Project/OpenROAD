@@ -1409,11 +1409,12 @@ void CUGR::reportCongestion() const
                wire_dominant_edges,
                via_dominant_edges);
     // Sub-min planes are the first min_routing_layer slices of via_demand.
+    const int submin_layers
+        = std::min(constants_.min_routing_layer, num_layers);
     const double submin_via = std::accumulate(
         via_demand.begin(),
         via_demand.begin()
-            + static_cast<size_t>(constants_.min_routing_layer) * x_size
-                  * y_size,
+            + static_cast<size_t>(submin_layers) * x_size * y_size,
         0.0);
     debugPrint(logger_,
                GRT,

@@ -851,7 +851,7 @@ void GridGraph::forEachViaFlankEdgeImpl(const int layer_index,
                                         const std::vector<double>& net_costs,
                                         F&& fn) const
 {
-  for (int l = layer_index; l <= layer_index + 1; l++) {
+  for (int l = layer_index; l <= layer_index + 1 && l < num_layers_; l++) {
     const int direction = layer_directions_[l];
     PointT lower_loc = loc;
     lower_loc[direction] -= 1;
