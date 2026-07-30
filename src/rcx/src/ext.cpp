@@ -217,7 +217,7 @@ void Ext::get_ext_db_corner(int& index, const std::string& name)
   }
 }
 
-void Ext::extractMultiChip(ExtractOptions options)
+void Ext::extractMultiChip(const ExtractOptions& options)
 {
   multi_chip_extractor_->run(options);
 }

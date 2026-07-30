@@ -73,7 +73,7 @@ class Ext
                        bool parallel,
                        int corner);
   void extract(ExtractOptions options);
-  void extractMultiChip(ExtractOptions options);
+  void extractMultiChip(const ExtractOptions& options);
 
   void define_process_corner(int ext_model_index, const std::string& name);
   void define_derived_corner(const std::string& name,
