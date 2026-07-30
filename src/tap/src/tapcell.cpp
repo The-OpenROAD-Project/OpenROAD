@@ -322,8 +322,8 @@ static std::vector<std::pair<int, int>> computeOpenSpans(
   return open_spans;
 }
 
-// True when the cell is flush with the row start or end.
-static bool isFlushWithRowEnd(const odb::Rect& cell, const odb::Rect& row)
+// True when the cell touches the row start or end.
+static bool isAtRowEnd(const odb::Rect& cell, const odb::Rect& row)
 {
   return cell.xMin() == row.xMin() || cell.xMax() == row.xMax();
 }
@@ -1203,21 +1203,21 @@ void Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   const odb::Rect cell(
       ll.getX(), ll.getY(), ll.getX() + width, ll.getY() + height);
 
-  // Resolve overlaps with corners already placed in this row: a corner flush
-  // with the row end displaces a same-area corner that is not; otherwise the
-  // new corner is skipped.
+  // Resolve overlaps with corners already placed in this row: a corner at the
+  // row end displaces a same-area corner that is not at it; otherwise the new
+  // corner is skipped.
   std::vector<odb::dbInst*> displaced;
   auto placed = placed_corners_.find(row);
   if (placed != placed_corners_.end()) {
     const odb::Rect row_bbox = row->getBBox();
-    const bool cell_flush = isFlushWithRowEnd(cell, row_bbox);
+    const bool cell_at_row_end = isAtRowEnd(cell, row_bbox);
     for (auto* other : placed->second) {
       const odb::Rect other_box = other->getBBox()->getBox();
       if (!cell.overlaps(other_box)) {
         continue;
       }
-      const bool other_flush = isFlushWithRowEnd(other_box, row_bbox);
-      if (cell_flush || other_flush) {
+      const bool other_at_row_end = isAtRowEnd(other_box, row_bbox);
+      if (cell_at_row_end || other_at_row_end) {
         debugPrint(logger_,
                    utl::TAP,
                    "Endcap",
@@ -1228,7 +1228,8 @@ void Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
                    corner.pt.getY(),
                    row->getName());
       }
-      if (cell_flush && !other_flush && area_corners.contains(other)) {
+      if (cell_at_row_end && !other_at_row_end
+          && area_corners.contains(other)) {
         displaced.push_back(other);
       } else {
         return;

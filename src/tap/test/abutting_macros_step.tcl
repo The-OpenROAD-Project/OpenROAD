@@ -1,6 +1,6 @@
 # Two abutting macros whose right (and left) edges are misaligned by one
 # site, creating a one-row boundary jog narrower than the corner master. The
-# corner flush with the row end must displace the overlapping inner corner so
+# corner at the row end must displace the overlapping inner corner so
 # the jog row is not covered by both a horizontal edge fill and a row-end
 # endcap.
 source "helpers.tcl"
