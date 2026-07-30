@@ -91,7 +91,7 @@ void Opendp::checkPlacement(const bool verbose,
   if (disallow_one_site_gaps_) {
     for (auto& cell : network_->getNodes()) {
       // One site gap check
-      if (cell->getType() == Node::CELL && checkOneSiteGaps(*cell)) {
+      if (cell->isStdCell() && checkOneSiteGaps(*cell)) {
         one_site_gap_failures.push_back(cell.get());
       }
     }
