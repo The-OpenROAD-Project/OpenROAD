@@ -134,6 +134,20 @@ list is as important as the findings list.
 Only after the report, optionally run the test suites — as confirmation,
 never as the review.
 
+## Step 5b — Verify incoming findings' premises
+
+When this review processes findings from ANOTHER reviewer (human, bot, or a
+prior round of this skill): each finding is itself a claim. Before designing
+a fix, verify the finding's PREMISE against the source (the same
+claim-vs-code treatment as Step 5) — a reviewer can be right about the
+symptom (a crash) and wrong about the cause or the model ("these values can
+differ per X" when the implementation stores one X globally). The premise
+dictates the fix's shape; a wrong premise produces a wrong-shaped fix that
+tests cannot catch. A reviewer's track record of correct findings raises
+your trust in their symptoms, never in their premises. If a finding cannot
+be reproduced empirically, that raises the verification bar — it does not
+substitute for it.
+
 ## Anti-patterns (the misses this skill exists to prevent)
 
 - Working around an anomaly in your own testing ("wildcard didn't work, I
@@ -144,3 +158,6 @@ never as the review.
   untouched siblings.
 - Letting the fixture define coverage: if the fixture has no spare/empty/
   restored/multi-X case, the matrix still must answer for those modes.
+- Trusting an external finding's premise because the reviewer's other
+  findings were correct — verify the premise in source before shaping the
+  fix around it.

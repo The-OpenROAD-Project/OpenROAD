@@ -451,9 +451,6 @@ class dbNetwork : public ConcreteNetwork
   void mergeInto(Net* net, Net* into_net) override;
   Net* mergedInto(Net* net) override;
   double dbuToMeters(int dist) const;
-  // Per-tech overload: chiplets in a 3DIC stack may use different
-  // technologies, so multi-tech-safe callers pass the owning block's tech.
-  double dbuToMeters(int dist, odb::dbTech* tech) const;
   int metersToDbu(double dist) const;
 
   ////////////////////////////////////////////////////////////////

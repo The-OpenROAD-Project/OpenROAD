@@ -1326,18 +1326,17 @@ bool dbNetwork::isTopInstanceOrNull(const Instance* instance) const
 
 double dbNetwork::dbuToMeters(int dist) const
 {
-  return dbuToMeters(dist, db_->getTech());
-}
-
-double dbNetwork::dbuToMeters(int dist, odb::dbTech* tech) const
-{
-  int dbu = tech->getDbUnitsPerMicron();
+  // DBU scale is a database-level property shared by every tech/block
+  // (dbTech::getDbUnitsPerMicron delegates to it), so this is correct for
+  // multi-tech 3DIC stacks too -- and unlike db_->getTech() it cannot raise
+  // ODB-432 on a multi-tech database.
+  int dbu = db_->getDbuPerMicron();
   return dist / (dbu * 1e+6);
 }
 
 int dbNetwork::metersToDbu(double dist) const
 {
-  int dbu = db_->getTech()->getDbUnitsPerMicron();
+  int dbu = db_->getDbuPerMicron();
   return dist * dbu * 1e+6;
 }
 
@@ -2441,13 +2440,9 @@ void dbNetwork::location(const Pin* pin,
                          bool& exists) const
 {
   if (isPlaced(pin)) {
-    // Convert with the pin's owning block's tech: chiplets in a 3DIC stack
-    // may use different technologies (dbDatabase::getTech() errors on
-    // multi-tech databases, and a single global DBU scale would be wrong).
-    odb::dbTech* tech = getBlockOf(pin)->getTech();
     odb::Point pt = location(pin);
-    x = dbuToMeters(pt.getX(), tech);
-    y = dbuToMeters(pt.getY(), tech);
+    x = dbuToMeters(pt.getX());
+    y = dbuToMeters(pt.getY());
     exists = true;
   } else {
     x = 0;
