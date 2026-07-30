@@ -341,6 +341,47 @@ class TileGenerator
   const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
                                                                = nullptr) const;
 
+  // Geometry one dbMaster contributes to one tech layer, in master-local
+  // coordinates; the render pass applies each instance's transform.  Bucketing
+  // by layer up front is what lets the per-instance pass draw a layer's shapes
+  // directly instead of walking all of a master's geometry and calling
+  // dbBox::getTechLayer() (a chain of dbTable lookups) on every box, once per
+  // layer per tile.  Mirrors gui::LayoutViewer::boxesByLayer.
+  struct MasterLayerGeom
+  {
+    // Obstructions (LEF OBS), drawn before pins.  Polygons and boxes are kept
+    // apart because they take different draw calls, and both before the pin
+    // shapes because OBS uses a different color — that boundary is the only
+    // ordering that affects the result (shapes sharing a color composite
+    // order-independently).
+    std::vector<odb::Polygon> obs_polys;
+    std::vector<odb::Rect> obs_boxes;
+    std::vector<odb::Polygon> pin_polys;
+    // Pin boxes grouped by MTerm, preserving master MTerm order and geometry
+    // order within a pin: the fill pass draws them all, and the ITerm label
+    // pass walks each group for the first box big enough to label.
+    std::vector<std::pair<odb::dbMTerm*, std::vector<odb::Rect>>> pin_boxes;
+  };
+  using MasterGeomByLayer = odb::PtrMap<odb::dbMaster, MasterLayerGeom>;
+
+  // Cut and enclosure boxes of one via master (dbTechVia or dbVia) on one
+  // layer, in via-local coordinates; the render pass offsets them by the sbox
+  // center.  A power grid instantiates a handful of distinct via masters
+  // thousands of times, so decomposing each master once removes the
+  // per-via-instance walk that dominated special-net rendering.
+  using ViaBoxesByMaster = odb::PtrMap<odb::dbObject, std::vector<odb::Rect>>;
+
+  // Immutable snapshot of both caches, published as a whole.  Renders take a
+  // shared_ptr copy once per tile and then read it without locking; a
+  // concurrent invalidation swaps in a fresh snapshot and leaves the one
+  // in-flight renders hold alive.
+  struct GeomCache
+  {
+    odb::PtrMap<odb::dbTechLayer, MasterGeomByLayer> master_geom;
+    odb::PtrMap<odb::dbTechLayer, ViaBoxesByMaster> via_boxes;
+  };
+  std::shared_ptr<const GeomCache> geomCache() const;
+
   std::vector<SelectionResult> selectAt(
       int dbu_x,
       int dbu_y,
@@ -557,13 +598,18 @@ class TileGenerator
                             const odb::Rect& rect,
                             const odb::Rect& dbu_tile);
 
+  // `dim` follows the setPixel/blendPixel convention: pass the buffer's side
+  // length to skip re-deriving it with bufferDim(), or -1 to have it computed.
+  // Both of these are called once per drawn shape, so on a dense layer the
+  // sqrt+lround adds up — callers in the render loop already know the value.
   void fillPolygon(std::vector<unsigned char>& image,
                    const odb::Polygon& poly,
                    const odb::Rect& dbu_tile,
                    double scale,
                    const Color& color,
                    bool blend = false,
-                   FillPattern pattern = FillPattern::kSolid) const;
+                   FillPattern pattern = FillPattern::kSolid,
+                   int dim = -1) const;
 
   // ox/oy are the tile's origin in absolute pixel coordinates
   // ((int)(dbu_tile.xMin()*scale), ...); they anchor non-solid patterns so the
@@ -574,7 +620,8 @@ class TileGenerator
                       const Color& color,
                       FillPattern pattern = FillPattern::kSolid,
                       int ox = 0,
-                      int oy = 0) const;
+                      int oy = 0,
+                      int dim = -1) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
@@ -604,6 +651,12 @@ class TileGenerator
   mutable std::mutex layer_colors_mutex_;
   mutable odb::PtrMap<odb::dbTech, odb::PtrMap<odb::dbTechLayer, Color>>
       layer_colors_by_tech_;
+
+  // Layer-bucketed master and via-master geometry.  See geomCache(); built on
+  // first use and dropped by eagerInit() / onDesignChanged().
+  mutable std::mutex geom_cache_mutex_;
+  mutable std::shared_ptr<const GeomCache> geom_cache_;
+  std::shared_ptr<const GeomCache> buildGeomCache() const;
 
   // Cached chiplet traversal.  See chiplets().  Invalidated in
   // eagerInit() and also auto-invalidated when the chiplet hierarchy
