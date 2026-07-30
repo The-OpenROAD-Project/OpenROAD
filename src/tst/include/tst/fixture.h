@@ -7,6 +7,7 @@
 #include <string>
 
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "tcl.h"

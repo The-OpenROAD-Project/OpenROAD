@@ -2,6 +2,9 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <cassert>
+#include <cstddef>
+#include <limits>
+#include <utility>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -10,6 +13,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
