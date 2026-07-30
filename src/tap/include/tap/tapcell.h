@@ -245,8 +245,7 @@ class Tapcell
   std::string tap_prefix_;
   std::string endcap_prefix_;
   std::vector<Edge> filled_edges_;
-  // x-spans already occupied by endcap cells (horizontal edge fills and
-  // row-end endcaps), per row.
+  // x-spans already occupied by endcap cells, per row.
   odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>> occupied_row_spans_;
   // corner cells placed so far, per row, persisted across areas/holes.
   CornerMap placed_corners_;

@@ -322,8 +322,7 @@ static std::vector<std::pair<int, int>> computeOpenSpans(
   return open_spans;
 }
 
-// True when the cell is flush with the row start or end; edge placement keys
-// off such corners to terminate rows.
+// True when the cell is flush with the row start or end.
 static bool isFlushWithRowEnd(const odb::Rect& cell, const odb::Rect& row)
 {
   return cell.xMin() == row.xMin() || cell.xMax() == row.xMax();
@@ -971,8 +970,7 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon& area,
   return placeEndcaps(area90, outer, options);
 }
 
-// True when [x_min, x_max) overlaps an endcap cell (horizontal edge fill or
-// row-end endcap) already placed in the row.
+// True when [x_min, x_max) overlaps an endcap cell already placed in the row.
 bool Tapcell::isRowSpanOccupied(odb::dbRow* row,
                                 const int x_min,
                                 const int x_max) const
@@ -982,8 +980,7 @@ bool Tapcell::isRowSpanOccupied(odb::dbRow* row,
          && overlapsSpans(occupied->second, x_min, x_max);
 }
 
-// x-spans in the row occupied by the boundary cells placed so far: horizontal
-// edge fills, row-end endcaps and corner cells.
+// x-spans occupied by the boundary cells placed in the row so far.
 std::vector<std::pair<int, int>> Tapcell::occupiedSpans(odb::dbRow* row) const
 {
   std::vector<std::pair<int, int>> spans;
@@ -1009,8 +1006,9 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
 
   // insert corners first. placed_corners_ persists across areas/holes so that
   // edges and corners of one macro's hole see the corners already placed by an
-  // adjacent macro's hole in the same row. area_corners tracks this area's
-  // corners, the only ones placeEndcapCorner may displace.
+  // adjacent macro's hole in the same row.
+  // area_corners tracks this area's corners, the only ones displacement may
+  // remove.
   odb::PtrSet<odb::dbInst> area_corners;
   for (const auto& corner : getBoundaryCorners(area, outer)) {
     placeEndcapCorner(corner, options, area_corners);
@@ -1187,13 +1185,9 @@ void Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   const odb::Rect cell(
       ll.getX(), ll.getY(), ll.getX() + width, ll.getY() + height);
 
-  // Resolve overlaps with corners already placed in this row, e.g. the two
-  // corners of a boundary jog narrower than the corner master, or the inner
-  // top and bottom corners of a single-height row between macros. A corner
-  // flush with the row end displaces a same-area corner that is not, since
-  // edge placement relies on flush corners to terminate rows; otherwise the
-  // new corner is skipped. Corners are only destroyed once all checks have
-  // passed, so a corner always survives at the jog.
+  // Resolve overlaps with corners already placed in this row: a corner flush
+  // with the row end displaces a same-area corner that is not; otherwise the
+  // new corner is skipped.
   std::vector<odb::dbInst*> displaced;
   auto placed = placed_corners_.find(row);
   if (placed != placed_corners_.end()) {
@@ -1206,9 +1200,6 @@ void Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
       }
       const bool other_flush = isFlushWithRowEnd(other_box, row_bbox);
       if (cell_flush || other_flush) {
-        // A row-terminating corner collides with another corner: the
-        // boundary jog between two macro edges is narrower than the corner
-        // cells, so one of them has to be omitted.
         debugPrint(logger_,
                    utl::TAP,
                    "Endcap",
@@ -1227,8 +1218,7 @@ void Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
     }
   }
 
-  // Skip corners overlapping an endcap cell already placed in this row: an
-  // adjacent macro's hole may have filled the row before this corner.
+  // Skip corners overlapping an endcap cell already placed in this row.
   if (isRowSpanOccupied(row, cell.xMin(), cell.xMax())) {
     return;
   }
@@ -1363,9 +1353,7 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
     }
   }
 
-  // Fill only x-ranges not already covered by another endcap or corner cell
-  // in this row, so a single-height row between macros gets one edge, not
-  // overlaps.
+  // Fill only x-ranges not already covered by another endcap or corner cell.
   std::vector<std::pair<int, int>>& occupied = occupied_row_spans_[row];
 
   for (const auto& [span_start, span_end] :
@@ -1503,9 +1491,7 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
     const int x_start = ll.getX();
     const int x_end = x_start + width;
 
-    // Skip rows whose end is already terminated by a corner cell or occupied
-    // by another endcap cell, e.g. the fill of a boundary jog narrower than
-    // the corner master.
+    // Skip rows whose end is already covered by a corner or endcap cell.
     if (overlapsSpans(occupiedSpans(row), x_start, x_end)) {
       debugPrint(logger_,
                  utl::TAP,
