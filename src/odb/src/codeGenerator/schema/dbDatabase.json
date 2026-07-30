@@ -39,6 +39,11 @@
       "type": "uint32_t",
       "default": 0,
       "flags": ["no-serial"]
+    },
+    {
+      "name": "assembly_extraction_rules_file_",
+      "type": "std::string",
+      "flags": ["private", "no-serial"]
     }
   ]
 }

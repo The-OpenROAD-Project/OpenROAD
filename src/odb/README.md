@@ -513,13 +513,15 @@ add_3dblox_alignment_marker_rule
 
 ### Set Extraction Rules File
 
-Sets the path to the parasitics extraction rules file. For a design in which
+Sets the path to the parasitics extraction rules file. For a 3D design in which
 multiple technologies are used, the user must specify the technology for which
-they want to set the rules path.
+they want to set the rules path as well as the assembly design kit extraction
+rules for the inter-chip parasitics with `-assembly`.
 
 ```tcl
 set_extraction_rules_file
     [-tech tech_name]
+    [-assembly]
     rules_file
 ```
 
@@ -528,6 +530,7 @@ set_extraction_rules_file
 | Switch Name | Description |
 | ----- | ----- |
 | `-tech` | Technology for which to set the extraction rules path. |
+| `-assembly` | Set the inter-chip extraction rules. Cannot be combined with `-tech`. |
 | `rules_file` | Path to the extraction rules file. |
 
 ## Regression tests

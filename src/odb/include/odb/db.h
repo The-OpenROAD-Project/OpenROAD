@@ -7699,7 +7699,9 @@ class dbDatabase : public dbObject
   void setHierarchy(bool value);
   bool hasHierarchy() const;
 
-  bool hasHierarchicalChip() const;
+  const std::string& getAssemblyExtractionRulesFile() const;
+
+  void setAssemblyExtractionRulesFile(const std::string& rules_file_path);
 
   void setTopChip(dbChip* chip);
   ///

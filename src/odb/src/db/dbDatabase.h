@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "dbCore.h"
 #include "dbHashTable.h"
@@ -50,7 +51,10 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 137;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 138;  // Current revision number
+
+// Revision where dbDatabase::assembly_extraction_rules_file_ was added
+inline constexpr uint32_t kSchemaAssemblyExtractionRulesFile = 138;
 
 // Revision where dbChipCapNode/dbChipRSeg inter-chip parasitics were added
 inline constexpr uint32_t kSchemaChipParasitics = 137;
@@ -352,6 +356,7 @@ class _dbDatabase : public _dbObject
   uint32_t master_id_;
   dbId<_dbChip> chip_;
   uint32_t dbu_per_micron_;
+  std::string assembly_extraction_rules_file_;
   dbTable<_dbAlignmentMarkerRule>* alignment_marker_rule_tbl_;
   dbTable<_dbChip, 2>* chip_tbl_;
   dbHashTable<_dbChip, 2> chip_hash_;

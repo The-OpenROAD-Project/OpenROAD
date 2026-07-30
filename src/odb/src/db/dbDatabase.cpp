@@ -5,6 +5,7 @@
 #include "dbDatabase.h"
 
 #include <cstdint>
+#include <string>
 
 #include "dbAlignmentMarkerRule.h"
 #include "dbChip.h"
@@ -100,6 +101,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
     return false;
   }
   if (dbu_per_micron_ != rhs.dbu_per_micron_) {
+    return false;
+  }
+  if (assembly_extraction_rules_file_ != rhs.assembly_extraction_rules_file_) {
     return false;
   }
   if (*alignment_marker_rule_tbl_ != *rhs.alignment_marker_rule_tbl_) {
@@ -371,6 +375,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   } else {
     obj.hierarchy_ = false;
   }
+  if (obj.isSchema(kSchemaAssemblyExtractionRulesFile)) {
+    stream >> obj.assembly_extraction_rules_file_;
+  }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(kSchemaBlockTech)) {
     if (obj.chip_) {
@@ -484,6 +491,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.alignment_marker_rule_tbl_;
   stream << obj.dbu_per_micron_;
   stream << obj.hierarchy_;
+  stream << obj.assembly_extraction_rules_file_;
   // User Code End <<
   return stream;
 }
@@ -537,6 +545,8 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["assembly_extraction_rules_file"].add(
+      assembly_extraction_rules_file_);
   alignment_marker_rule_tbl_->collectMemInfo(
       info.children["alignment_marker_rule_tbl_"]);
   chip_tbl_->collectMemInfo(info.children["chip_tbl_"]);
@@ -923,15 +933,35 @@ bool dbDatabase::hasHierarchy() const
   return db->hierarchy_;
 }
 
-bool dbDatabase::hasHierarchicalChip() const
+const std::string& dbDatabase::getAssemblyExtractionRulesFile() const
 {
-  for (dbChip* chip : getChips()) {
-    if (chip->getChipType() == dbChip::ChipType::HIER) {
-      return true;
-    }
+  _dbDatabase* db = (_dbDatabase*) this;
+  return db->assembly_extraction_rules_file_;
+}
+
+void dbDatabase::setAssemblyExtractionRulesFile(
+    const std::string& rules_file_path)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  utl::Logger* logger = db->getLogger();
+
+  dbChip* top_chip = getChip();
+
+  if (!top_chip) {
+    logger->error(utl::ODB,
+                  1219,
+                  "Could not set assembly extraction rules file. No design "
+                  "loaded.");
   }
 
-  return false;
+  if (top_chip->getChipType() != dbChip::ChipType::HIER) {
+    logger->error(utl::ODB,
+                  1220,
+                  "Could not set assembly extraction rules file. Design is "
+                  "not 3D.");
+  }
+
+  db->assembly_extraction_rules_file_ = rules_file_path;
 }
 
 void dbDatabase::read(std::istream& file)
