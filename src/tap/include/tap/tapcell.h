@@ -226,6 +226,7 @@ class Tapcell
   int placeEndcapEdgeVertical(const Edge& edge,
                               const EndcapCellOptions& options);
   bool isRowSpanOccupied(odb::dbRow* row, int x_min, int x_max) const;
+  bool overlapsPlacedCell(odb::dbRow* row, int x_min, int x_max) const;
   std::vector<std::pair<int, int>> occupiedSpans(odb::dbRow* row) const;
 
   EndcapCellOptions correctEndcapOptions(

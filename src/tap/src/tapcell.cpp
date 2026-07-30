@@ -980,6 +980,24 @@ bool Tapcell::isRowSpanOccupied(odb::dbRow* row,
          && overlapsSpans(occupied->second, x_min, x_max);
 }
 
+// True when [x_min, x_max) overlaps a boundary cell already placed in the row.
+bool Tapcell::overlapsPlacedCell(odb::dbRow* row,
+                                 const int x_min,
+                                 const int x_max) const
+{
+  if (isRowSpanOccupied(row, x_min, x_max)) {
+    return true;
+  }
+  auto placed = placed_corners_.find(row);
+  if (placed == placed_corners_.end()) {
+    return false;
+  }
+  return std::ranges::any_of(placed->second, [&](odb::dbInst* inst) {
+    const odb::Rect box = inst->getBBox()->getBox();
+    return x_max > box.xMin() && x_min < box.xMax();
+  });
+}
+
 // x-spans occupied by the boundary cells placed in the row so far.
 std::vector<std::pair<int, int>> Tapcell::occupiedSpans(odb::dbRow* row) const
 {
@@ -1492,7 +1510,7 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
     const int x_end = x_start + width;
 
     // Skip rows whose end is already covered by a corner or endcap cell.
-    if (overlapsSpans(occupiedSpans(row), x_start, x_end)) {
+    if (overlapsPlacedCell(row, x_start, x_end)) {
       debugPrint(logger_,
                  utl::TAP,
                  "Endcap",
