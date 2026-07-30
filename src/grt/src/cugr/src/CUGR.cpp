@@ -814,9 +814,8 @@ void CUGR::debugCongestion2D() const
 
 void CUGR::iterativeRRR(std::vector<int>& net_indices)
 {
-  // Gate on the integer overflow metric (the one users see in
-  // printStatistics and GRT-0096). Sub-1 fractional overflow rounds to 0
-  // and cannot be driven lower by RRR, so don't waste iterations on it.
+  // Gate on the integer overflow metric: sub-track overflow is left for
+  // detailed-route jogs to absorb rather than spending RRR iterations.
   if (totalOverflow() == 0) {
     return;
   }
@@ -1241,8 +1240,8 @@ void CUGR::printStatistics() const
   logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
   logger_->report("Total via count:       {}", via_count);
-  logger_->report("Total congestion:      {}", (int) total_overflow);
-  logger_->report("Min resource:          {}", min_resource);
+  logger_->report("Total congestion:      {:.2f}", total_overflow);
+  logger_->report("Min resource:          {:.2f}", min_resource);
   logger_->report("Bottleneck:            {}", bottleneck);
 }
 

@@ -40,8 +40,8 @@ Stage 1: Pattern routing.
 Routing statistics
 Wire length:           2918
 Total via count:       136
-Total congestion:      0
-Min resource:          2
+Total congestion:      0.00
+Min resource:          2.00
 Bottleneck:            (5, 0, 0)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)

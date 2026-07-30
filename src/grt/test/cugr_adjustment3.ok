@@ -57,8 +57,8 @@ Stage 5: Iterative rip-up and re-route.
 Routing statistics
 Wire length:           44482
 Total via count:       4125
-Total congestion:      392
-Min resource:          -2.163157537108974
+Total congestion:      392.91
+Min resource:          -2.16
 Bottleneck:            (1, 17, 18)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
