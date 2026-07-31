@@ -16,8 +16,10 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def gcd.def
 
-create_clock [get_ports clk] -name core_clock -period 2.0
-set_max_fanout 100 [current_design]
+# Tight constraints so repair_design/repair_timing actually transform the
+# netlist and the incremental rounds reroute real dirty nets.
+create_clock [get_ports clk] -name core_clock -period 0.45
+set_max_fanout 8 [current_design]
 
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
