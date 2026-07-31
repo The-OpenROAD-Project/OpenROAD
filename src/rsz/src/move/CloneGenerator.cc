@@ -148,7 +148,7 @@ std::vector<sta::Pin*> selectMovedLoads(
 {
   std::vector<sta::Pin*> moved_loads;
   // Move the less critical half of the loads and keep top-level ports on the
-  // original drivers.
+  // original driver.
   const int split_index = fanout_slacks.size() / 2;
   moved_loads.reserve(split_index);
   for (int i = 0; i < split_index; ++i) {
