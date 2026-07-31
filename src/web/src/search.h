@@ -158,6 +158,17 @@ class Search : public odb::dbBlockCallBackObj
   // tile cache and push a redraw to connected clients.  Pass `{}` to clear.
   void setOnModified(std::function<void()> cb);
 
+  // Counter bumped on every design edit this object hears about, whether or
+  // not setOnModified's callback fires for it.  That callback is deliberately
+  // debounced to a valid→invalid index transition so a batch of edits does not
+  // flood connected clients with redraws, which makes it unsuitable for
+  // invalidating a cache: an edit arriving while an index is already invalid
+  // is silent.  Caches poll this instead and rebuild when it moves.
+  uint64_t revision() const
+  {
+    return revision_.load(std::memory_order_acquire);
+  }
+
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
   RoutingRange searchBoxShapes(odb::dbBlock* block,
@@ -334,6 +345,9 @@ class Search : public odb::dbBlockCallBackObj
   // thread — guarded by on_modified_mutex_.
   std::function<void()> on_modified_;
   mutable std::mutex on_modified_mutex_;
+
+  // See revision().  Bumped by every edit, undebounced.
+  std::atomic_uint64_t revision_{0};
 
   struct BlockData
   {

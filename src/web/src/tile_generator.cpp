@@ -675,6 +675,10 @@ void TileGenerator::eagerInit()
     std::lock_guard lock(layer_colors_mutex_);
     layer_colors_by_tech_.clear();
   }
+  // Same address-reuse hazard, for the dbMaster/dbVia keys: a reload's fresh
+  // objects can land where the old ones were, so a revision bump alone would
+  // not prove the keys still mean the same thing.  Dropped unconditionally
+  // here, where a reload is known to be in progress.
   {
     std::lock_guard lock(geom_cache_mutex_);
     geom_cache_.reset();
@@ -711,15 +715,9 @@ void TileGenerator::onDesignChanged()
     tile_cache_index_.clear();
   }
 
-  // An edit can introduce a master or via master (read_lef, or a router
-  // creating a dbVia) whose geometry is not in the cache, which would make
-  // renderTileBuffer skip shapes that now exist.  Rebuilt lazily on the next
-  // tile; edits are rare enough that the rewalk costs nothing here.  Renders
-  // already in flight keep the snapshot they took alive.
-  {
-    std::lock_guard lock(geom_cache_mutex_);
-    geom_cache_.reset();
-  }
+  // The geometry cache is NOT dropped here.  This hook is debounced (see
+  // below), so an edit arriving while an index is already invalid never
+  // reaches it — geomCache() polls Search::revision() instead, which is not.
 
   // Tell connected clients to re-request (mirrors Qt's fullRepaint).  The
   // Search-level debounce (announceModified fires only on a valid→invalid
@@ -1362,9 +1360,13 @@ std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::buildGeomCache()
 
 std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::geomCache() const
 {
+  // Read the revision before building so an edit landing mid-build leaves the
+  // recorded revision behind the live one, and the next call rebuilds.
+  const uint64_t rev = search_->revision();
   std::lock_guard lock(geom_cache_mutex_);
-  if (!geom_cache_) {
+  if (!geom_cache_ || geom_cache_revision_ != rev) {
     geom_cache_ = buildGeomCache();
+    geom_cache_revision_ = rev;
   }
   return geom_cache_;
 }

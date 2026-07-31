@@ -713,6 +713,65 @@ TEST_F(TileGeneratorTest, EagerInitClearsLayerColorCache)
   EXPECT_EQ(colors.at(metal1).b, 254);
 }
 
+// The per-instance render pass reads master OBS and pin shapes out of the
+// layer-bucketed geometry cache, so a master's shapes must appear on the layer
+// they belong to and nowhere else.  Nangate45 cells carry pin geometry on
+// metal1 only, so a metal2 tile over the same instance must come back empty.
+TEST_F(TileGeneratorTest, MasterPinGeometryOnlyDrawnOnItsOwnLayer)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  unsigned w = 0, h = 0;
+  auto m1 = decodePng(tile_gen_->generateTile("metal1", 0, 0, 0), w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(m1))
+      << "metal1 tile should show the cell's pin shapes";
+
+  auto m2 = decodePng(tile_gen_->generateTile("metal2", 0, 0, 0), w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(m2))
+      << "metal2 tile should be empty: no Nangate45 master has geometry there";
+}
+
+// The cache is handed out as a snapshot; repeat calls with no intervening edit
+// must return the same one, otherwise every tile would rewalk every master.
+TEST_F(TileGeneratorTest, GeomCacheReusedWhenDesignUnchanged)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  EXPECT_EQ(tile_gen_->geomCache(), tile_gen_->geomCache());
+}
+
+// Regression: the geometry cache must not be tied to the design-changed
+// callback, which is debounced to a valid→invalid index transition.  The second
+// edit below leaves the instance index already invalid, so that callback stays
+// silent -- and a cache keyed on it would keep serving a pre-edit snapshot,
+// silently dropping the geometry of any master or via the edit introduced.
+TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  // Registers Search as a db callback object and builds the indices, so the
+  // first edit below is the valid→invalid transition and the second is not.
+  tile_gen_->eagerInit();
+
+  auto before = tile_gen_->geomCache();
+  ASSERT_NE(before, nullptr);
+
+  // First edit: index was valid, so the debounced callback does fire.
+  inst->setLocation(2000, 2000);
+  auto after_first = tile_gen_->geomCache();
+  EXPECT_NE(before, after_first);
+
+  // Second edit: index is already invalid, so the callback does NOT fire.  The
+  // cache still has to notice, via Search::revision().
+  inst->setLocation(4000, 4000);
+  auto after_second = tile_gen_->geomCache();
+  EXPECT_NE(after_first, after_second)
+      << "geometry cache went stale across an edit that the debounced "
+         "design-changed callback does not report";
+}
+
 TEST_F(TileGeneratorTest, SerializeTechResponseIncludesLayerColors)
 {
   makeTileGen();

@@ -653,9 +653,10 @@ class TileGenerator
       layer_colors_by_tech_;
 
   // Layer-bucketed master and via-master geometry.  See geomCache(); built on
-  // first use and dropped by eagerInit() / onDesignChanged().
+  // first use and rebuilt whenever Search::revision() moves.
   mutable std::mutex geom_cache_mutex_;
   mutable std::shared_ptr<const GeomCache> geom_cache_;
+  mutable uint64_t geom_cache_revision_ = 0;
   std::shared_ptr<const GeomCache> buildGeomCache() const;
 
   // Cached chiplet traversal.  See chiplets().  Invalidated in

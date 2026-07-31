@@ -271,6 +271,11 @@ void Search::setOnModified(std::function<void()> cb)
 
 void Search::notifyModified()
 {
+  // Bumped here as well as in announceModified so revision() moves for the
+  // edits that call this directly (die/core area, region boxes).  Bumping
+  // twice for one edit is harmless: callers only compare it for equality.
+  revision_.fetch_add(1, std::memory_order_release);
+
   std::function<void()> cb;
   {
     std::lock_guard lock(on_modified_mutex_);
@@ -283,6 +288,10 @@ void Search::notifyModified()
 
 void Search::announceModified(std::atomic_bool& flag)
 {
+  // Unconditional, unlike the callback below: an edit that arrives while this
+  // index is already invalid still has to be visible to revision() pollers.
+  revision_.fetch_add(1, std::memory_order_release);
+
   const bool prev_flag = flag.exchange(false);
 
   if (prev_flag) {
