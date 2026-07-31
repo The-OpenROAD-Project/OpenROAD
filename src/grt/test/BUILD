@@ -5,6 +5,7 @@ package(features = ["layering_check"])
 
 TESTS = [
     "bus_route",
+    "check_antennas_cugr",
     "clock_route",
     "clock_route_cugr",
     "clock_route_cugr2",
@@ -115,7 +116,7 @@ TESTS = [
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
     "soft_ndr_4w_6s_cugr",
-    "soft_ndr_reset_cap",
+    "soft_ndr_escalation",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",

@@ -92,7 +92,7 @@ class CUGR
   void init(int min_routing_layer,
             int max_routing_layer,
             const odb::PtrSet<odb::dbNet>& clock_nets);
-  void route(bool incremental = false);
+  void route(bool incremental);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
@@ -145,7 +145,6 @@ class CUGR
                              int tile_x,
                              int tile_y,
                              double demand = 1.0) const;
-  void routeIncremental();
   // Adopts an externally restored routing (journal restore): rebuilds the
   // net's routing tree from the segments and swaps the grid-graph demand
   // without scheduling a reroute. Returns false if the net must be rerouted.

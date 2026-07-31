@@ -3000,7 +3000,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
             }
           }
         }
-        if (obs->getDesignRuleWidth() == -1) {
+        if (obs->getDesignRuleWidth() == -1 && obs->getMinSpacing() == -1) {
           gtl::rectangle_data<frCoord> rect(xl, yl, xh, yh);
           using gtl::operators::operator+=;
           layerPolys[layerNum] += rect;
@@ -3008,6 +3008,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           auto blkIn = std::make_unique<frBlockage>();
           blkIn->setId(num_blockages++);
           blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
+          blkIn->setMinSpacing(obs->getMinSpacing());
           auto pinIn = std::make_unique<frBPin>();
           pinIn->setId(0);
           // pinFig
