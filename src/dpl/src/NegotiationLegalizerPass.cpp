@@ -976,9 +976,7 @@ void NegotiationLegalizer::updateHistoryCosts(
   // Walk active-cell footprints instead of the full grid: every overused
   // pixel whose hist_cost is read has >= 2 overlapping cells, and at least
   // one of them is illegal (hence active). Dedupe shared pixels so each is
-  // bumped once. initFromDb() resets hist_gen_ and the stamps on every
-  // legalize() call, and this runs at most once per negotiation iteration, so
-  // the uint32_t stamp cannot wrap.
+  // bumped once.
   ++hist_gen_;
   for (int idx : activeCells) {
     const NegCell& cell = cells_[idx];
