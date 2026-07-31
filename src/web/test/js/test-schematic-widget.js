@@ -625,6 +625,172 @@ describe('SchematicWidget schematic navigation', () => {
     });
 });
 
+describe('SchematicWidget timing path overlay', () => {
+    // A timing_report data_nodes entry; `inst` is what the overlay joins on.
+    function node(inst, extra = {}) {
+        return { pin: `${inst}/A`, inst, clk: false, ...extra };
+    }
+
+    function timingPath(nodes, slack = -0.25) {
+        return { slack, data_nodes: nodes, capture_nodes: [] };
+    }
+
+    // Put several named cells into one SVG so path ordering can be checked.
+    function makeCells(widget, instNames) {
+        const svg = document.createElementNS(svgNS, 'svg');
+        const groups = {};
+        for (const instName of instNames) {
+            const group = document.createElementNS(svgNS, 'g');
+            group.id = `cell_${instName}`;
+            group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
+            group.appendChild(document.createElementNS(svgNS, 'path'));
+            svg.appendChild(group);
+            groups[instName] = group;
+        }
+        widget.svgContainer.replaceChildren(svg);
+        widget._svgEl = svg;
+        return { svg, groups };
+    }
+
+    function overlayIn(group) {
+        return group.querySelectorAll('.schematic-timing-node');
+    }
+
+    it('outlines each path cell and badges it in path order', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1', 'u2']);
+
+        widget.showTimingPath(timingPath([node('u1'), node('u2')]));
+
+        // Each decorated cell gets an outline rect plus an order badge.
+        assert.equal(overlayIn(groups.u1).length, 2);
+        assert.equal(overlayIn(groups.u2).length, 2);
+        assert.equal(groups.u1.querySelector('text').textContent, '1');
+        assert.equal(groups.u2.querySelector('text').textContent, '2');
+        container.element.remove();
+    });
+
+    it('colors clock nodes and data nodes differently', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['ff1', 'u1']);
+
+        widget.showTimingPath(timingPath([
+            node('ff1', { clk: true }),
+            node('u1'),
+        ]));
+
+        const clkRect = groups.ff1.querySelector('rect');
+        const dataRect = groups.u1.querySelector('rect');
+        assert.notEqual(clkRect.getAttribute('stroke'),
+                        dataRect.getAttribute('stroke'));
+        container.element.remove();
+    });
+
+    it('treats a cell on both the clock and data legs as a data cell', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['ff1', 'u1']);
+
+        widget.showTimingPath(timingPath([
+            node('ff1', { clk: true }),
+            node('ff1'),
+            node('u1'),
+        ]));
+
+        assert.equal(groups.ff1.querySelector('rect').getAttribute('stroke'),
+                     groups.u1.querySelector('rect').getAttribute('stroke'));
+        // Repeated instances collapse to one badge, so u1 stays second.
+        assert.equal(groups.u1.querySelector('text').textContent, '2');
+        container.element.remove();
+    });
+
+    it('skips nodes with no instance, such as block ports', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1']);
+
+        widget.showTimingPath(timingPath([
+            { pin: 'in1', clk: false },
+            node('u1'),
+        ]));
+
+        assert.equal(groups.u1.querySelector('text').textContent, '1');
+        container.element.remove();
+    });
+
+    it('removes the overlay when passed null', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1']);
+
+        widget.showTimingPath(timingPath([node('u1')]));
+        assert.equal(overlayIn(groups.u1).length, 2);
+
+        widget.showTimingPath(null);
+        assert.equal(overlayIn(groups.u1).length, 0);
+        container.element.remove();
+    });
+
+    it('replaces the previous overlay instead of stacking onto it', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1']);
+
+        widget.showTimingPath(timingPath([node('u1')]));
+        widget.showTimingPath(timingPath([node('u1')]));
+
+        assert.equal(overlayIn(groups.u1).length, 2);
+        container.element.remove();
+    });
+
+    it('reports when the path has no cells in the current schematic', () => {
+        const { widget, container } = makeWidget();
+        makeCells(widget, ['other']);
+
+        widget.showTimingPath(timingPath([node('u1'), node('u2')]));
+
+        const status = widget.controls.querySelector('#schematic-status');
+        assert.match(status.textContent, /none of its 2 cells/);
+        container.element.remove();
+    });
+
+    it('reports how many of the path cells were highlighted', () => {
+        const { widget, container } = makeWidget();
+        makeCells(widget, ['u1']);
+
+        widget.showTimingPath(timingPath([node('u1'), node('u2')]));
+
+        const status = widget.controls.querySelector('#schematic-status');
+        assert.match(status.textContent, /1 of 2 cells/);
+        container.element.remove();
+    });
+
+    it('leaves the selection highlight in place', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1']);
+
+        widget._highlightCellGroup(groups.u1);
+        widget.showTimingPath(timingPath([node('u1')]));
+
+        assert.ok(groups.u1.querySelector('#_schematic_highlight'),
+                  'selection highlight survives the timing overlay');
+        assert.equal(overlayIn(groups.u1).length, 2);
+
+        // ...and clearing the timing overlay leaves the selection alone.
+        widget.showTimingPath(null);
+        assert.ok(groups.u1.querySelector('#_schematic_highlight'));
+        container.element.remove();
+    });
+
+    it('keeps overlay elements out of the click hit test', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1']);
+
+        widget.showTimingPath(timingPath([node('u1')]));
+
+        for (const el of overlayIn(groups.u1)) {
+            assert.equal(el.getAttribute('pointer-events'), 'none');
+        }
+        container.element.remove();
+    });
+});
+
 describe('canonicalizeCell', () => {
     it('maps simple gates to upstream skin types and A/B/Y pids', () => {
         const got = canonicalizeCell(cell({

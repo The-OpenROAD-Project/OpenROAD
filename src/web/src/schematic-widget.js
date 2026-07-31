@@ -4,6 +4,12 @@
 // NetlistsVG is used to render a Yosys-compatible JSON netlist into an SVG.
 // It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
 
+import { fmtTime } from './timing-widget.js';
+
+// Marks every element belonging to the timing-path overlay, so a redraw can
+// remove them all without disturbing the selection highlight.
+const TIMING_OVERLAY_CLASS = 'schematic-timing-node';
+
 export class SchematicWidget {
     constructor(container, appState) {
         this.container = container;
@@ -79,6 +85,10 @@ export class SchematicWidget {
         this._selectedCell = null;
         this._schematicHistory = [];
         this._maxSchematicHistory = 50;
+
+        // Timing path pushed in by the TimingWidget; re-applied after every
+        // render, since renderNetlist replaces the whole SVG.
+        this._timingPath = null;
 
         // Map from SVG element id → ODB instance name.
         // netlistsvg prefixes instance names (e.g. "load2" → id="cell_load2"),
@@ -324,6 +334,128 @@ export class SchematicWidget {
             // getBBox can fail on hidden elements.
             return false;
         }
+    }
+
+    // ── Timing path overlay ──────────────────────────────────────────────────
+
+    // Outline the cells of a timing path on the schematic. `path` is a
+    // TimingPathSummary as delivered by the server's timing_report request;
+    // passing null clears the overlay. Driven by TimingWidget row selection.
+    showTimingPath(path) {
+        this._timingPath = path || null;
+        this._applyTimingPath();
+    }
+
+    _clearTimingPathOverlay() {
+        if (!this._svgEl) {
+            return;
+        }
+        for (const el of this._svgEl.querySelectorAll(
+            `.${TIMING_OVERLAY_CLASS}`)) {
+            el.remove();
+        }
+    }
+
+    // Collapse the path's pin nodes to instances, keeping first-seen order so
+    // the badges follow the direction of the path. `inst` is supplied by the
+    // server; block ports have none and are skipped.
+    _timingPathInstances(nodes) {
+        const order = [];
+        const indexOf = new Map();
+        for (const n of nodes) {
+            const inst = n && n.inst;
+            if (!inst) {
+                continue;
+            }
+            if (!indexOf.has(inst)) {
+                indexOf.set(inst, order.length);
+                order.push({ inst, isClock: !!n.clk });
+            } else if (!n.clk) {
+                // A cell touched by both the clock and data legs of the path
+                // reads as a data cell.
+                order[indexOf.get(inst)].isClock = false;
+            }
+        }
+        return order;
+    }
+
+    _applyTimingPath() {
+        this._clearTimingPathOverlay();
+        const path = this._timingPath;
+        if (!path || !this._svgEl) {
+            return;
+        }
+
+        const nodes = Array.isArray(path.data_nodes) ? path.data_nodes : [];
+        const order = this._timingPathInstances(nodes);
+
+        let shown = 0;
+        order.forEach((entry, idx) => {
+            const group = this._cellGroupForInstance(entry.inst);
+            if (group && this._decorateTimingCell(group, idx + 1, entry.isClock)) {
+                shown++;
+            }
+        });
+
+        const slack = `slack ${fmtTime(path.slack)}`;
+        if (order.length === 0) {
+            this.setStatus(`Timing path (${slack}) has no instances to show.`);
+        } else if (shown === 0) {
+            this.setStatus(
+                `Timing path (${slack}): none of its ${order.length} cells are `
+                + 'in this schematic — refresh from a cell on the path.');
+        } else {
+            this.setStatus(
+                `Timing path (${slack}): ${shown} of ${order.length} cells `
+                + 'highlighted.');
+        }
+        return shown;
+    }
+
+    // Draw the outline and order badge for one cell on the path. Colors match
+    // the layout overlay (collectTimingPathShapes): cyan for clock nodes, red
+    // for data nodes, so the two views read consistently.
+    _decorateTimingCell(cellGroup, order, isClock) {
+        let bb;
+        try {
+            bb = cellGroup.getBBox();
+        } catch (_) {
+            // getBBox throws on hidden elements.
+            return false;
+        }
+
+        const color = isClock ? '#00b8d4' : '#d32f2f';
+        const pad = 5;
+
+        const outline = document.createElementNS(
+            'http://www.w3.org/2000/svg', 'rect');
+        outline.setAttribute('x', bb.x - pad);
+        outline.setAttribute('y', bb.y - pad);
+        outline.setAttribute('width', bb.width + pad * 2);
+        outline.setAttribute('height', bb.height + pad * 2);
+        outline.setAttribute('fill', 'none');
+        outline.setAttribute('stroke', color);
+        outline.setAttribute('stroke-width', '2');
+        outline.setAttribute('stroke-dasharray', '4 2');
+        outline.setAttribute('rx', '3');
+        outline.setAttribute('class', TIMING_OVERLAY_CLASS);
+        // Non-interactive: must not steal clicks from the cell hit target.
+        outline.setAttribute('pointer-events', 'none');
+        cellGroup.appendChild(outline);
+
+        const badge = document.createElementNS(
+            'http://www.w3.org/2000/svg', 'text');
+        badge.setAttribute('x', bb.x - pad);
+        badge.setAttribute('y', bb.y - pad - 2);
+        badge.setAttribute('fill', color);
+        badge.setAttribute('font-size', '8');
+        badge.setAttribute('font-weight', 'bold');
+        badge.setAttribute('class', TIMING_OVERLAY_CLASS);
+        badge.setAttribute('pointer-events', 'none');
+        badge.textContent = String(order);
+        cellGroup.appendChild(badge);
+
+        return true;
     }
 
     _handleSelectClick(e) {
@@ -882,6 +1014,10 @@ export class SchematicWidget {
 
             const cellCount = Object.keys(cells).length;
             this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);
+            // The new SVG has none of the previous overlay; re-draw it so a
+            // view toggle or cone expansion keeps the path visible. Sets its
+            // own status message when a path is active.
+            this._applyTimingPath();
             return true;
         } catch (err) {
             console.error('NetlistSVG render failed:', err);

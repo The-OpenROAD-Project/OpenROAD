@@ -340,3 +340,137 @@ describe('TimingWidget path table sorting', () => {
         assert.equal(tip.style.display, 'none');
     });
 });
+
+describe('TimingWidget unconstrained paths', () => {
+    it('requests constrained paths only by default', async () => {
+        const app = createMockApp({ timing_report: () => ({ paths: [] }) });
+        const widget = new TimingWidget(app, () => {});
+
+        await widget.update();
+
+        const reports = app.requests.filter(r => r.type === 'timing_report');
+        assert.equal(reports.length, 2);
+        for (const r of reports) {
+            assert.equal(r.unconstrained, false);
+        }
+    });
+
+    it('requests unconstrained paths when the box is checked', async () => {
+        const app = createMockApp({ timing_report: () => ({ paths: [] }) });
+        const widget = new TimingWidget(app, () => {});
+        widget._unconstrainedBox.checked = true;
+
+        await widget.update();
+
+        const reports = app.requests.filter(r => r.type === 'timing_report');
+        assert.equal(reports.length, 2);
+        for (const r of reports) {
+            assert.equal(r.unconstrained, true);
+        }
+    });
+
+    it('refetches when the box is toggled', () => {
+        const app = createMockApp({ timing_report: () => ({ paths: [] }) });
+        const widget = new TimingWidget(app, () => {});
+        app.requests.length = 0;
+
+        widget._unconstrainedBox.checked = true;
+        widget._unconstrainedBox.dispatchEvent(
+            new window.Event('change', { bubbles: true }));
+
+        assert.ok(app.requests.some(r => r.type === 'timing_report'),
+                  'toggling the box refetches the report');
+    });
+
+    // The server re-derives the path list to resolve path_index, so a
+    // highlight sent while unconstrained paths are shown must say so or it
+    // resolves against a different list.
+    it('carries the flag on timing_highlight so indices stay in sync', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget._unconstrainedBox.checked = true;
+        widget.showPaths('setup', [makePath(0.0, 'a'), makePath(0.1, 'b')]);
+        app.requests.length = 0;
+
+        widget._selectPathRow(1);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, true);
+    });
+
+    it('carries the flag on detail-row highlights too', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget._unconstrainedBox.checked = true;
+        widget.showPaths('setup', [
+            makePath(0.0, 'a', {
+                data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],
+            }),
+        ]);
+        widget._selectPathRow(0);
+        app.requests.length = 0;
+
+        widget._selectDetailRow(0);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, true);
+        assert.equal(highlight.pin_name, 'u1/A');
+    });
+});
+
+describe('TimingWidget schematic hand-off', () => {
+    function appWithSchematic(responses = {}) {
+        const app = createMockApp(responses);
+        app.schematicPaths = [];
+        app.schematicWidget = {
+            showTimingPath(path) { app.schematicPaths.push(path); },
+        };
+        return app;
+    }
+
+    it('pushes the selected path to the schematic widget', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        const paths = [makePath(0.0, 'a'), makePath(0.1, 'b')];
+        widget.showPaths('setup', paths);
+        app.schematicPaths.length = 0;
+
+        widget._selectPathRow(1);
+
+        assert.equal(app.schematicPaths.length, 1);
+        assert.equal(app.schematicPaths[0].end_pin, 'b');
+    });
+
+    it('clears the schematic overlay when the selection is cleared', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'a')]);
+        widget._selectPathRow(0);
+        app.schematicPaths.length = 0;
+
+        // Switching tabs drops the selection and clears the highlight.
+        widget._holdTab.dispatchEvent(new window.Event('click'));
+
+        assert.deepEqual(app.schematicPaths, [null]);
+    });
+
+    it('sends the sorted row, not the pre-sort row, to the schematic', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        // Default sort is slack ascending, so this reorders to b, a.
+        widget.showPaths('setup', [makePath(0.5, 'a'), makePath(-0.5, 'b')]);
+        app.schematicPaths.length = 0;
+
+        widget._selectPathRow(0);
+
+        assert.equal(app.schematicPaths[0].end_pin, 'b');
+    });
+
+    it('works when no schematic panel exists', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'a')]);
+
+        assert.doesNotThrow(() => widget._selectPathRow(0));
+    });
+});

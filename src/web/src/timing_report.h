@@ -23,6 +23,11 @@ namespace web {
 struct TimingNode
 {
   std::string pin_name;
+  // Instance owning `pin_name`, empty for block ports.  Emitted so clients can
+  // join a path onto instance-keyed views (e.g. the schematic) without having
+  // to split pin_name on the hierarchy delimiter, which is ambiguous when
+  // instance names contain it.
+  std::string inst_name;
   int fanout = 0;
   bool is_rising = false;
   bool is_clock = false;
@@ -89,11 +94,15 @@ class TimingReport
  public:
   explicit TimingReport(sta::dbSta* sta);
 
+  // `include_unconstrained` mirrors the Qt GUI's "Unconstrained" checkbox
+  // (TimingControlsDialog): with it off, a design without SDC constraints
+  // yields no path ends at all and the report comes back empty.
   std::vector<TimingPathSummary> getReport(
       bool is_setup,
       int max_paths = 100,
       float slack_min = -std::numeric_limits<float>::max(),
-      float slack_max = std::numeric_limits<float>::max()) const;
+      float slack_max = std::numeric_limits<float>::max(),
+      bool include_unconstrained = false) const;
 
   SlackHistogramResult getSlackHistogram(bool is_setup,
                                          const std::string& path_group = "",

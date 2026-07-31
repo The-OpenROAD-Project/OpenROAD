@@ -412,6 +412,11 @@ Return the worst N timing paths.
 | `max_paths`  | `int`    |    ✓     | —                                | Maximum number of paths to return.                   |
 | `slack_min`  | `double` |          | `-FLT_MAX`                       | Lower slack bound (inclusive). Optional filter.      |
 | `slack_max`  | `double` |          | `+FLT_MAX`                       | Upper slack bound (exclusive). Optional filter.      |
+| `unconstrained` | `bool` |          | `false`                          | Include paths with no timing constraint.             |
+
+A design with no SDC constraints has no constrained path ends, so
+`unconstrained: false` returns an empty `paths` array. This mirrors the
+Qt GUI's "Unconstrained" checkbox in `TimingControlsDialog`.
 
 **Response (JSON):**
 ```json
@@ -423,13 +428,18 @@ Return the worst N timing paths.
       "slack":    -0.5,    "skew":    0.0,
       "path_delay": 0.9,   "logic_depth": 4, "fanout": 12,
       "start_pin":  "ff1/CK", "end_pin": "ff2/D",
-      "data_nodes":    [{"pin": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
+      "data_nodes":    [{"pin": "...", "inst": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
       "capture_nodes": [{...}]
     },
     ...
   ]
 }
 ```
+
+`inst` is the instance owning `pin`, empty for block ports. It lets
+clients join a path onto instance-keyed views without splitting `pin` on
+the hierarchy delimiter, which is ambiguous when instance names contain
+it.
 
 ### `timing_highlight`
 
@@ -440,7 +450,12 @@ single stage emphasized.
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------- |
 | `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
 | `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
+| `unconstrained` | `bool` | optional, `>= 0` only   | Must match the `timing_report` that produced `path_index`.     |
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
+
+The server re-runs the report to resolve `path_index`, so `unconstrained`
+has to match the value used for the `timing_report` request the index came
+from — otherwise the index resolves against a different path list.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.

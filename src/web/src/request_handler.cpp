@@ -2224,7 +2224,8 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
         static_cast<float>(jsonOr<double>(
             req.json, "slack_min", -std::numeric_limits<float>::max())),
         static_cast<float>(jsonOr<double>(
-            req.json, "slack_max", std::numeric_limits<float>::max())));
+            req.json, "slack_max", std::numeric_limits<float>::max())),
+        jsonOr(req.json, "unconstrained", false));
     writePayload(resp, serializeTimingPaths(paths));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2250,8 +2251,17 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
     // path_index < 0 is the clear-highlight signal (no other fields used).
     if (path_index >= 0) {
       const bool is_setup = req.json.at("is_setup").as_bool();
+      // `path_index` indexes the list the client last fetched via
+      // timing_report, so this re-fetch has to use the same options or the
+      // index lands on a different path.
+      const bool unconstrained = jsonOr(req.json, "unconstrained", false);
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-      auto paths = timing_report_->getReport(is_setup);
+      auto paths = timing_report_->getReport(
+          is_setup,
+          /*max_paths=*/100,
+          /*slack_min=*/-std::numeric_limits<float>::max(),
+          /*slack_max=*/std::numeric_limits<float>::max(),
+          unconstrained);
       if (path_index < static_cast<int>(paths.size())) {
         odb::dbBlock* block = gen_->getBlock();
         collectTimingPathShapes(block, paths[path_index], new_rects, new_lines);

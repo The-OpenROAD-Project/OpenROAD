@@ -42,7 +42,29 @@ export class TimingWidget {
         this._pathCountLabel = document.createElement('span');
         this._pathCountLabel.className = 'timing-path-count';
 
+        // "Unconstrained" mirrors the Qt GUI's TimingControlsDialog checkbox.
+        // Without it, a design with no SDC yields zero path ends and the
+        // table reads as empty rather than as unconstrained.
+        this._unconstrainedBox = document.createElement('input');
+        this._unconstrainedBox.type = 'checkbox';
+        this._unconstrainedLabel = document.createElement('label');
+        this._unconstrainedLabel.className = 'timing-unconstrained';
+        // The input is nested inside the label, so clicking the text toggles
+        // it without needing a document-unique id to point `for` at.
+        this._unconstrainedLabel.title =
+            'Include paths that have no timing constraint.\n' +
+            'Designs without an SDC report no paths otherwise.';
+        this._unconstrainedLabel.appendChild(this._unconstrainedBox);
+        this._unconstrainedLabel.appendChild(
+            document.createTextNode('Unconstrained'));
+        if (isStaticMode(this._app)) {
+            // Static reports are pre-rendered server-side; there is no server
+            // to re-query, so the control would be inert.
+            this._unconstrainedLabel.style.display = 'none';
+        }
+
         toolbar.appendChild(this._updateBtn);
+        toolbar.appendChild(this._unconstrainedLabel);
         toolbar.appendChild(this._pathCountLabel);
         el.appendChild(toolbar);
 
@@ -138,6 +160,7 @@ export class TimingWidget {
 
         // Fetch paths
         this._updateBtn.addEventListener('click', () => this.update());
+        this._unconstrainedBox.addEventListener('change', () => this.update());
 
         // Keyboard navigation — path table
         this._pathTableContainer.setAttribute('tabindex', '0');
@@ -196,13 +219,21 @@ export class TimingWidget {
         this._clearTimingHighlight();
     }
 
+    // Whether unconstrained paths are being requested. The server re-derives
+    // the path list for timing_highlight, so every request that carries a
+    // path index has to send the same value.
+    _unconstrained() {
+        return !!(this._unconstrainedBox && this._unconstrainedBox.checked);
+    }
+
     async update() {
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
+        const unconstrained = this._unconstrained();
         try {
             const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100, unconstrained }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100, unconstrained }),
             ]);
             // Copy the arrays: in static mode the response is a shared
             // cached object whose path order must keep matching the
@@ -278,8 +309,19 @@ export class TimingWidget {
     }
 
     _clearTimingHighlight() {
+        this._showPathOnSchematic(null);
         this._app.websocketManager.request({ type: 'timing_highlight', path_index: -1 })
             .then(() => this._refreshOverlay());
+    }
+
+    // Mirror the selected path onto the schematic view, when that panel
+    // exists. Both widgets are constructed with the same app object, so the
+    // schematic registers itself as app.schematicWidget.
+    _showPathOnSchematic(path) {
+        const schematic = this._app.schematicWidget;
+        if (schematic && typeof schematic.showTimingPath === 'function') {
+            schematic.showTimingPath(path);
+        }
     }
 
     _selectPathRow(idx) {
@@ -295,10 +337,12 @@ export class TimingWidget {
         // column click in static mode) so the overlay lookup matches.
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const highlightIdx = paths[idx]?._originalIndex ?? idx;
+        this._showPathOnSchematic(paths[idx]);
         this._app.websocketManager.request({
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
+            unconstrained: this._unconstrained(),
         }).then(() => this._refreshOverlay())
           .catch(err => console.error('timing_highlight error:', err));
     }
@@ -393,6 +437,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
+            unconstrained: this._unconstrained(),
             pin_name: nodes[idx].pin,
         }).then(() => this._refreshOverlay());
     }
