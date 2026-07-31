@@ -50,7 +50,10 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 136;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 137;  // Current revision number
+
+// Revision where dbChipCapNode/dbChipRSeg inter-chip parasitics were added
+inline constexpr uint32_t kSchemaChipParasitics = 137;
 
 // Revision where dbNet::disable_auto_taper flag was added
 inline constexpr uint32_t kSchemaNetDisableAutoTaper = 136;

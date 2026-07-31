@@ -96,6 +96,10 @@ class CUGR
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
+  // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
+  // overflow split into wire vs via-stub shares (proportional attribution);
+  // sub-min layers shown as all-zero rows. Gated on verbose_.
+  void reportCongestion() const;
   void getITermsAccessPoints(
       odb::dbNet* net,
       odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points);
@@ -235,6 +239,16 @@ class CUGR
   // Append net's routing tree to route as GRoute segments.
   void buildNetRoute(const GRNet* net, GRoute& route) const;
   void printStatistics() const;
+
+  // Tile classification for debugCongestion2D.
+  struct Congestion2D
+  {
+    double total_3d_overflow = 0.0;
+    double total_2d_overflow = 0.0;
+    int tiles_3d_only = 0;
+    int tiles_2d = 0;
+  };
+  Congestion2D computeCongestion2D() const;
 
   /**
    * @brief Diagnoses whether residual overflow is spreadable.

@@ -64,6 +64,7 @@ TESTS = [
     "pin_access1_cugr",
     "pin_access2",
     "pin_access2_cugr",
+    "pin_access_fallback_cugr",
     "pin_edge",
     "pin_track_not_aligned",
     "pre_routed1",

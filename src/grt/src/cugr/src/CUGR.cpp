@@ -11,6 +11,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -717,20 +718,13 @@ void CUGR::route(bool incremental)
   }
 }
 
-void CUGR::debugCongestion2D() const
+CUGR::Congestion2D CUGR::computeCongestion2D() const
 {
-  if (!logger_->debugCheck(utl::GRT, "rrr_2d", 1)) {
-    return;
-  }
-
   const int x_size = grid_graph_->getXSize();
   const int y_size = grid_graph_->getYSize();
   const int num_layers = grid_graph_->getNumLayers();
 
-  double total_3d_overflow = 0.0;
-  double total_2d_overflow = 0.0;
-  int tiles_3d_only = 0;
-  int tiles_2d = 0;
+  Congestion2D result;
 
   for (int direction = 0; direction < 2; ++direction) {
     std::vector<int> same_dir_layers;
@@ -763,32 +757,44 @@ void CUGR::debugCongestion2D() const
           }
         }
         const double tile_2d_overflow = std::max(0.0, sum_dem - sum_cap);
-        total_3d_overflow += per_layer_overflow_sum;
-        total_2d_overflow += tile_2d_overflow;
+        result.total_3d_overflow += per_layer_overflow_sum;
+        result.total_2d_overflow += tile_2d_overflow;
         if (tile_2d_overflow > 0.0) {
-          ++tiles_2d;
+          ++result.tiles_2d;
         } else if (per_layer_overflow_sum > 0.0) {
-          ++tiles_3d_only;
+          ++result.tiles_3d_only;
         }
       }
     }
   }
 
+  return result;
+}
+
+void CUGR::debugCongestion2D() const
+{
+  if (!logger_->debugCheck(utl::GRT, "rrr_2d", 1)) {
+    return;
+  }
+
+  const Congestion2D congestion = computeCongestion2D();
+
   const auto rnd = [](double v) { return static_cast<int>(std::round(v)); };
-  const int spreadable = rnd(total_3d_overflow - total_2d_overflow);
+  const int spreadable
+      = rnd(congestion.total_3d_overflow - congestion.total_2d_overflow);
   debugPrint(logger_, GRT, "rrr_2d", 1, "2D-aggregate congestion check:");
   debugPrint(logger_,
              GRT,
              "rrr_2d",
              1,
              "  3D overflow:               {} units",
-             rnd(total_3d_overflow));
+             rnd(congestion.total_3d_overflow));
   debugPrint(logger_,
              GRT,
              "rrr_2d",
              1,
              "  2D-aggregate overflow:     {} units (unavoidable)",
-             rnd(total_2d_overflow));
+             rnd(congestion.total_2d_overflow));
   debugPrint(
       logger_,
       GRT,
@@ -801,20 +807,19 @@ void CUGR::debugCongestion2D() const
              "rrr_2d",
              1,
              "  Tiles with 3D-only ovf:    {}",
-             tiles_3d_only);
+             congestion.tiles_3d_only);
   debugPrint(logger_,
              GRT,
              "rrr_2d",
              1,
              "  Tiles with 2D ovf:         {} (true planar congestion)",
-             tiles_2d);
+             congestion.tiles_2d);
 }
 
 void CUGR::iterativeRRR(std::vector<int>& net_indices)
 {
-  // Gate on the integer overflow metric (the one users see in
-  // printStatistics and GRT-0096). Sub-1 fractional overflow rounds to 0
-  // and cannot be driven lower by RRR, so don't waste iterations on it.
+  // Gate on the integer overflow metric: sub-track overflow is left for
+  // detailed-route jogs to absorb rather than spending RRR iterations.
   if (totalOverflow() == 0) {
     return;
   }
@@ -1239,9 +1244,189 @@ void CUGR::printStatistics() const
   logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
   logger_->report("Total via count:       {}", via_count);
-  logger_->report("Total congestion:      {}", (int) total_overflow);
-  logger_->report("Min resource:          {}", min_resource);
+  logger_->report("Total congestion:      {:.2f}", total_overflow);
+  logger_->report("Min resource:          {:.2f}", min_resource);
   logger_->report("Bottleneck:            {}", bottleneck);
+}
+
+void CUGR::reportCongestion() const
+{
+  if (!verbose_) {
+    return;
+  }
+
+  const int num_layers = grid_graph_->getNumLayers();
+  const int x_size = grid_graph_->getXSize();
+  const int y_size = grid_graph_->getYSize();
+
+  // Via-stub share of each edge's demand; the wire share is the remainder.
+  std::vector<CapacityT> via_demand(
+      static_cast<size_t>(num_layers) * x_size * y_size, 0.0);
+  for (const auto& net : gr_nets_) {
+    if (net == nullptr || !net->getRoutingTree()) {
+      continue;
+    }
+    grid_graph_->accumulateViaDemand(
+        net->getRoutingTree(), net->getNdrCosts(), via_demand);
+  }
+
+  struct LayerRow
+  {
+    std::string name;
+    std::string dir;
+    double resource = 0.0;
+    double wire = 0.0;
+    double via = 0.0;
+    double demand = 0.0;
+    double wire_overflow = 0.0;
+    double via_overflow = 0.0;
+    double max_edge_overflow = 0.0;
+  };
+  std::vector<LayerRow> rows;
+  rows.reserve(num_layers);
+
+  int overflowed_edges = 0;
+  int wire_dominant_edges = 0;
+  int via_dominant_edges = 0;
+
+  // Fractional sibling of GridGraph::computeCongestionInformation (which
+  // rounds to int and has no wire/via split).
+  for (int layer = 0; layer < num_layers; layer++) {
+    const int direction = grid_graph_->getLayerDirection(layer);
+    LayerRow row;
+    row.name = grid_graph_->getLayerName(layer);
+    row.dir = direction == MetalLayer::H ? "H" : "V";
+    // Sub-min layers hold only inert pin-access via demand on 0-capacity
+    // edges: mimic FastRoute and show an all-zero row.
+    if (layer < constants_.min_routing_layer) {
+      rows.push_back(std::move(row));
+      continue;
+    }
+    const int x_max = direction == MetalLayer::H ? x_size - 1 : x_size;
+    const int y_max = direction == MetalLayer::H ? y_size : y_size - 1;
+    for (int x = 0; x < x_max; x++) {
+      for (int y = 0; y < y_max; y++) {
+        const auto& edge = grid_graph_->getEdge(layer, x, y);
+        const double capacity = std::max(edge.capacity, 0.0);
+        const double edge_via
+            = via_demand[grid_graph_->edgeFlatIndex(layer, x, y)];
+        row.resource += capacity;
+        row.demand += edge.demand;
+        row.via += edge_via;
+        const double edge_overflow = edge.demand - capacity;
+        if (edge_overflow > 0.0) {
+          // Excess is charged proportionally to each share of the demand.
+          const double via_fraction
+              = edge.demand > 0.0 ? std::clamp(edge_via / edge.demand, 0.0, 1.0)
+                                  : 0.0;
+          row.via_overflow += edge_overflow * via_fraction;
+          row.wire_overflow += edge_overflow * (1.0 - via_fraction);
+          row.max_edge_overflow
+              = std::max(row.max_edge_overflow, edge_overflow);
+          overflowed_edges++;
+          if (via_fraction >= 0.5) {
+            via_dominant_edges++;
+          } else {
+            wire_dominant_edges++;
+          }
+        }
+      }
+    }
+    row.wire = std::max(0.0, row.demand - row.via);
+    rows.push_back(std::move(row));
+  }
+
+  LayerRow total;
+  total.name = "Total";
+  for (const LayerRow& row : rows) {
+    total.resource += row.resource;
+    total.wire += row.wire;
+    total.via += row.via;
+    total.demand += row.demand;
+    total.wire_overflow += row.wire_overflow;
+    total.via_overflow += row.via_overflow;
+    total.max_edge_overflow
+        = std::max(total.max_edge_overflow, row.max_edge_overflow);
+  }
+
+  const bool has_overflow = overflowed_edges > 0;
+  constexpr const char* kBaseFormat
+      = "{:<7} {:>3} {:>12} {:>12} {:>12} {:>12} {:>10}";
+  constexpr const char* kOverflowFormat = " {:>10} {:>10} {:>13}";
+
+  auto f2 = [](double value) { return fmt::format("{:.2f}", value); };
+  auto print_layer_row = [&](const LayerRow& row) {
+    std::string line = fmt::format(
+        kBaseFormat,
+        row.name,
+        row.dir,
+        f2(row.resource),
+        f2(row.wire),
+        f2(row.via),
+        f2(row.demand),
+        f2(row.resource > 0.0 ? 100.0 * row.demand / row.resource : 0.0));
+    if (has_overflow) {
+      line += fmt::format(kOverflowFormat,
+                          f2(row.wire_overflow),
+                          f2(row.via_overflow),
+                          f2(row.max_edge_overflow));
+    }
+    logger_->report("{}", line);
+  };
+
+  logger_->info(GRT, 130, "CUGR congestion report:");
+  std::string header = fmt::format(kBaseFormat,
+                                   "Layer",
+                                   "Dir",
+                                   "Resource",
+                                   "Wire Dmd",
+                                   "Via Dmd",
+                                   "Total Dmd",
+                                   "Usage (%)");
+  if (has_overflow) {
+    header
+        += fmt::format(kOverflowFormat, "Wire Ovf", "Via Ovf", "Max Edge Ovf");
+  }
+  const std::string rule(header.size(), '-');
+  logger_->report("{}", header);
+  logger_->report("{}", rule);
+  for (const LayerRow& row : rows) {
+    print_layer_row(row);
+  }
+  logger_->report("{}", rule);
+  print_layer_row(total);
+
+  if (logger_->debugCheck(utl::GRT, "report", 1)) {
+    const double total_overflow = total.wire_overflow + total.via_overflow;
+    debugPrint(logger_,
+               GRT,
+               "report",
+               1,
+               "3D overflow: {:.2f} tracks (wire: {:.2f}, via: {:.2f}; "
+               "integer-reported: {}) on {} edges (wire-dominant: {}, "
+               "via-dominant: {})",
+               total_overflow,
+               total.wire_overflow,
+               total.via_overflow,
+               static_cast<int>(total_overflow),
+               overflowed_edges,
+               wire_dominant_edges,
+               via_dominant_edges);
+    // Sub-min planes are the first min_routing_layer slices of via_demand.
+    const int submin_layers
+        = std::min(constants_.min_routing_layer, num_layers);
+    const double submin_via = std::accumulate(
+        via_demand.begin(),
+        via_demand.begin()
+            + static_cast<size_t>(submin_layers) * x_size * y_size,
+        0.0);
+    debugPrint(logger_,
+               GRT,
+               "report",
+               1,
+               "Sub-min-layer via demand (inert): {:.2f} tracks",
+               submin_via);
+  }
 }
 
 void CUGR::updateDbCongestion()
@@ -1321,7 +1506,13 @@ void CUGR::getITermsAccessPoints(
     return;
   }
   GRNet* gr_net = it->second;
-  for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
+  const auto& preferred_aps = gr_net->getPreferredAccessPoints();
+  for (const auto& [pin_idx, iterm] : gr_net->getITermsByPinIndex()) {
+    auto ap_it = preferred_aps.find(pin_idx);
+    if (ap_it == preferred_aps.end()) {
+      continue;
+    }
+    const AccessPoint& ap = ap_it->second;
     const int x = grid_graph_->getGridline(0, ap.point.x());
     const int y = grid_graph_->getGridline(1, ap.point.y());
     access_points[iterm] = odb::Point3D(x, y, ap.layers.high() + 1);
@@ -1337,7 +1528,13 @@ void CUGR::getBTermsAccessPoints(
     return;
   }
   GRNet* gr_net = it->second;
-  for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
+  const auto& preferred_aps = gr_net->getPreferredAccessPoints();
+  for (const auto& [pin_idx, bterm] : gr_net->getBTermsByPinIndex()) {
+    auto ap_it = preferred_aps.find(pin_idx);
+    if (ap_it == preferred_aps.end()) {
+      continue;
+    }
+    const AccessPoint& ap = ap_it->second;
     const int x = grid_graph_->getGridline(0, ap.point.x());
     const int y = grid_graph_->getGridline(1, ap.point.y());
     access_points[bterm] = odb::Point3D(x, y, ap.layers.high() + 1);
@@ -1664,28 +1861,14 @@ void CUGR::saveCongestion()
   std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> via_nets;
 
   auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
-    // commitVia(via_layer, loc) adds stub demand on edges adjacent to
-    // (vx, vy) on layers via_layer and via_layer+1, in each layer's
-    // preferred direction. Mirror that to know which nets touched
-    // which edges.
-    for (int l = via_layer; l <= via_layer + 1 && l < num_layers; l++) {
-      const int dir = grid_graph_->getLayerDirection(l);
-      if (dir == MetalLayer::H) {
-        if (vx > 0) {
-          via_nets[{l, vx - 1, vy}].insert(db_net);
-        }
-        if (vx + 1 < x_size) {
-          via_nets[{l, vx, vy}].insert(db_net);
-        }
-      } else {
-        if (vy > 0) {
-          via_nets[{l, vx, vy - 1}].insert(db_net);
-        }
-        if (vy + 1 < y_size) {
-          via_nets[{l, vx, vy}].insert(db_net);
-        }
-      }
-    }
+    // Same edges commitVia() deposits stub demand on.
+    grid_graph_->forEachViaFlankEdge(
+        via_layer,
+        {vx, vy},
+        {},
+        [&](int l, PointT edge_loc, CapacityT /*demand*/, double /*factor*/) {
+          via_nets[{l, edge_loc.x(), edge_loc.y()}].insert(db_net);
+        });
   };
 
   for (const auto& gr_net : gr_nets_) {
