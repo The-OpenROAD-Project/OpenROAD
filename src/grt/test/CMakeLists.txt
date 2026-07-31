@@ -81,8 +81,10 @@ or_integration_tests(
     remove_buffers3
     repair_antennas1
     repair_antennas2
+    repair_antennas2_cugr
     repair_antennas3
     repair_antennas4
+    repair_antennas4_cugr
     repair_antennas_adjacent_jumpers
     repair_antennas_allow_congestion
     repair_antennas_cugr
@@ -90,6 +92,7 @@ or_integration_tests(
     repair_antennas_error2
     repair_antennas_from_odb
     repair_antennas_only_diodes
+    repair_antennas_only_diodes_cugr
     repair_antennas_only_jumpers
     report_wire_length1
     report_wire_length2
