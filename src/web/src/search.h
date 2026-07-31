@@ -4,8 +4,10 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <limits>
 #include <map>
+#include <mutex>
 #include <set>
 #include <shared_mutex>
 #include <string>
@@ -159,6 +161,12 @@ class Search : public odb::dbBlockCallBackObj
 
   // Build the structure for the given chip.
   void setTopChip(odb::dbChip* chip);
+
+  // Install a callback fired (debounced) whenever a design edit invalidates
+  // one of the spatial indices — i.e. the same valid→invalid transition that
+  // Qt's Search emits `modified()` on.  TileGenerator uses it to drop its PNG
+  // tile cache and push a redraw to connected clients.  Pass `{}` to clear.
+  void setOnModified(std::function<void()> cb);
 
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -320,11 +328,21 @@ class Search : public odb::dbBlockCallBackObj
   void clear();
 
   void announceModified(std::atomic_bool& flag);
+  // Fire on_modified_ unconditionally (no per-index debounce).  Used for design
+  // edits that change rendering but not a spatial index (die/core area, region
+  // boxes), which announceModified's flag-based path would otherwise miss.
+  void notifyModified();
   BlockData& getData(odb::dbBlock* block);
 
   utl::Logger* logger_;
   odb::dbChip* top_chip_{nullptr};
   boost::asio::thread_pool pool_{std::thread::hardware_concurrency()};
+
+  // Fired by announceModified() on a valid→invalid index transition (see
+  // setOnModified).  Set once at server startup; read on the design-mutation
+  // thread — guarded by on_modified_mutex_.
+  std::function<void()> on_modified_;
+  mutable std::mutex on_modified_mutex_;
 
   struct BlockData
   {

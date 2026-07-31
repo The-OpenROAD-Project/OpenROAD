@@ -7,17 +7,23 @@ proc sv_elaborate { args } {
   syn::sv_elaborate_cmd [join $args " "]
 }
 
-sta::define_cmd_args "synthesize" {-reduce_name_loss}
+sta::define_cmd_args "synthesize" {[-reduce_name_loss] [-naming_threshold fanout_size]}
 
 proc synthesize { args } {
-  sta::parse_key_args "synthesize" args keys {} flags {-reduce_name_loss}
+  sta::parse_key_args "synthesize" args keys {-naming_threshold} flags {-reduce_name_loss}
+
+  # -1 signals names can be lost no matter their fanout
+  set naming_threshold -1
+  if { [info exists keys(-naming_threshold)] } {
+    set naming_threshold $keys(-naming_threshold)
+  }
 
   # bitblast all but arithmetic
   syn::bitblast_cmd false
   syn::liveness_opt_cmd
 
   if { ![info exists flags(-reduce_name_loss)] } {
-    syn::abc_roundtrip {&ps; &st; &fraig -v -w;}
+    syn::abc_roundtrip {&ps; &st; &fraig -v -w;} $naming_threshold
   }
 
   # now bitblast incl. arithmetic
@@ -25,7 +31,8 @@ proc synthesize { args } {
   syn::opt_cmd
 
   if { ![info exists flags(-reduce_name_loss)] } {
-    syn::abc_roundtrip {&ps; &st; &dc2 -v; &dc2 -v; &if -g -K 6; &dc2 -v; &dc2 -v; &dc2 -v; &ps}
+    syn::abc_roundtrip {&ps; &st; &dc2 -v; &dc2 -v; &if -g -K 6; &dc2 -v; &dc2 -v; &dc2 -v; &ps} \
+      $naming_threshold
   }
 
   syn::map_sequentials

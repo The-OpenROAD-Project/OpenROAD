@@ -2,6 +2,9 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <cassert>
+#include <cstddef>
+#include <limits>
+#include <utility>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -10,6 +13,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
@@ -150,7 +154,7 @@ float networkSlack(utl::Logger* logger,
                    const sta::Scene* corner,
                    const float fixed_slew[2])
 {
-  assert(net.outs.size() == problem.outputs.size());
+  assert(net.outs.size() == problem.numOutputs());
 
   std::vector<float> load(net.nodes.size(), 0.0f);
 
@@ -313,7 +317,7 @@ void populateCutTiming(sta::dbNetwork* network,
   };
 
   std::unordered_map<sta::Vertex*, int> vertex_po_index;
-  assert(roots.size() == problem.outputs.size());
+  assert(roots.size() == problem.numOutputs());
   for (int i = 0; i < problem.numOutputs(); i++) {
     sta::PinSet* pin_set = network->drivers(roots[i]);
     if (pin_set->size() != 1) {
@@ -339,7 +343,7 @@ void populateCutTiming(sta::dbNetwork* network,
     problem.output(i).external_load = load;
   }
 
-  assert(leaves.size() == problem.inputs.size());
+  assert(leaves.size() == problem.numInputs());
   for (size_t li = 0; li < problem.numInputs(); li++) {
     sta::PinSet* pin_set = network->drivers(leaves[li]);
     if (pin_set->size() != 1) {

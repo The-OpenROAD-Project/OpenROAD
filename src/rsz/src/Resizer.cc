@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -53,7 +54,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
@@ -2955,10 +2955,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
+  const bool creates_feedthrough
+      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!bufferRemovalCreatesFeedthrough(input_modnet, output_modnet)
-      && !db_network_->hasPort(input_net) && db_network_->hasPort(output_net)) {
+  if (!creates_feedthrough && !db_network_->hasPort(input_net)
+      && db_network_->hasPort(output_net)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
@@ -2981,7 +2983,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   std::optional<std::string> new_modnet_name;
   if (db_survivor->isDeeperThan(db_removed)) {
     new_net_name = db_removed->getName();
-    if (removed_modnet != nullptr) {
+    // The rename exists to keep the ModNet name in sync with the flat net
+    // name.  Feedthrough is the exception: removed_modnet is the output
+    // ModNet, so syncing would name the ModNet after the output port and
+    // write_verilog would then drop the assign statement.  On a feedthrough
+    // the ModNet name must always stay the input port name.
+    if (removed_modnet != nullptr && !creates_feedthrough) {
       new_modnet_name = removed_modnet->getName();
     }
   }
@@ -3332,6 +3339,81 @@ class SearchPredCombLogic : public sta::SearchPred1
   }
 };
 
+// Iterative DFS over the timing graph, replacing pull-style
+// sta::BfsFwdIterator/BfsBkwdIterator usage.
+// Adjacency matches Bfs{Fwd,Bkwd}Iterator::enqueueAdjacentVertices:
+// fanout: searchFrom(vertex) gates expansion; each out-edge requires
+//         searchThru(edge) && searchTo(to_vertex);
+// fanin:  searchTo(vertex) gates expansion; each in-edge requires
+//         searchFrom(from_vertex) && searchThru(edge).
+// The mode-less SearchPred methods are used, which OR across all modes.
+// visit_seeds=false starts from the pred-filtered adjacency of each seed
+// (BfsIterator::enqueueAdjacentVertices seeding); visit_seeds=true visits
+// the seeds themselves first (BfsIterator::enqueue seeding).
+// visit(vertex) returns true if the search should expand through vertex.
+enum class DfsDirection
+{
+  kFanin,
+  kFanout
+};
+
+static void dfsSearch(sta::Graph* graph,
+                      const sta::SearchPred& pred,
+                      DfsDirection dir,
+                      const std::vector<sta::Vertex*>& seeds,
+                      bool visit_seeds,
+                      const std::function<bool(sta::Vertex*)>& visit)
+{
+  std::vector<sta::Vertex*> stack;
+  sta::VertexSet visited(graph);
+
+  auto expand = [&](sta::Vertex* vertex) {
+    if (dir == DfsDirection::kFanout) {
+      if (pred.searchFrom(vertex)) {
+        sta::VertexOutEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* to_vertex = edge->to(graph);
+          if (pred.searchThru(edge) && pred.searchTo(to_vertex)
+              && visited.insert(to_vertex).second) {
+            stack.push_back(to_vertex);
+          }
+        }
+      }
+    } else {
+      if (pred.searchTo(vertex)) {
+        sta::VertexInEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* from_vertex = edge->from(graph);
+          if (pred.searchFrom(from_vertex) && pred.searchThru(edge)
+              && visited.insert(from_vertex).second) {
+            stack.push_back(from_vertex);
+          }
+        }
+      }
+    }
+  };
+
+  for (sta::Vertex* seed : seeds) {
+    if (visit_seeds) {
+      if (visited.insert(seed).second) {
+        stack.push_back(seed);
+      }
+    } else {
+      expand(seed);
+    }
+  }
+
+  while (!stack.empty()) {
+    sta::Vertex* vertex = stack.back();
+    stack.pop_back();
+    if (visit(vertex)) {
+      expand(vertex);
+    }
+  }
+}
+
 // Find source pins for logic fanin of ends.
 sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 {
@@ -3346,20 +3428,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
   }
 
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::PinSet fanins(db_network_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      continue;
-    }
-    iter.enqueueAdjacentVertices(vertex);
-    fanins.insert(vertex->pin());
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          return false;
+        }
+        fanins.insert(vertex->pin());
+        return true;
+      });
   return fanins;
 }
 
@@ -3367,20 +3450,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 sta::VertexSet Resizer::findFaninRoots(sta::VertexSet& ends)
 {
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::VertexSet roots(graph_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      roots.insert(vertex);
-    } else {
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          roots.insert(vertex);
+          return false;
+        }
+        return true;
+      });
   return roots;
 }
 
@@ -3402,18 +3486,19 @@ sta::VertexSet Resizer::findFanouts(sta::VertexSet& reg_outs)
 {
   sta::VertexSet fanouts(graph_);
   SearchPredCombLogic pred(sta_);
-  sta::BfsFwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* reg_out : reg_outs) {
-    iter.enqueueAdjacentVertices(reg_out);
-  }
-
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (!isRegister(vertex)) {
-      fanouts.insert(vertex);
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(reg_outs.begin(), reg_outs.end());
+  dfsSearch(graph_,
+            pred,
+            DfsDirection::kFanout,
+            seeds,
+            /*visit_seeds=*/false,
+            [&](sta::Vertex* vertex) {
+              if (isRegister(vertex)) {
+                return false;
+              }
+              fanouts.insert(vertex);
+              return true;
+            });
   return fanouts;
 }
 
@@ -5064,32 +5149,47 @@ class ClkArrivalSearchPred : public sta::EvalPred
 
 sta::InstanceSeq Resizer::findClkInverters()
 {
-  sta::InstanceSeq clk_inverters;
+  std::vector<std::pair<sta::Level, sta::Instance*>> inverters;
   ClkArrivalSearchPred srch_pred(this);
-  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, this);
+  std::vector<sta::Vertex*> seeds;
   for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
     for (const sta::Pin* pin : clk->leafPins()) {
-      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-      bfs.enqueue(vertex);
+      seeds.push_back(graph_->pinDrvrVertex(pin));
     }
   }
-  while (bfs.hasNext()) {
-    sta::Vertex* vertex = bfs.next();
-    const sta::Pin* pin = vertex->pin();
-    sta::Instance* inst = network_->instance(pin);
-    sta::LibertyCell* lib_cell = network_->libertyCell(inst);
-    if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
-      clk_inverters.emplace_back(inst);
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_clk_inverters",
-                 2,
-                 "inverter {}",
-                 network_->pathName(inst));
-    }
-    if (!vertex->isRegClk()) {
-      bfs.enqueueAdjacentVertices(vertex);
-    }
+  dfsSearch(
+      graph_,
+      srch_pred,
+      DfsDirection::kFanout,
+      seeds,
+      /*visit_seeds=*/true,
+      [&](sta::Vertex* vertex) {
+        const sta::Pin* pin = vertex->pin();
+        sta::Instance* inst = network_->instance(pin);
+        sta::LibertyCell* lib_cell = network_->libertyCell(inst);
+        if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
+          inverters.emplace_back(vertex->level(), inst);
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_clk_inverters",
+                     2,
+                     "inverter {}",
+                     network_->pathName(inst));
+        }
+        return !vertex->isRegClk();
+      });
+  // cloneClkInverter moves an inverter's loads onto its input net, so an
+  // upstream inverter must be cloned before the inverters it drives or it
+  // gets cloned once per downstream clone instead of once per load.
+  std::stable_sort(inverters.begin(),
+                   inverters.end(),
+                   [](const std::pair<sta::Level, sta::Instance*>& lhs,
+                      const std::pair<sta::Level, sta::Instance*>& rhs) {
+                     return lhs.first < rhs.first;
+                   });
+  sta::InstanceSeq clk_inverters;
+  for (const auto& [level, inst] : inverters) {
+    clk_inverters.emplace_back(inst);
   }
   return clk_inverters;
 }
