@@ -339,7 +339,7 @@ export class HierarchyBrowser {
                 fmtInt(node.insts),
                 fmtInt(node.macros),
                 fmtInt(node.modules),
-                fmtArea(node.area),
+                this._fmtArea(node.area),
                 fmtInt(node.local_insts),
                 fmtInt(node.local_macros),
                 fmtInt(node.local_modules),
@@ -396,14 +396,19 @@ export class HierarchyBrowser {
         this._render();
         this._sendModuleColors();
     }
+
+    _fmtArea(v) {
+        if (v == null) return '';
+        if (this._app.showDbu) {
+            // Convert μm² back to DBU².
+            const dbu = this._app.getDbuPerMicron();
+            return String(Math.round(v * dbu * dbu));
+        }
+        if (v >= 1e6) return (v / 1e6).toFixed(3) + ' mm²';
+        return v.toFixed(3) + ' μm²';
+    }
 }
 
 function fmtInt(v) {
     return v != null ? String(v) : '';
-}
-
-function fmtArea(v) {
-    if (v == null) return '';
-    if (v >= 1e6) return (v / 1e6).toFixed(3) + ' mm²';
-    return v.toFixed(3) + ' μm²';
 }

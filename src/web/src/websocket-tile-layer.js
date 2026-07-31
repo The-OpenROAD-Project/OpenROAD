@@ -3,6 +3,72 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
+// Device pixel ratio for HiDPI tile rendering, clamped to [1,3] so the
+// server-side tile cache has few buckets.  The server renders each tile at
+// 256*dpr physical pixels; Leaflet lays it out at 256 CSS px, so the image
+// maps 1:1 onto the device pixel grid and the browser never resamples it —
+// which is what would otherwise reintroduce the moiré beat on HiDPI displays.
+export function currentDpr() {
+    const dpr = (typeof window !== 'undefined' && window.devicePixelRatio)
+        ? window.devicePixelRatio
+        : 1;
+    return Math.max(1, Math.min(3, dpr));
+}
+
+// Pure builder for the tile-request payload (exported for unit tests).  `ctx`
+// carries the per-layer visibility/selectability context.  Single source of
+// truth for the wire format so createTile and refreshTiles can't drift.
+//
+// Tiles don't use selectability for rendering, but it is sent on every request
+// so the wire schema stays uniform with selectAt requests.
+export function buildTileRequest(coords, layerName, ctx) {
+    const { visibility, selectability, visibleLayers, selectableLayers, app }
+        = ctx;
+    const vf = {};
+    for (const [k, v] of Object.entries(visibility)) {
+        vf[k] = !!v;
+    }
+    if (selectability) {
+        for (const [k, v] of Object.entries(selectability)) {
+            vf['s_' + k] = !!v;
+        }
+    }
+    const req = {
+        type: 'tile',
+        layer: layerName,
+        z: coords.z,
+        x: coords.x,
+        y: coords.y,
+        dpr: currentDpr(),
+        visible_layers: visibleLayers ? [...visibleLayers] : [],
+        selectable_layers: selectableLayers ? [...selectableLayers] : [],
+        ...vf,
+    };
+    if (app && app.visibleChiplets instanceof Set) {
+        req.visible_chiplets = [...app.visibleChiplets];
+    }
+    // Per-layer fill pattern (int matching the server's FillPattern enum;
+    // 1 = solid). Read lazily so a change via the layer context menu is
+    // picked up on the next refresh without rebuilding the layer.
+    if (app && app.layerPatterns) {
+        const p = app.layerPatterns[layerName];
+        if (p !== undefined && p !== 1) {
+            req.pattern = p;
+        }
+    }
+    return req;
+}
+
+// Floor the map's REAL (possibly fractional) zoom so the displayed tile pane
+// is only ever UPSCALED (scale 2^(realZoom-floor) ∈ [1,2)), never downscaled.
+// Upscaling a band-limited tile cannot reintroduce the moiré beat; downscaling
+// can.  Reading the live map zoom (not the passed arg) keeps this correct
+// during zoom-animation frames and robust even if zoomSnap:0 is re-enabled.
+export function floorClampZoom(layer, zoom) {
+    const real = (layer && layer._map) ? layer._map.getZoom() : zoom;
+    return Math.floor(real);
+}
+
 // `app` (last arg) is read lazily on every request so that
 // app.visibleChiplets, populated by display-controls.js after the tech
 // metadata arrives, is reflected in tile requests without rebuilding
@@ -11,41 +77,17 @@
 export function createWebSocketTileLayer(visibility, visibleLayers,
                                          selectability, selectableLayers,
                                          app) {
-    // Single source of truth for the tile-request payload.  Both
-    // createTile (initial load) and refreshTiles (visibility change)
-    // call this so the wire format stays in sync — earlier copies of
-    // this snippet drifted when fields like visible_chiplets were
-    // added in only one place.
-    //
-    // Tiles don't actually use selectability for rendering, but we
-    // send it on every request so the wire schema stays uniform with
-    // selectAt requests.
-    function buildTileRequest(coords, layerName) {
-        const vf = {};
-        for (const [k, v] of Object.entries(visibility)) {
-            vf[k] = !!v;
-        }
-        if (selectability) {
-            for (const [k, v] of Object.entries(selectability)) {
-                vf['s_' + k] = !!v;
-            }
-        }
-        const req = {
-            type: 'tile',
-            layer: layerName,
-            z: coords.z,
-            x: coords.x,
-            y: coords.y,
-            visible_layers: visibleLayers ? [...visibleLayers] : [],
-            selectable_layers: selectableLayers ? [...selectableLayers] : [],
-            ...vf,
-        };
-        if (app && app.visibleChiplets instanceof Set) {
-            req.visible_chiplets = [...app.visibleChiplets];
-        }
-        return req;
-    }
+    const ctx = {
+        visibility, selectability, visibleLayers, selectableLayers, app,
+    };
     return L.GridLayer.extend({
+        // Force upscale-only display (see floorClampZoom) so the browser
+        // never downscales a band-limited tile back into a moiré beat.
+        _clampZoom: function(zoom) {
+            return L.GridLayer.prototype._clampZoom.call(
+                this, floorClampZoom(this, zoom));
+        },
+
         initialize: function(websocketManager, layerName, options) {
             this._websocketManager = websocketManager;
             this._layerName = layerName;
@@ -81,7 +123,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             tile._websocketRequestId = this._websocketManager.nextId;
 
             this._websocketManager.request(
-                buildTileRequest(coords, this._layerName)
+                buildTileRequest(coords, this._layerName, ctx)
             ).then(data => {
                 if (typeof data === 'string') {
                     tile.src = data;  // data URI from cache
@@ -115,7 +157,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 tile._websocketRequestId = this._websocketManager.nextId;
 
                 this._websocketManager.request(
-                    buildTileRequest(coords, this._layerName)
+                    buildTileRequest(coords, this._layerName, ctx)
                 ).then(data => {
                     if (tile.src && tile.src.startsWith('blob:')) {
                         URL.revokeObjectURL(tile.src);
@@ -136,6 +178,123 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             if (tile && tile.el) {
                 if (tile.el._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile.el._websocketRequestId);
+                }
+                if (tile.el.src && tile.el.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.el.src);
+                }
+            }
+            L.GridLayer.prototype._removeTile.call(this, key);
+        }
+    });
+}
+
+// Lightweight tile layer that renders only highlight/overlay shapes
+// (selection, hover, timing, DRC, route guides) on a transparent
+// background.  Separated from the base tile layers so that highlight
+// changes don't trigger a full re-render of all geometry tiles.
+export function createOverlayTileLayer(visibility, app) {
+    function buildOverlayRequest(coords) {
+        const req = {
+            type: 'overlay_tile',
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+            debug_renderers: !!visibility.debug_renderers,
+        };
+        // Pass visible layers so route guides respect layer visibility.
+        if (app && app.visibleLayerNames) {
+            req.visible_layers = [...app.visibleLayerNames];
+        }
+        return req;
+    }
+    return L.GridLayer.extend({
+        initialize: function(websocketManager, options) {
+            this._websocketManager = websocketManager;
+            L.GridLayer.prototype.initialize.call(this, options);
+        },
+
+        createTile: function(coords, done) {
+            const tile = document.createElement('img');
+            tile.alt = '';
+            tile.setAttribute('role', 'presentation');
+
+            tile._tileDone = false;
+            tile.onload = () => {
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
+                if (!tile._tileDone) {
+                    tile._tileDone = true;
+                    done(null, tile);
+                }
+            };
+            tile.onerror = () => {
+                if (!tile._tileDone) {
+                    tile._tileDone = true;
+                    done(new Error('overlay tile load error'), tile);
+                }
+            };
+
+            const requestId = this._websocketManager.nextId;
+            tile._websocketRequestId = requestId;
+
+            this._websocketManager.request(
+                buildOverlayRequest(coords)
+            ).then(data => {
+                if (tile._websocketRequestId !== requestId) {
+                    return;  // stale response; a newer request superseded this one
+                }
+                if (typeof data === 'string') {
+                    tile.src = data;
+                } else {
+                    tile.src = URL.createObjectURL(data);
+                }
+            }).catch(() => {});
+
+            return tile;
+        },
+
+        refreshTiles: function() {
+            if (!this._map) return;
+
+            for (const key in this._tiles) {
+                const tileInfo = this._tiles[key];
+                if (!tileInfo || !tileInfo.el) continue;
+
+                const tile = tileInfo.el;
+                const coords = tileInfo.coords;
+
+                if (tile._websocketRequestId !== undefined) {
+                    this._websocketManager.cancel(tile._websocketRequestId);
+                }
+
+                const requestId = this._websocketManager.nextId;
+                tile._websocketRequestId = requestId;
+
+                this._websocketManager.request(
+                    buildOverlayRequest(coords)
+                ).then(data => {
+                    if (tile._websocketRequestId !== requestId) {
+                        return;  // stale response superseded by a newer refresh
+                    }
+                    if (tile.src && tile.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(tile.src);
+                    }
+                    if (typeof data === 'string') {
+                        tile.src = data;
+                    } else {
+                        tile.src = URL.createObjectURL(data);
+                    }
+                }).catch(() => {});
+            }
+        },
+
+        _removeTile: function(key) {
+            const tile = this._tiles[key];
+            if (tile && tile.el) {
+                if (tile.el._websocketRequestId !== undefined) {
+                    this._websocketManager.cancel(tile.el._websocketRequestId);
+                    tile.el._websocketRequestId = undefined;
                 }
                 if (tile.el.src && tile.el.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.el.src);

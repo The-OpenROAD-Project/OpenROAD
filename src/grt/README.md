@@ -32,6 +32,7 @@ global_route
     [-end_incremental]
     [-use_cugr]
     [-resistance_aware]
+    [-res_aware_nets_percentage percent]
     [-infinite_cap]
 ```
 
@@ -52,6 +53,7 @@ global_route
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
 | `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
+| `-res_aware_nets_percentage` | Set the percentage of resistance-aware nets (e.g. `-res_aware_nets_percentage 100` (for 100%)). The default value is `15` with resistance-aware enabled and `0` otherwise, and the allowed values are floats between `[0, 100]`. |
 | `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
 | `-snapshot_batched_width` | Set the semantic width of snapshot-batched routing (max batches per wave). The default is `0`, preserving the non-batched behavior. Set a positive integer to enable batched routing; allowed values are integers `[1, MAX_INT]`. Execution width still follows `set_thread_count`. NOTE: this is not recommended for production flows; it is intended for exploration and research projects. |
 
@@ -462,12 +464,6 @@ Be aware that much of the error checking is done in `Tcl`, so that with
 the current `C++` / `Python` API, that might be an issue to deal
 with. There are also some useful `Python` functions located in the `grt_aux.py` [file](./test/grt_aux.py)
 but these are not considered a part of the *final* API and may be subject to change.
-
-## FAQs
-
-Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+fastroute+in%3Atitle)
-about this tool.
 
 ## References
 

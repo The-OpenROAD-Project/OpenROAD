@@ -2516,7 +2516,20 @@ int dbBlock::getGCellTileSize()
   // lambda function to get the average track spacing of a given layer
   auto getAverageTrackSpacing = [this](int layer_idx) -> int {
     dbTech* tech = getTech();
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    // Skip backside routing layers (e.g. BSPDN BPR/BM*/BRDL) so the Nth
+    // routing layer is counted among frontside metals regardless of LEF
+    // ordering.
+    odb::dbTechLayer* tech_layer = nullptr;
+    int count = 0;
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING || layer->isBackside()) {
+        continue;
+      }
+      if (++count == layer_idx) {
+        tech_layer = layer;
+        break;
+      }
+    }
     odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
 
     if (track_grid == nullptr) {
@@ -2743,12 +2756,6 @@ int dbBlock::getCornersPerBlock()
   return block->corners_per_block_;
 }
 
-bool dbBlock::extCornersAreIndependent()
-{
-  bool independent = getExtControl()->_independentExtCorners;
-  return independent;
-}
-
 int dbBlock::getExtDbCount()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2821,13 +2828,6 @@ void dbBlock::initParasiticsValueTables()
   block->c_val_tbl_->push_back(0.0);
 }
 
-void dbBlock::setCornersPerBlock(int cornersPerBlock)
-{
-  initParasiticsValueTables();
-  _dbBlock* block = (_dbBlock*) this;
-  block->corners_per_block_ = cornersPerBlock;
-}
-
 void dbBlock::setCornerCount(int cornersStoredCnt,
                              int extDbCnt,
                              const char* name_list)
@@ -2869,54 +2869,6 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
     }
     block->corner_name_list_ = strdup((char*) name_list);
   }
-}
-dbBlock* dbBlock::getExtCornerBlock(uint32_t corner)
-{
-  dbBlock* block = findExtCornerBlock(corner);
-  if (!block) {
-    block = this;
-  }
-  return block;
-}
-
-dbBlock* dbBlock::findExtCornerBlock(uint32_t corner)
-{
-  char cornerName[64];
-  sprintf(cornerName, "extCornerBlock__%d", corner);
-  return findChild(cornerName);
-}
-
-dbBlock* dbBlock::createExtCornerBlock(uint32_t corner)
-{
-  char cornerName[64];
-  sprintf(cornerName, "extCornerBlock__%d", corner);
-  dbBlock* extBlk = dbBlock::create(this, cornerName, '/');
-  assert(extBlk);
-  char name[64];
-  for (dbNet* net : getNets()) {
-    sprintf(name, "%d", net->getId());
-    dbNet* xnet = dbNet::create(extBlk, name, true);
-    if (xnet == nullptr) {
-      getImpl()->getLogger()->error(
-          utl::ODB, 8, "Cannot duplicate net {}", net->getConstName());
-    }
-    if (xnet->getId() != net->getId()) {
-      getImpl()->getLogger()->warn(utl::ODB,
-                                   9,
-                                   "id mismatch ({},{}) for net {}",
-                                   xnet->getId(),
-                                   net->getId(),
-                                   net->getConstName());
-    }
-    dbSigType ty = net->getSigType();
-    if (ty.isSupply()) {
-      xnet->setSpecial();
-    }
-
-    xnet->setSigType(ty);
-  }
-  extBlk->setCornersPerBlock(1);
-  return extBlk;
 }
 
 char* dbBlock::getCornerNameList()
@@ -3136,15 +3088,6 @@ void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
 void dbBlock::destroyParasitics(std::vector<dbNet*>& nets)
 {
   destroyCornerParasitics(nets);
-  if (!extCornersAreIndependent()) {
-    return;
-  }
-  int numcorners = getCornerCount();
-  dbBlock* extBlock;
-  for (int corner = 1; corner < numcorners; corner++) {
-    extBlock = findExtCornerBlock(corner);
-    extBlock->destroyCornerParasitics(nets);
-  }
 }
 
 void dbBlock::getCcHaloNets(std::vector<dbNet*>& changedNets,
@@ -3940,7 +3883,15 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
   auto exists = [this, scope, corresponding_flat_net](const char* name) {
     if (scope != nullptr) {
       const char* base = getBaseName(name);
-      if (scope->getModNet(base) || scope->findModBTerm(base)) {
+      // A net/port name must also be unique against instance names in the
+      // scope: a net/port and an instance cannot share a name in one Verilog
+      // scope.  OpenROAD can promote an anonymous net ("_NNNNN_") to a
+      // module boundary port, and yosys/ABC name anonymous cells "_NNNNN_"
+      // too, so without this check the promoted port collides with a leaf or
+      // hierarchical instance of the same name -- illegal Verilog that
+      // Verilator rejects with "Instance has the same name as port".
+      if (scope->getModNet(base) || scope->findModBTerm(base)
+          || scope->findModInst(base) || scope->findDbInst(base)) {
         return true;
       }
     }

@@ -7,9 +7,10 @@
 import { dbuRectToBounds } from './coordinates.js';
 
 export class DrcWidget {
-    constructor(app, redrawAllLayers) {
+    constructor(app, redrawAllLayers, refreshOverlay) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._refreshOverlay = refreshOverlay || redrawAllLayers;
         this._categories = [];
         this._activeCategory = '';
         this._markerTree = null;  // server response for current category
@@ -117,7 +118,7 @@ export class DrcWidget {
             this._markerTree = null;
             this._treeContainer.innerHTML = '';
             this._infoBar.textContent = '';
-            this._redrawAllLayers();
+            this._refreshOverlay();
             return;
         }
 
@@ -129,7 +130,7 @@ export class DrcWidget {
         }).then(data => {
             this._markerTree = data;
             this._renderTree();
-            this._redrawAllLayers();
+            this._refreshOverlay();
         }).catch(err => {
             this._treeContainer.innerHTML = '';
             const errDiv = document.createElement('div');
@@ -344,7 +345,7 @@ export class DrcWidget {
                 if (row) row.classList.remove('drc-unvisited');
 
                 this._zoomToBBox(data.bbox);
-                this._redrawAllLayers();
+                this._refreshOverlay();
 
                 if (openInspector) {
                     if (data.select_id != null && this._app.navigateInspector) {
@@ -391,7 +392,7 @@ export class DrcWidget {
             field: field,
             value: !!value
         }).then(() => {
-            this._redrawAllLayers();
+            this._refreshOverlay();
             if (field === 'visible') {
                 this._update3DHighlights();
                 if (value) {
@@ -514,7 +515,7 @@ export class DrcWidget {
             category: category.name,
             visible: !!visible
         }).then(() => {
-            this._redrawAllLayers();
+            this._refreshOverlay();
             this._update3DHighlights();
             if (visible) {
                 this._flashHighlight();

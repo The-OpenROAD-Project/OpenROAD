@@ -200,6 +200,109 @@ void SinkClustering::run(const unsigned groupSize,
   }
 }
 
+void SinkClustering::repairClusteringSolution(
+    const unsigned groupSize,
+    vector<vector<Point<double>>>& solutionPoints,
+    vector<vector<unsigned>>& solutionPointsIdx,
+    vector<vector<unsigned>>& solutions,
+    int& single_cluster_count,
+    int& solved_cluster_count)
+{
+  int cluster_num = solutions.size();
+  for (int c = 0; c < cluster_num; ++c) {
+    // only clusters with a single sink
+    if (solutionPoints[c].size() == 1) {
+      single_cluster_count++;
+      // get info of the single sink
+      const unsigned idx = solutionPointsIdx[c][0];
+      const Point<double>& p = points_[idx];
+      // init variables to repair
+      double min_dist_to_add = maxInternalDiameter_;
+      int min_sink_idx_to_add = -1, min_cluster_idx_to_add = -1;
+      double min_dist_to_merge = maxInternalDiameter_;
+      int cluster_idx_to_merge = -1;
+      // Find cluster to add one sink
+      for (int k = 0; k < cluster_num; ++k) {
+        if (k == c) {
+          continue;
+        }
+        // iter all sinks of candidate cluster
+        unsigned pointIdx = 0;
+        double distanceCost = 0;
+        double capCost = pointsCap_[idx];
+        for (const auto& comparisonPoint : solutionPoints[k]) {
+          const double cost = HTree_->computeDist(p, comparisonPoint);
+          const double cap_cost
+              = pointsCap_[idx]
+                + (cost * capPerUnit_
+                   + pointsCap_[solutionPointsIdx[k][pointIdx]]);
+          if (solutionPoints[k].size() > 2 && cost < min_dist_to_add
+              && !isLimitExceeded(2, cost, cap_cost, groupSize)) {
+            min_dist_to_add = cost;
+            min_sink_idx_to_add = pointIdx;
+            min_cluster_idx_to_add = k;
+          }
+          if (useMaxCapLimit_) {
+            capCost += cost * capPerUnit_
+                       + pointsCap_[solutionPointsIdx[k][pointIdx]];
+          }
+          pointIdx++;
+          distanceCost = std::max(cost, distanceCost);
+        }
+
+        if (!isLimitExceeded(
+                solutionPoints[k].size(), distanceCost, capCost, groupSize)
+            && distanceCost < min_dist_to_merge) {
+          cluster_idx_to_merge = k;
+          min_dist_to_merge = distanceCost;
+        }
+      }
+      // cluster found to merge the single cluster
+      if (cluster_idx_to_merge != -1) {
+        solved_cluster_count++;
+        // Add sink to found cluster
+        solutionPoints[cluster_idx_to_merge].push_back(p);
+        solutionPointsIdx[cluster_idx_to_merge].push_back(idx);
+        solutions[cluster_idx_to_merge].push_back(idx);
+        // move cluster to the last to remove it from the vectors
+        std::swap(solutionPoints[c], solutionPoints[cluster_num - 1]);
+        solutionPoints.pop_back();
+        std::swap(solutionPointsIdx[c], solutionPointsIdx[cluster_num - 1]);
+        solutionPointsIdx.pop_back();
+        std::swap(solutions[c], solutions[cluster_num - 1]);
+        solutions.pop_back();
+        cluster_num--;
+        if (c < cluster_num && solutionPoints[c].size() == 1) {
+          c--;
+        }
+      }
+      // if it can not be added on cluster near and there is a sink near, then
+      // add the sink on cluster
+      else if (min_cluster_idx_to_add != -1) {
+        solved_cluster_count++;
+        // add the more nearby sink on cluster
+        const unsigned idx_p
+            = solutionPointsIdx[min_cluster_idx_to_add][min_sink_idx_to_add];
+        solutionPoints[c].push_back(points_[idx_p]);
+        solutionPointsIdx[c].push_back(idx_p);
+        solutions[c].push_back(idx_p);
+        // delete the sink of old cluster
+        const unsigned old_size = solutionPoints[min_cluster_idx_to_add].size();
+        std::swap(solutionPoints[min_cluster_idx_to_add][min_sink_idx_to_add],
+                  solutionPoints[min_cluster_idx_to_add][old_size - 1]);
+        solutionPoints[min_cluster_idx_to_add].pop_back();
+        std::swap(
+            solutionPointsIdx[min_cluster_idx_to_add][min_sink_idx_to_add],
+            solutionPointsIdx[min_cluster_idx_to_add][old_size - 1]);
+        solutionPointsIdx[min_cluster_idx_to_add].pop_back();
+        std::swap(solutions[min_cluster_idx_to_add][min_sink_idx_to_add],
+                  solutions[min_cluster_idx_to_add][old_size - 1]);
+        solutions[min_cluster_idx_to_add].pop_back();
+      }
+    }
+  }
+}
+
 bool SinkClustering::findBestMatching(const unsigned groupSize)
 {
   // Counts how many clusters are in each solution.
@@ -330,6 +433,22 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
              bestSolutionCost_);
   // Save the solution for the Tree Builder.
   if (bestSolutionFound) {
+    // Repair single sink on cluster
+    int single_cluster_count = 0;
+    int solved_cluster_count = 0;
+    repairClusteringSolution(groupSize,
+                             solutionPoints[bestSolution],
+                             solutionPointsIdx[bestSolution],
+                             solutions[bestSolution],
+                             single_cluster_count,
+                             solved_cluster_count);
+    if (logger_->debugCheck(CTS, "clustering", 2)) {
+      logger_->report(
+          "Best solution has {} clusters with single sink, {} clusters move to "
+          "nearby cluster",
+          single_cluster_count,
+          solved_cluster_count);
+    }
     bestSolution_ = solutions[bestSolution];
     // Calculate max diameter to save
     double span;

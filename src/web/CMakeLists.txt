@@ -31,6 +31,7 @@ set(WEB_ASSET_FILES
     src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
+    src/openroad_skin.svg
     src/charts-widget.js
     src/timing-widget.js
     src/drc-widget.js

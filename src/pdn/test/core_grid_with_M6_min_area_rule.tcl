@@ -22,6 +22,6 @@ add_pdn_connect -layers {metal4 metal7}
 
 pdngen
 
-set def_file [make_result_file core_grid_with_M6_min_area.def]
+set def_file [make_result_file core_grid_with_M6_min_area_rule.def]
 write_def $def_file
 diff_files core_grid_with_M6_min_area.defok $def_file

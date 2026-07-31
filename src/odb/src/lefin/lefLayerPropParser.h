@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <tuple>
@@ -83,6 +84,12 @@ class lefTechLayerRightWayOnGridOnlyParser
 };
 
 class lefTechLayerRectOnlyParser
+{
+ public:
+  static bool parse(const std::string&, dbTechLayer*, lefinReader*);
+};
+
+class lefTechLayerBacksideParser
 {
  public:
   static bool parse(const std::string&, dbTechLayer*, lefinReader*);

@@ -1,0 +1,22 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: inferred_clock_gator_time_borrow
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 10 components and 52 component-terminals.
+[INFO ODB-0133]     Created 7 nets and 22 connections.
+[WARNING STA-0450] virtual clock vclk can not be propagated.
+BEFORE_BORROW 0.4545
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove BufferMove SplitLoadMove 
+[INFO RSZ-0094] Found 7 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 7 out of 7 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.1 |       -0.3 |      7 | enable_latch/D
+      28* |       1 |       5 |        1 |      0 |     0 |   +13.6% |   -0.048 |       -0.1 |       -0.2 |      7 | enable_latch/D
+    final |       1 |       5 |        1 |      0 |     0 |   +13.6% |   -0.048 |       -0.1 |       -0.2 |      7 | enable_latch/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 1 buffers.
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+AFTER_BORROW 0.4502

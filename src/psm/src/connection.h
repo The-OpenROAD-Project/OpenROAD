@@ -145,6 +145,31 @@ class TermConnection : public Connection
   static constexpr Resistance kResistance = 0.001;
 };
 
+// A virtual edge connecting a front-side iterm node to a backside iterm
+// node on an instance whose master is tagged with LEF58_BACKSIDE_BRIDGE.
+// These cells (taps / TSV-like structures) physically stitch the two
+// sides together inside the cell layout; PSM models that stitch as a
+// zero-impedance edge so the BFS over the PG graph crosses sides only
+// through legitimate bridge cells.
+class BridgeConnection : public Connection
+{
+ public:
+  BridgeConnection(Node* node0, Node* node1);
+
+  Resistance getResistance(const ResistanceMap& res_map) const override
+  {
+    return kResistance;
+  }
+  bool isValid() const override { return true; }
+
+  void mergeWith(const Connection* other) override {}
+
+  std::string describe() const override;
+
+ private:
+  static constexpr Resistance kResistance = 0.001;
+};
+
 class FixedResistanceConnection : public Connection
 {
  public:

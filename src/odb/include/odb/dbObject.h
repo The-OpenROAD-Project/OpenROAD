@@ -64,12 +64,14 @@ enum dbObjectType
   dbChipObj,
   dbChipBumpObj,
   dbChipBumpInstObj,
+  dbChipCapNodeObj,
   dbChipConnObj,
   dbChipInstObj,
   dbChipNetObj,
   dbChipPathObj,
   dbChipRegionObj,
   dbChipRegionInstObj,
+  dbChipRSegObj,
   dbDatabaseObj,
   dbDftObj,
   dbGCellGridObj,
@@ -127,6 +129,11 @@ enum dbObjectType
   dbTechLayerVoltageSpacingObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
+  dbUnfoldedChipBumpInstObj,
+  dbUnfoldedChipConnObj,
+  dbUnfoldedChipInstObj,
+  dbUnfoldedChipNetObj,
+  dbUnfoldedChipRegionInstObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

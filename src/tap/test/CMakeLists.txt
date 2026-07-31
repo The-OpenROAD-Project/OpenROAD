@@ -33,11 +33,14 @@ or_integration_tests(
     gcd_sky130
     gcd_sky130_separate
     invalid_cells
+    invalid_master_class
     jpeg_gf180
     multiple_calls
     no_endcap
     overlap_cover
     region1
+    single_row_macros
+    single_row_macros_offset
     symmetry
 )
 

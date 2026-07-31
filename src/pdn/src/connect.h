@@ -46,6 +46,8 @@ class Connect
 
   void setOnGrid(const std::vector<odb::dbTechLayer*>& layers);
 
+  void setMinWidthLayers(const std::vector<odb::dbTechLayer*>& layers);
+
   void setSplitCuts(const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits);
   int getSplitCutPitch(odb::dbTechLayer* layer) const;
   bool getSplitCutStagger(odb::dbTechLayer* layer) const;
@@ -109,6 +111,7 @@ class Connect
   int max_columns_ = 0;
 
   odb::PtrSet<odb::dbTechLayer> ongrid_;
+  odb::PtrSet<odb::dbTechLayer> min_width_layers_;
   odb::PtrMap<odb::dbTechLayer, SplitCut> split_cuts_;
 
   // map of built vias, where the key is the width and height of the via

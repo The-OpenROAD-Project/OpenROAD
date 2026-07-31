@@ -14,9 +14,9 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/tech/frTechObject.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -339,10 +339,16 @@ class GuidePathFinder
     int cost;
     bool operator<(const Wavefront& b) const
     {
-      if (cost == b.cost) {
+      // Total order so that priority_queue pop order (and therefore the
+      // chosen predecessor on cost ties) does not depend on the standard
+      // library's heap implementation.
+      if (cost != b.cost) {
+        return cost > b.cost;
+      }
+      if (node_idx != b.node_idx) {
         return node_idx > b.node_idx;
       }
-      return cost > b.cost;
+      return prev_idx > b.prev_idx;
     }
   };
   /**

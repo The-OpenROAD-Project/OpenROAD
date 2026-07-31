@@ -173,7 +173,7 @@ proc save_clocktree_image { args } {
     utl::error GUI 88 "-clock is required"
   }
 
-  gui::save_clocktree_image $path $clock $scene $width $height
+  gui::save_clocktree_image $path $clock [get_name $scene] $width $height
 }
 
 sta::define_cmd_args "save_histogram_image" {

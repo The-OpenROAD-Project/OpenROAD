@@ -19,6 +19,7 @@ ALL_TESTS = [
     "escape_slash_hier",
     "find_clks1",
     "find_clks2",
+    "get_nets1_hier",
     "get_ports1",
     "get_ports1_hier",
     "hier2",
@@ -31,6 +32,7 @@ ALL_TESTS = [
     "hier_weird_port",
     "levelize_drvr_vertices1",
     "make_port",
+    "modnet_port_alias",
     "network_edit1",
     "power1",
     "read_def_bus_port",
@@ -117,6 +119,9 @@ filegroup(
             "find_clks1": [
                 "pad.lef",
                 "pad.lib",
+            ],
+            "get_nets1_hier": [
+                "hier1.v",
             ],
             "get_ports1_hier": [
                 "get_ports1.v",

@@ -1184,7 +1184,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           if (src_heap_3D_.empty()) {
             logger_->error(GRT,
                            183,
-                           "Net {}: heap underflow during 3D maze routing.",
+                           "Net {}: the 3D maze router ran out of legal paths "
+                           "(heap underflow) - the net is boxed in by local "
+                           "congestion or blockages.",
                            nets_[netID]->getName());
           }
           // update ind1 for next loop

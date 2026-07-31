@@ -12,7 +12,8 @@ read_def gcd.def
 source sky130hs/sky130hs.rc
 
 define_process_corner -ext_model_index 0 X
-extract_parasitics -ext_model_file ext_pattern.rules -no_merge_via_res -max_res 0.0
+set_extraction_rules_file ext_pattern.rules
+extract_parasitics -no_merge_via_res -max_res 0.0
 
 set spef_file [make_result_file no_merging.spef]
 write_spef $spef_file

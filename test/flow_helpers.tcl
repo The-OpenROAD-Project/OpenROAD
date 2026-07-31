@@ -13,7 +13,7 @@ proc read_libraries { } {
   set corners [sta::scenes]
   if { [llength $corners] > 1 } {
     foreach corner $corners {
-      set corner_name [$corner name]
+      set corner_name [get_name $corner]
       set corner_index [lsearch $liberty_files $corner_name]
       if { $corner_index == -1 } {
         error "No liberty file in \$liberty_files for corner $corner_name."

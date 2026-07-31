@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,31 +35,18 @@ struct AccessPoint
   }
 };
 
-// Only hash and compare on the point, not the layers
-class AccessPointHash
+struct PointTHash
 {
- public:
-  AccessPointHash(int y_size) : y_size_(y_size) {}
-
-  std::size_t operator()(const AccessPoint& ap) const
+  std::size_t operator()(const PointT& point) const
   {
-    return robin_hood::hash_int(ap.point.x() * y_size_ + ap.point.y());
-  }
-
- private:
-  const uint64_t y_size_;
-};
-
-struct AccessPointEqual
-{
-  bool operator()(const AccessPoint& lhs, const AccessPoint& rhs) const
-  {
-    return lhs.point == rhs.point;
+    return robin_hood::hash_int((static_cast<uint64_t>(point.x()) << 32)
+                                | static_cast<uint32_t>(point.y()));
   }
 };
 
-using AccessPointSet
-    = robin_hood::unordered_set<AccessPoint, AccessPointHash, AccessPointEqual>;
+// Selected access cell -> union of the fixed layer intervals of the pins
+// that share it, so the routing tree honors every pin's connection layers.
+using AccessPointMap = robin_hood::unordered_map<PointT, IntervalT, PointTHash>;
 
 struct GraphEdge
 {
@@ -183,6 +171,25 @@ class GridGraph
 
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
+  // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
+  // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
+  CostT getWireResistanceCost(int layer_index,
+                              PointT u,
+                              PointT v,
+                              int wire_width = 0) const;
+
+  // Res-aware via cost for the step lower_layer -> lower_layer+1; 0 when
+  // the tech leaves cut-layer resistance unpopulated.
+  CostT getViaResistanceCost(int lower_layer) const;
+
+  // Total tree resistance (wire + via) for res-aware ordering; ndr_widths gives
+  // the per-layer NDR width (0 => layer default), matching
+  // getWireResistanceCost.
+  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                          const std::vector<int>& ndr_widths) const;
+
+  int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
+
   /**
    * @brief Sets the multiplier applied to the logistic-cost slopes.
    *
@@ -219,7 +226,7 @@ class GridGraph
                       double threshold) const;
 
   // Misc
-  AccessPointSet selectAccessPoints(GRNet* net) const;
+  AccessPointMap selectAccessPoints(GRNet* net) const;
 
   // Methods for updating demands - Public API.
 
@@ -248,6 +255,30 @@ class GridGraph
    */
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                        const std::vector<double>& net_costs = {});
+
+  // Debug: snapshot/restore per-edge demand for consistency checks.
+  std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
+  void restoreDemand(
+      const std::vector<std::vector<std::vector<CapacityT>>>& snap);
+
+  // Accumulates a tree's via-stub demand into a flat [layer][x][y] map
+  // (see edgeFlatIndex), mirroring commitVia's deposits; used to attribute
+  // demand for reporting.
+  void accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
+                           const std::vector<double>& net_costs,
+                           std::vector<CapacityT>& via_demand) const;
+
+  size_t edgeFlatIndex(const int layer, const int x, const int y) const
+  {
+    return (static_cast<size_t>(layer) * x_size_ + x) * y_size_ + y;
+  }
+
+  // Non-template forEachViaFlankEdge for callers outside GridGraph.cpp.
+  void forEachViaFlankEdge(
+      int layer_index,
+      PointT loc,
+      const std::vector<double>& net_costs,
+      const std::function<void(int, PointT, CapacityT, double)>& fn) const;
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -306,8 +337,16 @@ class GridGraph
       const odb::Point& inst_location) const;
   AccessPoint selectAccessPoint(
       const std::vector<AccessPoint>& access_points) const;
-  bool findODBAccessPoints(GRNet* net,
-                           AccessPointSet& selected_access_points) const;
+  // Select APs from DRT-created ODB access points; returns the pin indices
+  // that have none, for the shape-derived fallback.
+  std::vector<int> findODBAccessPoints(
+      GRNet* net,
+      AccessPointMap& selected_access_points) const;
+  // Shape-derived AP selection for one pin: pick the most accessible cell
+  // closest to the net center among the cells the pin shapes touch.
+  void selectShapeAccessPoint(GRNet* net,
+                              int pin_idx,
+                              AccessPointMap& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
@@ -335,13 +374,23 @@ class GridGraph
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
                   const std::vector<double>& net_costs = {});
+  // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
+  CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
+  // Enumerates the flanking edges a via at `loc` (between `layer_index` and
+  // `layer_index + 1`) deposits demand on, with the layer's NDR factor:
+  // fn(l, edge_lower_point, demand, layer_factor).
+  // Defined in GridGraph.cpp; all instantiations live there.
+  template <typename F>
+  void forEachViaFlankEdgeImpl(int layer_index,
+                               PointT loc,
+                               const std::vector<double>& net_costs,
+                               F&& fn) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;
   std::vector<std::vector<int>> grid_centers_;
   std::vector<std::string> layer_names_;
   std::vector<int> layer_directions_;
-  std::vector<int> layer_min_lengths_;
 
   const int lib_dbu_;
   const int m2_pitch_;
@@ -384,6 +433,11 @@ class GridGraph
   const Constants constants_;
   // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
   double cost_multiplier_ = 1.0;
+  // First non-zero sheet/via resistance across layers: the res-aware cost
+  // reference (scanning vs. layer 0 survives techs with undefined bottom-layer
+  // R).
+  double ref_resistance_ = 0.0;
+  double ref_via_resistance_ = 0.0;
 };
 
 template <typename Type>

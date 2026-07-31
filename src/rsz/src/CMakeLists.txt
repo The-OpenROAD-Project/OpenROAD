@@ -28,6 +28,7 @@ add_library(rsz_lib
     policy/MeasuredVtSwapPolicy.cc
     DelayEstimator.cc
     DelayEstimatorReporter.cc
+    LRSubproblem.cc
     policy/SetupCritVtSwapPolicy.cc
     policy/SetupDirectionalPolicy.cc
     policy/SetupLastGaspPolicy.cc
@@ -36,6 +37,7 @@ add_library(rsz_lib
     policy/SetupWnsPolicy.cc
     policy/SetupMt1Policy.cc
     policy/SetupReroutePolicy.cc
+    policy/GlobalSizingPolicy.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc

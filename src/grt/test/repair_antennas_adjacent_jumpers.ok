@@ -1,0 +1,34 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 411 nets and 1210 connections.
+[INFO ANT-0002] Found 13 net violations.
+[INFO ANT-0001] Found 14 pin violations.
+[INFO GRT-0012] Found 13 antenna violations.
+[INFO GRT-0302] Inserted 13 jumpers for 9 nets.
+[INFO GRT-0012] Found 4 antenna violations.
+[INFO DPL-0006] Core area: 221001.18 um^2
+[INFO DPL-0007] Movable instances area: 3816.98 um^2
+[INFO DPL-0008] Fixed instances area within core: 2435.96 um^2
+[INFO DPL-0009] Utilization: 2.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 1364 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
+[INFO GRT-0015] Inserted 4 diodes.
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
+No differences found.
+No differences found.

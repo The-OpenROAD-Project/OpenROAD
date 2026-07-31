@@ -14,6 +14,7 @@
 #include "odb/geom.h"
 #include "snapper.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace mpl {
 using std::string;
@@ -54,8 +55,10 @@ bool MacroPlacer::place(const int num_threads,
                         const float target_util,
                         const float min_ar,
                         const char* report_directory,
-                        const bool keep_clustering_data)
+                        const bool keep_clustering_data,
+                        const bool use_full_halo)
 {
+  utl::Timer timer;
   hier_rtlmp_->init();
   hier_rtlmp_->setClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
@@ -77,9 +80,11 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
+  hier_rtlmp_->setUseFullHalo(use_full_halo);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
   hier_rtlmp_->run();
+  logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 
   return true;
 }

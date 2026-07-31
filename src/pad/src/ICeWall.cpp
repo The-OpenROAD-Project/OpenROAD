@@ -1444,6 +1444,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                        int width,
                        int spacing,
                        bool allow45,
+                       bool fixed,
                        float turn_penalty,
                        int max_iterations)
 {
@@ -1460,6 +1461,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                                         width,
                                         spacing,
                                         allow45,
+                                        fixed,
                                         turn_penalty,
                                         max_iterations);
   router_->setRDLDebugNet(rdl_net_debug_);

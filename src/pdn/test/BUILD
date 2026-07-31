@@ -6,6 +6,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "add_pdn_connect_backside_err",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_macro_covered_partial",
@@ -41,6 +42,7 @@ COMPULSORY_TESTS = [
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
+    "core_grid_min_width_layers",
     "core_grid_no_trim",
     "core_grid_obstruction",
     "core_grid_offset_strap",
@@ -52,6 +54,8 @@ COMPULSORY_TESTS = [
     "core_grid_strap_count",
     "core_grid_strap_outside_core",
     "core_grid_via_snap",
+    "core_grid_with_multiple_bterms",
+    "core_grid_with_no_grid",
     "core_grid_with_M6_min_area",
     "core_grid_with_M6_min_area_rule",
     "core_grid_with_M7_pins",
@@ -92,6 +96,7 @@ COMPULSORY_TESTS = [
     "macros_cells_via_failure",
     "macros_different_nets",
     "macros_grid_check",
+    "macros_grid_not_used",
     "macros_grid_through",
     "macros_grid_through_without_middle",
     "macros_narrow_channel",
@@ -112,6 +117,7 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_flipchip_connect_overpads",
     "pads_black_parrot_grid_define",
     "pads_black_parrot_limit_connect",
+    "pads_black_parrot_macro_grid",
     "pads_black_parrot_max_width",
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
@@ -136,6 +142,7 @@ COMPULSORY_TESTS = [
     "reset",
     "ripup",
     "sky130_spm_floating_bpin",
+    "sky130_spm_halo_too_big",
     "sroute_test",
     "widthtable",
 ]
@@ -279,6 +286,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
@@ -286,6 +297,12 @@ filegroup(
             "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
+                "ihp_ethmac/floorplan.def",
+            ],
+            "macros_grid_not_used": [
                 "ihp_ethmac/tech.lef",
                 "ihp_ethmac/sg13g2.lef",
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",

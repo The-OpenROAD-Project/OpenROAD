@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2026, The OpenROAD Authors
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -12,12 +13,12 @@
 #include "db/tech/frConstraint.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "src/drt/src/global.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -91,6 +92,12 @@ class Fixture : public ::testing::Test
   void makeRectOnlyConstraint(frLayerNum layer_num);
 
   void makeMinEnclosedAreaConstraint(frLayerNum layer_num);
+
+  odb::dbTechLayerAreaRule* makeLef58AreaConstraint(frLayerNum layer_num,
+                                                    int64_t area,
+                                                    int rect_width = -1,
+                                                    bool except_rectangle
+                                                    = false);
 
   void makeSpacingEndOfLineConstraint(frLayerNum layer_num,
                                       frCoord par_space = -1,
