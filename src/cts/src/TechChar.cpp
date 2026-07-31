@@ -825,6 +825,7 @@ static bool containsIgnoreCase(const std::string& str,
 
 void TechChar::createDelayBufList()
 {
+  std::vector<std::string> properDlyBuffers;
   if (options_->isBufferListInferred()) {
     const char* lib_name
         = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
@@ -868,16 +869,16 @@ void TechChar::createDelayBufList()
     }
 
     if (!footprintClkDly.empty()) {
-      options_->setDlyBufferList(footprintClkDly);
+      properDlyBuffers = footprintClkDly;
       logger_->report("Using footpring for clkdly");
     } else if (!nameClkDly.empty()) {
-      options_->setDlyBufferList(nameClkDly);
+      properDlyBuffers = nameClkDly;
       logger_->report("Using name for clkdly");
     } else if (!footprintDly.empty()) {
-      options_->setDlyBufferList(footprintDly);
+      properDlyBuffers = footprintDly;
       logger_->report("Using footpring for dly");
     } else if (!nameDly.empty()) {
-      options_->setDlyBufferList(nameDly);
+      properDlyBuffers = nameDly;
       logger_->report("Using name for dly");
     }
   }
@@ -914,6 +915,12 @@ void TechChar::createDelayBufList()
   }
 
   if (drvrRes) {
+    std::set<std::string> seen(delay_buffers.begin(), delay_buffers.end());
+    for (const auto& buf : properDlyBuffers) {
+      if (seen.insert(buf).second) {
+        delay_buffers.push_back(buf);
+      }
+    }
     options_->setDlyBufferList(delay_buffers);
     return;
   }
@@ -944,6 +951,12 @@ void TechChar::createDelayBufList()
       delay_buffers.push_back(buffer);
       prevDrvrRes = drvrRes;
       prevInternalDelay = intrinsicDelay;
+    }
+  }
+  std::set<std::string> seen(delay_buffers.begin(), delay_buffers.end());
+  for (const auto& buf : properDlyBuffers) {
+    if (seen.insert(buf).second) {
+      delay_buffers.push_back(buf);
     }
   }
   options_->setDlyBufferList(delay_buffers);
