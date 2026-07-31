@@ -148,6 +148,7 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
+  void initialSnap();
   void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for
                                      // GUI updates)
   void pushNegotiationPixels();

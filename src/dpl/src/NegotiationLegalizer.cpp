@@ -9,7 +9,6 @@
 #include <cstddef>
 #include <limits>
 #include <map>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -120,6 +119,12 @@ void NegotiationLegalizer::legalize()
 
   initFenceRegions();
 
+  // Snap movable cells off invalid initial positions (no site, fixed
+  // blockage, wrong row/site, or outside their fence) and populate grid
+  // usage. Must run after buildGrid()/initFenceRegions() so it can use the
+  // real constraint helpers and see fixed-cell blockages.
+  initialSnap();
+
   debugPause("Pause after initialization.");
 
   debugPrint(logger_,
@@ -138,12 +143,7 @@ void NegotiationLegalizer::legalize()
              "negotiation",
              1,
              "NegotiationLegalizer: skipping Abacus pass.");
-  // Populate usage from initial coordinates
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (!cells_[i].fixed) {
-      addUsage(i, 1);
-    }
-  }
+  // Grid usage was already populated by initialSnap().
   // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
   // lookups see the correct placement state.
   syncAllCellsToDplGrid();
@@ -375,17 +375,8 @@ bool NegotiationLegalizer::initFromDb()
   grid_w_ = dpl_grid->getRowSiteCount().v;
   grid_h_ = dpl_grid->getRowCount().v;
 
-  // Build NegCell records from all placed instances.
   cells_.clear();
   cells_.reserve(block->getInsts().size());
-
-  // Cache region boundaries converted to grid coordinates, keyed by dbRegion*.
-  struct RegionRectInline
-  {
-    int xlo, ylo, xhi, yhi;
-  };
-  std::unordered_map<odb::dbRegion*, std::vector<RegionRectInline>>
-      region_rect_cache;
 
   for (auto* db_inst : block->getInsts()) {
     const auto status = db_inst->getPlacementStatus();
@@ -407,8 +398,7 @@ bool NegotiationLegalizer::initFromDb()
     int db_x = 0;
     int db_y = 0;
     db_inst->getLocation(db_x, db_y);
-    // Snap to grid, findBestLocation() and snapToLegal() iterate over grid
-    // positions
+    // Snap to grid, findBestLocation() iterates over grid positions
     cell.init_x = dpl_grid->gridX(DbuX{db_x - die_xlo_}).v;
     cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
 
@@ -428,200 +418,6 @@ bool NegotiationLegalizer::initFromDb()
     cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
     cell.x = cell.init_x;
     cell.y = cell.init_y;
-
-    // gridX() / gridRoundY() don't check whether a site actually exists at the
-    // computed position.  Instances near the chip boundary or in sparse-row
-    // designs can land on invalid (is_valid=false) pixels.  Fix those with a
-    // 4-direction linear search (based on Opendp::moveHopeless).
-    if (!cell.fixed) {
-      // Check that the full cell footprint (width x height) fits on valid
-      // sites.
-      auto isValidSite = [&](int pixel_left, int pixel_bottom) -> bool {
-        if (pixel_left < 0 || pixel_bottom < 0
-            || pixel_left + cell.width > grid_w_
-            || pixel_bottom + cell.height > grid_h_) {
-          return false;
-        }
-        // Site-type matching is checked by isValidRow after, at negotiation
-        // loop; the snap only verifies geometric validity below.
-        for (int row_offset = 0; row_offset < cell.height; ++row_offset) {
-          for (int col_offset = 0; col_offset < cell.width; ++col_offset) {
-            const auto& p = dpl_grid->pixel(GridY{pixel_bottom + row_offset},
-                                            GridX{pixel_left + col_offset});
-            if (!p.is_valid) {
-              return false;
-            }
-          }
-        }
-        return true;
-      };
-
-      // For region-constrained cells, collect the region rects in grid
-      // coordinates so the snap below can verify containment.
-      // initFenceRegions() has not run yet, so we read ODB directly.
-      // Instances reach their region via a GROUP, not via dbInst::region_,
-      // so we must check both paths.
-      odb::dbRegion* odb_region = db_inst->getRegion();
-      if (odb_region == nullptr) {
-        auto* grp = db_inst->getGroup();
-        if (grp != nullptr) {
-          odb_region = grp->getRegion();
-        }
-      }
-      // Look up (or populate) the cache for this region.
-      const std::vector<RegionRectInline>* region_rects_ptr = nullptr;
-      if (odb_region != nullptr) {
-        auto it = region_rect_cache.find(odb_region);
-        if (it == region_rect_cache.end()) {
-          std::vector<RegionRectInline> rects;
-          for (auto* box : odb_region->getBoundaries()) {
-            RegionRectInline r;
-            r.xlo = (box->xMin() - die_xlo_) / site_width_;
-            r.ylo = dpl_grid->gridEndY(DbuY{box->yMin() - die_ylo_}).v;
-            r.xhi = (box->xMax() - die_xlo_) / site_width_;
-            r.yhi = dpl_grid->gridSnapDownY(DbuY{box->yMax() - die_ylo_}).v;
-            rects.push_back(r);
-          }
-          it = region_rect_cache.emplace(odb_region, std::move(rects)).first;
-        }
-        region_rects_ptr = &it->second;
-      }
-      // Returns true when (gx,gy) satisfies the region constraint:
-      // region-constrained cells must land inside their region;
-      // unconstrained cells have no restriction here (negotiation handles it).
-      auto isInRegionOk = [&](int gx, int gy) -> bool {
-        if (region_rects_ptr == nullptr) {
-          return true;
-        }
-        for (const auto& r : *region_rects_ptr) {
-          if (gx >= r.xlo && gy >= r.ylo && gx + cell.width <= r.xhi
-              && gy + cell.height <= r.yhi) {
-            return true;
-          }
-        }
-        return false;
-      };
-
-      if (!isValidSite(cell.init_x, cell.init_y)
-          || !isInRegionOk(cell.init_x, cell.init_y)) {
-        debugPrint(logger_,
-                   utl::DPL,
-                   "negotiation",
-                   1,
-                   "Instance '{}' initially at dbu ({}, {}) rounds to "
-                   "an invalid initial position at dbu ({}, {}). Will "
-                   "search for the nearest valid site.",
-                   cell.db_inst->getName(),
-                   db_x,
-                   db_y,
-                   die_xlo_ + cell.init_x * site_width_,
-                   die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
-
-        // Linear scan in the four cardinal directions (same shape as
-        // Opendp::moveHopeless).
-        int best_x = cell.init_x;
-        int best_y = cell.init_y;
-        int best_dist = std::numeric_limits<int>::max();
-        bool found = false;
-        const int init_y_dbu = dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
-
-        for (int x = cell.init_x - 1; x >= 0; --x) {  // left
-          if (isValidSite(x, cell.init_y) && isInRegionOk(x, cell.init_y)) {
-            const int dist = (cell.init_x - x) * site_width_;
-            if (dist < best_dist) {
-              best_dist = dist;
-              best_x = x;
-              best_y = cell.init_y;
-              found = true;
-            }
-            break;
-          }
-        }
-        for (int x = cell.init_x + 1; x + cell.width <= grid_w_;
-             ++x) {  // right
-          if (isValidSite(x, cell.init_y) && isInRegionOk(x, cell.init_y)) {
-            const int dist = (x - cell.init_x) * site_width_;
-            if (dist < best_dist) {
-              best_dist = dist;
-              best_x = x;
-              best_y = cell.init_y;
-              found = true;
-            }
-            break;
-          }
-        }
-        for (int y = cell.init_y - 1; y >= 0; --y) {  // below
-          if (isValidSite(cell.init_x, y) && isInRegionOk(cell.init_x, y)) {
-            const int dist = init_y_dbu - dpl_grid->gridYToDbu(GridY{y}).v;
-            if (dist < best_dist) {
-              best_dist = dist;
-              best_x = cell.init_x;
-              best_y = y;
-              found = true;
-            }
-            break;
-          }
-        }
-        for (int y = cell.init_y + 1; y + cell.height <= grid_h_;
-             ++y) {  // above
-          if (isValidSite(cell.init_x, y) && isInRegionOk(cell.init_x, y)) {
-            const int dist = dpl_grid->gridYToDbu(GridY{y}).v - init_y_dbu;
-            if (dist < best_dist) {
-              best_dist = dist;
-              best_x = cell.init_x;
-              best_y = y;
-              found = true;
-            }
-            break;
-          }
-        }
-
-        if (found) {
-          cell.init_x = best_x;
-          cell.init_y = best_y;
-          cell.x = cell.init_x;
-          cell.y = cell.init_y;
-
-          if (debug_observer_ && opendp_->deep_iterative_debug_) {
-            const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
-            if (!debug_inst || cell.db_inst == debug_inst) {
-              if (network_) {
-                if (Node* node = cell.node) {
-                  node->setLeft(DbuX(cell.x * site_width_));
-                  node->setBottom(DbuY(dpl_grid->gridYToDbu(GridY{cell.y}).v));
-                  node->setPlaced(true);
-                }
-              }
-              pushNegotiationPixels();
-              const int snap_x_dbu = die_xlo_ + cell.x * site_width_;
-              const int snap_y_dbu
-                  = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.y}).v;
-              logger_->report("Pause at snapping of {} to ({}, {}) dbu.",
-                              cell.db_inst->getName(),
-                              snap_x_dbu,
-                              snap_y_dbu);
-              debug_observer_->drawSelected(cell.db_inst, !debug_inst);
-            }
-          }
-        } else {
-          const int init_x_dbu = die_xlo_ + cell.init_x * site_width_;
-          const int init_y_dbu
-              = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
-          debugPrint(logger_,
-                     utl::DPL,
-                     "negotiation",
-                     1,
-                     "No valid site found for instance '{}' near its "
-                     "initial position dbu ({}, {}). Linear scan in all "
-                     "four cardinal directions exhausted with no match. "
-                     "Leaving instance at its initial position; "
-                     "negotiation will need to legalize it.",
-                     cell.db_inst->getName(),
-                     init_x_dbu,
-                     init_y_dbu);
-        }
-      }
-    }
 
     debugPrint(logger_,
                utl::DPL,
@@ -759,6 +555,196 @@ void NegotiationLegalizer::initFenceRegions()
         cell.fence_id = fi;
         break;
       }
+    }
+  }
+}
+
+// ===========================================================================
+// initialSnap – relocate movable cells off invalid initial
+// positions and record their usage on the grid (density-aware).
+// ===========================================================================
+
+void NegotiationLegalizer::initialSnap()
+{
+  const Grid* dpl_grid = opendp_->grid_.get();
+  std::vector<bool> relocated(cells_.size(), false);
+
+  // Can cell `ci` legally occupy (px, py)? True when the footprint is in-die,
+  // sits only on real sites (capacity 0 = no site or fixed blockage), matches
+  // the row (site type, orientation, power) and is inside the fence. This is
+  // the snapping trigger; usage (movable overlap) is ignored. Only the cell
+  // body is checked, not its padding: padding merely widens the horizontal gap
+  // a sideways move must clear, which would bias the search into shooting the
+  // cell vertically past the fixed instance instead of nudging it aside.
+  // Spacing/padding is negotiation's job.
+  auto placeable = [&](int ci, int px, int py) -> bool {
+    const NegCell& cell = cells_[ci];
+    if (!inDie(px, py, cell.width, cell.height)) {
+      return false;
+    }
+    for (int dy = 0; dy < cell.height; ++dy) {
+      for (int gx = px; gx < px + cell.width; ++gx) {
+        if (gridAt(gx, py + dy).capacity == 0) {
+          return false;
+        }
+      }
+    }
+    return isValidRow(py, cell, px) && respectsFence(ci, px, py);
+  };
+
+  // Destination test: placeable AND unclaimed. At this point the only usage on
+  // the grid is from cells relocated earlier in this pass (normal overlaps are
+  // committed only after the loop), so the search skips just those and stops
+  // at the nearest genuinely-open site. This spreads relocated cells apart,
+  // e.g. filling a short channel between fixed end caps site by site instead
+  // of piling them onto the same opening.
+  auto vacant = [&](int ci, int px, int py) -> bool {
+    if (!placeable(ci, px, py)) {
+      return false;
+    }
+    const NegCell& cell = cells_[ci];
+    for (int dy = 0; dy < cell.height; ++dy) {
+      for (int gx = px; gx < px + cell.width; ++gx) {
+        if (gridAt(gx, py + dy).usage > 0) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  for (int idx = 0; idx < static_cast<int>(cells_.size()); ++idx) {
+    NegCell& cell = cells_[idx];
+    if (cell.fixed) {
+      continue;
+    }
+
+    if (!placeable(idx, cell.init_x, cell.init_y)) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "Instance '{}' has an invalid initial position at dbu "
+                 "({}, {}). Will search for the nearest valid site.",
+                 cell.db_inst->getName(),
+                 die_xlo_ + cell.init_x * site_width_,
+                 die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
+
+      // Linear scan in the four cardinal directions (same shape as
+      // Opendp::moveHopeless). Each direction walks until the first vacant
+      // site — unbounded by any search window, so it can step past an
+      // arbitrarily wide macro or a fully-occupied channel to reach real
+      // room.
+      int best_x = cell.init_x;
+      int best_y = cell.init_y;
+      int best_dist = std::numeric_limits<int>::max();
+      bool found = false;
+      const int init_y_dbu = dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
+
+      for (int x = cell.init_x - 1; x >= 0; --x) {  // left
+        if (vacant(idx, x, cell.init_y)) {
+          const int dist = (cell.init_x - x) * site_width_;
+          if (dist < best_dist) {
+            best_dist = dist;
+            best_x = x;
+            best_y = cell.init_y;
+            found = true;
+          }
+          break;
+        }
+      }
+      for (int x = cell.init_x + 1; x + cell.width <= grid_w_; ++x) {  // right
+        if (vacant(idx, x, cell.init_y)) {
+          const int dist = (x - cell.init_x) * site_width_;
+          if (dist < best_dist) {
+            best_dist = dist;
+            best_x = x;
+            best_y = cell.init_y;
+            found = true;
+          }
+          break;
+        }
+      }
+      for (int y = cell.init_y - 1; y >= 0; --y) {  // below
+        if (vacant(idx, cell.init_x, y)) {
+          const int dist = init_y_dbu - dpl_grid->gridYToDbu(GridY{y}).v;
+          if (dist < best_dist) {
+            best_dist = dist;
+            best_x = cell.init_x;
+            best_y = y;
+            found = true;
+          }
+          break;
+        }
+      }
+      for (int y = cell.init_y + 1; y + cell.height <= grid_h_; ++y) {  // above
+        if (vacant(idx, cell.init_x, y)) {
+          const int dist = dpl_grid->gridYToDbu(GridY{y}).v - init_y_dbu;
+          if (dist < best_dist) {
+            best_dist = dist;
+            best_x = cell.init_x;
+            best_y = y;
+            found = true;
+          }
+          break;
+        }
+      }
+
+      if (found) {
+        cell.init_x = best_x;
+        cell.init_y = best_y;
+        cell.x = cell.init_x;
+        cell.y = cell.init_y;
+        // Commit now so later relocations in this loop see this cell's claim
+        // and do not pile onto it.
+        addUsage(idx, 1);
+        relocated[idx] = true;
+
+        if (debug_observer_ && opendp_->deep_iterative_debug_) {
+          const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
+          if (!debug_inst || cell.db_inst == debug_inst) {
+            if (network_) {
+              if (Node* node = cell.node) {
+                node->setLeft(DbuX(cell.x * site_width_));
+                node->setBottom(DbuY(dpl_grid->gridYToDbu(GridY{cell.y}).v));
+                node->setPlaced(true);
+              }
+            }
+            pushNegotiationPixels();
+            const int snap_x_dbu = die_xlo_ + cell.x * site_width_;
+            const int snap_y_dbu
+                = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.y}).v;
+            logger_->report("Pause at snapping of {} to ({}, {}) dbu.",
+                            cell.db_inst->getName(),
+                            snap_x_dbu,
+                            snap_y_dbu);
+            debug_observer_->drawSelected(cell.db_inst, !debug_inst);
+          }
+        }
+      } else {
+        debugPrint(logger_,
+                   utl::DPL,
+                   "negotiation",
+                   1,
+                   "No valid site found for instance '{}' near its initial "
+                   "position dbu ({}, {}). Linear scan in all four cardinal "
+                   "directions exhausted with no match. Leaving instance at "
+                   "its initial position; negotiation will need to legalize "
+                   "it.",
+                   cell.db_inst->getName(),
+                   die_xlo_ + cell.init_x * site_width_,
+                   die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
+      }
+    }
+  }
+
+  // Now record usage for the cells that were not relocated (already placeable,
+  // or search exhausted). This was deferred until after the loop so those
+  // normal overlaps did not steer the relocation search above. Relocated cells
+  // recorded their usage inline, so every movable cell is now on the grid.
+  for (int idx = 0; idx < static_cast<int>(cells_.size()); ++idx) {
+    if (!cells_[idx].fixed && !relocated[idx]) {
+      addUsage(idx, 1);
     }
   }
 }
