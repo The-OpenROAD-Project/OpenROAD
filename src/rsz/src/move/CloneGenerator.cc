@@ -153,7 +153,8 @@ std::vector<sta::Pin*> selectMovedLoads(
   moved_loads.reserve(split_index);
   for (int i = 0; i < split_index; ++i) {
     sta::Pin* load_pin = fanout_slacks[i].first->pin();
-    if (!resizer.network()->isTopLevelPort(load_pin)) {
+    if (!resizer.network()->isTopLevelPort(load_pin)
+        && !resizer.dontTouch(resizer.network()->instance(load_pin))) {
       moved_loads.push_back(load_pin);
     }
   }
