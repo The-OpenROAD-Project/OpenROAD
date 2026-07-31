@@ -197,4 +197,51 @@ TEST_F(TestEstimateParasitics, ScanClockIdealOnlyInTestMode)
   ep_.setIncrementalParasiticsEnabled(false);
 }
 
+// Verifies that wire RC values are stored per chip: chip-specific values take
+// precedence over the defaults, and chips without an entry use the defaults.
+TEST_F(TestEstimateParasitics, WireRcPerTech)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  sta::Scene* scene = sta_->scenes().front();
+  odb::dbChip* chip1 = db_->getChip();
+  ASSERT_NE(chip1, nullptr);
+
+  // A null tech sets the default values used by techs without an entry.
+  ep_.initChip(chip1);
+  ep_.setHWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.setVWireSignalRC(nullptr, scene, 2.0e3, 2.0e-10);
+  ep_.setHWireClkRC(nullptr, scene, 5.0e3, 5.0e-10);
+  ep_.setVWireClkRC(nullptr, scene, 5.0e3, 5.0e-10);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalVCapacitance(scene), 2.0e-10);
+
+  // A second technology with tech-specific values, used by a second chip.
+  loadTechAndLib(
+      "tech2", "lib2", getFilePath("_main/test/Nangate45/Nangate45.lef"));
+  odb::dbTech* tech2 = db_->findTech("tech2");
+  ASSERT_NE(tech2, nullptr);
+  odb::dbChip* chip2 = odb::dbChip::create(
+      db_.get(), tech2, "chip2", odb::dbChip::ChipType::DIE);
+  ASSERT_NE(chip2, nullptr);
+  odb::dbBlock::create(chip2, "chip2_block");
+  ep_.setHWireSignalRC(tech2, scene, 3.0e3, 3.0e-10);
+  ep_.setVWireSignalRC(tech2, scene, 4.0e3, 4.0e-10);
+
+  // The tech-specific values do not leak into the default-valued tech.
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
+
+  // Rebinding to the second chip resolves tech2's signal values; its unset
+  // clock values fall back to the defaults independently.
+  ep_.initChip(chip2);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 3.0e3);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalVCapacitance(scene), 4.0e-10);
+  EXPECT_DOUBLE_EQ(ep_.wireClkHResistance(scene), 5.0e3);
+
+  // Rebinding back to a chip whose tech has no entry falls back to defaults.
+  ep_.initChip(chip1);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
+  EXPECT_DOUBLE_EQ(ep_.wireSignalVResistance(scene), 2.0e3);
+}
+
 }  // namespace est

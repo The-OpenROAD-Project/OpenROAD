@@ -75,22 +75,20 @@ Stage 2: Resistance-aware re-route of critical nets.
 Routing statistics
 Wire length:           34022
 Total via count:       2528
-Total congestion:      0
-Min resource:          0.14035059109068904
+Total congestion:      0.00
+Min resource:          0.14
 Bottleneck:            (4, 94, 153)
-
-[INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
----------------------------------------------------------------------------------------
-M1                   0             0            0.00%             0 /  0 /  0
-M2              178347           568            0.32%             0 /  0 /  0
-M3              193349          1107            0.57%             0 /  0 /  0
-M4              144977           329            0.23%             0 /  0 /  0
-M5              144977           657            0.45%             0 /  0 /  0
-M6              108785           121            0.11%             0 /  0 /  0
----------------------------------------------------------------------------------------
-Total           770435          2782            0.36%             0 /  0 /  0
-
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
+--------------------------------------------------------------------------
+M1        V         0.00         0.00         0.00         0.00       0.00
+M2        H    178346.57       390.00       177.63       567.63       0.32
+M3        V    193348.79       980.00       127.34      1107.34       0.57
+M4        H    144976.79       234.00        95.28       329.28       0.23
+M5        V    144976.79       604.00        53.01       657.01       0.45
+M6        H    108784.79       108.00        12.59       120.59       0.11
+--------------------------------------------------------------------------
+Total          770433.74      2316.00       465.85      2781.85       0.36
 [INFO GRT-0018] Total wirelength: 1825 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
