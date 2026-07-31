@@ -483,6 +483,11 @@ export class SchematicWidget {
 
         const { faninDepth, fanoutDepth } = this._schematicDepths();
         const readyPromise = wm.readyPromise || Promise.resolve();
+        // Capture the netlist the user requested expansion against, so that
+        // a schematic swap while the websocket request is in flight can't
+        // cause us to merge the response into (and overwrite) a different
+        // netlist.
+        const baseNetlistAtRequest = this._currentNetlist;
 
         return readyPromise.then(() =>
             wm.request({ type: 'schematic_cone', inst_name: instName,
@@ -493,8 +498,8 @@ export class SchematicWidget {
                         this.setStatus('No cells found for selected instance.');
                         return false;
                     }
-                    const netlist = this._currentNetlist
-                        ? this._mergeSchematicNetlists(this._currentNetlist, data)
+                    const netlist = baseNetlistAtRequest
+                        ? this._mergeSchematicNetlists(baseNetlistAtRequest, data)
                         : data;
                     return this.renderNetlist(netlist).then(() => true);
                 })
