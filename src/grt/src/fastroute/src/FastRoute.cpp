@@ -2388,9 +2388,8 @@ NetRouteMap FastRouteCore::run()
       // When the overflow iterations fail to make progress (the minimum
       // overflow stagnates, or the loop runs past kSoftNdrMaxIter) demote every
       // congested NDR net to soft-NDR and restart the loop.
-      const int iter = i;
       if (total_overflow_ > 0
-          && (minofl_stagnant > kSoftNdrStagnantTh || iter > kSoftNdrMaxIter)) {
+          && (minofl_stagnant > kSoftNdrStagnantTh || i > kSoftNdrMaxIter)) {
         // Recompute the NDR nets currently involved in congestion (nets already
         // demoted to soft-NDR are skipped).
         computeCongestedNDRnets();
