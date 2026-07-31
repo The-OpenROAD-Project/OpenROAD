@@ -558,6 +558,11 @@ export class SchematicWidget {
 
         const { faninDepth, fanoutDepth } = this._schematicDepths();
         const readyPromise = wm.readyPromise || Promise.resolve();
+        // Capture the netlist the user requested expansion against, so that
+        // a schematic swap while the websocket request is in flight can't
+        // cause us to merge the response into (and overwrite) a different
+        // netlist.
+        const baseNetlistAtRequest = this._currentNetlist;
 
         return readyPromise.then(() =>
             wm.request({ type: 'schematic_cone', inst_name: instName,
@@ -568,8 +573,8 @@ export class SchematicWidget {
                         this.setStatus('No cells found for selected instance.');
                         return false;
                     }
-                    const netlist = this._currentNetlist
-                        ? this._mergeSchematicNetlists(this._currentNetlist, data)
+                    const netlist = baseNetlistAtRequest
+                        ? this._mergeSchematicNetlists(baseNetlistAtRequest, data)
                         : data;
                     return Promise.resolve(this.renderNetlist(netlist))
                         .then((didRender) => {
@@ -1357,9 +1362,14 @@ export class SchematicWidget {
             }
         }
 
+        // Pre-measure each group once. Calling getBoundingClientRect() from
+        // inside the comparator would force a synchronous layout on every
+        // comparison (O(N log N) reflows during the sort).
+        const groupRects = new Map(
+            records.map((r) => [r, r.group.getBoundingClientRect()]));
         records.sort((a, b) => {
-            const rectA = a.group.getBoundingClientRect();
-            const rectB = b.group.getBoundingClientRect();
+            const rectA = groupRects.get(a);
+            const rectB = groupRects.get(b);
             return rectA.top - rectB.top || rectA.left - rectB.left;
         });
 
