@@ -2139,18 +2139,15 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
-  // Soft-NDR demotion schedule. Demote a growing fraction of the congested NDR
-  // nets on a fixed iteration schedule, restarting the loop only on the final
-  // disable-everything step:
-  //   iteration 5  -> demote 10% of the congested NDR nets, keep iterating
-  //   iteration 10 -> demote 50% of the congested NDR nets, keep iterating
-  //   iteration 15 -> demote all remaining congested NDR nets and restart
-  // Not restarting on the 10%/50% steps lets the maze router absorb the freed
-  // capacity in place instead of paying for a full restart each time.
-  constexpr int kSoftNdrDemote10Iter = 5;
-  constexpr int kSoftNdrDemote50Iter = 10;
-  constexpr int kSoftNdrDemoteAllIter = 15;
+  // Soft-NDR demotion. When the overflow iterations fail to make progress --
+  // the minimum overflow stagnates for more than kSoftNdrStagnantTh iterations,
+  // or the loop runs past kSoftNdrMaxIter iterations -- demote every congested
+  // NDR net to soft-NDR and restart the overflow loop.
+  constexpr int kSoftNdrStagnantTh = 10;
+  constexpr int kSoftNdrMaxIter = 15;
   float overflow_reduction_percent = -1;
+  // Iterations since the minimum overflow last improved.
+  int minofl_stagnant = 0;
   {
     const DebugScopedTimer timer(timings.overflow_iterations,
                                  logger_,
@@ -2249,6 +2246,9 @@ NetRouteMap FastRouteCore::run()
       if (minofl > past_cong) {
         minofl = past_cong;
         minoflrnd = i;
+        minofl_stagnant = 0;
+      } else {
+        minofl_stagnant++;
       }
 
       if (i == 8) {
@@ -2341,6 +2341,7 @@ NetRouteMap FastRouteCore::run()
             if (minofl > past_cong) {
               minofl = past_cong;
               minoflrnd = i;
+              minofl_stagnant = 0;
             }
           }
         } else {
@@ -2384,56 +2385,39 @@ NetRouteMap FastRouteCore::run()
             max_overflow_increases);
       }
 
-      // Try disabling NDR nets to fix congestion following the fixed demotion
-      // schedule described where the constants are defined: demote 10% of the
-      // congested NDR nets at iteration 5, 50% at iteration 10, and all of the
-      // remaining ones at iteration 15. Only the final step restarts the loop.
-      const int iter = i - 1;
+      // When the overflow iterations fail to make progress (the minimum
+      // overflow stagnates, or the loop runs past kSoftNdrMaxIter) demote every
+      // congested NDR net to soft-NDR and restart the loop.
+      const int iter = i;
       if (total_overflow_ > 0
-          && (iter == kSoftNdrDemote10Iter || iter == kSoftNdrDemote50Iter
-              || iter == kSoftNdrDemoteAllIter)) {
+          && (minofl_stagnant > kSoftNdrStagnantTh || iter > kSoftNdrMaxIter)) {
         // Recompute the NDR nets currently involved in congestion (nets already
         // demoted to soft-NDR are skipped).
         computeCongestedNDRnets();
 
-        double demote_fraction;
-        bool restart_loop;
-        if (iter == kSoftNdrDemote10Iter) {
-          demote_fraction = 0.1;
-          restart_loop = false;
-        } else if (iter == kSoftNdrDemote50Iter) {
-          demote_fraction = 0.5;
-          restart_loop = false;
-        } else {  // kSoftNdrDemoteAllIter
-          demote_fraction = 1.0;
-          restart_loop = true;
-        }
-
-        std::vector<int> net_ids
-            = graph2d_.getCongestedNDRnetsByFraction(demote_fraction);
+        std::vector<int> net_ids = graph2d_.getCongestedNDRnetsByFraction(1.0);
 
         // Only apply soft NDR if there are NDR nets involved in congestion
         if (!net_ids.empty()) {
           // Apply the soft NDR to the selected list of nets
           applySoftNDR(net_ids);
 
-          if (restart_loop) {
-            // Reset loop parameters
-            overflow_increases = 0;
-            i = 1;
-            costheight_ = COSHEIGHT;
-            enlarge_ = ENLARGE;
-            ripup_threshold = Ripvalue;
-            minofl = total_overflow_;
-            bmfl = minofl;
-            stopDEC = false;
+          // Reset loop parameters
+          overflow_increases = 0;
+          minofl_stagnant = 0;
+          i = 1;
+          costheight_ = COSHEIGHT;
+          enlarge_ = ENLARGE;
+          ripup_threshold = Ripvalue;
+          minofl = total_overflow_;
+          bmfl = minofl;
+          stopDEC = false;
 
-            slope = 20;
-            L = 1;
+          slope = 20;
+          L = 1;
 
-            // Increase maze route 3D threshold to fix bad routes
-            long_edge_len = BIG_INT;
-          }
+          // Increase maze route 3D threshold to fix bad routes
+          long_edge_len = BIG_INT;
         }
       }
 
