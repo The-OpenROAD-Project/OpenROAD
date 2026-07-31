@@ -417,6 +417,12 @@ class TileGenerator
   // `collectChiplets` is kept for tests and one-shot callers.
   const std::vector<ChipletNode>& chiplets() const;
 
+  // Monotonic counter, bumped every time chiplets() rebuilds its cache.
+  // Caches derived from the chiplet list poll this to notice a hierarchy
+  // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
+  // the chiplet cache, so the value returned reflects the live hierarchy.
+  uint64_t chipletsGeneration() const;
+
   std::vector<unsigned char> generateTile(
       const std::string& layer,
       int z,
@@ -653,10 +659,13 @@ class TileGenerator
       layer_colors_by_tech_;
 
   // Layer-bucketed master and via-master geometry.  See geomCache(); built on
-  // first use and rebuilt whenever Search::revision() moves.
+  // first use and rebuilt whenever Search::revision() or chipletsGeneration()
+  // moves.  The via half is keyed off the reachable chiplets' blocks, so a
+  // hierarchy edit changes what belongs in it without any block edit.
   mutable std::mutex geom_cache_mutex_;
   mutable std::shared_ptr<const GeomCache> geom_cache_;
   mutable uint64_t geom_cache_revision_ = 0;
+  mutable uint64_t geom_cache_chiplet_generation_ = 0;
   std::shared_ptr<const GeomCache> buildGeomCache() const;
 
   // Cached chiplet traversal.  See chiplets().  Invalidated in
@@ -669,6 +678,8 @@ class TileGenerator
   mutable bool chiplets_cache_valid_ = false;
   mutable odb::dbChip* chiplets_cache_root_ = nullptr;
   mutable size_t chiplets_cache_inst_count_ = 0;
+  // See chipletsGeneration().
+  mutable uint64_t chiplets_cache_generation_ = 0;
 
   // LRU cache of PNG-encoded clean tiles (see tileCacheGet/Put).  The list
   // holds (key, png) most-recent-first; the index maps key → list iterator.

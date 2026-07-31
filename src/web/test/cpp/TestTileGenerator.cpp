@@ -772,6 +772,102 @@ TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
          "design-changed callback does not report";
 }
 
+// Build a HIER root chip holding `num_insts` instances of the fixture's chip,
+// and make it the top chip so chiplets() traverses down into that one block
+// once per instance.  Returns the root.
+odb::dbChip* makeSharedChipletRoot(odb::dbDatabase* db,
+                                   odb::dbChip* master,
+                                   const int num_insts)
+{
+  odb::dbChip* root
+      = odb::dbChip::create(db, nullptr, "root", odb::dbChip::ChipType::HIER);
+  db->setTopChip(root);
+  for (int i = 0; i < num_insts; ++i) {
+    odb::dbChipInst::create(root, master, "die" + std::to_string(i));
+  }
+  return root;
+}
+
+// Add a block via with one cut box on `layer`, which is what the geometry
+// cache's via_boxes map is built from.
+odb::dbVia* makeBlockVia(odb::dbBlock* block,
+                         odb::dbTechLayer* layer,
+                         const char* name)
+{
+  odb::dbVia* via = odb::dbVia::create(block, name);
+  odb::dbBox::create(via, layer, -50, -50, 50, 50);
+  return via;
+}
+
+// Regression: chiplets() reports one node per dbChipInst, so instances sharing
+// a master chip all report the same block.  Collecting that block's vias once
+// per instance would leave the render pass redrawing every box once per
+// instance of the chiplet -- invisible in the output (fills are opaque) but
+// quadratic in the repeat count, and it multiplies the cache's memory by it
+// too.
+TEST_F(TileGeneratorTest, GeomCacheVisitsASharedChipletBlockOnce)
+{
+  odb::dbTechLayer* via1 = getDb()->getTech()->findLayer("via1");
+  ASSERT_NE(via1, nullptr);
+  odb::dbVia* via = makeBlockVia(block_, via1, "V1");
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/3);
+  makeTileGen();
+
+  auto cache = tile_gen_->geomCache();
+  ASSERT_NE(cache, nullptr);
+  const auto layer_it = cache->via_boxes.find(via1);
+  ASSERT_NE(layer_it, cache->via_boxes.end());
+  const auto via_it = layer_it->second.find(via);
+  ASSERT_NE(via_it, layer_it->second.end());
+  EXPECT_EQ(via_it->second.size(), 1u)
+      << "block via decomposed once per dbChipInst instead of once per block";
+}
+
+// Regression: creating a dbChipInst fires no dbBlockCallBackObj, so it cannot
+// move Search::revision() -- but it does make an already-populated block's vias
+// newly reachable, which is what via_boxes is keyed off.  A cache keyed on the
+// revision alone keeps a snapshot built before the chiplet existed, and the new
+// chiplet's special-net vias silently stop drawing.
+TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterChipletInstCreated)
+{
+  odb::dbTechLayer* via1 = getDb()->getTech()->findLayer("via1");
+  ASSERT_NE(via1, nullptr);
+
+  // A second chip, off to the side of the hierarchy and carrying a via of its
+  // own, so the cache built below provably cannot contain it yet.
+  odb::dbChip* other
+      = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+  odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+  other_block->setDieArea(odb::Rect(0, 0, 1000, 1000));
+  odb::dbVia* other_via = makeBlockVia(other_block, via1, "V1_other");
+
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  auto before = tile_gen_->geomCache();
+  ASSERT_NE(before, nullptr);
+  {
+    const auto layer_it = before->via_boxes.find(via1);
+    if (layer_it != before->via_boxes.end()) {
+      EXPECT_EQ(layer_it->second.find(other_via), layer_it->second.end())
+          << "unreachable chip's via cached before its chiplet existed";
+    }
+  }
+
+  odb::dbChipInst::create(root, other, "other_die");
+
+  auto after = tile_gen_->geomCache();
+  EXPECT_NE(before, after)
+      << "geometry cache went stale across a chiplet-hierarchy edit, which no "
+         "block callback reports";
+  const auto layer_it = after->via_boxes.find(via1);
+  ASSERT_NE(layer_it, after->via_boxes.end());
+  EXPECT_NE(layer_it->second.find(other_via), layer_it->second.end())
+      << "new chiplet's block vias missing from the cache, so its special-net "
+         "vias would not draw";
+}
+
 TEST_F(TileGeneratorTest, SerializeTechResponseIncludesLayerColors)
 {
   makeTileGen();

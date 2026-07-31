@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -823,8 +824,18 @@ const std::vector<ChipletNode>& TileGenerator::chiplets() const
     chiplets_cache_root_ = root;
     chiplets_cache_inst_count_ = inst_count;
     chiplets_cache_valid_ = true;
+    ++chiplets_cache_generation_;
   }
   return chiplets_cache_;
+}
+
+uint64_t TileGenerator::chipletsGeneration() const
+{
+  // Refresh first so the counter reflects the live hierarchy rather than
+  // whatever the last chiplets() caller saw.
+  chiplets();
+  std::lock_guard lock(chiplets_mutex_);
+  return chiplets_cache_generation_;
 }
 
 void TileGenerator::computePinLabelMargin()
@@ -1346,8 +1357,13 @@ std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::buildGeomCache()
       add_via_boxes(via, via->getBoxes());
     }
   }
+  // One node per dbChipInst, so every instance of a shared master chip reports
+  // the same block.  Visit each block once: appending a via's boxes again per
+  // instance would leave duplicates for the render pass to redraw, once per
+  // instance of the chiplet.
+  std::unordered_set<odb::dbBlock*> seen_blocks;
   for (const ChipletNode& node : chiplets()) {
-    if (!node.block) {
+    if (!node.block || !seen_blocks.insert(node.block).second) {
       continue;
     }
     for (odb::dbVia* via : node.block->getVias()) {
@@ -1360,13 +1376,22 @@ std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::buildGeomCache()
 
 std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::geomCache() const
 {
-  // Read the revision before building so an edit landing mid-build leaves the
-  // recorded revision behind the live one, and the next call rebuilds.
+  // Read both keys before building so an edit landing mid-build leaves the
+  // recorded values behind the live ones, and the next call rebuilds.
   const uint64_t rev = search_->revision();
+  // Creating a dbChipInst fires no block callback, so it cannot move
+  // Search::revision() — but it does make an already-populated block's vias
+  // newly reachable, which is exactly what via_boxes is keyed off.  Every other
+  // source of new geometry reaches revision() transitively: a dbVia or dbMaster
+  // only becomes drawable once an sbox or instance references it, and those do
+  // notify.  chipletsGeneration() closes that one gap.
+  const uint64_t chiplet_generation = chipletsGeneration();
   std::lock_guard lock(geom_cache_mutex_);
-  if (!geom_cache_ || geom_cache_revision_ != rev) {
+  if (!geom_cache_ || geom_cache_revision_ != rev
+      || geom_cache_chiplet_generation_ != chiplet_generation) {
     geom_cache_ = buildGeomCache();
     geom_cache_revision_ = rev;
+    geom_cache_chiplet_generation_ = chiplet_generation;
   }
   return geom_cache_;
 }
