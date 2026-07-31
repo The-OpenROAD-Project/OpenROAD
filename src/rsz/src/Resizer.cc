@@ -58,11 +58,13 @@
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
+#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/Hash.hh"
 #include "sta/InputDrive.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
@@ -2199,8 +2201,16 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     return {};
   }
 
+  // An instance of a dont_use cell is left alone rather than sized.  Its
+  // target load is not in target_load_map_, which findTargetLoads builds
+  // without dont_use cells, so it has no usable baseline to size against.
+  if (dontUse(source_cell)) {
+    swappable_cells_cache_[source_cell] = {source_cell};
+    return {source_cell};
+  }
+
   sta::LibertyCellSeq swappable_cells;
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
 
   if (equiv_cells) {
     int64_t source_cell_area = master->getArea();
@@ -2313,7 +2323,7 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return vt_equiv_cells_cache_[source_cell];
   }
 
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   if (equiv_cells == nullptr || source_cell_master == nullptr) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
@@ -2440,26 +2450,102 @@ void Resizer::checkLibertyForAllCorners()
   }
 }
 
+// Bucket key, same shape as the port term of sta::hashCell.  Equivalent cells
+// always share a key because sta::equivCellPorts requires matching port names
+// and directions.  Unrelated cells may too; sta::equivCells separates them.
+static unsigned equivCellKey(const sta::LibertyCell* cell)
+{
+  unsigned key = 0;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    key += sta::hashString(port->name()) * 3 + port->direction()->index() * 5;
+  }
+  return key;
+}
+
+// Group the link cells into equivalence classes.
+//
+// Not sta::Sta::makeEquivCells, which skips cells with the liberty dont_use
+// attribute.  Liberty dont_use only seeds dont_use_ (copyDontUseFromLiberty);
+// unset_dont_use clears dont_use_ but not liberty, and those cells must stay
+// sizing candidates.  So nothing is filtered here; callers apply dont_use_.
 void Resizer::makeEquivCells()
 {
-  if (!equiv_cells_made_) {
-    sta::LibertyLibrarySeq libs;
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      // massive kludge until makeEquivCells is fixed to only incldue link cells
-      sta::LibertyCellIterator cell_iter(lib);
-      if (cell_iter.hasNext()) {
-        sta::LibertyCell* cell = cell_iter.next();
-        if (isLinkCell(cell)) {
-          libs.emplace_back(lib);
-        }
+  if (equiv_cells_made_) {
+    return;
+  }
+  clearEquivCells();
+
+  std::unordered_map<unsigned, sta::LibertyCellSeq> buckets;
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      network_->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    sta::LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      // Only link cells can be swapped in; the other corners' copies would
+      // multiply every class by the corner count.
+      if (isLinkCell(cell)) {
+        buckets[equivCellKey(cell)].emplace_back(cell);
       }
     }
-    delete lib_iter;
-    sta_->makeEquivCells(&libs, nullptr);
-    equiv_cells_made_ = true;
   }
+
+  for (sta::LibertyCellSeq& cells : std::views::values(buckets)) {
+    // One member per class is enough to compare against, sta::equivCells
+    // being transitive.
+    std::vector<sta::LibertyCellSeq> classes;
+    for (sta::LibertyCell* cell : cells) {
+      auto equivs = std::ranges::find_if(
+          classes, [cell](const sta::LibertyCellSeq& members) {
+            return sta::equivCells(members.front(), cell);
+          });
+      if (equivs == classes.end()) {
+        classes.emplace_back(1, cell);
+      } else {
+        equivs->emplace_back(cell);
+      }
+    }
+
+    for (sta::LibertyCellSeq& members : classes) {
+      // Cells with no equivalents stay out of equiv_cells_.
+      if (members.size() < 2) {
+        continue;
+      }
+      // Callers rely on decreasing drive resistance.
+      std::ranges::stable_sort(
+          members,
+          [this](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
+            return cellDriveResistance(cell1) > cellDriveResistance(cell2);
+          });
+      sta::LibertyCellSeq& equivs
+          = equiv_cell_groups_.emplace_back(std::move(members));
+      for (sta::LibertyCell* cell : equivs) {
+        equiv_cells_[cell] = &equivs;
+      }
+    }
+  }
+
+  equiv_cells_made_ = true;
+}
+
+// Cells equivalent to cell, sorted in decreasing drive resistance, or nullptr
+// if the cell has no equivalents.  The build is lazy, so the first call must
+// be on the main thread; that is why resizePreamble and balanceRowUsage call
+// makeEquivCells up front.
+sta::LibertyCellSeq* Resizer::equivCells(sta::LibertyCell* cell)
+{
+  makeEquivCells();
+  return sta::findKey(equiv_cells_, cell);
+}
+
+void Resizer::clearEquivCells()
+{
+  equiv_cells_.clear();
+  equiv_cell_groups_.clear();
+  equiv_cells_made_ = false;
 }
 
 // When there are multiple VT layers, create a composite name
@@ -3397,6 +3483,10 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  // findTargetLoads skips dont_use cells, so a cell re-enabled with
+  // unset_dont_use would otherwise keep a target load of zero and be ranked
+  // worst by findTargetCell.
+  target_load_map_ = nullptr;
 }
 
 void Resizer::resetDontUse()
@@ -3408,6 +3498,7 @@ void Resizer::resetDontUse()
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
   copyDontUseFromLiberty();
@@ -6216,7 +6307,8 @@ void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
   swappable_cells_cache_.clear();
-  equiv_cells_made_ = false;
+  target_load_map_ = nullptr;
+  clearEquivCells();
 }
 
 void Resizer::copyDontUseFromLiberty()

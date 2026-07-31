@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <map>
 #include <memory>
@@ -520,6 +521,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  sta::LibertyCellSeq* equivCells(sta::LibertyCell* cell);
   VTCategory cellVTType(odb::dbMaster* master);
   double computeDesignArea();
 
@@ -604,6 +606,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isTristateDriver(const sta::Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
+  void clearEquivCells();
   bool bufferSizeOutmatched(sta::LibertyCell* worse,
                             sta::LibertyCell* better,
                             float max_drive_resist);
@@ -1000,7 +1003,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
   bool match_cell_footprint_ = false;
+
+  // Equivalence classes over the link cells, owned by equiv_cell_groups_ (a
+  // deque so the classes keep stable addresses).  No dont_use filtering;
+  // callers of equivCells apply dont_use_.  Cells with no equivalents are not
+  // in equiv_cells_.  Belongs in dbSta, but cannot move there until the two
+  // dont_use fields are unified.
   bool equiv_cells_made_ = false;
+  std::unordered_map<sta::LibertyCell*, sta::LibertyCellSeq*> equiv_cells_;
+  std::deque<sta::LibertyCellSeq> equiv_cell_groups_;
 
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
