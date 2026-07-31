@@ -16,6 +16,7 @@
 #include <array>
 #include <bit>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <limits>
@@ -23,6 +24,7 @@
 #include <memory>
 #include <numeric>
 #include <optional>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
