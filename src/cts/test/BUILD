@@ -36,6 +36,8 @@ COMPULSORY_TESTS = [
     "gated_clock3",
     "gated_clock4",
     "gated_clock5",
+    "gated_clock_ndr_full",
+    "gated_clock_ndr_root",
     "hier_insertion_delay",
     "insertion_delay",
     "inverters",
@@ -168,6 +170,14 @@ filegroup(
             "gated_clock5": [
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
+            ],
+            "gated_clock_ndr_full": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
+            ],
+            "gated_clock_ndr_root": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
             ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",
