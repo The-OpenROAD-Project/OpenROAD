@@ -117,7 +117,7 @@ C++20-capable compiler, but pinning the same toolchain is recommended
 to avoid compiler-specific issues:
 
 ```starlark
-bazel_dep(name = "llvm", version = "0.8.11")
+bazel_dep(name = "llvm", version = "0.8.14")
 
 register_toolchains("@llvm//toolchain:all")
 ```

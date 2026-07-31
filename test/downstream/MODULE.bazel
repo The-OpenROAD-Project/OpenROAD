@@ -23,7 +23,7 @@ git_override(
 # The C++ toolchain is a dev_dependency in OpenROAD, so the root module
 # must configure its own. hermetic-llvm provides a statically linked,
 # zero-sysroot LLVM toolchain.
-bazel_dep(name = "llvm", version = "0.8.11")
+bazel_dep(name = "llvm", version = "0.8.14")
 
 register_toolchains(
     "@llvm//toolchain:all",

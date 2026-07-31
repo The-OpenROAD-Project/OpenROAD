@@ -18,6 +18,7 @@ COMPULSORY_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",
+    "ndr_no_auto_taper",
     "obstruction",
     "single_step",
     "ta_ap_aligned",
@@ -36,6 +37,7 @@ ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 BIG_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
+    "ndr_no_auto_taper",
 ]
 
 PY_TESTS = [
