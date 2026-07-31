@@ -92,6 +92,7 @@ TESTS = [
     "repair_antennas_only_diodes",
     "repair_antennas_only_jumpers",
     "repair_antennas_allow_congestion",
+    "repair_antennas_cugr",
     "repair_antennas_from_odb",
     "report_wire_length1",
     "report_wire_length2",
