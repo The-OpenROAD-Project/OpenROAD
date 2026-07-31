@@ -3021,130 +3021,162 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
 WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                                  SessionState& state)
 {
-  // Re-derive the selection highlights when either:
-  //  - the "Flywires only" toggle flipped (so the change takes effect
-  //    without re-selecting) — but only while the highlights are live: a
-  //    flip after an explicit "clear highlights" must not resurrect them;
-  //  - debug renderers are active — instance positions change between
-  //    frames, so the highlight must track the moving instance.
-  const bool flywires_only = jsonOr(req.json, "flywires_only", false);
-  const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
-  {
-    std::lock_guard<std::mutex> lock(state.selection_mutex);
-    const bool flipped = (flywires_only != state.flywires_only);
-    state.flywires_only = flywires_only;
-    const bool live
-        = state.highlight_source != SessionState::HighlightSource::kNone;
-    if ((flipped && live) || (debug_renderers && state.current_inspected)) {
-      // Re-derive from the SAME source the shapes came from.  Preferring
-      // current_inspected unconditionally would drop every other item of a
-      // shift+click multi-selection on the first flip, with no way back.  With
-      // no prior highlight the source is kNone, which only the debug-renderer
-      // disjunct can reach — there the inspected object is what to track.
-      if (state.highlight_source
-          == SessionState::HighlightSource::kSelectionSet) {
-        setSelectionSetHighlights(state);
-      } else {
-        setSelectionHighlights(state, state.current_inspected);
-      }
-    }
-  }
-
-  // Snapshot current highlight state
-  std::vector<odb::Rect> rects;
-  std::vector<odb::Polygon> polys;
-  std::vector<ColoredRect> colored;
-  std::vector<FlightLine> lines;
-  {
-    std::lock_guard<std::mutex> lock(state.selection_mutex);
-    rects = state.highlight_rects;
-    rects.insert(
-        rects.end(), state.hover_rects.begin(), state.hover_rects.end());
-    polys = state.highlight_polys;
-    colored = state.timing_rects;
-    lines = state.highlight_lines;
-    lines.insert(
-        lines.end(), state.timing_lines.begin(), state.timing_lines.end());
-  }
-
-  // Merge DRC overlay shapes
-  {
-    std::lock_guard<std::mutex> lock(state.drc_mutex);
-    colored.insert(
-        colored.end(), state.drc_rects.begin(), state.drc_rects.end());
-    lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
-  }
-
-  // Snapshot route guide nets
-  std::set<uint32_t> route_guides;
-  {
-    std::lock_guard<std::mutex> lock(state.route_guides_mutex);
-    route_guides = state.route_guide_net_ids;
-  }
-  const std::set<uint32_t>* route_guide_ptr
-      = route_guides.empty() ? nullptr : &route_guides;
-
-  // Parse visible layers so route guides respect layer visibility.
-  // has_vis_layers=true means the field was present (even if empty,
-  // which means "all layers hidden" — matching pin-marker semantics).
-  bool has_vis_layers = false;
-  std::set<std::string> vis_layers;
-  if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
-    has_vis_layers = true;
-    const auto& arr = it->value().as_array();
-    for (const auto& elem : arr) {
-      vis_layers.emplace(elem.as_string());
-    }
-  }
-
-  // Same sizing contract as layer tiles: an overlay rendered at a different
-  // size than the tiles beneath it is blurry and misregistered against them.
-  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
-  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
-
-  const int z = static_cast<int>(req.json.at("z").as_int64());
-  const int x = static_cast<int>(req.json.at("x").as_int64());
-  const int y = static_cast<int>(req.json.at("y").as_int64());
-
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = WebSocketResponse::kPng;
-  resp.payload = gen_->generateOverlayTile(z,
-                                           x,
-                                           y,
-                                           rects,
-                                           polys,
-                                           colored,
-                                           lines,
-                                           route_guide_ptr,
-                                           has_vis_layers,
-                                           vis_layers,
-                                           dpr,
-                                           tile_px);
+  // Overlay requests run on a bare io_context thread with no dispatcher-level
+  // try/catch, so convert malformed-request exceptions (e.g. a non-bool
+  // toggle flag) into an error response instead of terminating the server.
+  try {
+    // Re-derive the selection highlights when either:
+    //  - the "Flywires only" toggle flipped (so the change takes effect
+    //    without re-selecting) — but only while the highlights are live: a
+    //    flip after an explicit "clear highlights" must not resurrect them;
+    //  - debug renderers are active — instance positions change between
+    //    frames, so the highlight must track the moving instance.
+    const bool flywires_only = jsonOr(req.json, "flywires_only", false);
+    const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      const bool flipped = (flywires_only != state.flywires_only);
+      state.flywires_only = flywires_only;
+      const bool live
+          = state.highlight_source != SessionState::HighlightSource::kNone;
+      if ((flipped && live) || (debug_renderers && state.current_inspected)) {
+        // Re-derive from the SAME source the shapes came from.  Preferring
+        // current_inspected unconditionally would drop every other item of a
+        // shift+click multi-selection on the first flip, with no way back. With
+        // no prior highlight the source is kNone, which only the debug-renderer
+        // disjunct can reach — there the inspected object is what to track.
+        if (state.highlight_source
+            == SessionState::HighlightSource::kSelectionSet) {
+          setSelectionSetHighlights(state);
+        } else {
+          setSelectionHighlights(state, state.current_inspected);
+        }
+      }
+    }
 
-  // The selection highlight the client draws over the layer tiles comes from
-  // here, so the shape counts say whether a "missing" highlight was never
-  // collected server-side or just not drawn.
-  debugPrint(gen_->getLogger(),
-             utl::WEB,
-             "tile",
-             1,
-             "overlay tile: id={} z/x/y={}/{}/{} dpr={} tile_px={} rects={} "
-             "polys={} colored={} lines={} route_guide_nets={} "
-             "flywires_only={} bytes={}",
-             req.id,
-             z,
-             x,
-             y,
-             dpr,
-             tile_px,
-             rects.size(),
-             polys.size(),
-             colored.size(),
-             lines.size(),
-             route_guides.size(),
-             flywires_only,
-             resp.payload.size());
+    // Snapshot current highlight state.
+    // "Highlight selected" (Misc toggle, default on — Qt parity) gates the
+    // current selection's highlight as a whole: its rects, its polys and its
+    // flywires.  Leaving the flywires in would draw half a highlight for a
+    // toggle whose label promises none.  Hover is a separate state and the
+    // timing shapes have their own controls, so both are always drawn; the
+    // selection itself stays active server-side regardless.
+    const bool highlight_selected
+        = jsonOr(req.json, "highlight_selected", true);
+    std::vector<odb::Rect> rects;
+    std::vector<odb::Polygon> polys;
+    std::vector<ColoredRect> colored;
+    std::vector<FlightLine> lines;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (highlight_selected) {
+        rects = state.highlight_rects;
+        polys = state.highlight_polys;
+        lines = state.highlight_lines;
+      }
+      rects.insert(
+          rects.end(), state.hover_rects.begin(), state.hover_rects.end());
+      colored = state.timing_rects;
+      lines.insert(
+          lines.end(), state.timing_lines.begin(), state.timing_lines.end());
+    }
+
+    // Merge DRC overlay shapes
+    {
+      std::lock_guard<std::mutex> lock(state.drc_mutex);
+      colored.insert(
+          colored.end(), state.drc_rects.begin(), state.drc_rects.end());
+      lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
+    }
+
+    // Snapshot the nets whose route guides should be drawn.  Always include
+    // the per-net selections (inspector "Show route guides", a web-only
+    // finer control).  When the global "Focused nets guides" toggle is on,
+    // also include every focused net — mirroring the Qt GUI toggle, which
+    // draws the guides of all focused nets at once.
+    const bool focused_nets_guides
+        = jsonOr(req.json, "focused_nets_guides", false);
+    std::set<uint32_t> route_guides;
+    {
+      std::lock_guard<std::mutex> lock(state.route_guides_mutex);
+      route_guides = state.route_guide_net_ids;
+    }
+    if (focused_nets_guides) {
+      std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+      route_guides.insert(state.focus_net_ids.begin(),
+                          state.focus_net_ids.end());
+    }
+    const std::set<uint32_t>* route_guide_ptr
+        = route_guides.empty() ? nullptr : &route_guides;
+
+    // Parse visible layers so route guides respect layer visibility.
+    // has_vis_layers=true means the field was present (even if empty,
+    // which means "all layers hidden" — matching pin-marker semantics).
+    bool has_vis_layers = false;
+    std::set<std::string> vis_layers;
+    if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
+      has_vis_layers = true;
+      const auto& arr = it->value().as_array();
+      for (const auto& elem : arr) {
+        vis_layers.emplace(elem.as_string());
+      }
+    }
+
+    // Same sizing contract as layer tiles: an overlay rendered at a different
+    // size than the tiles beneath it is blurry and misregistered against them.
+    const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+    const int tile_px
+        = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
+
+    const int z = static_cast<int>(req.json.at("z").as_int64());
+    const int x = static_cast<int>(req.json.at("x").as_int64());
+    const int y = static_cast<int>(req.json.at("y").as_int64());
+
+    resp.type = WebSocketResponse::kPng;
+    resp.payload = gen_->generateOverlayTile(z,
+                                             x,
+                                             y,
+                                             rects,
+                                             polys,
+                                             colored,
+                                             lines,
+                                             route_guide_ptr,
+                                             has_vis_layers,
+                                             vis_layers,
+                                             dpr,
+                                             tile_px);
+
+    // The selection highlight the client draws over the layer tiles comes from
+    // here, so the shape counts say whether a "missing" highlight was never
+    // collected server-side or just not drawn.
+    debugPrint(gen_->getLogger(),
+               utl::WEB,
+               "tile",
+               1,
+               "overlay tile: id={} z/x/y={}/{}/{} dpr={} tile_px={} rects={} "
+               "polys={} colored={} lines={} route_guide_nets={} "
+               "flywires_only={} bytes={}",
+               req.id,
+               z,
+               x,
+               y,
+               dpr,
+               tile_px,
+               rects.size(),
+               polys.size(),
+               colored.size(),
+               lines.size(),
+               route_guides.size(),
+               flywires_only,
+               resp.payload.size());
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
   return resp;
 }
 

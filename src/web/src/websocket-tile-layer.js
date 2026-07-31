@@ -166,6 +166,8 @@ export function createOverlayTileLayer(visibility, app) {
             ...tileSizeFields(currentDpr(), tileSize),
             debug_renderers: !!visibility.debug_renderers,
             flywires_only: !!visibility.flywires_only,
+            focused_nets_guides: !!visibility.focused_nets_guides,
+            highlight_selected: visibility.highlight_selected !== false,
         };
         // Pass visible layers so route guides respect layer visibility.
         if (app && app.visibleLayerNames) {

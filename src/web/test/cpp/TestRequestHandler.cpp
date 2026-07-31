@@ -932,6 +932,229 @@ TEST_F(TileHandlerTest, FlywiresOnlySupplyNetKeepsShapes)
       << "a selected supply net must still be highlighted by its SWires";
 }
 
+// Helper: create a placed BUF_X16 to anchor getBounds(), plus a signal net
+// carrying one route guide on metal1 across most of the die.  Returns the net.
+static odb::dbNet* makeNetWithGuide(odb::dbBlock* block,
+                                    odb::dbLib* lib,
+                                    odb::dbDatabase* db)
+{
+  odb::dbMaster* master = lib->findMaster("BUF_X16");
+  odb::dbInst* ll = odb::dbInst::create(block, master, "anchor_ll");
+  ll->setLocation(0, 0);
+  ll->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbInst* ur = odb::dbInst::create(block, master, "anchor_ur");
+  ur->setLocation(90000, 90000);
+  ur->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  odb::dbNet* net = odb::dbNet::create(block, "guided");
+  odb::dbTechLayer* metal1 = db->getTech()->findLayer("metal1");
+  odb::dbGuide::create(net,
+                       metal1,
+                       metal1,
+                       odb::Rect(10000, 10000, 90000, 90000),
+                       /*is_congested=*/false);
+  return net;
+}
+
+TEST_F(TileHandlerTest, FocusedNetsGuidesTogglesGuides)
+{
+  odb::dbNet* net = makeNetWithGuide(block_, lib_, getDb());
+  {
+    std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+    state_.focus_net_ids.insert(net->getId());  // net is focused
+  }
+  gen_->eagerInit();
+
+  // Baseline: nothing drawn on the overlay.
+  WebSocketRequest empty_req;
+  empty_req.id = 30;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Toggle OFF: focused net has no per-net guide selection → no guides.
+  WebSocketRequest off_req;
+  off_req.id = 31;
+  off_req.type = WebSocketRequest::kOverlayTile;
+  off_req.json = parseObj(R"({"z":0,"x":0,"y":0,"focused_nets_guides":false})");
+  const auto off = handler_->handleOverlayTile(off_req, state_).payload;
+  EXPECT_EQ(off, blank)
+      << "guides must not draw when the toggle is off and no per-net selection";
+
+  // Toggle ON: the focused net's guides are drawn.
+  WebSocketRequest on_req;
+  on_req.id = 32;
+  on_req.type = WebSocketRequest::kOverlayTile;
+  on_req.json = parseObj(R"({"z":0,"x":0,"y":0,"focused_nets_guides":true})");
+  const auto on = handler_->handleOverlayTile(on_req, state_).payload;
+  EXPECT_NE(on, blank)
+      << "focused nets' guides should be drawn when the toggle is on";
+}
+
+TEST_F(TileHandlerTest, PerNetGuidesIgnoreGlobalToggle)
+{
+  odb::dbNet* net = makeNetWithGuide(block_, lib_, getDb());
+  {
+    std::lock_guard<std::mutex> lock(state_.route_guides_mutex);
+    state_.route_guide_net_ids.insert(net->getId());  // explicit per-net
+  }
+  gen_->eagerInit();
+
+  WebSocketRequest empty_req;
+  empty_req.id = 33;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Global toggle off, but the per-net selection still draws its guides.
+  WebSocketRequest req;
+  req.id = 34;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"focused_nets_guides":false})");
+  const auto out = handler_->handleOverlayTile(req, state_).payload;
+  EXPECT_NE(out, blank)
+      << "per-net route guides must render regardless of the global toggle";
+}
+
+TEST_F(TileHandlerTest, HighlightSelectedTogglesSelectionHighlight)
+{
+  // Anchor bounds with an instance, then put a selection highlight rect.
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  odb::dbInst* inst = odb::dbInst::create(block_, master, "anchor");
+  inst->setLocation(0, 0);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(10000, 10000, 90000, 90000);
+  }
+  gen_->eagerInit();
+
+  WebSocketRequest empty_req;
+  empty_req.id = 40;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Toggle ON (default): selection highlight is drawn.
+  WebSocketRequest on_req;
+  on_req.id = 41;
+  on_req.type = WebSocketRequest::kOverlayTile;
+  on_req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":true})");
+  const auto on = handler_->handleOverlayTile(on_req, state_).payload;
+  EXPECT_NE(on, blank) << "selection highlight should draw when toggle is on";
+
+  // Toggle OFF: selection highlight suppressed.
+  WebSocketRequest off_req;
+  off_req.id = 42;
+  off_req.type = WebSocketRequest::kOverlayTile;
+  off_req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":false})");
+  const auto off = handler_->handleOverlayTile(off_req, state_).payload;
+  EXPECT_EQ(off, blank)
+      << "selection highlight must be hidden when the toggle is off";
+}
+
+// The two Misc toggles meet here: "Flywires only" turns the selection's
+// highlight into driver->sink lines, and "Highlight selected" must hide the
+// selection's highlight as a whole.  Gating only the rects and polys would
+// leave the flywires on screen — half a highlight for a toggle that promises
+// none.
+TEST_F(TileHandlerTest, HighlightSelectedAlsoGatesSelectionFlywires)
+{
+  odb::dbNet* net = makeConnectedNet("gated_sig");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Flywires on: the selection is now carried by highlight_lines.
+  WebSocketRequest fly_req = overlayRequest(45, /*flywires_only=*/true);
+  const auto with_flywires
+      = handler_->handleOverlayTile(fly_req, state_).payload;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    ASSERT_FALSE(state_.highlight_lines.empty())
+        << "precondition: flywires_only must produce driver->sink lines";
+  }
+
+  WebSocketRequest empty_req;
+  empty_req.id = 46;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+  ASSERT_NE(with_flywires, blank)
+      << "precondition: the flywires must actually draw something";
+
+  // "Highlight selected" off: the flywires go with the rest of the highlight.
+  WebSocketRequest off_req;
+  off_req.id = 47;
+  off_req.type = WebSocketRequest::kOverlayTile;
+  off_req.json = parseObj(
+      R"({"z":0,"x":0,"y":0,"flywires_only":true,"highlight_selected":false})");
+  const auto off = handler_->handleOverlayTile(off_req, state_).payload;
+  EXPECT_EQ(off, blank)
+      << "selection flywires must be hidden when the toggle is off";
+
+  // The selection itself survives, so turning the toggle back on restores it.
+  WebSocketRequest on_req = overlayRequest(48, /*flywires_only=*/true);
+  const auto back_on = handler_->handleOverlayTile(on_req, state_).payload;
+  EXPECT_NE(back_on, blank)
+      << "the flywires must come back when the toggle is on again";
+}
+
+TEST_F(TileHandlerTest, OverlayTileMalformedFlagReturnsError)
+{
+  // Overlay requests run on a bare io_context thread, so a malformed flag
+  // type must come back as a kError response, not an exception (which
+  // would terminate the whole server).
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":1})");
+
+  WebSocketResponse resp;
+  EXPECT_NO_THROW(resp = handler_->handleOverlayTile(req, state_));
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+}
+
+TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
+{
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  odb::dbInst* inst = odb::dbInst::create(block_, master, "anchor");
+  inst->setLocation(0, 0);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.hover_rects.emplace_back(10000, 10000, 90000, 90000);
+  }
+  gen_->eagerInit();
+
+  WebSocketRequest empty_req;
+  empty_req.id = 43;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Hover must still render even with the selection highlight toggled off.
+  WebSocketRequest req;
+  req.id = 44;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":false})");
+  const auto out = handler_->handleOverlayTile(req, state_).payload;
+  EXPECT_NE(out, blank)
+      << "hover highlight is independent of the Highlight selected toggle";
+}
+
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
   gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
