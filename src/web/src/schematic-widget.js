@@ -1279,9 +1279,14 @@ export class SchematicWidget {
             }
         }
 
+        // Pre-measure each group once. Calling getBoundingClientRect() from
+        // inside the comparator would force a synchronous layout on every
+        // comparison (O(N log N) reflows during the sort).
+        const groupRects = new Map(
+            records.map((r) => [r, r.group.getBoundingClientRect()]));
         records.sort((a, b) => {
-            const rectA = a.group.getBoundingClientRect();
-            const rectB = b.group.getBoundingClientRect();
+            const rectA = groupRects.get(a);
+            const rectB = groupRects.get(b);
             return rectA.top - rectB.top || rectA.left - rectB.left;
         });
 
