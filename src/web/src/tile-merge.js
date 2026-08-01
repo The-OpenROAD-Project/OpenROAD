@@ -320,11 +320,16 @@ export function closeAll(images) {
 // without a DOM: `request` fetches one item's tile, `decode` turns a payload
 // into something drawable, `draw` composites, `release` frees the decodes.
 //
-// Ordering: the K requests go out together and are awaited together, because
-// they are independent and serialising them would multiply latency by K.  But
-// the DRAW is strictly in item order regardless of arrival order — a group is a
-// contiguous z-run and painting it in completion order would scramble the
-// stack.
+// Ordering: the K requests go out together, because they are independent and
+// serialising them would multiply latency by K.  The canvas is recomposited
+// from scratch on every arrival, always walking the item list in order, so the
+// stacking cannot depend on the order responses happen to land in.
+//
+// Incremental: the tile paints as soon as anything arrives rather than waiting
+// for the slowest of its K layers, and keeps repainting as the rest land.  A
+// request that never settles therefore costs one missing layer instead of a
+// blank tile — with the per-layer panes a stuck request blanked one layer, and
+// waiting for the whole group would have made that a whole group.
 //
 // Lifetime: every decoded image is released in a finally, including on a draw
 // failure or a stale abort.  Explicit release is the entire reason for
@@ -342,10 +347,11 @@ export async function renderMergedTile({
     draw,
     release = closeAll,
     isStale = () => false,
+    onFirstDraw,
 } = {}) {
     const list = Array.isArray(items) ? items : [];
     const stats = { requested: list.length, arrived: 0, decoded: 0, drawn: 0,
-                    stale: false };
+                    paints: 0, stale: false };
     if (list.length === 0) {
         // An empty group still has to paint: the canvas is reused across
         // refreshes, so skipping the draw would leave the previous content.
@@ -358,40 +364,75 @@ export async function renderMergedTile({
         return stats;
     }
 
-    const settled = await Promise.allSettled(list.map(item => request(item)));
-    if (isStale()) {
-        stats.stale = true;
-        return stats;
-    }
+    // A slot that has not arrived yet is drawn as nothing.  That is exact, not
+    // an approximation: transparent is the identity for src-over, so
+    // compositing the arrived subset in list order gives precisely the same
+    // pixels as the full composite would where those layers are absent.  It is
+    // what lets the tile paint before every layer is in without any risk of
+    // getting the stacking wrong — the list is still walked in order every
+    // time, so there is no prefix pointer or gap handling to get wrong.
+    const images = new Array(list.length).fill(null);
+    let painted = false;
 
-    const payloads = settled.map(
-        r => (r.status === 'fulfilled' ? r.value : null));
-    stats.arrived = payloads.filter(p => p != null).length;
-
-    const images = await Promise.all(payloads.map(async (payload) => {
-        if (payload == null) {
-            return null;
-        }
-        try {
-            return await decode(payload);
-        } catch (e) {
-            return null;  // one undecodable tile must not lose the group
-        }
-    }));
-    stats.decoded = images.filter(Boolean).length;
-
-    try {
-        // Re-checked after decoding: a refresh or a pan during the decode would
-        // otherwise paint this group's canvas with superseded content.
+    function paint() {
         if (isStale()) {
             stats.stale = true;
-            return stats;
+            return;
         }
         stats.drawn = draw(list.map((item, i) => ({
             image: images[i],
             opacity: item.opacity,
         }))) || 0;
+        stats.paints++;
+        if (!painted) {
+            painted = true;
+            // Leaflet hides a tile until done() marks it loaded
+            // (.leaflet-tile { visibility: hidden }), so without this the
+            // incremental paints would not be visible at all.
+            if (onFirstDraw) {
+                onFirstDraw();
+            }
+        }
+    }
+
+    try {
+        await Promise.all(list.map(async (item, i) => {
+            let payload = null;
+            try {
+                payload = await request(item);
+            } catch (e) {
+                return;  // cancelled or dropped: leave the slot transparent
+            }
+            if (payload == null) {
+                return;
+            }
+            stats.arrived++;
+            let image = null;
+            try {
+                image = await decode(payload);
+            } catch (e) {
+                return;  // one undecodable tile must not lose the group
+            }
+            if (!image) {
+                return;
+            }
+            // Stored before the staleness check so the release below frees it
+            // even when this render has been superseded.
+            images[i] = image;
+            stats.decoded++;
+            paint();
+        }));
+
+        // Nothing arrived at all — paint the empty composite anyway, so the
+        // tile resolves as blank rather than staying invisible forever.
+        if (!painted) {
+            paint();
+        }
     } finally {
+        // Held until the tile is complete rather than released per draw: a
+        // later arrival belongs UNDERNEATH layers already drawn, so the canvas
+        // is recomposited from scratch each time and every source has to still
+        // be available.  Peak is the same K bitmaps the batch version held.
         release(images);
     }
     return stats;

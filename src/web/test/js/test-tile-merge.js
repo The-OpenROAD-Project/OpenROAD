@@ -545,24 +545,32 @@ describe('renderMergedTile', () => {
         { layer: '_instances', opacity: 1 },
     ];
 
-    it('draws in item order, not arrival order', () => {
-        // A group is a contiguous z-run; painting in completion order would
-        // scramble the stack. metal2 is made to arrive first on purpose.
+    it('composites in item order regardless of arrival order', () => {
+        // A group is a contiguous z-run, so the canvas is recomposited from
+        // scratch in list order on every arrival — the stacking must not depend
+        // on which response happens to land first. metal2 arrives first here.
         const h = harness({
             items: ITEMS,
             delays: { metal1: 20, metal2: 0, _instances: 10 },
         });
         return renderMergedTile(h.opts).then((stats) => {
             assert.equal(stats.drawn, 3);
-            assert.deepEqual(h.drawnCalls[0].map(d => d.id),
+            const last = h.drawnCalls[h.drawnCalls.length - 1];
+            assert.deepEqual(last.map(d => d.id),
                              ['metal1', 'metal2', '_instances']);
+            // Every paint walks the full list, so a slot not yet in is drawn as
+            // nothing rather than the later layers sliding down into its place.
+            for (const call of h.drawnCalls) {
+                assert.deepEqual(call.map(d => d.opacity), [0.7, 0.7, 1]);
+            }
         });
     });
 
     it('carries each item its own opacity', async () => {
         const h = harness({ items: ITEMS });
         await renderMergedTile(h.opts);
-        assert.deepEqual(h.drawnCalls[0].map(d => d.opacity), [0.7, 0.7, 1]);
+        const last = h.drawnCalls[h.drawnCalls.length - 1];
+        assert.deepEqual(last.map(d => d.opacity), [0.7, 0.7, 1]);
     });
 
     it('issues the requests concurrently, not one after another', async () => {
@@ -602,8 +610,8 @@ describe('renderMergedTile', () => {
         assert.equal(stats.requested, 3);
         assert.equal(stats.arrived, 2);
         assert.equal(stats.drawn, 2);
-        assert.deepEqual(h.drawnCalls[0].map(d => d.id),
-                         ['metal1', null, '_instances']);
+        const last = h.drawnCalls[h.drawnCalls.length - 1];
+        assert.deepEqual(last.map(d => d.id), ['metal1', null, '_instances']);
     });
 
     it('skips an undecodable payload and still paints the rest', async () => {
@@ -612,6 +620,8 @@ describe('renderMergedTile', () => {
         assert.equal(stats.arrived, 3);
         assert.equal(stats.decoded, 2);
         assert.equal(stats.drawn, 2);
+        const last = h.drawnCalls[h.drawnCalls.length - 1];
+        assert.deepEqual(last.map(d => d.id), [null, 'metal2', '_instances']);
         // The failed decode leaves nothing to release.
         assert.deepEqual(h.released.sort(), ['_instances', 'metal2']);
     });
@@ -632,18 +642,21 @@ describe('renderMergedTile', () => {
         assert.equal(h.drawnCalls.length, 0, 'must not paint superseded content');
     });
 
-    it('re-checks staleness after decoding, and releases if it went stale', async () => {
-        // A refresh or pan during the decode would otherwise paint the group's
-        // canvas with content the map has already moved past.
-        let calls = 0;
-        const h = harness({
-            items: ITEMS,
-            // Fresh when the requests land, stale by the time decoding is done.
-            stale: () => (++calls > 1),
-        });
-        const stats = await renderMergedTile(h.opts);
+    it('stops painting the moment it goes stale, and still frees the decodes', async () => {
+        // A refresh or pan mid-flight must not keep painting the canvas with
+        // content the map has already moved past — but the bitmaps decoded
+        // before that point still have to be released.
+        let stale = false;
+        const h = harness({ items: ITEMS, stale: () => stale });
+        const opts = h.opts;
+        const realDraw = opts.draw;
+        opts.draw = (sources) => {
+            stale = true;   // superseded right after the first paint
+            return realDraw(sources);
+        };
+        const stats = await renderMergedTile(opts);
         assert.equal(stats.stale, true);
-        assert.equal(h.drawnCalls.length, 0);
+        assert.equal(h.drawnCalls.length, 1, 'no painting after going stale');
         assert.equal(h.released.length, 3, 'decoded images must still be freed');
     });
 
@@ -895,5 +908,115 @@ describe('setItemVisible: only a real change may dirty a pane', () => {
     it('tolerates a missing item', () => {
         assert.equal(setItemVisible(null, true), false);
         assert.equal(setItemVisible(undefined, false), false);
+    });
+});
+
+describe('renderMergedTile: incremental painting', () => {
+    function incHarness(items, { hang = [], delays = {} } = {}) {
+        const drawnCalls = [];
+        const released = [];
+        let firstDraws = 0;
+        return {
+            drawnCalls, released,
+            firstDraws: () => firstDraws,
+            opts: {
+                items,
+                request: async (item) => {
+                    if (hang.includes(item.layer)) {
+                        return new Promise(() => {});  // never settles
+                    }
+                    const ms = delays[item.layer] || 0;
+                    if (ms) {
+                        await new Promise(r => setTimeout(r, ms));
+                    }
+                    return { payloadFor: item.layer };
+                },
+                decode: async (p) => ({ id: p.payloadFor,
+                                        close() { released.push(this.id); } }),
+                draw: (sources) => {
+                    drawnCalls.push(sources.map(
+                        s => (s.image ? s.image.id : null)));
+                    return sources.filter(s => s.image).length;
+                },
+                onFirstDraw: () => { firstDraws++; },
+            },
+        };
+    }
+
+    const ITEMS3 = [
+        { layer: 'a', opacity: 1 },
+        { layer: 'b', opacity: 1 },
+        { layer: 'c', opacity: 1 },
+    ];
+
+    it('paints as each layer arrives rather than once at the end', async () => {
+        const h = incHarness(ITEMS3, { delays: { a: 0, b: 10, c: 20 } });
+        const stats = await renderMergedTile(h.opts);
+        assert.equal(stats.paints, 3, 'one paint per arrival');
+        // Each paint is a full composite of what has arrived so far, in order.
+        assert.deepEqual(h.drawnCalls, [
+            ['a', null, null],
+            ['a', 'b', null],
+            ['a', 'b', 'c'],
+        ]);
+    });
+
+    it('draws a not-yet-arrived layer as nothing, in its own slot', async () => {
+        // Transparent is the identity for src-over, so the partial composite is
+        // exact: the later layers must not slide down into the empty slot.
+        const h = incHarness(ITEMS3, { delays: { a: 20, b: 0, c: 10 } });
+        await renderMergedTile(h.opts);
+        assert.deepEqual(h.drawnCalls[0], [null, 'b', null]);
+        assert.deepEqual(h.drawnCalls[1], [null, 'b', 'c']);
+        assert.deepEqual(h.drawnCalls[2], ['a', 'b', 'c']);
+    });
+
+    it('reports the first paint once, so the tile becomes visible early', async () => {
+        // Leaflet hides a tile until done() marks it loaded, so onFirstDraw is
+        // what makes incremental painting visible at all — and it must fire
+        // exactly once, not on every repaint.
+        const h = incHarness(ITEMS3, { delays: { a: 0, b: 5, c: 10 } });
+        await renderMergedTile(h.opts);
+        assert.equal(h.firstDraws(), 1);
+    });
+
+    it('does not let one stuck request blank the whole group', async () => {
+        // The motivating case. With a batch draw, a request that never settles
+        // left the tile blank indefinitely; now it costs one layer.
+        const h = incHarness(ITEMS3, { hang: ['b'] });
+        renderMergedTile(h.opts);           // deliberately not awaited
+        await new Promise(r => setTimeout(r, 20));
+        assert.ok(h.drawnCalls.length >= 1, 'must paint without the straggler');
+        const last = h.drawnCalls[h.drawnCalls.length - 1];
+        assert.deepEqual(last, ['a', null, 'c']);
+        assert.equal(h.firstDraws(), 1, 'the tile is visible');
+    });
+
+    it('paints an all-blank composite when nothing arrives', async () => {
+        // Otherwise a tile whose every layer failed would stay hidden forever,
+        // because Leaflet only reveals it once done() has been called.
+        const h = incHarness(ITEMS3);
+        h.opts.request = async () => { throw new Error('cancelled'); };
+        const stats = await renderMergedTile(h.opts);
+        assert.equal(stats.arrived, 0);
+        assert.equal(stats.paints, 1);
+        assert.deepEqual(h.drawnCalls[0], [null, null, null]);
+        assert.equal(h.firstDraws(), 1);
+    });
+
+    it('holds the decodes until the tile is complete, then frees them all', async () => {
+        // A late arrival belongs UNDERNEATH layers already drawn, so the canvas
+        // is recomposited from scratch and every source must still be around.
+        // Releasing per paint would free a bitmap still needed by the next one.
+        const h = incHarness(ITEMS3, { delays: { a: 0, b: 5, c: 10 } });
+        const opts = h.opts;
+        const realDraw = opts.draw;
+        opts.draw = (sources) => {
+            assert.equal(h.released.length, 0,
+                         'nothing may be released while paints remain');
+            return realDraw(sources);
+        };
+        await renderMergedTile(opts);
+        assert.deepEqual(h.released.sort(), ['a', 'b', 'c']);
     });
 });

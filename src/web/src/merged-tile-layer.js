@@ -162,6 +162,17 @@ export function createMergedTileLayer(ctx, options = {}) {
                 // very first paint of every tile.
                 isStale: () => this._generation !== generation
                                || canvas._orRemoved === true,
+                // Reported on the FIRST paint, not on completion: Leaflet keeps
+                // a tile hidden (.leaflet-tile { visibility: hidden }) until
+                // done() adds leaflet-tile-loaded, so deferring it would make
+                // every incremental paint invisible and the tile would still
+                // appear only once its slowest layer had landed.
+                onFirstDraw: () => {
+                    if (done && !canvas._orTileDone) {
+                        canvas._orTileDone = true;
+                        done(null, canvas);
+                    }
+                },
             }).then(() => {
                 if (done && !canvas._orTileDone) {
                     canvas._orTileDone = true;

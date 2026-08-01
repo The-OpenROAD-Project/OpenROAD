@@ -63,9 +63,15 @@ function fakeManager({ hang = false } = {}) {
     return mgr;
 }
 
-// Capture what got drawn, in order, with the alpha in force at draw time.
+// Capture what got drawn, with the alpha in force at draw time.
+//
+// Rendering is incremental: the canvas is recomposited from scratch on every
+// arrival, so there are several paints per tile.  clearRect delimits them, and
+// `paints` is one entry per paint.  `last()` is the finished composite, which
+// is what most assertions care about.
 function stubCanvas2d() {
-    const drawn = [];
+    const paints = [];
+    let current = null;
     const origGetContext
         = globalThis.HTMLCanvasElement.prototype.getContext;
     globalThis.HTMLCanvasElement.prototype.getContext = function() {
@@ -74,14 +80,26 @@ function stubCanvas2d() {
             get globalAlpha() { return this._alpha; },
             set globalAlpha(v) { this._alpha = v; },
             cleared: 0,
-            clearRect() { this.cleared++; },
-            drawImage(img) { drawn.push({ id: img.id, alpha: this._alpha }); },
+            clearRect() {
+                this.cleared++;
+                current = [];
+                paints.push(current);
+            },
+            drawImage(img) {
+                if (!current) {
+                    current = [];
+                    paints.push(current);
+                }
+                current.push({ id: img.id, alpha: this._alpha });
+            },
         };
         this._orCtx = ctx;
         return ctx;
     };
     return {
-        drawn,
+        paints,
+        last: () => (paints.length ? paints[paints.length - 1] : []),
+        get drawn() { return paints.length ? paints[paints.length - 1] : []; },
         restore() {
             globalThis.HTMLCanvasElement.prototype.getContext = origGetContext;
         },
@@ -149,7 +167,9 @@ describe('createMergedTileLayer: one canvas per tile, K layers inside it', () =>
             await new Promise((resolve) => {
                 layer.createTile({ x: 0, y: 0, z: 0 }, () => resolve());
             });
-            assert.deepEqual(stub.drawn, [
+            // The finished composite: every layer, in z-order, at its own
+            // opacity.  Earlier paints are subsets of this.
+            assert.deepEqual(stub.last(), [
                 { id: 'metal1', alpha: 0.7 },
                 { id: 'metal2', alpha: 0.7 },
                 { id: '_instances', alpha: 1 },
@@ -209,7 +229,7 @@ describe('createMergedTileLayer: one canvas per tile, K layers inside it', () =>
             });
             assert.deepEqual(mgr.sent.map(m => m.layer),
                              ['metal1', '_instances']);
-            assert.deepEqual(stub.drawn.map(d => d.id),
+            assert.deepEqual(stub.last().map(d => d.id),
                              ['metal1', '_instances']);
         } finally {
             stub.restore();
@@ -304,7 +324,7 @@ describe('refreshTiles: the contract redrawAllLayers depends on', () => {
             layer._generation++;   // a refresh happened while in flight
             release();
             await new Promise(r => setTimeout(r, 0));
-            assert.equal(stub.drawn.length, 0,
+            assert.equal(stub.paints.length, 0,
                          'stale generation must not paint');
         } finally {
             stub.restore();
@@ -486,7 +506,7 @@ describe('staleness must not be inferred from DOM attachment', () => {
                 el = layer.createTile({ x: 0, y: 0, z: 0 }, () => resolve());
             });
             assert.equal(el.isConnected, false, 'never appended here');
-            assert.deepEqual(stub.drawn.map(d => d.id), ['metal1'],
+            assert.deepEqual(stub.last().map(d => d.id), ['metal1'],
                              'an unappended tile must still paint');
         } finally {
             stub.restore();
@@ -513,7 +533,7 @@ describe('staleness must not be inferred from DOM attachment', () => {
             layer._removeTile('0:0:0');
             release();
             await new Promise(r => setTimeout(r, 0));
-            assert.equal(stub.drawn.length, 0);
+            assert.equal(stub.paints.length, 0);
         } finally {
             stub.restore();
         }
