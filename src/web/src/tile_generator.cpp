@@ -106,7 +106,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   struct BoolField
   {
     const char* key;
-    bool TileVisibility::* field;
+    bool TileVisibility::*field;
     bool default_val;
   };
 
