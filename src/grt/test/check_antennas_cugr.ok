@@ -8,6 +8,3 @@
 local net guides: 2
 [INFO ANT-0002] Found 5 net violations.
 [INFO ANT-0001] Found 5 pin violations.
-[WARNING GRT-0310] repair_antennas is not supported with CUGR yet; skipping antenna repair.
-[INFO ANT-0002] Found 5 net violations.
-[INFO ANT-0001] Found 5 pin violations.
