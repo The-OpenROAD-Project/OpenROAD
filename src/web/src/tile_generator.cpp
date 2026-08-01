@@ -106,7 +106,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   struct BoolField
   {
     const char* key;
-    bool TileVisibility::*field;
+    bool TileVisibility::* field;
     bool default_val;
   };
 
@@ -4105,7 +4105,11 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                             + "/" + std::to_string(y);
 
   const int margin = static_cast<int>(std::lround(4 * px_per_css));
-  const int font_px = static_cast<int>(std::lround(20 * px_per_css));
+  // Floor at 10px, matching rasterizeWebPainterOps: a dpr < 0.5 (browser zoom
+  // out) would otherwise round the height toward 0 and hand fontAtlasGetFont a
+  // degenerate size.
+  const int font_px
+      = std::max(10, static_cast<int>(std::lround(20 * px_per_css)));
   drawText(image, margin, margin, label, fontAtlasGetFont(font_px), yellow);
 }
 
