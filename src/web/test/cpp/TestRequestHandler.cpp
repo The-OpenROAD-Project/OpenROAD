@@ -198,6 +198,121 @@ TEST_F(TileHandlerTest, TechReturnsJson)
   EXPECT_NE(json.find("\"has_liberty\""), std::string::npos);
 }
 
+// PNG dimensions live in the IHDR chunk: 8-byte signature, 4-byte length,
+// 4-byte type, then width and height as big-endian uint32.  Read directly so
+// this test needs no PNG decoder dependency.
+static uint32_t pngWidth(const std::vector<unsigned char>& png)
+{
+  if (png.size() < 24) {
+    return 0;
+  }
+  return (static_cast<uint32_t>(png[16]) << 24)
+         | (static_cast<uint32_t>(png[17]) << 16)
+         | (static_cast<uint32_t>(png[18]) << 8)
+         | static_cast<uint32_t>(png[19]);
+}
+
+// The device pixel ratio comes from the client — only the browser can know the
+// display's ratio — and the server honours it rather than snapping it to a
+// fixed ladder.  A snapped ratio renders a tile of the wrong size that the
+// browser then rescales, which is the moiré beat the tile pipeline exists to
+// avoid, and 1.75 and 2.5 are ordinary Windows scale factors.
+//
+// The client mirrors this in quantizeDpr() in tile-request.js and sizes its
+// merged canvas from its own copy, so a divergence here resamples every tile.
+// The viewer's options are query parameters, so the asset lookup must never
+// see them.  Without this the whole page 404s with "Resource not found." the
+// moment any option is used -- which is how ?mergetiles=0 shipped unusable.
+TEST(AssetPathFromTarget, StripsTheQueryString)
+{
+  EXPECT_EQ(assetPathFromTarget("/?mergetiles=0"), "/index.html");
+  EXPECT_EQ(assetPathFromTarget("/?tilebudget=256&mergegroups=8"),
+            "/index.html");
+  EXPECT_EQ(assetPathFromTarget("/main.js?v=2"), "/main.js");
+}
+
+TEST(AssetPathFromTarget, StripsAFragment)
+{
+  EXPECT_EQ(assetPathFromTarget("/#anchor"), "/index.html");
+  EXPECT_EQ(assetPathFromTarget("/main.js#top"), "/main.js");
+  // Query before fragment, and a '#' inside the query is still a fragment.
+  EXPECT_EQ(assetPathFromTarget("/main.js?a=1#top"), "/main.js");
+}
+
+TEST(AssetPathFromTarget, MapsRootOntoTheIndexDocument)
+{
+  EXPECT_EQ(assetPathFromTarget("/"), "/index.html");
+  EXPECT_EQ(assetPathFromTarget(""), "/index.html");
+}
+
+TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
+{
+  EXPECT_EQ(assetPathFromTarget("/style.css"), "/style.css");
+  EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
+}
+
+TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
+{
+  struct Case
+  {
+    double requested;
+    uint32_t expected_px;
+  };
+  // 256 * dpr, rounded — matching renderTileBuffer.
+  const Case cases[] = {
+      {1.0, 256},
+      {1.25, 320},
+      {1.75, 448},  // was snapped to 1.5 (384 px) by the old ladder
+      {2.0, 512},
+      {2.5, 640},  // was snapped to 2.0 (512 px)
+  };
+  for (const Case& c : cases) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],"dpr":)"
+        + std::to_string(c.requested) + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << "dpr " << c.requested;
+    EXPECT_EQ(pngWidth(resp.payload), c.expected_px)
+        << "dpr " << c.requested << " must render at 256*dpr";
+  }
+}
+
+TEST_F(TileHandlerTest, RoundsDprToBoundTheCacheKeySpace)
+{
+  // dpr is part of the tile-cache key, so an unrounded ratio would fork its own
+  // set of cached tiles for every trailing digit.  Two decimals is the bound.
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("dpr":1.3333333})");
+  auto resp = handler_->handleTile(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kPng);
+  // 1.33, not 1.3333333: round(256 * 1.33) = 340.
+  EXPECT_EQ(pngWidth(resp.payload), 340u);
+}
+
+TEST_F(TileHandlerTest, ClampsDprIntoRange)
+{
+  for (const auto& [requested, expected] :
+       std::vector<std::pair<std::string, uint32_t>>{
+           {"0.5", 256}, {"-1", 256}, {"8", 768}}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],"dpr":)"
+        + requested + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << "dpr " << requested;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << "dpr " << requested;
+  }
+}
+
 TEST_F(TileHandlerTest, TileReturnsPng)
 {
   WebSocketRequest req;

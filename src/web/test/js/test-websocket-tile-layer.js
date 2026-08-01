@@ -18,11 +18,34 @@ class MockWebSocket {
 }
 globalThis.WebSocket = MockWebSocket;
 
+// Minimal Leaflet stand-in so the layer class itself can be built, not just the
+// pure helpers. Without this, a name the layer body references but never binds
+// (an `export ... from` re-export with no local import, say) goes unnoticed:
+// importers resolve it, the module body does not, and it only fails at runtime
+// inside Leaflet's _setView.
+globalThis.L = {
+    GridLayer: {
+        prototype: {
+            initialize(opts) { this.options = { ...(opts || {}) }; },
+            _clampZoom(z) { return z; },
+            _removeTile() {},
+        },
+        extend(proto) {
+            const Base = globalThis.L.GridLayer.prototype;
+            function Layer(...args) { this._tiles = {}; this.initialize(...args); }
+            Layer.prototype = Object.create(Base);
+            Object.assign(Layer.prototype, proto);
+            return Layer;
+        },
+    },
+};
+
 // The tile-layer module references the Leaflet global `L` only inside
 // createWebSocketTileLayer's body, so importing it (for the pure helpers)
 // does not require Leaflet.
 const { buildMapOptions } = await import('../../src/ui-utils.js');
-const { floorClampZoom, buildTileRequest, currentDpr }
+const { floorClampZoom, buildTileRequest, currentDpr,
+        createWebSocketTileLayer, createOverlayTileLayer }
     = await import('../../src/websocket-tile-layer.js');
 const { WebSocketManager } = await import('../../src/websocket-manager.js');
 
@@ -72,8 +95,16 @@ describe('currentDpr', () => {
     it('clamps above 3', () => {
         assert.equal(withDpr(8, currentDpr), 3);
     });
+
     it('defaults to 1 when devicePixelRatio is absent', () => {
         assert.equal(withDpr(undefined, currentDpr), 1);
+    });
+
+    it('normalizes the ratio the way the server will', () => {
+        // The client and server must agree on the tile's pixel size; see
+        // quantizeDpr in tile-request.js and request_handler.cpp.
+        assert.equal(withDpr(1.75, currentDpr), 1.75);
+        assert.equal(withDpr(4 / 3, currentDpr), 1.33);
     });
 });
 
@@ -154,5 +185,38 @@ describe('WebSocketManager.cancel', () => {
             zoom: 1, json: {}, tiles: {}, overlays: {},
         });
         assert.doesNotThrow(() => mgr.cancel(1));
+    });
+});
+
+describe('the layer body must resolve every name it references', () => {
+    // Regression test for a real breakage: floorClampZoom was re-exported with
+    // `export { floorClampZoom } from './tile-request.js'`, which does NOT
+    // create a local binding. Importers still resolved the name, and the
+    // existing tests all imported it directly, so everything looked fine — but
+    // _clampZoom referenced an undefined name and the map failed to load with
+    // "ReferenceError: floorClampZoom is not defined" from inside GridLayer's
+    // _setView. Building the class and calling through it is what catches this.
+    function build() {
+        const Layer = createWebSocketTileLayer(
+            { stdcells: true }, new Set(['metal1']), null, null, null);
+        return new Layer({ nextId: 1, request: () => new Promise(() => {}),
+                           cancel() {} }, 'metal1', {});
+    }
+
+    it('resolves _clampZoom through the real layer', () => {
+        const layer = build();
+        layer._map = { getZoom: () => 3.7 };
+        assert.doesNotThrow(() => layer._clampZoom(4));
+        assert.equal(layer._clampZoom(4), 3);
+    });
+
+    it('falls back to the passed zoom with no map', () => {
+        const layer = build();
+        layer._map = null;
+        assert.equal(layer._clampZoom(5), 5);
+    });
+
+    it('builds the overlay layer class too', () => {
+        assert.doesNotThrow(() => createOverlayTileLayer({}, null));
     });
 });
