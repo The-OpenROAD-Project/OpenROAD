@@ -195,6 +195,25 @@ static double quantizeDpr(const double raw)
   return std::round(clamped * 100.0) / 100.0;
 }
 
+std::string assetPathFromTarget(const std::string_view target)
+{
+  std::string path(target);
+  // Query first, then fragment: a fragment is never sent by a browser, but a
+  // hand-built request can carry one and it must not reach the lookup either.
+  const size_t query = path.find('?');
+  if (query != std::string::npos) {
+    path.resize(query);
+  }
+  const size_t fragment = path.find('#');
+  if (fragment != std::string::npos) {
+    path.resize(fragment);
+  }
+  if (path.empty() || path == "/") {
+    return "/index.html";
+  }
+  return path;
+}
+
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
                            const gui::Selected& sel)
