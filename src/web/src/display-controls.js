@@ -64,6 +64,12 @@ const fallbackLayerPalette = [
     [180, 70, 150],  // magenta
 ];
 
+import {
+    computeGroupCount, estimateTilesPerPane, partitionIntoGroups, tileBytes,
+    DEFAULT_BUDGET_BYTES,
+} from './tile-merge.js';
+import { buildMergedPanes } from './merged-tile-layer.js';
+
 // Populate display controls with layer checkboxes and visibility tree.
 export function populateDisplayControls(app, visibility, selectability,
                                          WebSocketTileLayer,
@@ -72,6 +78,74 @@ export function populateDisplayControls(app, visibility, selectability,
     if (!app.displayControlsEl) return;
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
+
+    // ─── Tile grouping ───────────────────────────────────────────────────
+    //
+    // Two modes.  Legacy: one Leaflet pane per tech layer per chiplet, which on
+    // a multi-die design is ~97 panes holding ~582 MB of decoded tile images —
+    // past the browser's ~458 MB ceiling, where it starts discarding decodes and
+    // the discarded regions paint white (docs/tile-memory.md).  Merged:
+    // the routing layers are composited into N canvas panes, N chosen from a
+    // memory budget, so the total is bounded no matter how many layers or
+    // chiplets the design has.
+    //
+    // Only the routing layers are merged.  _instances, _pins and _modules stay
+    // as their own panes: there are three of them, they carry no meaningful
+    // memory, and they have their own add/remove rules driven by Shapes and
+    // Module-view toggles which are not worth folding into the draw list.
+    const mergedLayerClass = app.mergeTiles ? app.MergedTileLayer : null;
+    // Panes whose draw list changed during one tree update, refreshed once at
+    // the end rather than per layer — a group toggle walks every node, and
+    // refreshing per node would re-request the same pane dozens of times.
+    const dirtyPanes = new Set();
+
+    function flushDirtyPanes() {
+        for (const pane of dirtyPanes) {
+            pane.refreshTiles();
+        }
+        dirtyPanes.clear();
+    }
+
+    // A routing layer, as the tree sees it.  In legacy mode this IS the Leaflet
+    // layer; in merged mode it is an adapter over one entry of a pane's draw
+    // list, exposing the same three things the tree uses.
+    function makeRoutingLayer(name, zIndex) {
+        if (!mergedLayerClass) {
+            const layer = new WebSocketTileLayer(app.websocketManager, name, {
+                opacity: 0.7,
+                zIndex,
+            });
+            layer._orShow = () => layer.addTo(app.map);
+            layer._orHide = () => app.map.removeLayer(layer);
+            return layer;
+        }
+        // 0.7 matches the legacy per-layer pane opacity.  It is applied inside
+        // the merged canvas; the pane itself must stay opaque or every layer
+        // gets multiplied by 0.7 twice (see MERGED_PANE_OPACITY).
+        const item = { layer: name, opacity: 0.7, visible: false };
+        return {
+            _orItem: item,
+            _orPane: null,
+            refreshTiles() {
+                if (this._orPane) {
+                    dirtyPanes.add(this._orPane);
+                    flushDirtyPanes();
+                }
+            },
+            _orShow() {
+                item.visible = true;
+                if (this._orPane) {
+                    dirtyPanes.add(this._orPane);
+                }
+            },
+            _orHide() {
+                item.visible = false;
+                if (this._orPane) {
+                    dirtyPanes.add(this._orPane);
+                }
+            },
+        };
+    }
 
     // Instance borders layer (always below routing layers)
     const instancesLayer = new WebSocketTileLayer(app.websocketManager, '_instances', {
@@ -186,21 +260,23 @@ export function populateDisplayControls(app, visibility, selectability,
                 const name = layerObj.name || layerObj;
                 const slot = nextLayerSlot++;
                 const zIndex = slot + 3;
-                const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                    opacity: 0.7,
-                    zIndex: zIndex,
-                });
+                const layer = makeRoutingLayer(name, zIndex);
 
                 const id = `${parentId}/${name}`;
                 layer._nodeId = id;
 
                 const visible = !savedHiddenLayers.has(id);
                 if (visible) {
-                    layer.addTo(app.map);
+                    layer._orShow();
                     app.visibleLayers.add(id);
                     app.visibleLayerNames.add(name);
                 }
-                app.allLayers.push(layer);
+                // In merged mode the panes go into allLayers instead, once the
+                // grouping is known — a draw-list entry is not something
+                // redrawAllLayers() can refresh.
+                if (!mergedLayerClass) {
+                    app.allLayers.push(layer);
+                }
                 leafletLayers.push(layer);
 
                 layerIds.push(id);
@@ -243,27 +319,76 @@ export function populateDisplayControls(app, visibility, selectability,
         layerSpec = {
             id: 'layers_parent',
             children: techData.layers.map((name, index) => {
-                const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                    opacity: 0.7,
-                    zIndex: index + 3,
-                });
+                const layer = makeRoutingLayer(name, index + 3);
 
                 const id = `layers_parent/${name}`;
                 layer._nodeId = id;
-                
+
                 const visible = !savedHiddenLayers.has(id);
                 if (visible) {
-                    layer.addTo(app.map);
+                    layer._orShow();
                     app.visibleLayers.add(id);
                     app.visibleLayerNames.add(name);
                 }
-                app.allLayers.push(layer);
+                if (!mergedLayerClass) {
+                    app.allLayers.push(layer);
+                }
                 leafletLayers.push(layer);
 
                 layerIds.push(id);
                 return { id, data: { name, layer, colorIndex: index, nodeId: id }, checked: visible };
             }),
         };
+    }
+
+    // ─── Build the merged panes ──────────────────────────────────────────
+    //
+    // leafletLayers is in slot order, which IS the z-order, so it can be
+    // partitioned directly.  Runs must be contiguous: each group becomes one
+    // image, and interleaved groups have no stacking that reproduces the
+    // original (see partitionIntoGroups).
+    if (mergedLayerClass && leafletLayers.length > 0) {
+        const container = app.map.getContainer();
+        const budget = app.tileBudgetBytes || DEFAULT_BUDGET_BYTES;
+        const perTile = tileBytes(256, app.tileDpr ? app.tileDpr() : 1);
+        const tilesPerPane = estimateTilesPerPane(
+            container.clientWidth, container.clientHeight);
+        const groupCount = app.mergeGroupCount || computeGroupCount({
+            budgetBytes: budget,
+            tilesPerPane,
+            bytesPerTile: perTile,
+            paneCount: leafletLayers.length,
+        });
+        const groups = partitionIntoGroups(
+            leafletLayers.map(l => l._orItem), groupCount);
+        // zIndex 3 upwards, matching the slots the per-layer panes used, so the
+        // routing stack still sits above _instances/_pins/_modules.
+        const panes = buildMergedPanes(mergedLayerClass, app.websocketManager,
+                                       groups, app.map, 3);
+        // Point every tree entry at the pane that now owns its draw item.
+        let at = 0;
+        groups.forEach((group, gi) => {
+            for (let i = 0; i < group.length; i++) {
+                leafletLayers[at++]._orPane = panes[gi];
+            }
+        });
+        // These are what redrawAllLayers() refreshes — the design-changed push,
+        // pattern changes and visibility changes all arrive through it.
+        app.allLayers.push(...panes);
+        app.mergedPanes = panes;
+        app.mergeStats = {
+            layers: leafletLayers.length,
+            groups: panes.length,
+            tilesPerPane,
+            budgetMB: Math.round(budget / (1024 * 1024)),
+            estimatedMB: Math.round(
+                panes.length * tilesPerPane * perTile / (1024 * 1024)),
+        };
+        console.log('[tiles] merged %d layers into %d panes '
+                    + '(~%d MB of %d MB budget, %d tiles/pane)',
+                    app.mergeStats.layers, app.mergeStats.groups,
+                    app.mergeStats.estimatedMB, app.mergeStats.budgetMB,
+                    tilesPerPane);
     }
 
     // Parallel selectability model with the same node ids as layerSpec so
@@ -318,11 +443,11 @@ export function populateDisplayControls(app, visibility, selectability,
                 const id = node.data.nodeId || node.data.name;
                 allLayerIds.push(id);
                 if (node.checked) {
-                    node.data.layer.addTo(app.map);
+                    node.data.layer._orShow();
                     app.visibleLayers.add(id);
                     app.visibleLayerNames.add(node.data.name);
                 } else {
-                    app.map.removeLayer(node.data.layer);
+                    node.data.layer._orHide();
                     app.visibleLayers.delete(id);
                 }
             }
@@ -349,6 +474,9 @@ export function populateDisplayControls(app, visibility, selectability,
                 }
             }
         });
+        // One refresh per affected merged pane, after the whole walk: a group
+        // toggle touches many nodes that share a pane.
+        flushDirtyPanes();
         // Visibility off ⇒ selectability disabled — refresh selectability DOM.
         syncLayerSelDom();
         // Refresh pins layer so it filters by the updated visible_layers.

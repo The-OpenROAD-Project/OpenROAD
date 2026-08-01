@@ -170,23 +170,29 @@ class [[nodiscard]] ScopedDbuFormat
 // Clamp + quantize the client's devicePixelRatio so the server renders tiles
 // at a stable 256*dpr and the tile cache has few buckets.  Snaps to the common
 // HiDPI ratios; anything outside [1,3] or non-finite falls back to 1.0.
+// Normalize the client-reported device pixel ratio.
+//
+// Only the browser knows the display's ratio, so this is the value the client
+// sent, not one the server picks.  It is honoured rather than snapped to a
+// ladder: the ratio decides the rendered tile's pixel size, and a client whose
+// ratio is not on the ladder gets a tile of the wrong size that the browser
+// then rescales — which is the moiré beat the whole tile pipeline is built to
+// avoid.  A 1.75 or 2.5 display (ordinary Windows scale factors) hit that.
+//
+// Rounded to two decimals only to bound the tile-cache key space, since dpr is
+// part of the key: without it a ratio like 1.3333333 would fork its own set of
+// cached tiles for every distinct trailing digit.  In practice this is one
+// bucket per connected client.
+//
+// MUST match quantizeDpr() in tile-request.js — the client sizes its merged
+// canvas from its own copy, and any disagreement resamples every tile.
 static double quantizeDpr(const double raw)
 {
   if (!std::isfinite(raw) || raw <= 1.0) {
     return 1.0;
   }
   const double clamped = std::min(raw, 3.0);
-  constexpr double kSteps[] = {1.0, 1.25, 1.5, 2.0, 3.0};
-  double best = 1.0;
-  double best_err = std::numeric_limits<double>::max();
-  for (const double step : kSteps) {
-    const double err = std::abs(step - clamped);
-    if (err < best_err) {
-      best_err = err;
-      best = step;
-    }
-  }
-  return best;
+  return std::round(clamped * 100.0) / 100.0;
 }
 
 // Store a Selected in the clickables vector and return its index.
@@ -2429,6 +2435,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   if (cacheable && resp.type == WebSocketResponse::kPng) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }
+
   return resp;
 }
 

@@ -16,6 +16,9 @@ set(WEB_ASSET_FILES
     src/index.html
     src/style.css
     src/theme.js
+    src/tile-merge.js
+    src/tile-request.js
+    src/merged-tile-layer.js
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
