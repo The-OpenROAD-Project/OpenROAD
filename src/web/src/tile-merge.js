@@ -131,6 +131,52 @@ export function measureViewport(container, win) {
     return { width, height };
 }
 
+// Set a draw item's visibility, returning whether it actually changed.
+//
+// The return value is the point.  The layer tree's onChange walks EVERY node
+// and asserts the desired state on each one, so a caller that marks its pane
+// dirty unconditionally re-requests every tile in every pane on any checkbox
+// click — roughly 2300 requests on the 97-layer design that motivated this.
+// The per-layer panes never had that problem because Leaflet's addTo() is a
+// no-op for a layer already on the map; this restores the same property.
+export function setItemVisible(item, visible) {
+    if (!item) {
+        return false;
+    }
+    const want = !!visible;
+    if (!!item.visible === want) {
+        return false;
+    }
+    item.visible = want;
+    return true;
+}
+
+// Panes that stay unmerged and so are not counted by the grouping, but do hold
+// a full grid of tiles each: _instances, _pins, and the always-on highlight
+// overlay.  (_modules and the heatmap are only mounted when enabled, so they are
+// not reserved for; they will push the total up when switched on.)
+//
+// At dpr 1 these are ~6 MB each and hardly matter.  At dpr 3 a tile is 2.25 MB,
+// so a pane is ~54 MB and the three together are ~162 MB — enough that a budget
+// which ignored them would report a comfortable fit while the real total sat
+// above the ceiling.
+export const UNMERGED_PANE_COUNT = 3;
+
+// Budget left for the merged panes once the unmerged ones are charged for.
+//
+// Never returns less than one group's worth: the viewer has to render
+// something, and a budget so small that no group fits would be a blank map
+// rather than a slow one.
+export function reserveForUnmergedPanes(budgetBytes, tilesPerPane,
+                                        bytesPerTile,
+                                        unmergedPanes = UNMERGED_PANE_COUNT) {
+    const perPane = tilesPerPane * bytesPerTile;
+    if (!(perPane > 0)) {
+        return budgetBytes;
+    }
+    return Math.max(perPane, budgetBytes - unmergedPanes * perPane);
+}
+
 // How many merged panes fit in the budget.
 //
 // `tilesPerPane` must come from what Leaflet actually holds, not from the

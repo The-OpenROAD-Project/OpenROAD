@@ -67,7 +67,8 @@ const fallbackLayerPalette = [
 
 import {
     computeGroupCount, estimateTilesPerPane, measureViewport,
-    partitionIntoGroups, tileBytes, DEFAULT_BUDGET_BYTES,
+    partitionIntoGroups, reserveForUnmergedPanes, setItemVisible, tileBytes,
+    DEFAULT_BUDGET_BYTES, UNMERGED_PANE_COUNT,
 } from './tile-merge.js';
 import { buildMergedPanes } from './merged-tile-layer.js';
 
@@ -133,15 +134,18 @@ export function populateDisplayControls(app, visibility, selectability,
                     flushDirtyPanes();
                 }
             },
+            // setItemVisible reports whether the state actually changed, and
+            // only a real change dirties the pane.  The tree's onChange walks
+            // EVERY node and asserts the desired state on each, so dirtying
+            // unconditionally made one checkbox re-request every tile in every
+            // pane.
             _orShow() {
-                item.visible = true;
-                if (this._orPane) {
+                if (setItemVisible(item, true) && this._orPane) {
                     dirtyPanes.add(this._orPane);
                 }
             },
             _orHide() {
-                item.visible = false;
-                if (this._orPane) {
+                if (setItemVisible(item, false) && this._orPane) {
                     dirtyPanes.add(this._orPane);
                 }
             },
@@ -360,8 +364,13 @@ export function populateDisplayControls(app, visibility, selectability,
             const { width, height } = measureViewport(app.map.getContainer());
             const tilesPerPane = estimateTilesPerPane(width, height);
             const perTile = tileBytes(256, app.tileDpr ? app.tileDpr() : 1);
+            // The panes that are NOT merged still hold full tile grids, and
+            // they are not free: at dpr 3 each costs ~54 MB, so the three of
+            // them would put the real total over the ceiling while the budget
+            // reported it as fitting.  Charge them first.
             const count = app.mergeGroupCount || computeGroupCount({
-                budgetBytes: budget,
+                budgetBytes: reserveForUnmergedPanes(budget, tilesPerPane,
+                                                     perTile),
                 tilesPerPane,
                 bytesPerTile: perTile,
                 paneCount: items.length,
@@ -370,13 +379,18 @@ export function populateDisplayControls(app, visibility, selectability,
         }
 
         function describe(paneCount, tilesPerPane, perTile) {
+            // estimatedMB counts the unmerged panes too, so the reported figure
+            // is the whole viewer's tile memory rather than just the part this
+            // grouping controls.
+            const total = (paneCount + UNMERGED_PANE_COUNT) * tilesPerPane
+                          * perTile;
             return {
                 layers: items.length,
                 groups: paneCount,
                 tilesPerPane,
+                unmergedPanes: UNMERGED_PANE_COUNT,
                 budgetMB: Math.round(budget / (1024 * 1024)),
-                estimatedMB: Math.round(
-                    paneCount * tilesPerPane * perTile / (1024 * 1024)),
+                estimatedMB: Math.round(total / (1024 * 1024)),
             };
         }
 

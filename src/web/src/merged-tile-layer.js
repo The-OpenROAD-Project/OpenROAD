@@ -103,21 +103,38 @@ export function createMergedTileLayer(ctx, options = {}) {
         createTile: function(coords, done) {
             const canvas = document.createElement('canvas');
             canvas.setAttribute('role', 'presentation');
-            const size = this.getTileSize();
             const dpr = dprOf();
-            // Backing store in device pixels, CSS box in layout pixels, so the
-            // canvas maps 1:1 onto the device grid and drawImage does not
-            // resample — the same invariant the <img> path relies on.
-            canvas.width = Math.round(size.x * dpr);
-            canvas.height = Math.round(size.y * dpr);
-            canvas.style.width = size.x + 'px';
-            canvas.style.height = size.y + 'px';
-
+            this._sizeCanvas(canvas, dpr);
             this._renderTile(canvas, coords, dpr, done);
             return canvas;
         },
 
+        // Backing store in device pixels, CSS box in layout pixels, so the
+        // canvas maps 1:1 onto the device grid and drawImage does not resample
+        // — the same invariant the <img> path relies on.
+        //
+        // Re-applied on every render, not just at creation: devicePixelRatio
+        // changes when the window moves between monitors or the browser zoom
+        // changes, and a refresh then requests images at the new dpr.  A canvas
+        // still sized for the old one would scale every incoming tile into the
+        // wrong backing store, leaving existing tiles blurry and inconsistent
+        // with any created afterwards.
+        _sizeCanvas: function(canvas, dpr) {
+            const size = this.getTileSize();
+            const w = Math.round(size.x * dpr);
+            const h = Math.round(size.y * dpr);
+            if (canvas.width !== w || canvas.height !== h) {
+                // Assigning width/height also clears the canvas, which is what
+                // we want here — the caller is about to redraw it.
+                canvas.width = w;
+                canvas.height = h;
+            }
+            canvas.style.width = size.x + 'px';
+            canvas.style.height = size.y + 'px';
+        },
+
         _renderTile: function(canvas, coords, dpr, done) {
+            this._sizeCanvas(canvas, dpr);
             const generation = this._generation;
             const items = this.visibleItems();
             const context = canvas.getContext('2d');

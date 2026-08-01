@@ -5,8 +5,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    BYTES_PER_PIXEL, DEFAULT_BUDGET_BYTES, tileBytes, estimateTilesPerPane,
-    measureViewport, computeGroupCount,
+    BYTES_PER_PIXEL, DEFAULT_BUDGET_BYTES, UNMERGED_PANE_COUNT, tileBytes,
+    estimateTilesPerPane, measureViewport, reserveForUnmergedPanes,
+    setItemVisible, computeGroupCount,
     partitionIntoGroups, mergeOntoContext, closeAll, describePlan,
     MERGED_PANE_OPACITY, mergedPaneOptions, blendOver, compositeStack,
     renderMergedTile,
@@ -784,5 +785,115 @@ describe('measureViewport: a zero-sized container silently disables merging', ()
         });
         assert.ok(fromWindow < fromPanel,
                   `${fromWindow} should be < ${fromPanel}`);
+    });
+});
+
+describe('reserveForUnmergedPanes: the panes outside the grouping are not free', () => {
+    // _instances, _pins and the always-on highlight overlay each hold a full
+    // tile grid and are never merged. At dpr 1 they are ~6 MB each and hardly
+    // matter; at dpr 3 a pane is ~54 MB, so ignoring them let the budget report
+    // a comfortable fit while the real total sat above the ceiling.
+    const TILES = 24;
+
+    it('charges the unmerged panes before the merged ones', () => {
+        const perTile = tileBytes(256, 1);
+        const perPane = TILES * perTile;
+        const budget = 350 * 1024 * 1024;
+        assert.equal(reserveForUnmergedPanes(budget, TILES, perTile),
+                     budget - UNMERGED_PANE_COUNT * perPane);
+    });
+
+    it('keeps the real total under budget on a HiDPI display', () => {
+        // The case that motivated it: dpr 3, where each unmerged pane is ~54 MB.
+        const perTile = tileBytes(256, 3);
+        const budget = 350 * 1024 * 1024;
+        const naive = computeGroupCount({
+            budgetBytes: budget, tilesPerPane: TILES,
+            bytesPerTile: perTile, paneCount: PANES,
+        });
+        const guarded = computeGroupCount({
+            budgetBytes: reserveForUnmergedPanes(budget, TILES, perTile),
+            tilesPerPane: TILES, bytesPerTile: perTile, paneCount: PANES,
+        });
+        assert.ok(guarded < naive, `${guarded} should be < ${naive}`);
+
+        const perPane = TILES * perTile;
+        assert.ok((naive + UNMERGED_PANE_COUNT) * perPane > budget,
+                  'the unguarded total should indeed bust the budget');
+        assert.ok((guarded + UNMERGED_PANE_COUNT) * perPane <= budget,
+                  'the guarded total must fit including the unmerged panes');
+    });
+
+    it('never starves the merged panes entirely', () => {
+        // A budget too small for the unmerged panes alone must still leave room
+        // for one group: a blank map is worse than a slow one.
+        const perTile = tileBytes(256, 3);
+        const left = reserveForUnmergedPanes(1, TILES, perTile);
+        assert.equal(left, TILES * perTile);
+        assert.equal(computeGroupCount({
+            budgetBytes: left, tilesPerPane: TILES,
+            bytesPerTile: perTile, paneCount: PANES,
+        }), 1);
+    });
+
+    it('degrades to the raw budget on nonsense input', () => {
+        assert.equal(reserveForUnmergedPanes(1000, 0, 4), 1000);
+        assert.equal(reserveForUnmergedPanes(1000, 4, 0), 1000);
+    });
+
+    it('honours a caller-supplied pane count', () => {
+        const perTile = tileBytes(256, 1);
+        const perPane = TILES * perTile;
+        assert.equal(reserveForUnmergedPanes(100 * perPane, TILES, perTile, 5),
+                     95 * perPane);
+    });
+});
+
+describe('setItemVisible: only a real change may dirty a pane', () => {
+    // The layer tree's onChange walks every node and asserts the desired state
+    // on each one. Reporting a change every time made a single checkbox click
+    // re-request every tile in every pane — ~2300 requests on the 97-layer
+    // design. The per-layer panes never had this problem because Leaflet's
+    // addTo() is a no-op for a layer already on the map.
+    it('reports a change only when the state moves', () => {
+        const item = { layer: 'metal1', opacity: 0.7, visible: false };
+        assert.equal(setItemVisible(item, true), true);
+        assert.equal(item.visible, true);
+        assert.equal(setItemVisible(item, true), false, 'already visible');
+        assert.equal(setItemVisible(item, false), true);
+        assert.equal(setItemVisible(item, false), false, 'already hidden');
+    });
+
+    it('treats a missing visible flag as hidden', () => {
+        const item = { layer: 'metal1', opacity: 0.7 };
+        assert.equal(setItemVisible(item, true), true);
+        assert.equal(setItemVisible(item, true), false);
+    });
+
+    it('normalizes truthiness so it cannot report a spurious change', () => {
+        const item = { layer: 'metal1', visible: true };
+        assert.equal(setItemVisible(item, 1), false);
+        assert.equal(setItemVisible(item, 'yes'), false);
+        assert.equal(setItemVisible(item, 0), true);
+    });
+
+    it('is quiet for a whole tree walk that changes nothing', () => {
+        // The actual regression: re-asserting the current state across every
+        // layer must dirty nothing at all.
+        const items = Array.from({ length: 94 }, (_, i) => ({
+            layer: 'm' + i, opacity: 0.7, visible: i % 3 !== 0,
+        }));
+        let dirtied = 0;
+        for (const item of items) {
+            if (setItemVisible(item, item.visible)) {
+                dirtied++;
+            }
+        }
+        assert.equal(dirtied, 0);
+    });
+
+    it('tolerates a missing item', () => {
+        assert.equal(setItemVisible(null, true), false);
+        assert.equal(setItemVisible(undefined, false), false);
     });
 });

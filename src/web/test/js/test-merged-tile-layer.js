@@ -667,3 +667,89 @@ describe('cache-invalidation and refresh paths must reach a merged pane', () => 
         assert.deepEqual(merged, legacy);
     });
 });
+
+describe('canvas backing store follows the device pixel ratio', () => {
+    // devicePixelRatio changes when the window moves between monitors or the
+    // browser zoom changes. A refresh then requests images at the new dpr, so a
+    // canvas still sized for the old one would scale every incoming tile into
+    // the wrong backing store — existing tiles blurry, and inconsistent with
+    // any created afterwards.
+    function layerWithDpr(mgr, dprRef) {
+        const Layer = createMergedTileLayer(CTX, {
+            decode: async (payload) => (payload
+                ? { id: payload.payloadFor, close() {} } : null),
+            dpr: () => dprRef.value,
+        });
+        const layer = new Layer(mgr, [{ layer: 'metal1', opacity: 1,
+                                        visible: true }], {});
+        layer._map = {};
+        return layer;
+    }
+
+    it('resizes an existing tile when the ratio changes', async () => {
+        const stub = stubCanvas2d();
+        const dprRef = { value: 1 };
+        try {
+            const mgr = fakeManager();
+            const layer = layerWithDpr(mgr, dprRef);
+            const el = layer.createTile({ x: 0, y: 0, z: 0 }, () => {});
+            layer._tiles = { '0:0:0': { el, coords: { x: 0, y: 0, z: 0 } } };
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(el.width, 256);
+
+            dprRef.value = 2;
+            layer.refreshTiles();
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(el.width, 512, 'backing store must follow the dpr');
+            assert.equal(el.height, 512);
+            // The CSS box stays in layout pixels either way.
+            assert.equal(el.style.width, '256px');
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it('requests at the same ratio it sizes the canvas for', async () => {
+        // The two must not drift: the server renders 256*dpr and the canvas
+        // draws at its own width, so a mismatch resamples every tile.
+        const stub = stubCanvas2d();
+        const dprRef = { value: 2 };
+        try {
+            const mgr = fakeManager();
+            const layer = layerWithDpr(mgr, dprRef);
+            const el = layer.createTile({ x: 0, y: 0, z: 0 }, () => {});
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(mgr.sent[0].dpr, 2);
+            assert.equal(el.width, 256 * mgr.sent[0].dpr);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it('leaves the canvas alone when the ratio is unchanged', async () => {
+        // Assigning width clears the canvas, so doing it unnecessarily would
+        // blank every tile on every refresh.
+        const stub = stubCanvas2d();
+        const dprRef = { value: 1 };
+        try {
+            const mgr = fakeManager();
+            const layer = layerWithDpr(mgr, dprRef);
+            const el = layer.createTile({ x: 0, y: 0, z: 0 }, () => {});
+            layer._tiles = { '0:0:0': { el, coords: { x: 0, y: 0, z: 0 } } };
+            await new Promise(r => setTimeout(r, 0));
+
+            let writes = 0;
+            let w = el.width;
+            Object.defineProperty(el, 'width', {
+                get: () => w,
+                set: (v) => { writes++; w = v; },
+                configurable: true,
+            });
+            layer.refreshTiles();
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(writes, 0, 'must not clear the canvas needlessly');
+        } finally {
+            stub.restore();
+        }
+    });
+});
