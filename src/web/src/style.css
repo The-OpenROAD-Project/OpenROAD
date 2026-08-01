@@ -665,10 +665,20 @@ html, body {
     color: var(--fg-primary);
     cursor: pointer;
 }
+/* The expand/collapse triangle. The group header is a <label> wrapping the
+ * visibility checkbox, so any click that misses the arrow toggles visibility
+ * instead of expanding the group. The 9px glyph's own line box is shorter
+ * than the row, so the arrow stretches to the full row height and the
+ * negative margins extend it over the header's 3px vertical padding, leaving
+ * no dead band above or below the triangle. */
 .display-controls .vis-arrow {
     font-size: 9px;
     width: 14px;
-    text-align: center;
+    align-self: stretch;
+    margin: -3px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--fg-muted);
     cursor: pointer;
     user-select: none;
