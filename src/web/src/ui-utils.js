@@ -48,9 +48,15 @@ export function makeGroupHeader(className = 'vis-group-header') {
     return { header, arrow };
 }
 
-// Wire `header` so a click anywhere but its checkboxes expands/collapses
-// `children`, keeping `arrow`'s glyph in sync.  `collapsed` is the initial
-// state and is applied immediately.
+// Wire `header` so clicking its triangle or its own bare area (the group
+// name and the empty space, both of which target `header` itself) expands or
+// collapses `children`, keeping `arrow`'s glyph in sync.  `collapsed` is the
+// initial state and is applied immediately.
+//
+// Only those two targets collapse.  Every other element in the row keeps its
+// own click, so a control added later cannot both act and collapse the group:
+// the worst a new child can do is not respond, which is visible immediately,
+// rather than firing two actions at once.
 export function attachGroupCollapse(header, arrow, children, collapsed) {
     const apply = (c) => {
         children.classList.toggle('collapsed', c);
@@ -58,8 +64,7 @@ export function attachGroupCollapse(header, arrow, children, collapsed) {
     };
     apply(!!collapsed);
     header.addEventListener('click', (e) => {
-        // The controls own their clicks (visibility / selectability).
-        if (e.target.closest('input, select, button')) return;
+        if (e.target !== header && e.target !== arrow) return;
         apply(!children.classList.contains('collapsed'));
     });
 }

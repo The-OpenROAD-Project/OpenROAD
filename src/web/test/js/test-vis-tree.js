@@ -233,6 +233,22 @@ describe('VisTree', () => {
             assert.equal(visibility.a, false);
             assert.equal(visibility.b, false);
         });
+
+        // Only the triangle and the header's own bare area collapse, so a
+        // control added to the row acts without also collapsing the group.
+        it('clicking a control added to the header does not expand', () => {
+            const { header, kids } = build();
+            const extra = document.createElement('label');
+            const extraCb = document.createElement('input');
+            extraCb.type = 'checkbox';
+            extra.appendChild(extraCb);
+            extra.appendChild(document.createTextNode('Extra'));
+            header.appendChild(extra);
+
+            click(extra);
+            assert.equal(extraCb.checked, true);
+            assert.ok(kids.classList.contains('collapsed'));
+        });
     });
 
     describe('disabled groups', () => {
