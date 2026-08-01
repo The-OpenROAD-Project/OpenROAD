@@ -7,6 +7,7 @@ import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
     from './vis-tree.js';
 import { getCookie, setCookie } from './theme.js';
+import { isStaticMode } from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -176,13 +177,21 @@ export function populateDisplayControls(app, visibility, selectability,
     // z-index and palette slot regardless of which chiplet it belongs to.
     let nextLayerSlot = 0;
 
-    function buildLayerSpec(hierarchyNode, parentId = 'layers') {
+    // `ownerPath` is the chiplet whose dbTech owns the layers rendered at this
+    // level.  Category nodes (Backside/Implant/Other) are pure UI folders with
+    // no path of their own, so they inherit their parent chiplet's — the
+    // select_layer request needs it to pick the right tech in a multi-die
+    // design, where two chips can both have an "M1".
+    function buildLayerSpec(hierarchyNode, parentId = 'layers',
+                            ownerPath = undefined) {
         const children = [];
+        const chipletPath = hierarchyNode.type === 'category'
+            ? ownerPath : hierarchyNode.path;
 
         if (hierarchyNode.instances && hierarchyNode.instances.length > 0) {
             hierarchyNode.instances.forEach((inst, idx) => {
                 const instId = parentId + "/" + (inst.name || idx);
-                children.push(buildLayerSpec(inst, instId));
+                children.push(buildLayerSpec(inst, instId, chipletPath));
             });
         }
 
@@ -211,7 +220,12 @@ export function populateDisplayControls(app, visibility, selectability,
                 layerIds.push(id);
                 children.push({
                     id,
-                    data: { name, layer, color: layerObj.color, colorIndex: slot, nodeId: id },
+                    // ownerChipletPath, not chipletPath: the latter means
+                    // "this node IS that chiplet" and drives the Chiplets
+                    // panel sync, which must only ever see group nodes.
+                    data: { name, layer, color: layerObj.color,
+                            colorIndex: slot, nodeId: id,
+                            ownerChipletPath: chipletPath },
                     checked: visible,
                 });
             });
@@ -486,6 +500,49 @@ export function populateDisplayControls(app, visibility, selectability,
         if (e.key === 'Escape') hideContextMenu();
     });
 
+    // --- Layer row selection ---
+    //
+    // Clicking a layer's name selects it and shows its properties in the
+    // Inspector, as the Qt GUI does (DisplayControls::displayItemSelected
+    // emits `selected(makeSelected(tech_layer))` when a row is clicked).
+    //
+    // The name lives inside a <label> that wraps the visibility checkbox, so
+    // the browser's implicit label activation would also toggle visibility on
+    // every click.  preventDefault() suppresses that: in the Qt GUI clicking
+    // the name selects and only the checkbox column toggles.
+    //
+    // Saved reports have no backend to answer select_layer, so their rows keep
+    // the plain label behaviour (clicking the name toggles visibility).
+    const layerRowsSelectable = !isStaticMode(app);
+    let selectedLayerRow = null;
+
+    function selectLayerRow(row, name, chipletPath) {
+        if (selectedLayerRow && selectedLayerRow !== row) {
+            selectedLayerRow.classList.remove('vis-row-selected');
+        }
+        selectedLayerRow = row;
+        row.classList.add('vis-row-selected');
+
+        const msg = { type: 'select_layer', layer: name,
+                      use_dbu: app.showDbu };
+        if (chipletPath) msg.chiplet = chipletPath;
+        app.websocketManager.request(msg).then(data => {
+            if (app.updateInspector) {
+                app.updateInspector(data);
+            }
+            if (app.focusComponent) {
+                app.focusComponent('Inspector');
+            }
+            // The server replaced the selection set, so whatever highlight the
+            // previous selection painted is stale.  A tech layer contributes
+            // no shapes of its own, so only the overlay needs repainting —
+            // not every tile.
+            if (app.refreshOverlay) {
+                app.refreshOverlay();
+            }
+        }).catch(err => console.error('select_layer failed:', err));
+    }
+
     function buildLayerDOM(node, isRoot = false) {
         const selNode = layerSelModel.get(node.id);
         if (!node.children || node.children.length === 0) {
@@ -493,6 +550,7 @@ export function populateDisplayControls(app, visibility, selectability,
             // stretches on the left, the visibility and selectability
             // checkboxes are pinned to the right under the header icons.
             const label = document.createElement('label');
+            if (layerRowsSelectable) label.className = 'vis-leaf-selectable';
 
             const spacer = document.createElement('span');
             spacer.className = 'vis-arrow';
@@ -511,6 +569,13 @@ export function populateDisplayControls(app, visibility, selectability,
             nameSpan.appendChild(colorSwatch);
             nameSpan.appendChild(document.createTextNode(name));
             label.appendChild(nameSpan);
+            if (layerRowsSelectable) {
+                nameSpan.addEventListener('click', (e) => {
+                    // Stop the <label> from toggling the visibility checkbox.
+                    e.preventDefault();
+                    selectLayerRow(label, name, node.data.ownerChipletPath);
+                });
+            }
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';

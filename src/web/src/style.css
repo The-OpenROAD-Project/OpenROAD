@@ -693,6 +693,15 @@ html, body {
     vertical-align: middle;
     border: 1px solid var(--border-strong);
 }
+/* Clicking a layer's name selects it (Inspector shows the tech-layer
+ * properties), mirroring the Qt GUI's row selection.  The name is the click
+ * target, so give it the pointer affordance and mark the selected row. */
+.display-controls .vis-leaf-selectable .vis-name {
+    cursor: pointer;
+}
+.display-controls label.vis-row-selected {
+    background: var(--bg-selected-row);
+}
 .display-controls .vis-group {
     margin: 1px 0;
 }

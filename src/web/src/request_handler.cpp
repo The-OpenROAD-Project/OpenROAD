@@ -559,6 +559,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectPrev(req, state);
         });
+  d.add("select_layer",
+        WebSocketRequest::kSelectLayer,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelectLayer(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -906,6 +911,105 @@ WebSocketResponse SelectHandler::handleSelectPrev(const WebSocketRequest& req,
                                                   SessionState& state)
 {
   return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getBlock());
+}
+
+// Select a tech layer by name, as clicking a layer row in the Qt GUI's
+// Display Control does (DisplayControls::displayItemSelected emits
+// `selected(makeSelected(tech_layer))`).  The layer becomes the inspected
+// object so the Inspector panel shows its properties.
+//
+// A dbTechLayer carries no geometry, so this contributes no highlight shapes;
+// collectHighlightShapes still runs to clear whatever the previous selection
+// left behind, matching the "replace the selection" semantics of a plain
+// (non-shift) click.
+WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+
+  try {
+    const std::string layer_name
+        = std::string(req.json.at("layer").as_string());
+
+    // Multi-die designs give each chip its own dbTech, so the same layer name
+    // can exist in several of them.  The frontend sends the chiplet path its
+    // layer row belongs to; single-chip designs omit it and get the design's
+    // only tech.
+    std::string chiplet_path;
+    if (const auto* v = req.json.if_contains("chiplet"); v && v->is_string()) {
+      chiplet_path = std::string(v->as_string());
+    }
+
+    odb::dbTech* tech = nullptr;
+    if (!chiplet_path.empty()) {
+      for (const ChipletNode& node : gen_->chiplets()) {
+        if (node.path == chiplet_path && node.chip != nullptr) {
+          tech = node.chip->getTech();
+          break;
+        }
+      }
+    }
+    if (tech == nullptr) {
+      tech = gen_->getTech();
+    }
+    if (tech == nullptr) {
+      throw std::runtime_error("No tech loaded");
+    }
+
+    odb::dbTechLayer* layer = tech->findLayer(layer_name.c_str());
+    if (layer == nullptr) {
+      throw std::runtime_error("Layer not found: " + layer_name);
+    }
+
+    gui::Selected sel
+        = gui::DescriptorRegistry::instance()->makeSelected(layer);
+
+    // STA's getProperties() is not thread-safe; serialize with the other
+    // STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+
+    int sel_count = 0;
+    int sel_index = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      state.navigation_history.clear();
+      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      state.selection_set.clear();
+      if (sel) {
+        state.selection_set.insert(sel);
+      }
+      state.selection_itr = state.selection_set.begin();
+      state.current_inspected = sel;
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        root, sel, new_selectables, /*can_navigate_back=*/false);
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
 }
 
 WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
