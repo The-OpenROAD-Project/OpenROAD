@@ -658,27 +658,21 @@ html, body {
 .display-controls .vis-group {
     margin: 1px 0;
 }
+/* Group header row: a <div>, not a <label>, so only its checkboxes toggle
+ * state.  Clicking the triangle, the name or the empty space expands or
+ * collapses the group, so text selection there is never wanted. */
 .display-controls .vis-group-header {
     display: flex;
     align-items: center;
     padding: 3px 0;
     color: var(--fg-primary);
     cursor: pointer;
+    user-select: none;
 }
-/* The expand/collapse triangle. The group header is a <label> wrapping the
- * visibility checkbox, so any click that misses the arrow toggles visibility
- * instead of expanding the group. The 9px glyph's own line box is shorter
- * than the row, so the arrow stretches to the full row height and the
- * negative margins extend it over the header's 3px vertical padding, leaving
- * no dead band above or below the triangle. */
 .display-controls .vis-arrow {
     font-size: 9px;
     width: 14px;
-    align-self: stretch;
-    margin: -3px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    text-align: center;
     color: var(--fg-muted);
     cursor: pointer;
     user-select: none;
@@ -714,8 +708,9 @@ html, body {
     opacity: 0.35;
     cursor: not-allowed;
 }
-.display-controls label.vis-sel-disabled {
-    /* Visually dim labels whose selectability is disabled by visibility. */
+.display-controls .vis-sel-disabled {
+    /* Visually dim rows whose selectability is disabled by visibility.
+     * Matches both leaf <label> rows and group header <div> rows. */
     color: var(--fg-muted);
 }
 

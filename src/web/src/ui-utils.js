@@ -31,6 +31,39 @@ export function buildMapOptions(
     };
 }
 
+// Build a display-controls group header row and its expand/collapse triangle.
+//
+// The header is a plain <div>, not a <label>: a <label> wrapping the
+// visibility checkbox activates that checkbox for a click anywhere in the
+// row, so any click that misses a checkbox toggles the whole category's
+// visibility.  Here only the checkboxes toggle state; the triangle, the
+// group name and the empty space expand/collapse, matching the Qt GUI's
+// tree where clicking an item's name never changes visibility.
+export function makeGroupHeader(className = 'vis-group-header') {
+    const header = document.createElement('div');
+    header.className = className;
+    const arrow = document.createElement('span');
+    arrow.className = 'vis-arrow';
+    header.appendChild(arrow);
+    return { header, arrow };
+}
+
+// Wire `header` so a click anywhere but its checkboxes expands/collapses
+// `children`, keeping `arrow`'s glyph in sync.  `collapsed` is the initial
+// state and is applied immediately.
+export function attachGroupCollapse(header, arrow, children, collapsed) {
+    const apply = (c) => {
+        children.classList.toggle('collapsed', c);
+        arrow.textContent = c ? '▶' : '▼';
+    };
+    apply(!!collapsed);
+    header.addEventListener('click', (e) => {
+        // The controls own their clicks (visibility / selectability).
+        if (e.target.closest('input, select, button')) return;
+        apply(!children.classList.contains('collapsed'));
+    });
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of
