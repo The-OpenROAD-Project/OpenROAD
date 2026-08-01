@@ -446,11 +446,11 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             }
             group.appendChild(kids);
 
-            arrow.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
+            // One listener, on the header.  The arrow lives inside the header,
+            // so clicking it expands/collapses too — which is what users
+            // reach for first.  A second listener on the arrow itself would
+            // also see the click bubble up to the header and toggle twice,
+            // leaving the group exactly as it was.
             header.addEventListener('click', () => {
                 kids.classList.toggle('collapsed');
                 arrow.textContent = kids.classList.contains('collapsed')

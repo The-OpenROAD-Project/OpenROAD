@@ -9,7 +9,8 @@ import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
 globalThis.document = dom.window.document;
 
-const { VisTree } = await import('../../src/vis-tree.js');
+const { VisTree, makeColumnHeader, makeNameSpan }
+    = await import('../../src/vis-tree.js');
 
 describe('VisTree', () => {
     let visibility, selectability, changes, tree;
@@ -390,6 +391,112 @@ describe('VisTree', () => {
                 leaves[0].querySelectorAll('input[type=checkbox]').length, 2);
             assert.equal(
                 leaves[1].querySelectorAll('input[type=checkbox]').length, 1);
+        });
+    });
+
+    // Column layout mirrors the Qt GUI (displayControls.cpp): the name cell
+    // stretches and the visibility / selectability checkboxes are the last two
+    // elements of every row, so they form two straight columns under the
+    // header icons.  Anything appended after them (e.g. a bare label text
+    // node, as the rows used to do) breaks that alignment.
+    describe('column layout', () => {
+        // Every row (group headers and leaves alike) must end with the
+        // visibility column then the selectability column, and carry its text
+        // in a .vis-name cell before them.
+        function checkRow(row) {
+            const cells = row.children;
+            assert.ok(cells.length >= 3,
+                      `row "${row.textContent}" has too few cells`);
+            const vis = cells[cells.length - 2];
+            const sel = cells[cells.length - 1];
+            assert.ok(vis.classList.contains('vis-cb'),
+                      `expected vis column last-but-one, got ${vis.className}`);
+            assert.ok(sel.classList.contains('vis-sel-cb'),
+                      `expected sel column last, got ${sel.className}`);
+            assert.equal(vis.tagName, 'INPUT');
+            assert.equal(vis.type, 'checkbox');
+            const name = row.querySelector('.vis-name');
+            assert.ok(name, `row "${row.textContent}" has no .vis-name cell`);
+            // No stray text outside the name cell — that is what used to sit
+            // to the right of the checkboxes.
+            for (const node of row.childNodes) {
+                if (node.nodeType === 3) {
+                    assert.equal(node.textContent.trim(), '',
+                                 'row text must live in the .vis-name cell');
+                }
+            }
+        }
+
+        function renderSample() {
+            visibility.a = true;
+            tree.add({ label: 'Nets', addSelectable: true, children: [
+                { key: 'a', label: 'Signal' },
+                { key: 'b', label: 'Power' },
+            ]});
+            tree.add({ label: 'Tracks', children: [
+                { key: 'c', label: 'Pref' },
+            ]});
+            tree.add({ key: 'd', label: 'Module view' });
+            const container = document.createElement('div');
+            tree.render(container);
+            return container;
+        }
+
+        it('checkboxes are the last two cells of every row', () => {
+            const container = renderSample();
+            const rows = container.querySelectorAll(
+                '.vis-group-header, .vis-leaf');
+            assert.ok(rows.length >= 6, `only ${rows.length} rows rendered`);
+            rows.forEach(checkRow);
+        });
+
+        it('rows without selectability keep a spacer in that column', () => {
+            const container = renderSample();
+            // "Tracks" opts out of selectability, so its rows get the
+            // layout-only placeholder rather than nothing at all.
+            const rows = Array.from(container.querySelectorAll(
+                '.vis-group-header, .vis-leaf'));
+            const tracks = rows.find(r => r.textContent.includes('Pref'));
+            const last = tracks.children[tracks.children.length - 1];
+            assert.ok(last.classList.contains('vis-sel-spacer'));
+            assert.equal(last.tagName, 'SPAN');
+        });
+
+        it('name text lives in the stretching name cell', () => {
+            const container = renderSample();
+            const rows = Array.from(container.querySelectorAll('.vis-leaf'));
+            const signal = rows.find(r => r.textContent.includes('Signal'));
+            assert.equal(signal.querySelector('.vis-name').textContent,
+                         'Signal');
+        });
+
+        it('makeNameSpan builds a .vis-name cell', () => {
+            const span = makeNameSpan('Metal1');
+            assert.equal(span.className, 'vis-name');
+            assert.equal(span.textContent, 'Metal1');
+        });
+    });
+
+    // The panel header labels the two checkbox columns with the same icons the
+    // Qt GUI uses in its QHeaderView (DisplayControlModel::headerData).
+    describe('makeColumnHeader', () => {
+        it('has a stretching name cell then two icon columns', () => {
+            const header = makeColumnHeader();
+            assert.equal(header.className, 'display-controls-header');
+            assert.equal(header.children.length, 3);
+            assert.ok(header.children[0].classList.contains('vis-name'));
+            const icons = header.querySelectorAll('.vis-header-icon');
+            assert.equal(icons.length, 2);
+            assert.equal(icons[0].title, 'Visible');
+            assert.equal(icons[1].title, 'Selectable');
+        });
+
+        it('renders an svg symbol in each column', () => {
+            const header = makeColumnHeader();
+            for (const icon of header.querySelectorAll('.vis-header-icon')) {
+                assert.equal(icon.children.length, 1);
+                assert.equal(icon.children[0].tagName.toLowerCase(), 'svg');
+            }
         });
     });
 

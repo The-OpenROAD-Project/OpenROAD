@@ -4,7 +4,8 @@
 // Display controls — layer checkboxes and visibility tree.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { VisTree } from './vis-tree.js';
+import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
+    from './vis-tree.js';
 import { getCookie, setCookie } from './theme.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
@@ -72,6 +73,10 @@ export function populateDisplayControls(app, visibility, selectability,
     if (!app.displayControlsEl) return;
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
+
+    // Column header (visibility / selectability icons), mirroring the Qt GUI's
+    // QHeaderView.  Added first so it is the panel's sticky top row.
+    app.displayControlsEl.appendChild(makeColumnHeader());
 
     // Instance borders layer (always below routing layers)
     const instancesLayer = new WebSocketTileLayer(app.websocketManager, '_instances', {
@@ -484,11 +489,32 @@ export function populateDisplayControls(app, visibility, selectability,
     function buildLayerDOM(node, isRoot = false) {
         const selNode = layerSelModel.get(node.id);
         if (!node.children || node.children.length === 0) {
-            // Leaf node (layer)
+            // Leaf node (layer).  Column order matches the Qt GUI: the name
+            // stretches on the left, the visibility and selectability
+            // checkboxes are pinned to the right under the header icons.
             const label = document.createElement('label');
+
+            const spacer = document.createElement('span');
+            spacer.className = 'vis-arrow';
+            spacer.style.visibility = 'hidden';
+            spacer.textContent = '▶';
+            label.appendChild(spacer);
+
+            const index = node.data.colorIndex;
+            const name = node.data.name;
+
+            const nameSpan = makeNameSpan();
+            const colorSwatch = document.createElement('span');
+            colorSwatch.className = 'layer-color';
+            const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
+            colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
+            nameSpan.appendChild(colorSwatch);
+            nameSpan.appendChild(document.createTextNode(name));
+            label.appendChild(nameSpan);
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            checkbox.className = 'vis-cb';
             checkbox.title = 'Visible';
             checkbox.checked = node.checked;
             node.cb = checkbox;
@@ -508,18 +534,9 @@ export function populateDisplayControls(app, visibility, selectability,
                     layerSelModel.check(node.id, selCheckbox.checked);
                 });
                 label.appendChild(selCheckbox);
+            } else {
+                label.appendChild(makeSelSpacer());
             }
-
-            const index = node.data.colorIndex;
-            const name = node.data.name;
-
-            const colorSwatch = document.createElement('span');
-            colorSwatch.className = 'layer-color';
-            const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
-            colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
-            label.appendChild(colorSwatch);
-
-            label.appendChild(document.createTextNode(name));
 
             // Setup context menu for layer
             label.addEventListener('contextmenu', (e) => {
@@ -565,8 +582,12 @@ export function populateDisplayControls(app, visibility, selectability,
             arrow.textContent = '▼';
             header.appendChild(arrow);
 
+            const name = isRoot ? 'Layers' : (node.data.name || 'Group');
+            header.appendChild(makeNameSpan(name));
+
             const cb = document.createElement('input');
             cb.type = 'checkbox';
+            cb.className = 'vis-cb';
             cb.title = 'Visible';
             cb.checked = node.checked;
             cb.indeterminate = node.indeterminate;
@@ -588,10 +609,10 @@ export function populateDisplayControls(app, visibility, selectability,
                     layerSelModel.check(node.id, selCb.checked);
                 });
                 header.appendChild(selCb);
+            } else {
+                header.appendChild(makeSelSpacer());
             }
 
-            const name = isRoot ? 'Layers' : (node.data.name || 'Group');
-            header.appendChild(document.createTextNode(name));
             group.appendChild(header);
 
             const kids = document.createElement('div');
@@ -862,6 +883,7 @@ export function populateDisplayControls(app, visibility, selectability,
         chipletArrow.className = 'vis-arrow';
         chipletArrow.textContent = '▼';
         chipletHeader.appendChild(chipletArrow);
+        chipletHeader.appendChild(makeNameSpan('Chiplets'));
 
         // Group-level checkbox: toggles every chiplet at once and
         // shows tri-state when the children disagree, matching the
@@ -870,6 +892,7 @@ export function populateDisplayControls(app, visibility, selectability,
         if (rootNode) {
             const parentCb = document.createElement('input');
             parentCb.type = 'checkbox';
+            parentCb.className = 'vis-cb';
             parentCb.checked = rootNode.checked;
             parentCb.indeterminate = rootNode.indeterminate;
             rootNode.cb = parentCb;
@@ -883,7 +906,8 @@ export function populateDisplayControls(app, visibility, selectability,
             });
             chipletHeader.appendChild(parentCb);
         }
-        chipletHeader.appendChild(document.createTextNode('Chiplets'));
+        // Chiplets have no selectability column; keep the layout aligned.
+        chipletHeader.appendChild(makeSelSpacer());
         chipletGroup.appendChild(chipletHeader);
 
         const chipletChildren = document.createElement('div');
@@ -897,8 +921,10 @@ export function populateDisplayControls(app, visibility, selectability,
                 label.style.paddingLeft = (8 * (c.depth - 1)) + 'px';
                 label.title = c.path
                     + (c.master ? ` (${c.master})` : '');
+                label.appendChild(makeNameSpan(c.name));
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
+                checkbox.className = 'vis-cb';
                 checkbox.checked = node.checked;
                 checkbox.indeterminate = node.indeterminate;
                 node.cb = checkbox;
@@ -907,7 +933,7 @@ export function populateDisplayControls(app, visibility, selectability,
                     mirrorChipletToLayers(c.path, checkbox.checked);
                 });
                 label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(c.name));
+                label.appendChild(makeSelSpacer());
                 chipletChildren.appendChild(label);
             }
             if (node.children) {
