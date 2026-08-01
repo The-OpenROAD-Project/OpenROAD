@@ -998,14 +998,18 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'scale_bar', label: 'Scale bar' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
-    visTree.add({ key: 'debug', label: 'Debug tiles' });
-    // Debug graphics overlay: calls drawObjects() on registered renderers
-    // (e.g. gpl::GraphicsImpl when global_placement_debug is enabled).
-    visTree.add({ label: 'Debug Graphics', visKey: 'debug_renderers',
-        children: [
-            { key: 'debug_live', label: 'Live (don\'t require pause)' },
-        ],
-    });
+    // Developer overlays.  All three are plain leaves under a visKey-less
+    // group: giving the group `visKey: 'debug_renderers'` would tie the
+    // renderer overlay to the group's tri-state, so ticking the unrelated
+    // "Tiles" row would switch the renderers on via the indeterminate state.
+    visTree.add({ label: 'Debug Graphics', children: [
+        // Renderer overlay: calls drawObjects() on registered renderers
+        // (e.g. gpl::GraphicsImpl when global_placement_debug is enabled).
+        { key: 'debug_renderers', label: 'Renderers' },
+        { key: 'debug_live', label: 'Live (don\'t require pause)',
+          disabledBy: 'debug_renderers' },
+        { key: 'debug', label: 'Tiles' },
+    ]});
     visTree.render(app.displayControlsEl);
 
     if (!app.heatMapLayer) {

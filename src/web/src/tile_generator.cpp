@@ -3401,7 +3401,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
     // Overlays draw at the OUTPUT resolution (crisp lines/text, not band-
     // limited), so they map DBU to pixels with the output-space scale.
-    const double scale_out = scale / super_per_css;
+    // `scale` is super-space (super px per DBU); the output buffer is tile_px
+    // = super / kCoverageSupersample on a side.  Dividing by super_per_css
+    // (= dpr * kCoverageSupersample) instead would land in CSS space and
+    // shrink every overlay to 1/dpr of the tile on HiDPI.
+    const double scale_out = scale / kCoverageSupersample;
 
     // Overlays render once in world space, on top of all chiplets.
     // Their geometry (timing paths, DRC rects, flight lines) is already
@@ -3456,7 +3460,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // out of tile_generator means test executables that link libweb
       // don't transitively need gui.a / ord.a.
       drawRendererOverlay(
-          world_image_buffer, dbu_tile_world, scale, vis.debug_live);
+          world_image_buffer, dbu_tile_world, scale_out, vis.debug_live);
     }
   }
 
@@ -4078,21 +4082,31 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                                      const int y) const
 {
   const Color yellow{.r = 255, .g = 255, .b = 0, .a = 255};
-  const int last = kTileSizeInPixel - 1;
+  // The output buffer is tile_px = 256*dpr on a side, NOT kTileSizeInPixel.
+  // Recover the real dimension: hardcoding 256 boxed the whole overlay into
+  // the top-left 256x256 corner of a HiDPI tile, so the "tile" outline drew
+  // at 1/dpr of the tile it was supposed to trace.
+  const int dim = bufferDim(image);
+  const int last = dim - 1;
+  // Pixel-authored sizes (border inset, font height) are in CSS px; scale them
+  // to physical px so the overlay looks identical across dpr.
+  const double px_per_css = static_cast<double>(dim) / kTileSizeInPixel;
 
   // Draw 1-pixel yellow border
-  for (int i = 0; i < kTileSizeInPixel; ++i) {
-    setPixel(image, i, 0, yellow);
-    setPixel(image, i, last, yellow);
-    setPixel(image, 0, i, yellow);
-    setPixel(image, last, i, yellow);
+  for (int i = 0; i < dim; ++i) {
+    setPixel(image, i, 0, yellow, dim);
+    setPixel(image, i, last, yellow, dim);
+    setPixel(image, 0, i, yellow, dim);
+    setPixel(image, last, i, yellow, dim);
   }
 
   // Build the label string "z=<zoom> <x>/<y>"
   const std::string label = "z=" + std::to_string(z) + " " + std::to_string(x)
                             + "/" + std::to_string(y);
 
-  drawText(image, 4, 4, label, fontAtlasGetFont(20), yellow);
+  const int margin = static_cast<int>(std::lround(4 * px_per_css));
+  const int font_px = static_cast<int>(std::lround(20 * px_per_css));
+  drawText(image, margin, margin, label, fontAtlasGetFont(font_px), yellow);
 }
 
 namespace {
@@ -4124,10 +4138,12 @@ inline int toPxX(int dbu_x, const odb::Rect& tile, double scale)
   return static_cast<int>((dbu_x - tile.xMin()) * scale);
 }
 
-// Y is flipped: DBU grows up, pixel rows grow down.
-inline int toPxY(int dbu_y, const odb::Rect& tile, double scale)
+// Y is flipped: DBU grows up, pixel rows grow down.  `dim` is the buffer side
+// length (tile_px = 256*dpr), not a fixed 256 — a hardcoded flip anchors the
+// overlay 256 rows from the top instead of the tile bottom on HiDPI.
+inline int toPxY(int dbu_y, const odb::Rect& tile, double scale, int dim)
 {
-  return 255 - static_cast<int>((dbu_y - tile.yMin()) * scale);
+  return dim - 1 - static_cast<int>((dbu_y - tile.yMin()) * scale);
 }
 
 }  // namespace
@@ -4169,6 +4185,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
                                            const double scale) const
 {
   {
+    // Buffer side length (tile_px = 256*dpr) — every Y flip below is relative
+    // to it, not to a fixed 256.
+    const int dim = bufferDim(image);
     for (const DrawOp& op : ops) {
       if (const auto* r = std::get_if<DrawRectOp>(&op)) {
         const odb::Rect px = toPixels(scale, r->rect, dbu_tile);
@@ -4178,7 +4197,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           const Color fill = toTileColor(r->brush.color);
           for (int iy = px.yMin(); iy < px.yMax(); ++iy) {
             for (int ix = px.xMin(); ix < px.xMax(); ++ix) {
-              blendPixel(image, ix, 255 - iy, fill);
+              blendPixel(image, ix, dim - 1 - iy, fill, dim);
             }
           }
         }
@@ -4187,8 +4206,8 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           const int w = penWidthPx(r->pen, scale);
           const int x0 = px.xMin();
           const int x1 = px.xMax() - 1;
-          const int y0 = 255 - px.yMin();
-          const int y1 = 255 - (px.yMax() - 1);
+          const int y0 = dim - 1 - px.yMin();
+          const int y1 = dim - 1 - (px.yMax() - 1);
           drawLine(image, x0, y0, x1, y0, pen, w);
           drawLine(image, x1, y0, x1, y1, pen, w);
           drawLine(image, x1, y1, x0, y1, pen, w);
@@ -4199,9 +4218,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           continue;
         }
         const int x0 = toPxX(l->p1.x(), dbu_tile, scale);
-        const int y0 = toPxY(l->p1.y(), dbu_tile, scale);
+        const int y0 = toPxY(l->p1.y(), dbu_tile, scale, dim);
         const int x1 = toPxX(l->p2.x(), dbu_tile, scale);
-        const int y1 = toPxY(l->p2.y(), dbu_tile, scale);
+        const int y1 = toPxY(l->p2.y(), dbu_tile, scale, dim);
         drawLine(image,
                  x0,
                  y0,
@@ -4212,7 +4231,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
       } else if (const auto* c = std::get_if<DrawCircleOp>(&op)) {
         // Simple midpoint circle (outline only).
         const int cx = toPxX(c->cx, dbu_tile, scale);
-        const int cy = toPxY(c->cy, dbu_tile, scale);
+        const int cy = toPxY(c->cy, dbu_tile, scale, dim);
         const int pr = std::max(1, static_cast<int>(c->r * scale));
         if (c->pen.color.a == 0) {
           continue;
@@ -4243,7 +4262,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           continue;
         }
         const int cx = toPxX(xop->cx, dbu_tile, scale);
-        const int cy = toPxY(xop->cy, dbu_tile, scale);
+        const int cy = toPxY(xop->cy, dbu_tile, scale, dim);
         const int half = std::max(1, static_cast<int>(xop->size * scale / 2));
         const Color pen = toTileColor(xop->pen.color);
         const int w = penWidthPx(xop->pen, scale);
@@ -4270,9 +4289,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
             const odb::Point& b = p->points[(i + 1) % n];
             drawLine(image,
                      toPxX(a.x(), dbu_tile, scale),
-                     toPxY(a.y(), dbu_tile, scale),
+                     toPxY(a.y(), dbu_tile, scale, dim),
                      toPxX(b.x(), dbu_tile, scale),
-                     toPxY(b.y(), dbu_tile, scale),
+                     toPxY(b.y(), dbu_tile, scale, dim),
                      pen,
                      w);
           }
@@ -4285,7 +4304,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         const int tw = getTextWidth(s->text, str_font);
         const int th = getTextHeight(str_font);
         int ax = toPxX(s->x, dbu_tile, scale);
-        int ay = toPxY(s->y, dbu_tile, scale);
+        int ay = toPxY(s->y, dbu_tile, scale, dim);
         // Adjust anchor: text renders with top-left at (ax, ay).
         switch (s->anchor) {
           case gui::Painter::kBottomLeft:
