@@ -270,6 +270,66 @@ describe('VisTree', () => {
         });
     });
 
+    // Leaf rows have the same rule as group headers: only the checkboxes
+    // change state.  They used to be <label>s wrapping the visibility
+    // checkbox, so a click on the name, on the indent spacer, or anywhere in
+    // the row's padding flipped the item — the box changed when the user had
+    // aimed at the text.
+    describe('leaf row clicks', () => {
+        const click = (el) => el.dispatchEvent(
+            new dom.window.MouseEvent('click', { bubbles: true }));
+
+        const build = () => {
+            visibility.a = true;
+            tree.add({ label: 'Group', children: [{ key: 'a', label: 'A' }] });
+            const container = document.createElement('div');
+            // jsdom only runs a control's activation behavior when connected.
+            document.body.textContent = '';
+            document.body.appendChild(container);
+            tree.render(container);
+            const row = container.querySelector('.vis-leaf');
+            return {
+                row,
+                name: row.querySelector('.vis-name'),
+                spacer: row.querySelector('.vis-arrow'),
+                cb: row.querySelector('input.vis-cb'),
+            };
+        };
+
+        it('is not a label, so nothing in it implicitly toggles', () => {
+            const { row } = build();
+            assert.equal(row.tagName, 'DIV');
+        });
+
+        it('clicking the leaf name does not toggle visibility', () => {
+            const { name, cb } = build();
+            click(name);
+            assert.equal(cb.checked, true);
+            assert.equal(visibility.a, true);
+        });
+
+        it('clicking the row itself does not toggle visibility', () => {
+            const { row, cb } = build();
+            click(row);
+            assert.equal(cb.checked, true);
+            assert.equal(visibility.a, true);
+        });
+
+        it('clicking the indent spacer does not toggle visibility', () => {
+            const { spacer, cb } = build();
+            click(spacer);
+            assert.equal(cb.checked, true);
+            assert.equal(visibility.a, true);
+        });
+
+        it('clicking the checkbox still toggles visibility', () => {
+            const { cb } = build();
+            click(cb);
+            assert.equal(cb.checked, false);
+            assert.equal(visibility.a, false);
+        });
+    });
+
     describe('disabled groups', () => {
         it('marks children container as disabled', () => {
             tree.add({ label: 'Group', disabled: true, children: [
@@ -294,7 +354,7 @@ describe('VisTree', () => {
             tree.render(container);
             assert.equal(visibility.pins, false);
             // pin_names value preserved but its label should be disabled.
-            const labels = container.querySelectorAll('label');
+            const labels = container.querySelectorAll('.vis-leaf');
             const pinNamesLabel = [...labels].find(l => l.textContent.includes('Pin Names'));
             assert.ok(pinNamesLabel.classList.contains('disabled'));
         });
@@ -308,7 +368,7 @@ describe('VisTree', () => {
             ]});
             const container = document.createElement('div');
             tree.render(container);
-            const labels = container.querySelectorAll('label');
+            const labels = container.querySelectorAll('.vis-leaf');
             const pinNamesLabel = [...labels].find(l => l.textContent.includes('Pin Names'));
             assert.ok(!pinNamesLabel.classList.contains('disabled'));
         });
@@ -324,7 +384,7 @@ describe('VisTree', () => {
             tree.render(container);
 
             // Uncheck pins.
-            const labels = container.querySelectorAll('label');
+            const labels = container.querySelectorAll('.vis-leaf');
             const pinsLabel = [...labels].find(l =>
                 l.textContent.includes('Pins') && !l.textContent.includes('Names'));
             const pinsCb = pinsLabel.querySelector('input');
@@ -346,7 +406,7 @@ describe('VisTree', () => {
             const container = document.createElement('div');
             tree.render(container);
             // Only visibility checkbox on the leaf (plus parent header cb).
-            const leafLabel = container.querySelector('.vis-group-children label');
+            const leafLabel = container.querySelector('.vis-group-children .vis-leaf');
             assert.equal(leafLabel.querySelectorAll('input[type=checkbox]').length, 1);
             // selectability state untouched for keys without selectable column.
             assert.equal(selectability.a, undefined);
@@ -359,7 +419,7 @@ describe('VisTree', () => {
             ]});
             const container = document.createElement('div');
             tree.render(container);
-            const leafLabel = container.querySelector('.vis-group-children label');
+            const leafLabel = container.querySelector('.vis-group-children .vis-leaf');
             const inputs = leafLabel.querySelectorAll('input[type=checkbox]');
             assert.equal(inputs.length, 2);
             // The header (group) also gets a selectability checkbox.
@@ -376,7 +436,7 @@ describe('VisTree', () => {
             ]});
             const container = document.createElement('div');
             tree.render(container);
-            const leafLabel = container.querySelector('.vis-group-children label');
+            const leafLabel = container.querySelector('.vis-group-children .vis-leaf');
             const [, selCb] = leafLabel.querySelectorAll('input[type=checkbox]');
             selCb.checked = false;
             selCb.dispatchEvent(new dom.window.Event('change'));
@@ -395,7 +455,7 @@ describe('VisTree', () => {
             const container = document.createElement('div');
             tree.render(container);
             // Uncheck child A's selectability.
-            const leaves = container.querySelectorAll('.vis-group-children label');
+            const leaves = container.querySelectorAll('.vis-group-children .vis-leaf');
             const [, aSel] = leaves[0].querySelectorAll('input[type=checkbox]');
             aSel.checked = false;
             aSel.dispatchEvent(new dom.window.Event('change'));
@@ -414,7 +474,7 @@ describe('VisTree', () => {
             ]});
             const container = document.createElement('div');
             tree.render(container);
-            const leafLabel = container.querySelector('.vis-group-children label');
+            const leafLabel = container.querySelector('.vis-group-children .vis-leaf');
             const [visCb, selCb] = leafLabel.querySelectorAll(
                 'input[type=checkbox]');
             assert.equal(selCb.disabled, false);
@@ -490,7 +550,7 @@ describe('VisTree', () => {
             ]});
             const container = document.createElement('div');
             tree.render(container);
-            const leaves = container.querySelectorAll('.vis-group-children label');
+            const leaves = container.querySelectorAll('.vis-group-children .vis-leaf');
             assert.equal(
                 leaves[0].querySelectorAll('input[type=checkbox]').length, 2);
             assert.equal(

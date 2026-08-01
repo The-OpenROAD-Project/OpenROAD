@@ -660,12 +660,20 @@ html, body {
     color: var(--fg-disabled);
     padding: 12px 0;
 }
-.display-controls label {
+.display-controls label,
+.display-controls .vis-leaf {
     display: flex;
     align-items: center;
     padding: 3px 0;
     color: var(--fg-primary);
     cursor: pointer;
+}
+/* Leaf rows are <div>s, not <label>s, so that only the checkboxes toggle
+ * visibility — a <label> activates its checkbox for a click anywhere in the
+ * row.  Nothing here is a text-entry target, and the name doubles as a click
+ * target on layer rows, so drag-selecting text is never wanted. */
+.display-controls .vis-leaf {
+    user-select: none;
 }
 .display-controls input[type="checkbox"] {
     margin-right: 8px;
@@ -699,7 +707,7 @@ html, body {
 .display-controls .vis-leaf-selectable .vis-name {
     cursor: pointer;
 }
-.display-controls label.vis-row-selected {
+.display-controls .vis-row-selected {
     background: var(--bg-selected-row);
 }
 .display-controls .vis-group {
@@ -732,7 +740,7 @@ html, body {
     display: none;
 }
 .display-controls .vis-group-children.disabled,
-.display-controls .vis-group-children > label.disabled {
+.display-controls .vis-group-children > .disabled {
     opacity: 0.4;
     pointer-events: none;
 }

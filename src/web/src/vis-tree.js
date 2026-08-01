@@ -238,17 +238,23 @@ export class VisTree {
         };
 
         if (!node.children.length) {
-            const label = document.createElement('label');
-            label.className = 'vis-leaf';
+            // A <div>, not a <label>, for the same reason group headers are
+            // (see makeGroupHeader): a <label> wrapping the visibility
+            // checkbox activates it for a click anywhere in the row — the
+            // name, the indent spacer, the row's own padding — so a click
+            // that merely missed the 13px box flipped the layer.  Only the
+            // checkboxes toggle state now, matching the Qt GUI's tree.
+            const row = document.createElement('div');
+            row.className = 'vis-leaf';
             const spacer = document.createElement('span');
             spacer.className = 'vis-arrow';
             spacer.style.visibility = 'hidden';
             spacer.textContent = '▶';
-            label.appendChild(spacer);
-            label.appendChild(makeNameSpan(spec.label));
-            appendColumns(label);
-            node.el = label;
-            return label;
+            row.appendChild(spacer);
+            row.appendChild(makeNameSpan(spec.label));
+            appendColumns(row);
+            node.el = row;
+            return row;
         }
 
         const div = document.createElement('div');

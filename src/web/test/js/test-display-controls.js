@@ -81,10 +81,9 @@ describe('nonSolidPatterns', () => {
 });
 
 // Clicking a layer's name selects it and shows its properties in the
-// Inspector, mirroring the Qt GUI's DisplayControls row selection.  The name
-// sits inside the <label> that wraps the visibility checkbox, so the important
-// invariant is that a name click selects WITHOUT toggling visibility — only
-// the checkbox column toggles.
+// Inspector, mirroring the Qt GUI's DisplayControls row selection.  The
+// invariant that goes with it: a click anywhere in the row that is not on a
+// checkbox must never change visibility — only the checkbox column toggles.
 describe('layer row selection', () => {
     let app, requests, inspected, focused, techData;
 
@@ -159,7 +158,7 @@ describe('layer row selection', () => {
     // Layer rows are the leaves carrying a color swatch, which distinguishes
     // them from the VisTree rows rendered into the same panel.
     function layerRow(container, name) {
-        const rows = container.querySelectorAll('label.vis-leaf-selectable');
+        const rows = container.querySelectorAll('.vis-leaf-selectable');
         return Array.from(rows).find(
             r => r.querySelector('.vis-name').textContent === name);
     }
@@ -207,6 +206,41 @@ describe('layer row selection', () => {
         assert.ok(app.visibleLayerNames.has('metal1'));
     });
 
+    // The row used to be a <label> wrapping the visibility checkbox, so a
+    // click that missed the 13px box — the swatch, the indent spacer, the
+    // row's padding — flipped the layer.
+    it('is not a label, so nothing in the row implicitly toggles', () => {
+        const container = render();
+        assert.equal(layerRow(container, 'metal1').tagName, 'DIV');
+    });
+
+    it('clicking the row or the indent spacer does not toggle visibility',
+       async () => {
+           const container = render();
+           const row = layerRow(container, 'metal1');
+           const cb = row.querySelector('input.vis-cb');
+
+           click(row);
+           click(row.querySelector('.vis-arrow'));
+           await flush();
+
+           assert.equal(cb.checked, true);
+           assert.ok(app.visibleLayerNames.has('metal1'));
+       });
+
+    it('clicking the color swatch selects rather than toggling', async () => {
+        const container = render();
+        const row = layerRow(container, 'metal1');
+        const cb = row.querySelector('input.vis-cb');
+
+        click(row.querySelector('.layer-color'));
+        await flush();
+
+        assert.equal(cb.checked, true);
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0].layer, 'metal1');
+    });
+
     it('clicking the visibility checkbox still toggles', () => {
         const container = render();
         const cb = layerRow(container, 'metal1').querySelector('input.vis-cb');
@@ -248,7 +282,7 @@ describe('layer row selection', () => {
         app.websocketManager.isStaticMode = true;
         const container = render();
         assert.equal(
-            container.querySelectorAll('label.vis-leaf-selectable').length, 0);
+            container.querySelectorAll('.vis-leaf-selectable').length, 0);
     });
 
     // Clicking through several layers leaves one request in flight per click.

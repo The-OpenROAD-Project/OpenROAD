@@ -567,8 +567,15 @@ export function populateDisplayControls(app, visibility, selectability,
             // Leaf node (layer).  Column order matches the Qt GUI: the name
             // stretches on the left, the visibility and selectability
             // checkboxes are pinned to the right under the header icons.
-            const label = document.createElement('label');
-            if (layerRowsSelectable) label.className = 'vis-leaf-selectable';
+            //
+            // A <div>, not a <label>: a <label> wrapping the visibility
+            // checkbox activates it for a click anywhere in the row, so
+            // clicking the name, the indent spacer or the row's padding
+            // flipped the layer.  Only the checkboxes toggle state now.
+            const label = document.createElement('div');
+            label.className
+                = layerRowsSelectable ? 'vis-leaf vis-leaf-selectable'
+                                      : 'vis-leaf';
 
             const spacer = document.createElement('span');
             spacer.className = 'vis-arrow';
@@ -588,9 +595,7 @@ export function populateDisplayControls(app, visibility, selectability,
             nameSpan.appendChild(document.createTextNode(name));
             label.appendChild(nameSpan);
             if (layerRowsSelectable) {
-                nameSpan.addEventListener('click', (e) => {
-                    // Stop the <label> from toggling the visibility checkbox.
-                    e.preventDefault();
+                nameSpan.addEventListener('click', () => {
                     selectLayerRow(label, name, node.data.ownerChipletPath);
                 });
             }
@@ -979,7 +984,9 @@ export function populateDisplayControls(app, visibility, selectability,
             const c = node.data;
             // The root is rendered by the header above; skip it here.
             if (node !== rootNode) {
-                const label = document.createElement('label');
+                // A <div>, like the layer rows: only the checkbox toggles.
+                const label = document.createElement('div');
+                label.className = 'vis-leaf';
                 label.style.paddingLeft = (8 * (c.depth - 1)) + 'px';
                 label.title = c.path
                     + (c.master ? ` (${c.master})` : '');
