@@ -12,6 +12,7 @@
 // checkbox is disabled — matching the Qt GUI's displayControls behavior.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
+import { makeGroupHeader, attachGroupCollapse } from './ui-utils.js';
 
 export class VisTree {
     constructor(visibility, selectability, onChange) {
@@ -193,12 +194,7 @@ export class VisTree {
         const div = document.createElement('div');
         div.className = 'vis-group';
 
-        const header = document.createElement('label');
-        header.className = 'vis-group-header';
-        const arrow = document.createElement('span');
-        arrow.className = 'vis-arrow';
-        arrow.textContent = '▶';
-        header.appendChild(arrow);
+        const { header, arrow } = makeGroupHeader();
         header.appendChild(cb);
         if (selCb) {
             header.appendChild(selCb);
@@ -211,18 +207,12 @@ export class VisTree {
         div.appendChild(header);
 
         const kids = document.createElement('div');
-        kids.className = 'vis-group-children collapsed';
+        kids.className = 'vis-group-children';
         if (spec.disabled) kids.classList.add('disabled');
         for (const c of node.children) kids.appendChild(this._dom(c));
         div.appendChild(kids);
 
-        arrow.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            kids.classList.toggle('collapsed');
-            arrow.textContent = kids.classList.contains('collapsed')
-                ? '▶' : '▼';
-        });
+        attachGroupCollapse(header, arrow, kids, true);
 
         return div;
     }

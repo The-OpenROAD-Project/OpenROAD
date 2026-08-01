@@ -31,6 +31,44 @@ export function buildMapOptions(
     };
 }
 
+// Build a display-controls group header row and its expand/collapse triangle.
+//
+// The header is a plain <div>, not a <label>: a <label> wrapping the
+// visibility checkbox activates that checkbox for a click anywhere in the
+// row, so any click that misses a checkbox toggles the whole category's
+// visibility.  Here only the checkboxes toggle state; the triangle, the
+// group name and the empty space expand/collapse, matching the Qt GUI's
+// tree where clicking an item's name never changes visibility.
+export function makeGroupHeader(className = 'vis-group-header') {
+    const header = document.createElement('div');
+    header.className = className;
+    const arrow = document.createElement('span');
+    arrow.className = 'vis-arrow';
+    header.appendChild(arrow);
+    return { header, arrow };
+}
+
+// Wire `header` so clicking its triangle or its own bare area (the group
+// name and the empty space, both of which target `header` itself) expands or
+// collapses `children`, keeping `arrow`'s glyph in sync.  `collapsed` is the
+// initial state and is applied immediately.
+//
+// Only those two targets collapse.  Every other element in the row keeps its
+// own click, so a control added later cannot both act and collapse the group:
+// the worst a new child can do is not respond, which is visible immediately,
+// rather than firing two actions at once.
+export function attachGroupCollapse(header, arrow, children, collapsed) {
+    const apply = (c) => {
+        children.classList.toggle('collapsed', c);
+        arrow.textContent = c ? '▶' : '▼';
+    };
+    apply(!!collapsed);
+    header.addEventListener('click', (e) => {
+        if (e.target !== header && e.target !== arrow) return;
+        apply(!children.classList.contains('collapsed'));
+    });
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

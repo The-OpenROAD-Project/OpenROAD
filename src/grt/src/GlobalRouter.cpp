@@ -616,17 +616,27 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  bool diode_only,
                                  const int num_threads)
 {
-  if (use_cugr_) {
-    // Repair still depends on FastRoute-only state (jumper insertion queries
-    // FastRoute edge resources); checking works with CUGR, repair is pending.
+  if (use_cugr_ && jumper_only) {
+    // Jumper insertion queries FastRoute-only edge resources; with CUGR
+    // antennas are repaired with diodes only.
     logger_->warn(GRT,
                   310,
-                  "repair_antennas is not supported with CUGR yet; skipping "
-                  "antenna repair.");
+                  "Jumper insertion is not supported with CUGR yet; "
+                  "skipping antenna repair.");
     logger_->metric("antenna_diodes_count", total_diodes_count_);
     return 0;
   }
   if (!initialized_ || haveDetailedRoutes()) {
+    // Rebuilding engine state from detailed routes is FastRoute-only; the
+    // CUGR equivalent is pending.
+    if (use_cugr_) {
+      logger_->warn(GRT,
+                    311,
+                    "repair_antennas with CUGR requires global routes from "
+                    "the current session; skipping antenna repair.");
+      logger_->metric("antenna_diodes_count", total_diodes_count_);
+      return 0;
+    }
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
@@ -705,8 +715,10 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           num_threads);
     // if run in GRT and it need run jumper insertion
     std::vector<odb::dbNet*> nets_with_jumpers;
-    if (!haveDetailedRoutes(nets_to_repair)
-        && repair_antennas_->hasNewViolations() && !diode_only) {
+    // Jumper insertion depends on FastRoute edge resources
+    // (hasAvailableResources); with CUGR go straight to diodes.
+    if (!use_cugr_ && !diode_only && repair_antennas_->hasNewViolations()
+        && !haveDetailedRoutes(nets_to_repair)) {
       // Run jumper insertion and clean
       repair_antennas_->jumperInsertion(routes_,
                                         grid_->getTileSize(),

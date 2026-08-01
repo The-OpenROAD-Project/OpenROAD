@@ -658,12 +658,16 @@ html, body {
 .display-controls .vis-group {
     margin: 1px 0;
 }
+/* Group header row: a <div>, not a <label>, so only its checkboxes toggle
+ * state.  Clicking the triangle, the name or the empty space expands or
+ * collapses the group, so text selection there is never wanted. */
 .display-controls .vis-group-header {
     display: flex;
     align-items: center;
     padding: 3px 0;
     color: var(--fg-primary);
     cursor: pointer;
+    user-select: none;
 }
 .display-controls .vis-arrow {
     font-size: 9px;
@@ -704,8 +708,9 @@ html, body {
     opacity: 0.35;
     cursor: not-allowed;
 }
-.display-controls label.vis-sel-disabled {
-    /* Visually dim labels whose selectability is disabled by visibility. */
+.display-controls .vis-sel-disabled {
+    /* Visually dim rows whose selectability is disabled by visibility.
+     * Matches both leaf <label> rows and group header <div> rows. */
     color: var(--fg-muted);
 }
 
