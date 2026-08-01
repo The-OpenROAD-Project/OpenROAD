@@ -28,6 +28,7 @@ genrule(
     srcs = [
         "src/style.css",
         "src/theme.js",
+        "src/display-state.js",
         "src/3d-viewer-widget.js",
         "src/coordinates.js",
         "src/ui-utils.js",
@@ -58,6 +59,7 @@ genrule(
           " --output $@" +
           " --css $(location src/style.css)" +
           " --js $(location src/theme.js)" +
+          " $(location src/display-state.js)" +
           " $(location src/3d-viewer-widget.js)" +
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +
@@ -93,6 +95,7 @@ _WEB_ASSET_FILES = [
     "src/tile-request.js",
     "src/device-pixels.js",
     "src/merged-tile-layer.js",
+    "src/display-state.js",
     "src/3d-viewer-widget.js",
     "src/coordinates.js",
     "src/ui-utils.js",

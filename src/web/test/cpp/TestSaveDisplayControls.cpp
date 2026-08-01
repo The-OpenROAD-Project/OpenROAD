@@ -93,6 +93,22 @@ TEST_F(SaveDisplayControlsTest, SaveWithoutServerThrows)
   EXPECT_FALSE(std::filesystem::exists(path));
 }
 
+// Opening the target succeeding says nothing about the write: reporting success
+// after a failed one would leave a truncated file behind.  /dev/full accepts
+// the open and fails every write with ENOSPC, which is the cheapest way to
+// reach that path without filling a disk.
+TEST_F(SaveDisplayControlsTest, SaveReportsWriteFailure)
+{
+  if (!std::filesystem::exists("/dev/full")) {
+    GTEST_SKIP() << "/dev/full is Linux-specific";
+  }
+  WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+  server.initLogger();
+  server.setDisplayState(R"({"version":1,"entries":{"or_show_dbu":"1"}})");
+
+  EXPECT_ANY_THROW(server.saveDisplayControls("/dev/full"));
+}
+
 // ─── Restore ────────────────────────────────────────────────────────────────
 
 TEST_F(SaveDisplayControlsTest, RestoreValidJsonSucceeds)
@@ -124,6 +140,48 @@ TEST_F(SaveDisplayControlsTest, RestoreInvalidJsonThrows)
 
   const std::string path = tempJson("invalid");
   writeFile(path, "{ this is not valid json ");
+
+  EXPECT_ANY_THROW(server.restoreDisplayControls(path));
+}
+
+// The client writes these entries straight into document.cookie and Web
+// Storage, so the shape is validated here, at the file boundary, and a bad file
+// is rejected loudly instead of half-applying.
+
+TEST_F(SaveDisplayControlsTest, RestoreRejectsMissingEntriesObject)
+{
+  WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+  server.initLogger();
+
+  const std::string path = tempJson("no_entries");
+  writeFile(path, R"({"version":1})");
+
+  EXPECT_ANY_THROW(server.restoreDisplayControls(path));
+}
+
+TEST_F(SaveDisplayControlsTest, RestoreRejectsNonStringEntry)
+{
+  WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+  server.initLogger();
+
+  // A JSON number is not interchangeable with the string the readers compare
+  // against ("1" === "1"), so coercing it would silently change the setting.
+  const std::string path = tempJson("number_entry");
+  writeFile(path, R"({"version":1,"entries":{"or_show_dbu":1}})");
+
+  EXPECT_ANY_THROW(server.restoreDisplayControls(path));
+}
+
+TEST_F(SaveDisplayControlsTest, RestoreRejectsCookieDelimiterInValue)
+{
+  WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+  server.initLogger();
+
+  // A ';' would let the file forge attributes on the cookie the client writes.
+  const std::string path = tempJson("cookie_inject");
+  writeFile(
+      path,
+      R"({"version":1,"entries":{"or_bg_color":"#fff; Domain=evil.test"}})");
 
   EXPECT_ANY_THROW(server.restoreDisplayControls(path));
 }

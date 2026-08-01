@@ -67,6 +67,13 @@ js_test(
 )
 
 js_test(
+    name = "display_state_test",
+    data = JS_FILES,
+    entry_point = "js/test-display-state.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "schematic_widget_test",
     data = JS_FILES,
     entry_point = "js/test-schematic-widget.js",

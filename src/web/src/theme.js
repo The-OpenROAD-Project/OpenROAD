@@ -22,6 +22,29 @@ export function deleteCookie(name) {
     document.cookie = name + '=; path=/; max-age=0; SameSite=Lax';
 }
 
+// The theme is persisted in TWO stores: a cookie (shared across ports for the
+// live server) and a localStorage mirror (which is all a standalone file://
+// report has).  Initialization below reads `cookie || localStorage || system`,
+// so the two must always move together — clearing only the cookie would fall
+// through to a stale mirror.  Both writers go through this pair so that rule
+// lives in exactly one place.
+//
+// Persistence only: applying the theme to the DOM is the caller's business,
+// because the display-state restore path writes storage and then reloads.
+export function persistTheme(theme) {
+    setCookie('or_theme', theme);
+    try {
+        window.localStorage.setItem('or_theme', theme);
+    } catch (_) { /* storage disabled */ }
+}
+
+export function clearPersistedTheme() {
+    deleteCookie('or_theme');
+    try {
+        window.localStorage.removeItem('or_theme');
+    } catch (_) { /* storage disabled */ }
+}
+
 // Enable the Golden Layout theme stylesheet matching the active theme.
 export function applyGLTheme(theme) {
     const dark  = document.getElementById('gl-theme-dark');
@@ -70,9 +93,7 @@ export function getThemeDefaultBgColor() {
 // change.  (Charts/clock use --canvas-bg, not --bg-map, so they don't
 // need refreshing here.)
 function refreshBackgroundConsumers(app) {
-    if (app && app.threeDViewerWidget && app.threeDViewerWidget.render) {
-        app.threeDViewerWidget.render();
-    }
+    app.threeDViewerWidget?.render?.();
 }
 
 if (typeof document !== 'undefined') {

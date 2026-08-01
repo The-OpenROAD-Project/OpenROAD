@@ -1360,6 +1360,15 @@ void WebServer::saveDisplayControls(const std::string& filename)
     return;
   }
   out << state;
+  // Opening the file succeeding says nothing about the write: a full disk or a
+  // quota surfaces only here, and reporting success would leave a truncated
+  // file behind.  close() flushes, so check after it.
+  out.close();
+  if (!out) {
+    logger_->error(
+        utl::WEB, 53, "Failed writing display controls to {}.", filename);
+    return;
+  }
   logger_->info(utl::WEB, 46, "Saved display controls to {}.", filename);
 }
 
@@ -1387,6 +1396,49 @@ void WebServer::restoreDisplayControls(const std::string& filename)
                    e.what());
     return;
   }
+  // Validate the shape here, at the file boundary, so the client can trust
+  // what it is handed: it writes these values straight into document.cookie,
+  // where a ';' would inject cookie attributes, and a JSON number or boolean
+  // would silently change a key's meaning.  Rejecting loudly beats a restore
+  // that half-applies.
+  const auto* root = parsed.if_object();
+  const auto* entries_value
+      = root != nullptr ? root->if_contains("entries") : nullptr;
+  const boost::json::object* entries
+      = entries_value != nullptr ? entries_value->if_object() : nullptr;
+  if (entries == nullptr) {
+    logger_->error(utl::WEB,
+                   52,
+                   "Invalid display-controls state in {}: expected an "
+                   "\"entries\" object.",
+                   filename);
+    return;
+  }
+  // One error site for every way an entry can be unusable, so the reason is
+  // carried as text rather than burning a message id per case.  error() does
+  // not return, so reporting at the point of detection needs no loop-carried
+  // state.
+  for (const auto& [key, value] : *entries) {
+    const char* reason = nullptr;
+    if (!value.is_string()) {
+      reason = "is not a string";
+    } else if (const std::string_view text = value.get_string();
+               text.find_first_of(";\r\n") != std::string_view::npos) {
+      // Cookie delimiters would let the file forge attributes on the cookies
+      // the client writes these into.  No legitimate value carries them: the
+      // cookie-backed ones are URI-encoded by their writers, the rest is JSON.
+      reason = "contains a ';', CR or LF";
+    }
+    if (reason != nullptr) {
+      logger_->error(utl::WEB,
+                     54,
+                     "Invalid display-controls state in {}: entry \"{}\" {}.",
+                     filename,
+                     std::string(key),
+                     reason);
+    }
+  }
+
   boost::json::object msg;
   msg["type"] = "restore_display_state";
   msg["state"] = std::move(parsed);

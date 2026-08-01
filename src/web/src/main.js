@@ -30,7 +30,8 @@ import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
-import { getCookie, setCookie, deleteCookie, applyGLTheme } from './theme.js';
+import { getCookie, setCookie, applyGLTheme, persistTheme } from './theme.js';
+import { serializeDisplayState, applyDisplayStateEntries } from './display-state.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 
@@ -553,77 +554,6 @@ function redrawAllLayers() {
 // debug_refresh + debug_paused) into a single redrawAllLayers() call.
 const scheduleRedrawAllLayers = rafCoalesce(redrawAllLayers);
 
-// Every key that together captures the full display-controls state, with the
-// browser store it lives in.  The individual controls already persist to these
-// keys, so serializing them lets `save_display_controls` /
-// `restore_display_controls` (Tcl) round-trip the entire panel through the
-// normal page-init path — no parallel apply logic to drift out of sync with
-// the controls.
-//
-// The split between the two stores is deliberate, not incidental: per-layer
-// visibility, selectability and fill patterns live in sessionStorage rather
-// than cookies, because they must survive the reload that opening a database
-// triggers but start fresh in a new session, as in Qt (review feedback on
-// #10795).  Both paths below dispatch on `store`, so neither silently skips
-// the sessionStorage-backed entries.
-const DISPLAY_STATE_KEYS = [
-    { key: 'or_visibility', store: 'cookie' },
-    { key: 'or_selectability', store: 'cookie' },
-    { key: 'or_hidden_layers', store: 'session' },
-    { key: 'or_nonselectable_layers', store: 'session' },
-    { key: 'or_layer_patterns', store: 'session' },
-    { key: 'or_hidden_chiplets', store: 'cookie' },
-    { key: 'or_bg_color', store: 'cookie' },
-    { key: 'or_show_dbu', store: 'cookie' },
-    { key: 'or_theme', store: 'cookie' },
-    { key: 'or_use_true_z', store: 'cookie' },
-];
-
-// Values are moved verbatim: the cookie helpers are raw pass-through (their
-// callers URI-encode) and the sessionStorage keys hold plain JSON, so reading
-// and writing through the same store round-trips without re-encoding.
-function readDisplayStateKey({ key, store }) {
-    if (store !== 'session') {
-        return getCookie(key);
-    }
-    try {
-        return window.sessionStorage.getItem(key);
-    } catch (_) {
-        return null;  // storage disabled
-    }
-}
-
-// `value === null` means "unset", so the reload falls back to the default.
-function writeDisplayStateKey({ key, store }, value) {
-    if (store !== 'session') {
-        if (value === null) {
-            deleteCookie(key);
-        } else {
-            setCookie(key, value);
-        }
-        return;
-    }
-    try {
-        if (value === null) {
-            window.sessionStorage.removeItem(key);
-        } else {
-            window.sessionStorage.setItem(key, value);
-        }
-    } catch (_) { /* storage disabled */ }
-}
-
-// Snapshot the current display state as a plain object for the server to
-// persist.  Only non-empty entries are included so restore can tell "unset"
-// (use default) from "set".
-function serializeDisplayState() {
-    const entries = {};
-    for (const spec of DISPLAY_STATE_KEYS) {
-        const value = readDisplayStateKey(spec);
-        if (value) entries[spec.key] = value;
-    }
-    return { version: 1, entries };
-}
-
 // Push the current display state to the server (coalesced via rAF) so the
 // Tcl save_display_controls command has an up-to-date snapshot to write.
 const scheduleSyncDisplayState = rafCoalesce(() => {
@@ -643,12 +573,7 @@ function applyDisplayState(state) {
     if (!state || typeof state !== 'object') return;
     const entries = state.entries;
     if (!entries || typeof entries !== 'object') return;
-    for (const spec of DISPLAY_STATE_KEYS) {
-        const value = entries[spec.key];
-        const absent = value === undefined || value === null || value === '';
-        // Absent in the saved state → clear so the reload uses defaults.
-        writeDisplayStateKey(spec, absent ? null : String(value));
-    }
+    applyDisplayStateEntries(entries);
     // Preserve the current view so restoring controls doesn't move the map.
     try {
         if (app.map && typeof sessionStorage !== 'undefined') {
@@ -1169,11 +1094,7 @@ app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     applyGLTheme(next);
-    setCookie('or_theme', next);
-    // Also write to localStorage for standalone file:// reports.
-    if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('or_theme', next);
-    }
+    persistTheme(next);
     // Re-render canvas-based widgets that read theme colors.
     if (app.chartsWidget) app.chartsWidget.render();
     if (app.clockTreeWidget) app.clockTreeWidget.render();
