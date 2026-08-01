@@ -323,7 +323,19 @@ export class WebSocketManager {
         // or pump — the server still has to process those bytes, and the slot
         // frees only when its (now stale) reply arrives. Freeing it here would
         // let cancellation churn re-flood the socket.
+        //
+        // The promise is rejected as well, for the same reason as the queued
+        // branch: dropping the handler without settling leaves the caller
+        // awaiting forever, and a caller with a `finally` never runs it. The
+        // merged tile layer frees its decoded ImageBitmaps there, so a silent
+        // drop here means every pruned or refreshed tile keeps its decodes
+        // alive — the unbounded decoded-image growth the merge exists to bound.
+        // The stale reply is still ignored: the handler is gone from `pending`.
+        const sent = this.pending.get(id);
         const had = this.pending.delete(id);
+        if (sent) {
+            sent.reject(new Error('Request cancelled'));
+        }
         // Tell the server to skip the now-obsolete tile render so fast
         // pan/zoom doesn't pile up stale work (and the 'pending' set drains).
         // Fire-and-forget: the cancel message gets its own id but is NOT

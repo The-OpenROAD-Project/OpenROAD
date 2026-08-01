@@ -63,6 +63,67 @@ function fakeManager({ hang = false } = {}) {
     return mgr;
 }
 
+// Fake manager that reproduces the real cancellation contract: a request stays
+// in flight until it is answered or cancelled, and cancel() REJECTS it (see
+// WebSocketManager.cancel).  fakeManager's cancel only records, which cannot
+// exercise what a render does after its requests are cancelled.
+//
+// `nextId` does not increment on read, matching the real manager: it is a plain
+// field there, consumed by request().
+function cancellableManager() {
+    const inFlight = new Map();  // id -> { layer, resolve, reject }
+    const mgr = {
+        _next: 1,
+        sent: [],
+        cancelled: [],
+        get nextId() { return this._next; },
+        request(msg) {
+            const id = mgr._next++;
+            mgr.sent.push(msg);
+            return new Promise((resolve, reject) => {
+                inFlight.set(id, { layer: msg.layer, resolve, reject });
+            });
+        },
+        // Answer every in-flight request for one layer.
+        reply(layer) {
+            for (const [id, entry] of [...inFlight]) {
+                if (entry.layer === layer) {
+                    inFlight.delete(id);
+                    entry.resolve({ payloadFor: layer });
+                }
+            }
+        },
+        cancel(id) {
+            mgr.cancelled.push(id);
+            const entry = inFlight.get(id);
+            if (entry) {
+                inFlight.delete(id);
+                entry.reject(new Error('Request cancelled'));
+            }
+        },
+    };
+    return mgr;
+}
+
+// Layer whose decodes are recorded, so releasing them can be asserted.
+function trackingLayer(mgr, items) {
+    const decoded = [];
+    const Layer = createMergedTileLayer(CTX, {
+        decode: async (payload) => {
+            if (!payload) {
+                return null;
+            }
+            const image = { id: payload.payloadFor, closed: false,
+                            close() { this.closed = true; } };
+            decoded.push(image);
+            return image;
+        },
+        dpr: () => 1,
+    });
+    const layer = new Layer(mgr, items, { zIndex: 0 });
+    return { layer, decoded };
+}
+
 // Capture what got drawn, with the alpha in force at draw time.
 //
 // Rendering is incremental: the canvas is recomposited from scratch on every
@@ -298,6 +359,73 @@ describe('refreshTiles: the contract redrawAllLayers depends on', () => {
 
             layer.refreshTiles();
             assert.deepEqual(mgr.cancelled, firstIds);
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it('reveals a tile refreshed before its first paint, and not before', async () => {
+        // done() belongs to the TILE, not to the render that happened to create
+        // it: a refresh replaces the render but not the tile.  Leaflet keeps a
+        // tile hidden (.leaflet-tile { visibility: hidden }) until done() marks
+        // it loaded, so the handshake has to survive being superseded — and it
+        // has to be performed by a render that actually PAINTED.  A superseded
+        // render reporting done on its way out reveals a canvas still holding
+        // its pre-refresh content, which for a new tile is nothing at all.
+        const mgr = cancellableManager();
+        const stub = stubCanvas2d();
+        try {
+            const { layer } = trackingLayer(mgr, ITEMS);
+            layer._map = {};
+            let doneCalls = 0;
+            const coords = { x: 0, y: 0, z: 0 };
+            const el = layer.createTile(coords, () => { doneCalls++; });
+            layer._tiles = { '0:0:0': { el, coords } };
+            assert.equal(doneCalls, 0, 'nothing has arrived yet');
+
+            // A checkbox toggle lands before any layer of this tile has
+            // arrived: the first render is cancelled and replaced.
+            layer.refreshTiles();
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(doneCalls, 0,
+                         'the superseded render painted nothing to reveal');
+
+            // The replacement render's tiles arrive and paint.
+            for (const item of ITEMS) {
+                mgr.reply(item.layer);
+            }
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(doneCalls, 1, 'the painted tile must be revealed');
+        } finally {
+            stub.restore();
+        }
+    });
+
+    it('releases the decodes of a render whose requests were cancelled', async () => {
+        // The release lives in renderMergedTile's finally, so it only runs if
+        // every await settles.  A cancelled request that never settles would
+        // strand the sibling layers' ImageBitmaps — unbounded decoded-image
+        // growth, which is the failure this whole layer exists to prevent.
+        const mgr = cancellableManager();
+        const stub = stubCanvas2d();
+        try {
+            const { layer, decoded } = trackingLayer(mgr, ITEMS);
+            layer._map = {};
+            const coords = { x: 0, y: 0, z: 0 };
+            const el = layer.createTile(coords, () => {});
+            layer._tiles = { '0:0:0': { el, coords } };
+
+            // One layer lands; the tile is then refreshed with the other two
+            // still on the wire, which cancels them.
+            mgr.reply('metal1');
+            await new Promise(r => setTimeout(r, 0));
+            assert.equal(decoded.length, 1, 'one layer decoded');
+
+            layer.refreshTiles();
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.ok(decoded[0].closed,
+                      'the arrived decode must be released, not stranded');
         } finally {
             stub.restore();
         }

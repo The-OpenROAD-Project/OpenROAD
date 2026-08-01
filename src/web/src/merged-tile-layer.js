@@ -105,7 +105,14 @@ export function createMergedTileLayer(ctx, options = {}) {
             canvas.setAttribute('role', 'presentation');
             const dpr = dprOf();
             this._sizeCanvas(canvas, dpr);
-            this._renderTile(canvas, coords, dpr, done);
+            // Stored on the element rather than held only by this render, so
+            // whichever render paints first can complete the handshake.  A
+            // refresh that lands before the first paint replaces the render but
+            // not the tile, and Leaflet keeps the tile hidden until done() is
+            // called — so a done that belonged to the superseded render would
+            // leave a painted canvas invisible until the tile was recreated.
+            canvas._orDone = done;
+            this._renderTile(canvas, coords, dpr);
             return canvas;
         },
 
@@ -133,7 +140,18 @@ export function createMergedTileLayer(ctx, options = {}) {
             canvas.style.height = size.y + 'px';
         },
 
-        _renderTile: function(canvas, coords, dpr, done) {
+        // Mark the tile loaded, once.  Leaflet reveals it only here
+        // (.leaflet-tile { visibility: hidden } until done() adds
+        // leaflet-tile-loaded), so every exit from a render has to reach this.
+        _finishTile: function(canvas, err) {
+            if (canvas._orTileDone || !canvas._orDone) {
+                return;
+            }
+            canvas._orTileDone = true;
+            canvas._orDone(err || null, canvas);
+        },
+
+        _renderTile: function(canvas, coords, dpr) {
             this._sizeCanvas(canvas, dpr);
             const generation = this._generation;
             const items = this.visibleItems();
@@ -141,6 +159,15 @@ export function createMergedTileLayer(ctx, options = {}) {
             // Request ids are tracked per tile so _removeTile can cancel the
             // whole group's in-flight work when the tile is pruned.
             canvas._orRequestIds = [];
+
+            // Superseded by a later refresh, or the tile was pruned while the
+            // requests were in flight.  Pruning is tracked with an explicit flag
+            // rather than canvas.isConnected: Leaflet appends the element AFTER
+            // createTile returns, so attachment state conflates "pruned" with
+            // "not yet attached" and would drop the very first paint of every
+            // tile.
+            const isStale = () => this._generation !== generation
+                                  || canvas._orRemoved === true;
 
             renderMergedTile({
                 items,
@@ -154,36 +181,26 @@ export function createMergedTileLayer(ctx, options = {}) {
                 draw: (sources) => mergeOntoContext(context, sources,
                                                     canvas.width),
                 release: closeAll,
-                // Superseded by a later refresh, or the tile was pruned while
-                // the requests were in flight.  Pruning is tracked with an
-                // explicit flag rather than canvas.isConnected: Leaflet appends
-                // the element AFTER createTile returns, so attachment state
-                // conflates "pruned" with "not yet attached" and would drop the
-                // very first paint of every tile.
-                isStale: () => this._generation !== generation
-                               || canvas._orRemoved === true,
+                isStale,
                 // Reported on the FIRST paint, not on completion: Leaflet keeps
                 // a tile hidden (.leaflet-tile { visibility: hidden }) until
                 // done() adds leaflet-tile-loaded, so deferring it would make
                 // every incremental paint invisible and the tile would still
                 // appear only once its slowest layer had landed.
-                onFirstDraw: () => {
-                    if (done && !canvas._orTileDone) {
-                        canvas._orTileDone = true;
-                        done(null, canvas);
-                    }
-                },
+                onFirstDraw: () => this._finishTile(canvas),
             }).then(() => {
-                if (done && !canvas._orTileDone) {
-                    canvas._orTileDone = true;
-                    done(null, canvas);
+                // A superseded render must not finish the tile: it painted
+                // nothing, so revealing the canvas here would show the state it
+                // had before the refresh.  The render that replaced it owns the
+                // handshake.
+                if (!isStale()) {
+                    this._finishTile(canvas);
                 }
             }).catch((err) => {
-                if (done && !canvas._orTileDone) {
-                    canvas._orTileDone = true;
-                    // Reported as a load error so Leaflet stops waiting on it;
-                    // the canvas keeps whatever it managed to paint.
-                    done(err, canvas);
+                // Reported as a load error so Leaflet stops waiting on it; the
+                // canvas keeps whatever it managed to paint.
+                if (!isStale()) {
+                    this._finishTile(canvas, err);
                 }
             });
         },
@@ -204,7 +221,7 @@ export function createMergedTileLayer(ctx, options = {}) {
                 }
                 this._cancelTile(info.el);
                 const dpr = dprOf();
-                this._renderTile(info.el, info.coords, dpr, null);
+                this._renderTile(info.el, info.coords, dpr);
             }
         },
 

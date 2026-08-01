@@ -334,7 +334,10 @@ export function closeAll(images) {
 // Lifetime: every decoded image is released in a finally, including on a draw
 // failure or a stale abort.  Explicit release is the entire reason for
 // ImageBitmap over <img>; leaking here would reintroduce exactly the unbounded
-// decoded-image growth this exists to bound.
+// decoded-image growth this exists to bound.  That rests on `request` always
+// settling: a cancelled request has to reject rather than stay pending, or the
+// finally never runs and the group's decodes are stranded (see
+// WebSocketManager.cancel, which rejects both the queued and the sent case).
 //
 // Partial failure is survivable by design: one item that fails to arrive or
 // decode is skipped and the rest of the group still paints.  Blanking the whole

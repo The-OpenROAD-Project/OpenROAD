@@ -324,6 +324,38 @@ describe('WebSocketManager flow control', () => {
         // The promise must reject — not hang forever — so callers clean up.
         await assert.rejects(observed, { message: 'Request cancelled' });
     });
+
+    it('cancelling a sent request settles its promise', async () => {
+        // The sent branch has to settle for the same reason the queued one
+        // does, and the cost of not doing so is higher: the merged tile layer
+        // releases its decoded ImageBitmaps in a finally, which never runs if
+        // the await never returns.  Every pruned or refreshed tile would then
+        // keep its decodes alive — the growth the merge exists to bound.
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+
+        const promise = mgr.request({ type: 'tile', n: 0 });
+        const id = promise.requestId;
+        assert.ok(mgr.pending.has(id), 'request is on the wire');
+
+        mgr.cancel(id);
+        // Raced against a timer rather than awaited directly: the failure mode
+        // being guarded against is a promise that never settles, and awaiting
+        // that hangs the suite instead of failing it.
+        const outcome = await Promise.race([
+            promise.then(() => 'resolved', (e) => e.message),
+            new Promise(r => setTimeout(() => r('never settled'), 50)),
+        ]);
+        assert.equal(outcome, 'Request cancelled');
+
+        // Settling must not disturb the wire-slot accounting: the bytes are
+        // committed and the slot frees only when the stale reply lands.
+        assert.equal(mgr._inFlight, 1, 'cancel must not free the wire slot');
+        assert.ok(!mgr.pending.has(id), 'the stale reply is no longer tracked');
+        // And the stale reply must still be harmless once it arrives.
+        deliverReply(mgr, id);
+        assert.equal(mgr._inFlight, 0, 'the reply freed the slot');
+    });
 });
 
 describe('WebSocketManager liveness', () => {
