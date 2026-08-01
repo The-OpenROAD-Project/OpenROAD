@@ -275,6 +275,38 @@ describe('WebSocketManager flow control', () => {
             'replies — not cancels — drive the next burst');
     });
 
+    it('does not count a cancel acknowledgement as a request reply', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 1;
+
+        const first = mgr.request({ type: 'tile', n: 0 });
+        first.catch(() => {});
+        mgr.request({ type: 'tile', n: 1 }).catch(() => {});
+        mgr.request({ type: 'tile', n: 2 }).catch(() => {});
+
+        mgr.cancel(first.requestId);
+        const cancel = mgr.socket.sent.map(msg => JSON.parse(msg))
+            .find(msg => msg.type === 'cancel');
+        assert.ok(cancel, 'cancel request was sent');
+
+        // The server acknowledges every cancel with the cancel message's own
+        // id.  That message was never counted in the wire window, so its reply
+        // must not release another queued tile.
+        deliverReply(mgr, cancel.id);
+        assert.equal(mgr._inFlight, 1);
+        assert.equal(mgr._queue.size, 2);
+        assert.equal(mgr.socket.sent.filter(
+            msg => JSON.parse(msg).type === 'tile').length, 1);
+
+        // The cancelled tile's eventual response is what frees the slot.
+        deliverReply(mgr, first.requestId);
+        assert.equal(mgr._inFlight, 1);
+        assert.equal(mgr._queue.size, 1);
+        assert.equal(mgr.socket.sent.filter(
+            msg => JSON.parse(msg).type === 'tile').length, 2);
+    });
+
     it('cancelling a queued request drops it before it is sent', async () => {
         const mgr = new WebSocketManager('ws://fake');
         await mgr.readyPromise;

@@ -55,9 +55,10 @@ export class WebSocketManager {
         // Not yet on the wire, so cancel() can drop them for free.
         this._queue = new Map(); // id -> {msg, resolve, reject}
         // Requests sent but not yet answered by the server (the real wire
-        // window). Incremented on send, decremented when ANY reply for a sent
+        // window). Incremented on send, decremented when a reply for that sent
         // id arrives — even a stale one for a cancelled request.
         this._inFlight = 0;
+        this._inFlightIds = new Set();
         this._maxInFlight = DEFAULT_MAX_IN_FLIGHT; // updated by server "config"
         this._lastRecvAt = 0;     // perf.now() of the last message of any kind
         this._bufStuckSince = 0;  // liveness: when bufferedAmount got stuck
@@ -94,6 +95,7 @@ export class WebSocketManager {
         mgr.pending = new Map();
         mgr._queue = new Map(); // unused in cache mode, but keeps cancel() safe
         mgr._inFlight = 0;
+        mgr._inFlightIds = new Set();
         mgr._maxInFlight = DEFAULT_MAX_IN_FLIGHT;
         mgr._lastRecvAt = 0;
         mgr.reconnectDelay = 0;
@@ -146,6 +148,7 @@ export class WebSocketManager {
     _handleClose() {
         this._isConnected = false;
         this._inFlight = 0;
+        this._inFlightIds.clear();
         this._bufStuckSince = 0;
         this.onStatusChange();
         for (const [id, handler] of this.pending) {
@@ -228,10 +231,11 @@ export class WebSocketManager {
             return;
         }
 
-        // Any reply for a sent id frees a wire slot — including a stale reply
-        // for a request we already cancelled. This keeps the scheduler moving
-        // and bounds the send rate to the server's response rate.
-        if (this._inFlight > 0) {
+        // Only a reply for a request counted in the wire window frees a slot.
+        // Cancel messages are fire-and-forget and have ids of their own; their
+        // acknowledgements must not free a tile-request slot.  The original
+        // tile reply still does so even after its promise was cancelled.
+        if (this._inFlightIds.delete(id) && this._inFlight > 0) {
             this._inFlight--;
         }
 
@@ -301,6 +305,7 @@ export class WebSocketManager {
                 reject: entry.reject,
             });
             this.socket.send(JSON.stringify(entry.msg));
+            this._inFlightIds.add(id);
             this._inFlight++;
         }
         this.onStatusChange();

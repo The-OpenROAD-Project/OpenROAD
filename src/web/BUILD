@@ -34,7 +34,10 @@ genrule(
         "src/checkbox-tree-model.js",
         "src/vis-tree.js",
         "src/websocket-manager.js",
+        "src/tile-merge.js",
+        "src/tile-request.js",
         "src/websocket-tile-layer.js",
+        "src/merged-tile-layer.js",
         "src/display-controls.js",
         "src/inspector.js",
         "src/ruler.js",
@@ -60,7 +63,10 @@ genrule(
           " $(location src/checkbox-tree-model.js)" +
           " $(location src/vis-tree.js)" +
           " $(location src/websocket-manager.js)" +
+          " $(location src/tile-merge.js)" +
+          " $(location src/tile-request.js)" +
           " $(location src/websocket-tile-layer.js)" +
+          " $(location src/merged-tile-layer.js)" +
           " $(location src/display-controls.js)" +
           " $(location src/inspector.js)" +
           " $(location src/ruler.js)" +
