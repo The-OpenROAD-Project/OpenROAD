@@ -250,4 +250,79 @@ describe('layer row selection', () => {
         assert.equal(
             container.querySelectorAll('label.vis-leaf-selectable').length, 0);
     });
+
+    // Clicking through several layers leaves one request in flight per click.
+    // They can land in any order, so the response has to be matched against
+    // the row that is still selected before it touches the Inspector.
+    it('a stale response does not overwrite a newer selection', async () => {
+        const pending = [];
+        app.websocketManager.request = (msg) => {
+            requests.push(msg);
+            return new Promise(resolve => pending.push(
+                () => resolve({ type: 'Layer', name: msg.layer })));
+        };
+
+        const container = render();
+        click(layerRow(container, 'metal1').querySelector('.vis-name'));
+        click(layerRow(container, 'metal2').querySelector('.vis-name'));
+        assert.equal(pending.length, 2);
+
+        // metal2 (the live selection) answers first, metal1 straggles in.
+        pending[1]();
+        pending[0]();
+        await flush();
+
+        assert.equal(inspected.length, 1);
+        assert.equal(inspected[0].name, 'metal2');
+    });
+
+    it('a failed request drops the selection highlight', async () => {
+        app.websocketManager.request = () => Promise.reject(new Error('boom'));
+        const container = render();
+        const row = layerRow(container, 'metal1');
+
+        const realError = console.error;
+        console.error = () => {};
+        try {
+            click(row.querySelector('.vis-name'));
+            await flush();
+        } finally {
+            console.error = realError;
+        }
+
+        assert.equal(row.classList.contains('vis-row-selected'), false);
+    });
+
+    // A failure for a row the user already clicked past must not clear the
+    // highlight the newer click put somewhere else.
+    it('a failure for a superseded row leaves the newer highlight',
+       async () => {
+           const pending = [];
+           app.websocketManager.request = (msg) => {
+               requests.push(msg);
+               return new Promise((resolve, reject) => pending.push({
+                   ok: () => resolve({ type: 'Layer', name: msg.layer }),
+                   fail: () => reject(new Error('boom')),
+               }));
+           };
+
+           const container = render();
+           const m1 = layerRow(container, 'metal1');
+           const m2 = layerRow(container, 'metal2');
+           click(m1.querySelector('.vis-name'));
+           click(m2.querySelector('.vis-name'));
+
+           const realError = console.error;
+           console.error = () => {};
+           try {
+               pending[1].ok();
+               pending[0].fail();
+               await flush();
+           } finally {
+               console.error = realError;
+           }
+
+           assert.ok(m2.classList.contains('vis-row-selected'));
+           assert.equal(m1.classList.contains('vis-row-selected'), false);
+       });
 });

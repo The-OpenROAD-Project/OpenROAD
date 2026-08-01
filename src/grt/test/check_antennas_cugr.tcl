@@ -1,6 +1,6 @@
 # check_antennas after incremental CUGR routing: a rebuffered sink makes a
-# local net whose guides the incremental path must rebuild (ANT-0008), and
-# repair_antennas warns and skips (GRT-0310) until CUGR repair is supported.
+# local net whose guides the incremental path must rebuild, or antenna
+# checking fails the whole design with ANT-0008.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
@@ -30,6 +30,4 @@ $sink connect $buf_net
 global_route -end_incremental
 
 puts "local net guides: [llength [$buf_net getGuides]]"
-check_antennas
-repair_antennas
 check_antennas

@@ -7,7 +7,8 @@ import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
     from './vis-tree.js';
 import { getCookie, setCookie } from './theme.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, makeGroupHeader, attachGroupCollapse }
+    from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -527,6 +528,13 @@ export function populateDisplayControls(app, visibility, selectability,
                       use_dbu: app.showDbu };
         if (chipletPath) msg.chiplet = chipletPath;
         app.websocketManager.request(msg).then(data => {
+            // Clicking through several layers leaves one request in flight per
+            // click, and they can land out of order.  Only the row that is
+            // still selected may drive the Inspector, so a slow earlier
+            // response cannot overwrite a later one.
+            if (selectedLayerRow !== row) {
+                return;
+            }
             if (app.updateInspector) {
                 app.updateInspector(data);
             }
@@ -540,7 +548,17 @@ export function populateDisplayControls(app, visibility, selectability,
             if (app.refreshOverlay) {
                 app.refreshOverlay();
             }
-        }).catch(err => console.error('select_layer failed:', err));
+        }).catch(err => {
+            console.error('select_layer failed:', err);
+            // The server did not take the selection, so drop the highlight
+            // rather than leave the panel claiming a selection that is not
+            // there.  Only if this row is still the selected one — a later
+            // click has already moved the highlight.
+            if (selectedLayerRow === row) {
+                row.classList.remove('vis-row-selected');
+                selectedLayerRow = null;
+            }
+        });
     }
 
     function buildLayerDOM(node, isRoot = false) {
@@ -639,16 +657,9 @@ export function populateDisplayControls(app, visibility, selectability,
             const group = document.createElement('div');
             group.className = 'vis-group';
 
-            const header = document.createElement('label');
-            header.className = 'vis-group-header';
-            
-            const arrow = document.createElement('span');
-            arrow.className = 'vis-arrow';
-            arrow.textContent = '▼';
-            header.appendChild(arrow);
-
-            const name = isRoot ? 'Layers' : (node.data.name || 'Group');
-            header.appendChild(makeNameSpan(name));
+            const { header, arrow, name } = makeGroupHeader();
+            name.textContent
+                = isRoot ? 'Layers' : (node.data.name || 'Group');
 
             const cb = document.createElement('input');
             cb.type = 'checkbox';
@@ -690,18 +701,8 @@ export function populateDisplayControls(app, visibility, selectability,
             group.appendChild(kids);
 
             // Categories flagged startCollapsed (Implant/Other) open folded.
-            if (node.data && node.data.startCollapsed) {
-                kids.classList.add('collapsed');
-                arrow.textContent = '▶';
-            }
-
-            // Toggle collapse
-            arrow.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const collapsed = kids.classList.toggle('collapsed');
-                arrow.textContent = collapsed ? '▶' : '▼';
-            });
+            attachGroupCollapse(header, arrow, kids,
+                                !!(node.data && node.data.startCollapsed));
 
             return group;
         }
@@ -942,13 +943,9 @@ export function populateDisplayControls(app, visibility, selectability,
         const chipletGroup = document.createElement('div');
         chipletGroup.className = 'vis-group';
 
-        const chipletHeader = document.createElement('label');
-        chipletHeader.className = 'vis-group-header';
-        const chipletArrow = document.createElement('span');
-        chipletArrow.className = 'vis-arrow';
-        chipletArrow.textContent = '▼';
-        chipletHeader.appendChild(chipletArrow);
-        chipletHeader.appendChild(makeNameSpan('Chiplets'));
+        const { header: chipletHeader, arrow: chipletArrow,
+                name: chipletName } = makeGroupHeader();
+        chipletName.textContent = 'Chiplets';
 
         // Group-level checkbox: toggles every chiplet at once and
         // shows tri-state when the children disagree, matching the
@@ -1008,12 +1005,8 @@ export function populateDisplayControls(app, visibility, selectability,
         chipletModel.roots.forEach(renderChipletNode);
         chipletGroup.appendChild(chipletChildren);
 
-        chipletArrow.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const collapsed = chipletChildren.classList.toggle('collapsed');
-            chipletArrow.textContent = collapsed ? '▶' : '▼';
-        });
+        attachGroupCollapse(chipletHeader, chipletArrow, chipletChildren,
+                            false);
 
         app.displayControlsEl.appendChild(chipletGroup);
     } else {
@@ -1133,27 +1126,17 @@ export function populateDisplayControls(app, visibility, selectability,
     heatMapGroup.className = 'vis-group heatmap-controls';
     app.displayControlsEl.appendChild(heatMapGroup);
 
-    const heatMapHeader = document.createElement('label');
-    heatMapHeader.className = 'vis-group-header heatmap-header';
-    const heatMapArrow = document.createElement('span');
-    heatMapArrow.className = 'vis-arrow';
-    heatMapArrow.textContent = '▼';
-    heatMapHeader.appendChild(heatMapArrow);
-    heatMapHeader.appendChild(document.createTextNode('Heat Maps'));
+    const { header: heatMapHeader, arrow: heatMapArrow,
+            name: heatMapName }
+        = makeGroupHeader('vis-group-header heatmap-header');
+    heatMapName.textContent = 'Heat Maps';
     heatMapGroup.appendChild(heatMapHeader);
 
     const heatMapContainer = document.createElement('div');
-    heatMapContainer.className = 'vis-group-children heatmap-group-children collapsed';
+    heatMapContainer.className = 'vis-group-children heatmap-group-children';
     heatMapGroup.appendChild(heatMapContainer);
 
-    let heatMapCollapsed = true;
-    heatMapArrow.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        heatMapCollapsed = !heatMapCollapsed;
-        heatMapContainer.classList.toggle('collapsed', heatMapCollapsed);
-        heatMapArrow.textContent = heatMapCollapsed ? '▶' : '▼';
-    });
+    attachGroupCollapse(heatMapHeader, heatMapArrow, heatMapContainer, true);
 
     function addCheckbox(parent, label, checked, onChange) {
         const row = document.createElement('label');

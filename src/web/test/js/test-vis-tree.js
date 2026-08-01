@@ -166,6 +166,110 @@ describe('VisTree', () => {
         });
     });
 
+    describe('group header clicks', () => {
+        const click = (el) => el.dispatchEvent(
+            new dom.window.MouseEvent('click', { bubbles: true }));
+
+        // Build a one-group tree with both children visible.  The container
+        // is attached to the document because jsdom only runs a checkbox's
+        // activation behavior (toggle + `change`) for connected elements.
+        const build = () => {
+            visibility.a = true;
+            visibility.b = true;
+            tree.add({ label: 'Group', children: [
+                { key: 'a', label: 'A' },
+                { key: 'b', label: 'B' },
+            ]});
+            const container = document.createElement('div');
+            document.body.textContent = '';
+            document.body.appendChild(container);
+            tree.render(container);
+            return {
+                header: container.querySelector('.vis-group-header'),
+                arrow: container.querySelector('.vis-group-header .vis-arrow'),
+                name: container.querySelector('.vis-group-header .vis-name'),
+                kids: container.querySelector('.vis-group-children'),
+                cb: container.querySelector('.vis-group-header input'),
+            };
+        };
+
+        it('starts collapsed', () => {
+            const { arrow, kids } = build();
+            assert.ok(kids.classList.contains('collapsed'));
+            assert.equal(arrow.textContent, '▶');
+        });
+
+        it('clicking the arrow expands and collapses', () => {
+            const { arrow, kids } = build();
+            click(arrow);
+            assert.ok(!kids.classList.contains('collapsed'));
+            assert.equal(arrow.textContent, '▼');
+            click(arrow);
+            assert.ok(kids.classList.contains('collapsed'));
+            assert.equal(arrow.textContent, '▶');
+        });
+
+        it('clicking the arrow does not change visibility', () => {
+            const { arrow } = build();
+            click(arrow);
+            assert.equal(visibility.a, true);
+            assert.equal(visibility.b, true);
+        });
+
+        // Regression: the header used to be a <label> wrapping the visibility
+        // checkbox, so a click on the group name -- or one that merely missed
+        // the small arrow glyph -- toggled the whole category's visibility.
+        it('clicking the group name expands instead of toggling visibility',
+           () => {
+               const { header, kids } = build();
+               click(header);
+               assert.ok(!kids.classList.contains('collapsed'));
+               assert.equal(visibility.a, true);
+               assert.equal(visibility.b, true);
+           });
+
+        // The group name is a .vis-name span (it has to be an element so it
+        // can stretch and push the checkbox columns right).  It used to be a
+        // bare text node whose clicks reported the header as the target, so
+        // wrapping it would silently drop the row's largest click target
+        // unless attachGroupCollapse treats the span as a target too.
+        it('clicking the name cell expands instead of toggling visibility',
+           () => {
+               const { name, kids } = build();
+               assert.equal(name.textContent, 'Group');
+               click(name);
+               assert.ok(!kids.classList.contains('collapsed'));
+               assert.equal(visibility.a, true);
+               assert.equal(visibility.b, true);
+               click(name);
+               assert.ok(kids.classList.contains('collapsed'));
+           });
+
+        it('clicking the visibility checkbox does not expand', () => {
+            const { cb, kids } = build();
+            click(cb);
+            assert.ok(kids.classList.contains('collapsed'));
+            assert.equal(visibility.a, false);
+            assert.equal(visibility.b, false);
+        });
+
+        // Only the triangle and the header's own bare area collapse, so a
+        // control added to the row acts without also collapsing the group.
+        it('clicking a control added to the header does not expand', () => {
+            const { header, kids } = build();
+            const extra = document.createElement('label');
+            const extraCb = document.createElement('input');
+            extraCb.type = 'checkbox';
+            extra.appendChild(extraCb);
+            extra.appendChild(document.createTextNode('Extra'));
+            header.appendChild(extra);
+
+            click(extra);
+            assert.equal(extraCb.checked, true);
+            assert.ok(kids.classList.contains('collapsed'));
+        });
+    });
+
     describe('disabled groups', () => {
         it('marks children container as disabled', () => {
             tree.add({ label: 'Group', disabled: true, children: [
