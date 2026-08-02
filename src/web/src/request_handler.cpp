@@ -248,6 +248,61 @@ static void serializeAnyValue(boost::json::object& out,
   out[field_name] = gui::Descriptor::Property::toString(value);
 }
 
+// Serialize an ordered list of unkeyed values (Property values held as a
+// std::vector/std::set of std::any) as inspector children.  Mirrors the Qt
+// inspector's makeList(): entries have no name of their own, so they are
+// numbered 1..N and the value carries the content.
+template <typename Iterator>
+static boost::json::array serializeAnyList(
+    Iterator begin,
+    Iterator end,
+    std::vector<gui::Selected>& selectables)
+{
+  boost::json::array children;
+  int index = 0;
+  for (Iterator itr = begin; itr != end; ++itr) {
+    boost::json::object child;
+    child["name"] = std::to_string(++index);
+    serializeAnyValue(child, "value", *itr, selectables);
+    children.emplace_back(std::move(child));
+  }
+  return children;
+}
+
+// Serialize a PropertyTable as a row/column grid.  The Qt inspector renders
+// these as an HTML table; the client does the same from this data rather than
+// from server-generated markup.  Headers are kept separate from the cells so
+// the client can drop the header row or column when a table has none.
+static boost::json::object serializePropertyTable(
+    const gui::PropertyTable& table)
+{
+  boost::json::object out;
+
+  boost::json::array columns;
+  for (const auto& header : table.getColumnHeaders()) {
+    columns.emplace_back(header);
+  }
+  out["column_headers"] = std::move(columns);
+
+  boost::json::array rows;
+  for (const auto& header : table.getRowHeaders()) {
+    rows.emplace_back(header);
+  }
+  out["row_headers"] = std::move(rows);
+
+  boost::json::array data;
+  for (const auto& row : table.getData()) {
+    boost::json::array cells;
+    for (const auto& cell : row) {
+      cells.emplace_back(cell);
+    }
+    data.emplace_back(std::move(cells));
+  }
+  out["data"] = std::move(data);
+
+  return out;
+}
+
 static boost::json::object serializeProperty(
     const gui::Descriptor::Property& prop,
     std::vector<gui::Selected>& selectables)
@@ -276,6 +331,12 @@ static boost::json::object serializeProperty(
       children.emplace_back(std::move(child));
     }
     o["children"] = std::move(children);
+  } else if (auto* table = std::any_cast<gui::PropertyTable>(&prop.value)) {
+    o["table"] = serializePropertyTable(*table);
+  } else if (auto* vec = std::any_cast<std::vector<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(vec->begin(), vec->end(), selectables);
+  } else if (auto* set = std::any_cast<std::set<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(set->begin(), set->end(), selectables);
   } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
