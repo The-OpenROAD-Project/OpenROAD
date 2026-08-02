@@ -252,18 +252,18 @@ static void serializeAnyValue(boost::json::object& out,
 // std::vector/std::set of std::any) as inspector children.  Mirrors the Qt
 // inspector's makeList(): entries have no name of their own, so they are
 // numbered 1..N and the value carries the content.
-template <typename Iterator>
+template <typename Container>
 static boost::json::array serializeAnyList(
-    Iterator begin,
-    Iterator end,
+    const Container& values,
     std::vector<gui::Selected>& selectables)
 {
   boost::json::array children;
+  children.reserve(values.size());
   int index = 0;
-  for (Iterator itr = begin; itr != end; ++itr) {
+  for (const auto& value : values) {
     boost::json::object child;
     child["name"] = std::to_string(++index);
-    serializeAnyValue(child, "value", *itr, selectables);
+    serializeAnyValue(child, "value", value, selectables);
     children.emplace_back(std::move(child));
   }
   return children;
@@ -279,20 +279,24 @@ static boost::json::object serializePropertyTable(
   boost::json::object out;
 
   boost::json::array columns;
+  columns.reserve(table.getColumnHeaders().size());
   for (const auto& header : table.getColumnHeaders()) {
     columns.emplace_back(header);
   }
   out["column_headers"] = std::move(columns);
 
   boost::json::array rows;
+  rows.reserve(table.getRowHeaders().size());
   for (const auto& header : table.getRowHeaders()) {
     rows.emplace_back(header);
   }
   out["row_headers"] = std::move(rows);
 
   boost::json::array data;
+  data.reserve(table.getData().size());
   for (const auto& row : table.getData()) {
     boost::json::array cells;
+    cells.reserve(row.size());
     for (const auto& cell : row) {
       cells.emplace_back(cell);
     }
@@ -334,9 +338,9 @@ static boost::json::object serializeProperty(
   } else if (auto* table = std::any_cast<gui::PropertyTable>(&prop.value)) {
     o["table"] = serializePropertyTable(*table);
   } else if (auto* vec = std::any_cast<std::vector<std::any>>(&prop.value)) {
-    o["children"] = serializeAnyList(vec->begin(), vec->end(), selectables);
+    o["children"] = serializeAnyList(*vec, selectables);
   } else if (auto* set = std::any_cast<std::set<std::any>>(&prop.value)) {
-    o["children"] = serializeAnyList(set->begin(), set->end(), selectables);
+    o["children"] = serializeAnyList(*set, selectables);
   } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
