@@ -32,6 +32,7 @@ struct FakeInspectable
   std::string name;
   std::string type;
   odb::Rect bbox;
+  gui::Descriptor::Properties properties;
 };
 
 class FakeDescriptor : public gui::Descriptor
@@ -60,7 +61,10 @@ class FakeDescriptor : public gui::Descriptor
   {
   }
 
-  Properties getProperties(const std::any&) const override { return {}; }
+  Properties getProperties(const std::any& object) const override
+  {
+    return std::any_cast<FakeInspectable*>(object)->properties;
+  }
 
   gui::Selected makeSelected(const std::any& object) const override
   {
@@ -544,11 +548,14 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
-    fake_current_
-        = {.name = "current", .type = "FakeCurrent", .bbox = {0, 0, 100, 100}};
+    fake_current_ = {.name = "current",
+                     .type = "FakeCurrent",
+                     .bbox = {0, 0, 100, 100},
+                     .properties = {}};
     fake_previous_ = {.name = "previous",
                       .type = "FakePrevious",
-                      .bbox = {100, 100, 200, 200}};
+                      .bbox = {100, 100, 200, 200},
+                      .properties = {}};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
@@ -837,6 +844,120 @@ TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
   std::string json_um = payloadStr(resp_um);
   EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
       << json_um;
+}
+
+// Micron formatting must not depend on a top block existing.  Before, a null
+// block quietly disabled the conversion and every property came back in raw
+// DBU whatever the client asked for, which reads as "Show DBU" being stuck on.
+class TechOnlySelectHandlerTest : public tst::Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    loadTechAndLib("ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
+    fake_ = {.name = "current",
+             .type = "FakeCurrent",
+             .bbox = {2000, 4000, 6000, 8000},
+             .properties = {}};
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<SelectHandler> handler_;
+  SessionState state_;
+  FakeDescriptor fake_descriptor_;
+  FakeInspectable fake_;
+};
+
+TEST_F(TechOnlySelectHandlerTest, InspectUsesTechDbuWhenNoBlock)
+{
+  ASSERT_EQ(getDb()->getChip(), nullptr);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {gui::Selected(&fake_, &fake_descriptor_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 40;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":false})");
+
+  const std::string json = payloadStr(handler_->handleInspect(req, state_));
+  EXPECT_NE(json.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json;
+}
+
+// A PropertyTable (e.g. a layer's two-widths spacing table) is serialized as a
+// grid the client draws as a table, not flattened to Property::toString()'s
+// "<unknown>".
+TEST_F(SelectHandlerTest, InspectSerializesPropertyTable)
+{
+  gui::PropertyTable table(/*rows=*/2, /*columns=*/2);
+  table.setColumnHeader(0, "0 \xC2\xB5m");
+  table.setColumnHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
+  table.setRowHeader(0, "0 \xC2\xB5m");
+  table.setRowHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
+  table.setData(0, 0, "0.065 \xC2\xB5m");
+  table.setData(0, 1, "0.1 \xC2\xB5m");
+  table.setData(1, 0, "0.1 \xC2\xB5m");
+  table.setData(1, 1, "0.2 \xC2\xB5m");
+  fake_current_.properties = {{"Two width spacing rules", table}};
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  const std::string json = payloadStr(handler_->handleInspect(req, state_));
+  EXPECT_EQ(json.find("<unknown>"), std::string::npos) << json;
+  EXPECT_NE(json.find("\"table\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"column_headers\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"row_headers\""), std::string::npos) << json;
+  // Newlines inside a header survive as real newlines for the client to
+  // render as separate lines.
+  EXPECT_NE(json.find("0.2 \xC2\xB5m\\nPRL 0.1 \xC2\xB5m"), std::string::npos)
+      << json;
+  EXPECT_NE(json.find("[[\"0.065 \xC2\xB5m\",\"0.1 \xC2\xB5m\"],"
+                      "[\"0.1 \xC2\xB5m\",\"0.2 \xC2\xB5m\"]]"),
+            std::string::npos)
+      << json;
+}
+
+// An unkeyed list value (a layer's width table) becomes numbered children,
+// mirroring the Qt inspector's indexed list rows.
+TEST_F(SelectHandlerTest, InspectSerializesValueList)
+{
+  const std::vector<std::any> widths
+      = {std::string("0.018 \xC2\xB5m"), std::string("0.09 \xC2\xB5m")};
+  fake_current_.properties = {{"Width table", widths}};
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 31;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  const std::string json = payloadStr(handler_->handleInspect(req, state_));
+  EXPECT_EQ(json.find("<unknown>"), std::string::npos) << json;
+  EXPECT_NE(json.find("\"children\":[{\"name\":\"1\","
+                      "\"value\":\"0.018 \xC2\xB5m\"},"
+                      "{\"name\":\"2\",\"value\":\"0.09 \xC2\xB5m\"}]"),
+            std::string::npos)
+      << json;
 }
 
 //------------------------------------------------------------------------------

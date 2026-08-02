@@ -866,15 +866,49 @@ html, body {
     padding: 2px 0;
     border-bottom: 1px solid var(--bg-context);
 }
+/* The name column is a fixed width so every value starts at the same x.
+ * Letting it size to its content (the old min-width) made one long name such
+ * as "Wrong way minimum width" shove that row's value out past all the
+ * others, which reads as a broken table.  Names too long for the column are
+ * clipped with an ellipsis and carry the full text as a tooltip; the width
+ * itself is draggable via .inspector-col-resizer. */
 .inspector-prop-name {
     color: var(--accent-text);
-    min-width: 120px;
+    box-sizing: border-box;
+    flex: 0 0 var(--inspector-name-w, 140px);
     padding-right: 8px;
-    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+/* `pre`, not the default `normal`, for two reasons.  LEF58 rules arrive from
+ * odb as multi-line strings (e.g. "SPACING 0.018 ENDOFLINE ...\nPARALLELEDGE
+ * ...") and collapsing those newlines to spaces runs the clauses together,
+ * when the rule is meant to be read line by line.  And a long line must stay
+ * one line: wrapping it to the panel width meant the only way to read it as a
+ * line was to widen the whole inspector.  Instead each value scrolls sideways
+ * inside its own cell, so a long value costs one thin scrollbar on that row
+ * rather than a horizontal scroll of the whole panel.  min-width:0 is what
+ * lets the cell shrink to the row instead of stretching it. */
 .inspector-prop-value {
     color: var(--fg-primary);
-    word-break: break-all;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: pre;
+}
+.inspector-prop-value,
+.inspector-table-scroll {
+    scrollbar-width: thin;
+}
+.inspector-prop-value::-webkit-scrollbar,
+.inspector-table-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+.inspector-prop-value::-webkit-scrollbar-thumb,
+.inspector-table-scroll::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 3px;
 }
 .inspector-editable {
     cursor: text;
@@ -885,6 +919,26 @@ html, body {
     outline: none;
     border-bottom: 1px solid var(--fg-primary);
     background: var(--bg-input);
+}
+/* Holds the property rows so the column divider can be absolutely positioned
+ * over their full height. */
+.inspector-rows {
+    position: relative;
+}
+.inspector-col-resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--inspector-name-w, 140px);
+    width: 7px;
+    margin-left: -4px;
+    cursor: col-resize;
+    z-index: 2;
+}
+.inspector-col-resizer:hover,
+.inspector-col-resizer.dragging {
+    background: var(--accent-text);
+    opacity: 0.35;
 }
 .inspector-group {
     margin: 1px 0;
@@ -917,6 +971,34 @@ html, body {
 }
 .inspector-group-children.collapsed {
     display: none;
+}
+/* Property tables (e.g. a layer's two-widths spacing table) can be far wider
+ * than the docked panel, so the grid scrolls inside its own box rather than
+ * forcing the whole inspector to scroll sideways. */
+.inspector-table-scroll {
+    overflow-x: auto;
+    padding: 2px 0 4px;
+}
+.inspector-table {
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.inspector-table th,
+.inspector-table td {
+    border: 1px solid var(--border-strong);
+    padding: 2px 6px;
+    text-align: center;
+    vertical-align: middle;
+    /* Headers carry embedded newlines (width above, PRL below). */
+    white-space: pre-line;
+}
+.inspector-table th {
+    color: var(--accent-text);
+    background: var(--bg-context);
+    font-weight: normal;
+}
+.inspector-table td {
+    color: var(--fg-primary);
 }
 .inspector-link {
     color: var(--accent-link);

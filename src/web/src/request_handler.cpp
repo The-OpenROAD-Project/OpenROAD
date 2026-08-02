@@ -133,6 +133,28 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 
 }  // namespace
 
+// The design's database units per micron.  Preferred from the top block, but
+// falls back to the tech: db->getChip() is null until a chip is the designated
+// top, and a null block used to silently disable micron formatting for the
+// whole request — which shows up as "Show DBU" appearing to be stuck on, since
+// every property comes back in raw DBU no matter what the client asked for.
+// Returns 0 when neither is loaded, i.e. there is nothing to convert against.
+static double dbuPerMicron(odb::dbDatabase* db)
+{
+  if (db == nullptr) {
+    return 0;
+  }
+  if (odb::dbChip* chip = db->getChip()) {
+    if (odb::dbBlock* block = chip->getBlock()) {
+      return block->getDbUnitsPerMicron();
+    }
+  }
+  if (odb::dbTech* tech = db->getTech()) {
+    return tech->getDbUnitsPerMicron();
+  }
+  return 0;
+}
+
 // RAII helper: temporarily sets Descriptor::Property::convert_dbu to a
 // micron-aware formatter (matching the Qt GUI's default) for the lifetime
 // of the scope.  When `use_dbu` is true the default identity formatter is
@@ -141,13 +163,13 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 class [[nodiscard]] ScopedDbuFormat
 {
  public:
-  ScopedDbuFormat(odb::dbBlock* block, bool use_dbu)
+  ScopedDbuFormat(odb::dbDatabase* db, bool use_dbu)
       : saved_(gui::Descriptor::Property::convert_dbu)
   {
-    if (use_dbu || !block) {
+    const double dbu_per_micron = dbuPerMicron(db);
+    if (use_dbu || dbu_per_micron <= 0) {
       return;  // keep default (raw DBU)
     }
-    const double dbu_per_micron = block->getDbUnitsPerMicron();
     const int precision
         = static_cast<int>(std::ceil(std::log10(dbu_per_micron)));
     gui::Descriptor::Property::convert_dbu
@@ -242,6 +264,61 @@ static void serializeAnyValue(boost::json::object& out,
   out[field_name] = gui::Descriptor::Property::toString(value);
 }
 
+// Serialize an ordered list of unkeyed values (Property values held as a
+// std::vector/std::set of std::any) as inspector children.  Mirrors the Qt
+// inspector's makeList(): entries have no name of their own, so they are
+// numbered 1..N and the value carries the content.
+template <typename Iterator>
+static boost::json::array serializeAnyList(
+    Iterator begin,
+    Iterator end,
+    std::vector<gui::Selected>& selectables)
+{
+  boost::json::array children;
+  int index = 0;
+  for (Iterator itr = begin; itr != end; ++itr) {
+    boost::json::object child;
+    child["name"] = std::to_string(++index);
+    serializeAnyValue(child, "value", *itr, selectables);
+    children.emplace_back(std::move(child));
+  }
+  return children;
+}
+
+// Serialize a PropertyTable as a row/column grid.  The Qt inspector renders
+// these as an HTML table; the client does the same from this data rather than
+// from server-generated markup.  Headers are kept separate from the cells so
+// the client can drop the header row or column when a table has none.
+static boost::json::object serializePropertyTable(
+    const gui::PropertyTable& table)
+{
+  boost::json::object out;
+
+  boost::json::array columns;
+  for (const auto& header : table.getColumnHeaders()) {
+    columns.emplace_back(header);
+  }
+  out["column_headers"] = std::move(columns);
+
+  boost::json::array rows;
+  for (const auto& header : table.getRowHeaders()) {
+    rows.emplace_back(header);
+  }
+  out["row_headers"] = std::move(rows);
+
+  boost::json::array data;
+  for (const auto& row : table.getData()) {
+    boost::json::array cells;
+    for (const auto& cell : row) {
+      cells.emplace_back(cell);
+    }
+    data.emplace_back(std::move(cells));
+  }
+  out["data"] = std::move(data);
+
+  return out;
+}
+
 static boost::json::object serializeProperty(
     const gui::Descriptor::Property& prop,
     std::vector<gui::Selected>& selectables)
@@ -270,6 +347,12 @@ static boost::json::object serializeProperty(
       children.emplace_back(std::move(child));
     }
     o["children"] = std::move(children);
+  } else if (auto* table = std::any_cast<gui::PropertyTable>(&prop.value)) {
+    o["table"] = serializePropertyTable(*table);
+  } else if (auto* vec = std::any_cast<std::vector<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(vec->begin(), vec->end(), selectables);
+  } else if (auto* set = std::any_cast<std::set<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(set->begin(), set->end(), selectables);
   } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
@@ -632,7 +715,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
@@ -749,7 +832,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     bool can_navigate_back = false;
     int sel_count = 0;
@@ -808,7 +891,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
     int sel_count = 0;
     int sel_index = -1;
     {
@@ -859,7 +942,7 @@ static WebSocketResponse handleSelectionCycle(
     SessionState& state,
     const int direction,
     std::shared_ptr<TclEvaluator>& tcl_eval,
-    odb::dbBlock* block)
+    odb::dbDatabase* db)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -868,7 +951,7 @@ static WebSocketResponse handleSelectionCycle(
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(db, use_dbu);
     int sel_count = 0;
     int sel_index = -1;
     {
@@ -924,13 +1007,13 @@ static WebSocketResponse handleSelectionCycle(
 WebSocketResponse SelectHandler::handleSelectNext(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getDb());
 }
 
 WebSocketResponse SelectHandler::handleSelectPrev(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getDb());
 }
 
 WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
@@ -1049,7 +1132,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
     // serialize the entire net walk and inspection with the shared STA lock.
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     std::vector<odb::dbNet*> matched;
     for (odb::dbNet* net : block->getNets()) {
@@ -1825,7 +1908,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
