@@ -9,6 +9,40 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// --- Selection ownership ---
+//
+// Several panels can replace the selection: the canvas, the Inspector's links
+// and prev/next, the Display Control's layer rows, the fanout chart, the
+// schematic and the rulers.  The server runs its handlers on a thread pool, so
+// two selections issued in quick succession can complete out of order and the
+// slower — older — one would otherwise land last, leaving the Inspector
+// describing an object the server no longer has selected.
+//
+// beginSelection() hands ownership to the caller and returns a token; the
+// caller drops its own response once isCurrentSelection() goes false.  Panels
+// that decorate their own selection register a reset callback so the new owner
+// clears the previous one's decoration — the callback also runs for the panel
+// that called beginSelection(), so paint after the call, never before.
+
+export function beginSelection(app) {
+    app.selectionToken = (app.selectionToken || 0) + 1;
+    for (const reset of app.selectionResetters || []) {
+        reset();
+    }
+    return app.selectionToken;
+}
+
+export function isCurrentSelection(app, token) {
+    return app.selectionToken === token;
+}
+
+export function onSelectionReset(app, fn) {
+    if (!app.selectionResetters) {
+        app.selectionResetters = [];
+    }
+    app.selectionResetters.push(fn);
+}
+
 // Leaflet map options for the 2D layout viewer.
 //
 // zoomSnap:1 + zoomDelta:1 force the map to rest only at INTEGER zoom levels,

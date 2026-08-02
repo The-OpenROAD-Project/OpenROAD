@@ -839,6 +839,36 @@ TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
       << json_um;
 }
 
+// A multi-die design's top chip is hierarchical and owns no dbBlock, so the
+// micron conversion has to come from the database rather than from a block --
+// otherwise every inspected value (including a tech layer's pitch, width and
+// spacing) would fall back to unlabelled raw DBU integers.
+TEST_F(SelectHandlerTest, InspectConvertsToMicronsWithoutABlock)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  odb::dbBlock::destroy(block_);
+  block_ = nullptr;
+  ASSERT_EQ(gen_->getBlock(), nullptr);
+  ASSERT_NE(getDb()->getDbuPerMicron(), 0u);
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":false})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json;
+}
+
 //------------------------------------------------------------------------------
 // Focus nets tests
 //------------------------------------------------------------------------------

@@ -138,16 +138,22 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 // of the scope.  When `use_dbu` is true the default identity formatter is
 // kept so that raw DBU integers are emitted.  Must be held while the
 // sta_lock mutex is held — the global static is not otherwise thread-safe.
+//
+// The scale comes from the database, not from a block: a multi-die design's
+// top chip is hierarchical and owns no dbBlock, so keying off one would leave
+// its properties as unlabelled raw integers.  dbDatabase::getDbuPerMicron() is
+// the design-wide value every tech and block shares, and is 0 only before any
+// LEF is read.
 class [[nodiscard]] ScopedDbuFormat
 {
  public:
-  ScopedDbuFormat(odb::dbBlock* block, bool use_dbu)
+  ScopedDbuFormat(odb::dbDatabase* db, bool use_dbu)
       : saved_(gui::Descriptor::Property::convert_dbu)
   {
-    if (use_dbu || !block) {
+    if (use_dbu || db == nullptr || db->getDbuPerMicron() == 0) {
       return;  // keep default (raw DBU)
     }
-    const double dbu_per_micron = block->getDbUnitsPerMicron();
+    const double dbu_per_micron = db->getDbuPerMicron();
     const int precision
         = static_cast<int>(std::ceil(std::log10(dbu_per_micron)));
     gui::Descriptor::Property::convert_dbu
@@ -637,7 +643,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
@@ -754,7 +760,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     bool can_navigate_back = false;
     int sel_count = 0;
@@ -813,7 +819,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
     int sel_count = 0;
     int sel_index = -1;
     {
@@ -864,7 +870,7 @@ static WebSocketResponse handleSelectionCycle(
     SessionState& state,
     const int direction,
     std::shared_ptr<TclEvaluator>& tcl_eval,
-    odb::dbBlock* block)
+    odb::dbDatabase* db)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -873,7 +879,7 @@ static WebSocketResponse handleSelectionCycle(
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(db, use_dbu);
     int sel_count = 0;
     int sel_index = -1;
     {
@@ -929,13 +935,13 @@ static WebSocketResponse handleSelectionCycle(
 WebSocketResponse SelectHandler::handleSelectNext(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getDb());
 }
 
 WebSocketResponse SelectHandler::handleSelectPrev(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getDb());
 }
 
 // Select a tech layer by name, as clicking a layer row in the Qt GUI's
@@ -995,7 +1001,7 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
     // STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     int sel_count = 0;
     int sel_index = -1;
@@ -1153,7 +1159,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
     // serialize the entire net walk and inspection with the shared STA lock.
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     std::vector<odb::dbNet*> matched;
     for (odb::dbNet* net : block->getNets()) {
@@ -1929,7 +1935,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);

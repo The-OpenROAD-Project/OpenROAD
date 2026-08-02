@@ -7,8 +7,8 @@ import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
     from './vis-tree.js';
 import { getCookie, setCookie } from './theme.js';
-import { isStaticMode, makeGroupHeader, attachGroupCollapse }
-    from './ui-utils.js';
+import { isStaticMode, makeGroupHeader, attachGroupCollapse, beginSelection,
+         isCurrentSelection, onSelectionReset } from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -704,20 +704,34 @@ export function populateDisplayControls(app, visibility, selectability,
     // Inspector, as the Qt GUI does (DisplayControls::displayItemSelected
     // emits `selected(makeSelected(tech_layer))` when a row is clicked).
     //
-    // The name lives inside a <label> that wraps the visibility checkbox, so
-    // the browser's implicit label activation would also toggle visibility on
-    // every click.  preventDefault() suppresses that: in the Qt GUI clicking
-    // the name selects and only the checkbox column toggles.
+    // Only the checkboxes toggle state — leaf rows are <div>s rather than
+    // <label>s so that a click on the name, the indent spacer or the row's
+    // padding does not activate the visibility checkbox, matching the Qt GUI
+    // where the name column selects and the checkbox column toggles.
     //
-    // Saved reports have no backend to answer select_layer, so their rows keep
-    // the plain label behaviour (clicking the name toggles visibility).
+    // Saved reports have no backend to answer select_layer, so their rows are
+    // not selectable: the name is inert there and only the checkboxes work.
     const layerRowsSelectable = !isStaticMode(app);
     let selectedLayerRow = null;
 
-    function selectLayerRow(row, name, chipletPath) {
-        if (selectedLayerRow && selectedLayerRow !== row) {
+    function clearSelectedLayerRow() {
+        if (selectedLayerRow) {
             selectedLayerRow.classList.remove('vis-row-selected');
+            selectedLayerRow = null;
         }
+    }
+
+    // Another panel taking the selection (a canvas click, Inspector
+    // navigation, the fanout chart, ...) leaves this row's highlight claiming
+    // a selection the server no longer holds, so drop it.
+    if (layerRowsSelectable) {
+        onSelectionReset(app, clearSelectedLayerRow);
+    }
+
+    function selectLayerRow(row, name, chipletPath) {
+        // Take the selection before painting: beginSelection() runs the
+        // resetters, which clears whichever row was highlighted before.
+        const token = beginSelection(app);
         selectedLayerRow = row;
         row.classList.add('vis-row-selected');
 
@@ -725,11 +739,11 @@ export function populateDisplayControls(app, visibility, selectability,
                       use_dbu: app.showDbu };
         if (chipletPath) msg.chiplet = chipletPath;
         app.websocketManager.request(msg).then(data => {
-            // Clicking through several layers leaves one request in flight per
-            // click, and they can land out of order.  Only the row that is
-            // still selected may drive the Inspector, so a slow earlier
-            // response cannot overwrite a later one.
-            if (selectedLayerRow !== row) {
+            // Clicking through several layers — or clicking a layer and then
+            // selecting elsewhere — leaves one request in flight per click,
+            // and they can land out of order.  A response that is no longer
+            // the newest selection must not drive the Inspector.
+            if (!isCurrentSelection(app, token)) {
                 return;
             }
             if (app.updateInspector) {
@@ -749,11 +763,10 @@ export function populateDisplayControls(app, visibility, selectability,
             console.error('select_layer failed:', err);
             // The server did not take the selection, so drop the highlight
             // rather than leave the panel claiming a selection that is not
-            // there.  Only if this row is still the selected one — a later
-            // click has already moved the highlight.
-            if (selectedLayerRow === row) {
-                row.classList.remove('vis-row-selected');
-                selectedLayerRow = null;
+            // there.  Only if this click is still the newest one — a later
+            // selection has already moved the highlight.
+            if (isCurrentSelection(app, token)) {
+                clearSelectedLayerRow();
             }
         });
     }

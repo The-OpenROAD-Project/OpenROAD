@@ -7,6 +7,7 @@ import { dom } from './setup-dom.js';
 
 const { layerRangeSet, nonSolidPatterns, populateDisplayControls }
     = await import('../../src/display-controls.js');
+const { beginSelection } = await import('../../src/ui-utils.js');
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
 const COUNT = 10;
@@ -276,13 +277,73 @@ describe('layer row selection', () => {
         assert.deepEqual(focused, ['Inspector']);
     });
 
-    // Saved reports have no backend to answer select_layer, so their rows keep
-    // the plain <label> behaviour.
-    it('static mode leaves rows as plain visibility toggles', () => {
+    // Saved reports have no backend to answer select_layer, so their rows are
+    // not selectable: the name is inert and the checkbox does the toggling,
+    // exactly as on a live row.
+    it('static mode leaves rows unselectable', () => {
         app.websocketManager.isStaticMode = true;
         const container = render();
         assert.equal(
             container.querySelectorAll('.vis-leaf-selectable').length, 0);
+    });
+
+    it('static mode still toggles visibility from the checkbox', () => {
+        app.websocketManager.isStaticMode = true;
+        const container = render();
+        const rows = container.querySelectorAll('.vis-leaf');
+        const row = Array.from(rows).find(
+            r => r.querySelector('.vis-name')?.textContent === 'metal1');
+        assert.ok(row, 'metal1 row should render in static mode');
+
+        const cb = row.querySelector('input.vis-cb');
+        cb.checked = false;
+        cb.dispatchEvent(new dom.window.Event('change'));
+        assert.equal(app.visibleLayerNames.has('metal1'), false);
+
+        // The name is inert without a backend: no request, no toggle.
+        click(row.querySelector('.vis-name'));
+        assert.equal(requests.length, 0);
+        assert.equal(cb.checked, false);
+    });
+
+    // The layer row is one of several panels that can own the selection.  When
+    // another one takes over — a canvas click, Inspector navigation, the
+    // fanout chart — the row would otherwise keep claiming a selection the
+    // server no longer holds.
+    it('drops the highlight when another panel takes the selection',
+       async () => {
+           const container = render();
+           const row = layerRow(container, 'metal1');
+
+           click(row.querySelector('.vis-name'));
+           await flush();
+           assert.ok(row.classList.contains('vis-row-selected'));
+
+           beginSelection(app);
+           assert.equal(row.classList.contains('vis-row-selected'), false);
+       });
+
+    // The server answers on a thread pool, so a layer request issued before a
+    // canvas click can still land after it.  Matching only against the row
+    // would accept it; the shared token rejects it.
+    it('a response superseded by another panel is dropped', async () => {
+        const pending = [];
+        app.websocketManager.request = (msg) => {
+            requests.push(msg);
+            return new Promise(resolve => pending.push(
+                () => resolve({ type: 'Layer', name: msg.layer })));
+        };
+
+        const container = render();
+        click(layerRow(container, 'metal1').querySelector('.vis-name'));
+
+        // Another panel selects something while metal1 is still in flight.
+        beginSelection(app);
+        pending[0]();
+        await flush();
+
+        assert.deepEqual(inspected, []);
+        assert.deepEqual(focused, []);
     });
 
     // Clicking through several layers leaves one request in flight per click.
