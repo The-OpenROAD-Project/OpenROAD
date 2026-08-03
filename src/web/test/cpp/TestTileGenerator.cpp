@@ -713,6 +713,161 @@ TEST_F(TileGeneratorTest, EagerInitClearsLayerColorCache)
   EXPECT_EQ(colors.at(metal1).b, 254);
 }
 
+// The per-instance render pass reads master OBS and pin shapes out of the
+// layer-bucketed geometry cache, so a master's shapes must appear on the layer
+// they belong to and nowhere else.  Nangate45 cells carry pin geometry on
+// metal1 only, so a metal2 tile over the same instance must come back empty.
+TEST_F(TileGeneratorTest, MasterPinGeometryOnlyDrawnOnItsOwnLayer)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  unsigned w = 0, h = 0;
+  auto m1 = decodePng(tile_gen_->generateTile("metal1", 0, 0, 0), w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(m1))
+      << "metal1 tile should show the cell's pin shapes";
+
+  auto m2 = decodePng(tile_gen_->generateTile("metal2", 0, 0, 0), w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(m2))
+      << "metal2 tile should be empty: no Nangate45 master has geometry there";
+}
+
+// The cache is handed out as a snapshot; repeat calls with no intervening edit
+// must return the same one, otherwise every tile would rewalk every master.
+TEST_F(TileGeneratorTest, GeomCacheReusedWhenDesignUnchanged)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  EXPECT_EQ(tile_gen_->geomCache(), tile_gen_->geomCache());
+}
+
+// Regression: the geometry cache must not be tied to the design-changed
+// callback, which is debounced to a valid→invalid index transition.  The second
+// edit below leaves the instance index already invalid, so that callback stays
+// silent -- and a cache keyed on it would keep serving a pre-edit snapshot,
+// silently dropping the geometry of any master or via the edit introduced.
+TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterDebouncedEdit)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  // Registers Search as a db callback object and builds the indices, so the
+  // first edit below is the valid→invalid transition and the second is not.
+  tile_gen_->eagerInit();
+
+  auto before = tile_gen_->geomCache();
+  ASSERT_NE(before, nullptr);
+
+  // First edit: index was valid, so the debounced callback does fire.
+  inst->setLocation(2000, 2000);
+  auto after_first = tile_gen_->geomCache();
+  EXPECT_NE(before, after_first);
+
+  // Second edit: index is already invalid, so the callback does NOT fire.  The
+  // cache still has to notice, via Search::revision().
+  inst->setLocation(4000, 4000);
+  auto after_second = tile_gen_->geomCache();
+  EXPECT_NE(after_first, after_second)
+      << "geometry cache went stale across an edit that the debounced "
+         "design-changed callback does not report";
+}
+
+// Build a HIER root chip holding `num_insts` instances of the fixture's chip,
+// and make it the top chip so chiplets() traverses down into that one block
+// once per instance.  Returns the root.
+odb::dbChip* makeSharedChipletRoot(odb::dbDatabase* db,
+                                   odb::dbChip* master,
+                                   const int num_insts)
+{
+  odb::dbChip* root
+      = odb::dbChip::create(db, nullptr, "root", odb::dbChip::ChipType::HIER);
+  db->setTopChip(root);
+  for (int i = 0; i < num_insts; ++i) {
+    odb::dbChipInst::create(root, master, "die" + std::to_string(i));
+  }
+  return root;
+}
+
+// Add a block via with one cut box on `layer`, which is what the geometry
+// cache's via_boxes map is built from.
+odb::dbVia* makeBlockVia(odb::dbBlock* block,
+                         odb::dbTechLayer* layer,
+                         const char* name)
+{
+  odb::dbVia* via = odb::dbVia::create(block, name);
+  odb::dbBox::create(via, layer, -50, -50, 50, 50);
+  return via;
+}
+
+// Regression: chiplets() reports one node per dbChipInst, so instances sharing
+// a master chip all report the same block.  Collecting that block's vias once
+// per instance would leave the render pass redrawing every box once per
+// instance of the chiplet -- invisible in the output (fills are opaque) but
+// quadratic in the repeat count, and it multiplies the cache's memory by it
+// too.
+TEST_F(TileGeneratorTest, GeomCacheVisitsASharedChipletBlockOnce)
+{
+  odb::dbTechLayer* via1 = getDb()->getTech()->findLayer("via1");
+  ASSERT_NE(via1, nullptr);
+  odb::dbVia* via = makeBlockVia(block_, via1, "V1");
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/3);
+  makeTileGen();
+
+  auto cache = tile_gen_->geomCache();
+  ASSERT_NE(cache, nullptr);
+  const auto layer_it = cache->via_boxes.find(via1);
+  ASSERT_NE(layer_it, cache->via_boxes.end());
+  const auto via_it = layer_it->second.find(via);
+  ASSERT_NE(via_it, layer_it->second.end());
+  EXPECT_EQ(via_it->second.size(), 1u)
+      << "block via decomposed once per dbChipInst instead of once per block";
+}
+
+// Regression: creating a dbChipInst fires no dbBlockCallBackObj, so it cannot
+// move Search::revision() -- but it does make an already-populated block's vias
+// newly reachable, which is what via_boxes is keyed off.  A cache keyed on the
+// revision alone keeps a snapshot built before the chiplet existed, and the new
+// chiplet's special-net vias silently stop drawing.
+TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterChipletInstCreated)
+{
+  odb::dbTechLayer* via1 = getDb()->getTech()->findLayer("via1");
+  ASSERT_NE(via1, nullptr);
+
+  // A second chip, off to the side of the hierarchy and carrying a via of its
+  // own, so the cache built below provably cannot contain it yet.
+  odb::dbChip* other
+      = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+  odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+  other_block->setDieArea(odb::Rect(0, 0, 1000, 1000));
+  odb::dbVia* other_via = makeBlockVia(other_block, via1, "V1_other");
+
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  auto before = tile_gen_->geomCache();
+  ASSERT_NE(before, nullptr);
+  {
+    const auto layer_it = before->via_boxes.find(via1);
+    if (layer_it != before->via_boxes.end()) {
+      EXPECT_EQ(layer_it->second.find(other_via), layer_it->second.end())
+          << "unreachable chip's via cached before its chiplet existed";
+    }
+  }
+
+  odb::dbChipInst::create(root, other, "other_die");
+
+  auto after = tile_gen_->geomCache();
+  EXPECT_NE(before, after)
+      << "geometry cache went stale across a chiplet-hierarchy edit, which no "
+         "block callback reports";
+  const auto layer_it = after->via_boxes.find(via1);
+  ASSERT_NE(layer_it, after->via_boxes.end());
+  EXPECT_NE(layer_it->second.find(other_via), layer_it->second.end())
+      << "new chiplet's block vias missing from the cache, so its special-net "
+         "vias would not draw";
+}
+
 TEST_F(TileGeneratorTest, SerializeTechResponseIncludesLayerColors)
 {
   makeTileGen();
@@ -1124,6 +1279,53 @@ TEST_F(TileGeneratorTest, DebugModeDrawsBorder)
   EXPECT_EQ(pixels[last + 1], 255);  // G
   EXPECT_EQ(pixels[last + 2], 0);    // B
   EXPECT_EQ(pixels[last + 3], 255);  // A
+}
+
+TEST_F(TileGeneratorTest, DebugBorderTracesFullHiDpiTile)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.debug = true;
+
+  // dpr=2 → a 512px tile.  The border must trace the 512px edges: drawing it
+  // at a hardcoded 256 boxed the outline into the top-left quadrant, so the
+  // debug "tile" was only 1/dpr of the tile it claimed to outline.
+  auto png = tile_gen_->generateTile("_instances",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     /*focus_net_ids=*/nullptr,
+                                     /*route_guide_net_ids=*/nullptr,
+                                     /*dpr=*/2.0);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 512u);
+  ASSERT_EQ(h, 512u);
+
+  const auto is_yellow = [&pixels, w](const unsigned px, const unsigned py) {
+    const size_t i = (static_cast<size_t>(py) * w + px) * 4;
+    return pixels[i] == 255 && pixels[i + 1] == 255 && pixels[i + 2] == 0
+           && pixels[i + 3] == 255;
+  };
+
+  // All four true corners of the 512px tile.
+  EXPECT_TRUE(is_yellow(0, 0));
+  EXPECT_TRUE(is_yellow(w - 1, 0));
+  EXPECT_TRUE(is_yellow(0, h - 1));
+  EXPECT_TRUE(is_yellow(w - 1, h - 1));
+
+  // Midpoints of the right and bottom edges, which the 256px border missed
+  // entirely.
+  EXPECT_TRUE(is_yellow(w - 1, h / 2));
+  EXPECT_TRUE(is_yellow(w / 2, h - 1));
 }
 
 TEST_F(TileGeneratorTest, DebugDefaultOff)

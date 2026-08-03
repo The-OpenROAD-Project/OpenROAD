@@ -119,6 +119,7 @@ struct WebSocketRequest
     kDrcHighlight,
     kSelectNext,
     kSelectPrev,
+    kSelectLayer,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
@@ -205,6 +206,14 @@ struct SessionState
   std::set<uint32_t> cancelled_ids;
 };
 
+// Map an HTTP request target onto an embedded asset path.
+//
+// Strips the query string and fragment, which the asset lookup must not see:
+// the viewer's options are passed as query parameters (?mergetiles=0 and
+// friends), and matching "/?mergetiles=0" against the asset table simply fails,
+// so the whole page 404s.  Also maps "/" onto the index document.
+std::string assetPathFromTarget(std::string_view target);
+
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
 // (boost::system::system_error) when the key is present but the JSON type
@@ -249,6 +258,8 @@ class SelectHandler
                                      SessionState& state);
   WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
                                      SessionState& state);
+  WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
