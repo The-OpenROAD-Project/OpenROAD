@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -675,6 +676,14 @@ void TileGenerator::eagerInit()
     std::lock_guard lock(layer_colors_mutex_);
     layer_colors_by_tech_.clear();
   }
+  // Same address-reuse hazard, for the dbMaster/dbVia keys: a reload's fresh
+  // objects can land where the old ones were, so a revision bump alone would
+  // not prove the keys still mean the same thing.  Dropped unconditionally
+  // here, where a reload is known to be in progress.
+  {
+    std::lock_guard lock(geom_cache_mutex_);
+    geom_cache_.reset();
+  }
 
   // Tiles depend on the design geometry, so a reload invalidates every cached
   // PNG.  Clearing here ties cache lifetime to design loading.
@@ -706,6 +715,10 @@ void TileGenerator::onDesignChanged()
     tile_cache_lru_.clear();
     tile_cache_index_.clear();
   }
+
+  // The geometry cache is NOT dropped here.  This hook is debounced (see
+  // below), so an edit arriving while an index is already invalid never
+  // reaches it — geomCache() polls Search::revision() instead, which is not.
 
   // Tell connected clients to re-request (mirrors Qt's fullRepaint).  The
   // Search-level debounce (announceModified fires only on a valid→invalid
@@ -811,8 +824,18 @@ const std::vector<ChipletNode>& TileGenerator::chiplets() const
     chiplets_cache_root_ = root;
     chiplets_cache_inst_count_ = inst_count;
     chiplets_cache_valid_ = true;
+    ++chiplets_cache_generation_;
   }
   return chiplets_cache_;
+}
+
+uint64_t TileGenerator::chipletsGeneration() const
+{
+  // Refresh first so the counter reflects the live hierarchy rather than
+  // whatever the last chiplets() caller saw.
+  chiplets();
+  std::lock_guard lock(chiplets_mutex_);
+  return chiplets_cache_generation_;
 }
 
 void TileGenerator::computePinLabelMargin()
@@ -972,7 +995,8 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
                                 const double scale,
                                 const Color& color,
                                 const bool blend,
-                                const FillPattern pattern) const
+                                const FillPattern pattern,
+                                int dim) const
 {
   // kNone paints nothing: skip all scanline setup and the pixel loop.
   if (pattern == FillPattern::kNone) {
@@ -986,7 +1010,9 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
   if (n < 3) {
     return;
   }
-  const int dim = bufferDim(image);
+  if (dim < 0) {
+    dim = bufferDim(image);
+  }
 
   // Convert polygon points to pixel coordinates (floating point for precision).
   std::vector<double> px(n), py(n);
@@ -1265,6 +1291,109 @@ const odb::PtrMap<odb::dbTechLayer, Color>& TileGenerator::getLayerColorMap(
     it->second = buildLayerColorMap(tech);
   }
   return it->second;
+}
+
+std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::buildGeomCache()
+    const
+{
+  auto cache = std::make_shared<GeomCache>();
+
+  // Master OBS and pin geometry, bucketed by the layer each box/polygon sits
+  // on.  Collects exactly the sources the per-instance render pass draws, so a
+  // (layer, master) pair absent from the map provably has nothing to draw.
+  for (odb::dbLib* lib : db_->getLibs()) {
+    for (odb::dbMaster* master : lib->getMasters()) {
+      for (odb::dbPolygon* poly_obs : master->getPolygonObstructions()) {
+        if (odb::dbTechLayer* lyr = poly_obs->getTechLayer()) {
+          cache->master_geom[lyr][master].obs_polys.push_back(
+              poly_obs->getPolygon());
+        }
+      }
+      for (odb::dbBox* obs : master->getObstructions(false)) {
+        if (odb::dbTechLayer* lyr = obs->getTechLayer()) {
+          cache->master_geom[lyr][master].obs_boxes.push_back(obs->getBox());
+        }
+      }
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbPolygon* poly_geom : mpin->getPolygonGeometry()) {
+            if (odb::dbTechLayer* lyr = poly_geom->getTechLayer()) {
+              cache->master_geom[lyr][master].pin_polys.push_back(
+                  poly_geom->getPolygon());
+            }
+          }
+          for (odb::dbBox* geom : mpin->getGeometry(false)) {
+            odb::dbTechLayer* lyr = geom->getTechLayer();
+            if (!lyr) {
+              continue;
+            }
+            auto& groups = cache->master_geom[lyr][master].pin_boxes;
+            // MTerms are visited in master order and a pin's boxes
+            // consecutively, so extending the trailing group when the MTerm
+            // repeats is enough to keep each pin's boxes together and in order.
+            if (groups.empty() || groups.back().first != mterm) {
+              groups.emplace_back(mterm, std::vector<odb::Rect>{});
+            }
+            groups.back().second.push_back(geom->getBox());
+          }
+        }
+      }
+    }
+  }
+
+  // Via masters.  dbSBox reports its master as either a dbTechVia (tech-wide)
+  // or a dbVia (per block), so both are collected into one map keyed by the
+  // common dbObject base.
+  auto add_via_boxes = [&cache](odb::dbObject* via_master,
+                                const odb::dbSet<odb::dbBox>& boxes) {
+    for (odb::dbBox* box : boxes) {
+      if (odb::dbTechLayer* lyr = box->getTechLayer()) {
+        cache->via_boxes[lyr][via_master].push_back(box->getBox());
+      }
+    }
+  };
+  for (odb::dbTech* tech : db_->getTechs()) {
+    for (odb::dbTechVia* via : tech->getVias()) {
+      add_via_boxes(via, via->getBoxes());
+    }
+  }
+  // One node per dbChipInst, so every instance of a shared master chip reports
+  // the same block.  Visit each block once: appending a via's boxes again per
+  // instance would leave duplicates for the render pass to redraw, once per
+  // instance of the chiplet.
+  std::unordered_set<odb::dbBlock*> seen_blocks;
+  for (const ChipletNode& node : chiplets()) {
+    if (!node.block || !seen_blocks.insert(node.block).second) {
+      continue;
+    }
+    for (odb::dbVia* via : node.block->getVias()) {
+      add_via_boxes(via, via->getBoxes());
+    }
+  }
+
+  return cache;
+}
+
+std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::geomCache() const
+{
+  // Read both keys before building so an edit landing mid-build leaves the
+  // recorded values behind the live ones, and the next call rebuilds.
+  const uint64_t rev = search_->revision();
+  // Creating a dbChipInst fires no block callback, so it cannot move
+  // Search::revision() — but it does make an already-populated block's vias
+  // newly reachable, which is exactly what via_boxes is keyed off.  Every other
+  // source of new geometry reaches revision() transitively: a dbVia or dbMaster
+  // only becomes drawable once an sbox or instance references it, and those do
+  // notify.  chipletsGeneration() closes that one gap.
+  const uint64_t chiplet_generation = chipletsGeneration();
+  std::lock_guard lock(geom_cache_mutex_);
+  if (!geom_cache_ || geom_cache_revision_ != rev
+      || geom_cache_chiplet_generation_ != chiplet_generation) {
+    geom_cache_ = buildGeomCache();
+    geom_cache_revision_ = rev;
+    geom_cache_chiplet_generation_ = chiplet_generation;
+  }
+  return geom_cache_;
 }
 
 std::vector<std::string> TileGenerator::getSites() const
@@ -1755,6 +1884,47 @@ static std::vector<unsigned char> lanczos2Downsample(
     int src_dim,
     int dst_dim);
 
+namespace {
+
+// This master's shapes on the layer whose cache slice is `by_master`, or null
+// when it has none there (so the caller can skip it outright).
+const TileGenerator::MasterLayerGeom* findMasterGeom(
+    const TileGenerator::MasterGeomByLayer* by_master,
+    odb::dbMaster* master)
+{
+  if (!by_master) {
+    return nullptr;
+  }
+  const auto it = by_master->find(master);
+  return it == by_master->end() ? nullptr : &it->second;
+}
+
+// The via-local boxes this sbox's via master contributes to the layer whose
+// cache slice is `by_master`, or null when it contributes none.  Resolving the
+// master costs one dbBox flag test plus a table lookup, instead of walking and
+// layer-testing every box of the via for every sbox.
+const std::vector<odb::Rect>* findViaBoxes(
+    const TileGenerator::ViaBoxesByMaster* by_master,
+    odb::dbSBox* sbox)
+{
+  if (!by_master) {
+    return nullptr;
+  }
+  odb::dbObject* via_master = nullptr;
+  if (odb::dbTechVia* tech_via = sbox->getTechVia()) {
+    via_master = tech_via;
+  } else if (odb::dbVia* block_via = sbox->getBlockVia()) {
+    via_master = block_via;
+  }
+  if (!via_master) {
+    return nullptr;
+  }
+  const auto it = by_master->find(via_master);
+  return it == by_master->end() ? nullptr : &it->second;
+}
+
+}  // namespace
+
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
     const int z,
@@ -1853,6 +2023,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         = vis.detailed ? static_cast<int>(std::lround(1.0 * tile_dbu_size
                                                       / kTileSizeInPixel))
                        : size_limit_dbu;
+    // One snapshot for the whole tile: taken under a lock here, then read
+    // lock-free by the per-chiplet loop below (see GeomCache).
+    const std::shared_ptr<const GeomCache> geom_cache = geomCache();
     // Supersampled render buffer (RGBA, super x super).  The per-chiplet loop
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
@@ -1995,6 +2168,23 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
 
       odb::dbTechLayer* tech_layer = tech->findLayer(layer.c_str());
+
+      // This layer's slices of the geometry cache.  Null means no master (resp.
+      // no via master) in the design has anything on this layer, so the
+      // corresponding draw pass has nothing to do at all.
+      const MasterGeomByLayer* layer_master_geom = nullptr;
+      const ViaBoxesByMaster* layer_via_boxes = nullptr;
+      if (tech_layer) {
+        const auto mit = geom_cache->master_geom.find(tech_layer);
+        if (mit != geom_cache->master_geom.end()) {
+          layer_master_geom = &mit->second;
+        }
+        const auto vit = geom_cache->via_boxes.find(tech_layer);
+        if (vit != geom_cache->via_boxes.end()) {
+          layer_via_boxes = &vit->second;
+        }
+      }
+
       Color color{.r = 200, .g = 200, .b = 200, .a = 180};
       if (tech_layer) {
         const auto it = layer_colors.find(tech_layer);
@@ -2018,12 +2208,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               if (!box.overlaps(dbu_tile)) {
                 return;
               }
+              // image_buffer is the supersampled raster, so its side is
+              // `super`; passing it skips a sqrt+lround per shape.
               drawFilledRect(image_buffer,
                              toPixels(scale, box.intersect(dbu_tile), dbu_tile),
                              c,
                              pattern,
                              pat_ox,
-                             pat_oy);
+                             pat_oy,
+                             super);
             };
 
       // Special "_modules" layer: draw filled module-colored rectangles
@@ -2222,8 +2415,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               // Only draw if marker intersects this tile.
               const odb::Rect marker_bbox = marker_poly.getEnclosingRect();
               if (marker_bbox.overlaps(dbu_tile)) {
-                fillPolygon(
-                    image_buffer, marker_poly, dbu_tile, scale, marker_color);
+                fillPolygon(image_buffer,
+                            marker_poly,
+                            dbu_tile,
+                            scale,
+                            marker_color,
+                            /*blend=*/false,
+                            FillPattern::kSolid,
+                            super);
               }
 
               // Draw the box rect itself (same as GUI painter.drawRect).
@@ -2293,6 +2492,19 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // Special "_instances" layer: only draw instance borders, no routing
       const bool instances_only = (layer == "_instances");
 
+      // On a tech-layer tile the per-instance pass paints only master
+      // obstructions (vis.blockages) and cell-pin shapes (vis.inst_pins).  It
+      // draws nothing when both are off, or when no master has geometry on this
+      // layer at all (implant/marker layers, upper metals) — yet the query
+      // still runs, and at zoom-out its box spans the design, so it walks every
+      // instance and throws the result away.  Skip it in those cases.  A null
+      // tech_layer means "no layer filter" (the _instances tile, or a layer
+      // name this chiplet's tech doesn't have), in which case the pass draws
+      // unconditionally and must not be skipped.
+      const bool inst_pass_draws
+          = instances_only || !tech_layer
+            || ((vis.blockages || vis.inst_pins) && layer_master_geom);
+
       // "_modules" and "_pins" layers handle their own drawing above;
       // skip all other drawing (instances, routing, etc.)
       if (!modules_layer && !pins_layer) {
@@ -2304,13 +2516,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // instances at the RTree level (Qt-parity), so dense bump arrays vanish
         // at zoom-out — unless "Detailed view" is on, which sets the limit to
         // 0.
-        for (odb::dbInst* inst :
-             search_->searchInsts(block,
-                                  dbu_x_min,
-                                  dbu_y_min,
-                                  dbu_x_max,
-                                  dbu_y_max,
-                                  instance_size_limit_dbu)) {
+        const Search::InstRange insts
+            = inst_pass_draws ? search_->searchInsts(block,
+                                                     dbu_x_min,
+                                                     dbu_y_min,
+                                                     dbu_x_max,
+                                                     dbu_y_max,
+                                                     instance_size_limit_dbu)
+                              : Search::InstRange{};
+        for (odb::dbInst* inst : insts) {
           odb::Rect inst_bbox = inst->getBBox()->getBox();
           if (!dbu_tile.overlaps(inst_bbox)) {
             continue;
@@ -2474,22 +2688,26 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
               }
             }
-          } else {
-            // Layer-specific: obstructions and pins
+          } else if (!tech_layer) {
+            // No layer filter (a layer name this chiplet's tech doesn't have):
+            // draw every master shape in the fallback color, as before.  The
+            // geometry cache is layer-keyed and so cannot serve this; it is not
+            // a hot path — only multi-tech designs reach it.
             if (vis.blockages) {
               for (odb::dbPolygon* poly_obs :
                    master->getPolygonObstructions()) {
-                if (tech_layer && poly_obs->getTechLayer() != tech_layer) {
-                  continue;
-                }
                 odb::Polygon poly = poly_obs->getPolygon();
                 inst->getTransform().apply(poly);
-                fillPolygon(image_buffer, poly, dbu_tile, scale, obs_color);
+                fillPolygon(image_buffer,
+                            poly,
+                            dbu_tile,
+                            scale,
+                            obs_color,
+                            /*blend=*/false,
+                            FillPattern::kSolid,
+                            super);
               }
               for (odb::dbBox* obs : master->getObstructions(false)) {
-                if (tech_layer && obs->getTechLayer() != tech_layer) {
-                  continue;
-                }
                 odb::Rect box = obs->getBox();
                 inst->getTransform().apply(box);
                 draw_box_in_tile(box, obs_color);
@@ -2500,9 +2718,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               for (odb::dbMTerm* mterm : master->getMTerms()) {
                 for (odb::dbMPin* mpin : mterm->getMPins()) {
                   for (odb::dbPolygon* poly_geom : mpin->getPolygonGeometry()) {
-                    if (tech_layer && poly_geom->getTechLayer() != tech_layer) {
-                      continue;
-                    }
                     odb::Polygon poly = poly_geom->getPolygon();
                     inst->getTransform().apply(poly);
                     fillPolygon(image_buffer,
@@ -2511,12 +2726,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                 scale,
                                 color,
                                 /*blend=*/false,
-                                layer_pattern);
+                                layer_pattern,
+                                super);
                   }
                   for (odb::dbBox* geom : mpin->getGeometry(false)) {
-                    if (tech_layer && geom->getTechLayer() != tech_layer) {
-                      continue;
-                    }
                     odb::Rect box = geom->getBox();
                     inst->getTransform().apply(box);
                     draw_box_in_tile(box, color, layer_pattern);
@@ -2535,9 +2748,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 bool drawn = false;
                 for (odb::dbMPin* mpin : mterm->getMPins()) {
                   for (odb::dbBox* geom : mpin->getGeometry(false)) {
-                    if (tech_layer && geom->getTechLayer() != tech_layer) {
-                      continue;
-                    }
                     odb::Rect box = geom->getBox();
                     xfm.apply(box);
                     if (!box.overlaps(dbu_tile)) {
@@ -2599,6 +2809,125 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   if (drawn) {
                     break;
                   }
+                }
+              }
+            }
+          } else if (const MasterLayerGeom* mg
+                     = findMasterGeom(layer_master_geom, master)) {
+            // Layer-specific obstructions and pins, read straight out of the
+            // geometry cache: this master's shapes ON THIS LAYER, with no
+            // getTechLayer() calls and no walk over geometry belonging to other
+            // layers.  A master with nothing here was already skipped by
+            // findMasterGeom returning null.
+            const odb::dbTransform xfm = inst->getTransform();
+
+            if (vis.blockages) {
+              for (const odb::Polygon& src : mg->obs_polys) {
+                odb::Polygon poly = src;
+                xfm.apply(poly);
+                fillPolygon(image_buffer,
+                            poly,
+                            dbu_tile,
+                            scale,
+                            obs_color,
+                            /*blend=*/false,
+                            FillPattern::kSolid,
+                            super);
+              }
+              for (const odb::Rect& src : mg->obs_boxes) {
+                odb::Rect box = src;
+                xfm.apply(box);
+                draw_box_in_tile(box, obs_color);
+              }
+            }
+
+            if (vis.inst_pins) {
+              for (const odb::Polygon& src : mg->pin_polys) {
+                odb::Polygon poly = src;
+                xfm.apply(poly);
+                fillPolygon(image_buffer,
+                            poly,
+                            dbu_tile,
+                            scale,
+                            color,
+                            /*blend=*/false,
+                            layer_pattern,
+                            super);
+              }
+              for (const auto& [mterm, boxes] : mg->pin_boxes) {
+                for (const odb::Rect& src : boxes) {
+                  odb::Rect box = src;
+                  xfm.apply(box);
+                  draw_box_in_tile(box, color, layer_pattern);
+                }
+              }
+            }
+
+            // Draw ITerm name labels when zoomed in and pins are visible.
+            // One label per pin: the first box big enough and inside the tile,
+            // in the same order the master declares them.
+            if (vis.inst_pins && vis.inst_pin_names) {
+              constexpr Color iterm_label_color{
+                  .r = 255, .g = 255, .b = 0, .a = 220};
+
+              for (const auto& [mterm, boxes] : mg->pin_boxes) {
+                for (const odb::Rect& src : boxes) {
+                  odb::Rect box = src;
+                  xfm.apply(box);
+                  if (!box.overlaps(dbu_tile)) {
+                    continue;
+                  }
+
+                  // Skip if pin box is too small in pixels.
+                  const int box_px_w = static_cast<int>(box.dx() * scale);
+                  const int box_px_h = static_cast<int>(box.dy() * scale);
+                  if (box_px_w < kMinItermLabelBoxPx * super_per_css
+                      && box_px_h < kMinItermLabelBoxPx * super_per_css) {
+                    continue;
+                  }
+
+                  const std::string name(mterm->getName());
+                  const int text_w = getTextWidth(name, iterm_font);
+
+                  // Center of pin box in pixel coords.
+                  const odb::Point center = box.center();
+                  const int cx = static_cast<int>((center.x() - dbu_tile.xMin())
+                                                  * scale);
+                  const int cy = super - 1
+                                 - static_cast<int>(
+                                     (center.y() - dbu_tile.yMin()) * scale);
+
+                  // Rotate 90° if box is taller than wide and text overflows.
+                  const bool rotate
+                      = (box_px_h > box_px_w) && (text_w > box_px_w);
+
+                  if (rotate) {
+                    const int px = cx - iterm_font_h / 2;
+                    const int py = cy - text_w / 2;
+                    if (px > -iterm_font_h && px < super && py > -text_w
+                        && py < super) {
+                      drawTextRotated(image_buffer,
+                                      px,
+                                      py,
+                                      name,
+                                      iterm_font,
+                                      iterm_label_color);
+                    }
+                  } else {
+                    const int px = cx - text_w / 2;
+                    const int py = cy - iterm_font_h / 2;
+                    if (px > -text_w && px < super && py > -iterm_font_h
+                        && py < super) {
+                      drawText(image_buffer,
+                               px,
+                               py,
+                               name,
+                               iterm_font,
+                               iterm_label_color);
+                    }
+                  }
+
+                  break;  // only label first geometry per pin
                 }
               }
             }
@@ -2670,13 +2999,17 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                         scale,
                         color,
                         /*blend=*/false,
-                        layer_pattern);
+                        layer_pattern,
+                        super);
           }
         }
 
         // Draw special net vias — decompose into individual cut boxes
+        // layer_via_boxes null ⇒ no via master in the design has a box on this
+        // layer, so the search would return vias none of whose boxes could be
+        // drawn.  Skip the query too, not just the inner loop.
         if (!instances_only && tech_layer && vis.special_nets
-            && vis.srouting_vias) {
+            && vis.srouting_vias && layer_via_boxes) {
           for (const auto& shape :
                search_->searchSNetViaShapes(block,
                                             tech_layer,
@@ -2694,21 +3027,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             odb::dbSBox* sbox = std::get<0>(shape);
-            std::vector<odb::dbBox*> via_boxes;
-            if (auto tech_via = sbox->getTechVia()) {
-              via_boxes.assign(tech_via->getBoxes().begin(),
-                               tech_via->getBoxes().end());
-            } else if (auto block_via = sbox->getBlockVia()) {
-              via_boxes.assign(block_via->getBoxes().begin(),
-                               block_via->getBoxes().end());
+            const std::vector<odb::Rect>* via_boxes
+                = findViaBoxes(layer_via_boxes, sbox);
+            if (!via_boxes) {
+              continue;
             }
             const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
                                     (sbox->yMin() + sbox->yMax()) / 2);
-            for (odb::dbBox* vbox : via_boxes) {
-              if (vbox->getTechLayer() != tech_layer) {
-                continue;
-              }
-              odb::Rect box = vbox->getBox();
+            for (const odb::Rect& src : *via_boxes) {
+              odb::Rect box = src;
               box.moveDelta(origin.x(), origin.y());
               draw_box_in_tile(box, color, layer_pattern);
             }
@@ -2721,7 +3048,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // and below, search for vias there, and draw only the enclosure boxes
         // that belong to the current routing layer.
         if (!instances_only && tech_layer && vis.special_nets
-            && vis.srouting_vias
+            && vis.srouting_vias && layer_via_boxes
             && tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
           odb::dbTechLayer* adj_cuts[2]
               = {tech_layer->getLowerLayer(), tech_layer->getUpperLayer()};
@@ -2747,19 +3074,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 continue;
               }
               odb::dbSBox* sbox = std::get<0>(shape);
-              odb::dbSet<odb::dbBox> via_boxes;
-              if (auto tech_via = sbox->getTechVia()) {
-                via_boxes = tech_via->getBoxes();
-              } else if (auto block_via = sbox->getBlockVia()) {
-                via_boxes = block_via->getBoxes();
+              // Indexed by the layer being DRAWN (tech_layer, the routing
+              // layer), not the cut layer being searched — these are the via's
+              // enclosure boxes landing on this metal.
+              const std::vector<odb::Rect>* via_boxes
+                  = findViaBoxes(layer_via_boxes, sbox);
+              if (!via_boxes) {
+                continue;
               }
               const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
                                       (sbox->yMin() + sbox->yMax()) / 2);
-              for (odb::dbBox* vbox : via_boxes) {
-                if (vbox->getTechLayer() != tech_layer) {
-                  continue;
-                }
-                odb::Rect box = vbox->getBox();
+              for (const odb::Rect& src : *via_boxes) {
+                odb::Rect box = src;
                 box.moveDelta(origin.x(), origin.y());
                 draw_box_in_tile(box, color, layer_pattern);
               }
@@ -3075,7 +3401,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
     // Overlays draw at the OUTPUT resolution (crisp lines/text, not band-
     // limited), so they map DBU to pixels with the output-space scale.
-    const double scale_out = scale / super_per_css;
+    // `scale` is super-space (super px per DBU); the output buffer is tile_px
+    // = super / kCoverageSupersample on a side.  Dividing by super_per_css
+    // (= dpr * kCoverageSupersample) instead would land in CSS space and
+    // shrink every overlay to 1/dpr of the tile on HiDPI.
+    const double scale_out = scale / kCoverageSupersample;
 
     // Overlays render once in world space, on top of all chiplets.
     // Their geometry (timing paths, DRC rects, flight lines) is already
@@ -3130,7 +3460,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // out of tile_generator means test executables that link libweb
       // don't transitively need gui.a / ord.a.
       drawRendererOverlay(
-          world_image_buffer, dbu_tile_world, scale, vis.debug_live);
+          world_image_buffer, dbu_tile_world, scale_out, vis.debug_live);
     }
   }
 
@@ -3752,21 +4082,35 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                                      const int y) const
 {
   const Color yellow{.r = 255, .g = 255, .b = 0, .a = 255};
-  const int last = kTileSizeInPixel - 1;
+  // The output buffer is tile_px = 256*dpr on a side, NOT kTileSizeInPixel.
+  // Recover the real dimension: hardcoding 256 boxed the whole overlay into
+  // the top-left 256x256 corner of a HiDPI tile, so the "tile" outline drew
+  // at 1/dpr of the tile it was supposed to trace.
+  const int dim = bufferDim(image);
+  const int last = dim - 1;
+  // Pixel-authored sizes (border inset, font height) are in CSS px; scale them
+  // to physical px so the overlay looks identical across dpr.
+  const double px_per_css = static_cast<double>(dim) / kTileSizeInPixel;
 
   // Draw 1-pixel yellow border
-  for (int i = 0; i < kTileSizeInPixel; ++i) {
-    setPixel(image, i, 0, yellow);
-    setPixel(image, i, last, yellow);
-    setPixel(image, 0, i, yellow);
-    setPixel(image, last, i, yellow);
+  for (int i = 0; i < dim; ++i) {
+    setPixel(image, i, 0, yellow, dim);
+    setPixel(image, i, last, yellow, dim);
+    setPixel(image, 0, i, yellow, dim);
+    setPixel(image, last, i, yellow, dim);
   }
 
   // Build the label string "z=<zoom> <x>/<y>"
   const std::string label = "z=" + std::to_string(z) + " " + std::to_string(x)
                             + "/" + std::to_string(y);
 
-  drawText(image, 4, 4, label, fontAtlasGetFont(20), yellow);
+  const int margin = static_cast<int>(std::lround(4 * px_per_css));
+  // Floor at 10px, matching rasterizeWebPainterOps: a dpr < 0.5 (browser zoom
+  // out) would otherwise round the height toward 0 and hand fontAtlasGetFont a
+  // degenerate size.
+  const int font_px
+      = std::max(10, static_cast<int>(std::lround(20 * px_per_css)));
+  drawText(image, margin, margin, label, fontAtlasGetFont(font_px), yellow);
 }
 
 namespace {
@@ -3798,10 +4142,12 @@ inline int toPxX(int dbu_x, const odb::Rect& tile, double scale)
   return static_cast<int>((dbu_x - tile.xMin()) * scale);
 }
 
-// Y is flipped: DBU grows up, pixel rows grow down.
-inline int toPxY(int dbu_y, const odb::Rect& tile, double scale)
+// Y is flipped: DBU grows up, pixel rows grow down.  `dim` is the buffer side
+// length (tile_px = 256*dpr), not a fixed 256 — a hardcoded flip anchors the
+// overlay 256 rows from the top instead of the tile bottom on HiDPI.
+inline int toPxY(int dbu_y, const odb::Rect& tile, double scale, int dim)
 {
-  return 255 - static_cast<int>((dbu_y - tile.yMin()) * scale);
+  return dim - 1 - static_cast<int>((dbu_y - tile.yMin()) * scale);
 }
 
 }  // namespace
@@ -3843,6 +4189,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
                                            const double scale) const
 {
   {
+    // Buffer side length (tile_px = 256*dpr) — every Y flip below is relative
+    // to it, not to a fixed 256.
+    const int dim = bufferDim(image);
     for (const DrawOp& op : ops) {
       if (const auto* r = std::get_if<DrawRectOp>(&op)) {
         const odb::Rect px = toPixels(scale, r->rect, dbu_tile);
@@ -3852,7 +4201,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           const Color fill = toTileColor(r->brush.color);
           for (int iy = px.yMin(); iy < px.yMax(); ++iy) {
             for (int ix = px.xMin(); ix < px.xMax(); ++ix) {
-              blendPixel(image, ix, 255 - iy, fill);
+              blendPixel(image, ix, dim - 1 - iy, fill, dim);
             }
           }
         }
@@ -3861,8 +4210,8 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           const int w = penWidthPx(r->pen, scale);
           const int x0 = px.xMin();
           const int x1 = px.xMax() - 1;
-          const int y0 = 255 - px.yMin();
-          const int y1 = 255 - (px.yMax() - 1);
+          const int y0 = dim - 1 - px.yMin();
+          const int y1 = dim - 1 - (px.yMax() - 1);
           drawLine(image, x0, y0, x1, y0, pen, w);
           drawLine(image, x1, y0, x1, y1, pen, w);
           drawLine(image, x1, y1, x0, y1, pen, w);
@@ -3873,9 +4222,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           continue;
         }
         const int x0 = toPxX(l->p1.x(), dbu_tile, scale);
-        const int y0 = toPxY(l->p1.y(), dbu_tile, scale);
+        const int y0 = toPxY(l->p1.y(), dbu_tile, scale, dim);
         const int x1 = toPxX(l->p2.x(), dbu_tile, scale);
-        const int y1 = toPxY(l->p2.y(), dbu_tile, scale);
+        const int y1 = toPxY(l->p2.y(), dbu_tile, scale, dim);
         drawLine(image,
                  x0,
                  y0,
@@ -3886,7 +4235,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
       } else if (const auto* c = std::get_if<DrawCircleOp>(&op)) {
         // Simple midpoint circle (outline only).
         const int cx = toPxX(c->cx, dbu_tile, scale);
-        const int cy = toPxY(c->cy, dbu_tile, scale);
+        const int cy = toPxY(c->cy, dbu_tile, scale, dim);
         const int pr = std::max(1, static_cast<int>(c->r * scale));
         if (c->pen.color.a == 0) {
           continue;
@@ -3917,7 +4266,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           continue;
         }
         const int cx = toPxX(xop->cx, dbu_tile, scale);
-        const int cy = toPxY(xop->cy, dbu_tile, scale);
+        const int cy = toPxY(xop->cy, dbu_tile, scale, dim);
         const int half = std::max(1, static_cast<int>(xop->size * scale / 2));
         const Color pen = toTileColor(xop->pen.color);
         const int w = penWidthPx(xop->pen, scale);
@@ -3944,9 +4293,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
             const odb::Point& b = p->points[(i + 1) % n];
             drawLine(image,
                      toPxX(a.x(), dbu_tile, scale),
-                     toPxY(a.y(), dbu_tile, scale),
+                     toPxY(a.y(), dbu_tile, scale, dim),
                      toPxX(b.x(), dbu_tile, scale),
-                     toPxY(b.y(), dbu_tile, scale),
+                     toPxY(b.y(), dbu_tile, scale, dim),
                      pen,
                      w);
           }
@@ -3959,7 +4308,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         const int tw = getTextWidth(s->text, str_font);
         const int th = getTextHeight(str_font);
         int ax = toPxX(s->x, dbu_tile, scale);
-        int ay = toPxY(s->y, dbu_tile, scale);
+        int ay = toPxY(s->y, dbu_tile, scale, dim);
         // Adjust anchor: text renders with top-left at (ax, ay).
         switch (s->anchor) {
           case gui::Painter::kBottomLeft:
@@ -4130,13 +4479,16 @@ void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
                                    const Color& color,
                                    const FillPattern pattern,
                                    const int ox,
-                                   const int oy) const
+                                   const int oy,
+                                   int dim) const
 {
   // kNone paints nothing: skip the pixel loop entirely.
   if (pattern == FillPattern::kNone) {
     return;
   }
-  const int dim = bufferDim(buffer);
+  if (dim < 0) {
+    dim = bufferDim(buffer);
+  }
   for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
     const int draw_y = dim - 1 - iy;
     for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {

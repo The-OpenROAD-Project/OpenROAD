@@ -272,6 +272,10 @@ class dbBox : public dbObject
 
   void setDesignRuleWidth(int);
 
+  int getMinSpacing() const;
+
+  void setMinSpacing(int);
+
   ///
   /// Get the height (yMax-yMin) of the box.
   ///
