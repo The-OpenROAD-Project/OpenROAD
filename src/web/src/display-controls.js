@@ -4,9 +4,11 @@
 // Display controls — layer checkboxes and visibility tree.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { VisTree } from './vis-tree.js';
+import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
+    from './vis-tree.js';
 import { getCookie, setCookie } from './theme.js';
-import { makeGroupHeader, attachGroupCollapse } from './ui-utils.js';
+import { isStaticMode, makeGroupHeader, attachGroupCollapse, beginSelection,
+         isCurrentSelection, onSelectionReset } from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -80,6 +82,10 @@ export function populateDisplayControls(app, visibility, selectability,
     if (!app.displayControlsEl) return;
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
+
+    // Column header (visibility / selectability icons), mirroring the Qt GUI's
+    // QHeaderView.  Added first so it is the panel's sticky top row.
+    app.displayControlsEl.appendChild(makeColumnHeader());
 
     // ─── Tile grouping ───────────────────────────────────────────────────
     //
@@ -250,13 +256,21 @@ export function populateDisplayControls(app, visibility, selectability,
     // z-index and palette slot regardless of which chiplet it belongs to.
     let nextLayerSlot = 0;
 
-    function buildLayerSpec(hierarchyNode, parentId = 'layers') {
+    // `ownerPath` is the chiplet whose dbTech owns the layers rendered at this
+    // level.  Category nodes (Backside/Implant/Other) are pure UI folders with
+    // no path of their own, so they inherit their parent chiplet's — the
+    // select_layer request needs it to pick the right tech in a multi-die
+    // design, where two chips can both have an "M1".
+    function buildLayerSpec(hierarchyNode, parentId = 'layers',
+                            ownerPath = undefined) {
         const children = [];
+        const chipletPath = hierarchyNode.type === 'category'
+            ? ownerPath : hierarchyNode.path;
 
         if (hierarchyNode.instances && hierarchyNode.instances.length > 0) {
             hierarchyNode.instances.forEach((inst, idx) => {
                 const instId = parentId + "/" + (inst.name || idx);
-                children.push(buildLayerSpec(inst, instId));
+                children.push(buildLayerSpec(inst, instId, chipletPath));
             });
         }
 
@@ -287,7 +301,12 @@ export function populateDisplayControls(app, visibility, selectability,
                 layerIds.push(id);
                 children.push({
                     id,
-                    data: { name, layer, color: layerObj.color, colorIndex: slot, nodeId: id },
+                    // ownerChipletPath, not chipletPath: the latter means
+                    // "this node IS that chiplet" and drives the Chiplets
+                    // panel sync, which must only ever see group nodes.
+                    data: { name, layer, color: layerObj.color,
+                            colorIndex: slot, nodeId: id,
+                            ownerChipletPath: chipletPath },
                     checked: visible,
                 });
             });
@@ -679,14 +698,121 @@ export function populateDisplayControls(app, visibility, selectability,
         if (e.key === 'Escape') hideContextMenu();
     });
 
+    // --- Layer row selection ---
+    //
+    // Clicking a layer's name selects it and shows its properties in the
+    // Inspector, as the Qt GUI does (DisplayControls::displayItemSelected
+    // emits `selected(makeSelected(tech_layer))` when a row is clicked).
+    //
+    // Only the checkboxes toggle state — leaf rows are <div>s rather than
+    // <label>s so that a click on the name, the indent spacer or the row's
+    // padding does not activate the visibility checkbox, matching the Qt GUI
+    // where the name column selects and the checkbox column toggles.
+    //
+    // Saved reports have no backend to answer select_layer, so their rows are
+    // not selectable: the name is inert there and only the checkboxes work.
+    const layerRowsSelectable = !isStaticMode(app);
+    let selectedLayerRow = null;
+
+    function clearSelectedLayerRow() {
+        if (selectedLayerRow) {
+            selectedLayerRow.classList.remove('vis-row-selected');
+            selectedLayerRow = null;
+        }
+    }
+
+    // Another panel taking the selection (a canvas click, Inspector
+    // navigation, the fanout chart, ...) leaves this row's highlight claiming
+    // a selection the server no longer holds, so drop it.
+    if (layerRowsSelectable) {
+        onSelectionReset(app, clearSelectedLayerRow);
+    }
+
+    function selectLayerRow(row, name, chipletPath) {
+        // Take the selection before painting: beginSelection() runs the
+        // resetters, which clears whichever row was highlighted before.
+        const token = beginSelection(app);
+        selectedLayerRow = row;
+        row.classList.add('vis-row-selected');
+
+        const msg = { type: 'select_layer', layer: name,
+                      use_dbu: app.showDbu };
+        if (chipletPath) msg.chiplet = chipletPath;
+        app.websocketManager.request(msg).then(data => {
+            // Clicking through several layers — or clicking a layer and then
+            // selecting elsewhere — leaves one request in flight per click,
+            // and they can land out of order.  A response that is no longer
+            // the newest selection must not drive the Inspector.
+            if (!isCurrentSelection(app, token)) {
+                return;
+            }
+            if (app.updateInspector) {
+                app.updateInspector(data);
+            }
+            if (app.focusComponent) {
+                app.focusComponent('Inspector');
+            }
+            // The server replaced the selection set, so whatever highlight the
+            // previous selection painted is stale.  A tech layer contributes
+            // no shapes of its own, so only the overlay needs repainting —
+            // not every tile.
+            if (app.refreshOverlay) {
+                app.refreshOverlay();
+            }
+        }).catch(err => {
+            console.error('select_layer failed:', err);
+            // The server did not take the selection, so drop the highlight
+            // rather than leave the panel claiming a selection that is not
+            // there.  Only if this click is still the newest one — a later
+            // selection has already moved the highlight.
+            if (isCurrentSelection(app, token)) {
+                clearSelectedLayerRow();
+            }
+        });
+    }
+
     function buildLayerDOM(node, isRoot = false) {
         const selNode = layerSelModel.get(node.id);
         if (!node.children || node.children.length === 0) {
-            // Leaf node (layer)
-            const label = document.createElement('label');
+            // Leaf node (layer).  Column order matches the Qt GUI: the name
+            // stretches on the left, the visibility and selectability
+            // checkboxes are pinned to the right under the header icons.
+            //
+            // A <div>, not a <label>: a <label> wrapping the visibility
+            // checkbox activates it for a click anywhere in the row, so
+            // clicking the name, the indent spacer or the row's padding
+            // flipped the layer.  Only the checkboxes toggle state now.
+            const label = document.createElement('div');
+            label.className
+                = layerRowsSelectable ? 'vis-leaf vis-leaf-selectable'
+                                      : 'vis-leaf';
+
+            const spacer = document.createElement('span');
+            spacer.className = 'vis-arrow';
+            spacer.style.visibility = 'hidden';
+            spacer.textContent = '▶';
+            label.appendChild(spacer);
+
+            const index = node.data.colorIndex;
+            const name = node.data.name;
+
+            const nameSpan = makeNameSpan();
+            const colorSwatch = document.createElement('span');
+            colorSwatch.className = 'layer-color';
+            const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
+            colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
+            nameSpan.appendChild(colorSwatch);
+            nameSpan.appendChild(document.createTextNode(name));
+            label.appendChild(nameSpan);
+            if (layerRowsSelectable) {
+                nameSpan.addEventListener('click', () => {
+                    selectLayerRow(label, name, node.data.ownerChipletPath);
+                });
+            }
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            checkbox.className = 'vis-cb';
             checkbox.title = 'Visible';
             checkbox.checked = node.checked;
             node.cb = checkbox;
@@ -706,18 +832,9 @@ export function populateDisplayControls(app, visibility, selectability,
                     layerSelModel.check(node.id, selCheckbox.checked);
                 });
                 label.appendChild(selCheckbox);
+            } else {
+                label.appendChild(makeSelSpacer());
             }
-
-            const index = node.data.colorIndex;
-            const name = node.data.name;
-
-            const colorSwatch = document.createElement('span');
-            colorSwatch.className = 'layer-color';
-            const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
-            colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
-            label.appendChild(colorSwatch);
-
-            label.appendChild(document.createTextNode(name));
 
             // Setup context menu for layer
             label.addEventListener('contextmenu', (e) => {
@@ -755,10 +872,13 @@ export function populateDisplayControls(app, visibility, selectability,
             const group = document.createElement('div');
             group.className = 'vis-group';
 
-            const { header, arrow } = makeGroupHeader();
+            const { header, arrow, name } = makeGroupHeader();
+            name.textContent
+                = isRoot ? 'Layers' : (node.data.name || 'Group');
 
             const cb = document.createElement('input');
             cb.type = 'checkbox';
+            cb.className = 'vis-cb';
             cb.title = 'Visible';
             cb.checked = node.checked;
             cb.indeterminate = node.indeterminate;
@@ -780,10 +900,10 @@ export function populateDisplayControls(app, visibility, selectability,
                     layerSelModel.check(node.id, selCb.checked);
                 });
                 header.appendChild(selCb);
+            } else {
+                header.appendChild(makeSelSpacer());
             }
 
-            const name = isRoot ? 'Layers' : (node.data.name || 'Group');
-            header.appendChild(document.createTextNode(name));
             group.appendChild(header);
 
             const kids = document.createElement('div');
@@ -1038,8 +1158,9 @@ export function populateDisplayControls(app, visibility, selectability,
         const chipletGroup = document.createElement('div');
         chipletGroup.className = 'vis-group';
 
-        const { header: chipletHeader, arrow: chipletArrow }
-            = makeGroupHeader();
+        const { header: chipletHeader, arrow: chipletArrow,
+                name: chipletName } = makeGroupHeader();
+        chipletName.textContent = 'Chiplets';
 
         // Group-level checkbox: toggles every chiplet at once and
         // shows tri-state when the children disagree, matching the
@@ -1048,6 +1169,7 @@ export function populateDisplayControls(app, visibility, selectability,
         if (rootNode) {
             const parentCb = document.createElement('input');
             parentCb.type = 'checkbox';
+            parentCb.className = 'vis-cb';
             parentCb.checked = rootNode.checked;
             parentCb.indeterminate = rootNode.indeterminate;
             rootNode.cb = parentCb;
@@ -1061,7 +1183,8 @@ export function populateDisplayControls(app, visibility, selectability,
             });
             chipletHeader.appendChild(parentCb);
         }
-        chipletHeader.appendChild(document.createTextNode('Chiplets'));
+        // Chiplets have no selectability column; keep the layout aligned.
+        chipletHeader.appendChild(makeSelSpacer());
         chipletGroup.appendChild(chipletHeader);
 
         const chipletChildren = document.createElement('div');
@@ -1071,12 +1194,16 @@ export function populateDisplayControls(app, visibility, selectability,
             const c = node.data;
             // The root is rendered by the header above; skip it here.
             if (node !== rootNode) {
-                const label = document.createElement('label');
+                // A <div>, like the layer rows: only the checkbox toggles.
+                const label = document.createElement('div');
+                label.className = 'vis-leaf';
                 label.style.paddingLeft = (8 * (c.depth - 1)) + 'px';
                 label.title = c.path
                     + (c.master ? ` (${c.master})` : '');
+                label.appendChild(makeNameSpan(c.name));
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
+                checkbox.className = 'vis-cb';
                 checkbox.checked = node.checked;
                 checkbox.indeterminate = node.indeterminate;
                 node.cb = checkbox;
@@ -1085,7 +1212,7 @@ export function populateDisplayControls(app, visibility, selectability,
                     mirrorChipletToLayers(c.path, checkbox.checked);
                 });
                 label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(c.name));
+                label.appendChild(makeSelSpacer());
                 chipletChildren.appendChild(label);
             }
             if (node.children) {
@@ -1195,14 +1322,18 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'scale_bar', label: 'Scale bar' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
-    visTree.add({ key: 'debug', label: 'Debug tiles' });
-    // Debug graphics overlay: calls drawObjects() on registered renderers
-    // (e.g. gpl::GraphicsImpl when global_placement_debug is enabled).
-    visTree.add({ label: 'Debug Graphics', visKey: 'debug_renderers',
-        children: [
-            { key: 'debug_live', label: 'Live (don\'t require pause)' },
-        ],
-    });
+    // Developer overlays.  All three are plain leaves under a visKey-less
+    // group: giving the group `visKey: 'debug_renderers'` would tie the
+    // renderer overlay to the group's tri-state, so ticking the unrelated
+    // "Tiles" row would switch the renderers on via the indeterminate state.
+    visTree.add({ label: 'Debug Graphics', children: [
+        // Renderer overlay: calls drawObjects() on registered renderers
+        // (e.g. gpl::GraphicsImpl when global_placement_debug is enabled).
+        { key: 'debug_renderers', label: 'Renderers' },
+        { key: 'debug_live', label: 'Live (don\'t require pause)',
+          disabledBy: 'debug_renderers' },
+        { key: 'debug', label: 'Tiles' },
+    ]});
     visTree.render(app.displayControlsEl);
 
     if (!app.heatMapLayer) {
@@ -1216,9 +1347,10 @@ export function populateDisplayControls(app, visibility, selectability,
     heatMapGroup.className = 'vis-group heatmap-controls';
     app.displayControlsEl.appendChild(heatMapGroup);
 
-    const { header: heatMapHeader, arrow: heatMapArrow }
+    const { header: heatMapHeader, arrow: heatMapArrow,
+            name: heatMapName }
         = makeGroupHeader('vis-group-header heatmap-header');
-    heatMapHeader.appendChild(document.createTextNode('Heat Maps'));
+    heatMapName.textContent = 'Heat Maps';
     heatMapGroup.appendChild(heatMapHeader);
 
     const heatMapContainer = document.createElement('div');

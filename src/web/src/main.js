@@ -16,7 +16,8 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode, buildMapOptions } from './ui-utils.js';
+import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection }
+    from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -122,6 +123,11 @@ const app = {
     heatMapLegendEl: null,
     renderHeatMapControls: null,
     rulerManager: null,
+    // Bumped by beginSelection() whenever a panel takes over the selection;
+    // see ui-utils.js.  Panels register their reset callbacks in
+    // `selectionResetters` via onSelectionReset().
+    selectionToken: 0,
+    selectionResetters: [],
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
     },
@@ -1201,8 +1207,14 @@ app.websocketManager.readyPromise.then(async () => {
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
+            const token = beginSelection(app);
             app.websocketManager.request(selectRequest)
                 .then(data => {
+                    // A newer selection (another click, a layer row, the
+                    // Inspector) has already replaced this one on the server;
+                    // this response describes a selection that no longer
+                    // exists, so it must not drive the Inspector.
+                    if (!isCurrentSelection(app, token)) return;
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {

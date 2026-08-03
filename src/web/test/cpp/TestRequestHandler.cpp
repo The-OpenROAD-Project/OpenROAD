@@ -32,6 +32,7 @@ struct FakeInspectable
   std::string name;
   std::string type;
   odb::Rect bbox;
+  gui::Descriptor::Properties properties;
 };
 
 class FakeDescriptor : public gui::Descriptor
@@ -60,7 +61,10 @@ class FakeDescriptor : public gui::Descriptor
   {
   }
 
-  Properties getProperties(const std::any&) const override { return {}; }
+  Properties getProperties(const std::any& object) const override
+  {
+    return std::any_cast<FakeInspectable*>(object)->properties;
+  }
 
   gui::Selected makeSelected(const std::any& object) const override
   {
@@ -544,11 +548,14 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
-    fake_current_
-        = {.name = "current", .type = "FakeCurrent", .bbox = {0, 0, 100, 100}};
+    fake_current_ = {.name = "current",
+                     .type = "FakeCurrent",
+                     .bbox = {0, 0, 100, 100},
+                     .properties = {}};
     fake_previous_ = {.name = "previous",
                       .type = "FakePrevious",
-                      .bbox = {100, 100, 200, 200}};
+                      .bbox = {100, 100, 200, 200},
+                      .properties = {}};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
@@ -837,6 +844,104 @@ TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
   std::string json_um = payloadStr(resp_um);
   EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
       << json_um;
+}
+
+// A multi-die design's top chip is hierarchical and owns no dbBlock, so the
+// micron conversion has to come from the database rather than from a block --
+// otherwise every inspected value (including a tech layer's pitch, width and
+// spacing) would fall back to unlabelled raw DBU integers.
+TEST_F(SelectHandlerTest, InspectConvertsToMicronsWithoutABlock)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  odb::dbBlock::destroy(block_);
+  block_ = nullptr;
+  ASSERT_EQ(gen_->getBlock(), nullptr);
+  ASSERT_NE(getDb()->getDbuPerMicron(), 0u);
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":false})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json;
+}
+
+// A PropertyTable (e.g. a layer's two-widths spacing table) is serialized as a
+// grid the client draws as a table, not flattened to Property::toString()'s
+// "<unknown>".
+TEST_F(SelectHandlerTest, InspectSerializesPropertyTable)
+{
+  gui::PropertyTable table(/*rows=*/2, /*columns=*/2);
+  table.setColumnHeader(0, "0 \xC2\xB5m");
+  table.setColumnHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
+  table.setRowHeader(0, "0 \xC2\xB5m");
+  table.setRowHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
+  table.setData(0, 0, "0.065 \xC2\xB5m");
+  table.setData(0, 1, "0.1 \xC2\xB5m");
+  table.setData(1, 0, "0.1 \xC2\xB5m");
+  table.setData(1, 1, "0.2 \xC2\xB5m");
+  fake_current_.properties = {{"Two width spacing rules", table}};
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  const std::string json = payloadStr(handler_->handleInspect(req, state_));
+  EXPECT_EQ(json.find("<unknown>"), std::string::npos) << json;
+  EXPECT_NE(json.find("\"table\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"column_headers\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"row_headers\""), std::string::npos) << json;
+  // Newlines inside a header survive as real newlines for the client to
+  // render as separate lines.
+  EXPECT_NE(json.find("0.2 \xC2\xB5m\\nPRL 0.1 \xC2\xB5m"), std::string::npos)
+      << json;
+  EXPECT_NE(json.find("[[\"0.065 \xC2\xB5m\",\"0.1 \xC2\xB5m\"],"
+                      "[\"0.1 \xC2\xB5m\",\"0.2 \xC2\xB5m\"]]"),
+            std::string::npos)
+      << json;
+}
+
+// An unkeyed list value (a layer's width table) becomes numbered children,
+// mirroring the Qt inspector's indexed list rows.
+TEST_F(SelectHandlerTest, InspectSerializesValueList)
+{
+  const std::vector<std::any> widths
+      = {std::string("0.018 \xC2\xB5m"), std::string("0.09 \xC2\xB5m")};
+  fake_current_.properties = {{"Width table", widths}};
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 31;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  const std::string json = payloadStr(handler_->handleInspect(req, state_));
+  EXPECT_EQ(json.find("<unknown>"), std::string::npos) << json;
+  EXPECT_NE(json.find("\"children\":[{\"name\":\"1\","
+                      "\"value\":\"0.018 \xC2\xB5m\"},"
+                      "{\"name\":\"2\",\"value\":\"0.09 \xC2\xB5m\"}]"),
+            std::string::npos)
+      << json;
 }
 
 //------------------------------------------------------------------------------
@@ -1227,6 +1332,132 @@ TEST_F(SelectHandlerTest, SelectNextClearsNavigationHistory)
 
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.navigation_history.empty());
+}
+
+//------------------------------------------------------------------------------
+// select_layer tests
+//
+// Backs the Display Control panel's click-to-select, mirroring the Qt GUI's
+// DisplayControls::displayItemSelected.  These exercise layer resolution and
+// the selection-state replacement; the inspect payload's contents come from
+// DbTechLayerDescriptor, which this binary does not register (see
+// FakeDescriptor above), so a resolved layer is asserted via the response
+// being kJson rather than the not-found kError.
+//------------------------------------------------------------------------------
+
+TEST_F(SelectHandlerTest, SelectLayerResolvesLayerByName)
+{
+  ASSERT_NE(getDb()->getTech()->findLayer("metal1"), nullptr);
+
+  WebSocketRequest req;
+  req.id = 50;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.id, 50u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"selection_index\""), std::string::npos) << json;
+}
+
+TEST_F(SelectHandlerTest, SelectLayerUnknownNameReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 51;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"no_such_layer"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Layer not found: no_such_layer"),
+            std::string::npos)
+      << payloadStr(resp);
+}
+
+TEST_F(SelectHandlerTest, SelectLayerMissingFieldReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 52;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"use_dbu":true})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("server error"), std::string::npos);
+}
+
+// A chiplet path that matches no ChipletNode falls back to the design's
+// default tech rather than failing, so a stale path in the frontend (e.g.
+// after the hierarchy changed) still resolves the layer.
+TEST_F(SelectHandlerTest, SelectLayerUnknownChipletFallsBackToDefaultTech)
+{
+  WebSocketRequest req;
+  req.id = 53;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1","chiplet":"top.nonexistent"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+}
+
+// Selecting a layer is a plain (non-shift) selection: it replaces whatever
+// was selected before and drops the hover/timing overlays, so the canvas
+// does not keep painting the previous object's highlight.
+TEST_F(SelectHandlerTest, SelectLayerReplacesPreviousSelection)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.hover_rects.emplace_back(0, 0, 10, 10);
+    state_.timing_rects.push_back(
+        {odb::Rect(0, 0, 10, 10), {.r = 255, .g = 0, .b = 0, .a = 255}, ""});
+    state_.highlight_rects.emplace_back(0, 0, 10, 10);
+    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+  }
+
+  WebSocketRequest req;
+  req.id = 54;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.hover_rects.empty());
+  EXPECT_TRUE(state_.timing_rects.empty());
+  EXPECT_TRUE(state_.navigation_history.empty());
+  // A tech layer has no geometry of its own, so the previous object's
+  // highlight must be gone rather than replaced.
+  EXPECT_TRUE(state_.highlight_rects.empty());
+  EXPECT_EQ(state_.selection_set.count(makeFakeSelected(&fake_current_)), 0u);
+}
+
+// An error path must not leave the session half-updated: the layer lookup
+// throws before any state is touched.
+TEST_F(SelectHandlerTest, SelectLayerErrorKeepsPreviousSelection)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+
+  WebSocketRequest req;
+  req.id = 55;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"no_such_layer"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kError);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_set.size(), 2u);
 }
 
 TEST_F(SelectHandlerTest, InspectResponseIncludesSelectionMetadata)

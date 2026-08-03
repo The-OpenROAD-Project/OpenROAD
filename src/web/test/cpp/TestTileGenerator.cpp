@@ -1281,6 +1281,53 @@ TEST_F(TileGeneratorTest, DebugModeDrawsBorder)
   EXPECT_EQ(pixels[last + 3], 255);  // A
 }
 
+TEST_F(TileGeneratorTest, DebugBorderTracesFullHiDpiTile)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.debug = true;
+
+  // dpr=2 → a 512px tile.  The border must trace the 512px edges: drawing it
+  // at a hardcoded 256 boxed the outline into the top-left quadrant, so the
+  // debug "tile" was only 1/dpr of the tile it claimed to outline.
+  auto png = tile_gen_->generateTile("_instances",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     /*focus_net_ids=*/nullptr,
+                                     /*route_guide_net_ids=*/nullptr,
+                                     /*dpr=*/2.0);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 512u);
+  ASSERT_EQ(h, 512u);
+
+  const auto is_yellow = [&pixels, w](const unsigned px, const unsigned py) {
+    const size_t i = (static_cast<size_t>(py) * w + px) * 4;
+    return pixels[i] == 255 && pixels[i + 1] == 255 && pixels[i + 2] == 0
+           && pixels[i + 3] == 255;
+  };
+
+  // All four true corners of the 512px tile.
+  EXPECT_TRUE(is_yellow(0, 0));
+  EXPECT_TRUE(is_yellow(w - 1, 0));
+  EXPECT_TRUE(is_yellow(0, h - 1));
+  EXPECT_TRUE(is_yellow(w - 1, h - 1));
+
+  // Midpoints of the right and bottom edges, which the 256px border missed
+  // entirely.
+  EXPECT_TRUE(is_yellow(w - 1, h / 2));
+  EXPECT_TRUE(is_yellow(w / 2, h - 1));
+}
+
 TEST_F(TileGeneratorTest, DebugDefaultOff)
 {
   TileVisibility vis;
