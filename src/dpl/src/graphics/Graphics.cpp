@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
 #include "gui/gui.h"
@@ -23,6 +24,14 @@
 #include "utl/Logger.h"
 
 namespace dpl {
+
+namespace {
+
+using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+using BoostRect = boost::polygon::rectangle_data<int>;
+
+}  // namespace
 
 Graphics::Graphics(Opendp* dp,
                    const odb::dbInst* debug_instance,
@@ -77,7 +86,8 @@ void Graphics::binSearch(const Node* cell,
                          GridX xh,
                          GridY yh)
 {
-  if (!debug_instance_ || cell->getDbInst() != debug_instance_) {
+  const odb::dbInst* inst = cell->getDbInst();
+  if (!inst) {
     return;
   }
   odb::Rect core = dp_->grid_->getCore();
@@ -85,7 +95,21 @@ void Graphics::binSearch(const Node* cell,
   int yl_dbu = core.yMin() + dp_->grid_->gridYToDbu(yl).v;
   int xh_dbu = core.xMin() + gridToDbu(xh, dp_->grid_->getSiteWidth()).v;
   int yh_dbu = core.yMin() + dp_->grid_->gridYToDbu(yh).v;
-  searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
+  searched_diamond_[inst].emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
+}
+
+void Graphics::clearDiamondSearch(const Node* cell)
+{
+  auto it = searched_diamond_.find(cell->getDbInst());
+  if (it != searched_diamond_.end()) {
+    // Keep the allocation: the same cell gets searched again on later passes.
+    it->second.clear();
+  }
+}
+
+void Graphics::clearAllDiamondSearches()
+{
+  searched_diamond_.clear();
 }
 
 void Graphics::redrawAndPause()
@@ -194,13 +218,64 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawCircle(final_location.x(), final_location.y(), 100);
   }
 
-  // Diamond search range
-  auto color = gui::Painter::kCyan;
-  color.a = 100;
-  painter.setPen(color);
-  painter.setBrush(color);
-  for (auto& rect : searched_) {
-    painter.drawRect(rect);
+  // Diamond search range, outline only.  Searches are recorded for every cell,
+  // so draw the ones the user is looking at: the debug instance plus whatever
+  // is selected in the GUI.
+  if (!searched_diamond_.empty()) {
+    using boost::polygon::operators::operator+=;
+
+    auto drawBoundary = [&painter](const auto& ring) {
+      std::vector<odb::Point> points;
+      for (auto itr = ring.begin(); itr != ring.end(); itr++) {
+        const auto point = *itr;
+        points.emplace_back(point.x(), point.y());
+      }
+      if (points.size() > 2) {
+        painter.drawPolygon(points);
+      }
+    };
+
+    std::unordered_set<const odb::dbInst*> draw_insts;
+    if (debug_instance_) {
+      draw_insts.insert(debug_instance_);
+    }
+    for (odb::dbInst* inst : selected_insts) {
+      draw_insts.insert(inst);
+    }
+
+    painter.setBrush(gui::Painter::kTransparent);
+    for (const odb::dbInst* inst : draw_insts) {
+      auto it = searched_diamond_.find(inst);
+      if (it == searched_diamond_.end() || it->second.empty()) {
+        continue;
+      }
+      const std::vector<odb::Rect>& searched = it->second;
+
+      // Candidates overlap heavily (consecutive ones are a single site apart),
+      // so union them and stroke just the exterior boundary.
+      Polygon90Set searched_area;
+      for (const odb::Rect& rect : searched) {
+        searched_area
+            += BoostRect{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
+      }
+      std::vector<Polygon90> searched_polygons;
+      searched_area.get_polygons(searched_polygons);
+
+      painter.setPen(gui::Painter::kPink, /* cosmetic */ true);
+      for (const Polygon90& polygon : searched_polygons) {
+        drawBoundary(polygon);
+        for (auto hole = polygon.begin_holes(); hole != polygon.end_holes();
+             hole++) {
+          drawBoundary(*hole);
+        }
+      }
+
+      // Last candidate tried: the position the cell takes when the search
+      // succeeds.  Deep pink to stand out from the pale region boundary.
+      painter.setPen(gui::Painter::Color{0xff, 0x14, 0x93, 0xff},
+                     /* cosmetic */ true);
+      painter.drawRect(searched.back());
+    }
   }
 
   if (paint_pixels_) {

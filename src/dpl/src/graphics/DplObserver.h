@@ -41,6 +41,12 @@ class DplObserver
                          GridX xh,
                          GridY yh)
       = 0;
+
+  // Drop the candidates recorded for |cell| (call at the start of each
+  // diamond search, so only the latest search for that cell is kept).
+  virtual void clearDiamondSearch(const Node* cell) {}
+  // Drop the candidates recorded for every cell.
+  virtual void clearAllDiamondSearches() {}
   virtual void redrawAndPause() = 0;
   virtual const odb::dbInst* getDebugInstance() const { return nullptr; }
 

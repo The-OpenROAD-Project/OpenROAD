@@ -34,6 +34,8 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridY yl,
                  GridX xh,
                  GridY yh) override;
+  void clearDiamondSearch(const Node* cell) override;
+  void clearAllDiamondSearches() override;
   void redrawAndPause() override;
   const odb::dbInst* getDebugInstance() const override
   {
@@ -73,7 +75,11 @@ class Graphics : public gui::Renderer, public DplObserver
   odb::dbBlock* block_ = nullptr;
   bool paint_pixels_;
   bool paint_negotiation_pixels_;
-  std::vector<odb::Rect> searched_;
+  // Candidate positions tried by the most recent diamond search of each cell,
+  // keyed by dbInst* so drawObjects() can draw whichever instance the user has
+  // selected in the GUI (same approach as negotiation_search_windows_).
+  std::unordered_map<const odb::dbInst*, std::vector<odb::Rect>>
+      searched_diamond_;
 
   // NegotiationLegalizer grid snapshot for rendering
   std::vector<NegotiationPixelState> negotiation_pixels_;
