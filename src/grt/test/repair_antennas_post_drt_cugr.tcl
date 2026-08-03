@@ -2,6 +2,15 @@
 # re-inits CUGR, dirty diode nets drop their stale wires and reroute, and a
 # final detailed_route confirms the repair on the real wires.
 source "helpers.tcl"
+# Suppress DRT init logging: region/guide query sizes are a function of the
+# exact route geometry, not the repair contract this test locks.
+suppress_message DRT 33
+suppress_message DRT 36
+suppress_message DRT 167
+suppress_message DRT 168
+suppress_message DRT 178
+suppress_message DRT 179
+suppress_message DRT 349
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
 read_lef "sky130hs/sky130hs_std_cell.lef"

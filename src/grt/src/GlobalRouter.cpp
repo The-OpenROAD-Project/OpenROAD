@@ -638,12 +638,10 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       // routes. updateNet releases a net's own demand before it is
       // rerouted, mirroring removeWireUsage.
       for (odb::dbNet* db_net : block_->getNets()) {
-        if (isDetailedRouted(db_net)) {
-          GRoute wire_route = makeRouteFromWires(db_net);
-          if (!wire_route.empty()
-              && cugr_->restoreNetRoute(db_net, wire_route)) {
-            continue;
-          }
+        if (isDetailedRouted(db_net)
+            && cugr_->restoreNetRoute(
+                db_net, makeRouteFromWires(db_net, min_layer, max_layer))) {
+          continue;
         }
         auto it = routes_.find(db_net);
         if (it != routes_.end()) {
@@ -1371,8 +1369,8 @@ void GlobalRouter::destroyNetWire(Net* net)
   odb::dbWire* wire = net->getDbNet()->getWire();
   if (wire != nullptr) {
     // removeWireUsage releases FastRoute capacity obstructions. CUGR's
-    // release happens in updateNet, which drops the net's guide-derived
-    // tree demand before the reroute.
+    // release happens in updateNet, which drops the net's adopted tree
+    // demand before the reroute.
     if (!use_cugr_) {
       removeWireUsage(wire);
     }
@@ -1425,17 +1423,16 @@ void GlobalRouter::removeRectUsage(const odb::Rect& rect,
 // source for CUGR demand adoption: DRT may deviate from the guides, so
 // consumption must come from the real wires (FastRoute instead applies the
 // wire shapes as capacity obstructions in findNetsObstructions).
-GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net)
+GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
+                                        const int min_layer,
+                                        const int max_layer)
 {
   GRoute route;
   odb::dbWire* wire = db_net->getWire();
   if (wire == nullptr) {
     return route;
   }
-  int min_layer, max_layer;
-  getMinMaxLayer(min_layer, max_layer);
 
-  std::vector<odb::dbShape> via_boxes;
   odb::dbWirePath path;
   odb::dbWirePathShape pshape;
   odb::dbWirePathItr pitr;
@@ -1444,16 +1441,18 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net)
       const odb::dbShape& shape = pshape.shape;
       const odb::Rect rect = shape.getBox();
       if (shape.isVia()) {
-        int via_min_layer = std::numeric_limits<int>::max();
-        int via_max_layer = std::numeric_limits<int>::min();
-        odb::dbShape::getViaBoxes(shape, via_boxes);
-        for (const odb::dbShape& box : via_boxes) {
-          const int level = box.getTechLayer()->getRoutingLevel();
-          if (level != 0) {
-            via_min_layer = std::min(via_min_layer, level);
-            via_max_layer = std::max(via_max_layer, level);
-          }
+        odb::dbTechLayer* bottom_layer;
+        odb::dbTechLayer* top_layer;
+        if (odb::dbTechVia* tech_via = shape.getTechVia()) {
+          bottom_layer = tech_via->getBottomLayer();
+          top_layer = tech_via->getTopLayer();
+        } else {
+          odb::dbVia* via = shape.getVia();
+          bottom_layer = via->getBottomLayer();
+          top_layer = via->getTopLayer();
         }
+        const int via_min_layer = bottom_layer->getRoutingLevel();
+        const int via_max_layer = top_layer->getRoutingLevel();
         const odb::Point center = grid_->getPositionOnGrid(rect.center());
         for (int level = std::max(via_min_layer, min_layer);
              level < std::min(via_max_layer, max_layer + 1);
