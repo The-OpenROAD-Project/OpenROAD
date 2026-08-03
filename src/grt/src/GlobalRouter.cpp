@@ -640,8 +640,8 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : block_->getNets()) {
         const bool is_routed = isDetailedRouted(db_net);
         if (is_routed
-            && cugr_->restoreNetRoute(
-                db_net, makeRouteFromWires(db_net, min_layer, max_layer))) {
+            && cugr_->restoreNetRoute(db_net,
+                                      makeRouteFromWires(db_net, max_layer))) {
           from_wires++;
           continue;
         }
@@ -1435,9 +1435,7 @@ void GlobalRouter::removeRectUsage(const odb::Rect& rect,
 // Convert a net's detailed wires to a gcell-granularity route for CUGR
 // demand adoption. DRT may deviate from the guides, so consumption must
 // come from the real wires.
-GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
-                                        const int min_layer,
-                                        const int max_layer)
+GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net, const int max_layer)
 {
   GRoute route;
   odb::dbWire* wire = db_net->getWire();
@@ -1468,9 +1466,10 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
         const int via_min_layer = bottom_layer->getRoutingLevel();
         const int via_max_layer = top_layer->getRoutingLevel();
         const odb::Point center = grid_->getPositionOnGrid(pshape.point);
-        // Emit only layer pairs CUGR represents: a via reaching above the
-        // ceiling (e.g. to a top-level pin) would reject the whole tree.
-        for (int level = std::max(via_min_layer, min_layer);
+        // Keep the below-min pin access layers — restoreNetRoute requires
+        // the tree to cover the pins — but clamp at the ceiling: a via
+        // above it (e.g. to a top-level pin) would reject the whole tree.
+        for (int level = via_min_layer;
              level < std::min(via_max_layer, max_layer);
              level++) {
           route.emplace_back(
@@ -1478,7 +1477,7 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
         }
       } else {
         const int level = shape.getTechLayer()->getRoutingLevel();
-        if (level >= min_layer && level <= max_layer) {
+        if (level <= max_layer) {
           const odb::Point p0 = grid_->getPositionOnGrid(prev_point);
           const odb::Point p1 = grid_->getPositionOnGrid(pshape.point);
           // Skip spans within a single gcell.
