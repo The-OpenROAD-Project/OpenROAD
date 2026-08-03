@@ -75,6 +75,10 @@ class Ext
   void extract(ExtractOptions options);
   void extractMultiChip(const ExtractOptions& options);
 
+  void setExtractionRulesFile(const std::string& rules_file);
+  void setExtractionRulesFile(const std::string& rules_file,
+                              const std::string& tech_name);
+
   void define_process_corner(int ext_model_index, const std::string& name);
   void define_derived_corner(const std::string& name,
                              const std::string& process_corner_name,

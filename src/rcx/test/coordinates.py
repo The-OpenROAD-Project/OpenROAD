@@ -17,8 +17,7 @@ via_45.set_resistance(tech)
 
 rcx_aux.define_process_corner(design, ext_model_index=0, filename="X")
 
-db_tech = tech.getTech()
-db_tech.setExtractionRulesFile("45_patterns.rules")
+rcx_aux.set_extraction_rules_file(design, filename="45_patterns.rules")
 
 rcx_aux.extract_parasitics(design, max_res=0, coupling_threshold=0.1)
 
