@@ -910,6 +910,33 @@ void GridGraph::commitVia(const int layer_index,
   }
 }
 
+void GridGraph::commitWrongWayWire(const int layer_index,
+                                   const PointT loc,
+                                   const bool rip_up,
+                                   const double layer_factor)
+{
+  const int direction = layer_directions_[layer_index];
+  PointT lower_loc = loc;
+  lower_loc[direction] -= 1;
+  const int lower_edge_length
+      = loc[direction] > 0 ? getEdgeLength(direction, lower_loc[direction]) : 0;
+  const int higher_edge_length = loc[direction] < getSize(direction) - 1
+                                     ? getEdgeLength(direction, loc[direction])
+                                     : 0;
+  const int edge_sum = lower_edge_length + higher_edge_length;
+  if (edge_sum == 0) {
+    return;
+  }
+  const CapacityT demand
+      = (CapacityT) design_->getWrongWayDemandLength(layer_index) / edge_sum;
+  if (lower_edge_length > 0) {
+    commit(layer_index, lower_loc, (rip_up ? -demand : demand), layer_factor);
+  }
+  if (higher_edge_length > 0) {
+    commit(layer_index, loc, (rip_up ? -demand : demand), layer_factor);
+  }
+}
+
 std::vector<std::vector<std::vector<CapacityT>>> GridGraph::snapshotDemand()
     const
 {
@@ -940,37 +967,50 @@ void GridGraph::restoreDemand(
 
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool rip_up,
-                           const std::vector<double>& net_costs)
+                           const std::vector<double>& net_costs,
+                           const bool allow_wrong_way)
 {
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
         const int layer = node->getLayerIdx();
         const int direction = layer_directions_[layer];
+        const int perp = 1 - direction;
         const double wire_factor
             = std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
-        if (direction == MetalLayer::H) {
-          if (node->y() != child->y()) {
-            logger_->error(utl::GRT,
-                           1252,
-                           "Horizontal wire endpoints have different y "
-                           "coordinates: {} != {}.",
-                           node->y(),
-                           child->y());
+        if ((*node)[perp] != (*child)[perp]) {
+          // Native trees are direction-legal by construction; only routes
+          // adopted from detailed wires may carry wrong-way spans.
+          if (!allow_wrong_way || (*node)[direction] != (*child)[direction]) {
+            if (direction == MetalLayer::H) {
+              logger_->error(utl::GRT,
+                             1252,
+                             "Horizontal wire endpoints have different y "
+                             "coordinates: {} != {}.",
+                             node->y(),
+                             child->y());
+            } else {
+              logger_->error(utl::GRT,
+                             1253,
+                             "Vertical wire endpoints have different x "
+                             "coordinates: {} != {}.",
+                             node->x(),
+                             child->x());
+            }
           }
+          const auto [l, h] = std::minmax({(*node)[perp], (*child)[perp]});
+          for (int c = l; c < h; c++) {
+            PointT cell;
+            cell[direction] = (*node)[direction];
+            cell[perp] = c;
+            commitWrongWayWire(layer, cell, rip_up, wire_factor);
+          }
+        } else if (direction == MetalLayer::H) {
           const auto [l, h] = std::minmax({node->x(), child->x()});
           for (int x = l; x < h; x++) {
             commitWire(layer, {x, node->y()}, rip_up, wire_factor);
           }
         } else {
-          if (node->x() != child->x()) {
-            logger_->error(utl::GRT,
-                           1253,
-                           "Vertical wire endpoints have different x "
-                           "coordinates: {} != {}.",
-                           node->x(),
-                           child->x());
-          }
           const auto [l, h] = std::minmax({node->y(), child->y()});
           for (int y = l; y < h; y++) {
             commitWire(layer, {node->x(), y}, rip_up, wire_factor);
@@ -1338,18 +1378,20 @@ void GridGraph::write(const std::string& heatmap_file) const
 }
 
 void GridGraph::addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                             const std::vector<double>& net_costs)
+                             const std::vector<double>& net_costs,
+                             const bool allow_wrong_way)
 {
   if (tree) {
-    commitTree(tree, false, net_costs);
+    commitTree(tree, false, net_costs, allow_wrong_way);
   }
 }
 
 void GridGraph::removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                                const std::vector<double>& net_costs)
+                                const std::vector<double>& net_costs,
+                                const bool allow_wrong_way)
 {
   if (tree) {
-    commitTree(tree, true, net_costs);
+    commitTree(tree, true, net_costs, allow_wrong_way);
   }
 }
 

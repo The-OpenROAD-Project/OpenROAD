@@ -242,7 +242,8 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                    const std::vector<double>& net_costs = {});
+                    const std::vector<double>& net_costs = {},
+                    bool allow_wrong_way = false);
 
   /**
    * @brief Removes the demand previously added for a routing tree.
@@ -254,7 +255,8 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                       const std::vector<double>& net_costs = {});
+                       const std::vector<double>& net_costs = {},
+                       bool allow_wrong_way = false);
 
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
@@ -373,7 +375,14 @@ class GridGraph
                  const std::vector<double>& net_costs = {});
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
-                  const std::vector<double>& net_costs = {});
+                  const std::vector<double>& net_costs = {},
+                  bool allow_wrong_way = false);
+  // Demand of an adopted wrong-way wire crossing the gcell at `loc`,
+  // deposited on the layer's flanking edges like a via stub.
+  void commitWrongWayWire(int layer_index,
+                          PointT loc,
+                          bool rip_up,
+                          double layer_factor);
   // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
   CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
   // Enumerates the flanking edges a via at `loc` (between `layer_index` and

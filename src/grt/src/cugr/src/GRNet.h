@@ -150,6 +150,13 @@ class GRNet
     return pin_index_to_iterm_;
   }
   bool isLocal() const;
+  // Set when the adopted routing tree carries wrong-way spans from
+  // detailed routes; add/removeTreeUsage must allow them symmetrically.
+  bool hasWrongWayEdges() const { return has_wrong_way_edges_; }
+  void setHasWrongWayEdges(bool has_wrong_way)
+  {
+    has_wrong_way_edges_ = has_wrong_way;
+  }
 
  private:
   int index_;
@@ -164,6 +171,7 @@ class GRNet
   float slack_;
   bool is_critical_;
   bool is_res_aware_ = false;
+  bool has_wrong_way_edges_ = false;
   float resistance_ = 0.0f;
   int net_length_ = 0;
   std::vector<double> ndr_costs_;

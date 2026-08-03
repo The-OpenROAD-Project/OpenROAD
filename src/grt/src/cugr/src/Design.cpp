@@ -403,6 +403,20 @@ void Design::computeViaDemandLengths()
   via_demand_length_lower_.assign(num_layers, 0.0);
   via_demand_length_upper_.assign(num_layers, 0.0);
 
+  // A wrong-way wire crosses a layer's tracks like a via pad: its width
+  // runs along the tracks and it spans one gcell across them. Demand per
+  // crossed gcell, consumed by GridGraph::commitWrongWayWire.
+  wrong_way_demand_length_.assign(num_layers, 0.0);
+  for (int i = 0; i < num_layers; i++) {
+    const MetalLayer& layer = layers_[i];
+    wrong_way_demand_length_[i]
+        = layer.getDirection() == MetalLayer::H
+              ? viaDemandLength(
+                    layer, layer.getWidth(), default_gridline_spacing_)
+              : viaDemandLength(
+                    layer, default_gridline_spacing_, layer.getWidth());
+  }
+
   const bool debug = logger_->debugCheck(utl::GRT, "via_geom", 1);
   int fallback_pairs = 0;
   for (int i = 0; i + 1 < num_layers; i++) {
