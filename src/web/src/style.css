@@ -626,26 +626,71 @@ html, body {
 
 /* Display Controls panel */
 .display-controls {
-    padding: 8px;
-    padding-bottom: 20px;
+    padding: 0 8px 20px 8px;
     box-sizing: border-box;
     overflow-y: auto;
     height: 100%;
     font-size: 13px;
 }
+/* Column header, mirroring the Qt GUI's QHeaderView
+ * (DisplayControlModel::headerData): an icon over the visibility column and
+ * one over the selectability column.  Sticky so the columns stay labelled
+ * while the tree scrolls. */
+.display-controls-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    padding: 6px 0 4px 0;
+    margin-bottom: 2px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+}
+.display-controls-header .vis-header-icon {
+    /* Width matches a checkbox column (13px box + 2×4px margin) so each icon
+     * sits directly above its column. */
+    flex: 0 0 21px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg-muted);
+}
 .display-controls .loading {
     color: var(--fg-disabled);
     padding: 12px 0;
 }
-.display-controls label {
+.display-controls label,
+.display-controls .vis-leaf {
     display: flex;
     align-items: center;
     padding: 3px 0;
     color: var(--fg-primary);
     cursor: pointer;
 }
+/* Leaf rows are <div>s, not <label>s, so that only the checkboxes toggle
+ * visibility — a <label> activates its checkbox for a click anywhere in the
+ * row.  Nothing here is a text-entry target, and the name doubles as a click
+ * target on layer rows, so drag-selecting text is never wanted. */
+.display-controls .vis-leaf {
+    user-select: none;
+}
 .display-controls input[type="checkbox"] {
     margin-right: 8px;
+}
+/* Name cell: stretches so the visibility/selectability columns that follow it
+ * are pushed to the row's right edge, as in the Qt GUI where the name column
+ * is the stretching one.  Long names ellipsize rather than widen the row. */
+.display-controls .vis-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    /* `display: block` (not flex) so text-overflow can ellipsize the label —
+     * ellipsis does not apply to the anonymous item a flex container would
+     * wrap the text in. */
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .display-controls .layer-color {
     display: inline-block;
@@ -653,7 +698,17 @@ html, body {
     height: 12px;
     border-radius: 2px;
     margin-right: 6px;
+    vertical-align: middle;
     border: 1px solid var(--border-strong);
+}
+/* Clicking a layer's name selects it (Inspector shows the tech-layer
+ * properties), mirroring the Qt GUI's row selection.  The name is the click
+ * target, so give it the pointer affordance and mark the selected row. */
+.display-controls .vis-leaf-selectable .vis-name {
+    cursor: pointer;
+}
+.display-controls .vis-row-selected {
+    background: var(--bg-selected-row);
 }
 .display-controls .vis-group {
     margin: 1px 0;
@@ -685,23 +740,34 @@ html, body {
     display: none;
 }
 .display-controls .vis-group-children.disabled,
-.display-controls .vis-group-children > label.disabled {
+.display-controls .vis-group-children > .disabled {
     opacity: 0.4;
     pointer-events: none;
 }
 
-/* Selectability checkbox (second column, next to the visibility checkbox).
- * Small left margin gives a clear visual separation between the two columns;
- * disabled state (visibility off) dims the checkbox. */
+/* Visibility and selectability columns.  Both are fixed-width and sit at the
+ * row's right edge (the name cell before them stretches), so they line up with
+ * each other down the tree and with the header icons.  Keep the 13px box and
+ * 4px side margins in sync with .vis-header-icon's flex-basis (13+4+4 = 21). */
+.display-controls .vis-cb,
 .display-controls .vis-sel-cb {
-    margin-left: 2px;
-    margin-right: 2px;
+    flex: 0 0 13px;
+    box-sizing: border-box;
+    width: 13px;
+    height: 13px;
+    margin: 0 4px;
+}
+/* The generic `.display-controls input[type="checkbox"]` rule above carries an
+ * attribute selector, so it outranks a plain class selector — the column
+ * margins have to be restated at matching specificity or the 8px right margin
+ * wins and the columns drift out of line with the header. */
+.display-controls input[type="checkbox"].vis-cb,
+.display-controls input[type="checkbox"].vis-sel-cb {
+    margin: 0 4px;
 }
 .display-controls .vis-sel-cb.vis-sel-spacer {
     /* Layout-only placeholder when a row has no selectability checkbox. */
     display: inline-block;
-    width: 13px;
-    height: 13px;
     visibility: hidden;
 }
 .display-controls .vis-sel-cb:disabled {

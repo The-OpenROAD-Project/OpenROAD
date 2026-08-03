@@ -119,6 +119,7 @@ struct WebSocketRequest
     kDrcHighlight,
     kSelectNext,
     kSelectPrev,
+    kSelectLayer,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
@@ -257,6 +258,8 @@ class SelectHandler
                                      SessionState& state);
   WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
                                      SessionState& state);
+  WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);

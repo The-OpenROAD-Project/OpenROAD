@@ -4,6 +4,7 @@
 // Inspector panel — property tree, hover highlights, bbox display.
 
 import { dbuRectToBounds } from './coordinates.js';
+import { beginSelection, isCurrentSelection } from './ui-utils.js';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -236,11 +237,16 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             pendingInspectId = null;
         }
         showLoading();
+        // Cycling moves the inspected object, so it owns the selection from
+        // here on: a response from an older selection path must not overwrite
+        // it, and panels painting their own selection must let go.
+        const token = beginSelection(app);
         const promise = app.websocketManager.request({ type: reqType, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Selection cycle error:', data.error);
                     updateInspector(lastInspectData);
@@ -289,6 +295,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         // Show loading state immediately
         showLoading();
 
+        const token = beginSelection(app);
         const promise = app.websocketManager.request(
             { type: 'inspect', select_id: selectId, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
@@ -296,6 +303,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect error:', data.error);
                     return;
@@ -334,12 +342,14 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
 
         showLoading();
 
+        const token = beginSelection(app);
         const promise = app.websocketManager.request({ type: 'inspect_back', use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect back error:', data.error);
                     return;
@@ -446,11 +456,11 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             }
             group.appendChild(kids);
 
-            arrow.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
+            // One listener, on the header.  The arrow lives inside the header,
+            // so clicking it expands/collapses too — which is what users
+            // reach for first.  A second listener on the arrow itself would
+            // also see the click bubble up to the header and toggle twice,
+            // leaving the group exactly as it was.
             header.addEventListener('click', () => {
                 kids.classList.toggle('collapsed');
                 arrow.textContent = kids.classList.contains('collapsed')

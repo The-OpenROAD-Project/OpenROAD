@@ -314,4 +314,66 @@ describe('Inspector focus nets', () => {
             assert.equal(kids.children.length, 2);
         });
     });
+
+    // The arrow sits inside the clickable header.  It used to carry its own
+    // click listener as well, so a click on the arrow toggled twice (once on
+    // the arrow, once as the event bubbled to the header) and the group never
+    // moved — even though the arrow is the first thing users click.
+    describe('group expand/collapse', () => {
+        // A group with >= 10 children starts collapsed; fewer starts open.
+        function render(childCount) {
+            const children = [];
+            for (let i = 0; i < childCount; i++) {
+                children.push({ name: 'p' + i, value: String(i) });
+            }
+            panel.updateInspector({
+                type: 'Inst',
+                name: 'buf1',
+                bbox: [0, 0, 100, 100],
+                properties: [{ name: 'Pins', children }],
+            });
+            const group = app.inspectorEl.querySelector('.inspector-group');
+            return {
+                arrow: group.querySelector('.vis-arrow'),
+                header: group.querySelector('.inspector-group-header'),
+                kids: group.querySelector('.inspector-group-children'),
+            };
+        }
+
+        const click = (el) => el.dispatchEvent(
+            new dom.window.MouseEvent('click', { bubbles: true }));
+
+        it('clicking the arrow collapses an expanded group', () => {
+            const { arrow, kids } = render(2);
+            assert.equal(kids.classList.contains('collapsed'), false);
+            assert.equal(arrow.textContent, '▼');
+            click(arrow);
+            assert.equal(kids.classList.contains('collapsed'), true);
+            assert.equal(arrow.textContent, '▶');
+        });
+
+        it('clicking the arrow expands a collapsed group', () => {
+            const { arrow, kids } = render(12);
+            assert.equal(kids.classList.contains('collapsed'), true);
+            assert.equal(arrow.textContent, '▶');
+            click(arrow);
+            assert.equal(kids.classList.contains('collapsed'), false);
+            assert.equal(arrow.textContent, '▼');
+        });
+
+        it('arrow clicks toggle once, not twice', () => {
+            const { arrow, kids } = render(2);
+            click(arrow);
+            click(arrow);
+            assert.equal(kids.classList.contains('collapsed'), false);
+            assert.equal(arrow.textContent, '▼');
+        });
+
+        it('clicking elsewhere in the header still toggles', () => {
+            const { header, arrow, kids } = render(2);
+            click(header.querySelector('.inspector-prop-name'));
+            assert.equal(kids.classList.contains('collapsed'), true);
+            assert.equal(arrow.textContent, '▶');
+        });
+    });
 });
