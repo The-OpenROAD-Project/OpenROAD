@@ -648,8 +648,21 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
         auto it = routes_.find(db_net);
         if (it != routes_.end() && cugr_->restoreNetRoute(db_net, it->second)) {
           from_guides++;
+          debugPrint(logger_,
+                     GRT,
+                     "repair_antennas",
+                     2,
+                     "net {} adopted from guides (routed: {})",
+                     db_net->getConstName(),
+                     is_routed);
         } else if (is_routed || it != routes_.end()) {
           failed++;
+          debugPrint(logger_,
+                     GRT,
+                     "repair_antennas",
+                     2,
+                     "net {} adoption failed",
+                     db_net->getConstName());
         }
       }
       debugPrint(logger_,
