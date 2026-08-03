@@ -51,6 +51,8 @@ add_library(rcx_lib
   extmeasure_diag_opt.cpp
   parse.cpp
   find_some_net.cpp
+  multiChipExtractor.cpp
+  multiChipSpefWriter.cpp
 )
 
 target_include_directories(rcx_lib
