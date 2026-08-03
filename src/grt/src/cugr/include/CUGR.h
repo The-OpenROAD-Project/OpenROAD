@@ -39,6 +39,7 @@ namespace grt {
 class Design;
 class GridGraph;
 class GRNet;
+class GRTreeNode;
 class BoxT;
 
 struct Constants
@@ -90,11 +91,15 @@ class CUGR
   void init(int min_routing_layer,
             int max_routing_layer,
             const odb::PtrSet<odb::dbNet>& clock_nets);
-  void route(bool incremental = false);
+  void route(bool incremental);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
+  // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
+  // overflow split into wire vs via-stub shares (proportional attribution);
+  // sub-min layers shown as all-zero rows. Gated on verbose_.
+  void reportCongestion() const;
   void getITermsAccessPoints(
       odb::dbNet* net,
       odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points);
@@ -121,7 +126,10 @@ class CUGR
   void setVerbose(bool verbose) { verbose_ = verbose; }
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
-  void routeIncremental();
+  // Adopts an externally restored routing (journal restore): rebuilds the
+  // net's routing tree from the segments and swaps the grid-graph demand
+  // without scheduling a reroute. Returns false if the net must be rerouted.
+  bool restoreNetRoute(odb::dbNet* db_net, const GRoute& route);
 
   const std::vector<int>& getOriginalResources() const;
   void computeCongestionInformation();
@@ -150,6 +158,12 @@ class CUGR
   void demoteNonCriticalNets(float slack_th);
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks(const std::vector<int>& net_indices);
+  // Builds a routing tree spanning the segments' gcells; nullptr if the
+  // segments are malformed or disconnected.
+  std::shared_ptr<GRTreeNode> buildTreeFromRoute(const GRoute& route) const;
+  // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
+  // from every committed tree and report drift from the tracked demand.
+  void verifyDemandConsistency(const char* tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -225,6 +239,16 @@ class CUGR
   // Append net's routing tree to route as GRoute segments.
   void buildNetRoute(const GRNet* net, GRoute& route) const;
   void printStatistics() const;
+
+  // Tile classification for debugCongestion2D.
+  struct Congestion2D
+  {
+    double total_3d_overflow = 0.0;
+    double total_2d_overflow = 0.0;
+    int tiles_3d_only = 0;
+    int tiles_2d = 0;
+  };
+  Congestion2D computeCongestion2D() const;
 
   /**
    * @brief Diagnoses whether residual overflow is spreadable.
