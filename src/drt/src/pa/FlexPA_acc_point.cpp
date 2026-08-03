@@ -45,15 +45,15 @@ namespace drt {
 std::vector<const frViaDef*> FlexPA::getPriorityViaDefs(
     const frLayerNum layer_num,
     frInstTerm* inst_term,
-    const bool get_all)
+    const bool get_all,
+    const int already_collected)
 {
   std::vector<const frViaDef*> priority_via_defs;
-  if (!layer_num_to_via_defs_.contains(layer_num)
-      || layer_num > router_cfg_->TOP_ROUTING_LAYER) {
+  if (!layer_num_to_via_defs_.contains(layer_num)) {
     return priority_via_defs;
   }
   const int max_num_via_trial = 2;
-  int cnt = 0;
+  int cnt = already_collected;
   for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num][1]) {
     if (inst_term && inst_term->isStubborn()
         && avoid_via_defs_.contains(via_def)) {
@@ -904,14 +904,17 @@ void FlexPA::filterViaAccess(
   if (via_defs.empty()) {  // no via map entry
 
     // UP Vias
-    std::vector<const frViaDef*> up_vias
-        = getPriorityViaDefs(layer_num + 1, inst_term, try_all_vias);
-    via_defs.insert(via_defs.end(), up_vias.begin(), up_vias.end());
+    if (layer_num + 1 <= router_cfg_->TOP_ROUTING_LAYER) {
+      std::vector<const frViaDef*> up_vias
+          = getPriorityViaDefs(layer_num + 1, inst_term, try_all_vias);
+      via_defs.insert(via_defs.end(), up_vias.begin(), up_vias.end());
+    }
 
     // DOWN Vias
-    if (isIOTerm(inst_term)) {
-      std::vector<const frViaDef*> down_vias
-          = getPriorityViaDefs(layer_num - 1, inst_term, try_all_vias);
+    if (isIOTerm(inst_term)
+        && layer_num - 1 <= router_cfg_->TOP_ROUTING_LAYER) {
+      std::vector<const frViaDef*> down_vias = getPriorityViaDefs(
+          layer_num - 1, inst_term, try_all_vias, (int) via_defs.size());
       via_defs.insert(via_defs.end(), down_vias.begin(), down_vias.end());
     }
   }
