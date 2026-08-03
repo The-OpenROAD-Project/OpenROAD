@@ -201,6 +201,28 @@ static double quantizeDpr(const double raw)
   return std::round(clamped * 100.0) / 100.0;
 }
 
+// The exact device-pixel side length the client will display the tile in.
+//
+// Sent explicitly rather than derived from dpr here: a tile's CSS box is only a
+// whole number of device pixels when tileSize*dpr is an integer, and where it
+// is not (256 CSS px is 426.67 device px at a 1.6667 display scale) any size
+// this end picks is one the browser has to resample.  The client knows the box
+// it will use, so it names the pixel count.
+//
+// Clamped so a malformed request cannot ask for a gigantic buffer — the render
+// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// specified"; the generator falls back to 256*dpr.
+static int quantizeTilePx(const double raw)
+{
+  if (!std::isfinite(raw) || raw <= 0.0) {
+    return 0;
+  }
+  constexpr int64_t kMinTilePx = 32;
+  constexpr int64_t kMaxTilePx = 2048;
+  return static_cast<int>(
+      std::clamp<int64_t>(std::llround(raw), kMinTilePx, kMaxTilePx));
+}
+
 std::string assetPathFromTarget(const std::string_view target)
 {
   std::string path(target);
@@ -572,7 +594,8 @@ WebSocketResponse TileHandler::renderTile(
     const std::map<uint32_t, Color>* module_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
-    const double dpr)
+    const double dpr,
+    const int tile_px)
 {
   WebSocketResponse resp;
   resp.id = id;
@@ -589,7 +612,8 @@ WebSocketResponse TileHandler::renderTile(
                                   module_colors,
                                   focus_net_ids,
                                   route_guide_net_ids,
-                                  dpr);
+                                  dpr,
+                                  tile_px);
   return resp;
 }
 
@@ -2570,6 +2594,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   static const std::vector<FlightLine> no_lines;
 
   const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
 
   // A tile is cacheable only when it depends solely on the static design +
   // visibility + dpr — i.e. no per-session overlays are active.  That keeps
@@ -2599,6 +2624,9 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       key_obj.erase(k);
     }
     key_obj["dpr"] = dpr;
+    // Pinned like dpr: two clients on different displays ask for different
+    // pixel counts of the same tile, and they are different images.
+    key_obj["tile_px"] = tile_px;
     cache_key = boost::json::serialize(key_obj);
     std::vector<unsigned char> cached;
     if (gen_->tileCacheGet(cache_key, cached)) {
@@ -2625,7 +2653,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                    mod_ptr,
                    focus_ptr,
                    nullptr,
-                   dpr);
+                   dpr,
+                   tile_px);
   if (cacheable && resp.type == WebSocketResponse::kPng) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }

@@ -4,7 +4,8 @@
 // Leaflet tile layer that fetches tiles via WebSocket.
 
 import {
-    buildTileRequestFor, floorClampZoom, nativeDpr,
+    buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
+    withDeviceExactTileSize,
 } from './tile-request.js';
 
 // Imported AND re-exported: `export { x } from '...'` alone re-exports without
@@ -12,8 +13,8 @@ import {
 // name at runtime while importers still resolved it fine.
 export { floorClampZoom };
 
-// Device pixel ratio for tile requests. Normalized to match what the server
-// will render at; see quantizeDpr in tile-request.js.
+// The display's real device pixel ratio.  Sizes are computed from this;
+// the wire payload rounds it for its cache-key field (see tile-request.js).
 export function currentDpr() {
     return nativeDpr();
 }
@@ -21,7 +22,8 @@ export function currentDpr() {
 // Kept as a named export because main.js and the tests import it from here.
 // Delegates so the per-layer and merged paths cannot drift on the wire format.
 export function buildTileRequest(coords, layerName, ctx) {
-    return buildTileRequestFor(coords, layerName, ctx, currentDpr());
+    return buildTileRequestFor(coords, layerName, ctx, currentDpr(),
+                               tileSizeCss());
 }
 
 // `app` (last arg) is read lazily on every request so that
@@ -46,7 +48,8 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
         initialize: function(websocketManager, layerName, options) {
             this._websocketManager = websocketManager;
             this._layerName = layerName;
-            L.GridLayer.prototype.initialize.call(this, options);
+            L.GridLayer.prototype.initialize.call(
+                this, withDeviceExactTileSize(options));
         },
 
         createTile: function(coords, done) {
@@ -168,7 +171,8 @@ export function createOverlayTileLayer(visibility, app) {
     return L.GridLayer.extend({
         initialize: function(websocketManager, options) {
             this._websocketManager = websocketManager;
-            L.GridLayer.prototype.initialize.call(this, options);
+            L.GridLayer.prototype.initialize.call(
+                this, withDeviceExactTileSize(options));
         },
 
         createTile: function(coords, done) {

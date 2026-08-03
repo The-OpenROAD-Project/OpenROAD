@@ -317,6 +317,96 @@ TEST_F(TileHandlerTest, ClampsDprIntoRange)
   }
 }
 
+// The client names the exact device-pixel square the tile will be displayed in,
+// because neither end can derive it: a tile's CSS box is a whole number of
+// device pixels only when tileSize*dpr is, and at a 1.6667 display scale
+// 256*dpr is 426.67 -- a size no image can have.  A tile that is not the size
+// of its box is resampled by the browser, which fades its edges into its
+// neighbours: the tile seams this replaced.
+TEST_F(TileHandlerTest, HonoursTheClientRequestedPixelCount)
+{
+  // The sizes a 240 CSS px tile works out to across real display ratios.
+  for (const uint32_t px : {240u, 300u, 320u, 360u, 400u, 420u, 480u, 720u}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1.67,"tile_px":)"
+        + std::to_string(px) + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << px;
+    EXPECT_EQ(pngWidth(resp.payload), px)
+        << "asked for " << px << " px and must not get 256*dpr";
+  }
+}
+
+TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
+{
+  // The two are independent inputs: the count sizes the tile, the ratio scales
+  // what is authored in CSS px (fonts, stroke widths, the sub-resolution cull).
+  for (const char* dpr : {"1", "1.25", "1.67", "3"}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],"dpr":)"
+        + std::string(dpr) + R"(,"tile_px":400})");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << dpr;
+    EXPECT_EQ(pngWidth(resp.payload), 400u) << "dpr " << dpr;
+  }
+}
+
+TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
+{
+  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // hostile count must not be taken at face value.  0 and negatives mean "not
+  // specified" and fall back to 256*dpr.
+  const std::vector<std::pair<std::string, uint32_t>> cases = {
+      {"0", 256},        // unspecified -> 256 * dpr(1)
+      {"-5", 256},       // nonsense -> same
+      {"16", 32},        // below the floor
+      {"100000", 2048},  // above the ceiling
+  };
+  for (const auto& [requested, expected] : cases) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1,"tile_px":)"
+        + requested + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << requested;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << "tile_px " << requested;
+  }
+}
+
+TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
+{
+  // Two clients on different displays ask for different pixel counts of the
+  // same tile, and they are different images.  Without this in the key the
+  // second one is served the first one's size and the browser rescales it.
+  const auto render = [&](const std::string& px) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1.67,"tile_px":)"
+        + px + "}");
+    auto resp = handler_->handleTile(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+    return pngWidth(resp.payload);
+  };
+  EXPECT_EQ(render("400"), 400u);
+  EXPECT_EQ(render("480"), 480u);
+  // ...and back, which must come from the cache at its own size, not the last
+  // one rendered.
+  EXPECT_EQ(render("400"), 400u);
+}
+
 TEST_F(TileHandlerTest, TileReturnsPng)
 {
   WebSocketRequest req;

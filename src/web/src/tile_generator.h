@@ -60,6 +60,32 @@ struct FlightLine
   Color color;
 };
 
+// Where one tile sits in DBU space, and how DBU map to its pixels.
+//
+// The tile grid step is maxDXDY / 2^z — a FRACTIONAL number of DBU — so a
+// tile's lower-left corner is fractional too, and `origin_x/origin_y` keep it
+// that way.  The client lays the tiles out on that exact grid (the DBU↔latLng
+// transform in coordinates.js), so rounding the corner here would shift a
+// tile's content by its own fractional part, a different amount in each tile.
+// Neighbours then disagree about where the shared edge is and a hairline seam
+// opens along it — one that widens as you zoom in (the shift is fixed in DBU,
+// so it grows in pixels) and again with the display's dpr.
+//
+// `cull` is the same window rounded OUTWARD to whole DBU: the query and clip
+// window, never the drawing origin.
+struct TileFrame
+{
+  double origin_x = 0.0;
+  double origin_y = 0.0;
+  double scale = 1.0;  // pixels per DBU
+  odb::Rect cull;
+
+  // DBU → pixels within the tile.  Y counts up from the tile's bottom edge;
+  // callers that write into the buffer apply the row flip themselves.
+  double pxX(double dbu) const { return (dbu - origin_x) * scale; }
+  double pxY(double dbu) const { return (dbu - origin_y) * scale; }
+};
+
 struct SelectionResult
 {
   std::any object;  // dbInst*, dbNet*, etc.
@@ -436,7 +462,14 @@ class TileGenerator
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
-      double dpr = 1.0) const;
+      double dpr = 1.0,
+      // Exact device-pixel side length to render, as the client will display
+      // it.  Sent explicitly because a tile's CSS box is only a whole number of
+      // device pixels when tileSize*dpr is an integer: at a 1.6667 display
+      // scale, 256 CSS px is 426.67 device px, and handing the browser the
+      // rounded 428 makes it resample every tile.  0 = unspecified, which falls
+      // back to the historical 256*dpr.
+      int tile_px = 0) const;
 
   // Render only highlight/overlay shapes (selection, hover, timing, DRC,
   // route guides, flight lines) on a fully transparent background.  Used
@@ -483,8 +516,7 @@ class TileGenerator
   // test executables that link libweb don't need to pull in ord.
   using DebugOverlayCallback
       = std::function<void(std::vector<unsigned char>& image,
-                           const odb::Rect& dbu_tile,
-                           double pixels_per_dbu,
+                           const TileFrame& frame,
                            bool debug_live)>;
   // Install (or clear with `{}`) the debug-overlay callback.  Global
   // process state; installed by WebServer on serve() and cleared on
@@ -497,8 +529,7 @@ class TileGenerator
   // TileGenerator's line/polygon/bitmap primitives.
   void rasterizeWebPainterOps(std::vector<unsigned char>& image,
                               const std::vector<DrawOp>& ops,
-                              const odb::Rect& dbu_tile,
-                              double scale) const;
+                              const TileFrame& frame) const;
 
   // ─── Server-side tile cache ──────────────────────────────────────────
   //
@@ -534,7 +565,14 @@ class TileGenerator
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
-      double dpr = 1.0) const;
+      double dpr = 1.0,
+      // Exact device-pixel side length to render, as the client will display
+      // it.  Sent explicitly because a tile's CSS box is only a whole number of
+      // device pixels when tileSize*dpr is an integer: at a 1.6667 display
+      // scale, 256 CSS px is 426.67 device px, and handing the browser the
+      // rounded 428 makes it resample every tile.  0 = unspecified, which falls
+      // back to the historical 256*dpr.
+      int tile_px = 0) const;
   // `dim` is the square tile side length (buffer stride); -1 derives it from
   // the buffer.  Hot loops pass it explicitly to avoid the per-pixel sqrt.
   void setPixel(std::vector<unsigned char>& image,
@@ -571,38 +609,31 @@ class TileGenerator
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
                      const std::vector<odb::Polygon>& polys,
-                     const odb::Rect& dbu_tile,
-                     double scale) const;
+                     const TileFrame& frame) const;
 
   void drawColoredHighlight(std::vector<unsigned char>& image,
                             const std::vector<ColoredRect>& rects,
                             const std::string& current_layer,
-                            const odb::Rect& dbu_tile,
-                            double scale) const;
+                            const TileFrame& frame) const;
 
   void drawFlightLines(std::vector<unsigned char>& image,
                        const std::vector<FlightLine>& lines,
-                       const odb::Rect& dbu_tile,
-                       double scale) const;
+                       const TileFrame& frame) const;
 
   // Private counterpart of setDebugOverlayCallback: invokes the
   // installed callback (if any) for this tile.  See the public API
   // above for rationale.
   void drawRendererOverlay(std::vector<unsigned char>& image,
-                           const odb::Rect& dbu_tile,
-                           double scale,
+                           const TileFrame& frame,
                            bool debug_live) const;
 
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,
                        const std::string& layer,
                        const Color& color,
-                       const odb::Rect& dbu_tile,
-                       double scale) const;
+                       const TileFrame& frame) const;
 
-  static odb::Rect toPixels(double scale,
-                            const odb::Rect& rect,
-                            const odb::Rect& dbu_tile);
+  static odb::Rect toPixels(const TileFrame& frame, const odb::Rect& rect);
 
   // `dim` follows the setPixel/blendPixel convention: pass the buffer's side
   // length to skip re-deriving it with bufferDim(), or -1 to have it computed.
@@ -610,15 +641,14 @@ class TileGenerator
   // sqrt+lround adds up — callers in the render loop already know the value.
   void fillPolygon(std::vector<unsigned char>& image,
                    const odb::Polygon& poly,
-                   const odb::Rect& dbu_tile,
-                   double scale,
+                   const TileFrame& frame,
                    const Color& color,
                    bool blend = false,
                    FillPattern pattern = FillPattern::kSolid,
                    int dim = -1) const;
 
-  // ox/oy are the tile's origin in absolute pixel coordinates
-  // ((int)(dbu_tile.xMin()*scale), ...); they anchor non-solid patterns so the
+  // ox/oy are the tile's origin in absolute pixel coordinates, folded onto the
+  // pattern lattice (patternAnchor()); they anchor non-solid patterns so the
   // hatch stays seamless across tile boundaries.  Only meaningful when
   // pattern != kSolid.
   void drawFilledRect(std::vector<unsigned char>& buffer,
