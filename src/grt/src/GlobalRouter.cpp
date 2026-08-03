@@ -1403,6 +1403,66 @@ void GlobalRouter::removeRectUsage(const odb::Rect& rect,
   applyObstructionAdjustment(rect, tech_layer, false, true);
 }
 
+// Convert a net's detailed wires to a gcell-granularity route. Used as the
+// source for CUGR demand adoption: DRT may deviate from the guides, so
+// consumption must come from the real wires (FastRoute instead applies the
+// wire shapes as capacity obstructions in findNetsObstructions).
+GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net)
+{
+  GRoute route;
+  odb::dbWire* wire = db_net->getWire();
+  if (wire == nullptr) {
+    return route;
+  }
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+
+  std::vector<odb::dbShape> via_boxes;
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbWirePathItr pitr;
+  for (pitr.begin(wire); pitr.getNextPath(path);) {
+    while (pitr.getNextShape(pshape)) {
+      const odb::dbShape& shape = pshape.shape;
+      const odb::Rect rect = shape.getBox();
+      if (shape.isVia()) {
+        int via_min_layer = std::numeric_limits<int>::max();
+        int via_max_layer = std::numeric_limits<int>::min();
+        odb::dbShape::getViaBoxes(shape, via_boxes);
+        for (const odb::dbShape& box : via_boxes) {
+          const int level = box.getTechLayer()->getRoutingLevel();
+          if (level != 0) {
+            via_min_layer = std::min(via_min_layer, level);
+            via_max_layer = std::max(via_max_layer, level);
+          }
+        }
+        const odb::Point center = grid_->getPositionOnGrid(rect.center());
+        for (int level = std::max(via_min_layer, min_layer);
+             level < std::min(via_max_layer, max_layer + 1);
+             level++) {
+          route.emplace_back(
+              center.x(), center.y(), level, center.x(), center.y(), level + 1);
+        }
+      } else {
+        const int level = shape.getTechLayer()->getRoutingLevel();
+        if (level < min_layer || level > max_layer) {
+          continue;
+        }
+        const odb::Point p0
+            = grid_->getPositionOnGrid({rect.xMin(), rect.yMin()});
+        const odb::Point p1
+            = grid_->getPositionOnGrid({rect.xMax(), rect.yMax()});
+        // Wire shapes are rectilinear; skip the rare fat shape that spans
+        // gcells on both axes and segments fully inside one gcell.
+        if ((p0.x() == p1.x()) != (p0.y() == p1.y())) {
+          route.emplace_back(p0.x(), p0.y(), level, p1.x(), p1.y(), level);
+        }
+      }
+    }
+  }
+  return route;
+}
+
 bool GlobalRouter::isDetailedRouted(odb::dbNet* db_net)
 {
   return (!db_net->isSpecial()
