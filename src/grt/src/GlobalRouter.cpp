@@ -1452,8 +1452,10 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
         const int via_min_layer = bottom_layer->getRoutingLevel();
         const int via_max_layer = top_layer->getRoutingLevel();
         const odb::Point center = grid_->getPositionOnGrid(pshape.point);
+        // Emit only layer pairs CUGR represents: a via reaching above the
+        // ceiling (e.g. to a top-level pin) would reject the whole tree.
         for (int level = std::max(via_min_layer, min_layer);
-             level < std::min(via_max_layer, max_layer + 1);
+             level < std::min(via_max_layer, max_layer);
              level++) {
           route.emplace_back(
               center.x(), center.y(), level, center.x(), center.y(), level + 1);
