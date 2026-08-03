@@ -120,9 +120,10 @@ void NegotiationLegalizer::legalize()
   initFenceRegions();
 
   // Snap movable cells off invalid initial positions (no site, fixed
-  // blockage, wrong row/site, or outside their fence) and populate grid
-  // usage. Must run after buildGrid()/initFenceRegions() so it can use the
-  // real constraint helpers and see fixed-cell blockages.
+  // blockage, or outside their fence) and populate grid usage. Must run after
+  // buildGrid()/initFenceRegions() so it can see fixed-cell blockages and
+  // fence regions. Row legality (site type, orientation, power) is left to
+  // negotiation.
   initialSnap();
 
   debugPause("Pause after initialization.");
@@ -567,16 +568,12 @@ void NegotiationLegalizer::initFenceRegions()
 void NegotiationLegalizer::initialSnap()
 {
   const Grid* dpl_grid = opendp_->grid_.get();
-  std::vector<bool> relocated(cells_.size(), false);
 
-  // Can cell `ci` legally occupy (px, py)? True when the footprint is in-die,
-  // sits only on real sites (capacity 0 = no site or fixed blockage), matches
-  // the row (site type, orientation, power) and is inside the fence. This is
-  // the snapping trigger; usage (movable overlap) is ignored. Only the cell
-  // body is checked, not its padding: padding merely widens the horizontal gap
-  // a sideways move must clear, which would bias the search into shooting the
-  // cell vertically past the fixed instance instead of nudging it aside.
-  // Spacing/padding is negotiation's job.
+  // Can cell `ci` geometrically occupy (px, py)? True when the body footprint
+  // is in-die, on real sites (capacity 0 = no site or fixed blockage) and
+  // inside the fence. Deliberately ignores row legality (site type,
+  // orientation, power), movable overlap and padding — negotiation handles all
+  // of those; the snap only keeps cells off fixed blockages and off-die.
   auto placeable = [&](int ci, int px, int py) -> bool {
     const NegCell& cell = cells_[ci];
     if (!inDie(px, py, cell.width, cell.height)) {
@@ -589,28 +586,7 @@ void NegotiationLegalizer::initialSnap()
         }
       }
     }
-    return isValidRow(py, cell, px) && respectsFence(ci, px, py);
-  };
-
-  // Destination test: placeable AND unclaimed. At this point the only usage on
-  // the grid is from cells relocated earlier in this pass (normal overlaps are
-  // committed only after the loop), so the search skips just those and stops
-  // at the nearest genuinely-open site. This spreads relocated cells apart,
-  // e.g. filling a short channel between fixed end caps site by site instead
-  // of piling them onto the same opening.
-  auto vacant = [&](int ci, int px, int py) -> bool {
-    if (!placeable(ci, px, py)) {
-      return false;
-    }
-    const NegCell& cell = cells_[ci];
-    for (int dy = 0; dy < cell.height; ++dy) {
-      for (int gx = px; gx < px + cell.width; ++gx) {
-        if (gridAt(gx, py + dy).usage > 0) {
-          return false;
-        }
-      }
-    }
-    return true;
+    return respectsFence(ci, px, py);
   };
 
   for (int idx = 0; idx < static_cast<int>(cells_.size()); ++idx) {
@@ -630,63 +606,69 @@ void NegotiationLegalizer::initialSnap()
                  die_xlo_ + cell.init_x * site_width_,
                  die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
 
-      // Linear scan in the four cardinal directions (same shape as
-      // Opendp::moveHopeless). Each direction walks until the first vacant
-      // site — unbounded by any search window, so it can step past an
-      // arbitrarily wide macro or a fully-occupied channel to reach real
-      // room.
+      const int init_y_dbu = dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
+      // Farthest an in-grid site can sit from the initial position; once the
+      // budget reaches it the whole grid has been covered.
+      const int max_budget
+          = grid_w_ * site_width_
+            + std::max(init_y_dbu - dpl_grid->gridYToDbu(GridY{0}).v,
+                       dpl_grid->gridYToDbu(GridY{grid_h_ - cell.height}).v
+                           - init_y_dbu);
+
       int best_x = cell.init_x;
       int best_y = cell.init_y;
       int best_dist = std::numeric_limits<int>::max();
       bool found = false;
-      const int init_y_dbu = dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
 
-      for (int x = cell.init_x - 1; x >= 0; --x) {  // left
-        if (vacant(idx, x, cell.init_y)) {
-          const int dist = (cell.init_x - x) * site_width_;
-          if (dist < best_dist) {
-            best_dist = dist;
-            best_x = x;
-            best_y = cell.init_y;
-            found = true;
+      for (int budget = site_width_; !found;
+           budget = std::min(budget * 2, max_budget)) {
+        // Rows in rings of increasing distance from init_y. `reach` is the
+        // current budget, tightened by the incumbent once a hit is seen.
+        for (int r = 0;; ++r) {
+          const int reach = std::min(budget, best_dist);
+          const int ring_rows[2] = {cell.init_y - r, cell.init_y + r};
+          bool ring_in_reach = false;
+          for (int s = 0; s < (r == 0 ? 1 : 2); ++s) {
+            const int py = ring_rows[s];
+            if (py < 0 || py + cell.height > grid_h_) {
+              continue;
+            }
+            const int vdist
+                = std::abs(dpl_grid->gridYToDbu(GridY{py}).v - init_y_dbu);
+            if (vdist >= reach) {
+              continue;  // this row is beyond the current reach
+            }
+            ring_in_reach = true;
+            // Nearest placeable column on this row within the reach budget.
+            // dx == 0 first, then outward (left wins ties).
+            const int max_dx = (reach - vdist) / site_width_;
+            for (int dx = 0; dx <= max_dx; ++dx) {
+              int hit_x = -1;
+              if (cell.init_x - dx >= 0
+                  && placeable(idx, cell.init_x - dx, py)) {
+                hit_x = cell.init_x - dx;
+              } else if (dx > 0 && cell.init_x + dx + cell.width <= grid_w_
+                         && placeable(idx, cell.init_x + dx, py)) {
+                hit_x = cell.init_x + dx;
+              }
+              if (hit_x >= 0) {
+                const int total = vdist + dx * site_width_;
+                if (total < best_dist) {
+                  best_dist = total;
+                  best_x = hit_x;
+                  best_y = py;
+                  found = true;
+                }
+                break;  // nearest column on this row
+              }
+            }
           }
-          break;
+          if (!ring_in_reach) {
+            break;
+          }
         }
-      }
-      for (int x = cell.init_x + 1; x + cell.width <= grid_w_; ++x) {  // right
-        if (vacant(idx, x, cell.init_y)) {
-          const int dist = (x - cell.init_x) * site_width_;
-          if (dist < best_dist) {
-            best_dist = dist;
-            best_x = x;
-            best_y = cell.init_y;
-            found = true;
-          }
-          break;
-        }
-      }
-      for (int y = cell.init_y - 1; y >= 0; --y) {  // below
-        if (vacant(idx, cell.init_x, y)) {
-          const int dist = init_y_dbu - dpl_grid->gridYToDbu(GridY{y}).v;
-          if (dist < best_dist) {
-            best_dist = dist;
-            best_x = cell.init_x;
-            best_y = y;
-            found = true;
-          }
-          break;
-        }
-      }
-      for (int y = cell.init_y + 1; y + cell.height <= grid_h_; ++y) {  // above
-        if (vacant(idx, cell.init_x, y)) {
-          const int dist = dpl_grid->gridYToDbu(GridY{y}).v - init_y_dbu;
-          if (dist < best_dist) {
-            best_dist = dist;
-            best_x = cell.init_x;
-            best_y = y;
-            found = true;
-          }
-          break;
+        if (budget >= max_budget) {
+          break;  // whole grid covered, nothing placeable
         }
       }
 
@@ -695,55 +677,28 @@ void NegotiationLegalizer::initialSnap()
         cell.init_y = best_y;
         cell.x = cell.init_x;
         cell.y = cell.init_y;
-        // Commit now so later relocations in this loop see this cell's claim
-        // and do not pile onto it.
-        addUsage(idx, 1);
-        relocated[idx] = true;
-
-        if (debug_observer_ && opendp_->deep_iterative_debug_) {
-          const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
-          if (!debug_inst || cell.db_inst == debug_inst) {
-            if (network_) {
-              if (Node* node = cell.node) {
-                node->setLeft(DbuX(cell.x * site_width_));
-                node->setBottom(DbuY(dpl_grid->gridYToDbu(GridY{cell.y}).v));
-                node->setPlaced(true);
-              }
-            }
-            pushNegotiationPixels();
-            const int snap_x_dbu = die_xlo_ + cell.x * site_width_;
-            const int snap_y_dbu
-                = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.y}).v;
-            logger_->report("Pause at snapping of {} to ({}, {}) dbu.",
-                            cell.db_inst->getName(),
-                            snap_x_dbu,
-                            snap_y_dbu);
-            debug_observer_->drawSelected(cell.db_inst, !debug_inst);
-          }
-        }
       } else {
-        debugPrint(logger_,
-                   utl::DPL,
-                   "negotiation",
-                   1,
-                   "No valid site found for instance '{}' near its initial "
-                   "position dbu ({}, {}). Linear scan in all four cardinal "
-                   "directions exhausted with no match. Leaving instance at "
-                   "its initial position; negotiation will need to legalize "
-                   "it.",
-                   cell.db_inst->getName(),
-                   die_xlo_ + cell.init_x * site_width_,
-                   die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
+        debugPrint(
+            logger_,
+            utl::DPL,
+            "negotiation",
+            1,
+            "No placeable site found for instance '{}' near its initial "
+            "position dbu ({}, {}). Diamond search covered the grid with "
+            "no match. Leaving instance at its initial position; "
+            "negotiation will need to legalize it.",
+            cell.db_inst->getName(),
+            die_xlo_ + cell.init_x * site_width_,
+            die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
       }
     }
   }
 
-  // Now record usage for the cells that were not relocated (already placeable,
-  // or search exhausted). This was deferred until after the loop so those
-  // normal overlaps did not steer the relocation search above. Relocated cells
-  // recorded their usage inline, so every movable cell is now on the grid.
+  // Record grid usage for movable cells.
+  // The snap search does not read usage, so this is done after all cells are
+  // placed
   for (int idx = 0; idx < static_cast<int>(cells_.size()); ++idx) {
-    if (!cells_[idx].fixed && !relocated[idx]) {
+    if (!cells_[idx].fixed) {
       addUsage(idx, 1);
     }
   }
