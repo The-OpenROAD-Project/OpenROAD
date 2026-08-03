@@ -20,6 +20,32 @@ proc define_process_corner { args } {
   rcx::define_process_corner $ext_model_index $filename
 }
 
+sta::define_cmd_args "set_extraction_rules_file" {
+    [-tech tech_name] rules_file
+}
+
+proc set_extraction_rules_file { args } {
+  sta::parse_key_args "set_extraction_rules_file" args \
+    keys {-tech} flags {}
+  sta::check_argc_eq1 "set_extraction_rules_file" $args
+
+  if { ![ord::db_has_tech] } {
+    utl::error RCX 520 "No LEF technology has been read."
+  }
+
+  set tech_name ""
+  if { [info exists keys(-tech)] } {
+    set tech_name $keys(-tech)
+    if { [[ord::get_db] findTech $tech_name] == "NULL" } {
+      utl::error RCX 519 "Technology $tech_name not found."
+    }
+  }
+
+  set rules_file [file nativename [lindex $args 0]]
+
+  rcx::set_extraction_rules_file $rules_file $tech_name
+}
+
 sta::define_cmd_args "define_rcx_corners" {
     [-corner_list cornerList]
 }

@@ -23,6 +23,7 @@ using ord::getOpenRCX;
 using rcx::Ext;
 %}
 
+%include <std_string.i>
 %include "../../Exception.i"
 %inline %{
 
@@ -31,6 +32,32 @@ define_process_corner(int ext_model_index, const char* file)
 {
   Ext* ext = getOpenRCX();
   ext->define_process_corner(ext_model_index, file);
+}
+
+void
+set_extraction_rules_file(const std::string& rules_file,
+                          const std::string& tech_name)
+{
+  Ext* ext = getOpenRCX();
+  utl::Logger* logger = getLogger();
+  odb::dbChip* top_chip = ord::getOpenRoad()->getDb()->getChip();
+
+  if (!top_chip) {
+    logger->error(utl::RCX, 523, "No design is loaded.");
+  }
+
+  if (top_chip->getChipType() == odb::dbChip::ChipType::HIER) {
+    if (tech_name.empty()) {
+      logger->error(utl::RCX,
+                    521,
+                    "Could not set extraction rules file. Use -tech to "
+                    "specify a technology in a 3D design.");
+    }
+
+    ext->setExtractionRulesFile(rules_file, tech_name);
+  } else {
+    ext->setExtractionRulesFile(rules_file);
+  }
 }
 
 void
