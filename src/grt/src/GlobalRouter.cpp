@@ -627,45 +627,58 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     return 0;
   }
   if (!initialized_ || haveDetailedRoutes()) {
-    // Rebuilding engine state from detailed routes is FastRoute-only; the
-    // CUGR equivalent is pending.
-    if (use_cugr_) {
-      logger_->warn(GRT,
-                    311,
-                    "repair_antennas with CUGR requires global routes from "
-                    "the current session; skipping antenna repair.");
-      logger_->metric("antenna_diodes_count", total_diodes_count_);
-      return 0;
-    }
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
-    initFastRoute(min_layer, max_layer);
-    // Repopulate edge usage from routes_ using updateNetResources, which
-    // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
-    // there is too much congestion
-    std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
-    int net_id;
-    bool exists;
-    for (const auto& [db_net, groute] : routes_) {
-      if (!isDetailedRouted(db_net)) {
-        auto it = db_net_map_.find(db_net);
-        if (it != db_net_map_.end()) {
-          updateNetResources(it->second, false);
-          // Mark the net so congestion-loop releases use the matching
-          // GRoute-based path (updateNetResources) rather than the
-          // sttree-based clearNetRoute (which sees empty sttrees here
-          // and would leave the 3D usage un-released, causing underflow).
-          it->second->setAreSegmentsRestored(true);
-          if (db_net->getNonDefaultRule() != nullptr) {
-            fastroute_->getNetId(db_net, net_id, exists);
-            ndr_nets.emplace_back(db_net, net_id);
+    if (use_cugr_) {
+      initCUGR(min_layer, max_layer);
+      // Adopt the existing routing into CUGR's demand so reroutes avoid
+      // it — the analog of FastRoute's findNetsObstructions. Consumption
+      // of detailed-routed nets comes from the real wires (DRT may
+      // deviate from the guides); other nets use their guide-derived
+      // routes. updateNet releases a net's own demand before it is
+      // rerouted, mirroring removeWireUsage.
+      for (odb::dbNet* db_net : block_->getNets()) {
+        if (isDetailedRouted(db_net)) {
+          GRoute wire_route = makeRouteFromWires(db_net);
+          if (!wire_route.empty()
+              && cugr_->restoreNetRoute(db_net, wire_route)) {
+            continue;
+          }
+        }
+        auto it = routes_.find(db_net);
+        if (it != routes_.end()) {
+          cugr_->restoreNetRoute(db_net, it->second);
+        }
+      }
+    } else {
+      initFastRoute(min_layer, max_layer);
+      // Repopulate edge usage from routes_ using updateNetResources, which
+      // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
+      // there is too much congestion
+      std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
+      int net_id;
+      bool exists;
+      for (const auto& [db_net, groute] : routes_) {
+        if (!isDetailedRouted(db_net)) {
+          auto it = db_net_map_.find(db_net);
+          if (it != db_net_map_.end()) {
+            updateNetResources(it->second, false);
+            // Mark the net so congestion-loop releases use the matching
+            // GRoute-based path (updateNetResources) rather than the
+            // sttree-based clearNetRoute (which sees empty sttrees here
+            // and would leave the 3D usage un-released, causing underflow).
+            it->second->setAreSegmentsRestored(true);
+            if (db_net->getNonDefaultRule() != nullptr) {
+              fastroute_->getNetId(db_net, net_id, exists);
+              ndr_nets.emplace_back(db_net, net_id);
+            }
           }
         }
       }
+      // Disable the extra edge cost for NDR nets on congested 2D edges.
+      // Uses routes_ segments directly since sttrees are not yet populated.
+      disableCongestedNDRNetsFromRoutes(ndr_nets);
     }
-    // Disable the extra edge cost for NDR nets on congested 2D edges.
-    // Uses routes_ segments directly since sttrees are not yet populated.
-    disableCongestedNDRNetsFromRoutes(ndr_nets);
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
@@ -1357,7 +1370,12 @@ void GlobalRouter::destroyNetWire(Net* net)
 {
   odb::dbWire* wire = net->getDbNet()->getWire();
   if (wire != nullptr) {
-    removeWireUsage(wire);
+    // removeWireUsage releases FastRoute capacity obstructions. CUGR's
+    // release happens in updateNet, which drops the net's guide-derived
+    // tree demand before the reroute.
+    if (!use_cugr_) {
+      removeWireUsage(wire);
+    }
     odb::dbWire::destroy(wire);
   }
   net->setHasWires(false);
@@ -6589,6 +6607,10 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
     // Rebuild the pin set from the netlist; positions are synced below.
     Net* net = getNet(db_net);
     updateNetPins(net);
+    // Stale detailed wires (post-detailed-route repair) must go: the
+    // reroute and its guides supersede them, and the antenna checker
+    // must not read them. No-op for nets without wires.
+    destroyNetWire(net);
     // Journal-restored nets get their pre-change routing back from the odb
     // guides instead of a reroute; a failed restore forces the reroute.
     const bool restore_requested
