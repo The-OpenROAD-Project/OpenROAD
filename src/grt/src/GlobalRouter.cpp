@@ -1433,9 +1433,11 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
   odb::dbWirePathShape pshape;
   odb::dbWirePathItr pitr;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
+    // Walk the centerline points: corners of the width-expanded shape
+    // boxes can land in neighboring gcells and break the gcell trace.
+    odb::Point prev_point = path.point;
     while (pitr.getNextShape(pshape)) {
       const odb::dbShape& shape = pshape.shape;
-      const odb::Rect rect = shape.getBox();
       if (shape.isVia()) {
         odb::dbTechLayer* bottom_layer;
         odb::dbTechLayer* top_layer;
@@ -1449,7 +1451,7 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
         }
         const int via_min_layer = bottom_layer->getRoutingLevel();
         const int via_max_layer = top_layer->getRoutingLevel();
-        const odb::Point center = grid_->getPositionOnGrid(rect.center());
+        const odb::Point center = grid_->getPositionOnGrid(pshape.point);
         for (int level = std::max(via_min_layer, min_layer);
              level < std::min(via_max_layer, max_layer + 1);
              level++) {
@@ -1458,19 +1460,16 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
         }
       } else {
         const int level = shape.getTechLayer()->getRoutingLevel();
-        if (level < min_layer || level > max_layer) {
-          continue;
-        }
-        const odb::Point p0
-            = grid_->getPositionOnGrid({rect.xMin(), rect.yMin()});
-        const odb::Point p1
-            = grid_->getPositionOnGrid({rect.xMax(), rect.yMax()});
-        // Wire shapes are rectilinear; skip the rare fat shape that spans
-        // gcells on both axes and segments fully inside one gcell.
-        if ((p0.x() == p1.x()) != (p0.y() == p1.y())) {
-          route.emplace_back(p0.x(), p0.y(), level, p1.x(), p1.y(), level);
+        if (level >= min_layer && level <= max_layer) {
+          const odb::Point p0 = grid_->getPositionOnGrid(prev_point);
+          const odb::Point p1 = grid_->getPositionOnGrid(pshape.point);
+          // Skip spans within a single gcell.
+          if ((p0.x() == p1.x()) != (p0.y() == p1.y())) {
+            route.emplace_back(p0.x(), p0.y(), level, p1.x(), p1.y(), level);
+          }
         }
       }
+      prev_point = pshape.point;
     }
   }
   return route;
