@@ -634,17 +634,33 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       // Adopt the existing routing into CUGR's demand, like FastRoute's
       // findNetsObstructions: real wires for detailed-routed nets, guide
       // routes otherwise. updateNet releases a net's demand on reroute.
+      int from_wires = 0;
+      int from_guides = 0;
+      int failed = 0;
       for (odb::dbNet* db_net : block_->getNets()) {
-        if (isDetailedRouted(db_net)
+        const bool is_routed = isDetailedRouted(db_net);
+        if (is_routed
             && cugr_->restoreNetRoute(
                 db_net, makeRouteFromWires(db_net, min_layer, max_layer))) {
+          from_wires++;
           continue;
         }
         auto it = routes_.find(db_net);
-        if (it != routes_.end()) {
-          cugr_->restoreNetRoute(db_net, it->second);
+        if (it != routes_.end() && cugr_->restoreNetRoute(db_net, it->second)) {
+          from_guides++;
+        } else if (is_routed || it != routes_.end()) {
+          failed++;
         }
       }
+      debugPrint(logger_,
+                 GRT,
+                 "repair_antennas",
+                 1,
+                 "Demand adoption: {} nets from wires, {} from guides, {} "
+                 "failed",
+                 from_wires,
+                 from_guides,
+                 failed);
     } else {
       initFastRoute(min_layer, max_layer);
       // Repopulate edge usage from routes_ using updateNetResources, which
