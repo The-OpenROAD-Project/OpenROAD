@@ -68,6 +68,11 @@ class OptimizeMirroring
 
   // Mirroring swaps the left/right cell edges, so the LEF58 cell edge
   // spacing rules have to be rechecked for the mirrored orientation.
+  // The check needs the dpl network, grid and DRC engine.
+  bool hasEdgeSpacingCheck() const
+  {
+    return drc_engine_ != nullptr && network_ != nullptr && grid_ != nullptr;
+  }
   bool isEdgeSpacingLegal(odb::dbInst* inst,
                           const odb::dbOrientType& orient) const;
   void updateNodeOrient(odb::dbInst* inst, const odb::dbOrientType& orient);

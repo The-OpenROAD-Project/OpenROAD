@@ -221,7 +221,7 @@ bool OptimizeMirroring::isEdgeSpacingLegal(
     odb::dbInst* inst,
     const odb::dbOrientType& orient) const
 {
-  if (drc_engine_ == nullptr || !drc_engine_->hasCellEdgeSpacingTable()) {
+  if (!hasEdgeSpacingCheck() || !drc_engine_->hasCellEdgeSpacingTable()) {
     return true;
   }
   const Node* cell = network_->getNode(inst);
@@ -235,7 +235,7 @@ bool OptimizeMirroring::isEdgeSpacingLegal(
 void OptimizeMirroring::updateNodeOrient(odb::dbInst* inst,
                                          const odb::dbOrientType& orient)
 {
-  if (network_ == nullptr) {
+  if (!hasEdgeSpacingCheck()) {
     return;
   }
   Node* cell = network_->getNode(inst);
