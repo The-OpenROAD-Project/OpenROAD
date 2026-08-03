@@ -631,12 +631,9 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     getMinMaxLayer(min_layer, max_layer);
     if (use_cugr_) {
       initCUGR(min_layer, max_layer);
-      // Adopt the existing routing into CUGR's demand so reroutes avoid
-      // it — the analog of FastRoute's findNetsObstructions. Consumption
-      // of detailed-routed nets comes from the real wires (DRT may
-      // deviate from the guides); other nets use their guide-derived
-      // routes. updateNet releases a net's own demand before it is
-      // rerouted, mirroring removeWireUsage.
+      // Adopt the existing routing into CUGR's demand, like FastRoute's
+      // findNetsObstructions: real wires for detailed-routed nets, guide
+      // routes otherwise. updateNet releases a net's demand on reroute.
       for (odb::dbNet* db_net : block_->getNets()) {
         if (isDetailedRouted(db_net)
             && cugr_->restoreNetRoute(
@@ -1419,10 +1416,9 @@ void GlobalRouter::removeRectUsage(const odb::Rect& rect,
   applyObstructionAdjustment(rect, tech_layer, false, true);
 }
 
-// Convert a net's detailed wires to a gcell-granularity route. Used as the
-// source for CUGR demand adoption: DRT may deviate from the guides, so
-// consumption must come from the real wires (FastRoute instead applies the
-// wire shapes as capacity obstructions in findNetsObstructions).
+// Convert a net's detailed wires to a gcell-granularity route for CUGR
+// demand adoption. DRT may deviate from the guides, so consumption must
+// come from the real wires.
 GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net,
                                         const int min_layer,
                                         const int max_layer)
