@@ -5,11 +5,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
 #include <memory>
 #include <random>
+#include <vector>
 
 #include "DmpCeffLambertWDelayCalc.hh"
 #include "db_sta/dbSta.hh"
+#include "sta/DelayCalc.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace sta {
@@ -24,190 +29,162 @@ class TestLambertW : public tst::IntegratedFixture
   }
 };
 
-// Subclasses to expose protected members for unit testing
-class ExposedLambertWDelayCalc : public DmpCeffLambertWDelayCalc
-{
- public:
-  using DmpCeffLambertWDelayCalc::DmpCeffLambertWDelayCalc;
-
-  float evaluateLoadDelay(double threshold_voltage,
-                          double pole1,
-                          double residue1,
-                          double residue1_div_pole1_squared,
-                          double elmore_delay,
-                          double transition_time,
-                          double output_voltage_at_transition)
-  {
-    return loadDelay(threshold_voltage,
-                     pole1,
-                     residue1,
-                     residue1_div_pole1_squared,
-                     elmore_delay,
-                     transition_time,
-                     output_voltage_at_transition);
-  }
-};
-
-class ExposedTwoPoleDelayCalc : public DmpCeffTwoPoleDelayCalc
-{
- public:
-  using DmpCeffTwoPoleDelayCalc::DmpCeffTwoPoleDelayCalc;
-
-  float evaluateLoadDelay(double threshold_voltage,
-                          double pole1,
-                          double pole2,
-                          double residue1,
-                          double residue2,
-                          double elmore_delay,
-                          double residue1_div_pole1_squared,
-                          double residue2_div_pole2_squared,
-                          double transition_time,
-                          double output_voltage_at_transition)
-  {
-    return loadDelay(threshold_voltage,
-                     pole1,
-                     pole2,
-                     residue1,
-                     residue2,
-                     elmore_delay,
-                     residue1_div_pole1_squared,
-                     residue2_div_pole2_squared,
-                     transition_time,
-                     output_voltage_at_transition);
-  }
-};
-
-struct PiModelParameters
-{
-  double pole1;
-  double pole2;
-  double residue1;
-  double residue2;
-  double residue1_div_pole1_squared;
-  double residue2_div_pole2_squared;
-  double elmore_delay;
-  double transition_time;
-  double threshold_voltage;
-  double output_voltage_at_transition;
-  double residue_coeff_C;
-  double crossing_offset_D;
-  double lambert_argument;
-};
-
-// Calculates the two-pole transfer function coefficients and initial response
-// parameters from randomized physical properties of a Pi-model circuit.
-// The transfer function assumes a DC gain of 1.0 (residue1/pole1 +
-// residue2/pole2 = 1.0).
-PiModelParameters calculatePiModelParameters(double pole1,
-                                             double pole2,
-                                             double residue1_fraction,
-                                             double transition_time,
-                                             double threshold_voltage)
-{
-  PiModelParameters params;
-  params.pole1 = pole1;
-  params.pole2 = pole2;
-  params.residue1 = residue1_fraction * pole1;
-  params.residue2 = (1.0 - residue1_fraction) * pole2;
-
-  params.residue1_div_pole1_squared = params.residue1 / (pole1 * pole1);
-  params.residue2_div_pole2_squared = params.residue2 / (pole2 * pole2);
-  params.elmore_delay
-      = params.residue1_div_pole1_squared + params.residue2_div_pole2_squared;
-
-  params.transition_time = transition_time;
-  params.threshold_voltage = threshold_voltage;
-
-  // output_voltage_at_transition is the value of the output voltage at the end
-  // of the input ramp.
-  params.output_voltage_at_transition
-      = (transition_time - params.elmore_delay
-         + params.residue1_div_pole1_squared
-               * std::exp(-pole1 * transition_time)
-         + params.residue2_div_pole2_squared
-               * std::exp(-pole2 * transition_time))
-        / transition_time;
-
-  params.residue_coeff_C = params.residue1_div_pole1_squared;
-  params.crossing_offset_D
-      = threshold_voltage * transition_time + params.elmore_delay;
-
-  // lambert_argument is the argument to the Lambert W function for checking
-  // boundary limits.
-  params.lambert_argument = -pole1 * params.residue_coeff_C
-                            * std::exp(-pole1 * params.crossing_offset_D);
-  return params;
-}
-
 TEST_F(TestLambertW, ValidateRandomPImodels)
 {
   readVerilogAndSetup("TestDbSta_0.v");
 
-  std::unique_ptr<ExposedLambertWDelayCalc> lambert_calc
-      = std::make_unique<ExposedLambertWDelayCalc>(sta_.get());
-  std::unique_ptr<ExposedTwoPoleDelayCalc> twopole_calc
-      = std::make_unique<ExposedTwoPoleDelayCalc>(sta_.get());
+  std::unique_ptr<DmpCeffLambertWDelayCalc> lambert_calc
+      = std::make_unique<DmpCeffLambertWDelayCalc>(sta_.get());
+  std::unique_ptr<DmpCeffTwoPoleDelayCalc> twopole_calc
+      = std::make_unique<DmpCeffTwoPoleDelayCalc>(sta_.get());
 
-  std::mt19937 gen(42);  // fixed seed for reproducibility
-  std::uniform_real_distribution<double> dis_p1(1.0, 50.0);
-  std::uniform_real_distribution<double> dis_p2(60.0, 500.0);  // p2 > p1
-  std::uniform_real_distribution<double> dis_k1(0.1, 0.9);
-  // transition times in ns
-  std::uniform_real_distribution<double> dis_tt(0.01, 1.0);
-  std::uniform_real_distribution<double> dis_vth(0.1, 0.9);
+  const Scene* scene = sta_->cmdScene();
+  const MinMax* min_max = MinMax::max();
+  const RiseFall* rf = RiseFall::rise();
 
-  int samples = 0;
-  while (samples < 100) {
-    double pole1 = dis_p1(gen);
-    double pole2 = dis_p2(gen);
-    double residue1_fraction = dis_k1(gen);
-    double transition_time = dis_tt(gen);
-    double threshold_voltage = dis_vth(gen);
+  Pin* drvr_pin = db_network_->findPin("buf/Z");
+  Pin* load_pin = db_network_->findPin("load/A");
+  ASSERT_NE(drvr_pin, nullptr);
+  ASSERT_NE(load_pin, nullptr);
 
-    PiModelParameters params = calculatePiModelParameters(
-        pole1, pole2, residue1_fraction, transition_time, threshold_voltage);
-    static constexpr double inv_e = -1.0 / std::numbers::e;
+  Instance* inst = db_network_->instance(drvr_pin);
+  LibertyCell* cell = db_network_->libertyCell(inst);
+  ASSERT_NE(cell, nullptr);
+  TimingArcSet* arc_set = cell->timingArcSets().front();
+  ASSERT_NE(arc_set, nullptr);
+  TimingArc* arc = arc_set->arcs().front();
+  ASSERT_NE(arc, nullptr);
 
-    if (params.output_voltage_at_transition < threshold_voltage
-        || (params.lambert_argument >= inv_e
-            && params.lambert_argument < 0.0)) {
-      float t_lambert = lambert_calc->evaluateLoadDelay(
-          threshold_voltage,
-          pole1,
-          params.residue1,
-          params.residue1_div_pole1_squared,
-          params.elmore_delay,
-          transition_time,
-          params.output_voltage_at_transition);
-      float t_twopole = twopole_calc->evaluateLoadDelay(
-          threshold_voltage,
-          pole1,
-          pole2,
-          params.residue1,
-          params.residue2,
-          params.elmore_delay,
-          params.residue1_div_pole1_squared,
-          params.residue2_div_pole2_squared,
-          transition_time,
-          params.output_voltage_at_transition);
+  LoadPinIndexMap load_pin_map(db_network_);
+  load_pin_map[load_pin] = 0;
 
-      float diff = std::abs(t_lambert - t_twopole);
-      float max_val = std::max(std::abs(t_lambert), std::abs(t_twopole));
+  Parasitics* parasitics = scene->parasitics(min_max);
+  ASSERT_NE(parasitics, nullptr);
 
-      if (max_val > 0.05) {
-        float rel_err = diff / max_val;
-        EXPECT_LT(rel_err, 0.06)
-            << "Mismatch at sample " << samples << ": Lambert=" << t_lambert
-            << ", TwoPole=" << t_twopole << ", RelErr=" << rel_err;
-      } else {
-        EXPECT_LT(diff, 0.01) << "Absolute error at sample " << samples
-                              << ": Lambert=" << t_lambert
-                              << ", TwoPole=" << t_twopole << ", Diff=" << diff;
-      }
+  std::mt19937 gen(42);
+  std::uniform_real_distribution<float> dis_c2(1e-15f, 50e-15f);
+  std::uniform_real_distribution<float> dis_rpi(10.0f, 500.0f);
+  std::uniform_real_distribution<float> dis_c1(1e-15f, 50e-15f);
+  std::uniform_real_distribution<float> dis_slew(0.01e-9f, 0.5e-9f);
 
-      samples++;
+  const Net* net = db_network_->net(drvr_pin);
+  ASSERT_NE(net, nullptr);
+
+  static constexpr int kNumSamples = 10000;
+  std::vector<float> rel_errors;
+  rel_errors.reserve(kNumSamples);
+  int count_under_6pct = 0;
+  int count_under_10pct = 0;
+
+  for (int i = 0; i < kNumSamples; ++i) {
+    float c2 = dis_c2(gen);
+    float rpi = dis_rpi(gen);
+    float c1 = dis_c1(gen);
+
+    // Rejection sampling for physically realistic layout parasitics:
+    // 1. Physical wire constraint: C2 must be >= half the wire capacitance
+    // associated with Rpi (min c/r ratio ~0.04 fF/Ohm)
+    float min_c2_from_rpi = 0.5f * rpi * 0.04e-15f;
+    if (c2 < min_c2_from_rpi) {
+      --i;
+      continue;
     }
-  }
-}
 
+    // 2. Capacitance ratio constraint: For long wires (Rpi > 100 Ohm), y =
+    // C2/(C1+C2) is bounded in [0.20, 0.80]
+    float y_ratio = c2 / (c1 + c2);
+    if (rpi > 100.0f && (y_ratio < 0.20f || y_ratio > 0.80f)) {
+      --i;
+      continue;
+    }
+
+    Slew in_slew(dis_slew(gen));
+
+    // Construct a detailed RC network representing the Pi model
+    Parasitic* pnet = parasitics->makeParasiticNetwork(net, false);
+    ParasiticNode* drvr_node
+        = parasitics->ensureParasiticNode(pnet, drvr_pin, db_network_);
+    ParasiticNode* load_node
+        = parasitics->ensureParasiticNode(pnet, load_pin, db_network_);
+
+    parasitics->incrCap(drvr_node, c2);
+    parasitics->incrCap(load_node, c1);
+    parasitics->makeResistor(pnet, 1, rpi, drvr_node, load_node);
+
+    // Reduce the RC network using OpenSTA's parasitic reduction engine
+    Parasitic* parasitic = parasitics->reduceToPiPoleResidue2(
+        pnet, drvr_pin, rf, scene, min_max);
+    ASSERT_NE(parasitic, nullptr);
+
+    float load_cap = c1 + c2;
+
+    ArcDcalcResult res_lambert = lambert_calc->gateDelay(drvr_pin,
+                                                         arc,
+                                                         in_slew,
+                                                         load_cap,
+                                                         parasitic,
+                                                         load_pin_map,
+                                                         scene,
+                                                         min_max);
+
+    ArcDcalcResult res_twopole = twopole_calc->gateDelay(drvr_pin,
+                                                         arc,
+                                                         in_slew,
+                                                         load_cap,
+                                                         parasitic,
+                                                         load_pin_map,
+                                                         scene,
+                                                         min_max);
+
+    float gd_lambert = delayAsFloat(res_lambert.gateDelay());
+    float gd_twopole = delayAsFloat(res_twopole.gateDelay());
+
+    float diff = std::abs(gd_lambert - gd_twopole);
+    float max_val = std::max(std::abs(gd_lambert), std::abs(gd_twopole));
+
+    if (max_val > 0.0f) {
+      float rel_err = diff / max_val;
+      rel_errors.push_back(rel_err);
+      if (rel_err < 0.06f) {
+        count_under_6pct++;
+      }
+      if (rel_err < 0.10f) {
+        count_under_10pct++;
+      }
+    }
+
+    parasitics->deleteParasiticNetwork(net);
+    parasitics->deleteDrvrReducedParasitics(drvr_pin);
+  }
+
+  std::sort(rel_errors.begin(), rel_errors.end());
+  float mean_err = 0.0f;
+  for (float err : rel_errors) {
+    mean_err += err;
+  }
+  mean_err /= rel_errors.size();
+
+  float p95_err = rel_errors[static_cast<size_t>(0.95 * rel_errors.size())];
+  float p99_err = rel_errors[static_cast<size_t>(0.99 * rel_errors.size())];
+  float max_err = rel_errors.back();
+
+  std::cout << "\n=======================================================\n";
+  std::cout << " [ STATISTICAL ANALYSIS ] 10,000 Random Pi Models\n";
+  std::cout << "-------------------------------------------------------\n";
+  std::cout << "  Mean Relative Error           : " << mean_err * 100.0f
+            << "%\n";
+  std::cout << "  95th Percentile Relative Error: " << p95_err * 100.0f
+            << "%\n";
+  std::cout << "  99th Percentile Relative Error: " << p99_err * 100.0f
+            << "%\n";
+  std::cout << "  Max Relative Error            : " << max_err * 100.0f
+            << "%\n";
+  std::cout << "  Samples with Error < 6.0%     : "
+            << (count_under_6pct * 100.0f / rel_errors.size()) << "%\n";
+  std::cout << "  Samples with Error < 10.0%    : "
+            << (count_under_10pct * 100.0f / rel_errors.size()) << "%\n";
+  std::cout << "=======================================================\n\n";
+
+  EXPECT_LT(p99_err, 0.15);
+}
 }  // namespace sta

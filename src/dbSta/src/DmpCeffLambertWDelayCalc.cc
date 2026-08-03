@@ -204,6 +204,8 @@ void DmpCeffLambertWDelayCalc::loadDelaySlew(const Pin* load_pin,
     return;
   }
 
+  // OpenSTA's parasitic reduction engine (reduceToPiPoleResidue2) returns
+  // positive decay constants (p1 > 0, p2 > 0) representing pole magnitudes.
   double p1 = pole1.real();
   double k1 = residue1.real();
   double p2 = pole2.real();
@@ -254,11 +256,11 @@ void DmpCeffLambertWDelayCalc::loadDelaySlew(const Pin* load_pin,
     return;
   }
 
-  wire_delay = loadDelay(vth_lambert_, p1, k1, k1_p1_2, B, tt, y_tt)
+  wire_delay = loadDelay(vth_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vth)
                - tt * vth_lambert_;
 
-  float tl = loadDelay(vl_lambert_, p1, k1, k1_p1_2, B, tt, y_tt);
-  float th = loadDelay(vh_lambert_, p1, k1, k1_p1_2, B, tt, y_tt);
+  float tl = loadDelay(vl_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vl);
+  float th = loadDelay(vh_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vh);
   load_slew = (th - tl) / slew_derate_lambert_;
 
   thresholdAdjust(load_pin, drvr_library, rf, wire_delay, load_slew);
@@ -270,18 +272,18 @@ float DmpCeffLambertWDelayCalc::loadDelay(double vth,
                                           double k1_p1_2,
                                           double B,
                                           double tt,
-                                          double y_tt)
+                                          double y_tt,
+                                          double arg)
 {
   if (y_tt < vth) {
-    double arg = k1 * (std::exp(p1 * tt) - 1.0) / ((1.0 - vth) * p1 * p1 * tt);
-    if (arg <= 0.0) {
+    double exp_arg
+        = k1 * (std::exp(p1 * tt) - 1.0) / ((1.0 - vth) * p1 * p1 * tt);
+    if (exp_arg <= 0.0) {
       return 0.0;
     }
-    return std::log(arg) / p1;
+    return std::log(exp_arg) / p1;
   } else {
-    double C = k1_p1_2;
     double D = vth * tt + B;
-    double arg = -p1 * C * std::exp(-p1 * D);
     double w = boost::math::lambert_w0(arg);
     double delay = D + w / p1;
     return static_cast<float>(delay);
@@ -305,44 +307,47 @@ CeffResult DmpCeffLambertWDelayCalc::calculateCeff(
       || rpi == 0.0) {
     ceff = c2 + c1;
   } else {
-    // Normalized coordinates
-    double x = rpi / rd;
-    double y = c2 / (c1 + c2);
-    double z = in_slew / (rd * (c1 + c2));
+    // Normalized coordinates with reciprocals to avoid divisions
+    double inv_tot = 1.0 / (c1 + c2);
+    double inv_rd = 1.0 / rd;
+    double x = rpi * inv_rd;
+    double y = c2 * inv_tot;
+    double z = in_slew * inv_rd * inv_tot;
+
+    double y_sqrt = std::sqrt(std::max(y, 0.0));
+    double z2 = z * z;
+    double yz = y_sqrt * z;
 
     // 18-coeff Padé coefficients.
     // To regenerate these coefficients:
     //   bazel build \
     //     //third_party/open_road/src/dbSta:generate_pade_coefficients
-    static constexpr double a1_coef[6] = {-1.05692262e+01,
-                                          3.07744770e+01,
-                                          2.94737243e+00,
-                                          -1.44306033e+01,
-                                          -1.33568141e+00,
-                                          -3.75630970e-01};
-    static constexpr double b1_coef[6] = {-5.28936996e+00,
-                                          1.81458204e+01,
-                                          1.58000032e+00,
-                                          -6.46238347e+00,
-                                          -5.60207391e-02,
-                                          -2.85470479e-01};
-    static constexpr double b2_coef[6] = {8.41241751e+00,
-                                          -1.84965384e+01,
-                                          -1.38865980e-01,
-                                          1.01447563e+01,
-                                          2.35617823e-01,
-                                          -2.12797727e-02};
+    static constexpr double a1_coef[6] = {-4.60512811e-01,
+                                          6.91701256e-01,
+                                          7.09008866e+00,
+                                          3.24039351e+00,
+                                          -4.63636243e+00,
+                                          3.62412342e-02};
+    static constexpr double b1_coef[6] = {6.66946102e-02,
+                                          1.84900104e+00,
+                                          5.89372830e+00,
+                                          9.97500731e-01,
+                                          -4.00536240e+00,
+                                          8.14833452e-02};
+    static constexpr double b2_coef[6] = {12.6815995e+00,
+                                          -15.2315308e+00,
+                                          3.99960993e-01,
+                                          2.56651173e+00,
+                                          -2.54326578e-01,
+                                          -1.36694965e-02};
 
-    auto eval_poly
-        = [](double y_coord, double z_coord, const double c[6]) constexpr {
-            return c[0] + c[1] * y_coord + c[2] * z_coord
-                   + c[3] * y_coord * y_coord + c[4] * y_coord * z_coord
-                   + c[5] * z_coord * z_coord;
-          };
+    auto eval_poly = [y_sqrt, y, z, yz, z2](const double c[6]) constexpr {
+      return c[0] + c[1] * y_sqrt + c[2] * z + c[3] * y + c[4] * yz + c[5] * z2;
+    };
 
-    double a1 = eval_poly(y, z, a1_coef);
-    double b1 = eval_poly(y, z, b1_coef);
-    double b2 = eval_poly(y, z, b2_coef);
+    double a1 = eval_poly(a1_coef);
+    double b1 = eval_poly(b1_coef);
+    double b2 = eval_poly(b2_coef);
 
     double num = 1.0 + a1 * x;
     double den = 1.0 + b1 * x + b2 * x * x;

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -17,11 +17,11 @@ cc_library(
     name = "lambertw_delay_calc",
     srcs = ["src/DmpCeffLambertWDelayCalc.cc"],
     hdrs = ["src/DmpCeffLambertWDelayCalc.hh"],
+    features = ["-layering_check"],
     deps = [
         "//src/sta:opensta_lib",
         "@boost.math",
     ],
-    features = ["-layering_check"]
 )
 
 cc_library(
@@ -218,10 +218,10 @@ cc_binary(
     data = [
         "//src/dbSta/test:synthetic_linear.lib",
     ],
+    features = ["-layering_check"],
     deps = [
         "//src/sta:opensta_lib",
     ],
-    features = ["-layering_check"],
 )
 
 py_binary(

@@ -130,8 +130,10 @@ class DmpCeffLambertWDelayCalc : public DmpCeffTwoPoleDelayCalc
                   double k1_p1_2,
                   double B,
                   double tt,
-                  double y_tt);
+                  double y_tt,
+                  double arg);
 
+ protected:
   float vth_lambert_{0.0F};
   float vl_lambert_{0.0F};
   float vh_lambert_{0.0F};

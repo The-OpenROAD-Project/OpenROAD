@@ -81,12 +81,12 @@ int main(int argc, char** argv)
   }
 
   std::vector<double> ys;
-  for (double val = 0.025; val < 1.0; val += 0.025) {
+  for (double val = 0.005; val < 1.0; val += 0.01) {
     ys.push_back(val);
   }
 
   std::vector<double> zs;
-  for (double val = 0.1; val <= 10.0; val *= 1.34164079) {
+  for (double val = 0.05; val <= 20.0; val *= 1.34164079) {
     zs.push_back(val);
   }
 
