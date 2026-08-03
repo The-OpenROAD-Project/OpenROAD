@@ -639,14 +639,16 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       int failed = 0;
       for (odb::dbNet* db_net : block_->getNets()) {
         const bool is_routed = isDetailedRouted(db_net);
+        auto it = routes_.find(db_net);
+        if (!is_routed && it == routes_.end()) {
+          continue;  // nothing to adopt (e.g. single-pin nets)
+        }
         if (is_routed
             && cugr_->restoreNetRoute(db_net,
                                       makeRouteFromWires(db_net, max_layer))) {
           from_wires++;
-          continue;
-        }
-        auto it = routes_.find(db_net);
-        if (it != routes_.end() && cugr_->restoreNetRoute(db_net, it->second)) {
+        } else if (it != routes_.end()
+                   && cugr_->restoreNetRoute(db_net, it->second)) {
           from_guides++;
           debugPrint(logger_,
                      GRT,
@@ -655,7 +657,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                      "net {} adopted from guides (routed: {})",
                      db_net->getConstName(),
                      is_routed);
-        } else if (is_routed || it != routes_.end()) {
+        } else {
           failed++;
           debugPrint(logger_,
                      GRT,

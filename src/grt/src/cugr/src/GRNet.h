@@ -40,6 +40,9 @@ class GRNet
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree)
   {
     routing_tree_ = std::move(tree);
+    // A newly installed tree is native (direction-legal) unless the
+    // caller marks it adopted afterwards.
+    has_wrong_way_edges_ = false;
   }
   void setSlack(float slack) { slack_ = slack; }
   float getSlack() const { return slack_; }

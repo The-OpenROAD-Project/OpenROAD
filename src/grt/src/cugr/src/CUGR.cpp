@@ -1550,9 +1550,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                   gr_net->getNdrCosts(),
-                                   gr_net->hasWrongWayEdges());
+      grid_graph_->removeTreeUsage(*gr_net);
     }
     design_->updateNet(db_net);
     const int idx = gr_net->getIndex();
@@ -1581,8 +1579,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   }
 }
 
-std::shared_ptr<GRTreeNode> CUGR::buildTreeFromRoute(const GRoute& route,
-                                                     bool& has_wrong_way) const
+std::shared_ptr<GRTreeNode> CUGR::buildTreeFromRoute(const GRoute& route) const
 {
   // Collect gcell nodes and unit edges (deduplicated) from the segments.
   std::map<uint64_t, GRPoint> nodes;
@@ -1633,9 +1630,6 @@ std::shared_ptr<GRTreeNode> CUGR::buildTreeFromRoute(const GRoute& route,
       // edges along the crossed axis (commitTree deposits their demand on
       // the flanking edges) instead of rejecting the whole tree.
       const int axis = cells[0].low() != cells[0].high() ? 0 : 1;
-      if (axis != direction && cells[axis].low() != cells[axis].high()) {
-        has_wrong_way = true;
-      }
       if (axis == 0) {
         const int y = cells[1].low();
         addNode(GRPoint(init_layer, cells[0].low(), y));
@@ -1687,8 +1681,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   if (!design_ || route.empty()) {
     return false;
   }
-  bool has_wrong_way = false;
-  std::shared_ptr<GRTreeNode> tree = buildTreeFromRoute(route, has_wrong_way);
+  std::shared_ptr<GRTreeNode> tree = buildTreeFromRoute(route);
   if (!tree) {
     return false;
   }
@@ -1707,9 +1700,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                   gr_net->getNdrCosts(),
-                                   gr_net->hasWrongWayEdges());
+      grid_graph_->removeTreeUsage(*gr_net);
     }
     design_->updateNet(db_net);
     const int idx = gr_net->getIndex();
@@ -1758,8 +1749,10 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   }
 
   new_net->setRoutingTree(tree);
-  new_net->setHasWrongWayEdges(has_wrong_way);
-  grid_graph_->addTreeUsage(tree, new_net->getNdrCosts(), has_wrong_way);
+  // The flag records provenance, not geometry: adopted routes come from
+  // detailed wires, where wrong-way spans are legal.
+  new_net->setHasWrongWayEdges(true);
+  grid_graph_->addTreeUsage(*new_net);
   return true;
 }
 
@@ -1776,9 +1769,7 @@ void CUGR::removeNet(odb::dbNet* db_net)
 
   GRNet* gr_net = it->second;
   if (gr_net->getRoutingTree()) {
-    grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                 gr_net->getNdrCosts(),
-                                 gr_net->hasWrongWayEdges());
+    grid_graph_->removeTreeUsage(*gr_net);
   }
 
   int index = gr_net->getIndex();
@@ -2019,15 +2010,13 @@ void CUGR::verifyDemandConsistency(const char* tag)
   const auto live = grid_graph_->snapshotDemand();
   for (const auto& net : gr_nets_) {
     if (net && net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(
-          net->getRoutingTree(), net->getNdrCosts(), net->hasWrongWayEdges());
+      grid_graph_->removeTreeUsage(*net);
     }
   }
   const auto base = grid_graph_->snapshotDemand();
   for (const auto& net : gr_nets_) {
     if (net && net->getRoutingTree()) {
-      grid_graph_->addTreeUsage(
-          net->getRoutingTree(), net->getNdrCosts(), net->hasWrongWayEdges());
+      grid_graph_->addTreeUsage(*net);
     }
   }
   const auto recomputed = grid_graph_->snapshotDemand();

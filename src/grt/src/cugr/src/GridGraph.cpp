@@ -840,6 +840,34 @@ void GridGraph::commitWire(const int layer_index,
   }
 }
 
+// Enumerate the preferred-direction edges flanking `loc` on `layer`;
+// fn(edge_loc, edge_sum) runs per existing edge with their summed span.
+template <typename F>
+void GridGraph::forEachFlankEdge(const int layer,
+                                 const PointT loc,
+                                 F&& fn) const
+{
+  const int direction = layer_directions_[layer];
+  PointT lower_loc = loc;
+  lower_loc[direction] -= 1;
+  const int lower_edge_length
+      = loc[direction] > 0 ? getEdgeLength(direction, lower_loc[direction]) : 0;
+  const int higher_edge_length = loc[direction] < getSize(direction) - 1
+                                     ? getEdgeLength(direction, loc[direction])
+                                     : 0;
+  // Prevent division by zero
+  const int edge_sum = lower_edge_length + higher_edge_length;
+  if (edge_sum == 0) {
+    return;
+  }
+  if (lower_edge_length > 0) {
+    fn(lower_loc, edge_sum);
+  }
+  if (higher_edge_length > 0) {
+    fn(loc, edge_sum);
+  }
+}
+
 template <typename F>
 void GridGraph::forEachViaFlankEdgeImpl(const int layer_index,
                                         const PointT loc,
@@ -847,31 +875,12 @@ void GridGraph::forEachViaFlankEdgeImpl(const int layer_index,
                                         F&& fn) const
 {
   for (int l = layer_index; l <= layer_index + 1 && l < num_layers_; l++) {
-    const int direction = layer_directions_[l];
-    PointT lower_loc = loc;
-    lower_loc[direction] -= 1;
-    const int lower_edge_length
-        = loc[direction] > 0 ? getEdgeLength(direction, lower_loc[direction])
-                             : 0;
-    const int higher_edge_length
-        = loc[direction] < getSize(direction) - 1
-              ? getEdgeLength(direction, loc[direction])
-              : 0;
-
-    // Prevent division by zero
-    if (lower_edge_length > 0 || higher_edge_length > 0) {
-      const CapacityT demand
-          = viaDemand(layer_index, l, lower_edge_length + higher_edge_length);
-      // Use the per-layer NDR factor for `l`, not a net-wide value.
-      const double layer_factor
-          = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
-      if (lower_edge_length > 0) {
-        fn(l, lower_loc, demand, layer_factor);
-      }
-      if (higher_edge_length > 0) {
-        fn(l, loc, demand, layer_factor);
-      }
-    }
+    // Use the per-layer NDR factor for `l`, not a net-wide value.
+    const double layer_factor
+        = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
+    forEachFlankEdge(l, loc, [&](PointT edge_loc, int edge_sum) {
+      fn(l, edge_loc, viaDemand(layer_index, l, edge_sum), layer_factor);
+    });
   }
 }
 
@@ -915,26 +924,22 @@ void GridGraph::commitWrongWayWire(const int layer_index,
                                    const bool rip_up,
                                    const double layer_factor)
 {
-  const int direction = layer_directions_[layer_index];
-  PointT lower_loc = loc;
-  lower_loc[direction] -= 1;
-  const int lower_edge_length
-      = loc[direction] > 0 ? getEdgeLength(direction, lower_loc[direction]) : 0;
-  const int higher_edge_length = loc[direction] < getSize(direction) - 1
-                                     ? getEdgeLength(direction, loc[direction])
-                                     : 0;
-  const int edge_sum = lower_edge_length + higher_edge_length;
-  if (edge_sum == 0) {
-    return;
-  }
-  const CapacityT demand
-      = (CapacityT) design_->getWrongWayDemandLength(layer_index) / edge_sum;
-  if (lower_edge_length > 0) {
-    commit(layer_index, lower_loc, (rip_up ? -demand : demand), layer_factor);
-  }
-  if (higher_edge_length > 0) {
-    commit(layer_index, loc, (rip_up ? -demand : demand), layer_factor);
-  }
+  forEachFlankEdge(layer_index, loc, [&](PointT edge_loc, int edge_sum) {
+    const CapacityT demand
+        = (CapacityT) design_->getWrongWayDemandLength(layer_index) / edge_sum;
+    commit(layer_index, edge_loc, (rip_up ? -demand : demand), layer_factor);
+  });
+}
+
+void GridGraph::addTreeUsage(const GRNet& net)
+{
+  addTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.hasWrongWayEdges());
+}
+
+void GridGraph::removeTreeUsage(const GRNet& net)
+{
+  removeTreeUsage(
+      net.getRoutingTree(), net.getNdrCosts(), net.hasWrongWayEdges());
 }
 
 std::vector<std::vector<std::vector<CapacityT>>> GridGraph::snapshotDemand()
@@ -980,8 +985,10 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
             = std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
         if ((*node)[perp] != (*child)[perp]) {
           // Native trees are direction-legal by construction; only routes
-          // adopted from detailed wires may carry wrong-way spans.
-          if (!allow_wrong_way || (*node)[direction] != (*child)[direction]) {
+          // adopted from detailed wires may carry wrong-way spans. Diagonal
+          // edges are always malformed.
+          const bool is_diagonal = (*node)[direction] != (*child)[direction];
+          if (!allow_wrong_way || is_diagonal) {
             if (direction == MetalLayer::H) {
               logger_->error(utl::GRT,
                              1252,

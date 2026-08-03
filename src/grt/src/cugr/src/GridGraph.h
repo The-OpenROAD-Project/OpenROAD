@@ -244,6 +244,10 @@ class GridGraph
   void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                     const std::vector<double>& net_costs = {},
                     bool allow_wrong_way = false);
+  // Net-aware forms: the tree, NDR costs and wrong-way permission all
+  // travel with the net, so adopt/release sites cannot disagree.
+  void addTreeUsage(const GRNet& net);
+  void removeTreeUsage(const GRNet& net);
 
   /**
    * @brief Removes the demand previously added for a routing tree.
@@ -389,6 +393,8 @@ class GridGraph
   // `layer_index + 1`) deposits demand on, with the layer's NDR factor:
   // fn(l, edge_lower_point, demand, layer_factor).
   // Defined in GridGraph.cpp; all instantiations live there.
+  template <typename F>
+  void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
   template <typename F>
   void forEachViaFlankEdgeImpl(int layer_index,
                                PointT loc,
