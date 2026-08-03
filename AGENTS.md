@@ -29,3 +29,4 @@ Skills are located in `.agents/skills/` (with `.claude/skills` symlink for Claud
 | `fix-bug` | Trace root cause, implement fix, create tests, prepare commit | `/fix-bug <issue#-or-error-code>` |
 | `add-test` | Add integration/unit tests with dual CMake+Bazel registration | `/add-test <module> [description]` |
 | `review-pr` | Draft local PR review notes (correctness > QoR > testing); human posts | `/review-pr <pr#-or-url>` |
+| `contract-review` | Adversarial contract-surface review of a diff (mode matrix, sibling sweep, invariant grep, claim-vs-code, lifecycle parity) — finds what tests miss | `/contract-review [base-ref]` |

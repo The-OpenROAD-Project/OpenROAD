@@ -462,6 +462,18 @@ create_obstruction
 | `effective_width` | (optional): Add an effective width to the obstruction.  |
 
 
+### Report 3DIC Summary
+
+Prints a structural summary of a 3DIC (3DBlox) design loaded via `read_3dbx`:
+the chiplet, top-level chip-net, 3D bond-region and bump-pad counts, plus each
+chip instance and the chiplet master it references. Useful as a post-read
+sanity check before cross-chiplet timing. Takes no arguments.
+
+```tcl
+report_3dic_summary
+```
+
+
 ## Example scripts
 
 After building successfully, run OpenDB Tcl shell using
