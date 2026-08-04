@@ -1561,15 +1561,14 @@ static bool outputPortReferencesState(sta::LibertyPort* output_port,
 // Unsupported cells fall back to generic boxes.
 static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
 {
-  GateClass result;
   if (network == nullptr) {
-    return result;
+    return {};
   }
 
   sta::LibertyCell* cell = network->libertyCell(inst);
   if (cell == nullptr || !cell->hasSequentials()
       || cell->sequentials().size() != 1) {
-    return result;
+    return {};
   }
 
   // Ignore supplies and unconnected pins; only visible signal wiring matters.
@@ -1587,7 +1586,7 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
   }
 
   if (connected_inputs.empty() || connected_outputs.empty()) {
-    return result;
+    return {};
   }
 
   // All connected outputs must refer to the same Liberty register definition.
@@ -1674,6 +1673,7 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
     return {};
   }
 
+  GateClass result;
   result.kind
       = clear != nullptr ? "dffr" : (preset != nullptr ? "dffs" : "dff");
   result.ports["D"] = data->getMTerm()->getName();
@@ -1812,9 +1812,10 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
     std::vector<std::vector<std::string>> terms
         = classifyAoiOai(func, func->op());
     if (!terms.empty()) {
+      // No `ports` map: the viewer derives AOI/OAI symbol port ids from the
+      // term grouping instead, so a lone output entry here would go unread.
       result.kind = (func->op() == sta::FuncExpr::Op::or_) ? "aoi" : "oai";
       result.terms = std::move(terms);
-      result.ports["Y"] = out_port->name();
     }
   }
   return result;
