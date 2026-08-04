@@ -18,6 +18,10 @@ or_integration_tests(
     check7
     check8
     check9
+    diamond01
+    diamond_multi_height
+    diamond_one_site_gap
+    diamond_regions
     fence01
     fence02
     fence03
@@ -51,10 +55,6 @@ or_integration_tests(
     multi_height_one_site_gap_disallow
     multi_height_power_align
     multi_height_rows
-    negotiation01
-    negotiation_multi_height
-    negotiation_one_site_gap
-    negotiation_regions
     obstruction1
     obstruction2
     one_site_gap_disallow

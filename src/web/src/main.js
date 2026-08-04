@@ -4,13 +4,20 @@
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
-import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
+import {
+    createWebSocketTileLayer,
+    createOverlayTileLayer,
+    currentDpr,
+    floorClampZoom,
+} from './websocket-tile-layer.js';
+import { createMergedTileLayer } from './merged-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection }
+    from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -103,6 +110,10 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
+    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
+    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // display-controls.js and read lazily by websocket-tile-layer.js.
+    layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
     showDbu: getCookie('or_show_dbu') === '1',
     selectableLayers: new Set(),
@@ -112,6 +123,11 @@ const app = {
     heatMapLegendEl: null,
     renderHeatMapControls: null,
     rulerManager: null,
+    // Bumped by beginSelection() whenever a panel takes over the selection;
+    // see ui-utils.js.  Panels register their reset callbacks in
+    // `selectionResetters` via onSelectionReset().
+    selectionToken: 0,
+    selectionResetters: [],
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
     },
@@ -199,6 +215,7 @@ const visibility = {
     // Module view
     module_view: false,
     // Misc
+    detailed: false,
     rulers: true,
     scale_bar: true,
     // Debug
@@ -279,6 +296,48 @@ try {
 const WebSocketTileLayer = createWebSocketTileLayer(
     visibility, app.visibleLayerNames, selectability, app.selectableLayers,
     app);
+
+// ─── Tile grouping ──────────────────────────────────────────────────────────
+//
+// One pane per tech layer per chiplet puts a multi-die design at ~97 panes and
+// ~582 MB of decoded tile images, past the browser's ~458 MB ceiling, where
+// Chrome discards decodes and the discarded regions paint white until something
+// forces a full invalidation.  Merging the routing layers into N canvas panes,
+// N derived from a memory budget, bounds the total regardless of how many layers
+// or chiplets the design has.
+//
+//   ?mergetiles=0        legacy one-pane-per-layer, for A/B comparison
+//   ?tilebudget=<MB>     override the budget (default 350 MB)
+//   ?mergegroups=<N>     pin N directly, bypassing the budget
+(function configureTileMerging() {
+    let params = null;
+    try {
+        params = new URLSearchParams(window.location.search);
+    } catch (_) {
+        params = null;
+    }
+    const param = (name) => (params ? params.get(name) : null);
+
+    app.mergeTiles = param('mergetiles') !== '0';
+    const budgetMB = Number(param('tilebudget'));
+    if (Number.isFinite(budgetMB) && budgetMB > 0) {
+        app.tileBudgetBytes = Math.round(budgetMB * 1024 * 1024);
+    }
+    const groups = Number(param('mergegroups'));
+    if (Number.isFinite(groups) && groups > 0) {
+        app.mergeGroupCount = Math.floor(groups);
+    }
+    // display-controls reads dpr through app so it does not have to import a
+    // layer module just to size the memory budget.
+    app.tileDpr = currentDpr;
+    app.MergedTileLayer = createMergedTileLayer({
+        visibility,
+        selectability,
+        visibleLayers: app.visibleLayerNames,
+        selectableLayers: app.selectableLayers,
+        app,
+    }, { dpr: currentDpr });
+})();
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -287,6 +346,13 @@ const HeatMapTileLayer = L.GridLayer.extend({
         this._websocketManager = websocketManager;
         this._appState = appState;
         L.GridLayer.prototype.initialize.call(this, options);
+    },
+
+    // Upscale-only display, same as the layout tile layer: the map rests on
+    // integer zoom so heatmap tiles show 1:1 with no fractional rescaling.
+    _clampZoom: function(zoom) {
+        return L.GridLayer.prototype._clampZoom.call(
+            this, floorClampZoom(this, zoom));
     },
 
     createTile: function(coords, done) {
@@ -464,13 +530,7 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
-    app.map = L.map(mapDiv, {
-        crs: L.CRS.Simple,
-        zoom: 1,
-        zoomSnap: 0,
-        fadeAnimation: false,
-        attributionControl: false,
-    });
+    app.map = L.map(mapDiv, buildMapOptions());
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';
@@ -1147,8 +1207,14 @@ app.websocketManager.readyPromise.then(async () => {
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
+            const token = beginSelection(app);
             app.websocketManager.request(selectRequest)
                 .then(data => {
+                    // A newer selection (another click, a layer row, the
+                    // Inspector) has already replaced this one on the server;
+                    // this response describes a selection that no longer
+                    // exists, so it must not drive the Inspector.
+                    if (!isCurrentSelection(app, token)) return;
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {

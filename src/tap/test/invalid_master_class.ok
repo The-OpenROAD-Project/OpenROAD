@@ -1,0 +1,13 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0227] LEF file: invalid_master_class.lef, created 1 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 5 components and 160 component-terminals.
+[ERROR TAP-0036] Master CORNER_TOPLEFT_LEGACY with class ENDCAP TOPLEFT given for -cnrcap_nwin_master cannot be placed in core rows and would be ignored by detailed placement.
+TAP-0036
+[ERROR TAP-0036] Master CORNER_TOPLEFT_LEGACY with class ENDCAP TOPLEFT given for -left_top_corner cannot be placed in core rows and would be ignored by detailed placement.
+TAP-0036
+[ERROR TAP-0036] Master CORNER_TOPLEFT_LEGACY with class ENDCAP TOPLEFT given for -master cannot be placed in core rows and would be ignored by detailed placement.
+TAP-0036

@@ -52,7 +52,7 @@ clock_gating
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ------------- | ----------------------------------------------- |
 | `-min_instances` | Minimum number of instances that should be gated by a single clock gate. |
 | `-max_cover` | Maximum number of initial gate condition candidate nets per instance. |
 | `-dump_dir` | Directory for debug dumps. |
@@ -78,11 +78,6 @@ Simply run the following script:
 ## Limitations
 
 Clock gating is currently not available for designs that contain HA and FA cells which are not supported by ABC.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+clock-gating)
-about this tool.
 
 ## References
 

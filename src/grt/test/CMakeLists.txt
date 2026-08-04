@@ -2,6 +2,7 @@ or_integration_tests(
   "grt"
   TESTS
     bus_route
+    check_antennas_cugr
     clock_route
     clock_route_alpha
     clock_route_cugr
@@ -60,6 +61,7 @@ or_integration_tests(
     pin_access1_cugr
     pin_access2
     pin_access2_cugr
+    pin_access_fallback_cugr
     pin_edge
     pin_track_not_aligned
     pre_routed1
@@ -72,19 +74,28 @@ or_integration_tests(
     read_segments_error3
     read_segments_error4
     read_segments_error5
+    read_segments_error6
     region_adjustment
     remove_buffers1
     remove_buffers2
+    remove_buffers1_cugr
+    remove_buffers2_cugr
+    remove_buffers3_cugr
+    remove_buffers3
     repair_antennas1
     repair_antennas2
+    repair_antennas2_cugr
     repair_antennas3
     repair_antennas4
+    repair_antennas4_cugr
     repair_antennas_adjacent_jumpers
     repair_antennas_allow_congestion
+    repair_antennas_cugr
     repair_antennas_error1
     repair_antennas_error2
     repair_antennas_from_odb
     repair_antennas_only_diodes
+    repair_antennas_only_diodes_cugr
     repair_antennas_only_jumpers
     report_wire_length1
     report_wire_length2
@@ -106,7 +117,7 @@ or_integration_tests(
     skip_large_fanout1
     soft_ndr_4w_6s
     soft_ndr_4w_6s_cugr
-    soft_ndr_reset_cap
+    soft_ndr_escalation
     top_level_term1
     top_level_term2
     top_level_term3

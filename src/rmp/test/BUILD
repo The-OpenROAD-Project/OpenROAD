@@ -38,7 +38,14 @@ COMPULSORY_TESTS = [
     "memory_nangate45",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+# ABC resynthesis output is nondeterministic/threaded, so this test self-checks
+# invariants and prints "pass" instead of diffing a flaky golden log.
+PASSFAIL_TESTS = [
+    "gcd_restructure_delay",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -143,6 +150,8 @@ LONG_RUNNING_TESTS = [
     regression_test(
         name = test_name,
         size = "medium" if test_name in LONG_RUNNING_TESTS else "small",
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [
             ":" + test_name + "_resources",
             "//src/rmp:rmp_py",

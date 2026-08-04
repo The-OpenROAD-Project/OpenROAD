@@ -3,6 +3,27 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
+import {
+    buildTileRequestFor, floorClampZoom, nativeDpr,
+} from './tile-request.js';
+
+// Imported AND re-exported: `export { x } from '...'` alone re-exports without
+// creating a local binding, so _clampZoom below would reference an undefined
+// name at runtime while importers still resolved it fine.
+export { floorClampZoom };
+
+// Device pixel ratio for tile requests. Normalized to match what the server
+// will render at; see quantizeDpr in tile-request.js.
+export function currentDpr() {
+    return nativeDpr();
+}
+
+// Kept as a named export because main.js and the tests import it from here.
+// Delegates so the per-layer and merged paths cannot drift on the wire format.
+export function buildTileRequest(coords, layerName, ctx) {
+    return buildTileRequestFor(coords, layerName, ctx, currentDpr());
+}
+
 // `app` (last arg) is read lazily on every request so that
 // app.visibleChiplets, populated by display-controls.js after the tech
 // metadata arrives, is reflected in tile requests without rebuilding
@@ -11,41 +32,17 @@
 export function createWebSocketTileLayer(visibility, visibleLayers,
                                          selectability, selectableLayers,
                                          app) {
-    // Single source of truth for the tile-request payload.  Both
-    // createTile (initial load) and refreshTiles (visibility change)
-    // call this so the wire format stays in sync — earlier copies of
-    // this snippet drifted when fields like visible_chiplets were
-    // added in only one place.
-    //
-    // Tiles don't actually use selectability for rendering, but we
-    // send it on every request so the wire schema stays uniform with
-    // selectAt requests.
-    function buildTileRequest(coords, layerName) {
-        const vf = {};
-        for (const [k, v] of Object.entries(visibility)) {
-            vf[k] = !!v;
-        }
-        if (selectability) {
-            for (const [k, v] of Object.entries(selectability)) {
-                vf['s_' + k] = !!v;
-            }
-        }
-        const req = {
-            type: 'tile',
-            layer: layerName,
-            z: coords.z,
-            x: coords.x,
-            y: coords.y,
-            visible_layers: visibleLayers ? [...visibleLayers] : [],
-            selectable_layers: selectableLayers ? [...selectableLayers] : [],
-            ...vf,
-        };
-        if (app && app.visibleChiplets instanceof Set) {
-            req.visible_chiplets = [...app.visibleChiplets];
-        }
-        return req;
-    }
+    const ctx = {
+        visibility, selectability, visibleLayers, selectableLayers, app,
+    };
     return L.GridLayer.extend({
+        // Force upscale-only display (see floorClampZoom) so the browser
+        // never downscales a band-limited tile back into a moiré beat.
+        _clampZoom: function(zoom) {
+            return L.GridLayer.prototype._clampZoom.call(
+                this, floorClampZoom(this, zoom));
+        },
+
         initialize: function(websocketManager, layerName, options) {
             this._websocketManager = websocketManager;
             this._layerName = layerName;
@@ -81,15 +78,17 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             tile._websocketRequestId = this._websocketManager.nextId;
 
             this._websocketManager.request(
-                buildTileRequest(coords, this._layerName)
+                buildTileRequest(coords, this._layerName, ctx)
             ).then(data => {
                 if (typeof data === 'string') {
                     tile.src = data;  // data URI from cache
                 } else {
                     tile.src = URL.createObjectURL(data);
                 }
-            }).catch(() => {
-                // Request was cancelled (e.g. by refreshTiles); ignore
+            }).catch(err => {
+                // Request was cancelled (e.g. by refreshTiles); ignore.  Note
+                // that `done` is never called and no retry is issued, so this
+                // tile stays blank until Leaflet evicts it.
             });
 
             return tile;
@@ -99,6 +98,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
         // Use this instead of redraw() for visibility changes.
         refreshTiles: function() {
             if (!this._map) return;
+
 
             for (const key in this._tiles) {
                 const tileInfo = this._tiles[key];
@@ -115,7 +115,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 tile._websocketRequestId = this._websocketManager.nextId;
 
                 this._websocketManager.request(
-                    buildTileRequest(coords, this._layerName)
+                    buildTileRequest(coords, this._layerName, ctx)
                 ).then(data => {
                     if (tile.src && tile.src.startsWith('blob:')) {
                         URL.revokeObjectURL(tile.src);
@@ -125,7 +125,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                     } else {
                         tile.src = URL.createObjectURL(data);
                     }
-                }).catch(() => {
+                }).catch(err => {
                     // Tile refresh failed; keep existing image
                 });
             }
@@ -207,7 +207,8 @@ export function createOverlayTileLayer(visibility, app) {
                 } else {
                     tile.src = URL.createObjectURL(data);
                 }
-            }).catch(() => {});
+            }).catch(err => {
+            });
 
             return tile;
         },

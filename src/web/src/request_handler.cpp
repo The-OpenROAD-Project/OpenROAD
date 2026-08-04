@@ -138,16 +138,22 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 // of the scope.  When `use_dbu` is true the default identity formatter is
 // kept so that raw DBU integers are emitted.  Must be held while the
 // sta_lock mutex is held — the global static is not otherwise thread-safe.
+//
+// The scale comes from the database, not from a block: a multi-die design's
+// top chip is hierarchical and owns no dbBlock, so keying off one would leave
+// its properties as unlabelled raw integers.  dbDatabase::getDbuPerMicron() is
+// the design-wide value every tech and block shares, and is 0 only before any
+// LEF is read.
 class [[nodiscard]] ScopedDbuFormat
 {
  public:
-  ScopedDbuFormat(odb::dbBlock* block, bool use_dbu)
+  ScopedDbuFormat(odb::dbDatabase* db, bool use_dbu)
       : saved_(gui::Descriptor::Property::convert_dbu)
   {
-    if (use_dbu || !block) {
+    if (use_dbu || db == nullptr || db->getDbuPerMicron() == 0) {
       return;  // keep default (raw DBU)
     }
-    const double dbu_per_micron = block->getDbUnitsPerMicron();
+    const double dbu_per_micron = db->getDbuPerMicron();
     const int precision
         = static_cast<int>(std::ceil(std::log10(dbu_per_micron)));
     gui::Descriptor::Property::convert_dbu
@@ -167,6 +173,52 @@ class [[nodiscard]] ScopedDbuFormat
  private:
   gui::DBUToString saved_;
 };
+// Clamp + quantize the client's devicePixelRatio so the server renders tiles
+// at a stable 256*dpr and the tile cache has few buckets.  Snaps to the common
+// HiDPI ratios; anything outside [1,3] or non-finite falls back to 1.0.
+// Normalize the client-reported device pixel ratio.
+//
+// Only the browser knows the display's ratio, so this is the value the client
+// sent, not one the server picks.  It is honoured rather than snapped to a
+// ladder: the ratio decides the rendered tile's pixel size, and a client whose
+// ratio is not on the ladder gets a tile of the wrong size that the browser
+// then rescales — which is the moiré beat the whole tile pipeline is built to
+// avoid.  A 1.75 or 2.5 display (ordinary Windows scale factors) hit that.
+//
+// Rounded to two decimals only to bound the tile-cache key space, since dpr is
+// part of the key: without it a ratio like 1.3333333 would fork its own set of
+// cached tiles for every distinct trailing digit.  In practice this is one
+// bucket per connected client.
+//
+// MUST match quantizeDpr() in tile-request.js — the client sizes its merged
+// canvas from its own copy, and any disagreement resamples every tile.
+static double quantizeDpr(const double raw)
+{
+  if (!std::isfinite(raw) || raw <= 1.0) {
+    return 1.0;
+  }
+  const double clamped = std::min(raw, 3.0);
+  return std::round(clamped * 100.0) / 100.0;
+}
+
+std::string assetPathFromTarget(const std::string_view target)
+{
+  std::string path(target);
+  // Query first, then fragment: a fragment is never sent by a browser, but a
+  // hand-built request can carry one and it must not reach the lookup either.
+  const size_t query = path.find('?');
+  if (query != std::string::npos) {
+    path.resize(query);
+  }
+  const size_t fragment = path.find('#');
+  if (fragment != std::string::npos) {
+    path.resize(fragment);
+  }
+  if (path.empty() || path == "/") {
+    return "/index.html";
+  }
+  return path;
+}
 
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
@@ -194,6 +246,65 @@ static void serializeAnyValue(boost::json::object& out,
     }
   }
   out[field_name] = gui::Descriptor::Property::toString(value);
+}
+
+// Serialize an ordered list of unkeyed values (Property values held as a
+// std::vector/std::set of std::any) as inspector children.  Mirrors the Qt
+// inspector's makeList(): entries have no name of their own, so they are
+// numbered 1..N and the value carries the content.
+template <typename Container>
+static boost::json::array serializeAnyList(
+    const Container& values,
+    std::vector<gui::Selected>& selectables)
+{
+  boost::json::array children;
+  children.reserve(values.size());
+  int index = 0;
+  for (const auto& value : values) {
+    boost::json::object child;
+    child["name"] = std::to_string(++index);
+    serializeAnyValue(child, "value", value, selectables);
+    children.emplace_back(std::move(child));
+  }
+  return children;
+}
+
+// Serialize a PropertyTable as a row/column grid.  The Qt inspector renders
+// these as an HTML table; the client does the same from this data rather than
+// from server-generated markup.  Headers are kept separate from the cells so
+// the client can drop the header row or column when a table has none.
+static boost::json::object serializePropertyTable(
+    const gui::PropertyTable& table)
+{
+  boost::json::object out;
+
+  boost::json::array columns;
+  columns.reserve(table.getColumnHeaders().size());
+  for (const auto& header : table.getColumnHeaders()) {
+    columns.emplace_back(header);
+  }
+  out["column_headers"] = std::move(columns);
+
+  boost::json::array rows;
+  rows.reserve(table.getRowHeaders().size());
+  for (const auto& header : table.getRowHeaders()) {
+    rows.emplace_back(header);
+  }
+  out["row_headers"] = std::move(rows);
+
+  boost::json::array data;
+  data.reserve(table.getData().size());
+  for (const auto& row : table.getData()) {
+    boost::json::array cells;
+    cells.reserve(row.size());
+    for (const auto& cell : row) {
+      cells.emplace_back(cell);
+    }
+    data.emplace_back(std::move(cells));
+  }
+  out["data"] = std::move(data);
+
+  return out;
 }
 
 static boost::json::object serializeProperty(
@@ -224,6 +335,12 @@ static boost::json::object serializeProperty(
       children.emplace_back(std::move(child));
     }
     o["children"] = std::move(children);
+  } else if (auto* table = std::any_cast<gui::PropertyTable>(&prop.value)) {
+    o["table"] = serializePropertyTable(*table);
+  } else if (auto* vec = std::any_cast<std::vector<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(*vec, selectables);
+  } else if (auto* set = std::any_cast<std::set<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(*set, selectables);
   } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
@@ -454,7 +571,8 @@ WebSocketResponse TileHandler::renderTile(
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
     const std::set<uint32_t>* focus_net_ids,
-    const std::set<uint32_t>* route_guide_net_ids)
+    const std::set<uint32_t>* route_guide_net_ids,
+    const double dpr)
 {
   WebSocketResponse resp;
   resp.id = id;
@@ -470,7 +588,8 @@ WebSocketResponse TileHandler::renderTile(
                                   flight_lines,
                                   module_colors,
                                   focus_net_ids,
-                                  route_guide_net_ids);
+                                  route_guide_net_ids,
+                                  dpr);
   return resp;
 }
 
@@ -536,6 +655,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectPrev(req, state);
         });
+  d.add("select_layer",
+        WebSocketRequest::kSelectLayer,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelectLayer(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -584,7 +708,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
@@ -701,7 +825,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     bool can_navigate_back = false;
     int sel_count = 0;
@@ -760,7 +884,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
     int sel_count = 0;
     int sel_index = -1;
     {
@@ -811,7 +935,7 @@ static WebSocketResponse handleSelectionCycle(
     SessionState& state,
     const int direction,
     std::shared_ptr<TclEvaluator>& tcl_eval,
-    odb::dbBlock* block)
+    odb::dbDatabase* db)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -820,7 +944,7 @@ static WebSocketResponse handleSelectionCycle(
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(db, use_dbu);
     int sel_count = 0;
     int sel_index = -1;
     {
@@ -876,13 +1000,112 @@ static WebSocketResponse handleSelectionCycle(
 WebSocketResponse SelectHandler::handleSelectNext(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getDb());
 }
 
 WebSocketResponse SelectHandler::handleSelectPrev(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getDb());
+}
+
+// Select a tech layer by name, as clicking a layer row in the Qt GUI's
+// Display Control does (DisplayControls::displayItemSelected emits
+// `selected(makeSelected(tech_layer))`).  The layer becomes the inspected
+// object so the Inspector panel shows its properties.
+//
+// A dbTechLayer carries no geometry, so this contributes no highlight shapes;
+// collectHighlightShapes still runs to clear whatever the previous selection
+// left behind, matching the "replace the selection" semantics of a plain
+// (non-shift) click.
+WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+
+  try {
+    const std::string layer_name
+        = std::string(req.json.at("layer").as_string());
+
+    // Multi-die designs give each chip its own dbTech, so the same layer name
+    // can exist in several of them.  The frontend sends the chiplet path its
+    // layer row belongs to; single-chip designs omit it and get the design's
+    // only tech.
+    std::string chiplet_path;
+    if (const auto* v = req.json.if_contains("chiplet"); v && v->is_string()) {
+      chiplet_path = std::string(v->as_string());
+    }
+
+    odb::dbTech* tech = nullptr;
+    if (!chiplet_path.empty()) {
+      for (const ChipletNode& node : gen_->chiplets()) {
+        if (node.path == chiplet_path && node.chip != nullptr) {
+          tech = node.chip->getTech();
+          break;
+        }
+      }
+    }
+    if (tech == nullptr) {
+      tech = gen_->getTech();
+    }
+    if (tech == nullptr) {
+      throw std::runtime_error("No tech loaded");
+    }
+
+    odb::dbTechLayer* layer = tech->findLayer(layer_name.c_str());
+    if (layer == nullptr) {
+      throw std::runtime_error("Layer not found: " + layer_name);
+    }
+
+    gui::Selected sel
+        = gui::DescriptorRegistry::instance()->makeSelected(layer);
+
+    // STA's getProperties() is not thread-safe; serialize with the other
+    // STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    int sel_count = 0;
+    int sel_index = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      state.navigation_history.clear();
+      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      state.selection_set.clear();
+      if (sel) {
+        state.selection_set.insert(sel);
+      }
+      state.selection_itr = state.selection_set.begin();
+      state.current_inspected = sel;
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        root, sel, new_selectables, /*can_navigate_back=*/false);
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
 }
 
 WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
@@ -1001,7 +1224,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
     // serialize the entire net walk and inspection with the shared STA lock.
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     std::vector<odb::dbNet*> matched;
     for (odb::dbNet* net : block->getNets()) {
@@ -1777,7 +2000,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
@@ -2227,6 +2450,15 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  // run_inline so the cancel runs on the read thread, ahead of the posted
+  // tile render it is meant to abort.
+  d.add(
+      "cancel",
+      WebSocketRequest::kCancel,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleCancel(req, state);
+      },
+      /*run_inline=*/true);
   d.add("module_hierarchy",
         WebSocketRequest::kModuleHierarchy,
         [this](const WebSocketRequest& req, SessionState&) {
@@ -2295,6 +2527,19 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     }
   }
 
+  // Skip a render the client abandoned while it sat queued (best-effort).
+  {
+    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
+    if (state.cancelled_ids.erase(req.id) > 0) {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kError;
+      const std::string msg = "cancelled";
+      resp.payload.assign(msg.begin(), msg.end());
+      return resp;
+    }
+  }
+
   TileVisibility vis;
   vis.parseFromJson(req.json);
 
@@ -2324,20 +2569,68 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   static const std::vector<ColoredRect> no_colored;
   static const std::vector<FlightLine> no_lines;
 
-  return renderTile(req.id,
-                    std::string(req.json.at("layer").as_string()),
-                    static_cast<int>(req.json.at("z").as_int64()),
-                    static_cast<int>(req.json.at("x").as_int64()),
-                    static_cast<int>(req.json.at("y").as_int64()),
-                    vis,
-                    *gen_,
-                    no_rects,
-                    no_polys,
-                    no_colored,
-                    no_lines,
-                    mod_ptr,
-                    focus_ptr,
-                    nullptr);
+  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+
+  // A tile is cacheable only when it depends solely on the static design +
+  // visibility + dpr — i.e. no per-session overlays are active.  That keeps
+  // the cache session-independent and correct; overlay tiles render fresh.
+  const bool cacheable = mod_ptr == nullptr && focus_ptr == nullptr
+                         && !vis.debug && !vis.debug_renderers
+                         && !vis.debug_live;
+
+  std::string cache_key;
+  if (cacheable) {
+    // Key = the full render determinant: the request JSON minus the per-call
+    // id, with dpr pinned to the quantized value actually rendered.
+    // Selectability (the s_* flags and selectable_layers) does NOT affect the
+    // rendered tile, so it is excluded — toggling "selectable" must not
+    // invalidate the cache.
+    boost::json::object key_obj = req.json;
+    key_obj.erase("id");
+    key_obj.erase("selectable_layers");
+    std::vector<std::string> sel_keys;
+    for (const auto& kv : key_obj) {
+      const std::string_view k = kv.key();
+      if (k.size() >= 2 && k[0] == 's' && k[1] == '_') {
+        sel_keys.emplace_back(k);
+      }
+    }
+    for (const std::string& k : sel_keys) {
+      key_obj.erase(k);
+    }
+    key_obj["dpr"] = dpr;
+    cache_key = boost::json::serialize(key_obj);
+    std::vector<unsigned char> cached;
+    if (gen_->tileCacheGet(cache_key, cached)) {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kPng;
+      resp.payload = std::move(cached);
+      return resp;
+    }
+  }
+
+  WebSocketResponse resp
+      = renderTile(req.id,
+                   std::string(req.json.at("layer").as_string()),
+                   static_cast<int>(req.json.at("z").as_int64()),
+                   static_cast<int>(req.json.at("x").as_int64()),
+                   static_cast<int>(req.json.at("y").as_int64()),
+                   vis,
+                   *gen_,
+                   no_rects,
+                   no_polys,
+                   no_colored,
+                   no_lines,
+                   mod_ptr,
+                   focus_ptr,
+                   nullptr,
+                   dpr);
+  if (cacheable && resp.type == WebSocketResponse::kPng) {
+    gen_->tileCachePut(std::move(cache_key), resp.payload);
+  }
+
+  return resp;
 }
 
 WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
@@ -2415,6 +2708,37 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                   route_guide_ptr,
                                   has_vis_layers,
                                   vis_layers);
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleCancel(const WebSocketRequest& req,
+                                            SessionState& state)
+{
+  // Cap so a long browsing session whose cancels never match a queued render
+  // can't grow the set without bound; trimming the oldest (lowest) ids only
+  // costs an occasional missed cancel (the render proceeds, which is correct).
+  constexpr size_t kCancelledCap = 4096;
+  {
+    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
+    if (const auto* ids = req.json.if_contains("cancel_ids")) {
+      for (const auto& v : ids->as_array()) {
+        state.cancelled_ids.insert(static_cast<uint32_t>(v.as_int64()));
+      }
+    } else {
+      state.cancelled_ids.insert(
+          static_cast<uint32_t>(jsonOr<int64_t>(req.json, "cancel_id", 0)));
+    }
+    while (state.cancelled_ids.size() > kCancelledCap) {
+      state.cancelled_ids.erase(state.cancelled_ids.begin());
+    }
+  }
+  // Minimal ack.  The client does not track the cancel message in `pending`,
+  // so this response is harmlessly ignored.
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  const std::string ok = "{\"cancelled\":1}";
+  resp.payload.assign(ok.begin(), ok.end());
   return resp;
 }
 

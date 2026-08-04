@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -39,6 +40,7 @@ namespace grt {
 class Design;
 class GridGraph;
 class GRNet;
+class GRTreeNode;
 class BoxT;
 
 struct Constants
@@ -90,10 +92,15 @@ class CUGR
   void init(int min_routing_layer,
             int max_routing_layer,
             const odb::PtrSet<odb::dbNet>& clock_nets);
-  void route();
+  void route(bool incremental);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
+  GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
+  // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
+  // overflow split into wire vs via-stub shares (proportional attribution);
+  // sub-min layers shown as all-zero rows. Gated on verbose_.
+  void reportCongestion() const;
   void getITermsAccessPoints(
       odb::dbNet* net,
       odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points);
@@ -118,10 +125,30 @@ class CUGR
     congestion_iterations_ = iterations;
   }
   void setVerbose(bool verbose) { verbose_ = verbose; }
-  void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
-  void routeIncremental();
+  // Transfer removed net tree ownership to preserved net without removing
+  // its GridGraph usage. Called at inDbNetPostMerge time.
+  void mergeNet(odb::dbNet* preserved_net,
+                odb::dbNet* removed_net,
+                const std::vector<GSegment>& connection);
+  // Returns the per-layer NDR demand vector for db_net, or all-ones if the
+  // net is not found.  Used by GlobalRouter to pass the correct demand into
+  // hasAvailableResources() when checking capacity for NDR nets.
+  std::vector<double> getNdrCosts(odb::dbNet* db_net) const;
+
+  // Returns true if the edge on (layer_index, tile_x, tile_y) has at least
+  // one unit of remaining capacity -- the CUGR analog of
+  // FastRouteCore::hasAvailableResources.
+  // demand is the per-edge demand to check against (default 1.0 for non-NDR).
+  bool hasAvailableResources(int layer_index,
+                             int tile_x,
+                             int tile_y,
+                             double demand = 1.0) const;
+  // Adopts an externally restored routing (journal restore): rebuilds the
+  // net's routing tree from the segments and swaps the grid-graph demand
+  // without scheduling a reroute. Returns false if the net must be rerouted.
+  bool restoreNetRoute(odb::dbNet* db_net, const GRoute& route);
 
   const std::vector<int>& getOriginalResources() const;
   void computeCongestionInformation();
@@ -137,16 +164,25 @@ class CUGR
  private:
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
-  void updateCriticalNets();
+  void updateCriticalNets(const std::vector<int>& net_indices);
   // Re-extract parasitics and refresh every net's slack from the routing.
-  void updateNetSlacks();
+  void updateNetSlacks(const std::vector<int>& net_indices);
+  // Refresh the slack of the given nets from STA, without re-extracting
+  // parasitics (incremental scope).
+  void refreshNetSlacks(const std::vector<int>& net_indices);
   // Slack value at the critical_nets_percentage_ percentile of the nets.
   float criticalSlackThreshold() const;
   // Push nets with slack above the threshold to the back of the default
   // ordering by maxing their slack; res-aware nets are exempt.
   void demoteNonCriticalNets(float slack_th);
   float getNetSlack(odb::dbNet* net);
-  void setInitialNetSlacks();
+  void setInitialNetSlacks(const std::vector<int>& net_indices);
+  // Builds a routing tree spanning the segments' gcells; nullptr if the
+  // segments are malformed or disconnected.
+  std::shared_ptr<GRTreeNode> buildTreeFromRoute(const GRoute& route) const;
+  // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
+  // from every committed tree and report drift from the tracked demand.
+  void verifyDemandConsistency(const char* tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -205,8 +241,9 @@ class CUGR
    *
    * Early-exits when the integer overflow metric (`totalOverflow()`)
    * is already zero, so designs that finished stage 4 clean pay no
-   * cost. Emits `GRT-0117` per iteration and `GRT-0118` if overflow
-   * remains when the loop ends.
+   * cost. Emits `GRT-0117` per iteration and, in full route only,
+   * `GRT-0118` if overflow remains when the loop ends (incremental
+   * defers to the session-end `GRT-0128`).
    *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
@@ -218,7 +255,19 @@ class CUGR
                       bool res_aware_order) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
+  // Append net's routing tree to route as GRoute segments.
+  void buildNetRoute(const GRNet* net, GRoute& route) const;
   void printStatistics() const;
+
+  // Tile classification for debugCongestion2D.
+  struct Congestion2D
+  {
+    double total_3d_overflow = 0.0;
+    double total_2d_overflow = 0.0;
+    int tiles_3d_only = 0;
+    int tiles_2d = 0;
+  };
+  Congestion2D computeCongestion2D() const;
 
   /**
    * @brief Diagnoses whether residual overflow is spreadable.
@@ -246,6 +295,9 @@ class CUGR
   std::vector<int> net_indices_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
   std::unordered_map<odb::dbNet*, GRNet*> db_net_map_;
+  // Nets merged into a survivor; removeNet() must NOT remove their GridGraph
+  // usage.
+  std::unordered_set<odb::dbNet*> merged_nets_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
@@ -263,6 +315,11 @@ class CUGR
   int congestion_iterations_ = 5;
   bool verbose_ = true;
 
+  // Suppresses the global parasitics re-estimate during incremental routing.
+  bool incremental_routing_ = false;
+  // Dirty-net set for the current incremental pass; scopes congestion checks.
+  std::vector<int> incremental_candidates_;
+
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).
   float worst_slack_ = 1.0f;
@@ -276,7 +333,7 @@ class CUGR
 
   // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
   // worst_* normalisers; no-op unless resistance_aware_.
-  void markResAwareNets();
+  void markResAwareNets(const std::vector<int>& net_indices);
 
   // FR-style ordering score (lower routes first): slack/resistance/fanout/
   // length blend, each normalised by the per-run worst.

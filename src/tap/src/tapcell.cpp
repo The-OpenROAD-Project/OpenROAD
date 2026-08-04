@@ -68,8 +68,60 @@ int Tapcell::defaultDistance() const
   return 2 * block->getDbUnitsPerMicron();
 }
 
+void Tapcell::checkPlaceable(odb::dbMaster* master,
+                             const std::string& option) const
+{
+  if (master != nullptr && !master->isCoreAutoPlaceable()) {
+    logger_->error(utl::TAP,
+                   36,
+                   "Master {} with class {} given for {} cannot be placed in "
+                   "core rows and would be ignored by detailed placement.",
+                   master->getName(),
+                   master->getType().getString(),
+                   option);
+  }
+}
+
+void Tapcell::checkPlaceable(const Options& options) const
+{
+  checkPlaceable(options.endcap_master, "-endcap_master");
+  checkPlaceable(options.tapcell_master, "-tapcell_master");
+  checkPlaceable(options.cnrcap_nwin_master, "-cnrcap_nwin_master");
+  checkPlaceable(options.cnrcap_nwout_master, "-cnrcap_nwout_master");
+  checkPlaceable(options.tap_nwintie_master, "-tap_nwintie_master");
+  checkPlaceable(options.tap_nwin2_master, "-tap_nwin2_master");
+  checkPlaceable(options.tap_nwin3_master, "-tap_nwin3_master");
+  checkPlaceable(options.tap_nwouttie_master, "-tap_nwouttie_master");
+  checkPlaceable(options.tap_nwout2_master, "-tap_nwout2_master");
+  checkPlaceable(options.tap_nwout3_master, "-tap_nwout3_master");
+  checkPlaceable(options.incnrcap_nwin_master, "-incnrcap_nwin_master");
+  checkPlaceable(options.incnrcap_nwout_master, "-incnrcap_nwout_master");
+}
+
+void Tapcell::checkPlaceable(const EndcapCellOptions& options) const
+{
+  checkPlaceable(options.left_top_corner, "-left_top_corner");
+  checkPlaceable(options.right_top_corner, "-right_top_corner");
+  checkPlaceable(options.left_bottom_corner, "-left_bottom_corner");
+  checkPlaceable(options.right_bottom_corner, "-right_bottom_corner");
+  checkPlaceable(options.left_top_edge, "-left_top_edge");
+  checkPlaceable(options.right_top_edge, "-right_top_edge");
+  checkPlaceable(options.left_bottom_edge, "-left_bottom_edge");
+  checkPlaceable(options.right_bottom_edge, "-right_bottom_edge");
+  checkPlaceable(options.left_edge, "-left_edge");
+  checkPlaceable(options.right_edge, "-right_edge");
+  for (odb::dbMaster* master : options.top_edge) {
+    checkPlaceable(master, "-top_edge");
+  }
+  for (odb::dbMaster* master : options.bottom_edge) {
+    checkPlaceable(master, "-bottom_edge");
+  }
+}
+
 void Tapcell::cutRows(const Options& options)
 {
+  checkPlaceable(options.endcap_master, "-endcap_master");
+
   vector<odb::dbBox*> blockages = findBlockages();
   odb::dbBlock* block = db_->getChip()->getBlock();
   const int halo_x = options.halo_x >= 0 ? options.halo_x : defaultDistance();
@@ -83,6 +135,8 @@ void Tapcell::cutRows(const Options& options)
 
 void Tapcell::run(const Options& options)
 {
+  checkPlaceable(options);
+
   cutRows(options);
 
   placeEndcaps(correctEndcapOptions(options));
@@ -527,6 +581,8 @@ std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
 
 void Tapcell::placeEndcaps(const EndcapCellOptions& options)
 {
+  checkPlaceable(options);
+
   const auto filled_options = correctEndcapOptions(options);
 
   const auto areas = getBoundaryAreas();
@@ -1622,6 +1678,7 @@ void Tapcell::placeTapcells(const Options& options)
   if (options.tapcell_master == nullptr) {
     return;
   }
+  checkPlaceable(options.tapcell_master, "-master");
 
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 

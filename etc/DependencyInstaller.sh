@@ -183,8 +183,19 @@ _install_yosys() {
             cd "${BASE_DIR}"
             _execute "Cloning Yosys ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/yosys
             cd yosys
-            _execute "Building Yosys..." make -j "${NUM_THREADS}" PREFIX="${yosys_prefix}" ABC_ARCHFLAGS=-Wno-register
-            _execute "Installing Yosys..." make install PREFIX="${yosys_prefix}"
+            if [[ -f Makefile ]]; then
+                _execute "Building Yosys..." make -j "${NUM_THREADS}" PREFIX="${yosys_prefix}" ABC_ARCHFLAGS=-Wno-register
+                _execute "Installing Yosys..." make install PREFIX="${yosys_prefix}"
+            else
+                # Yosys v0.67 and later dropped the Makefile in favor of CMake.
+                local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
+                if [[ ! -f "${cmake_bin}" ]]; then
+                    cmake_bin="cmake"
+                fi
+                _execute "Configuring Yosys..." "${cmake_bin}" -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="${yosys_prefix}" .
+                _execute "Building Yosys..." "${cmake_bin}" --build build -j "${NUM_THREADS}"
+                _execute "Installing Yosys..." "${cmake_bin}" --build build --target install
+            fi
         )
         INSTALL_SUMMARY+=("Yosys: system=${yosys_installed_version}, required=${required_version}, path=${yosys_prefix}, status=installed")
     else
@@ -339,26 +350,30 @@ _install_bison() {
     if [[ "${bison_installed_version}" != "${BISON_VERSION}" ]]; then
         (
             cd "${BASE_DIR}"
-            local mirrors=(
-                "https://ftp.gnu.org/gnu/bison"
-                "https://ftpmirror.gnu.org/bison"
-                "https://mirrors.kernel.org/gnu/bison"
-                "https://mirrors.dotsrc.org/gnu/bison"
-            )
-            local success=0
-            for mirror in "${mirrors[@]}"; do
-                local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
-                log "Trying to download bison from: $url"
-                if wget $OPT_NOCERT "$url"; then
-                    success=1
-                    break
-                else
-                    warn "Failed to download from $mirror"
+            _download_bison() {
+                local mirrors=(
+                    "https://ftp.gnu.org/gnu/bison"
+                    "https://ftpmirror.gnu.org/bison"
+                    "https://mirrors.kernel.org/gnu/bison"
+                    "https://mirrors.dotsrc.org/gnu/bison"
+                )
+                local success=0
+                for mirror in "${mirrors[@]}"; do
+                    local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
+                    log "Trying to download bison from: $url"
+                    if wget $OPT_NOCERT "$url"; then
+                        success=1
+                        break
+                    else
+                        warn "Failed to download from $mirror"
+                    fi
+                done
+                if [[ ${success} -ne 1 ]]; then
+                    warn "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
+                    return 1
                 fi
-            done
-            if [[ ${success} -ne 1 ]]; then
-                error "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
-            fi
+            }
+            _execute "Downloading Bison" _download_bison
             _verify_checksum "${BISON_CHECKSUM}" "bison-${BISON_VERSION}.tar.gz" || error "Bison checksum failed."
             _execute "Extracting Bison..." tar xf "bison-${BISON_VERSION}.tar.gz"
             cd "bison-${BISON_VERSION}"
@@ -675,25 +690,31 @@ _install_abseil() {
     local absl_prefix_found=""
     local absl_version_file=""
 
-    # Check in default/user-specified prefix first (lib64 on RHEL, lib elsewhere).
-    for absl_version_file_default in \
-        "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
-        "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
-        if [[ -f "${absl_version_file_default}" ]]; then
-            absl_prefix_found="${absl_prefix_install}"
-            absl_version_file="${absl_version_file_default}"
-            break
-        fi
-    done
-
-    # If not found, check in or-tools path
-    if [[ -z "${absl_prefix_found}" && -n "${OR_TOOLS_PATH}" ]]; then
+    # Prefer the Abseil bundled with or-tools (lib64 on RHEL, lib elsewhere).
+    # Prebuilt or-tools links its own Abseil copy, so building OpenROAD
+    # against any other copy loads two Abseils at runtime and crashes at
+    # startup with a duplicate-flag ODR error ("Inconsistency between flag
+    # object and registration for flag 'flagfile'").
+    if [[ -n "${OR_TOOLS_PATH}" ]]; then
         for absl_version_file_or_tools in \
             "${OR_TOOLS_PATH}/lib64/cmake/absl/abslConfigVersion.cmake" \
             "${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"; do
             if [[ -f "${absl_version_file_or_tools}" ]]; then
                 absl_prefix_found="${OR_TOOLS_PATH}"
                 absl_version_file="${absl_version_file_or_tools}"
+                break
+            fi
+        done
+    fi
+
+    # Fall back to a copy in the default/user-specified prefix.
+    if [[ -z "${absl_prefix_found}" ]]; then
+        for absl_version_file_default in \
+            "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_default}" ]]; then
+                absl_prefix_found="${absl_prefix_install}"
+                absl_version_file="${absl_version_file_default}"
                 break
             fi
         done
@@ -707,6 +728,16 @@ _install_abseil() {
     local required_version="${ABSL_VERSION%.*}"
     log "Checking Abseil (System: ${absl_installed_version}, Required: ${required_version})"
     if [[ "${absl_installed_version}" != "${required_version}" ]]; then
+        if [[ -n "${absl_prefix_found}" && "${absl_prefix_found}" == "${OR_TOOLS_PATH}" ]]; then
+            warn "or-tools bundles Abseil ${absl_installed_version} but ${required_version} is required."
+            warn "Building a separate Abseil copy; keep OR_TOOLS_VERSION_BIG and ABSL_VERSION in sync to avoid runtime ODR errors."
+        fi
+        # Remove any stale Abseil from the install prefix so the new version
+        # does not overlay a mix of old and new headers/libraries.
+        rm -rf "${absl_prefix_install}/include/absl" \
+            "${absl_prefix_install}"/lib/cmake/absl "${absl_prefix_install}"/lib64/cmake/absl \
+            "${absl_prefix_install}"/lib/libabsl_* "${absl_prefix_install}"/lib64/libabsl_* \
+            "${absl_prefix_install}"/lib/pkgconfig/absl_*.pc "${absl_prefix_install}"/lib64/pkgconfig/absl_*.pc
         (
             cd "${BASE_DIR}"
             _execute "Downloading Abseil..." wget $OPT_NOCERT "https://github.com/abseil/abseil-cpp/releases/download/${ABSL_VERSION}/abseil-cpp-${ABSL_VERSION}.tar.gz"
@@ -728,6 +759,11 @@ _install_abseil() {
         done
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=installed")
     else
+        if [[ "${absl_prefix_found}" == "${OR_TOOLS_PATH}" ]] &&
+            [[ -d "${absl_prefix_install}/lib/cmake/absl" || -d "${absl_prefix_install}/lib64/cmake/absl" ]]; then
+            warn "Stale Abseil found in ${absl_prefix_install} alongside the or-tools copy."
+            warn "Remove include/absl, lib*/cmake/absl and lib*/libabsl_* from ${absl_prefix_install} to avoid runtime ODR errors."
+        fi
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=skipped")
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
