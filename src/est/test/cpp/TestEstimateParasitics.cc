@@ -258,7 +258,8 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
 
   // A bump with a recorded net is a bump terminal only on that net: with the
   // bump net pointing elsewhere, scan_clk is no longer a pad net, so the new
-  // bump values are not applied and the stale annotation survives.
+  // bump values are not applied. The single-net API does not delete the
+  // previous annotation; the full pass below verifies it is wiped.
   odb::dbNet* d_net = scan_reg->findITerm("D")->getNet();
   ASSERT_NE(d_net, nullptr);
   bump->setNet(d_net);
@@ -321,6 +322,16 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   ASSERT_NE(pi, nullptr);
   parasitics->piModel(pi, c2, rpi, c1);
   EXPECT_FLOAT_EQ(rpi, 7.5f);
+
+  // dbChipBump::setNet emits no invalidation, but the full estimation pass
+  // deletes all parasitics up front: scan_clk's obsolete bump annotation
+  // (its bump net still points at d) does not survive it.
+  ep_.setHWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.setVWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.estimateWireParasitics();
+  EXPECT_EQ(parasitics->findPiElmore(
+                scan_clk_pin, sta::RiseFall::rise(), sta::MinMax::max()),
+            nullptr);
 }
 
 // Verifies that wire RC values are stored per chip: chip-specific values take
