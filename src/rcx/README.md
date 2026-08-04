@@ -42,6 +42,25 @@ define_process_corner
 | `-ext_model_index` | Extraction model index. Expects 2 inputs (an index, and corner name). |
 | `filename` | Path to process corner file `rcx_patterns.rules`. |
 
+### Set Extraction Rules File
+
+Sets the path to the parasitics extraction rules file. For a 3D design in
+which multiple technologies are used, the user must specify the technology
+for which they want to set the rules path.
+
+```tcl
+set_extraction_rules_file
+    [-tech tech_name]
+    rules_file
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-tech` | Technology for which to set the extraction rules path. |
+| `rules_file` | Path to the extraction rules file. |
+
 ### Extract Parasitics
 
 The `extract_parasitics` command performs parasitic extraction based on the
