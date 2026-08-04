@@ -320,11 +320,15 @@ Using the closed-form threshold function $t(v)$, the final timing quantities are
 
 1. **Wire Delay:**
    $$t_{\text{wire}} = t(v_{\text{th}}) - t_t \cdot v_{\text{th}}$$
+
 2. **Load Slew:**
    $$S_{\text{load}} = \frac{t(v_H) - t(v_L)}{k_{\text{derate}}}$$
 
-*(Note: Multiplying the library table driver slew $S_{\text{drvr}}$ by $k_{\text{derate}}$ converts it to the measured $v_L \to v_H$ transition time to form the ramp duration $t_t$. Dividing the load transition time $\Delta t = t(v_H) - t(v_L)$ by $k_{\text{derate}}$ scales the measured receiver transition back to the reported library slew format $S_{\text{load}}$.)*
-3. **Threshold Adjustment:** Handled by standard OpenSTA library threshold mapping via `thresholdAdjust()`.
+3. **Threshold Adjustment:**
+   Handled by standard OpenSTA library threshold mapping via `thresholdAdjust()`.
+
+> [!NOTE]
+> Multiplying the library table driver slew $S_{\text{drvr}}$ by $k_{\text{derate}}$ converts it to the measured $v_L \to v_H$ transition time to form the ramp duration $t_t$. Dividing the load transition time $\Delta t = t(v_H) - t(v_L)$ by $k_{\text{derate}}$ scales the measured receiver transition back to the reported library slew format $S_{\text{load}}$.
 
 ### 4.5 Robustness & Fallback Guarantees
 
