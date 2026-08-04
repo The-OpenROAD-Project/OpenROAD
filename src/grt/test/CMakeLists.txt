@@ -97,6 +97,7 @@ or_integration_tests(
     repair_antennas_only_diodes
     repair_antennas_only_diodes_cugr
     repair_antennas_only_jumpers
+    repair_antennas_post_drt_below_min_cugr
     repair_antennas_post_drt_cugr
     report_wire_length1
     report_wire_length2
