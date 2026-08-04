@@ -4,7 +4,7 @@
 #
 # Check YAML formatting with yamlfix.
 set -euo pipefail
-TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+TOOL="$(realpath "$1")"
 GIT="$(realpath "$2")"
 cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 
@@ -13,9 +13,16 @@ if [ -f "yamlfix.toml" ]; then
     OPTIONS+=("-c" "yamlfix.toml")
 fi
 
-"${GIT}" ls-files '*.yaml' '*.yml' -z | xargs -0 "$TOOL" "${OPTIONS[@]}"
-if ! "${GIT}" diff --quiet -- '*.yaml' '*.yml'; then
-    echo "YAML formatting errors found. Run 'bazelisk run //:fix_lint' to fix." >&2
-    "${GIT}" diff -- '*.yaml' '*.yml'
-    exit 1
+FILES=()
+while IFS= read -r -d '' file; do
+    FILES+=("$file")
+done < <("${GIT}" ls-files '*.yaml' '*.yml' -z)
+
+if [ "${#FILES[@]}" -gt 0 ]; then
+    "$TOOL" "${OPTIONS[@]}" "${FILES[@]}"
+    if ! "${GIT}" diff --quiet -- '*.yaml' '*.yml'; then
+        echo "YAML formatting errors found. Run 'bazelisk run //:fix_lint' to fix." >&2
+        "${GIT}" diff -- '*.yaml' '*.yml'
+        exit 1
+    fi
 fi

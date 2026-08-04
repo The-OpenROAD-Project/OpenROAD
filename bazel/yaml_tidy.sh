@@ -4,7 +4,7 @@
 #
 # Auto-format YAML files in-place using yamlfix.
 set -euo pipefail
-TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+TOOL="$(realpath "$1")"
 GIT="$(realpath "$2")"
 cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 
@@ -13,4 +13,11 @@ if [ -f "yamlfix.toml" ]; then
     OPTIONS+=("-c" "yamlfix.toml")
 fi
 
-"${GIT}" ls-files '*.yaml' '*.yml' -z | xargs -0 "$TOOL" "${OPTIONS[@]}"
+FILES=()
+while IFS= read -r -d '' file; do
+    FILES+=("$file")
+done < <("${GIT}" ls-files '*.yaml' '*.yml' -z)
+
+if [ "${#FILES[@]}" -gt 0 ]; then
+    "$TOOL" "${OPTIONS[@]}" "${FILES[@]}"
+fi
