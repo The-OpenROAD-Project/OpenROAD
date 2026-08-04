@@ -8,6 +8,7 @@ set -euo pipefail
 
 TOOL="$(realpath "$1")"
 GIT="$(realpath "$2")"
+GIT_LS_FILES="$(realpath "bazel/git_ls_files.sh")"
 
 export RUNFILES_DIR="${RUNFILES_DIR:-${PWD%/*}}"
 
@@ -15,6 +16,6 @@ export RUNFILES_DIR="${RUNFILES_DIR:-${PWD%/*}}"
 WORKSPACE="$(dirname "$(readlink MODULE.bazel)")"
 cd "$WORKSPACE"
 
-"bazel/git_ls_files.sh" "${GIT}" \
+"${GIT_LS_FILES}" "${GIT}" \
         '*.bazel' '*.bzl' '**/BUILD' 'BUILD' '**/WORKSPACE' 'WORKSPACE' -z \
     | xargs -0 "${TOOL}" -mode=check -lint=warn

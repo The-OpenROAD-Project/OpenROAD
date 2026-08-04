@@ -681,6 +681,7 @@ sh_binary(
         "tclint.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
+        "//bazel:git_ls_files.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",
