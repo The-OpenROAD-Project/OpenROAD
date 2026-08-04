@@ -30,19 +30,19 @@ set block [ord::get_db_block]
 set li1 [[ord::get_db_tech] findLayer li1]
 set target ""
 foreach net [$block getNets] {
-  if {[$net isSpecial] || [$net getWire] == "NULL"} { continue }
-  if {[llength [$net getITerms]] < 2} { continue }
+  if { [$net isSpecial] || [$net getWire] == "NULL" } { continue }
+  if { [llength [$net getITerms]] < 2 } { continue }
   set target $net
   break
 }
 set bbox [[lindex [$target getITerms] 0] getBBox]
-set x [expr {([$bbox xMin] + [$bbox xMax]) / 2}]
-set y [expr {([$bbox yMin] + [$bbox yMax]) / 2}]
+set x [expr { ([$bbox xMin] + [$bbox xMax]) / 2 }]
+set y [expr { ([$bbox yMin] + [$bbox yMax]) / 2 }]
 set enc [odb::dbWireEncoder]
 $enc append [$target getWire]
 $enc newPath $li1 "ROUTED"
 $enc addPoint $x $y
-$enc addPoint $x [expr {$y + 20000}]
+$enc addPoint $x [expr { $y + 20000 }]
 $enc end
 puts "added li1 span to [$target getName]"
 
