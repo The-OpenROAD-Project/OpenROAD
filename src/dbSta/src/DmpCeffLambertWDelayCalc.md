@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Static Timing Analysis (STA) engines spend a substantial fraction of their runtime calculating gate delays and wire delays across millions of timing arcs in the physical synthesis loop (buffer insertion, gate sizing, clock-tree synthesis, and routing). 
+Static Timing Analysis (STA) engines spend a substantial fraction of their runtime calculating gate delays and wire delays across millions of timing arcs in the physical synthesis loop (buffer insertion, gate sizing, clock-tree synthesis, and routing).
 
 In deep-submicron and nanometer nodes, interconnect wire resistance shields downstream capacitance, requiring the use of **Driving Point $\Pi$-models** $(C_2, R_\pi, C_1)$ and **Effective Capacitance ($C_{\text{eff}}$)** algorithms. The industry-standard **Dartu-Menezes-Pileggi (DMP)** approach computes $C_{\text{eff}}$ and threshold crossing times using iterative **Newton-Raphson (N-R)** algorithms. While accurate, the iterative loop creates significant performance bottlenecks:
 - Non-deterministic iteration counts leading to execution divergence.
@@ -215,7 +215,7 @@ $$y(t) \approx \frac{t - B + C e^{-p_1 t}}{t_t}$$
 where:
 - $C = \dfrac{k_1}{p_1^2}$
 - $B = \dfrac{k_1}{p_1^2} + \dfrac{k_2}{p_2^2}$ (Elmore delay)
-- $t_t = \dfrac{\text{drvr\_slew} \cdot \text{slew\_derate}}{v_H - v_L}$ (ramp transition time)
+- $t_t = \dfrac{S_{\text{drvr}} \cdot k_{\text{derate}}}{v_H - v_L}$ (0%–100% ramp transition time, where $S_{\text{drvr}}$ is the driver slew and $k_{\text{derate}}$ is the library `slew_derate` factor)
 
 #### Step 2: Target Threshold Equation
 Setting $y(t) = v_{\text{th}}$:
@@ -319,9 +319,11 @@ return std::log(exp_arg) / p1;
 Using the closed-form threshold function $t(v)$, the final timing quantities are resolved:
 
 1. **Wire Delay:**
-   $$\text{wire\_delay} = t(v_{\text{th}}) - t_t \cdot v_{\text{th}}$$
+   $$t_{\text{wire}} = t(v_{\text{th}}) - t_t \cdot v_{\text{th}}$$
 2. **Load Slew:**
-   $$\text{load\_slew} = \frac{t(v_H) - t(v_L)}{\text{slew\_derate}}$$
+   $$S_{\text{load}} = \frac{t(v_H) - t(v_L)}{k_{\text{derate}}}$$
+
+*(Note: Multiplying the library table driver slew $S_{\text{drvr}}$ by $k_{\text{derate}}$ converts it to the measured $v_L \to v_H$ transition time to form the ramp duration $t_t$. Dividing the load transition time $\Delta t = t(v_H) - t(v_L)$ by $k_{\text{derate}}$ scales the measured receiver transition back to the reported library slew format $S_{\text{load}}$.)*
 3. **Threshold Adjustment:** Handled by standard OpenSTA library threshold mapping via `thresholdAdjust()`.
 
 ### 4.5 Robustness & Fallback Guarantees
