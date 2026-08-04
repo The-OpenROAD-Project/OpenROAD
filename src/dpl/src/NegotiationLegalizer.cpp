@@ -375,6 +375,11 @@ bool NegotiationLegalizer::initFromDb()
   grid_w_ = dpl_grid->getRowSiteCount().v;
   grid_h_ = dpl_grid->getRowCount().v;
 
+  // legalize() can run again on this same object, and grid_w_/grid_h_ may be
+  // different next time.
+  hist_seen_stamp_.assign(static_cast<size_t>(grid_w_) * grid_h_, 0);
+  hist_gen_ = 0;
+
   // Build NegCell records from all placed instances.
   cells_.clear();
   cells_.reserve(block->getInsts().size());
