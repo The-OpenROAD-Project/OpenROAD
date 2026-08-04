@@ -4,6 +4,7 @@
 // Inspector panel — property tree, hover highlights, bbox display.
 
 import { dbuRectToBounds } from './coordinates.js';
+import { beginSelection, isCurrentSelection } from './ui-utils.js';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -236,11 +237,16 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             pendingInspectId = null;
         }
         showLoading();
+        // Cycling moves the inspected object, so it owns the selection from
+        // here on: a response from an older selection path must not overwrite
+        // it, and panels painting their own selection must let go.
+        const token = beginSelection(app);
         const promise = app.websocketManager.request({ type: reqType, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Selection cycle error:', data.error);
                     updateInspector(lastInspectData);
@@ -289,6 +295,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         // Show loading state immediately
         showLoading();
 
+        const token = beginSelection(app);
         const promise = app.websocketManager.request(
             { type: 'inspect', select_id: selectId, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
@@ -296,6 +303,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect error:', data.error);
                     return;
@@ -334,12 +342,14 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
 
         showLoading();
 
+        const token = beginSelection(app);
         const promise = app.websocketManager.request({ type: 'inspect_back', use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect back error:', data.error);
                     return;
@@ -415,48 +425,122 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         }, 1100);
     }
 
-    function renderProperty(prop, data) {
-        // Group with children (PropertyList or SelectionSet)
-        if (prop.children) {
-            const group = document.createElement('div');
-            group.className = 'inspector-group';
+    // Build the collapsible shell (header row + body) shared by the group and
+    // table property renderers.  `count` is the parenthesised badge after the
+    // name; pass null to omit it.
+    function makeCollapsibleGroup(name, count, collapsed) {
+        const group = document.createElement('div');
+        group.className = 'inspector-group';
 
-            const header = document.createElement('div');
-            header.className = 'inspector-group-header';
-            const arrow = document.createElement('span');
-            arrow.className = 'vis-arrow';
-            arrow.textContent = '▶';
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'inspector-prop-name';
-            nameSpan.textContent = prop.name;
+        const header = document.createElement('div');
+        header.className = 'inspector-group-header';
+        const arrow = document.createElement('span');
+        arrow.className = 'vis-arrow';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'inspector-prop-name';
+        nameSpan.textContent = name;
+        nameSpan.title = name;
+        header.appendChild(arrow);
+        header.appendChild(nameSpan);
+        if (count !== null) {
             const countSpan = document.createElement('span');
             countSpan.className = 'inspector-count';
-            countSpan.textContent = `(${prop.children.length})`;
-            header.appendChild(arrow);
-            header.appendChild(nameSpan);
+            countSpan.textContent = `(${count})`;
             header.appendChild(countSpan);
-            group.appendChild(header);
+        }
+        group.appendChild(header);
 
-            const kids = document.createElement('div');
-            const autoExpand = prop.children.length < 10;
-            kids.className = 'inspector-group-children' + (autoExpand ? '' : ' collapsed');
-            arrow.textContent = autoExpand ? '▼' : '▶';
-            for (const child of prop.children) {
-                kids.appendChild(renderProperty(child, data));
+        const body = document.createElement('div');
+        body.className = 'inspector-group-children'
+            + (collapsed ? ' collapsed' : '');
+        arrow.textContent = collapsed ? '▶' : '▼';
+        group.appendChild(body);
+
+        // One listener, on the header.  The arrow lives inside the header, so
+        // clicking it expands/collapses too — which is what users reach for
+        // first.  A second listener on the arrow itself would also see the
+        // click bubble up to the header and toggle twice, leaving the group
+        // exactly as it was.
+        header.addEventListener('click', () => {
+            body.classList.toggle('collapsed');
+            arrow.textContent = body.classList.contains('collapsed')
+                ? '▶' : '▼';
+        });
+
+        return { group, header, arrow, body };
+    }
+
+    // Render a PropertyTable (e.g. a layer's two-widths spacing table) as a
+    // grid, matching the Qt inspector.  Row and column headers are optional:
+    // a table that has none is drawn as a bare grid rather than with a blank
+    // header row/column.
+    function renderTable(table) {
+        const columns = table.column_headers || [];
+        const rowHeaders = table.row_headers || [];
+        const data = table.data || [];
+        const hasColumnHeaders = columns.some(h => h !== '');
+        const hasRowHeaders = rowHeaders.some(h => h !== '');
+
+        const el = document.createElement('table');
+        el.className = 'inspector-table';
+
+        if (hasColumnHeaders) {
+            const head = document.createElement('thead');
+            const tr = document.createElement('tr');
+            if (hasRowHeaders) {
+                // Empty corner cell above the row-header column.
+                tr.appendChild(document.createElement('th'));
             }
-            group.appendChild(kids);
+            for (const header of columns) {
+                const th = document.createElement('th');
+                th.textContent = header;
+                tr.appendChild(th);
+            }
+            head.appendChild(tr);
+            el.appendChild(head);
+        }
 
-            arrow.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
-            header.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
+        const body = document.createElement('tbody');
+        data.forEach((row, i) => {
+            const tr = document.createElement('tr');
+            if (hasRowHeaders) {
+                const th = document.createElement('th');
+                th.textContent = rowHeaders[i] || '';
+                tr.appendChild(th);
+            }
+            for (const cell of row) {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+            }
+            body.appendChild(tr);
+        });
+        el.appendChild(body);
 
+        return el;
+    }
+
+    function renderProperty(prop, data) {
+        // Table-valued property (PropertyTable)
+        if (prop.table) {
+            const rows = (prop.table.data || []).length;
+            const { group, body } = makeCollapsibleGroup(
+                prop.name, rows, /*collapsed=*/rows >= 10);
+            const scroller = document.createElement('div');
+            scroller.className = 'inspector-table-scroll';
+            scroller.appendChild(renderTable(prop.table));
+            body.appendChild(scroller);
+            return group;
+        }
+
+        // Group with children (PropertyList, SelectionSet or value list)
+        if (prop.children) {
+            const autoExpand = prop.children.length < 10;
+            const { group, body } = makeCollapsibleGroup(
+                prop.name, prop.children.length, /*collapsed=*/!autoExpand);
+            for (const child of prop.children) {
+                body.appendChild(renderProperty(child, data));
+            }
             return group;
         }
 
@@ -466,6 +550,8 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         const nameEl = document.createElement('span');
         nameEl.className = 'inspector-prop-name';
         nameEl.textContent = prop.name || '';
+        // The column clips long names, so keep the full text reachable.
+        nameEl.title = prop.name || '';
         const valEl = document.createElement('span');
         valEl.className = 'inspector-prop-value';
         valEl.textContent = prop.value || '';
@@ -501,6 +587,52 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         }
 
         return row;
+    }
+
+    // Width of the property-name column, in pixels.  Held here rather than in
+    // the DOM because updateInspector() rebuilds the panel from scratch on
+    // every selection, which would otherwise reset a width the user set.
+    const kDefaultNameWidth = 140;
+    const kMinNameWidth = 60;
+    const kMaxNameWidth = 500;
+    let nameColumnWidth = kDefaultNameWidth;
+
+    function applyNameColumnWidth() {
+        if (!app.inspectorEl) return;
+        app.inspectorEl.style.setProperty(
+            '--inspector-name-w', nameColumnWidth + 'px');
+    }
+
+    // Divider between the name and value columns; drag to widen the name
+    // column when a property name is clipped.
+    function makeColumnResizer() {
+        const grip = document.createElement('div');
+        grip.className = 'inspector-col-resizer';
+        grip.title = 'Drag to resize the name column';
+
+        grip.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startWidth = nameColumnWidth;
+            grip.classList.add('dragging');
+
+            const onMove = (ev) => {
+                nameColumnWidth = Math.max(
+                    kMinNameWidth,
+                    Math.min(kMaxNameWidth,
+                             startWidth + ev.clientX - startX));
+                applyNameColumnWidth();
+            };
+            const onUp = () => {
+                grip.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        return grip;
     }
 
     function zoomToBBox(bbox) {
@@ -612,9 +744,14 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             app.inspectorEl.appendChild(nav);
         }
 
+        const rows = document.createElement('div');
+        rows.className = 'inspector-rows';
         for (const prop of data.properties) {
-            app.inspectorEl.appendChild(renderProperty(prop, data));
+            rows.appendChild(renderProperty(prop, data));
         }
+        rows.appendChild(makeColumnResizer());
+        app.inspectorEl.appendChild(rows);
+        applyNameColumnWidth();
     }
 
     function createInspector(container) {

@@ -27,7 +27,7 @@ BAZEL_OPTS="${BAZEL_OPTS:--c opt ${BAZEL_REMOTE_MATERIALIZE}}"
 "${BAZEL}" fetch "${BAZEL_REMOTE_MATERIALIZE}" //src/...
 "${BAZEL}" build -k ${BAZEL_OPTS} \
   @openmp//:omp_header \
-  $("${BANT}" list-targets -g "genrule|tcl_encode|tcl_wrap_cc" -g "//src" | awk '{print $3}')
+  $("${BANT}" list-targets ... -g "genrule|tcl_encode|tcl_wrap_cc" -g "//src" -c3)
 
 # Create compilation DB. Command 'compilation-db' would create a huge *.json file,
 # but compile_flags.txt is perfectly sufficient and easier for tools to use as
