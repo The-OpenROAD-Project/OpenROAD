@@ -532,8 +532,9 @@ build_test(
 # ---------------------------------------------------------------------------
 # Lint & tidy targets
 #
-# bazelisk test //:lint_test   — run all lint checks
-# bazelisk run  //:fix_lint    — auto-fix then lint
+# bazelisk test //:lint_test               — run all lint checks
+# bazelisk run  //:fix_lint                — auto-fix then lint in OpenROAD
+# bazelisk run  //tools/OpenROAD:fix_lint  — auto-fix then lint in ORFS / downstream repos
 # ---------------------------------------------------------------------------
 
 # --- TCL linting (tclint) -------------------------------------------------
@@ -656,6 +657,8 @@ test_suite(
 
 # Linting is done here (not just formatting) because not all lint violations
 # are auto-fixable — fix_lint fixes what it can, then reports the rest.
+# Downstream workspaces (such as OpenROAD-flow-scripts) can run this directly
+# from their repo root via `bazelisk run //tools/OpenROAD:fix_lint`.
 # buildifier: disable=native-sh-binary
 sh_binary(
     name = "fix_lint",
@@ -685,4 +688,3 @@ sh_binary(
     ],
     visibility = ["//visibility:public"],
 )
-
