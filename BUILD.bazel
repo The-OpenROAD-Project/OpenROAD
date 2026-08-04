@@ -651,6 +651,7 @@ test_suite(
         ":lint_bzl_test",
         ":lint_tcl_test",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # Linting is done here (not just formatting) because not all lint violations
@@ -682,4 +683,6 @@ sh_binary(
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
+    visibility = ["//visibility:public"],
 )
+
