@@ -22,4 +22,10 @@ void MultiChipExtractor::setExtractionRulesFile(
   extraction_rules_files_[tech] = extraction_rules_file;
 }
 
+void MultiChipExtractor::setAssemblyExtractionRulesFile(
+    const std::string& assembly_extraction_rules_file)
+{
+  assembly_extraction_rules_file_ = assembly_extraction_rules_file;
+}
+
 }  // namespace rcx

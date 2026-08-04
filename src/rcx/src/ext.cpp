@@ -241,6 +241,13 @@ void Ext::setExtractionRulesFile(const std::string& rules_file,
   multi_chip_extractor_->setExtractionRulesFile(tech, rules_file);
 }
 
+void Ext::setAssemblyExtractionRulesFile(
+    const std::string& assembly_extraction_rules_file)
+{
+  multi_chip_extractor_->setAssemblyExtractionRulesFile(
+      assembly_extraction_rules_file);
+}
+
 void Ext::extract(ExtractOptions options)
 {
   _ext->setBlockFromChip(_db->getChip());

@@ -78,6 +78,8 @@ class Ext
   void setExtractionRulesFile(const std::string& rules_file);
   void setExtractionRulesFile(const std::string& rules_file,
                               const std::string& tech_name);
+  void setAssemblyExtractionRulesFile(
+      const std::string& assembly_extraction_rules_file);
 
   void define_process_corner(int ext_model_index, const std::string& name);
   void define_derived_corner(const std::string& name,
