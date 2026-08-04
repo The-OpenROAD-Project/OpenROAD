@@ -183,21 +183,9 @@ For real $\xi$:
   - The **lower branch** $W_{-1}(\xi) \in (-\infty, -1]$.
 - If $\xi < -1/e$: No real solution exists.
 
-```
-       W(xi)
-         ^
-       2 |                                      Principal branch W_0(xi)
-         |                                  . - '
-       1 |                             . - '
-         |                        . - '
-       0 +--------------------.-------------------> xi
-         |                .-' |       1          2
-      -1 +...............*----+ (-1/e, -1)
-         |              . |
-      -2 |             .  |
-         |            .   |           Lower branch W_{-1}(xi)
-      -3 |           .    |
-```
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Mplwp_lambert_W_branches.svg/1280px-Mplwp_lambert_W_branches.svg.png" alt="Branches of the Lambert W function: Principal branch W_0 in blue, lower branch W_-1 in magenta" width="550"/>
+</p>
 
 In circuit timing analysis, whenever a transcendental equation combines a **linear ramp term** and an **exponential decay term** ($a t + b + c e^{-p t} = 0$), the exact analytical solution can be cast into $w e^w = \xi$ and solved via $W_0$.
 
