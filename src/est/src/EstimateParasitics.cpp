@@ -1210,16 +1210,25 @@ bool EstimateParasitics::isChipBumpPin(const sta::Pin* pin) const
   if (bump == nullptr) {
     return false;
   }
-  // A multi-pin bump cell is a bump terminal only on its recorded bump net.
-  odb::dbNet* bump_net = bump->getNet();
-  if (bump_net == nullptr) {
-    return true;
-  }
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
   odb::dbModITerm* moditerm;
   db_network_->staToDb(pin, iterm, bterm, moditerm);
-  return iterm != nullptr && iterm->getNet() == bump_net;
+  if (iterm == nullptr) {
+    return false;
+  }
+  // A multi-pin bump cell is a bump terminal only on its recorded bump net.
+  odb::dbNet* bump_net = bump->getNet();
+  if (bump_net != nullptr) {
+    return iterm->getNet() == bump_net;
+  }
+  // Without a recorded net, only a single-signal-pin bump is unambiguous.
+  for (odb::dbITerm* other : db_inst->getITerms()) {
+    if (other != iterm && other->getSigType() == odb::dbSigType::SIGNAL) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool EstimateParasitics::isPad(const sta::Instance* inst) const

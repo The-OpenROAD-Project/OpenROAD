@@ -214,14 +214,16 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   sta::Net* net = flatNet(scan_clk_pin);
   ASSERT_NE(net, nullptr);
 
-  // Make scan_reg a chip bump; the bump association alone classifies the
-  // port-to-bump net as a pad net.
+  // Make scan_reg a chip bump on the scan_clk net; the bump association
+  // alone classifies the port-to-bump net as a pad net.
   odb::dbInst* scan_reg = block_->findInst("scan_reg");
   ASSERT_NE(scan_reg, nullptr);
   odb::dbChipRegion* region = odb::dbChipRegion::create(
       db_->getChip(), "f2f", odb::dbChipRegion::Side::FRONT, nullptr);
   ASSERT_NE(region, nullptr);
-  ASSERT_NE(odb::dbChipBump::create(region, scan_reg), nullptr);
+  odb::dbChipBump* bump = odb::dbChipBump::create(region, scan_reg);
+  ASSERT_NE(bump, nullptr);
+  bump->setNet(db_network_->staToDb(net));
 
   // Without bump values the legacy small connectivity resistor is used.
   ep_.estimateWireParasitic(net);
@@ -257,8 +259,6 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   // A bump with a recorded net is a bump terminal only on that net: with the
   // bump net pointing elsewhere, scan_clk is no longer a pad net, so the new
   // bump values are not applied and the stale annotation survives.
-  odb::dbChipBump* bump = scan_reg->getChipBump();
-  ASSERT_NE(bump, nullptr);
   odb::dbNet* d_net = scan_reg->findITerm("D")->getNet();
   ASSERT_NE(d_net, nullptr);
   bump->setNet(d_net);
@@ -289,6 +289,38 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   EXPECT_EQ(parasitics->findPiElmore(
                 d_pin, sta::RiseFall::rise(), sta::MinMax::max()),
             nullptr);
+
+  // Without a recorded net, a bump on a multi-signal-pin instance is
+  // ambiguous and never classifies: reg0's two-pin q0 net stays unannotated.
+  odb::dbInst* reg0 = block_->findInst("reg0");
+  ASSERT_NE(reg0, nullptr);
+  ASSERT_NE(odb::dbChipBump::create(region, reg0), nullptr);
+  sta::Pin* q0_pin = findTopPin("q0");
+  ASSERT_NE(q0_pin, nullptr);
+  sta::Pin* q0_drvr = db_network_->dbToSta(reg0->findITerm("Q"));
+  ASSERT_NE(q0_drvr, nullptr);
+  ep_.estimateWireParasitic(flatNet(q0_pin));
+  EXPECT_EQ(parasitics->findPiElmore(
+                q0_drvr, sta::RiseFall::rise(), sta::MinMax::max()),
+            nullptr);
+
+  // Without a recorded net, a single-signal-pin bump is unambiguous and
+  // takes the lumped RC.
+  odb::dbMaster* logic0 = db_->findMaster("LOGIC0_X1");
+  ASSERT_NE(logic0, nullptr);
+  odb::dbInst* u_bump = odb::dbInst::create(block_, logic0, "u_bump");
+  ASSERT_NE(u_bump, nullptr);
+  odb::dbNet* b_net = odb::dbNet::create(block_, "b_net");
+  u_bump->findITerm("Z")->connect(b_net);
+  ASSERT_NE(odb::dbBTerm::create(b_net, "b_port"), nullptr);
+  ASSERT_NE(odb::dbChipBump::create(region, u_bump), nullptr);
+  ep_.estimateWireParasitic(db_network_->dbToSta(b_net));
+  pi = parasitics->findPiElmore(db_network_->dbToSta(u_bump->findITerm("Z")),
+                                sta::RiseFall::rise(),
+                                sta::MinMax::max());
+  ASSERT_NE(pi, nullptr);
+  parasitics->piModel(pi, c2, rpi, c1);
+  EXPECT_FLOAT_EQ(rpi, 7.5f);
 }
 
 // Verifies that wire RC values are stored per chip: chip-specific values take
