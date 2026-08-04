@@ -783,8 +783,11 @@ bool EstimateParasitics::isPadNet(const sta::Net* net) const
 void EstimateParasitics::makePadParasitic(const sta::Net* net,
                                           sta::SpefWriter* spef_writer)
 {
+  // The two-node model cannot represent additional loads.
   const sta::Pin *pin1, *pin2;
-  net2Pins(net, pin1, pin2);
+  if (!net2Pins(net, pin1, pin2)) {
+    return;
+  }
   const bool is_bump
       = !bump_rc_.empty() && (isChipBumpPin(pin1) || isChipBumpPin(pin2));
   for (sta::Scene* corner : sta_->scenes()) {
@@ -1210,10 +1213,7 @@ bool EstimateParasitics::isChipBumpPin(const sta::Pin* pin) const
   if (bump == nullptr) {
     return false;
   }
-  odb::dbITerm* iterm;
-  odb::dbBTerm* bterm;
-  odb::dbModITerm* moditerm;
-  db_network_->staToDb(pin, iterm, bterm, moditerm);
+  odb::dbITerm* iterm = db_network_->flatPin(pin);
   if (iterm == nullptr) {
     return false;
   }
