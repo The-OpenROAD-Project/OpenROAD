@@ -7,7 +7,7 @@
 set -euo pipefail
 
 TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-GIT="$(realpath "$2")"
+GIT="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 
 # With rules_python's script bootstrap (bootstrap_impl=script), a py_binary
 # invoked via its realpath cannot locate its runfiles once we cd away.
