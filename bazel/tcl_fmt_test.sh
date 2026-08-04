@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025-2025, The OpenROAD Authors
+# Copyright (c) 2025-2026, The OpenROAD Authors
 #
 # Check that all TCL files are properly formatted.
 
@@ -12,4 +12,4 @@ GIT="$(realpath "$2")"
 WORKSPACE="$(dirname "$(readlink -f tclint.toml)")"
 cd "$WORKSPACE"
 
-"${GIT}" ls-files '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "${TOOL}" --check
+"bazel/git_ls_files.sh" "${GIT}" '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "${TOOL}" --check

@@ -548,6 +548,7 @@ sh_test(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclint",
         "@git",
     ],
@@ -566,6 +567,7 @@ sh_test(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclfmt",
         "@git",
     ],
@@ -584,6 +586,7 @@ sh_binary(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclfmt",
         "@git",
     ],
@@ -601,6 +604,7 @@ sh_test(
     ],
     data = [
         "MODULE.bazel",
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
@@ -619,6 +623,7 @@ sh_test(
     ],
     data = [
         "MODULE.bazel",
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
@@ -636,6 +641,7 @@ sh_binary(
         "$(rootpath @git)",
     ],
     data = [
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
