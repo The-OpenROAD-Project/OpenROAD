@@ -19,11 +19,13 @@ exports_files(
         "tcl_fmt_test.sh",
         "tcl_lint_test.sh",
         "tcl_tidy.sh",
+        "yaml_fmt_test.sh",
+        "yaml_tidy.sh",
     ],
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt binaries from pip — version pinned in requirements.in
+# tclint / tclfmt / yamlfix binaries from pip — version pinned in requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
@@ -33,6 +35,12 @@ py_console_script_binary(
 py_console_script_binary(
     name = "tclfmt",
     pkg = "@openroad-pip//tclint",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "yamlfix",
+    pkg = "@openroad-pip//yamlfix",
     visibility = ["//visibility:public"],
 )
 
