@@ -4,7 +4,7 @@
 #
 # Auto-format YAML files in-place using yamlfix.
 set -euo pipefail
-TOOL="$(realpath "$1")"
+TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 GIT="$(realpath "$2")"
 cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 

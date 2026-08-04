@@ -653,6 +653,7 @@ sh_test(
         "$(rootpath @git)",
     ],
     data = [
+        "MODULE.bazel",
         "//bazel:yamlfix",
         "@git",
     ],

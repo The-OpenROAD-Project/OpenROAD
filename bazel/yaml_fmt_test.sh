@@ -4,25 +4,57 @@
 #
 # Check YAML formatting with yamlfix.
 set -euo pipefail
-TOOL="$(realpath "$1")"
+TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 GIT="$(realpath "$2")"
-cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
+# MODULE.bazel must be in the sh_test `data` deps so it appears as a
+# runfiles symlink pointing at the real workspace. `readlink` (no -f,
+# for macOS portability) resolves the absolute path Bazel wrote.
+[ -L MODULE.bazel ] || { echo "MODULE.bazel missing from runfiles" >&2; exit 1; }
+WORKSPACE="$(dirname "$(readlink MODULE.bazel)")"
+cd "$WORKSPACE"
 
 OPTIONS=()
-if [ -f "yamlfix.toml" ]; then
-    OPTIONS+=("-c" "yamlfix.toml")
-fi
 
 FILES=()
 while IFS= read -r -d '' file; do
     FILES+=("$file")
 done < <("${GIT}" ls-files '*.yaml' '*.yml' -z)
 
-if [ "${#FILES[@]}" -gt 0 ]; then
+if [ "${#FILES[@]}" -eq 0 ]; then
+    exit 0
+fi
+
+# Create a temporary directory to avoid modifying the user's workspace during testing
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+# Copy files to the temporary directory preserving directory structure
+for file in "${FILES[@]}"; do
+    mkdir -p "$TMP_DIR/$(dirname "$file")"
+    cp "$file" "$TMP_DIR/$file"
+done
+
+# Copy configuration if present
+if [ -f "yamlfix.toml" ]; then
+    cp "yamlfix.toml" "$TMP_DIR/"
+    OPTIONS+=("-c" "$TMP_DIR/yamlfix.toml")
+fi
+
+# Run formatting on the temporary copies
+(
+    cd "$TMP_DIR"
     "$TOOL" "${OPTIONS[@]}" "${FILES[@]}"
-    if ! "${GIT}" diff --quiet -- '*.yaml' '*.yml'; then
-        echo "YAML formatting errors found. Run 'bazelisk run //:fix_lint' to fix." >&2
-        "${GIT}" diff -- '*.yaml' '*.yml'
-        exit 1
+)
+
+# Check for differences
+diff_found=0
+for file in "${FILES[@]}"; do
+    if ! diff -u "$file" "$TMP_DIR/$file"; then
+        diff_found=1
     fi
+done
+
+if [ "$diff_found" -ne 0 ]; then
+    echo "YAML formatting errors found. Run 'bazelisk run //:fix_lint' to fix." >&2
+    exit 1
 fi
