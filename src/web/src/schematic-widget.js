@@ -6,6 +6,31 @@
 
 import { beginSelection, isCurrentSelection } from './ui-utils.js';
 
+// Normalize an SVG bbox ({x, y, width, height}) into a rect that also carries
+// its far edges, which is what the label placement and padding math reads.
+function boundsFromBBox(bbox) {
+    return {
+        x: bbox.x,
+        y: bbox.y,
+        right: bbox.x + bbox.width,
+        bottom: bbox.y + bbox.height,
+        width: bbox.width,
+        height: bbox.height,
+    };
+}
+
+// Grow a DOMRect-like rect by `padding` on every side.
+function expandRect(rect, padding) {
+    return {
+        left: rect.left - padding,
+        right: rect.right + padding,
+        top: rect.top - padding,
+        bottom: rect.bottom + padding,
+        width: rect.width + padding * 2,
+        height: rect.height + padding * 2,
+    };
+}
+
 export class SchematicWidget {
     constructor(container, appState) {
         this.container = container;
@@ -590,9 +615,7 @@ export class SchematicWidget {
         this._collectSchematicBits(mergedTop, usedBits);
         let nextBit = 1;
         for (const bit of usedBits) {
-            if (bit > nextBit) {
-                nextBit = bit;
-            }
+            nextBit = Math.max(nextBit, bit);
         }
         const allocateBit = () => {
             nextBit += 1;
@@ -612,11 +635,12 @@ export class SchematicWidget {
                 // Same net name means the added cone touches an existing wire.
                 mergedBits = mergedTop.netnames[netName].bits;
             } else {
-                const copiedNet = addedNet;
+                // addedCloneTop is already a deep clone, so its nets can be
+                // rebased and adopted into the merge result directly.
                 mergedBits = addedBits.map((bit) =>
                     Number.isInteger(bit) && bit > 1 ? allocateBit() : bit);
-                copiedNet.bits = mergedBits;
-                mergedTop.netnames[netName] = copiedNet;
+                addedNet.bits = mergedBits;
+                mergedTop.netnames[netName] = addedNet;
             }
 
             addedBits.forEach((bit, index) => {
@@ -632,24 +656,22 @@ export class SchematicWidget {
             if (Object.prototype.hasOwnProperty.call(mergedTop.ports, portName)) {
                 continue;
             }
-            const copiedPort = port;
-            if (Array.isArray(copiedPort.bits)) {
-                copiedPort.bits = this._remapSchematicBits(copiedPort.bits, bitRemap);
+            if (Array.isArray(port.bits)) {
+                port.bits = this._remapSchematicBits(port.bits, bitRemap);
             }
-            mergedTop.ports[portName] = copiedPort;
+            mergedTop.ports[portName] = port;
         }
 
         for (const [cellName, cell] of Object.entries(addedCloneTop.cells)) {
             if (Object.prototype.hasOwnProperty.call(mergedTop.cells, cellName)) {
                 continue;
             }
-            const copiedCell = cell;
-            if (copiedCell.connections) {
-                copiedCell.connections = this._remapSchematicBits(
-                    copiedCell.connections,
+            if (cell.connections) {
+                cell.connections = this._remapSchematicBits(
+                    cell.connections,
                     bitRemap);
             }
-            mergedTop.cells[cellName] = copiedCell;
+            mergedTop.cells[cellName] = cell;
         }
 
         return merged;
@@ -768,9 +790,10 @@ export class SchematicWidget {
             this._scopeSkinStyles();
             const symbolView = this._isSymbolView();
             if (symbolView) {
+                // Only create the label elements here. Placing them needs real
+                // text metrics, which the browser has not computed yet, so the
+                // layout/padding pass runs from the rAF pair below instead.
                 this._ensureOpenRoadSymbolLabels(renderJson);
-                this._layoutInstanceLabels(renderJson);
-                this._padSvgToContent();
             }
 
             // Build SVG-id → ODB instance-name map.
@@ -861,69 +884,30 @@ export class SchematicWidget {
         label.style.pointerEvents = 'none';
     }
 
-    _textBBox(label) {
-        try {
-            const bbox = label.getBBox();
-            if (bbox && bbox.width > 0 && bbox.height > 0) {
-                return {
-                    x: bbox.x,
-                    y: bbox.y,
-                    right: bbox.x + bbox.width,
-                    bottom: bbox.y + bbox.height,
-                    width: bbox.width,
-                    height: bbox.height,
-                };
-            }
-        } catch (_) {
-            // Fall back to an estimate in tests and during early SVG layout.
+    // Hide `elements`, run `measure`, then restore each element's original
+    // `display`. Measuring a symbol has to exclude the labels that get moved
+    // around it, or the body bounds would chase the label being placed.
+    _measureHidden(elements, measure) {
+        const restore = [];
+        for (const el of elements) {
+            restore.push([el, el.getAttribute('display')]);
+            el.setAttribute('display', 'none');
         }
 
-        const fontSize = parseFloat(
-            label.style.fontSize || label.getAttribute('font-size') || '10') || 10;
-        const text = label.textContent || '';
-        const width = Math.max(text.length, 1) * fontSize * 0.65;
-        const height = fontSize;
-        const x = parseFloat(label.getAttribute('x') || '0') || 0;
-        const y = parseFloat(label.getAttribute('y') || '0') || 0;
-        const anchor = this._textAnchorForLabel(label);
-        const left = anchor === 'middle'
-            ? x - width / 2
-            : (anchor === 'end' ? x - width : x);
-        const top = y - height / 2;
-        return {
-            x: left,
-            y: top,
-            right: left + width,
-            bottom: top + height,
-            width,
-            height,
-        };
+        try {
+            return measure();
+        } finally {
+            for (const [el, display] of restore) {
+                if (display === null) el.removeAttribute('display');
+                else el.setAttribute('display', display);
+            }
+        }
     }
 
     _groupBoundsWithoutText(group) {
-        // Measure the symbol body, not labels that may be moved around it.
-        const hiddenText = [];
-        for (const label of group.querySelectorAll('text')) {
-            hiddenText.push([label, label.getAttribute('display')]);
-            label.setAttribute('display', 'none');
-        }
-
-        try {
-            const bbox = group.getBBox();
-            return {
-                x: bbox.x,
-                y: bbox.y,
-                right: bbox.x + bbox.width,
-                bottom: bbox.y + bbox.height,
-                width: bbox.width,
-                height: bbox.height,
-            };
-        } finally {
-            for (const [label, display] of hiddenText) {
-                if (display === null) label.removeAttribute('display');
-                else label.setAttribute('display', display);
-            }
-        }
+        return this._measureHidden(
+            group.querySelectorAll('text'),
+            () => boundsFromBBox(group.getBBox()));
     }
 
     _parseSvgNumber(value) {
@@ -1054,14 +1038,7 @@ export class SchematicWidget {
             const group = this._cellGroupForInstance(instName);
             if (!group) continue;
 
-            let label = null;
-            for (const text of group.querySelectorAll('text')) {
-                if (this._isInstanceLabel(text)) {
-                    label = text;
-                    break;
-                }
-            }
-
+            let label = this._instanceLabelForGroup(group);
             if (!label) {
                 label = document.createElementNS(svgNS, 'text');
                 const symbolWidth = parseFloat(this._svgSkinAttribute(group, 'width'));
@@ -1121,8 +1098,7 @@ export class SchematicWidget {
 
     _instanceLabelForGroup(group) {
         for (const text of group.querySelectorAll('text')) {
-            if (this._svgSkinAttribute(text, 'attribute') === 'ref'
-                || text.getAttribute('data-openroad-label') === 'instance') {
+            if (this._isInstanceLabel(text)) {
                 return text;
             }
         }
@@ -1130,33 +1106,13 @@ export class SchematicWidget {
     }
 
     _groupBoundsWithoutLabel(group, label) {
-        const oldDisplay = label.getAttribute('display');
-        label.setAttribute('display', 'none');
-        try {
-            return group.getBBox();
-        } finally {
-            if (oldDisplay === null) label.removeAttribute('display');
-            else label.setAttribute('display', oldDisplay);
-        }
+        return this._measureHidden([label], () => group.getBBox());
     }
 
     _groupScreenRectWithoutLabel(group, label, padding = 4) {
-        const oldDisplay = label.getAttribute('display');
-        label.setAttribute('display', 'none');
-        try {
-            const rect = group.getBoundingClientRect();
-            return {
-                left: rect.left - padding,
-                right: rect.right + padding,
-                top: rect.top - padding,
-                bottom: rect.bottom + padding,
-                width: rect.width + padding * 2,
-                height: rect.height + padding * 2,
-            };
-        } finally {
-            if (oldDisplay === null) label.removeAttribute('display');
-            else label.setAttribute('display', oldDisplay);
-        }
+        return this._measureHidden(
+            [label],
+            () => expandRect(group.getBoundingClientRect(), padding));
     }
 
     _setLabelPosition(label, placement) {
@@ -1171,35 +1127,15 @@ export class SchematicWidget {
     }
 
     _expandedScreenRect(el, padding = 2) {
-        const rect = el.getBoundingClientRect();
-        return {
-            left: rect.left - padding,
-            right: rect.right + padding,
-            top: rect.top - padding,
-            bottom: rect.bottom + padding,
-            width: rect.width + padding * 2,
-            height: rect.height + padding * 2,
-        };
+        return expandRect(el.getBoundingClientRect(), padding);
     }
 
+    // Both rects come from expandRect, so they always carry finite edges; an
+    // unmeasurable element still yields NaN, which scores as no overlap.
     _rectOverlapArea(a, b) {
-        const aLeft = Number.isFinite(a.left) ? a.left : a.x;
-        const aTop = Number.isFinite(a.top) ? a.top : a.y;
-        const aRight = Number.isFinite(a.right) ? a.right : aLeft + a.width;
-        const aBottom = Number.isFinite(a.bottom) ? a.bottom : aTop + a.height;
-        const bLeft = Number.isFinite(b.left) ? b.left : b.x;
-        const bTop = Number.isFinite(b.top) ? b.top : b.y;
-        const bRight = Number.isFinite(b.right) ? b.right : bLeft + b.width;
-        const bBottom = Number.isFinite(b.bottom) ? b.bottom : bTop + b.height;
-
-        if (![aLeft, aTop, aRight, aBottom, bLeft, bTop, bRight, bBottom]
-                .every(Number.isFinite)) {
-            return 0;
-        }
-
-        const width = Math.max(0, Math.min(aRight, bRight) - Math.max(aLeft, bLeft));
-        const height = Math.max(0, Math.min(aBottom, bBottom) - Math.max(aTop, bTop));
-        return width * height;
+        const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+        const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+        return Number.isFinite(width) && Number.isFinite(height) ? width * height : 0;
     }
 
     _labelLineCount(label) {
@@ -1416,15 +1352,6 @@ export class SchematicWidget {
         }
     }
 
-    _elementBBoxToSvgRect(element) {
-        try {
-            const bbox = element.getBBox();
-            return this._localRectToSvgRect(element, bbox);
-        } catch (_) {
-            return null;
-        }
-    }
-
     _openRoadLabelBounds() {
         if (!this._svgEl) return null;
 
@@ -1481,16 +1408,6 @@ export class SchematicWidget {
             });
     }
 
-    _svgContentBoundsFromSvgBBox() {
-        if (!this._svgEl) return null;
-
-        let bounds = null;
-        for (const element of this._svgContentElements()) {
-            bounds = this._unionSvgRect(bounds, this._elementBBoxToSvgRect(element));
-        }
-        return bounds;
-    }
-
     _svgContentBoundsFromScreen() {
         if (!this._svgEl) return null;
 
@@ -1509,17 +1426,13 @@ export class SchematicWidget {
         if (!this._svgEl) return;
 
         try {
-            let bounds = null;
-            const bbox = this._svgEl.getBBox();
-            bounds = this._unionSvgRect(bounds, {
-                x: bbox.x,
-                y: bbox.y,
-                right: bbox.x + bbox.width,
-                bottom: bbox.y + bbox.height,
-            });
-            // Combine SVG-space and screen-space measurements because browser
-            // text layout and transformed skin geometry are exposed differently.
-            bounds = this._unionSvgRect(bounds, this._svgContentBoundsFromSvgBBox());
+            // The root bbox is already the union of every child's bbox in SVG
+            // space. The other two passes are not redundant with it: the screen
+            // pass picks up stroke width and real text metrics that getBBox
+            // omits, and the label pass estimates extents analytically for
+            // labels the browser has not laid out yet.
+            let bounds = this._unionSvgRect(
+                null, boundsFromBBox(this._svgEl.getBBox()));
             bounds = this._unionSvgRect(bounds, this._openRoadLabelBounds());
             bounds = this._unionSvgRect(bounds, this._svgContentBoundsFromScreen());
             if (!bounds) return;
