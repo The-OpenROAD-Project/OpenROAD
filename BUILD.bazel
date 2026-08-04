@@ -654,6 +654,8 @@ sh_test(
     ],
     data = [
         "MODULE.bazel",
+        "yamlfix.ignore",
+        "yamlfix.toml",
         "//bazel:yamlfix",
         "@git",
     ],
@@ -672,6 +674,8 @@ sh_binary(
         "$(rootpath @git)",
     ],
     data = [
+        "yamlfix.ignore",
+        "yamlfix.toml",
         "//bazel:yamlfix",
         "@git",
     ],
@@ -716,6 +720,8 @@ sh_binary(
     data = [
         "MODULE.bazel",
         "tclint.toml",
+        "yamlfix.ignore",
+        "yamlfix.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
         "//bazel:tcl_lint_test.sh",

@@ -1,0 +1,43 @@
+# Files in this blacklist are ignored by fix_lint and fmt_yaml_test; remove a file from this list to enable formatting.
+
+# --- Section 1: Generated / Lockfiles (Never format) ---
+src/web/test/pnpm-lock.yaml
+
+# --- Section 2: Existing YAML files (To be formatted in follow-up PRs) ---
+.gemini/config.yaml
+.github/ISSUE_TEMPLATE/bug_report.yml
+.github/ISSUE_TEMPLATE/bug_report_with_ol.yml
+.github/ISSUE_TEMPLATE/bug_report_with_orfs.yml
+.github/ISSUE_TEMPLATE/config.yml
+.github/ISSUE_TEMPLATE/feature_request.yml
+.github/dependabot.yml
+.github/workflows/black.yaml
+.github/workflows/buildifier.yaml
+.github/workflows/first-time-contributor.yml
+.github/workflows/github-actions-are-differences-found.yml
+.github/workflows/github-actions-are-odb-files-generated.yml
+.github/workflows/github-actions-check-bazel-lock.yml
+.github/workflows/github-actions-clang-tidy-bazel-post.yml
+.github/workflows/github-actions-clang-tidy-bazel.yml
+.github/workflows/github-actions-cron-sync-fork-from-upstream-PII.yaml
+.github/workflows/github-actions-cron-sync-fork-from-upstream.yml
+.github/workflows/github-actions-format-on-push.yml
+.github/workflows/github-actions-lint-tcl.yml
+.github/workflows/github-actions-macos-bazel.yml
+.github/workflows/github-actions-macos.yml
+.github/workflows/github-actions-on-delete-cleanup.yml
+.github/workflows/github-actions-on-label-create.yml
+.github/workflows/github-actions-on-master-push.yml
+.github/workflows/github-actions-on-push.yml
+.github/workflows/github-actions-quarterly-tag.yml
+.github/workflows/github-actions-repo-stats.yml
+.github/workflows/github-actions-stale.yml
+.github/workflows/github-actions-update-grammar-railroad-diagrams.yml
+.github/workflows/pr-labeler.yml
+.readthedocs.yaml
+docs/toc.yml
+etc/monitoring/compose.yaml
+etc/monitoring/grafana/dashboards/default.yml
+etc/monitoring/grafana/datasource/datasource.yml
+etc/monitoring/prometheus/prometheus.yml
+src/drt/test/Distributed/k8s-drt.yaml

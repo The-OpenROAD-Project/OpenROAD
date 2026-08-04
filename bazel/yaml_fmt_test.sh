@@ -13,11 +13,21 @@ GIT="$(realpath "$2")"
 WORKSPACE="$(dirname "$(readlink MODULE.bazel)")"
 cd "$WORKSPACE"
 
+is_blacklisted() {
+    local target="$1"
+    if [ -f "yamlfix.ignore" ]; then
+        grep -qxF "$target" "yamlfix.ignore" 2>/dev/null && return 0
+    fi
+    return 1
+}
+
 OPTIONS=()
 
 FILES=()
 while IFS= read -r -d '' file; do
-    FILES+=("$file")
+    if ! is_blacklisted "$file"; then
+        FILES+=("$file")
+    fi
 done < <("${GIT}" ls-files '*.yaml' '*.yml' -z)
 
 if [ "${#FILES[@]}" -eq 0 ]; then
