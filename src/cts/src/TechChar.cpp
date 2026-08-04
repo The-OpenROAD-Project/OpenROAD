@@ -825,6 +825,7 @@ static bool containsIgnoreCase(const std::string& str,
 
 void TechChar::createDelayBufList()
 {
+  // Find porper delay buffers
   std::vector<std::string> properDlyBuffers;
   if (options_->isBufferListInferred()) {
     const char* lib_name
@@ -883,7 +884,7 @@ void TechChar::createDelayBufList()
     }
   }
 
-  bool drvrRes = true;
+  // Trim clk buffers and add to delay list
   std::vector<std::string> delay_buffers;
   float prevDrvrRes = -1;
   float prevInternalDelay = -1;
@@ -914,45 +915,6 @@ void TechChar::createDelayBufList()
     }
   }
 
-  if (drvrRes) {
-    std::set<std::string> seen(delay_buffers.begin(), delay_buffers.end());
-    for (const auto& buf : properDlyBuffers) {
-      if (seen.insert(buf).second) {
-        delay_buffers.push_back(buf);
-      }
-    }
-    options_->setDlyBufferList(delay_buffers);
-    return;
-  }
-  delay_buffers.clear();
-  prevDrvrRes = -1;
-  prevInternalDelay = -1;
-  std::vector<std::string> buffersIntDly = options_->getBufferList();
-  // Sort buffers in ascending order of max cap limit
-  std::ranges::sort(
-      buffersIntDly, [this](const std::string& buf1, const std::string& buf2) {
-        return (this->getinternalDelay(buf1) < this->getinternalDelay(buf2));
-      });
-
-  for (const std::string& buffer : buffersIntDly) {
-    float drvrRes = getDrvrResistance(buffer);
-    float intrinsicDelay = getinternalDelay(buffer);
-
-    if (prevInternalDelay == -1) {
-      prevDrvrRes = drvrRes;
-      prevInternalDelay = intrinsicDelay;
-      delay_buffers.push_back(buffer);
-    } else if ((intrinsicDelay - prevInternalDelay) / intrinsicDelay > 0.1) {
-      delay_buffers.push_back(buffer);
-      prevDrvrRes = drvrRes;
-      prevInternalDelay = intrinsicDelay;
-    } else if (drvrRes > prevDrvrRes) {
-      delay_buffers.pop_back();
-      delay_buffers.push_back(buffer);
-      prevDrvrRes = drvrRes;
-      prevInternalDelay = intrinsicDelay;
-    }
-  }
   std::set<std::string> seen(delay_buffers.begin(), delay_buffers.end());
   for (const auto& buf : properDlyBuffers) {
     if (seen.insert(buf).second) {

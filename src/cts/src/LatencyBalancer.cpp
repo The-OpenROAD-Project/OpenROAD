@@ -93,26 +93,58 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
   debugPrint(logger_, CTS, "insertion delay", 3, "]");
 }
 
-int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load, double wl, double& wireCap)
+int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& driver, const std::string& load, double wl, double& wireCap)
 {
   wireCap = wl * capPerDBU_;
-  double totalCap = wireCap;
+  double totalCap = wireCap / 2.0;
   double wireRes = wl * resPerDBU_;
 
-
-  if(load != "") {
+  if (!load.empty()) {
     odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
-    sta::Cell* loadMasterCell = network_->dbToSta(loadMaster);
     sta::LibertyCell* libertyLoadCell
-        = network_->libertyCell(loadMasterCell);
+        = network_->libertyCell(network_->dbToSta(loadMaster));
     sta::LibertyPort *input, *output;
     libertyLoadCell->bufferPorts(input, output);
     totalCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
   }
 
+  if (!driver.empty()) {
+    odb::dbMaster* drvMaster = db_->findMaster(driver.c_str());
+    sta::LibertyCell* libertyDrvCell
+        = network_->libertyCell(network_->dbToSta(drvMaster));
+    sta::LibertyPort *input, *output;
+    libertyDrvCell->bufferPorts(input, output);
+    wireRes += output->driveResistance();
+  }
+  return wireRes * totalCap * dpUnit_;
+}
 
+int64_t LatencyBalancer::computeWireLumpedDelay(
+    const std::string& driver,
+    const std::vector<odb::dbITerm*>& loads,
+    double extraLoadCap,
+    double wl,
+    double& wireCap)
+{
+  wireCap = wl * capPerDBU_;
+  double totalCap = wireCap / 2.0 + extraLoadCap;
+  double wireRes = wl * resPerDBU_;
 
+  for (odb::dbITerm* load : loads) {
+    odb::dbMTerm* loadMTerm = load->getMTerm();
+    sta::Port* loadPin = network_->dbToSta(loadMTerm);
+    sta::LibertyPort* loadPort = network_->libertyPort(loadPin);
+    totalCap += loadPort->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+  }
 
+  if (!driver.empty()) {
+    odb::dbMaster* drvMaster = db_->findMaster(driver.c_str());
+    sta::LibertyCell* libertyDrvCell
+        = network_->libertyCell(network_->dbToSta(drvMaster));
+    sta::LibertyPort *input, *output;
+    libertyDrvCell->bufferPorts(input, output);
+    wireRes += output->driveResistance();
+  }
   return wireRes * totalCap * dpUnit_;
 }
 
@@ -381,10 +413,9 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
 
 DPResult LatencyBalancer::solveDP(
     int64_t                    target,
-    int64_t                    wireDly,
+    double                     wl,
     const std::vector<odb::dbITerm*>& sinks,
     const std::vector<std::string>&   dlyBuffers,
-    double                     extraOutCap,
     double                     loadPinsHwpl)
 {
   const size_t nBuffers = dlyBuffers.size();
@@ -393,12 +424,15 @@ DPResult LatencyBalancer::solveDP(
   // Buffers delay when driving sinks
   std::vector<int64_t> sinkDelay(nBuffers);
   for (size_t j = 0; j < nBuffers; j++) {
-    int64_t delay= static_cast<int64_t>(
-                       techChar_->computeBufferDelay(
-                           dlyBuffers[j], sinks,
-                           extraOutCap + loadPinsHwpl * capPerDBU_)
-                       * dpUnit_)
-                   + wireDly;
+    double wireCap = 0.0;
+    int64_t wireDly = computeWireLumpedDelay(
+        dlyBuffers[j], sinks, loadPinsHwpl * capPerDBU_, wl, wireCap);
+    int64_t delay = static_cast<int64_t>(
+                        techChar_->computeBufferDelay(
+                            dlyBuffers[j], sinks,
+                            wireCap + loadPinsHwpl * capPerDBU_)
+                        * dpUnit_)
+                    + wireDly;
     sinkDelay[j] = delay;
     maxBufDelay = std::max(maxBufDelay, delay);
   }
@@ -407,11 +441,14 @@ DPResult LatencyBalancer::solveDP(
   std::vector<std::vector<int64_t>> pairDelay(nBuffers, std::vector<int64_t>(nBuffers));
   for (size_t i = 0; i < nBuffers; i++) {
     for (size_t j = 0; j < nBuffers; j++) {
+      double wireCap = 0.0;
+      int64_t wireDly
+          = computeWireLumpedDelay(dlyBuffers[i], dlyBuffers[j], wl, wireCap);
       int64_t delay = static_cast<int64_t>(
-                            techChar_->computeBufferDelay(
-                                dlyBuffers[i], dlyBuffers[j], extraOutCap)
-                            * dpUnit_)
-                        + wireDly;
+                          techChar_->computeBufferDelay(
+                              dlyBuffers[i], dlyBuffers[j], wireCap)
+                          * dpUnit_)
+                      + wireDly;
       pairDelay[i][j] = delay;
       maxBufDelay = std::max(maxBufDelay, delay);
     }
@@ -486,7 +523,7 @@ DPResult LatencyBalancer::solveDP(
   // Step back: w -= pairDelay[cur][next], then cur = next.
 
   DPResult result;
-  result.achievedDelay = dp[bestW][bestJ];
+  result.achievedDelay = bestW;
 
   int64_t w   = bestW;
   int cur = bestJ;
@@ -573,21 +610,17 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     double offsetX = (double) (loadPinsBbox.xCenter() - srcX) / (double) (nBufs + 1);
     double offsetY = (double) (loadPinsBbox.yCenter() - srcY) / (double) (nBufs + 1);
 
-    double extraOutCap = 0.0;
-    int64_t wireDly = computeWireLumpedDelay(options_->getRootBuffer(), std::abs(offsetX) + std::abs(offsetY), extraOutCap);
-    debugPrint(
-        logger_, CTS, "insertion delay", 4, "Estimated wire delay: {}", wireDly);
-    
-    
-    // Compute best buffer combination with more accurate values
-    dpResult = solveDP(target, wireDly, sinks, dlyBuffers, extraOutCap, loadPinsHwpl);
+    double wl = std::abs(offsetX) + std::abs(offsetY);
+
+    // Compute best buffer combination with per-case wire delays
+    dpResult = solveDP(target, wl, sinks, dlyBuffers, loadPinsHwpl);
 
     debugPrint(logger_, CTS, "insertion delay", 4,
                "Pass {} best = {}", pass, dpResult.achievedDelay);
 
     prevNBufs = nBufs;
     nBufs = static_cast<int>(dpResult.buffers.size());
-    debugPrint(logger_, CTS, "insertion delay", 4, "Pass {} n bufs = {}", pass + 2, nBufs);
+    debugPrint(logger_, CTS, "insertion delay", 4, "Pass {} n bufs = {}", pass, nBufs);
     if(!nBufs) {
       break;
     }
