@@ -92,8 +92,9 @@ chip bumps in 3D designs (`dbChipBump` instances). Unlike `set_wire_rc`, the
 values are absolute per bump, not per unit length, and at least one of
 `-resistance` or `-capacitance` is required. Without values, bumps use a
 small connectivity resistor. The lumped model applies to two-pin
-port-to-bump nets; bump nets with additional loads are estimated as ordinary
-wires, without the bump RC.
+port-to-bump nets during placement-based estimation; bump nets with
+additional loads are estimated as ordinary wires, without the bump RC, and
+routing-based estimation uses the routed wire RC.
 
 ```tcl
 set_bump_rc
