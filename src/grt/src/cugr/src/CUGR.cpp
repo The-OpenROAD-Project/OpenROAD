@@ -1750,7 +1750,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
 
   new_net->setRoutingTree(tree);
   // The flag records provenance, not geometry: adopted routes come from
-  // detailed wires, where wrong-way spans are legal.
+  // detailed wires, where wrong-way and below-min pin-access spans are legal.
   new_net->setAdopted(true);
   grid_graph_->addTreeUsage(*new_net);
   return true;

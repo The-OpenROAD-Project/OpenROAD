@@ -978,6 +978,12 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
     for (const auto& child : node->getChildren()) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
         const int layer = node->getLayerIdx();
+        // Detailed routes may dip below min_routing_layer for pin access;
+        // those layers hold no capacity, so adopted spans commit no demand.
+        // Native trees fall through to the GRT-0307 tripwire in commitWire.
+        if (adopted && layer < constants_.min_routing_layer) {
+          continue;
+        }
         const int direction = layer_directions_[layer];
         const int perp = 1 - direction;
         const double wire_factor
