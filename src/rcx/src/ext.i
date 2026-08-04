@@ -61,6 +61,27 @@ set_extraction_rules_file(const std::string& rules_file,
 }
 
 void
+set_assembly_extraction_rules_file(const std::string& rules_file)
+{
+  Ext* ext = getOpenRCX();
+  utl::Logger* logger = getLogger();
+  odb::dbChip* top_chip = ord::getOpenRoad()->getDb()->getChip();
+
+  if (!top_chip) {
+    logger->error(utl::RCX, 524, "No design is loaded.");
+  }
+
+  if (top_chip->getChipType() != odb::dbChip::ChipType::HIER) {
+    logger->error(utl::RCX,
+                  525,
+                  "Could not set assembly extraction rules file. Design is "
+                  "not 3D.");
+  }
+
+  ext->setAssemblyExtractionRulesFile(rules_file);
+}
+
+void
 extract(const char* ext_model_file,
         int corner_cnt,
         double max_res,
