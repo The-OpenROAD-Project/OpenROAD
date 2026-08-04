@@ -773,7 +773,7 @@ bool EstimateParasitics::isPadNet(const sta::Net* net) const
   // The pad model is a two-node network; nets with more pins are estimated
   // as ordinary wires.
   const sta::Pin *pin1, *pin2;
-  return net2Pins(net, pin1, pin2)
+  return isTwoPinNet(net, pin1, pin2)
          && ((network_->isTopLevelPort(pin1)
               && (isPadPin(pin2) || isChipBumpPin(pin2)))
              || (network_->isTopLevelPort(pin2)
@@ -785,7 +785,7 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
 {
   // The two-node model cannot represent additional loads.
   const sta::Pin *pin1, *pin2;
-  if (!net2Pins(net, pin1, pin2)) {
+  if (!isTwoPinNet(net, pin1, pin2)) {
     return;
   }
   const bool is_bump
@@ -1175,9 +1175,9 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
   }
 }
 
-bool EstimateParasitics::net2Pins(const sta::Net* net,
-                                  const sta::Pin*& pin1,
-                                  const sta::Pin*& pin2) const
+bool EstimateParasitics::isTwoPinNet(const sta::Net* net,
+                                     const sta::Pin*& pin1,
+                                     const sta::Pin*& pin2) const
 {
   pin1 = nullptr;
   pin2 = nullptr;
