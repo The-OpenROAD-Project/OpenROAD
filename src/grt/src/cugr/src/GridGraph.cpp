@@ -933,13 +933,12 @@ void GridGraph::commitWrongWayWire(const int layer_index,
 
 void GridGraph::addTreeUsage(const GRNet& net)
 {
-  addTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.hasWrongWayEdges());
+  addTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.isAdopted());
 }
 
 void GridGraph::removeTreeUsage(const GRNet& net)
 {
-  removeTreeUsage(
-      net.getRoutingTree(), net.getNdrCosts(), net.hasWrongWayEdges());
+  removeTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.isAdopted());
 }
 
 std::vector<std::vector<std::vector<CapacityT>>> GridGraph::snapshotDemand()
@@ -973,7 +972,7 @@ void GridGraph::restoreDemand(
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool rip_up,
                            const std::vector<double>& net_costs,
-                           const bool allow_wrong_way)
+                           const bool adopted)
 {
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
@@ -988,7 +987,7 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
           // adopted from detailed wires may carry wrong-way spans. Diagonal
           // edges are always malformed.
           const bool is_diagonal = (*node)[direction] != (*child)[direction];
-          if (!allow_wrong_way || is_diagonal) {
+          if (!adopted || is_diagonal) {
             if (direction == MetalLayer::H) {
               logger_->error(utl::GRT,
                              1252,
@@ -1386,19 +1385,19 @@ void GridGraph::write(const std::string& heatmap_file) const
 
 void GridGraph::addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                              const std::vector<double>& net_costs,
-                             const bool allow_wrong_way)
+                             const bool adopted)
 {
   if (tree) {
-    commitTree(tree, false, net_costs, allow_wrong_way);
+    commitTree(tree, false, net_costs, adopted);
   }
 }
 
 void GridGraph::removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                                 const std::vector<double>& net_costs,
-                                const bool allow_wrong_way)
+                                const bool adopted)
 {
   if (tree) {
-    commitTree(tree, true, net_costs, allow_wrong_way);
+    commitTree(tree, true, net_costs, adopted);
   }
 }
 

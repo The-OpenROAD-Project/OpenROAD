@@ -1751,7 +1751,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   new_net->setRoutingTree(tree);
   // The flag records provenance, not geometry: adopted routes come from
   // detailed wires, where wrong-way spans are legal.
-  new_net->setHasWrongWayEdges(true);
+  new_net->setAdopted(true);
   grid_graph_->addTreeUsage(*new_net);
   return true;
 }
@@ -2259,9 +2259,9 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   }
 
   // Grafting an adopted tree into a native survivor must carry the
-  // wrong-way permission, or the combined tree's release trips GRT-1252.
-  preserved_gr->setHasWrongWayEdges(preserved_gr->hasWrongWayEdges()
-                                    || removed_gr->hasWrongWayEdges());
+  // adopted mark, or the combined tree's release trips GRT-1252.
+  preserved_gr->setAdopted(preserved_gr->isAdopted()
+                           || removed_gr->isAdopted());
 
   merged_nets_.insert(removed_net);
 }

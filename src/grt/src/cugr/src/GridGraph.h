@@ -243,8 +243,8 @@ class GridGraph
    */
   void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                     const std::vector<double>& net_costs = {},
-                    bool allow_wrong_way = false);
-  // Net-aware forms: the tree, NDR costs and wrong-way permission all
+                    bool adopted = false);
+  // Net-aware forms: the tree, NDR costs and adopted mark all
   // travel with the net, so adopt/release sites cannot disagree.
   void addTreeUsage(const GRNet& net);
   void removeTreeUsage(const GRNet& net);
@@ -260,7 +260,7 @@ class GridGraph
    */
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                        const std::vector<double>& net_costs = {},
-                       bool allow_wrong_way = false);
+                       bool adopted = false);
 
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
@@ -380,7 +380,7 @@ class GridGraph
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
                   const std::vector<double>& net_costs = {},
-                  bool allow_wrong_way = false);
+                  bool adopted = false);
   // Demand of an adopted wrong-way wire crossing the gcell at `loc`,
   // deposited on the layer's flanking edges like a via stub.
   void commitWrongWayWire(int layer_index,
