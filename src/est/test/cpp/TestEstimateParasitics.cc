@@ -278,6 +278,17 @@ TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
   ASSERT_NE(pi, nullptr);
   parasitics->piModel(pi, c2, rpi, c1);
   EXPECT_FLOAT_EQ(rpi, 7.5f);
+
+  // A net with more than two pins never takes the two-node bump model, even
+  // as the recorded bump net; it stays unannotated (unplaced, so the wire
+  // estimator makes no tree) instead of dropping loads.
+  bump->setNet(d_net);
+  sta::Pin* d_pin = findTopPin("d");
+  ASSERT_NE(d_pin, nullptr);
+  ep_.estimateWireParasitic(db_network_->dbToSta(d_net));
+  EXPECT_EQ(parasitics->findPiElmore(
+                d_pin, sta::RiseFall::rise(), sta::MinMax::max()),
+            nullptr);
 }
 
 // Verifies that wire RC values are stored per chip: chip-specific values take

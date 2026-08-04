@@ -280,7 +280,8 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                             sta::Scene* corner,
                             const sta::Net* net,
                             int& max_node_index);
-  void net2Pins(const sta::Net* net,
+  // Returns true when the net connects exactly two pins.
+  bool net2Pins(const sta::Net* net,
                 const sta::Pin*& pin1,
                 const sta::Pin*& pin2) const;
   double dbuToMeters(int dist) const;
