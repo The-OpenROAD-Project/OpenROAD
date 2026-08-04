@@ -553,6 +553,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- TCL formatting check (tclfmt --check) --------------------------------
@@ -571,6 +572,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- TCL auto-format only (tclfmt --in-place) -----------------------------
@@ -588,6 +590,7 @@ sh_binary(
         "//bazel:tclfmt",
         "@git",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel linting (buildifier -lint=warn) --------------------------------
@@ -606,6 +609,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel formatting check (buildifier -mode=check -lint=off) ------------
@@ -624,6 +628,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel auto-format only (buildifier -mode=fix) ------------------------
@@ -640,6 +645,7 @@ sh_binary(
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # --- Umbrella targets ------------------------------------------------------
