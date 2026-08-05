@@ -3,6 +3,7 @@
 #   bazel run //bazel:requirements.update
 
 tclint==0.7.0
+yamlfix==1.19.1
 
 # Sphinx documentation build (replicates ReadTheDocs CI check)
 # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/9885
