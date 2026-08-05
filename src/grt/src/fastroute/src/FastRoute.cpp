@@ -841,6 +841,28 @@ void FastRouteCore::addHorizontalAdjustments(
   }
 }
 
+// Number of tracks to charge for the metal blocking one gcell edge.
+//
+// intervals is a set of *disjoint* intervals, so rounding each one up
+// separately would charge a whole track per fragment: a 200 DBU sliver would
+// cost as much as a full track. That makes the charge depend on how the blocked
+// region happens to be fragmented rather than on how much of it is covered, and
+// it is not monotonic - deleting an obstruction that bridged two fragments
+// splits the span and *raises* the charge. Removing metal (remove_fillers, for
+// instance) could then lower an edge's capacity, which is never correct. Sum
+// the covered length first and round once, so the charge only grows with
+// coverage.
+static int blockedTrackCount(const interval_set<int>& intervals,
+                             const int track_space)
+{
+  int64_t blocked_length = 0;
+  for (const auto& interval_it : intervals) {
+    blocked_length += std::abs(interval_it.upper() - interval_it.lower());
+  }
+  return static_cast<int>(
+      std::ceil(static_cast<double>(blocked_length) / track_space));
+}
+
 void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
 {
   // Calculate reduce for vertical tiles
@@ -852,11 +874,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
-        for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
-        }
+        reduce = blockedTrackCount(intervals, track_space[layer - 1]);
       }
       edge_cap -= reduce;
       edge_cap = std::max(edge_cap, 0);
@@ -873,11 +891,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
-        for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
-        }
+        reduce = blockedTrackCount(intervals, track_space[layer - 1]);
       }
       edge_cap -= reduce;
       edge_cap = std::max(edge_cap, 0);
