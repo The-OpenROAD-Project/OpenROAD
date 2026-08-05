@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -39,6 +40,44 @@ boost::json::object parseObj(std::string_view json)
 constexpr int kTileSize = 256;
 // Square die side used by the tile-seam tests (DBU; 45 um at 2000 dbu/um).
 constexpr int kSeamDieSide = 90000;
+
+// The (CSS tile size, device pixel ratio) pairs the viewer actually asks for.
+//
+// A tile's CSS box is a whole number of device pixels only when the two
+// multiply out whole, which is why the viewer uses 240 rather than 256 (see
+// TILE_SIZE_CSS in tile-request.js).  The ratios are real ones: display
+// scaling, browser zoom, and the two multiplied.  1.6666666269302368 is
+// verbatim from the display the tile seams were reported on — a float32 5/3,
+// which is why nothing here can be asserted bit-exactly.
+//
+// Rendering is checked across all of them because every dpr bug in this
+// pipeline was invisible at 1 and 2 and only appeared at a fractional ratio.
+struct DprCase
+{
+  int css_tile_size;
+  double dpr;
+  const char* what;
+};
+
+constexpr DprCase kDprCases[] = {
+    {240, 1.0, "no scaling"},
+    {240, 1.25, "125% display"},
+    {240, 1.3333333333333333, "133%, or 166% at 80% zoom"},
+    {240, 1.5, "150% display"},
+    {240, 1.6666666269302368, "166% display -- the reported case"},
+    {240, 1.75, "175% display"},
+    {240, 2.0, "200%"},
+    {240, 3.0, "300%"},
+    // The size a static report bakes its tiles at, which the viewer keeps.
+    {256, 1.0, "static report"},
+};
+
+// What the client asks the server to render for a case: the exact device-pixel
+// square the tile will occupy, from the REAL ratio (mirrors tileDevicePx()).
+int tilePxFor(const DprCase& c)
+{
+  return static_cast<int>(std::lround(c.css_tile_size * c.dpr));
+}
 
 enum class Axis
 {
@@ -123,6 +162,74 @@ std::set<int> textPixels(const std::vector<unsigned char>& a,
     }
   }
   return result;
+}
+
+// Sub-pixel x of a vertical coverage edge along `row`: the total UNCOVERED area
+// to the left of it, in pixels.  For a monotone left-to-right transition that
+// integral *is* the edge position, whatever the reconstruction filter spreads
+// over the pixels either side of it — a normalized filter preserves total
+// coverage.  The row must be fully covered at its right end; the alpha there is
+// taken as the "covered" reference, so a fill drawn at any constant alpha
+// works.
+double coverageEdgeX(const std::vector<unsigned char>& rgba,
+                     const int dim,
+                     const int row)
+{
+  const size_t base = static_cast<size_t>(row) * dim * 4;
+  const double full = rgba[base + static_cast<size_t>(dim - 1) * 4 + 3];
+  EXPECT_GT(full, 0.0) << "row " << row << " is not covered at its right edge";
+  if (full <= 0.0) {
+    return -1.0;
+  }
+  double uncovered = 0.0;
+  for (int x = 0; x < dim; ++x) {
+    const double a = rgba[base + static_cast<size_t>(x) * 4 + 3];
+    uncovered += 1.0 - std::min(1.0, a / full);
+  }
+  return uncovered;
+}
+
+// Columns of `row` with any coverage at all.  Used where the fill is a faint
+// wash under an opaque border (overlay highlights are alpha 30 with an alpha
+// 255 outline), which defeats an alpha-weighted integral -- the border would
+// count for eight times the fill it encloses.
+int coveredColumns(const std::vector<unsigned char>& rgba,
+                   const int dim,
+                   const int row)
+{
+  const size_t base = static_cast<size_t>(row) * dim * 4;
+  int covered = 0;
+  for (int x = 0; x < dim; ++x) {
+    if (rgba[base + static_cast<size_t>(x) * 4 + 3] > 0) {
+      covered++;
+    }
+  }
+  return covered;
+}
+
+// Covered width over columns [x0, x1) of `row`, in pixels: the coverage
+// integral, normalized by the row's strongest alpha (the fill's own).
+// Filter-independent for the same reason as coverageEdgeX.
+double coveredWidthPx(const std::vector<unsigned char>& rgba,
+                      const int dim,
+                      const int row,
+                      const int x0,
+                      const int x1)
+{
+  const size_t base = static_cast<size_t>(row) * dim * 4;
+  double full = 0.0;
+  for (int x = 0; x < dim; ++x) {
+    full = std::max(
+        full, static_cast<double>(rgba[base + static_cast<size_t>(x) * 4 + 3]));
+  }
+  if (full <= 0.0) {
+    return 0.0;
+  }
+  double covered = 0.0;
+  for (int x = x0; x < x1; ++x) {
+    covered += rgba[base + static_cast<size_t>(x) * 4 + 3] / full;
+  }
+  return covered;
 }
 
 constexpr double kPi = std::numbers::pi;
@@ -893,6 +1000,638 @@ TEST_F(TileGeneratorTest, GenerateTileReturnsValidPng)
   auto pixels = decodePng(png, w, h);
   EXPECT_EQ(w, 256u);
   EXPECT_EQ(h, 256u);
+}
+
+// A tile must render exactly the DBU window the client's coordinate transform
+// assigns to it: [xMin + x*T, xMin + (x+1)*T) with T = maxDXDY/2^z.  T is
+// fractional, so the window's origin is fractional too, and truncating it to an
+// int (as this code used to) shifts the tile's content by frac(origin) DBU — by
+// a DIFFERENT amount in each tile, since each has its own fractional part. That
+// is what tears content apart along a shared edge and shows up as a hairline
+// seam in the viewer.  The shift is frac * (256*dpr/T) device px: invisible
+// while a DBU is smaller than a pixel, and past a pixel wide once you zoom in —
+// sooner, and twice as wide, on a HiDPI display.
+TEST_F(TileGeneratorTest, TileContentRegistersWithIdealGrid)
+{
+  constexpr int kZoom = 10;
+  const int num_tiles = 1 << kZoom;
+
+  // Pin the block bbox to a known square: getBounds() follows the bbox (the
+  // die area alone does not move it), and the tile grid is derived from it.
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  block_->setDieArea(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide));
+  placeInst("BUF_X16", "buf_ll", 0, 0);
+  placeInst("BUF_X16",
+            "buf_ur",
+            kSeamDieSide - master->getWidth(),
+            kSeamDieSide - master->getHeight());
+
+  makeTileGen();
+  const odb::Rect bounds = tile_gen_->getBounds();
+  ASSERT_EQ(bounds.dx(), bounds.dy()) << "test derives T from a square bounds";
+  const double tile_dbu = static_cast<double>(bounds.maxDXDY()) / num_tiles;
+  // A fractional tile size is the whole point: with an integer one every origin
+  // is exact and there is nothing to get wrong.
+  ASSERT_NE(tile_dbu, std::floor(tile_dbu));
+
+  // The two tile columns whose ideal origins have the smallest and the largest
+  // fractional part.  Their truncation errors differ the most, so content in
+  // one is offset from content in the other by the most the bug can produce.
+  int k_lo = -1;
+  int k_hi = -1;
+  double frac_lo = 2.0;
+  double frac_hi = -1.0;
+  for (int k = num_tiles / 4; k < num_tiles / 2; ++k) {
+    const double org = bounds.xMin() + k * tile_dbu;
+    const double frac = org - std::floor(org);
+    if (frac < frac_lo) {
+      frac_lo = frac;
+      k_lo = k;
+    }
+    if (frac > frac_hi) {
+      frac_hi = frac;
+      k_hi = k;
+    }
+  }
+  ASSERT_GE(k_lo, 0);
+  ASSERT_GE(k_hi, 0);
+  // Each stripe below spans 1.5 tiles, so the two must not be neighbours.
+  ASSERT_GE(std::abs(k_hi - k_lo), 2);
+
+  // One metal1 stripe per column, its left edge at the column's mid-point.  The
+  // stripe runs past the tile's right edge and past both its horizontal edges,
+  // so the measured row is uncovered left of the edge and fully covered right
+  // of it all the way to the tile border.
+  const int row_tile = num_tiles / 2;
+  const int y_lo = static_cast<int>(
+      std::llround(bounds.yMin() + (row_tile - 1) * tile_dbu));
+  const int y_hi = static_cast<int>(
+      std::llround(bounds.yMin() + (row_tile + 2) * tile_dbu));
+  odb::dbTechLayer* m1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(m1, nullptr);
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  odb::dbSWire* swire = odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  const std::array<int, 2> columns = {k_lo, k_hi};
+  std::array<int, 2> edge_dbu = {0, 0};
+  for (size_t i = 0; i < columns.size(); ++i) {
+    const double org = bounds.xMin() + columns[i] * tile_dbu;
+    edge_dbu[i] = static_cast<int>(std::llround(org + tile_dbu / 2));
+    odb::dbSBox::create(swire,
+                        m1,
+                        edge_dbu[i],
+                        y_lo,
+                        static_cast<int>(std::llround(org + 1.5 * tile_dbu)),
+                        y_hi,
+                        odb::dbWireShapeType::STRIPE);
+  }
+
+  makeTileGen();
+  // The stripes sit inside the die, so they must not have moved the bounds the
+  // placements above were derived from.
+  ASSERT_EQ(tile_gen_->getBounds(), bounds);
+
+  // Client tile y is top-down, the renderer's is bottom-up.
+  const int tile_y = num_tiles - 1 - row_tile;
+  const TileVisibility vis;
+  for (const DprCase& dpr_case : kDprCases) {
+    const int dim = tilePxFor(dpr_case);
+    const double dpr = dpr_case.dpr;
+    const double px_per_dbu = dim / tile_dbu;
+    for (size_t i = 0; i < columns.size(); ++i) {
+      unsigned w = 0;
+      unsigned h = 0;
+      const std::vector<unsigned char> rgba
+          = decodePng(tile_gen_->generateTile("metal1",
+                                              kZoom,
+                                              columns[i],
+                                              tile_y,
+                                              vis,
+                                              {},
+                                              {},
+                                              {},
+                                              {},
+                                              nullptr,
+                                              nullptr,
+                                              nullptr,
+                                              dpr,
+                                              dim),
+                      w,
+                      h);
+      ASSERT_EQ(w, static_cast<unsigned>(dim));
+      const double org = bounds.xMin() + columns[i] * tile_dbu;
+      const double expected = (edge_dbu[i] - org) * px_per_dbu;
+      const double measured = coverageEdgeX(rgba, dim, dim / 2);
+      EXPECT_NEAR(measured, expected, 1.0)
+          << dpr_case.what << ": tile column " << columns[i] << " at dpr "
+          << dpr << " (" << dim << " px)" << ": stripe edge at " << edge_dbu[i]
+          << " dbu renders " << (measured - expected)
+          << " px from where the ideal tile origin " << org
+          << " puts it (tile size " << tile_dbu << " dbu)";
+    }
+  }
+}
+
+// The client names the pixel count it will display the tile in, instead of the
+// server deriving it from a rounded dpr.  A tile's CSS box is a whole number of
+// device pixels only when tileSize*dpr is an integer: at a 1.6667 display scale
+// (a 166% desktop, and the ratio this was reported on) 256 CSS px is 426.67
+// device px, so any size derived here is one the browser has to resample —
+// which softens every tile edge and puts the boundaries off the device grid.
+TEST_F(TileGeneratorTest, ExplicitTilePixelCountIsHonoured)
+{
+  constexpr int kZoom = 10;
+  const int num_tiles = 1 << kZoom;
+  // What a 255 CSS px tile is worth on a 1.6667 display: whole, unlike 256.
+  constexpr int kDeviceExactPx = 425;
+  const double dpr = 425.0 / 255.0;
+
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  block_->setDieArea(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide));
+  placeInst("BUF_X16", "buf_ll", 0, 0);
+  placeInst("BUF_X16",
+            "buf_ur",
+            kSeamDieSide - master->getWidth(),
+            kSeamDieSide - master->getHeight());
+
+  makeTileGen();
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = static_cast<double>(bounds.maxDXDY()) / num_tiles;
+
+  const int column = num_tiles / 2;
+  const int row_tile = num_tiles / 2;
+  const double org = bounds.xMin() + column * tile_dbu;
+  const int edge_dbu = static_cast<int>(std::llround(org + tile_dbu / 2));
+  odb::dbTechLayer* m1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(m1, nullptr);
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  odb::dbSWire* swire = odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  odb::dbSBox::create(
+      swire,
+      m1,
+      edge_dbu,
+      static_cast<int>(std::llround(bounds.yMin() + (row_tile - 1) * tile_dbu)),
+      static_cast<int>(std::llround(org + 1.5 * tile_dbu)),
+      static_cast<int>(std::llround(bounds.yMin() + (row_tile + 2) * tile_dbu)),
+      odb::dbWireShapeType::STRIPE);
+
+  makeTileGen();
+  ASSERT_EQ(tile_gen_->getBounds(), bounds);
+
+  const TileVisibility vis;
+  unsigned w = 0;
+  unsigned h = 0;
+  const std::vector<unsigned char> rgba
+      = decodePng(tile_gen_->generateTile("metal1",
+                                          kZoom,
+                                          column,
+                                          num_tiles - 1 - row_tile,
+                                          vis,
+                                          {},
+                                          {},
+                                          {},
+                                          {},
+                                          nullptr,
+                                          nullptr,
+                                          nullptr,
+                                          dpr,
+                                          kDeviceExactPx),
+                  w,
+                  h);
+  // Exactly the count asked for -- NOT lround(256*dpr), which would be 427.
+  EXPECT_EQ(w, static_cast<unsigned>(kDeviceExactPx));
+  EXPECT_EQ(h, static_cast<unsigned>(kDeviceExactPx));
+  EXPECT_NE(w, static_cast<unsigned>(std::lround(kTileSize * dpr)));
+
+  // ...and the content still registers on the ideal grid at that size.
+  const double expected = (edge_dbu - org) * (kDeviceExactPx / tile_dbu);
+  EXPECT_NEAR(
+      coverageEdgeX(rgba, kDeviceExactPx, kDeviceExactPx / 2), expected, 1.0);
+}
+
+// The symptom the registration above is the cause of: a shape crossing a tile
+// boundary must arrive whole.  Two neighbours each rendering their own
+// slightly-shifted DBU window either skip a strip of the design between them
+// (the dark hairline the viewer shows) or draw one strip twice.
+//
+// Measured differentially, against an identical stripe that crosses no seam:
+// a stripe's own edges cost a pixel or two of coverage to the band-limiting
+// filter (whose undershoot clips at alpha 0), and charging that to the seam
+// would make this test fail on a perfectly continuous tiling.  The difference
+// between the two isolates what the seam alone costs.
+TEST_F(TileGeneratorTest, ShapeCrossingTileSeamStaysWhole)
+{
+  constexpr int kZoom = 10;
+  const int num_tiles = 1 << kZoom;
+
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  block_->setDieArea(odb::Rect(0, 0, kSeamDieSide, kSeamDieSide));
+  placeInst("BUF_X16", "buf_ll", 0, 0);
+  placeInst("BUF_X16",
+            "buf_ur",
+            kSeamDieSide - master->getWidth(),
+            kSeamDieSide - master->getHeight());
+
+  makeTileGen();
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = static_cast<double>(bounds.maxDXDY()) / num_tiles;
+  ASSERT_NE(tile_dbu, std::floor(tile_dbu));
+
+  // Two stripes of the same width in the same tile row: the reference sits
+  // inside one tile, the subject straddles that tile's right edge.  A vertical
+  // gap between them (0.7T .. 0.75T) keeps their coverage separable by column.
+  const int column = num_tiles / 2;
+  const double org = bounds.xMin() + column * tile_dbu;
+  const int ref_lo = static_cast<int>(std::llround(org + 0.2 * tile_dbu));
+  const int ref_hi = static_cast<int>(std::llround(org + 0.7 * tile_dbu));
+  const int seam_lo = static_cast<int>(std::llround(org + 0.75 * tile_dbu));
+  const int seam_hi = static_cast<int>(std::llround(org + 1.25 * tile_dbu));
+  const int row_tile = num_tiles / 2;
+  const int y_lo = static_cast<int>(
+      std::llround(bounds.yMin() + (row_tile - 1) * tile_dbu));
+  const int y_hi = static_cast<int>(
+      std::llround(bounds.yMin() + (row_tile + 2) * tile_dbu));
+
+  odb::dbTechLayer* m1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(m1, nullptr);
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  odb::dbSWire* swire = odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  odb::dbSBox::create(
+      swire, m1, ref_lo, y_lo, ref_hi, y_hi, odb::dbWireShapeType::STRIPE);
+  odb::dbSBox::create(
+      swire, m1, seam_lo, y_lo, seam_hi, y_hi, odb::dbWireShapeType::STRIPE);
+
+  makeTileGen();
+  ASSERT_EQ(tile_gen_->getBounds(), bounds);
+
+  const int tile_y = num_tiles - 1 - row_tile;
+  const TileVisibility vis;
+  for (const DprCase& dpr_case : kDprCases) {
+    const int dim = tilePxFor(dpr_case);
+    const double dpr = dpr_case.dpr;
+    const double px_per_dbu = dim / tile_dbu;
+    std::vector<std::vector<unsigned char>> tiles;
+    for (const int tx : {column, column + 1}) {
+      unsigned w = 0;
+      unsigned h = 0;
+      tiles.push_back(decodePng(tile_gen_->generateTile("metal1",
+                                                        kZoom,
+                                                        tx,
+                                                        tile_y,
+                                                        vis,
+                                                        {},
+                                                        {},
+                                                        {},
+                                                        {},
+                                                        nullptr,
+                                                        nullptr,
+                                                        nullptr,
+                                                        dpr,
+                                                        dim),
+                                w,
+                                h));
+      ASSERT_EQ(w, static_cast<unsigned>(dim));
+    }
+    // Split the first tile's row in the gap between the two stripes.
+    const int split = static_cast<int>(0.725 * tile_dbu * px_per_dbu);
+    const double ref_covered = coveredWidthPx(tiles[0], dim, dim / 2, 0, split);
+    const double seam_covered
+        = coveredWidthPx(tiles[0], dim, dim / 2, split, dim)
+          + coveredWidthPx(tiles[1], dim, dim / 2, 0, dim);
+    const double ref_loss = ref_covered - (ref_hi - ref_lo) * px_per_dbu;
+    const double seam_loss = seam_covered - (seam_hi - seam_lo) * px_per_dbu;
+    EXPECT_NEAR(seam_loss, ref_loss, 1.0)
+        << dpr_case.what << ": at dpr " << dpr
+        << " a stripe across the seam between tiles " << column << " and "
+        << (column + 1) << " renders " << (seam_loss - ref_loss)
+        << " px differently from the same stripe inside one tile: the tiles "
+        << (seam_loss < ref_loss ? "skip" : "repeat")
+        << " a strip of the design at their shared edge";
+  }
+}
+
+// Every ratio the viewer can ask for produces a tile of exactly the requested
+// size -- the invariant the whole seam fix rests on, since a tile that is not
+// the size of its box gets resampled by the browser and its edges fade into its
+// neighbours.
+TEST_F(TileGeneratorTest, TilePixelCountIsExactAcrossDprMatrix)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  for (const DprCase& dpr_case : kDprCases) {
+    const int expected_px = tilePxFor(dpr_case);
+    unsigned w = 0;
+    unsigned h = 0;
+    const std::vector<unsigned char> rgba
+        = decodePng(tile_gen_->generateTile("_instances",
+                                            0,
+                                            0,
+                                            0,
+                                            TileVisibility{},
+                                            {},
+                                            {},
+                                            {},
+                                            {},
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            dpr_case.dpr,
+                                            expected_px),
+                    w,
+                    h);
+    EXPECT_EQ(w, static_cast<unsigned>(expected_px)) << dpr_case.what;
+    EXPECT_EQ(h, static_cast<unsigned>(expected_px)) << dpr_case.what;
+    EXPECT_EQ(rgba.size(), static_cast<size_t>(expected_px) * expected_px * 4)
+        << dpr_case.what;
+  }
+}
+
+// A client that names no pixel count still gets the historical 256*dpr, so an
+// older viewer served by a newer binary is unaffected.
+TEST_F(TileGeneratorTest, TilePixelCountFallsBackToDprWhenUnspecified)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  for (const double dpr : {1.0, 1.25, 1.6666666269302368, 2.0, 3.0}) {
+    unsigned w = 0;
+    unsigned h = 0;
+    decodePng(tile_gen_->generateTile("_instances",
+                                      0,
+                                      0,
+                                      0,
+                                      TileVisibility{},
+                                      {},
+                                      {},
+                                      {},
+                                      {},
+                                      nullptr,
+                                      nullptr,
+                                      nullptr,
+                                      dpr,
+                                      /*tile_px=*/0),
+              w,
+              h);
+    EXPECT_EQ(w, static_cast<unsigned>(std::lround(kTileSize * dpr)))
+        << "dpr " << dpr;
+    EXPECT_EQ(h, w) << "dpr " << dpr;
+  }
+}
+
+// The pixel count sizes the tile; the ratio scales what is authored in CSS px
+// (fonts, stroke widths, the sub-resolution cull).  They are independent inputs
+// -- rendering the same tile at the same size with a different ratio must not
+// change its dimensions, only that CSS-authored detail.
+TEST_F(TileGeneratorTest, TilePixelCountAndDprAreIndependent)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  constexpr int kPx = 400;
+  for (const double dpr : {1.0, 1.6666666269302368, 3.0}) {
+    unsigned w = 0;
+    unsigned h = 0;
+    decodePng(tile_gen_->generateTile("_instances",
+                                      0,
+                                      0,
+                                      0,
+                                      TileVisibility{},
+                                      {},
+                                      {},
+                                      {},
+                                      {},
+                                      nullptr,
+                                      nullptr,
+                                      nullptr,
+                                      dpr,
+                                      kPx),
+              w,
+              h);
+    EXPECT_EQ(w, static_cast<unsigned>(kPx)) << "dpr " << dpr;
+  }
+}
+
+// Overlay tiles (selection, DRC markers, timing paths, route guides) are drawn
+// on top of the layer tiles, so they have to be rendered at the same pixel
+// count and on the same grid.  A 256 px overlay stretched over a 400 px layer
+// tile is both blurry and misregistered against the shapes it annotates.
+TEST_F(TileGeneratorTest, OverlayTileHonoursTheRequestedPixelCount)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const std::vector<odb::Rect> highlight = {bounds};
+
+  for (const DprCase& dpr_case : kDprCases) {
+    const int expected_px = tilePxFor(dpr_case);
+    unsigned w = 0;
+    unsigned h = 0;
+    const std::vector<unsigned char> rgba
+        = decodePng(tile_gen_->generateOverlayTile(0,
+                                                   0,
+                                                   0,
+                                                   highlight,
+                                                   {},
+                                                   {},
+                                                   {},
+                                                   nullptr,
+                                                   false,
+                                                   {},
+                                                   dpr_case.dpr,
+                                                   expected_px),
+                    w,
+                    h);
+    EXPECT_EQ(w, static_cast<unsigned>(expected_px)) << dpr_case.what;
+    EXPECT_EQ(h, static_cast<unsigned>(expected_px)) << dpr_case.what;
+    EXPECT_TRUE(hasNonTransparentPixel(rgba))
+        << dpr_case.what << ": highlight must be drawn at every size";
+  }
+}
+
+// The highlight lands where the layer tile puts the shape, at every size: both
+// paths derive their frame from the same exact tile origin.
+TEST_F(TileGeneratorTest, OverlayTileRegistersWithTheLayerTileGrid)
+{
+  constexpr int kZoom = 4;
+  const int num_tiles = 1 << kZoom;
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = static_cast<double>(bounds.maxDXDY()) / num_tiles;
+
+  // A highlight covering the left half of one tile: its right edge is a
+  // measurable feature at a known place in the tile.
+  const int column = num_tiles / 2;
+  const int row = num_tiles / 2;
+  const double org_x = bounds.xMin() + column * tile_dbu;
+  const double org_y = bounds.yMin() + row * tile_dbu;
+  const int edge_dbu = static_cast<int>(std::llround(org_x + tile_dbu / 2));
+  const std::vector<odb::Rect> highlight
+      = {odb::Rect(static_cast<int>(std::llround(org_x - tile_dbu)),
+                   static_cast<int>(std::llround(org_y - tile_dbu)),
+                   edge_dbu,
+                   static_cast<int>(std::llround(org_y + 2 * tile_dbu)))};
+
+  for (const DprCase& dpr_case : kDprCases) {
+    const int dim = tilePxFor(dpr_case);
+    unsigned w = 0;
+    unsigned h = 0;
+    const std::vector<unsigned char> rgba
+        = decodePng(tile_gen_->generateOverlayTile(kZoom,
+                                                   column,
+                                                   num_tiles - 1 - row,
+                                                   highlight,
+                                                   {},
+                                                   {},
+                                                   {},
+                                                   nullptr,
+                                                   false,
+                                                   {},
+                                                   dpr_case.dpr,
+                                                   dim),
+                    w,
+                    h);
+    ASSERT_EQ(w, static_cast<unsigned>(dim)) << dpr_case.what;
+    // Covered from the tile's left edge up to the highlight's right edge, so
+    // the covered-column count is that edge's position in pixels.
+    const double expected = (edge_dbu - org_x) * (dim / tile_dbu);
+    const double measured = coveredColumns(rgba, dim, dim / 2);
+    EXPECT_NEAR(measured, expected, 2.0)
+        << dpr_case.what << ": highlight edge at " << edge_dbu
+        << " dbu renders " << (measured - expected) << " px from where the "
+        << "layer tile grid puts it";
+  }
+}
+
+TEST_F(TileGeneratorTest, OverlayTileFallsBackToDprWhenUnspecified)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  for (const double dpr : {1.0, 1.25, 1.6666666269302368, 2.0}) {
+    unsigned w = 0;
+    unsigned h = 0;
+    decodePng(tile_gen_->generateOverlayTile(0,
+                                             0,
+                                             0,
+                                             {tile_gen_->getBounds()},
+                                             {},
+                                             {},
+                                             {},
+                                             nullptr,
+                                             false,
+                                             {},
+                                             dpr,
+                                             /*tile_px=*/0),
+              w,
+              h);
+    EXPECT_EQ(w, static_cast<unsigned>(std::lround(kTileSize * dpr)))
+        << "dpr " << dpr;
+  }
+}
+
+// Heat-map tiles sit over the layer tiles like overlays do, and were the last
+// path still rendering a flat 256 px whatever the display was doing.
+TEST_F(TileGeneratorTest, HeatMapTileHonoursTheRequestedPixelCount)
+{
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(30000, 30000, 60000, 60000)));
+
+  for (const DprCase& dpr_case : kDprCases) {
+    const int expected_px = tilePxFor(dpr_case);
+    unsigned w = 0;
+    unsigned h = 0;
+    const std::vector<unsigned char> rgba
+        = decodePng(tile_gen_->generateHeatMapTile(
+                        *heatmap_, 0, 0, 0, dpr_case.dpr, expected_px),
+                    w,
+                    h);
+    EXPECT_EQ(w, static_cast<unsigned>(expected_px)) << dpr_case.what;
+    EXPECT_EQ(h, static_cast<unsigned>(expected_px)) << dpr_case.what;
+    EXPECT_TRUE(hasNonTransparentPixel(rgba))
+        << dpr_case.what << ": the populated bin must be drawn at every size";
+  }
+}
+
+// The bin lands on the same grid as the layers under it, at every size.
+TEST_F(TileGeneratorTest, HeatMapTileRegistersWithTheLayerTileGrid)
+{
+  // A bin covering the middle third of the design, so its edges are interior
+  // features whose pixel positions are predictable from the tile frame.
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(30000, 30000, 60000, 60000)));
+  const odb::Rect bounds = tile_gen_->getBounds();
+  // A bin is 15 um = 30000 DBU (buildSeamDesign's setGridSizes) and at zoom 0
+  // one tile spans the whole bounds, so the populated bin covers this fraction
+  // of the tile however many pixels wide it is.
+  constexpr double kBinDbu = 30000.0;
+  const double bin_fraction = kBinDbu / bounds.maxDXDY();
+
+  for (const DprCase& dpr_case : kDprCases) {
+    const int dim = tilePxFor(dpr_case);
+    unsigned w = 0;
+    unsigned h = 0;
+    const std::vector<unsigned char> rgba = decodePng(
+        tile_gen_->generateHeatMapTile(*heatmap_, 0, 0, 0, dpr_case.dpr, dim),
+        w,
+        h);
+    ASSERT_EQ(w, static_cast<unsigned>(dim)) << dpr_case.what;
+    const int covered = coveredColumns(rgba, dim, dim / 2);
+    const double expected = bin_fraction * dim;
+    EXPECT_NEAR(covered, expected, 0.06 * dim)
+        << dpr_case.what << ": bin covers " << covered << " of " << dim
+        << " px, expected about " << expected;
+  }
+}
+
+// Labels are authored in CSS px, so they have to scale with the display: a
+// fixed 14 px label on a 3x tile is a third the size it should be.
+TEST_F(TileGeneratorTest, HeatMapLabelsScaleWithTheDisplay)
+{
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(30000, 30000, 60000, 60000)));
+
+  const auto labelPixels = [&](const double dpr, const int px) {
+    unsigned w = 0;
+    unsigned h = 0;
+    heatmap_->setShowNumbers(true);
+    const std::vector<unsigned char> on = decodePng(
+        tile_gen_->generateHeatMapTile(*heatmap_, 0, 0, 0, dpr, px), w, h);
+    heatmap_->setShowNumbers(false);
+    const std::vector<unsigned char> off = decodePng(
+        tile_gen_->generateHeatMapTile(*heatmap_, 0, 0, 0, dpr, px), w, h);
+    // Pixels the label adds, whatever the fill under it is.
+    return textPixels(on, off, Axis::kColumn).size();
+  };
+
+  const size_t at_1x = labelPixels(1.0, 256);
+  const size_t at_2x = labelPixels(2.0, 512);
+  ASSERT_GT(at_1x, 0u) << "the label must render at all";
+  // Twice the pixels per CSS px in each direction, so the label spans about
+  // twice the columns.  Loose bounds: glyph rasterization is not linear.
+  EXPECT_GT(at_2x, at_1x * 3 / 2)
+      << "label spanned " << at_2x << " columns at 2x vs " << at_1x
+      << " at 1x -- it is not scaling with the display";
+  EXPECT_LT(at_2x, at_1x * 3)
+      << "label spanned " << at_2x << " columns at 2x vs " << at_1x << " at 1x";
+}
+
+TEST_F(TileGeneratorTest, HeatMapTileFallsBackToDprWhenUnspecified)
+{
+  ASSERT_NO_FATAL_FAILURE(
+      buildSeamDesign(odb::Rect(30000, 30000, 60000, 60000)));
+  for (const double dpr : {1.0, 1.25, 1.6666666269302368, 2.0}) {
+    unsigned w = 0;
+    unsigned h = 0;
+    decodePng(tile_gen_->generateHeatMapTile(*heatmap_, 0, 0, 0, dpr, 0), w, h);
+    EXPECT_EQ(w, static_cast<unsigned>(std::lround(kTileSize * dpr)))
+        << "dpr " << dpr;
+  }
 }
 
 TEST_F(TileGeneratorTest, EmptyDesignProducesTransparentTile)
