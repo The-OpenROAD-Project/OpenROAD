@@ -35,6 +35,7 @@ TESTS = [
     "gcd",
     "gcd_cugr",
     "gcd_flute",
+    "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
     "incremental_repair_cugr",
