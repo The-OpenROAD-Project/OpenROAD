@@ -351,11 +351,11 @@ void RepairDesign::repairDesign(
                   repaired_net_count,
                   static_cast<int>(driver_vertices.size()));
     int max_length = resizer_->metersToDbu(max_wire_length);
+    // Zero-config futility guard: stop buffer insertion when count exceeds
+    // limit
+    const int max_allowed_buffers
+        = std::max(5000, static_cast<int>(driver_vertices.size() * 0.05));
     for (int i = driver_vertices.size() - 1; i >= 0; i--) {
-      // Zero-config futility guard: stop buffer insertion when count exceeds
-      // limit
-      const int max_allowed_buffers
-          = std::max(5000, static_cast<int>(driver_vertices.size() * 0.05));
       if (inserted_buffer_count_ > max_allowed_buffers) {
         logger_->warn(
             RSZ,
