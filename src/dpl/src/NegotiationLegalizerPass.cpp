@@ -292,10 +292,10 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 {
   if (debug_observer_) {
     debug_observer_->clearNegotiationSearchWindows();
+    debug_observer_->clearCurrentIterMovers();
   }
 
   current_iter_ = iter;
-  current_iter_movers_.clear();
 
   // Reset per-iteration stuck-cell tallies.
   stuck_no_candidate_count_iter_ = 0;
@@ -449,8 +449,7 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
   syncCellToDplGrid(cell_idx);
   if (did_move && debug_observer_
       && (opendp_->iterative_debug_ || opendp_->deep_iterative_debug_)) {
-    current_iter_movers_.insert(cells_[cell_idx].db_inst);
-    debug_observer_->setCurrentIterMovers(current_iter_movers_);
+    debug_observer_->addCurrentIterMover(cells_[cell_idx].db_inst);
   }
   if (opendp_->deep_iterative_debug_ && debug_observer_
       && current_iter_ >= opendp_->negotiation_debug_start_) {

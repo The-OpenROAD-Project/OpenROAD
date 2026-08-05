@@ -120,8 +120,6 @@ void NegotiationLegalizer::legalize()
 
   initFenceRegions();
 
-  debugPause("Pause after initialization.");
-
   debugPrint(logger_,
              utl::DPL,
              "negotiation",

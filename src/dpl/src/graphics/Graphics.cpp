@@ -307,7 +307,8 @@ void Graphics::drawObjects(gui::Painter& painter)
         search.boundaries_valid = true;
       }
 
-      painter.setPen(gui::Painter::kPink, /* cosmetic */ true);
+      painter.setPen(
+          gui::Painter::kPink, /* cosmetic */ true, kSearchOutlineWidth);
       for (const std::vector<odb::Point>& boundary : search.boundaries) {
         painter.drawPolygon(boundary);
       }
@@ -315,7 +316,8 @@ void Graphics::drawObjects(gui::Painter& painter)
       // Last candidate tried: the position the cell takes when the search
       // succeeds.  Deep pink to stand out from the pale region boundary.
       painter.setPen(gui::Painter::Color{0xff, 0x14, 0x93, 0xff},
-                     /* cosmetic */ true);
+                     /* cosmetic */ true,
+                     kSearchOutlineWidth);
       painter.drawRect(search.last);
     }
   }
@@ -462,14 +464,14 @@ void Graphics::drawObjects(gui::Painter& painter)
 
       // Init-position search window
       auto init_color = gui::Painter::kCyan;
-      painter.setPen(init_color, /* cosmetic */ true);
+      painter.setPen(init_color, /* cosmetic */ true, kSearchOutlineWidth);
       painter.drawRect(init_win);
 
       // Current-position window (only when the cell is displaced).
       if (!curr_win.isInverted() && curr_win.area() > 0) {
         auto curr_color = gui::Painter::kWhite;
         curr_color.a = 200;
-        painter.setPen(curr_color, /* cosmetic */ true);
+        painter.setPen(curr_color, /* cosmetic */ true, kSearchOutlineWidth);
         painter.drawRect(curr_win);
       }
     }
@@ -538,10 +540,14 @@ void Graphics::addNegotiationPhase2Marker(int iter)
   }
 }
 
-void Graphics::setCurrentIterMovers(
-    const std::unordered_set<odb::dbInst*>& movers)
+void Graphics::addCurrentIterMover(odb::dbInst* inst)
 {
-  current_iter_movers_ = movers;
+  current_iter_movers_.insert(inst);
+}
+
+void Graphics::clearCurrentIterMovers()
+{
+  current_iter_movers_.clear();
 }
 
 /* static */

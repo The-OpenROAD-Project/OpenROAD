@@ -4,7 +4,6 @@
 #pragma once
 
 #include <cstdint>
-#include <unordered_set>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -86,13 +85,12 @@ class DplObserver
   virtual void addNegotiationPhase2Marker(int iter) {}
 
   // Inform the observer which cells moved in the current negotiation iteration.
-  // Cells in the set are drawn with directional colors; others are greyed out.
-  // Pass an empty set to revert to the default (all movers use directional
-  // colors).
-  virtual void setCurrentIterMovers(
-      const std::unordered_set<odb::dbInst*>& movers)
-  {
-  }
+  // Those cells are drawn with directional colors; others are greyed out.  One
+  // cell at a time: place() reports every move, so passing the whole set each
+  // time would copy it once per move.  With none reported the observer reverts
+  // to the default (all movers use directional colors).
+  virtual void addCurrentIterMover(odb::dbInst* inst) {}
+  virtual void clearCurrentIterMovers() {}
 };
 
 }  // namespace dpl

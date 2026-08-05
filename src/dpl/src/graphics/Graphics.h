@@ -61,8 +61,8 @@ class Graphics : public gui::Renderer, public DplObserver
                                      int illegal_count,
                                      int illegal_site_count) override;
   void addNegotiationPhase2Marker(int iter) override;
-  void setCurrentIterMovers(
-      const std::unordered_set<odb::dbInst*>& movers) override;
+  void addCurrentIterMover(odb::dbInst* inst) override;
+  void clearCurrentIterMovers() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
@@ -104,6 +104,11 @@ class Graphics : public gui::Renderer, public DplObserver
 
   // Row span capacity kept between searches.
   static constexpr size_t kMaxRetainedRows = 64;
+
+  // Stroke width of the search outlines (diamond region and negotiation
+  // windows), in screen pixels: the pens are cosmetic, so the outlines stay
+  // this thick at any zoom.
+  static constexpr int kSearchOutlineWidth = 3;
 
   // NegotiationLegalizer grid snapshot for rendering
   std::vector<NegotiationPixelState> negotiation_pixels_;
