@@ -99,8 +99,6 @@ py_test(
     ],
     tags = [
         "doc_check",
-        "local",
-        "no-sandbox",
     ],
     deps = [
         requirement("sphinx"),

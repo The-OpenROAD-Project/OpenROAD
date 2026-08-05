@@ -13,7 +13,7 @@ sphinx-external-toc==0.3.1
 sphinx-tabs==3.4.7
 sphinxcontrib-mermaid==2.0.1
 myst-parser==1.0.0
-sphinx-llm
+sphinx-llm==0.4.1
 # imghdr was removed from the Python 3.13 stdlib; sphinx.builders.epub3 still
 # imports it. The standard-imghdr backport restores the module.
 standard-imghdr==3.13.0

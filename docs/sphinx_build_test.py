@@ -16,9 +16,10 @@ Usage::
 
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
+
+from sphinx.cmd.build import main as sphinx_main
 
 # abspath (not realpath) so the path stays inside the runfiles tree instead
 # of resolving symlinks back to the live workspace.
@@ -45,7 +46,6 @@ def main() -> int:
 
         # Calling sphinx via subprocess would fail because a child python3
         # doesn't inherit the Bazel runfiles PYTHONPATH used by this test.
-        from sphinx.cmd.build import main as sphinx_main
 
         args = ["-b", "html", "-T", "-q"]
         if not shutil.which("mmdc"):
