@@ -1621,7 +1621,6 @@ std::shared_ptr<GRTreeNode> CUGR::buildTreeFromRoute(const GRoute& route) const
       }
       const BoxT cells = grid_graph_->rangeSearchCells(BoxT(
           segment.init_x, segment.init_y, segment.final_x, segment.final_y));
-      const int direction = grid_graph_->getLayerDirection(init_layer);
       if (cells[0].low() != cells[0].high()
           && cells[1].low() != cells[1].high()) {
         return nullptr;
