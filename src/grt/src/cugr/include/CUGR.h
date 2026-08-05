@@ -307,7 +307,6 @@ class CUGR
   utl::ServiceRegistry* service_registry_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;
-  NetRouteMap routes_;
 
   Constants constants_;
 
