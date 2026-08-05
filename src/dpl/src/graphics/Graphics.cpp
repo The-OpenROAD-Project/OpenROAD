@@ -90,21 +90,54 @@ void Graphics::binSearch(const Node* cell,
   if (!inst) {
     return;
   }
-  odb::Rect core = dp_->grid_->getCore();
-  int xl_dbu = core.xMin() + gridToDbu(xl, dp_->grid_->getSiteWidth()).v;
-  int yl_dbu = core.yMin() + dp_->grid_->gridYToDbu(yl).v;
-  int xh_dbu = core.xMin() + gridToDbu(xh, dp_->grid_->getSiteWidth()).v;
-  int yh_dbu = core.yMin() + dp_->grid_->gridYToDbu(yh).v;
-  searched_diamond_[inst].emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
+  // Skip cells with no search started: canBePlaced() is also called outside
+  // any search (Opendp::setInitialGridCells).
+  auto it = searched_diamond_.find(inst);
+  if (it == searched_diamond_.end()) {
+    return;
+  }
+  const odb::Rect core = dp_->grid_->getCore();
+  const DbuX site_width = dp_->grid_->getSiteWidth();
+  const int x_lo = core.xMin() + gridToDbu(xl, site_width).v;
+  const int y_lo = core.yMin() + dp_->grid_->gridYToDbu(yl).v;
+  const int x_hi = core.xMin() + gridToDbu(xh, site_width).v;
+  const int y_hi = core.yMin() + dp_->grid_->gridYToDbu(yh).v;
+
+  DiamondSearch& search = it->second;
+  search.last = odb::Rect(x_lo, y_lo, x_hi, y_hi);
+  search.boundaries_valid = false;
+
+  // Widen the span of this candidate's row, or start one.
+  auto row = std::lower_bound(
+      search.rows.begin(),
+      search.rows.end(),
+      y_lo,
+      [](const RowSpan& span, const int y) { return span.y_lo < y; });
+  if (row != search.rows.end() && row->y_lo == y_lo) {
+    row->y_hi = std::max(row->y_hi, y_hi);
+    row->x_lo = std::min(row->x_lo, x_lo);
+    row->x_hi = std::max(row->x_hi, x_hi);
+  } else {
+    search.rows.insert(row, RowSpan{y_lo, y_hi, x_lo, x_hi});
+  }
 }
 
 void Graphics::clearDiamondSearch(const Node* cell)
 {
-  auto it = searched_diamond_.find(cell->getDbInst());
-  if (it != searched_diamond_.end()) {
-    // Keep the allocation: the same cell gets searched again on later passes.
-    it->second.clear();
+  const odb::dbInst* inst = cell->getDbInst();
+  if (!inst) {
+    return;
   }
+  // Creating the entry is what lets binSearch() record for this cell.
+  DiamondSearch& search = searched_diamond_[inst];
+  if (search.rows.capacity() > kMaxRetainedRows) {
+    std::vector<RowSpan>().swap(search.rows);
+  } else {
+    search.rows.clear();
+  }
+  search.last = odb::Rect();
+  search.boundaries.clear();
+  search.boundaries_valid = false;
 }
 
 void Graphics::clearAllDiamondSearches()
@@ -224,16 +257,17 @@ void Graphics::drawObjects(gui::Painter& painter)
   if (!searched_diamond_.empty()) {
     using boost::polygon::operators::operator+=;
 
-    auto drawBoundary = [&painter](const auto& ring) {
-      std::vector<odb::Point> points;
-      for (auto itr = ring.begin(); itr != ring.end(); itr++) {
-        const auto point = *itr;
-        points.emplace_back(point.x(), point.y());
-      }
-      if (points.size() > 2) {
-        painter.drawPolygon(points);
-      }
-    };
+    auto addBoundary
+        = [](const auto& ring, std::vector<std::vector<odb::Point>>& out) {
+            std::vector<odb::Point> points;
+            for (auto itr = ring.begin(); itr != ring.end(); itr++) {
+              const auto point = *itr;
+              points.emplace_back(point.x(), point.y());
+            }
+            if (points.size() > 2) {
+              out.push_back(std::move(points));
+            }
+          };
 
     std::unordered_set<const odb::dbInst*> draw_insts;
     if (debug_instance_) {
@@ -246,35 +280,42 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setBrush(gui::Painter::kTransparent);
     for (const odb::dbInst* inst : draw_insts) {
       auto it = searched_diamond_.find(inst);
-      if (it == searched_diamond_.end() || it->second.empty()) {
+      if (it == searched_diamond_.end() || it->second.rows.empty()) {
         continue;
       }
-      const std::vector<odb::Rect>& searched = it->second;
+      DiamondSearch& search = it->second;
 
-      // Candidates overlap heavily (consecutive ones are a single site apart),
-      // so union them and stroke just the exterior boundary.
-      Polygon90Set searched_area;
-      for (const odb::Rect& rect : searched) {
-        searched_area
-            += BoostRect{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
+      // Row spans abut and overlap, so union them and stroke just the exterior
+      // boundary.  Cached, since this runs on every repaint.
+      if (!search.boundaries_valid) {
+        Polygon90Set searched_area;
+        for (const RowSpan& row : search.rows) {
+          searched_area += BoostRect{row.x_lo, row.y_lo, row.x_hi, row.y_hi};
+        }
+        std::vector<Polygon90> searched_polygons;
+        searched_area.get_polygons(searched_polygons);
+
+        search.boundaries.clear();
+        for (const Polygon90& polygon : searched_polygons) {
+          addBoundary(polygon, search.boundaries);
+          for (auto hole = polygon.begin_holes(); hole != polygon.end_holes();
+               hole++) {
+            addBoundary(*hole, search.boundaries);
+          }
+        }
+        search.boundaries_valid = true;
       }
-      std::vector<Polygon90> searched_polygons;
-      searched_area.get_polygons(searched_polygons);
 
       painter.setPen(gui::Painter::kPink, /* cosmetic */ true);
-      for (const Polygon90& polygon : searched_polygons) {
-        drawBoundary(polygon);
-        for (auto hole = polygon.begin_holes(); hole != polygon.end_holes();
-             hole++) {
-          drawBoundary(*hole);
-        }
+      for (const std::vector<odb::Point>& boundary : search.boundaries) {
+        painter.drawPolygon(boundary);
       }
 
       // Last candidate tried: the position the cell takes when the search
       // succeeds.  Deep pink to stand out from the pale region boundary.
       painter.setPen(gui::Painter::Color{0xff, 0x14, 0x93, 0xff},
                      /* cosmetic */ true);
-      painter.drawRect(searched.back());
+      painter.drawRect(search.last);
     }
   }
 

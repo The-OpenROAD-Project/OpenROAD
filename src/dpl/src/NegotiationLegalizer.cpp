@@ -311,8 +311,8 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
   commitNegotiationPosToDpl();
   pushNegotiationPixels();
   logger_->report("{}", msg);
-  debug_observer_->clearAllDiamondSearches();
   debug_observer_->redrawAndPause();
+  debug_observer_->clearAllDiamondSearches();
 }
 
 // ===========================================================================

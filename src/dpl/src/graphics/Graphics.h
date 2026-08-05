@@ -75,11 +75,35 @@ class Graphics : public gui::Renderer, public DplObserver
   odb::dbBlock* block_ = nullptr;
   bool paint_pixels_;
   bool paint_negotiation_pixels_;
-  // Candidate positions tried by the most recent diamond search of each cell,
-  // keyed by dbInst* so drawObjects() can draw whichever instance the user has
-  // selected in the GUI (same approach as negotiation_search_windows_).
-  std::unordered_map<const odb::dbInst*, std::vector<odb::Rect>>
-      searched_diamond_;
+  // One row of the region covered by a diamond search, in dbu.
+  struct RowSpan
+  {
+    int y_lo;
+    int y_hi;
+    int x_lo;
+    int x_hi;
+  };
+
+  // Region covered by the most recent diamond search of one cell, stored as the
+  // x range tried in each row rather than a box per candidate.  The search
+  // tries every site between a row's two extremes, so the range loses nothing,
+  // and a search that tries 200k candidates costs one span per row.
+  struct DiamondSearch
+  {
+    std::vector<RowSpan> rows;  // sorted by y_lo
+    odb::Rect last;             // last candidate tried
+    // Union of |rows|, cached: drawObjects() runs on every repaint.
+    std::vector<std::vector<odb::Point>> boundaries;
+    bool boundaries_valid = false;
+  };
+
+  // Keyed by dbInst* so drawObjects() can draw whichever instance is selected
+  // in the GUI (same approach as negotiation_search_windows_).  An entry means
+  // a search for that cell has started; binSearch() ignores cells without one.
+  std::unordered_map<const odb::dbInst*, DiamondSearch> searched_diamond_;
+
+  // Row span capacity kept between searches.
+  static constexpr size_t kMaxRetainedRows = 64;
 
   // NegotiationLegalizer grid snapshot for rendering
   std::vector<NegotiationPixelState> negotiation_pixels_;
