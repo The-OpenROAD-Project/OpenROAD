@@ -841,20 +841,20 @@ void PlacerBaseCommon::init()
 
   // Extending instances by average pin density using memoized master signal pin
   // counts.
-  boost::unordered_flat_map<const odb::dbMaster*, double> master_stats_map;
-  auto get_signal_pin_count
-      = [&master_stats_map](const Instance& inst) -> double {
+  boost::unordered::unordered_flat_map<const odb::dbMaster*, int>
+      master_stats_map;
+  auto get_signal_pin_count = [&master_stats_map](const Instance& inst) -> int {
     auto* master = inst.dbInst()->getMaster();
-    auto [it, inserted] = master_stats_map.try_emplace(master, 0.0);
+    auto [it, inserted] = master_stats_map.try_emplace(master, 0);
     if (inserted) {
-      it->second = static_cast<double>(std::ranges::count_if(
+      it->second = static_cast<int>(std::ranges::count_if(
           master->getMTerms(),
           [](odb::dbMTerm* mterm) { return !mterm->getSigType().isSupply(); }));
     }
     return it->second;
   };
 
-  double total_signal_pins = 0.0;
+  int total_signal_pins = 0;
   int64_t movable_area = 0;
   int64_t total_area = 0;
   for (const auto& inst : instStor_) {
@@ -877,7 +877,9 @@ void PlacerBaseCommon::init()
              block->dbuAreaToMicrons(total_area));
 
   double avg_density
-      = (movable_area > 0) ? total_signal_pins / movable_area : 0.0;
+      = (movable_area > 0)
+            ? static_cast<double>(total_signal_pins) / movable_area
+            : 0.0;
   if (log_->debugCheck(GPL, "extendPinDensity", 1)) {
     double avg_density_micron = block->dbuToMicrons(avg_density);
     double avg_area_per_pin_dbu
@@ -899,9 +901,9 @@ void PlacerBaseCommon::init()
   if (!pbVars_.disablePinDensityAdjust) {
     for (auto& inst : instStor_) {
       if (!inst.isFixed() && inst.isInstance()) {
-        double pin_count = get_signal_pin_count(inst);
-        if (pin_count > 2.0 && avg_density > 0.0) {
-          double target_area = pin_count / avg_density;
+        int pin_count = get_signal_pin_count(inst);
+        if (pin_count > 2 && avg_density > 0.0) {
+          double target_area = static_cast<double>(pin_count) / avg_density;
           double scale
               = std::sqrt(target_area / static_cast<double>(inst.getArea()));
           // Cap scaling, avoid later excessive routability inflation
