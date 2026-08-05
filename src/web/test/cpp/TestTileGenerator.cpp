@@ -1566,7 +1566,11 @@ TEST_F(TileGeneratorTest, HeatMapTileRegistersWithTheLayerTileGrid)
   ASSERT_NO_FATAL_FAILURE(
       buildSeamDesign(odb::Rect(30000, 30000, 60000, 60000)));
   const odb::Rect bounds = tile_gen_->getBounds();
-  const double tile_dbu = bounds.maxDXDY();  // zoom 0: one tile spans it all
+  // A bin is 15 um = 30000 DBU (buildSeamDesign's setGridSizes) and at zoom 0
+  // one tile spans the whole bounds, so the populated bin covers this fraction
+  // of the tile however many pixels wide it is.
+  constexpr double kBinDbu = 30000.0;
+  const double bin_fraction = kBinDbu / bounds.maxDXDY();
 
   for (const DprCase& dpr_case : kDprCases) {
     const int dim = tilePxFor(dpr_case);
@@ -1577,13 +1581,11 @@ TEST_F(TileGeneratorTest, HeatMapTileRegistersWithTheLayerTileGrid)
         w,
         h);
     ASSERT_EQ(w, static_cast<unsigned>(dim)) << dpr_case.what;
-    // The bin grid is 30000 DBU wide (setGridSizes(15,15) over the 90000 die),
-    // so whatever is drawn spans a third of the tile, wherever the bins land.
     const int covered = coveredColumns(rgba, dim, dim / 2);
-    const double third = dim / 3.0;
-    EXPECT_NEAR(covered, third, 0.06 * dim)
+    const double expected = bin_fraction * dim;
+    EXPECT_NEAR(covered, expected, 0.06 * dim)
         << dpr_case.what << ": bin covers " << covered << " of " << dim
-        << " px, expected about a third (" << third << ")";
+        << " px, expected about " << expected;
   }
 }
 
