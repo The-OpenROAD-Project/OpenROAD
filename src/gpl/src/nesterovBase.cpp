@@ -1984,12 +1984,11 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
     stats.total_extended_area = block->dbuAreaToMicrons(ext_area);
 
     // Save area per pin
-    int pin_count = db_inst->getITerms().size();
-    if (pin_count > 0) {
+    if (stats.pin_count > 0) {
       stats.original_area_per_pin
-          = block->dbuAreaToMicrons(orig_area) / pin_count;
+          = block->dbuAreaToMicrons(orig_area) / stats.pin_count;
       stats.extended_area_per_pin
-          = block->dbuAreaToMicrons(ext_area) / pin_count;
+          = block->dbuAreaToMicrons(ext_area) / stats.pin_count;
     }
     // Populate area_diff as the percentage difference between extended and
     // original area
