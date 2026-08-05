@@ -1933,7 +1933,7 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
     float extended_area_per_pin = 0.0;
     float area_diff = 0.0;
   };
-  static std::unordered_map<std::string, struct MasterStats> master_stats_map;
+  std::unordered_map<std::string, struct MasterStats> master_stats_map;
 
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
 
@@ -1988,10 +1988,12 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
   for (auto& entry : master_stats_map) {
     MasterStats& stats = entry.second;
     if (stats.pin_count > 0 && stats.instance_count > 0) {
-      stats.original_area_per_pin = stats.total_original_area
-                                    / (stats.pin_count * stats.instance_count);
-      stats.extended_area_per_pin = stats.total_extended_area
-                                    / (stats.pin_count * stats.instance_count);
+      stats.original_area_per_pin
+          = stats.total_original_area
+            / (static_cast<double>(stats.pin_count) * stats.instance_count);
+      stats.extended_area_per_pin
+          = stats.total_extended_area
+            / (static_cast<double>(stats.pin_count) * stats.instance_count);
     }
     if (stats.total_original_area != 0.0) {
       stats.area_diff = 100.0f
