@@ -549,6 +549,7 @@ sh_test(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclint",
         "@git",
     ],
@@ -568,6 +569,7 @@ sh_test(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclfmt",
         "@git",
     ],
@@ -587,6 +589,7 @@ sh_binary(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclfmt",
         "@git",
     ],
@@ -605,6 +608,7 @@ sh_test(
     ],
     data = [
         "MODULE.bazel",
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
@@ -624,6 +628,7 @@ sh_test(
     ],
     data = [
         "MODULE.bazel",
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
@@ -642,7 +647,48 @@ sh_binary(
         "$(rootpath @git)",
     ],
     data = [
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# --- YAML formatting check (yamlfix) ---------------------------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_yaml_test",
+    srcs = ["//bazel:yaml_fmt_test.sh"],
+    args = [
+        "$(rootpath //bazel:yamlfix)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "MODULE.bazel",
+        "yamlfix.ignore",
+        "yamlfix.toml",
+        "//bazel:yamlfix",
+        "@git",
+    ],
+    tags = ["local"],
+    visibility = ["//visibility:public"],
+)
+
+# --- YAML auto-format only (yamlfix) ---------------------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_yaml",
+    srcs = ["//bazel:yaml_tidy.sh"],
+    args = [
+        "$(rootpath //bazel:yamlfix)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "yamlfix.ignore",
+        "yamlfix.toml",
+        "//bazel:yamlfix",
         "@git",
     ],
     visibility = ["//visibility:public"],
@@ -655,6 +701,7 @@ test_suite(
     tests = [
         ":fmt_bzl_test",
         ":fmt_tcl_test",
+        ":fmt_yaml_test",
         ":lint_bzl_test",
         ":lint_tcl_test",
     ],
@@ -679,16 +726,23 @@ sh_binary(
         "$(rootpath //bazel:bzl_lint_test.sh)",
         "$(rootpath @buildifier_prebuilt//:buildifier)",
         "$(rootpath @git)",
+        "$(rootpath //bazel:yaml_tidy.sh)",
+        "$(rootpath //bazel:yamlfix)",
     ],
     data = [
         "MODULE.bazel",
         "tclint.toml",
+        "yamlfix.ignore",
+        "yamlfix.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
+        "//bazel:git_ls_files.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",
         "//bazel:tclint",
+        "//bazel:yaml_tidy.sh",
+        "//bazel:yamlfix",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
