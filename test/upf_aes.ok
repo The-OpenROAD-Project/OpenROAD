@@ -86,7 +86,6 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):         128 ,    128
 [INFO GPL-0029] Bin size (W * H):       7.338 *  7.310 um
 [INFO GPL-0030] Number of bins:                  16384
-[INFO GPL-0103] Initializing Nesterov electrostatic solver.
 [INFO GPL-0033] ---- Initialize Nesterov Region: PD_AES_1
 [INFO GPL-0023] Placement target density:       0.4969
 [INFO GPL-0024] Movable insts average area:      8.183 um^2
@@ -96,7 +95,6 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):         128 ,    128
 [INFO GPL-0029] Bin size (W * H):       4.841 *  3.573 um
 [INFO GPL-0030] Number of bins:                  16384
-[INFO GPL-0103] Initializing Nesterov electrostatic solver.
 [INFO GPL-0033] ---- Initialize Nesterov Region: PD_AES_2
 [INFO GPL-0023] Placement target density:       0.4959
 [INFO GPL-0024] Movable insts average area:      8.183 um^2
