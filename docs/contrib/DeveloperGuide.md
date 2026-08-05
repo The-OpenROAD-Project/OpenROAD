@@ -168,7 +168,6 @@ Optimization passes (e.g., gate sizing, buffer insertion, congestion repair) mus
 ### 2. Pass Termination Without Flow Interruption
 When an optimization pass hits a futility limit:
 * The pass must **stop its internal iteration loop** and issue a clear warning (`utl::warn`).
-* The pass **must not exit OpenROAD** (`utl::error` or process exit).
 * The overall flow **must run to completion**.
 
 ### 3. Downstream Metric Evaluation
@@ -177,6 +176,9 @@ Small upstream variations (e.g., placement seed changes) cause large downstream 
 * Detailed routing (`drt`) and parasitic extraction (`rcx`) resolve local congestion and extract wire parasitics.
 
 Completing the flow allows autotuners to collect final metrics and extract actionable signals, even when an intermediate pass halts early.
+
+### 4. Custom DSE Signals
+If users require a different signal than the full flow (e.g., a signal that is directionally accurate when far from the target and highly accurate when closer), they should write their own `.py` or `.tcl` script. This provides full flexibility tailored to their specific use-case, design, and project phase without requiring OpenROAD to anticipate their requirements and goals. Users can easily combine existing scripts into a single OpenROAD process invocation or invoke various commands directly.
 
 
 ## Test
