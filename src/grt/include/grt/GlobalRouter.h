@@ -306,6 +306,14 @@ class GlobalRouter
   // grid point but no via connects them, so the route handed to parasitics
   // estimation is electrically connected (correct-by-construction).
   void addImplicitVias(GRoute& route);
+  // Canonicalize a route rebuilt from ODB guides: orient via segments
+  // lower->upper layer and drop the resulting exact duplicates. saveGuides()
+  // writes a pin-access via as two dbGuides over the same box (layer1 with via
+  // layer2, plus layer2 with via layer1) because DRT needs a guide rectangle on
+  // both layers; read back naively, that single via becomes two opposite-facing
+  // GSegments. Must run before addImplicitVias()/mergeSegments() so their
+  // point-degree bookkeeping counts each via once.
+  void normalizeGuideRoute(GRoute& route);
 
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
