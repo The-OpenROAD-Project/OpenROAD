@@ -217,10 +217,11 @@ static int quantizeTilePx(const double raw)
   if (!std::isfinite(raw) || raw <= 0.0) {
     return 0;
   }
-  constexpr int64_t kMinTilePx = 32;
-  constexpr int64_t kMaxTilePx = 2048;
-  return static_cast<int>(
-      std::clamp<int64_t>(std::llround(raw), kMinTilePx, kMaxTilePx));
+  // Clamped BEFORE rounding: std::llround of a double past the range of long
+  // long is undefined, and `raw` is whatever the client sent.
+  constexpr double kMinTilePx = 32.0;
+  constexpr double kMaxTilePx = 2048.0;
+  return static_cast<int>(std::lround(std::clamp(raw, kMinTilePx, kMaxTilePx)));
 }
 
 std::string assetPathFromTarget(const std::string_view target)

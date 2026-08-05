@@ -196,36 +196,44 @@ export function buildTileRequestFor(coords, layerName, ctx, dpr,
 // neighbour, which reads as thick, soft seams over the whole layout.
 //
 // A resolution media query is the only reliable signal (there is no dpr event);
-// it has to be re-armed after each change because the query it matches on is the
-// old ratio. Returns an unsubscribe function.
+// each query only ever matches the ratio it was built for, so a fresh one is
+// installed after every change. Returns an unsubscribe function.
 export function watchDevicePixelRatio(onChange) {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function'
         || typeof onChange !== 'function') {
         return () => {};
     }
     let stopped = false;
-    let current = null;
-    const arm = () => {
+    let query = null;
+    let handler = null;
+    const listen = () => {
         if (stopped) {
             return;
         }
         const dpr = window.devicePixelRatio || 1;
-        current = window.matchMedia(`(resolution: ${dpr}dppx)`);
-        const fired = () => {
+        query = window.matchMedia(`(resolution: ${dpr}dppx)`);
+        handler = () => {
             if (stopped) {
                 return;
             }
-            arm();
+            listen();
             onChange(window.devicePixelRatio || 1);
         };
-        // `once` so the handler cannot fire twice for one change; arm() installs
-        // the next one against the new ratio.
-        current.addEventListener('change', fired, { once: true });
+        // `once` so the handler cannot fire twice for one change; listen()
+        // installs the next one against the new ratio.
+        query.addEventListener('change', handler, { once: true });
     };
-    arm();
+    listen();
     return () => {
         stopped = true;
-        current = null;
+        // `once` retires a handler that has fired, but the one waiting on the
+        // current ratio has not: without this it outlives the caller, and a
+        // viewer that is mounted and torn down repeatedly accumulates them.
+        if (query && handler) {
+            query.removeEventListener('change', handler);
+        }
+        query = null;
+        handler = null;
     };
 }
 

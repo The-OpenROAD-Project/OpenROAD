@@ -120,10 +120,14 @@ describe('watchDevicePixelRatio', () => {
             devicePixelRatio: dpr,
             queries,
             matchMedia(query) {
-                const mql = { query, handlers: [] };
+                const mql = { query, handlers: [], removed: [] };
                 mql.addEventListener = (name, fn) => {
                     assert.equal(name, 'change');
                     mql.handlers.push(fn);
+                };
+                mql.removeEventListener = (name, fn) => {
+                    assert.equal(name, 'change');
+                    mql.removed.push(fn);
                 };
                 queries.push(mql);
                 return mql;
@@ -143,7 +147,7 @@ describe('watchDevicePixelRatio', () => {
         }
     });
 
-    it('reports the new ratio and re-arms against it', () => {
+    it('reports the new ratio and watches for the next one', () => {
         const saved = globalThis.window;
         const win = fakeWindow(1.25);
         globalThis.window = win;
@@ -153,7 +157,7 @@ describe('watchDevicePixelRatio', () => {
             win.devicePixelRatio = 1.6666666269302368;
             win.queries[0].handlers[0]();
             assert.deepEqual(seen, [1.6666666269302368]);
-            // Re-armed: the old query only ever matches the old ratio, so
+            // A new query: the old one only ever matches the old ratio, so
             // without this a second change would go unnoticed.
             assert.equal(win.queries.length, 2);
             assert.ok(win.queries[1].query.includes('1.6666666269302368dppx'));
@@ -172,6 +176,23 @@ describe('watchDevicePixelRatio', () => {
             stop();
             win.queries[0].handlers[0]();
             assert.deepEqual(seen, []);
+        } finally {
+            globalThis.window = saved;
+        }
+    });
+
+    it('detaches the pending listener on unsubscribe', () => {
+        // `once` retires a handler that has fired; the one still waiting on the
+        // current ratio has not, and would outlive a viewer that is torn down.
+        const saved = globalThis.window;
+        const win = fakeWindow(1.25);
+        globalThis.window = win;
+        try {
+            const stop = watchDevicePixelRatio(() => {});
+            assert.equal(win.queries[0].removed.length, 0);
+            stop();
+            assert.deepEqual(win.queries[0].removed,
+                             [win.queries[0].handlers[0]]);
         } finally {
             globalThis.window = saved;
         }

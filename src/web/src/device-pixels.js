@@ -32,10 +32,10 @@
 // side overwrites the other, and the correction survives every update Leaflet
 // makes to the child.
 //
-// One residual, out of reach from here: a tile's own box is 256 CSS px, whole in
-// device pixels only when 256*dpr is. Every ratio a display reports (1, 1.25,
-// 1.5, 1.75, 2, 2.5, 3) satisfies that; a ratio like 1.33 — browser zoom rather
-// than display scaling — would also need per-tile widths.
+// This removes the shared PHASE. The other half is the PITCH: tiles must also be
+// a whole number of device pixels apart, or only every 1/frac-th boundary can be
+// on the grid whatever the phase is — see TILE_SIZE_CSS in tile-request.js,
+// which is why the tile size is 240 rather than 256.
 
 import { nativeDpr } from './tile-request.js';
 
@@ -64,15 +64,17 @@ export function deviceResidualCss(css_pos, dpr) {
 // correction, and that origin term.
 //
 // One tile per container is enough: tiles differ from each other by whole
-// multiples of the tile size, which is a whole number of device pixels for every
-// ratio a display reports (see the header note on 256*dpr).
+// multiples of the tile size, and that size is chosen to be a whole number of
+// device pixels at every real ratio (TILE_SIZE_CSS in tile-request.js).
 //
 // The measured rect already includes whatever correction is on the parent now,
 // so the new correction is the old one minus what is still left over. That
 // converges in one step and never accumulates drift.
 //
-// `rectOf` is injected so this is testable without a layout engine.
-export function snapContainerToDeviceGrid(container, dpr, rectOf) {
+// `rectOf` is injected so this is testable without a layout engine, and
+// defaults to the real measurement for every other caller.
+export function snapContainerToDeviceGrid(container, dpr,
+                                          rectOf = defaultRectOf) {
     const holder = container && container.parentElement;
     if (!holder) {
         return null;

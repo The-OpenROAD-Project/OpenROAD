@@ -1125,10 +1125,10 @@ TEST_F(TileGeneratorTest, TileContentRegistersWithIdealGrid)
       const double measured = coverageEdgeX(rgba, dim, dim / 2);
       EXPECT_NEAR(measured, expected, 1.0)
           << dpr_case.what << ": tile column " << columns[i] << " at dpr "
-          << dpr << " (" << dim << " px)"
-          << ": stripe edge at " << edge_dbu[i] << " dbu renders "
-          << (measured - expected) << " px from where the ideal tile origin "
-          << org << " puts it (tile size " << tile_dbu << " dbu)";
+          << dpr << " (" << dim << " px)" << ": stripe edge at " << edge_dbu[i]
+          << " dbu renders " << (measured - expected)
+          << " px from where the ideal tile origin " << org
+          << " puts it (tile size " << tile_dbu << " dbu)";
     }
   }
 }
