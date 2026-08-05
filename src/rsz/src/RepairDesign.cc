@@ -352,6 +352,18 @@ void RepairDesign::repairDesign(
                   static_cast<int>(driver_vertices.size()));
     int max_length = resizer_->metersToDbu(max_wire_length);
     for (int i = driver_vertices.size() - 1; i >= 0; i--) {
+      // Zero-config futility guard: stop buffer insertion when count exceeds
+      // limit
+      const int max_allowed_buffers
+          = std::max(5000, static_cast<int>(driver_vertices.size() * 0.05));
+      if (inserted_buffer_count_ > max_allowed_buffers) {
+        logger_->warn(
+            RSZ,
+            3310,
+            "Buffer limit reached ({}); stopping repair pass on doomed run.",
+            inserted_buffer_count_);
+        break;
+      }
       print_iteration++;
       if (verbose || (print_iteration == 1)) {
         printProgress(print_iteration,
