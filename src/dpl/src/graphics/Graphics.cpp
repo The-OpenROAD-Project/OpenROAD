@@ -59,6 +59,7 @@ Graphics::Graphics(Opendp* dp,
 void Graphics::startPlacement(odb::dbBlock* block)
 {
   block_ = block;
+  clearAllDiamondSearches();
 }
 
 void Graphics::drawSelected(odb::dbInst* instance, bool force)
