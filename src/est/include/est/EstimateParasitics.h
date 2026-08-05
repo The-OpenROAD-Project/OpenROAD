@@ -282,11 +282,9 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   odb::dbBlock* block_ = nullptr;
   std::unique_ptr<OdbCallBack> db_cbk_;
 
-  // Layer RC per wire length keyed by layer, indexed by corner->index()
-  std::unordered_map<odb::dbTechLayer*, std::vector<double>>
-      layer_res_;  // ohms/meter
-  std::unordered_map<odb::dbTechLayer*, std::vector<double>>
-      layer_cap_;  // Farads/meter
+  // Layer RC per wire length indexed by layer number, then corner->index()
+  std::vector<std::vector<double>> layer_res_;  // ohms/meter
+  std::vector<std::vector<double>> layer_cap_;  // Farads/meter
   // Wire RC per technology; the nullptr entry holds the defaults used by
   // chips whose technology has no specific values
   std::unordered_map<odb::dbTech*, WireRC> wire_rc_;
