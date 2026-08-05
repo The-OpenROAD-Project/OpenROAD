@@ -4,9 +4,11 @@
 #pragma once
 
 #include <any>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <list>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -181,7 +183,15 @@ struct TileVisibility
   bool pins = true;               // BTerm (IO pin) shapes on tech layers
   bool pin_markers = true;        // BTerm direction markers on _pins layer
   bool pin_names = true;          // BTerm name labels on _pins layer
-  bool blockages = true;
+
+  // Shapes — other per-layer geometry (not routing sub-types)
+  bool blockages = true;  // master obstructions (LEF OBS)
+  bool fills = false;     // dbFill metal fill (off by default, GUI parity)
+
+  // Fill pattern applied to the requested layer's own shapes (routing,
+  // special-net, instance OBS/pins).  Per-request because each tile request
+  // targets a single layer.  Defaults to solid (the historical behavior).
+  FillPattern fill_pattern = FillPattern::kSolid;
 
   // Instance sub-shapes
   bool inst_names = true;      // Instance name labels on _instances layer
@@ -202,6 +212,12 @@ struct TileVisibility
   // Tracks (off by default, matching GUI)
   bool tracks_pref = false;
   bool tracks_non_pref = false;
+
+  // Detailed view (off by default, matching the Qt GUI's Misc/"Detailed view").
+  // When on, the sub-resolution cull is relaxed so small features stay visible
+  // at zoom-out: instances are not culled at all and shapes fall back to a 1 px
+  // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
+  bool detailed = false;
 
   // Debug
   bool debug = false;
@@ -292,6 +308,9 @@ struct TileVisibility
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+  // Visibility for an already-classified instance.  Lets callers that already
+  // computed the category (e.g. the tile render loop) avoid reclassifying.
+  bool isCategoryVisible(InstCategory cat) const;
 
   bool isNetSelectable(odb::dbNet* net) const;
   bool isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const;
@@ -321,6 +340,47 @@ class TileGenerator
   // lazily and cached; the cache is rebuilt only if the tech changes.
   const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
                                                                = nullptr) const;
+
+  // Geometry one dbMaster contributes to one tech layer, in master-local
+  // coordinates; the render pass applies each instance's transform.  Bucketing
+  // by layer up front is what lets the per-instance pass draw a layer's shapes
+  // directly instead of walking all of a master's geometry and calling
+  // dbBox::getTechLayer() (a chain of dbTable lookups) on every box, once per
+  // layer per tile.  Mirrors gui::LayoutViewer::boxesByLayer.
+  struct MasterLayerGeom
+  {
+    // Obstructions (LEF OBS), drawn before pins.  Polygons and boxes are kept
+    // apart because they take different draw calls, and both before the pin
+    // shapes because OBS uses a different color — that boundary is the only
+    // ordering that affects the result (shapes sharing a color composite
+    // order-independently).
+    std::vector<odb::Polygon> obs_polys;
+    std::vector<odb::Rect> obs_boxes;
+    std::vector<odb::Polygon> pin_polys;
+    // Pin boxes grouped by MTerm, preserving master MTerm order and geometry
+    // order within a pin: the fill pass draws them all, and the ITerm label
+    // pass walks each group for the first box big enough to label.
+    std::vector<std::pair<odb::dbMTerm*, std::vector<odb::Rect>>> pin_boxes;
+  };
+  using MasterGeomByLayer = odb::PtrMap<odb::dbMaster, MasterLayerGeom>;
+
+  // Cut and enclosure boxes of one via master (dbTechVia or dbVia) on one
+  // layer, in via-local coordinates; the render pass offsets them by the sbox
+  // center.  A power grid instantiates a handful of distinct via masters
+  // thousands of times, so decomposing each master once removes the
+  // per-via-instance walk that dominated special-net rendering.
+  using ViaBoxesByMaster = odb::PtrMap<odb::dbObject, std::vector<odb::Rect>>;
+
+  // Immutable snapshot of both caches, published as a whole.  Renders take a
+  // shared_ptr copy once per tile and then read it without locking; a
+  // concurrent invalidation swaps in a fresh snapshot and leaves the one
+  // in-flight renders hold alive.
+  struct GeomCache
+  {
+    odb::PtrMap<odb::dbTechLayer, MasterGeomByLayer> master_geom;
+    odb::PtrMap<odb::dbTechLayer, ViaBoxesByMaster> via_boxes;
+  };
+  std::shared_ptr<const GeomCache> geomCache() const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -357,6 +417,12 @@ class TileGenerator
   // `collectChiplets` is kept for tests and one-shot callers.
   const std::vector<ChipletNode>& chiplets() const;
 
+  // Monotonic counter, bumped every time chiplets() rebuilds its cache.
+  // Caches derived from the chiplet list poll this to notice a hierarchy
+  // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
+  // the chiplet cache, so the value returned reflects the live hierarchy.
+  uint64_t chipletsGeneration() const;
+
   std::vector<unsigned char> generateTile(
       const std::string& layer,
       int z,
@@ -369,7 +435,24 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
-      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
+      const std::set<uint32_t>* route_guide_net_ids = nullptr,
+      double dpr = 1.0) const;
+
+  // Render only highlight/overlay shapes (selection, hover, timing, DRC,
+  // route guides, flight lines) on a fully transparent background.  Used
+  // by the overlay tile layer so base tiles can stay cached when only
+  // highlights change.
+  std::vector<unsigned char> generateOverlayTile(
+      int z,
+      int x,
+      int y,
+      const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<odb::Polygon>& highlight_polys = {},
+      const std::vector<ColoredRect>& colored_rects = {},
+      const std::vector<FlightLine>& flight_lines = {},
+      const std::set<uint32_t>* route_guide_net_ids = nullptr,
+      bool has_visible_layers = false,
+      const std::set<std::string>& visible_layers = {}) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
@@ -417,6 +500,24 @@ class TileGenerator
                               const odb::Rect& dbu_tile,
                               double scale) const;
 
+  // ─── Server-side tile cache ──────────────────────────────────────────
+  //
+  // PNG-encoded "clean" tiles (no per-session overlays) keyed by a string
+  // fingerprint of the full render determinant.  Re-rendering tiles at
+  // 256*dpr*S is expensive, so pan/zoom-back and visibility toggles reuse
+  // the cached bytes.  LRU eviction at kTileCacheCap; cleared on design
+  // reload via eagerInit().  Thread-safe (mirrors chiplets_mutex_).
+  bool tileCacheGet(const std::string& key,
+                    std::vector<unsigned char>& out) const;
+  void tileCachePut(std::string key, std::vector<unsigned char> png) const;
+
+  // Install (or clear with `{}`) a callback invoked after a design edit has
+  // invalidated the tile cache — WebServer wires this to broadcast a
+  // {"type":"refresh"} push so clients re-request tiles (mirrors the Qt GUI's
+  // Search::modified → LayoutViewer::fullRepaint).  Set at serve() startup.
+  void setDesignChangedCallback(std::function<void()> cb);
+  size_t tileCacheSize() const;  // for tests
+
  private:
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
   // Same signature as generateTile but returns raw pixels.
@@ -432,11 +533,15 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
-      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
+      const std::set<uint32_t>* route_guide_net_ids = nullptr,
+      double dpr = 1.0) const;
+  // `dim` is the square tile side length (buffer stride); -1 derives it from
+  // the buffer.  Hot loops pass it explicitly to avoid the per-pixel sqrt.
   void setPixel(std::vector<unsigned char>& image,
                 int x,
                 int y,
-                const Color& c) const;
+                const Color& c,
+                int dim = -1) const;
 
   void drawDebugOverlay(std::vector<unsigned char>& image,
                         int z,
@@ -499,21 +604,36 @@ class TileGenerator
                             const odb::Rect& rect,
                             const odb::Rect& dbu_tile);
 
+  // `dim` follows the setPixel/blendPixel convention: pass the buffer's side
+  // length to skip re-deriving it with bufferDim(), or -1 to have it computed.
+  // Both of these are called once per drawn shape, so on a dense layer the
+  // sqrt+lround adds up — callers in the render loop already know the value.
   void fillPolygon(std::vector<unsigned char>& image,
                    const odb::Polygon& poly,
                    const odb::Rect& dbu_tile,
                    double scale,
                    const Color& color,
-                   bool blend = false) const;
+                   bool blend = false,
+                   FillPattern pattern = FillPattern::kSolid,
+                   int dim = -1) const;
 
+  // ox/oy are the tile's origin in absolute pixel coordinates
+  // ((int)(dbu_tile.xMin()*scale), ...); they anchor non-solid patterns so the
+  // hatch stays seamless across tile boundaries.  Only meaningful when
+  // pattern != kSolid.
   void drawFilledRect(std::vector<unsigned char>& buffer,
                       const odb::Rect& rect,
-                      const Color& color) const;
+                      const Color& color,
+                      FillPattern pattern = FillPattern::kSolid,
+                      int ox = 0,
+                      int oy = 0,
+                      int dim = -1) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
                          int y,
-                         const Color& c);
+                         const Color& c,
+                         int dim = -1);
 
   static void drawLine(std::vector<unsigned char>& image,
                        int x0,
@@ -538,6 +658,16 @@ class TileGenerator
   mutable odb::PtrMap<odb::dbTech, odb::PtrMap<odb::dbTechLayer, Color>>
       layer_colors_by_tech_;
 
+  // Layer-bucketed master and via-master geometry.  See geomCache(); built on
+  // first use and rebuilt whenever Search::revision() or chipletsGeneration()
+  // moves.  The via half is keyed off the reachable chiplets' blocks, so a
+  // hierarchy edit changes what belongs in it without any block edit.
+  mutable std::mutex geom_cache_mutex_;
+  mutable std::shared_ptr<const GeomCache> geom_cache_;
+  mutable uint64_t geom_cache_revision_ = 0;
+  mutable uint64_t geom_cache_chiplet_generation_ = 0;
+  std::shared_ptr<const GeomCache> buildGeomCache() const;
+
   // Cached chiplet traversal.  See chiplets().  Invalidated in
   // eagerInit() and also auto-invalidated when the chiplet hierarchy
   // signature (root pointer + total dbChipInst count) changes — this
@@ -548,6 +678,28 @@ class TileGenerator
   mutable bool chiplets_cache_valid_ = false;
   mutable odb::dbChip* chiplets_cache_root_ = nullptr;
   mutable size_t chiplets_cache_inst_count_ = 0;
+  // See chipletsGeneration().
+  mutable uint64_t chiplets_cache_generation_ = 0;
+
+  // LRU cache of PNG-encoded clean tiles (see tileCacheGet/Put).  The list
+  // holds (key, png) most-recent-first; the index maps key → list iterator.
+  using TileCacheEntry = std::pair<std::string, std::vector<unsigned char>>;
+  mutable std::mutex tile_cache_mutex_;
+  mutable std::list<TileCacheEntry> tile_cache_lru_;
+  mutable std::unordered_map<std::string, std::list<TileCacheEntry>::iterator>
+      tile_cache_index_;
+  static constexpr size_t kTileCacheCap = 512;
+
+  // Design-change → invalidation wiring.  search_ fires on_modified (see
+  // Search::setOnModified) on any geometry edit; onDesignChanged() drops the
+  // PNG tile cache and invokes design_changed_cb_ (installed by WebServer to
+  // broadcast a "refresh" push to clients).  suppress_design_changed_ gates
+  // out the storm of index invalidations during eagerInit()/reload, which
+  // already clears the cache itself and drives its own refresh.
+  void onDesignChanged();
+  std::function<void()> design_changed_cb_;
+  mutable std::mutex design_changed_cb_mutex_;
+  std::atomic_bool suppress_design_changed_{false};
 
   static constexpr int kTileSizeInPixel = 256;
 };

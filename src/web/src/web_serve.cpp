@@ -6,6 +6,7 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -237,9 +238,27 @@ void WebServer::serve(int port)
           }
         });
 
+    // After a design edit invalidates the tile cache, push a refresh so every
+    // connected client re-requests its tiles (mirrors the Qt GUI's repaint on
+    // Search::modified).  Fired on the design-mutation thread; broadcast() is
+    // safe from any thread (it posts writes onto each session's strand).
+    generator_->setDesignChangedCallback([hook = viewer_hook_.get()]() {
+      if (hook == nullptr) {
+        return;
+      }
+      hook->sessions().broadcast(R"({"type":"refresh"})");
+    });
+
     auto const address = net::ip::make_address("0.0.0.0");
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
+
+    // Bound how many requests the client keeps in flight at once. Scale with
+    // the server's I/O worker count (the threads that actually service
+    // requests) so the window tracks the configured thread budget, with an
+    // absolute cap so a many-core box doesn't hand out an unbounded window.
+    // Announced to the client on connect; see WebSocketSession::on_accept.
+    int const max_in_flight = std::clamp(num_threads * 4, 16, 256);
 
     ioc_ = std::make_unique<net::io_context>(num_threads);
 
@@ -250,7 +269,8 @@ void WebServer::serve(int port)
                                        timing_report,
                                        clock_report,
                                        logger_,
-                                       viewer_hook_.get());
+                                       viewer_hook_.get(),
+                                       max_in_flight);
     shutdown_listener_ = std::move(handle.shutdown);
 
     const std::string url = "http://localhost:" + std::to_string(handle.port);
@@ -384,6 +404,9 @@ void WebServer::stop()
 
   if (viewer_hook_) {
     TileGenerator::setDebugOverlayCallback({});
+    if (generator_) {
+      generator_->setDesignChangedCallback({});
+    }
     if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
       gui::Gui::get()->setHeadlessViewer(nullptr);
     }

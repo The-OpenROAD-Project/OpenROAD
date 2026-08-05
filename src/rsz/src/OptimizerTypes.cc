@@ -3,6 +3,8 @@
 
 #include "OptimizerTypes.hh"
 
+#include <functional>
+#include <set>
 #include <string>
 
 #include "rsz/Resizer.hh"
@@ -193,6 +195,52 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
 {
   return findMatchingTimingArc(
       reference, candidate, ArcMatchMode::kExact, nullptr);
+}
+
+const sta::Path* latchDataPath(const sta::PathExpanded& expanded)
+{
+  const sta::Path* d_path = nullptr;
+  const sta::Path* q_path = nullptr;
+  sta::Edge* d_q_edge = nullptr;
+  expanded.latchPaths(d_path, q_path, d_q_edge);
+  return d_path;
+}
+
+bool visitLatchFaninSegments(
+    const sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor)
+{
+  // Guard against accidental latch loops while following D-side fanin chains.
+  std::set<const sta::Pin*> visited_latch_d;
+  const sta::Path* d_path = latchDataPath(expanded);
+  while (d_path != nullptr) {
+    const sta::Pin* d_pin = d_path->pin(sta);
+    if (visited_latch_d.contains(d_pin)) {
+      break;
+    }
+    visited_latch_d.insert(d_pin);
+
+    sta::PathExpanded d_expanded(d_path, sta);
+    if (visitor(d_path, d_expanded)) {
+      return true;
+    }
+    d_path = latchDataPath(d_expanded);
+  }
+  return false;
+}
+
+bool visitPathSegments(
+    const sta::Path* path,
+    sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor)
+{
+  if (visitor(path, expanded)) {
+    return true;
+  }
+
+  return visitLatchFaninSegments(expanded, sta, visitor);
 }
 
 bool Target::canBePathDriver() const

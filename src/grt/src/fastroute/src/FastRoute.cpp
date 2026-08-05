@@ -1407,17 +1407,59 @@ void FastRouteCore::updateRouteGridsLayer(int x1,
     TreeEdge* treeedge = &(treeedges[edgeID]);
     // Only process edges that have actual routing
     if (treeedge->len > 0 || treeedge->route.routelen > 0) {
-      int routeLen = treeedge->route.routelen;
-      std::vector<GPoint3D>& grids = treeedge->route.grids;
+      const int routeLen = treeedge->route.routelen;
+      const std::vector<GPoint3D>& grids = treeedge->route.grids;
 
-      // If the point is within the specified rectangular region AND on the
-      // original layer
+      std::vector<GPoint3D> new_grids;
+      new_grids.reserve(grids.size() + 4);
+      bool modified = false;
+
       for (int i = 0; i <= routeLen; i++) {
-        if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
-            && grids[i].y <= y2 && grids[i].layer == layer) {
-          // Update to the new layer
-          grids[i].layer = new_layer;
+        const bool in_region = grids[i].x >= x1 && grids[i].x <= x2
+                               && grids[i].y >= y1 && grids[i].y <= y2
+                               && grids[i].layer == layer;
+        if (!in_region) {
+          new_grids.push_back(grids[i]);
+          continue;
         }
+        modified = true;
+        // Check whether the previous/next grid point is outside the promoted
+        // region. When the first (or last) promoted point is adjacent to an
+        // unpromoted point we insert a via-transition copy on the old layer so
+        // that releaseNetResources sees a layer change (via) rather than a
+        // same-layer horizontal/vertical edge at the boundary. Without this,
+        // two back-to-back jumpers whose promoted endpoints are adjacent
+        // (e.g. right endpoint of jumper A at x=107 and left endpoint of
+        // jumper B at x=108) merge into a single same-layer chain and
+        // releaseNetResources under-decrements the edge that was never
+        // incremented.
+        const bool prev_outside = (i == 0) || grids[i - 1].x < x1
+                                  || grids[i - 1].x > x2 || grids[i - 1].y < y1
+                                  || grids[i - 1].y > y2
+                                  || grids[i - 1].layer != layer;
+        const bool next_outside = (i == routeLen) || grids[i + 1].x < x1
+                                  || grids[i + 1].x > x2 || grids[i + 1].y < y1
+                                  || grids[i + 1].y > y2
+                                  || grids[i + 1].layer != layer;
+
+        // Insert old-layer via point before the first promoted point
+        if (prev_outside && i > 0) {
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
+        }
+        GPoint3D promoted = grids[i];
+        promoted.layer = new_layer;
+        new_grids.push_back(promoted);
+        // Insert old-layer via point after the last promoted point
+        if (next_outside && i < routeLen) {
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
+        }
+      }
+
+      if (modified) {
+        treeedge->route.routelen = static_cast<int>(new_grids.size()) - 1;
+        treeedge->route.grids = std::move(new_grids);
       }
     }
   }
@@ -1943,7 +1985,6 @@ NetRouteMap FastRouteCore::run()
   int max_adj;
   int long_edge_len = 40;
   int short_edge_len = 12;
-  const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
@@ -2098,8 +2139,14 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
+  // Soft-NDR demotion. When the overflow iterations fail to make progress --
+  // the minimum overflow stagnates for more than kSoftNdrStagnantTh iterations,
+  // or the loop runs past kSoftNdrMaxIter iterations -- demote every congested
+  // NDR net to soft-NDR and restart the overflow loop.
+  constexpr int kSoftNdrStagnantTh = 10;
+  constexpr int kSoftNdrMaxIter = 15;
   float overflow_reduction_percent = -1;
-  // Minimum overflow stagnation
+  // Iterations since the minimum overflow last improved.
   int minofl_stagnant = 0;
   {
     const DebugScopedTimer timer(timings.overflow_iterations,
@@ -2338,30 +2385,18 @@ NetRouteMap FastRouteCore::run()
             max_overflow_increases);
       }
 
-      // Try disabling NDR nets to fix congestion
+      // When the overflow iterations fail to make progress (the minimum
+      // overflow stagnates, or the loop runs past kSoftNdrMaxIter) demote every
+      // congested NDR net to soft-NDR and restart the loop.
       if (total_overflow_ > 0
-          && (i == overflow_iterations_
-              || overflow_increases == max_overflow_increases
-              || minofl_stagnant >= 10)) {
-        // Compute all the NDR nets involved in congestion
+          && (minofl_stagnant > kSoftNdrStagnantTh || i > kSoftNdrMaxIter)) {
+        // Recompute the NDR nets currently involved in congestion (nets already
+        // demoted to soft-NDR are skipped).
         computeCongestedNDRnets();
 
-        std::vector<int> net_ids;
+        std::vector<int> net_ids = graph2d_.getCongestedNDRnetsByFraction(1.0);
 
-        // If the congestion is not that high (note that the overflow is
-        // inflated by 100x when there is no capacity available for a NDR net in
-        // a specific edge)
-        if (total_overflow_ < soft_ndr_overflow_th) {
-          // Select one NDR net to be disabled
-          int net_id = graph2d_.getOneCongestedNDRnet();
-          if (net_id != -1) {
-            net_ids.push_back(net_id);
-          }
-        } else {  // Select multiple NDR nets
-          net_ids = graph2d_.getMultipleCongestedNDRnet();
-        }
-
-        // Only apply soft NDR if there is NDR nets involved in congestion
+        // Only apply soft NDR if there are NDR nets involved in congestion
         if (!net_ids.empty()) {
           // Apply the soft NDR to the selected list of nets
           applySoftNDR(net_ids);
@@ -2774,6 +2809,11 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
+}
+
+void FastRouteCore::setResAwareNetsPercentage(float percentage)
+{
+  res_aware_nets_percentage_ = percentage;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)

@@ -9,6 +9,7 @@ man_pages(
     name = "man_pages",
     docs_srcs = [
         "Makefile",
+        "src/man_fontfix.tmac",
     ] + glob(["md/**/*.md"]),
     messages = [
         "//src/ant:messages_txt",
@@ -109,6 +110,7 @@ py_test(
         requirement("sphinx-tabs"),
         requirement("sphinxcontrib-mermaid"),
         requirement("myst-parser"),
+        requirement("sphinx_llm"),
         requirement("standard-imghdr"),
     ],
 )

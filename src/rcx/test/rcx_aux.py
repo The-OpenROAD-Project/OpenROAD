@@ -1,4 +1,3 @@
-import utl
 import rcx
 
 # Thin wrapper over api defined in ext.i (and reused by ext-py.i)
@@ -7,6 +6,10 @@ import rcx
 
 def define_process_corner(design, *, ext_model_index=0, filename=""):
     design.getOpenRCX().define_process_corner(ext_model_index, filename)
+
+
+def set_extraction_rules_file(design, *, filename=""):
+    design.getOpenRCX().setExtractionRulesFile(filename)
 
 
 def extract_parasitics(
@@ -30,12 +33,13 @@ def extract_parasitics(
 
     opts = rcx.ExtractOptions()
 
-    opts.ext_model_file = ext_model_file
+    if ext_model_file is not None:
+        opts.ext_model_file = ext_model_file
+
     opts.corner_cnt = corner_cnt
     opts.corner = corner
     opts.max_res = max_res
     opts.coupling_threshold = coupling_threshold
-    opts.signal_table = 3
     opts.cc_model = cc_model
     opts.context_depth = context_depth
     opts.lef_res = lef_res

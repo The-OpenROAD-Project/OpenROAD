@@ -55,7 +55,8 @@ class MBFF
        std::unique_ptr<AbstractGraphics> graphics);
 
   ~MBFF();
-  void Run(int mx_sz, float alpha, float beta);
+  void Run(int mx_sz, float alpha, float beta, float clock_power_weight);
+  bool IsValidTray(odb::dbInst* tray);
 
  private:
   enum PortName
@@ -109,43 +110,10 @@ class MBFF
   };
 
   // MBFF functions
-  const sta::LibertyCell* getLibertyCell(const sta::Cell* cell);
   float GetDist(const Point& a, const Point& b);
   float GetDistAR(const Point& a, const Point& b, float AR);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
-
-  // clock pin functions
-  bool IsClockPin(odb::dbITerm* iterm);
-  bool ClockOn(odb::dbInst* inst);
-
-  // d pin functions
-  bool IsDPin(odb::dbITerm* iterm);
-  int GetNumD(odb::dbInst* inst);
-
-  // q(n) pin functions
-  bool IsQPin(odb::dbITerm* iterm);
-  bool IsInvertingQPin(odb::dbITerm* iterm);
-  int GetNumQ(odb::dbInst* inst);
-
-  // clear/preset pin functions
-  bool HasClear(odb::dbInst* inst);
-  bool IsClearPin(odb::dbITerm* iterm);
-  bool HasPreset(odb::dbInst* inst);
-  bool IsPresetPin(odb::dbITerm* iterm);
-
-  // scan cell/pin functions
-  bool IsScanCell(odb::dbInst* inst);
-  bool IsScanIn(odb::dbITerm* iterm);
-  odb::dbITerm* GetScanIn(odb::dbInst* inst);
-  bool IsScanEnable(odb::dbITerm* iterm);
-  odb::dbITerm* GetScanEnable(odb::dbInst* inst);
-
-  // supply pin functions
-  bool IsSupplyPin(odb::dbITerm* iterm);
-
-  bool IsValidFlop(odb::dbInst* FF);
-  bool IsValidTray(odb::dbInst* tray);
 
   // (MB)FF funcs
   PortName PortType(const sta::LibertyPort* lib_port, odb::dbInst* inst);
@@ -275,6 +243,9 @@ class MBFF
   float single_bit_width_;
   float single_bit_power_;
   float clock_period_;
+  // Per-sink clock-tree power expressed as a multiple of single_bit_power_.
+  // 0 reproduces the legacy cost model (clock-tree savings not credited).
+  float clock_power_weight_;
   odb::dbMaster* single_bit_master_;
 
   // launch-capture FF-pair vars

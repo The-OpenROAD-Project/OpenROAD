@@ -381,6 +381,11 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   }
   stream >> *tech.name_cache_;
   stream >> tech.via_hash_;
+  if (db->isSchema(kSchemaTechExtractionRulesFile)
+      && db->isLessThanSchema(kSchemaRemoveTechExtractionRulesFile)) {
+    std::string obsolete_extraction_rules_file;
+    stream >> obsolete_extraction_rules_file;
+  }
 
   return stream;
 }

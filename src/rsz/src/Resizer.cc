@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -44,6 +45,7 @@
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -52,7 +54,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
@@ -89,6 +90,7 @@
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 #include "utl/scope.h"
+#include "utl/timer.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -201,7 +203,7 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
                                 sta::LibertyPort* input_port,
                                 LibertyPortVec& ports)
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }
@@ -327,9 +329,11 @@ using odb::dbBoolProperty;
 using odb::dbBox;
 using odb::dbDoubleProperty;
 using odb::dbInst;
+using odb::dbIntProperty;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSet;
+using odb::dbStringProperty;
 
 Resizer::Resizer(utl::Logger* logger,
                  odb::dbDatabase* db,
@@ -351,7 +355,7 @@ Resizer::Resizer(utl::Logger* logger,
   estimate_parasitics_ = estimate_parasitics;
   db_network_ = sta->getDbNetwork();
   resized_multi_output_insts_ = sta::InstanceSet(db_network_);
-  db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
+  db_cbk_ = std::make_unique<OdbCallBack>(this, db_network_);
 
   db_network_->addObserver(this);
 
@@ -555,6 +559,60 @@ void Resizer::initBlock()
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = false;
+  }
+
+  // Global sizing knobs from `set_global_sizing_config`. Reset to struct
+  // defaults and apply each dbProperty as an override; an absent property
+  // leaves the default in place. GlobalSizingPolicy reads these via
+  // globalSizingConfig().
+  global_sizing_config_ = GlobalSizingConfig{};
+  if (dbStringProperty* p = dbStringProperty::find(block_, "gs_presize_mode")) {
+    const std::string v = p->getValue();
+    if (v == "disabled") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kDisabled;
+    } else if (v == "min_size_max_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMinSizeMaxVt;
+    } else if (v == "max_size_min_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMaxSizeMinVt;
+    } else {
+      logger_->warn(RSZ,
+                    413,
+                    "Ignoring invalid gs_presize_mode value '{}'; expected "
+                    "disabled, min_size_max_vt, or max_size_min_vt.",
+                    v);
+    }
+  }
+  if (dbBoolProperty* p
+      = dbBoolProperty::find(block_, "gs_include_clock_network")) {
+    global_sizing_config_.include_clock_network = p->getValue();
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_setup_slack_margin")) {
+    global_sizing_config_.setup_slack_margin
+        = static_cast<float>(p->getValue());
+  }
+  if (dbIntProperty* p = dbIntProperty::find(block_, "gs_max_iterations")) {
+    global_sizing_config_.max_iterations = p->getValue();
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_beta")) {
+    global_sizing_config_.beta = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_mu_exponent")) {
+    global_sizing_config_.mu_exponent = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_lambda_floor")) {
+    global_sizing_config_.lambda_floor = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_timing_bias")) {
+    global_sizing_config_.timing_bias = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_budget_safety_factor")) {
+    global_sizing_config_.budget_safety_factor
+        = static_cast<float>(p->getValue());
   }
 }
 
@@ -1516,7 +1574,7 @@ bool Resizer::isCombinational(sta::LibertyCell* cell) const
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials());
+          && !cell->isSequential());
 }
 
 std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
@@ -1659,6 +1717,7 @@ void Resizer::resizePreamble()
   findBuffers();
   findTargetLoads();
   findFastBuffers();
+  computeSlewShapeFactor();
 }
 
 void Resizer::runRepairSetupPreamble()
@@ -2810,10 +2869,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
+  const bool creates_feedthrough
+      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!bufferRemovalCreatesFeedthrough(input_modnet, output_modnet)
-      && !db_network_->hasPort(input_net) && db_network_->hasPort(output_net)) {
+  if (!creates_feedthrough && !db_network_->hasPort(input_net)
+      && db_network_->hasPort(output_net)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
@@ -2836,7 +2897,12 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   std::optional<std::string> new_modnet_name;
   if (db_survivor->isDeeperThan(db_removed)) {
     new_net_name = db_removed->getName();
-    if (removed_modnet != nullptr) {
+    // The rename exists to keep the ModNet name in sync with the flat net
+    // name.  Feedthrough is the exception: removed_modnet is the output
+    // ModNet, so syncing would name the ModNet after the output port and
+    // write_verilog would then drop the assign statement.  On a feedthrough
+    // the ModNet name must always stay the input port name.
+    if (removed_modnet != nullptr && !creates_feedthrough) {
       new_modnet_name = removed_modnet->getName();
     }
   }
@@ -3187,6 +3253,81 @@ class SearchPredCombLogic : public sta::SearchPred1
   }
 };
 
+// Iterative DFS over the timing graph, replacing pull-style
+// sta::BfsFwdIterator/BfsBkwdIterator usage.
+// Adjacency matches Bfs{Fwd,Bkwd}Iterator::enqueueAdjacentVertices:
+// fanout: searchFrom(vertex) gates expansion; each out-edge requires
+//         searchThru(edge) && searchTo(to_vertex);
+// fanin:  searchTo(vertex) gates expansion; each in-edge requires
+//         searchFrom(from_vertex) && searchThru(edge).
+// The mode-less SearchPred methods are used, which OR across all modes.
+// visit_seeds=false starts from the pred-filtered adjacency of each seed
+// (BfsIterator::enqueueAdjacentVertices seeding); visit_seeds=true visits
+// the seeds themselves first (BfsIterator::enqueue seeding).
+// visit(vertex) returns true if the search should expand through vertex.
+enum class DfsDirection
+{
+  kFanin,
+  kFanout
+};
+
+static void dfsSearch(sta::Graph* graph,
+                      const sta::SearchPred& pred,
+                      DfsDirection dir,
+                      const std::vector<sta::Vertex*>& seeds,
+                      bool visit_seeds,
+                      const std::function<bool(sta::Vertex*)>& visit)
+{
+  std::vector<sta::Vertex*> stack;
+  sta::VertexSet visited(graph);
+
+  auto expand = [&](sta::Vertex* vertex) {
+    if (dir == DfsDirection::kFanout) {
+      if (pred.searchFrom(vertex)) {
+        sta::VertexOutEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* to_vertex = edge->to(graph);
+          if (pred.searchThru(edge) && pred.searchTo(to_vertex)
+              && visited.insert(to_vertex).second) {
+            stack.push_back(to_vertex);
+          }
+        }
+      }
+    } else {
+      if (pred.searchTo(vertex)) {
+        sta::VertexInEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* from_vertex = edge->from(graph);
+          if (pred.searchFrom(from_vertex) && pred.searchThru(edge)
+              && visited.insert(from_vertex).second) {
+            stack.push_back(from_vertex);
+          }
+        }
+      }
+    }
+  };
+
+  for (sta::Vertex* seed : seeds) {
+    if (visit_seeds) {
+      if (visited.insert(seed).second) {
+        stack.push_back(seed);
+      }
+    } else {
+      expand(seed);
+    }
+  }
+
+  while (!stack.empty()) {
+    sta::Vertex* vertex = stack.back();
+    stack.pop_back();
+    if (visit(vertex)) {
+      expand(vertex);
+    }
+  }
+}
+
 // Find source pins for logic fanin of ends.
 sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 {
@@ -3201,20 +3342,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
   }
 
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::PinSet fanins(db_network_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      continue;
-    }
-    iter.enqueueAdjacentVertices(vertex);
-    fanins.insert(vertex->pin());
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          return false;
+        }
+        fanins.insert(vertex->pin());
+        return true;
+      });
   return fanins;
 }
 
@@ -3222,20 +3364,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 sta::VertexSet Resizer::findFaninRoots(sta::VertexSet& ends)
 {
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::VertexSet roots(graph_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      roots.insert(vertex);
-    } else {
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          roots.insert(vertex);
+          return false;
+        }
+        return true;
+      });
   return roots;
 }
 
@@ -3257,18 +3400,19 @@ sta::VertexSet Resizer::findFanouts(sta::VertexSet& reg_outs)
 {
   sta::VertexSet fanouts(graph_);
   SearchPredCombLogic pred(sta_);
-  sta::BfsFwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* reg_out : reg_outs) {
-    iter.enqueueAdjacentVertices(reg_out);
-  }
-
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (!isRegister(vertex)) {
-      fanouts.insert(vertex);
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(reg_outs.begin(), reg_outs.end());
+  dfsSearch(graph_,
+            pred,
+            DfsDirection::kFanout,
+            seeds,
+            /*visit_seeds=*/false,
+            [&](sta::Vertex* vertex) {
+              if (isRegister(vertex)) {
+                return false;
+              }
+              fanouts.insert(vertex);
+              return true;
+            });
   return fanouts;
 }
 
@@ -3277,7 +3421,7 @@ bool Resizer::isRegister(sta::Vertex* vertex)
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    return cell && cell->hasSequentials();
+    return cell && cell->isSequential();
   }
   return false;
 }
@@ -4343,6 +4487,19 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          sta::ArcDelay delays[sta::RiseFall::index_count],
                          sta::Slew slews[sta::RiseFall::index_count])
 {
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc_, delays, slews);
+}
+
+void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
+                         const float load_cap,
+                         const sta::Scene* scene,
+                         const sta::MinMax* min_max,
+                         sta::ArcDelayCalc* arc_delay_calc,
+                         // Return values.
+                         sta::ArcDelay delays[sta::RiseFall::index_count],
+                         sta::Slew slews[sta::RiseFall::index_count])
+{
   for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = -sta::INF;
     slews[rf_index] = -sta::INF;
@@ -4365,14 +4522,14 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
         }
         sta::LoadPinIndexMap load_pin_index_map(network_);
         sta::ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slew,
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         scene,
-                                         min_max);
+            = arc_delay_calc->gateDelay(nullptr,
+                                        arc,
+                                        in_slew,
+                                        load_cap,
+                                        nullptr,
+                                        load_pin_index_map,
+                                        scene,
+                                        min_max);
 
         const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
         const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
@@ -4441,9 +4598,19 @@ sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const sta::Scene* scene,
                                  const sta::MinMax* min_max)
 {
+  return gateDelay(drvr_port, load_cap, scene, min_max, arc_delay_calc_);
+}
+
+sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
+                                 const float load_cap,
+                                 const sta::Scene* scene,
+                                 const sta::MinMax* min_max,
+                                 sta::ArcDelayCalc* arc_delay_calc)
+{
   sta::ArcDelay delays[sta::RiseFall::index_count];
   sta::Slew slews[sta::RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, scene, min_max, delays, slews);
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc, delays, slews);
   return max(delays[sta::RiseFall::riseIndex()],
              delays[sta::RiseFall::fallIndex()]);
 }
@@ -4730,8 +4897,10 @@ void Resizer::repairDesign(double max_wire_length,
                            double cap_margin,
                            double buffer_gain,
                            bool match_cell_footprint,
+                           bool reroute,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -4741,13 +4910,99 @@ void Resizer::repairDesign(double max_wire_length,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
+  utl::SetAndRestore set_reroute(repair_design_->reroute_, reroute);
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
+  logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 int Resizer::repairDesignBufferCount() const
 {
   return repair_design_->insertedBufferCount();
+}
+
+float Resizer::getRerouteResistanceReduction()
+{
+  return kMinResistanceReduction;
+}
+
+bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
+{
+  // Res-aware rerouting only makes sense with global-routing parasitics.
+  if (estimate_parasitics_->getParasiticsSrc()
+      != est::ParasiticsSrc::kGlobalRouting) {
+    return false;
+  }
+
+  sta::Net* net = network_->net(drvr_pin);
+  if (net == nullptr || dontTouch(drvr_pin)) {
+    return false;
+  }
+
+  odb::dbNet* db_net = db_network_->flatNet(net);
+  if (db_net == nullptr || db_net->isSpecial()) {
+    return false;
+  }
+
+  // Already scheduled for res-aware routing in a prior iteration.
+  if (global_router_->isNetResAware(db_net)) {
+    return false;
+  }
+
+  // Unconstrained nets have no timing path; res-aware routing will waste
+  // valuable resources.
+  const sta::Slack slack = sta_->slack(graph_->pinDrvrVertex(drvr_pin), max_);
+  if (slack == sta::INF) {
+    return false;
+  }
+
+  // Short nets (<=3 gcells) have negligible resistance; skip the reroute.
+  const int kShortNetGCellThreshold = 3;
+  const int tile_size = global_router_->getTileSize();
+  if (tile_size > 0) {
+    const grt::NetRouteMap& routes = global_router_->getRoutes();
+    auto it = routes.find(db_net);
+    if (it != routes.end()) {
+      int gcell_length = 0;
+      for (const grt::GSegment& seg : it->second) {
+        if (!seg.isVia()) {
+          gcell_length += seg.length() / tile_size;
+        }
+      }
+      if (gcell_length <= kShortNetGCellThreshold) {
+        return false;
+      }
+    }
+  }
+
+  // Only reroute if moving to the lowest-resistance layer saves enough
+  // resistance to justify the disruption.
+  const float resistance = global_router_->getFRNetResistance(db_net);
+  const float estimated_resistance
+      = global_router_->getFRNetResistanceOnMinResistanceLayer(db_net);
+  float reduction_ratio = 0.0f;
+  if (resistance > 0.0f) {
+    reduction_ratio = (resistance - estimated_resistance) / resistance;
+  }
+
+  if (reduction_ratio < kMinResistanceReduction) {
+    return false;
+  }
+
+  global_router_->setResistanceAware(true);
+  global_router_->addDirtyNet(db_net);
+  global_router_->setNetIsResAware(db_net, true);
+  estimate_parasitics_->parasiticsInvalid(db_net);
+
+  debugPrint(logger_,
+             utl::RSZ,
+             "reroute",
+             1,
+             "RepairDesign rerouting net {} (resistance {} -> {} estimated)",
+             db_net->getName(),
+             resistance,
+             estimated_resistance);
+  return true;
 }
 
 void Resizer::repairNet(sta::Net* net,
@@ -4803,32 +5058,47 @@ class ClkArrivalSearchPred : public sta::EvalPred
 
 sta::InstanceSeq Resizer::findClkInverters()
 {
-  sta::InstanceSeq clk_inverters;
+  std::vector<std::pair<sta::Level, sta::Instance*>> inverters;
   ClkArrivalSearchPred srch_pred(this);
-  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, this);
+  std::vector<sta::Vertex*> seeds;
   for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
     for (const sta::Pin* pin : clk->leafPins()) {
-      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-      bfs.enqueue(vertex);
+      seeds.push_back(graph_->pinDrvrVertex(pin));
     }
   }
-  while (bfs.hasNext()) {
-    sta::Vertex* vertex = bfs.next();
-    const sta::Pin* pin = vertex->pin();
-    sta::Instance* inst = network_->instance(pin);
-    sta::LibertyCell* lib_cell = network_->libertyCell(inst);
-    if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
-      clk_inverters.emplace_back(inst);
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_clk_inverters",
-                 2,
-                 "inverter {}",
-                 network_->pathName(inst));
-    }
-    if (!vertex->isRegClk()) {
-      bfs.enqueueAdjacentVertices(vertex);
-    }
+  dfsSearch(
+      graph_,
+      srch_pred,
+      DfsDirection::kFanout,
+      seeds,
+      /*visit_seeds=*/true,
+      [&](sta::Vertex* vertex) {
+        const sta::Pin* pin = vertex->pin();
+        sta::Instance* inst = network_->instance(pin);
+        sta::LibertyCell* lib_cell = network_->libertyCell(inst);
+        if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
+          inverters.emplace_back(vertex->level(), inst);
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_clk_inverters",
+                     2,
+                     "inverter {}",
+                     network_->pathName(inst));
+        }
+        return !vertex->isRegClk();
+      });
+  // cloneClkInverter moves an inverter's loads onto its input net, so an
+  // upstream inverter must be cloned before the inverters it drives or it
+  // gets cloned once per downstream clone instead of once per load.
+  std::stable_sort(inverters.begin(),
+                   inverters.end(),
+                   [](const std::pair<sta::Level, sta::Instance*>& lhs,
+                      const std::pair<sta::Level, sta::Instance*>& rhs) {
+                     return lhs.first < rhs.first;
+                   });
+  sta::InstanceSeq clk_inverters;
+  for (const auto& [level, inst] : inverters) {
+    clk_inverters.emplace_back(inst);
   }
   return clk_inverters;
 }
@@ -4916,6 +5186,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
 {
+  utl::Timer timer;
   OptimizerRunConfig config;
   // Freeze Tcl-facing repair setup knobs before policy dispatch.
   config.setup_slack_margin = setup_margin;
@@ -4938,7 +5209,9 @@ bool Resizer::repairSetup(double setup_margin,
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
-  return optimizer.run();
+  bool result = optimizer.run();
+  logger_->info(RSZ, 505, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::reportSwappablePins()
@@ -4997,6 +5270,7 @@ bool Resizer::repairHold(
     bool match_cell_footprint,
     bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   // Some technologies such as nangate45 don't have delay cells. Hence,
@@ -5015,13 +5289,15 @@ bool Resizer::repairHold(
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return repair_hold_->repairHold(setup_margin,
-                                  hold_margin,
-                                  allow_setup_violations,
-                                  max_buffer_percent,
-                                  max_passes,
-                                  max_iterations,
-                                  verbose);
+  bool result = repair_hold_->repairHold(setup_margin,
+                                         hold_margin,
+                                         allow_setup_violations,
+                                         max_buffer_percent,
+                                         max_passes,
+                                         max_iterations,
+                                         verbose);
+  logger_->info(RSZ, 506, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::repairHold(const sta::Pin* end_pin,
@@ -5054,6 +5330,7 @@ bool Resizer::recoverPower(float recover_power_percent,
                            bool match_cell_footprint,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -5063,7 +5340,9 @@ bool Resizer::recoverPower(float recover_power_percent,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent, verbose);
+  bool result = recover_power_->recoverPower(recover_power_percent, verbose);
+  logger_->info(RSZ, 507, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 ////////////////////////////////////////////////////////////////
 void Resizer::swapArithModules(int path_count,
@@ -6447,9 +6726,50 @@ void Resizer::inferClockBufferList(const char* lib_name,
   }
 }
 
-float Resizer::getSlewRCFactor() const
+// Compute a slew shape factor for Elmore approximation
+void Resizer::computeSlewShapeFactor()
 {
-  return repair_design_->getSlewRCFactor();
+  using sta::RiseFall;
+  const sta::LibertyLibrary* library = network_->defaultLibertyLibrary();
+  float factor = 0.0;
+  for (auto rf : RiseFall::range()) {
+    // cast both rise and fall into 1->0 transition
+    float th_low, th_high;
+    if (rf == RiseFall::rise()) {
+      // flip
+      th_low = 1.0 - library->slewUpperThreshold(rf);
+      th_high = 1.0 - library->slewLowerThreshold(rf);
+    } else {
+      th_low = library->slewLowerThreshold(rf);
+      th_high = library->slewUpperThreshold(rf);
+    }
+    // compute crossing times assuming RC=1 where R is driving resistance and C
+    // is load
+    float t_high = -log(th_high);
+    float t_low = -log(th_low);
+    // scale by slew derate
+    float rf_factor = (t_low - t_high) / library->slewDerateFromLibrary();
+    // check the factor has the right order of magnitude
+    if (!(rf_factor >= 0.1 && rf_factor <= 10.0)) {
+      logger_->error(
+          RSZ,
+          101,
+          "Elmore slew modeling shape factor is out of range: {:.3e} for {}",
+          rf_factor,
+          rf->name());
+    }
+    debugPrint(logger_,
+               RSZ,
+               "lib_preprocessing",
+               1,
+               "transition {} shape factor {:.3e}",
+               rf->name(),
+               rf_factor);
+    factor = std::max(factor, rf_factor);
+  }
+  // Apply 10% modeling pessmism
+  const float pessimism = 0.10;
+  slew_shape_factor_ = factor * (1 + pessimism);
 }
 
 sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
@@ -6573,6 +6893,9 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
 
   BnetPtr tree1 = makeBufferedNet(drvr_pin, corner);
   BnetPtr tree2 = makeBufferedNet(buffer_drvr_pin, corner);
+  if (!tree1 || !tree2) {
+    return false;
+  }
   BnetPtr stitched_tree = stitchTrees(tree1, buffer_load_pin, tree2);
 
   if (stitched_tree == tree1) {
@@ -6721,8 +7044,7 @@ bool Resizer::estimateSlewsInTree(
           case BnetType::via: {
             double r_via
                 = node->viaResistance(corner, this, estimate_parasitics_);
-            double t_via = r_via * node->ref()->cap()
-                           * repair_design_->slew_rc_factor_.value();
+            double t_via = r_via * node->ref()->cap() * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",
@@ -6744,7 +7066,7 @@ bool Resizer::estimateSlewsInTree(
                 corner, this, estimate_parasitics_, unit_res, unit_cap);
             double t_wire = length * unit_res
                             * (node->ref()->cap() + length * unit_cap / 2)
-                            * repair_design_->slew_rc_factor_.value();
+                            * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",

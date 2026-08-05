@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
+#include "clockBase.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
@@ -28,6 +29,7 @@
 #include "sta/StaState.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "utl/validation.h"
 
 namespace gpl {
@@ -100,6 +102,7 @@ void Replace::reset()
 
   tb_.reset();
   rb_.reset();
+  cb_.reset();
 }
 
 void Replace::addPlacementCluster(const Cluster& cluster)
@@ -203,8 +206,10 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 
 void Replace::doPlace(const int threads, const PlaceOptions& options)
 {
+  utl::Timer timer;
   doInitialPlace(threads, options);
   doNesterovPlace(threads, options);
+  log_->info(GPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
@@ -248,7 +253,8 @@ void Replace::runMBFF(const int max_sz,
                       const float alpha,
                       const float beta,
                       const int threads,
-                      const int num_paths)
+                      const int num_paths,
+                      const float clock_power_weight)
 {
   MBFF pntset(db_,
               sta_,
@@ -259,7 +265,7 @@ void Replace::runMBFF(const int max_sz,
               num_paths,
               gui_debug_,
               graphics_->MakeNew(log_));
-  pntset.Run(max_sz, alpha, beta);
+  pntset.Run(max_sz, alpha, beta, clock_power_weight);
 }
 
 bool Replace::initNesterovPlace(const PlaceOptions& options,
@@ -315,6 +321,22 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     tb_->setRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent);
   }
 
+  if (!cb_ && options.virtualCtsMode) {
+    float skew_fraction = options.virtualCtsMaxSkewFraction;
+    // Clamp to a sane range; a negative value yields negative insertion
+    // delays and values above the clock period make no physical sense.
+    if (skew_fraction < 0.0f || skew_fraction > 1.0f) {
+      log_->warn(GPL,
+                 165,
+                 "virtual_cts_max_skew_fraction {} out of range [0, 1]; "
+                 "clamping.",
+                 skew_fraction);
+      skew_fraction = std::clamp(skew_fraction, 0.0f, 1.0f);
+    }
+    cb_ = std::make_shared<ClockBase>(sta_, db_, log_);
+    cb_->setMaxSkewFraction(skew_fraction);
+  }
+
   if (!np_) {
     NesterovPlaceVars npVars(options);
 
@@ -340,6 +362,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
                                           nbVec_,
                                           rb_,
                                           tb_,
+                                          cb_,
                                           graphics_->MakeNew(log_),
                                           log_);
   }

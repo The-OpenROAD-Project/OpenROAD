@@ -23,7 +23,7 @@
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
 Design statistics
-Nets:                579
+Nets:                563
 Special nets:        0
 Routing layers:      10
 
@@ -31,7 +31,7 @@ Routing layers:      10
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      24480         24480          0.00%
+metal1     Horizontal          0             0          0.00%
 metal2     Vertical        17918         17918          0.00%
 metal3     Horizontal      24480         24480          0.00%
 metal4     Vertical        12172         12172          0.00%
@@ -46,33 +46,31 @@ metal10    Vertical         2142          2142          0.00%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           36727
-Total via count:       2460
-Total congestion:      0
-Min resource:          1
+Total via count:       2478
+Total congestion:      0.00
+Min resource:          1.00
 Bottleneck:            (8, 0, 4)
-
-[INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
----------------------------------------------------------------------------------------
-metal1           24480             0            0.00%             0 /  0 /  0
-metal2           17918          1179            6.58%             0 /  0 /  0
-metal3           24480          1215            4.96%             0 /  0 /  0
-metal4           12172             0            0.00%             0 /  0 /  0
-metal5           12240            48            0.39%             0 /  0 /  0
-metal6           12172             3            0.02%             0 /  0 /  0
-metal7            4284             0            0.00%             0 /  0 /  0
-metal8            4284             0            0.00%             0 /  0 /  0
-metal9            2142             0            0.00%             0 /  0 /  0
-metal10           2142             0            0.00%             0 /  0 /  0
----------------------------------------------------------------------------------------
-Total           116314          2445            2.10%             0 /  0 /  0
-
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
+--------------------------------------------------------------------------
+metal1    H         0.00         0.00         0.00         0.00       0.00
+metal2    V     17918.00      1169.00       177.67      1346.67       7.52
+metal3    H     24480.00      1224.00       109.87      1333.87       5.45
+metal4    V     12172.00         2.00        10.20        12.20       0.10
+metal5    H     12240.00        39.00         7.98        46.98       0.38
+metal6    V     12172.00        11.00         2.55        13.55       0.11
+metal7    H      4284.00         0.00         0.00         0.00       0.00
+metal8    V      4284.00         0.00         0.00         0.00       0.00
+metal9    H      2142.00         0.00         0.00         0.00       0.00
+metal10   V      2142.00         0.00         0.00         0.00       0.00
+--------------------------------------------------------------------------
+Total           91834.00      2445.00       308.27      2753.27       3.00
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 17.729-17.729
- Total capacitance: 47.704-50.967
+ Wire capacitance: 17.897-17.897
+ Total capacitance: 47.872-51.135
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

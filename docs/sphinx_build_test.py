@@ -26,13 +26,22 @@ DOCS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def main() -> int:
-    build_output = tempfile.mkdtemp(prefix="sphinx_build_")
+    temp_root = tempfile.mkdtemp(prefix="sphinx_test_")
+    build_output = os.path.join(temp_root, "_build")
+    temp_docs_dir = os.path.join(temp_root, "docs")
     saved_cwd = os.getcwd()
     try:
+        # Copy docs directory and root README.md into temporary root
+        # so conf.py setup(app) mutations do not affect workspace files.
+        shutil.copytree(DOCS_DIR, temp_docs_dir, symlinks=True)
+
+        readme_src = os.path.join(os.path.dirname(DOCS_DIR), "README.md")
+        if os.path.exists(readme_src):
+            shutil.copy2(readme_src, os.path.join(temp_root, "README.md"))
+
         # conf.py's setup(app) hook uses cwd-relative paths like "./main"
-        # and "../README.md", so it must run with docs/ as cwd. Sphinx
-        # invokes setup(app) automatically when it loads conf.py below.
-        os.chdir(DOCS_DIR)
+        # and "../README.md", so it must run with docs/ as cwd.
+        os.chdir(temp_docs_dir)
 
         # Calling sphinx via subprocess would fail because a child python3
         # doesn't inherit the Bazel runfiles PYTHONPATH used by this test.
@@ -41,21 +50,10 @@ def main() -> int:
         args = ["-b", "html", "-T", "-q"]
         if not shutil.which("mmdc"):
             args.extend(["-D", "mermaid_output_format=raw"])
-        args.extend([DOCS_DIR, build_output])
+        args.extend([temp_docs_dir, build_output])
 
         print("Running sphinx-build...", flush=True)
         returncode = sphinx_main(args)
-
-        # conf.py's setup(app) rewrites README.md and README2.md in place.
-        # revert-links.py undoes those mutations so the test leaves no trace.
-        revert = os.path.join(DOCS_DIR, "revert-links.py")
-        if os.path.isfile(revert):
-            subprocess.run(
-                [sys.executable, revert],
-                cwd=DOCS_DIR,
-                capture_output=True,
-                check=True,
-            )
 
         if returncode != 0:
             print(
@@ -67,7 +65,7 @@ def main() -> int:
         return 0
     finally:
         os.chdir(saved_cwd)
-        shutil.rmtree(build_output, ignore_errors=True)
+        shutil.rmtree(temp_root, ignore_errors=True)
 
 
 if __name__ == "__main__":

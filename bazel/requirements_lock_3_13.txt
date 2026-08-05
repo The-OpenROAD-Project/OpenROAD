@@ -180,6 +180,7 @@ docutils==0.19 \
     #   myst-parser
     #   pydata-sphinx-theme
     #   sphinx
+    #   sphinx-markdown-builder
     #   sphinx-tabs
 idna==3.11 \
     --hash=sha256:771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea \
@@ -443,6 +444,8 @@ sphinx==5.3.0 \
     #   sphinx-book-theme
     #   sphinx-copybutton
     #   sphinx-external-toc
+    #   sphinx-llm
+    #   sphinx-markdown-builder
     #   sphinx-tabs
     #   sphinxcontrib-mermaid
 sphinx-book-theme==1.1.3 \
@@ -457,6 +460,14 @@ sphinx-external-toc==0.3.1 \
     --hash=sha256:9c8ea9980ea0e57bf3ce98f6a400f9b69eb1df808f7dd796c9c8cc1873d8b355 \
     --hash=sha256:cd93c1e7599327b2a728db12d9819068ce719c4b037ffc62e47f20ffb6310fb3
     # via -r bazel/requirements.in
+sphinx-llm==0.4.1 \
+    --hash=sha256:0789185dcbbecc00b5e25aa3db6342b98dad6a9def96088a9e50fa0203fda090 \
+    --hash=sha256:d7c8ee2a6335636b628ea2b26cd1e1dee1f0cf9c40fe51b20f201af1c05b95f5
+    # via -r bazel/requirements.in
+sphinx-markdown-builder==0.6.10 \
+    --hash=sha256:16d86738b9ac69fcbc86e373c31c6402c30af1fa8d98d0f62cc5f38bfe5fc26e \
+    --hash=sha256:cd5acf88d52ea0146a712fd557404f10326dff3428a78ba928e59b1727fd4a86
+    # via sphinx-llm
 sphinx-tabs==3.4.7 \
     --hash=sha256:991ad4a424ff54119799ba1491701aa8130dd43509474aef45a81c42d889784d \
     --hash=sha256:c12d7a36fd413b369e9e9967a0a4015781b71a9c393575419834f19204bd1915
@@ -493,6 +504,10 @@ standard-imghdr==3.13.0 \
     --hash=sha256:30a1bff5465605bb496f842a6ac3cc1f2131bf3025b0da28d4877d6d4b7cc8e9 \
     --hash=sha256:8d9c68058d882f6fc3542a8d39ef9ff94d2187dc90bd0c851e0902776b7b7a42
     # via -r bazel/requirements.in
+tabulate==0.10.0 \
+    --hash=sha256:e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d \
+    --hash=sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3
+    # via sphinx-markdown-builder
 tclint==0.7.0 \
     --hash=sha256:58b54bf333a96ef4b4eac3bde23da997a64a4414a4cdec8e5e0a9fbafb6dcd25 \
     --hash=sha256:bd605b11d44708e1537b902e63d7dd1d05f2d85c2c99a36854b157606eac1e8a

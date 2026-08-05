@@ -12,11 +12,6 @@ or_integration_tests(
     create_sboxes
     def_dup_net
     def_parser
-    design_is_routed1
-    design_is_routed2
-    design_is_routed3
-    design_is_routed_fail1
-    design_is_routed_fail2
     dont_touch
     dump_netlists
     dump_netlists_withfill
@@ -73,6 +68,8 @@ or_integration_tests(
     write_macro_placement
   PASSFAIL_TESTS
     cpp_tests
+    read_3dbv_fail
+    read_3dbx_fail
     read_def_virtual_invalid
     test_block
     test_bterm

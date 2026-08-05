@@ -85,8 +85,7 @@ class SaveReportTest : public tst::Nangate45Fixture
     WebServer server(getDb(),
                      /*sta=*/nullptr,
                      getLogger(),
-                     /*interp=*/nullptr,
-                     /*num_threads=*/1);
+                     /*interp=*/nullptr);
     server.saveReport(path, max_setup, max_hold);
   }
 
@@ -156,6 +155,9 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
 
   EXPECT_TRUE(contains(html, "class WebSocketManager"));
   EXPECT_TRUE(contains(html, "fromCache"));
+  EXPECT_TRUE(contains(html, "function buildTileRequestFor"));
+  EXPECT_TRUE(contains(html, "function createMergedTileLayer"));
+  EXPECT_TRUE(contains(html, "function computeGroupCount"));
   EXPECT_TRUE(contains(html, "TimingWidget"));
   EXPECT_TRUE(contains(html, "ChartsWidget"));
 }
@@ -377,6 +379,19 @@ TEST_F(SaveReportTest, SerializeTechResponse)
   EXPECT_TRUE(contains(json, "\"sites\":"));
   EXPECT_TRUE(contains(json, "\"has_liberty\":"));
   EXPECT_TRUE(contains(json, "\"dbu_per_micron\":"));
+}
+
+// Non-routing tech layers (Nangate45's MASTERSLICE poly/active and OVERLAP)
+// are grouped into an "Other" category node in the layer hierarchy, mirroring
+// the Qt GUI's displayControls grouping.
+TEST_F(SaveReportTest, SerializeTechResponseGroupsOtherLayers)
+{
+  TileGenerator gen(getDb(), /*sta=*/nullptr, getLogger());
+  const std::string json = boost::json::serialize(serializeTechResponse(gen));
+
+  EXPECT_TRUE(contains(json, "\"layer_hierarchy\":"));
+  EXPECT_TRUE(contains(json, "\"type\":\"category\""));
+  EXPECT_TRUE(contains(json, "\"name\":\"Other\""));
 }
 
 TEST_F(SaveReportTest, SerializeBoundsShapesReady)

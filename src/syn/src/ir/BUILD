@@ -3,6 +3,8 @@
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
+package(features = ["layering_check"])
+
 cc_library(
     name = "ir",
     srcs = [

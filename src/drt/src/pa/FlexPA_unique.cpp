@@ -16,9 +16,9 @@
 #include "db/obj/frTrackPattern.h"
 #include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 
@@ -167,6 +167,21 @@ bool UniqueInsts::isNDRInst(frInst* inst) const
   return false;
 }
 
+bool UniqueInsts::isNoAutoTaperNDRInst(frInst* inst) const
+{
+  // An instance whose pin access must be computed without auto-taper:
+  // it touches an NDR net for which auto-taper is off, either globally
+  // (!AUTO_TAPER_NDR_NETS) or per-net.
+  for (const auto& a : inst->getInstTerms()) {
+    auto* net = a->getNet();
+    if (net && net->hasNDR()
+        && !net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
 {
   const odb::Point origin = inst->getOrigin();
@@ -196,7 +211,7 @@ UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
   }
   // Special case for NDR instances, create a separate unique class for them
   frInst* ndr_inst = nullptr;
-  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(inst)) {
+  if (isNoAutoTaperNDRInst(inst)) {
     ndr_inst = inst;
   }
   std::set<frTerm*> stubborn_terms;

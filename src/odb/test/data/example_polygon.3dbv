@@ -1,0 +1,32 @@
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+
+ChipletDef:
+  SoC:
+    type: die
+    design_area: [955, 1082]
+    shrink: 1
+    tsv: false
+    thickness: 300
+    offset: [0, 0]
+    cad_layer:
+      108;101:
+        type: design_area
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [955, 0]
+          - [955, 1082]
+          - [0, 1082]
+      back_reg:
+        side: back
+        coords:
+          - [0, 0]
+          - [955, 0]
+          - [955, 1082]
+          - [0, 1082]
+          - [100, 100]

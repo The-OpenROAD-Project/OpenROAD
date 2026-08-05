@@ -104,7 +104,11 @@ global_placement
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
-    [-enable_routing_congestion]
+    [-enable_routing_congestion]\
+    [-virtual_cts]\
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]
 ```
 
 #### Options
@@ -131,6 +135,10 @@ global_placement
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
+| `-virtual_cts` | Flag to build a lightweight virtual clock tree during global placement. Clock tree is used to compute clock network latency per clock sink to model clock skew during timing-driven placement. Virtual CTS runs before each timing-driven iteration. |
+| `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Valid range is [0, 1]; out-of-range values are clamped. Default is 0.10 (10%). |
+| `-random_seed` | Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement to explore layout variations. Default is `1`. |
+| `-perturb_dist` | Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller. |
 
 #### Initial-Placement Arguments
 
@@ -172,7 +180,8 @@ cluster_flops
     [-tray_weight tray_weight]\
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
-    [-num_paths num_paths]
+    [-num_paths num_paths]\
+    [-clock_power_weight clock_power_weight]
 ```
 
 #### Options
@@ -183,6 +192,7 @@ cluster_flops
 | `-timing_weight` | Timing weight, default value is 0.1, type `float`. |
 | `-max_split_size` | Maximum split size, default value is 500 (-1 for no decomposition), type `int`.|
 | `-num_paths` | KIV, default value is 0, type `int`. |
+| `-clock_power_weight` | Credits clock-tree power saved by banking, promoting higher banking ratios. Models a per-sink clock-tree power equal to this weight times the single-bit flop power; an N-bit tray presents one clock sink instead of N. Default value is 0.0 (legacy cost model, no clock-tree credit), type `float` (must be non-negative). Any non-negative value is accepted, including fractional weights (e.g. 0.5, 1.5); sweep it continuously (typically around 1-3) to reach the desired banking on designs where reduced clock-tree routing is the goal. |
 
 
 ### Placement Clusters
@@ -288,11 +298,6 @@ gpl.setTimingNetWeightMax(weight)
 There are some useful Python functions located in the file
 [grt_aux.py](test/grt_aux.py) but these are not considered a part of the *final*
 API and they may change.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+replace+in%3Atitle)
-about this tool.
 
 ## References
 

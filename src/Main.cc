@@ -44,9 +44,8 @@
 #include "utl/decode.h"
 #include "web/web.h"
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
 #include "bazel/tcl_library_init.h"
-#include "boost/dll/runtime_symbol_info.hpp"
 #endif
 
 #include "tcl_readline_setup.h"
@@ -185,32 +184,6 @@ static void initPython()
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
-#ifdef BAZEL_CURRENT_REPOSITORY
-// Point RUNFILES_DIR at the runfiles tree next to the installed binary so it
-// can find its Tcl resources. boost::dll::program_location() asks the OS for
-// the absolute path of the running executable (/proc/self/exe on Linux, etc.),
-// which is robust regardless of how it was launched -- a relative path, a bare
-// name resolved via PATH, or through a symlink -- unlike reconstructing it from
-// argv[0].
-static void setupBazelRunfilesEnvironment()
-{
-  if (getenv("RUNFILES_DIR") != nullptr) {
-    return;
-  }
-
-  boost::dll::fs::error_code ec;
-  boost::dll::fs::path exe_path = boost::dll::program_location(ec);
-  if (ec) {
-    return;
-  }
-
-  exe_path += ".runfiles";
-  if (boost::dll::fs::exists(exe_path)) {
-    setenv("RUNFILES_DIR", exe_path.string().c_str(), /* override */ 0);
-  }
-}
-#endif
-
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
 // Such applications won't allocate or use these objects.
@@ -259,10 +232,6 @@ int main(int argc, char* argv[])
   signal(SIGFPE, handler);
   signal(SIGILL, handler);
   signal(SIGSEGV, handler);
-
-#ifdef BAZEL_CURRENT_REPOSITORY
-  setupBazelRunfilesEnvironment();
-#endif
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
@@ -385,7 +354,7 @@ static int tclAppInit(int& argc,
     // Initialize tcl interpreter and readline.
     exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
     if (in_bazel::SetupTclEnvironment(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
@@ -616,7 +585,7 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
       strcasecmp(BUILD_TYPE, "opt") == 0
 #else
       strcasecmp(BUILD_TYPE, "release") == 0

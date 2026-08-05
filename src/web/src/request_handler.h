@@ -95,6 +95,8 @@ struct WebSocketRequest
     kClockTree,
     kClockTreeHighlight,
     kSlackHistogram,
+    kFanoutHistogram,
+    kSelectFanoutBin,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
@@ -115,9 +117,14 @@ struct WebSocketRequest
     kDrcUpdateMarker,
     kDrcUpdateCategoryVisibility,
     kDrcHighlight,
+    kSelectNext,
+    kSelectPrev,
+    kSelectLayer,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
+    kOverlayTile,
+    kCancel,
     kUnknown
   };
 
@@ -169,6 +176,10 @@ struct SessionState
   gui::Selected current_inspected;
   std::vector<gui::Selected> navigation_history;
 
+  // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
+  gui::SelectionSet selection_set;
+  gui::SelectionSet::const_iterator selection_itr = selection_set.end();
+
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
 
@@ -186,7 +197,22 @@ struct SessionState
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
+
+  // Tile-request ids the client has abandoned (pan/zoom away).  Populated by
+  // the inline `cancel` handler and consumed at the top of handleTile so a
+  // still-queued render is skipped.  Best-effort (a render already running on
+  // a worker thread is not interrupted).
+  std::mutex cancelled_mutex;
+  std::set<uint32_t> cancelled_ids;
 };
+
+// Map an HTTP request target onto an embedded asset path.
+//
+// Strips the query string and fragment, which the asset lookup must not see:
+// the viewer's options are passed as query parameters (?mergetiles=0 and
+// friends), and matching "/?mergetiles=0" against the asset table simply fails,
+// so the whole page 404s.  Also maps "/" onto the index document.
+std::string assetPathFromTarget(std::string_view target);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
@@ -224,8 +250,16 @@ class SelectHandler
                                 SessionState& state);
   WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,
                                        SessionState& state);
+  WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
+                                          SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
+  WebSocketResponse handleSelectNext(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
@@ -265,6 +299,7 @@ class TimingHandler
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
                                           SessionState& state);
   WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleFanoutHistogram(const WebSocketRequest& req);
   WebSocketResponse handleChartFilters(const WebSocketRequest& req);
 
  private:
@@ -302,6 +337,8 @@ class TileHandler
   void initializeHeatMaps(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
+  WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
   WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
                                           SessionState& state);
@@ -313,6 +350,11 @@ class TileHandler
                                      SessionState& state);
   WebSocketResponse handleHeatMapTile(const WebSocketRequest& req,
                                       SessionState& state);
+  // Marks a tile-request id as cancelled so a still-queued render is skipped.
+  // Registered run_inline so it executes on the read thread, ahead of the
+  // posted render it cancels.
+  WebSocketResponse handleCancel(const WebSocketRequest& req,
+                                 SessionState& state);
 
  private:
   static WebSocketResponse serializeBounds(uint32_t id,
@@ -332,7 +374,8 @@ class TileHandler
       const std::vector<FlightLine>& flight_lines,
       const std::map<uint32_t, Color>* module_colors,
       const std::set<uint32_t>* focus_net_ids,
-      const std::set<uint32_t>* route_guide_net_ids);
+      const std::set<uint32_t>* route_guide_net_ids,
+      double dpr = 1.0);
 
   std::shared_ptr<TileGenerator> gen_;
 };

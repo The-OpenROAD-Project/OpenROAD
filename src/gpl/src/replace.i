@@ -26,6 +26,7 @@ static gpl::PlaceOptions getOptions(
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
   checkFlag(flags, "-timing_driven_repair_timing", options.timingDrivenRepairTiming);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
+  checkFlag(flags, "-virtual_cts", options.virtualCtsMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
   checkFlag(
       flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
@@ -69,6 +70,9 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
+  checkKey(keys,
+           "-virtual_cts_max_skew_fraction",
+           options.virtualCtsMaxSkewFraction);
   checkKey(keys, "-timing_driven_nets_percentage", options.timingDrivenNetsPercentage);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);
   checkKey(keys, "-max_phi_coef", options.maxPhiCoef);
@@ -78,6 +82,8 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys,
            "-timing_driven_repair_tns_end_percent",
            options.timingDrivenRepairTnsEndPercent);
+  checkKey(keys, "-random_seed", options.initialPlacePerturbationSeed);
+  checkKey(keys, "-perturb_dist", options.initialPlacePerturbationDist);
 
   if (auto it = keys.find("-density"); it != keys.end()) {
     if (it->second == "uniform") {
@@ -145,11 +151,12 @@ replace_nesterov_place_cmd(const std::map<std::string, std::string>& keys,
 
 
 void
-replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths) 
+replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths,
+                     float clock_power_weight)
 {
   Replace* replace = getReplace();
   int threads = ord::OpenRoad::openRoad()->getThreadCount();
-  replace->runMBFF(max_sz, alpha, beta, threads, num_paths);   
+  replace->runMBFF(max_sz, alpha, beta, threads, num_paths, clock_power_weight);
 }
 
 

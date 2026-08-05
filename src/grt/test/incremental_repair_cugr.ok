@@ -1,0 +1,164 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 0
+[INFO GRT-0019] Found 1 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+Design statistics
+Nets:                563
+Special nets:        0
+Routing layers:      10
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        17918         17918          0.00%
+metal3     Horizontal      24480         24480          0.00%
+metal4     Vertical        12172         12172          0.00%
+metal5     Horizontal      12240         12240          0.00%
+metal6     Vertical        12172         12172          0.00%
+metal7     Horizontal       4284          4284          0.00%
+metal8     Vertical         4284          4284          0.00%
+metal9     Horizontal       2142          2142          0.00%
+metal10    Vertical         2142          2142          0.00%
+---------------------------------------------------------------
+
+Stage 1: Pattern routing.
+Routing statistics
+Wire length:           36727
+Total via count:       2478
+Total congestion:      0.00
+Min resource:          1.00
+Bottleneck:            (8, 0, 4)
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
+--------------------------------------------------------------------------
+metal1    H         0.00         0.00         0.00         0.00       0.00
+metal2    V     17918.00      1169.00       177.67      1346.67       7.52
+metal3    H     24480.00      1224.00       109.87      1333.87       5.45
+metal4    V     12172.00         2.00        10.20        12.20       0.10
+metal5    H     12240.00        39.00         7.98        46.98       0.38
+metal6    V     12172.00        11.00         2.55        13.55       0.11
+metal7    H      4284.00         0.00         0.00         0.00       0.00
+metal8    V      4284.00         0.00         0.00         0.00       0.00
+metal9    H      2142.00         0.00         0.00         0.00       0.00
+metal10   V      2142.00         0.00         0.00         0.00       0.00
+--------------------------------------------------------------------------
+Total           91834.00      2445.00       308.27      2753.27       3.00
+[INFO GRT-0018] Total wirelength: 10354 um
+[INFO GRT-0014] Routed nets: 563
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       579
+[WARNING RSZ-0104] Net _437_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _436_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _435_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _434_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _433_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _432_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _431_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _430_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _429_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _428_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _427_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _426_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _425_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _424_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _423_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _422_ only has one pin. Check if it is intended to be dangling.
+    final |     +1.1% |       0 |      10 |            10 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0035] Found 10 fanout violations.
+[INFO RSZ-0038] Inserted 10 buffers in 10 nets.
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 6286.11 um^2
+[INFO DPL-0007] Movable instances area: 719.53 um^2
+[INFO DPL-0008] Fixed instances area within core: 44.69 um^2
+[INFO DPL-0009] Utilization: 12.2%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 686 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
+Placement Analysis
+---------------------------------
+total displacement          8.8 u
+average displacement        0.0 u
+max displacement            2.8 u
+original HPWL            6996.9 u
+legalized HPWL           7000.6 u
+delta HPWL                    0 %
+
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 32 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.317 |       -9.2 |       -8.6 |     32 | _881_/D
+     351* |      57 |     135 |       44 |      0 |    22 |   +16.9% |   -0.149 |       -4.4 |       -4.0 |     32 | _875_/D
+    final |      57 |     141 |       44 |      0 |    22 |   +17.3% |   -0.149 |       -4.4 |       -3.9 |     32 | _875_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 57 buffers.
+[INFO RSZ-0040] Inserted 44 buffers.
+[INFO RSZ-0051] Resized 141 instances: 141 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 22 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 6286.11 um^2
+[INFO DPL-0007] Movable instances area: 844.02 um^2
+[INFO DPL-0008] Fixed instances area within core: 44.69 um^2
+[INFO DPL-0009] Utilization: 14.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 673 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
+Placement Analysis
+---------------------------------
+total displacement         83.5 u
+average displacement        0.1 u
+max displacement            3.2 u
+original HPWL            7037.5 u
+legalized HPWL           7090.4 u
+delta HPWL                    1 %
+
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
+pass

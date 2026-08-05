@@ -3,10 +3,12 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -36,6 +38,22 @@ class Logger;
 
 namespace pad {
 
+struct DbNetPtrLess
+{
+  bool operator()(const odb::dbNet* lhs, const odb::dbNet* rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
+
+struct DbITermPtrLess
+{
+  bool operator()(const odb::dbITerm* lhs, const odb::dbITerm* rhs) const
+  {
+    return lhs->getId() < rhs->getId();
+  }
+};
+
 class RDLRouter;
 
 using GridGraph
@@ -49,6 +67,18 @@ using GridWeightMap
     = boost::property_map<GridGraph, boost::edge_weight_t>::type;
 using GridGraphVertex = GridGraph::vertex_descriptor;
 using GridGraphEdge = GridGraph::edge_descriptor;
+
+// Order edges by (source, target) vertex indices; the descriptor's default
+// operator< compares a heap pointer, giving build-dependent iteration.
+struct GridGraphEdgeLess
+{
+  bool operator()(const GridGraphEdge& lhs, const GridGraphEdge& rhs) const
+  {
+    return std::minmax(lhs.m_source, lhs.m_target)
+           < std::minmax(rhs.m_source, rhs.m_target);
+  }
+};
+using GridGraphEdgeSet = std::set<GridGraphEdge, GridGraphEdgeLess>;
 
 struct RouteTarget
 {
@@ -116,6 +146,7 @@ class RDLRouter
             int width,
             int spacing,
             bool allow45,
+            bool fixed,
             float turn_penalty,
             int max_iterations);
   ~RDLRouter();
@@ -195,11 +226,11 @@ class RDLRouter
 
   void populateTerminalAccessPoints(
       RouteTarget& target,
-      std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const;
+      std::unordered_map<odb::Point, GridGraphEdgeSet>& edges) const;
   void cleanupTerminalAccessPoints(odb::dbITerm* iterm,
                                    std::vector<RouteTarget>& targets) const;
   void cleanupGraphEdges(
-      const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges);
+      const std::unordered_map<odb::Point, GridGraphEdgeSet>& edges);
   std::set<odb::Point> generateTerminalAccessPoints(const odb::Point& pt,
                                                     bool do_x) const;
   TerminalAccess insertTerminalAccess(const RouteTarget& target,
@@ -209,7 +240,7 @@ class RDLRouter
   odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>> generateRoutingTargets(
       odb::dbNet* net) const;
   odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
-  std::set<GridGraphEdge> getVertexEdges(const GridGraphVertex& vertex) const;
+  GridGraphEdgeSet getVertexEdges(const GridGraphVertex& vertex) const;
 
   void buildIntialRouteSet();
   int reportFailedRoutes(
@@ -230,6 +261,7 @@ class RDLRouter
   int width_;
   int spacing_;
   bool allow45_;
+  bool fixed_;
   float turn_penalty_;
   int max_router_iterations_;
 

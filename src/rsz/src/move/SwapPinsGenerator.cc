@@ -210,7 +210,7 @@ void SwapPinsGenerator::equivCellPins(const sta::LibertyCell* cell,
                                       sta::LibertyPort* input_port,
                                       LibertyPortVec& ports) const
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }

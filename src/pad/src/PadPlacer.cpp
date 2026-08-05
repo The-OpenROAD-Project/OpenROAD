@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
@@ -1486,7 +1487,7 @@ bool PlacerPadPlacer::padSpreading(
           last_idx = j;
         }
       }
-      bound_pos = last_idx == insts.size()
+      bound_pos = last_idx + 1 == insts.size()
                       ? getRowEnd(insts[last_idx])
                       : positions[insts[last_idx + 1]]->center;
     } else {
@@ -1570,6 +1571,12 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
     positions[inst] = std::move(anchors);
   }
 
+  std::vector<int> check_positions;
+  check_positions.reserve(positions.size());
+  for (const auto& [inst, anchor] : positions) {
+    check_positions.push_back(anchor->center);
+  }
+
   for (int k = 0; k < kMaxIterations; k++) {
     // Update coeff schedule
     const float kRepel1 = kRepelStart
@@ -1585,6 +1592,26 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
     if (padSpreading(
             positions, initial_positions, k, kSpring1, kRepel1, kDamper)) {
       break;
+    }
+
+    bool changed = false;
+    size_t idx = 0;
+    for (const auto& [inst, anchor] : positions) {
+      if (anchor->center != check_positions[idx]) {
+        changed = true;
+      }
+      // update check positions
+      check_positions[idx] = anchor->center;
+      idx++;
+    }
+    if (!changed) {
+      // Place instances for better debugging
+      placeInstances(positions);
+      getLogger()->error(
+          utl::PAD,
+          47,
+          "Pad placement unable to legalize pads after {} iterations.",
+          k);
     }
   }
 

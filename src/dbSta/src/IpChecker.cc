@@ -22,8 +22,8 @@
 
 namespace sta {
 
-IpChecker::IpChecker(odb::dbDatabase* db, dbSta* sta, utl::Logger* logger)
-    : db_(db), sta_(sta), logger_(logger)
+IpChecker::IpChecker(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
 }
 

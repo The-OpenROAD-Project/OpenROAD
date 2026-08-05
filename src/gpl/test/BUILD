@@ -19,6 +19,8 @@ TESTS = [
     "incremental01",
     "mbff_hier",
     "mbff_orig_name",
+    "mbff_clock_power_off",
+    "mbff_clock_power_on",
     "nograd01",
     "simple01",
     "simple01-obs",
@@ -30,6 +32,10 @@ TESTS = [
     "simple01-td-tune",
     "simple01-td-repair",
     "simple01-uniform",
+    "simple01-vcts",
+    "simple01-vcts-clamp",
+    "simple01-vcts-noclk",
+    "simple01-vcts-userlat",
     "simple02",
     "simple02-rd",
     "simple03",
@@ -140,10 +146,10 @@ PY_TESTS = [
 cc_test(
     name = "gpl_fft_unittest",
     srcs = ["fft_test.cc"],
-    features = ["-layering_check"],  # TODO: includes private headers
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//src/gpl",
+        "//src/gpl",  # buildcleaner: keep: needs fixing gpl layering first.
+        "//src/gpl:gpl_private_hdrs",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",
@@ -159,6 +165,7 @@ cc_test(
     ],
     deps = [
         "//src/ant",
+        "//src/dbSta:dbNetwork",
         "//src/dbSta:dbReadVerilog",
         "//src/dpl",
         "//src/est",

@@ -63,6 +63,13 @@ class SinkClustering
   void computeAllThetas();
   void sortPoints();
   void writePlotFile();
+  void repairClusteringSolution(
+      unsigned groupSize,
+      std::vector<std::vector<Point<double>>>& solutionPoints,
+      std::vector<std::vector<unsigned>>& solutionPointsIdx,
+      std::vector<std::vector<unsigned>>& solutions,
+      int& single_cluster_count,
+      int& solved_cluster_count);
   bool findBestMatching(unsigned groupSize);
   void writePlotFile(unsigned groupSize);
 

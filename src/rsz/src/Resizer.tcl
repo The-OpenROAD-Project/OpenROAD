@@ -148,12 +148,13 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-buffer_gain gain] \
                                       [-pre_placement] \
                                       [-match_cell_footprint] \
+                                      [-reroute] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-match_cell_footprint -verbose -pre_placement}
+    flags {-match_cell_footprint -verbose -pre_placement -reroute}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -171,8 +172,9 @@ proc repair_design { args } {
   set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
+  set reroute [info exists flags(-reroute)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
-    $pre_placement $match_cell_footprint $verbose
+    $pre_placement $match_cell_footprint $reroute $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
@@ -544,6 +546,58 @@ proc clear_bool_prop { name } {
     odb::dbProperty_destroy $prop
   }
 }
+
+proc set_double_prop { value opt_name prop_name } {
+  sta::check_float $opt_name $value
+  set block [get_block]
+  set prop [odb::dbDoubleProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbDoubleProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc set_positive_int_prop { value opt_name prop_name } {
+  sta::check_positive_integer $opt_name $value
+  set block [get_block]
+  set prop [odb::dbIntProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbIntProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc set_string_prop { value opt_name prop_name allowed } {
+  if { [lsearch -exact $allowed $value] < 0 } {
+    utl::error "RSZ" 417 \
+      "$opt_name argument '$value' is not one of: [join $allowed {, }]"
+  }
+  set block [get_block]
+  set prop [odb::dbStringProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbStringProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc clear_int_prop { name } {
+  set block [get_block]
+  set prop [odb::dbIntProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
+  }
+}
+
+proc clear_string_prop { name } {
+  set block [get_block]
+  set prop [odb::dbStringProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
+  }
+}
 }
 
 sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
@@ -743,6 +797,185 @@ proc report_opt_config { args } {
   puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
   puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
   puts "-disable_buffer_pruning:            $disable_buffer_pruning"
+  puts "*******************************************"
+}
+
+# Global sizing (Lagrangian-Relaxation) configuration. Knobs only affect the
+# `repair_timing -phases GLOBAL_SIZING` policy; values persist as dbProperties
+# on the block (gs_* names on disk).
+sta::define_cmd_args "set_global_sizing_config" { \
+    [-presize_mode mode] \
+    [-include_clock_network bool] \
+    [-setup_slack_margin margin] \
+    [-max_iterations iterations] \
+    [-beta value] \
+    [-mu_exponent value] \
+    [-lambda_floor value] \
+    [-timing_bias value] \
+    [-budget_safety_factor value] }
+
+proc set_global_sizing_config { args } {
+  sta::parse_key_args "set_global_sizing_config" args \
+    keys {-presize_mode -include_clock_network -setup_slack_margin \
+            -max_iterations -beta -mu_exponent -lambda_floor -timing_bias \
+            -budget_safety_factor} flags {}
+
+  if { [info exists keys(-presize_mode)] } {
+    rsz::set_string_prop $keys(-presize_mode) "-presize_mode" \
+      "gs_presize_mode" {disabled min_size_max_vt max_size_min_vt}
+  }
+  if { [info exists keys(-include_clock_network)] } {
+    rsz::set_boolean_prop $keys(-include_clock_network) \
+      "-include_clock_network" "gs_include_clock_network"
+  }
+  if { [info exists keys(-setup_slack_margin)] } {
+    rsz::set_double_prop $keys(-setup_slack_margin) \
+      "-setup_slack_margin" "gs_setup_slack_margin"
+  }
+  if { [info exists keys(-max_iterations)] } {
+    rsz::set_positive_int_prop $keys(-max_iterations) \
+      "-max_iterations" "gs_max_iterations"
+  }
+  if { [info exists keys(-beta)] } {
+    rsz::set_positive_double_prop $keys(-beta) "-beta" "gs_beta"
+  }
+  if { [info exists keys(-mu_exponent)] } {
+    rsz::set_positive_double_prop $keys(-mu_exponent) \
+      "-mu_exponent" "gs_mu_exponent"
+  }
+  if { [info exists keys(-lambda_floor)] } {
+    rsz::set_positive_double_prop $keys(-lambda_floor) \
+      "-lambda_floor" "gs_lambda_floor"
+  }
+  if { [info exists keys(-timing_bias)] } {
+    rsz::set_positive_double_prop $keys(-timing_bias) \
+      "-timing_bias" "gs_timing_bias"
+  }
+  if { [info exists keys(-budget_safety_factor)] } {
+    rsz::set_positive_double_prop $keys(-budget_safety_factor) \
+      "-budget_safety_factor" "gs_budget_safety_factor"
+  }
+}
+
+sta::define_cmd_args "reset_global_sizing_config" { \
+    [-presize_mode] \
+    [-include_clock_network] \
+    [-setup_slack_margin] \
+    [-max_iterations] \
+    [-beta] \
+    [-mu_exponent] \
+    [-lambda_floor] \
+    [-timing_bias] \
+    [-budget_safety_factor] }
+
+proc reset_global_sizing_config { args } {
+  sta::parse_key_args "reset_global_sizing_config" args \
+    keys {} flags {-presize_mode -include_clock_network -setup_slack_margin \
+                     -max_iterations -beta -mu_exponent -lambda_floor \
+                     -timing_bias -budget_safety_factor}
+  set reset_all [expr { [array size flags] == 0 }]
+
+  if { $reset_all || [info exists flags(-presize_mode)] } {
+    rsz::clear_string_prop "gs_presize_mode"
+  }
+  if { $reset_all || [info exists flags(-include_clock_network)] } {
+    rsz::clear_bool_prop "gs_include_clock_network"
+  }
+  if { $reset_all || [info exists flags(-setup_slack_margin)] } {
+    rsz::clear_double_prop "gs_setup_slack_margin"
+  }
+  if { $reset_all || [info exists flags(-max_iterations)] } {
+    rsz::clear_int_prop "gs_max_iterations"
+  }
+  if { $reset_all || [info exists flags(-beta)] } {
+    rsz::clear_double_prop "gs_beta"
+  }
+  if { $reset_all || [info exists flags(-mu_exponent)] } {
+    rsz::clear_double_prop "gs_mu_exponent"
+  }
+  if { $reset_all || [info exists flags(-lambda_floor)] } {
+    rsz::clear_double_prop "gs_lambda_floor"
+  }
+  if { $reset_all || [info exists flags(-timing_bias)] } {
+    rsz::clear_double_prop "gs_timing_bias"
+  }
+  if { $reset_all || [info exists flags(-budget_safety_factor)] } {
+    rsz::clear_double_prop "gs_budget_safety_factor"
+  }
+}
+
+sta::define_cmd_args "report_global_sizing_config" {}
+
+proc report_global_sizing_config { args } {
+  sta::parse_key_args "report_global_sizing_config" args keys {} flags {}
+  set block [rsz::get_block]
+
+  set presize_mode_value "undefined"
+  set prop [odb::dbStringProperty_find $block "gs_presize_mode"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set presize_mode_value [$prop getValue]
+  }
+
+  set include_clock_network_value "undefined"
+  set prop [odb::dbBoolProperty_find $block "gs_include_clock_network"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set v [$prop getValue]
+    set include_clock_network_value [expr { $v ? "true" : "false" }]
+  }
+
+  set setup_slack_margin_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_setup_slack_margin"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set setup_slack_margin_value [$prop getValue]
+  }
+
+  set max_iterations_value "undefined"
+  set prop [odb::dbIntProperty_find $block "gs_max_iterations"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set max_iterations_value [$prop getValue]
+  }
+
+  set beta_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_beta"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set beta_value [$prop getValue]
+  }
+
+  set mu_exponent_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_mu_exponent"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set mu_exponent_value [$prop getValue]
+  }
+
+  set lambda_floor_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_lambda_floor"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set lambda_floor_value [$prop getValue]
+  }
+
+  set timing_bias_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_timing_bias"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set timing_bias_value [$prop getValue]
+  }
+
+  set budget_safety_factor_value "undefined"
+  set prop [odb::dbDoubleProperty_find $block "gs_budget_safety_factor"]
+  if { $prop ne "NULL" && $prop ne "" } {
+    set budget_safety_factor_value [$prop getValue]
+  }
+
+  puts "*******************************************"
+  puts "Global sizing config:"
+  puts "-presize_mode:           $presize_mode_value"
+  puts "-include_clock_network:  $include_clock_network_value"
+  puts "-setup_slack_margin:     $setup_slack_margin_value"
+  puts "-max_iterations:         $max_iterations_value"
+  puts "-beta:                   $beta_value"
+  puts "-mu_exponent:            $mu_exponent_value"
+  puts "-lambda_floor:           $lambda_floor_value"
+  puts "-timing_bias:            $timing_bias_value"
+  puts "-budget_safety_factor:   $budget_safety_factor_value"
   puts "*******************************************"
 }
 

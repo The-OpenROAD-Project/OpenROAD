@@ -209,21 +209,22 @@ TEST_P(CmTest, MapsBelowAreaAndIsEquivalent)
   // naming-only Nots that cm.cc:integrate() leaves behind.
   float area = 0.0f;
   gate->forEachInstance([&](const Instance* inst) {
-    if (inst->is<Input>() || inst->is<Output>() || inst->is<Name>()
-        || inst->is<Not>() || inst->is<TieLow>() || inst->is<TieHigh>()
-        || inst->is<TieX>()) {
-      return;
+    if (inst->isMapped()) {
+      inst->visit([&](Net fanin) {
+        auto [fanin_driver, offset] = gate->resolve(fanin);
+        if (!fanin_driver->isMapped()) {
+          std::ostringstream os;
+          gate->dumpInstance(os, fanin_driver);
+          ADD_FAILURE() << "Unexpected instance after combinational mapping: "
+                        << os.str();
+          return;
+        }
+      });
     }
-    if (!inst->is<Target>()) {
-      std::ostringstream os;
-      gate->dumpInstance(os, inst);
-      ADD_FAILURE() << "Non-Target instance survived combinational mapping in "
-                       "case "
-                    << tc.name << ": " << os.str();
-      return;
-    }
-    if (auto* t = inst->try_as<Target>()) {
-      area += t->cell()->area();
+    if (inst->is<Target>()) {
+      if (auto* t = inst->try_as<Target>()) {
+        area += t->cell()->area();
+      }
     }
   });
 

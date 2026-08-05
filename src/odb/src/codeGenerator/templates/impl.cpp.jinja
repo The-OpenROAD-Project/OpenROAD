@@ -33,6 +33,9 @@ namespace odb {
 
   bool _{{klass.name}}::operator<(const _{{klass.name}}& rhs) const
   {
+    {% if klass.less_fields | length == 1 %}
+    // NOLINTBEGIN(readability-simplify-boolean-expr)
+    {% endif %}
     {% for less in klass.less_fields %}
     if ({{less.left}} >= {{less.right}}) {
       return false;
@@ -42,6 +45,9 @@ namespace odb {
     //User Code Begin <
     //User Code End <
     return true;
+    {% if klass.less_fields | length == 1 %}
+    // NOLINTEND(readability-simplify-boolean-expr)
+    {% endif %}
   }
 
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)

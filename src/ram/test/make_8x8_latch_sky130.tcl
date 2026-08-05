@@ -13,10 +13,8 @@ generate_ram \
   -mask_size 8 \
   -word_size 8 \
   -num_words 8 \
-  -read_ports 1 \
+  -rw_ports 1 \
   -use_latch 1 \
-  -power_pin VPWR \
-  -ground_pin VGND \
   -routing_layer {met1 0.48} \
   -ver_layer {met2 0.48 40} \
   -hor_layer {met3 0.48 20} \

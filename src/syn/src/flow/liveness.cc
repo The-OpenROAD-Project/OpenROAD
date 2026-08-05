@@ -353,7 +353,7 @@ void livenessOpt(Graph& g, utl::Logger* logger, bool replace_combinational)
 
     bool is_register = inst->is<Dff>();
     if (auto* t = inst->try_as<Target>()) {
-      if (t->cell() && t->cell()->hasSequentials()) {
+      if (t->cell() && t->cell()->isSequential()) {
         is_register = true;
       }
     }

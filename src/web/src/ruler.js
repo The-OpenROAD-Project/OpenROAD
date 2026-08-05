@@ -11,6 +11,7 @@
 //   Shift+K  : clear all rulers
 
 import { dbuToLatLng, latLngToDbu } from './coordinates.js';
+import { beginSelection } from './ui-utils.js';
 
 const RULER_COLOR = '#00ffff';
 const RULER_SELECTED_COLOR = '#ffff00';
@@ -494,6 +495,11 @@ export class RulerManager {
         const ruler = this._rulers.find(r => r.id === rulerId);
         if (!ruler) return;
 
+        // A ruler is a client-side object, but it still takes over the
+        // Inspector, so other panels must drop the selection they painted and
+        // any of their responses still in flight must not overwrite it.
+        beginSelection(this._app);
+
         const dbuPerUm = this._app.techData?.dbu_per_micron || 1000;
         const dx = Math.abs(ruler.pt1.x - ruler.pt0.x);
         const dy = Math.abs(ruler.pt1.y - ruler.pt0.y);
@@ -501,15 +507,12 @@ export class RulerManager {
             ? Math.sqrt(dx * dx + dy * dy)
             : dx + dy;
 
-        const fmt = (dbu) => {
-            const um = dbu / dbuPerUm;
-            return um.toFixed(3) + ' um';
-        };
+        const fmt = (dbu) => this._app.formatDbu(dbu, true);
 
         const parseDbu = (str) => {
-            // Parse "123.456 um" → DBU
             const num = parseFloat(str);
             if (isNaN(num)) return null;
+            if (this._app.showDbu) return Math.round(num);
             return Math.round(num * dbuPerUm);
         };
 
@@ -623,11 +626,7 @@ export class RulerManager {
     }
 
     _formatDistance(dbuLength) {
-        const dbuPerUm = this._app.techData?.dbu_per_micron || 1000;
-        const um = dbuLength / dbuPerUm;
-        if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
-        if (um >= 1) return um.toFixed(3) + ' um';
-        return (um * 1000).toFixed(1) + ' nm';
+        return this._app.formatDistance(dbuLength);
     }
 
     _setCursor(crosshair) {

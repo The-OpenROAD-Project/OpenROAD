@@ -206,7 +206,7 @@ class Shape
   static std::string getRectText(const odb::Rect& rect, double dbu_to_micron);
 
   std::vector<odb::dbBox*> writeToDb(odb::dbSWire* swire,
-                                     bool add_pins,
+                                     odb::dbBTerm* bterm,
                                      bool make_rect_as_pin) const;
 
   // copy existing shapes into the map
@@ -247,7 +247,7 @@ class Shape
   std::set<odb::Rect> bterm_connections_;
 
   // add rect as bterm to database
-  odb::dbBox* addBPinToDb(const odb::Rect& rect) const;
+  odb::dbBox* addBPinToDb(odb::dbBTerm* bterm, const odb::Rect& rect) const;
 
   void updateIBTermConnections(std::set<odb::Rect>& terms);
 

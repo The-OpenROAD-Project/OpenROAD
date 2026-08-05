@@ -79,7 +79,7 @@ class GridComponent
 
   std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
       const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
-      bool add_pins,
+      const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
       const odb::PtrSet<odb::dbTechLayer>& convert_layer_to_pin) const;
 
   virtual void report() const = 0;

@@ -423,7 +423,7 @@ SizeDownFanoutOutputProfile buildOutputProfile(
 sta::Slack computeDelayBudget(const SizeDownFanoutContext& ctx,
                               const SizeDownFanoutLoadContext& load_ctx)
 {
-  if (load_ctx.load_cell->hasSequentials()) {
+  if (load_ctx.load_cell->isSequential()) {
     const sta::Slack worst_output_slack
         = getWorstOutputSlack(ctx, load_ctx.load_inst);
     debugPrint(
@@ -514,7 +514,7 @@ float computeWorstDelayChange(const SizeDownFanoutContext& ctx,
     const float new_load_delay = ctx.resizer.gateDelay(
         output_port, profile.output_caps[output_index], ctx.scene, ctx.min_max);
     const float delay_change
-        = load_ctx.load_cell->hasSequentials()
+        = load_ctx.load_cell->isSequential()
               ? new_load_delay - profile.output_delays[output_index]
               : new_load_delay + drvr_delta_delay
                     - profile.output_delays[output_index];

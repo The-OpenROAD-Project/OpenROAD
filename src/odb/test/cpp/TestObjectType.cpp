@@ -4,12 +4,12 @@
 #include "gtest/gtest.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
-#include "tst/fixture.h"
+#include "tst/db_fixture.h"
 
 namespace odb {
 namespace {
 
-class ObjectTypeFixture : public tst::Fixture
+class ObjectTypeFixture : public tst::DbFixture
 {
 };
 

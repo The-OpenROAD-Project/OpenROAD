@@ -40,7 +40,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/dft/Dft.hh",
         "src/MakeDft.cpp",
         ":swig",
         ":tcl",
@@ -53,12 +52,11 @@ cc_library(
         "src",
     ],
     deps = [
+        ":dft",
         "//:ord",
-        "//src/dbSta",
         "//src/dft/src/architect",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

@@ -15,4 +15,5 @@ sh_test(
         "//packaging:tarfile",
     ],
     tags = ["local"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
 )

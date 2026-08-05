@@ -16,6 +16,9 @@ set(WEB_ASSET_FILES
     src/index.html
     src/style.css
     src/theme.js
+    src/tile-merge.js
+    src/tile-request.js
+    src/merged-tile-layer.js
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
@@ -31,6 +34,7 @@ set(WEB_ASSET_FILES
     src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
+    src/openroad_skin.svg
     src/charts-widget.js
     src/timing-widget.js
     src/drc-widget.js
@@ -56,7 +60,10 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/vis-tree.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-request.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/merged-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
