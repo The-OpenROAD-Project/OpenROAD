@@ -14,7 +14,7 @@ import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
     tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
-    watchDevicePixelRatio,
+    watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
@@ -395,6 +395,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
             z: coords.z,
             x: coords.x,
             y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
             tile.src = URL.createObjectURL(blob);
         }).catch(() => {
@@ -422,6 +426,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 z: coords.z,
                 x: coords.x,
                 y: coords.y,
+                ...tileSizeFields(currentDpr(), this.getTileSize().x),
             }).then(blob => {
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);

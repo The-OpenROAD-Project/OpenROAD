@@ -118,6 +118,27 @@ export function nativeDpr() {
     return Math.min(raw, 3);
 }
 
+// The sizing fields every tile request carries, whatever kind it is.
+//
+// Layer, overlay and heat-map tiles are stacked on top of each other in the
+// browser, so all three have to be rendered at the same pixel count and land on
+// the same grid; an overlay half a pixel off, or an image the browser has to
+// rescale, shows up as a blurred or misregistered highlight.
+export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
+    return {
+        // Rounded here and nowhere else: this field feeds the server's cache
+        // key and its CSS-authored sizes (fonts, pen widths), both of which
+        // tolerate two decimals.  `tile_px` must NOT be derived from it.
+        dpr: quantizeDpr(dpr),
+        // The exact device-pixel square this tile will be displayed in, from
+        // the REAL ratio.  The server renders this count rather than deriving
+        // one, because neither end can derive it: 256*dpr at 1.6667 is 426.67,
+        // a size no image can have, and rounding the ratio first gives 401 for
+        // a 400 px box.  Either way the browser resamples every tile.
+        tile_px: tileDevicePx(tileSize, dpr),
+    };
+}
+
 // Pure builder for the tile-request payload. `ctx` carries the per-layer
 // visibility/selectability context.
 //
@@ -145,16 +166,7 @@ export function buildTileRequestFor(coords, layerName, ctx, dpr,
         z: coords.z,
         x: coords.x,
         y: coords.y,
-        // Rounded here and nowhere else: this field feeds the server's cache
-        // key and its CSS-authored sizes (fonts, stroke widths), both of which
-        // tolerate two decimals.  `tile_px` below must NOT be derived from it.
-        dpr: quantizeDpr(dpr),
-        // The exact device-pixel square this tile will be displayed in, from
-        // the REAL ratio.  The server renders this count rather than deriving
-        // one, because neither end can derive it: 256*dpr at 1.6667 is 426.67,
-        // a size no image can have, and rounding the ratio first gives 401 for
-        // a 400 px box.  Either way the browser resamples every tile.
-        tile_px: tileDevicePx(tileSize, dpr),
+        ...tileSizeFields(dpr, tileSize),
         visible_layers: visibleLayers ? [...visibleLayers] : [],
         selectable_layers: selectableLayers ? [...selectableLayers] : [],
         ...vf,

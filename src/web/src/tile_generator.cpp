@@ -874,6 +874,16 @@ odb::Rect TileGenerator::toPixels(const TileFrame& frame, const odb::Rect& rect)
                    std::ceil(frame.pxY(rect.yMax())));
 }
 
+// Default overlay pen width (3 CSS px) in this frame's pixels.  A fixed 3
+// physical px is a third as thick, relative to everything else, on a 3x
+// display.
+static int penWidthCss(const TileFrame& frame)
+{
+  constexpr double kOverlayPenCssPx = 3.0;
+  return std::max(
+      1, static_cast<int>(std::lround(kOverlayPenCssPx * frame.px_per_css)));
+}
+
 // The tile origin in absolute (whole-design) pixel space, folded onto a
 // `period`-pixel lattice.  Hatches and dot fills are phased off this so the
 // pattern runs unbroken across a tile boundary, and they only ever use it
@@ -906,12 +916,14 @@ static TileFrame tileFrame(const odb::Rect& bounds,
                            const int x,
                            const int y,
                            const double tile_dbu_size,
-                           const double scale)
+                           const double scale,
+                           const double px_per_css = 1.0)
 {
   TileFrame frame;
   frame.origin_x = bounds.xMin() + x * tile_dbu_size;
   frame.origin_y = bounds.yMin() + y * tile_dbu_size;
   frame.scale = scale;
+  frame.px_per_css = px_per_css;
   // Query/clip window: the tile rounded OUTWARD to whole DBU, so a shape
   // reaching even fractionally into the tile is still found and drawn.
   frame.cull
@@ -1847,15 +1859,26 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const std::vector<FlightLine>& flight_lines,
     const std::set<uint32_t>* route_guide_net_ids,
     const bool has_visible_layers,
-    const std::set<std::string>& visible_layers) const
+    const std::set<std::string>& visible_layers,
+    const double dpr,
+    const int requested_tile_px) const
 {
-  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
-  std::vector<unsigned char> image(kBufferSize, 0);  // fully transparent
+  // Same contract as renderTileBuffer: the client states the device-pixel
+  // square it will display this tile in, because an overlay drawn at a
+  // different size than the layer tiles beneath it is both blurry and
+  // misregistered against them.  0 falls back to the historical 256*dpr.
+  const double effective_dpr = dpr > 0.0 ? dpr : 1.0;
+  const int dim
+      = requested_tile_px > 0
+            ? requested_tile_px
+            : static_cast<int>(std::lround(kTileSizeInPixel * effective_dpr));
+  std::vector<unsigned char> image(static_cast<size_t>(dim) * dim * 4,
+                                   0);  // fully transparent
 
   if (!getChip()) {
     // No design — return blank transparent PNG.
     std::vector<unsigned char> png;
-    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    lodepng::encode(png, image, dim, dim);
     return png;
   }
 
@@ -1864,7 +1887,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
       && colored_rects.empty() && flight_lines.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
     std::vector<unsigned char> png;
-    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    lodepng::encode(png, image, dim, dim);
     return png;
   }
 
@@ -1874,14 +1897,14 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   const odb::Rect full_bounds = getBounds();
   if (full_bounds.maxDXDY() <= 0) {
     std::vector<unsigned char> png;
-    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    lodepng::encode(png, image, dim, dim);
     return png;
   }
   // Same exact grid as renderTileBuffer: the overlay is drawn on top of those
   // tiles, so a highlight has to land on the shape it highlights.
   const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
   const TileFrame frame = tileFrame(
-      full_bounds, x, y, tile_dbu_size, kTileSizeInPixel / tile_dbu_size);
+      full_bounds, x, y, tile_dbu_size, dim / tile_dbu_size, effective_dpr);
 
   // Draw highlight shapes onto transparent buffer.
   if (!highlight_rects.empty() || !highlight_polys.empty()) {
@@ -1916,7 +1939,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   }
 
   std::vector<unsigned char> png;
-  lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+  lodepng::encode(png, image, dim, dim);
   return png;
 }
 
@@ -2055,7 +2078,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // Drawing happens in the supersampled buffer, so this frame is in
     // super-pixels; the output-resolution overlays below build their own.
     const TileFrame world_frame
-        = tileFrame(full_bounds, x, y, tile_dbu_size, scale);
+        = tileFrame(full_bounds, x, y, tile_dbu_size, scale, super_per_css);
     const double dbu_x_min_world = world_frame.origin_x;
     const double dbu_y_min_world = world_frame.origin_y;
     const odb::Rect& dbu_tile_world = world_frame.cull;
@@ -3469,9 +3492,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // (= dpr * kCoverageSupersample) instead would land in CSS space and
     // shrink every overlay to 1/dpr of the tile on HiDPI.
     const double scale_out = scale / kCoverageSupersample;
-    // Same tile, same exact origin, output-resolution scale.
+    // Same tile, same exact origin, output-resolution scale — and one physical
+    // pixel per CSS pixel per dpr, rather than the supersampled frame's.
     TileFrame out_frame = world_frame;
     out_frame.scale = scale_out;
+    out_frame.px_per_css = effective_dpr;
 
     // Overlays render once in world space, on top of all chiplets.
     // Their geometry (timing paths, DRC rects, flight lines) is already
@@ -3534,10 +3559,21 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     gui::HeatMapDataSource& source,
     const int z,
     const int x,
-    int y) const
+    int y,
+    const double dpr,
+    const int requested_tile_px) const
 {
-  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
-  std::vector<unsigned char> image_buffer(kBufferSize, 0);
+  // Same contract as the layer and overlay tiles: the client states the
+  // device-pixel square, so the heat map is as crisp as the layers under it
+  // instead of being a 256 px image stretched over them.  0 falls back to the
+  // historical 256*dpr.
+  const double effective_dpr = dpr > 0.0 ? dpr : 1.0;
+  const int dim
+      = requested_tile_px > 0
+            ? requested_tile_px
+            : static_cast<int>(std::lround(kTileSizeInPixel * effective_dpr));
+  std::vector<unsigned char> image_buffer(static_cast<size_t>(dim) * dim * 4,
+                                          0);
 
   const double num_tiles_at_zoom = pow(2, z);
   if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
@@ -3547,13 +3583,19 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   y = num_tiles_at_zoom - 1 - y;
   const odb::Rect hm_bounds = getBounds();
   const double tile_dbu_size = hm_bounds.maxDXDY() / num_tiles_at_zoom;
-  const double scale = kTileSizeInPixel / tile_dbu_size;
+  const double scale = dim / tile_dbu_size;
   // Same exact grid as the layer tiles this heat map is drawn over.
-  const TileFrame frame = tileFrame(hm_bounds, x, y, tile_dbu_size, scale);
+  const TileFrame frame
+      = tileFrame(hm_bounds, x, y, tile_dbu_size, scale, effective_dpr);
   const odb::Rect& dbu_tile = frame.cull;
   constexpr double kTextRectMargin = 0.8;
-  constexpr int kHeatmapFontHeight = 14;
-  const auto heatmap_font = fontAtlasGetFont(kHeatmapFontHeight);
+  // Authored in CSS px, so it scales with the display like every other
+  // pixel-specified size; a fixed 14 would shrink as the ratio rises.
+  constexpr int kHeatmapFontHeightCss = 14;
+  const int heatmap_font_px = std::max(
+      1,
+      static_cast<int>(std::lround(kHeatmapFontHeightCss * frame.px_per_css)));
+  const auto heatmap_font = fontAtlasGetFont(heatmap_font_px);
   const Color text_color{.r = 255, .g = 255, .b = 255, .a = 255};
 
   for (const auto& map_point : source.getVisibleMap(dbu_tile, scale)) {
@@ -3569,7 +3611,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
 
     for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
       for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-        blendPixel(image_buffer, ix, 255 - iy, color);
+        blendPixel(image_buffer, ix, dim - 1 - iy, color, dim);
       }
     }
 
@@ -3593,7 +3635,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
         = 0.5 * (map_point.rect.yMin() + map_point.rect.yMax());
 
     const int pixel_x = std::lround(frame.pxX(center_x));
-    const int pixel_y = 255 - std::lround(frame.pxY(center_y));
+    const int pixel_y = dim - 1 - std::lround(frame.pxY(center_y));
 
     // The label is centered on the bin center and may straddle the boundary
     // between adjacent tiles.  Skipping when the center falls outside this tile
@@ -3607,8 +3649,8 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     const int text_py_min = pixel_y - text_height / 2;
     const int text_py_max = text_py_min + text_height;
 
-    if (text_px_max <= 0 || text_px_min >= kTileSizeInPixel || text_py_max <= 0
-        || text_py_min >= kTileSizeInPixel) {
+    if (text_px_max <= 0 || text_px_min >= dim || text_py_max <= 0
+        || text_py_min >= dim) {
       continue;
     }
 
@@ -3617,8 +3659,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   }
 
   std::vector<unsigned char> png_data;
-  unsigned error = lodepng::encode(
-      png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
+  unsigned error = lodepng::encode(png_data, image_buffer, dim, dim);
   if (error) {
     logger_->report("PNG encoder error: {}", lodepng_error_text(error));
   }
@@ -4624,7 +4665,7 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
       const int py0 = dim - 1 - static_cast<int>(frame.pxY(points[i].y()));
       const int px1 = static_cast<int>(frame.pxX(points[i + 1].x()));
       const int py1 = dim - 1 - static_cast<int>(frame.pxY(points[i + 1].y()));
-      drawLine(image, px0, py0, px1, py1, border);
+      drawLine(image, px0, py0, px1, py1, border, penWidthCss(frame));
     }
   }
 }
@@ -4774,7 +4815,7 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
 
     Color c = fl.color;
     c.a = 220;
-    drawLine(image, px0, py0, px1, py1, c);
+    drawLine(image, px0, py0, px1, py1, c, penWidthCss(frame));
   }
 }
 

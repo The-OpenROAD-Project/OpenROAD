@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import {
     TILE_SIZE_CSS, STATIC_TILE_SIZE_CSS, quantizeDpr, tileDevicePx,
     tileSizeCss, useStaticTileSize, useDeviceExactTileSize,
-    withDeviceExactTileSize, buildTileRequestFor,
+    withDeviceExactTileSize, buildTileRequestFor, tileSizeFields,
 } from '../../src/tile-request.js';
 import { deviceResidualCss } from '../../src/device-pixels.js';
 
@@ -128,6 +128,40 @@ describe('dpr contract: the image is exactly the box it goes in', () => {
             assert.equal(tileDevicePx(TILE_SIZE_CSS, dpr), requested,
                          `dpr ${dpr}`);
         }
+    });
+});
+
+describe('dpr contract: all three tile kinds are sized alike', () => {
+    // Layer, overlay and heat-map tiles are stacked on each other in the
+    // browser. If they disagree about the pixel count, the upper ones are
+    // rescaled by the browser -- blurry, and half a pixel off the shapes they
+    // annotate. tileSizeFields is the single place that decides, so the test is
+    // that every kind goes through it and gets the same answer.
+    it('gives every kind the same count at every ratio', () => {
+        for (const dpr of RATIOS) {
+            const fields = tileSizeFields(dpr, TILE_SIZE_CSS);
+            const layer = buildTileRequestFor({ x: 1, y: 2, z: 3 }, 'metal1',
+                                              { visibility: {} }, dpr,
+                                              TILE_SIZE_CSS);
+            assert.equal(fields.tile_px, Math.round(TILE_SIZE_CSS * dpr),
+                         `dpr ${dpr}`);
+            assert.equal(layer.tile_px, fields.tile_px, `layer @${dpr}`);
+            assert.equal(layer.dpr, fields.dpr, `layer dpr @${dpr}`);
+        }
+    });
+
+    it('carries both the rounded ratio and the exact count', () => {
+        // The server needs both: the count sizes the image, the ratio scales
+        // what is authored in CSS px (label heights, overlay pen widths).
+        const fields = tileSizeFields(1.6666666269302368, TILE_SIZE_CSS);
+        assert.equal(fields.tile_px, 400);
+        assert.equal(fields.dpr, 1.67);
+    });
+
+    it('follows the tile size it is given, so a static report stays 256', () => {
+        assert.equal(tileSizeFields(1, 256).tile_px, 256);
+        assert.equal(tileSizeFields(2, 256).tile_px, 512);
+        assert.equal(tileSizeFields(1.6666666269302368, 240).tile_px, 400);
     });
 });
 

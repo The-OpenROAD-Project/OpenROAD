@@ -2723,6 +2723,11 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     }
   }
 
+  // Same sizing contract as layer tiles: an overlay rendered at a different
+  // size than the tiles beneath it is blurry and misregistered against them.
+  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
+
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kPng;
@@ -2736,7 +2741,9 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                   lines,
                                   route_guide_ptr,
                                   has_vis_layers,
-                                  vis_layers);
+                                  vis_layers,
+                                  dpr,
+                                  tile_px);
   return resp;
 }
 
@@ -2960,6 +2967,11 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
     const int z = static_cast<int>(req.json.at("z").as_int64());
     const int x = static_cast<int>(req.json.at("x").as_int64());
     const int y = static_cast<int>(req.json.at("y").as_int64());
+    // Same sizing contract as layer tiles: the client states the device-pixel
+    // square, so the heat map is as crisp as the layers beneath it.
+    const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+    const int tile_px
+        = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
     std::shared_ptr<gui::HeatMapDataSource> source;
     {
       std::lock_guard<std::mutex> lock(state.heatmap_mutex);
@@ -2971,7 +2983,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       }
       source = source_itr->second;
     }
-    resp.payload = gen_->generateHeatMapTile(*source, z, x, y);
+    resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();

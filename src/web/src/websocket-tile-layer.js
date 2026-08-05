@@ -5,7 +5,7 @@
 
 import {
     buildTileRequestFor, floorClampZoom, nativeDpr, tileSizeCss,
-    withDeviceExactTileSize,
+    tileSizeFields, withDeviceExactTileSize,
 } from './tile-request.js';
 
 // Imported AND re-exported: `export { x } from '...'` alone re-exports without
@@ -154,12 +154,16 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
 // background.  Separated from the base tile layers so that highlight
 // changes don't trigger a full re-render of all geometry tiles.
 export function createOverlayTileLayer(visibility, app) {
-    function buildOverlayRequest(coords) {
+    function buildOverlayRequest(coords, tileSize) {
         const req = {
             type: 'overlay_tile',
             z: coords.z,
             x: coords.x,
             y: coords.y,
+            // Sized like the layer tiles it is drawn over: a highlight
+            // rendered at a different pixel count is rescaled by the browser
+            // and no longer sits exactly on the shape it highlights.
+            ...tileSizeFields(currentDpr(), tileSize),
             debug_renderers: !!visibility.debug_renderers,
         };
         // Pass visible layers so route guides respect layer visibility.
@@ -201,7 +205,7 @@ export function createOverlayTileLayer(visibility, app) {
             tile._websocketRequestId = requestId;
 
             this._websocketManager.request(
-                buildOverlayRequest(coords)
+                buildOverlayRequest(coords, this.getTileSize().x)
             ).then(data => {
                 if (tile._websocketRequestId !== requestId) {
                     return;  // stale response; a newer request superseded this one
@@ -235,7 +239,7 @@ export function createOverlayTileLayer(visibility, app) {
                 tile._websocketRequestId = requestId;
 
                 this._websocketManager.request(
-                    buildOverlayRequest(coords)
+                    buildOverlayRequest(coords, this.getTileSize().x)
                 ).then(data => {
                     if (tile._websocketRequestId !== requestId) {
                         return;  // stale response superseded by a newer refresh

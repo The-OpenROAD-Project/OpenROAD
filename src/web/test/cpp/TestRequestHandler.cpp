@@ -479,6 +479,46 @@ TEST_F(TileHandlerTest, OverlayTileReturnsPng)
   EXPECT_EQ(resp.payload[3], 'G');
 }
 
+// The overlay is composited over the layer tiles in the browser, so it has to
+// come back at the same pixel count they do; a 256 px overlay stretched over a
+// 400 px layer tile is blurry and no longer sits on the shapes it annotates.
+TEST_F(TileHandlerTest, OverlayTileHonoursTheRequestedPixelCount)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
+  for (const uint32_t px : {240u, 320u, 400u, 480u}) {
+    WebSocketRequest req;
+    req.id = 10;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,"dpr":1.67,"tile_px":)"
+                        + std::to_string(px) + "}");
+    auto resp = handler_->handleOverlayTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << px;
+    EXPECT_EQ(pngWidth(resp.payload), px) << "asked for " << px << " px";
+  }
+}
+
+TEST_F(TileHandlerTest, OverlayTileClampsAndFallsBack)
+{
+  const std::vector<std::pair<std::string, uint32_t>> cases = {
+      {R"("dpr":1)", 256},                    // unspecified -> 256 * dpr
+      {R"("dpr":2)", 512},                    // ...which follows dpr
+      {R"("dpr":1,"tile_px":0)", 256},        // explicit "not specified"
+      {R"("dpr":1,"tile_px":100000)", 2048},  // above the ceiling
+  };
+  for (const auto& [fields, expected] : cases) {
+    WebSocketRequest req;
+    req.id = 10;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,)" + fields + "}");
+    auto resp = handler_->handleOverlayTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << fields;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << fields;
+  }
+}
+
 TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
 {
   // Put a highlight rect in the state

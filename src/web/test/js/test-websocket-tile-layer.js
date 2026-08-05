@@ -367,4 +367,52 @@ describe('the layer body must resolve every name it references', () => {
     it('builds the overlay layer class too', () => {
         assert.doesNotThrow(() => createOverlayTileLayer({}, null));
     });
+
+    // createTile builds an <img>; this file runs without jsdom, so stand one up
+    // for the duration. Only what the layer touches needs to exist.
+    function withFakeDocument(fn) {
+        const saved = globalThis.document;
+        globalThis.document = {
+            createElement: () => ({ setAttribute() {} }),
+        };
+        try {
+            return fn();
+        } finally {
+            globalThis.document = saved;
+        }
+    }
+
+    // Build an overlay layer whose requests are captured, with `tileSize` as
+    // Leaflet would report it.
+    function overlayRequests(tileSize) {
+        const sent = [];
+        const OverlayLayer = createOverlayTileLayer({}, null);
+        const layer = new OverlayLayer(
+            { nextId: 1,
+              request: (msg) => { sent.push(msg); return new Promise(() => {}); },
+              cancel() {} },
+            {});
+        // Leaflet derives this from the tileSize option; stub it so createTile
+        // can run without a map.
+        layer.getTileSize = () => ({ x: tileSize, y: tileSize });
+        withFakeDocument(() => layer.createTile({ x: 1, y: 2, z: 3 }, () => {}));
+        return sent;
+    }
+
+    // The wiring, not the helper: tileSizeFields can be perfect and still not be
+    // called. An overlay sized differently from the layer tiles under it is
+    // rescaled by the browser and slides off the shapes it annotates.
+    it('sends the sizing fields on an overlay request', () => {
+        const sent = overlayRequests(240);
+        assert.equal(sent.length, 1);
+        assert.equal(sent[0].type, 'overlay_tile');
+        assert.equal(sent[0].tile_px, Math.round(240 * currentDpr()));
+        assert.ok(sent[0].dpr > 0);
+    });
+
+    it('sizes an overlay request from its own tile size', () => {
+        // A static report's layers are 256; the overlay must follow them.
+        const sent = overlayRequests(256);
+        assert.equal(sent[0].tile_px, Math.round(256 * currentDpr()));
+    });
 });

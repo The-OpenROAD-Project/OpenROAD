@@ -79,6 +79,11 @@ struct TileFrame
   double origin_y = 0.0;
   double scale = 1.0;  // pixels per DBU
   odb::Rect cull;
+  // Pixels of THIS frame per CSS pixel.  Sizes authored in CSS px — pen widths,
+  // font heights — are multiplied by it so they come out the same size on every
+  // display instead of shrinking as the ratio rises.  The display's dpr for an
+  // output-resolution frame; dpr * the supersample factor for a super one.
+  double px_per_css = 1.0;
 
   // DBU → pixels within the tile.  Y counts up from the tile's bottom edge;
   // callers that write into the buffer apply the row flip themselves.
@@ -485,11 +490,15 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       bool has_visible_layers = false,
-      const std::set<std::string>& visible_layers = {}) const;
+      const std::set<std::string>& visible_layers = {},
+      double dpr = 1.0,
+      int tile_px = 0) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
-                                                 int y) const;
+                                                 int y,
+                                                 double dpr = 1.0,
+                                                 int tile_px = 0) const;
 
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
