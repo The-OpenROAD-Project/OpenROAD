@@ -85,8 +85,9 @@ class DplObserver
   virtual void addNegotiationPhase2Marker(int iter) {}
 
   // Inform the observer which cells moved in the current negotiation iteration.
-  // Those cells are drawn with directional colors; others are greyed out. With none reported the observer reverts
-  // to the default (all movers use directional colors).
+  // Those cells are drawn with directional colors; others are greyed out. With
+  // none reported the observer reverts to the default (all movers use
+  // directional colors).
   virtual void addCurrentIterMover(odb::dbInst* inst) {}
   virtual void clearCurrentIterMovers() {}
 };

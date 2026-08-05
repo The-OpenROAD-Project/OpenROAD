@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -75,6 +76,8 @@ class Graphics : public gui::Renderer, public DplObserver
   odb::dbBlock* block_ = nullptr;
   bool paint_pixels_;
   bool paint_negotiation_pixels_;
+
+  std::mutex state_mutex_;
   // One row of the region covered by a diamond search, in dbu.
   struct RowSpan
   {

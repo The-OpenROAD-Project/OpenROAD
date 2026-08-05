@@ -58,8 +58,12 @@ Graphics::Graphics(Opendp* dp,
 
 void Graphics::startPlacement(odb::dbBlock* block)
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   block_ = block;
-  clearAllDiamondSearches();
+  // Graphics outlives one placement run, so drop searches from the previous
+  // one. Cleared inline rather than via clearAllDiamondSearches(), which
+  // relocks.
+  searched_diamond_.clear();
 }
 
 void Graphics::drawSelected(odb::dbInst* instance, bool force)
@@ -91,6 +95,7 @@ void Graphics::binSearch(const Node* cell,
   if (!inst) {
     return;
   }
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   // Skip cells with no search started: canBePlaced() is also called outside
   // any search (Opendp::setInitialGridCells).
   auto it = searched_diamond_.find(inst);
@@ -129,6 +134,7 @@ void Graphics::clearDiamondSearch(const Node* cell)
   if (!inst) {
     return;
   }
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   // Creating the entry is what lets binSearch() record for this cell.
   DiamondSearch& search = searched_diamond_[inst];
   if (search.rows.capacity() > kMaxRetainedRows) {
@@ -143,6 +149,7 @@ void Graphics::clearDiamondSearch(const Node* cell)
 
 void Graphics::clearAllDiamondSearches()
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   searched_diamond_.clear();
 }
 
@@ -158,6 +165,8 @@ void Graphics::drawObjects(gui::Painter& painter)
   if (!block_) {
     return;
   }
+  // Held for the whole draw: placement runs concurrently on the main thread.
+  const std::lock_guard<std::mutex> lock(state_mutex_);
 
   // Create a set of selected instances for fast lookup
   odb::PtrSet<odb::dbInst> selected_insts;
@@ -487,6 +496,7 @@ void Graphics::setNegotiationPixels(
     int site_width,
     const std::vector<int>& row_y_dbu)
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_pixels_ = pixels;
   negotiation_grid_w_ = grid_w;
   negotiation_grid_h_ = grid_h;
@@ -498,6 +508,7 @@ void Graphics::setNegotiationPixels(
 
 void Graphics::clearNegotiationPixels()
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_pixels_.clear();
   negotiation_row_y_dbu_.clear();
   negotiation_grid_w_ = 0;
@@ -509,11 +520,13 @@ void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
                                           const odb::Rect& init_window,
                                           const odb::Rect& curr_window)
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_search_windows_[inst] = {init_window, curr_window};
 }
 
 void Graphics::clearNegotiationSearchWindows()
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   negotiation_search_windows_.clear();
   // Force the next drawObjects() call to re-log the window size, since a new
   // iteration means the window for the selected instance may have changed.
@@ -542,11 +555,13 @@ void Graphics::addNegotiationPhase2Marker(int iter)
 
 void Graphics::addCurrentIterMover(odb::dbInst* inst)
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   current_iter_movers_.insert(inst);
 }
 
 void Graphics::clearCurrentIterMovers()
 {
+  const std::lock_guard<std::mutex> lock(state_mutex_);
   current_iter_movers_.clear();
 }
 
