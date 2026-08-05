@@ -156,7 +156,7 @@ commands are read from the file.
 
 OpenROAD supports automated Design Space Exploration (DSE) tools and autotuners across all stages of physical design. Automated tools run across a wide spectrum:
 * **Early RTL & Floorplan Exploration**: Fast feedback loops using custom project Tcl script snippets developed for a specific phase in a project.
-* **Late-Stage Pre-Tapeout Sweeps**: Full, unmodified flow runs through final parasitic extraction (`rcx`) to eke out a few percent timing and area improvement via seed and parameter sweeps.
+* **Late-Stage Pre-Tapeout Sweeps**: Full, unmodified flow runs through final parasitic extraction (`rcx`) to eke out a few percent improvement in timing and area via seed and parameter sweeps.
 
 To support automated workflows, optimization passes must follow these guidelines for non-convergent ("doomed") runs:
 
@@ -172,9 +172,9 @@ When an optimization pass hits a futility limit:
 * The overall flow **must run to completion**.
 
 ### 3. Downstream Metric Evaluation
-Small upstream variations (e.g., placement seed changes) cause large downstream effects ("placement lottery"). Accurate clock period and parasitic timing signals often emerge late in the flow:
+Small upstream variations (e.g., placement seed changes) cause large downstream effects ("placement lottery"). Accurate clock period and parasitic-aware timing signals often emerge late in the flow:
 * Global routing (`grt`) provides realistic clock period estimates.
-* Detailed routing (`drt`) and parasitic extraction (`rcx`) resolve local congestion and wire parasitics.
+* Detailed routing (`drt`) and parasitic extraction (`rcx`) resolve local congestion and extract wire parasitics.
 
 Completing the flow allows autotuners to collect final metrics and extract actionable signals, even when an intermediate pass halts early.
 
