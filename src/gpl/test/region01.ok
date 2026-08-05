@@ -109,7 +109,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
 [INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0103] Initializing Nesterov electrostatic solver across 630 instances and 666 nets.
+[INFO GPL-0103] Initializing Nesterov electrostatic solver.
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
         0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.76e-15 |  (spm_inst_0_domain)
         0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.36e-15 |  (spm_inst_1_domain)
