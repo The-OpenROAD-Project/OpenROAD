@@ -78,7 +78,8 @@ class Graphics : public gui::Renderer, public DplObserver
   bool paint_negotiation_pixels_;
 
   std::mutex state_mutex_;
-  // One row of the region covered by a diamond search, in dbu.
+
+  // One row of a diamond search region, in dbu.
   struct RowSpan
   {
     int y_lo;
@@ -87,30 +88,22 @@ class Graphics : public gui::Renderer, public DplObserver
     int x_hi;
   };
 
-  // Region covered by the most recent diamond search of one cell, stored as the
-  // x range tried in each row rather than a box per candidate.  The search
-  // tries every site between a row's two extremes, so the range loses nothing,
-  // and a search that tries 200k candidates costs one span per row.
+  // Most recent diamond search of one cell: the x range tried in each row, not
+  // a box per candidate, so a 200k-candidate search costs one span per row.
   struct DiamondSearch
   {
-    std::vector<RowSpan> rows;  // sorted by y_lo
-    odb::Rect last;             // last candidate tried
-    // Union of |rows|, cached: drawObjects() runs on every repaint.
-    std::vector<std::vector<odb::Point>> boundaries;
+    std::vector<RowSpan> rows;                        // sorted by y_lo
+    odb::Rect last;                                   // last candidate tried
+    std::vector<std::vector<odb::Point>> boundaries;  // union of |rows|, cached
     bool boundaries_valid = false;
   };
 
-  // Keyed by dbInst* so drawObjects() can draw whichever instance is selected
-  // in the GUI (same approach as negotiation_search_windows_).  An entry means
-  // a search for that cell has started; binSearch() ignores cells without one.
+  // An entry means a search for that cell has started; binSearch() ignores
+  // cells without one.
   std::unordered_map<const odb::dbInst*, DiamondSearch> searched_diamond_;
 
   // Row span capacity kept between searches.
   static constexpr size_t kMaxRetainedRows = 64;
-
-  // Stroke width of the search outlines (diamond region and negotiation
-  // windows), in screen pixels: the pens are cosmetic, so the outlines stay
-  // this thick at any zoom.
   static constexpr int kSearchOutlineWidth = 3;
 
   // NegotiationLegalizer grid snapshot for rendering
