@@ -280,7 +280,7 @@ void Opendp::createNetwork()
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       debugPrint(logger_,
                  utl::DPL,
-                 "cell_placement",
+                 "cell_init",
                  2,
                  "Skipping instance {} with master {} of type {} (not core "
                  "auto placeable)",
@@ -294,7 +294,7 @@ void Opendp::createNetwork()
                                      row_outer_shell_rects)) {
       debugPrint(logger_,
                  utl::DPL,
-                 "cell_placement",
+                 "cell_init",
                  2,
                  "Skipping fixed instance {} with master {} of type {} "
                  "(outside outer shell)",
