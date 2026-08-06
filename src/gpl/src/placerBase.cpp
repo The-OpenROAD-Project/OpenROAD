@@ -1458,8 +1458,9 @@ void PlacerBase::initInstsForUnusableSites()
           const int64_t base_idx = static_cast<int64_t>(endY) * siteCountX;
           auto first = siteGrid.begin() + base_idx + startX;
           auto last = siteGrid.begin() + base_idx + endX;
-          if (!std::all_of(
-                  first, last, [](SiteInfo s) { return s == Blocked; })) {
+          if (!std::all_of(first, last, [](SiteInfo s) {
+                return s == SiteInfo::Blocked;
+              })) {
             break;
           }
         }
