@@ -38,22 +38,7 @@ namespace {
 
 bool guideLess(const frGuide* lhs, const frGuide* rhs)
 {
-  const auto [lhs_begin, lhs_end] = lhs->getPoints();
-  const auto [rhs_begin, rhs_end] = rhs->getPoints();
-  return std::make_tuple(lhs->getNet()->getId(),
-                         lhs->getLayerNum(),
-                         lhs_begin.x(),
-                         lhs_begin.y(),
-                         lhs_end.x(),
-                         lhs_end.y(),
-                         lhs->getIndexInOwner())
-         < std::make_tuple(rhs->getNet()->getId(),
-                           rhs->getLayerNum(),
-                           rhs_begin.x(),
-                           rhs_begin.y(),
-                           rhs_end.x(),
-                           rhs_end.y(),
-                           rhs->getIndexInOwner());
+  return lhs->getId() < rhs->getId();
 }
 
 bool grPinLess(const frBlockObject* lhs, const frBlockObject* rhs)
