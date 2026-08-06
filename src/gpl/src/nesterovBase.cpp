@@ -953,9 +953,12 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                          int parallel_threads)
 {
   // clear the Bin-area info
-  for (Bin& bin : bins_) {
-    bin.setInstPlacedAreaUnscaled(0);
-    bin.setFillerArea(0);
+  const int thread_count = std::max(1, parallel_threads);
+#pragma omp parallel for num_threads(thread_count) if (thread_count > 1) \
+    schedule(static)
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    bins_[i].setInstPlacedAreaUnscaled(0);
+    bins_[i].setFillerArea(0);
   }
 
   // The per-cell scatter below is the dominant host hotspot of the global
@@ -964,11 +967,11 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   // thread-order-dependent result. So parallelize it there, accumulating
   // per-bin areas into flat buffers with atomics. The CPU-only path keeps the
   // serial branch for bit-stable regression goldens.
-  if (parallel_threads > 1) {
+  if (thread_count > 1) {
     const int nbins = static_cast<int>(bins_.size());
     std::vector<float> inst_area(nbins, 0.0f);
     std::vector<float> filler_area(nbins, 0.0f);
-#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
+#pragma omp parallel for num_threads(thread_count) schedule(dynamic, 128)
     for (const GCellHandle& cell : cells) {
       const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
       const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
@@ -1002,7 +1005,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
         }
       }
     }
-#pragma omp parallel for num_threads(parallel_threads)
+#pragma omp parallel for num_threads(thread_count) schedule(static)
     for (int b = 0; b < nbins; b++) {
       bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
       bins_[b].setFillerArea(filler_area[b]);
@@ -1054,14 +1057,17 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   }
 
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
-  sumOverflowArea_ = 0;
-  sumOverflowAreaUnscaled_ = 0;
+  // Accumulate in int64_t with float addends, matching the original
+  // member-variable reduction bit-for-bit; regression goldens depend on it.
+  int64_t local_sum_overflow_area = 0;
+  int64_t local_sum_overflow_area_unscaled = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
-#pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
-  for (auto it = bins_.begin(); it < bins_.end(); ++it) {
-    Bin& bin = *it;  // old-style loop for old OpenMP
+#pragma omp parallel for num_threads(thread_count) if (thread_count > 1) \
+    schedule(static)                                                     \
+    reduction(+ : local_sum_overflow_area, local_sum_overflow_area_unscaled)
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    Bin& bin = bins_[i];
 
     // Copy unscaled to scaled
     bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
@@ -1078,14 +1084,14 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
         0.0f,
         static_cast<float>(bin.instPlacedArea())
             + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
-    sumOverflowArea_ += overflowArea;  // NOLINT
+    local_sum_overflow_area += overflowArea;  // NOLINT
 
     const float overflowAreaUnscaled
         = std::max(0.0f,
                    static_cast<float>(bin.getInstPlacedAreaUnscaled())
                        + static_cast<float>(bin.getNonPlaceAreaUnscaled())
                        - scaledBinArea);
-    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+    local_sum_overflow_area_unscaled += overflowAreaUnscaled;
     if (overflowAreaUnscaled > 0) {
       debugPrint(log_,
                  GPL,
@@ -1112,6 +1118,8 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
           block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
     }
   }
+  sumOverflowArea_ = local_sum_overflow_area;
+  sumOverflowAreaUnscaled_ = local_sum_overflow_area_unscaled;
 }
 
 std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
@@ -2899,9 +2907,12 @@ void NesterovBase::updateDensityFieldBin()
 {
   assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = getBins().begin(); it < getBins().end(); ++it) {
-    auto& bin = *it;  // old-style loop for old OpenMP
+  auto& bins = getBins();
+  const int thread_count = std::max(1, static_cast<int>(nbc_->getNumThreads()));
+#pragma omp parallel for num_threads(thread_count) if (thread_count > 1) \
+    schedule(static)
+  for (size_t i = 0; i < bins.size(); ++i) {
+    auto& bin = bins[i];
     fft_->updateDensity(bin.x(), bin.y(), bin.getDensity());
   }
 
@@ -2910,21 +2921,25 @@ void NesterovBase::updateDensityFieldBin()
 
   // update electroPhi and electroField
   // update sumPhi_ for nesterov loop
-  sumPhi_ = 0;
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : sumPhi_)
-  for (auto it = getBins().begin(); it < getBins().end(); ++it) {
-    auto& bin = *it;  // old-style loop for old OpenMP
+  // float accumulation matches the original sumPhi_ reduction bit-for-bit;
+  // regression goldens depend on it.
+  float local_sum_phi = 0;
+#pragma omp parallel for num_threads(thread_count) if (thread_count > 1) \
+    schedule(static) reduction(+ : local_sum_phi)
+  for (size_t i = 0; i < bins.size(); ++i) {
+    auto& bin = bins[i];
     auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
     bin.setElectroField(eFieldPair.first, eFieldPair.second);
 
     float electroPhi = fft_->getElectroPhi(bin.x(), bin.y());
     bin.setElectroPhi(electroPhi);
 
-    sumPhi_ += electroPhi
-               * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
-                                    + bin.getFillerArea());
+    local_sum_phi
+        += electroPhi
+           * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
+                                + bin.getFillerArea());
   }
+  sumPhi_ = local_sum_phi;
 }
 
 void NesterovBase::initDensity1()
