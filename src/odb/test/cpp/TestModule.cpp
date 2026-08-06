@@ -277,6 +277,26 @@ TEST_F(ModuleFixture, reparent_updates_index_and_fires_callback)
   EXPECT_EQ(top->findDbInst("inst"), inst);
 }
 
+TEST_F(ModuleFixture, removing_module_fires_callback)
+{
+  dbModule* top = block_->getTopModule();
+  dbModule* child = dbModule::create(block_, "child");
+  dbInst* inst = dbInst::create(block_, lib_->findMaster("and2"), "inst");
+  ASSERT_NE(inst, nullptr);
+
+  ParentChangeCallback callback;
+  callback.addOwner(block_);
+
+  child->addInst(inst);
+  ASSERT_EQ(callback.calls, 1);
+  ASSERT_EQ(inst->getModule(), child);
+
+  dbInst::destroy(inst);
+  EXPECT_EQ(callback.calls, 2);
+  EXPECT_EQ(callback.observed_module, nullptr);
+  EXPECT_EQ(child->findDbInst("inst"), nullptr);
+}
+
 TEST_F(ModuleFixture, rename_updates_module_index)
 {
   dbModule* top = block_->getTopModule();
