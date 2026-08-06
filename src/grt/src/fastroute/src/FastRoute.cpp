@@ -843,15 +843,13 @@ void FastRouteCore::addHorizontalAdjustments(
 
 // Number of tracks to charge for the metal blocking one gcell edge.
 //
-// intervals is a set of *disjoint* intervals, so rounding each one up
-// separately would charge a whole track per fragment: a 200 DBU sliver would
-// cost as much as a full track. That makes the charge depend on how the blocked
-// region happens to be fragmented rather than on how much of it is covered, and
-// it is not monotonic - deleting an obstruction that bridged two fragments
-// splits the span and *raises* the charge. Removing metal (remove_fillers, for
-// instance) could then lower an edge's capacity, which is never correct. Sum
-// the covered length first and round once, so the charge only grows with
-// coverage.
+// intervals holds disjoint intervals, so rounding each one up on its own would
+// charge a full track per fragment, making the total depend on how the blocked
+// region happens to be fragmented rather than on how much of it is covered.
+// That is also not monotonic: deleting metal that bridged two fragments splits
+// the span, each half is then rounded up separately, and the edge loses
+// capacity even though less of it is blocked. Summing the covered length and
+// rounding once keeps the charge a function of coverage alone.
 static int blockedTrackCount(const interval_set<int>& intervals,
                              const int track_space)
 {
