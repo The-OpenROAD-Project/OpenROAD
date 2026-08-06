@@ -1463,14 +1463,13 @@ void PlacerBase::initInstsForUnusableSites()
             }
           }
           if (can_merge) {
-            for (int x = startX; x < endX; x++) {
-              siteGrid[(endY * siteCountX) + x] = SiteInfo::FixedInst; // Processed
-            }
             endY++;
           }
         }
-        for (int x = startX; x < endX; x++) {
-          siteGrid[(j * siteCountX) + x] = SiteInfo::FixedInst; // Processed
+        for (int y = j; y < endY; y++) {
+          for (int x = startX; x < endX; x++) {
+            siteGrid[(y * siteCountX) + x] = SiteInfo::FixedInst;  // Processed
+          }
         }
         Instance dummy_gcell(region_bbox_.xMin() + (siteSizeX_ * startX),
                              region_bbox_.yMin() + (siteSizeY_ * j),
