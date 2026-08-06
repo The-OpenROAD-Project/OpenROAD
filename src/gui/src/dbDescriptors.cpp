@@ -936,7 +936,9 @@ void DbMasterDescriptor::getMasterEquivalent(
     odb::dbMaster* master,
     odb::PtrSet<odb::dbMaster>& masters)
 {
-  // mirrors method used in Resizer.cpp
+  // The only remaining user of the OpenSTA equivalence table, which filters on
+  // liberty dont_use.  Resizer::makeEquivCells builds its own, so the two
+  // disagree once set_dont_use or unset_dont_use has been used.
   auto network = sta->getDbNetwork();
 
   sta::LibertyLibrarySeq libs;

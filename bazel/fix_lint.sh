@@ -15,6 +15,8 @@ BZL_FMT_BUILDIFIER="$6"
 BZL_LINT_SH="$7"
 BZL_LINT_BUILDIFIER="$8"
 GIT="$9"
+YAML_TIDY_SH="${10:-}"
+YAMLFIX="${11:-}"
 
 export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 # TCL: auto-format then lint
@@ -24,6 +26,11 @@ export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 # Bazel: auto-format then lint
 "${BZL_TIDY_SH}" "${BZL_FMT_BUILDIFIER}" "${GIT}"
 "${BZL_LINT_SH}" "${BZL_LINT_BUILDIFIER}" "${GIT}" || rc=$?
+
+# YAML: auto-format
+if [ -n "${YAML_TIDY_SH}" ] && [ -n "${YAMLFIX}" ]; then
+    "${YAML_TIDY_SH}" "${YAMLFIX}" "${GIT}" || rc=$?
+fi
 
 "${GIT}" -C "$BUILD_WORKSPACE_DIRECTORY" status
 
