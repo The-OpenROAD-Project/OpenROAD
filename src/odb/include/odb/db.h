@@ -5910,10 +5910,6 @@ class dbTech : public dbObject
   ///
   std::string getName();
 
-  void setExtractionRulesFile(const std::string& path);
-
-  std::string getExtractionRulesFile();
-
   ///
   /// Get the Database units per micron.
   ///
@@ -7702,8 +7698,6 @@ class dbDatabase : public dbObject
 
   void setHierarchy(bool value);
   bool hasHierarchy() const;
-
-  bool hasHierarchicalChip() const;
 
   void setTopChip(dbChip* chip);
   ///

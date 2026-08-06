@@ -222,6 +222,32 @@ void Ext::extractMultiChip(const ExtractOptions& options)
   multi_chip_extractor_->run(options);
 }
 
+void Ext::setExtractionRulesFile(const std::string& rules_file)
+{
+  _ext->setExtractionRulesFile(rules_file);
+}
+
+void Ext::setExtractionRulesFile(const std::string& rules_file,
+                                 const std::string& tech_name)
+{
+  odb::dbTech* tech = _db->findTech(tech_name.c_str());
+  if (!tech) {
+    logger_->error(RCX,
+                   522,
+                   "Could not set extraction rules file. Tech {} not found.",
+                   tech_name);
+  }
+
+  multi_chip_extractor_->setExtractionRulesFile(tech, rules_file);
+}
+
+void Ext::setAssemblyExtractionRulesFile(
+    const std::string& assembly_extraction_rules_file)
+{
+  multi_chip_extractor_->setAssemblyExtractionRulesFile(
+      assembly_extraction_rules_file);
+}
+
 void Ext::extract(ExtractOptions options)
 {
   _ext->setBlockFromChip(_db->getChip());
@@ -229,17 +255,16 @@ void Ext::extract(ExtractOptions options)
 
   odb::orderWires(logger_, block);
 
-  odb::dbTech* tech = block->getTech();
   if (options.ext_model_file != nullptr && options.ext_model_file[0] != '\0') {
     logger_->warn(RCX,
                   514,
                   "The ext_model_file option is deprecated. Use "
                   "set_extraction_rules_file command instead.");
 
-    tech->setExtractionRulesFile(options.ext_model_file);
+    _ext->setExtractionRulesFile(options.ext_model_file);
   }
 
-  std::string rules_file = tech->getExtractionRulesFile();
+  const std::string& rules_file = _ext->getExtractionRulesFile();
   if (!rules_file.empty()) {
     options.ext_model_file = rules_file.c_str();
   }
@@ -261,8 +286,9 @@ void Ext::extract(ExtractOptions options)
     _ext->setExtractionOptions(options);
 
     if (_ext->modelExists()) {
-      std::unique_ptr<extRCModel> rules_model
-          = parseRules(tech, _ext->getProcessCornerTable(), _ext->_v2, logger_);
+      odb::dbTech* tech = block->getTech();
+      std::unique_ptr<extRCModel> rules_model = parseRules(
+          tech, rules_file, _ext->getProcessCornerTable(), _ext->_v2, logger_);
 
       _ext->registerRulesModel(rules_model.release());
       _ext->setCornerCount();
