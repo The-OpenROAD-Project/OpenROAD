@@ -2756,7 +2756,15 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   const int layer_level = layer->getRoutingLevel();
   if (force_to_die_bound) {
     // block boundary PDN shapes for the checks below, without persisting the
-    // intervals beyond this placement
+    // intervals beyond this placement, padding them with the actual pin size
+    pin_size_cache_.clear();
+    spacing_cache_.clear();
+    const bool vertical_pin
+        = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    PinSize pin_size;
+    pin_size.half_width = (vertical_pin ? width : height) / 2;
+    pin_size.height = vertical_pin ? height : width;
+    pin_size_cache_[{layer_level, vertical_pin}] = pin_size;
     const size_t num_excluded_intervals = excluded_intervals_.size();
     getBlockedRegionsFromDbObstructions();
     getBlockedRegionsFromPDN();
@@ -2845,6 +2853,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     excluded_intervals_.erase(
         excluded_intervals_.begin() + num_excluded_intervals,
         excluded_intervals_.end());
+    pin_size_cache_.clear();
+    spacing_cache_.clear();
   }
 
   odb::Point ll = odb::Point(pos.x() - width / 2, pos.y() - height / 2);

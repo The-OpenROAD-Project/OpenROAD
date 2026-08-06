@@ -20,5 +20,8 @@ place_pin -pin_name req_msg\[0\] -layer metal2 -location {51 148} \
   -force_to_die_boundary
 place_pin -pin_name req_msg\[1\] -layer metal2 -location {50.5 148} \
   -force_to_die_boundary
+# wide pins must be kept away using their own size, not the default one
+place_pin -pin_name req_msg\[2\] -layer metal2 -location {51 148} \
+  -pin_size {10 2} -force_to_die_boundary
 
 puts "pin to stripe violations: [count_pdn_shape_violations spacing]"
