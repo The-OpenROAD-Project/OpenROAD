@@ -101,6 +101,7 @@ or_integration_tests(
     pdn_boundary_stripes_length
     pdn_boundary_stripes_no_pins
     pdn_boundary_stripes_polygon
+    pdn_boundary_vias
     pdn_near_boundary_stripes
     pdn_near_boundary_stripes_length
     pin_extension

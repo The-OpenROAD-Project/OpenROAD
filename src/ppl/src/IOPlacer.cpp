@@ -24,6 +24,7 @@
 #include "Slots.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "ppl/Parameters.h"
@@ -600,6 +601,16 @@ void IOPlacer::getBlockedRegionsFromPDN()
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* sbox : swire->getWires()) {
         if (sbox->isVia()) {
+          // via landing pads can also reach the die boundary
+          std::vector<odb::dbShape> via_shapes;
+          sbox->getViaBoxes(via_shapes);
+          for (const odb::dbShape& via_shape : via_shapes) {
+            odb::dbTechLayer* tech_layer = via_shape.getTechLayer();
+            if (tech_layer == nullptr || tech_layer->getRoutingLevel() == 0) {
+              continue;
+            }
+            excludeBoundaryShape(via_shape.getBox(), tech_layer, die_area);
+          }
           continue;
         }
         odb::dbTechLayer* tech_layer = sbox->getTechLayer();
