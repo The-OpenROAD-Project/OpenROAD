@@ -104,7 +104,6 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):         128 ,    128
 [INFO GPL-0029] Bin size (W * H):       4.841 *  3.581 um
 [INFO GPL-0030] Number of bins:                  16384
-[INFO GPL-0103] Initializing Nesterov electrostatic solver.
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group

@@ -176,10 +176,6 @@ void NesterovPlace::npUpdateNextGradient(
 
 void NesterovPlace::init()
 {
-  if (recursionCntInitSLPCoef_ == 0) {
-    log_->info(GPL, 103, "Initializing Nesterov electrostatic solver.");
-  }
-
   // foreach nesterovbase call init
   total_sum_overflow_ = 0;
   float totalBaseWireLengthCoeff = 0;

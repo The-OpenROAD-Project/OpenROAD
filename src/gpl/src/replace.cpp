@@ -355,6 +355,8 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
       nb->setNpVars(&npVars);
     }
 
+    log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
+
     np_ = std::make_unique<NesterovPlace>(npVars,
                                           pbc_,
                                           nbc_,
@@ -377,11 +379,14 @@ int Replace::doNesterovPlace(const int threads,
                              const int start_iter)
 {
   checkHasCoreRows();
+  const bool np_existed = np_ != nullptr;
   if (!initNesterovPlace(options, threads, true)) {
     return 0;
   }
 
-  log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
+  if (np_existed) {
+    log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
+  }
   if (options.timingDrivenMode) {
     rs_->resizeSlackPreamble();
   }
