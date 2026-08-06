@@ -90,6 +90,7 @@ or_integration_tests(
     no_instance_pins
     no_pins
     no_tracks
+    obstruction_boundary
     on_grid
     partial_tracks
     partial_tracks_error

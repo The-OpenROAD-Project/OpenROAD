@@ -539,6 +539,56 @@ int IOPlacer::computeLayerSpacing(const int layer,
   return spacing;
 }
 
+void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
+                                    odb::dbTechLayer* tech_layer,
+                                    const odb::Rect& die_area)
+{
+  const int layer = tech_layer->getRoutingLevel();
+  bool vertical = ver_layers_.find(layer) != ver_layers_.end();
+  bool horizontal = hor_layers_.find(layer) != hor_layers_.end();
+  if (ver_layers_.empty() && hor_layers_.empty()) {
+    // standalone place_pin: use the layer preferred direction
+    vertical = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    horizontal = !vertical;
+  }
+  if (!vertical && !horizontal) {
+    return;
+  }
+  for (const bool vertical_pin : {true, false}) {
+    // skip orientations whose pins are placed on other layers
+    if (vertical_pin ? !vertical : !horizontal) {
+      continue;
+    }
+    int half_width, height;
+    computePinSize(layer, vertical_pin, half_width, height);
+    const int shape_width = std::min(box.dx(), box.dy());
+    const int spacing = computeLayerSpacing(
+        layer, std::max(shape_width, 2 * half_width), height);
+    // extend the shape by the pin reach into the die, so shapes close
+    // to the boundary also block the nearby slots
+    const odb::Rect reach_box
+        = box.bloat(height + spacing,
+                    vertical_pin ? odb::Orientation2D::Vertical
+                                 : odb::Orientation2D::Horizontal);
+    if (!die_area.intersects(reach_box)) {
+      continue;
+    }
+    const odb::Rect intersect = die_area.intersect(reach_box);
+    const int pad = half_width + spacing;
+    for (const Interval& interval : findBlockedIntervals(die_area, intersect)) {
+      const bool vertical_edge = interval.getEdge() == Edge::top
+                                 || interval.getEdge() == Edge::bottom;
+      if (vertical_edge != vertical_pin) {
+        continue;
+      }
+      excludeInterval(Interval(interval.getEdge(),
+                               interval.getBegin() - pad,
+                               interval.getEnd() + pad,
+                               layer));
+    }
+  }
+}
+
 void IOPlacer::getBlockedRegionsFromPDN()
 {
   const odb::Rect die_area = getBlock()->getDieArea();
@@ -556,53 +606,7 @@ void IOPlacer::getBlockedRegionsFromPDN()
         if (tech_layer == nullptr) {
           continue;
         }
-        const int layer = tech_layer->getRoutingLevel();
-        bool vertical = ver_layers_.find(layer) != ver_layers_.end();
-        bool horizontal = hor_layers_.find(layer) != hor_layers_.end();
-        if (ver_layers_.empty() && hor_layers_.empty()) {
-          // standalone place_pin: use the layer preferred direction
-          vertical
-              = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-          horizontal = !vertical;
-        }
-        if (!vertical && !horizontal) {
-          continue;
-        }
-        const odb::Rect box = sbox->getBox();
-        for (const bool vertical_pin : {true, false}) {
-          // skip orientations whose pins are placed on other layers
-          if (vertical_pin ? !vertical : !horizontal) {
-            continue;
-          }
-          int half_width, height;
-          computePinSize(layer, vertical_pin, half_width, height);
-          const int shape_width = std::min(box.dx(), box.dy());
-          const int spacing = computeLayerSpacing(
-              layer, std::max(shape_width, 2 * half_width), height);
-          // extend the shape by the pin reach into the die, so shapes close
-          // to the boundary also block the nearby slots
-          const odb::Rect reach_box
-              = box.bloat(height + spacing,
-                          vertical_pin ? odb::Orientation2D::Vertical
-                                       : odb::Orientation2D::Horizontal);
-          if (!die_area.intersects(reach_box)) {
-            continue;
-          }
-          const odb::Rect intersect = die_area.intersect(reach_box);
-          const int pad = half_width + spacing;
-          for (const Interval& interval :
-               findBlockedIntervals(die_area, intersect)) {
-            const bool vertical_edge = interval.getEdge() == Edge::top
-                                       || interval.getEdge() == Edge::bottom;
-            if (vertical_edge != vertical_pin) {
-              continue;
-            }
-            excludeInterval(Interval(interval.getEdge(),
-                                     interval.getBegin() - pad,
-                                     interval.getEnd() + pad,
-                                     layer));
-          }
-        }
+        excludeBoundaryShape(sbox->getBox(), tech_layer, die_area);
       }
     }
   }
@@ -629,17 +633,15 @@ void IOPlacer::getBlockedRegionsFromMacros()
 
 void IOPlacer::getBlockedRegionsFromDbObstructions()
 {
-  odb::Rect die_area = getBlock()->getDieArea();
+  const odb::Rect die_area = getBlock()->getDieArea();
 
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
-    odb::dbBox* obstructBox = obstruction->getBBox();
-    odb::Rect obstructArea = obstructBox->getBox();
-    odb::Rect intersect = die_area.intersect(obstructArea);
-
-    std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
-    for (Interval interval : intervals) {
-      excludeInterval(interval);
+    odb::dbBox* obstruct_box = obstruction->getBBox();
+    odb::dbTechLayer* tech_layer = obstruct_box->getTechLayer();
+    if (tech_layer == nullptr) {
+      continue;
     }
+    excludeBoundaryShape(obstruct_box->getBox(), tech_layer, die_area);
   }
 }
 
@@ -2406,6 +2408,7 @@ void IOPlacer::runHungarianMatching()
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
+  getBlockedRegionsFromDbObstructions();
   getBlockedRegionsFromPDN();
 
   defineSlots();
@@ -2549,6 +2552,7 @@ void IOPlacer::runAnnealing()
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
+  getBlockedRegionsFromDbObstructions();
   getBlockedRegionsFromPDN();
 
   defineSlots();
@@ -2770,6 +2774,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     // block boundary PDN shapes for the checks below, without persisting the
     // intervals beyond this placement
     const size_t num_excluded_intervals = excluded_intervals_.size();
+    getBlockedRegionsFromDbObstructions();
     getBlockedRegionsFromPDN();
     movePinToTrack(pos, layer_level, width, height, die_boundary);
     Edge edge;
