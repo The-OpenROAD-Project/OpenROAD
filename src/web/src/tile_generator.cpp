@@ -99,6 +99,56 @@ constexpr int kMinInstNameBoxPx = 20;      // min instance pixel dim for names
 // survives on its length.
 constexpr double kMinViewablePx = 5.0;
 
+// Die/core/region outline color: Qt pen Qt::gray width 0 (drawChip,
+// renderThread.cpp:1174).
+constexpr Color kOutlineGray{.r = 128, .g = 128, .b = 128, .a = 255};
+
+// DBU -> tile-pixel conversion shared by the drawing primitives, in double.
+// Unclamped: an oblique segment must be converted through these and clipped
+// by drawLine, because saturating x and y independently (as the int
+// overloads below do) rotates the segment instead of shortening it.
+inline double toPxXd(int dbu_x, const TileFrame& frame)
+{
+  return frame.pxX(dbu_x);
+}
+
+// Y is flipped: DBU grows up, pixel rows grow down.  `dim` is the side of the
+// buffer being painted: tile_px for a plain tile, tile_px*kCoverageSupersample
+// on the supersampled render path (pass bufferDim(image) there).
+inline double toPxYd(int dbu_y, const TileFrame& frame, int dim)
+{
+  return dim - 1 - frame.pxY(dbu_y);
+}
+
+// Clamped int form, so a far-outside coordinate can't overflow the cast at
+// extreme zoom.  Only safe for POINTS (dots, glyph anchors, circle/X centres)
+// and for the corners of axis-aligned rects, where losing the exact off-tile
+// coordinate cannot tilt anything; oblique segments must use toPxXd/toPxYd.
+inline int toPxX(int dbu_x, const TileFrame& frame)
+{
+  return static_cast<int>(std::clamp(frame.pxX(dbu_x), -1.0e7, 1.0e7));
+}
+
+// Clamped int form; see toPxX for when it may be used.  Deliberately clamps the
+// offset rather than delegating to toPxYd and clamping the flipped result — the
+// two differ by `dim` once saturated.
+inline int toPxY(int dbu_y, const TileFrame& frame, int dim)
+{
+  return dim - 1
+         - static_cast<int>(std::clamp(frame.pxY(dbu_y), -1.0e7, 1.0e7));
+}
+
+// Width in buffer pixels of a line meant to read as ONE CSS pixel: the overlay
+// hairlines (die/core/region outlines, grid dots and lines).  Authoring a
+// literal 1 px is wrong twice over — it reads a third as thick as everything
+// else on a 3x display, and on the supersampled render path it fades to ~1/S
+// intensity once lanczos2Downsample decimates the buffer back.  See
+// penWidthCss for the 3 CSS px pen the gui::Painter ops default to.
+inline int hairlineCss(const TileFrame& frame)
+{
+  return std::max(1, static_cast<int>(std::lround(frame.px_per_css)));
+}
+
 }  // namespace
 
 void TileVisibility::parseFromJson(const boost::json::object& json)
@@ -154,6 +204,10 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"pins",               &TileVisibility::pins,               true},
     {"pin_markers",        &TileVisibility::pin_markers,        true},
     {"pin_names",          &TileVisibility::pin_names,          true},
+    {"access_points",      &TileVisibility::access_points,      false},
+    {"regions",            &TileVisibility::regions,            true},
+    {"mfg_grid",           &TileVisibility::mfg_grid,           false},
+    {"gcell_grid",         &TileVisibility::gcell_grid,         false},
     {"inst_names",         &TileVisibility::inst_names,         true},
     {"inst_pins",          &TileVisibility::inst_pins,          true},
     {"inst_pin_names",     &TileVisibility::inst_pin_names,     true},
@@ -652,6 +706,9 @@ void TileGenerator::eagerInit()
     chiplets_cache_.clear();
     chiplets_cache_valid_ = false;
   }
+  // Overlay caches are keyed by dbBlock*, which may be stale after a
+  // design swap.
+  clearOverlayCaches();
 
   odb::dbChip* chip = db_->getChip();
   if (chip) {
@@ -719,6 +776,10 @@ void TileGenerator::onDesignChanged()
   // The geometry cache is NOT dropped here.  This hook is debounced (see
   // below), so an edit arriving while an index is already invalid never
   // reaches it — geomCache() polls Search::revision() instead, which is not.
+  // The overlay caches (access points, gcell grids) are derived from the design
+  // in the same way and an empty entry is indistinguishable from "no data" —
+  // caching the gcell grid before global_route created it would keep the
+  // overlay blank until a page reload — so they poll the revision too.
 
   // Tell connected clients to re-request (mirrors Qt's fullRepaint).  The
   // Search-level debounce (announceModified fires only on a valid→invalid
@@ -1326,6 +1387,96 @@ static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
     colors[layer] = c;
   }
   return colors;
+}
+
+void TileGenerator::clearOverlayCaches() const
+{
+  std::lock_guard lock(overlay_cache_mutex_);
+  dropOverlayCaches();
+}
+
+// Caller holds overlay_cache_mutex_.  All three caches are derived from the
+// same design state and are invalidated as a unit, so one recorded revision
+// covers them.
+void TileGenerator::dropOverlayCaches() const
+{
+  bpin_ap_cache_.clear();
+  gcell_x_cache_.clear();
+  gcell_y_cache_.clear();
+}
+
+// Caller holds overlay_cache_mutex_.  `rev` must have been read BEFORE the lock
+// was taken, so an edit landing while a cache is being built leaves the
+// recorded revision behind the live one and the next call rebuilds — the same
+// ordering geomCache() relies on.
+void TileGenerator::dropOverlayCachesIfStale(const uint64_t rev) const
+{
+  if (overlay_cache_revision_ != rev) {
+    dropOverlayCaches();
+    overlay_cache_revision_ = rev;
+  }
+}
+
+TileGenerator::BpinApList TileGenerator::bpinAccessPoints(
+    odb::dbBlock* block) const
+{
+  const uint64_t rev = search_->revision();
+  std::lock_guard lock(overlay_cache_mutex_);
+  dropOverlayCachesIfStale(rev);
+  auto [it, inserted] = bpin_ap_cache_.try_emplace(block);
+  if (inserted) {
+    auto aps = std::make_shared<std::vector<BpinAp>>();
+    for (odb::dbBTerm* term : block->getBTerms()) {
+      for (odb::dbBPin* pin : term->getBPins()) {
+        for (odb::dbAccessPoint* ap : pin->getAccessPoints()) {
+          if (ap) {
+            aps->push_back({ap->getPoint(),
+                            ap->getLayer(),
+                            term->getNet(),
+                            ap->hasAccess()});
+          }
+        }
+      }
+    }
+    it->second = std::move(aps);
+  }
+  return it->second;
+}
+
+// Shared body of gcellGridX/Y.  `fill` copies one axis out of the block's grid;
+// a pointer-to-member would be ambiguous, dbGCellGrid::getGridX/Y each having a
+// second, reference-returning overload.
+TileGenerator::GridList TileGenerator::gcellGrid(
+    odb::PtrMap<odb::dbBlock, GridList>& cache,
+    odb::dbBlock* block,
+    const std::function<void(odb::dbGCellGrid*, std::vector<int>&)>& fill) const
+{
+  const uint64_t rev = search_->revision();
+  std::lock_guard lock(overlay_cache_mutex_);
+  dropOverlayCachesIfStale(rev);
+  auto [it, inserted] = cache.try_emplace(block);
+  if (inserted) {
+    auto grid_lines = std::make_shared<std::vector<int>>();
+    if (odb::dbGCellGrid* grid = block->getGCellGrid()) {
+      fill(grid, *grid_lines);  // sorted ascending by odb
+    }
+    it->second = std::move(grid_lines);
+  }
+  return it->second;
+}
+
+TileGenerator::GridList TileGenerator::gcellGridX(odb::dbBlock* block) const
+{
+  return gcellGrid(gcell_x_cache_, block, [](auto* grid, auto& out) {
+    grid->getGridX(out);
+  });
+}
+
+TileGenerator::GridList TileGenerator::gcellGridY(odb::dbBlock* block) const
+{
+  return gcellGrid(gcell_y_cache_, block, [](auto* grid, auto& out) {
+    grid->getGridY(out);
+  });
 }
 
 const odb::PtrMap<odb::dbTechLayer, Color>& TileGenerator::getLayerColorMap(
@@ -1991,6 +2142,408 @@ const std::vector<odb::Rect>* findViaBoxes(
 
 }  // namespace
 
+void TileGenerator::outlineRectInTile(std::vector<unsigned char>& image,
+                                      const odb::Rect& r,
+                                      const Color& c,
+                                      const TileFrame& frame) const
+{
+  const odb::Rect& dbu_tile = frame.cull;
+  const int xl = r.xMin();
+  const int yl = r.yMin();
+  const int xh = r.xMax();
+  const int yh = r.yMax();
+  const int64_t pixel_xl = static_cast<int64_t>(frame.pxX(xl));
+  const int64_t pixel_yl = static_cast<int64_t>(frame.pxY(yl));
+  const int64_t pixel_xh = static_cast<int64_t>(std::ceil(frame.pxX(xh)));
+  const int64_t pixel_yh = static_cast<int64_t>(std::ceil(frame.pxY(yh)));
+
+  // frame.scale is in buffer pixels per DBU, so the clamps must follow the
+  // buffer the caller handed us: tile_px for a plain tile,
+  // tile_px*kCoverageSupersample for the supersampled render path.
+  const int dim = bufferDim(image);
+  const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, dim);
+  const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, dim);
+  const int loop_xh = std::clamp<int64_t>(pixel_xh, 0, dim);
+  const int loop_yh = std::clamp<int64_t>(pixel_yh, 0, dim);
+
+  const int draw_xl = std::clamp<int64_t>(pixel_xl, 0, dim - 1);
+  const int draw_yl = std::clamp<int64_t>(pixel_yl, 0, dim - 1);
+  const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, dim - 1);
+  const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, dim - 1);
+
+  // Thickness grows with the buffer so the edge survives decimation; each
+  // band is drawn inward from the edge to keep the rect's extent exact.
+  const int t = hairlineCss(frame);
+  if (dbu_tile.xMin() <= xl && xl <= dbu_tile.xMax()) {
+    for (int iy = loop_yl; iy < loop_yh; ++iy) {
+      for (int k = 0; k < t; ++k) {
+        setPixel(image, draw_xl + k, dim - 1 - iy, c, dim);
+      }
+    }
+  }
+  if (dbu_tile.xMin() <= xh && xh <= dbu_tile.xMax()) {
+    for (int iy = loop_yl; iy < loop_yh; ++iy) {
+      for (int k = 0; k < t; ++k) {
+        setPixel(image, draw_xh - k, dim - 1 - iy, c, dim);
+      }
+    }
+  }
+  if (dbu_tile.yMin() <= yl && yl <= dbu_tile.yMax()) {
+    for (int ix = loop_xl; ix < loop_xh; ++ix) {
+      for (int k = 0; k < t; ++k) {
+        setPixel(image, ix, dim - 1 - draw_yl - k, c, dim);
+      }
+    }
+  }
+  if (dbu_tile.yMin() <= yh && yh <= dbu_tile.yMax()) {
+    for (int ix = loop_xl; ix < loop_xh; ++ix) {
+      for (int k = 0; k < t; ++k) {
+        setPixel(image, ix, dim - 1 - draw_yh + k, c, dim);
+      }
+    }
+  }
+}
+
+// Special "_access_points" layer: dbAccessPoint markers (X).  Mirrors GUI
+// RenderThread::drawAccessPoints (renderThread.cpp:1484-1550).
+void TileGenerator::drawAccessPointsLayer(std::vector<unsigned char>& image,
+                                          odb::dbBlock* block,
+                                          const TileFrame& frame,
+                                          const TileVisibility& vis) const
+{
+  const odb::Rect& dbu_tile = frame.cull;
+  constexpr Color kApHasAccess{.r = 0, .g = 255, .b = 0, .a = 255};
+  constexpr Color kApNoAccess{.r = 255, .g = 0, .b = 0, .a = 255};
+  constexpr int kApSizeDbu = 100;             // match GUI shape_size
+  constexpr int kApHalfDbu = kApSizeDbu / 2;  // marker reach past its centre
+  const int dim = bufferDim(image);
+  // LOD: skip when the 100-DBU marker would be sub-pixel (mirror GUI).  The
+  // limit is in CSS pixels, so scale it by the buffer's px-per-CSS-px.
+  if (kApSizeDbu * frame.scale < frame.px_per_css) {
+    return;
+  }
+  const int half_px = static_cast<int>(kApSizeDbu * frame.scale / 2.0);
+  const int stroke = hairlineCss(frame);
+
+  // Cull against the tile grown by the marker's reach, not against the tile
+  // itself: the X extends half a marker past its centre, so an access point
+  // just outside this tile still paints arms into it.  Culling on the bare
+  // centre made the neighbouring tile skip the marker entirely, which chopped
+  // the X along every tile seam (PR #10806 review).  drawLine clips to the
+  // buffer, so drawing a marker centred outside the tile is safe.
+  odb::Rect ap_tile;
+  dbu_tile.bloat(kApHalfDbu, ap_tile);
+
+  // Draw one access point whose point is already in GLOBAL DBU.
+  auto draw_ap = [&](const odb::Point& pt,
+                     odb::dbTechLayer* ap_lyr,
+                     const bool has_access) {
+    if (vis.has_visible_layers && ap_lyr
+        && !vis.visible_layers.contains(ap_lyr->getName())) {
+      return;  // access point on a hidden layer
+    }
+    if (!ap_tile.intersects(pt)) {
+      return;  // viewport cull, inflated by the marker reach
+    }
+    const int px = toPxX(pt.x(), frame);
+    const int py = toPxY(pt.y(), frame, dim);
+    const Color c = has_access ? kApHasAccess : kApNoAccess;
+    drawLine(image,
+             px - half_px,
+             py - half_px,
+             px + half_px,
+             py + half_px,
+             c,
+             stroke);
+    drawLine(image,
+             px - half_px,
+             py + half_px,
+             px + half_px,
+             py - half_px,
+             c,
+             stroke);
+  };
+
+  // (a) IO pins (BPins) — global coords, no transform.  The per-block
+  // cache avoids rescanning every BTerm on every tile; holding the shared_ptr
+  // keeps the list alive across a concurrent cache clear.
+  const BpinApList bpin_aps = bpinAccessPoints(block);
+  for (const BpinAp& ap : *bpin_aps) {
+    if (ap.net && !vis.isNetVisible(ap.net)) {
+      continue;  // null-safe net filter
+    }
+    draw_ap(ap.point, ap.layer, ap.has_access);
+  }
+  // (b) Instance pins (ITerms) — translate by instance origin only.
+  //     Gate on inst_pins to mirror GUI areInstancePinsVisible().
+  //     searchInsts gets the grown tile for the same seam reason as draw_ap.
+  if (vis.inst_pins) {
+    for (odb::dbInst* inst : search_->searchInsts(block,
+                                                  ap_tile.xMin(),
+                                                  ap_tile.yMin(),
+                                                  ap_tile.xMax(),
+                                                  ap_tile.yMax())) {
+      int ox = 0;
+      int oy = 0;
+      inst->getLocation(ox, oy);
+      const odb::dbTransform xform({ox, oy});  // translation only!
+      for (odb::dbITerm* it : inst->getITerms()) {
+        for (odb::dbAccessPoint* ap : it->getPrefAccessPoints()) {
+          if (!ap) {
+            continue;
+          }
+          odb::Point pt = ap->getPoint();
+          xform.apply(pt);
+          draw_ap(pt, ap->getLayer(), ap->hasAccess());
+        }
+      }
+    }
+  }
+}
+
+// Special "_regions" layer: dbRegion boundaries as semi-transparent
+// filled rects with a 1px gray outline.  Mirrors GUI
+// RenderThread::drawRegions (renderThread.cpp:1405-1426).
+void TileGenerator::drawRegionsLayer(std::vector<unsigned char>& image,
+                                     odb::dbBlock* block,
+                                     const TileFrame& frame,
+                                     const TileVisibility& /*vis*/) const
+{
+  const odb::Rect& dbu_tile = frame.cull;
+  // GUI defaults: fill = region_color_ (0x70,0x70,0x70,0x70), outline
+  // pen = Qt::gray — same gray as the die outline (kOutlineGray).
+  constexpr Color kRegionFill{.r = 0x70, .g = 0x70, .b = 0x70, .a = 0x70};
+  for (odb::dbRegion* region : block->getRegions()) {
+    for (odb::dbBox* box : region->getBoundaries()) {
+      const odb::Rect r = box->getBox();
+      if (r.area() <= 0 || !r.overlaps(dbu_tile)) {
+        continue;
+      }
+      drawFilledRect(
+          image, toPixels(frame, r.intersect(dbu_tile)), kRegionFill);
+      // Outline: same clamped edge drawing as the die/core outline.
+      outlineRectInTile(image, r, kOutlineGray, frame);
+    }
+  }
+}
+
+// Special "_mfg_grid" layer: white dots at manufacturing-grid points.
+// Mirrors GUI RenderThread::drawManufacturingGrid (renderThread.cpp:1359-1403).
+void TileGenerator::drawMfgGridLayer(std::vector<unsigned char>& image,
+                                     odb::dbBlock* block,
+                                     const TileFrame& frame,
+                                     const TileVisibility& vis) const
+{
+  const odb::Rect& dbu_tile = frame.cull;
+  odb::dbTech* tech = block->getTech();
+  if (!tech || !tech->hasManufacturingGrid()) {
+    return;
+  }
+  const int grid = tech->getManufacturingGrid();  // DBU
+  if (grid <= 0) {
+    return;
+  }
+  const int dim = bufferDim(image);
+  // Adaptive decimation instead of the Qt behaviour of hiding the grid whenever
+  // points would be closer than kMinViewablePx.  A manufacturing grid is far
+  // finer than a die: nangate45's 10 DBU grid on a 9.3 mm die only clears a
+  // 5 px spacing at z=15, so the Qt rule makes the overlay unreachable in
+  // practice (PR #10806 review).  Here we keep the on-screen spacing at
+  // kMinViewablePx by drawing every k-th grid line: k == 1 is the exact grid
+  // once it is legible, and below that this is a SUBGRID (k*grid), not the
+  // literal manufacturing grid.
+  //
+  // k depends only on scale/dim — never on the tile — so neighbouring tiles at
+  // the same zoom agree on the same absolute lattice and the seams line up.
+  //
+  // "Detailed view" tightens the target spacing, so the lattice gets denser and
+  // lands closer to the real grid (measured on bp_quad: coverage 24% -> 37%,
+  // dot period 5 px -> 4).  It stops at 4 px rather than the 1 px the toggle
+  // uses for shapes, for two reasons:
+  //  - a grid tiles the plane, unlike sparse shapes, and the tile is Lanczos-
+  //    decimated on the way out, which spreads every dot over ~3 output px.
+  //    Below ~4 px the dots merge into a solid white sheet that hides the
+  //    design (measured at a 1 px and a 2 px target: every pixel of the tile
+  //    lit), which is worse than showing nothing.
+  //  - the target can never reach 0, because this loop is O(points in tile) —
+  //    the raw grid on a 9.3 mm die at zoom-out is ~10^11 points per tile.
+  constexpr double kDetailedGridPx = 4.0;
+  const double target_px = vis.detailed ? kDetailedGridPx : kMinViewablePx;
+  const double dbu_per_css = frame.px_per_css / frame.scale;
+  const int k = std::max(
+      1, static_cast<int>(std::ceil(target_px * dbu_per_css / grid)));
+  const int step = k * grid;
+  constexpr Color kGridDot{.r = 255, .g = 255, .b = 255, .a = 255};
+  const int dot = hairlineCss(frame);
+  // Anchor on absolute multiples of `step` (seamless across tiles).  Integer
+  // division truncates toward zero, so snap explicitly to handle negative
+  // coordinates (tile bounds include the label margin, which can go
+  // negative near the origin); the Qt version only handles positive ones.
+  int first_x = dbu_tile.xMin() / step * step;
+  if (first_x < dbu_tile.xMin()) {
+    first_x += step;
+  }
+  int last_x = dbu_tile.xMax() / step * step;
+  if (last_x > dbu_tile.xMax()) {
+    last_x -= step;
+  }
+  int first_y = dbu_tile.yMin() / step * step;
+  if (first_y < dbu_tile.yMin()) {
+    first_y += step;
+  }
+  int last_y = dbu_tile.yMax() / step * step;
+  if (last_y > dbu_tile.yMax()) {
+    last_y -= step;
+  }
+  for (int gx = first_x; gx <= last_x; gx += step) {
+    const int px = toPxX(gx, frame);
+    for (int gy = first_y; gy <= last_y; gy += step) {
+      const int py = toPxY(gy, frame, dim);
+      // One dot per grid point; `dot` px wide so it survives decimation.
+      for (int dy = 0; dy < dot; ++dy) {
+        for (int dx = 0; dx < dot; ++dx) {
+          setPixel(image, px + dx, py + dy, kGridDot, dim);
+        }
+      }
+    }
+  }
+}
+
+// Special "_gcell_grid" layer: white grid lines at GCell boundaries.
+// Mirrors GUI RenderThread::drawGCellGrid (renderThread.cpp:1304-1357).
+void TileGenerator::drawGcellGridLayer(std::vector<unsigned char>& image,
+                                       odb::dbBlock* block,
+                                       const TileFrame& frame,
+                                       const TileVisibility& /*vis*/) const
+{
+  const odb::Rect& dbu_tile = frame.cull;
+  odb::dbGCellGrid* grid = block->getGCellGrid();
+  const odb::Rect die_area = block->getDieArea();
+  if (!grid || !dbu_tile.intersects(die_area)) {
+    return;
+  }
+  const odb::Rect draw_bounds = dbu_tile.intersect(die_area);
+  constexpr Color kGridLine{.r = 255, .g = 255, .b = 255, .a = 255};
+  const int dim = bufferDim(image);
+  // Pixel range of draw_bounds inside this tile (Y flipped).
+  const int pxl = toPxX(draw_bounds.xMin(), frame);
+  const int pxh = toPxX(draw_bounds.xMax(), frame);
+  const int pyl = toPxY(draw_bounds.yMin(), frame, dim);
+  const int pyh = toPxY(draw_bounds.yMax(), frame, dim);
+
+  const int stroke = hairlineCss(frame);
+  auto draw_v = [&](const int x) {
+    if (x < draw_bounds.xMin() || draw_bounds.xMax() < x) {
+      return;
+    }
+    const int px = toPxX(x, frame);
+    drawLine(image, px, pyl, px, pyh, kGridLine, stroke);
+  };
+  auto draw_h = [&](const int y) {
+    if (y < draw_bounds.yMin() || draw_bounds.yMax() < y) {
+      return;
+    }
+    const int py = toPxY(y, frame, dim);
+    drawLine(image, pxl, py, pxh, py, kGridLine, stroke);
+  };
+
+  // Per-block cache + binary search: only visit the grid lines inside
+  // this tile instead of copying/scanning the full vectors.  Holding the
+  // shared_ptr keeps the vectors alive across a concurrent cache clear.
+  const GridList x_grid = gcellGridX(block);
+  const GridList y_grid = gcellGridY(block);
+  for (auto itx = std::ranges::lower_bound(*x_grid, draw_bounds.xMin());
+       itx != x_grid->end() && *itx <= draw_bounds.xMax();
+       ++itx) {
+    draw_v(*itx);
+  }
+  for (auto ity = std::ranges::lower_bound(*y_grid, draw_bounds.yMin());
+       ity != y_grid->end() && *ity <= draw_bounds.yMax();
+       ++ity) {
+    draw_h(*ity);
+  }
+
+  // Close the mesh at the die boundary.  The grid lines are the gcell
+  // START edges (e.g. gcd/ihp: last line at 172800 vs die 185960), so the
+  // top/right edges have no line.  The Qt GUI looks closed because it
+  // always draws the die outline separately (renderThread.cpp:1188-1191);
+  // the web viewer only draws a die outline for multi-die designs, so
+  // close the grid here.
+  draw_v(die_area.xMin());
+  draw_v(die_area.xMax());
+  draw_h(die_area.yMin());
+  draw_h(die_area.yMax());
+}
+
+/* static */
+std::vector<std::string> TileGenerator::saveImageLayerOrder(
+    const TileVisibility& vis,
+    const std::vector<std::string>& tech_layers)
+{
+  // Bottom to top, by the SAME z order the client stacks the layers in on
+  // screen (addPseudoLayer / the layer loop in display-controls.js): Leaflet
+  // paints by zIndex, so a PNG composited in any other order is not the view
+  // the user saw.  Compositing in registry order — every pseudo layer last —
+  // put the manufacturing grid over the routing and the pin markers over the
+  // tech layers.  These three mirror the client's non-pseudo values;
+  // PseudoLayerDef::z_index carries the overlays'.
+  constexpr int kInstancesZ = 0;
+  constexpr int kPinsZ = 1;
+  constexpr int kTechLayerZBase = 3;
+
+  std::vector<std::pair<int, std::string>> ordered;
+  ordered.reserve(tech_layers.size() + 2 + pseudoLayerDefs().size());
+  ordered.emplace_back(kInstancesZ, "_instances");
+  if (vis.pins) {
+    ordered.emplace_back(kPinsZ, "_pins");
+  }
+  int layer_z = kTechLayerZBase;
+  for (const std::string& name : tech_layers) {
+    ordered.emplace_back(layer_z++, name);
+  }
+  for (const PseudoLayerDef& def : pseudoLayerDefs()) {
+    if (vis.*def.flag) {
+      ordered.emplace_back(def.z_index, def.name);
+    }
+  }
+  std::ranges::stable_sort(ordered, {}, &std::pair<int, std::string>::first);
+
+  std::vector<std::string> names;
+  names.reserve(ordered.size());
+  for (auto& [z, name] : ordered) {
+    names.push_back(std::move(name));
+  }
+  return names;
+}
+
+const std::array<TileGenerator::PseudoLayerDef, 4>&
+TileGenerator::pseudoLayerDefs()
+{
+  // z_index mirrors addPseudoLayer() in display-controls.js (see
+  // saveImageLayerOrder); those values in turn follow the GUI's paint order
+  // (renderThread.cpp:1201-1298), where the manufacturing grid goes down before
+  // the routing layers and access points, regions and the gcell grid on top.
+  static const std::array<PseudoLayerDef, 4> defs = {{
+      {.name = "_access_points",
+       .flag = &TileVisibility::access_points,
+       .painter = &TileGenerator::drawAccessPointsLayer,
+       .z_index = 1000},
+      {.name = "_regions",
+       .flag = &TileVisibility::regions,
+       .painter = &TileGenerator::drawRegionsLayer,
+       .z_index = 1001},
+      {.name = "_mfg_grid",
+       .flag = &TileVisibility::mfg_grid,
+       .painter = &TileGenerator::drawMfgGridLayer,
+       .z_index = 2},
+      {.name = "_gcell_grid",
+       .flag = &TileVisibility::gcell_grid,
+       .painter = &TileGenerator::drawGcellGridLayer,
+       .z_index = 1002},
+  }};
+  return defs;
+}
+
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
     const int z,
@@ -2122,11 +2675,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // frame for translation-only transforms; non-R0 orientations log
     // and skip for v1 (followup work to support full transforms).
     const std::vector<ChipletNode>& chiplet_nodes = chiplets();
-    // The die-outline overlay only makes sense in multi-die designs; in
-    // single-chip layouts there is no chiplet to demarcate, and adding
-    // it caused regressions because every "expect transparent" test
-    // started seeing a gray frame.
+    // Multi-die designs draw the die outline on EVERY layer pass (chiplet
+    // demarcation).  Single-die designs draw die+core outlines too (Qt
+    // drawChip does it unconditionally), but only on the always-rendered
+    // "_instances" pass — drawing on every pass put a gray frame on every
+    // tech-layer tile and broke every "expect transparent" test.
     const bool draw_die_outline = chiplet_nodes.size() > 1;
+    // "_instances" pass: instance borders only (no routing) + the always-on
+    // die/core outlines.
+    const bool instances_only = (layer == "_instances");
     for (const ChipletNode& node : chiplet_nodes) {
       if (!vis.isChipletVisible(node.path)) {
         continue;
@@ -2207,55 +2764,23 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const int pat_ox = patternAnchor(dbu_x_min, scale);
       const int pat_oy = patternAnchor(dbu_y_min, scale);
 
-      // Mirrors RenderThread::drawChip() in the Qt GUI: outline the die
-      // boundary so the chiplet shape is visible regardless of which
-      // tech layer is active. Drawn once per layer-pass on every tile,
-      // but only in multi-die designs where the demarcation is useful.
-      if (draw_die_outline) {
+      // Mirrors RenderThread::drawChip() in the Qt GUI: die outline on
+      // every layer pass in multi-die designs (chiplet demarcation), and
+      // on the _instances pass for all designs (Qt draws it always;
+      // scoping to _instances keeps tech-layer tiles transparent).
+      if (draw_die_outline || instances_only) {
         const odb::Rect die = block->getDieArea();
         if (die.area() > 0) {
-          const int xl = die.xMin();
-          const int yl = die.yMin();
-          const int xh = die.xMax();
-          const int yh = die.yMax();
-          const int64_t pixel_xl = (int64_t) ((xl - dbu_x_min) * scale);
-          const int64_t pixel_yl = (int64_t) ((yl - dbu_y_min) * scale);
-          const int64_t pixel_xh
-              = (int64_t) std::ceil((xh - dbu_x_min) * scale);
-          const int64_t pixel_yh
-              = (int64_t) std::ceil((yh - dbu_y_min) * scale);
-
-          const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, super);
-          const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, super);
-          const int loop_xh = std::clamp<int64_t>(pixel_xh, 0, super);
-          const int loop_yh = std::clamp<int64_t>(pixel_yh, 0, super);
-
-          const int draw_xl = std::clamp<int64_t>(pixel_xl, 0, super - 1);
-          const int draw_yl = std::clamp<int64_t>(pixel_yl, 0, super - 1);
-          const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, super - 1);
-          const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, super - 1);
-
-          constexpr Color die_outline{.r = 128, .g = 128, .b = 128, .a = 255};
-          if (dbu_x_min <= xl && xl <= dbu_x_max) {
-            for (int iy = loop_yl; iy < loop_yh; ++iy) {
-              setPixel(image_buffer, draw_xl, super - 1 - iy, die_outline);
-            }
-          }
-          if (dbu_x_min <= xh && xh <= dbu_x_max) {
-            for (int iy = loop_yl; iy < loop_yh; ++iy) {
-              setPixel(image_buffer, draw_xh, super - 1 - iy, die_outline);
-            }
-          }
-          if (dbu_y_min <= yl && yl <= dbu_y_max) {
-            for (int ix = loop_xl; ix < loop_xh; ++ix) {
-              setPixel(image_buffer, ix, super - 1 - draw_yl, die_outline);
-            }
-          }
-          if (dbu_y_min <= yh && yh <= dbu_y_max) {
-            for (int ix = loop_xl; ix < loop_xh; ++ix) {
-              setPixel(image_buffer, ix, super - 1 - draw_yh, die_outline);
-            }
-          }
+          outlineRectInTile(image_buffer, die, kOutlineGray, frame);
+        }
+      }
+      // Core area outline (Qt drawChip draws it right after the die).
+      // Unset core -> empty polygon -> mergeInit()-inverted rect, so
+      // check min<max explicitly rather than area()>0.
+      if (instances_only) {
+        const odb::Rect core = block->getCoreArea();
+        if (core.xMin() < core.xMax() && core.yMin() < core.yMax()) {
+          outlineRectInTile(image_buffer, core, kOutlineGray, frame);
         }
       }
 
@@ -2580,8 +3105,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         }
       }
 
-      // Special "_instances" layer: only draw instance borders, no routing
-      const bool instances_only = (layer == "_instances");
+      // Self-painting pseudo layers (see pseudoLayerDefs): dispatch by
+      // name and gate on the layer's visibility flag.
+      bool pseudo_overlay = false;
+      for (const PseudoLayerDef& def : pseudoLayerDefs()) {
+        if (layer == def.name) {
+          pseudo_overlay = true;
+          if (vis.*def.flag) {
+            (this->*def.painter)(image_buffer, block, frame, vis);
+          }
+          break;
+        }
+      }
 
       // On a tech-layer tile the per-instance pass paints only master
       // obstructions (vis.blockages) and cell-pin shapes (vis.inst_pins).  It
@@ -2596,9 +3131,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           = instances_only || !tech_layer
             || ((vis.blockages || vis.inst_pins) && layer_master_geom);
 
-      // "_modules" and "_pins" layers handle their own drawing above;
-      // skip all other drawing (instances, routing, etc.)
-      if (!modules_layer && !pins_layer) {
+      // Pseudo layers ("_modules", "_pins" and the overlays above) handle
+      // their own drawing; skip all other drawing (instances, routing, etc.)
+      const bool pseudo_layer = modules_layer || pins_layer || pseudo_overlay;
+      if (!pseudo_layer) {
         const auto iterm_font = fontAtlasGetFont(static_cast<int>(
             std::lround(kItermLabelFontHeight * super_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
@@ -3428,7 +3964,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           }
         }
 
-      }  // end if (!modules_layer && !pins_layer)
+      }  // end if (!pseudo_layer)
 
       if (use_local) {
         // Slow-path compositing for chiplets with non-R0 orientations.
@@ -3947,15 +4483,8 @@ void TileGenerator::saveImage(const std::string& filename,
   const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
   std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
-  // Layers to render (bottom to top): _instances, tech layers, _pins.
-  std::vector<std::string> layers_to_render;
-  layers_to_render.emplace_back("_instances");
-  for (const auto& name : getLayers()) {
-    layers_to_render.push_back(name);
-  }
-  if (vis.pins) {
-    layers_to_render.emplace_back("_pins");
-  }
+  const std::vector<std::string> layers_to_render
+      = saveImageLayerOrder(vis, getLayers());
 
   // Render each tile, compositing all layers.
   for (int ty = ty_min; ty <= ty_max; ++ty) {
@@ -4235,19 +4764,6 @@ Color toTileColor(const gui::Painter::Color& c)
   };
 }
 
-inline int toPxX(int dbu_x, const TileFrame& frame)
-{
-  return static_cast<int>(frame.pxX(dbu_x));
-}
-
-// Y is flipped: DBU grows up, pixel rows grow down.  `dim` is the buffer side
-// length (tile_px = 256*dpr), not a fixed 256 — a hardcoded flip anchors the
-// overlay 256 rows from the top instead of the tile bottom on HiDPI.
-inline int toPxY(int dbu_y, const TileFrame& frame, int dim)
-{
-  return dim - 1 - static_cast<int>(frame.pxY(dbu_y));
-}
-
 }  // namespace
 
 /* static */
@@ -4318,15 +4834,13 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         if (l->pen.color.a == 0) {
           continue;
         }
-        const int x0 = toPxX(l->p1.x(), frame);
-        const int y0 = toPxY(l->p1.y(), frame, dim);
-        const int x1 = toPxX(l->p2.x(), frame);
-        const int y1 = toPxY(l->p2.y(), frame, dim);
+        // Oblique segment: convert in double so drawLine's clip keeps the
+        // slope (see toPxXd).
         drawLine(image,
-                 x0,
-                 y0,
-                 x1,
-                 y1,
+                 toPxXd(l->p1.x(), frame),
+                 toPxYd(l->p1.y(), frame, dim),
+                 toPxXd(l->p2.x(), frame),
+                 toPxYd(l->p2.y(), frame, dim),
                  toTileColor(l->pen.color),
                  penWidthPx(l->pen, scale));
       } else if (const auto* c = std::get_if<DrawCircleOp>(&op)) {
@@ -4387,11 +4901,12 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
           for (int i = 0; i < n; ++i) {
             const odb::Point& a = p->points[i];
             const odb::Point& b = p->points[(i + 1) % n];
+            // Polygon edges are arbitrary segments — same reason as DrawLineOp.
             drawLine(image,
-                     toPxX(a.x(), frame),
-                     toPxY(a.y(), frame, dim),
-                     toPxX(b.x(), frame),
-                     toPxY(b.y(), frame, dim),
+                     toPxXd(a.x(), frame),
+                     toPxYd(a.y(), frame, dim),
+                     toPxXd(b.x(), frame),
+                     toPxYd(b.y(), frame, dim),
                      pen,
                      w);
           }
@@ -4657,15 +5172,20 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
     // Semi-transparent yellow fill
     fillPolygon(image, poly, frame, fill, /*blend=*/true);
 
-    // Solid yellow border — draw each edge
+    // Solid yellow border — draw each edge.  Oblique by nature (these are the
+    // octagons of octilinear SWires), so convert in double and let drawLine
+    // clip: a vertex a whole die outside the tile overflows an int cast, and
+    // saturating it per axis would tilt the edge.
     const auto& points = poly.getPoints();
     const int n = static_cast<int>(points.size());
     for (int i = 0; i < n - 1; ++i) {
-      const int px0 = static_cast<int>(frame.pxX(points[i].x()));
-      const int py0 = dim - 1 - static_cast<int>(frame.pxY(points[i].y()));
-      const int px1 = static_cast<int>(frame.pxX(points[i + 1].x()));
-      const int py1 = dim - 1 - static_cast<int>(frame.pxY(points[i + 1].y()));
-      drawLine(image, px0, py0, px1, py1, border, penWidthCss(frame));
+      drawLine(image,
+               toPxXd(points[i].x(), frame),
+               toPxYd(points[i].y(), frame, dim),
+               toPxXd(points[i + 1].x(), frame),
+               toPxYd(points[i + 1].y(), frame, dim),
+               border,
+               penWidthCss(frame));
     }
   }
 }
@@ -4753,20 +5273,73 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
 
 /* static */
 void TileGenerator::drawLine(std::vector<unsigned char>& image,
-                             int x0,
-                             int y0,
-                             int x1,
-                             int y1,
+                             const double fx0,
+                             const double fy0,
+                             const double fx1,
+                             const double fy1,
                              const Color& c,
-                             int width)
+                             const int width)
 {
+  const int r = (width - 1) / 2;
+  int x0 = 0;
+  int y0 = 0;
+  int x1 = 0;
+  int y1 = 0;
+
+  // Liang-Barsky clip against the tile (with a margin for the brush
+  // radius) BEFORE running Bresenham: callers may pass endpoints far
+  // outside the tile (flywires, region edges at deep zoom) and an
+  // unclipped line iterates one step per pixel of its full length.
+  // The bound follows the buffer, like setPixel/drawFilledRect: overlay
+  // painters run on the supersampled buffer, where a hardcoded 256 would
+  // clip away everything past the first quadrant.
+  //
+  // Clipping (not saturating) is also what keeps the slope exact: the clip
+  // moves both endpoints along the segment's own parameter t, so the
+  // in-bounds result is collinear with the input no matter how far outside
+  // the tile the endpoints started.
+  {
+    const double lo = -r - 1.0;
+    const double hi = bufferDim(image) + r;
+    const double dxf = fx1 - fx0;
+    const double dyf = fy1 - fy0;
+    double t0 = 0.0;
+    double t1 = 1.0;
+    auto clip = [&t0, &t1](double p, double q) {
+      if (p == 0.0) {
+        return q >= 0.0;  // parallel: inside iff q >= 0
+      }
+      const double t = q / p;
+      if (p < 0) {
+        if (t > t1) {
+          return false;
+        }
+        t0 = std::max(t0, t);
+      } else {
+        if (t < t0) {
+          return false;
+        }
+        t1 = std::min(t1, t);
+      }
+      return true;
+    };
+    if (!clip(-dxf, fx0 - lo) || !clip(dxf, hi - fx0) || !clip(-dyf, fy0 - lo)
+        || !clip(dyf, hi - fy0)) {
+      return;  // fully outside the tile
+    }
+    // Both ends now lie inside [lo, hi], so the casts cannot overflow.
+    x1 = static_cast<int>(std::lround(fx0 + t1 * dxf));
+    y1 = static_cast<int>(std::lround(fy0 + t1 * dyf));
+    x0 = static_cast<int>(std::lround(fx0 + t0 * dxf));
+    y0 = static_cast<int>(std::lround(fy0 + t0 * dyf));
+  }
+
   // Bresenham's line algorithm
   int dx = std::abs(x1 - x0);
   int dy = std::abs(y1 - y0);
   int sx = x0 < x1 ? 1 : -1;
   int sy = y0 < y1 ? 1 : -1;
   int err = dx - dy;
-  const int r = (width - 1) / 2;
 
   while (true) {
     if (r <= 0) {
@@ -4800,15 +5373,17 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
 {
   const int dim = bufferDim(image);
   for (const auto& fl : lines) {
-    // Convert DBU to pixel coordinates
-    int px0 = static_cast<int>(frame.pxX(fl.p1.x()));
-    int py0 = dim - 1 - static_cast<int>(frame.pxY(fl.p1.y()));
-    int px1 = static_cast<int>(frame.pxX(fl.p2.x()));
-    int py1 = dim - 1 - static_cast<int>(frame.pxY(fl.p2.y()));
+    // Convert DBU to pixel coordinates in double and let drawLine clip:
+    // flywires can be far longer than a tile, and the clamped int conversion
+    // would tilt them once one axis saturated at extreme zoom.
+    const double px0 = toPxXd(fl.p1.x(), frame);
+    const double py0 = toPxYd(fl.p1.y(), frame, dim);
+    const double px1 = toPxXd(fl.p2.x(), frame);
+    const double py1 = toPxYd(fl.p2.y(), frame, dim);
 
     // Rough bounding-box check: skip if line can't cross this tile
-    int lx0 = std::min(px0, px1), lx1 = std::max(px0, px1);
-    int ly0 = std::min(py0, py1), ly1 = std::max(py0, py1);
+    const double lx0 = std::min(px0, px1), lx1 = std::max(px0, px1);
+    const double ly0 = std::min(py0, py1), ly1 = std::max(py0, py1);
     if (lx1 < 0 || lx0 >= dim || ly1 < 0 || ly0 >= dim) {
       continue;
     }
@@ -5150,6 +5725,9 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   out["sites"] = std::move(sites);
 
   out["has_liberty"] = gen.hasSta();
+  // Lets the client skip creating the default-on "_regions" tile layer
+  // (and its per-viewport requests) when the design has no dbRegion.
+  out["has_regions"] = gen.getBlock() && !gen.getBlock()->getRegions().empty();
   // For 3DBlox designs the top dbChip is HIER and has no dbBlock; the
   // chiplet list below is still emitted so the frontend can group layers
   // by chiplet.
