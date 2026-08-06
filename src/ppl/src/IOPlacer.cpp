@@ -858,7 +858,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
       }
 
       for (const odb::Point& pos : slots) {
-        bool blocked = checkBlocked(Edge::invalid, line, pos, layer);
+        bool blocked = checkBlocked(Edge::polygonEdge, line, pos, layer);
         slots_.push_back({blocked, false, pos, layer, Edge::polygonEdge, line});
       }
     }
