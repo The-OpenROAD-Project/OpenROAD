@@ -22,7 +22,6 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -1140,7 +1139,6 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
-  normalizeGuideRoute(routes_[db_net]);
   addImplicitVias(routes_[db_net]);
 
   // Validate that the restored routing covers every pin; on failure fall back
@@ -2874,7 +2872,6 @@ void GlobalRouter::loadGuidesFromDB()
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
-    normalizeGuideRoute(route);
     addImplicitVias(route);
     mergeSegments(pins, route);
   }
@@ -3041,37 +3038,6 @@ void GlobalRouter::addImplicitVias(GRoute& route)
     }
   }
   route.insert(route.end(), bridges.begin(), bridges.end());
-}
-
-void GlobalRouter::normalizeGuideRoute(GRoute& route)
-{
-  if (route.empty()) {
-    return;
-  }
-
-  // Orient vias lower->upper. GSegment equality (and GSegmentHash) compares
-  // init/final layers positionally, so the two guides saveGuides() writes for a
-  // pin-access via only compare equal once both face the same way. Layer 0 is
-  // the "no via layer" sentinel from a guide without a via layer, not a real
-  // routing level, so leave those segments untouched.
-  for (GSegment& seg : route) {
-    if (seg.isVia() && seg.init_layer > seg.final_layer
-        && seg.final_layer > 0) {
-      std::swap(seg.init_layer, seg.final_layer);
-    }
-  }
-
-  // Keep the first occurrence of each segment so the surviving order is a
-  // function of the guide order alone, which makes the reload deterministic.
-  std::unordered_set<GSegment, GSegmentHash> seen;
-  seen.reserve(route.size());
-  size_t write = 0;
-  for (size_t read = 0; read < route.size(); read++) {
-    if (seen.insert(route[read]).second) {
-      route[write++] = route[read];
-    }
-  }
-  route.resize(write);
 }
 
 void GlobalRouter::updateEdgesUsage()
