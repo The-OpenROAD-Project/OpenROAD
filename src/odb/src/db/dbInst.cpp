@@ -82,7 +82,10 @@ void _dbInst::setModule(dbId<_dbModule> module)
   }
 
   module_ = module;
-  if (previous == 0 || module == 0) {
+  // Initial assignment during dbInst::create is not a hierarchy change.
+  // Clearing an existing module is a hierarchy change and must notify
+  // callbacks so consumers can invalidate cached hierarchical paths.
+  if (previous == 0) {
     return;
   }
 
