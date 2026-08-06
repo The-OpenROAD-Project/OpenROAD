@@ -132,6 +132,7 @@ or_integration_tests(
     top_layer7
     top_layer_error
     top_layer_error2
+    top_layer_pdn_spacing
     write_pin_placement1
     write_pin_placement2
     write_pin_placement3
