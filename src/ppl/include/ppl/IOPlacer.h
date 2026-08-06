@@ -227,6 +227,9 @@ class IOPlacer
                                              const odb::Rect& box);
   PinSize computePinSize(int layer);
   int computeLayerSpacing(int layer, int shape_width, int parallel_length);
+  void excludeBoundaryShape(const odb::Rect& box,
+                            odb::dbTechLayer* tech_layer,
+                            const odb::Rect& die_area);
   void getBlockedRegionsFromPDN();
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
