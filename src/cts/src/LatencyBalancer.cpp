@@ -93,7 +93,7 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
   debugPrint(logger_, CTS, "insertion delay", 3, "]");
 }
 
-int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& driver, const std::string& load, double wl, double& wireCap)
+int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load, double wl, double& wireCap)
 {
   wireCap = wl * capPerDBU_;
   double totalCap = wireCap / 2.0;
@@ -108,19 +108,10 @@ int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& driver, const
     totalCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
   }
 
-  if (!driver.empty()) {
-    odb::dbMaster* drvMaster = db_->findMaster(driver.c_str());
-    sta::LibertyCell* libertyDrvCell
-        = network_->libertyCell(network_->dbToSta(drvMaster));
-    sta::LibertyPort *input, *output;
-    libertyDrvCell->bufferPorts(input, output);
-    wireRes += output->driveResistance();
-  }
   return wireRes * totalCap * dpUnit_;
 }
 
 int64_t LatencyBalancer::computeWireLumpedDelay(
-    const std::string& driver,
     const std::vector<odb::dbITerm*>& loads,
     double extraLoadCap,
     double wl,
@@ -137,14 +128,6 @@ int64_t LatencyBalancer::computeWireLumpedDelay(
     totalCap += loadPort->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
   }
 
-  if (!driver.empty()) {
-    odb::dbMaster* drvMaster = db_->findMaster(driver.c_str());
-    sta::LibertyCell* libertyDrvCell
-        = network_->libertyCell(network_->dbToSta(drvMaster));
-    sta::LibertyPort *input, *output;
-    libertyDrvCell->bufferPorts(input, output);
-    wireRes += output->driveResistance();
-  }
   return wireRes * totalCap * dpUnit_;
 }
 
@@ -422,17 +405,18 @@ DPResult LatencyBalancer::solveDP(
 
   int64_t maxBufDelay = 0;
   // Buffers delay when driving sinks
+  double sinkWireCap = 0.0;
+  int64_t sinkWireDly = computeWireLumpedDelay(
+      sinks, loadPinsHwpl * capPerDBU_, wl, sinkWireCap);
+  debugPrint(logger_, CTS, "insertion delay", 5, "Buffer driving sinks has {} wire dly", sinkWireDly);
   std::vector<int64_t> sinkDelay(nBuffers);
   for (size_t j = 0; j < nBuffers; j++) {
-    double wireCap = 0.0;
-    int64_t wireDly = computeWireLumpedDelay(
-        dlyBuffers[j], sinks, loadPinsHwpl * capPerDBU_, wl, wireCap);
     int64_t delay = static_cast<int64_t>(
                         techChar_->computeBufferDelay(
                             dlyBuffers[j], sinks,
-                            wireCap + loadPinsHwpl * capPerDBU_)
+                            sinkWireCap + loadPinsHwpl * capPerDBU_)
                         * dpUnit_)
-                    + wireDly;
+                    + sinkWireDly;
     sinkDelay[j] = delay;
     maxBufDelay = std::max(maxBufDelay, delay);
   }
@@ -443,7 +427,8 @@ DPResult LatencyBalancer::solveDP(
     for (size_t j = 0; j < nBuffers; j++) {
       double wireCap = 0.0;
       int64_t wireDly
-          = computeWireLumpedDelay(dlyBuffers[i], dlyBuffers[j], wl, wireCap);
+          = computeWireLumpedDelay(dlyBuffers[j], wl, wireCap);
+      debugPrint(logger_, CTS, "insertion delay", 5, "Buffer {} driving {} has {} wire dly", dlyBuffers[i], dlyBuffers[j], wireDly);
       int64_t delay = static_cast<int64_t>(
                           techChar_->computeBufferDelay(
                               dlyBuffers[i], dlyBuffers[j], wireCap)
