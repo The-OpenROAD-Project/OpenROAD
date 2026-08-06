@@ -7,6 +7,9 @@ proc get_required_spacing { layer pin_box llx lly urx ury mode } {
   if { $mode == "overlap" } {
     return 0
   }
+  if { [string is integer -strict $mode] } {
+    return $mode
+  }
   if { $mode == "table" } {
     set shape_width [expr { min($urx - $llx, $ury - $lly) }]
     set pin_length [expr {

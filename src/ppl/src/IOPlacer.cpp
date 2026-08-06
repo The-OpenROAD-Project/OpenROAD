@@ -553,12 +553,18 @@ int IOPlacer::computeLayerSpacing(const int layer,
 
 odb::Rect IOPlacer::padShapeForPin(const odb::Rect& box,
                                    const int layer,
-                                   const bool vertical_pin)
+                                   const bool vertical_pin,
+                                   const int min_spacing,
+                                   const int effective_width)
 {
   const PinSize pin_size = computePinSize(layer, vertical_pin);
-  const int shape_width = std::min(box.dx(), box.dy());
-  const int spacing = computeLayerSpacing(
-      layer, std::max(shape_width, 2 * pin_size.half_width), pin_size.height);
+  const int shape_width = std::max(
+      static_cast<int>(std::min(box.dx(), box.dy())), effective_width);
+  const int spacing = std::max(
+      computeLayerSpacing(layer,
+                          std::max(shape_width, 2 * pin_size.half_width),
+                          pin_size.height),
+      min_spacing);
   // pad by the pin footprint plus spacing: half width along the edge, the pin
   // extension into the die on the other axis
   const odb::Orientation2D edge_dir = vertical_pin
@@ -586,7 +592,9 @@ bool touchesLine(const odb::Rect& rect, const odb::Line& line)
 
 void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
                                     odb::dbTechLayer* tech_layer,
-                                    const odb::Rect& die_area)
+                                    const odb::Rect& die_area,
+                                    const int min_spacing,
+                                    const int effective_width)
 {
   const int layer = tech_layer->getRoutingLevel();
   // PPL-45/46 guarantee the layer sets agree with the preferred direction, so
@@ -600,7 +608,8 @@ void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
       return;
     }
   }
-  const odb::Rect padded_box = padShapeForPin(box, layer, vertical_pin);
+  const odb::Rect padded_box
+      = padShapeForPin(box, layer, vertical_pin, min_spacing, effective_width);
   if (!die_area.intersects(padded_box)) {
     return;
   }
@@ -701,7 +710,16 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
     if (tech_layer == nullptr) {
       continue;
     }
-    excludeBoundaryShape(obstruct_box->getBox(), tech_layer, die_area);
+    const int min_spacing
+        = obstruction->hasMinSpacing() ? obstruction->getMinSpacing() : 0;
+    const int effective_width = obstruction->hasEffectiveWidth()
+                                    ? obstruction->getEffectiveWidth()
+                                    : 0;
+    excludeBoundaryShape(obstruct_box->getBox(),
+                         tech_layer,
+                         die_area,
+                         min_spacing,
+                         effective_width);
   }
 }
 

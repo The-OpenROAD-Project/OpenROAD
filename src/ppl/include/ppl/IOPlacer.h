@@ -226,10 +226,16 @@ class IOPlacer
   };
   PinSize computePinSize(int layer, bool vertical_pin);
   int computeLayerSpacing(int layer, int shape_width, int parallel_length);
-  odb::Rect padShapeForPin(const odb::Rect& box, int layer, bool vertical_pin);
+  odb::Rect padShapeForPin(const odb::Rect& box,
+                           int layer,
+                           bool vertical_pin,
+                           int min_spacing = 0,
+                           int effective_width = 0);
   void excludeBoundaryShape(const odb::Rect& box,
                             odb::dbTechLayer* tech_layer,
-                            const odb::Rect& die_area);
+                            const odb::Rect& die_area,
+                            int min_spacing = 0,
+                            int effective_width = 0);
   void getBlockedRegions();
   void getBlockedRegionsFromPDN();
   void getBlockedRegionsFromMacros();
