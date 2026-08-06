@@ -268,6 +268,11 @@ void Replace::runMBFF(const int max_sz,
   pntset.Run(max_sz, alpha, beta, clock_power_weight);
 }
 
+static void logNesterovExecute(utl::Logger* log)
+{
+  log->info(utl::GPL, 84, "---- Execute Nesterov Global Placement.");
+}
+
 bool Replace::initNesterovPlace(const PlaceOptions& options,
                                 const int threads,
                                 bool check_density)
@@ -355,7 +360,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
       nb->setNpVars(&npVars);
     }
 
-    log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
+    logNesterovExecute(log_);
 
     np_ = std::make_unique<NesterovPlace>(npVars,
                                           pbc_,
@@ -385,7 +390,7 @@ int Replace::doNesterovPlace(const int threads,
   }
 
   if (np_existed) {
-    log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
+    logNesterovExecute(log_);
   }
   if (options.timingDrivenMode) {
     rs_->resizeSlackPreamble();
