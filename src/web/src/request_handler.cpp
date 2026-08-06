@@ -201,6 +201,29 @@ static double quantizeDpr(const double raw)
   return std::round(clamped * 100.0) / 100.0;
 }
 
+// The exact device-pixel side length the client will display the tile in.
+//
+// Sent explicitly rather than derived from dpr here: a tile's CSS box is only a
+// whole number of device pixels when tileSize*dpr is an integer, and where it
+// is not (256 CSS px is 426.67 device px at a 1.6667 display scale) any size
+// this end picks is one the browser has to resample.  The client knows the box
+// it will use, so it names the pixel count.
+//
+// Clamped so a malformed request cannot ask for a gigantic buffer — the render
+// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// specified"; the generator falls back to 256*dpr.
+static int quantizeTilePx(const double raw)
+{
+  if (!std::isfinite(raw) || raw <= 0.0) {
+    return 0;
+  }
+  // Clamped BEFORE rounding: std::llround of a double past the range of long
+  // long is undefined, and `raw` is whatever the client sent.
+  constexpr double kMinTilePx = 32.0;
+  constexpr double kMaxTilePx = 2048.0;
+  return static_cast<int>(std::lround(std::clamp(raw, kMinTilePx, kMaxTilePx)));
+}
+
 std::string assetPathFromTarget(const std::string_view target)
 {
   std::string path(target);
@@ -572,7 +595,8 @@ WebSocketResponse TileHandler::renderTile(
     const std::map<uint32_t, Color>* module_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
-    const double dpr)
+    const double dpr,
+    const int tile_px)
 {
   WebSocketResponse resp;
   resp.id = id;
@@ -589,7 +613,8 @@ WebSocketResponse TileHandler::renderTile(
                                   module_colors,
                                   focus_net_ids,
                                   route_guide_net_ids,
-                                  dpr);
+                                  dpr,
+                                  tile_px);
   return resp;
 }
 
@@ -2570,6 +2595,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   static const std::vector<FlightLine> no_lines;
 
   const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
 
   // A tile is cacheable only when it depends solely on the static design +
   // visibility + dpr — i.e. no per-session overlays are active.  That keeps
@@ -2599,6 +2625,9 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       key_obj.erase(k);
     }
     key_obj["dpr"] = dpr;
+    // Pinned like dpr: two clients on different displays ask for different
+    // pixel counts of the same tile, and they are different images.
+    key_obj["tile_px"] = tile_px;
     cache_key = boost::json::serialize(key_obj);
     std::vector<unsigned char> cached;
     if (gen_->tileCacheGet(cache_key, cached)) {
@@ -2625,7 +2654,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                    mod_ptr,
                    focus_ptr,
                    nullptr,
-                   dpr);
+                   dpr,
+                   tile_px);
   if (cacheable && resp.type == WebSocketResponse::kPng) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }
@@ -2694,6 +2724,11 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     }
   }
 
+  // Same sizing contract as layer tiles: an overlay rendered at a different
+  // size than the tiles beneath it is blurry and misregistered against them.
+  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
+
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kPng;
@@ -2707,7 +2742,9 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                   lines,
                                   route_guide_ptr,
                                   has_vis_layers,
-                                  vis_layers);
+                                  vis_layers,
+                                  dpr,
+                                  tile_px);
   return resp;
 }
 
@@ -2931,6 +2968,11 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
     const int z = static_cast<int>(req.json.at("z").as_int64());
     const int x = static_cast<int>(req.json.at("x").as_int64());
     const int y = static_cast<int>(req.json.at("y").as_int64());
+    // Same sizing contract as layer tiles: the client states the device-pixel
+    // square, so the heat map is as crisp as the layers beneath it.
+    const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+    const int tile_px
+        = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
     std::shared_ptr<gui::HeatMapDataSource> source;
     {
       std::lock_guard<std::mutex> lock(state.heatmap_mutex);
@@ -2942,7 +2984,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       }
       source = source_itr->second;
     }
-    resp.payload = gen_->generateHeatMapTile(*source, z, x, y);
+    resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();

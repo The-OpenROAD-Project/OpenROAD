@@ -11,6 +11,11 @@ import {
     floorClampZoom,
 } from './websocket-tile-layer.js';
 import { createMergedTileLayer } from './merged-tile-layer.js';
+import { installDeviceGridSnapping } from './device-pixels.js';
+import {
+    tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
+    watchDevicePixelRatio, tileSizeFields,
+} from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
@@ -345,7 +350,9 @@ const HeatMapTileLayer = L.GridLayer.extend({
     initialize: function(websocketManager, appState, options) {
         this._websocketManager = websocketManager;
         this._appState = appState;
-        L.GridLayer.prototype.initialize.call(this, options);
+        // Same grid as the layer tiles it is drawn over.
+        L.GridLayer.prototype.initialize.call(
+            this, withDeviceExactTileSize(options));
     },
 
     // Upscale-only display, same as the layout tile layer: the map rests on
@@ -388,6 +395,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
             z: coords.z,
             x: coords.x,
             y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
             tile.src = URL.createObjectURL(blob);
         }).catch(() => {
@@ -415,6 +426,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 z: coords.z,
                 x: coords.x,
                 y: coords.y,
+                ...tileSizeFields(currentDpr(), this.getTileSize().x),
             }).then(blob => {
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
@@ -531,6 +543,15 @@ function createLayoutViewer(container) {
     app.heatMapLegendEl = heatMapLegend;
 
     app.map = L.map(mapDiv, buildMapOptions());
+    // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
+    // boundaries mid-device-pixel and they show as dark hairlines; this nudges
+    // each tile container back onto the grid after every move.
+    installDeviceGridSnapping(app.map);
+    // Tiles are rasterized for the ratio in force when they were requested and
+    // are never revisited on their own, so a window moved to another monitor —
+    // or a browser zoom change — leaves every tile stretched from the old ratio
+    // into the new box until something forces a refresh. Nothing did.
+    watchDevicePixelRatio(() => redrawAllLayers());
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';
@@ -921,6 +942,9 @@ const LAYOUT_VERSION = 3;
 
 const staticCache = window.__STATIC_CACHE__ || null;
 if (staticCache) {
+    // Before any layer or the map scale is built: a report's tiles are baked at
+    // a fixed size and cannot be re-rendered to fit a different box.
+    useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
@@ -1130,7 +1154,9 @@ app.websocketManager.readyPromise.then(async () => {
         // No design loaded — skip map setup, let user open a DB via menu.
         const hasDesign = designWidth > 0 && designHeight > 0;
         if (hasDesign) {
-            const tileSize = 256;
+            // The map's whole coordinate system is defined in units of one
+            // tile, so this must be the size the layers actually use.
+            const tileSize = tileSizeCss();
             const maxDXDY = Math.max(designWidth, designHeight);
             const scale = tileSize / maxDXDY;
             app.designScale = scale;

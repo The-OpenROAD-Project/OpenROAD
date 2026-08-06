@@ -19,7 +19,10 @@
 import {
     closeAll, mergeOntoContext, mergedPaneOptions, renderMergedTile,
 } from './tile-merge.js';
-import { buildTileRequestFor, floorClampZoom, nativeDpr } from './tile-request.js';
+import {
+    buildTileRequestFor, floorClampZoom, nativeDpr, tileDevicePx,
+    withDeviceExactTileSize,
+} from './tile-request.js';
 
 // Decode a websocket tile payload into something drawable.
 //
@@ -86,7 +89,8 @@ export function createMergedTileLayer(ctx, options = {}) {
             // generation can tell they have been superseded and drop their work
             // instead of painting it.
             this._generation = 0;
-            L.GridLayer.prototype.initialize.call(this, opts);
+            L.GridLayer.prototype.initialize.call(
+                this, withDeviceExactTileSize(opts));
         },
 
         // Swap the draw list (a layer toggled, reordered, or regrouped after a
@@ -128,8 +132,11 @@ export function createMergedTileLayer(ctx, options = {}) {
         // with any created afterwards.
         _sizeCanvas: function(canvas, dpr) {
             const size = this.getTileSize();
-            const w = Math.round(size.x * dpr);
-            const h = Math.round(size.y * dpr);
+            // The same count the request asks the server for, so the image
+            // arrives at exactly the backing store's size and drawImage is a
+            // straight blit.
+            const w = tileDevicePx(size.x, dpr);
+            const h = tileDevicePx(size.y, dpr);
             if (canvas.width !== w || canvas.height !== h) {
                 // Assigning width/height also clears the canvas, which is what
                 // we want here — the caller is about to redraw it.
@@ -175,7 +182,8 @@ export function createMergedTileLayer(ctx, options = {}) {
                     const id = this._websocketManager.nextId;
                     canvas._orRequestIds.push(id);
                     return this._websocketManager.request(
-                        buildTileRequestFor(coords, item.layer, ctx, dpr));
+                        buildTileRequestFor(coords, item.layer, ctx, dpr,
+                                            this.getTileSize().x));
                 },
                 decode,
                 draw: (sources) => mergeOntoContext(context, sources,

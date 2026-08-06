@@ -375,7 +375,8 @@ class TileHandler
       const std::map<uint32_t, Color>* module_colors,
       const std::set<uint32_t>* focus_net_ids,
       const std::set<uint32_t>* route_guide_net_ids,
-      double dpr = 1.0);
+      double dpr = 1.0,
+      int tile_px = 0);
 
   std::shared_ptr<TileGenerator> gen_;
 };
