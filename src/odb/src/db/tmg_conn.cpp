@@ -1298,11 +1298,26 @@ int tmg_conn::getStartNode()
   for (const tmg_rcterm& x : termV_) {
     if (x.iterm == it_drv && x.bterm == bt_drv) {
       if (!x.pt) {
-        return 0;
+        break;
       }
+
       return (x.pt - ptV_.data());
     }
   }
+
+  // A driver bterm with no pin geometry cannot anchor the walk.  On nets
+  // the router tied to a bump (BUMP_ASSIGNMENT net property), the signal
+  // physically enters through the bump pad, connected as a special iterm;
+  // root the tree there.
+  if (bt_drv && bt_drv->getBPins().empty()
+      && dbProperty::find(net_, "BUMP_ASSIGNMENT")) {
+    for (const tmg_rcterm& x : termV_) {
+      if (x.iterm && x.iterm->isSpecial() && x.pt) {
+        return (x.pt - ptV_.data());
+      }
+    }
+  }
+
   return 0;
 }
 
