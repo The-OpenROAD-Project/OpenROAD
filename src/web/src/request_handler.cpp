@@ -1565,9 +1565,11 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
     return {};
   }
 
+  // Exactly one sequential: multi-bit and statetable cells have no symbol.
+  // This subsumes the deprecated hasSequentials(), which is only true when
+  // sequentials() is non-empty or a statetable is present.
   sta::LibertyCell* cell = network->libertyCell(inst);
-  if (cell == nullptr || !cell->hasSequentials()
-      || cell->sequentials().size() != 1) {
+  if (cell == nullptr || cell->sequentials().size() != 1) {
     return {};
   }
 
