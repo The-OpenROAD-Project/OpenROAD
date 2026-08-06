@@ -3187,15 +3187,22 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   }
 
   // check for slots that overlap with obstructions
+  const int layer_level = top_grid_->layer->getRoutingLevel();
+  const int pin_min_dim = std::min(top_grid_->pin_width, top_grid_->pin_height);
+  const int pin_max_dim = std::max(top_grid_->pin_width, top_grid_->pin_height);
   for (odb::Rect& rect : obstructions) {
+    // floor the keepout at the layer spacing required by the obstruction
+    const int shape_width = std::min(rect.dx(), rect.dy());
+    const int spacing = computeLayerSpacing(
+        layer_level, std::max(shape_width, pin_min_dim), pin_max_dim);
+    const int keepout = std::max(top_grid_->keepout, spacing);
     for (auto& slot : top_layer_slots_) {
       odb::Point& point = slot.pos;
       // mock slot with keepout
-      odb::Rect pin_rect(
-          point.x() - top_grid_->pin_width / 2 - top_grid_->keepout,
-          point.y() - top_grid_->pin_height / 2 - top_grid_->keepout,
-          point.x() + top_grid_->pin_width / 2 + top_grid_->keepout,
-          point.y() + top_grid_->pin_height / 2 + top_grid_->keepout);
+      odb::Rect pin_rect(point.x() - top_grid_->pin_width / 2 - keepout,
+                         point.y() - top_grid_->pin_height / 2 - keepout,
+                         point.x() + top_grid_->pin_width / 2 + keepout,
+                         point.y() + top_grid_->pin_height / 2 + keepout);
       if (rect.intersects(pin_rect)) {  // mark slot as blocked
         slot.blocked = true;
       }
