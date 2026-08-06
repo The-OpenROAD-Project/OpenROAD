@@ -557,8 +557,14 @@ void IOPlacer::getBlockedRegionsFromPDN()
           continue;
         }
         const int layer = tech_layer->getRoutingLevel();
-        const bool vertical = ver_layers_.find(layer) != ver_layers_.end();
-        const bool horizontal = hor_layers_.find(layer) != hor_layers_.end();
+        bool vertical = ver_layers_.find(layer) != ver_layers_.end();
+        bool horizontal = hor_layers_.find(layer) != hor_layers_.end();
+        if (ver_layers_.empty() && hor_layers_.empty()) {
+          // standalone place_pin: use the layer preferred direction
+          vertical
+              = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+          horizontal = !vertical;
+        }
         if (!vertical && !horizontal) {
           continue;
         }
@@ -2761,6 +2767,10 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   const int layer_level = layer->getRoutingLevel();
   if (force_to_die_bound) {
+    // block boundary PDN shapes for the checks below, without persisting the
+    // intervals beyond this placement
+    const size_t num_excluded_intervals = excluded_intervals_.size();
+    getBlockedRegionsFromPDN();
     movePinToTrack(pos, layer_level, width, height, die_boundary);
     Edge edge;
     odb::dbTrackGrid* track_grid = getBlock()->findTrackGrid(layer);
@@ -2843,6 +2853,9 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     }
     pos.addX(horizontal ? 0 : offset);
     pos.addY(horizontal ? offset : 0);
+    excluded_intervals_.erase(
+        excluded_intervals_.begin() + num_excluded_intervals,
+        excluded_intervals_.end());
   }
 
   odb::Point ll = odb::Point(pos.x() - width / 2, pos.y() - height / 2);
