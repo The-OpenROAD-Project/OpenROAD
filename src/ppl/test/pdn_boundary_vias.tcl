@@ -1,6 +1,7 @@
 # place_pins must keep min spacing from special net via landing pads close to
 # the die boundary, even when no wire shape covers them
 source "helpers.tcl"
+source "pdn_helpers.tcl"
 
 # slot count and HPWL change once boundary PDN shapes block slots
 suppress_message PPL 1
@@ -26,43 +27,8 @@ for { set x 98000 } { $x <= 106000 } { incr x 380 } {
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
   -min_distance 0.12
 
-# count signal pin shapes overlapping or too close to the via pads
-proc count_via_pad_violations { } {
-  set block [ord::get_db_block]
-  set violations 0
-  foreach bterm [$block getBTerms] {
-    if { [$bterm getSigType] == "POWER" } {
-      continue
-    }
-    foreach bpin [$bterm getBPins] {
-      foreach box [$bpin getBoxes] {
-        set layer [$box getTechLayer]
-        set spacing [$layer getSpacing]
-        if { [$layer getName] != "metal2" } {
-          continue
-        }
-        for { set x 98000 } { $x <= 106000 } { incr x 380 } {
-          set dx [expr {
-            max(0, max($x - 140 - [$box xMax], [$box xMin] - ($x + 140)))
-          }]
-          set dy [expr {
-            max(0, max(295650 - [$box yMax], [$box yMin] - 295930))
-          }]
-          if { $dx < $spacing && $dy < $spacing } {
-            puts "pin [$bterm getName] at\
-              ([ord::dbu_to_microns [$box xMin]]\
-              [ord::dbu_to_microns [$box yMin]])\
-              ([ord::dbu_to_microns [$box xMax]]\
-              [ord::dbu_to_microns [$box yMax]]) within\
-              [ord::dbu_to_microns [expr { max($dx, $dy) }]]um of via pad at\
-              [ord::dbu_to_microns $x]um"
-            incr violations
-          }
-        }
-      }
-    }
-  }
-  return $violations
+set via_rects {}
+for { set x 98000 } { $x <= 106000 } { incr x 380 } {
+  lappend via_rects [list [expr { $x - 140 }] 295650 [expr { $x + 140 }] 295930]
 }
-
-puts "pin to via pad violations: [count_via_pad_violations]"
+puts "pin to via pad violations: [count_rect_violations metal2 $via_rects spacing]"

@@ -1,6 +1,7 @@
 # top layer pin placement must keep at least the layer min spacing from PDN
 # shapes when the user keepout is smaller than it
 source "helpers.tcl"
+source "pdn_helpers.tcl"
 
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
@@ -27,44 +28,4 @@ set_io_pin_constraint \
 
 place_pins -hor_layer met3 -ver_layer met2
 
-# count top layer pin shapes closer to the strap than the required spacing
-proc count_strap_spacing_violations { } {
-  set block [ord::get_db_block]
-  set violations 0
-  foreach bterm [$block getBTerms] {
-    if { [$bterm getSigType] == "POWER" } {
-      continue
-    }
-    foreach bpin [$bterm getBPins] {
-      foreach box [$bpin getBoxes] {
-        set layer [$box getTechLayer]
-        if { [$layer getName] != "met5" } {
-          continue
-        }
-        set pin_length [expr {
-          max([$box xMax] - [$box xMin], [$box yMax] - [$box yMin])
-        }]
-        set spacing [$layer getSpacing 10000 $pin_length]
-        set dx [expr {
-          max(0, max(50000 - [$box xMax], [$box xMin] - 250000))
-        }]
-        set dy [expr {
-          max(0, max(125000 - [$box yMax], [$box yMin] - 130000))
-        }]
-        if { $dx < $spacing && $dy < $spacing } {
-          puts "pin [$bterm getName] at\
-            ([ord::dbu_to_microns [$box xMin]]\
-            [ord::dbu_to_microns [$box yMin]])\
-            ([ord::dbu_to_microns [$box xMax]]\
-            [ord::dbu_to_microns [$box yMax]]) within\
-            [ord::dbu_to_microns [expr { max($dx, $dy) }]]um of the strap,\
-            needs [ord::dbu_to_microns $spacing]um"
-          incr violations
-        }
-      }
-    }
-  }
-  return $violations
-}
-
-puts "pin to strap spacing violations: [count_strap_spacing_violations]"
+puts "pin to strap spacing violations: [count_pdn_shape_violations table]"
