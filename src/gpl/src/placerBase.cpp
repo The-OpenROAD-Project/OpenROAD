@@ -1455,23 +1455,19 @@ void PlacerBase::initInstsForUnusableSites()
         int endX = i;
         int endY = j + 1;
         for (; endY < siteCountY; endY++) {
-          bool row_blocked = true;
           const int64_t base_idx = static_cast<int64_t>(endY) * siteCountX;
-          for (int x = startX; x < endX; x++) {
-            if (siteGrid[base_idx + x] != Blocked) {
-              row_blocked = false;
-              break;
-            }
-          }
-          if (!row_blocked) {
+          auto first = siteGrid.begin() + base_idx + startX;
+          auto last = siteGrid.begin() + base_idx + endX;
+          if (!std::all_of(
+                  first, last, [](SiteInfo s) { return s == Blocked; })) {
             break;
           }
         }
         for (int y = j; y < endY; y++) {
           const int64_t base_idx = static_cast<int64_t>(y) * siteCountX;
-          for (int x = startX; x < endX; x++) {
-            siteGrid[base_idx + x] = SiteInfo::FixedInst;  // Processed
-          }
+          std::fill(siteGrid.begin() + base_idx + startX,
+                    siteGrid.begin() + base_idx + endX,
+                    SiteInfo::FixedInst);
         }
         Instance dummy_gcell(region_bbox_.xMin() + (siteSizeX_ * startX),
                              region_bbox_.yMin() + (siteSizeY_ * j),
