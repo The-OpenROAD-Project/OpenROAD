@@ -908,9 +908,6 @@ double NegotiationLegalizer::negotiationCost(int cell_idx,
     return cost;
   }
 
-  // Footprint only.  The cell's own padding is not claimed on the grid; it is
-  // scored by the countDRCViolations penalty in findBestLocation, which goes
-  // through PlacementDRC and so honours the master-class padding rules.
   for (int dy = 0; dy < cell.height; ++dy) {
     for (int gx = x; gx < x + cell.width; ++gx) {
       const int gy = y + dy;
