@@ -256,11 +256,11 @@ class NegotiationLegalizer
   void addUsage(int cell_idx, int delta);
 
   // Effective padded footprint helpers (inclusive of padding zones).
-  [[nodiscard]] int effXBegin(const NegCell& cell) const
+  [[nodiscard]] int paddedXBegin(const NegCell& cell) const
   {
     return std::max(0, cell.x - cell.pad_left);
   }
-  [[nodiscard]] int effXEnd(const NegCell& cell) const
+  [[nodiscard]] int paddedXEnd(const NegCell& cell) const
   {
     return std::min(grid_w_, cell.x + cell.width + cell.pad_right);
   }
