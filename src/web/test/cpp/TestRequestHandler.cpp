@@ -83,6 +83,54 @@ class FakeDescriptor : public gui::Descriptor
   }
 };
 
+// Minimal dbNet descriptor so tests can build a gui::Selected whose
+// isNet() is true; highlight() stands in for the wire-shape drawing of
+// the real NetDescriptor (a big rect the flywire mode must suppress).
+class FakeNetDescriptor : public gui::Descriptor
+{
+ public:
+  static constexpr int kWireRectSize = 90000;
+
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbNet*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Net"; }
+
+  std::string getTypeName(const std::any&) const override { return "Net"; }
+
+  bool getBBox(const std::any&, odb::Rect& bbox) const override
+  {
+    bbox = odb::Rect(0, 0, kWireRectSize, kWireRectSize);
+    return true;
+  }
+
+  bool isNet(const std::any&) const override { return true; }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbNet*>(l) < std::any_cast<odb::dbNet*>(r);
+  }
+
+  void highlight(const std::any&, gui::Painter& painter) const override
+  {
+    painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
+  }
+};
+
 class LazyMetadataHeatMap : public gui::HeatMapDataSource
 {
  public:
@@ -164,6 +212,50 @@ class TileHandlerTest : public tst::Nangate45Fixture
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     handler_ = std::make_unique<TileHandler>(gen_);
+  }
+
+  // Driver (buf1.Z) and sink (buf2.A) placed buffers on a new net.
+  odb::dbNet* makeConnectedNet(const char* net_name)
+  {
+    odb::dbMaster* master = lib_->findMaster("BUF_X16");
+    if (!master) {
+      return nullptr;
+    }
+    const std::string base = net_name;
+    odb::dbInst* buf1
+        = odb::dbInst::create(block_, master, (base + "_drv").c_str());
+    buf1->setLocation(10000, 10000);
+    buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbInst* buf2
+        = odb::dbInst::create(block_, master, (base + "_snk").c_str());
+    buf2->setLocation(60000, 60000);
+    buf2->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbNet* net = odb::dbNet::create(block_, net_name);
+    buf1->findITerm("Z")->connect(net);
+    buf2->findITerm("A")->connect(net);
+    return net;
+  }
+
+  // Prime the highlight state the way an inspect would, so an overlay request
+  // can exercise a "Flywires only" flip against it.
+  void primeInspected(const gui::Selected& sel)
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = sel;
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  // An overlay-tile request with the "Flywires only" toggle in a given
+  // position.
+  static WebSocketRequest overlayRequest(uint32_t id, bool flywires_only)
+  {
+    WebSocketRequest req;
+    req.id = id;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(flywires_only
+                            ? R"({"z":0,"x":0,"y":0,"flywires_only":true})"
+                            : R"({"z":0,"x":0,"y":0,"flywires_only":false})");
+    return req;
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -538,6 +630,260 @@ TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
   EXPECT_FALSE(resp.payload.empty());
 }
 
+//------------------------------------------------------------------------------
+// "Flywires only" (Misc toggle) — selection flywires on the overlay
+//------------------------------------------------------------------------------
+
+TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
+{
+  odb::dbNet* net = makeConnectedNet("sig");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Toggle ON via overlay request: highlight re-derived as flywires.
+  WebSocketRequest req = overlayRequest(20, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "flywires_only should produce driver->sink lines";
+    for (const auto& r : state_.highlight_rects) {
+      EXPECT_LT(r.dx(), FakeNetDescriptor::kWireRectSize)
+          << "wire shapes must be suppressed in flywire mode";
+    }
+  }
+
+  // Toggle back OFF: unrouted net keeps its flywires (GUI fallback) and
+  // the descriptor's wire shapes are collected again.
+  req = overlayRequest(21, /*flywires_only=*/false);
+  resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "unrouted net keeps flywires with the toggle off (GUI parity)";
+    bool has_wire_rect = false;
+    for (const auto& r : state_.highlight_rects) {
+      has_wire_rect
+          = has_wire_rect || r.dx() == FakeNetDescriptor::kWireRectSize;
+    }
+    EXPECT_TRUE(has_wire_rect)
+        << "descriptor wire shapes should return when the toggle is off";
+  }
+}
+
+TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("sig2");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+    // Simulate an explicit "clear highlights" that kept the inspected
+    // object (e.g. DRC clear): vectors empty, highlights inactive.
+  }
+
+  WebSocketRequest req = overlayRequest(23, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "toggle flip must not resurrect cleared highlights";
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+TEST_F(TileHandlerTest, NonNetPayloadWithIsNetDoesNotThrow)
+{
+  // A descriptor may report isNet()==true while its payload is NOT a
+  // plain dbNet* (e.g. DbNetDescriptor::NetWithSink).  The collector
+  // must fall back to the generic highlight path instead of throwing
+  // std::bad_any_cast.
+  class FakeNetWithSinkDescriptor : public FakeNetDescriptor
+  {
+   public:
+    std::string getName(const std::any&) const override { return "nws"; }
+    void highlight(const std::any&, gui::Painter& painter) const override
+    {
+      painter.drawRect(odb::Rect(0, 0, 1000, 1000));
+    }
+  };
+  static FakeNetWithSinkDescriptor descriptor;
+  // Payload is an int — any_cast<odb::dbNet*> by value would throw.
+  primeInspected(descriptor.makeSelected(std::any(42)));
+
+  WebSocketRequest req = overlayRequest(24, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty());
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "non-dbNet payload should use the generic highlight path";
+}
+
+TEST_F(TileHandlerTest, FlywiresSkipSupplyNets)
+{
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  odb::dbInst* buf1 = odb::dbInst::create(block_, master, "buf1");
+  buf1->setLocation(10000, 10000);
+  buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  buf1->findITerm("A")->connect(pwr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(pwr)));
+
+  WebSocketRequest req = overlayRequest(22, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "supply nets must not get flywires (GUI parity)";
+}
+
+// A "Flywires only" flip must re-derive the highlight from the SAME selection
+// it came from.  Preferring current_inspected (which a click sets to the LAST
+// object hit) silently dropped every other member of a shift+click
+// multi-selection on the first flip, and flipping back did not restore them
+// (reported on the PR #10806 review).
+TEST_F(TileHandlerTest, FlywiresFlipPreservesMultiSelection)
+{
+  odb::dbNet* net_a = makeConnectedNet("multi_a");
+  odb::dbNet* net_b = makeConnectedNet("multi_b");
+  ASSERT_NE(net_a, nullptr);
+  ASSERT_NE(net_b, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    // As after two shift+clicks: both nets selected, the second one inspected.
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_a)));
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_b)));
+    state_.selection_itr = state_.selection_set.begin();
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net_b));
+    state_.highlight_source = SessionState::HighlightSource::kSelectionSet;
+  }
+
+  // Each net has one driver and one sink, so one flywire per net.
+  WebSocketRequest req = overlayRequest(25, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.highlight_lines.size(), 2u)
+        << "both selected nets must keep their flywires across the flip";
+  }
+
+  // ... and flipping back keeps both, too (the unrouted-net fallback).
+  req = overlayRequest(26, /*flywires_only=*/false);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 2u)
+      << "un-toggling must not narrow the selection either";
+}
+
+// The other half of the invariant: when the user followed an inspector link out
+// of the selection set, handleInspect deliberately narrowed the highlight to
+// that one object, so a flip must NOT widen it back to the whole set.
+TEST_F(TileHandlerTest, FlywiresFlipAfterLinkFollowKeepsSingleObject)
+{
+  odb::dbNet* net_a = makeConnectedNet("link_a");
+  odb::dbNet* net_b = makeConnectedNet("link_b");
+  odb::dbNet* linked = makeConnectedNet("link_target");
+  ASSERT_NE(net_a, nullptr);
+  ASSERT_NE(net_b, nullptr);
+  ASSERT_NE(linked, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_a)));
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_b)));
+    state_.selection_itr = state_.selection_set.end();
+    state_.current_inspected = net_descriptor.makeSelected(std::any(linked));
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  WebSocketRequest req = overlayRequest(27, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 1u)
+      << "the link target's highlight must not grow into the selection set";
+}
+
+// "Flywires only" suppresses the routed wire/guide shapes, NOT the special
+// (geometric) routing: the GUI draws SWires at the tail of
+// DbNetDescriptor::highlight regardless of the mode.
+TEST_F(TileHandlerTest, FlywiresOnlyKeepsSpecialWireShapes)
+{
+  odb::dbNet* net = makeConnectedNet("special_sig");
+  ASSERT_NE(net, nullptr);
+  net->setSpecial();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  ASSERT_NE(swire, nullptr);
+  odb::dbSBox::create(
+      swire, metal1, 20000, 20000, 30000, 21000, odb::dbWireShapeType::NONE);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  WebSocketRequest req = overlayRequest(28, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "a routed special net gets no flywires (GUI parity)";
+  const auto& rects = state_.highlight_rects;
+  EXPECT_NE(std::ranges::find(rects, odb::Rect(20000, 20000, 30000, 21000)),
+            rects.end())
+      << "the SWire shape must survive flywires-only mode";
+}
+
+// Same for supply nets, which is the worst case of the bug: their flywires AND
+// their ITerm boxes are suppressed by GUI parity, so before the fix a selected
+// power net came back with no highlight at all.
+TEST_F(TileHandlerTest, FlywiresOnlySupplyNetKeepsShapes)
+{
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD_swire");
+  pwr->setSigType(odb::dbSigType::POWER);
+  pwr->setSpecial();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbSWire* swire = odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  ASSERT_NE(swire, nullptr);
+  odb::dbSBox::create(
+      swire, metal1, 0, 40000, 100000, 41000, odb::dbWireShapeType::NONE);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(pwr)));
+
+  WebSocketRequest req = overlayRequest(29, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "supply nets must not get flywires (GUI parity)";
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "a selected supply net must still be highlighted by its SWires";
+}
+
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
   gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
@@ -792,6 +1138,31 @@ TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"error\""), std::string::npos);
+}
+
+// An inspect that resolves to nothing clears the highlight vectors, so it must
+// also clear the source tag.  Leaving it set let a later "Flywires only" flip
+// re-derive the highlight from the stale current_inspected — resurrecting
+// exactly what the tag exists to keep dismissed.
+TEST_F(SelectHandlerTest, InvalidInspectDoesNotPrimeHighlights)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":999})");
+  ASSERT_EQ(handler_->handleInspect(req, state_).type,
+            WebSocketResponse::kJson);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty());
+  EXPECT_EQ(state_.highlight_source, SessionState::HighlightSource::kNone)
+      << "an empty selection must not leave the highlights primed";
 }
 
 TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
