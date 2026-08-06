@@ -294,6 +294,8 @@ class IOPlacer
   std::map<int, std::vector<odb::Rect>> layer_blocked_shapes_;
   std::map<std::pair<int, bool>, PinSize> pin_size_cache_;
   std::map<std::tuple<int, int, int>, int> spacing_cache_;
+  // width of the pin being placed by place_pin, for the spacing rules
+  int manual_pin_width_ = 0;
 
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<utl::Validator> validator_;

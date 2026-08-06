@@ -560,11 +560,11 @@ odb::Rect IOPlacer::padShapeForPin(const odb::Rect& box,
   const PinSize pin_size = computePinSize(layer, vertical_pin);
   const int shape_width = std::max(
       static_cast<int>(std::min(box.dx(), box.dy())), effective_width);
-  const int spacing = std::max(
-      computeLayerSpacing(layer,
-                          std::max(shape_width, 2 * pin_size.half_width),
-                          pin_size.height),
-      min_spacing);
+  const int pin_width = std::max(2 * pin_size.half_width, manual_pin_width_);
+  const int spacing
+      = std::max(computeLayerSpacing(
+                     layer, std::max(shape_width, pin_width), pin_size.height),
+                 min_spacing);
   // pad by the pin footprint plus spacing: half width along the edge, the pin
   // extension into the die on the other axis
   const odb::Orientation2D edge_dir = vertical_pin
@@ -2826,6 +2826,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     pin_size.half_width = (vertical_pin ? width : height) / 2;
     pin_size.height = vertical_pin ? height : width;
     pin_size_cache_[{layer_level, vertical_pin}] = pin_size;
+    manual_pin_width_ = std::min(width, height);
     const size_t num_excluded_intervals = excluded_intervals_.size();
     getBlockedRegionsFromDbObstructions();
     getBlockedRegionsFromPDN();
@@ -2851,24 +2852,29 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     // between pins
     // empty line created to comply with definition
     odb::Line empty_line;
+    // check the center and the extremities of the pin shape, so wide pins do
+    // not straddle a blocked region
     bool placed_at_blocked
-        = horizontal
-              ? checkBlocked(edge,
-                             empty_line,
-                             odb::Point(pos.x(), pos.y() - height / 2),
-                             layer_level)
-                    || checkBlocked(edge,
-                                    empty_line,
-                                    odb::Point(pos.x(), pos.y() + height / 2),
-                                    layer_level)
-              : checkBlocked(edge,
-                             empty_line,
-                             odb::Point(pos.x() - width / 2, pos.y()),
-                             layer_level)
-                    || checkBlocked(edge,
-                                    empty_line,
-                                    odb::Point(pos.x() + width / 2, pos.y()),
-                                    layer_level);
+        = checkBlocked(edge, empty_line, pos, layer_level)
+          || (horizontal
+                  ? checkBlocked(edge,
+                                 empty_line,
+                                 odb::Point(pos.x(), pos.y() - height / 2),
+                                 layer_level)
+                        || checkBlocked(
+                            edge,
+                            empty_line,
+                            odb::Point(pos.x(), pos.y() + height / 2),
+                            layer_level)
+                  : checkBlocked(edge,
+                                 empty_line,
+                                 odb::Point(pos.x() - width / 2, pos.y()),
+                                 layer_level)
+                        || checkBlocked(
+                            edge,
+                            empty_line,
+                            odb::Point(pos.x() + width / 2, pos.y()),
+                            layer_level));
     bool sum = true;
     int offset_sum = 1;
     int offset_sub = 1;
@@ -2886,28 +2892,33 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
       // check the whole pin shape to make sure no overlaps will happen
       // between pins
+      const odb::Point offset_pos = horizontal
+                                        ? odb::Point(pos.x(), pos.y() + offset)
+                                        : odb::Point(pos.x() + offset, pos.y());
       placed_at_blocked
-          = horizontal
-                ? checkBlocked(
-                      edge,
-                      empty_line,
-                      odb::Point(pos.x(), pos.y() - height / 2 + offset),
-                      layer_level)
-                      || checkBlocked(
+          = checkBlocked(edge, empty_line, offset_pos, layer_level)
+            || (horizontal
+                    ? checkBlocked(
                           edge,
                           empty_line,
-                          odb::Point(pos.x(), pos.y() + height / 2 + offset),
+                          odb::Point(pos.x(), pos.y() - height / 2 + offset),
                           layer_level)
-                : checkBlocked(
-                      edge,
-                      empty_line,
-                      odb::Point(pos.x() - width / 2 + offset, pos.y()),
-                      layer_level)
-                      || checkBlocked(
+                          || checkBlocked(
+                              edge,
+                              empty_line,
+                              odb::Point(pos.x(),
+                                         pos.y() + height / 2 + offset),
+                              layer_level)
+                    : checkBlocked(
                           edge,
                           empty_line,
-                          odb::Point(pos.x() + width / 2 + offset, pos.y()),
-                          layer_level);
+                          odb::Point(pos.x() - width / 2 + offset, pos.y()),
+                          layer_level)
+                          || checkBlocked(
+                              edge,
+                              empty_line,
+                              odb::Point(pos.x() + width / 2 + offset, pos.y()),
+                              layer_level));
     }
     pos.addX(horizontal ? 0 : offset);
     pos.addY(horizontal ? offset : 0);
@@ -2916,6 +2927,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
         excluded_intervals_.end());
     pin_size_cache_.clear();
     spacing_cache_.clear();
+    manual_pin_width_ = 0;
   }
 
   odb::Point ll = odb::Point(pos.x() - width / 2, pos.y() - height / 2);
@@ -3356,6 +3368,11 @@ void IOPlacer::initNetlist()
     bterm->getFirstPinLocation(x_pos, y_pos);
     if (bterm->getFirstPinPlacementStatus().isFixed()) {
       for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
+        const int min_spacing
+            = bterm_pin->hasMinSpacing() ? bterm_pin->getMinSpacing() : 0;
+        const int effective_width = bterm_pin->hasEffectiveWidth()
+                                        ? bterm_pin->getEffectiveWidth()
+                                        : 0;
         for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
           odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
           const int layer = tech_layer->getRoutingLevel();
@@ -3364,7 +3381,11 @@ void IOPlacer::initNetlist()
           const bool vertical_pin
               = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
           layer_fixed_pins_shapes_[layer].push_back(
-              padShapeForPin(bpin_box->getBox(), layer, vertical_pin));
+              padShapeForPin(bpin_box->getBox(),
+                             layer,
+                             vertical_pin,
+                             min_spacing,
+                             effective_width));
         }
       }
       continue;
