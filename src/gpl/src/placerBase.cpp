@@ -1454,21 +1454,23 @@ void PlacerBase::initInstsForUnusableSites()
         }
         int endX = i;
         int endY = j + 1;
-        bool can_merge = true;
-        while (can_merge && endY < siteCountY) {
+        for (; endY < siteCountY; endY++) {
+          bool row_blocked = true;
+          const int64_t base_idx = static_cast<int64_t>(endY) * siteCountX;
           for (int x = startX; x < endX; x++) {
-            if (siteGrid[(endY * siteCountX) + x] != Blocked) {
-              can_merge = false;
+            if (siteGrid[base_idx + x] != Blocked) {
+              row_blocked = false;
               break;
             }
           }
-          if (can_merge) {
-            endY++;
+          if (!row_blocked) {
+            break;
           }
         }
         for (int y = j; y < endY; y++) {
+          const int64_t base_idx = static_cast<int64_t>(y) * siteCountX;
           for (int x = startX; x < endX; x++) {
-            siteGrid[(y * siteCountX) + x] = SiteInfo::FixedInst;  // Processed
+            siteGrid[base_idx + x] = SiteInfo::FixedInst;  // Processed
           }
         }
         Instance dummy_gcell(region_bbox_.xMin() + (siteSizeX_ * startX),
