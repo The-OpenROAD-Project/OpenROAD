@@ -3167,17 +3167,24 @@ void IOPlacer::findSlotsForTopLayer()
 
 void IOPlacer::filterObstructedSlotsForTopLayer()
 {
-  // Collect top_grid obstructions
-  std::vector<odb::Rect> obstructions;
+  // Collect top_grid obstructions, with the spacing rules they carry
+  std::vector<BlockingShape> obstructions;
 
   // Get routing obstructions
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
+    // system reserved obstructions only mark the outside of polygon dies
+    if (obstruction->isSystemReserved()) {
+      continue;
+    }
     odb::dbBox* box = obstruction->getBBox();
     if (top_grid_ != nullptr && top_grid_->layer != nullptr
         && box->getTechLayer()->getRoutingLevel()
                == top_grid_->layer->getRoutingLevel()) {
-      odb::Rect obstruction_rect = box->getBox();
-      obstructions.push_back(obstruction_rect);
+      obstructions.push_back(
+          {box->getBox(),
+           obstruction->hasMinSpacing() ? obstruction->getMinSpacing() : 0,
+           obstruction->hasEffectiveWidth() ? obstruction->getEffectiveWidth()
+                                            : 0});
     }
   }
 
@@ -3198,12 +3205,12 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
               odb::dbTechLayer* tech_layer = via_shape.getTechLayer();
               if (tech_layer != nullptr
                   && tech_layer->getRoutingLevel() == top_layer_level) {
-                obstructions.push_back(via_shape.getBox());
+                obstructions.push_back({via_shape.getBox(), 0, 0});
               }
             }
           } else if (wire->getTechLayer()->getRoutingLevel()
                      == top_layer_level) {
-            obstructions.push_back(wire->getBox());
+            obstructions.push_back({wire->getBox(), 0, 0});
           }
         }
       }
@@ -3218,8 +3225,10 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
           if (top_grid_ != nullptr && top_grid_->layer != nullptr
               && box->getTechLayer()->getRoutingLevel()
                      == top_grid_->layer->getRoutingLevel()) {
-            odb::Rect obstruction_rect = box->getBox();
-            obstructions.push_back(obstruction_rect);
+            obstructions.push_back(
+                {box->getBox(),
+                 pin->hasMinSpacing() ? pin->getMinSpacing() : 0,
+                 pin->hasEffectiveWidth() ? pin->getEffectiveWidth() : 0});
           }
         }
       }
@@ -3245,11 +3254,16 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   const int layer_level = top_grid_->layer->getRoutingLevel();
   const int pin_min_dim = std::min(top_grid_->pin_width, top_grid_->pin_height);
   const int pin_max_dim = std::max(top_grid_->pin_width, top_grid_->pin_height);
-  for (odb::Rect& rect : obstructions) {
-    // floor the keepout at the layer spacing required by the obstruction
-    const int shape_width = std::min(rect.dx(), rect.dy());
-    const int spacing = computeLayerSpacing(
-        layer_level, std::max(shape_width, pin_min_dim), pin_max_dim);
+  for (const BlockingShape& obstruction : obstructions) {
+    const odb::Rect& rect = obstruction.rect;
+    // floor the keepout at the spacing required by the obstruction
+    const int shape_width
+        = std::max(static_cast<int>(std::min(rect.dx(), rect.dy())),
+                   obstruction.effective_width);
+    const int spacing = std::max(
+        computeLayerSpacing(
+            layer_level, std::max(shape_width, pin_min_dim), pin_max_dim),
+        obstruction.min_spacing);
     const int keepout = std::max(top_grid_->keepout, spacing);
     for (auto& slot : top_layer_slots_) {
       odb::Point& point = slot.pos;

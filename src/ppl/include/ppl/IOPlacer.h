@@ -224,6 +224,13 @@ class IOPlacer
     int half_width = 0;
     int height = 0;
   };
+  // a shape blocking pins, with the spacing rules it carries
+  struct BlockingShape
+  {
+    odb::Rect rect;
+    int min_spacing = 0;
+    int effective_width = 0;
+  };
   PinSize computePinSize(int layer, bool vertical_pin);
   int computeLayerSpacing(int layer, int shape_width, int parallel_length);
   odb::Rect padShapeForPin(const odb::Rect& box,
