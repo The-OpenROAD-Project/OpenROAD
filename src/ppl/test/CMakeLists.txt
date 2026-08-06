@@ -93,6 +93,7 @@ or_integration_tests(
     on_grid
     partial_tracks
     partial_tracks_error
+    pdn_boundary_mirrored_pins
     pdn_boundary_pg_pins
     pdn_boundary_stripes
     pdn_boundary_stripes_length
