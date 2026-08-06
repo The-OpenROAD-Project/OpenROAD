@@ -775,11 +775,10 @@ void NegotiationLegalizer::initFenceRegions()
 void NegotiationLegalizer::addUsage(int cell_idx, int delta)
 {
   const NegCell& cell = cells_[cell_idx];
-  const int xBegin = paddedXBegin(cell);
-  const int xEnd = paddedXEnd(cell);
+  // Footprint only: usage/overuse tracks site contention, not padding.
   for (int dy = 0; dy < cell.height; ++dy) {
     const int gy = cell.y + dy;
-    for (int gx = xBegin; gx < xEnd; ++gx) {
+    for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
       if (gridExists(gx, gy)) {
         gridAt(gx, gy).usage += delta;
       }
@@ -1096,12 +1095,11 @@ bool NegotiationLegalizer::isCellLegal(int cell_idx) const
     return false;
   }
 
-  const int xBegin = paddedXBegin(cell);
-  const int xEnd = paddedXEnd(cell);
+  // Footprint only: padding was already ruled on by the checkDRC call above.
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int gx = xBegin; gx < xEnd; ++gx) {
-      if (gridAt(gx, cell.y + dy).capacity == 0
-          || gridAt(gx, cell.y + dy).overuse() > 0) {
+    for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
+      const Pixel& g = gridAt(gx, cell.y + dy);
+      if (g.capacity == 0 || g.overuse() > 0) {
         return false;
       }
     }
