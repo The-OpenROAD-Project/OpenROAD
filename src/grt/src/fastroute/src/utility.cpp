@@ -1348,6 +1348,7 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   is_3d_step_ = false;
+  res_aware_nets_percentage_ = kInitialResAwareNetsPercentage;
   updateSlacks();
   is_3d_step_ = true;
 
