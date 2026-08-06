@@ -59,6 +59,7 @@ void HungarianMatching::createMatrix()
   for (int idx : pin_indices_) {
     IOPin& io_pin = netlist_->getIoPin(idx);
     if (!io_pin.isInGroup()) {
+      const bool has_mirror = io_pin.getBTerm()->hasMirroredBTerm();
       bool is_mirrored = false;
       std::vector<int> larger_costs;
       int slot_index = 0;
@@ -75,7 +76,7 @@ void HungarianMatching::createMatrix()
         larger_costs.push_back(std::max(io_net_hpwl, mirrored_cost));
         // avoid slots whose mirrored slot cannot receive the mirrored pin
         hungarian_matrix_[slot_index][pin_index]
-            = isMirroredSlotBlocked(io_pin, slot_pos, slots_[i].layer)
+            = has_mirror && isMirroredSlotBlocked(slot_pos, slots_[i].layer)
                   ? hungarian_fail_
                   : hpwl;
         is_mirrored = is_mirrored || mirrored_cost != 0;
@@ -355,13 +356,9 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
   assignment_.clear();
 }
 
-bool HungarianMatching::isMirroredSlotBlocked(IOPin& io_pin,
-                                              const odb::Point& pos,
+bool HungarianMatching::isMirroredSlotBlocked(const odb::Point& pos,
                                               int layer) const
 {
-  if (!io_pin.getBTerm()->hasMirroredBTerm()) {
-    return false;
-  }
   const int slot_index
       = getSlotIdxByPosition(core_->getMirroredPosition(pos), layer);
   return slot_index < 0 || !slots_[slot_index].isAvailable();

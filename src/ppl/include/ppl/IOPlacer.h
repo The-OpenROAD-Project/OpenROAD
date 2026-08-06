@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -227,9 +228,11 @@ class IOPlacer
                                              const odb::Rect& box);
   PinSize computePinSize(int layer);
   int computeLayerSpacing(int layer, int shape_width, int parallel_length);
+  odb::Rect padShapeForPin(const odb::Rect& box, int layer, bool vertical_pin);
   void excludeBoundaryShape(const odb::Rect& box,
                             odb::dbTechLayer* tech_layer,
                             const odb::Rect& die_area);
+  void getBlockedRegions();
   void getBlockedRegionsFromPDN();
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
@@ -274,9 +277,11 @@ class IOPlacer
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   FallbackPins fallback_pins_;
+  // fixed pin shapes padded by the pin size and spacing, per layer
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
   // a pin size only depends on its layer, wrong way pins are rejected
   std::map<int, PinSize> pin_size_cache_;
+  std::map<std::tuple<int, int, int>, int> spacing_cache_;
 
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<utl::Validator> validator_;
