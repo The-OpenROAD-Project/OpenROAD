@@ -954,8 +954,8 @@ std::vector<odb::Point> IOPlacer::findLayerSlots(const int layer,
                        : parms_->getHorizontalThicknessMultiplier();
 
     int half_width = vertical_pin
-                         ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
-                         : int(ceil(core_->getMinWidthY()[layer] / 2.0));
+                         ? int(ceil(core_->getMinWidthX().at(layer) / 2.0))
+                         : int(ceil(core_->getMinWidthY().at(layer) / 2.0));
 
     half_width *= thickness_multiplier;
 
@@ -1801,12 +1801,12 @@ void IOPlacer::updatePinArea(IOPin& pin)
     if (pin.getOrientation() == Orientation::north
         || pin.getOrientation() == Orientation::south) {
       float thickness_multiplier = parms_->getVerticalThicknessMultiplier();
-      int half_width = int(ceil(core_->getMinWidthX()[pin.getLayer()] / 2.0))
+      int half_width = int(ceil(core_->getMinWidthX().at(pin.getLayer()) / 2.0))
                        * thickness_multiplier;
       int height = int(std::max(
           2.0 * half_width,
-          ceil(core_->getMinAreaX()[pin.getLayer()] / (2.0 * half_width))));
-      required_min_area = core_->getMinAreaX()[pin.getLayer()];
+          ceil(core_->getMinAreaX().at(pin.getLayer()) / (2.0 * half_width))));
+      required_min_area = core_->getMinAreaX().at(pin.getLayer());
 
       int ext = 0;
       if (parms_->getVerticalLength() != -1) {
@@ -1833,12 +1833,12 @@ void IOPlacer::updatePinArea(IOPin& pin)
     if (pin.getOrientation() == Orientation::west
         || pin.getOrientation() == Orientation::east) {
       float thickness_multiplier = parms_->getHorizontalThicknessMultiplier();
-      int half_width = int(ceil(core_->getMinWidthY()[pin.getLayer()] / 2.0))
+      int half_width = int(ceil(core_->getMinWidthY().at(pin.getLayer()) / 2.0))
                        * thickness_multiplier;
       int height = int(std::max(
           2.0 * half_width,
-          ceil(core_->getMinAreaY()[pin.getLayer()] / (2.0 * half_width))));
-      required_min_area = core_->getMinAreaY()[pin.getLayer()];
+          ceil(core_->getMinAreaY().at(pin.getLayer()) / (2.0 * half_width))));
+      required_min_area = core_->getMinAreaY().at(pin.getLayer());
 
       int ext = 0;
       if (parms_->getHorizontalLengthExtend() != -1) {
