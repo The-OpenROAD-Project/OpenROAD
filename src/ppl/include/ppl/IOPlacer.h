@@ -277,6 +277,8 @@ class IOPlacer
   FallbackPins fallback_pins_;
   // fixed pin shapes padded by the pin size and spacing, per layer
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
+  // padded boundary shapes blocking polygon die slots, per layer
+  std::map<int, std::vector<odb::Rect>> layer_blocked_shapes_;
   std::map<std::pair<int, bool>, PinSize> pin_size_cache_;
   std::map<std::tuple<int, int, int>, int> spacing_cache_;
 

@@ -70,6 +70,7 @@ void IOPlacer::clear()
   top_layer_slots_.clear();
   assignment_.clear();
   excluded_intervals_.clear();
+  layer_blocked_shapes_.clear();
   pin_size_cache_.clear();
   spacing_cache_.clear();
   *parms_ = Parameters();
@@ -431,6 +432,16 @@ bool IOPlacer::checkBlocked(Edge edge,
       }
     }
   }
+  if (edge == Edge::polygonEdge) {
+    const auto blocked_shapes = layer_blocked_shapes_.find(layer);
+    if (blocked_shapes != layer_blocked_shapes_.end()) {
+      for (const odb::Rect& padded_shape : blocked_shapes->second) {
+        if (padded_shape.intersects(pos)) {
+          return true;
+        }
+      }
+    }
+  }
   bool vertical_pin = (edge == Edge::polygonEdge)
                           ? line.pt0().getY() == line.pt1().getY()
                           : (edge == Edge::top || edge == Edge::bottom);
@@ -557,6 +568,22 @@ odb::Rect IOPlacer::padShapeForPin(const odb::Rect& box,
       .bloat(pin_size.height + spacing, edge_dir.turn_90());
 }
 
+namespace {
+bool touchesLine(const odb::Rect& rect, const odb::Line& line)
+{
+  const odb::Point pt0 = line.pt0();
+  const odb::Point pt1 = line.pt1();
+  if (pt0.getY() == pt1.getY()) {
+    return rect.yMin() <= pt0.getY() && pt0.getY() <= rect.yMax()
+           && rect.xMin() <= std::max(pt0.getX(), pt1.getX())
+           && std::min(pt0.getX(), pt1.getX()) <= rect.xMax();
+  }
+  return rect.xMin() <= pt0.getX() && pt0.getX() <= rect.xMax()
+         && rect.yMin() <= std::max(pt0.getY(), pt1.getY())
+         && std::min(pt0.getY(), pt1.getY()) <= rect.yMax();
+}
+}  // namespace
+
 void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
                                     odb::dbTechLayer* tech_layer,
                                     const odb::Rect& die_area)
@@ -575,6 +602,18 @@ void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
   }
   const odb::Rect padded_box = padShapeForPin(box, layer, vertical_pin);
   if (!die_area.intersects(padded_box)) {
+    return;
+  }
+  const std::vector<odb::Line>& die_edges = core_->getDieAreaEdges();
+  if (die_edges.size() > 4) {
+    // polygon dies have slots on edges the bounding box cannot represent, so
+    // block their slots with the padded shape itself
+    for (const odb::Line& die_edge : die_edges) {
+      if (touchesLine(padded_box, die_edge)) {
+        layer_blocked_shapes_[layer].push_back(padded_box);
+        break;
+      }
+    }
     return;
   }
   const odb::Rect intersect = die_area.intersect(padded_box);
@@ -653,6 +692,10 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
   const odb::Rect die_area = getBlock()->getDieArea();
 
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
+    // system reserved obstructions only mark the outside of polygon dies
+    if (obstruction->isSystemReserved()) {
+      continue;
+    }
     odb::dbBox* obstruct_box = obstruction->getBBox();
     odb::dbTechLayer* tech_layer = obstruct_box->getTechLayer();
     if (tech_layer == nullptr) {
@@ -3266,6 +3309,7 @@ void IOPlacer::initNetlist()
 {
   netlist_->reset();
   layer_fixed_pins_shapes_.clear();
+  layer_blocked_shapes_.clear();
   pin_size_cache_.clear();
   spacing_cache_.clear();
   const odb::Rect& coreBoundary = core_->getBoundary();
