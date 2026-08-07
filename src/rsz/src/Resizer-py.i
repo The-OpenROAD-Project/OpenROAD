@@ -36,7 +36,7 @@ using namespace rsz;
 %ignore rsz::Resizer::repairSetup(double, double, int, int, int, bool, bool,
                                   const std::vector<rsz::MoveType>&,
                                   const char*,
-                                  bool, bool, bool, bool, bool, bool, bool, bool);
+                                  bool, bool, bool, bool, bool, bool, bool, bool, bool);
 
 %ignore rsz::Resizer::computeNewDelaysSlews;
 %ignore rsz::Resizer::estimateSlewsAfterBufferRemoval;
@@ -90,7 +90,8 @@ using namespace rsz;
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
-                   bool skip_crit_vt_swap)
+                   bool skip_crit_vt_swap,
+                   bool use_stage_delay_ranking = false)
   {
     auto move_seq = rsz::Resizer::parseMoveSequence(
         std::string(sequence ? sequence : ""));
@@ -100,6 +101,7 @@ using namespace rsz;
                               phases ? phases : "",
                               skip_pin_swap, skip_gate_cloning, skip_size_down_fanout,
                               skip_buffering, skip_buffer_removal,
-                              skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
+                              skip_last_gasp, skip_vt_swap, skip_crit_vt_swap,
+                              use_stage_delay_ranking);
   }
 }
