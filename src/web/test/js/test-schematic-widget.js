@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import {
     SchematicWidget, canonicalizeCell, canonicalizeForSkin, scopeCssSelector,
 } from '../../src/schematic-widget.js';
+import { beginSelection } from '../../src/ui-utils.js';
 
 globalThis.CSS = globalThis.CSS || { escape: (value) => String(value) };
 globalThis.requestAnimationFrame = globalThis.requestAnimationFrame
@@ -44,61 +45,55 @@ function makeWidget(appState = {}) {
     return { widget, container };
 }
 
-function makeInteractiveCell(widget, instName) {
+// Build a one-cell SVG and install it as the widget's rendered schematic.
+// The variants below differ only in how the cell id is discoverable (group id
+// vs. a class on the child shape) and in the stubbed screen geometry, since
+// jsdom computes no SVG layout of its own.
+//   identify: 'id'       -> group carries id="cell_<inst>", mapped directly
+//             'class'    -> child path carries the id as a class token
+//             'register' -> group carries the id, registered via the widget
+function makeCell(widget, instName, { identify = 'id', bounds = rect(0, 0, 30, 30) } = {}) {
     const svg = document.createElementNS(svgNS, 'svg');
     const group = document.createElementNS(svgNS, 'g');
     const path = document.createElementNS(svgNS, 'path');
 
-    group.id = `cell_${instName}`;
+    if (identify !== 'class') {
+        group.id = `cell_${instName}`;
+    } else {
+        path.setAttribute('class', `cell_${instName}`);
+    }
     group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
-    group.getBoundingClientRect = () => rect(0, 0, 30, 30);
+    group.getBoundingClientRect = () => bounds;
+    path.getBoundingClientRect = () => bounds;
     group.appendChild(path);
     svg.appendChild(group);
 
     widget.svgContainer.replaceChildren(svg);
     widget._svgEl = svg;
-    widget._svgIdToInstName.set(group.id, instName);
+    if (identify === 'id') {
+        widget._svgIdToInstName.set(group.id, instName);
+    } else {
+        widget._registerSvgCellHitTarget(instName, group);
+    }
 
-    return { group, path };
+    return {
+        svg,
+        group,
+        path,
+        hitTarget: group.querySelector('rect[data-openroad-hit-target]'),
+    };
 }
 
-function makeClassOnlyInteractiveCell(widget, instName) {
-    const svg = document.createElementNS(svgNS, 'svg');
-    const group = document.createElementNS(svgNS, 'g');
-    const path = document.createElementNS(svgNS, 'path');
+const makeInteractiveCell = (widget, instName) => makeCell(widget, instName);
 
-    group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
-    group.getBoundingClientRect = () => rect(0, 0, 30, 30);
-    path.setAttribute('class', `cell_${instName}`);
-    group.appendChild(path);
-    svg.appendChild(group);
+const makeClassOnlyInteractiveCell = (widget, instName) =>
+    makeCell(widget, instName, { identify: 'class' });
 
-    widget.svgContainer.replaceChildren(svg);
-    widget._svgEl = svg;
-    widget._registerSvgCellHitTarget(instName, group);
-
-    return { group, path };
-}
-
-function makeHitTargetCell(widget, instName) {
-    const svg = document.createElementNS(svgNS, 'svg');
-    const group = document.createElementNS(svgNS, 'g');
-    const path = document.createElementNS(svgNS, 'path');
-
-    group.id = `cell_${instName}`;
-    group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
-    group.getBoundingClientRect = () => rect(10, 10, 40, 40);
-    path.getBoundingClientRect = () => rect(10, 10, 40, 40);
-    group.appendChild(path);
-    svg.appendChild(group);
-
-    widget.svgContainer.replaceChildren(svg);
-    widget._svgEl = svg;
-    widget._registerSvgCellHitTarget(instName, group);
-
-    const hitTarget = group.querySelector('rect[data-openroad-hit-target]');
-    return { svg, group, path, hitTarget };
-}
+const makeHitTargetCell = (widget, instName) =>
+    makeCell(widget, instName, {
+        identify: 'register',
+        bounds: rect(10, 10, 40, 40),
+    });
 
 function doubleClickEvent(target) {
     return {
@@ -459,6 +454,50 @@ describe('SchematicWidget schematic navigation', () => {
             fanin_depth: 1,
             fanout_depth: 1,
         });
+        container.element.remove();
+    });
+
+    it('drops an inspect response that another panel has superseded', async () => {
+        let releaseInspect;
+        const inspected = [];
+        const appState = {
+            showDbu: false,
+            websocketManager: {
+                request: () => new Promise((resolve) => {
+                    releaseInspect = resolve;
+                }),
+            },
+            updateInspector: (data) => inspected.push(data),
+            focusComponent() {},
+        };
+        const { widget, container } = makeWidget(appState);
+
+        const pending = widget._fetchInspect('u1');
+        // Another panel takes the selection while the request is in flight.
+        beginSelection(appState);
+        releaseInspect({ selected: [{ name: 'u1' }] });
+
+        assert.equal(await pending, false);
+        assert.deepEqual(inspected, []);
+        container.element.remove();
+    });
+
+    it('applies an inspect response that still owns the selection', async () => {
+        const inspected = [];
+        const focused = [];
+        const appState = {
+            showDbu: false,
+            websocketManager: {
+                request: () => Promise.resolve({ selected: [{ name: 'u1' }] }),
+            },
+            updateInspector: (data) => inspected.push(data),
+            focusComponent: (name) => focused.push(name),
+        };
+        const { widget, container } = makeWidget(appState);
+
+        assert.equal(await widget._fetchInspect('u1'), true);
+        assert.deepEqual(inspected, [{ selected: [{ name: 'u1' }] }]);
+        assert.deepEqual(focused, ['Inspector']);
         container.element.remove();
     });
 
