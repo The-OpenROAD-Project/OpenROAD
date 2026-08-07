@@ -427,14 +427,12 @@ export class SchematicWidget {
             }
             this.netlistsvg = window.netlistsvg;
 
-            // Load OpenROAD's skin (served as a local asset).  It defines
+            // Load OpenROAD's custom skin (served as a local asset).  It defines
             // proper gate symbols with correctly-placed ports and instance-name
             // labels; renderNetlist() rewrites cell types to match it (see
             // canonicalizeForSkin).  render() passes the skin to onml.p(), which
-            // expects a raw XML string, so fetch it as text.  no-store because
-            // the skin ships with the server build: a cached copy from an older
-            // session would be missing the symbols the netlist now asks for.
-            const resp = await fetch('openroad_skin.svg', { cache: 'no-store' });
+            // expects a raw XML string, so fetch it as text.
+            const resp = await fetch('openroad_skin.svg');
             if (!resp.ok) {
                 throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
             }
@@ -1532,9 +1530,13 @@ export function scopeCssSelector(selectorText, scope) {
 
 // ── Skin canonicalization ──────────────────────────────────────────────────
 //
-// The server tags recognised combinational/register cells with `gate_kind`.
-// Before rendering we rewrite them to the gate types drawn by openroad_skin.svg
-// and remap real Liberty pins to the skin's port ids.
+// The server tags recognised combinational and register cells with `gate_kind`
+// (and/nand/or/nor/xor/xnor/not/buf, aoi/oai with `gate_terms`, or a
+// dff/dffr/dffs register).  Before
+// rendering we rewrite those cells to the canonical gate types drawn by the
+// custom skin (openroad_skin.svg) and remap their pins to the symbol's port ids
+// (A, B, …, Y).  netlistsvg then renders proper gate symbols and routes the
+// wires to the symbol-defined port positions — no overlay or alignment needed.
 
 // gate_kind -> skin symbol type (a Yosys primitive alias the skin recognises).
 const SKIN_SIMPLE_TYPE = {
@@ -1542,11 +1544,15 @@ const SKIN_SIMPLE_TYPE = {
     xor: '$_XOR_', xnor: '$_XNOR_', not: '$_NOT_', buf: '$_BUF_',
 };
 
+// Compound gate types the skin actually draws.  Unsupported arities are left as
+// labelled generic boxes (which keep the design's real pin names).
 const SKIN_COMPOUND_TYPES = new Set([
     'aoi21', 'aoi22', 'aoi211', 'aoi221', 'aoi222', 'aoi33',
     'oai21', 'oai22', 'oai211', 'oai221', 'oai222', 'oai33',
 ]);
 
+// Wider (>2-input) basic gates the skin draws, named kind+arity.  2-input gates
+// use the Yosys primitive aliases in SKIN_SIMPLE_TYPE instead.
 const SKIN_MULTI_TYPES = new Set([
     'and3', 'and4', 'or3', 'or4', 'nand3', 'nand4', 'nor3', 'nor4',
 ]);
@@ -1638,7 +1644,7 @@ function skinPidForGatePort(symbolPort) {
     return symbolPort;
 }
 
-// Rewrite one cell to an OpenROAD skin gate symbol when it carries a recognised
+// Rewrite one cell to a custom-skin gate symbol when it carries a recognised
 // `gate_kind`: set its `type` to the canonical symbol name and remap its
 // `connections`/`port_directions` keys to the symbol's port ids.  Pins not part
 // of the gate (power/ground) are dropped.  Cells that aren't recognised — or
@@ -1682,7 +1688,8 @@ export function canonicalizeCell(cell) {
         const sizes = terms.map((t) => t.length);
         type = kind + sizes.slice().sort((a, b) => b - a).join('');
         if (!SKIN_COMPOUND_TYPES.has(type)) return cell;
-        // Match the skin's AOI/OAI port layout: single-literal terms use A first.
+        // Assign input pids term-by-term, smallest term first (so a 1-pin
+        // literal term gets 'A'); matches the symbol's port layout.
         const ordered = terms.map((t) => t.slice())
             .sort((a, b) => a.length - b.length);
         let i = 0;
@@ -1735,7 +1742,7 @@ export function canonicalizeCell(cell) {
 }
 
 // Return a copy of the netlist with recognised logic gates rewritten to the
-// OpenROAD skin's gate symbols.  Cell keys (instance names) are preserved so
+// custom skin's gate symbols.  Cell keys (instance names) are preserved so
 // selection/inspect keep working.
 export function canonicalizeForSkin(json) {
     const top = json && json.modules && json.modules.top;
