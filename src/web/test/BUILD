@@ -96,7 +96,7 @@ js_test(
 
 js_test(
     name = "display_controls_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -161,6 +161,20 @@ js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "merged_tile_layer_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-merged-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "tile_merge_test",
+    data = JS_FILES,
+    entry_point = "js/test-tile-merge.js",
     no_copy_to_bin = JS_FILES,
 )
 

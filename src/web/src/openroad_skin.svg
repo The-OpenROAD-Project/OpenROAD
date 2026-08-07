@@ -171,7 +171,9 @@ path, rect, circle, polygon {
     <g s:x="24" s:y="10" s:pid="Y"/>
   </g>
 
-  <!-- dff -->
+  <!-- dff. Grown from 30x40 and re-pinned: the backend now reports QN, which
+       the old symbol had no port for, so an inverted output was dropped from
+       the drawing. D/CLK/Q moved to make room for the second output. -->
   <g s:type="dff" transform="translate(350,150)" s:width="46" s:height="44">
     <s:alias val="dff"/>
     <s:alias val="$dff"/>

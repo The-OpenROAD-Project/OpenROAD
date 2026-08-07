@@ -7,14 +7,17 @@ import { WebSocketManager } from './websocket-manager.js';
 import {
     createWebSocketTileLayer,
     createOverlayTileLayer,
+    currentDpr,
     floorClampZoom,
 } from './websocket-tile-layer.js';
+import { createMergedTileLayer } from './merged-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode, buildMapOptions } from './ui-utils.js';
+import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection }
+    from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -120,6 +123,11 @@ const app = {
     heatMapLegendEl: null,
     renderHeatMapControls: null,
     rulerManager: null,
+    // Bumped by beginSelection() whenever a panel takes over the selection;
+    // see ui-utils.js.  Panels register their reset callbacks in
+    // `selectionResetters` via onSelectionReset().
+    selectionToken: 0,
+    selectionResetters: [],
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
     },
@@ -288,6 +296,48 @@ try {
 const WebSocketTileLayer = createWebSocketTileLayer(
     visibility, app.visibleLayerNames, selectability, app.selectableLayers,
     app);
+
+// ─── Tile grouping ──────────────────────────────────────────────────────────
+//
+// One pane per tech layer per chiplet puts a multi-die design at ~97 panes and
+// ~582 MB of decoded tile images, past the browser's ~458 MB ceiling, where
+// Chrome discards decodes and the discarded regions paint white until something
+// forces a full invalidation.  Merging the routing layers into N canvas panes,
+// N derived from a memory budget, bounds the total regardless of how many layers
+// or chiplets the design has.
+//
+//   ?mergetiles=0        legacy one-pane-per-layer, for A/B comparison
+//   ?tilebudget=<MB>     override the budget (default 350 MB)
+//   ?mergegroups=<N>     pin N directly, bypassing the budget
+(function configureTileMerging() {
+    let params = null;
+    try {
+        params = new URLSearchParams(window.location.search);
+    } catch (_) {
+        params = null;
+    }
+    const param = (name) => (params ? params.get(name) : null);
+
+    app.mergeTiles = param('mergetiles') !== '0';
+    const budgetMB = Number(param('tilebudget'));
+    if (Number.isFinite(budgetMB) && budgetMB > 0) {
+        app.tileBudgetBytes = Math.round(budgetMB * 1024 * 1024);
+    }
+    const groups = Number(param('mergegroups'));
+    if (Number.isFinite(groups) && groups > 0) {
+        app.mergeGroupCount = Math.floor(groups);
+    }
+    // display-controls reads dpr through app so it does not have to import a
+    // layer module just to size the memory budget.
+    app.tileDpr = currentDpr;
+    app.MergedTileLayer = createMergedTileLayer({
+        visibility,
+        selectability,
+        visibleLayers: app.visibleLayerNames,
+        selectableLayers: app.selectableLayers,
+        app,
+    }, { dpr: currentDpr });
+})();
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -1157,8 +1207,14 @@ app.websocketManager.readyPromise.then(async () => {
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
+            const token = beginSelection(app);
             app.websocketManager.request(selectRequest)
                 .then(data => {
+                    // A newer selection (another click, a layer row, the
+                    // Inspector) has already replaced this one on the server;
+                    // this response describes a selection that no longer
+                    // exists, so it must not drive the Inspector.
+                    if (!isCurrentSelection(app, token)) return;
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {

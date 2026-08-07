@@ -71,7 +71,17 @@ extract(const char* ext_model_file,
   opts._version= version;
 
   opts._dbg= dbg;
-  
+
+  odb::dbChip* top_chip = ord::getOpenRoad()->getDb()->getChip();
+  if (!top_chip) {
+    getLogger()->error(utl::RCX, 517, "No design is loaded.");
+  }
+
+  if (top_chip->getChipType() == odb::dbChip::ChipType::HIER) {
+    ext->extractMultiChip(opts);
+    return;
+  }
+
   ext->extract(opts);
 }
 
@@ -93,7 +103,17 @@ write_spef(const char* file,
   if (coordinates) {  
     opts.N = "Y";
   }
-  
+
+  odb::dbChip* top_chip = ord::getOpenRoad()->getDb()->getChip();
+  if (!top_chip) {
+    getLogger()->error(utl::RCX, 518, "No design is loaded.");
+  }
+
+  if (top_chip->getChipType() == odb::dbChip::ChipType::HIER) {
+    ext->writeMultiChipSpef(opts);
+    return;
+  }
+
   ext->write_spef(opts);
 }
 

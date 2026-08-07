@@ -93,10 +93,7 @@ static http::response<http::string_body> handle_request(
   res.set(http::field::access_control_allow_origin, "*");
 
   if (req.method() == http::verb::get) {
-    std::string file_path(req.target());
-    if (file_path == "/") {
-      file_path = "/index.html";
-    }
+    const std::string file_path = assetPathFromTarget(req.target());
     const auto* asset = findEmbeddedAsset(file_path);
     if (asset) {
       res.set(http::field::content_type, asset->content_type);

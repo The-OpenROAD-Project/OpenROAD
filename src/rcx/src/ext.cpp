@@ -18,6 +18,8 @@
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
 #include "rcx/ext_options.h"
+#include "rcx/multiChipExtractor.h"
+#include "rcx/multiChipSpefWriter.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -26,7 +28,12 @@ using utl::Logger;
 using utl::RCX;
 
 Ext::Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version)
-    : _db(db), _ext(new extMain()), logger_(logger), spef_version_(spef_version)
+    : _db(db),
+      _ext(new extMain()),
+      logger_(logger),
+      spef_version_(spef_version),
+      multi_chip_extractor_(std::make_unique<MultiChipExtractor>(db, logger)),
+      multi_chip_spef_writer_(std::make_unique<MultiChipSpefWriter>(db, logger))
 {
   _ext->init(db, logger);
 }
@@ -210,6 +217,11 @@ void Ext::get_ext_db_corner(int& index, const std::string& name)
   }
 }
 
+void Ext::extractMultiChip(const ExtractOptions& options)
+{
+  multi_chip_extractor_->run(options);
+}
+
 void Ext::extract(ExtractOptions options)
 {
   _ext->setBlockFromChip(_db->getChip());
@@ -314,6 +326,11 @@ void Ext::write_spef(const SpefOptions& options)
                   name,
                   spef_version_,
                   options.parallel);
+}
+
+void Ext::writeMultiChipSpef(const SpefOptions& options)
+{
+  multi_chip_spef_writer_->run(options);
 }
 
 void Ext::read_spef(ReadSpefOpts& opt)

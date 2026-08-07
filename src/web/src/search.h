@@ -75,21 +75,6 @@ class Search : public odb::dbBlockCallBackObj
   using SNetDBoxValue = std::pair<odb::dbSBox*, T>;
   ;
 
-  template <typename T>
-  struct BBoxIndexableGetter
-  {
-    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
-    odb::Rect operator()(T t) const { return t->getBBox()->getBox(); }
-    odb::Rect operator()(const SNetValue<T>& t) const
-    {
-      return std::get<0>(t)->getBox();
-    }
-    odb::Rect operator()(const SNetDBoxValue<T>& t) const
-    {
-      return std::get<0>(t)->getBox();
-    }
-  };
-
   struct FillIndexableGetter
   {
     using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
@@ -101,18 +86,23 @@ class Search : public odb::dbBlockCallBackObj
     }
   };
 
+  // Every tree below indexes on a Rect STORED IN THE TREE (the `first` of a
+  // RectValue pair), never on one derived from ODB by an indexable getter.
+  // Boost's rtree invokes the indexable getter on every element a query
+  // visits, and each derivation (inst->getBBox()->getBox(), sbox->getBox())
+  // is a chain of dbTable lookups whose cache behavior is far worse than the
+  // traversal itself.  At zoom-out the query box spans the whole design, so
+  // nothing prunes and the getter runs once per element per tile per layer —
+  // it dominated the web viewer's render time on large designs.  The extra 16
+  // bytes per entry buy that back.
   template <typename T>
   using RtreeRect = bgi::rtree<RectValue<T>, bgi::quadratic<16>>;
   template <typename T>
-  using RtreeDBox = bgi::rtree<T, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
-  template <typename T>
   using RtreeRoutingShapes = bgi::rtree<RouteBoxValue<T>, bgi::quadratic<16>>;
   template <typename T>
-  using RtreeSNetShapes
-      = bgi::rtree<SNetValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
+  using RtreeSNetShapes = RtreeRect<SNetValue<T>>;
   template <typename T>
-  using RtreeSNetDBoxShapes = bgi::
-      rtree<SNetDBoxValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
+  using RtreeSNetDBoxShapes = RtreeRect<SNetDBoxValue<T>>;
   using RtreeFill
       = bgi::rtree<odb::dbFill*, bgi::quadratic<16>, FillIndexableGetter>;
 
@@ -167,6 +157,17 @@ class Search : public odb::dbBlockCallBackObj
   // Qt's Search emits `modified()` on.  TileGenerator uses it to drop its PNG
   // tile cache and push a redraw to connected clients.  Pass `{}` to clear.
   void setOnModified(std::function<void()> cb);
+
+  // Counter bumped on every design edit this object hears about, whether or
+  // not setOnModified's callback fires for it.  That callback is deliberately
+  // debounced to a valid→invalid index transition so a batch of edits does not
+  // flood connected clients with redraws, which makes it unsuitable for
+  // invalidating a cache: an edit arriving while an index is already invalid
+  // is silent.  Caches poll this instead and rebuild when it moves.
+  uint64_t revision() const
+  {
+    return revision_.load(std::memory_order_acquire);
+  }
 
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -307,9 +308,10 @@ class Search : public odb::dbBlockCallBackObj
  private:
   struct BlockData;
 
-  void addSNet(odb::dbNet* net,
-               LayerMap<std::vector<SNetValue<odb::dbNet*>>>& net_shapes,
-               LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>>& via_shapes);
+  void addSNet(
+      odb::dbNet* net,
+      LayerMap<std::vector<RectValue<SNetValue<odb::dbNet*>>>>& net_shapes,
+      LayerMap<std::vector<RectValue<SNetDBoxValue<odb::dbNet*>>>>& via_shapes);
   void addNet(odb::dbNet* net,
               LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>>& tree_shapes);
   void addVia(odb::dbNet* net,
@@ -344,10 +346,13 @@ class Search : public odb::dbBlockCallBackObj
   std::function<void()> on_modified_;
   mutable std::mutex on_modified_mutex_;
 
+  // See revision().  Bumped by every edit, undebounced.
+  std::atomic_uint64_t revision_{0};
+
   struct BlockData
   {
-    RtreeDBox<odb::dbInst*> insts;
-    RtreeDBox<odb::dbBlockage*> blockages;
+    RtreeRect<odb::dbInst*> insts;
+    RtreeRect<odb::dbBlockage*> blockages;
     RtreeRect<odb::dbRow*> rows;
 
     std::shared_mutex shapes_init_mutex;
@@ -365,7 +370,7 @@ class Search : public odb::dbBlockCallBackObj
     LayerMap<RtreeSNetDBoxShapes<odb::dbNet*>> snet_via_shapes;
     LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes;
     LayerMap<RtreeFill> fills;
-    LayerMap<RtreeDBox<odb::dbObstruction*>> obstructions;
+    LayerMap<RtreeRect<odb::dbObstruction*>> obstructions;
 
     std::atomic_bool shapes_init{false};
     std::atomic_bool fills_init{false};

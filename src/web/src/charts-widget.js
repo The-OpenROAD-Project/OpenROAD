@@ -4,7 +4,8 @@
 // Canvas-based slack histogram widget.
 
 import { getThemeColors } from './theme.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, beginSelection, isCurrentSelection }
+    from './ui-utils.js';
 
 // Layout margins (pixels)
 export const kLeftMargin = 60;
@@ -683,6 +684,9 @@ export class ChartsWidget {
         if (this._currentTab !== 'fanout') return;
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
+        // Replaces the server-side selection, so it takes ownership from any
+        // other panel's in-flight selection (see ui-utils.js).
+        const token = beginSelection(this._app);
         try {
             const resp = await this._app.websocketManager.request({
                 type: 'select_fanout_bin',
@@ -690,6 +694,7 @@ export class ChartsWidget {
                 upper: bar.upper,
                 use_dbu: this._app.showDbu,
             });
+            if (!isCurrentSelection(this._app, token)) return;
             if (resp && resp.truncated) {
                 console.warn(
                     `Fanout bin has ${resp.count} nets; selection capped at `

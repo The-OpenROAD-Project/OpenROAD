@@ -324,6 +324,19 @@ limited to one module named `top`:
 Cones are capped at 150 instances; nets with fanout > 30 are skipped to
 keep the schematic readable.
 
+#### Gate symbol hints
+
+Cells recognised from their Liberty function carry three extra fields
+beyond the Yosys schema. They are rendering *hints* only — `type` stays
+the real master name, and a client that ignores them still gets a
+correct netlist, just drawn as generic boxes.
+
+| Field         | Type     | Description                                          |
+| ------------- | -------- | ---------------------------------------------------- |
+| `gate_kind`   | `string` | `and`/`nand`/`or`/`nor`/`xor`/`xnor`/`not`/`buf` for simple gates, `aoi`/`oai` for compound and/or-invert gates, `dff`/`dffr`/`dffs` for registers. Absent when the cell is not recognised. |
+| `gate_ports`  | `object` | Symbol port id → real Liberty pin name (e.g. `{"A1": "A", "Y": "ZN"}`), letting the viewer route the skin symbol while still labelling the design's own pin names. Emitted for simple gates and registers. |
+| `gate_terms`  | `array`  | `aoi`/`oai` only: the input pin names of each first-level term (AOI21 → `[["A"], ["B1", "B2"]]`). A one-pin term feeds the second-level gate directly. The viewer derives the symbol port ids from this grouping, so no `gate_ports` is sent. |
+
 ### `schematic_full`
 
 Same shape as `schematic_cone` but emits the entire block (no caps). No

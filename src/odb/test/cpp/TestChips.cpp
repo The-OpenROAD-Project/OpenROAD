@@ -472,6 +472,8 @@ TEST_F(ChipHierarchyFixture, test_chip_parasitics)
       break;
     }
   }
+
+  ASSERT_NE(memory_region, nullptr);
   auto memory_bump_inst = *memory_region->getChipBumpInsts().begin();
 
   dbChipNet* net = dbChipNet::create(system_chip, "net1");

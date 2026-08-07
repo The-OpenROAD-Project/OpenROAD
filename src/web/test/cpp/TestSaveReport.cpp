@@ -155,6 +155,9 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
 
   EXPECT_TRUE(contains(html, "class WebSocketManager"));
   EXPECT_TRUE(contains(html, "fromCache"));
+  EXPECT_TRUE(contains(html, "function buildTileRequestFor"));
+  EXPECT_TRUE(contains(html, "function createMergedTileLayer"));
+  EXPECT_TRUE(contains(html, "function computeGroupCount"));
   EXPECT_TRUE(contains(html, "TimingWidget"));
   EXPECT_TRUE(contains(html, "ChartsWidget"));
 }
