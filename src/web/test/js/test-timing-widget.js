@@ -342,44 +342,22 @@ describe('TimingWidget path table sorting', () => {
 });
 
 describe('TimingWidget unconstrained paths', () => {
-    it('requests constrained paths only by default', async () => {
+    it('sends the checkbox state, and refetches when it is toggled', async () => {
         const app = createMockApp({ timing_report: () => ({ paths: [] }) });
         const widget = new TimingWidget(app, () => {});
 
         await widget.update();
+        assert.deepEqual(
+            app.requests.filter(r => r.type === 'timing_report')
+                        .map(r => r.unconstrained), [false, false]);
 
-        const reports = app.requests.filter(r => r.type === 'timing_report');
-        assert.equal(reports.length, 2);
-        for (const r of reports) {
-            assert.equal(r.unconstrained, false);
-        }
-    });
-
-    it('requests unconstrained paths when the box is checked', async () => {
-        const app = createMockApp({ timing_report: () => ({ paths: [] }) });
-        const widget = new TimingWidget(app, () => {});
-        widget._unconstrainedBox.checked = true;
-
-        await widget.update();
-
-        const reports = app.requests.filter(r => r.type === 'timing_report');
-        assert.equal(reports.length, 2);
-        for (const r of reports) {
-            assert.equal(r.unconstrained, true);
-        }
-    });
-
-    it('refetches when the box is toggled', () => {
-        const app = createMockApp({ timing_report: () => ({ paths: [] }) });
-        const widget = new TimingWidget(app, () => {});
         app.requests.length = 0;
-
         widget._unconstrainedBox.checked = true;
         widget._unconstrainedBox.dispatchEvent(
             new window.Event('change', { bubbles: true }));
 
-        assert.ok(app.requests.some(r => r.type === 'timing_report'),
-                  'toggling the box refetches the report');
+        assert.ok(app.requests.some(
+            r => r.type === 'timing_report' && r.unconstrained === true));
     });
 
     // The server re-derives the path list to resolve path_index, so a
@@ -422,24 +400,15 @@ describe('TimingWidget schematic hand-off', () => {
     function appWithSchematic(responses = {}) {
         const app = createMockApp(responses);
         app.schematicPaths = [];
+        app.schematicNodes = [];
         app.schematicWidget = {
-            showTimingPath(path) { app.schematicPaths.push(path); },
+            showTimingPath(path, nodes) {
+                app.schematicPaths.push(path);
+                app.schematicNodes.push(nodes);
+            },
         };
         return app;
     }
-
-    it('pushes the selected path to the schematic widget', () => {
-        const app = appWithSchematic();
-        const widget = new TimingWidget(app, () => {});
-        const paths = [makePath(0.0, 'a'), makePath(0.1, 'b')];
-        widget.showPaths('setup', paths);
-        app.schematicPaths.length = 0;
-
-        widget._selectPathRow(1);
-
-        assert.equal(app.schematicPaths.length, 1);
-        assert.equal(app.schematicPaths[0].end_pin, 'b');
-    });
 
     it('clears the schematic overlay when the selection is cleared', () => {
         const app = appWithSchematic();
@@ -464,6 +433,41 @@ describe('TimingWidget schematic hand-off', () => {
         widget._selectPathRow(0);
 
         assert.equal(app.schematicPaths[0].end_pin, 'b');
+    });
+
+    // The schematic draws the cells the detail table lists, so the widget has
+    // to send whichever node list is on display.
+    function pathWithBothLegs() {
+        return makePath(-0.1, 'a', {
+            data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],
+            capture_nodes: [{ pin: 'cap1/A', inst: 'cap1', clk: true }],
+        });
+    }
+
+    it('sends the displayed node list, following the detail tab', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [pathWithBothLegs()]);
+        app.schematicNodes.length = 0;
+
+        widget._selectPathRow(0);
+        assert.equal(app.schematicNodes[0][0].inst, 'u1');
+
+        app.schematicNodes.length = 0;
+        widget._captureTab.dispatchEvent(new window.Event('click'));
+        assert.equal(app.schematicNodes.length, 1);
+        assert.equal(app.schematicNodes[0][0].inst, 'cap1');
+    });
+
+    it('does not push to the schematic on a tab switch with no path selected', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [pathWithBothLegs()]);
+        app.schematicPaths.length = 0;
+
+        widget._captureTab.dispatchEvent(new window.Event('click'));
+
+        assert.deepEqual(app.schematicPaths, []);
     });
 
     it('works when no schematic panel exists', () => {

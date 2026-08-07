@@ -10,6 +10,24 @@ import { fmtTime } from './timing-widget.js';
 // remove them all without disturbing the selection highlight.
 const TIMING_OVERLAY_CLASS = 'schematic-timing-node';
 
+// How clock and data cells on a timing path are drawn. Follows the layout
+// overlay's convention (collectTimingPathShapes: cyan clock, red data) so a
+// path reads the same way in both views, softened for the schematic's
+// background. The dash patterns repeat the distinction independently of hue,
+// so it survives grayscale printing and color vision deficiency.
+const TIMING_NODE_STYLE = {
+    clock: { color: '#00b8d4', dash: '1 3', label: 'clock' },
+    data: { color: '#d32f2f', dash: '4 2', label: 'data' },
+};
+
+function svgEl(tag, attrs) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, v] of Object.entries(attrs)) {
+        el.setAttribute(k, v);
+    }
+    return el;
+}
+
 export class SchematicWidget {
     constructor(container, appState) {
         this.container = container;
@@ -41,7 +59,10 @@ export class SchematicWidget {
             '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
             '<button id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
             '<button id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
-            '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>';
+            '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>' +
+            // Only meaningful while a timing path is drawn, so it stays hidden
+            // otherwise rather than taking up toolbar space permanently.
+            '<span id="schematic-timing-legend" class="schematic-timing-legend" hidden></span>';
         this.element.appendChild(this.controls);
 
         // ── SVG viewport (overflow hidden; pan/zoom via CSS transform) ──────
@@ -87,8 +108,11 @@ export class SchematicWidget {
         this._maxSchematicHistory = 50;
 
         // Timing path pushed in by the TimingWidget; re-applied after every
-        // render, since renderNetlist replaces the whole SVG.
+        // render, since renderNetlist replaces the whole SVG. _timingNodes is
+        // the detail-table list on display (data path or capture path).
         this._timingPath = null;
+        this._timingNodes = [];
+        this._timingLegend = this._buildTimingLegend();
 
         // Map from SVG element id → ODB instance name.
         // netlistsvg prefixes instance names (e.g. "load2" → id="cell_load2"),
@@ -338,22 +362,61 @@ export class SchematicWidget {
 
     // ── Timing path overlay ──────────────────────────────────────────────────
 
-    // Outline the cells of a timing path on the schematic. `path` is a
-    // TimingPathSummary as delivered by the server's timing_report request;
-    // passing null clears the overlay. Driven by TimingWidget row selection.
-    showTimingPath(path) {
+    // Show a timing path on the schematic. `path` is a TimingPathSummary from
+    // the server's timing_report; `nodes` is the node list actually on display
+    // in the timing panel's detail table (data path or capture path), which
+    // defaults to the data path. Passing null clears the overlay.
+    //
+    // The path drives what is drawn: the schematic is rebuilt from exactly the
+    // instances the detail table lists, then annotated with the order badges.
+    // Driven by TimingWidget row selection and detail-tab switching.
+    showTimingPath(path, nodes) {
         this._timingPath = path || null;
-        this._applyTimingPath();
+        this._timingNodes = path ? (nodes || path.data_nodes || []) : [];
+        if (!this._timingPath) {
+            this._applyTimingPath();
+            return Promise.resolve(false);
+        }
+        return this._loadPathSchematic();
     }
 
-    _clearTimingPathOverlay() {
-        if (!this._svgEl) {
-            return;
+    // Fetch and render a schematic containing only this path's instances.
+    // Falls back to annotating whatever is already on screen when the server
+    // is unreachable or the path has no instances to draw.
+    _loadPathSchematic() {
+        const order = this._timingPathInstances(this._timingNodes);
+        const wm = this.appState.websocketManager;
+        if (order.length === 0 || !wm || !this._netlistsvgReady) {
+            this._applyTimingPath();
+            return Promise.resolve(false);
         }
-        for (const el of this._svgEl.querySelectorAll(
-            `.${TIMING_OVERLAY_CLASS}`)) {
-            el.remove();
-        }
+
+        this.setStatus(`Loading schematic for ${order.length} path cells…`);
+        return wm.request({
+            type: 'schematic_path',
+            inst_names: order.map(e => e.inst),
+        })
+            .then(netlist => {
+                const cells = netlist?.modules?.top?.cells;
+                if (!cells || Object.keys(cells).length === 0) {
+                    this.setStatus('No schematic cells found for this path.');
+                    return false;
+                }
+                // Keep the pre-path view reachable through Back. Snapshotted
+                // here rather than before the request so the deep copy is
+                // skipped when the request fails — renderNetlist below is what
+                // replaces _currentNetlist, so this still runs pre-mutation.
+                this._pushSchematicHistory(this._currentSchematicSnapshot());
+                // renderNetlist re-applies the overlay once the SVG exists.
+                return this.renderNetlist(netlist);
+            })
+            .catch(err => {
+                console.error('schematic_path failed:', err);
+                // Still annotate whatever happens to be on screen.
+                this._applyTimingPath();
+                this.setStatus(`Path schematic error: ${err}`);
+                return false;
+            });
     }
 
     // Collapse the path's pin nodes to instances, keeping first-seen order so
@@ -380,14 +443,20 @@ export class SchematicWidget {
     }
 
     _applyTimingPath() {
-        this._clearTimingPathOverlay();
+        if (!this._svgEl) {
+            return;
+        }
+        for (const el of this._svgEl.querySelectorAll(`.${TIMING_OVERLAY_CLASS}`)) {
+            el.remove();
+        }
+
         const path = this._timingPath;
-        if (!path || !this._svgEl) {
+        if (!path) {
+            this._timingLegend.hidden = true;
             return;
         }
 
-        const nodes = Array.isArray(path.data_nodes) ? path.data_nodes : [];
-        const order = this._timingPathInstances(nodes);
+        const order = this._timingPathInstances(this._timingNodes);
 
         let shown = 0;
         order.forEach((entry, idx) => {
@@ -396,6 +465,10 @@ export class SchematicWidget {
                 shown++;
             }
         });
+
+        // The key explains the outlines, so it earns its space only when some
+        // outline was actually drawn.
+        this._timingLegend.hidden = shown === 0;
 
         const slack = `slack ${fmtTime(path.slack)}`;
         if (order.length === 0) {
@@ -409,12 +482,30 @@ export class SchematicWidget {
                 `Timing path (${slack}): ${shown} of ${order.length} cells `
                 + 'highlighted.');
         }
-        return shown;
     }
 
-    // Draw the outline and order badge for one cell on the path. Colors match
-    // the layout overlay (collectTimingPathShapes): cyan for clock nodes, red
-    // for data nodes, so the two views read consistently.
+    // The key is constant, so it is built once and only toggled thereafter.
+    _buildTimingLegend() {
+        const legend = this.controls.querySelector('#schematic-timing-legend');
+        for (const style of Object.values(TIMING_NODE_STYLE)) {
+            const item = document.createElement('span');
+            item.className = 'schematic-timing-legend-item';
+            // The swatch is drawn with the overlay's own stroke, so it is a
+            // literal sample of the outline rather than a copy of it.
+            const swatch = svgEl('svg',
+                { width: 14, height: 10, 'aria-hidden': 'true' });
+            swatch.appendChild(svgEl('rect', {
+                x: 1, y: 1, width: 12, height: 8, fill: 'none',
+                stroke: style.color, 'stroke-width': 2,
+                'stroke-dasharray': style.dash,
+            }));
+            item.append(swatch, style.label);
+            legend.appendChild(item);
+        }
+        return legend;
+    }
+
+    // Draw the outline and order badge for one cell on the path.
     _decorateTimingCell(cellGroup, order, isClock) {
         let bb;
         try {
@@ -424,34 +515,26 @@ export class SchematicWidget {
             return false;
         }
 
-        const color = isClock ? '#00b8d4' : '#d32f2f';
+        const style = isClock ? TIMING_NODE_STYLE.clock : TIMING_NODE_STYLE.data;
         const pad = 5;
+        // pointer-events none: must not steal clicks from the cell hit target.
+        const shared = {
+            class: TIMING_OVERLAY_CLASS, 'pointer-events': 'none',
+        };
 
-        const outline = document.createElementNS(
-            'http://www.w3.org/2000/svg', 'rect');
-        outline.setAttribute('x', bb.x - pad);
-        outline.setAttribute('y', bb.y - pad);
-        outline.setAttribute('width', bb.width + pad * 2);
-        outline.setAttribute('height', bb.height + pad * 2);
-        outline.setAttribute('fill', 'none');
-        outline.setAttribute('stroke', color);
-        outline.setAttribute('stroke-width', '2');
-        outline.setAttribute('stroke-dasharray', '4 2');
-        outline.setAttribute('rx', '3');
-        outline.setAttribute('class', TIMING_OVERLAY_CLASS);
-        // Non-interactive: must not steal clicks from the cell hit target.
-        outline.setAttribute('pointer-events', 'none');
-        cellGroup.appendChild(outline);
+        cellGroup.appendChild(svgEl('rect', {
+            ...shared,
+            x: bb.x - pad, y: bb.y - pad,
+            width: bb.width + pad * 2, height: bb.height + pad * 2,
+            fill: 'none', stroke: style.color, 'stroke-width': 2,
+            'stroke-dasharray': style.dash, rx: 3,
+        }));
 
-        const badge = document.createElementNS(
-            'http://www.w3.org/2000/svg', 'text');
-        badge.setAttribute('x', bb.x - pad);
-        badge.setAttribute('y', bb.y - pad - 2);
-        badge.setAttribute('fill', color);
-        badge.setAttribute('font-size', '8');
-        badge.setAttribute('font-weight', 'bold');
-        badge.setAttribute('class', TIMING_OVERLAY_CLASS);
-        badge.setAttribute('pointer-events', 'none');
+        const badge = svgEl('text', {
+            ...shared,
+            x: bb.x - pad, y: bb.y - pad - 2,
+            fill: style.color, 'font-size': 8, 'font-weight': 'bold',
+        });
         badge.textContent = String(order);
         cellGroup.appendChild(badge);
 

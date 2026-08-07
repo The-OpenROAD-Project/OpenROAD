@@ -150,12 +150,14 @@ export class TimingWidget {
             this._dataTab.classList.add('active');
             this._captureTab.classList.remove('active');
             this._renderDetailTable();
+            this._refreshSchematicForDetailTab();
         });
         this._captureTab.addEventListener('click', () => {
             this._detailTab = 'capture';
             this._captureTab.classList.add('active');
             this._dataTab.classList.remove('active');
             this._renderDetailTable();
+            this._refreshSchematicForDetailTab();
         });
 
         // Fetch paths
@@ -219,11 +221,10 @@ export class TimingWidget {
         this._clearTimingHighlight();
     }
 
-    // Whether unconstrained paths are being requested. The server re-derives
-    // the path list for timing_highlight, so every request that carries a
-    // path index has to send the same value.
+    // The server re-derives the path list for timing_highlight, so every
+    // request that carries a path index has to send the same value.
     _unconstrained() {
-        return !!(this._unconstrainedBox && this._unconstrainedBox.checked);
+        return this._unconstrainedBox.checked;
     }
 
     async update() {
@@ -315,13 +316,35 @@ export class TimingWidget {
     }
 
     // Mirror the selected path onto the schematic view, when that panel
-    // exists. Both widgets are constructed with the same app object, so the
-    // schematic registers itself as app.schematicWidget.
+    // exists. The node list sent is whichever the detail table is showing, so
+    // the schematic draws exactly the cells the user can see listed.
     _showPathOnSchematic(path) {
         const schematic = this._app.schematicWidget;
-        if (schematic && typeof schematic.showTimingPath === 'function') {
-            schematic.showTimingPath(path);
+        if (schematic) {
+            schematic.showTimingPath(path || null, this._activeDetailNodes(path));
         }
+    }
+
+    _activeDetailNodes(path) {
+        if (!path) {
+            return [];
+        }
+        return (this._detailTab === 'capture' ? path.capture_nodes
+                                              : path.data_nodes) || [];
+    }
+
+    // Re-send the current path after a detail-tab switch, so the schematic
+    // follows the table between data path and capture path.
+    _refreshSchematicForDetailTab() {
+        const path = this._selectedPath();
+        if (path) {
+            this._showPathOnSchematic(path);
+        }
+    }
+
+    _selectedPath() {
+        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
+        return paths[this._selectedPathIndex];
     }
 
     _selectPathRow(idx) {
@@ -429,7 +452,7 @@ export class TimingWidget {
 
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
-        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        const nodes = this._activeDetailNodes(path);
         // Use _originalIndex when paths were filtered (e.g. by histogram
         // column click in static mode) so the overlay lookup matches.
         const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
@@ -453,7 +476,7 @@ export class TimingWidget {
         if (this._selectedPathIndex < 0 || this._selectedPathIndex >= paths.length) return;
 
         const path = paths[this._selectedPathIndex];
-        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        const nodes = this._activeDetailNodes(path);
 
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');

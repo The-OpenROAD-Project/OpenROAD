@@ -545,6 +545,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleSchematicFull(req);
         });
+  d.add("schematic_path",
+        WebSocketRequest::kSchematicPath,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleSchematicPath(req);
+        });
   d.add("schematic_inspect",
         WebSocketRequest::kSchematicInspect,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -1694,6 +1699,71 @@ static void emitSchematicCell(boost::json::object& cells,
   cells[inst->getName()] = std::move(cell);
 }
 
+// Assemble the Yosys-format netlist JSON that every schematic request returns.
+//
+// `net_to_id` decides which nets are wired: a pin whose net is absent gets a
+// synthetic dangling id from emitSchematicCell.  The full-block request passes
+// its own map so that nets touching no instance at all (a port-to-port
+// feedthrough) still appear; the overload below covers everyone else.
+template <typename InstRange>
+static boost::json::object buildSchematicNetlist(
+    const InstRange& insts,
+    odb::PtrMap<odb::dbNet, int>& net_to_id,
+    int& next_net_id,
+    sta::dbNetwork* network)
+{
+  boost::json::object top;
+  top["attributes"] = boost::json::object{};
+
+  boost::json::object ports;
+  boost::json::object netnames;
+  for (const auto& [net, net_id] : net_to_id) {
+    const boost::json::array bits{boost::json::value(net_id)};
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      boost::json::object p;
+      p["direction"] = ioTypeToDirection(bterm->getIoType());
+      p["bits"] = bits;
+      ports[bterm->getName()] = std::move(p);
+    }
+    boost::json::object n;
+    n["hide_name"] = 0;
+    n["bits"] = bits;
+    n["attributes"] = boost::json::object{};
+    netnames[net->getName()] = std::move(n);
+  }
+  top["ports"] = std::move(ports);
+
+  boost::json::object cells;
+  for (odb::dbInst* inst : insts) {
+    emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
+  }
+  top["cells"] = std::move(cells);
+  top["netnames"] = std::move(netnames);
+
+  boost::json::object root;
+  root["modules"] = boost::json::object{{"top", std::move(top)}};
+  return root;
+}
+
+// Wire exactly the nets that touch `insts`.  Pins on any other net render as
+// short dangling stubs, which is what both the cone and a timing path want.
+template <typename InstRange>
+static boost::json::object buildSchematicNetlist(const InstRange& insts,
+                                                 sta::dbNetwork* network)
+{
+  odb::PtrMap<odb::dbNet, int> net_to_id;
+  int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
+  for (odb::dbInst* inst : insts) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net && !net_to_id.contains(net)) {
+        net_to_id[net] = next_net_id++;
+      }
+    }
+  }
+  return buildSchematicNetlist(insts, net_to_id, next_net_id, network);
+}
+
 WebSocketResponse SelectHandler::handleSchematicCone(
     const WebSocketRequest& req)
 {
@@ -1808,53 +1878,49 @@ WebSocketResponse SelectHandler::handleSchematicCone(
       }
     }
 
-    // Collect all nets that touch any visited instance.
-    odb::PtrMap<odb::dbNet, int> net_to_id;
-    int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
-    for (odb::dbInst* inst : all_insts) {
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        odb::dbNet* net = iterm->getNet();
-        if (net && !net_to_id.contains(net)) {
-          net_to_id[net] = next_net_id++;
-        }
-      }
+    sta::dbNetwork* network
+        = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
+    writePayload(resp, buildSchematicNetlist(all_insts, network));
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Build a schematic from an explicit list of instances — the cells of one
+// timing path.  Names that resolve to no instance (block ports on the path)
+// are skipped rather than treated as an error, since the caller derives them
+// from pins it does not filter.
+WebSocketResponse SelectHandler::handleSchematicPath(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  static constexpr int kMaxPathInsts = 400;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
     }
 
-    boost::json::object top;
-    top["attributes"] = boost::json::object{};
-
-    boost::json::object ports;
-    for (const auto& [net, _id] : net_to_id) {
-      for (odb::dbBTerm* bterm : net->getBTerms()) {
-        boost::json::object p;
-        p["direction"] = ioTypeToDirection(bterm->getIoType());
-        p["bits"] = boost::json::array{net_to_id[net]};
-        ports[bterm->getName()] = std::move(p);
+    odb::PtrSet<odb::dbInst> all_insts;
+    for (const auto& name_val : req.json.at("inst_names").as_array()) {
+      if (static_cast<int>(all_insts.size()) >= kMaxPathInsts) {
+        break;
+      }
+      const std::string name = std::string(name_val.as_string());
+      if (odb::dbInst* inst = block->findInst(name.c_str())) {
+        all_insts.insert(inst);
       }
     }
-    top["ports"] = std::move(ports);
 
     sta::dbNetwork* network
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
-    boost::json::object cells;
-    for (odb::dbInst* inst : all_insts) {
-      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
-    }
-    top["cells"] = std::move(cells);
-
-    boost::json::object netnames;
-    for (const auto& [net, net_id] : net_to_id) {
-      boost::json::object n;
-      n["hide_name"] = 0;
-      n["bits"] = boost::json::array{net_id};
-      n["attributes"] = boost::json::object{};
-      netnames[net->getName()] = std::move(n);
-    }
-    top["netnames"] = std::move(netnames);
-
-    boost::json::object root;
-    root["modules"] = boost::json::object{{"top", std::move(top)}};
-    writePayload(resp, root);
+    writePayload(resp, buildSchematicNetlist(all_insts, network));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1882,43 +1948,11 @@ WebSocketResponse SelectHandler::handleSchematicFull(
       net_to_id[net] = next_net_id++;
     }
 
-    boost::json::object top;
-    top["attributes"] = boost::json::object{};
-
-    boost::json::object ports;
-    for (odb::dbBTerm* bterm : block->getBTerms()) {
-      odb::dbNet* net = bterm->getNet();
-      if (!net) {
-        continue;
-      }
-      boost::json::object p;
-      p["direction"] = ioTypeToDirection(bterm->getIoType());
-      p["bits"] = boost::json::array{net_to_id[net]};
-      ports[bterm->getName()] = std::move(p);
-    }
-    top["ports"] = std::move(ports);
-
     sta::dbNetwork* network
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
-    boost::json::object cells;
-    for (odb::dbInst* inst : block->getInsts()) {
-      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
-    }
-    top["cells"] = std::move(cells);
-
-    boost::json::object netnames;
-    for (odb::dbNet* net : block->getNets()) {
-      boost::json::object n;
-      n["hide_name"] = 0;
-      n["bits"] = boost::json::array{net_to_id[net]};
-      n["attributes"] = boost::json::object{};
-      netnames[net->getName()] = std::move(n);
-    }
-    top["netnames"] = std::move(netnames);
-
-    boost::json::object root;
-    root["modules"] = boost::json::object{{"top", std::move(top)}};
-    writePayload(resp, root);
+    writePayload(resp,
+                 buildSchematicNetlist(
+                     block->getInsts(), net_to_id, next_net_id, network));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();

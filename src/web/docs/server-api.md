@@ -329,6 +329,22 @@ keep the schematic readable.
 Same shape as `schematic_cone` but emits the entire block (no caps). No
 request fields.
 
+### `schematic_path`
+
+Build a schematic from an explicit list of instances — used to draw the
+cells of one timing path, as listed in the timing panel's detail table.
+
+| Field        | Type       | Required | Description                              |
+| ------------ | ---------- | :------: | ---------------------------------------- |
+| `inst_names` | `string[]` |    ✓     | Instance names to include, in path order. |
+
+Names that match no instance are skipped rather than erroring, so callers
+may pass pin-derived names that include block ports. Capped at 400
+instances. Only nets touching a listed instance are wired; every other
+pin renders as a short dangling stub.
+
+**Response (JSON):** same Yosys netlist shape as `schematic_cone`.
+
 ### `schematic_inspect`
 
 Inspect a single instance by name (used when the schematic widget

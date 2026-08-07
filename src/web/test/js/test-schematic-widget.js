@@ -667,10 +667,18 @@ describe('SchematicWidget timing path overlay', () => {
         assert.equal(overlayIn(groups.u2).length, 2);
         assert.equal(groups.u1.querySelector('text').textContent, '1');
         assert.equal(groups.u2.querySelector('text').textContent, '2');
+        // Must not steal clicks from the cell hit targets.
+        for (const el of overlayIn(groups.u1)) {
+            assert.equal(el.getAttribute('pointer-events'), 'none');
+        }
         container.element.remove();
     });
 
-    it('colors clock nodes and data nodes differently', () => {
+    function legendOf(widget) {
+        return widget.controls.querySelector('#schematic-timing-legend');
+    }
+
+    it('distinguishes clock from data by dash pattern, not only color', () => {
         const { widget, container } = makeWidget();
         const { groups } = makeCells(widget, ['ff1', 'u1']);
 
@@ -679,10 +687,32 @@ describe('SchematicWidget timing path overlay', () => {
             node('u1'),
         ]));
 
-        const clkRect = groups.ff1.querySelector('rect');
-        const dataRect = groups.u1.querySelector('rect');
-        assert.notEqual(clkRect.getAttribute('stroke'),
-                        dataRect.getAttribute('stroke'));
+        const clk = groups.ff1.querySelector('rect');
+        const data = groups.u1.querySelector('rect');
+        // Redundant encoding: survives grayscale and color vision deficiency.
+        assert.notEqual(clk.getAttribute('stroke-dasharray'),
+                        data.getAttribute('stroke-dasharray'));
+        assert.notEqual(clk.getAttribute('stroke'), data.getAttribute('stroke'));
+        container.element.remove();
+    });
+
+    it('shows the clock/data key once cells are outlined', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1']);
+
+        widget.showTimingPath(timingPath([node('u1')]));
+
+        const legend = legendOf(widget);
+        assert.equal(legend.hidden, false);
+        assert.match(legend.textContent, /clock/);
+        assert.match(legend.textContent, /data/);
+        // The swatch is the overlay's own stroke, not a copy of it.
+        // u1 is a data node, so it pairs with the second (data) swatch.
+        const drawn = groups.u1.querySelector('rect');
+        const swatch = legend.querySelectorAll('rect')[1];
+        assert.equal(swatch.getAttribute('stroke'), drawn.getAttribute('stroke'));
+        assert.equal(swatch.getAttribute('stroke-dasharray'),
+                     drawn.getAttribute('stroke-dasharray'));
         container.element.remove();
     });
 
@@ -691,6 +721,7 @@ describe('SchematicWidget timing path overlay', () => {
         const { groups } = makeCells(widget, ['ff1', 'u1']);
 
         widget.showTimingPath(timingPath([
+            { pin: 'in1', clk: false },   // block port: no instance, skipped
             node('ff1', { clk: true }),
             node('ff1'),
             node('u1'),
@@ -703,19 +734,6 @@ describe('SchematicWidget timing path overlay', () => {
         container.element.remove();
     });
 
-    it('skips nodes with no instance, such as block ports', () => {
-        const { widget, container } = makeWidget();
-        const { groups } = makeCells(widget, ['u1']);
-
-        widget.showTimingPath(timingPath([
-            { pin: 'in1', clk: false },
-            node('u1'),
-        ]));
-
-        assert.equal(groups.u1.querySelector('text').textContent, '1');
-        container.element.remove();
-    });
-
     it('removes the overlay when passed null', () => {
         const { widget, container } = makeWidget();
         const { groups } = makeCells(widget, ['u1']);
@@ -725,6 +743,7 @@ describe('SchematicWidget timing path overlay', () => {
 
         widget.showTimingPath(null);
         assert.equal(overlayIn(groups.u1).length, 0);
+        assert.equal(legendOf(widget).hidden, true);
         container.element.remove();
     });
 
@@ -747,6 +766,7 @@ describe('SchematicWidget timing path overlay', () => {
 
         const status = widget.controls.querySelector('#schematic-status');
         assert.match(status.textContent, /none of its 2 cells/);
+        assert.equal(legendOf(widget).hidden, true);
         container.element.remove();
     });
 
@@ -758,6 +778,94 @@ describe('SchematicWidget timing path overlay', () => {
 
         const status = widget.controls.querySelector('#schematic-status');
         assert.match(status.textContent, /1 of 2 cells/);
+        container.element.remove();
+    });
+
+    // A widget wired to a fake server, ready to render path schematics.
+    function makePathWidget(netlistOrError) {
+        const requests = [];
+        const appState = {
+            websocketManager: {
+                request(msg) {
+                    requests.push(msg);
+                    return netlistOrError instanceof Error
+                        ? Promise.reject(netlistOrError)
+                        : Promise.resolve(netlistOrError);
+                },
+            },
+        };
+        const { widget, container } = makeWidget(appState);
+        widget._netlistsvgReady = true;
+        const rendered = [];
+        widget.renderNetlist = (json) => {
+            rendered.push(json);
+            return Promise.resolve(true);
+        };
+        return { widget, container, requests, rendered };
+    }
+
+    function netlistWith(...instNames) {
+        const cells = {};
+        for (const n of instNames) cells[n] = { type: 'BUF_X1' };
+        return { modules: { top: { cells } } };
+    }
+
+    it('requests a schematic of the path cells and renders it', async () => {
+        const { widget, container, requests, rendered } =
+            makePathWidget(netlistWith('u1', 'u2'));
+
+        await widget.showTimingPath(timingPath([node('u1'), node('u2')]));
+
+        const req = requests.find(r => r.type === 'schematic_path');
+        assert.ok(req, 'schematic_path was requested');
+        assert.deepEqual(req.inst_names, ['u1', 'u2']);
+        assert.equal(rendered.length, 1);
+        assert.ok(rendered[0].modules.top.cells.u1);
+        container.element.remove();
+    });
+
+    it('draws the node list it is given, so capture path works too', async () => {
+        const { widget, container, requests } =
+            makePathWidget(netlistWith('cap1'));
+        const path = timingPath([node('u1')]);
+        path.capture_nodes = [node('cap1')];
+
+        await widget.showTimingPath(path, path.capture_nodes);
+
+        const req = requests.find(r => r.type === 'schematic_path');
+        assert.deepEqual(req.inst_names, ['cap1']);
+        container.element.remove();
+    });
+
+    it('pushes the previous view so Back returns to it', async () => {
+        const { widget, container } = makePathWidget(netlistWith('u1'));
+        widget._currentNetlist = netlistWith('previous');
+
+        await widget.showTimingPath(timingPath([node('u1')]));
+
+        assert.equal(widget._schematicHistory.length, 1);
+        assert.ok(widget._schematicHistory[0].netlist.modules.top.cells.previous);
+        container.element.remove();
+    });
+
+    it('does not contact the server for a port-only path, or to clear', async () => {
+        const { widget, container, requests } = makePathWidget(netlistWith('u1'));
+
+        await widget.showTimingPath(timingPath([{ pin: 'clk', clk: true }]));
+        await widget.showTimingPath(null);
+
+        assert.equal(requests.length, 0);
+        container.element.remove();
+    });
+
+    it('falls back to annotating the current view when the request fails', async () => {
+        const { widget, container } = makePathWidget(new Error('boom'));
+        const { groups } = makeCells(widget, ['u1']);
+
+        await widget.showTimingPath(timingPath([node('u1')]));
+
+        // The overlay still went on whatever was already rendered.
+        assert.equal(overlayIn(groups.u1).length, 2);
         container.element.remove();
     });
 
@@ -778,20 +886,6 @@ describe('SchematicWidget timing path overlay', () => {
         container.element.remove();
     });
 
-    it('keeps overlay elements out of the click hit test', () => {
-        const { widget, container } = makeWidget();
-        const { groups } = makeCells(widget, ['u1']);
-
-        widget.showTimingPath(timingPath([node('u1')]));
-
-        for (const el of overlayIn(groups.u1)) {
-            assert.equal(el.getAttribute('pointer-events'), 'none');
-        }
-        container.element.remove();
-    });
-});
-
-describe('canonicalizeCell', () => {
     it('maps simple gates to upstream skin types and A/B/Y pids', () => {
         const got = canonicalizeCell(cell({
             type: 'NOR2_X1', gate_kind: 'nor',

@@ -1061,15 +1061,30 @@ html, body {
     font-size: 12px;
 }
 
+/* Clock/data key for the schematic timing-path overlay. Hidden unless a path
+   is drawn, so it costs no toolbar space the rest of the time. */
+.schematic-timing-legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+/* Beats the display:flex above. */
+.schematic-timing-legend[hidden] { display: none; }
+
+.schematic-timing-legend-item,
 .timing-unconstrained {
     display: flex;
     align-items: center;
     gap: 4px;
+    white-space: nowrap;
+}
+.schematic-timing-legend-item { color: var(--fg-muted); font-size: 11px; }
+.timing-unconstrained {
     color: var(--fg-primary);
     font-size: 12px;
     cursor: pointer;
     user-select: none;
-    white-space: nowrap;
 }
 .timing-unconstrained input { cursor: pointer; margin: 0; }
 
