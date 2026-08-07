@@ -4,6 +4,7 @@
 #pragma once
 
 #include <any>
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -214,6 +215,12 @@ struct TileVisibility
   bool pins = true;               // BTerm (IO pin) shapes on tech layers
   bool pin_markers = true;        // BTerm direction markers on _pins layer
   bool pin_names = true;          // BTerm name labels on _pins layer
+  bool access_points
+      = false;  // dbAccessPoint markers (X), off by default (Qt parity)
+  bool regions
+      = true;  // dbRegion boundaries overlay, on by default (Qt parity)
+  bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
+  bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -508,6 +515,13 @@ class TileGenerator
                  double dbu_per_pixel,
                  const TileVisibility& vis) const;
 
+  // The layers saveImage composites, bottom to top.  Public so a test can pin
+  // the order down: it has to match the zIndex the client gives each layer in
+  // display-controls.js, or the saved PNG is not the view on screen.
+  static std::vector<std::string> saveImageLayerOrder(
+      const TileVisibility& vis,
+      const std::vector<std::string>& tech_layers);
+
   // Render timing path overlay (colored rects + flight lines) to PNG bytes.
   std::vector<unsigned char> renderOverlayPng(
       int width_px,
@@ -674,11 +688,16 @@ class TileGenerator
                          const Color& c,
                          int dim = -1);
 
+  // Endpoints are tile-pixel coordinates, in double so that a segment far
+  // outside the tile keeps its exact SLOPE: the clip below runs on the values
+  // as given and only its (in-bounds) result is rounded.  Converting an oblique
+  // DBU segment through the clamped toPxX/toPxY instead would saturate each
+  // axis on its own and rotate the segment — use toPxXd/toPxYd here.
   static void drawLine(std::vector<unsigned char>& image,
-                       int x0,
-                       int y0,
-                       int x1,
-                       int y1,
+                       double x0,
+                       double y0,
+                       double x1,
+                       double y1,
                        const Color& c,
                        int width = 3);
 
@@ -739,6 +758,91 @@ class TileGenerator
   std::function<void()> design_changed_cb_;
   mutable std::mutex design_changed_cb_mutex_;
   std::atomic_bool suppress_design_changed_{false};
+
+  // Per-block caches for the grid/access-point overlay layers, so tiles
+  // don't rescan all BTerms / copy the full gcell vectors on every tile.
+  // Dropped by clearOverlayCaches() from eagerInit() (design reload), and by
+  // the accessors themselves when Search::revision() has moved: a gcell grid
+  // created mid-session by global_route would otherwise stay hidden behind the
+  // empty vector cached before it, and onDesignChanged() is debounced, so it
+  // cannot be relied on to notice (see dropOverlayCachesIfStale).
+  //
+  // The accessors hand out a shared_ptr, not a reference into the map: they
+  // release overlay_cache_mutex_ on return, and a concurrent
+  // clearOverlayCaches() would destroy a referenced vector under a renderer.
+  // Ownership costs nothing on the hot path (no data is copied).
+  struct BpinAp
+  {
+    odb::Point point;
+    odb::dbTechLayer* layer;
+    odb::dbNet* net;  // may be null (unconnected bterm)
+    bool has_access;
+  };
+  using BpinApList = std::shared_ptr<const std::vector<BpinAp>>;
+  using GridList = std::shared_ptr<const std::vector<int>>;
+  BpinApList bpinAccessPoints(odb::dbBlock* block) const;
+  GridList gcellGridX(odb::dbBlock* block) const;
+  GridList gcellGridY(odb::dbBlock* block) const;
+  GridList gcellGrid(odb::PtrMap<odb::dbBlock, GridList>& cache,
+                     odb::dbBlock* block,
+                     const std::function<void(odb::dbGCellGrid*,
+                                              std::vector<int>&)>& fill) const;
+  void clearOverlayCaches() const;
+  // Both require overlay_cache_mutex_; see the definitions.
+  void dropOverlayCaches() const;
+  void dropOverlayCachesIfStale(uint64_t rev) const;
+
+  // Pseudo-layer painters used by renderTileBuffer (one per overlay).
+  // Callers gate on the visibility flag; painters handle the rest.  All
+  // share one signature so pseudoLayerDefs() can dispatch by table.
+  void drawAccessPointsLayer(std::vector<unsigned char>& image,
+                             odb::dbBlock* block,
+                             const TileFrame& frame,
+                             const TileVisibility& vis) const;
+  void drawRegionsLayer(std::vector<unsigned char>& image,
+                        odb::dbBlock* block,
+                        const TileFrame& frame,
+                        const TileVisibility& vis) const;
+  void drawMfgGridLayer(std::vector<unsigned char>& image,
+                        odb::dbBlock* block,
+                        const TileFrame& frame,
+                        const TileVisibility& vis) const;
+  void drawGcellGridLayer(std::vector<unsigned char>& image,
+                          odb::dbBlock* block,
+                          const TileFrame& frame,
+                          const TileVisibility& vis) const;
+
+  // Registry of the self-painting pseudo layers: layer name -> visibility
+  // flag -> painter -> paint order.  Single source of truth for the
+  // renderTileBuffer dispatch, the pseudo-layer guard and saveImage's
+  // layers_to_render — adding an overlay means adding one entry (plus the
+  // client layer).
+  //
+  // `z_index` is only read by saveImageLayerOrder(); see that function for why
+  // the value has to mirror the client's.
+  struct PseudoLayerDef
+  {
+    const char* name;
+    bool TileVisibility::*flag;
+    void (TileGenerator::*painter)(std::vector<unsigned char>&,
+                                   odb::dbBlock*,
+                                   const TileFrame&,
+                                   const TileVisibility&) const;
+    int z_index;
+  };
+  static const std::array<PseudoLayerDef, 4>& pseudoLayerDefs();
+  // Draw a rect's edges clamped to the tile (die/core/region outlines).
+  void outlineRectInTile(std::vector<unsigned char>& image,
+                         const odb::Rect& r,
+                         const Color& c,
+                         const TileFrame& frame) const;
+  mutable std::mutex overlay_cache_mutex_;
+  mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
+  mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
+  mutable odb::PtrMap<odb::dbBlock, GridList> gcell_y_cache_;
+  // The Search::revision() the three caches above were built at; see
+  // dropOverlayCachesIfStale.
+  mutable uint64_t overlay_cache_revision_ = 0;
 
   static constexpr int kTileSizeInPixel = 256;
 };
