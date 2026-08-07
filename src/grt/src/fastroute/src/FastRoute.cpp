@@ -853,6 +853,9 @@ void FastRouteCore::addHorizontalAdjustments(
 static int blockedTrackCount(const interval_set<int>& intervals,
                              const int track_space)
 {
+  if (track_space <= 0) {
+    return 0;
+  }
   int64_t blocked_length = 0;
   for (const auto& interval_it : intervals) {
     blocked_length += std::abs(interval_it.upper() - interval_it.lower());
