@@ -110,6 +110,9 @@ class IRSolver
 
   std::vector<sta::Scene*> getCorners() const;
   bool hasSolution(sta::Scene* corner) const;
+  // Error out if no solution exists for this corner, so a report derived from one
+  // fails with a usable message instead of an out-of-range map lookup.
+  void ensureSolution(sta::Scene* corner) const;
   Voltage getNetVoltage(sta::Scene* corner) const;
   std::optional<Voltage> getVoltage(sta::Scene* corner, Node* node) const;
 
