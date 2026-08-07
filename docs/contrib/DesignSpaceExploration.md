@@ -57,7 +57,17 @@ If users require a different signal than the full flow, they should write their 
 
 For advanced DSE, custom flows can be written to reuse existing ORFS `.tcl` steps or skip them entirely. (Note: The standard ORFS flow remains the standard path for general use). For example, a custom estimator script could run `floorplan`, `global_placement`, and a fast 2-iteration `global_route -congestion_iterations 2` to yield a rapid signal in minutes rather than waiting hours for the full flow to complete. This provides full flexibility tailored to a specific use-case without requiring OpenROAD to anticipate all requirements.
 
-## 4. Framework Inversion with bazel-orfs
+## 4. The Contract Between Intent and Implementation
+
+Writing and iterating on defensive `.tcl` scripts to catch fatal flow errors is a massive cognitive burden with unacceptable turnaround times. When a `.tcl` script takes hours to run, debugging missing `catch` blocks or manually writing code to poll futility metrics paralyzes iteration. 
+
+To solve this, OpenROAD enforces a strict separation of concerns:
+* **`.tcl` Scripts (Intent):** The flow scripts should purely express the declarative intent of the designer (e.g., "run global placement, then global routing").
+* **C++ Engine (Implementation):** The underlying OpenROAD C++ solvers are responsible for executing that intent gracefully. If a design is doomed (futility), the engine must recognize this, immediately short-circuit, and degrade gracefully (warning the user and returning a success code instead of a fatal crash). This prevents the tool from stubbornly grinding for hours on a hopeless design and allows the pipeline to continue seamlessly.
+
+**The AI Development Contract:** This architectural boundary is not just a policy for human developers; it is a strict contract for AI coding agents. As established in the Google Antigravity documentation, agentic AI fundamentally requires this strict separation of concerns and hard stops on futility to function effectively. Without it, agents are forced to hack around in `.tcl` scripts to manage futility, where massive turnaround times destroy the agent's context window and iteration loop. We actively dogfood this policy: AI agents use this exact contract to develop and fix `bazel-orfs`, OpenROAD C++, and `.tcl` estimator scripts.
+
+## 5. Framework Inversion with bazel-orfs
 
 For advanced DSE, `bazel-orfs` introduces **framework inversion**. While Bazel acts as a rigid, reproducible build system that pins tools and containers, it can be leveraged to produce a self-contained script where parameterized RTL is injected at the top. 
 
@@ -65,7 +75,7 @@ For advanced DSE, `bazel-orfs` introduces **framework inversion**. While Bazel a
 * **Separation of Concerns:** Bazel can stay out of the DSE execution loop entirely. This means an orchestrator like Ray can sit *on top* (calling Bazel for hermetic signoff builds) or *at the bottom* (executing the Bazel-built self-contained scripts on a cluster). 
 * **Custom Patches:** Users can carry local patches in Bazel to extend OpenROAD on-the-fly, implementing design-specific early-termination policies. OpenROAD and ORFS aim to enable whichever framework arrangement is right for the user and project.
 
-## 5. Literature & Prior Art
+## 6. Literature & Prior Art
 
 The architectural concepts described in this document—using cheap, inaccurate signals to prune a search space before committing to expensive simulations—are not unique to EDA. These methods are rigorously studied across various engineering disciplines under the umbrella of **Multi-Fidelity Optimization (MFO)** and **Surrogate Modeling**.
 
