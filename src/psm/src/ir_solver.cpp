@@ -1455,8 +1455,10 @@ void IRSolver::report(sta::Scene* corner) const
 
   logger_->metric(getMetricKey("design_powergrid__voltage__worst", corner),
                   results.worst_voltage);
-  logger_->metric(getMetricKey("design_powergrid__drop__average", corner),
+  logger_->metric(getMetricKey("design_powergrid__voltage__average", corner),
                   results.avg_voltage);
+  logger_->metric(getMetricKey("design_powergrid__drop__average", corner),
+                  results.avg_ir_drop);
   logger_->metric(getMetricKey("design_powergrid__drop__worst", corner),
                   results.worst_ir_drop);
 }
