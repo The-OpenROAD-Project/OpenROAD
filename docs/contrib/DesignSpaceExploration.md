@@ -2,15 +2,17 @@
 
 OpenROAD supports automated Design Space Exploration (DSE) tools and autotuners across all stages of physical design.
 
+This guide explores architectural patterns and concepts for advanced Design Space Exploration (DSE) and large-scale autotuning. While many users achieve their goals using the standard OpenROAD flow and default metrics, building automated tuning frameworks often introduces unique challenges. This document provides background on how these advanced search spaces can be managed.
+
 ## 1. The Autotuner Misconception
 
 The plausible-sounding story of DSE goes: *We have a flow. It takes parameters. It produces a WNS and an area number. We have an autotuner. Point the tuner at the flow, give it a machine budget, come back in the morning.*
 
-When this approach yields mediocre results, users often mistakenly conclude that DSE is oversold. The reality is that the initial disappointment is due to mismanaged expectations: **OpenROAD cannot have an opinion on what makes your product perfect.**
+If a naive sweeping approach yields suboptimal results, users often mistakenly conclude that DSE is oversold. The reality is that the initial disappointment is due to mismanaged expectations: **OpenROAD cannot have an opinion on what makes your product perfect.**
 
 OpenROAD and ORFS are designed to translate RTL into physical layout and extract Power, Performance, and Area (PPA) metrics. However, true product optimization requires evaluating system-level properties—such as "useful work done per cycle" or "quality of results"—which are properties of the RTL combined with the software workload. **Only the user can write the optimization function for their design.**
 
-To successfully use DSE, the user must define an external optimization function that evaluates OpenROAD's PPA outputs against application-specific metrics. For example:
+While standard metrics like `fmax` or minimum area are sufficient for many tapeouts, large-scale product optimization often involves evaluating system-level properties. In these advanced DSE scenarios, the process relies on an external optimization function that evaluates OpenROAD's PPA outputs against application-specific metrics. For example:
 
 * **General Purpose CPUs:** The optimization function typically maximizes throughput (e.g., Instructions Per Cycle for a defined software workload) given strict PPA constraints (frequency targets, thermal limits). OpenROAD determines if that specific RTL architecture is physically realizable and what its power cost is; the optimizer balances the two.
 * **Machine Learning Accelerators:** In hardware-software co-design, the true optimization function is often **Inference-per-Watt** (successful inferences per joule of energy), subject to latency and accuracy constraints. OpenROAD provides power and area estimates for the hardware architecture, while the software side (network pruning, quantization) dictates accuracy and throughput. The perfect design is found by searching across both domains simultaneously.
@@ -47,13 +49,13 @@ To calibrate your ladder, measure retention on an anchor set (a set of designs w
 When an autotuner gets early information, it can drop specific candidates or it can narrow the range of parameters it samples from. **These are not symmetric.**
 
 Because early stages (like post-synth area) are biased relative to final stages (like post-place area, where legalization adds cells), early rankings are noisy.
-**Rule:** Let cheap stages kill candidates, but never let them shrink the search box. Only a stage that passes a strict recall check earns the right to narrow the search bounds. Dropping a candidate is recoverable by sampling the region again; narrowing the bounds permanently blinds the tuner to that region.
+**Strategy:** Let cheap stages kill candidates, but never let them shrink the search box. Only a stage that passes a strict recall check earns the right to narrow the search bounds. Dropping a candidate is recoverable by sampling the region again; narrowing the bounds permanently blinds the tuner to that region.
 
 ## 3. Custom DSE Signals & Single-Process Execution
 
 If users require a different signal than the full flow, they should write their own `.tcl` script. ORFS natively supports running the entire flow in a single OpenROAD process execution (e.g., via `KEEP_VARS=1` and `WRITE_ODB_AND_SDC_EACH_STAGE=0`, utilizing `flow.tcl`).
 
-Users are encouraged to write custom flows reusing existing ORFS `.tcl` steps or skipping them entirely. For example, a custom estimator script could run `floorplan`, `global_placement`, and a fast 2-iteration `global_route -congestion_iterations 2` to yield a rapid signal in minutes rather than waiting hours for the full flow to complete. This provides full flexibility tailored to a specific use-case without requiring OpenROAD to anticipate all requirements.
+For advanced DSE, custom flows can be written to reuse existing ORFS `.tcl` steps or skip them entirely. (Note: The standard ORFS flow remains the standard path for general use). For example, a custom estimator script could run `floorplan`, `global_placement`, and a fast 2-iteration `global_route -congestion_iterations 2` to yield a rapid signal in minutes rather than waiting hours for the full flow to complete. This provides full flexibility tailored to a specific use-case without requiring OpenROAD to anticipate all requirements.
 
 ## 4. Framework Inversion with bazel-orfs
 
