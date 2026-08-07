@@ -383,6 +383,45 @@ proc set_wire_rc { args } {
   }
 }
 
+sta::define_cmd_args "set_bump_rc" {[-corner corner]\
+                                      [-resistance res]\
+                                      [-capacitance cap]}
+
+proc set_bump_rc { args } {
+  sta::parse_key_args "set_bump_rc" args \
+    keys {-corner -resistance -capacitance} \
+    flags {}
+
+  set corners [sta::parse_scenes_or_all keys]
+
+  if {
+    ![info exists keys(-resistance)] && ![info exists keys(-capacitance)]
+  } {
+    utl::error EST 33 "missing -resistance or -capacitance argument."
+  }
+  ord::ensure_units_initialized
+
+  # lumped values per bump: ohms and farads, not per unit length
+  set bump_res 0.0
+  set bump_cap 0.0
+  if { [info exists keys(-resistance)] } {
+    set res $keys(-resistance)
+    sta::check_positive_float "-resistance" $res
+    set bump_res [sta::resistance_ui_sta $res]
+  }
+  if { [info exists keys(-capacitance)] } {
+    set cap $keys(-capacitance)
+    sta::check_positive_float "-capacitance" $cap
+    set bump_cap [sta::capacitance_ui_sta $cap]
+  }
+
+  sta::check_argc_eq0 "set_bump_rc" $args
+
+  foreach corner $corners {
+    est::set_bump_rc_cmd $corner $bump_res $bump_cap
+  }
+}
+
 namespace eval est {
 proc get_db_tech_checked { } {
   set tech [ord::get_db_tech]

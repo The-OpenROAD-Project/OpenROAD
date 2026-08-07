@@ -7,11 +7,15 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Parasitics.hh"
+#include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "tst/IntegratedFixture.h"
 
@@ -95,6 +99,30 @@ class TestEstimateParasitics : public tst::IntegratedFixture
     sta::LibertyCell* dff_x2 = sta_->network()->findLibertyCell("DFF_X2");
     ASSERT_NE(dff_x2, nullptr);
     ASSERT_TRUE(resizer_.replaceCell(inst, dff_x2));
+  }
+
+  struct PiModel
+  {
+    bool found = false;
+    float c2 = 0.0;
+    float rpi = 0.0;
+    float c1 = 0.0;
+  };
+
+  // Reduced pi model annotated for the driver pin; found is false when the
+  // net has no annotation.
+  PiModel findPiModel(sta::Pin* drvr_pin) const
+  {
+    PiModel pi_model;
+    sta::Parasitics* parasitics
+        = sta_->scenes().front()->parasitics(sta::MinMax::max());
+    sta::Parasitic* pi = parasitics->findPiElmore(
+        drvr_pin, sta::RiseFall::rise(), sta::MinMax::max());
+    if (pi != nullptr) {
+      pi_model.found = true;
+      parasitics->piModel(pi, pi_model.c2, pi_model.rpi, pi_model.c1);
+    }
+    return pi_model;
   }
 };
 
@@ -195,6 +223,131 @@ TEST_F(TestEstimateParasitics, ScanClockIdealOnlyInTestMode)
   // scan clock port and scan_reg/CK through delaysInvalidFromFanin().
   EXPECT_TRUE(sta_->search()->arrivalsValid());
   ep_.setIncrementalParasiticsEnabled(false);
+}
+
+// Verifies that set_bump_rc values are used for nets terminating on a
+// dbChipBump instance, replacing the small pad connectivity resistor.
+TEST_F(TestEstimateParasitics, BumpRcOnPadNet)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  sta::Scene* scene = sta_->scenes().front();
+  // scan_clk drives only scan_reg/CK: a two-pin port-to-instance net.
+  sta::Pin* scan_clk_pin = findTopPin("scan_clk");
+  ASSERT_NE(scan_clk_pin, nullptr);
+  sta::Net* net = flatNet(scan_clk_pin);
+  ASSERT_NE(net, nullptr);
+
+  // Make scan_reg a chip bump on the scan_clk net; the bump association
+  // alone classifies the port-to-bump net as a pad net.
+  odb::dbInst* scan_reg = block_->findInst("scan_reg");
+  ASSERT_NE(scan_reg, nullptr);
+  odb::dbChipRegion* region = odb::dbChipRegion::create(
+      db_->getChip(), "f2f", odb::dbChipRegion::Side::FRONT, nullptr);
+  ASSERT_NE(region, nullptr);
+  odb::dbChipBump* bump = odb::dbChipBump::create(region, scan_reg);
+  ASSERT_NE(bump, nullptr);
+  bump->setNet(db_network_->staToDb(net));
+
+  // Without bump values the legacy small connectivity resistor is used.
+  ep_.estimateWireParasitic(net);
+  PiModel pi = findPiModel(scan_clk_pin);
+  ASSERT_TRUE(pi.found);
+  EXPECT_FLOAT_EQ(pi.rpi, 0.001f);
+  // The reduced pi model includes the load pin caps; save them as baseline.
+  const float pin_caps = pi.c2 + pi.c1;
+
+  // With bump values the lumped bump RC is added on top of the pin caps.
+  ep_.setBumpRC(scene, 2.5, 4.0e-14);
+  ep_.estimateWireParasitic(net);
+  pi = findPiModel(scan_clk_pin);
+  ASSERT_TRUE(pi.found);
+  EXPECT_FLOAT_EQ(pi.rpi, 2.5f);
+  EXPECT_NEAR(pi.c2 + pi.c1 - pin_caps, 4.0e-14, 1.0e-16);
+
+  // A bump resistance below the connectivity floor is used as given.
+  ep_.setBumpRC(scene, 5.0e-4, 4.0e-14);
+  ep_.estimateWireParasitic(net);
+  pi = findPiModel(scan_clk_pin);
+  ASSERT_TRUE(pi.found);
+  EXPECT_FLOAT_EQ(pi.rpi, 5.0e-4f);
+
+  // A bump with a recorded net is a bump terminal only on that net: with the
+  // bump net pointing elsewhere, scan_clk is no longer a pad net, so the new
+  // bump values are not applied. The single-net API does not delete the
+  // previous annotation; the full pass below verifies it is wiped.
+  odb::dbNet* d_net = scan_reg->findITerm("D")->getNet();
+  ASSERT_NE(d_net, nullptr);
+  bump->setNet(d_net);
+  ep_.setBumpRC(scene, 7.5, 8.0e-14);
+  ep_.estimateWireParasitic(net);
+  pi = findPiModel(scan_clk_pin);
+  ASSERT_TRUE(pi.found);
+  EXPECT_FLOAT_EQ(pi.rpi, 5.0e-4f);
+
+  // On the recorded bump net the new lumped RC applies.
+  bump->setNet(db_network_->staToDb(net));
+  ep_.estimateWireParasitic(net);
+  pi = findPiModel(scan_clk_pin);
+  ASSERT_TRUE(pi.found);
+  EXPECT_FLOAT_EQ(pi.rpi, 7.5f);
+
+  // A net with more than two pins never takes the two-node bump model, even
+  // as the recorded bump net; it stays unannotated (unplaced, so the wire
+  // estimator makes no tree) instead of dropping loads.
+  bump->setNet(d_net);
+  sta::Pin* d_pin = findTopPin("d");
+  ASSERT_NE(d_pin, nullptr);
+  ep_.estimateWireParasitic(db_network_->dbToSta(d_net));
+  EXPECT_FALSE(findPiModel(d_pin).found);
+
+  // dbChipBump::setNet emits no invalidation, but the full estimation pass
+  // deletes all parasitics up front: scan_clk's obsolete bump annotation
+  // (its bump net still points at d) does not survive it.
+  ep_.setHWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.setVWireSignalRC(nullptr, scene, 1.0e3, 1.0e-10);
+  ep_.estimateWireParasitics();
+  EXPECT_FALSE(findPiModel(scan_clk_pin).found);
+}
+
+// Without a recorded bump net, classification falls back to the instance
+// shape: a single-signal-pin bump is unambiguous, a multi-signal-pin one is
+// not.
+TEST_F(TestEstimateParasitics, BumpRcClassificationFallback)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  sta::Scene* scene = sta_->scenes().front();
+  odb::dbChipRegion* region = odb::dbChipRegion::create(
+      db_->getChip(), "f2f", odb::dbChipRegion::Side::FRONT, nullptr);
+  ASSERT_NE(region, nullptr);
+  ep_.setBumpRC(scene, 7.5, 8.0e-14);
+
+  // A bare bump on a multi-signal-pin instance is ambiguous and never
+  // classifies: reg0's two-pin q0 net stays unannotated.
+  odb::dbInst* reg0 = block_->findInst("reg0");
+  ASSERT_NE(reg0, nullptr);
+  ASSERT_NE(odb::dbChipBump::create(region, reg0), nullptr);
+  sta::Pin* q0_pin = findTopPin("q0");
+  ASSERT_NE(q0_pin, nullptr);
+  sta::Pin* q0_drvr = db_network_->dbToSta(reg0->findITerm("Q"));
+  ASSERT_NE(q0_drvr, nullptr);
+  ep_.estimateWireParasitic(flatNet(q0_pin));
+  EXPECT_FALSE(findPiModel(q0_drvr).found);
+
+  // A bare single-signal-pin bump is unambiguous and takes the lumped RC.
+  odb::dbMaster* logic0 = db_->findMaster("LOGIC0_X1");
+  ASSERT_NE(logic0, nullptr);
+  odb::dbInst* u_bump = odb::dbInst::create(block_, logic0, "u_bump");
+  ASSERT_NE(u_bump, nullptr);
+  odb::dbNet* b_net = odb::dbNet::create(block_, "b_net");
+  u_bump->findITerm("Z")->connect(b_net);
+  ASSERT_NE(odb::dbBTerm::create(b_net, "b_port"), nullptr);
+  ASSERT_NE(odb::dbChipBump::create(region, u_bump), nullptr);
+  ep_.estimateWireParasitic(db_network_->dbToSta(b_net));
+  PiModel pi = findPiModel(db_network_->dbToSta(u_bump->findITerm("Z")));
+  ASSERT_TRUE(pi.found);
+  EXPECT_FLOAT_EQ(pi.rpi, 7.5f);
 }
 
 // Verifies that wire RC values are stored per chip: chip-specific values take
