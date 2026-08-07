@@ -508,12 +508,13 @@ IOPlacer::PinSize IOPlacer::computePinSize(const int layer,
       = vertical_pin ? parms_->getVerticalThicknessMultiplier()
                      : parms_->getHorizontalThicknessMultiplier();
   // fall back to the tech layer values for layers not used by place_pins
-  const int min_width = min_widths.find(layer) != min_widths.end()
-                            ? min_widths.at(layer)
+  const auto min_width_itr = min_widths.find(layer);
+  const int min_width = min_width_itr != min_widths.end()
+                            ? min_width_itr->second
                             : tech_layer->getWidth();
-  const int min_area = min_areas.find(layer) != min_areas.end()
-                           ? min_areas.at(layer)
-                           : tech_layer->getArea();
+  const auto min_area_itr = min_areas.find(layer);
+  const int min_area = min_area_itr != min_areas.end() ? min_area_itr->second
+                                                       : tech_layer->getArea();
   PinSize pin_size;
   pin_size.half_width = int(ceil(min_width / 2.0)) * thickness_multiplier;
   pin_size.height = int(std::max(2.0 * pin_size.half_width,
@@ -597,6 +598,10 @@ void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
                                     const int effective_width)
 {
   const int layer = tech_layer->getRoutingLevel();
+  // pins are only placed on routing layers
+  if (layer == 0) {
+    return;
+  }
   // PPL-45/46 guarantee the layer sets agree with the preferred direction, so
   // they only filter which layers have slots; empty sets mean standalone
   // place_pin, where every layer participates
@@ -3179,6 +3184,11 @@ void IOPlacer::findSlotsForTopLayer()
 
 void IOPlacer::filterObstructedSlotsForTopLayer()
 {
+  if (top_grid_ == nullptr || top_grid_->layer == nullptr) {
+    return;
+  }
+  const int top_layer_level = top_grid_->layer->getRoutingLevel();
+
   // Collect top_grid obstructions, with the spacing rules they carry
   std::vector<BlockingShape> obstructions;
 
@@ -3189,9 +3199,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       continue;
     }
     odb::dbBox* box = obstruction->getBBox();
-    if (top_grid_ != nullptr && top_grid_->layer != nullptr
-        && box->getTechLayer()->getRoutingLevel()
-               == top_grid_->layer->getRoutingLevel()) {
+    odb::dbTechLayer* tech_layer = box->getTechLayer();
+    if (tech_layer != nullptr
+        && tech_layer->getRoutingLevel() == top_layer_level) {
       obstructions.push_back(
           {box->getBox(),
            obstruction->hasMinSpacing() ? obstruction->getMinSpacing() : 0,
@@ -3205,10 +3215,6 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     if (net->isSpecial()) {
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* wire : swire->getWires()) {
-          if (top_grid_ == nullptr || top_grid_->layer == nullptr) {
-            continue;
-          }
-          const int top_layer_level = top_grid_->layer->getRoutingLevel();
           if (wire->isVia()) {
             // via landing pads also obstruct the top layer pins
             std::vector<odb::dbShape> via_shapes;
@@ -3234,9 +3240,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     for (odb::dbBPin* pin : term->getBPins()) {
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
-          if (top_grid_ != nullptr && top_grid_->layer != nullptr
-              && box->getTechLayer()->getRoutingLevel()
-                     == top_grid_->layer->getRoutingLevel()) {
+          odb::dbTechLayer* tech_layer = box->getTechLayer();
+          if (tech_layer != nullptr
+              && tech_layer->getRoutingLevel() == top_layer_level) {
             obstructions.push_back(
                 {box->getBox(),
                  pin->hasMinSpacing() ? pin->getMinSpacing() : 0,
@@ -3249,21 +3255,18 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
 
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
-  if (top_grid_ != nullptr) {
-    for (auto& slot : top_layer_slots_) {
-      odb::Point& point = slot.pos;
-      if (point.x() - top_grid_->pin_width / 2 < die_area.xMin()
-          || point.y() - top_grid_->pin_height / 2 < die_area.yMin()
-          || point.x() + top_grid_->pin_width / 2 > die_area.xMax()
-          || point.y() + top_grid_->pin_height / 2 > die_area.yMax()) {
-        // mark slot as blocked since it extends beyond the die area
-        slot.blocked = true;
-      }
+  for (auto& slot : top_layer_slots_) {
+    odb::Point& point = slot.pos;
+    if (point.x() - top_grid_->pin_width / 2 < die_area.xMin()
+        || point.y() - top_grid_->pin_height / 2 < die_area.yMin()
+        || point.x() + top_grid_->pin_width / 2 > die_area.xMax()
+        || point.y() + top_grid_->pin_height / 2 > die_area.yMax()) {
+      // mark slot as blocked since it extends beyond the die area
+      slot.blocked = true;
     }
   }
 
   // check for slots that overlap with obstructions
-  const int layer_level = top_grid_->layer->getRoutingLevel();
   const int pin_min_dim = std::min(top_grid_->pin_width, top_grid_->pin_height);
   const int pin_max_dim = std::max(top_grid_->pin_width, top_grid_->pin_height);
   for (const BlockingShape& obstruction : obstructions) {
@@ -3274,7 +3277,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
                    obstruction.effective_width);
     const int spacing = std::max(
         computeLayerSpacing(
-            layer_level, std::max(shape_width, pin_min_dim), pin_max_dim),
+            top_layer_level, std::max(shape_width, pin_min_dim), pin_max_dim),
         obstruction.min_spacing);
     const int keepout = std::max(top_grid_->keepout, spacing);
     for (auto& slot : top_layer_slots_) {
@@ -3375,6 +3378,9 @@ void IOPlacer::initNetlist()
                                         : 0;
         for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
           odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
+          if (tech_layer == nullptr) {
+            continue;
+          }
           const int layer = tech_layer->getRoutingLevel();
           // store the shapes padded, so the pins created near them keep the
           // min spacing
