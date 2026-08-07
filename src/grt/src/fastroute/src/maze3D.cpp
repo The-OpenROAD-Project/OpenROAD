@@ -719,9 +719,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   const int kHighDetourPenalty = 15;
 
   if (enable_resistance_aware_) {
-    res_aware_nets_percentage_ = kMidResAwareNetsPercentage;
+    if (!is_fixed_nets_percentage_) {
+      res_aware_nets_percentage_ = kMidResAwareNetsPercentage;
+    }
     updateSlacks();
-    res_aware_nets_percentage_ = kFinalResAwareNetsPercentage;
+    if (!is_fixed_nets_percentage_) {
+      res_aware_nets_percentage_ = kFinalResAwareNetsPercentage;
+    }
     netpinOrderInc();
     // More flexible during repair stages
     setDetourPenalty(is_incremental_grt_ ? kLowDetourPenalty
