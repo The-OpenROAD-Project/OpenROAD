@@ -238,6 +238,12 @@ export class SchematicWidget {
         return byClass ? this._closestGroup(byClass) : null;
     }
 
+    // Replaces the previous "walk up to the first <g> whose id is a known
+    // instance" lookup, which only worked for netlistsvg's generic boxes.
+    // Skin symbols put the cell id on a class of each child shape rather than
+    // on the group id, and their outlines are open paths with no fill, so a
+    // click inside a gate hit nothing at all. Resolving id *or* class token,
+    // plus the transparent hit rect from _addCellHitTarget, covers both.
     _cellHitFromTarget(target) {
         if (!this._svgEl) {
             return null;
@@ -425,7 +431,9 @@ export class SchematicWidget {
             // proper gate symbols with correctly-placed ports and instance-name
             // labels; renderNetlist() rewrites cell types to match it (see
             // canonicalizeForSkin).  render() passes the skin to onml.p(), which
-            // expects a raw XML string, so fetch it as text.
+            // expects a raw XML string, so fetch it as text.  no-store because
+            // the skin ships with the server build: a cached copy from an older
+            // session would be missing the symbols the netlist now asks for.
             const resp = await fetch('openroad_skin.svg', { cache: 'no-store' });
             if (!resp.ok) {
                 throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
@@ -441,6 +449,9 @@ export class SchematicWidget {
 
     // ── Refresh ──────────────────────────────────────────────────────────────
 
+    // Returns a promise resolving to whether a schematic was drawn. The bare
+    // `return` this used to do gave callers no way to sequence anything after
+    // the render, which double-click expansion and the tests both need.
     refresh() {
         const instName = this.appState.selectedInstanceName;
         if (!instName) {
@@ -681,6 +692,10 @@ export class SchematicWidget {
         return this.controls.querySelector('#schematic-view-style').value !== 'boxes';
     }
 
+    // Render used to always canonicalize. The Boxes view needs the untouched
+    // netlist instead, because canonicalizeForSkin rewrites pin names to skin
+    // port ids and drops power pins -- fine under a gate symbol, but a generic
+    // box is supposed to show the cell's real pins.
     _netlistForView(yosysJson) {
         return this._isSymbolView() ? canonicalizeForSkin(yosysJson) : yosysJson;
     }
@@ -1022,6 +1037,13 @@ export class SchematicWidget {
 
     // The OpenROAD skin supplies geometry/ports; real instance and Liberty
     // pin names are added after render.
+    //
+    // Supersedes _applyPinLabels, which positioned each label straight from the
+    // port's s:x/s:y attributes. That holds only when the marker sits directly
+    // under the cell group; the register symbols nest their pins inside
+    // translated helper groups, so those labels landed at the wrong offset.
+    // _portMarkerPosition now accumulates the parent transforms instead, and
+    // instance names are placed here too rather than left to the skin.
     _ensureOpenRoadSymbolLabels(netlist) {
         if (!this._svgEl) return;
 

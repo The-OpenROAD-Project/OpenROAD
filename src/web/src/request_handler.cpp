@@ -1784,6 +1784,9 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
       }
     }
     if (all_ports && operands.size() >= 2) {
+      // Each case used to return here. They break instead so the shared pin
+      // mapping below runs for every gate kind -- returning early would emit
+      // gate_kind with no gate_ports, leaving the symbol's pins unlabelled.
       switch (top) {
         case sta::FuncExpr::Op::and_:
           result.kind = inverting ? "nand" : "and";
@@ -1842,6 +1845,10 @@ static void emitSchematicCell(boost::json::object& cells,
   cell["attributes"] = boost::json::object{};
   cell["parameters"] = boost::json::object{};
 
+  // Was a single const classifyGate() call. Registers are tried first because
+  // classifyGate rejects any sequential cell outright, so a flop would other-
+  // wise fall through to a generic box. The result is no longer const only so
+  // the combinational path can reuse the variable.
   GateClass gate = classifyRegister(network, inst);
   if (gate.kind.empty()) {
     gate = classifyGate(network, inst);
