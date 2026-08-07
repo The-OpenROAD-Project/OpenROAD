@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <stdexcept>
+
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
@@ -141,6 +143,44 @@ TEST_F(TestOrderWires, BumpAssignedNetRootsTreeAtBumpIterm)
   EXPECT_EQ(y, bump_y_);
   EXPECT_EQ(decoder.next(), dbWireDecoder::ITERM);
   EXPECT_EQ(decoder.getITerm(), bump_iterm_);
+}
+
+// Without a bump assignment nothing anchors the walk of a net driven by a
+// bterm with no geometry, and a wire whose first path holds only a patch
+// RECT makes it start at a point with no reachable segment.  Ordering
+// must fail loudly (ODB-0395) and must not leave the net marked as
+// ordered.
+TEST_F(TestOrderWires, UnanchoredNetWithUnreachableStartPointFailsLoudly)
+{
+  dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
+  dbMaster* inv = db_->findMaster("INV_X1");
+
+  dbInst* recv = makeInst(block_,
+                          inv,
+                          "recv",
+                          {.location = {10000, 10000},
+                           .status = dbPlacementStatus::PLACED,
+                           .iterms = {{"n1", "A"}}});
+
+  makeBTerm(block_, "n1", {.io_type = dbIoType::INPUT, .bpins = {}});
+
+  dbNet* net = block_->findNet("n1");
+  int recv_x, recv_y;
+  ASSERT_TRUE(recv->findITerm("A")->getAvgXY(&recv_x, &recv_y));
+
+  dbWire* wire = dbWire::create(net);
+  dbWireEncoder encoder;
+  encoder.begin(wire);
+  encoder.newPath(metal1, dbWireType::ROUTED);
+  encoder.addPoint(recv_x, recv_y + 2000);
+  encoder.addRect(-70, -70, 70, 70);
+  encoder.newPath(metal1, dbWireType::ROUTED);
+  encoder.addPoint(recv_x, recv_y);
+  encoder.addPoint(recv_x, recv_y + 2000);
+  encoder.end();
+
+  EXPECT_THROW(orderWires(&logger_, block_), std::runtime_error);
+  EXPECT_FALSE(net->isWireOrdered());
 }
 
 }  // namespace odb

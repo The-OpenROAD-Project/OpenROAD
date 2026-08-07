@@ -1479,8 +1479,13 @@ void tmg_conn::treeReorder(const bool no_convert)
   }
   dfsClear();
   if (!dfsStart(jstart)) {
-    logger_->warn(ODB, 395, "cannot order {}", net_->getConstName());
-    return;
+    logger_->error(ODB,
+                   395,
+                   "Could not order wires of net {}. No wire segment is "
+                   "reachable from the start point ({} {}).",
+                   net_->getConstName(),
+                   ptV_[jstart].x,
+                   ptV_[jstart].y);
   }
   int last_term_index = 0;
   while (true) {
@@ -1561,8 +1566,13 @@ void tmg_conn::treeReorder(const bool no_convert)
     }
     jstart = pt - ptV_.data();
     if (!dfsStart(jstart)) {
-      logger_->warn(ODB, 396, "cannot order {}", net_->getConstName());
-      return;
+      logger_->error(ODB,
+                     396,
+                     "Could not order wires of net {}. No wire segment is "
+                     "reachable from the branch start point ({} {}).",
+                     net_->getConstName(),
+                     ptV_[jstart].x,
+                     ptV_[jstart].y);
     }
   }
 
