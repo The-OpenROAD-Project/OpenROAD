@@ -637,14 +637,22 @@ static void setSelectionSetHighlights(SessionState& state)
                                : SessionState::HighlightSource::kSelectionSet;
 }
 
+// `use_dbu` is only used to label the debug line: the lengths themselves go
+// through Descriptor::Property::convert_dbu, which the caller's
+// ScopedDbuFormat has already pointed at microns or at raw DBU.  Reusing that
+// converter is what keeps the log in the same unit the inspector is showing.
 static void writeInspectPayload(boost::json::object& o,
                                 const gui::Selected& sel,
                                 std::vector<gui::Selected>& new_selectables,
-                                bool can_navigate_back)
+                                bool can_navigate_back,
+                                bool use_dbu,
+                                utl::Logger* logger)
 {
   o["can_navigate_back"] = can_navigate_back ? 1 : 0;
   if (!sel) {
     o["error"] = "invalid select_id";
+    debugPrint(
+        logger, utl::WEB, "select", 1, "inspect outline: invalid select_id");
     return;
   }
 
@@ -659,8 +667,53 @@ static void writeInspectPayload(boost::json::object& o,
   o["properties"] = std::move(prop_arr);
 
   odb::Rect bbox;
-  if (sel.getBBox(bbox)) {
+  const bool has_bbox = sel.getBBox(bbox);
+  if (has_bbox) {
     o["bbox"] = bboxArray(bbox);
+  }
+
+  // This payload is what the client draws the yellow dashed selection outline
+  // from (inspector.js highlightBBox): it needs both a bbox and a type other
+  // than "Inst" — instances get the tile-rendered yellow highlight instead.
+  // Log what the client will see so a missing or misplaced outline can be
+  // attributed to the server side.
+  if (has_bbox) {
+    const auto len = [](const int dbu) {
+      return gui::Descriptor::Property::convert_dbu(dbu, /*add_units=*/false);
+    };
+    const char* unit = use_dbu ? "dbu" : "um";
+    debugPrint(logger,
+               utl::WEB,
+               "select",
+               1,
+               "inspect outline: type={} name={} bbox_{}=({},{})-({},{}) "
+               "size_{}={}x{} props={} dashed_outline={} back={}",
+               sel.getTypeName(),
+               sel.getName(),
+               unit,
+               len(bbox.xMin()),
+               len(bbox.yMin()),
+               len(bbox.xMax()),
+               len(bbox.yMax()),
+               unit,
+               len(bbox.dx()),
+               len(bbox.dy()),
+               props.size(),
+               // Mirrors inspector.js's `data.type !== 'Inst'` literally, so
+               // the log cannot drift from what the client actually draws.
+               sel.getTypeName() != "Inst",
+               can_navigate_back);
+  } else {
+    debugPrint(logger,
+               utl::WEB,
+               "select",
+               1,
+               "inspect outline: type={} name={} no bbox, no outline drawn "
+               "(props={}, back={})",
+               sel.getTypeName(),
+               sel.getName(),
+               props.size(),
+               can_navigate_back);
   }
 
   if (sel.isNet()) {
@@ -990,8 +1043,12 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         }
       }
       inspected_sel = registry->makeSelected(results[pick].object);
-      writeInspectPayload(
-          root, inspected_sel, new_selectables, /*can_navigate_back=*/false);
+      writeInspectPayload(root,
+                          inspected_sel,
+                          new_selectables,
+                          /*can_navigate_back=*/false,
+                          use_dbu,
+                          gen_->getLogger());
     } else {
       root["can_navigate_back"] = 0;
     }
@@ -1099,7 +1156,12 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(root,
+                        sel,
+                        new_selectables,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger());
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
     {
@@ -1153,7 +1215,12 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(root,
+                        sel,
+                        new_selectables,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger());
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
     {
@@ -1177,7 +1244,8 @@ static WebSocketResponse handleSelectionCycle(
     SessionState& state,
     const int direction,
     std::shared_ptr<TclEvaluator>& tcl_eval,
-    odb::dbDatabase* db)
+    odb::dbDatabase* db,
+    utl::Logger* logger)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -1222,7 +1290,8 @@ static WebSocketResponse handleSelectionCycle(
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
     const bool can_navigate_back = false;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(
+        root, sel, new_selectables, can_navigate_back, use_dbu, logger);
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
     {
@@ -1241,13 +1310,15 @@ static WebSocketResponse handleSelectionCycle(
 WebSocketResponse SelectHandler::handleSelectNext(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getDb());
+  return handleSelectionCycle(
+      req, state, +1, tcl_eval_, gen_->getDb(), gen_->getLogger());
 }
 
 WebSocketResponse SelectHandler::handleSelectPrev(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getDb());
+  return handleSelectionCycle(
+      req, state, -1, tcl_eval_, gen_->getDb(), gen_->getLogger());
 }
 
 // Select a tech layer by name, as clicking a layer row in the Qt GUI's
@@ -1334,8 +1405,12 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
 
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, /*can_navigate_back=*/false);
+    writeInspectPayload(root,
+                        sel,
+                        new_selectables,
+                        /*can_navigate_back=*/false,
+                        use_dbu,
+                        gen_->getLogger());
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
     {
@@ -1510,7 +1585,9 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
       writeInspectPayload(root,
                           first,
                           new_selectables,
-                          /*can_navigate_back=*/false);
+                          /*can_navigate_back=*/false,
+                          use_dbu,
+                          gen_->getLogger());
       {
         std::lock_guard<std::mutex> lock(state.selectables_mutex);
         state.selectables = std::move(new_selectables);
@@ -2257,8 +2334,12 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
 
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, /*can_navigate_back=*/false);
+    writeInspectPayload(root,
+                        sel,
+                        new_selectables,
+                        /*can_navigate_back=*/false,
+                        use_dbu,
+                        gen_->getLogger());
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
@@ -2768,10 +2849,25 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     }
   }
 
+  const std::string layer = std::string(req.json.at("layer").as_string());
+  const int z = static_cast<int>(req.json.at("z").as_int64());
+  const int x = static_cast<int>(req.json.at("x").as_int64());
+  const int y = static_cast<int>(req.json.at("y").as_int64());
+
   // Skip a render the client abandoned while it sat queued (best-effort).
   {
     std::lock_guard<std::mutex> lock(state.cancelled_mutex);
     if (state.cancelled_ids.erase(req.id) > 0) {
+      debugPrint(gen_->getLogger(),
+                 utl::WEB,
+                 "tile",
+                 1,
+                 "tile: id={} layer={} z/x/y={}/{}/{} cancelled before render",
+                 req.id,
+                 layer,
+                 z,
+                 x,
+                 y);
       WebSocketResponse resp;
       resp.id = req.id;
       resp.type = WebSocketResponse::kError;
@@ -2851,30 +2947,62 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       resp.id = req.id;
       resp.type = WebSocketResponse::kPng;
       resp.payload = std::move(cached);
+      debugPrint(gen_->getLogger(),
+                 utl::WEB,
+                 "tile",
+                 1,
+                 "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} "
+                 "cache=hit bytes={}",
+                 req.id,
+                 layer,
+                 z,
+                 x,
+                 y,
+                 dpr,
+                 tile_px,
+                 resp.payload.size());
       return resp;
     }
   }
 
-  WebSocketResponse resp
-      = renderTile(req.id,
-                   std::string(req.json.at("layer").as_string()),
-                   static_cast<int>(req.json.at("z").as_int64()),
-                   static_cast<int>(req.json.at("x").as_int64()),
-                   static_cast<int>(req.json.at("y").as_int64()),
-                   vis,
-                   *gen_,
-                   no_rects,
-                   no_polys,
-                   no_colored,
-                   no_lines,
-                   mod_ptr,
-                   focus_ptr,
-                   nullptr,
-                   dpr,
-                   tile_px);
+  WebSocketResponse resp = renderTile(req.id,
+                                      layer,
+                                      z,
+                                      x,
+                                      y,
+                                      vis,
+                                      *gen_,
+                                      no_rects,
+                                      no_polys,
+                                      no_colored,
+                                      no_lines,
+                                      mod_ptr,
+                                      focus_ptr,
+                                      nullptr,
+                                      dpr,
+                                      tile_px);
   if (cacheable && resp.type == WebSocketResponse::kPng) {
     gen_->tileCachePut(std::move(cache_key), resp.payload);
   }
+
+  debugPrint(gen_->getLogger(),
+             utl::WEB,
+             "tile",
+             1,
+             "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} cache={} "
+             "module_colors={} focus_nets={} detailed={} bytes={}",
+             req.id,
+             layer,
+             z,
+             x,
+             y,
+             dpr,
+             tile_px,
+             cacheable ? "miss" : "off",
+             mod_ptr != nullptr ? mod_colors.size() : 0,
+             focus_ptr != nullptr ? focus_nets.size() : 0,
+             vis.detailed,
+             resp.payload.size());
 
   return resp;
 }
@@ -2963,22 +3091,49 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
   const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
   const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
 
+  const int z = static_cast<int>(req.json.at("z").as_int64());
+  const int x = static_cast<int>(req.json.at("x").as_int64());
+  const int y = static_cast<int>(req.json.at("y").as_int64());
+
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kPng;
-  resp.payload
-      = gen_->generateOverlayTile(static_cast<int>(req.json.at("z").as_int64()),
-                                  static_cast<int>(req.json.at("x").as_int64()),
-                                  static_cast<int>(req.json.at("y").as_int64()),
-                                  rects,
-                                  polys,
-                                  colored,
-                                  lines,
-                                  route_guide_ptr,
-                                  has_vis_layers,
-                                  vis_layers,
-                                  dpr,
-                                  tile_px);
+  resp.payload = gen_->generateOverlayTile(z,
+                                           x,
+                                           y,
+                                           rects,
+                                           polys,
+                                           colored,
+                                           lines,
+                                           route_guide_ptr,
+                                           has_vis_layers,
+                                           vis_layers,
+                                           dpr,
+                                           tile_px);
+
+  // The selection highlight the client draws over the layer tiles comes from
+  // here, so the shape counts say whether a "missing" highlight was never
+  // collected server-side or just not drawn.
+  debugPrint(gen_->getLogger(),
+             utl::WEB,
+             "tile",
+             1,
+             "overlay tile: id={} z/x/y={}/{}/{} dpr={} tile_px={} rects={} "
+             "polys={} colored={} lines={} route_guide_nets={} "
+             "flywires_only={} bytes={}",
+             req.id,
+             z,
+             x,
+             y,
+             dpr,
+             tile_px,
+             rects.size(),
+             polys.size(),
+             colored.size(),
+             lines.size(),
+             route_guides.size(),
+             flywires_only,
+             resp.payload.size());
   return resp;
 }
 
@@ -2989,20 +3144,33 @@ WebSocketResponse TileHandler::handleCancel(const WebSocketRequest& req,
   // can't grow the set without bound; trimming the oldest (lowest) ids only
   // costs an occasional missed cancel (the render proceeds, which is correct).
   constexpr size_t kCancelledCap = 4096;
+  size_t requested = 0;
+  size_t pending = 0;
   {
     std::lock_guard<std::mutex> lock(state.cancelled_mutex);
     if (const auto* ids = req.json.if_contains("cancel_ids")) {
       for (const auto& v : ids->as_array()) {
         state.cancelled_ids.insert(static_cast<uint32_t>(v.as_int64()));
+        ++requested;
       }
     } else {
       state.cancelled_ids.insert(
           static_cast<uint32_t>(jsonOr<int64_t>(req.json, "cancel_id", 0)));
+      requested = 1;
     }
     while (state.cancelled_ids.size() > kCancelledCap) {
       state.cancelled_ids.erase(state.cancelled_ids.begin());
     }
+    pending = state.cancelled_ids.size();
   }
+  debugPrint(gen_->getLogger(),
+             utl::WEB,
+             "tile",
+             1,
+             "cancel: id={} cancelled={} pending={}",
+             req.id,
+             requested,
+             pending);
   // Minimal ack.  The client does not track the cancel message in `pending`,
   // so this response is harmlessly ignored.
   WebSocketResponse resp;
@@ -3219,10 +3387,31 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       source = source_itr->second;
     }
     resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
+    debugPrint(gen_->getLogger(),
+               utl::WEB,
+               "tile",
+               1,
+               "heatmap tile: id={} name={} z/x/y={}/{}/{} dpr={} tile_px={} "
+               "bytes={}",
+               req.id,
+               source->getName(),
+               z,
+               x,
+               y,
+               dpr,
+               tile_px,
+               resp.payload.size());
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
+    debugPrint(gen_->getLogger(),
+               utl::WEB,
+               "tile",
+               1,
+               "heatmap tile: id={} failed: {}",
+               req.id,
+               e.what());
   }
   return resp;
 }

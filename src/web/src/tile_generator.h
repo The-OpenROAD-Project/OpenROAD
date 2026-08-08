@@ -367,6 +367,7 @@ class TileGenerator
 
   bool hasSta() const { return sta_ != nullptr; }
   sta::dbSta* getSta() const { return sta_; }
+  utl::Logger* getLogger() const { return logger_; }
 
   odb::Rect getBounds() const;
   int getPinMaxSize() const;

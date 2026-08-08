@@ -1269,11 +1269,22 @@ app.websocketManager.readyPromise.then(async () => {
                         }
                         updateInspector(data);
                         focusComponent('Inspector');
-                        // Highlight selected instance bbox
-                        if (inst.bbox) {
-                            highlightBBox(inst.bbox[0], inst.bbox[1],
-                                          inst.bbox[2], inst.bbox[3]);
-                            pulseHighlight(inst.bbox);
+                        // Outline the object the Inspector is showing, using
+                        // ITS bbox — `data.bbox` — not `selected[0].bbox`.
+                        // For a net the two are different rects: selected[]
+                        // carries the hit-test bbox (dbNet::getTermBBox,
+                        // terminals only) while data.bbox is the descriptor's
+                        // full extent (wire ∪ terminals).  On a power net whose
+                        // straps span the design they differ by ~2x, so the box
+                        // landed nowhere near the net the Inspector was
+                        // describing.  selected[0] is also the wrong OBJECT
+                        // whenever the server cycled `pick` through overlapping
+                        // hits.  Instances are unaffected either way: their
+                        // hit-test bbox IS the descriptor bbox.
+                        if (data.bbox) {
+                            highlightBBox(data.bbox[0], data.bbox[1],
+                                          data.bbox[2], data.bbox[3]);
+                            pulseHighlight(data.bbox);
                         }
                     } else if (!selectRequest.add_to_selection) {
                         // Shift+click on empty space preserves the existing

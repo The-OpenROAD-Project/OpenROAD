@@ -43,11 +43,25 @@
 #include "third-party/lodepng/lodepng.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 #include "web_painter.h"
 
 namespace web {
 
 namespace {
+
+// DBU → micron string for debug output.  Precision tracks the database scale so
+// no significant digit is dropped (1000 DBU/µm → 3 decimals), matching how
+// ScopedDbuFormat formats the lengths the inspector shows.  Falls back to the
+// raw value when no LEF has been read yet and the scale is still 0.
+std::string dbuToUm(const int dbu, const double dbu_per_micron)
+{
+  if (dbu_per_micron <= 0) {
+    return std::to_string(dbu);
+  }
+  const int precision = static_cast<int>(std::ceil(std::log10(dbu_per_micron)));
+  return utl::to_numeric_string(dbu / dbu_per_micron, precision);
+}
 
 // Supersample factor for band-limited tile rasterization (anti-moiré).  The
 // tile is rendered at kCoverageSupersample x the output resolution and then
@@ -1668,15 +1682,16 @@ std::vector<SelectionResult> TileGenerator::selectAt(
   const int num_tiles = 1 << std::max(0, zoom);
   const int margin
       = std::max(1, getBounds().maxDXDY() / (kTileSizeInPixel * num_tiles) * 2);
+  const double dbu_per_micron = db_->getDbuPerMicron();
   debugPrint(logger_,
              utl::WEB,
              "select",
              1,
-             "selectAt dbu=({},{}) zoom={} margin={}",
-             dbu_x,
-             dbu_y,
+             "selectAt um=({},{}) zoom={} margin_um={}",
+             dbuToUm(dbu_x, dbu_per_micron),
+             dbuToUm(dbu_y, dbu_per_micron),
              zoom,
-             margin);
+             dbuToUm(margin, dbu_per_micron));
 
   odb::PtrSet<odb::dbNet> seen_nets;
 
@@ -2656,6 +2671,32 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         = vis.detailed
               ? static_cast<int>(std::lround(1.0 * tile_dbu_size / css_tile_px))
               : size_limit_dbu;
+    // The geometry the tile request resolves to: which slice of the design it
+    // covers and at what resolution.  `y` here is already flipped out of the
+    // client's Leaflet convention, so it will not match the requested y.  The
+    // micron window depends only on the design bounds and z; tile_px/super and
+    // the cull limits are the dpr-derived part.
+    const double dbu_per_micron = db_->getDbuPerMicron();
+    debugPrint(logger_,
+               utl::WEB,
+               "tile",
+               2,
+               "  tile frame: layer={} z={} x={} y_flipped={} "
+               "um=({},{})-({},{}) tile_px={} super={} inst_limit_um={} "
+               "shape_limit_um={}",
+               layer,
+               z,
+               x,
+               y,
+               dbuToUm(dbu_tile_world.xMin(), dbu_per_micron),
+               dbuToUm(dbu_tile_world.yMin(), dbu_per_micron),
+               dbuToUm(dbu_tile_world.xMax(), dbu_per_micron),
+               dbuToUm(dbu_tile_world.yMax(), dbu_per_micron),
+               tile_px,
+               super,
+               dbuToUm(instance_size_limit_dbu, dbu_per_micron),
+               dbuToUm(shape_size_limit_dbu, dbu_per_micron));
+
     // One snapshot for the whole tile: taken under a lock here, then read
     // lock-free by the per-chiplet loop below (see GeomCache).
     const std::shared_ptr<const GeomCache> geom_cache = geomCache();
