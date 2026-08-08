@@ -3,6 +3,7 @@
 
 #include "Opt.hh"
 
+#include <cinttypes>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -14,8 +15,7 @@
 #include "ScanCell.hh"
 #include "boost/geometry/geometries/register/point.hpp"
 #include "boost/geometry/geometry.hpp"
-#include "boost/geometry/index/rtree.hpp"
-#include "utl/Logger.h"
+#include "odb/geom.h"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -28,17 +28,17 @@ namespace {
 constexpr int kMaxCellsToSearch = 10;
 }  // namespace
 
-void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
-                            utl::Logger* logger)
+int64_t OptimizeScanWirelengthNN(std::vector<std::unique_ptr<ScanCell>>& cells,
+                                 utl::Logger* logger)
 {
   // Nothing to order
   if (cells.empty()) {
-    return;
+    return 0;
   }
   // No point running this if the cells aren't placed yet
   for (const auto& cell : cells) {
     if (!cell->isPlaced()) {
-      return;
+      return 0;
     }
   }
   // Define the starting node as the lower leftmost, so we don't accidentally
@@ -68,6 +68,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   // Search nearest neighbours
   std::vector<std::unique_ptr<ScanCell>> result;
   result.emplace_back(std::move(cells[cursor.second]));
+  int64_t twl = 0;
   while (result.size() < cells.size()) {
     // Search for next nearest
     auto next = cursor;
@@ -85,6 +86,10 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
           10,
           "Couldn't find nearest neighbor, too many overlapping cells");
     }
+    twl += std::llabs(boost::geometry::get<0>(cursor.first)
+                      - boost::geometry::get<0>(next.first))
+           + std::llabs(boost::geometry::get<1>(cursor.first)
+                        - boost::geometry::get<1>(next.first));
     // Make sure we only visit things once
     rtree.remove(cursor);
     cursor = std::move(next);
@@ -92,6 +97,102 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   }
   // Replace with sorted vector
   std::swap(cells, result);
+
+  return twl;
+}
+
+int64_t OptimizeScanWirelength2Opt(
+    const odb::Point source,
+    const odb::Point sink,
+    std::vector<std::unique_ptr<ScanCell>>& cells,
+    utl::Logger* logger,
+    size_t max_iters)
+{
+  // Nothing to order
+  if (cells.empty()) {
+    return 0;
+  }
+
+  size_t N = cells.size() + 2;
+
+  std::vector<odb::Point> points(N);
+  size_t i = -1;
+  points[++i] = source;
+
+  int64_t score = 0;
+  odb::Point last = points[i];
+  for (const auto& cell : cells) {
+    if (!cell->isPlaced()) {
+      // No point running this if the cells aren't placed yet
+      return 0;
+    }
+
+    points[++i] = cell->getOrigin();
+    score += odb::Point::manhattanDistance(last, points[i]);
+    last = points[i];
+  }
+  points[++i] = sink;
+  score += odb::Point::manhattanDistance(last, sink);
+  assert(++i == N);
+
+  int64_t best_score = score;
+
+  // Already "optimal" (unplaced)
+  if (best_score == 0) {
+    return 0;
+  }
+
+  size_t iters = 0;
+  bool improved_last_iter = true;
+  while (improved_last_iter && iters < max_iters) {
+    iters += 1;
+    debugPrint(logger,
+               utl::DFT,
+               "2opt",
+               1,
+               "Starting iteration {} (TWL: {})...",
+               iters,
+               best_score);
+    improved_last_iter = false;
+    for (size_t i = 0; i < N - 2; i += 1) {
+      for (size_t j = i + 2; j < N - 1; j += 1) {
+        auto&& x = points[i];
+        auto&& y = points[j];
+        auto&& u = points[i + 1];
+        auto&& v = points[j + 1];
+        auto score_d = -odb::Point::manhattanDistance(x, u)
+                       - odb::Point::manhattanDistance(y, v)
+                       + odb::Point::manhattanDistance(x, y)
+                       + odb::Point::manhattanDistance(u, v);
+        if (score_d < 0) {
+          improved_last_iter = true;
+          best_score += score_d;
+          for (size_t k = 0; k < (j - i) / 2; k += 1) {
+            std::swap(points[i + 1 + k], points[j - k]);
+            std::swap(cells[i + k], cells[j - k - 1]);
+          }
+        }
+      }
+    }
+  }
+
+  if (improved_last_iter) {
+    debugPrint(logger,
+               utl::DFT,
+               "2opt",
+               1,
+               "Stopping because the max iteration count ({}) was reached.",
+               iters);
+  } else {
+    debugPrint(logger,
+               utl::DFT,
+               "2opt",
+               1,
+               "Stopping after {} iterations because of a lack of improvement.",
+               iters);
+  }
+
+  return best_score;
 }
 
 }  // namespace dft
