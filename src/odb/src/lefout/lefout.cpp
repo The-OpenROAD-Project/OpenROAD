@@ -166,12 +166,32 @@ void lefout::writeBox(std::ostream& out, const std::string& indent, dbBox* box)
   int y2 = box->yMax();
 
   fmt::print(out,
-             "{}  RECT  {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
+             "{}  RECT  {:.11g} {:.11g} {:.11g} {:.11g}",
              indent.c_str(),
              lefdist(x1),
              lefdist(y1),
              lefdist(x2),
              lefdist(y2));
+
+  int min_spacing = 0;
+  if (box->getOwnerType() == dbBoxOwner::OBSTRUCTION) {
+    auto* obstruction = static_cast<dbObstruction*>(box->getBoxOwner());
+    min_spacing = obstruction->getMinSpacing();
+  } else if (box->getOwnerType() == dbBoxOwner::BPIN) {
+    auto* pin = static_cast<dbBPin*>(box->getBoxOwner());
+    min_spacing = pin->getMinSpacing();
+  }
+
+  if (min_spacing > 0) {
+    fmt::print(out, " SPACING {:.11g}", lefdist(min_spacing));
+  }
+
+  if (box->getDesignRuleWidth() > 0) {
+    fmt::print(
+        out, " DESIGNRULEWIDTH {:.11g}", lefdist(box->getDesignRuleWidth()));
+  }
+
+  fmt::print(out, " ;\n");
 }
 
 void lefout::writePolygon(std::ostream& out,
@@ -234,6 +254,17 @@ void lefout::writeObstructions(std::ostream& out, dbBlock* db_block)
   getObstructions(db_block, obstructions);
 
   fmt::print(out, "{}", "  OBS\n");
+
+  for (dbObstruction* obs : db_block->getObstructions()) {
+    dbBox* box = obs->getBBox();
+    if (obs->getMinSpacing() == 0 && box->getDesignRuleWidth() == 0) {
+      continue;
+    }
+
+    fmt::print(out, "    LAYER {} ;\n", box->getTechLayer()->getName().c_str());
+    writeBox(out, "   ", box);
+  }
+
   dbBox* block_bounding_box = db_block->getBBox();
   for (const auto& [tech_layer, polySet] : obstructions) {
     fmt::print(out, "    LAYER {} ;\n", tech_layer->getName().c_str());
@@ -267,7 +298,10 @@ void lefout::getObstructions(dbBlock* db_block,
                              ObstructionMap& obstructions) const
 {
   for (dbObstruction* obs : db_block->getObstructions()) {
-    insertObstruction(obs->getBBox(), obstructions);
+    if (obs->getMinSpacing() == 0
+        && obs->getBBox()->getDesignRuleWidth() == 0) {
+      insertObstruction(obs->getBBox(), obstructions);
+    }
   }
 
   findInstsObstructions(obstructions, db_block);
