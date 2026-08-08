@@ -11,6 +11,12 @@ add_library(dbSta_lib
   dbReadVerilog.cc
   SpefWriter.cc
   IpChecker.cc
+  PbaReport.cc
+  CpprReport.cc
+  McmmReport.cc
+  ClosureReport.cc
+  IncrementalStaReport.cc
+  AocvDerate.cc
 )
 
 target_include_directories(dbSta_lib

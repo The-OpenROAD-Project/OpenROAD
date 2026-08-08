@@ -1,0 +1,33 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 8171 components and 33894 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 411 nets and 1210 connections.
+[INFO RCX-0431] Defined process_corner X with ext_model_index 0
+[INFO RCX-0029] Defined extraction corner X
+[WARNING RCX-0514] The -ext_model_file option is deprecated. Use set_extraction_rules_file command instead.
+[INFO RCX-0435] Reading extraction model file ext_pattern.rules ...
+[INFO RCX-0436] RC segment generation gcd (max_merge_res 0.0) ...
+[INFO RCX-0040] Final 3221 rc segments
+[INFO RCX-0439] Coupling Cap extraction gcd ...
+[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
+[INFO RCX-0442] 50% of 2368 wires extracted
+[INFO RCX-0442] 100% of 2368 wires extracted
+[INFO RCX-0045] Extract 411 nets, 3632 rsegs, 3632 caps, 2237 ccs
+[INFO RCX-0443] 411 nets finished
+baseline TNS (mf=1.0): -2.766915e-08
+[WARNING STA-0900] setup and hold Miller factors differ but min and max share one parasitics object; using the setup factor 2.000. Read SPEF separately with -min/-max for independent setup/hold factors.
+derated TNS (mf=2.0): -3.193079e-08
+PASS: mf=2.0 increases worst-case setup path delay (TNS decreased)
+PASS: mf=1.0 reproduces baseline exactly (restored == baseline)
+Coupling / SI hotspot report (corner 0, Miller factor setup=1.000 hold=1.000)
+Net                                            Cc(fF)     Cgnd(fF)    Cc/Cgnd
+--------------------------------------------------------------------------------
+_268_                                         33.4154      50.0841     0.6672
+_271_                                         28.5179      41.7208     0.6835
+_197_                                         26.8916      50.2697     0.5349
+net1                                          23.1886      37.5184     0.6181
+resp_msg[11]                                  22.9563      33.3586     0.6882
+Reported 5 of 399 coupled signal nets.

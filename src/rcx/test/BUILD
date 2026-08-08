@@ -13,6 +13,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "45_gcd",
+    "coupling_si_miller",
     "ext_pattern",
     "gcd",
     "generate_pattern",
@@ -25,6 +26,12 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
+    "coupling_si_window",
+    "coupling_si_noise",
+    "coupling_si_noise_timing",
+    "coupling_xtalk_delay",
+    "coupling_xtalk_direction",
+    "coupling_xtalk_hold",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -91,6 +98,34 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "coupling_si_miller": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_si_window": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_xtalk_delay": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_xtalk_direction": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_xtalk_hold": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_si_noise": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
+            "coupling_si_noise_timing": [
+                "gcd.def",
+                "ext_pattern.rules",
+            ],
             "ext_pattern": ["generate_pattern.defok"],
             "gcd": ["ext_pattern.rules"],
             "no_merging": [

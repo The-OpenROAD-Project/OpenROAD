@@ -1,0 +1,49 @@
+# cppr.def -- reconvergent clock-tree design for CPPR regression.
+# Mirrors src/sta/search/test/search_crpr.v with Nangate45 cells:
+#   clk -> ckbuf1 -> clk_buf1 -> {reg1/CK, ckbuf2}
+#                       ckbuf2 -> clk_buf2 -> reg2/CK
+# The reg1 -> reg2 setup/hold check shares the clk -> ckbuf1 segment, so
+# under OCV derate that common segment is double-counted and CPPR credits
+# the pessimism back.
+VERSION 5.8 ;
+NAMESCASESENSITIVE ON ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN search_crpr ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 20000 20000 ) ;
+
+COMPONENTS 7 ;
+- ckbuf1 CLKBUF_X1 + PLACED ( 1000 1000 ) N ;
+- ckbuf2 CLKBUF_X1 + PLACED ( 3000 1000 ) N ;
+- and1 AND2_X1 + PLACED ( 5000 5000 ) N ;
+- buf1 BUF_X1 + PLACED ( 7000 5000 ) N ;
+- reg1 DFF_X1 + PLACED ( 9000 5000 ) N ;
+- buf2 BUF_X1 + PLACED ( 11000 5000 ) N ;
+- reg2 DFF_X1 + PLACED ( 13000 5000 ) N ;
+END COMPONENTS
+
+PINS 4 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL + PLACED ( 0 1000 ) N ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL + PLACED ( 0 5000 ) N ;
+- in2 + NET in2 + DIRECTION INPUT + USE SIGNAL + PLACED ( 0 6000 ) N ;
+- out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL + PLACED ( 20000 5000 ) N ;
+END PINS
+
+NETS 12 ;
+- clk ( PIN clk ) ( ckbuf1 A ) ;
+- clk_buf1 ( ckbuf1 Z ) ( ckbuf2 A ) ( reg1 CK ) ;
+- clk_buf2 ( ckbuf2 Z ) ( reg2 CK ) ;
+- in1 ( PIN in1 ) ( and1 A1 ) ;
+- in2 ( PIN in2 ) ( and1 A2 ) ;
+- n1 ( and1 ZN ) ( buf1 A ) ;
+- n2 ( buf1 Z ) ( reg1 D ) ;
+- n3 ( reg1 Q ) ( buf2 A ) ;
+- n4 ( buf2 Z ) ( reg2 D ) ;
+- out1 ( reg2 Q ) ( PIN out1 ) ;
+END NETS
+
+END DESIGN

@@ -11,6 +11,8 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
+    "aocv_derate",
+    "aocv_propagate",
     "block_sta1",
     "check_axioms",
     "clock_pin",
@@ -57,6 +59,15 @@ ALL_TESTS = [
     "report_cell_usage_modinsts_metrics",
     "report_cell_usage_physical_only",
     "report_json1",
+    "report_pba_slack",
+    "report_pba_hold",
+    "report_cppr",
+    "report_cppr_closure",
+    "report_mcmm_slack",
+    "report_mcmm_slack_by_mode",
+    "report_closure",
+    "report_incremental_sta",
+    "report_incremental_sta2",
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
@@ -98,6 +109,7 @@ filegroup(
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
         "helpers.tcl",
+        "incremental_sta_helpers.tcl",
         "liberty1.lef",
         "liberty1.lib",
     ],
@@ -111,6 +123,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "aocv_propagate": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
+            ],
             "block_sta1": [
                 "example1_typ.lib",
                 "example1.def",
@@ -207,6 +223,34 @@ filegroup(
             ],
             "report_json1": [
                 "reg6.def",
+            ],
+            "report_pba_slack": [
+                "pba_gcd.def",
+            ],
+            "report_pba_hold": [
+                "pba_gcd.def",
+            ],
+            "report_cppr": [
+                "cppr.def",
+            ],
+            "report_cppr_closure": [
+                "cppr.def",
+            ],
+            "report_mcmm_slack": [
+                "cppr.def",
+            ],
+            "report_mcmm_slack_by_mode": [
+                "cppr.def",
+            ],
+            "report_closure": [
+                "closure.def",
+            ],
+            "report_incremental_sta": [
+                "cppr.def",
+            ],
+            "report_incremental_sta2": [
+                "aocv_derate.def",
+                "aocv_derate.sdc",
             ],
             "report_timing_histogram": [
                 "example1_slow.lib",
