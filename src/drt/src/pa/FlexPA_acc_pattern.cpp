@@ -236,6 +236,7 @@ int FlexPA::genPatternsHelper(
                        used_access_points,
                        viol_access_points,
                        max_access_point_size);
+    // Print entire node graph after DP pass
     bool is_valid = false;
     if (genPatternsCommit(unique_inst,
                           nodes,
@@ -441,12 +442,16 @@ int FlexPA::getEdgeCost(
     const std::set<std::pair<int, int>>& viol_access_points,
     const int max_access_point_size)
 {
-  int edge_cost = 0;
   auto [prev_pin_idx, prev_acc_point_idx] = prev_node->getIdx();
   auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
 
+  if (viol_access_points.contains(prev_node->getIdx())
+      || viol_access_points.contains(curr_node->getIdx())) {
+    return kViolationCost;
+  }
+
   if (prev_node->isSource() || curr_node->isSink()) {
-    return edge_cost;
+    return 0;
   }
 
   bool has_vio = false;
@@ -543,11 +548,6 @@ int FlexPA::getEdgeCost(
       || (curr_pin_idx == (int) pins.size() - 1
           && used_access_points.contains(curr_node->getIdx()))) {
     return kRepeatedApCost;
-  }
-
-  if (viol_access_points.contains(prev_node->getIdx())
-      || viol_access_points.contains(curr_node->getIdx())) {
-    return kViolationCost;
   }
 
   const int prev_node_cost = prev_node->getNodeCost();
