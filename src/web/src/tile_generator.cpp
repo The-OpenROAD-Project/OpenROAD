@@ -1745,7 +1745,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
           prefixed += label;
           label = std::move(prefixed);
         }
-        results.push_back({inst, label, "Inst", toWorld(bbox), true});
+        results.push_back(
+            {inst, label, "Inst", toWorld(bbox), node.world_xfm, true});
       }
     }
 
@@ -1794,6 +1795,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
                                net->getName(),
                                "Net",
                                toWorld(net->getTermBBox()),
+                               node.world_xfm,
                                false});
           }
         }
@@ -1815,6 +1817,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
                                net->getName(),
                                "Net",
                                toWorld(net->getTermBBox()),
+                               node.world_xfm,
                                false});
           }
         }
@@ -1836,6 +1839,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
                                net->getName(),
                                "Net",
                                toWorld(net->getTermBBox()),
+                               node.world_xfm,
                                false});
           }
         }

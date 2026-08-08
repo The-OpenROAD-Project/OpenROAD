@@ -98,6 +98,11 @@ struct SelectionResult
   std::string name;
   std::string type_name;  // "Inst", "Net", etc. — sent to the JSON API
   odb::Rect bbox;
+  // Local-to-root transform of the chiplet the hit came from, so a consumer
+  // that re-derives a bbox from `object` (a gui::Descriptor reports it in the
+  // object's own block coordinates) can lift it into the same world space
+  // `bbox` is already in.  Identity for single-die designs.
+  odb::dbTransform world_xfm;
   // Fast-path tag for sort/count.  type_name is a string so `selectAt`
   // can serialize it later, but the sort comparator runs on every
   // result pair — comparing two short strings ("Inst" / "Net") per

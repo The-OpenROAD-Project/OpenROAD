@@ -646,7 +646,8 @@ static void writeInspectPayload(boost::json::object& o,
                                 std::vector<gui::Selected>& new_selectables,
                                 bool can_navigate_back,
                                 bool use_dbu,
-                                utl::Logger* logger)
+                                utl::Logger* logger,
+                                const odb::dbTransform& world_xfm = {})
 {
   o["can_navigate_back"] = can_navigate_back ? 1 : 0;
   if (!sel) {
@@ -669,6 +670,14 @@ static void writeInspectPayload(boost::json::object& o,
   odb::Rect bbox;
   const bool has_bbox = sel.getBBox(bbox);
   if (has_bbox) {
+    // A gui::Descriptor reports the bbox in the object's OWN block
+    // coordinates, but the client draws in root/world space — the same space
+    // selectAt already puts SelectionResult::bbox in.  Lift it through the
+    // chiplet's local-to-root transform so an object inside a translated or
+    // rotated dbChipInst is outlined where it is actually drawn.  Identity for
+    // single-die designs, and for callers with no chiplet context (see the
+    // world_xfm default).
+    world_xfm.apply(bbox);
     o["bbox"] = bboxArray(bbox);
   }
 
@@ -1043,12 +1052,15 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         }
       }
       inspected_sel = registry->makeSelected(results[pick].object);
+      // Pass the hit's chiplet transform so the emitted bbox lands in the same
+      // world space as results[pick].bbox.
       writeInspectPayload(root,
                           inspected_sel,
                           new_selectables,
                           /*can_navigate_back=*/false,
                           use_dbu,
-                          gen_->getLogger());
+                          gen_->getLogger(),
+                          results[pick].world_xfm);
     } else {
       root["can_navigate_back"] = 0;
     }
