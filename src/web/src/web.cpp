@@ -519,6 +519,42 @@ void WebSocketSession::do_read()
       });
 }
 
+namespace {
+
+// Run a request handler, converting any exception into an error response.
+//
+// Handlers run either on the read thread or on a bare io_context thread, and
+// neither has a try/catch above it: the threads run io_context::run() directly
+// (see createAndRunListener), so an exception escaping a handler unwinds out of
+// the thread function and calls std::terminate -- the whole openroad process
+// dies, taking the design with it.  A malformed request must cost the client
+// one error response, never the session.
+//
+// The obvious offender is a field whose JSON type is wrong: boost::json's
+// as_int64()/as_string() throw rather than return an error.  A client cannot
+// avoid this by being careful, either -- JSON.stringify serializes NaN and
+// Infinity as `null`, so any arithmetic that goes non-finite on the client
+// (an unbounded zoom, for one) arrives here as a null where a number belongs.
+WebSocketResponse invoke_handler(const RequestDispatcher::HandleFn& handle,
+                                 const WebSocketRequest& req,
+                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  try {
+    resp = handle(req, state);
+  } catch (const std::exception& e) {
+    resp = WebSocketResponse{};
+    resp.id = req.id;
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  resp.request_type = req.raw_type;
+  return resp;
+}
+
+}  // namespace
+
 void WebSocketSession::on_read(beast::error_code ec)
 {
   if (ec) {
@@ -542,19 +578,16 @@ void WebSocketSession::on_read(beast::error_code ec)
   const auto* entry = dispatcher_.find(req.type);
   if (entry != nullptr) {
     if (entry->run_inline) {
-      auto resp = entry->handle(req, state_);
-      resp.request_type = req.raw_type;
-      queue_response(resp);
+      queue_response(invoke_handler(entry->handle, req, state_));
     } else {
       auto handle = entry->handle;
-      net::post(websocket_.get_executor(),
-                [self = std::move(self),
-                 req = std::move(req),
-                 handle = std::move(handle)]() {
-                  auto resp = handle(req, self->state_);
-                  resp.request_type = req.raw_type;
-                  self->queue_response(resp);
-                });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self),
+           req = std::move(req),
+           handle = std::move(handle)]() {
+            self->queue_response(invoke_handler(handle, req, self->state_));
+          });
     }
   } else {
     // Unknown type -- return an error so the client knows the request

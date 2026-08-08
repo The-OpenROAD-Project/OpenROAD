@@ -3,7 +3,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeScaleBar, cssColorToHex, niceRoundParts, isValidHexColor }
+import { computeScaleBar, cssColorToHex, niceRoundParts, isValidHexColor,
+         maxUsefulZoom }
     from '../../src/ui-utils.js';
 
 describe('isValidHexColor', () => {
@@ -119,5 +120,48 @@ describe('computeScaleBar', () => {
             computeScaleBar(
                 { targetPx: 60, pxPerDbu: 0.001, dbuPerMicron: NaN }),
             expected);
+    });
+});
+
+describe('maxUsefulZoom', () => {
+    // designScale is pixels per DBU at zoom 0 (tileSize / maxDXDY), so these
+    // are the real values for a 256 px tile: gcd is 71510 DBU across, swerv
+    // 962800, microwatt 3610000.
+    const scaleFor = (maxDXDY) => 256 / maxDXDY;
+
+    it('caps where one DBU covers the pixel budget', () => {
+        // At the cap, designScale * 2^z must be at or just past maxPxPerDbu
+        // (8 by default) and one level lower must still be under it.
+        for (const maxDXDY of [71510, 962800, 3610000]) {
+            const scale = scaleFor(maxDXDY);
+            const z = maxUsefulZoom(scale);
+            assert.ok(scale * Math.pow(2, z) >= 8,
+                      `z=${z} should reach the budget for ${maxDXDY} DBU`);
+            assert.ok(scale * Math.pow(2, z - 1) < 8,
+                      `z=${z} should be the first level to reach it`);
+        }
+    });
+
+    it('returns an integer within the server tile-grid ceiling', () => {
+        for (const maxDXDY of [888, 71510, 3610000, 1e9]) {
+            const z = maxUsefulZoom(scaleFor(maxDXDY));
+            assert.equal(z, Math.trunc(z), 'zoom levels are integers');
+            assert.ok(z >= 1 && z <= 30, `z=${z} outside [1, 30]`);
+        }
+    });
+
+    it('bounds the zoom even before a design is loaded', () => {
+        // The whole point is that no path leaves maxZoom at Infinity.
+        for (const bad of [undefined, null, 0, -1, NaN, Infinity]) {
+            const z = maxUsefulZoom(bad);
+            assert.ok(Number.isFinite(z) && z > 0,
+                      `maxUsefulZoom(${bad}) must be finite and positive`);
+        }
+    });
+
+    it('honours a caller-supplied pixel budget', () => {
+        const scale = scaleFor(71510);
+        assert.ok(maxUsefulZoom(scale, 64) > maxUsefulZoom(scale, 8),
+                  'a larger budget allows deeper zoom');
     });
 });

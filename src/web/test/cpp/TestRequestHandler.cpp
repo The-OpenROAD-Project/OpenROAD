@@ -1125,6 +1125,66 @@ TEST_F(TileHandlerTest, OverlayTileMalformedFlagReturnsError)
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
 }
 
+// A zoom that is not an integer is the shape a non-finite client-side number
+// arrives in: JSON.stringify writes NaN and Infinity as `null`.  Reaching
+// as_int64() with one of those threw, and with no try/catch between the
+// handler and io_context::run() that killed the whole openroad process --
+// observed as the design vanishing and the session dropping after zooming in
+// to the limit and pressing F.  Each case must now be an error response.
+TEST_F(TileHandlerTest, TileRejectsNonIntegerZoomInsteadOfThrowing)
+{
+  struct Case
+  {
+    const char* what;
+    const char* json;
+  };
+  const Case cases[] = {
+      {"null zoom (a non-finite number after JSON.stringify)",
+       R"({"layer":"metal1","z":null,"x":0,"y":0})"},
+      {"fractional zoom", R"({"layer":"metal1","z":1.5,"x":0,"y":0})"},
+      {"null x", R"({"layer":"metal1","z":1,"x":null,"y":0})"},
+      {"zoom past the tile-grid ceiling",
+       R"({"layer":"metal1","z":60,"x":0,"y":0})"},
+      {"missing zoom", R"({"layer":"metal1","x":0,"y":0})"},
+  };
+
+  uint32_t id = 700;
+  for (const Case& c : cases) {
+    WebSocketRequest req;
+    req.id = id++;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(c.json);
+
+    WebSocketResponse resp;
+    EXPECT_NO_THROW(resp = handler_->handleTile(req, state_)) << c.what;
+    EXPECT_EQ(resp.type, WebSocketResponse::kError) << c.what;
+    EXPECT_EQ(resp.id, req.id) << c.what;
+  }
+}
+
+// Leaflet asks for tiles beyond the 2^z grid whenever the design is smaller
+// than the viewport or while panning at the border, and the renderers answer
+// those with a transparent tile.  A range check here would turn ordinary
+// panning into a stream of errors, so off-grid coordinates must still render.
+TEST_F(TileHandlerTest, TileStillServesOffGridCoordinates)
+{
+  gen_->eagerInit();
+
+  for (const char* json : {R"({"layer":"metal1","z":0,"x":-1,"y":0})",
+                           R"({"layer":"metal1","z":0,"x":3,"y":7})",
+                           R"({"layer":"metal1","z":2,"x":9999,"y":0})"}) {
+    WebSocketRequest req;
+    req.id = 710;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(json);
+
+    WebSocketResponse resp;
+    EXPECT_NO_THROW(resp = handler_->handleTile(req, state_)) << json;
+    EXPECT_EQ(resp.type, WebSocketResponse::kPng)
+        << "off-grid tiles are transparent, not errors: " << json;
+  }
+}
+
 TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
 {
   odb::dbMaster* master = lib_->findMaster("BUF_X16");

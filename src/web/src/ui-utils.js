@@ -117,6 +117,29 @@ export function attachGroupCollapse(header, arrow, children, collapsed) {
     });
 }
 
+// Deepest zoom worth offering, given `designScale` (pixels per DBU at zoom 0).
+//
+// Leaflet's default maxZoom is Infinity unless a layer supplies one, and
+// L.GridLayer -- unlike L.TileLayer -- supplies none.  Left unbounded the zoom
+// keeps climbing past any useful magnification until the arithmetic gives out:
+// the server's tile span (maxDXDY / 2^z) underflows to zero, so tiles come back
+// empty and the design appears to vanish, and the map's own 2^z factors reach
+// Infinity, which JSON.stringify writes as `null` in the tile request.
+//
+// The cap is where one DBU already covers `maxPxPerDbu` screen pixels: a DBU is
+// the smallest distance the database can express, so magnifying it further
+// shows nothing that was not already visible.  Returned as an integer because
+// the map rests on integer zoom levels (see buildMapOptions).
+export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
+    if (!Number.isFinite(designScale) || designScale <= 0) {
+        return 20;  // no design loaded yet; a finite fallback still bounds it
+    }
+    const z = Math.ceil(Math.log2(maxPxPerDbu / designScale));
+    // Never below 1 (a design bigger than the cap would otherwise pin the user
+    // at the fit zoom), never above the server's own tile-grid ceiling.
+    return Math.max(1, Math.min(30, z));
+}
+
 // True for a "#rrggbb" hex color string (the form an <input type="color">
 // emits and the form persisted for the background color).
 export function isValidHexColor(s) {

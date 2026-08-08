@@ -242,6 +242,52 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+bool parseTileCoords(const boost::json::object& json,
+                     int& z,
+                     int& x,
+                     int& y,
+                     std::string& error)
+{
+  const auto read = [&json, &error](const char* key, int& out) {
+    const auto* v = json.if_contains(key);
+    if (v == nullptr) {
+      error = std::string("missing \"") + key + "\"";
+      return false;
+    }
+    // is_int64() and not as_int64(): a null (what a non-finite client-side
+    // number serializes to) or a fractional zoom must be reported as the
+    // contract violation it is, not converted.
+    if (!v->is_int64()) {
+      error = std::string("\"") + key + "\" must be an integer";
+      return false;
+    }
+    const int64_t value = v->get_int64();
+    if (value < std::numeric_limits<int>::min()
+        || value > std::numeric_limits<int>::max()) {
+      error = std::string("\"") + key + "\" is out of range";
+      return false;
+    }
+    out = static_cast<int>(value);
+    return true;
+  };
+
+  if (!read("z", z) || !read("x", x) || !read("y", y)) {
+    return false;
+  }
+  if (z < 0 || z > kMaxTileZoom) {
+    error = "\"z\" is outside [0, " + std::to_string(kMaxTileZoom) + "]";
+    return false;
+  }
+  // x and y are deliberately NOT range-checked against the 2^z grid.  Leaflet
+  // routinely asks for tiles off the edge of the world -- whenever the design
+  // is smaller than the viewport, or while panning at the border -- and the
+  // renderers answer those with a transparent tile.  Rejecting them turns
+  // ordinary panning into a stream of errors: a first cut of this check
+  // produced 336 refusals in one session, all of them for legitimate
+  // off-grid tiles at zoom 0.
+  return true;
+}
+
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
                            const gui::Selected& sel)
@@ -2861,9 +2907,20 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   }
 
   const std::string layer = std::string(req.json.at("layer").as_string());
-  const int z = static_cast<int>(req.json.at("z").as_int64());
-  const int x = static_cast<int>(req.json.at("x").as_int64());
-  const int y = static_cast<int>(req.json.at("y").as_int64());
+  // Validate before doing any work: a malformed request must not reach the
+  // cache-key build below, let alone the renderer.
+  int z = 0;
+  int x = 0;
+  int y = 0;
+  if (std::string coord_error;
+      !parseTileCoords(req.json, z, x, y, coord_error)) {
+    WebSocketResponse resp;
+    resp.id = req.id;
+    resp.type = WebSocketResponse::kError;
+    const std::string err = "bad tile request: " + coord_error;
+    resp.payload.assign(err.begin(), err.end());
+    return resp;
+  }
 
   // Skip a render the client abandoned while it sat queued (best-effort).
   {
@@ -3130,9 +3187,16 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     const int tile_px
         = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
 
-    const int z = static_cast<int>(req.json.at("z").as_int64());
-    const int x = static_cast<int>(req.json.at("x").as_int64());
-    const int y = static_cast<int>(req.json.at("y").as_int64());
+    int z = 0;
+    int x = 0;
+    int y = 0;
+    if (std::string coord_error;
+        !parseTileCoords(req.json, z, x, y, coord_error)) {
+      resp.type = WebSocketResponse::kError;
+      const std::string err = "bad overlay request: " + coord_error;
+      resp.payload.assign(err.begin(), err.end());
+      return resp;
+    }
 
     resp.type = WebSocketResponse::kPng;
     resp.payload = gen_->generateOverlayTile(z,
@@ -3410,9 +3474,16 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kPng;
   try {
     const std::string req_name = std::string(req.json.at("name").as_string());
-    const int z = static_cast<int>(req.json.at("z").as_int64());
-    const int x = static_cast<int>(req.json.at("x").as_int64());
-    const int y = static_cast<int>(req.json.at("y").as_int64());
+    int z = 0;
+    int x = 0;
+    int y = 0;
+    if (std::string coord_error;
+        !parseTileCoords(req.json, z, x, y, coord_error)) {
+      resp.type = WebSocketResponse::kError;
+      const std::string err = "bad heat map request: " + coord_error;
+      resp.payload.assign(err.begin(), err.end());
+      return resp;
+    }
     // Same sizing contract as layer tiles: the client states the device-pixel
     // square, so the heat map is as crisp as the layers beneath it.
     const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));

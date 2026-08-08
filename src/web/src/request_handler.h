@@ -247,6 +247,12 @@ std::string assetPathFromTarget(std::string_view target);
 // For required fields, prefer the bare boost::json idiom
 // `obj.at(key).as_int64()` / `as_string()` / `as_bool()` / `as_double()`,
 // which throws on either missing or wrong-typed input.
+//
+// Throwing is safe here: WebSocketSession dispatches every handler through
+// invoke_handler(), which turns an escaped exception into an error response
+// for that one request.  It was not always so — the handlers ran with no
+// try/catch above them and out of io_context::run(), so a wrong-typed field
+// terminated the process.
 template <class T>
 T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
 {
@@ -255,6 +261,29 @@ T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
   }
   return default_val;
 }
+
+// Deepest tile zoom the server will address.  2^kMaxTileZoom must stay inside
+// an int, since the grid size is computed as an int in several renderers.
+constexpr int kMaxTileZoom = 30;
+
+// Read the z/x/y grid coordinates of a tile request into `z`/`x`/`y`.
+// Returns false, with `error` describing the offending field, when a
+// coordinate is missing, is not an integer, or the zoom is outside
+// [0, kMaxTileZoom].  x and y are not bounded to the grid: Leaflet asks for
+// off-grid tiles as a matter of course and the renderers answer with a
+// transparent tile.
+//
+// The type check is not paranoia about hand-written clients: JSON.stringify
+// serializes NaN and Infinity as `null`, so any client-side arithmetic that
+// goes non-finite -- an unbounded zoom being the one we hit -- reaches the
+// server as a null where a number belongs.  Reporting that as an error beats
+// rendering the transparent tiles that a degenerate zoom would otherwise
+// produce, which look to the user like the design vanished.
+bool parseTileCoords(const boost::json::object& json,
+                     int& z,
+                     int& x,
+                     int& y,
+                     std::string& error);
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler

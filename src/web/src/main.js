@@ -22,7 +22,7 @@ import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection,
-         computeScaleBar, rafCoalesce }
+         computeScaleBar, rafCoalesce, maxUsefulZoom }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -1239,6 +1239,11 @@ app.websocketManager.readyPromise.then(async () => {
                 [-maxDXDY * scale, 0],
                 [(designHeight - maxDXDY) * scale, designWidth * scale]
             ];
+            // Bound the zoom before the first fit: the tile layers are
+            // L.GridLayer, which contributes no maxZoom, so the map would
+            // otherwise let the user zoom until the tile math degenerates.
+            // Set per design, since the cap depends on this design's scale.
+            app.map.setMaxZoom(maxUsefulZoom(scale));
             app.map.fitBounds(app.fitBounds);
 
             if (staticCache) {
