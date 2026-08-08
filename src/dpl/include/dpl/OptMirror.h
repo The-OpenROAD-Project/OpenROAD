@@ -13,6 +13,10 @@
 
 namespace dpl {
 
+class Grid;
+class Network;
+class PlacementDRC;
+
 class NetBox
 {
  public:
@@ -40,7 +44,14 @@ using NetBoxes = std::vector<NetBox*>;
 class OptimizeMirroring
 {
  public:
-  OptimizeMirroring(utl::Logger* logger, odb::dbDatabase* db);
+  // network/grid/drc_engine are only needed to check the cell edge spacing
+  // rules of the mirrored instances. Pass nullptr for all three to skip the
+  // check.
+  OptimizeMirroring(utl::Logger* logger,
+                    odb::dbDatabase* db,
+                    Network* network,
+                    Grid* grid,
+                    PlacementDRC* drc_engine);
 
   void run();
 
@@ -55,11 +66,29 @@ class OptimizeMirroring
 
   int64_t hpwl(odb::dbInst* inst);  // Sum of ITerm hpwl's.
 
+  // Mirroring swaps the left/right cell edges, so the LEF58 cell edge
+  // spacing rules have to be rechecked for the mirrored orientation.
+  // The check needs the dpl network, grid and DRC engine.
+  bool hasEdgeSpacingCheck() const
+  {
+    return drc_engine_ != nullptr && network_ != nullptr && grid_ != nullptr;
+  }
+  bool isEdgeSpacingLegal(odb::dbInst* inst,
+                          const odb::dbOrientType& orient) const;
+  void updateNodeOrient(odb::dbInst* inst, const odb::dbOrientType& orient);
+
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
+  Network* network_ = nullptr;
+  Grid* grid_ = nullptr;
+  PlacementDRC* drc_engine_ = nullptr;
 
   NetBoxMap net_box_map_;
+
+  // Candidates rejected because mirroring would violate the cell edge
+  // spacing rules.
+  int edge_spacing_reject_count_ = 0;
 
   // Net bounding box size on nets with more instance terminals
   // than this are ignored.

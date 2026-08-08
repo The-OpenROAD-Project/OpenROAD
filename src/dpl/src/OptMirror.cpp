@@ -9,7 +9,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include "PlacementDRC.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/util.h"
@@ -48,13 +52,23 @@ void NetBox::restoreBox()
 
 ////////////////////////////////////////////////////////////////
 
-OptimizeMirroring::OptimizeMirroring(utl::Logger* logger, odb::dbDatabase* db)
-    : logger_(logger), db_(db), block_(db_->getChip()->getBlock())
+OptimizeMirroring::OptimizeMirroring(utl::Logger* logger,
+                                     odb::dbDatabase* db,
+                                     Network* network,
+                                     Grid* grid,
+                                     PlacementDRC* drc_engine)
+    : logger_(logger),
+      db_(db),
+      block_(db_->getChip()->getBlock()),
+      network_(network),
+      grid_(grid),
+      drc_engine_(drc_engine)
 {
 }
 
 void OptimizeMirroring::run()
 {
+  edge_spacing_reject_count_ = 0;
   findNetBoxes();
 
   NetBoxes sorted_boxes;
@@ -95,6 +109,13 @@ void OptimizeMirroring::run()
                             ? (hpwl_after - hpwl_before) / hpwl_before * 100
                             : 0.0;
     logger_->info(DPL, 23, "HPWL delta           {:8.1f} %", hpwl_delta);
+  }
+  if (edge_spacing_reject_count_ > 0) {
+    logger_->info(DPL,
+                  24,
+                  "Skipped {} instances that would violate cell edge spacing "
+                  "rules when mirrored",
+                  edge_spacing_reject_count_);
   }
 }
 
@@ -158,12 +179,25 @@ int OptimizeMirroring::mirrorCandidates(
 {
   int mirror_count = 0;
   for (odb::dbInst* inst : mirror_candidates) {
+    const dbOrientType orient = inst->getOrient();
+    const dbOrientType orient_my = orientMirrorY(orient);
+    // Mirroring swaps the left/right cell edge types, so the mirrored
+    // orientation can break the cell edge spacing rules even though the
+    // instance does not move.
+    if (!isEdgeSpacingLegal(inst, orient_my)) {
+      edge_spacing_reject_count_++;
+      debugPrint(logger_,
+                 DPL,
+                 "opt_mirror",
+                 1,
+                 "reject {} cell edge spacing",
+                 inst->getConstName());
+      continue;
+    }
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
     int64_t hpwl_before = hpwl(inst);
     saveNetBoxes(inst);
-    dbOrientType orient = inst->getOrient();
-    dbOrientType orient_my = orientMirrorY(orient);
     inst->setLocationOrient(orient_my);
     updateNetBoxes(inst);
     int64_t hpwl_after = hpwl(inst);
@@ -172,12 +206,42 @@ int OptimizeMirroring::mirrorCandidates(
       inst->setLocationOrient(orient);
       restoreNetBoxes(inst);
     } else {
+      // Keep the dpl node in sync so the edge spacing check of the following
+      // candidates sees the new orientation.
+      updateNodeOrient(inst, orient_my);
       debugPrint(
           logger_, DPL, "opt_mirror", 1, "mirror {}", inst->getConstName());
       mirror_count++;
     }
   }
   return mirror_count;
+}
+
+bool OptimizeMirroring::isEdgeSpacingLegal(
+    odb::dbInst* inst,
+    const odb::dbOrientType& orient) const
+{
+  if (!hasEdgeSpacingCheck() || !drc_engine_->hasCellEdgeSpacingTable()) {
+    return true;
+  }
+  const Node* cell = network_->getNode(inst);
+  if (cell == nullptr) {
+    return true;
+  }
+  return drc_engine_->checkEdgeSpacing(
+      cell, grid_->gridX(cell), grid_->gridRoundY(cell), orient);
+}
+
+void OptimizeMirroring::updateNodeOrient(odb::dbInst* inst,
+                                         const odb::dbOrientType& orient)
+{
+  if (!hasEdgeSpacingCheck()) {
+    return;
+  }
+  Node* cell = network_->getNode(inst);
+  if (cell != nullptr) {
+    cell->adjustCurrOrient(orient);
+  }
 }
 
 // apply mirror about Y axis to orient
