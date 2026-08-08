@@ -1933,7 +1933,7 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
     float extended_area_per_pin = 0.0;
     float area_diff = 0.0;
   };
-  static std::unordered_map<std::string, struct MasterStats> master_stats_map;
+  std::unordered_map<std::string, struct MasterStats> master_stats_map;
 
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
 
@@ -1980,23 +1980,26 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
     if (stats.pin_count == 0) {
       stats.pin_count = db_inst->getITerms().size();
     }
-    stats.total_original_area = block->dbuAreaToMicrons(orig_area);
-    stats.total_extended_area = block->dbuAreaToMicrons(ext_area);
+    stats.total_original_area += block->dbuAreaToMicrons(orig_area);
+    stats.total_extended_area += block->dbuAreaToMicrons(ext_area);
+  }
 
-    // Save area per pin
-    int pin_count = db_inst->getITerms().size();
-    if (pin_count > 0) {
+  // Calculate per-master derived metrics post-loop
+  for (auto& entry : master_stats_map) {
+    MasterStats& stats = entry.second;
+    if (stats.pin_count > 0 && stats.instance_count > 0) {
       stats.original_area_per_pin
-          = block->dbuAreaToMicrons(orig_area) / pin_count;
+          = stats.total_original_area
+            / (static_cast<double>(stats.pin_count) * stats.instance_count);
       stats.extended_area_per_pin
-          = block->dbuAreaToMicrons(ext_area) / pin_count;
+          = stats.total_extended_area
+            / (static_cast<double>(stats.pin_count) * stats.instance_count);
     }
-    // Populate area_diff as the percentage difference between extended and
-    // original area
-    if (orig_area != 0) {
+    if (stats.total_original_area != 0.0) {
       stats.area_diff = 100.0f
-                        * (static_cast<float>(ext_area - orig_area)
-                           / static_cast<float>(orig_area));
+                        * (static_cast<float>(stats.total_extended_area
+                                              - stats.total_original_area)
+                           / static_cast<float>(stats.total_original_area));
     } else {
       stats.area_diff = 0.0f;
     }
