@@ -17,6 +17,7 @@
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "gtest/gtest.h"
+#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -128,6 +129,53 @@ class FakeNetDescriptor : public gui::Descriptor
   void highlight(const std::any&, gui::Painter& painter) const override
   {
     painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
+  }
+};
+
+// Minimal dbInst descriptor reporting the instance bbox in its OWN block's
+// coordinates, which is what every real gui::Descriptor does.  Registering it
+// lets a select request reach writeInspectPayload without a dbSta (the real
+// DbInstDescriptor dereferences one in getProperties).
+class LocalBBoxInstDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbInst*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Inst"; }
+
+  std::string getTypeName(const std::any&) const override { return "Inst"; }
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  {
+    bbox = std::any_cast<odb::dbInst*>(object)->getBBox()->getBox();
+    return true;
+  }
+
+  bool isInst(const std::any&) const override { return true; }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbInst*>(l) < std::any_cast<odb::dbInst*>(r);
+  }
+
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
@@ -2718,6 +2766,86 @@ TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
   std::lock_guard<std::mutex> lock(state_.cancelled_mutex);
   EXPECT_EQ(state_.cancelled_ids.count(5), 1u);
   EXPECT_EQ(state_.cancelled_ids.count(6), 1u);
+}
+
+// Regression: the inspect payload's `bbox` must be in ROOT/world coordinates.
+//
+// A gui::Descriptor reports a bbox in the object's own block coordinates, while
+// selectAt already transforms SelectionResult::bbox into world space.  The
+// client draws its selection outline from the payload's `bbox`, so if that one
+// stays block-local, every object inside a translated dbChipInst is outlined at
+// the untransformed location — off by exactly the chiplet offset.
+TEST_F(SelectHandlerTest, InspectBboxIsInWorldCoordinatesForAChiplet)
+{
+  // handleSelect resolves the picked hit through the descriptor registry, which
+  // nothing else in this binary populates.  Scoped so the process-global
+  // registry is left as it was found even if an assertion below fires.  The
+  // registry holds descriptors by unique_ptr, so this must be heap-allocated.
+  struct ScopedInstDescriptor
+  {
+    ScopedInstDescriptor() : registry(gui::DescriptorRegistry::instance())
+    {
+      registry->registerDescriptor<odb::dbInst*>(new LocalBBoxInstDescriptor);
+    }
+    ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
+    gui::DescriptorRegistry* registry;
+  } scoped_inst_descriptor;
+
+  // Re-root the design under a HIER chip holding one instance of the fixture's
+  // chip, translated far enough that a block-local bbox cannot be mistaken for
+  // a world one.
+  constexpr int kOffsetX = 400000;
+  constexpr int kOffsetY = 250000;
+  odb::dbChip* master = getDb()->getChip();
+  ASSERT_NE(master, nullptr);
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), /*tech=*/nullptr, "root", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst* chiplet = odb::dbChipInst::create(root, master, "die0");
+  chiplet->setLoc(odb::Point3D(kOffsetX, kOffsetY, 0));
+  getDb()->setTopChip(root);
+
+  // buf1 sits at the origin of its own block, so in world space it sits at the
+  // chiplet offset.
+  odb::dbInst* buf1 = block_->findInst("buf1");
+  ASSERT_NE(buf1, nullptr);
+  const odb::Rect local = buf1->getBBox()->getBox();
+
+  WebSocketRequest req;
+  req.id = 77;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(R"({"dbu_x":401000,"dbu_y":251000,"zoom":0,)"
+                      R"("visible_layers":[]})");
+  auto resp = handler_->handleSelect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object root_obj = parseObj(payloadStr(resp));
+  const auto& selected = root_obj.at("selected").as_array();
+  ASSERT_FALSE(selected.empty()) << payloadStr(resp);
+  ASSERT_TRUE(root_obj.contains("bbox")) << payloadStr(resp);
+
+  const auto& bbox = root_obj.at("bbox").as_array();
+  ASSERT_EQ(bbox.size(), 4u);
+  const odb::Rect payload_bbox(bbox[0].to_number<int>(),
+                               bbox[1].to_number<int>(),
+                               bbox[2].to_number<int>(),
+                               bbox[3].to_number<int>());
+
+  // Translated by the chiplet offset, not left in block-local space.
+  EXPECT_EQ(payload_bbox,
+            odb::Rect(local.xMin() + kOffsetX,
+                      local.yMin() + kOffsetY,
+                      local.xMax() + kOffsetX,
+                      local.yMax() + kOffsetY));
+  EXPECT_NE(payload_bbox, local);
+
+  // And it agrees with the world-space bbox selectAt reports for the same hit,
+  // which is what the two used to disagree about.
+  const auto& hit = selected[0].as_object().at("bbox").as_array();
+  EXPECT_EQ(payload_bbox,
+            odb::Rect(hit[0].to_number<int>(),
+                      hit[1].to_number<int>(),
+                      hit[2].to_number<int>(),
+                      hit[3].to_number<int>()));
 }
 
 }  // namespace
