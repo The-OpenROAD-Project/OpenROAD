@@ -839,11 +839,19 @@ void PlacerBaseCommon::init()
     }
   }
 
-  // Extending instances by average pin density.
-  auto count_signal_pins = [](const Instance& inst) -> int {
-    return std::ranges::count_if(
-        inst.dbInst()->getITerms(),
-        [](odb::dbITerm* iterm) { return !iterm->getSigType().isSupply(); });
+  // Extending instances by average pin density using memoized master signal pin
+  // counts.
+  boost::unordered::unordered_flat_map<const odb::dbMaster*, int>
+      master_stats_map;
+  auto get_signal_pin_count = [&master_stats_map](const Instance& inst) -> int {
+    auto* master = inst.dbInst()->getMaster();
+    auto [it, inserted] = master_stats_map.try_emplace(master, 0);
+    if (inserted) {
+      it->second = static_cast<int>(std::ranges::count_if(
+          master->getMTerms(),
+          [](odb::dbMTerm* mterm) { return !mterm->getSigType().isSupply(); }));
+    }
+    return it->second;
   };
 
   int total_signal_pins = 0;
@@ -853,7 +861,7 @@ void PlacerBaseCommon::init()
     if (inst.isInstance()) {
       total_area += inst.getArea();
       if (!inst.isFixed()) {
-        total_signal_pins += count_signal_pins(inst);
+        total_signal_pins += get_signal_pin_count(inst);
         movable_area += inst.getArea();
       }
     }
@@ -893,7 +901,7 @@ void PlacerBaseCommon::init()
   if (!pbVars_.disablePinDensityAdjust) {
     for (auto& inst : instStor_) {
       if (!inst.isFixed() && inst.isInstance()) {
-        int pin_count = count_signal_pins(inst);
+        int pin_count = get_signal_pin_count(inst);
         if (pin_count > 2 && avg_density > 0.0) {
           double target_area = static_cast<double>(pin_count) / avg_density;
           double scale
