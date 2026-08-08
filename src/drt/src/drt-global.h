@@ -67,6 +67,11 @@ struct RouterConfiguration
 
   int END_ITERATION = 80;
 
+  // When the loaded design already has DRC markers, detailed routing imports
+  // them and resumes from this iteration instead of iteration 0 (skipping the
+  // initial full rip-up passes that are not useful when re-routing violations).
+  int REROUTE_VIOLATIONS_START_ITER = 3;
+
   int NDR_NETS_RIPUP_HARDINESS = 3;  // max ripup avoids
   int CLOCK_NETS_TRUNK_RIPUP_HARDINESS = 100;
   int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10;
