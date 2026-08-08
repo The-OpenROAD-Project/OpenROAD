@@ -1348,6 +1348,16 @@ bool IRSolver::hasSolution(sta::Scene* corner) const
   return false;
 }
 
+void IRSolver::reportNoSolution(sta::Scene* corner) const
+{
+  logger_->error(utl::PSM,
+                 92,
+                 "No solution available for {} on corner {}. Run "
+                 "analyze_power_grid first.",
+                 net_->getName(),
+                 corner != nullptr ? corner->name() : "default");
+}
+
 IRSolver::Results IRSolver::getSolution(sta::Scene* corner) const
 {
   Results results;
@@ -1507,6 +1517,10 @@ void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
     return;
   }
 
+  if (voltages_.find(corner) == voltages_.end()) {
+    reportNoSolution(corner);
+  }
+
   std::ofstream report(voltage_file);
   if (!report) {
     logger_->error(utl::PSM,
@@ -1547,6 +1561,12 @@ void IRSolver::writeEMFile(const std::string& em_file, sta::Scene* corner) const
     return;
   }
 
+  // generateCurrentMap() below derives per-connection current from the node
+  // voltages, so voltages are what this writer requires.
+  if (voltages_.find(corner) == voltages_.end()) {
+    reportNoSolution(corner);
+  }
+
   std::ofstream report(em_file);
   if (!report) {
     logger_->error(utl::PSM, 91, "Unable to open {} to write EM file", em_file);
@@ -1578,6 +1598,10 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
                               sta::Scene* corner,
                               const std::string& voltage_source_file) const
 {
+  if (currents_.find(corner) == currents_.end()) {
+    reportNoSolution(corner);
+  }
+
   std::ofstream spice(spice_file);
   if (!spice.is_open()) {
     logger_->error(
@@ -1608,7 +1632,13 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
   const auto& currents = currents_.at(corner);
   std::size_t current_number = 0;
   for (const auto& node : network_->getITermNodes()) {
-    const auto current = currents.at(node.get());
+    // The current map only holds nodes of instances that draw power, so an
+    // instance with none -- a filler, tap or decap -- has no entry at all.
+    const auto find_current = currents.find(node.get());
+    if (find_current == currents.end()) {
+      continue;
+    }
+    const auto current = find_current->second;
     if (std::abs(current) < kSpiceFileMinCurrent) {
       continue;
     }
