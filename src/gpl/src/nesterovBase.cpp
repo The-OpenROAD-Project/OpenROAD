@@ -76,6 +76,7 @@ static float getSecondNorm(const std::vector<FloatPoint>& a);
 // Choose to use "float" only in the following functions
 static float getOverlapDensityArea(const Bin& bin, const GCell* cell);
 
+#pragma omp declare simd
 static float fastExp(float exp);
 
 ////////////////////////////////////////////////
@@ -1420,91 +1421,132 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
 
   // If checks are very expensive, so short circuit them if debug is not enabled
   bool debug_enabled = log_->debugCheck(GPL, "wlUpdateWA", 1);
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
-    // old-style loop for old OpenMP
+#pragma omp parallel num_threads(num_threads_)
+  {
+    std::vector<float> cx, cy;
+    std::vector<float> expMinX, expMaxX, expMinY, expMaxY;
+    std::vector<float> expMinX_fast, expMaxX_fast, expMinY_fast, expMaxY_fast;
 
-    gNet->clearWaVars();
-    gNet->updateBox();
+#pragma omp for
+    for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
+      gNet->clearWaVars();
+      gNet->updateBox();
 
-    for (auto& gPin : gNet->getGPins()) {
-      // The WA terms are shift invariant:
-      //
-      //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
-      //   -----------------    = -----------------
-      //   Sum(exp(x_i))          Sum(exp(x_i - C))
-      //
-      // So we shift to keep the exponential from overflowing
-      float expMinX = (gNet->lx() - gPin->cx()) * wlCoeffX;
-      float expMaxX = (gPin->cx() - gNet->ux()) * wlCoeffX;
-      float expMinY = (gNet->ly() - gPin->cy()) * wlCoeffY;
-      float expMaxY = (gPin->cy() - gNet->uy()) * wlCoeffY;
-
-      // min x
-      if (expMinX > nbVars_.minWireLengthForceBar) {
-        gPin->setMinExpSumX(fastExp(expMinX));
-        gNet->addWaExpMinSumX(gPin->minExpSumX());
-        gNet->addWaXExpMinSumX(gPin->cx() * gPin->minExpSumX());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MinX updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->minExpSumX());
-        }
+      auto& gPins = gNet->getGPins();
+      int numPins = gPins.size();
+      if (numPins == 0) {
+        continue;
       }
 
-      // max x
-      if (expMaxX > nbVars_.minWireLengthForceBar) {
-        gPin->setMaxExpSumX(fastExp(expMaxX));
-        gNet->addWaExpMaxSumX(gPin->maxExpSumX());
-        gNet->addWaXExpMaxSumX(gPin->cx() * gPin->maxExpSumX());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MaxX updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->maxExpSumX());
-        }
+      if (cx.size() < numPins) {
+        cx.resize(numPins);
+        cy.resize(numPins);
+        expMinX.resize(numPins);
+        expMaxX.resize(numPins);
+        expMinY.resize(numPins);
+        expMaxY.resize(numPins);
+        expMinX_fast.resize(numPins);
+        expMaxX_fast.resize(numPins);
+        expMinY_fast.resize(numPins);
+        expMaxY_fast.resize(numPins);
       }
 
-      // min y
-      if (expMinY > nbVars_.minWireLengthForceBar) {
-        gPin->setMinExpSumY(fastExp(expMinY));
-        gNet->addWaExpMinSumY(gPin->minExpSumY());
-        gNet->addWaYExpMinSumY(gPin->cy() * gPin->minExpSumY());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MinY updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->minExpSumY());
-        }
+      float nlx = gNet->lx();
+      float nux = gNet->ux();
+      float nly = gNet->ly();
+      float nuy = gNet->uy();
+
+      for (int i = 0; i < numPins; i++) {
+        cx[i] = gPins[i]->cx();
+        cy[i] = gPins[i]->cy();
       }
 
-      // max y
-      if (expMaxY > nbVars_.minWireLengthForceBar) {
-        gPin->setMaxExpSumY(fastExp(expMaxY));
-        gNet->addWaExpMaxSumY(gPin->maxExpSumY());
-        gNet->addWaYExpMaxSumY(gPin->cy() * gPin->maxExpSumY());
-        if (debug_enabled && gPin->getGCell()
-            && gPin->getGCell()->isInstance()) {
-          debugPrint(log_,
-                     GPL,
-                     "wlUpdateWA",
-                     1,
-                     "MaxY updated: {} {:g}",
-                     gPin->getGCell()->getName(),
-                     gPin->maxExpSumY());
+#pragma omp simd
+      for (int i = 0; i < numPins; i++) {
+        expMinX[i] = (nlx - cx[i]) * wlCoeffX;
+        expMaxX[i] = (cx[i] - nux) * wlCoeffX;
+        expMinY[i] = (nly - cy[i]) * wlCoeffY;
+        expMaxY[i] = (cy[i] - nuy) * wlCoeffY;
+      }
+
+      float minBar = nbVars_.minWireLengthForceBar;
+#pragma omp simd
+      for (int i = 0; i < numPins; i++) {
+        expMinX_fast[i] = (expMinX[i] > minBar)
+                              ? fastExp(std::max(expMinX[i], minBar))
+                              : 0.0f;
+        expMaxX_fast[i] = (expMaxX[i] > minBar)
+                              ? fastExp(std::max(expMaxX[i], minBar))
+                              : 0.0f;
+        expMinY_fast[i] = (expMinY[i] > minBar)
+                              ? fastExp(std::max(expMinY[i], minBar))
+                              : 0.0f;
+        expMaxY_fast[i] = (expMaxY[i] > minBar)
+                              ? fastExp(std::max(expMaxY[i], minBar))
+                              : 0.0f;
+      }
+      for (int i = 0; i < numPins; i++) {
+        auto gPin = gPins[i];
+
+        if (expMinX[i] > minBar) {
+          gPin->setMinExpSumX(expMinX_fast[i]);
+          gNet->addWaExpMinSumX(expMinX_fast[i]);
+          gNet->addWaXExpMinSumX(cx[i] * expMinX_fast[i]);
+          if (debug_enabled && gPin->getGCell()
+              && gPin->getGCell()->isInstance()) {
+            debugPrint(log_,
+                       GPL,
+                       "wlUpdateWA",
+                       1,
+                       "MinX updated: {} {:g}",
+                       gPin->getGCell()->getName(),
+                       gPin->minExpSumX());
+          }
+        }
+        if (expMaxX[i] > minBar) {
+          gPin->setMaxExpSumX(expMaxX_fast[i]);
+          gNet->addWaExpMaxSumX(expMaxX_fast[i]);
+          gNet->addWaXExpMaxSumX(cx[i] * expMaxX_fast[i]);
+          if (debug_enabled && gPin->getGCell()
+              && gPin->getGCell()->isInstance()) {
+            debugPrint(log_,
+                       GPL,
+                       "wlUpdateWA",
+                       1,
+                       "MaxX updated: {} {:g}",
+                       gPin->getGCell()->getName(),
+                       gPin->maxExpSumX());
+          }
+        }
+        if (expMinY[i] > minBar) {
+          gPin->setMinExpSumY(expMinY_fast[i]);
+          gNet->addWaExpMinSumY(expMinY_fast[i]);
+          gNet->addWaYExpMinSumY(cy[i] * expMinY_fast[i]);
+          if (debug_enabled && gPin->getGCell()
+              && gPin->getGCell()->isInstance()) {
+            debugPrint(log_,
+                       GPL,
+                       "wlUpdateWA",
+                       1,
+                       "MinY updated: {} {:g}",
+                       gPin->getGCell()->getName(),
+                       gPin->minExpSumY());
+          }
+        }
+        if (expMaxY[i] > minBar) {
+          gPin->setMaxExpSumY(expMaxY_fast[i]);
+          gNet->addWaExpMaxSumY(expMaxY_fast[i]);
+          gNet->addWaYExpMaxSumY(cy[i] * expMaxY_fast[i]);
+          if (debug_enabled && gPin->getGCell()
+              && gPin->getGCell()->isInstance()) {
+            debugPrint(log_,
+                       GPL,
+                       "wlUpdateWA",
+                       1,
+                       "MaxY updated: {} {:g}",
+                       gPin->getGCell()->getName(),
+                       gPin->maxExpSumY());
+          }
         }
       }
     }
@@ -4938,6 +4980,7 @@ static float calculateBiVariateNormalCDF(biNormalParameters i)
 }
 //
 // https://codingforspeed.com/using-faster-exponential-approximation/
+#pragma omp declare simd
 static float fastExp(float exp)
 {
   exp = 1.0f + exp / 1024.0f;
