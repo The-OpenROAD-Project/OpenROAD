@@ -105,8 +105,10 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dbNetwork",
         ":dbSta",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/utl",
     ],
 )
