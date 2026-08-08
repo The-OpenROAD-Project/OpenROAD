@@ -83,7 +83,7 @@ clock_tree_synthesis
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). The default value is `0.6`, and the allowed values are floats `[0, 1.0]`. |
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
-| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the size will be automatically chosen between `10, 20 or 30` based on the tree buffer max cap. |
+| -sink_clustering_size | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers [0, MAX_INT]. If this is not specified, sinks will be clustered based on the sink buffer's maximum fanout. |
 | `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the diameter will be automatically chosen between `50, 100 or 200`, based on the tree buffer max cap. |
 | `-macro_clustering_size` | Specifies the maximum number of sinks per cluster for the macro tree. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-macro_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the macro tree. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
@@ -179,7 +179,7 @@ set_cts_config
 | `-sink_buffer_max_cap_derate` | Use this option to control automatic buffer selection. To favor strong(weak) drive strength buffers use a small(large) value.  The default value is `0.01`, meaning that buffers are selected by derating max cap limit by 0.01. The value of 1.0 means no derating of max cap limit.  |
 | `-sink_clustering_levels` | ... |
 | `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the diameter will be automatically chosen between `50, 100 or 200`, based on the tree buffer max cap. |
-| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the size will be automatically chosen between `10, 20 or 30` based on the tree buffer max cap. |
+| -sink_clustering_size | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers [0, MAX_INT]. If this is not specified, sinks will be clustered based on the sink buffer's maximum fanout. |
 | `-sink_clustering_levels` | ... |
 | `-skip_nets` | Tcl list containing the clock nets to be skipped (e.g. `{net1, net2}`). If the net is a root clock net, the whole clock is skipped, otherwise only the subnet specified is skipped. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
