@@ -59,6 +59,7 @@ clock_tree_synthesis
     [-balance_levels]
     [-sink_clustering_levels levels]
     [-num_static_layers]
+    [-num_max_leaf_sinks sinks]
     [-sink_clustering_buffer]
     [-obstruction_aware]
     [-apply_ndr strategy]
@@ -90,6 +91,7 @@ clock_tree_synthesis
 | `-balance_levels` | Attempt to keep a similar number of levels in the clock tree across non-register cells (e.g., clock-gate or inverter). The default value is `False`, and the allowed values are bool. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_max_leaf_sinks` | Maximum number of sinks per leaf sub-region used as the H-tree stop criterion. The H-tree keeps adding levels until the number of sinks per sub-region drops below this value. The default value is `15`, and the allowed values are positive integers `[1, MAX_INT]`. Lowering it produces a deeper H-tree with more buffers but tighter skew/latency balance; raising it produces a shallower tree with fewer buffers but looser balance. (A value larger than the root buffer's fanout limit is clamped to that limit.) |
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
 | `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
 | `-apply_ndr` | Applies 2X spacing non-default rule to clock nets except leaf-level nets following some strategy. There are four strategy options: `none, root_only, half, full`. If this is not specified, the default value is `none`. |
@@ -128,6 +130,29 @@ report_cts
 | Switch Name | Description |
 | ----- | ----- |
 | `-out_file` | The file to save `cts` reports. If this parameter is omitted, the report is streamed to `stdout` and not saved. |
+
+### Report Clock Tree
+
+This command reports clock-tree quality-of-results (QoR) metrics after a
+successful `clock_tree_synthesis` run. It is read-only and does not modify the
+design. For each synthesized clock (and a combined total when there is more
+than one), it reports:
+- Number of sinks, clock buffers, clock nets and tree levels
+- Total clock-net wire length (microns)
+- Achieved insertion delay / clock latency (min, max, average) from STA
+- Achieved clock skew (max latency - min latency)
+- An estimate of clock switching power (with `-power`)
+
+```tcl
+report_clock_tree
+    [-power]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-power` | Also report an estimate of the clock-tree dynamic switching power. The estimate uses `P = C_load * Vdd^2 * f_clk`, where the load capacitance combines input-pin capacitance and an HPWL-based wire-cap proxy, `Vdd` is taken from the operating conditions, and `f_clk` is derived from the SDC clock period. |
 
 ### Set CTS configuration
 

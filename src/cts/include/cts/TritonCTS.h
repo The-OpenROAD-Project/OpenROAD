@@ -4,6 +4,7 @@
 #pragma once
 
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -66,6 +67,11 @@ class TritonCTS
 
   void runTritonCts();
   void reportCtsMetrics();
+  // Additive, read-only post-CTS QoR analysis.  Walks the synthesized clock
+  // tree in the OpenDB and reports per-clock and total skew, insertion delay
+  // (latency), buffer/level counts, clock-net wire length and an estimate of
+  // clock switching power.  Does not modify the database.
+  void reportClockTree(bool report_power);
   CtsOptions* getParms() { return options_; }
   TechChar* getCharacterization() { return techChar_.get(); }
   odb::dbBlock* getBlock() { return db_->getChip()->getBlock(); }
@@ -213,6 +219,36 @@ class TritonCTS
                         ClockInst& dummyClock);
   void printClockNetwork(const Clock& clockNet) const;
   void setAllClocksPropagated();
+
+  // report_clock_tree helpers (read-only DB/STA analysis)
+  struct ClockTreeReport
+  {
+    std::string clock_name;
+    odb::dbNet* root_net = nullptr;
+    unsigned num_sinks = 0;
+    unsigned num_buffers = 0;
+    unsigned num_clock_nets = 0;
+    int max_level = 0;
+    double wire_length_um = 0.0;  // total clock-net wire length (um)
+    double total_load_cap = 0.0;  // sum of pin + estimated wire cap (F)
+    float min_latency = std::numeric_limits<float>::max();
+    float max_latency = std::numeric_limits<float>::lowest();
+    double sum_latency = 0.0;
+    unsigned latency_samples = 0;
+    bool has_latency = false;
+    float clock_period = 0.0;  // seconds, from SDC (0 if unknown)
+    // >=0 means the switching power was precomputed (per-clock sum, used for
+    // the multi-clock totals); <0 means compute it from cap * vdd^2 * f.
+    double switching_power = -1.0;
+  };
+  void collectClockTreeReport(odb::dbNet* root_net,
+                              const std::string& clock_name,
+                              float clock_period,
+                              ClockTreeReport& report);
+  float getSinkClkArrival(odb::dbITerm* sink_iterm, odb::dbNet* root_net);
+  double clockOperatingVoltage();
+  double clockSwitchingPower(const ClockTreeReport& report, double vdd);
+  void emitClockTreeReport(const ClockTreeReport& report, bool report_power);
   void repairClockNets();
   void balanceMacroRegisterLatencies();
 
