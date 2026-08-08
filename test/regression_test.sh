@@ -30,7 +30,11 @@ esac
 echo "Command: $CMD"
 EXPECTED_EXIT_CODE="${TEST_EXPECTED_EXIT_CODE:-0}"
 set +e
-$CMD 2>&1 | tee $LOG_FILE
+if [ -n "${ASAN_PRELOAD:-}" ]; then
+    LD_PRELOAD="${ASAN_PRELOAD}${LD_PRELOAD:+:${LD_PRELOAD}}" $CMD 2>&1 | tee $LOG_FILE
+else
+    $CMD 2>&1 | tee $LOG_FILE
+fi
 CMD_EXIT=${PIPESTATUS[0]}
 set -e
 

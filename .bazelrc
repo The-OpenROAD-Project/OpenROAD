@@ -120,7 +120,11 @@ build:macos --host_macos_minimum_os=13.3
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
-build:asan --copt=-fsanitize=address
+# Use hermetic LLVM's sanitizer setting so compiler-rt is built and staged in
+# the toolchain resource directory. external_include_paths is incompatible
+# with compiler-rt's internal LLVM header dependencies.
+build:asan --@llvm//config:asan=true
+build:asan --features=-external_include_paths
 build:asan --copt=-DADDRESS_SANITIZER
 build:asan --copt=-O1
 build:asan --copt=-g
@@ -128,7 +132,6 @@ build:asan --copt=-fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:asan --copt=-gz=zlib
 build:asan --linkopt=-gz=zlib
-build:asan --linkopt=-fsanitize=address
 # TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
 # dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
 # Override the per-target malloc attribute to use the system allocator, which
