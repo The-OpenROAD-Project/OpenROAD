@@ -97,6 +97,105 @@ TEST_F(BumpsFixture, bumpAlignmentFailure)
   }
 }
 
+// Fixture for the bump layer check: a region with a declared contact layer,
+// plus bump masters whose pin geometry lands on that layer or a different
+// one.
+class BumpLayerFixture : public CheckerFixture
+{
+ protected:
+  BumpLayerFixture()
+  {
+    contact_layer_ = dbTechLayer::create(tech_, "M8", dbTechLayerType::ROUTING);
+    other_layer_ = dbTechLayer::create(tech_, "M1", dbTechLayerType::ROUTING);
+
+    dbBlock::create(chip1_, "block1");
+
+    lib_ = dbLib::create(db_.get(), "bump_lib", tech_, ',');
+    on_layer_master_ = makeBumpMaster("on_layer_pad", contact_layer_);
+    off_layer_master_ = makeBumpMaster("off_layer_pad", other_layer_);
+
+    region_ = dbChipRegion::create(
+        chip1_, "r_contact", dbChipRegion::Side::FRONT, contact_layer_);
+    region_->setBox(Rect(0, 0, 2000, 2000));
+  }
+
+  dbMaster* makeBumpMaster(const char* name, dbTechLayer* layer)
+  {
+    dbMaster* master = dbMaster::create(lib_, name);
+    master->setWidth(100);
+    master->setHeight(100);
+    master->setType(dbMasterType::CORE);
+    dbMTerm* mterm
+        = dbMTerm::create(master, "pin", dbIoType::INOUT, dbSigType::SIGNAL);
+    dbMPin* mpin = dbMPin::create(mterm);
+    dbBox::create(mpin, layer, 0, 0, 100, 100);
+    master->setFrozen();
+    return master;
+  }
+
+  dbChipBump* createBump(dbChipRegion* region,
+                         dbMaster* master,
+                         const char* name)
+  {
+    dbInst* inst = dbInst::create(chip1_->getBlock(), master, name);
+    inst->setOrigin(500, 500);
+    inst->setPlacementStatus(dbPlacementStatus::PLACED);
+    return dbChipBump::create(region, inst);
+  }
+
+  dbChipInst* instantiate()
+  {
+    auto inst = dbChipInst::create(top_chip_, chip1_, "inst1");
+    inst->setLoc(Point3D(0, 0, 0));
+    inst->setOrient(dbOrientType3D(dbOrientType::R0, false));
+    return inst;
+  }
+
+  dbLib* lib_;
+  dbTechLayer* contact_layer_;
+  dbTechLayer* other_layer_;
+  dbMaster* on_layer_master_;
+  dbMaster* off_layer_master_;
+  dbChipRegion* region_;
+};
+
+TEST_F(BumpLayerFixture, bumpOnDeclaredLayerOk)
+{
+  createBump(region_, on_layer_master_, "b1");
+  instantiate();
+
+  check();
+
+  EXPECT_EQ(getMarkers(CheckerFixture::bump_layer_category).size(), 0);
+}
+
+TEST_F(BumpLayerFixture, bumpOffDeclaredLayerFlagged)
+{
+  createBump(region_, off_layer_master_, "b1");
+  instantiate();
+
+  check();
+
+  auto markers = getMarkers(CheckerFixture::bump_layer_category);
+  EXPECT_EQ(markers.size(), 1);
+  if (!markers.empty()) {
+    EXPECT_STREQ(markers[0]->getComment().c_str(),
+                 "Bump b1 in region r_contact has no pin geometry on the "
+                 "region's declared contact layer M8");
+  }
+}
+
+TEST_F(BumpLayerFixture, regionWithoutDeclaredLayerIsUnverifiable)
+{
+  // r1_fr comes from CheckerFixture with a null layer.
+  createBump(chip1_->findChipRegion("r1_fr"), off_layer_master_, "b1");
+  instantiate();
+
+  check();
+
+  EXPECT_EQ(getMarkers(CheckerFixture::bump_layer_category).size(), 0);
+}
+
 }  // namespace
 
 }  // namespace odb
