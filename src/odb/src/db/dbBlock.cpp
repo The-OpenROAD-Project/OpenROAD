@@ -871,7 +871,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
  * @param block The database block containing the objects.
  * @param table The internal database table storing the object implementations.
  * @param module_field Member pointer to the field storing the parent module ID
- *                     (e.g., &_dbInst::module_ or &_dbModInst::parent_).
+ *                     (e.g., &_dbModInst::parent_).
  * @param hash_field Member pointer to the hash map member in _dbModule where
  *                   the object ID should be stored.
  */
@@ -892,6 +892,22 @@ static void rebuildModuleHash(
     _dbModule* module = block.module_tbl_->getPtr(mid);
     if (module && _obj->name_) {
       (module->*hash_field)[_obj->name_] = _obj->getId();
+    }
+  }
+}
+
+static void rebuildDbInstModuleHash(_dbBlock& block)
+{
+  dbSet<dbInst> items((dbBlock*) &block, block.inst_tbl_);
+  for (dbInst* obj : items) {
+    _dbInst* _obj = (_dbInst*) obj;
+    dbId<_dbModule> mid = _obj->getModuleId();
+    if (mid == 0) {
+      mid = block.top_module_;
+    }
+    _dbModule* module = block.module_tbl_->getPtr(mid);
+    if (module && _obj->name_) {
+      module->dbinst_hash_[_obj->name_] = _obj->getId();
     }
   }
 }
@@ -989,8 +1005,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   if (db->isSchema(kSchemaDbRemoveHash)) {
     // Construct dbinst_hash_
-    rebuildModuleHash<dbInst>(
-        block, block.inst_tbl_, &_dbInst::module_, &_dbModule::dbinst_hash_);
+    rebuildDbInstModuleHash(block);
   }
   if (db->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> *block.scan_inst_tbl_;
