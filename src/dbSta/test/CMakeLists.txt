@@ -1,6 +1,12 @@
 or_integration_tests(
   "dbSta"
   TESTS
+    pocv_derate
+    pocv_baseline
+    pocv_propagate
+    lvf_sigma
+    lvf_flagoff
+    lvf_table
     block_sta1
     check_axioms
     clock_pin
