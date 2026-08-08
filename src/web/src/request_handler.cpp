@@ -154,8 +154,7 @@ class [[nodiscard]] ScopedDbuFormat
       return;  // keep default (raw DBU)
     }
     const double dbu_per_micron = db->getDbuPerMicron();
-    const int precision
-        = static_cast<int>(std::ceil(std::log10(dbu_per_micron)));
+    const int precision = dbuPrecision(dbu_per_micron);
     gui::Descriptor::Property::convert_dbu
         = [dbu_per_micron, precision](int value, bool add_units) {
             auto str = utl::to_numeric_string(

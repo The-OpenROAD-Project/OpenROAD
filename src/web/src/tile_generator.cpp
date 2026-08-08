@@ -48,20 +48,31 @@
 
 namespace web {
 
-namespace {
+int dbuPrecision(const double dbu_per_micron)
+{
+  if (dbu_per_micron <= 0) {
+    return 0;
+  }
+  // The epsilon defends against a libm whose log10 returns a hair above an
+  // exact integer for a power of ten (3.0000000000000004 for 1000), which would
+  // ceil() to one digit too many.  It cannot round the result down: log10 of a
+  // non-power-of-ten integer is never that close to an integer from above.
+  // std::max guards a sub-unity scale, which dbDatabase cannot currently report
+  // (getDbuPerMicron returns uint32_t and 0 is handled above).
+  return std::max(
+      0, static_cast<int>(std::ceil(std::log10(dbu_per_micron) - 1e-9)));
+}
 
-// DBU → micron string for debug output.  Precision tracks the database scale so
-// no significant digit is dropped (1000 DBU/µm → 3 decimals), matching how
-// ScopedDbuFormat formats the lengths the inspector shows.  Falls back to the
-// raw value when no LEF has been read yet and the scale is still 0.
-std::string dbuToUm(const int dbu, const double dbu_per_micron)
+std::string dbuToMicronString(const int dbu, const double dbu_per_micron)
 {
   if (dbu_per_micron <= 0) {
     return std::to_string(dbu);
   }
-  const int precision = static_cast<int>(std::ceil(std::log10(dbu_per_micron)));
-  return utl::to_numeric_string(dbu / dbu_per_micron, precision);
+  return utl::to_numeric_string(dbu / dbu_per_micron,
+                                dbuPrecision(dbu_per_micron));
 }
+
+namespace {
 
 // Supersample factor for band-limited tile rasterization (anti-moiré).  The
 // tile is rendered at kCoverageSupersample x the output resolution and then
@@ -1688,10 +1699,10 @@ std::vector<SelectionResult> TileGenerator::selectAt(
              "select",
              1,
              "selectAt um=({},{}) zoom={} margin_um={}",
-             dbuToUm(dbu_x, dbu_per_micron),
-             dbuToUm(dbu_y, dbu_per_micron),
+             dbuToMicronString(dbu_x, dbu_per_micron),
+             dbuToMicronString(dbu_y, dbu_per_micron),
              zoom,
-             dbuToUm(margin, dbu_per_micron));
+             dbuToMicronString(margin, dbu_per_micron));
 
   odb::PtrSet<odb::dbNet> seen_nets;
 
@@ -2692,14 +2703,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                z,
                x,
                y,
-               dbuToUm(dbu_tile_world.xMin(), dbu_per_micron),
-               dbuToUm(dbu_tile_world.yMin(), dbu_per_micron),
-               dbuToUm(dbu_tile_world.xMax(), dbu_per_micron),
-               dbuToUm(dbu_tile_world.yMax(), dbu_per_micron),
+               dbuToMicronString(dbu_tile_world.xMin(), dbu_per_micron),
+               dbuToMicronString(dbu_tile_world.yMin(), dbu_per_micron),
+               dbuToMicronString(dbu_tile_world.xMax(), dbu_per_micron),
+               dbuToMicronString(dbu_tile_world.yMax(), dbu_per_micron),
                tile_px,
                super,
-               dbuToUm(instance_size_limit_dbu, dbu_per_micron),
-               dbuToUm(shape_size_limit_dbu, dbu_per_micron));
+               dbuToMicronString(instance_size_limit_dbu, dbu_per_micron),
+               dbuToMicronString(shape_size_limit_dbu, dbu_per_micron));
 
     // One snapshot for the whole tile: taken under a lock here, then read
     // lock-free by the per-chiplet loop below (see GeomCache).

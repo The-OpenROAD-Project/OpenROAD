@@ -61,6 +61,23 @@ struct FlightLine
   Color color;
 };
 
+// Decimal places needed to print a DBU length in microns without collapsing two
+// adjacent DBU onto the same string.  That is the smallest p with 10^p >=
+// dbu_per_micron, hence ceil() and not round(): at 2000 DBU/µm (Nangate45)
+// round() yields 3, and 1 DBU (0.0005 µm) and 2 DBU (0.001 µm) both print as
+// "0.001".  Returns 0 for a scale of 0 or less, which callers treat as "no
+// scale known yet" and print raw DBU for.
+//
+// TODO: this and dbuToMicronString belong in utl alongside to_numeric_string;
+// they live here only because tile_generator.h is the web module's shared
+// header today.
+int dbuPrecision(double dbu_per_micron);
+
+// DBU -> micron string at dbuPrecision(), trailing zeros stripped.  Falls back
+// to the raw DBU count when the database has no scale yet, which is the case
+// before any LEF has been read.
+std::string dbuToMicronString(int dbu, double dbu_per_micron);
+
 // Where one tile sits in DBU space, and how DBU map to its pixels.
 //
 // The tile grid step is maxDXDY / 2^z — a FRACTIONAL number of DBU — so a
