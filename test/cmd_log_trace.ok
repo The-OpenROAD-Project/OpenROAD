@@ -1,0 +1,5 @@
+TEST: Verifying command tracing in log
+PASS: Found logged commands
+PASS: Found nested sourced command
+PASS: internal commands not logged
+pass
