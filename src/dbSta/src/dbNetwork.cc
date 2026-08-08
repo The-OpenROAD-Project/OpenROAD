@@ -522,16 +522,21 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
 bool DbInstancePinIterator::hasNext()
 {
   if (top_) {
-    while (bitr_ != bitr_end_) {
-      dbBTerm* bterm = *bitr_;
-      if (!network_->isPGSupply(bterm)) {
-        next_ = network_->dbToSta(bterm);
-        bitr_++;
-        return true;
-      }
-      bitr_++;
+    // Do not filter supply BTerms here.  The top-level block ports are the
+    // design's primary I/O (including power/ground pins) and must stay
+    // visible to consumers that walk the top instance's pins.  In
+    // particular write_verilog relies on this iterator to emit the
+    // "assign <port> = <net>;" aliases that connect a power/ground port to
+    // an internal supply net whose name differs from the port name.
+    // Filtering them out drops those connections and breaks LVS (#10414).
+    // Leaf instance terms are still filtered below.
+    if (bitr_ == bitr_end_) {
+      return false;
     }
-    return false;
+    dbBTerm* bterm = *bitr_;
+    next_ = network_->dbToSta(bterm);
+    bitr_++;
+    return true;
   }
 
   while (iitr_ != iitr_end_) {
