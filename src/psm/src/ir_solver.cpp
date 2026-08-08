@@ -1348,12 +1348,8 @@ bool IRSolver::hasSolution(sta::Scene* corner) const
   return false;
 }
 
-void IRSolver::ensureSolution(sta::Scene* corner) const
+void IRSolver::reportNoSolution(sta::Scene* corner) const
 {
-  if (hasSolution(corner)) {
-    return;
-  }
-
   logger_->error(utl::PSM,
                  92,
                  "No solution available for {} on corner {}. Run "
@@ -1519,7 +1515,9 @@ void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
     return;
   }
 
-  ensureSolution(corner);
+  if (voltages_.find(corner) == voltages_.end()) {
+    reportNoSolution(corner);
+  }
 
   std::ofstream report(voltage_file);
   if (!report) {
@@ -1561,7 +1559,11 @@ void IRSolver::writeEMFile(const std::string& em_file, sta::Scene* corner) const
     return;
   }
 
-  ensureSolution(corner);
+  // generateCurrentMap() below derives per-connection current from the node
+  // voltages, so voltages are what this writer requires.
+  if (voltages_.find(corner) == voltages_.end()) {
+    reportNoSolution(corner);
+  }
 
   std::ofstream report(em_file);
   if (!report) {
@@ -1594,7 +1596,9 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
                               sta::Scene* corner,
                               const std::string& voltage_source_file) const
 {
-  ensureSolution(corner);
+  if (currents_.find(corner) == currents_.end()) {
+    reportNoSolution(corner);
+  }
 
   std::ofstream spice(spice_file);
   if (!spice.is_open()) {
