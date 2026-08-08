@@ -120,7 +120,23 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
 
 void Connect::setMinWidthLayers(const std::vector<odb::dbTechLayer*>& layers)
 {
-  min_width_layers_.insert(layers.begin(), layers.end());
+  for (auto* layer : layers) {
+    const bool is_intermediate
+        = std::ranges::find(intermediate_routing_layers_, layer)
+          != intermediate_routing_layers_.end();
+    if (!is_intermediate) {
+      grid_->getLogger()->warn(
+          utl::PDN,
+          501,
+          "-min_width_layers layer {} is not an intermediate routing layer "
+          "between {} and {}; ignoring.",
+          layer->getName(),
+          layer0_->getName(),
+          layer1_->getName());
+    } else {
+      min_width_layers_.insert(layer);
+    }
+  }
 }
 
 void Connect::setSplitCuts(
@@ -263,17 +279,24 @@ void Connect::generateMinEnclosureViaRects(
         = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
     const int min_width = layer->getWidth();
 
+    auto* tech = layer->getTech();
     ViaLayerRects new_rects;
     for (const auto& rect : layer_rects) {
       odb::Rect new_rect = rect;
       const odb::Point new_rect_center(new_rect.xMin() + new_rect.dx() / 2,
                                        new_rect.yMin() + new_rect.dy() / 2);
       if (is_horizontal) {
-        new_rect.set_ylo(new_rect_center.y() - min_width / 2);
-        new_rect.set_yhi(new_rect.yMin() + min_width);
+        const int ylo = TechLayer::snapToManufacturingGrid(
+            tech, new_rect_center.y() - min_width / 2, false);
+        new_rect.set_ylo(ylo);
+        new_rect.set_yhi(
+            TechLayer::snapToManufacturingGrid(tech, ylo + min_width, true));
       } else {
-        new_rect.set_xlo(new_rect_center.x() - min_width / 2);
-        new_rect.set_xhi(new_rect.xMin() + min_width);
+        const int xlo = TechLayer::snapToManufacturingGrid(
+            tech, new_rect_center.x() - min_width / 2, false);
+        new_rect.set_xlo(xlo);
+        new_rect.set_xhi(
+            TechLayer::snapToManufacturingGrid(tech, xlo + min_width, true));
       }
 
       new_rects.insert(new_rect);
