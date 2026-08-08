@@ -307,6 +307,14 @@ class GlobalRouter
   // estimation is electrically connected (correct-by-construction).
   void addImplicitVias(GRoute& route);
 
+  // Remove duplicate via segments produced when reconstructing routes_ from
+  // ODB guides. saveGuides() writes two dbGuide objects (with swapped
+  // layer/via-layer) for vias that cover a pin, so loadGuidesFromDB() would
+  // otherwise create two via GSegments where the in-memory FastRoute routes_
+  // (getRoutes()) holds only one. A via and its layer-swapped inverse are
+  // treated as the same physical via. Wire segments are left untouched.
+  void dedupViaSegments(GRoute& route);
+
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
                            bool global_route,
