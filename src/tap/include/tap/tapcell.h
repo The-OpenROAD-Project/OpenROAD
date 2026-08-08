@@ -208,8 +208,9 @@ class Tapcell
                                    bool outer,
                                    const EndcapCellOptions& options);
 
-  CornerMap placeEndcapCorner(const Corner& corner,
-                              const EndcapCellOptions& options);
+  void placeEndcapCorner(const Corner& corner,
+                         const EndcapCellOptions& options,
+                         odb::PtrSet<odb::dbInst>& area_corners);
   int placeEndcapEdge(const Edge& edge,
                       const CornerMap& corners,
                       const EndcapCellOptions& options);
@@ -223,8 +224,10 @@ class Tapcell
                      EdgeType edge_type,
                      const std::string& prefix);
   int placeEndcapEdgeVertical(const Edge& edge,
-                              const CornerMap& corners,
                               const EndcapCellOptions& options);
+  bool isRowSpanOccupied(odb::dbRow* row, int x_min, int x_max) const;
+  bool overlapsPlacedCell(odb::dbRow* row, int x_min, int x_max) const;
+  std::vector<std::pair<int, int>> occupiedSpans(odb::dbRow* row) const;
 
   EndcapCellOptions correctEndcapOptions(
       const EndcapCellOptions& options) const;
@@ -243,9 +246,8 @@ class Tapcell
   std::string tap_prefix_;
   std::string endcap_prefix_;
   std::vector<Edge> filled_edges_;
-  // x-ranges already filled by horizontal endcap edges, per row.
-  odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>>
-      filled_horizontal_edges_;
+  // x-spans already occupied by endcap cells, per row.
+  odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>> occupied_row_spans_;
   // corner cells placed so far, per row, persisted across areas/holes.
   CornerMap placed_corners_;
 };
