@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "ClockDomain.hh"
-#include "Opt.hh"
 #include "ScanArchitect.hh"
+#include "NNReorder.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "utl/Logger.h"
@@ -47,8 +47,8 @@ void ScanArchitectHeuristic::architect()
                  std::vector<std::unique_ptr<ScanCell>>& sorted) {
             sorted.reserve(falling.size() + rising.size());
             // Sort to reduce wire length
-            OptimizeScanWirelength(falling, logger_);
-            OptimizeScanWirelength(rising, logger_);
+            NearestNeighborReorder(falling, logger_);
+            NearestNeighborReorder(rising, logger_);
             // Falling edge first
             std::ranges::move(falling, std::back_inserter(sorted));
             std::ranges::move(rising, std::back_inserter(sorted));

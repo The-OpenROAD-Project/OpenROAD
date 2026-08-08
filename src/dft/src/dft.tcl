@@ -108,3 +108,13 @@ proc scan_opt { args } {
   }
   dft::scan_opt
 }
+
+sta::define_cmd_args "report_chain_metrics" {}
+proc report_chain_metrics { args } {
+  sta::parse_key_args "report_chain_metrics" args keys {} flags {}
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DFT 17 "No design block found."
+  }
+  dft::report_chain_metrics
+}
