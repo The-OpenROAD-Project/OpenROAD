@@ -36,11 +36,10 @@ using rsz::Resizer;
 
 using odb::dbDatabase;
 
+// Defined in OpenRoadSingleton.cc (ord_app library) so the symbol lives
+// in a static archive for strict-linking consumers (issue #9563).
 OpenRoad *
-getOpenRoad()
-{
-  return OpenRoad::openRoad();
-}
+getOpenRoad();
 
 utl::Logger *
 getLogger()

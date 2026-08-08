@@ -196,6 +196,7 @@ swig_lib(NAME      ord
 
 target_link_libraries(ord
   PRIVATE
+    ord_app
     dbSta
     odb
     OpenSTA
@@ -291,6 +292,43 @@ add_subdirectory(web)
 
 ################################################################
 
+################################################################
+
+# Core ord::OpenRoad singleton accessors.
+#
+# These symbols (OpenRoad::openRoad/setOpenRoad/getDbNetwork and
+# ord::getOpenRoad) are referenced by the SWIG-generated TCL/Python
+# wrappers of other tools (e.g. dbSta's dbStaTCL_wrap.cxx).  Keeping them
+# in a static archive — rather than only in the `openroad` executable —
+# lets strict-linking consumers (Nix, static linking, `-Wl,-z,defs`)
+# resolve them.  Without this, targets such as CutGTests fail to link
+# (issue #9563).
+#
+# Dependency note: ord_app depends only on dbSta_lib (a leaf, needed for
+# getDbNetwork()).  Nothing dbSta_lib depends on links back to ord_app,
+# so there is no library dependency cycle.  The full OpenRoad.cc (which
+# pulls in every flow tool) deliberately stays in the executable to
+# avoid creating such a cycle.
+add_library(ord_app STATIC
+  OpenRoadSingleton.cc
+)
+
+target_include_directories(ord_app
+  PUBLIC
+    ../include
+)
+
+target_link_libraries(ord_app
+  PUBLIC
+    dbSta_lib
+    odb
+    OpenSTA
+)
+
+target_compile_features(ord_app PUBLIC cxx_std_20)
+
+################################################################
+
 add_executable(openroad
   ${OPENROAD_SOURCE}
 )
@@ -327,6 +365,7 @@ target_link_libraries(openroad
   ifp
   pad
   ord
+  ord_app
   gpl
   dpl
   exa

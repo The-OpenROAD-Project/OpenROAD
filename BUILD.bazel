@@ -243,6 +243,7 @@ cc_library(
     srcs = [
         "src/Design.cc",
         "src/OpenRoad.cc",
+        "src/OpenRoadSingleton.cc",
         "src/Tech.cc",
         "src/Timing.cc",
         ":openroad_swig",
@@ -273,6 +274,7 @@ cc_library(
     srcs = [
         "src/Design.cc",
         "src/OpenRoad.cc",
+        "src/OpenRoadSingleton.cc",
         "src/Tech.cc",
         "src/Timing.cc",
         ":openroad_swig",
