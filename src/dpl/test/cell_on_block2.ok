@@ -23,28 +23,29 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |      10002 |       756 |      7506
-        1 |       8501 |       563 |      6147
-        2 |       6161 |       438 |      4906
-        3 |       4346 |       338 |      3652
-        4 |       3080 |       263 |      2673
-        5 |       2089 |       187 |      1851
-        6 |       1688 |       146 |      1542
-        7 |       1119 |       107 |      1006
-        8 |        810 |        84 |       726
-        9 |        623 |        63 |       560
-       10 |        354 |        44 |       295
-       20 |        139 |        15 |       124
-       30 |         51 |         7 |        44
-       34 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 34.
+        0 |       4226 |       844 |      2897
+        1 |       3830 |       813 |      2823
+        2 |       3058 |       776 |      2202
+        3 |       2300 |       649 |      1525
+        4 |       1798 |       580 |      1218
+        5 |       1249 |       484 |       756
+        6 |       1150 |       402 |       733
+        7 |        883 |       371 |       512
+        8 |        936 |       336 |       594
+        9 |        575 |       261 |       314
+       10 |        460 |       204 |       256
+       20 |         42 |        28 |        14
+       30 |         23 |         9 |        14
+       40 |         12 |        12 |         0
+       49 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 49.
 Placement Analysis
 ---------------------------------
-total displacement     295763.0 u
-average displacement       25.1 u
-max displacement         1397.2 u
+total displacement     299526.7 u
+average displacement       25.5 u
+max displacement         1405.4 u
 original HPWL         1353118.6 u
-legalized HPWL        1391930.2 u
+legalized HPWL        1393941.6 u
 delta HPWL                    3 %
 
 No differences found.
