@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2025-2025, The OpenROAD Authors
+// Copyright (c) 2025-2026, The OpenROAD Authors
 
 #include "zero_slack_strategy.h"
 
@@ -50,7 +50,7 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   cut::AbcLibraryFactory factory(logger);
   factory.AddDbSta(sta);
   factory.AddResizer(resizer);
-  factory.SetCorner(corner_);
+  factory.SetScene(corner_);
   cut::AbcLibrary abc_library = factory.Build();
 
   // Disable incremental timing.

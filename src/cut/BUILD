@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, The OpenROAD Authors
+# Copyright (c) 2025-2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -16,6 +16,7 @@ cc_library(
         "src/blifParser.cpp",
         "src/logic_cut.cpp",
         "src/logic_extractor.cpp",
+        "src/utils.cpp",
     ],
     hdrs = [
         "include/cut/abc_init.h",
@@ -24,6 +25,7 @@ cc_library(
         "include/cut/blifParser.h",
         "include/cut/logic_cut.h",
         "include/cut/logic_extractor.h",
+        "include/cut/utils.h",
     ],
     defines = [
         "ABC_NAMESPACE=abc",
@@ -36,6 +38,7 @@ cc_library(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party/mockturtle",
         "@abc",
         "@boost.bind",
         "@boost.config",
