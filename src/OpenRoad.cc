@@ -269,7 +269,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                              ioPlacer_,
                              opendp_,
                              global_router_,
-                             detailed_router_);
+                             detailed_router_,
+                             sta_);
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);

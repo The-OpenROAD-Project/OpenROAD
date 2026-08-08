@@ -30,6 +30,7 @@ cc_library(
     ],
     deps = [
         "//:ord",
+        "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/drt",
