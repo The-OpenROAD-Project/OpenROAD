@@ -55,6 +55,24 @@ PASSFAIL_TESTS = [
     "incremental02",
 ]
 
+# Long-running placement tests, the same set as ./regression-large
+# (regression_tests_large.tcl). Tagged "manual" so wildcard builds and
+# CI skip them; run explicitly, e.g.:
+#   bazelisk test //src/gpl/test:large01-tcl_test
+LARGE_TESTS = [
+    "macro01",
+    "macro02",
+    "macro03",
+    "medium01",
+    "medium02",
+    "medium03",
+    "medium04",
+    "medium05",
+    "medium06",
+    "large01",
+    "large02",
+]
+
 ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 py_library(
@@ -85,7 +103,7 @@ filegroup(
         ["**/*"],
         exclude = [
             test + "." + ext
-            for test in TESTS
+            for test in TESTS + LARGE_TESTS
             for ext in [
                 "tcl",
                 "py",
@@ -100,6 +118,14 @@ filegroup(
     check_passfail = True if test_name in PASSFAIL_TESTS else False,
     data = [":test_resources"],
 ) for test_name in ALL_TESTS]
+
+for test_name in LARGE_TESTS:
+    regression_test(
+        name = test_name,
+        size = "large",
+        data = [":test_resources"],
+        tags = ["manual"],
+    )
 
 PY_TESTS = [
     "ar01",
