@@ -43,9 +43,34 @@
 #include "third-party/lodepng/lodepng.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 #include "web_painter.h"
 
 namespace web {
+
+int dbuPrecision(const double dbu_per_micron)
+{
+  if (dbu_per_micron <= 0) {
+    return 0;
+  }
+  // The epsilon defends against a libm whose log10 returns a hair above an
+  // exact integer for a power of ten (3.0000000000000004 for 1000), which would
+  // ceil() to one digit too many.  It cannot round the result down: log10 of a
+  // non-power-of-ten integer is never that close to an integer from above.
+  // std::max guards a sub-unity scale, which dbDatabase cannot currently report
+  // (getDbuPerMicron returns uint32_t and 0 is handled above).
+  return std::max(
+      0, static_cast<int>(std::ceil(std::log10(dbu_per_micron) - 1e-9)));
+}
+
+std::string dbuToMicronString(const int dbu, const double dbu_per_micron)
+{
+  if (dbu_per_micron <= 0) {
+    return std::to_string(dbu);
+  }
+  return utl::to_numeric_string(dbu / dbu_per_micron,
+                                dbuPrecision(dbu_per_micron));
+}
 
 namespace {
 
@@ -1668,15 +1693,16 @@ std::vector<SelectionResult> TileGenerator::selectAt(
   const int num_tiles = 1 << std::max(0, zoom);
   const int margin
       = std::max(1, getBounds().maxDXDY() / (kTileSizeInPixel * num_tiles) * 2);
+  const double dbu_per_micron = db_->getDbuPerMicron();
   debugPrint(logger_,
              utl::WEB,
              "select",
              1,
-             "selectAt dbu=({},{}) zoom={} margin={}",
-             dbu_x,
-             dbu_y,
+             "selectAt um=({},{}) zoom={} margin_um={}",
+             dbuToMicronString(dbu_x, dbu_per_micron),
+             dbuToMicronString(dbu_y, dbu_per_micron),
              zoom,
-             margin);
+             dbuToMicronString(margin, dbu_per_micron));
 
   odb::PtrSet<odb::dbNet> seen_nets;
 
@@ -1730,7 +1756,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
           prefixed += label;
           label = std::move(prefixed);
         }
-        results.push_back({inst, label, "Inst", toWorld(bbox), true});
+        results.push_back(
+            {inst, label, "Inst", toWorld(bbox), node.world_xfm, true});
       }
     }
 
@@ -1779,6 +1806,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
                                net->getName(),
                                "Net",
                                toWorld(net->getTermBBox()),
+                               node.world_xfm,
                                false});
           }
         }
@@ -1800,6 +1828,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
                                net->getName(),
                                "Net",
                                toWorld(net->getTermBBox()),
+                               node.world_xfm,
                                false});
           }
         }
@@ -1821,6 +1850,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
                                net->getName(),
                                "Net",
                                toWorld(net->getTermBBox()),
+                               node.world_xfm,
                                false});
           }
         }
@@ -2656,6 +2686,32 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         = vis.detailed
               ? static_cast<int>(std::lround(1.0 * tile_dbu_size / css_tile_px))
               : size_limit_dbu;
+    // The geometry the tile request resolves to: which slice of the design it
+    // covers and at what resolution.  `y` here is already flipped out of the
+    // client's Leaflet convention, so it will not match the requested y.  The
+    // micron window depends only on the design bounds and z; tile_px/super and
+    // the cull limits are the dpr-derived part.
+    const double dbu_per_micron = db_->getDbuPerMicron();
+    debugPrint(logger_,
+               utl::WEB,
+               "tile",
+               2,
+               "  tile frame: layer={} z={} x={} y_flipped={} "
+               "um=({},{})-({},{}) tile_px={} super={} inst_limit_um={} "
+               "shape_limit_um={}",
+               layer,
+               z,
+               x,
+               y,
+               dbuToMicronString(dbu_tile_world.xMin(), dbu_per_micron),
+               dbuToMicronString(dbu_tile_world.yMin(), dbu_per_micron),
+               dbuToMicronString(dbu_tile_world.xMax(), dbu_per_micron),
+               dbuToMicronString(dbu_tile_world.yMax(), dbu_per_micron),
+               tile_px,
+               super,
+               dbuToMicronString(instance_size_limit_dbu, dbu_per_micron),
+               dbuToMicronString(shape_size_limit_dbu, dbu_per_micron));
+
     // One snapshot for the whole tile: taken under a lock here, then read
     // lock-free by the per-chiplet loop below (see GeomCache).
     const std::shared_ptr<const GeomCache> geom_cache = geomCache();
