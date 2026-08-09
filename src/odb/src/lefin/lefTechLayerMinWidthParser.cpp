@@ -41,6 +41,9 @@ bool parseRule(Iterator first,
         >> lit(";");
 
   bool valid = qi::phrase_parse(first, last, MinWidthRule, space);
+  if (valid) {
+    qi::phrase_parse(first, last, *space, space);
+  }
 
   return valid && first == last;
 }
