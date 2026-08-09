@@ -2495,6 +2495,167 @@ TEST_F(TileGeneratorTest, NoOutlineOnTechLayerTiles)
 }
 
 //------------------------------------------------------------------------------
+// Track rendering: the tracks must stop at the die area, as in the Qt GUI
+// (RenderThread::drawTracks clips to block->getDieArea()).
+//------------------------------------------------------------------------------
+
+namespace {
+constexpr int kTrackDieSide = 40000;  // die: (0,0)-(40000,40000)
+constexpr int kTrackPitch = 2000;     // 21 tracks per axis across the die
+}  // namespace
+
+// Build a track grid on metal1 covering the die, and return the visibility
+// that draws tracks and nothing else.
+static TileVisibility trackOnlyVisibility()
+{
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.routing = false;
+  vis.special_nets = false;
+  vis.pins = false;
+  vis.inst_pins = false;
+  vis.blockages = false;
+  vis.tracks_pref = true;
+  vis.tracks_non_pref = true;
+  return vis;
+}
+
+TEST_F(TileGeneratorTest, TracksAreClippedToTheDieArea)
+{
+  block_->setDieArea(odb::Rect(0, 0, kTrackDieSide, kTrackDieSide));
+  // getBounds() follows the block bbox, and dbBlock::getBBox() covers the
+  // SHAPES, not the die area: an instance at the origin anchors the viewport
+  // to the die, and a second one beyond the die stretches the bbox past it.
+  // That gap outside the die is where the tracks used to run on, drawn to the
+  // tile edge instead of stopping at the die boundary.
+  placeInst("BUF_X16", "inside", 0, 0);
+  placeInst("BUF_X16", "outside", kTrackDieSide + 20000, kTrackDieSide + 20000);
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, metal1);
+  grid->addGridPatternX(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+  grid->addGridPatternY(0, kTrackDieSide / kTrackPitch + 1, kTrackPitch);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  ASSERT_NE(block_->findTrackGrid(metal1), nullptr)
+      << "precondition: the track grid must be reachable from the block";
+
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, trackOnlyVisibility());
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_GT(w, 0u);
+
+  // Map pixels back to DBU exactly as the renderer does at z=0: one tile
+  // spanning getBounds().maxDXDY(), Y flipped.
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double dbu_per_px = static_cast<double>(bounds.maxDXDY()) / w;
+  ASSERT_GT(dbu_per_px, 0.0);
+  // Three pixels of slack.  The tile is rasterized supersampled and then
+  // Lanczos-2 decimated, and that filter spreads a hairline about two output
+  // pixels either way, so a track sitting on the die edge tints just past it.
+  // The defect this guards against is nothing like that: it drew tracks to the
+  // tile edge, tens of pixels beyond the die.
+  const double slack = 3 * dbu_per_px;
+
+  size_t inside = 0;
+  size_t outside = 0;
+  double worst_x = 0;
+  double worst_y = 0;
+  double min_x = 1e18;
+  double min_y = 1e18;
+  for (unsigned py = 0; py < h; ++py) {
+    for (unsigned px = 0; px < w; ++px) {
+      if (pixels[4UL * (py * w + px) + 3] == 0) {
+        continue;
+      }
+      const double dbu_x = bounds.xMin() + px * dbu_per_px;
+      const double dbu_y = bounds.yMin() + (h - 1 - py) * dbu_per_px;
+      const bool in_die = dbu_x >= -slack && dbu_x <= kTrackDieSide + slack
+                          && dbu_y >= -slack && dbu_y <= kTrackDieSide + slack;
+      if (in_die) {
+        ++inside;
+      } else {
+        ++outside;
+        worst_x = std::max(worst_x, dbu_x);
+        worst_y = std::max(worst_y, dbu_y);
+        min_x = std::min(min_x, dbu_x);
+        min_y = std::min(min_y, dbu_y);
+      }
+    }
+  }
+
+  EXPECT_EQ(outside, 0u) << "tracks must stop at the die area (die side "
+                         << kTrackDieSide << ", slack " << slack
+                         << " dbu; stray x in [" << min_x << "," << worst_x
+                         << "], y in [" << min_y << "," << worst_y
+                         << "], inside=" << inside << ")";
+  EXPECT_GT(inside, 0u) << "the tracks inside the die must still be drawn";
+}
+
+TEST_F(TileGeneratorTest, TracksSpanTheWholeTileWhenTheDieCoversIt)
+{
+  // The common case — every design in the flow has die == bbox — must be
+  // untouched by the clip: the tracks still run edge to edge.
+  // Anchor the viewport to the die corners (the bbox covers shapes, not the
+  // die area).
+  placeInst("BUF_X16", "ll", 0, 0);
+  placeInst("BUF_X16", "ur", 90000, 90000);
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, metal1);
+  // The fixture's die is (0,0)-(100000,100000); cover it entirely.
+  grid->addGridPatternX(0, 100000 / kTrackPitch + 1, kTrackPitch);
+  grid->addGridPatternY(0, 100000 / kTrackPitch + 1, kTrackPitch);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, trackOnlyVisibility());
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_GT(w, 0u);
+
+  const auto row_has_pixel = [&](unsigned py) {
+    for (unsigned px = 0; px < w; ++px) {
+      if (pixels[4UL * (py * w + px) + 3] > 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const auto col_has_pixel = [&](unsigned px) {
+    for (unsigned py = 0; py < h; ++py) {
+      if (pixels[4UL * (py * w + px) + 3] > 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // getBounds() adds a symmetric pin-label margin, so the die does not reach
+  // the tile edge; sample just inside each die border instead of at pixel 0.
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double dbu_per_px = static_cast<double>(bounds.maxDXDY()) / w;
+  const auto col_of = [&](int dbu) {
+    const double px = (dbu - bounds.xMin()) / dbu_per_px;
+    return static_cast<unsigned>(std::clamp(px, 0.0, w - 1.0));
+  };
+  const auto row_of = [&](int dbu) {
+    const double py = (h - 1) - (dbu - bounds.yMin()) / dbu_per_px;
+    return static_cast<unsigned>(std::clamp(py, 0.0, h - 1.0));
+  };
+
+  EXPECT_TRUE(row_has_pixel(row_of(2000)) && row_has_pixel(row_of(98000)))
+      << "horizontal tracks must still reach both ends of the die";
+  EXPECT_TRUE(col_has_pixel(col_of(2000)) && col_has_pixel(col_of(98000)))
+      << "vertical tracks must still reach both ends of the die";
+}
+
+//------------------------------------------------------------------------------
 // GCell-grid overlay tests (_gcell_grid pseudo-layer)
 //------------------------------------------------------------------------------
 

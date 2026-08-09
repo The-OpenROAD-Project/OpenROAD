@@ -3955,11 +3955,32 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                      grid != nullptr,
                      vis.tracks_pref,
                      vis.tracks_non_pref);
-          if (grid) {
+          // Clip the tracks to the die area, as the Qt GUI does
+          // (RenderThread::drawTracks: draw_bounds = die.intersect(bounds)).
+          // A track line drawn to the tile edge runs past the chip in any
+          // design whose block bbox reaches beyond the die area — and the
+          // viewport follows that bbox (see getBounds) — leaving tracks
+          // floating outside the die.  Same shape as drawGCellGridLayer.
+          const odb::Rect die_area = block->getDieArea();
+          if (grid && dbu_tile.intersects(die_area)) {
+            const odb::Rect draw_bounds = dbu_tile.intersect(die_area);
+            // Span of the clipped region in buffer pixels (Y flipped).  Shared
+            // by every track of this tile, so neighbouring tiles agree on where
+            // the lines stop and the seams stay aligned.
+            const int pxl = toPxX(draw_bounds.xMin(), frame);
+            const int pxh = toPxX(draw_bounds.xMax(), frame);
+            const int pyl = toPxY(draw_bounds.yMin(), frame, super);
+            const int pyh = toPxY(draw_bounds.yMax(), frame, super);
+
             Color track_color = color;
             track_color.a = 150;
             const bool is_horizontal
                 = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+            // One buffer pixel, as before this clip existed: hairlineCss()
+            // would read as a thickness change rather than the intended
+            // geometry fix.  drawLine composites with blendPixel, so the
+            // 150-alpha blend is unchanged too.
+            constexpr int kTrackWidth = 1;
 
             // X-direction tracks (vertical lines on screen)
             // Preferred for vertical layers, non-preferred for horizontal
@@ -3979,15 +4000,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                          dbu_tile.xMax(),
                          dbu_tile.yMax());
               for (int tx : x_grid) {
-                if (tx < dbu_x_min || tx > dbu_x_max) {
+                if (tx < draw_bounds.xMin() || tx > draw_bounds.xMax()) {
                   continue;
                 }
-                const int px = static_cast<int>((tx - dbu_x_min) * scale);
-                if (px >= 0 && px < super) {
-                  for (int py = 0; py < super; ++py) {
-                    blendPixel(image_buffer, px, py, track_color);
-                  }
-                }
+                const int px = toPxX(tx, frame);
+                drawLine(
+                    image_buffer, px, pyl, px, pyh, track_color, kTrackWidth);
               }
             }
 
@@ -4005,16 +4023,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                          "  y_tracks: count={}",
                          y_grid.size());
               for (int ty : y_grid) {
-                if (ty < dbu_y_min || ty > dbu_y_max) {
+                if (ty < draw_bounds.yMin() || ty > draw_bounds.yMax()) {
                   continue;
                 }
-                const int py
-                    = super - 1 - static_cast<int>((ty - dbu_y_min) * scale);
-                if (py >= 0 && py < super) {
-                  for (int px = 0; px < super; ++px) {
-                    blendPixel(image_buffer, px, py, track_color);
-                  }
-                }
+                const int py = toPxY(ty, frame, super);
+                drawLine(
+                    image_buffer, pxl, py, pxh, py, track_color, kTrackWidth);
               }
             }
           }
