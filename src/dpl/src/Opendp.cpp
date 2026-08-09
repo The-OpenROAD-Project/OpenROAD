@@ -371,21 +371,14 @@ void Opendp::findDisplacementStats()
 void Opendp::optimizeMirroring()
 {
   // Mirroring swaps the left/right cell edges, so the cell edge spacing rules
-  // have to be rechecked for every candidate. The grid and the DRC engine are
-  // only needed when the tech has such rules.
-  PlacementDRC* drc_engine = nullptr;
-  Network* network = nullptr;
-  Grid* grid = nullptr;
-  if (!db_->getTech()->getCellEdgeSpacingTable().empty()) {
-    importDb();
-    adjustNodesOrient();
-    initGrid();
-    setGridCells();
-    drc_engine = drc_engine_.get();
-    network = network_.get();
-    grid = grid_.get();
-  }
-  OptimizeMirroring opt(logger_, db_, network, grid, drc_engine);
+  // have to be rechecked for every candidate, which needs the grid and the
+  // DRC engine.
+  importDb();
+  adjustNodesOrient();
+  initGrid();
+  setGridCells();
+  OptimizeMirroring opt(
+      logger_, db_, network_.get(), grid_.get(), drc_engine_.get());
   opt.run();
 }
 

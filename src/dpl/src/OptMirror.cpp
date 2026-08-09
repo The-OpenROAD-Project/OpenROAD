@@ -179,12 +179,17 @@ int OptimizeMirroring::mirrorCandidates(
 {
   int mirror_count = 0;
   for (odb::dbInst* inst : mirror_candidates) {
+    Node* cell = network_->getNode(inst);
+    if (cell == nullptr) {
+      logger_->error(
+          DPL, 25, "Instance {} is missing its dpl node.", inst->getName());
+    }
     const dbOrientType orient = inst->getOrient();
     const dbOrientType orient_my = orientMirrorY(orient);
     // Mirroring swaps the left/right cell edge types, so the mirrored
     // orientation can break the cell edge spacing rules even though the
     // instance does not move.
-    if (!isEdgeSpacingLegal(inst, orient_my)) {
+    if (!isEdgeSpacingLegal(cell, orient_my)) {
       edge_spacing_reject_count_++;
       debugPrint(logger_,
                  DPL,
@@ -208,7 +213,7 @@ int OptimizeMirroring::mirrorCandidates(
     } else {
       // Keep the dpl node in sync so the edge spacing check of the following
       // candidates sees the new orientation.
-      updateNodeOrient(inst, orient_my);
+      cell->adjustCurrOrient(orient_my);
       debugPrint(
           logger_, DPL, "opt_mirror", 1, "mirror {}", inst->getConstName());
       mirror_count++;
@@ -218,30 +223,11 @@ int OptimizeMirroring::mirrorCandidates(
 }
 
 bool OptimizeMirroring::isEdgeSpacingLegal(
-    odb::dbInst* inst,
+    const Node* cell,
     const odb::dbOrientType& orient) const
 {
-  if (!hasEdgeSpacingCheck() || !drc_engine_->hasCellEdgeSpacingTable()) {
-    return true;
-  }
-  const Node* cell = network_->getNode(inst);
-  if (cell == nullptr) {
-    return true;
-  }
   return drc_engine_->checkEdgeSpacing(
       cell, grid_->gridX(cell), grid_->gridRoundY(cell), orient);
-}
-
-void OptimizeMirroring::updateNodeOrient(odb::dbInst* inst,
-                                         const odb::dbOrientType& orient)
-{
-  if (!hasEdgeSpacingCheck()) {
-    return;
-  }
-  Node* cell = network_->getNode(inst);
-  if (cell != nullptr) {
-    cell->adjustCurrOrient(orient);
-  }
 }
 
 // apply mirror about Y axis to orient
