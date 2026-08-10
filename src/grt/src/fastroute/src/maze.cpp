@@ -2147,14 +2147,15 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
     }
   }
 
+  std::vector<char> congested_h(y_grid_ * x_grid_, 0);
+  std::vector<char> congested_v(y_grid_ * x_grid_, 0);
+
   // The radius around the congested zone is increased when no new nets are
   // obtained
   for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
        radius++) {
-    std::vector<std::vector<bool>> congested_h(
-        y_grid_, std::vector<bool>(x_grid_, false));
-    std::vector<std::vector<bool>> congested_v(
-        y_grid_, std::vector<bool>(x_grid_, false));
+    std::fill(congested_h.begin(), congested_h.end(), 0);
+    std::fill(congested_v.begin(), congested_v.end(), 0);
 
     for (const auto& position : overflow_positions) {
       int px = position.first.getX();
@@ -2169,7 +2170,7 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
       auto& congested_grid = is_horizontal ? congested_h : congested_v;
       for (int y = y_start; y <= y_end; ++y) {
         for (int x = x_start; x <= x_end; ++x) {
-          congested_grid[y][x] = true;
+          congested_grid[y * x_grid_ + x] = 1;
         }
       }
     }
@@ -2190,6 +2191,10 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
         const std::vector<GPoint3D>& grids = treeedge->route.grids;
         const int routeLen = treeedge->route.routelen;
 
+        if (routeLen <= 0 || grids.size() < static_cast<size_t>(routeLen + 1)) {
+          continue;
+        }
+
         for (int i = 0; i < routeLen && !found; i++) {
           if (grids[i].layer != grids[i + 1].layer) {
             continue;
@@ -2198,7 +2203,7 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
             const int ymin = std::min(grids[i].y, grids[i + 1].y);
             if (grids[i].x >= 0 && grids[i].x < x_grid_ && ymin >= 0
                 && ymin < y_grid_) {
-              if (congested_v[ymin][grids[i].x]) {
+              if (congested_v[ymin * x_grid_ + grids[i].x]) {
                 congestion_nets.insert(nets_[netID]->getDbNet());
                 already_added[netID] = true;
                 found = true;
@@ -2208,7 +2213,7 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
             const int xmin = std::min(grids[i].x, grids[i + 1].x);
             if (xmin >= 0 && xmin < x_grid_ && grids[i].y >= 0
                 && grids[i].y < y_grid_) {
-              if (congested_h[grids[i].y][xmin]) {
+              if (congested_h[grids[i].y * x_grid_ + xmin]) {
                 congestion_nets.insert(nets_[netID]->getDbNet());
                 already_added[netID] = true;
                 found = true;
