@@ -926,8 +926,7 @@ void GridGraph::commitWrongWayWire(const int layer_index,
 {
   forEachFlankEdge(layer_index, loc, [&](PointT edge_loc, int edge_sum) {
     const CapacityT demand
-        = static_cast<CapacityT>(design_->getWrongWayDemandLength(layer_index))
-          / edge_sum;
+        = design_->getWrongWayDemandLength(layer_index) / edge_sum;
     commit(layer_index, edge_loc, (rip_up ? -demand : demand), layer_factor);
   });
 }
