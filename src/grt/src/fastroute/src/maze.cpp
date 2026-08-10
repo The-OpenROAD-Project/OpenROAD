@@ -2110,7 +2110,9 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 
   // The radius around the congested zone is increased when no new nets are
   // obtained
-  for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
+  static constexpr int kMaxSearchRadius = 5;
+  for (int radius = 0;
+       radius < kMaxSearchRadius && old_size == congestion_nets.size();
        radius++) {
     std::fill(congested_h.begin(), congested_h.end(), 0);
     std::fill(congested_v.begin(), congested_v.end(), 0);
@@ -2149,7 +2151,7 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
         const std::vector<GPoint3D>& grids = treeedge->route.grids;
         const int routeLen = treeedge->route.routelen;
 
-        if (routeLen <= 0 || grids.size() < static_cast<size_t>(routeLen + 1)) {
+        if (routeLen <= 0 || grids.size() <= static_cast<size_t>(routeLen)) {
           continue;
         }
 
