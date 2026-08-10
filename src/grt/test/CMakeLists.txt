@@ -141,4 +141,6 @@ or_integration_tests(
     thread_count_reports
 )
 
-add_subdirectory(cpp)
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()
