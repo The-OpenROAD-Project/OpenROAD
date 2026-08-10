@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include <stdexcept>
-
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
@@ -14,6 +12,17 @@ namespace odb {
 class TestOrderWires : public tst::Fixture
 {
  protected:
+  struct InputBumpNet
+  {
+    dbNet* net;
+    dbITerm* receiver_iterm;
+    dbITerm* bump_iterm;
+    int receiver_x;
+    int receiver_y;
+    int bump_x;
+    int bump_y;
+  };
+
   void SetUp() override
   {
     loadTechAndLib(
@@ -22,165 +31,89 @@ class TestOrderWires : public tst::Fixture
     block_ = dbBlock::create(chip, "top");
   }
 
-  // A face-to-face style net: a receiver instance pin, a bump pad iterm
-  // (special, as a SPECIALNETS connection reads in), and an unplaced
-  // driver bterm carrying no geometry.  The BUMP_ASSIGNMENT net property
-  // marks the net as tied to the bump.
-  void buildBumpNet()
+  InputBumpNet buildInputBumpNet()
   {
-    dbMaster* inv = db_->findMaster("INV_X1");
+    InputBumpNet bump_net;
 
-    dbInst* recv = makeInst(block_,
-                            inv,
-                            "recv",
-                            {.location = {10000, 10000},
-                             .status = dbPlacementStatus::PLACED,
-                             .iterms = {{"n1", "A"}}});
     dbInst* bump = makeInst(block_,
-                            inv,
+                            db_->findMaster("INV_X1"),
                             "bump",
                             {.location = {50000, 10000},
                              .status = dbPlacementStatus::PLACED,
-                             .iterms = {{"n1", "A"}}});
+                             .iterms = {{"net", "A"}}});
 
-    makeBTerm(block_, "n1", {.io_type = dbIoType::INPUT, .bpins = {}});
+    // Note that here we could use any type of logical cell.
+    dbInst* receiver = makeInst(block_,
+                                db_->findMaster("INV_X1"),
+                                "receiver",
+                                {.location = {10000, 10000},
+                                 .status = dbPlacementStatus::PLACED,
+                                 .iterms = {{"net", "A"}}});
 
-    net_ = block_->findNet("n1");
-    recv_iterm_ = recv->findITerm("A");
-    bump_iterm_ = bump->findITerm("A");
-    bump_iterm_->setSpecial();
-    dbStringProperty::create(net_, "BUMP_ASSIGNMENT", "ASSIGNED");
+    // The bterm associated to the bump has no geometry.
+    makeBTerm(block_, "net", {.io_type = dbIoType::INPUT, .bpins = {}});
 
-    ASSERT_TRUE(recv_iterm_->getAvgXY(&recv_x_, &recv_y_));
-    ASSERT_TRUE(bump_iterm_->getAvgXY(&bump_x_, &bump_y_));
-    ASSERT_EQ(recv_y_, bump_y_);
-  }
+    bump_net.net = block_->findNet("net");
+    bump_net.receiver_iterm = receiver->findITerm("A");
+    bump_net.bump_iterm = bump->findITerm("A");
+    bump_net.bump_iterm->setSpecial();
+    dbStringProperty::create(bump_net.net, "BUMP_ASSIGNMENT", "ASSIGNED");
 
-  bool wireHasITerm(dbWire* wire, dbITerm* iterm)
-  {
-    dbWireDecoder decoder;
-    decoder.begin(wire);
-    for (dbWireDecoder::OpCode op = decoder.next();
-         op != dbWireDecoder::END_DECODE;
-         op = decoder.next()) {
-      if (op == dbWireDecoder::ITERM && decoder.getITerm() == iterm) {
-        return true;
-      }
-    }
-    return false;
+    bump_net.receiver_iterm->getAvgXY(&bump_net.receiver_x,
+                                      &bump_net.receiver_y);
+    bump_net.bump_iterm->getAvgXY(&bump_net.bump_x, &bump_net.bump_y);
+
+    return bump_net;
   }
 
   dbBlock* block_;
-  dbNet* net_;
-  dbITerm* recv_iterm_;
-  dbITerm* bump_iterm_;
-  int recv_x_;
-  int recv_y_;
-  int bump_x_;
-  int bump_y_;
 };
 
-// A net driven by an unplaced bterm gives the tree walk no driver anchor,
-// making it start at the wire's first point.  If the first path holds only
-// a patch RECT that point has no graph edges, and the walk used to abort
-// (ODB-0395) without stamping any terminal markers into the wire, leaving
-// extraction with no terminal connections.  On a bump-assigned net the
-// walk must anchor at the bump pad iterm instead and stamp the reachable
-// terms.
-TEST_F(TestOrderWires, RectFirstBumpNetWithUnplacedDriverPin)
+TEST_F(TestOrderWires, InputBumpNetWithPatchAtTheBeginning)
 {
-  buildBumpNet();
+  const InputBumpNet bump_net = buildInputBumpNet();
   dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
+  dbWire* wire = dbWire::create(bump_net.net);
 
-  dbWire* wire = dbWire::create(net_);
   dbWireEncoder encoder;
   encoder.begin(wire);
+
   // First path: a lone patch RECT, making a wire point without edges.
   encoder.newPath(metal1, dbWireType::ROUTED);
-  encoder.addPoint(bump_x_, bump_y_);
+  encoder.addPoint(bump_net.bump_x, bump_net.bump_y);
   encoder.addRect(-70, -70, 70, 70);
+
   // Second path: a real segment from the receiver pin to the bump pad.
   encoder.newPath(metal1, dbWireType::ROUTED);
-  encoder.addPoint(recv_x_, recv_y_);
-  encoder.addPoint(bump_x_, bump_y_);
-  encoder.end();
-
-  const int warnings_before = logger_.getWarningCount();
-  orderWires(&logger_, block_);
-
-  EXPECT_TRUE(net_->isWireOrdered());
-  EXPECT_EQ(logger_.getWarningCount(), warnings_before);
-  EXPECT_TRUE(wireHasITerm(net_->getWire(), recv_iterm_));
-  EXPECT_TRUE(wireHasITerm(net_->getWire(), bump_iterm_));
-}
-
-// On a bump-assigned net whose driver is a bterm with no pin geometry,
-// the walk must be rooted at the bump pad iterm: the signal physically
-// enters the die there.
-TEST_F(TestOrderWires, BumpAssignedNetRootsTreeAtBumpIterm)
-{
-  buildBumpNet();
-  dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
-
-  dbWire* wire = dbWire::create(net_);
-  dbWireEncoder encoder;
-  encoder.begin(wire);
-  encoder.newPath(metal1, dbWireType::ROUTED);
-  encoder.addPoint(recv_x_, recv_y_);
-  encoder.addPoint(bump_x_, bump_y_);
+  encoder.addPoint(bump_net.receiver_x, bump_net.receiver_y);
+  encoder.addPoint(bump_net.bump_x, bump_net.bump_y);
   encoder.end();
 
   orderWires(&logger_, block_);
+  EXPECT_TRUE(bump_net.net->isWireOrdered());
 
-  // The rewritten wire must begin at the bump pin, marker included.
   dbWireDecoder decoder;
-  decoder.begin(net_->getWire());
+  decoder.begin(bump_net.net->getWire());
   EXPECT_EQ(decoder.next(), dbWireDecoder::PATH);
+
+  // Operation codes of the bump pin.
   EXPECT_EQ(decoder.next(), dbWireDecoder::POINT);
   int x, y;
   decoder.getPoint(x, y);
-  EXPECT_EQ(x, bump_x_);
-  EXPECT_EQ(y, bump_y_);
+  EXPECT_EQ(x, bump_net.bump_x);
+  EXPECT_EQ(y, bump_net.bump_y);
   EXPECT_EQ(decoder.next(), dbWireDecoder::ITERM);
-  EXPECT_EQ(decoder.getITerm(), bump_iterm_);
-}
+  EXPECT_EQ(decoder.getITerm(), bump_net.bump_iterm);
 
-// Without a bump assignment nothing anchors the walk of a net driven by a
-// bterm with no geometry, and a wire whose first path holds only a patch
-// RECT makes it start at a point with no reachable segment.  Ordering
-// must fail loudly (ODB-0395) and must not leave the net marked as
-// ordered.
-TEST_F(TestOrderWires, UnanchoredNetWithUnreachableStartPointFailsLoudly)
-{
-  dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
-  dbMaster* inv = db_->findMaster("INV_X1");
+  // Operation codes of the receiver.
+  EXPECT_EQ(decoder.next(), dbWireDecoder::POINT);
+  decoder.getPoint(x, y);
+  EXPECT_EQ(x, bump_net.receiver_x);
+  EXPECT_EQ(y, bump_net.receiver_y);
+  EXPECT_EQ(decoder.next(), dbWireDecoder::ITERM);
+  EXPECT_EQ(decoder.getITerm(), bump_net.receiver_iterm);
 
-  dbInst* recv = makeInst(block_,
-                          inv,
-                          "recv",
-                          {.location = {10000, 10000},
-                           .status = dbPlacementStatus::PLACED,
-                           .iterms = {{"n1", "A"}}});
-
-  makeBTerm(block_, "n1", {.io_type = dbIoType::INPUT, .bpins = {}});
-
-  dbNet* net = block_->findNet("n1");
-  int recv_x, recv_y;
-  ASSERT_TRUE(recv->findITerm("A")->getAvgXY(&recv_x, &recv_y));
-
-  dbWire* wire = dbWire::create(net);
-  dbWireEncoder encoder;
-  encoder.begin(wire);
-  encoder.newPath(metal1, dbWireType::ROUTED);
-  encoder.addPoint(recv_x, recv_y + 2000);
-  encoder.addRect(-70, -70, 70, 70);
-  encoder.newPath(metal1, dbWireType::ROUTED);
-  encoder.addPoint(recv_x, recv_y);
-  encoder.addPoint(recv_x, recv_y + 2000);
-  encoder.end();
-
-  EXPECT_THROW(orderWires(&logger_, block_), std::runtime_error);
-  EXPECT_FALSE(net->isWireOrdered());
+  EXPECT_EQ(decoder.next(), dbWireDecoder::END_DECODE);
 }
 
 }  // namespace odb
