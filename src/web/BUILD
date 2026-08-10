@@ -34,7 +34,11 @@ genrule(
         "src/checkbox-tree-model.js",
         "src/vis-tree.js",
         "src/websocket-manager.js",
+        "src/tile-merge.js",
+        "src/tile-request.js",
+        "src/device-pixels.js",
         "src/websocket-tile-layer.js",
+        "src/merged-tile-layer.js",
         "src/display-controls.js",
         "src/inspector.js",
         "src/ruler.js",
@@ -60,7 +64,11 @@ genrule(
           " $(location src/checkbox-tree-model.js)" +
           " $(location src/vis-tree.js)" +
           " $(location src/websocket-manager.js)" +
+          " $(location src/tile-merge.js)" +
+          " $(location src/tile-request.js)" +
+          " $(location src/device-pixels.js)" +
           " $(location src/websocket-tile-layer.js)" +
+          " $(location src/merged-tile-layer.js)" +
           " $(location src/display-controls.js)" +
           " $(location src/inspector.js)" +
           " $(location src/ruler.js)" +
@@ -81,6 +89,10 @@ _WEB_ASSET_FILES = [
     "src/index.html",
     "src/style.css",
     "src/theme.js",
+    "src/tile-merge.js",
+    "src/tile-request.js",
+    "src/device-pixels.js",
+    "src/merged-tile-layer.js",
     "src/3d-viewer-widget.js",
     "src/coordinates.js",
     "src/ui-utils.js",
