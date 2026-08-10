@@ -2166,17 +2166,10 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
       int x_start = std::max(0, px - radius);
       int x_end = std::min(x_grid_ - 1, px + radius);
 
-      if (is_horizontal) {
-        for (int y = y_start; y <= y_end; ++y) {
-          for (int x = x_start; x <= x_end; ++x) {
-            congested_h[y][x] = true;
-          }
-        }
-      } else {
-        for (int y = y_start; y <= y_end; ++y) {
-          for (int x = x_start; x <= x_end; ++x) {
-            congested_v[y][x] = true;
-          }
+      auto& congested_grid = is_horizontal ? congested_h : congested_v;
+      for (int y = y_start; y <= y_end; ++y) {
+        for (int x = x_start; x <= x_end; ++x) {
+          congested_grid[y][x] = true;
         }
       }
     }
