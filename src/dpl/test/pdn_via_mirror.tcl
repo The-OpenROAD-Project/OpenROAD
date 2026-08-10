@@ -3,8 +3,8 @@
 # subsequent standalone mirroring operation.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_lef fixed_via_mirror.lef
-read_def fixed_via_mirror.def
+read_lef pdn_via_mirror.lef
+read_def pdn_via_mirror.def
 
 detailed_placement -pdn_aware
 optimize_mirroring

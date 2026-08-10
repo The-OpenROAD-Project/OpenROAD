@@ -1,8 +1,8 @@
 # Check strict Euclidean routing spacing for fixed supply via shapes.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_lef fixed_via_euclidean.lef
-read_def fixed_via_euclidean.def
+read_lef pdn_via_euclidean.lef
+read_def pdn_via_euclidean.def
 
 # Opt in to physical supply-via spacing for this Euclidean geometry case.
 detailed_placement -pdn_aware

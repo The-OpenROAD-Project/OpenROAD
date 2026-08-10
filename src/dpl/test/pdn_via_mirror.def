@@ -1,9 +1,10 @@
 VERSION 5.8 ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-DESIGN fixed_via_mirror_default_off ;
+DESIGN pdn_via_mirror ;
 UNITS DISTANCE MICRONS 2000 ;
 DIEAREA ( 0 0 ) ( 20000 12000 ) ;
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 3800 5600 N DO 32 BY 1 STEP 380 0 ;
 COMPONENTS 1 ;
   - mirror MIRROR_CELL + PLACED ( 3800 5600 ) N ;
 END COMPONENTS
@@ -11,6 +12,10 @@ PINS 1 ;
   - target + NET signal + DIRECTION INPUT + USE SIGNAL
     + LAYER metal1 ( -20 -20 ) ( 20 20 ) + FIXED ( 10000 6800 ) N ;
 END PINS
+SPECIALNETS 1 ;
+  - VSS + USE GROUND
+    + ROUTED metal1 0 + SHAPE STRIPE ( 6160 6800 ) via1_0 ;
+END SPECIALNETS
 NETS 1 ;
   - signal ( PIN target ) ( mirror A ) ;
 END NETS

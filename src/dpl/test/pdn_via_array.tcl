@@ -2,8 +2,8 @@
 # repeated placement in both row orientations.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_lef fixed_via_array.lef
-read_def fixed_via_array.def
+read_lef pdn_via_array.lef
+read_def pdn_via_array.def
 
 detailed_placement -pdn_aware
 check_placement

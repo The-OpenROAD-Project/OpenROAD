@@ -100,13 +100,11 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
-    "fixed_via",
-    "fixed_via_array",
-    "fixed_via_cut",
-    "fixed_via_default_off",
-    "fixed_via_euclidean",
-    "fixed_via_mirror",
-    "fixed_via_mirror_default_off",
+    "pdn_via",
+    "pdn_via_array",
+    "pdn_via_cut",
+    "pdn_via_euclidean",
+    "pdn_via_mirror",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -183,12 +181,6 @@ filegroup(
                 "edge_spacing.lef",
                 "multi_height_rows.def",
                 "Nangate45/fake_macros.lef",
-            ],
-            "fixed_via_default_off": [
-                "fixed_via.def",
-            ],
-            "fixed_via_mirror_default_off": [
-                "fixed_via_mirror.lef",
             ],
             "fillers1": [
                 "simple01.def",

@@ -94,13 +94,11 @@ or_integration_tests(
     regions1-opt
     regions2-opt
   PASSFAIL_TESTS
-    fixed_via
-    fixed_via_array
-    fixed_via_cut
-    fixed_via_default_off
-    fixed_via_euclidean
-    fixed_via_mirror
-    fixed_via_mirror_default_off
+    pdn_via
+    pdn_via_array
+    pdn_via_cut
+    pdn_via_euclidean
+    pdn_via_mirror
 )
 
 add_executable(dpl_test dpl_test.cc)

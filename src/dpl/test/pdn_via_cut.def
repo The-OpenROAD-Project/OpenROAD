@@ -1,7 +1,7 @@
 VERSION 5.8 ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-DESIGN fixed_via_cut ;
+DESIGN pdn_via_cut ;
 UNITS DISTANCE MICRONS 2000 ;
 DIEAREA ( 0 0 ) ( 10000 400 ) ;
 

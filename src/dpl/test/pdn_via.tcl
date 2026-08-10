@@ -1,6 +1,6 @@
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_def fixed_via.def
+read_def pdn_via.def
 
 # Opt in to physical supply-via conflicts; the diamond legalizer is an
 # independent placement strategy and must preserve the same physical result.

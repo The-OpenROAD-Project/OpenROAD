@@ -3,8 +3,8 @@
 # rather than a metal keepout.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_lef fixed_via_cut.lef
-read_def fixed_via_cut.def
+read_lef pdn_via_cut.lef
+read_def pdn_via_cut.def
 
 detailed_placement -pdn_aware
 check_placement
