@@ -155,7 +155,9 @@ void GlobalRouter::clear()
   routing_tracks_.clear();
   routing_layers_.clear();
   grid_->clear();
-  if (!use_cugr_) {
+  if (use_cugr_) {
+    cugr_->clear();
+  } else {
     fastroute_->clear();
   }
   vertical_capacities_.clear();

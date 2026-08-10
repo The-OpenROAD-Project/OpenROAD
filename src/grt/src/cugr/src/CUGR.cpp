@@ -83,18 +83,22 @@ CUGR::CUGR(odb::dbDatabase* db,
 
 CUGR::~CUGR() = default;
 
-void CUGR::init(const int min_routing_layer,
-                const int max_routing_layer,
-                const odb::PtrSet<odb::dbNet>& clock_nets)
+void CUGR::clear()
 {
-  // A re-init (post-DRT repair entry) replaces prior netlist state.
   gr_nets_.clear();
   net_indices_.clear();
   db_net_map_.clear();
   merged_nets_.clear();
   nets_to_route_.clear();
   incremental_candidates_.clear();
+  incremental_routing_ = false;
+}
 
+void CUGR::init(const int min_routing_layer,
+                const int max_routing_layer,
+                const odb::PtrSet<odb::dbNet>& clock_nets)
+{
+  clear();
   constants_.min_routing_layer = min_routing_layer - 1;
   design_ = std::make_unique<Design>(db_,
                                      logger_,
