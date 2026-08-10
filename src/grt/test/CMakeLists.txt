@@ -142,3 +142,7 @@ or_integration_tests(
     snapshot_batched_smoke
     thread_count_reports
 )
+
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()

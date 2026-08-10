@@ -120,9 +120,14 @@ test_suite(
 
 cc_test(
     name = "rcx_unittest",
-    srcs = ["ext2dBoxTest.cpp"],
+    srcs = [
+        "TestExtractor.cpp",
+        "ext2dBoxTest.cpp",
+    ],
     deps = [
+        "//src/odb/src/db",
         "//src/rcx",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

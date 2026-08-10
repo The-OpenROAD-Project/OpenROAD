@@ -152,6 +152,35 @@ exits. If the error is encountered while reading a file with the `source`
 or `read_sdc` commands and `file_continue_on_error` is `0` then no other
 commands are read from the file.
 
+## Support for Design Space Exploration (DSE) & Automated Tools
+
+OpenROAD supports automated Design Space Exploration (DSE) tools and autotuners across all stages of physical design. Automated tools run across a wide spectrum:
+* **Early RTL & Floorplan Exploration**: Fast feedback loops using custom project Tcl script snippets developed for a specific phase in a project.
+* **Late-Stage Pre-Tapeout Sweeps**: Full, unmodified flow runs through final parasitic extraction (`rcx`) to eke out a few percent improvement in timing and area via seed and parameter sweeps.
+
+To support automated workflows, optimization passes must follow these guidelines for non-convergent ("doomed") runs:
+
+### 1. Zero-Config Futility Guards
+Optimization passes (e.g., gate sizing, buffer insertion, congestion repair) must detect when an iteration loop diverges or hits diminishing returns.
+* Futility guards **must be automatic and zero-config**. They must not require CLI options or user parameters.
+* Automated tools encounter futile states when exploring unclosable RTL or searching outside the valid solution domain. Users cannot configure options for unknown failure modes.
+
+### 2. Pass Termination Without Flow Interruption
+When an optimization pass hits a futility limit:
+* The pass must **stop its internal iteration loop** and issue a clear warning (`utl::warn`).
+* The overall flow **must run to completion**.
+
+### 3. Downstream Metric Evaluation
+Small upstream variations (e.g., placement seed changes) cause large downstream effects ("placement lottery"). Accurate clock period and parasitic-aware timing signals often emerge late in the flow:
+* Global routing (`grt`) provides realistic clock period estimates.
+* Detailed routing (`drt`) and parasitic extraction (`rcx`) resolve local congestion and extract wire parasitics.
+
+Completing the flow allows autotuners to collect final metrics and extract actionable signals, even when an intermediate pass halts early.
+
+### 4. Custom DSE Signals
+If users require a different signal than the full flow (e.g., a signal that is directionally accurate when far from the target and highly accurate when closer), they should write their own `.py` or `.tcl` script. This provides full flexibility tailored to their specific use-case, design, and project phase without requiring OpenROAD to anticipate their requirements and goals. Users can easily combine existing scripts into a single OpenROAD process invocation or invoke various commands directly.
+
+
 ## Test
 
 Each "tool" has a `/test` directory containing a script named
