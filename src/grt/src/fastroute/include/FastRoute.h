@@ -369,10 +369,6 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void findNetsNearPosition(odb::PtrSet<odb::dbNet>& congestion_nets,
-                            const odb::Point& position,
-                            bool is_horizontal,
-                            int& radius);
   void SaveLastRouteLen();
   void checkAndFixEmbeddedTree(int net_id);
   bool areEdgesOverlapping(int net_id,
