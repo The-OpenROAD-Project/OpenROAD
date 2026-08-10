@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+flat_baseline_mean_ws=1.275101
+report_only_mean_ws=1.275101 unchanged=1
+report: depth=13 lin_sigma=0.027274 rss_sigma=0.008280
+[WARNING STA-1578] No liberty POCV/LVF models found.
+propagate_mean_ws=1.302426
+stat: mean=1.275101 slack_sigma=0.009108 stat_slack=1.247776 n_sigma=3.0
+variance_propagated: 1
+deep_path: 1
+stat_worse_than_mean: 1
+rss_lt_linear: 1
+consistent_with_report: 1 (prop=0.009108 rss=0.008280)
+after_reset_mean_ws=1.275101 unchanged=1
