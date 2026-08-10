@@ -1614,7 +1614,7 @@ void RepairDesign::repairNetWire(
       // the new repeater's input pin cap does not shrink the load the
       // driver sees). Two such iterations in a row terminate the loop.
       const double prev_ref_cap = ref_cap;
-      const bool zero_advance = (buf_dist <= 0.0);
+      const bool zero_advance = (buf_dist < 1.0);
       double dx = from_x - to_x;
       double dy = from_y - to_y;
       double d = (length == 0) ? 0.0 : buf_dist / length;
