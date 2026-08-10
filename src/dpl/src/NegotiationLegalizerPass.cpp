@@ -292,10 +292,10 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 {
   if (debug_observer_) {
     debug_observer_->clearNegotiationSearchWindows();
+    debug_observer_->clearCurrentIterMovers();
   }
 
   current_iter_ = iter;
-  current_iter_movers_.clear();
 
   // Reset per-iteration stuck-cell tallies.
   stuck_no_candidate_count_iter_ = 0;
@@ -449,8 +449,7 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
   syncCellToDplGrid(cell_idx);
   if (did_move && debug_observer_
       && (opendp_->iterative_debug_ || opendp_->deep_iterative_debug_)) {
-    current_iter_movers_.insert(cells_[cell_idx].db_inst);
-    debug_observer_->setCurrentIterMovers(current_iter_movers_);
+    debug_observer_->addCurrentIterMover(cells_[cell_idx].db_inst);
   }
   if (opendp_->deep_iterative_debug_ && debug_observer_
       && current_iter_ >= opendp_->negotiation_debug_start_) {
@@ -792,7 +791,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     if (opendp_->deep_iterative_debug_
         && iter >= opendp_->negotiation_debug_start_
         && cell.db_inst == debug_observer_->getDebugInstance()) {
-      const DbuX site_width = opendp_->grid_->getSiteWidth();
       odb::dbBlock* block = cell.db_inst->getBlock();
       const double inst_area_um2
           = block->dbuAreaToMicrons(cell.db_inst->getBBox()->getBox().area());
@@ -820,10 +818,13 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
             block->dbuToMicrons(curr_win.dy()),
             block->dbuAreaToMicrons(curr_win.area()));
       }
+      // Reported in absolute dbu (like the windows above), so the location
+      // can be compared against the search window and the cell's own
+      // orig/target coordinates.
       logger_->report("  Best location for {} is ({}, {}) with cost {}.",
                       cell.db_inst->getName(),
-                      gridToDbu(GridX{best_x}, site_width).v,
-                      opendp_->grid_->gridYToDbu(GridY{best_y}).v,
+                      toX(best_x),
+                      toY(best_y),
                       best_cost == static_cast<double>(kInfCost)
                           ? "inf"
                           : std::to_string(best_cost));
