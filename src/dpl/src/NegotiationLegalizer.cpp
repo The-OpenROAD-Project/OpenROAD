@@ -18,7 +18,6 @@
 #include "graphics/DplObserver.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
-#include "infrastructure/Padding.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
@@ -65,13 +64,11 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 NegotiationLegalizer::NegotiationLegalizer(Opendp* opendp,
                                            odb::dbDatabase* db,
                                            utl::Logger* logger,
-                                           const Padding* padding,
                                            DplObserver* debug_observer,
                                            Network* network)
     : opendp_(opendp),
       db_(db),
       logger_(logger),
-      padding_(padding),
       debug_observer_(debug_observer),
       network_(network)
 {
@@ -634,11 +631,6 @@ bool NegotiationLegalizer::initFromDb()
                "DEBUG cell init: {} height={}",
                db_inst->getName(),
                cell.height);
-
-    if (padding_ != nullptr) {
-      cell.pad_left = padding_->padLeft(db_inst).v;
-      cell.pad_right = padding_->padRight(db_inst).v;
-    }
 
     cells_.push_back(cell);
   }
