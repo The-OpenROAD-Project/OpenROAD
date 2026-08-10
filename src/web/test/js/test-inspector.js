@@ -313,5 +313,199 @@ describe('Inspector focus nets', () => {
             const kids = groups[0].querySelector('.inspector-group-children');
             assert.equal(kids.children.length, 2);
         });
+
+        it('keeps the full property name as a tooltip', () => {
+            panel.updateInspector({
+                type: 'Tech layer',
+                name: 'metal1',
+                properties: [
+                    { name: 'Wrong way minimum width', value: '0.07 um' },
+                ],
+            });
+            const nameEl = app.inspectorEl.querySelector('.inspector-prop-name');
+            assert.equal(nameEl.title, 'Wrong way minimum width');
+        });
+    });
+
+    describe('table properties', () => {
+        const tableData = {
+            type: 'Tech layer',
+            name: 'metal1',
+            properties: [{
+                name: 'Two width spacing rules',
+                table: {
+                    column_headers: ['0 um', '0.2 um\nPRL 0.1 um'],
+                    row_headers: ['0 um', '0.2 um\nPRL 0.1 um'],
+                    data: [['0.065 um', '0.1 um'], ['0.1 um', '0.2 um']],
+                },
+            }],
+        };
+
+        it('renders a grid with header row and header column', () => {
+            panel.updateInspector(tableData);
+            const table = app.inspectorEl.querySelector('.inspector-table');
+            assert.ok(table, 'table should be rendered');
+            // Header row: empty corner cell + one cell per column.
+            const headRow = table.querySelectorAll('thead tr th');
+            assert.equal(headRow.length, 3);
+            assert.equal(headRow[0].textContent, '');
+            assert.equal(headRow[1].textContent, '0 um');
+            assert.equal(headRow[2].textContent, '0.2 um\nPRL 0.1 um');
+            // Body rows: row header + one cell per column.
+            const bodyRows = table.querySelectorAll('tbody tr');
+            assert.equal(bodyRows.length, 2);
+            assert.equal(bodyRows[0].children[0].tagName, 'TH');
+            assert.equal(bodyRows[0].children[0].textContent, '0 um');
+            assert.equal(bodyRows[0].children[1].textContent, '0.065 um');
+            assert.equal(bodyRows[1].children[2].textContent, '0.2 um');
+        });
+
+        it('omits the header column when a table has no row headers', () => {
+            panel.updateInspector({
+                type: 'Tech layer',
+                name: 'metal1',
+                properties: [{
+                    name: 'Grid',
+                    table: {
+                        column_headers: ['a', 'b'],
+                        row_headers: ['', ''],
+                        data: [['1', '2'], ['3', '4']],
+                    },
+                }],
+            });
+            const table = app.inspectorEl.querySelector('.inspector-table');
+            assert.equal(table.querySelectorAll('thead tr th').length, 2);
+            assert.equal(table.querySelectorAll('tbody tr')[0].children.length, 2);
+        });
+
+        it('puts the table in a collapsible group with a row count', () => {
+            panel.updateInspector(tableData);
+            const group = app.inspectorEl.querySelector('.inspector-group');
+            assert.ok(group, 'table should live in a group');
+            assert.equal(
+                group.querySelector('.inspector-count').textContent, '(2)');
+            const body = group.querySelector('.inspector-group-children');
+            assert.equal(body.classList.contains('collapsed'), false);
+            group.querySelector('.inspector-group-header').dispatchEvent(
+                new dom.window.MouseEvent('click', { bubbles: true }));
+            assert.equal(body.classList.contains('collapsed'), true);
+        });
+    });
+
+    describe('name column width', () => {
+        function render() {
+            panel.updateInspector({
+                type: 'Net',
+                name: 'sig',
+                properties: [{ name: 'Name', value: 'sig' }],
+            });
+        }
+
+        it('adds a resizer to the property rows', () => {
+            render();
+            const grip = app.inspectorEl.querySelector('.inspector-col-resizer');
+            assert.ok(grip, 'resizer should be present');
+            assert.equal(grip.parentElement.className, 'inspector-rows');
+        });
+
+        it('drags the column wider and keeps the width across re-renders', () => {
+            render();
+            const grip = app.inspectorEl.querySelector('.inspector-col-resizer');
+            const before = app.inspectorEl.style.getPropertyValue(
+                '--inspector-name-w');
+            assert.equal(before, '140px');
+
+            grip.dispatchEvent(new dom.window.MouseEvent(
+                'mousedown', { clientX: 140, bubbles: true }));
+            document.dispatchEvent(new dom.window.MouseEvent(
+                'mousemove', { clientX: 200, bubbles: true }));
+            document.dispatchEvent(new dom.window.MouseEvent(
+                'mouseup', { bubbles: true }));
+            assert.equal(
+                app.inspectorEl.style.getPropertyValue('--inspector-name-w'),
+                '200px');
+
+            // A new selection rebuilds the panel; the width must survive.
+            render();
+            assert.equal(
+                app.inspectorEl.style.getPropertyValue('--inspector-name-w'),
+                '200px');
+        });
+
+        it('clamps the dragged width to the allowed range', () => {
+            render();
+            const grip = app.inspectorEl.querySelector('.inspector-col-resizer');
+            grip.dispatchEvent(new dom.window.MouseEvent(
+                'mousedown', { clientX: 140, bubbles: true }));
+            document.dispatchEvent(new dom.window.MouseEvent(
+                'mousemove', { clientX: -500, bubbles: true }));
+            document.dispatchEvent(new dom.window.MouseEvent(
+                'mouseup', { bubbles: true }));
+            assert.equal(
+                app.inspectorEl.style.getPropertyValue('--inspector-name-w'),
+                '60px');
+        });
+    });
+
+    // The arrow sits inside the clickable header.  It used to carry its own
+    // click listener as well, so a click on the arrow toggled twice (once on
+    // the arrow, once as the event bubbled to the header) and the group never
+    // moved — even though the arrow is the first thing users click.
+    describe('group expand/collapse', () => {
+        // A group with >= 10 children starts collapsed; fewer starts open.
+        function render(childCount) {
+            const children = [];
+            for (let i = 0; i < childCount; i++) {
+                children.push({ name: 'p' + i, value: String(i) });
+            }
+            panel.updateInspector({
+                type: 'Inst',
+                name: 'buf1',
+                bbox: [0, 0, 100, 100],
+                properties: [{ name: 'Pins', children }],
+            });
+            const group = app.inspectorEl.querySelector('.inspector-group');
+            return {
+                arrow: group.querySelector('.vis-arrow'),
+                header: group.querySelector('.inspector-group-header'),
+                kids: group.querySelector('.inspector-group-children'),
+            };
+        }
+
+        const click = (el) => el.dispatchEvent(
+            new dom.window.MouseEvent('click', { bubbles: true }));
+
+        it('clicking the arrow collapses an expanded group', () => {
+            const { arrow, kids } = render(2);
+            assert.equal(kids.classList.contains('collapsed'), false);
+            assert.equal(arrow.textContent, '▼');
+            click(arrow);
+            assert.equal(kids.classList.contains('collapsed'), true);
+            assert.equal(arrow.textContent, '▶');
+        });
+
+        it('clicking the arrow expands a collapsed group', () => {
+            const { arrow, kids } = render(12);
+            assert.equal(kids.classList.contains('collapsed'), true);
+            assert.equal(arrow.textContent, '▶');
+            click(arrow);
+            assert.equal(kids.classList.contains('collapsed'), false);
+            assert.equal(arrow.textContent, '▼');
+        });
+
+        it('arrow clicks toggle once, not twice', () => {
+            const { arrow, kids } = render(2);
+            click(arrow);
+            click(arrow);
+            assert.equal(kids.classList.contains('collapsed'), false);
+            assert.equal(arrow.textContent, '▼');
+        });
+
+        it('clicking elsewhere in the header still toggles', () => {
+            const { header, arrow, kids } = render(2);
+            click(header.querySelector('.inspector-prop-name'));
+            assert.equal(kids.classList.contains('collapsed'), true);
+            assert.equal(arrow.textContent, '▶');
+        });
     });
 });

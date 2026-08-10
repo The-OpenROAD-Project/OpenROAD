@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -53,16 +54,17 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
+#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/Hash.hh"
 #include "sta/InputDrive.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
@@ -2199,8 +2201,16 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     return {};
   }
 
+  // An instance of a dont_use cell is left alone rather than sized.  Its
+  // target load is not in target_load_map_, which findTargetLoads builds
+  // without dont_use cells, so it has no usable baseline to size against.
+  if (dontUse(source_cell)) {
+    swappable_cells_cache_[source_cell] = {source_cell};
+    return {source_cell};
+  }
+
   sta::LibertyCellSeq swappable_cells;
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
 
   if (equiv_cells) {
     int64_t source_cell_area = master->getArea();
@@ -2313,7 +2323,7 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return vt_equiv_cells_cache_[source_cell];
   }
 
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   if (equiv_cells == nullptr || source_cell_master == nullptr) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
@@ -2440,26 +2450,102 @@ void Resizer::checkLibertyForAllCorners()
   }
 }
 
+// Bucket key, same shape as the port term of sta::hashCell.  Equivalent cells
+// always share a key because sta::equivCellPorts requires matching port names
+// and directions.  Unrelated cells may too; sta::equivCells separates them.
+static unsigned equivCellKey(const sta::LibertyCell* cell)
+{
+  unsigned key = 0;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    key += sta::hashString(port->name()) * 3 + port->direction()->index() * 5;
+  }
+  return key;
+}
+
+// Group the link cells into equivalence classes.
+//
+// Not sta::Sta::makeEquivCells, which skips cells with the liberty dont_use
+// attribute.  Liberty dont_use only seeds dont_use_ (copyDontUseFromLiberty);
+// unset_dont_use clears dont_use_ but not liberty, and those cells must stay
+// sizing candidates.  So nothing is filtered here; callers apply dont_use_.
 void Resizer::makeEquivCells()
 {
-  if (!equiv_cells_made_) {
-    sta::LibertyLibrarySeq libs;
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      // massive kludge until makeEquivCells is fixed to only incldue link cells
-      sta::LibertyCellIterator cell_iter(lib);
-      if (cell_iter.hasNext()) {
-        sta::LibertyCell* cell = cell_iter.next();
-        if (isLinkCell(cell)) {
-          libs.emplace_back(lib);
-        }
+  if (equiv_cells_made_) {
+    return;
+  }
+  clearEquivCells();
+
+  std::unordered_map<unsigned, sta::LibertyCellSeq> buckets;
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      network_->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    sta::LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      // Only link cells can be swapped in; the other corners' copies would
+      // multiply every class by the corner count.
+      if (isLinkCell(cell)) {
+        buckets[equivCellKey(cell)].emplace_back(cell);
       }
     }
-    delete lib_iter;
-    sta_->makeEquivCells(&libs, nullptr);
-    equiv_cells_made_ = true;
   }
+
+  for (sta::LibertyCellSeq& cells : std::views::values(buckets)) {
+    // One member per class is enough to compare against, sta::equivCells
+    // being transitive.
+    std::vector<sta::LibertyCellSeq> classes;
+    for (sta::LibertyCell* cell : cells) {
+      auto equivs = std::ranges::find_if(
+          classes, [cell](const sta::LibertyCellSeq& members) {
+            return sta::equivCells(members.front(), cell);
+          });
+      if (equivs == classes.end()) {
+        classes.emplace_back(1, cell);
+      } else {
+        equivs->emplace_back(cell);
+      }
+    }
+
+    for (sta::LibertyCellSeq& members : classes) {
+      // Cells with no equivalents stay out of equiv_cells_.
+      if (members.size() < 2) {
+        continue;
+      }
+      // Callers rely on decreasing drive resistance.
+      std::ranges::stable_sort(
+          members,
+          [this](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
+            return cellDriveResistance(cell1) > cellDriveResistance(cell2);
+          });
+      sta::LibertyCellSeq& equivs
+          = equiv_cell_groups_.emplace_back(std::move(members));
+      for (sta::LibertyCell* cell : equivs) {
+        equiv_cells_[cell] = &equivs;
+      }
+    }
+  }
+
+  equiv_cells_made_ = true;
+}
+
+// Cells equivalent to cell, sorted in decreasing drive resistance, or nullptr
+// if the cell has no equivalents.  The build is lazy, so the first call must
+// be on the main thread; that is why resizePreamble and balanceRowUsage call
+// makeEquivCells up front.
+sta::LibertyCellSeq* Resizer::equivCells(sta::LibertyCell* cell)
+{
+  makeEquivCells();
+  return sta::findKey(equiv_cells_, cell);
+}
+
+void Resizer::clearEquivCells()
+{
+  equiv_cells_.clear();
+  equiv_cell_groups_.clear();
+  equiv_cells_made_ = false;
 }
 
 // When there are multiple VT layers, create a composite name
@@ -3253,6 +3339,81 @@ class SearchPredCombLogic : public sta::SearchPred1
   }
 };
 
+// Iterative DFS over the timing graph, replacing pull-style
+// sta::BfsFwdIterator/BfsBkwdIterator usage.
+// Adjacency matches Bfs{Fwd,Bkwd}Iterator::enqueueAdjacentVertices:
+// fanout: searchFrom(vertex) gates expansion; each out-edge requires
+//         searchThru(edge) && searchTo(to_vertex);
+// fanin:  searchTo(vertex) gates expansion; each in-edge requires
+//         searchFrom(from_vertex) && searchThru(edge).
+// The mode-less SearchPred methods are used, which OR across all modes.
+// visit_seeds=false starts from the pred-filtered adjacency of each seed
+// (BfsIterator::enqueueAdjacentVertices seeding); visit_seeds=true visits
+// the seeds themselves first (BfsIterator::enqueue seeding).
+// visit(vertex) returns true if the search should expand through vertex.
+enum class DfsDirection
+{
+  kFanin,
+  kFanout
+};
+
+static void dfsSearch(sta::Graph* graph,
+                      const sta::SearchPred& pred,
+                      DfsDirection dir,
+                      const std::vector<sta::Vertex*>& seeds,
+                      bool visit_seeds,
+                      const std::function<bool(sta::Vertex*)>& visit)
+{
+  std::vector<sta::Vertex*> stack;
+  sta::VertexSet visited(graph);
+
+  auto expand = [&](sta::Vertex* vertex) {
+    if (dir == DfsDirection::kFanout) {
+      if (pred.searchFrom(vertex)) {
+        sta::VertexOutEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* to_vertex = edge->to(graph);
+          if (pred.searchThru(edge) && pred.searchTo(to_vertex)
+              && visited.insert(to_vertex).second) {
+            stack.push_back(to_vertex);
+          }
+        }
+      }
+    } else {
+      if (pred.searchTo(vertex)) {
+        sta::VertexInEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* from_vertex = edge->from(graph);
+          if (pred.searchFrom(from_vertex) && pred.searchThru(edge)
+              && visited.insert(from_vertex).second) {
+            stack.push_back(from_vertex);
+          }
+        }
+      }
+    }
+  };
+
+  for (sta::Vertex* seed : seeds) {
+    if (visit_seeds) {
+      if (visited.insert(seed).second) {
+        stack.push_back(seed);
+      }
+    } else {
+      expand(seed);
+    }
+  }
+
+  while (!stack.empty()) {
+    sta::Vertex* vertex = stack.back();
+    stack.pop_back();
+    if (visit(vertex)) {
+      expand(vertex);
+    }
+  }
+}
+
 // Find source pins for logic fanin of ends.
 sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 {
@@ -3267,20 +3428,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
   }
 
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::PinSet fanins(db_network_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      continue;
-    }
-    iter.enqueueAdjacentVertices(vertex);
-    fanins.insert(vertex->pin());
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          return false;
+        }
+        fanins.insert(vertex->pin());
+        return true;
+      });
   return fanins;
 }
 
@@ -3288,20 +3450,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 sta::VertexSet Resizer::findFaninRoots(sta::VertexSet& ends)
 {
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::VertexSet roots(graph_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      roots.insert(vertex);
-    } else {
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          roots.insert(vertex);
+          return false;
+        }
+        return true;
+      });
   return roots;
 }
 
@@ -3323,18 +3486,19 @@ sta::VertexSet Resizer::findFanouts(sta::VertexSet& reg_outs)
 {
   sta::VertexSet fanouts(graph_);
   SearchPredCombLogic pred(sta_);
-  sta::BfsFwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* reg_out : reg_outs) {
-    iter.enqueueAdjacentVertices(reg_out);
-  }
-
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (!isRegister(vertex)) {
-      fanouts.insert(vertex);
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(reg_outs.begin(), reg_outs.end());
+  dfsSearch(graph_,
+            pred,
+            DfsDirection::kFanout,
+            seeds,
+            /*visit_seeds=*/false,
+            [&](sta::Vertex* vertex) {
+              if (isRegister(vertex)) {
+                return false;
+              }
+              fanouts.insert(vertex);
+              return true;
+            });
   return fanouts;
 }
 
@@ -3404,6 +3568,10 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  // findTargetLoads skips dont_use cells, so a cell re-enabled with
+  // unset_dont_use would otherwise keep a target load of zero and be ranked
+  // worst by findTargetCell.
+  target_load_map_ = nullptr;
 }
 
 void Resizer::resetDontUse()
@@ -3415,6 +3583,7 @@ void Resizer::resetDontUse()
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
   copyDontUseFromLiberty();
@@ -4980,32 +5149,47 @@ class ClkArrivalSearchPred : public sta::EvalPred
 
 sta::InstanceSeq Resizer::findClkInverters()
 {
-  sta::InstanceSeq clk_inverters;
+  std::vector<std::pair<sta::Level, sta::Instance*>> inverters;
   ClkArrivalSearchPred srch_pred(this);
-  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, this);
+  std::vector<sta::Vertex*> seeds;
   for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
     for (const sta::Pin* pin : clk->leafPins()) {
-      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-      bfs.enqueue(vertex);
+      seeds.push_back(graph_->pinDrvrVertex(pin));
     }
   }
-  while (bfs.hasNext()) {
-    sta::Vertex* vertex = bfs.next();
-    const sta::Pin* pin = vertex->pin();
-    sta::Instance* inst = network_->instance(pin);
-    sta::LibertyCell* lib_cell = network_->libertyCell(inst);
-    if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
-      clk_inverters.emplace_back(inst);
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_clk_inverters",
-                 2,
-                 "inverter {}",
-                 network_->pathName(inst));
-    }
-    if (!vertex->isRegClk()) {
-      bfs.enqueueAdjacentVertices(vertex);
-    }
+  dfsSearch(
+      graph_,
+      srch_pred,
+      DfsDirection::kFanout,
+      seeds,
+      /*visit_seeds=*/true,
+      [&](sta::Vertex* vertex) {
+        const sta::Pin* pin = vertex->pin();
+        sta::Instance* inst = network_->instance(pin);
+        sta::LibertyCell* lib_cell = network_->libertyCell(inst);
+        if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
+          inverters.emplace_back(vertex->level(), inst);
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_clk_inverters",
+                     2,
+                     "inverter {}",
+                     network_->pathName(inst));
+        }
+        return !vertex->isRegClk();
+      });
+  // cloneClkInverter moves an inverter's loads onto its input net, so an
+  // upstream inverter must be cloned before the inverters it drives or it
+  // gets cloned once per downstream clone instead of once per load.
+  std::stable_sort(inverters.begin(),
+                   inverters.end(),
+                   [](const std::pair<sta::Level, sta::Instance*>& lhs,
+                      const std::pair<sta::Level, sta::Instance*>& rhs) {
+                     return lhs.first < rhs.first;
+                   });
+  sta::InstanceSeq clk_inverters;
+  for (const auto& [level, inst] : inverters) {
+    clk_inverters.emplace_back(inst);
   }
   return clk_inverters;
 }
@@ -6223,7 +6407,8 @@ void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
   swappable_cells_cache_.clear();
-  equiv_cells_made_ = false;
+  target_load_map_ = nullptr;
+  clearEquivCells();
 }
 
 void Resizer::copyDontUseFromLiberty()

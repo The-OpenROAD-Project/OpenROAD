@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2026, The OpenROAD Authors
 
+#include <string>
+
 #include "Test3DBloxCheckerFixture.h"
 #include "gtest/gtest.h"
 #include "odb/3dblox.h"

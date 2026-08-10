@@ -1,0 +1,45 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+The following 1 cells are equivalent to FILLCELL_X1:
+==============================================================
+          Cell                              Area   Area    VT
+                                           (um^2)  Ratio  Type
+==============================================================
+FILLCELL_X1                                 0.266  1.00   -
+--------------------------------------------------------------
+The following 3 cells are equivalent to FILLCELL_X1:
+==============================================================
+          Cell                              Area   Area    VT
+                                           (um^2)  Ratio  Type
+==============================================================
+FILLCELL_X1                                 0.266  1.00   -
+FILLCELL_X2                                 0.532  2.00   -
+FILLCELL_X4                                 1.064  4.00   -
+--------------------------------------------------------------
+The following 6 cells are equivalent to BUF_X2:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+CLKBUF_X1                                   0.798  0.75 1.12e-08  0.26   -
+BUF_X1                                      0.798  0.75 2.14e-08  0.50   -
+CLKBUF_X2                                   1.064  1.00 2.29e-08  0.53   -
+BUF_X2                                      1.064  1.00 4.31e-08  1.00   -
+CLKBUF_X3                                   1.330  1.25 3.06e-08  0.71   -
+BUF_X4                                      1.862  1.75 8.61e-08  2.00   -
+-----------------------------------------------------------------------------
+The following 5 cells are equivalent to BUF_X2:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+CLKBUF_X1                                   0.798  0.75 1.12e-08  0.26   -
+BUF_X1                                      0.798  0.75 2.14e-08  0.50   -
+CLKBUF_X2                                   1.064  1.00 2.29e-08  0.53   -
+BUF_X2                                      1.064  1.00 4.31e-08  1.00   -
+CLKBUF_X3                                   1.330  1.25 3.06e-08  0.71   -
+-----------------------------------------------------------------------------

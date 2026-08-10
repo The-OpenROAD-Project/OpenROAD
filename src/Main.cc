@@ -273,7 +273,6 @@ int main(int argc, char* argv[])
     the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
     the_tech_and_design->design
         = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
-    ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
     const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
@@ -523,7 +522,6 @@ int ord::tclAppInit(Tcl_Interp* interp)
   the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
   the_tech_and_design->design
       = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
-  ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
 
   // This is to enable Design.i where a design arg can be
   // retrieved from the interpreter.  This is necessary for
