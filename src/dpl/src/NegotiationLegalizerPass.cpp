@@ -647,6 +647,17 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
         || !respectsFence(cell_idx, tx, ty)) {
       return;
     }
+    odb::dbOrientType targetOrient = default_orient;
+    if (site != nullptr) {
+      targetOrient
+          = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site)
+                .value_or(default_orient);
+    }
+    if (node != nullptr
+        && !opendp_->drc_engine_->checkFixedSupplyVias(
+            node, GridX{tx}, GridY{ty}, targetOrient)) {
+      return;
+    }
 
     double cost = negotiationCost(cell_idx, tx, ty, best_cost);
     if (cost > best_cost || (cost == best_cost && rank >= best_rank)) {
@@ -662,14 +673,12 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      odb::dbOrientType targetOrient = default_orient;
-      if (site != nullptr) {
-        auto orient
-            = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
-        targetOrient = orient.has_value() ? orient.value() : default_orient;
-      }
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
-          node, GridX{tx}, GridY{ty}, targetOrient);
+          node,
+          GridX{tx},
+          GridY{ty},
+          targetOrient,
+          /* include_fixed_supply_vias */ false);
       cost += drc_penalty * drcCount;
     }
     if (cost < best_cost || (cost == best_cost && rank < best_rank)) {

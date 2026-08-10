@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -41,6 +42,11 @@ class OptimizeMirroring
 {
  public:
   OptimizeMirroring(utl::Logger* logger, odb::dbDatabase* db);
+  void setLegalPredicate(
+      const std::function<bool(odb::dbInst*, const odb::dbOrientType&)>& legal)
+  {
+    legal_ = legal;
+  }
 
   void run();
 
@@ -58,6 +64,7 @@ class OptimizeMirroring
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
+  std::function<bool(odb::dbInst*, const odb::dbOrientType&)> legal_;
 
   NetBoxMap net_box_map_;
 

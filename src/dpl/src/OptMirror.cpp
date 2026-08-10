@@ -158,12 +158,15 @@ int OptimizeMirroring::mirrorCandidates(
 {
   int mirror_count = 0;
   for (odb::dbInst* inst : mirror_candidates) {
+    dbOrientType orient = inst->getOrient();
+    dbOrientType orient_my = orientMirrorY(orient);
+    if (legal_ && !legal_(inst, orient_my)) {
+      continue;
+    }
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
     int64_t hpwl_before = hpwl(inst);
     saveNetBoxes(inst);
-    dbOrientType orient = inst->getOrient();
-    dbOrientType orient_my = orientMirrorY(orient);
     inst->setLocationOrient(orient_my);
     updateNetBoxes(inst);
     int64_t hpwl_after = hpwl(inst);
