@@ -254,18 +254,6 @@ class NegotiationLegalizer
   }
   void addUsage(int cell_idx, int delta);
 
-  // Footprint extended by the cell's own padding.  Used to blockade the range
-  // a fixed cell reserves; movable cells claim only their footprint and get
-  // their padding checked by PlacementDRC, which applies the class rules.
-  [[nodiscard]] int paddedXBegin(const NegCell& cell) const
-  {
-    return std::max(0, cell.x - cell.pad_left);
-  }
-  [[nodiscard]] int paddedXEnd(const NegCell& cell) const
-  {
-    return std::min(grid_w_, cell.x + cell.width + cell.pad_right);
-  }
-
   // Data
   Opendp* opendp_{nullptr};
   odb::dbDatabase* db_{nullptr};

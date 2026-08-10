@@ -690,24 +690,20 @@ void NegotiationLegalizer::buildGrid()
     }
   }
 
-  // Mark blockages and record fixed-cell usage in one pass.
-  // The padded range of fixed cells is also blocked so movable cells
-  // cannot violate padding constraints relative to fixed instances.
+  // Blockade each fixed cell and record its usage in one pass.  Footprint
+  // only: padding is left to PlacementDRC, which knows both masters and so
+  // can apply the class-pair rules that a plain capacity cannot express.
   for (const NegCell& cell : cells_) {
     if (!cell.fixed) {
       continue;
     }
-    const int xBegin = paddedXBegin(cell);
-    const int xEnd = paddedXEnd(cell);
     for (int dy = 0; dy < cell.height; ++dy) {
       const int gy = cell.y + dy;
-      for (int gx = xBegin; gx < xEnd; ++gx) {
+      for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
         if (gridExists(gx, gy)) {
-          gridAt(gx, gy).capacity = 0;
-          // Physical footprint carries usage=1; padding slots do not.
-          if (gx >= cell.x && gx < cell.x + cell.width) {
-            gridAt(gx, gy).usage = 1;
-          }
+          Pixel& pixel = gridAt(gx, gy);
+          pixel.capacity = 0;
+          pixel.usage = 1;
         }
       }
     }
