@@ -102,7 +102,7 @@ filegroup(
         ["**/*"],
         exclude = [
             test + "." + ext
-            for test in TESTS
+            for test in ALL_TESTS + LARGE_TESTS
             for ext in [
                 "tcl",
                 "py",
