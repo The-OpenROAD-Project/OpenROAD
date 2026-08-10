@@ -2097,16 +2097,16 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 
   const size_t old_size = congestion_nets.size();
   std::vector<bool> already_added(netCount(), false);
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID] != nullptr
-        && congestion_nets.find(nets_[netID]->getDbNet())
-               != congestion_nets.end()) {
-      already_added[netID] = true;
+  for (odb::dbNet* db_net : congestion_nets) {
+    auto it = db_net_id_map_.find(db_net);
+    if (it != db_net_id_map_.end()) {
+      already_added[it->second] = true;
     }
   }
 
-  std::vector<char> congested_h(y_grid_ * x_grid_, 0);
-  std::vector<char> congested_v(y_grid_ * x_grid_, 0);
+  const size_t grid_size = static_cast<size_t>(y_grid_) * x_grid_;
+  std::vector<char> congested_h(grid_size, 0);
+  std::vector<char> congested_v(grid_size, 0);
 
   // The radius around the congested zone is increased when no new nets are
   // obtained
@@ -2128,7 +2128,7 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
       auto& congested_grid = is_horizontal ? congested_h : congested_v;
       for (int y = y_start; y <= y_end; ++y) {
         for (int x = x_start; x <= x_end; ++x) {
-          congested_grid[y * x_grid_ + x] = 1;
+          congested_grid[static_cast<size_t>(y) * x_grid_ + x] = 1;
         }
       }
     }
@@ -2161,7 +2161,8 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
             const int ymin = std::min(grids[i].y, grids[i + 1].y);
             if (grids[i].x >= 0 && grids[i].x < x_grid_ && ymin >= 0
                 && ymin < y_grid_) {
-              if (congested_v[ymin * x_grid_ + grids[i].x]) {
+              if (congested_v[static_cast<size_t>(ymin) * x_grid_
+                              + grids[i].x]) {
                 congestion_nets.insert(nets_[netID]->getDbNet());
                 already_added[netID] = true;
                 found = true;
@@ -2171,7 +2172,8 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
             const int xmin = std::min(grids[i].x, grids[i + 1].x);
             if (xmin >= 0 && xmin < x_grid_ && grids[i].y >= 0
                 && grids[i].y < y_grid_) {
-              if (congested_h[grids[i].y * x_grid_ + xmin]) {
+              if (congested_h[static_cast<size_t>(grids[i].y) * x_grid_
+                              + xmin]) {
                 congestion_nets.insert(nets_[netID]->getDbNet());
                 already_added[netID] = true;
                 found = true;
