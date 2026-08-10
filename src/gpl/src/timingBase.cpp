@@ -125,12 +125,17 @@ void TimingBase::setTimingNetsPercentage(float percentage)
 bool TimingBase::executeTimingDriven(bool run_journal_restore,
                                      bool enable_repair_timing)
 {
-  rs_->findResizeSlacks(run_journal_restore,
-                        (enable_repair_timing && repair_timing_),
-                        repair_tns_end_percent_);
+  {
+    // std::scope_exit at home, rarely needed, so inlined
+    std::shared_ptr<void> fix_pointers_guard(nullptr, [&](void*) {
+      if (!run_journal_restore) {
+        nbc_->fixPointers();
+      }
+    });
 
-  if (!run_journal_restore) {
-    nbc_->fixPointers();
+    rs_->findResizeSlacks(run_journal_restore,
+                          (enable_repair_timing && repair_timing_),
+                          repair_tns_end_percent_);
   }
 
   // get worst resize nets
