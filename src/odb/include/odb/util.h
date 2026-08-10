@@ -29,6 +29,7 @@ bool hasOneSiteMaster(dbDatabase* db);
 
 void cutRows(dbBlock* block,
              int min_row_width,
+             int min_row_height,
              const std::vector<dbBox*>& blockages,
              int halo_x,
              int halo_y,

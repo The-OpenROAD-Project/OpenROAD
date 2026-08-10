@@ -118,6 +118,24 @@ void Tapcell::checkPlaceable(const EndcapCellOptions& options) const
   }
 }
 
+int Tapcell::maxCoreCellHeight() const
+{
+  int max_height = 0;
+  for (odb::dbLib* lib : db_->getLibs()) {
+    for (odb::dbMaster* master : lib->getMasters()) {
+      if (!master->isCoreAutoPlaceable()) {
+        continue;
+      }
+      if (master->isBlock() || master->isPad() || master->isCover()
+          || master->isEndCap() || master->isFiller()) {
+        continue;
+      }
+      max_height = std::max(max_height, static_cast<int>(master->getHeight()));
+    }
+  }
+  return max_height;
+}
+
 void Tapcell::cutRows(const Options& options)
 {
   checkPlaceable(options.endcap_master, "-endcap_master");
@@ -130,7 +148,17 @@ void Tapcell::cutRows(const Options& options)
                           ? 2 * options.endcap_master->getWidth()
                           : 0;
   min_row_width = std::max(min_row_width, options.row_min_width);
-  odb::cutRows(block, min_row_width, blockages, halo_x, halo_y, logger_);
+
+  int max_cell_height = maxCoreCellHeight();
+  int min_row_height
+      = (options.endcap_master != nullptr)
+            ? 2 * options.endcap_master->getHeight() + max_cell_height
+            : 2 * max_cell_height;
+
+  min_row_height = std::max(min_row_height, options.row_min_height);
+
+  odb::cutRows(
+      block, min_row_width, min_row_height, blockages, halo_x, halo_y, logger_);
 }
 
 void Tapcell::run(const Options& options)
