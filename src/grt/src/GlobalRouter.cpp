@@ -1482,8 +1482,9 @@ GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net, const int max_layer)
         const int via_max_layer = top_layer->getRoutingLevel();
         const odb::Point center = grid_->getPositionOnGrid(pshape.point);
         // Keep the below-min pin access layers — restoreNetRoute requires
-        // the tree to cover the pins — but clamp at the ceiling: a via
-        // above it (e.g. to a top-level pin) would reject the whole tree.
+        // the tree to cover the pins — but clamp at the ceiling: the CUGR
+        // grid has no layers above it and clamps pin access points to it,
+        // so a net reaching a pin only above max_layer adopts from guides.
         for (int level = via_min_layer;
              level < std::min(via_max_layer, max_layer);
              level++) {
