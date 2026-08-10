@@ -42,9 +42,9 @@ dbInst* extSpef::getDbInst(const uint32_t id)
   const char hierD = _block->getHierarchyDelimiter();
   const char* instName = _spefName;
   const char* iName;
-  if (!_mMap && _divider[0] != hierD) {
+  if (!_mMap && spef_header_.divider[0] != hierD) {
     while (instName[ii] != '\0') {
-      if (instName[ii] == _divider[0]) {
+      if (instName[ii] == spef_header_.divider[0]) {
         _nDvdName[ii] = hierD;
       } else {
         _nDvdName[ii] = instName[ii];
@@ -721,10 +721,10 @@ dbNet* extSpef::getDbNet(uint32_t* id, const uint32_t spefId)
   const char hierD = _block->getHierarchyDelimiter();
   const char* netName = _spefName;
   const char* nName;
-  if (!_mMap && _divider[0] != hierD) {
+  if (!_mMap && spef_header_.divider[0] != hierD) {
     uint32_t ii = 0;
     while (netName[ii] != '\0') {
-      if (netName[ii] == _divider[0]) {
+      if (netName[ii] == spef_header_.divider[0]) {
         _nDvdName[ii] = hierD;
       } else {
         _nDvdName[ii] = netName[ii];
@@ -2166,7 +2166,8 @@ void extSpef::addNetNodeHash(dbNet* net)
       continue;
     }
     char nodeWord[100];
-    sprintf(nodeWord, "*%d%s%d", netId, _delimiter, nodeNum);
+    sprintf(
+        nodeWord, "*%d%s%d", netId, spef_header_.delimiter.c_str(), nodeNum);
     addNewCapIdOnCapTable(nodeWord, capId);
   }
 }
@@ -2527,7 +2528,7 @@ uint32_t extSpef::readBlock(const uint32_t debug,
       }
     }
 
-    _nodeParser->resetSeparator(_delimiter);
+    _nodeParser->resetSeparator(spef_header_.delimiter.c_str());
 
     if (_rRun == 1) {
       setSpefFlag(false);
@@ -2702,7 +2703,7 @@ void extSpef::printCapNode(const uint32_t capNodeId)
                   293,
                   "*{}{}{}",
                   tid,
-                  _delimiter,
+                  spef_header_.delimiter,
                   iterm->getMTerm()->getName().c_str());
   } else if (capNode->isBTerm()) {
     logger_->info(
@@ -2757,7 +2758,7 @@ bool extSpef::readPorts()
 
 uint32_t extSpef::readMaxMapId(int* cornerCnt)
 {
-  _nodeParser->resetSeparator(_delimiter);
+  _nodeParser->resetSeparator(spef_header_.delimiter.c_str());
 
   uint32_t maxId = 0;
   bool dnetFound = false;
@@ -2866,36 +2867,36 @@ bool extSpef::readHeaderInfo(const uint32_t debug, const bool skipFlag)
 
     if (_parser->isKeyword(0, "*DESIGN")) {
       _parser->mkWords(_parser->get(1), "\"");
-      strcpy(_design, _parser->get(0));
+      spef_header_.design_name = _parser->get(0);
     } else if (_parser->isKeyword(0, "*DIVIDER")) {
-      strcpy(_divider, _parser->get(1));
+      spef_header_.divider = _parser->get(1);
     } else if (_parser->isKeyword(0, "*DELIMITER")) {
-      strcpy(_delimiter, _parser->get(1));
+      spef_header_.delimiter = _parser->get(1);
     } else if (_parser->isKeyword(0, "*BUS_DELIMITER")) {
-      strcpy(_bus_delimiter, _parser->get(1));
+      spef_header_.bus_delimiter = _parser->get(1);
       if (_parser->getWordCnt() > 2) {
-        strcat(_bus_delimiter, _parser->get(2));
+        spef_header_.bus_delimiter += _parser->get(2);
       }
     } else if (_parser->isKeyword(0, "*DESIGN_FLOW")) {
     } else if (_parser->isKeyword(0, "*T_UNIT")) {
     } else if (_parser->isKeyword(0, "*R_UNIT")) {
-      strcpy(_res_unit_word, _parser->get(2));
+      spef_header_.resistance_unit_word = _parser->get(2);
 
       _res_unit = 1.0;
-      if (strcmp("MOHM", _res_unit_word) == 0) {
+      if (spef_header_.resistance_unit_word == "MOHM") {
         _res_unit = 0.001 * _parser->getInt(1);
       }
-      if (strcmp("KOHM", _res_unit_word) == 0) {
+      if (spef_header_.resistance_unit_word == "KOHM") {
         _res_unit = 1000.0 * _parser->getInt(1);
       }
 
     } else if (_parser->isKeyword(0, "*C_UNIT")) {
-      strcpy(_cap_unit_word, _parser->get(2));
+      spef_header_.capacitance_unit_word = _parser->get(2);
 
       _cap_unit = 1.0;
-      if (strcmp("PF", _cap_unit_word) == 0) {
+      if (spef_header_.capacitance_unit_word == "PF") {
         _cap_unit = 1000.0 * _parser->getInt(1);
-      } else if (strcmp("FF", _cap_unit_word) == 0) {
+      } else if (spef_header_.capacitance_unit_word == "FF") {
         _cap_unit = 1.0 * _parser->getInt(1);
       }
     } else if (_parser->isKeyword(0, "*L_UNIT")) {
