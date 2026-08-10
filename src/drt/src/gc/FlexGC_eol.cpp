@@ -652,6 +652,10 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
   if (edge->isFixed() && ptr->isFixed()) {
     return;
   }
+  if (edge->getNet()->getMinSpacing() != -1
+      || ptr->getNet()->getMinSpacing() != -1) {
+    return;
+  }
 
   // skip if non oppo-dir edge
   if ((int) edge->getDir() + (int) ptr->getDir() != OPPOSITEDIR) {
