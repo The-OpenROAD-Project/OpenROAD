@@ -56,7 +56,10 @@ int LatencyBalancer::run()
   initSta();
   findLeafBuilders(root_);
   buildGraph(root_->getTopInputNet());
-  computeBuffersDelay(buffersDelay_, 0);
+  computeBuffersDelay(0);
+  if (buffersDelay_.empty()) {
+    return 0;
+  }
   balanceLatencies(0);
   logger_->info(CTS,
                 36,
@@ -77,20 +80,31 @@ void LatencyBalancer::initSta()
   timingGraph_ = openSta_->graph();
 }
 
-void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
-                                          double extra_out_cap)
+void LatencyBalancer::computeBuffersDelay(double extra_out_cap)
 {
-  std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
   debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = [");
-  for (const std::string& buffer : dlyBuffers) {
-    int bufDelay = techChar_->computeBufferDelay(buffer, buffer, extra_out_cap)
-                   * dpUnit_;
+  for (const std::string& buffer : options_->getDlyBufferList()) {
+    const int64_t bufDelay = std::llround(
+        techChar_->computeBufferDelay(buffer, buffer, extra_out_cap) * dpUnit_);
+    if (bufDelay <= 0) {
+      // A zero step would make the DP chain and its backtracking never advance
+      debugPrint(
+          logger_, CTS, "insertion delay", 3, "{} : skipped, no delay", buffer);
+      continue;
+    }
     debugPrint(logger_, CTS, "insertion delay", 3, "{} : {}", buffer, bufDelay);
-    buffersDelay.push_back(
-        techChar_->computeBufferDelay(buffer, buffer, extra_out_cap)
-        * dpUnit_);
+    dlyBuffers_.push_back(buffer);
+    buffersDelay_.push_back(bufDelay);
   }
   debugPrint(logger_, CTS, "insertion delay", 3, "]");
+
+  if (buffersDelay_.empty()) {
+    logger_->warn(CTS,
+                  180,
+                  "No delay buffer has a measurable delay at {} resolution; "
+                  "latency balancing is skipped.",
+                  1.0 / dpUnit_);
+  }
 }
 
 int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load, double wl, double& wireCap)
@@ -411,12 +425,12 @@ DPResult LatencyBalancer::solveDP(
   debugPrint(logger_, CTS, "insertion delay", 5, "Buffer driving sinks has {} wire dly", sinkWireDly);
   std::vector<int64_t> sinkDelay(nBuffers);
   for (size_t j = 0; j < nBuffers; j++) {
-    int64_t delay = static_cast<int64_t>(
-                        techChar_->computeBufferDelay(
-                            dlyBuffers[j], sinks,
-                            sinkWireCap + loadPinsHwpl * capPerDBU_)
-                        * dpUnit_)
-                    + sinkWireDly;
+    int64_t delay
+        = std::llround(
+              techChar_->computeBufferDelay(
+                  dlyBuffers[j], sinks, sinkWireCap + loadPinsHwpl * capPerDBU_)
+              * dpUnit_)
+          + sinkWireDly;
     sinkDelay[j] = delay;
     maxBufDelay = std::max(maxBufDelay, delay);
   }
@@ -429,61 +443,66 @@ DPResult LatencyBalancer::solveDP(
       int64_t wireDly
           = computeWireLumpedDelay(dlyBuffers[j], wl, wireCap);
       debugPrint(logger_, CTS, "insertion delay", 5, "Buffer {} driving {} has {} wire dly", dlyBuffers[i], dlyBuffers[j], wireDly);
-      int64_t delay = static_cast<int64_t>(
-                          techChar_->computeBufferDelay(
-                              dlyBuffers[i], dlyBuffers[j], wireCap)
-                          * dpUnit_)
+      int64_t delay = std::llround(techChar_->computeBufferDelay(
+                                       dlyBuffers[i], dlyBuffers[j], wireCap)
+                                   * dpUnit_)
                       + wireDly;
       pairDelay[i][j] = delay;
       maxBufDelay = std::max(maxBufDelay, delay);
     }
   }
 
-  // max weight = target delay + some overdelay that could be benefitial
+  // Allow overshooting the target by up to one buffer delay
   const int64_t maxW = target + maxBufDelay;
-  constexpr int64_t UNSET = -1;
-  std::vector<std::vector<int>> dp (maxW + 1, std::vector<int>(nBuffers, UNSET));
-  std::vector<std::vector<int>> nxt(maxW + 1, std::vector<int>    (nBuffers, -2));
+  constexpr int32_t kUnset = -1;
+  constexpr int32_t kDrivesSinks = -1;
+  constexpr int32_t kNoNext = -2;
+  // dp[w][j] flattened: chain length for weight w with leftmost buffer j
+  std::vector<int32_t> dp(static_cast<size_t>(maxW + 1) * nBuffers, kUnset);
+  std::vector<int32_t> nxt(static_cast<size_t>(maxW + 1) * nBuffers, kNoNext);
+  auto state = [nBuffers](int64_t w, size_t j) {
+    return static_cast<size_t>(w) * nBuffers + j;
+  };
 
   // Base case: single buffer driving the sinks
   for (size_t j = 0; j < nBuffers; j++) {
-    int64_t bufDelay = sinkDelay[j];
-    if (bufDelay <= maxW) {
-      dp[bufDelay][j] = 1;
-      nxt[bufDelay][j] = -1;  // -1 → drives sinks
+    const int64_t bufDelay = sinkDelay[j];
+    if (bufDelay > 0 && bufDelay <= maxW) {
+      dp[state(bufDelay, j)] = 1;
+      nxt[state(bufDelay, j)] = kDrivesSinks;
     }
   }
 
-  // Extend the chain one buffer to the left at a time
+  // Extend leftward; positive steps make increasing w a valid order
   for (int64_t w = 0; w <= maxW; w++) {
-    for (size_t j = 0; j < nBuffers; j++) {       // j = current leftmost buffer
-      if (dp[w][j] == UNSET) {
+    for (size_t j = 0; j < nBuffers; j++) {  // j = current leftmost buffer
+      const int32_t chainLen = dp[state(w, j)];
+      if (chainLen == kUnset) {
         continue;
       }
 
-      for (size_t i = 0; i < nBuffers; i++) {     // i = candidate new leftmost buffer
-        int64_t bufDelay = pairDelay[i][j];   // exact: i's load is j, which is known
-        int64_t newWeight = w + bufDelay;
-        if (newWeight > maxW) {
+      for (size_t i = 0; i < nBuffers; i++) {  // i = candidate new leftmost
+        const int64_t bufDelay = pairDelay[i][j];
+        const int64_t newWeight = w + bufDelay;
+        if (bufDelay <= 0 || newWeight > maxW) {
           continue;
         }
 
-        if (dp[newWeight][i] == UNSET
-            || dp[w][j] + 1 < dp[newWeight][i]) {
-          dp[newWeight][i] = dp[w][j] + 1;
-          nxt[newWeight][i] = static_cast<int>(j);
+        const size_t next = state(newWeight, i);
+        if (dp[next] == kUnset || chainLen + 1 < dp[next]) {
+          dp[next] = chainLen + 1;
+          nxt[next] = static_cast<int32_t>(j);
         }
       }
     }
   }
 
-  // ── 3. Pick best solution ─────────────────────────────────────────────────
-
+  // Pick best solution
   int64_t bestW = 0;
   int     bestJ = -1;
   for (int64_t w = 0; w <= maxW; w++) {
     for (size_t j = 0; j < nBuffers; j++) {
-      if (dp[w][j] == UNSET) {
+      if (dp[state(w, j)] == kUnset) {
         continue;
       }
       int64_t dist = std::abs(w - target);
@@ -491,7 +510,7 @@ DPResult LatencyBalancer::solveDP(
                                      : std::abs(bestW - target);
 
       if (dist < bestDist
-        || (dist == bestDist && dp[w][j] < dp[bestW][bestJ])) {
+          || (dist == bestDist && dp[state(w, j)] < dp[state(bestW, bestJ)])) {
         bestW = w;
         bestJ = static_cast<int>(j);
       }
@@ -500,38 +519,42 @@ DPResult LatencyBalancer::solveDP(
 
   if (bestJ == -1) {
     return {};
-  }  // no solution found
+  }
 
-  // ── 4. Backtrack left → right along nxt[] pointers ───────────────────────
-  //
-  // At state (w, cur): cur is leftmost, nxt[w][cur] is what cur drives.
-  // Step back: w -= pairDelay[cur][next], then cur = next.
-
+  // Backtrack left → right: nxt[w][cur] is what cur drives
   DPResult result;
   result.achievedDelay = bestW;
 
-  int64_t w   = bestW;
+  int64_t w = bestW;
   int cur = bestJ;
-  while (cur != -1) {
+  // dp holds the chain length, bounding the walk
+  for (int32_t left = dp[state(bestW, bestJ)]; cur != -1 && left > 0; left--) {
     result.buffers.push_back(dlyBuffers[cur]);
-    int next = nxt[w][cur];
-    if (next == -1) { // cur drives sinks; we're done
+    const int32_t next = nxt[state(w, cur)];
+    if (next == kDrivesSinks) {
       break;
     }
-    w  -= pairDelay[cur][next];
+    w -= pairDelay[cur][next];
     cur = next;
   }
 
   return result;
 }
 
-int LatencyBalancer::backtrackCount(const std::vector<int>& dp_elements, const std::vector<int>& bufDelays, int64_t target)
+int LatencyBalancer::backtrackCount(const std::vector<int>& dp_elements,
+                                    const std::vector<int64_t>& bufDelays,
+                                    int64_t target)
 {
   int n = 0;
   int64_t w = target;
   while (w > 0 && dp_elements[w] != -1) {
+    const int64_t bufDelay = bufDelays[dp_elements[w]];
+    if (bufDelay <= 0) {
+      // Would never reach w == 0
+      break;
+    }
     n++;
-    w -= bufDelays[dp_elements[w]];
+    w -= bufDelay;
   }
   return n;
 }
@@ -542,17 +565,20 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     int srcY,
     const std::vector<odb::dbITerm*>& sinks)
 {
-  int target = delayNeeded * dpUnit_;
+  const int64_t target = std::llround(delayNeeded * dpUnit_);
   debugPrint(logger_, CTS, "insertion delay", 2, "  target delay: {}", target);
-  std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
+  if (target <= 0 || buffersDelay_.empty()) {
+    return {};
+  }
+  const std::vector<std::string>& dlyBuffers = dlyBuffers_;
 
   // Compute initial best combinations of buffers to insert the target delay
   std::vector<int64_t> dp(target + 1, 0);
   std::vector<int> dp_elements(target + 1, -1);
   for (int64_t w = 0; w <= target; w++) {
     for (size_t i = 0; i < buffersDelay_.size(); i++) {
-      const int bufDelay = buffersDelay_[i];
-      int bestPrevWeight;
+      const int64_t bufDelay = buffersDelay_[i];
+      int64_t bestPrevWeight;
       if (bufDelay > w) {
         bestPrevWeight = 0;
       } else {

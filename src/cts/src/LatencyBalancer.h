@@ -81,8 +81,8 @@ class LatencyBalancer
  private:
   void initSta();
   void findLeafBuilders(TreeBuilder* builder);
-  void computeBuffersDelay(std::vector<int>& buffersDelay,
-                           double extra_out_cap);
+  // Fills dlyBuffers_ and buffersDelay_, skipping cells with no usable delay.
+  void computeBuffersDelay(double extra_out_cap);
   int64_t computeWireLumpedDelay(const std::string& load, double wl, double& wireCap);
   int64_t computeWireLumpedDelay(const std::vector<odb::dbITerm*>& loads, double extraLoadCap, double wl, double& wireCap);
   void buildGraph(odb::dbNet* clkInputNet);
@@ -96,7 +96,9 @@ class LatencyBalancer
                                float& sumArrivals,
                                unsigned& numSinks);
 
-  static int backtrackCount(const std::vector<int>& dp_elements, const std::vector<int>& bufDelays, int64_t target);                      
+  static int backtrackCount(const std::vector<int>& dp_elements,
+                            const std::vector<int64_t>& bufDelays,
+                            int64_t target);
   DPResult solveDP(int64_t target, double wl, const std::vector<odb::dbITerm*>& sinks, const std::vector<std::string>& dlyBuffers, double loadPinsHwpl);
   std::vector<std::string> computeNumberOfDelayBuffers(
       double delayNeeded,
@@ -130,10 +132,12 @@ class LatencyBalancer
   float bufferDelay_;
   double capPerDBU_;
   double resPerDBU_;
-  double dpUnit_ = std::pow(10, 14); //fento seconds
+  double dpUnit_ = std::pow(10, 12);  // pico seconds
   float worseDelay_;
   int delayBufIndex_{0};
-  std::vector<int> buffersDelay_;
+  // Delay buffer candidates with a usable delay, and their delay in dpUnit_
+  std::vector<std::string> dlyBuffers_;
+  std::vector<int64_t> buffersDelay_;
   std::vector<GraphNode> graph_;
   std::map<std::string, TreeBuilder*> inst2builder_;
 };
