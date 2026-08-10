@@ -1,6 +1,8 @@
 or_integration_tests(
   "tap"
   TESTS
+    abutting_macros_step
+    abutting_macros_step_no_corners
     aes_gf180
     allow_one_site_gaps
     avoid_overlap

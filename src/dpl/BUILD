@@ -141,6 +141,7 @@ cc_library(
         "//src/odb/src/db",
         "//src/utl",
         "@boost.icl",
+        "@boost.polygon",
         "@boost.stacktrace",
         "@boost.utility",
         "@tcl_lang//:tcl",

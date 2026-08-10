@@ -3833,5 +3833,100 @@ TEST_F(TileGeneratorTest, EagerInitReindexDoesNotSpuriouslyNotify)
       << "eagerInit did not clear the tile cache";
 }
 
+//------------------------------------------------------------------------------
+// dbuPrecision / dbuToMicronString
+//
+// Both the inspector's property formatting (ScopedDbuFormat) and the WEB "tile"
+// / "select" debug lines print DBU lengths in microns at this precision, so the
+// contract is: never print two adjacent DBU as the same string.
+//------------------------------------------------------------------------------
+
+// One row per DATABASE MICRONS value a real PDK uses, plus the boundaries.
+struct DbuScaleCase
+{
+  double dbu_per_micron;
+  int precision;
+  const char* one_dbu;  // 1 DBU rendered in microns
+};
+
+// 2000 (Nangate45) and 20000 are the rows that pin ceil() over round(): round()
+// would give 3 and 4 here, which collapses 1 DBU onto 2 DBU.  1000 / 10000 /
+// 100000 are the exact powers of ten, where a log10 that lands a hair high
+// would ceil() to one digit too many.
+constexpr DbuScaleCase kDbuScales[] = {
+    {1.0, 0, "1"},
+    {100.0, 2, "0.01"},
+    {200.0, 3, "0.005"},
+    {1000.0, 3, "0.001"},   // sky130, asap7, ihp-sg13g2
+    {2000.0, 4, "0.0005"},  // Nangate45
+    {4000.0, 4, "0.0003"},  // not a divisor of 10^4 — nearest grid point
+    {10000.0, 4, "0.0001"},
+    {20000.0, 5, "0.00005"},
+    {100000.0, 5, "0.00001"},
+};
+
+TEST(DbuFormatTest, PrecisionMatchesTheDatabaseScale)
+{
+  for (const auto& c : kDbuScales) {
+    EXPECT_EQ(dbuPrecision(c.dbu_per_micron), c.precision)
+        << "dbu_per_micron=" << c.dbu_per_micron;
+    EXPECT_EQ(dbuToMicronString(1, c.dbu_per_micron), c.one_dbu)
+        << "dbu_per_micron=" << c.dbu_per_micron;
+  }
+}
+
+// The invariant the precision exists for: adjacent DBU must stay distinct.
+// This is what round() breaks at 2000 DBU/um.
+TEST(DbuFormatTest, AdjacentDbuNeverCollapseOntoTheSameString)
+{
+  for (const auto& c : kDbuScales) {
+    for (int dbu = 0; dbu < 8; ++dbu) {
+      EXPECT_NE(dbuToMicronString(dbu, c.dbu_per_micron),
+                dbuToMicronString(dbu + 1, c.dbu_per_micron))
+          << "dbu_per_micron=" << c.dbu_per_micron << " dbu=" << dbu;
+    }
+  }
+}
+
+// A power of ten must not pick up a spurious extra digit from log10 rounding.
+TEST(DbuFormatTest, PowersOfTenGetExactlyTheirExponent)
+{
+  double scale = 1.0;
+  for (int exponent = 0; exponent <= 9; ++exponent) {
+    EXPECT_EQ(dbuPrecision(scale), exponent) << "1e" << exponent;
+    scale *= 10.0;
+  }
+}
+
+// Whole microns and typical coordinates come out without trailing noise.
+TEST(DbuFormatTest, WholeAndFractionalMicronsRoundTrip)
+{
+  EXPECT_EQ(dbuToMicronString(1000, 1000.0), "1");
+  EXPECT_EQ(dbuToMicronString(974400, 1000.0), "974.4");
+  EXPECT_EQ(dbuToMicronString(-5760, 1000.0), "-5.76");
+  EXPECT_EQ(dbuToMicronString(0, 1000.0), "0");
+  // 2000 DBU/um: a half-DBU-per-milli scale still prints exactly.
+  EXPECT_EQ(dbuToMicronString(2000, 2000.0), "1");
+  EXPECT_EQ(dbuToMicronString(1, 2000.0), "0.0005");
+  EXPECT_EQ(dbuToMicronString(3, 2000.0), "0.0015");
+}
+
+// Before any LEF is read the database reports no scale; callers get raw DBU
+// rather than a division by zero.
+TEST(DbuFormatTest, NoScaleFallsBackToRawDbu)
+{
+  EXPECT_EQ(dbuPrecision(0.0), 0);
+  EXPECT_EQ(dbuToMicronString(12345, 0.0), "12345");
+  EXPECT_EQ(dbuPrecision(-1.0), 0);
+  EXPECT_EQ(dbuToMicronString(12345, -1.0), "12345");
+}
+
+// The scale the tests above model is the one the fixture's tech actually has.
+TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
+{
+  EXPECT_EQ(getDb()->getDbuPerMicron(), 2000u);
+  EXPECT_EQ(dbuPrecision(getDb()->getDbuPerMicron()), 4);
+}
+
 }  // namespace
 }  // namespace web
