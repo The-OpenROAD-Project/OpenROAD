@@ -1,0 +1,34 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN fixed_via_euclidean ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 10000 600 ) ;
+
+ROW ROW_0 EU_SITE 0 0 N DO 50 BY 1 STEP 200 0 ;
+ROW ROW_1 EU_SITE 0 200 N DO 50 BY 1 STEP 200 0 ;
+ROW ROW_2 EU_SITE 0 400 N DO 50 BY 1 STEP 200 0 ;
+
+COMPONENTS 6 ;
+  - axial EU_CELL + PLACED ( 0 0 ) N ;
+  - left_boundary EU_CELL + PLACED ( 0 400 ) N ;
+  - diagonal_large EU_CELL + PLACED ( 4000 0 ) N ;
+  - diagonal_small EU_CELL + PLACED ( 6000 0 ) N ;
+  - same_net EU_CELL + PLACED ( 2000 0 ) N ;
+  - diagonal_equal EU_CELL + PLACED ( 8000 0 ) N ;
+END COMPONENTS
+
+SPECIALNETS 1 ;
+  - VSS ( same_net VSS ) + USE GROUND
+    + ROUTED metal1 0 + SHAPE STRIPE ( 300 100 ) eu_via
+      NEW metal1 0 + SHAPE STRIPE ( 300 300 ) eu_via
+      NEW metal1 0 + SHAPE STRIPE ( 2300 100 ) eu_via
+      NEW metal1 0 + SHAPE STRIPE ( 2300 300 ) eu_via
+      NEW metal1 0 + SHAPE STRIPE ( 4300 300 ) eu_via
+      NEW metal1 0 + SHAPE STRIPE ( 6280 300 ) eu_via
+      # With center x=-130 and the M1 spacing rule, the via keepout ends at
+      # x=-1, one DBU before the first site on row 2.
+      NEW metal1 0 + SHAPE STRIPE ( 8250 320 ) eu_via
+      NEW metal1 0 + SHAPE STRIPE ( -130 500 ) eu_via ;
+END SPECIALNETS
+END DESIGN

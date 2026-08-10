@@ -99,7 +99,17 @@ COMPULSORY_TESTS = [
     "regions2-opt",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+PASSFAIL_TESTS = [
+    "fixed_via",
+    "fixed_via_array",
+    "fixed_via_cut",
+    "fixed_via_default_off",
+    "fixed_via_euclidean",
+    "fixed_via_mirror",
+    "fixed_via_mirror_default_off",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -173,6 +183,12 @@ filegroup(
                 "edge_spacing.lef",
                 "multi_height_rows.def",
                 "Nangate45/fake_macros.lef",
+            ],
+            "fixed_via_default_off": [
+                "fixed_via.def",
+            ],
+            "fixed_via_mirror_default_off": [
+                "fixed_via_mirror.lef",
             ],
             "fillers1": [
                 "simple01.def",
@@ -309,6 +325,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         tags = [],
         visibility = ["//visibility:public"],

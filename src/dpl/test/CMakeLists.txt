@@ -93,6 +93,14 @@ or_integration_tests(
     edge_spacing-opt
     regions1-opt
     regions2-opt
+  PASSFAIL_TESTS
+    fixed_via
+    fixed_via_array
+    fixed_via_cut
+    fixed_via_default_off
+    fixed_via_euclidean
+    fixed_via_mirror
+    fixed_via_mirror_default_off
 )
 
 add_executable(dpl_test dpl_test.cc)
@@ -109,4 +117,3 @@ gtest_discover_tests(dpl_test
 )
 
 add_dependencies(build_and_test dpl_test)
-

@@ -1,0 +1,17 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN fixed_via_mirror_default_off ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 20000 12000 ) ;
+COMPONENTS 1 ;
+  - mirror MIRROR_CELL + PLACED ( 3800 5600 ) N ;
+END COMPONENTS
+PINS 1 ;
+  - target + NET signal + DIRECTION INPUT + USE SIGNAL
+    + LAYER metal1 ( -20 -20 ) ( 20 20 ) + FIXED ( 10000 6800 ) N ;
+END PINS
+NETS 1 ;
+  - signal ( PIN target ) ( mirror A ) ;
+END NETS
+END DESIGN

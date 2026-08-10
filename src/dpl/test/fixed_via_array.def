@@ -1,0 +1,29 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN fixed_via_array ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 28000 14000 ) ;
+
+# Sites 0--71 provide a repeated physical supply-via array in two rows.
+ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 0 5600 N DO 72 BY 1 STEP 380 0 ;
+ROW ROW_1 FreePDK45_38x28_10R_NP_162NW_34O 0 8400 FS DO 72 BY 1 STEP 380 0 ;
+
+COMPONENTS 6 ;
+  - blocked_left SUPPLY_CACHE_CELL + PLACED ( 23560 5600 ) N ;
+  - gap_boundary SUPPLY_CACHE_CELL + PLACED ( 23940 5600 ) N ;
+  - blocked_right SUPPLY_CACHE_CELL + PLACED ( 24320 5600 ) N ;
+  - same_net SUPPLY_CACHE_CELL + PLACED ( 25080 8400 ) FS ;
+  - after_repeat SUPPLY_CACHE_CELL + PLACED ( 25840 5600 ) N ;
+  - mirrored_blocked SUPPLY_CACHE_CELL + PLACED ( 24320 8400 ) FS ;
+END COMPONENTS
+
+SPECIALNETS 1 ;
+  - VSS ( same_net VSS ) + USE GROUND
+    # Via centers are at sites 62, 64, and 66 in both rows.  Site 63 is an
+    # intentional physical hole; site 68 is beyond the finite repetition and
+    # must not inherit or wrap a conflict.
+    + ROUTED metal1 0 + SHAPE STRIPE ( 23750 7000 ) via1_0
+      DO 3 BY 2 STEP 760 2800 ;
+END SPECIALNETS
+END DESIGN
