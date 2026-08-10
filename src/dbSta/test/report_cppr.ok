@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: search_crpr
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 7 components and 33 component-terminals.
+[INFO ODB-0133]     Created 10 nets and 17 connections.
+column header: Endpoint                            Raw slack   CPPR slack       Credit  Common clock pin
+paths found > 0: 1
+reg2/D present: 1
+reg2/D credit > 0 (pessimism removed): 1
+reg2/D common pin is ckbuf1/Z: 1
+all credits non-negative: 1
+cppr == raw + credit on all checks: 1
+credit matches report_checks crpr:  1
+gba report_checks unchanged: 1

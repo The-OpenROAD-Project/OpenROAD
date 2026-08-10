@@ -1,6 +1,8 @@
 or_integration_tests(
   "dbSta"
   TESTS
+    aocv_derate
+    aocv_propagate
     block_sta1
     check_axioms
     clock_pin
@@ -47,6 +49,15 @@ or_integration_tests(
     report_cell_usage_modinsts_metrics
     report_cell_usage_physical_only
     report_json1
+    report_pba_slack
+    report_pba_hold
+    report_cppr
+    report_cppr_closure
+    report_mcmm_slack
+    report_mcmm_slack_by_mode
+    report_closure
+    report_incremental_sta
+    report_incremental_sta2
     report_timing_histogram
     report_logic_depth_histogram
     sdc_get1
