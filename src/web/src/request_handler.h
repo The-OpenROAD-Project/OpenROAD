@@ -262,8 +262,14 @@ T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
   return default_val;
 }
 
+// Build a kError response carrying `message`.  The three-line
+// type/string/assign dance is easy to get subtly wrong (the payload is bytes,
+// not a string), so it lives in one place.
+WebSocketResponse errorResponse(uint32_t id, std::string_view message);
+
 // Deepest tile zoom the server will address.  2^kMaxTileZoom must stay inside
 // an int, since the grid size is computed as an int in several renderers.
+// The client mirrors this ceiling in maxUsefulZoom() (ui-utils.js).
 constexpr int kMaxTileZoom = 30;
 
 // Read the z/x/y grid coordinates of a tile request into `z`/`x`/`y`.

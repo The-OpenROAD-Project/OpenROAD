@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeScaleBar, cssColorToHex, niceRoundParts, isValidHexColor,
-         maxUsefulZoom }
+         maxUsefulZoom, MAX_TILE_ZOOM }
     from '../../src/ui-utils.js';
 
 describe('isValidHexColor', () => {
@@ -125,7 +125,7 @@ describe('computeScaleBar', () => {
 
 describe('maxUsefulZoom', () => {
     // designScale is pixels per DBU at zoom 0 (tileSize / maxDXDY), so these
-    // are the real values for a 256 px tile: gcd is 71510 DBU across, swerv
+    // are real die widths: gcd is 71510 DBU across, swerv
     // 962800, microwatt 3610000.
     const scaleFor = (maxDXDY) => 256 / maxDXDY;
 
@@ -146,7 +146,8 @@ describe('maxUsefulZoom', () => {
         for (const maxDXDY of [888, 71510, 3610000, 1e9]) {
             const z = maxUsefulZoom(scaleFor(maxDXDY));
             assert.equal(z, Math.trunc(z), 'zoom levels are integers');
-            assert.ok(z >= 1 && z <= 30, `z=${z} outside [1, 30]`);
+            assert.ok(z >= 1 && z <= MAX_TILE_ZOOM,
+                      `z=${z} outside [1, ${MAX_TILE_ZOOM}]`);
         }
     });
 

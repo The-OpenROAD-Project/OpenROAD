@@ -242,6 +242,16 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+WebSocketResponse errorResponse(const uint32_t id,
+                                const std::string_view message)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kError;
+  resp.payload.assign(message.begin(), message.end());
+  return resp;
+}
+
 bool parseTileCoords(const boost::json::object& json,
                      int& z,
                      int& x,
@@ -2914,12 +2924,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   int y = 0;
   if (std::string coord_error;
       !parseTileCoords(req.json, z, x, y, coord_error)) {
-    WebSocketResponse resp;
-    resp.id = req.id;
-    resp.type = WebSocketResponse::kError;
-    const std::string err = "bad tile request: " + coord_error;
-    resp.payload.assign(err.begin(), err.end());
-    return resp;
+    return errorResponse(req.id, "bad tile request: " + coord_error);
   }
 
   // Skip a render the client abandoned while it sat queued (best-effort).
@@ -3084,6 +3089,17 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
   // try/catch, so convert malformed-request exceptions (e.g. a non-bool
   // toggle flag) into an error response instead of terminating the server.
   try {
+    // Validate first: below this point the handler mutates session state (the
+    // "Flywires only" latch) and takes several mutexes, and a request that is
+    // going to be refused must not do any of that.
+    int z = 0;
+    int x = 0;
+    int y = 0;
+    if (std::string coord_error;
+        !parseTileCoords(req.json, z, x, y, coord_error)) {
+      return errorResponse(req.id, "bad overlay request: " + coord_error);
+    }
+
     // Re-derive the selection highlights when either:
     //  - the "Flywires only" toggle flipped (so the change takes effect
     //    without re-selecting) — but only while the highlights are live: a
@@ -3186,17 +3202,6 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
     const int tile_px
         = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
-
-    int z = 0;
-    int x = 0;
-    int y = 0;
-    if (std::string coord_error;
-        !parseTileCoords(req.json, z, x, y, coord_error)) {
-      resp.type = WebSocketResponse::kError;
-      const std::string err = "bad overlay request: " + coord_error;
-      resp.payload.assign(err.begin(), err.end());
-      return resp;
-    }
 
     resp.type = WebSocketResponse::kPng;
     resp.payload = gen_->generateOverlayTile(z,
@@ -3479,10 +3484,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
     int y = 0;
     if (std::string coord_error;
         !parseTileCoords(req.json, z, x, y, coord_error)) {
-      resp.type = WebSocketResponse::kError;
-      const std::string err = "bad heat map request: " + coord_error;
-      resp.payload.assign(err.begin(), err.end());
-      return resp;
+      return errorResponse(req.id, "bad heat map request: " + coord_error);
     }
     // Same sizing contract as layer tiles: the client states the device-pixel
     // square, so the heat map is as crisp as the layers beneath it.

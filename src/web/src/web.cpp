@@ -530,24 +530,21 @@ namespace {
 // dies, taking the design with it.  A malformed request must cost the client
 // one error response, never the session.
 //
-// The obvious offender is a field whose JSON type is wrong: boost::json's
-// as_int64()/as_string() throw rather than return an error.  A client cannot
-// avoid this by being careful, either -- JSON.stringify serializes NaN and
-// Infinity as `null`, so any arithmetic that goes non-finite on the client
-// (an unbounded zoom, for one) arrives here as a null where a number belongs.
+// The obvious offender is a field whose JSON type is wrong -- boost::json's
+// as_int64()/as_string() throw rather than return an error.  See
+// parseTileCoords() in request_handler.h for why a careful client cannot avoid
+// this on its own.
 WebSocketResponse invoke_handler(const RequestDispatcher::HandleFn& handle,
                                  const WebSocketRequest& req,
                                  SessionState& state)
 {
   WebSocketResponse resp;
+  // `handle` returns by value, so on a throw `resp` is still the untouched
+  // default -- no partial payload to clear.
   try {
     resp = handle(req, state);
   } catch (const std::exception& e) {
-    resp = WebSocketResponse{};
-    resp.id = req.id;
-    resp.type = WebSocketResponse::kError;
-    const std::string err = std::string("server error: ") + e.what();
-    resp.payload.assign(err.begin(), err.end());
+    resp = errorResponse(req.id, std::string("server error: ") + e.what());
   }
   resp.request_type = req.raw_type;
   return resp;

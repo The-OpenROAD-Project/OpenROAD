@@ -130,14 +130,21 @@ export function attachGroupCollapse(header, arrow, children, collapsed) {
 // the smallest distance the database can express, so magnifying it further
 // shows nothing that was not already visible.  Returned as an integer because
 // the map rests on integer zoom levels (see buildMapOptions).
+// Must match kMaxTileZoom in request_handler.h: the server refuses a deeper
+// tile, so asking for one would only trade blank tiles for error responses.
+export const MAX_TILE_ZOOM = 30;
+
 export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
     if (!Number.isFinite(designScale) || designScale <= 0) {
-        return 20;  // no design loaded yet; a finite fallback still bounds it
+        // Callers hold off until the design bounds arrive, so this is a
+        // belt-and-braces value: still finite, so the zoom stays bounded.
+        return MAX_TILE_ZOOM;
     }
     const z = Math.ceil(Math.log2(maxPxPerDbu / designScale));
-    // Never below 1 (a design bigger than the cap would otherwise pin the user
-    // at the fit zoom), never above the server's own tile-grid ceiling.
-    return Math.max(1, Math.min(30, z));
+    // Never above the server's ceiling, and never below 1: a design so small
+    // that one DBU already fills the budget at zoom 0 would otherwise pin the
+    // user at the fit zoom with no way to zoom in at all.
+    return Math.max(1, Math.min(MAX_TILE_ZOOM, z));
 }
 
 // True for a "#rrggbb" hex color string (the form an <input type="color">

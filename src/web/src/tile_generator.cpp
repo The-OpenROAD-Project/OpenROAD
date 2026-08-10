@@ -3982,13 +3982,30 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // 150-alpha blend is unchanged too.
             constexpr int kTrackWidth = 1;
 
+            // Walk only the lines inside `draw_bounds`, over odb's own
+            // (memoized, sorted) grid vector.  dbTrackGrid offers a
+            // const-ref accessor next to the out-parameter one, so neither
+            // the copy nor the full scan is needed: metal1 of bp_quad has
+            // 18 947 x-tracks, and the copy alone was ~178 KB per layer-tile.
+            // drawGCellGridLayer keeps a cache of its own only because
+            // dbGCellGrid lacks this accessor.
+            const auto draw_clipped = [&](const std::vector<int>& lines,
+                                          const int lo,
+                                          const int hi,
+                                          const auto& draw_one) {
+              for (auto it = std::ranges::lower_bound(lines, lo);
+                   it != lines.end() && *it <= hi;
+                   ++it) {
+                draw_one(*it);
+              }
+            };
+
             // X-direction tracks (vertical lines on screen)
             // Preferred for vertical layers, non-preferred for horizontal
             // layers
             if ((!is_horizontal && vis.tracks_pref)
                 || (is_horizontal && vis.tracks_non_pref)) {
-              std::vector<int> x_grid;
-              grid->getGridX(x_grid);
+              const std::vector<int>& x_grid = grid->getGridX();
               debugPrint(logger_,
                          utl::WEB,
                          "tile",
@@ -3999,14 +4016,17 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                          dbu_tile.yMin(),
                          dbu_tile.xMax(),
                          dbu_tile.yMax());
-              for (int tx : x_grid) {
-                if (tx < draw_bounds.xMin() || tx > draw_bounds.xMax()) {
-                  continue;
-                }
-                const int px = toPxX(tx, frame);
-                drawLine(
-                    image_buffer, px, pyl, px, pyh, track_color, kTrackWidth);
-              }
+              draw_clipped(
+                  x_grid, draw_bounds.xMin(), draw_bounds.xMax(), [&](int tx) {
+                    const int px = toPxX(tx, frame);
+                    drawLine(image_buffer,
+                             px,
+                             pyl,
+                             px,
+                             pyh,
+                             track_color,
+                             kTrackWidth);
+                  });
             }
 
             // Y-direction tracks (horizontal lines on screen)
@@ -4014,22 +4034,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // layers
             if ((is_horizontal && vis.tracks_pref)
                 || (!is_horizontal && vis.tracks_non_pref)) {
-              std::vector<int> y_grid;
-              grid->getGridY(y_grid);
+              const std::vector<int>& y_grid = grid->getGridY();
               debugPrint(logger_,
                          utl::WEB,
                          "tile",
                          1,
                          "  y_tracks: count={}",
                          y_grid.size());
-              for (int ty : y_grid) {
-                if (ty < draw_bounds.yMin() || ty > draw_bounds.yMax()) {
-                  continue;
-                }
-                const int py = toPxY(ty, frame, super);
-                drawLine(
-                    image_buffer, pxl, py, pxh, py, track_color, kTrackWidth);
-              }
+              draw_clipped(
+                  y_grid, draw_bounds.yMin(), draw_bounds.yMax(), [&](int ty) {
+                    const int py = toPxY(ty, frame, super);
+                    drawLine(image_buffer,
+                             pxl,
+                             py,
+                             pxh,
+                             py,
+                             track_color,
+                             kTrackWidth);
+                  });
             }
           }
         }

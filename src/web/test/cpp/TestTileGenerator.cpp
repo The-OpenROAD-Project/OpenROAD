@@ -2499,14 +2499,12 @@ TEST_F(TileGeneratorTest, NoOutlineOnTechLayerTiles)
 // (RenderThread::drawTracks clips to block->getDieArea()).
 //------------------------------------------------------------------------------
 
-namespace {
 constexpr int kTrackDieSide = 40000;  // die: (0,0)-(40000,40000)
 constexpr int kTrackPitch = 2000;     // 21 tracks per axis across the die
-}  // namespace
 
-// Build a track grid on metal1 covering the die, and return the visibility
-// that draws tracks and nothing else.
-static TileVisibility trackOnlyVisibility()
+// Visibility that draws the tracks and nothing else, so any lit pixel in the
+// assertions below is a track.
+TileVisibility trackOnlyVisibility()
 {
   TileVisibility vis;
   vis.stdcells = false;
@@ -2562,10 +2560,10 @@ TEST_F(TileGeneratorTest, TracksAreClippedToTheDieArea)
 
   size_t inside = 0;
   size_t outside = 0;
-  double worst_x = 0;
-  double worst_y = 0;
-  double min_x = 1e18;
-  double min_y = 1e18;
+  // First offender only: enough to point at the failure, and cheaper than
+  // tracking the whole bounding box of the strays.
+  double stray_x = 0;
+  double stray_y = 0;
   for (unsigned py = 0; py < h; ++py) {
     for (unsigned px = 0; px < w; ++px) {
       if (pixels[4UL * (py * w + px) + 3] == 0) {
@@ -2577,21 +2575,17 @@ TEST_F(TileGeneratorTest, TracksAreClippedToTheDieArea)
                           && dbu_y >= -slack && dbu_y <= kTrackDieSide + slack;
       if (in_die) {
         ++inside;
-      } else {
-        ++outside;
-        worst_x = std::max(worst_x, dbu_x);
-        worst_y = std::max(worst_y, dbu_y);
-        min_x = std::min(min_x, dbu_x);
-        min_y = std::min(min_y, dbu_y);
+      } else if (outside++ == 0) {
+        stray_x = dbu_x;
+        stray_y = dbu_y;
       }
     }
   }
 
   EXPECT_EQ(outside, 0u) << "tracks must stop at the die area (die side "
                          << kTrackDieSide << ", slack " << slack
-                         << " dbu; stray x in [" << min_x << "," << worst_x
-                         << "], y in [" << min_y << "," << worst_y
-                         << "], inside=" << inside << ")";
+                         << " dbu; first stray pixel at " << stray_x << ","
+                         << stray_y << "; inside=" << inside << ")";
   EXPECT_GT(inside, 0u) << "the tracks inside the die must still be drawn";
 }
 
@@ -2607,9 +2601,10 @@ TEST_F(TileGeneratorTest, TracksSpanTheWholeTileWhenTheDieCoversIt)
   odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
   ASSERT_NE(metal1, nullptr);
   odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, metal1);
-  // The fixture's die is (0,0)-(100000,100000); cover it entirely.
-  grid->addGridPatternX(0, 100000 / kTrackPitch + 1, kTrackPitch);
-  grid->addGridPatternY(0, 100000 / kTrackPitch + 1, kTrackPitch);
+  // The fixture's die, set in SetUp(); cover it entirely.
+  constexpr int kFixtureDieSide = 100000;
+  grid->addGridPatternX(0, kFixtureDieSide / kTrackPitch + 1, kTrackPitch);
+  grid->addGridPatternY(0, kFixtureDieSide / kTrackPitch + 1, kTrackPitch);
 
   makeTileGen();
   tile_gen_->eagerInit();
@@ -2619,14 +2614,9 @@ TEST_F(TileGeneratorTest, TracksSpanTheWholeTileWhenTheDieCoversIt)
   auto pixels = decodePng(png, w, h);
   ASSERT_GT(w, 0u);
 
-  const auto row_has_pixel = [&](unsigned py) {
-    for (unsigned px = 0; px < w; ++px) {
-      if (pixels[4UL * (py * w + px) + 3] > 0) {
-        return true;
-      }
-    }
-    return false;
-  };
+  // Rows reuse the fixture's coveredColumns(); columns have no equivalent.
+  const auto row_has_pixel
+      = [&](unsigned py) { return coveredColumns(pixels, w, py) > 0; };
   const auto col_has_pixel = [&](unsigned px) {
     for (unsigned py = 0; py < h; ++py) {
       if (pixels[4UL * (py * w + px) + 3] > 0) {
