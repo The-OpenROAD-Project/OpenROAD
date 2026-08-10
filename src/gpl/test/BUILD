@@ -55,6 +55,23 @@ PASSFAIL_TESTS = [
     "incremental02",
 ]
 
+# Longer-running regression tests (see regression_tests_large.tcl). These are
+# tagged "manual" so they are excluded from the default `bazel test //...`
+# wildcard and must be requested explicitly, e.g. via the :large_tests suite.
+LARGE_TESTS = [
+    "macro01",
+    "macro02",
+    "macro03",
+    "medium01",
+    "medium02",
+    "medium03",
+    "medium04",
+    "medium05",
+    "medium06",
+    "large01",
+    "large02",
+]
+
 ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 py_library(
@@ -100,6 +117,21 @@ filegroup(
     check_passfail = True if test_name in PASSFAIL_TESTS else False,
     data = [":test_resources"],
 ) for test_name in ALL_TESTS]
+
+[regression_test(
+    name = test_name,
+    size = "enormous",
+    data = [":test_resources"],
+    tags = ["manual"],
+) for test_name in LARGE_TESTS]
+
+# Convenience suite to run all long-running tests explicitly:
+#   bazel test //src/gpl/test:large_tests
+test_suite(
+    name = "large_tests",
+    tags = ["manual"],
+    tests = [":" + test_name + "-tcl_test" for test_name in LARGE_TESTS],
+)
 
 PY_TESTS = [
     "ar01",
