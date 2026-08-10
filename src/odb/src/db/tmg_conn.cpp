@@ -1305,15 +1305,14 @@ int tmg_conn::getStartNode()
     }
   }
 
-  // A driver bterm with no pin geometry cannot anchor the walk.  On nets
-  // the router tied to a bump (BUMP_ASSIGNMENT net property), the signal
-  // physically enters through the bump pad, connected as a special iterm;
-  // root the tree there.
+  // The starting point of an input bump net is the bump iterm. Note that
+  // bump nets have a bterm that represents the logical connectivity of the
+  // bump, but it has no physical geometry and is invisible to the graph.
   if (bt_drv && bt_drv->getBPins().empty()
       && dbProperty::find(net_, "BUMP_ASSIGNMENT")) {
-    for (const tmg_rcterm& x : termV_) {
-      if (x.iterm && x.iterm->isSpecial() && x.pt) {
-        return (x.pt - ptV_.data());
+    for (const tmg_rcterm& rc_term : termV_) {
+      if (rc_term.iterm && rc_term.iterm->isSpecial() && rc_term.pt) {
+        return (rc_term.pt - ptV_.data());
       }
     }
   }
