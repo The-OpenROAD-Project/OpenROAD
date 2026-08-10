@@ -93,7 +93,9 @@ extSpef::extSpef(odb::dbTech* tech,
   _ext = extmain;
   _tech = tech;
   _block = blk;
-  spef_header_.version = version;
+  if (version) {
+    spef_header_.version = version;
+  }
 
   if (blk != nullptr) {
     _blockId = blk->getId();
@@ -299,7 +301,9 @@ void extSpef::reinitCapTable(Array1D<double*>* table, const uint32_t n)
 
 void extSpef::setDesign(const char* name)
 {
-  spef_header_.design_name = name;
+  if (name) {
+    spef_header_.design_name = name;
+  }
 }
 
 uint32_t extSpef::getInstMapId(const uint32_t id)
@@ -1564,7 +1568,7 @@ void extSpef::writeBlock(const char* nodeCoord,
       setupMappingForWrite();
     }
 
-    fprintf(_outFP, "%s", spef_header_.string().c_str());
+    fprintf(_outFP, "%s", spef_header_.string(logger_).c_str());
 
     if (_writeNameMap) {
       writeKeyword("\n*NAME_MAP");
@@ -1667,7 +1671,7 @@ uint32_t extSpef::getMappedBTermId(const uint32_t spefId)
   return bterm->getId();
 }
 
-std::string SpefHeader::string() const
+std::string SpefHeader::string(utl::Logger* logger) const
 {
   std::ostringstream out;
 
@@ -1676,8 +1680,16 @@ std::string SpefHeader::string() const
 
   const std::time_t current_time = std::time(nullptr);
   const std::tm* local_time = std::localtime(&current_time);
-  out << "*DATE \"" << std::put_time(local_time, "%H:%M:%S %A %B %d, %Y")
-      << "\"\n";
+
+  out << "*DATE \"";
+
+  if (local_time) {
+    out << std::put_time(local_time, "%H:%M:%S %A %B %d, %Y");
+  } else {
+    logger->warn(RCX, 528, "Could not format the SPEF header date.");
+  }
+
+  out << "\"\n";
 
   out << "*VENDOR \"The OpenROAD Project\"\n";
   out << "*PROGRAM \"OpenROAD\"\n";

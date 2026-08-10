@@ -2865,22 +2865,37 @@ bool extSpef::readHeaderInfo(const uint32_t debug, const bool skipFlag)
       continue;
     }
 
+    auto required_word
+        = [this](const int index, const char* keyword) -> const char* {
+      const char* word = _parser->get(index);
+
+      if (!word) {
+        logger_->error(RCX,
+                       527,
+                       "{} field is missing in SPEF header line {}.",
+                       keyword,
+                       _parser->getLineNum());
+      }
+
+      return word;
+    };
+
     if (_parser->isKeyword(0, "*DESIGN")) {
-      _parser->mkWords(_parser->get(1), "\"");
-      spef_header_.design_name = _parser->get(0);
+      _parser->mkWords(required_word(1, "*DESIGN"), "\"");
+      spef_header_.design_name = required_word(0, "*DESIGN");
     } else if (_parser->isKeyword(0, "*DIVIDER")) {
-      spef_header_.divider = _parser->get(1);
+      spef_header_.divider = required_word(1, "*DIVIDER");
     } else if (_parser->isKeyword(0, "*DELIMITER")) {
-      spef_header_.delimiter = _parser->get(1);
+      spef_header_.delimiter = required_word(1, "*DELIMITER");
     } else if (_parser->isKeyword(0, "*BUS_DELIMITER")) {
-      spef_header_.bus_delimiter = _parser->get(1);
+      spef_header_.bus_delimiter = required_word(1, "*BUS_DELIMITER");
       if (_parser->getWordCnt() > 2) {
         spef_header_.bus_delimiter += _parser->get(2);
       }
     } else if (_parser->isKeyword(0, "*DESIGN_FLOW")) {
     } else if (_parser->isKeyword(0, "*T_UNIT")) {
     } else if (_parser->isKeyword(0, "*R_UNIT")) {
-      spef_header_.resistance_unit_word = _parser->get(2);
+      spef_header_.resistance_unit_word = required_word(2, "*R_UNIT");
 
       _res_unit = 1.0;
       if (spef_header_.resistance_unit_word == "MOHM") {
@@ -2891,7 +2906,7 @@ bool extSpef::readHeaderInfo(const uint32_t debug, const bool skipFlag)
       }
 
     } else if (_parser->isKeyword(0, "*C_UNIT")) {
-      spef_header_.capacitance_unit_word = _parser->get(2);
+      spef_header_.capacitance_unit_word = required_word(2, "*C_UNIT");
 
       _cap_unit = 1.0;
       if (spef_header_.capacitance_unit_word == "PF") {

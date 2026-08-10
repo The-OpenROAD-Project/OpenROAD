@@ -23,7 +23,7 @@ class Parser;
 
 struct SpefHeader
 {
-  std::string string() const;
+  std::string string(utl::Logger* logger) const;
 
   std::string design_name;
   std::string version;
