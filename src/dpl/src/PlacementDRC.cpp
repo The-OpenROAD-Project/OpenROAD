@@ -123,15 +123,23 @@ class PlacementDRC::FixedSupplyVias
       return;
     }
 
-    // Standard cells can only be placed at legal row origins. Merge their
-    // geometry vertically per physical row to prove when no via can conflict.
-    const LayerVerticalRanges cell_ranges = cellVerticalRanges(masters, block);
+    const bool has_right_angle_row
+        = std::ranges::any_of(block->getRows(), [](odb::dbRow* row) {
+            return row->getOrient().isRightAngleRotation();
+          });
+    // Standard cells can only be placed at legal row origins. For rows without
+    // right-angle rotations, merge cell geometry vertically per physical row
+    // to prove when no via can conflict.
+    const LayerVerticalRanges cell_ranges
+        = has_right_angle_row ? LayerVerticalRanges{}
+                              : cellVerticalRanges(masters, block);
     size_t vertically_safe_shape_count = 0;
     for (auto& [layer, data] : layers_) {
-      data.max_spacing = maximumSpacing(layer, data);
-      data.query_halo = std::max(0, data.max_spacing - 1);
-      if (data.max_spacing == 0
-          || !hasPotentialVerticalConflict(data, cell_ranges.at(layer))) {
+      const int max_spacing = maximumSpacing(layer, data);
+      data.query_halo = std::max(0, max_spacing - 1);
+      if (max_spacing == 0
+          || (!has_right_angle_row
+              && !hasPotentialVerticalConflict(data, cell_ranges.at(layer)))) {
         vertically_safe_shape_count += data.shapes.size();
       }
     }
@@ -143,7 +151,7 @@ class PlacementDRC::FixedSupplyVias
                    "fixed_supply_via",
                    1,
                    "skipped fixed supply via checks at legal sites for {} "
-                   "vertically separated shapes",
+                   "shapes that cannot violate spacing",
                    vertically_safe_shape_count);
       }
       return;
@@ -305,7 +313,6 @@ class PlacementDRC::FixedSupplyVias
     std::vector<Shape> shapes;
     std::set<DimensionClass> fixed_dimensions;
     std::unique_ptr<ShapeIndex> index;
-    int max_spacing{0};
     int query_halo{0};
   };
 
@@ -567,8 +574,12 @@ class PlacementDRC::FixedSupplyVias
                   = core.yMin() + grid_->gridYToDbu(GridY{row}).v;
               const int row_y_max
                   = core.yMin() + grid_->gridYToDbu(GridY{row + 1}).v;
-              layer_ranges[row].merge(std::max(shape_y_min, row_y_min),
-                                      std::min(shape_y_max, row_y_max));
+              const int clipped_y_min
+                  = row == 0 ? shape_y_min : std::max(shape_y_min, row_y_min);
+              const int clipped_y_max = row == row_count - 1
+                                            ? shape_y_max
+                                            : std::min(shape_y_max, row_y_max);
+              layer_ranges[row].merge(clipped_y_min, clipped_y_max);
             }
           }
         }
