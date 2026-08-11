@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -20,7 +19,6 @@ namespace dpl {
 
 class DplObserver;
 class Opendp;
-class Padding;
 class Node;
 class Network;
 class Group;
@@ -76,14 +74,12 @@ struct NegCell
   odb::dbInst* db_inst{nullptr};
   Node* node{nullptr};  // cached network_->getNode(db_inst)
 
-  int init_x{0};     // position after global placement (sites)
-  int init_y{0};     // position after global placement (rows)
-  int x{0};          // current legalised position (sites)
-  int y{0};          // current legalised position (rows)
-  int width{0};      // footprint width  (sites)
-  int height{0};     // footprint height (row units: 1–4)
-  int pad_left{0};   // left padding (sites)
-  int pad_right{0};  // right padding (sites)
+  int init_x{0};  // position after global placement (sites)
+  int init_y{0};  // position after global placement (rows)
+  int x{0};       // current legalised position (sites)
+  int y{0};       // current legalised position (rows)
+  int width{0};   // footprint width  (sites)
+  int height{0};  // footprint height (row units: 1–4)
 
   bool fixed{false};
   int fence_id{-1};   // -1 → default region
@@ -104,7 +100,6 @@ class NegotiationLegalizer
   NegotiationLegalizer(Opendp* opendp,
                        odb::dbDatabase* db,
                        utl::Logger* logger,
-                       const Padding* padding = nullptr,
                        DplObserver* debug_observer = nullptr,
                        Network* network = nullptr);
   ~NegotiationLegalizer() = default;
@@ -255,23 +250,10 @@ class NegotiationLegalizer
   }
   void addUsage(int cell_idx, int delta);
 
-  // Footprint extended by the cell's own padding.  Used to blockade the range
-  // a fixed cell reserves; movable cells claim only their footprint and get
-  // their padding checked by PlacementDRC, which applies the class rules.
-  [[nodiscard]] int paddedXBegin(const NegCell& cell) const
-  {
-    return std::max(0, cell.x - cell.pad_left);
-  }
-  [[nodiscard]] int paddedXEnd(const NegCell& cell) const
-  {
-    return std::min(grid_w_, cell.x + cell.width + cell.pad_right);
-  }
-
   // Data
   Opendp* opendp_{nullptr};
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
-  const Padding* padding_{nullptr};
   DplObserver* debug_observer_{nullptr};
   Network* network_{nullptr};
 
