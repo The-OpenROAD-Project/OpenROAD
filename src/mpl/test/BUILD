@@ -38,6 +38,7 @@ COMPULSORY_TESTS = [
     "io_constraints9",
     "io_pads1",
     "keep_clustering_data",
+    "keep_clustering_data_existing_group",
     "macro_only",
     "macros_without_pins1",
     "mixed_ios1",
@@ -190,6 +191,11 @@ filegroup(
                     "testcases/macro_only.lef",
                 ],
                 "keep_clustering_data": [
+                    "Nangate45/Nangate45_fast.lib",
+                    "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "keep_clustering_data_existing_group": [
                     "Nangate45/Nangate45_fast.lib",
                     "testcases/io_constraints6.def",
                     "testcases/macro_only.lef",

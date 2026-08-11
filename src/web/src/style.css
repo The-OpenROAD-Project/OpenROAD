@@ -303,6 +303,47 @@ html, body {
     cursor: default;
 }
 
+/* Find dialog */
+.find-dialog {
+    min-width: 420px;
+}
+.find-dialog .find-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.find-dialog .find-row > label:first-child {
+    width: 70px;
+    font-size: 12px;
+    color: var(--fg-secondary);
+}
+.find-dialog .find-row input[type="text"],
+.find-dialog .find-row select {
+    flex: 1;
+}
+.find-dialog .find-options {
+    gap: 16px;
+    font-size: 12px;
+}
+.find-dialog .find-options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: auto;
+    color: var(--fg-primary);
+}
+.find-dialog .find-swatch {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    flex: none;
+}
+.modal-dialog .modal-error.modal-info {
+    color: var(--fg-secondary);
+}
+
 /* File browser dialog */
 .file-browser-dialog {
     min-width: 520px;

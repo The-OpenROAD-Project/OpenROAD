@@ -29,8 +29,10 @@
 #include "db_sta/dbSta.hh"
 #include "font_atlas.h"
 #include "glyph_cache.h"
+#include "group_report.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
+#include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -101,6 +103,13 @@ constexpr int kMinItermLabelBoxPx = 10;    // min pin-box pixel dim for labels
 constexpr int kMinInstNameFontPx = 10;     // minimum readable font size
 constexpr int kMaxInstNameFontPx = 40;     // cap font size for large macros
 constexpr int kMinInstNameBoxPx = 20;      // min instance pixel dim for names
+// Sub-resolution cull for cluster outlines, the same discipline kMinViewablePx
+// applies to shapes: a box this small draws as a dot on top of the color patch
+// the overlay already filled, so it costs a per-group stroke and adds nothing.
+// It is what bounds the outline pass when a design carries thousands of groups
+// — measured on a 10k-group synthetic, a third of the boxes fall under 4 px at
+// full zoom-out, and the cost of the pass is per box, not per pixel.
+constexpr double kMinClusterOutlineBoxPx = 4.0;
 // Minimum on-screen feature size (output CSS px) below which geometry is CULLED
 // at the search level instead of drawn.  A regular sub-pixel array (dense
 // bumps/vias) cannot be drawn both discretely (→ moiré) and band-limited (→ a
@@ -244,6 +253,9 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"tracks_pref",            &TileVisibility::tracks_pref,            false},
     {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
     {"detailed",               &TileVisibility::detailed,               false},
+    {"module_view",            &TileVisibility::module_view,            false},
+    {"cluster_view",           &TileVisibility::cluster_view,           false},
+    {"cluster_outlines",       &TileVisibility::cluster_outlines,       false},
     {"debug",                  &TileVisibility::debug,                  false},
     {"debug_renderers",        &TileVisibility::debug_renderers,        false},
     {"debug_live",             &TileVisibility::debug_live,             false},
@@ -765,6 +777,13 @@ void TileGenerator::eagerInit()
   {
     std::lock_guard lock(geom_cache_mutex_);
     geom_cache_.reset();
+  }
+  // And again for the dbBlock keys of the cluster-outline boxes.  This one is
+  // not just a wrong-answer hazard: odb::PtrMap orders by compare_by_id, which
+  // dereferences the key, so a stale dbBlock* is read on every lookup.
+  {
+    std::lock_guard lock(group_boxes_mutex_);
+    group_boxes_by_block_.clear();
   }
 
   // Tiles depend on the design geometry, so a reload invalidates every cached
@@ -1629,6 +1648,153 @@ std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::geomCache() const
   return geom_cache_;
 }
 
+const std::array<ColorOverlaySpec, kNumColorOverlays>& colorOverlayLayers()
+{
+  static const std::array<ColorOverlaySpec, kNumColorOverlays> kLayers{{
+      {"_modules",
+       &TileVisibility::module_view,
+       0,
+       [](odb::dbInst* inst) -> uint32_t {
+         odb::dbModule* mod = inst->getModule();
+         return mod == nullptr ? 0 : mod->getId();
+       },
+       [](odb::dbBlock* block, sta::dbSta* sta) {
+         return computeDefaultModuleColors(
+             HierarchyReport(block, sta).getReport());
+       },
+       {"module_view", nullptr},
+       // Under the routing, like the client's zIndex 2.
+       2},
+      {"_clusters",
+       &TileVisibility::cluster_view,
+       1,
+       [](odb::dbInst* inst) -> uint32_t {
+         odb::dbGroup* group = inst->getGroup();
+         return group == nullptr ? 0 : group->getId();
+       },
+       [](odb::dbBlock* block, sta::dbSta* /* sta */) {
+         return computeDefaultGroupColors(GroupReport(block).getReport());
+       },
+       {"cluster_view", "cluster_outlines"},
+       // Over the routing: the point of the cluster plot is to read the
+       // partition at a glance, and metal drawn on top defeats it.  Below the
+       // Misc overlays, which start at 1000.
+       999},
+  }};
+  return kLayers;
+}
+
+const ColorOverlaySpec* findColorOverlay(const std::string_view layer)
+{
+  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+    if (layer == spec.layer) {
+      return &spec;
+    }
+  }
+  return nullptr;
+}
+
+namespace {
+
+bool sameRgb(const Color& a, const Color& b)
+{
+  return a.r == b.r && a.g == b.g && a.b == b.b;
+}
+
+}  // namespace
+
+std::shared_ptr<const TileGenerator::GroupBoxes> TileGenerator::groupBoxes(
+    odb::dbBlock* block) const
+{
+  // Read the revision before building so an edit landing mid-build leaves the
+  // recorded value behind the live one and the next call rebuilds (same
+  // discipline as geomCache()).  The revision covers what moves the boxes —
+  // instance placement — while the per-entry group count below covers groups
+  // appearing or disappearing, which the revision does not see at all.
+  const uint64_t rev = search_->revision();
+  // Groups created after the first render do not move the revision (Search has
+  // no dbGroup callbacks), and the entry would otherwise be stuck with the box
+  // map it was built from — outlines silently missing until an unrelated
+  // placement edit.  Cheap to compare, and it costs nothing when unchanged.
+  const size_t group_count = block != nullptr ? block->getGroups().size() : 0;
+  std::lock_guard lock(group_boxes_mutex_);
+  if (group_boxes_revision_ != rev) {
+    group_boxes_by_block_.clear();
+    group_boxes_revision_ = rev;
+  }
+  if (auto it = group_boxes_by_block_.find(block);
+      it != group_boxes_by_block_.end()
+      && it->second.group_count == group_count) {
+    return it->second.boxes;
+  }
+
+  // The report already unions each group's member boxes (recursively, skipping
+  // fillers exactly as the overlay does), and the Clusters panel zooms to those
+  // same boxes — computing them a second time here would be two definitions of
+  // one rectangle, free to drift.
+  auto boxes = std::make_shared<GroupBoxes>();
+  if (block != nullptr) {
+    for (const GroupNode& node : GroupReport(block).getReport().nodes) {
+      if (!node.bbox.isInverted() && node.bbox.area() > 0) {
+        (*boxes)[node.odb_id] = node.bbox;
+      }
+    }
+  }
+  group_boxes_by_block_[block] = {group_count, boxes};
+  return boxes;
+}
+
+void TileGenerator::drawClusterOutlines(
+    std::vector<unsigned char>& image,
+    odb::dbBlock* block,
+    const std::map<uint32_t, Color>& group_colors,
+    const TileFrame& frame) const
+{
+  if (block == nullptr) {
+    return;
+  }
+  const auto boxes = groupBoxes(block);
+
+  for (odb::dbGroup* group : block->getGroups()) {
+    // Geometry first: the flat group table holds every group in the block, and
+    // for a design with thousands of clusters most of them are nowhere near
+    // this tile.  Rejecting on the box costs one lookup; the color and
+    // parent-color tests below cost two more plus a db deref.
+    auto box_it = boxes->find(group->getId());
+    if (box_it == boxes->end() || !frame.cull.overlaps(box_it->second)) {
+      continue;
+    }
+    const odb::Rect& box = box_it->second;
+    // Sub-resolution cull: below a few pixels the outline is a dot on top of
+    // the color patch the overlay already filled.
+    if (box.minDXDY() * frame.scale
+        < kMinClusterOutlineBoxPx * frame.px_per_css) {
+      continue;
+    }
+
+    auto color_it = group_colors.find(group->getId());
+    if (color_it == group_colors.end()) {
+      continue;
+    }
+    // A group that inherited its parent's color is part of the parent's
+    // colored area; drawing its box too would just add noise.
+    odb::dbGroup* parent = group->getParentGroup();
+    if (parent != nullptr) {
+      auto parent_it = group_colors.find(parent->getId());
+      if (parent_it != group_colors.end()
+          && sameRgb(parent_it->second, color_it->second)) {
+        continue;
+      }
+    }
+    Color outline = color_it->second;
+    outline.a = 255;
+
+    // Same clipped, inward-growing stroke the die/core and region outlines
+    // use, so a cluster box cannot end up a pixel off from them.
+    outlineRectInTile(image, box, outline, frame);
+  }
+}
+
 std::vector<std::string> TileGenerator::getSites() const
 {
   std::set<std::string> seen;
@@ -1988,7 +2154,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::vector<odb::Polygon>& highlight_polys,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
-    const std::map<uint32_t, Color>* module_colors,
+    const InstColorOverlay* inst_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
@@ -2003,7 +2169,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
                                        highlight_polys,
                                        colored_rects,
                                        flight_lines,
-                                       module_colors,
+                                       inst_colors,
                                        focus_net_ids,
                                        route_guide_net_ids,
                                        dpr,
@@ -2536,6 +2702,14 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
       ordered.emplace_back(def.z_index, def.name);
     }
   }
+  // The "color by owner" overlays come from their own table, but stack by the
+  // same rule.  Whether they have anything to paint depends on the design, so
+  // saveImage() drops the ones whose color map comes out empty.
+  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+    if (vis.*spec.flag) {
+      ordered.emplace_back(spec.z_index, spec.layer);
+    }
+  }
   std::ranges::stable_sort(ordered, {}, &std::pair<int, std::string>::first);
 
   std::vector<std::string> names;
@@ -2584,7 +2758,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::vector<odb::Polygon>& highlight_polys,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
-    const std::map<uint32_t, Color>* module_colors,
+    const InstColorOverlay* inst_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
@@ -2892,14 +3066,17 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                              super);
             };
 
-      // Special "_modules" layer: draw filled module-colored rectangles
-      const bool modules_layer
-          = (layer == "_modules" && module_colors && !module_colors->empty());
-      if (modules_layer) {
-        // The module-colored overview shows every instance regardless of size
-        // (mirrors Qt's instanceSizeLimit() == 0 in module view), so pass 0 —
-        // no sub-resolution cull — instead of size_limit_dbu, which would empty
-        // the map at zoom-out.
+      // Special "_modules"/"_clusters" layers: fill every instance with the
+      // color of its owner (dbModule for `_modules`, dbGroup for
+      // `_clusters`).  `owner_color` returns nullptr when the instance has no
+      // owner or the owner carries no color, which skips it.
+      // Generic (not std::function) so the color lookup inlines into the
+      // per-instance loop, which runs for every instance in the tile.
+      auto draw_inst_color_overlay = [&](auto&& owner_color) {
+        // The colored overview shows every instance regardless of size
+        // (mirrors Qt's instanceSizeLimit() == 0 in module view), so pass
+        // 0 — no sub-resolution cull — instead of size_limit_dbu, which
+        // would empty the map at zoom-out.
         for (odb::dbInst* inst : search_->searchInsts(block,
                                                       dbu_tile.xMin(),
                                                       dbu_tile.yMin(),
@@ -2913,15 +3090,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           if (inst->getMaster()->isFiller()) {
             continue;
           }
-          odb::dbModule* mod = inst->getModule();
-          if (!mod) {
+          const Color* c = owner_color(inst);
+          if (c == nullptr) {
             continue;
           }
-          auto it = module_colors->find(mod->getId());
-          if (it == module_colors->end()) {
-            continue;
-          }
-          const Color& c = it->second;
           const int pxl
               = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
           const int pyl
@@ -2934,9 +3106,41 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
           for (int iy = pyl; iy < pyh; ++iy) {
             for (int ix = pxl; ix < pxh; ++ix) {
-              blendPixel(image_buffer, ix, super - 1 - iy, c);
+              blendPixel(image_buffer, ix, super - 1 - iy, *c);
             }
           }
+        }
+      };
+
+      // Membership in a color-overlay layer does not depend on the flag or on a
+      // color map being present: with either missing it renders empty, not as a
+      // second copy of the instances layer stacked over the design (which is
+      // what falling through to the generic drawing below would do).  The flags
+      // are what the viewer's "Module view" / "Cluster view" checkboxes drive —
+      // the layers themselves stay mounted.
+      const ColorOverlaySpec* overlay = findColorOverlay(layer);
+      // Owner ids are per-block and the color maps come from the panels, which
+      // enumerate the top block only.  Looking those ids up against another
+      // chiplet's owners would match by numeric collision and paint that die in
+      // a color that means nothing, so an overlay covers only the block its map
+      // describes.
+      const bool overlay_block = (block == getBlock());
+      const std::map<uint32_t, Color>* overlay_colors
+          = (overlay && inst_colors) ? inst_colors->colors[overlay->index]
+                                     : nullptr;
+
+      if (overlay && overlay_block && vis.*(overlay->flag) && overlay_colors
+          && !overlay_colors->empty()) {
+        draw_inst_color_overlay([&](odb::dbInst* inst) -> const Color* {
+          const uint32_t owner = overlay->owner_id(inst);
+          if (owner == 0) {
+            return nullptr;
+          }
+          auto it = overlay_colors->find(owner);
+          return it == overlay_colors->end() ? nullptr : &it->second;
+        });
+        if (vis.cluster_outlines && layer == "_clusters") {
+          drawClusterOutlines(image_buffer, block, *overlay_colors, frame);
         }
       }
 
@@ -3187,9 +3391,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           = instances_only || !tech_layer
             || ((vis.blockages || vis.inst_pins) && layer_master_geom);
 
-      // Pseudo layers ("_modules", "_pins" and the overlays above) handle
-      // their own drawing; skip all other drawing (instances, routing, etc.)
-      const bool pseudo_layer = modules_layer || pins_layer || pseudo_overlay;
+      // Pseudo layers (the color overlays "_modules"/"_clusters", "_pins" and
+      // the overlays above) handle their own drawing; skip all other drawing
+      // (instances, routing, etc.)
+      const bool pseudo_layer
+          = overlay != nullptr || pins_layer || pseudo_overlay;
       if (!pseudo_layer) {
         const auto iterm_font = fontAtlasGetFont(static_cast<int>(
             std::lround(kItermLabelFontHeight * super_per_css)));
@@ -4539,8 +4745,35 @@ void TileGenerator::saveImage(const std::string& filename,
   const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
   std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
-  const std::vector<std::string> layers_to_render
+  std::vector<std::string> layers_to_render
       = saveImageLayerOrder(vis, getLayers());
+
+  // Owner coloring is opt-in, one display option per overlay
+  // (`-display_option {cluster_view true}`, `{module_view true}`).  Driven by
+  // the table so a new overlay is plotted headlessly without another branch
+  // here — the first version of this hardcoded `cluster_view`, which left
+  // `module_view` parseable but silently without effect.
+  std::array<std::map<uint32_t, Color>, kNumColorOverlays> owner_colors;
+  InstColorOverlay inst_colors;
+  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+    if (!(vis.*(spec.flag))) {
+      continue;
+    }
+    owner_colors[spec.index] = spec.default_colors(block, sta_);
+    if (owner_colors[spec.index].empty()) {
+      // Nothing to color by: warn and drop the layer saveImageLayerOrder put
+      // in for the flag, rather than compositing an empty pass over the image.
+      logger_->warn(
+          utl::WEB,
+          45,
+          "{} is on but the design has nothing to color it by; for "
+          "clusters, run rtl_macro_placer -keep_clustering_data first.",
+          spec.keys[0]);
+      std::erase(layers_to_render, spec.layer);
+      continue;
+    }
+    inst_colors.colors[spec.index] = &owner_colors[spec.index];
+  }
 
   // Render each tile, compositing all layers.
   for (int ty = ty_min; ty <= ty_max; ++ty) {
@@ -4554,7 +4787,16 @@ void TileGenerator::saveImage(const std::string& filename,
       const int leaflet_y = num_tiles - 1 - ty;
 
       for (const auto& layer : layers_to_render) {
-        auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
+        auto tile_buf = renderTileBuffer(layer,
+                                         z,
+                                         tx,
+                                         leaflet_y,
+                                         vis,
+                                         /*highlight_rects=*/{},
+                                         /*highlight_polys=*/{},
+                                         /*colored_rects=*/{},
+                                         /*flight_lines=*/{},
+                                         &inst_colors);
 
         // Composite tile onto output at (out_ox, out_oy).
         for (int py = 0; py < kTileSizeInPixel; ++py) {
@@ -5773,6 +6015,16 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
         static_cast<int>(c.r), static_cast<int>(c.g), static_cast<int>(c.b)});
   }
   out["layer_colors"] = std::move(layer_color_arr);
+
+  // The highlight-group palette, so the Find dialog's group list and swatches
+  // are the colors the overlay will actually paint.  Shipped rather than
+  // transcribed into JS: these live in gui::Painter and the count is
+  // gui::kNumHighlightSet, both of which the server validates against.
+  boost::json::array highlight_colors;
+  for (const gui::Painter::Color& c : gui::Painter::kHighlightColors) {
+    highlight_colors.emplace_back(boost::json::array{c.r, c.g, c.b, c.a});
+  }
+  out["highlight_colors"] = std::move(highlight_colors);
 
   boost::json::array sites;
   for (const auto& name : gen.getSites()) {

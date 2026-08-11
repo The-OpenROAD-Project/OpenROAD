@@ -33,6 +33,7 @@
 #include "color.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "group_report.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -43,8 +44,10 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "request_dispatcher.h"
+#include "shape_collector.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -52,51 +55,6 @@
 #include "utl/algorithms.h"
 
 namespace web {
-
-//------------------------------------------------------------------------------
-// ShapeCollector — a gui::Painter that collects rectangles from
-// descriptor->highlight() calls for use in tile rendering.
-//------------------------------------------------------------------------------
-
-class ShapeCollector : public gui::Painter
-{
- public:
-  ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
-
-  std::vector<odb::Rect> rects;
-  std::vector<odb::Polygon> polys;
-
-  void drawRect(const odb::Rect& rect, int, int) override
-  {
-    rects.push_back(rect);
-  }
-  void drawPolygon(const odb::Polygon& polygon) override
-  {
-    polys.push_back(polygon);
-  }
-  void drawOctagon(const odb::Oct& oct) override { polys.emplace_back(oct); }
-
-  // No-ops
-  Color getPenColor() override { return {}; }
-  void setPen(odb::dbTechLayer*, bool) override {}
-  void setPen(const Color&, bool, int) override {}
-  void setPenWidth(int) override {}
-  void setBrush(odb::dbTechLayer*, int) override {}
-  void setBrush(const Color&, const Brush&) override {}
-  void setFont(const Font&) override {}
-  void saveState() override {}
-  void restoreState() override {}
-  void drawLine(const odb::Point&, const odb::Point&) override {}
-  void drawCircle(int, int, int) override {}
-  void drawX(int, int, int) override {}
-  void drawPolygon(const std::vector<odb::Point>&) override {}
-  void drawString(int, int, Anchor, const std::string&, bool) override {}
-  odb::Rect stringBoundaries(int, int, Anchor, const std::string&) override
-  {
-    return {};
-  }
-  void drawRuler(int, int, int, int, bool, const std::string&) override {}
-};
 
 namespace {
 
@@ -525,11 +483,17 @@ static void collectSpecialWireShapes(odb::dbNet* net,
 // toggle off, unrouted nets still get flywires (GUI fallback — the
 // descriptor emits them via painter.drawLine, which ShapeCollector
 // drops, so they are recomputed here).
+// `collector` is supplied by the caller so it can bound what one object may
+// accumulate (see kMaxHighlightShapes) and reuse the allocation across a whole
+// selection set.  Nothing is appended for an object that exceeded the budget —
+// ask the collector (overflowed()) and stand in for it with standInBox().  A
+// default-constructed collector has no budget, which is the uncapped behavior.
 static void appendHighlightShapes(const gui::Selected& sel,
                                   std::vector<odb::Rect>& rects,
                                   std::vector<odb::Polygon>& polys,
                                   std::vector<FlightLine>& lines,
-                                  const bool flywires_only)
+                                  const bool flywires_only,
+                                  ShapeCollector& collector)
 {
   if (!sel) {
     return;
@@ -554,10 +518,30 @@ static void appendHighlightShapes(const gui::Selected& sel,
       collectNetFlightLines(net, lines);
     }
   }
-  ShapeCollector collector;
   sel.highlight(collector);
+  if (collector.overflowed()) {
+    return;
+  }
   rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
   polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
+}
+
+// The single box that stands in for an object whose shapes did not fit: its own
+// if it has one (a dbGroup only reports a bbox when it has a region), otherwise
+// the union of everything it tried to draw, kept and dropped alike.  Inverted
+// when there is nothing to draw at all.
+//
+// Shared because this degradation rule is what the highlight paths have in
+// common: the selection veil and the Find dialog's color groups must coarsen
+// the same oversized cluster the same way.
+static odb::Rect standInBox(const gui::Selected& sel,
+                            const ShapeCollector& collector)
+{
+  odb::Rect box;
+  if (!sel.getBBox(box) || box.isInverted()) {
+    box = collector.unionBBox();
+  }
+  return box;
 }
 
 static void collectHighlightShapes(const gui::Selected& sel,
@@ -569,7 +553,10 @@ static void collectHighlightShapes(const gui::Selected& sel,
   rects.clear();
   polys.clear();
   lines.clear();
-  appendHighlightShapes(sel, rects, polys, lines, flywires_only);
+  // Uncapped: one inspected object is one descriptor's worth of shapes.  The
+  // cap exists for selection sets, where find_objects can leave thousands.
+  ShapeCollector collector;
+  appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
 }
 
 // Return the 0-based position of the iterator within the selection set,
@@ -584,8 +571,29 @@ static int selectionIteratorPosition(const gui::SelectionSet& set,
   return static_cast<int>(std::distance(set.begin(), itr));
 }
 
-// Accumulate highlight shapes from all items in a selection set.
-static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
+// Maximum number of highlight shapes one request may push onto the overlay.
+// A cluster can hold tens of thousands of instances and the overlay renderer
+// walks every shape for every tile, so past this point shapes are coarsened to
+// one bounding box per object and finally dropped, with the response flagging
+// the truncation.  The per-instance view of a big cluster is the `_clusters`
+// color layer, which is drawn per tile from the spatial index and is not
+// affected by this cap.
+constexpr size_t kMaxHighlightShapes = 20000;
+
+// Maximum number of objects one find_objects request may select.  The walk is
+// unfiltered when the pattern is empty and matches everything on `*`, so
+// without a cap a single message selects every instance in the design:
+// gui::Selected copies for all of them, then that many inserts into a std::set
+// whose comparator is a virtual call plus two any_casts — minutes of CPU
+// holding the STA mutex, which blocks the Tcl console and every timing request
+// meanwhile. Selecting more than this is not a useful answer anyway; the
+// response reports the truncation the same way the shape cap does.
+constexpr size_t kMaxFindResults = 50000;
+
+// Accumulate highlight shapes from all items in a selection set, degrading
+// gracefully on huge sets (see kMaxHighlightShapes).  Returns true when the
+// shapes had to be coarsened or dropped.
+static bool collectMultiHighlightShapes(const gui::SelectionSet& selections,
                                         std::vector<odb::Rect>& rects,
                                         std::vector<odb::Polygon>& polys,
                                         std::vector<FlightLine>& lines,
@@ -594,8 +602,95 @@ static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
   rects.clear();
   polys.clear();
   lines.clear();
+  bool truncated = false;
+  // Reused across every selected object: a fresh collector per object is two
+  // vector allocations each, and a wide selection holds thousands.
+  ShapeCollector collector;
   for (const auto& sel : selections) {
-    appendHighlightShapes(sel, rects, polys, lines, flywires_only);
+    if (!sel) {
+      continue;
+    }
+    // `>=`, not `== budget`: the net paths below write their special-wire
+    // shapes straight into `rects` with no budget of their own, so the total
+    // can already be past the cap — and computing the room left as an unsigned
+    // subtraction would then wrap into a huge number and switch the cap off for
+    // the rest of the selection.
+    const size_t used = rects.size() + polys.size();
+    if (used >= kMaxHighlightShapes) {
+      // Budget exhausted even for one box per object.
+      return true;
+    }
+    collector.reset(kMaxHighlightShapes - used);
+    appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
+    if (!collector.overflowed()) {
+      continue;
+    }
+    truncated = true;
+    const odb::Rect stand_in = standInBox(sel, collector);
+    if (!stand_in.isInverted()) {
+      rects.push_back(stand_in);
+    }
+  }
+  return truncated;
+}
+
+// Rebuild the ColoredRects for the 16 highlight groups from their selection
+// sets, using the same colors as the Qt GUI (Painter::kHighlightColors).
+// Caller must hold state.selection_mutex.
+static void refreshHighlightGroupRects(SessionState& state)
+{
+  state.highlight_group_rects.clear();
+  // Reused across every selected object: a fresh collector per object is two
+  // vector allocations each, and a wide Find selects thousands.
+  ShapeCollector collector;
+  for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+    const gui::SelectionSet& set = state.highlight_groups[group];
+    if (set.empty()) {
+      continue;
+    }
+    const gui::Painter::Color& pc = gui::Painter::kHighlightColors[group];
+    const Color color{.r = static_cast<unsigned char>(pc.r),
+                      .g = static_cast<unsigned char>(pc.g),
+                      .b = static_cast<unsigned char>(pc.b),
+                      .a = static_cast<unsigned char>(pc.a)};
+    for (const auto& sel : set) {
+      if (!sel) {
+        continue;
+      }
+      // Budget each object to the room left, and coarsen it to one box if it
+      // does not fit — the same degradation the selection overlay does. Without
+      // this the cap is only checked *between* objects, so one root cluster
+      // (one shape per member instance, recursively) pushes millions of rects
+      // into session state, which the overlay renderer then walks for every
+      // tile.
+      const size_t room
+          = kMaxHighlightShapes - state.highlight_group_rects.size();
+      if (room == 0) {
+        return;
+      }
+      collector.reset(room);
+      sel.highlight(collector);
+      if (collector.overflowed()) {
+        const odb::Rect stand_in = standInBox(sel, collector);
+        if (!stand_in.isInverted()) {
+          state.highlight_group_rects.push_back(
+              {.rect = stand_in, .color = color, .layer = "", .filled = true});
+        }
+        continue;
+      }
+      for (const odb::Rect& r : collector.rects) {
+        state.highlight_group_rects.push_back(
+            {.rect = r, .color = color, .layer = "", .filled = true});
+      }
+      // ColoredRect carries no polygon, so octilinear shapes highlight as
+      // their enclosing box.
+      for (const odb::Polygon& poly : collector.polys) {
+        state.highlight_group_rects.push_back({.rect = poly.getEnclosingRect(),
+                                               .color = color,
+                                               .layer = "",
+                                               .filled = true});
+      }
+    }
   }
 }
 
@@ -624,16 +719,19 @@ static void setSelectionHighlights(SessionState& state,
                                : SessionState::HighlightSource::kNone;
 }
 
-static void setSelectionSetHighlights(SessionState& state)
+// Returns true when the shapes had to be coarsened (see kMaxHighlightShapes);
+// handlers that report it to the client pass it on as `highlight_truncated`.
+static bool setSelectionSetHighlights(SessionState& state)
 {
-  collectMultiHighlightShapes(state.selection_set,
-                              state.highlight_rects,
-                              state.highlight_polys,
-                              state.highlight_lines,
-                              state.flywires_only);
+  const bool truncated = collectMultiHighlightShapes(state.selection_set,
+                                                     state.highlight_rects,
+                                                     state.highlight_polys,
+                                                     state.highlight_lines,
+                                                     state.flywires_only);
   state.highlight_source = state.selection_set.empty()
                                ? SessionState::HighlightSource::kNone
                                : SessionState::HighlightSource::kSelectionSet;
+  return truncated;
 }
 
 // `use_dbu` is only used to label the debug line: the lengths themselves go
@@ -871,7 +969,7 @@ WebSocketResponse TileHandler::renderTile(
     const std::vector<odb::Polygon>& highlight_polys,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
-    const std::map<uint32_t, Color>* module_colors,
+    const InstColorOverlay* inst_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
@@ -889,7 +987,7 @@ WebSocketResponse TileHandler::renderTile(
                                   highlight_polys,
                                   colored_rects,
                                   flight_lines,
-                                  module_colors,
+                                  inst_colors,
                                   focus_net_ids,
                                   route_guide_net_ids,
                                   dpr,
@@ -963,6 +1061,21 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kSelectLayer,
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectLayer(req, state);
+        });
+  d.add("select_group",
+        WebSocketRequest::kSelectGroup,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelectGroup(req, state);
+        });
+  d.add("find_objects",
+        WebSocketRequest::kFindObjects,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleFindObjects(req, state);
+        });
+  d.add("clear_highlights",
+        WebSocketRequest::kClearHighlights,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleClearHighlights(req, state);
         });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
@@ -1089,7 +1202,8 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         state.selection_itr = state.selection_set.begin();
       }
 
-      // Highlight all items in the selection set.
+      // Highlight all items in the selection set (capped: find_objects can
+      // leave thousands of objects selected).
       setSelectionSetHighlights(state);
       state.current_inspected = inspected_sel;
 
@@ -1438,6 +1552,305 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
   return resp;
 }
 
+// Select (or deselect) a cluster (dbGroup) by its ODB id.  Driven by a row
+// click in the Clusters panel; the group's descriptor highlights every member
+// instance, which is the whole point of MPL's -keep_clustering_data.
+//
+// `deselect` exists because the panel is the only place that selection can be
+// undone from: clicking the row again, or hiding the cluster, has to be able to
+// drop it — otherwise the instances stay highlighted while the panel claims the
+// cluster is neither selected nor shown.
+WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (block == nullptr) {
+      throw std::runtime_error("No design loaded");
+    }
+    const auto odb_id = static_cast<uint32_t>(req.json.at("odb_id").as_int64());
+    // Resolved by scanning the (small) group table rather than with
+    // dbGroup::getGroup, which dereferences the id without validating it and
+    // so crashes on a stale id from a client whose tree predates a reload.
+    odb::dbGroup* group = nullptr;
+    for (odb::dbGroup* candidate : block->getGroups()) {
+      if (candidate->getId() == odb_id) {
+        group = candidate;
+        break;
+      }
+    }
+    if (group == nullptr) {
+      throw std::runtime_error("Group not found: " + std::to_string(odb_id));
+    }
+
+    gui::Selected sel
+        = gui::DescriptorRegistry::instance()->makeSelected(group);
+    const bool add_to_selection = jsonOr(req.json, "add_to_selection", false);
+    const bool deselect = jsonOr(req.json, "deselect", false);
+    const bool no_highlight = jsonOr(req.json, "no_highlight", false);
+
+    // STA's highlight()/getProperties() are not thread-safe; serialize with
+    // the other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    bool truncated = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      state.navigation_history.clear();
+
+      if (deselect) {
+        state.selection_set.erase(sel);
+        // Whatever is left keeps its highlight; with nothing left the overlay
+        // clears, which is the point of the request.
+        if (state.current_inspected == sel) {
+          state.current_inspected = gui::Selected();
+        }
+      } else {
+        if (!add_to_selection) {
+          state.selection_set.clear();
+        }
+        state.selection_set.insert(sel);
+        state.current_inspected = sel;
+      }
+      state.selection_itr = deselect ? state.selection_set.begin()
+                                     : state.selection_set.find(sel);
+
+      if (no_highlight) {
+        // The Clusters panel paints the selected cluster through the
+        // `_clusters` tile layer instead, which draws per tile from the spatial
+        // index: it shows every instance of the cluster (no
+        // kMaxHighlightShapes ceiling) in the cluster's own color, and the
+        // yellow selection veil would sit on top of that very color.  Skipping
+        // the collection also saves walking up to 20k shapes per click.
+        clearSelectionHighlights(state);
+      } else {
+        truncated = setSelectionSetHighlights(state);
+      }
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    if (deselect) {
+      // No object to describe: the Inspector goes back to its placeholder
+      // rather than still showing the cluster the user just dropped.  Not
+      // writeInspectPayload(Selected()) — that reports an "invalid select_id"
+      // error, which this is not.
+      root["can_navigate_back"] = 0;
+    } else {
+      writeInspectPayload(root,
+                          sel,
+                          new_selectables,
+                          /*can_navigate_back=*/false,
+                          use_dbu,
+                          gen_->getLogger());
+    }
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    root["highlight_truncated"] = truncated;
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Batch select/highlight by name pattern — the web counterpart of the Qt
+// GUI's Find dialog and of `select -type ... -name ... -highlight`
+// (Gui::select, which needs a MainWindow and so is unavailable here).
+// Matching a whole descriptor type in one request is what makes highlighting
+// an MPL cluster tree affordable: `type=Group` walks every dbGroup once.
+WebSocketResponse SelectHandler::handleFindObjects(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+
+  try {
+    // "object_type", not "type": the latter is the request envelope's own
+    // field (it carries "find_objects" here).
+    const std::string type
+        = std::string(req.json.at("object_type").as_string());
+    const std::string pattern = std::string(req.json.at("pattern").as_string());
+    const bool is_regexp = jsonOr(req.json, "is_regexp", false);
+    const bool case_sensitive = jsonOr(req.json, "case_sensitive", false);
+    const bool add_to_selection = jsonOr(req.json, "add_to_selection", false);
+    // -1 (the default) means "select only, do not highlight", matching the
+    // highlight_group argument of Gui::select.
+    const int highlight_group
+        = static_cast<int>(jsonOr<int64_t>(req.json, "highlight_group", -1));
+    // Below -1 is rejected rather than clamped: it is not a second spelling of
+    // "select only", it is a malformed request, and silently answering it as if
+    // it were -1 hides the client bug that sent it.
+    if (highlight_group < -1 || highlight_group >= gui::kNumHighlightSet) {
+      throw std::runtime_error("Invalid highlight group: "
+                               + std::to_string(highlight_group));
+    }
+
+    // STA's getProperties()/highlight() are not thread-safe, and
+    // visitAllObjects on the STA descriptors walks the network.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    // Anchored glob (or Tcl regexp) matching, mirroring Gui::select's
+    // QRegularExpression::wildcardToRegularExpression + exact match.  The
+    // interp is passed so a malformed regexp throws RegexpCompileError (a
+    // std::exception) instead of silently degrading to glob matching.
+    const sta::PatternMatch matcher(
+        pattern, is_regexp, /*nocase=*/!case_sensitive, tcl_eval_->interp);
+
+    // A vector, not a SelectionSet: visitAllObjects yields each object once,
+    // and the set's comparator costs a virtual lessThan plus two any_casts per
+    // comparison — paid n log n times for nothing.
+    std::vector<gui::Selected> found;
+    bool found_truncated = false;
+    bool type_found = false;
+    auto* registry = gui::DescriptorRegistry::instance();
+    registry->forEachDescriptor([&](const gui::Descriptor* descriptor) {
+      if (type_found || descriptor->getTypeName() != type) {
+        return;
+      }
+      type_found = true;
+      descriptor->visitAllObjects([&](const gui::Selected& sel) {
+        // matchNoCase() honors the nocase flag for globs and defers to the
+        // compiled (TCL_REG_NOCASE) regexp otherwise; match() would ignore it.
+        if (!pattern.empty() && !matcher.matchNoCase(sel.getName())) {
+          return;
+        }
+        // visitAllObjects takes a void callback, so the walk itself cannot be
+        // cut short — what the cap avoids is the copy and, above all, the set
+        // insert per object.
+        if (found.size() >= kMaxFindResults) {
+          found_truncated = true;
+          return;
+        }
+        found.push_back(sel);
+      });
+    });
+    if (!type_found) {
+      throw std::runtime_error("Unknown object type: " + type);
+    }
+
+    gui::Selected first;
+    int sel_count = 0;
+    int sel_index = -1;
+    bool truncated = false;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      state.navigation_history.clear();
+
+      if (!add_to_selection) {
+        state.selection_set.clear();
+      }
+      for (const auto& sel : found) {
+        state.selection_set.insert(sel);
+      }
+      state.selection_itr = state.selection_set.begin();
+      if (!state.selection_set.empty()) {
+        first = *state.selection_itr;
+      }
+      state.current_inspected = first;
+      truncated = setSelectionSetHighlights(state);
+
+      if (highlight_group >= 0) {
+        auto& group_set = state.highlight_groups[highlight_group];
+        if (!add_to_selection) {
+          group_set.clear();
+        }
+        for (const auto& sel : found) {
+          group_set.insert(sel);
+        }
+        refreshHighlightGroupRects(state);
+      }
+
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(root,
+                        first,
+                        new_selectables,
+                        /*can_navigate_back=*/false,
+                        use_dbu,
+                        gen_->getLogger());
+    root["found"] = static_cast<int64_t>(found.size());
+    root["found_truncated"] = found_truncated;
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    root["highlight_truncated"] = truncated;
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Drop every colored highlight group (and, unless the caller asks to keep
+// it, the selection itself).  Backs the Find dialog's "Clear" button.
+WebSocketResponse SelectHandler::handleClearHighlights(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+
+  const bool keep_selection = jsonOr(req.json, "keep_selection", false);
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    for (auto& group : state.highlight_groups) {
+      group.clear();
+    }
+    state.highlight_group_rects.clear();
+    if (!keep_selection) {
+      state.selection_set.clear();
+      state.selection_itr = state.selection_set.begin();
+      state.current_inspected = gui::Selected();
+      state.navigation_history.clear();
+      clearSelectionHighlights(state);
+    }
+  }
+
+  const std::string ok = R"({"ok":1})";
+  resp.payload.assign(ok.begin(), ok.end());
+  return resp;
+}
+
 WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
                                              SessionState& state)
 {
@@ -1615,7 +2028,8 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
         if (state.selection_itr == state.selection_set.end()) {
           state.selection_itr = state.selection_set.begin();
         }
-        // Highlight every selected net in the layout.
+        // Highlight every selected net in the layout (capped: a dense bin can
+        // hold thousands of nets).
         setSelectionSetHighlights(state);
         state.current_inspected = first;
 
@@ -2797,11 +3211,28 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleModuleHierarchy(req);
         });
-  d.add("set_module_colors",
-        WebSocketRequest::kSetModuleColors,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleSetModuleColors(req, state);
+  // Both color messages route to one handler; the slot comes from the overlay
+  // table rather than a literal here, so the wire name and the renderer's row
+  // cannot drift apart.
+  const size_t modules_index = findColorOverlay("_modules")->index;
+  d.add(
+      "set_module_colors",
+      WebSocketRequest::kSetModuleColors,
+      [this, modules_index](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, modules_index);
+      });
+  d.add("group_hierarchy",
+        WebSocketRequest::kGroupHierarchy,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGroupHierarchy(req);
         });
+  const size_t clusters_index = findColorOverlay("_clusters")->index;
+  d.add(
+      "set_group_colors",
+      WebSocketRequest::kSetGroupColors,
+      [this, clusters_index](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, clusters_index);
+      });
   d.add("heatmaps",
         WebSocketRequest::kHeatmaps,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -2891,14 +3322,31 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   TileVisibility vis;
   vis.parseFromJson(req.json);
 
-  // Snapshot module colors for _modules layer
-  std::map<uint32_t, Color> mod_colors;
-  {
-    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
-    mod_colors = state.module_colors;
+  // Snapshot the color map this layer paints with, if any.  Only a
+  // color-overlay layer with its flag on reads one, so every other tile
+  // request skips the (mutexed) copy entirely — it runs per tile per layer.
+  const ColorOverlaySpec* overlay = findColorOverlay(layer);
+  const bool color_overlay_active = overlay != nullptr && vis.*(overlay->flag);
+
+  // The row carries its own slot, so the session side is a plain array: there
+  // is no second table whose order has to be kept matching this one, and adding
+  // an overlay cannot silently paint from another one's colors.
+  std::shared_ptr<const std::map<uint32_t, Color>> overlay_colors;
+  InstColorOverlay inst_colors;
+  if (color_overlay_active) {
+    SessionState::OwnerColors& owner = state.owner_colors[overlay->index];
+    std::lock_guard<std::mutex> lock(owner.mutex);
+    overlay_colors = owner.colors;
   }
-  const std::map<uint32_t, Color>* mod_ptr
-      = mod_colors.empty() ? nullptr : &mod_colors;
+  // The snapshot outlives both the lock and the render: the panel sending new
+  // colors replaces the session's handle and drops its own reference, never the
+  // one this render holds.
+  const bool has_inst_colors = overlay_colors && !overlay_colors->empty();
+  if (has_inst_colors) {
+    inst_colors.colors[overlay->index] = overlay_colors.get();
+  }
+  // The color maps are session state that the tile-cache key does not carry, so
+  // a tile actually painting from one must not be cached.
 
   // Snapshot focus nets
   std::set<uint32_t> focus_nets;
@@ -2923,9 +3371,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // A tile is cacheable only when it depends solely on the static design +
   // visibility + dpr — i.e. no per-session overlays are active.  That keeps
   // the cache session-independent and correct; overlay tiles render fresh.
-  const bool cacheable = mod_ptr == nullptr && focus_ptr == nullptr
-                         && !vis.debug && !vis.debug_renderers
-                         && !vis.debug_live;
+  // The per-instance color maps are not part of the cache key, so a colored
+  // module/cluster tile must never be cached — while the same layer with its
+  // flag off is a constant empty tile and caches fine.
+  const bool cacheable = !has_inst_colors && focus_ptr == nullptr && !vis.debug
+                         && !vis.debug_renderers && !vis.debug_live;
 
   std::string cache_key;
   if (cacheable) {
@@ -2937,6 +3387,20 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     boost::json::object key_obj = req.json;
     key_obj.erase("id");
     key_obj.erase("selectable_layers");
+    // The color-overlay flags only change what THEIR layer draws.  Leaving them
+    // in every layer's key would make toggling one overlay a full cache miss
+    // for the whole screen — every metal layer re-rendered for a flag it
+    // ignores — and multiply the cache footprint per tile.
+    for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+      if (&spec == overlay) {
+        continue;
+      }
+      for (const char* flag_key : spec.keys) {
+        if (flag_key != nullptr) {
+          key_obj.erase(flag_key);
+        }
+      }
+    }
     std::vector<std::string> sel_keys;
     for (const auto& kv : key_obj) {
       const std::string_view k = kv.key();
@@ -2987,7 +3451,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       no_polys,
                                       no_colored,
                                       no_lines,
-                                      mod_ptr,
+                                      &inst_colors,
                                       focus_ptr,
                                       nullptr,
                                       dpr,
@@ -3001,7 +3465,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              "tile",
              1,
              "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} cache={} "
-             "module_colors={} focus_nets={} detailed={} bytes={}",
+             "owner_colors={} focus_nets={} detailed={} bytes={}",
              req.id,
              layer,
              z,
@@ -3010,7 +3474,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              dpr,
              tile_px,
              cacheable ? "miss" : "off",
-             mod_ptr != nullptr ? mod_colors.size() : 0,
+             has_inst_colors ? overlay_colors->size() : 0,
              focus_ptr != nullptr ? focus_nets.size() : 0,
              vis.detailed,
              resp.payload.size());
@@ -3065,6 +3529,10 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     lines = state.highlight_lines;
     lines.insert(
         lines.end(), state.timing_lines.begin(), state.timing_lines.end());
+    // The Find dialog's color groups ride the same overlay as the selection.
+    colored.insert(colored.end(),
+                   state.highlight_group_rects.begin(),
+                   state.highlight_group_rects.end());
   }
 
   // Merge DRC overlay shapes
@@ -3211,52 +3679,80 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
   return resp;
 }
 
-WebSocketResponse TileHandler::handleSetModuleColors(
-    const WebSocketRequest& req,
-    SessionState& state)
+// Parse the custom delimited color map used by set_module_colors and
+// set_group_colors: "<id>:<r>,<g>,<b>,<a>;<id>:...".  An empty string
+// yields an empty map (clear all).
+static std::map<uint32_t, Color> parseColorMap(const std::string& data)
+{
+  std::map<uint32_t, Color> colors;
+  size_t pos = 0;
+  while (pos < data.size()) {
+    size_t colon = data.find(':', pos);
+    if (colon == std::string::npos) {
+      break;
+    }
+    const uint32_t obj_id
+        = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
+    pos = colon + 1;
+
+    auto next_num = [&]() -> int {
+      size_t end = data.find_first_of(",;", pos);
+      if (end == std::string::npos) {
+        end = data.size();
+      }
+      const int val = std::stoi(data.substr(pos, end - pos));
+      pos = end + 1;
+      return val;
+    };
+
+    const uint8_t r = static_cast<uint8_t>(next_num());
+    const uint8_t g = static_cast<uint8_t>(next_num());
+    const uint8_t b = static_cast<uint8_t>(next_num());
+    const uint8_t a = static_cast<uint8_t>(next_num());
+    colors[obj_id] = Color{.r = r, .g = g, .b = b, .a = a};
+  }
+  return colors;
+}
+
+// Backs both set_module_colors and set_group_colors: the two differ only in
+// which overlay's slot they fill, which the spec row already names.
+WebSocketResponse TileHandler::handleSetOwnerColors(const WebSocketRequest& req,
+                                                    SessionState& state,
+                                                    const size_t overlay_index)
 {
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
-  std::map<uint32_t, Color> colors;
-  const std::string data = std::string(req.json.at("colors").as_string());
-  if (!data.empty()) {
-    size_t pos = 0;
-    while (pos < data.size()) {
-      size_t colon = data.find(':', pos);
-      if (colon == std::string::npos) {
-        break;
-      }
-      const uint32_t mod_id
-          = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
-      pos = colon + 1;
+  auto colors = std::make_shared<const std::map<uint32_t, Color>>(
+      parseColorMap(std::string(req.json.at("colors").as_string())));
 
-      auto next_num = [&]() -> int {
-        size_t end = data.find_first_of(",;", pos);
-        if (end == std::string::npos) {
-          end = data.size();
-        }
-        const int val = std::stoi(data.substr(pos, end - pos));
-        pos = end + 1;
-        return val;
-      };
-
-      const uint8_t r = static_cast<uint8_t>(next_num());
-      const uint8_t g = static_cast<uint8_t>(next_num());
-      const uint8_t b = static_cast<uint8_t>(next_num());
-      const uint8_t a = static_cast<uint8_t>(next_num());
-      colors[mod_id] = Color{.r = r, .g = g, .b = b, .a = a};
-    }
-  }
-
-  const int count = static_cast<int>(colors.size());
+  const int count = static_cast<int>(colors->size());
   {
-    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
-    state.module_colors = std::move(colors);
+    SessionState::OwnerColors& owner = state.owner_colors[overlay_index];
+    std::lock_guard<std::mutex> lock(owner.mutex);
+    owner.colors = std::move(colors);
   }
 
   const std::string ok = R"({"ok":1,"count":)" + std::to_string(count) + "}";
   resp.payload.assign(ok.begin(), ok.end());
+  return resp;
+}
+
+// Cluster (dbGroup) tree for the Clusters panel.  MPL writes its
+// clustering hierarchy here when run with -keep_clustering_data.
+WebSocketResponse TileHandler::handleGroupHierarchy(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    GroupReport report(gen_->getBlock());
+    writePayload(resp, serializeGroupResult(report.getReport()));
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
   return resp;
 }
 

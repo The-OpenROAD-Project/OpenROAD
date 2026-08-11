@@ -23,6 +23,7 @@ set(WEB_ASSET_FILES
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
+    src/color-tree.js
     src/vis-tree.js
     src/websocket-manager.js
     src/websocket-tile-layer.js
@@ -31,6 +32,7 @@ set(WEB_ASSET_FILES
     src/ruler.js
     src/tcl-completer.js
     src/hierarchy-browser.js
+    src/clusters-widget.js
     src/menu-bar.js
     src/title.js
     src/clock-tree-widget.js
@@ -59,6 +61,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/color-tree.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/vis-tree.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
@@ -71,6 +74,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/clusters-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
@@ -102,6 +106,7 @@ target_sources(web
   PRIVATE
     src/clock_tree_report.cpp
     src/color.cpp
+    src/group_report.cpp
     src/hierarchy_report.cpp
     src/request_handler.cpp
     src/search.cpp

@@ -1,6 +1,35 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { isStaticMode } from './ui-utils.js';
+
+// Object types the Find dialog can search.  The values are descriptor type
+// names as registered in gui::DescriptorRegistry, which is what the server's
+// find_objects handler matches against.  "Group" covers MPL's clustering data
+// (`rtl_macro_placer -keep_clustering_data`), where one pattern can highlight a
+// whole cluster in a single request.
+const FIND_TYPES = [
+    { label: 'Instance', value: 'Inst' },
+    { label: 'Net', value: 'Net' },
+    { label: 'IO Pin', value: 'BTerm' },
+    { label: 'Cluster (Group)', value: 'Group' },
+];
+
+// The highlight-group palette comes from the server (`highlight_colors` in the
+// tech response), which reads gui::Painter::kHighlightColors — the same array
+// the overlay paints with and validates group indices against.  Transcribing it
+// here would be 16 hand-typed triples that nothing keeps honest, and the
+// swatch would lose the palette's alpha.
+function highlightColors(app) {
+    const colors = app.techData && app.techData.highlight_colors;
+    return Array.isArray(colors) ? colors : [];
+}
+
+// Is the Find dialog usable?  Needs a design, and a server to search it.
+export function canFind(app) {
+    return !!app.designScale && !isStaticMode(app);
+}
+
 // Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
 export function createMenuBar(app) {
     const menus = [
@@ -19,7 +48,8 @@ export function createMenuBar(app) {
             { label: 'Show DBU', action: () => app.toggleShowDbu(),
               checked: () => app.showDbu },
             { type: 'separator' },
-            { label: 'Find...', shortcut: 'Ctrl+F', disabled: true },
+            { label: 'Find...', shortcut: 'Ctrl+F', action: () => showFindDialog(app),
+              enabledWhen: () => canFind(app) },
             { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
         ]},
         { label: 'Tools', items: [
@@ -35,6 +65,7 @@ export function createMenuBar(app) {
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
             { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
+            { label: 'Clusters', action: () => app.focusComponent('ClustersWidget') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
             { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },
@@ -151,6 +182,159 @@ export function createMenuBar(app) {
     }
 
     document.addEventListener('click', closeAll);
+}
+
+// ─── Find Dialog ────────────────────────────────────────────────────────────
+//
+// Batch select/highlight by name pattern, the web counterpart of the Qt GUI's
+// Find dialog and of `select -type ... -name ... -highlight`.  Selecting a
+// whole descriptor type in one request is what makes highlighting an MPL
+// cluster affordable: one `Group` pattern replaces a per-instance Tcl script
+// (issue #7959).
+export function showFindDialog(app) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    const palette = highlightColors(app);
+    const typeOptions = FIND_TYPES.map(
+        t => `<option value="${t.value}">${t.label}</option>`).join('');
+    const groupOptions = palette.map(
+        (_, i) => `<option value="${i}">Group ${i + 1}</option>`).join('');
+
+    overlay.innerHTML = `
+        <div class="modal-dialog find-dialog">
+            <h3>Find</h3>
+            <div class="find-row">
+                <label for="find-type">Type</label>
+                <select id="find-type" class="find-type">${typeOptions}</select>
+            </div>
+            <div class="find-row">
+                <label for="find-pattern">Name</label>
+                <input type="text" id="find-pattern" class="find-pattern"
+                       placeholder="Glob pattern, e.g. (root)_* — empty matches all">
+            </div>
+            <div class="find-row find-options">
+                <label><input type="checkbox" class="find-regexp"> Regular expression</label>
+                <label><input type="checkbox" class="find-case"> Match case</label>
+            </div>
+            <div class="find-row">
+                <label for="find-highlight">Highlight</label>
+                <select id="find-highlight" class="find-highlight">
+                    <option value="-1">None (select only)</option>
+                    ${groupOptions}
+                </select>
+                <span class="find-swatch"></span>
+            </div>
+            <div class="find-row find-options">
+                <label><input type="checkbox" class="find-add"> Add to selection</label>
+            </div>
+            <div class="modal-error" style="display:none"></div>
+            <div class="modal-buttons">
+                <button class="clear">Clear highlights</button>
+                <button class="cancel">Close</button>
+                <button class="primary ok">Find</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(overlay);
+
+    const typeSel = overlay.querySelector('.find-type');
+    const patternInput = overlay.querySelector('.find-pattern');
+    const regexpCb = overlay.querySelector('.find-regexp');
+    const caseCb = overlay.querySelector('.find-case');
+    const highlightSel = overlay.querySelector('.find-highlight');
+    const swatch = overlay.querySelector('.find-swatch');
+    const addCb = overlay.querySelector('.find-add');
+    const errorDiv = overlay.querySelector('.modal-error');
+    const okBtn = overlay.querySelector('.ok');
+    const clearBtn = overlay.querySelector('.clear');
+    const cancelBtn = overlay.querySelector('.cancel');
+
+    function close() {
+        overlay.remove();
+    }
+
+    function updateSwatch() {
+        const group = parseInt(highlightSel.value, 10);
+        const c = group >= 0 ? palette[group] : null;
+        swatch.style.backgroundColor = c
+            ? `rgba(${c[0]},${c[1]},${c[2]},${(c[3] ?? 255) / 255})`
+            : 'transparent';
+    }
+    updateSwatch();
+    highlightSel.addEventListener('change', updateSwatch);
+
+    function report(msg, isError) {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = msg ? '' : 'none';
+        errorDiv.classList.toggle('modal-info', !isError);
+    }
+
+    async function submit() {
+        okBtn.disabled = true;
+        okBtn.textContent = 'Finding...';
+        report('', false);
+        try {
+            const data = await app.websocketManager.request({
+                type: 'find_objects',
+                object_type: typeSel.value,
+                pattern: patternInput.value.trim(),
+                is_regexp: regexpCb.checked,
+                case_sensitive: caseCb.checked,
+                highlight_group: parseInt(highlightSel.value, 10),
+                add_to_selection: addCb.checked,
+                use_dbu: app.showDbu,
+            });
+            if (data.found === 0) {
+                report('No matching objects.', true);
+            } else {
+                let msg = data.found_truncated
+                    ? `Found more than ${data.found} object(s) — narrow the`
+                      + ' pattern.'
+                    : `Found ${data.found} object(s).`;
+                if (data.highlight_truncated) {
+                    msg += ' Highlight truncated — too many shapes.';
+                }
+                report(msg, false);
+                if (app.updateInspector) {
+                    app.updateInspector(data);
+                }
+            }
+            if (app.refreshOverlay) {
+                app.refreshOverlay();
+            }
+        } catch (err) {
+            report(err.message || 'Request failed', true);
+        }
+        okBtn.disabled = false;
+        okBtn.textContent = 'Find';
+    }
+
+    async function clearHighlights() {
+        try {
+            await app.websocketManager.request({
+                type: 'clear_highlights',
+                keep_selection: true,
+            });
+            report('Highlights cleared.', false);
+            if (app.refreshOverlay) {
+                app.refreshOverlay();
+            }
+        } catch (err) {
+            report(err.message || 'Request failed', true);
+        }
+    }
+
+    patternInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submit();
+        if (e.key === 'Escape') close();
+    });
+    okBtn.addEventListener('click', submit);
+    clearBtn.addEventListener('click', clearHighlights);
+    cancelBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+    patternInput.focus();
 }
 
 // ─── File Browser Dialog (Open/Save DB) ─────────────────────────────────────

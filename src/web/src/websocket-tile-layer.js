@@ -26,6 +26,12 @@ export function buildTileRequest(coords, layerName, ctx) {
                                tileSizeCss());
 }
 
+// A 1x1 transparent PNG.  Stands in for a tile the server would render empty
+// anyway (see the `gate` option below): no round trip, and the decoded bitmap
+// is one pixel instead of (256*dpr)².
+const EMPTY_TILE
+    = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
+
 // `app` (last arg) is read lazily on every request so that
 // app.visibleChiplets, populated by display-controls.js after the tech
 // metadata arrives, is reflected in tile requests without rebuilding
@@ -52,6 +58,57 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 this, withDeviceExactTileSize(options));
         },
 
+        // A layer whose content is switched by one visibility flag can be left
+        // mounted (which is what keeps the toggle honest — the map's layer set
+        // is not a second copy of the flag) without paying for it: while the
+        // flag is off the server would render an empty tile, so don't ask.
+        // The flag is named by whoever creates the layer, via `options.gate`.
+        // A name that is not a real visibility flag would read undefined and
+        // gate the layer off forever, with nothing on screen and no error to
+        // explain it; fail open and say so instead.
+        _gatedOff: function() {
+            const gate = this.options.gate;
+            if (gate == null) return false;
+            if (!(gate in ctx.visibility)) {
+                if (!this._gateWarned) {
+                    this._gateWarned = true;
+                    console.warn(`tile layer ${this._layerName}: unknown gate `
+                                 + `'${gate}', rendering ungated`);
+                }
+                return false;
+            }
+            return !ctx.visibility[gate];
+        },
+
+        // Point a tile at a new image, releasing the blob the old one held.
+        // Every src assignment goes through here so the revoke cannot be
+        // forgotten on one of the paths.
+        _setTileSrc: function(tile, src) {
+            if (tile.src && tile.src.startsWith('blob:')) {
+                URL.revokeObjectURL(tile.src);
+            }
+            tile.src = src;
+        },
+
+        // Ask the server for this tile and show whatever comes back.  Shared by
+        // createTile and refreshTiles: the request, the id bookkeeping that lets
+        // it be cancelled, and the cache's data-URI-vs-blob answer are the same
+        // in both.
+        _requestTile: function(tile, coords) {
+            tile._websocketRequestId = this._websocketManager.nextId;
+            this._websocketManager.request(
+                buildTileRequest(coords, this._layerName, ctx)
+            ).then(data => {
+                this._setTileSrc(
+                    tile,
+                    typeof data === 'string' ? data : URL.createObjectURL(data));
+            }).catch(err => {
+                // Cancelled (by refreshTiles) or failed.  `done` is never called
+                // and no retry is issued, so a tile that never loaded stays blank
+                // until Leaflet evicts it, and one that had an image keeps it.
+            });
+        },
+
         createTile: function(coords, done) {
             const tile = document.createElement('img');
             tile.alt = '';
@@ -76,24 +133,14 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 }
             };
 
-            // Store the request ID so _removeTile() can cancel it
-            // when the tile is discarded (e.g. during zoom).
-            tile._websocketRequestId = this._websocketManager.nextId;
+            if (this._gatedOff()) {
+                tile.src = EMPTY_TILE;
+                return tile;
+            }
 
-            this._websocketManager.request(
-                buildTileRequest(coords, this._layerName, ctx)
-            ).then(data => {
-                if (typeof data === 'string') {
-                    tile.src = data;  // data URI from cache
-                } else {
-                    tile.src = URL.createObjectURL(data);
-                }
-            }).catch(err => {
-                // Request was cancelled (e.g. by refreshTiles); ignore.  Note
-                // that `done` is never called and no retry is issued, so this
-                // tile stays blank until Leaflet evicts it.
-            });
-
+            // The request id stored by _requestTile is what lets _removeTile()
+            // cancel a tile discarded before it arrives (e.g. during zoom).
+            this._requestTile(tile, coords);
             return tile;
         },
 
@@ -102,7 +149,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
         refreshTiles: function() {
             if (!this._map) return;
 
-
+            const gated = this._gatedOff();
             for (const key in this._tiles) {
                 const tileInfo = this._tiles[key];
                 if (!tileInfo || !tileInfo.el) continue;
@@ -113,24 +160,25 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 // Cancel any pending request for this tile
                 if (tile._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile._websocketRequestId);
+                    tile._websocketRequestId = undefined;
                 }
 
-                tile._websocketRequestId = this._websocketManager.nextId;
+                // Switched off: blank the tile in place.  Leaving the previous
+                // image up would keep showing an overlay the user just turned
+                // off, and asking the server for a tile it renders empty is a
+                // round trip for 102 bytes.
+                if (gated) {
+                    // Only when it is not already blank: redrawAllLayers walks
+                    // every layer on any visibility change, so an overlay that
+                    // has been off the whole time would re-decode the same
+                    // placeholder across its whole tile grid each time.
+                    if (tile.src !== EMPTY_TILE) {
+                        this._setTileSrc(tile, EMPTY_TILE);
+                    }
+                    continue;
+                }
 
-                this._websocketManager.request(
-                    buildTileRequest(coords, this._layerName, ctx)
-                ).then(data => {
-                    if (tile.src && tile.src.startsWith('blob:')) {
-                        URL.revokeObjectURL(tile.src);
-                    }
-                    if (typeof data === 'string') {
-                        tile.src = data;
-                    } else {
-                        tile.src = URL.createObjectURL(data);
-                    }
-                }).catch(err => {
-                    // Tile refresh failed; keep existing image
-                });
+                this._requestTile(tile, coords);
             }
         },
 

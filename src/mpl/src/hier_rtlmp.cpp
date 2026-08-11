@@ -4,7 +4,6 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -2500,10 +2499,16 @@ void HierRTLMP::commitClusteringDataToDb() const
 {
   createGroupForCluster(tree_->root.get(), nullptr);
 
-  // Check that all instances are in a group
+  // Check that all instances are in a group, and count the ones that are in
+  // somebody else's: those were left out of the clustering data on purpose (see
+  // createGroupForCluster).  Counted here, over the instances, rather than at
+  // each skip: a cluster reaches the same instance through both its leaf list
+  // and its modules, so counting per skip reports it twice.
   int ungrouped_instances = 0;
+  int instances_kept_by_others = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (inst->getGroup() == nullptr) {
+    odb::dbGroup* group = inst->getGroup();
+    if (group == nullptr) {
       debugPrint(logger_,
                  MPL,
                  "commit_clustering_data",
@@ -2511,7 +2516,19 @@ void HierRTLMP::commitClusteringDataToDb() const
                  "Instance {} is not in any group.",
                  inst->getName());
       ungrouped_instances++;
+    } else if (group->getType() != odb::dbGroupType::VISUAL_DEBUG) {
+      instances_kept_by_others++;
     }
+  }
+  if (instances_kept_by_others > 0) {
+    logger_->warn(
+        MPL,
+        78,
+        "{} instances are missing from the clustering data because "
+        "they already belong to another group (a power domain, a "
+        "region). They keep it: an instance can only be in one group, "
+        "and taking it would change what the placer sees.",
+        instances_kept_by_others);
   }
   if (ungrouped_instances > 0) {
     logger_->error(MPL,
@@ -2536,14 +2553,29 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
 
   cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
 
-  for (odb::dbInst* inst : cluster->getLeafStdCells()) {
-    assert(inst->getGroup() == nullptr);
+  // An instance belongs to exactly ONE dbGroup, and dbGroup::addInst silently
+  // takes it out of the one it was in.  So an instance that is already owned —
+  // by a UPF power domain, by a region the placer honors — is left where it is
+  // and simply does not appear in the clustering data: this is debug output,
+  // and it must not rewrite what dpl/gpl read out of those groups.
+  //
+  // The same instance is reachable both as a leaf of this cluster and through
+  // its modules, so "already grouped" also covers a child cluster that took it
+  // first — which is ordinary.  commitClusteringDataToDb reports how many
+  // stayed with an outside owner.
+  auto add_or_skip = [&](odb::dbInst* inst) {
+    if (inst->getGroup() != nullptr) {
+      return;
+    }
     cluster_group->addInst(inst);
+  };
+
+  for (odb::dbInst* inst : cluster->getLeafStdCells()) {
+    add_or_skip(inst);
   }
 
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
-    assert(macro->getGroup() == nullptr);
-    cluster_group->addInst(macro);
+    add_or_skip(macro);
   }
 
   for (const auto& child : cluster->getChildren()) {
@@ -2552,11 +2584,7 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
 
   for (odb::dbModule* module : cluster->getDbModules()) {
     for (odb::dbInst* inst : module->getLeafInsts()) {
-      if (inst->getGroup() != nullptr) {
-        // Skip if it is part of a child cluster
-        continue;
-      }
-      cluster_group->addInst(inst);
+      add_or_skip(inst);
     }
   }
 }

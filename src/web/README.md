@@ -81,6 +81,22 @@ field and the value is `true` or `false`.
 | `net_clock` | true | Clock nets |
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
+| `cluster_view` | false | Color each instance by the `dbGroup` (cluster) it belongs to |
+| `cluster_outlines` | false | Outline each cluster's bounding box (needs `cluster_view`) |
+
+Cluster coloring reads the `dbGroup`s that
+[`rtl_macro_placer -keep_clustering_data`](../mpl/README.md) writes into the
+database, so it is only useful after MPL has run with that option. Each
+cluster gets its own palette color, and a cluster whose subtree is not
+expanded lends its color to all of its descendants — the same default the
+viewer's Clusters panel shows. When the design has no groups the option warns
+and the image is rendered as if it were off.
+
+In the viewer, clicking a row in the Clusters panel isolates that cluster:
+only its instances (and those of its nested clusters) stay colored, in the
+color of its swatch, until the row is clicked again. Since this is what the
+`cluster_view` overlay draws, the colors are only visible while it is on — the
+panel says so when it is off.
 
 #### Examples
 
@@ -104,6 +120,13 @@ save_image -web -area {0 0 100 100} -width 2048 region.png
 save_image -web -display_option {routing false} \
                 -display_option {net_power false} \
                 layout.png
+
+# Plot the MPL clustering result (one color per cluster, boxes outlined)
+rtl_macro_placer -keep_clustering_data
+save_image -web -width 1200 \
+                -display_option {cluster_view true} \
+                -display_option {cluster_outlines true} \
+                clusters.png
 ```
 
 ### Save Report

@@ -3,6 +3,8 @@
 
 // Shared UI utilities.
 
+import { dbuRectToBounds } from './coordinates.js';
+
 // True when the app was bootstrapped from a saved/static report
 // (i.e. there is no live WebSocket backend).
 export function isStaticMode(app) {
@@ -41,6 +43,20 @@ export function onSelectionReset(app, fn) {
         app.selectionResetters = [];
     }
     app.selectionResetters.push(fn);
+}
+
+// Fit the map to a DBU rectangle [xMin, yMin, xMax, yMax].
+//
+// Shared because three panels grew their own copy of the conversion +
+// fitBounds + padding (the Inspector's "Zoom to", the Clusters panel's
+// double-click, the DRC widget's marker zoom).
+export function zoomToBBox(app, bbox, padding = 20) {
+    if (!bbox || !app || !app.map || !app.designScale) return;
+    const [x1, y1, x2, y2] = bbox;
+    app.map.fitBounds(
+        dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+                        app.designOriginX, app.designOriginY),
+        { padding: [padding, padding] });
 }
 
 // Leaflet map options for the 2D layout viewer.

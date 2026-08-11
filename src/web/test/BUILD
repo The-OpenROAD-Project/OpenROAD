@@ -11,6 +11,7 @@ package(features = ["layering_check"])
 npm_link_all_packages(name = "node_modules")
 
 TESTS = [
+    "save_image_cluster_view",
 ]
 
 filegroup(
@@ -81,8 +82,15 @@ js_test(
 
 js_test(
     name = "websocket_tile_layer_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-websocket-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "color_tree_test",
+    data = JS_FILES,
+    entry_point = "js/test-color-tree.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -97,6 +105,13 @@ js_test(
     name = "display_controls_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "clusters_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-clusters-widget.js",
     no_copy_to_bin = JS_FILES,
 )
 

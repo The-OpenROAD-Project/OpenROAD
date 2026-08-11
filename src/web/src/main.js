@@ -19,12 +19,13 @@ import {
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
+import { ClustersWidget } from './clusters-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
-import { createMenuBar } from './menu-bar.js';
+import { canFind, createMenuBar, showFindDialog } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
@@ -100,6 +101,7 @@ const app = {
     hoverHighlightLayer: null,
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
+    clustersLayer: null,
     pinsLayer: null,
     accessPointsLayer: null,
     regionsLayer: null,
@@ -234,6 +236,9 @@ const visibility = {
     tracks_non_pref: false,
     // Module view
     module_view: false,
+    // Cluster (dbGroup) view
+    cluster_view: false,
+    cluster_outlines: false,
     // Misc
     detailed: false,
     rulers: true,
@@ -254,6 +259,16 @@ try {
 } catch (_) {
     // Ignore malformed cookie.
 }
+
+// Console handle.  main.js is an ES module, so nothing above is reachable from
+// the DevTools console — a state question as basic as "is the cluster overlay
+// flag on?" could not be answered without editing the source.  One global, set
+// once, with the two state maps attached (they are module-level consts, not app
+// fields, so the console needs them hung here explicitly).
+if (typeof window !== 'undefined') {
+    window.orApp = app;
+}
+app.visibility = visibility;
 
 // Selectability mirrors the Qt GUI's display-controls "selectable" column.
 // Defaults to true (everything selectable), matching the Qt GUI.  Only
@@ -297,6 +312,7 @@ const selectability = {
     placement_blockages: true,
     routing_obstructions: true,
 };
+app.selectability = selectability;
 
 try {
     const saved = getCookie('or_selectability');
@@ -499,23 +515,11 @@ function redrawAllLayers() {
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
 
-    // Show/hide the toggleable pseudo-layer tile layers.
-    const toggleableLayers = [
-        [app.modulesLayer, visibility.module_view],   // Module view
-        [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
-    ];
-    for (const [layer, visible] of toggleableLayers) {
-        if (!layer) continue;
-        if (visible && !app.map.hasLayer(layer)) {
-            layer.addTo(app.map);
-        } else if (!visible && app.map.hasLayer(layer)) {
-            app.map.removeLayer(layer);
-        }
-    }
+    // Every layer refreshes, pseudo layers included: they stay mounted and are
+    // gated on the visibility flag each request already carries (the `gate`
+    // option in display-controls.js, TileVisibility on the server).  Adding and
+    // removing them here instead made the map's layer set a second copy of the
+    // flag, and the two drifted.
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }
@@ -782,6 +786,10 @@ function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
 }
 
+function createClustersWidget(container) {
+    new ClustersWidget(container, app, redrawAllLayers);
+}
+
 function createTimingWidget(container) {
     app.timingWidget = new TimingWidget(app, redrawAllLayers, scheduleRefreshOverlay);
     container.element.appendChild(app.timingWidget.element);
@@ -902,6 +910,11 @@ const defaultLayoutConfig = {
                     },
                     {
                         type: 'component',
+                        componentType: 'ClustersWidget',
+                        title: 'Clusters',
+                    },
+                    {
+                        type: 'component',
                         componentType: 'TimingWidget',
                         title: 'Timing',
                     },
@@ -940,6 +953,7 @@ app.goldenLayout.registerComponentFactoryFunction('DisplayControls', createDispl
 app.goldenLayout.registerComponentFactoryFunction('TclConsole', createTclConsole);
 app.goldenLayout.registerComponentFactoryFunction('Inspector', createInspector);
 app.goldenLayout.registerComponentFactoryFunction('Browser', createBrowser);
+app.goldenLayout.registerComponentFactoryFunction('ClustersWidget', createClustersWidget);
 app.goldenLayout.registerComponentFactoryFunction('TimingWidget', createTimingWidget);
 app.goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
 app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
@@ -950,7 +964,7 @@ app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 3;
+const LAYOUT_VERSION = 4;
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
@@ -1003,6 +1017,7 @@ const componentTitles = {
     TclConsole: 'Tcl Console',
     Inspector: 'Inspector',
     Browser: 'Hierarchy',
+    ClustersWidget: 'Clusters',
     TimingWidget: 'Timing',
     DRCWidget: 'DRC',
     ClockWidget: 'Clock Tree',
@@ -1404,6 +1419,18 @@ document.addEventListener('keydown', (e) => {
     if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
     const key = e.key.toLowerCase();
+    if (key === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Find dialog.  Preventing the default keeps the browser's own
+        // find-in-page bar from opening over the viewer — but only when there is
+        // a dialog to open in its place.  In a saved static report canFind() is
+        // false, and swallowing the key there just took find-in-page away and
+        // gave nothing back.
+        if (canFind(app)) {
+            e.preventDefault();
+            showFindDialog(app);
+        }
+        return;
+    }
     if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
         app.rulerManager.cancelRulerBuild();
     } else if (key === 'k' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {

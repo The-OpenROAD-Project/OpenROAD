@@ -22,11 +22,57 @@
 #include "gui/heatMap.h"
 #include "odb/db.h"
 #include "request_handler.h"
+#include "shape_collector.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 
 namespace web {
 namespace {
+
+// Shared fixture helpers.  Three fixtures need a placed instance and two need
+// the shape MPL's -keep_clustering_data leaves behind; a copy per fixture means
+// a change in how those are modelled has to be made more than once.
+odb::dbInst* placeInstIn(odb::dbBlock* block,
+                         odb::dbLib* lib,
+                         const char* master_name,
+                         const char* inst_name,
+                         const int x,
+                         const int y)
+{
+  odb::dbMaster* master = lib->findMaster(master_name);
+  EXPECT_NE(master, nullptr) << master_name;
+  odb::dbInst* inst = odb::dbInst::create(block, master, inst_name);
+  inst->setLocation(x, y);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  return inst;
+}
+
+// A root cluster holding one instance, with a nested cluster holding more —
+// what MPL writes for a design with glue logic under the top module.
+struct ClusterTree
+{
+  odb::dbGroup* root = nullptr;
+  odb::dbGroup* child = nullptr;
+};
+
+ClusterTree makeClusterTreeIn(odb::dbBlock* block,
+                              odb::dbLib* lib,
+                              const int child_insts)
+{
+  ClusterTree tree;
+  tree.root = odb::dbGroup::create(block, "root");
+  tree.root->setType(odb::dbGroupType::VISUAL_DEBUG);
+  tree.root->addInst(placeInstIn(block, lib, "BUF_X16", "top_buf", 0, 0));
+
+  tree.child = odb::dbGroup::create(tree.root, "(root)_glue_logic");
+  tree.child->setType(odb::dbGroupType::VISUAL_DEBUG);
+  for (int i = 0; i < child_insts; ++i) {
+    const std::string name = "leaf_buf" + std::to_string(i);
+    tree.child->addInst(placeInstIn(
+        block, lib, "BUF_X16", name.c_str(), 20000 + 20000 * i, 20000));
+  }
+  return tree;
+}
 
 struct FakeInspectable
 {
@@ -177,6 +223,71 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
   {
     painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
+};
+
+// Stand-in for gui::DbGroupDescriptor, which lives in the Qt-independent but
+// separately-linked dbDescriptors library that this test binary does not pull
+// in.  It mirrors the behavior the handlers rely on: the type name "Group",
+// no bbox of its own (the real one only has one for groups with a region), a
+// highlight built from the member instances, and visitAllObjects over the
+// block's groups.
+class FakeGroupDescriptor : public gui::Descriptor
+{
+ public:
+  explicit FakeGroupDescriptor(odb::dbBlock* block) : block_(block) {}
+
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbGroup*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Group"; }
+
+  bool getBBox(const std::any& /* object */,
+               odb::Rect& /* bbox */) const override
+  {
+    return false;
+  }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>& func) const override
+  {
+    if (block_ == nullptr) {
+      return;
+    }
+    for (odb::dbGroup* group : block_->getGroups()) {
+      func(makeSelected(group));
+    }
+  }
+
+  Properties getProperties(const std::any& /* object */) const override
+  {
+    return {};
+  }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbGroup*>(l) < std::any_cast<odb::dbGroup*>(r);
+  }
+
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    auto* group = std::any_cast<odb::dbGroup*>(object);
+    for (odb::dbInst* inst : group->getInsts()) {
+      painter.drawRect(inst->getBBox()->getBox());
+    }
+    for (odb::dbGroup* child : group->getGroups()) {
+      highlight(child, painter);
+    }
+  }
+
+ private:
+  odb::dbBlock* block_;
 };
 
 class LazyMetadataHeatMap : public gui::HeatMapDataSource
@@ -1061,6 +1172,225 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
 }
 
 //------------------------------------------------------------------------------
+// Cluster (dbGroup) tests
+//------------------------------------------------------------------------------
+
+class GroupHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    handler_ = std::make_unique<TileHandler>(gen_);
+  }
+
+  // Overlay slots by layer name, so these tests read like the wire messages
+  // instead of hardcoding the table's row order.
+  static size_t slotOf(const char* layer)
+  {
+    return findColorOverlay(layer)->index;
+  }
+
+  const std::map<uint32_t, Color>& ownerColors(const char* layer)
+  {
+    static const std::map<uint32_t, Color> kNone;
+    const auto& colors = state_.owner_colors[slotOf(layer)].colors;
+    return colors ? *colors : kNone;
+  }
+
+  void setOwnerColors(const char* layer, std::map<uint32_t, Color> colors)
+  {
+    state_.owner_colors[slotOf(layer)].colors
+        = std::make_shared<const std::map<uint32_t, Color>>(std::move(colors));
+  }
+
+  void makeClusterTree()
+  {
+    const ClusterTree tree = makeClusterTreeIn(block_, lib_, /*child_insts=*/2);
+    root_ = tree.root;
+    child_ = tree.child;
+  }
+
+  boost::json::object groupHierarchy()
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kGroupHierarchy;
+    auto resp = handler_->handleGroupHierarchy(req);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+    return parseObj(payloadStr(resp));
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::unique_ptr<TileHandler> handler_;
+  SessionState state_;
+  odb::dbGroup* root_ = nullptr;
+  odb::dbGroup* child_ = nullptr;
+};
+
+TEST_F(GroupHandlerTest, GroupHierarchyIsEmptyWithoutGroups)
+{
+  auto obj = groupHierarchy();
+  EXPECT_TRUE(obj.at("nodes").as_array().empty());
+}
+
+// dbBlock::getGroups() is a flat table that also lists child groups, so the
+// report must recurse from the roots only — otherwise every nested cluster
+// would appear twice, once as a root.
+TEST_F(GroupHandlerTest, GroupHierarchyNestsChildGroupsOnce)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  ASSERT_EQ(nodes.size(), 2u);
+
+  const auto& root = nodes[0].as_object();
+  EXPECT_EQ(root.at("name").as_string(), "root");
+  EXPECT_EQ(root.at("type").as_string(), "VISUAL_DEBUG");
+  EXPECT_EQ(root.at("parent_id").as_int64(), -1);
+  EXPECT_EQ(root.at("odb_id").as_int64(), root_->getId());
+
+  const auto& child = nodes[1].as_object();
+  EXPECT_EQ(child.at("name").as_string(), "(root)_glue_logic");
+  EXPECT_EQ(child.at("parent_id").as_int64(), root.at("id").as_int64());
+}
+
+TEST_F(GroupHandlerTest, GroupHierarchyCountsHierarchically)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  ASSERT_EQ(nodes.size(), 2u);
+
+  const auto& root = nodes[0].as_object();
+  // 1 of its own + 2 in the child cluster.
+  EXPECT_EQ(root.at("insts").as_int64(), 3);
+  EXPECT_EQ(root.at("local_insts").as_int64(), 1);
+  EXPECT_EQ(root.at("groups").as_int64(), 1);
+  EXPECT_EQ(root.at("local_groups").as_int64(), 1);
+  EXPECT_GT(root.at("area").as_double(), 0.0);
+
+  const auto& child = nodes[1].as_object();
+  EXPECT_EQ(child.at("insts").as_int64(), 2);
+  EXPECT_EQ(child.at("groups").as_int64(), 0);
+}
+
+// The bbox drives "double-click to zoom" in the Clusters panel and the
+// cluster outlines in the tile renderer, so it must cover the child clusters
+// too, not just the group's own instances.
+TEST_F(GroupHandlerTest, GroupBBoxCoversNestedInstances)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  const auto& root_bbox = nodes[0].as_object().at("bbox").as_array();
+  const auto& child_bbox = nodes[1].as_object().at("bbox").as_array();
+
+  EXPECT_EQ(root_bbox[0].as_int64(), 0);
+  EXPECT_EQ(root_bbox[1].as_int64(), 0);
+  EXPECT_GE(root_bbox[2].as_int64(), child_bbox[2].as_int64());
+  EXPECT_GE(root_bbox[3].as_int64(), child_bbox[3].as_int64());
+  // The child holds no instance at the origin, so its box starts further in.
+  EXPECT_GT(child_bbox[0].as_int64(), 0);
+}
+
+// Each cluster gets its own palette color, which the widget then shows in its
+// swatch and the `_clusters` layer paints with.
+TEST_F(GroupHandlerTest, GroupHierarchyAssignsDistinctColors)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  const auto& c0 = nodes[0].as_object().at("color").as_array();
+  const auto& c1 = nodes[1].as_object().at("color").as_array();
+  ASSERT_EQ(c0.size(), 3u);
+  ASSERT_EQ(c1.size(), 3u);
+  const bool same = c0[0].as_int64() == c1[0].as_int64()
+                    && c0[1].as_int64() == c1[1].as_int64()
+                    && c0[2].as_int64() == c1[2].as_int64();
+  EXPECT_FALSE(same);
+}
+
+TEST_F(GroupHandlerTest, SetGroupColorsStoresTheMap)
+{
+  WebSocketRequest req;
+  req.id = 5;
+  req.type = WebSocketRequest::kSetGroupColors;
+  req.json = parseObj(R"({"colors":"7:255,0,0,100;9:0,255,0,100"})");
+
+  auto resp = handler_->handleSetOwnerColors(req, state_, slotOf("_clusters"));
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_NE(payloadStr(resp).find("\"count\":2"), std::string::npos);
+
+  ASSERT_EQ(ownerColors("_clusters").size(), 2u);
+  EXPECT_EQ(ownerColors("_clusters").at(7).r, 255);
+  EXPECT_EQ(ownerColors("_clusters").at(9).g, 255);
+  EXPECT_EQ(ownerColors("_clusters").at(9).a, 100);
+  // Module colors are a separate map: the two overlays must not clobber each
+  // other.
+  EXPECT_TRUE(ownerColors("_modules").empty());
+}
+
+// The Clusters/Hierarchy panels push a color map as soon as they load, and
+// those maps are not part of the tile cache key.  Only a color-overlay tile
+// that is actually drawing may be excluded from the cache for that reason:
+// dropping every layer would throw away the whole session's cached routing
+// tiles, and the same layer with its flag off is a constant empty tile.
+TEST_F(GroupHandlerTest, OnlyADrawingColorOverlayBypassesTheTileCache)
+{
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  setOwnerColors("_clusters",
+                 {{group->getId(), Color{.r = 255, .g = 0, .b = 0, .a = 100}}});
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":["metal1"]})");
+  handler_->handleTile(req, state_);
+  const size_t after_metal = gen_->tileCacheSize();
+  EXPECT_GT(after_metal, 0u);
+
+  // Overlay off: the tile is empty no matter what colors the session holds, so
+  // it is cacheable like any other.
+  req.id = 2;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[]})");
+  handler_->handleTile(req, state_);
+  const size_t after_off = gen_->tileCacheSize();
+  EXPECT_EQ(after_off, after_metal + 1)
+      << "an inactive color-overlay tile is a constant and should cache";
+
+  // Overlay on: the content now depends on session state that the key does not
+  // carry, so it must not be cached.
+  req.id = 3;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+  handler_->handleTile(req, state_);
+  EXPECT_EQ(gen_->tileCacheSize(), after_off)
+      << "a drawing color-overlay tile must not enter the cache";
+}
+
+TEST_F(GroupHandlerTest, SetGroupColorsWithEmptyStringClears)
+{
+  setOwnerColors("_clusters", {{3, Color{.r = 1, .g = 2, .b = 3, .a = 4}}});
+
+  WebSocketRequest req;
+  req.id = 6;
+  req.type = WebSocketRequest::kSetGroupColors;
+  req.json = parseObj(R"({"colors":""})");
+
+  auto resp = handler_->handleSetOwnerColors(req, state_, slotOf("_clusters"));
+  EXPECT_NE(payloadStr(resp).find("\"count\":0"), std::string::npos);
+  EXPECT_TRUE(ownerColors("_clusters").empty());
+}
+
+//------------------------------------------------------------------------------
 // SelectHandler tests
 //------------------------------------------------------------------------------
 
@@ -1096,12 +1426,7 @@ class SelectHandlerTest : public tst::Nangate45Fixture
                          int x,
                          int y)
   {
-    odb::dbMaster* master = lib_->findMaster(master_name);
-    EXPECT_NE(master, nullptr);
-    odb::dbInst* inst = odb::dbInst::create(block_, master, inst_name);
-    inst->setLocation(x, y);
-    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    return inst;
+    return placeInstIn(block_, lib_, master_name, inst_name, x, y);
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -1112,6 +1437,369 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   FakeInspectable fake_current_;
   FakeInspectable fake_previous_;
 };
+
+// select_group / find_objects tests.  Both go through the descriptor
+// registry, so the fixture registers FakeGroupDescriptor for dbGroup* and
+// removes it again afterwards (the registry is a process-wide singleton).
+class GroupSelectTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
+
+    const ClusterTree tree = makeClusterTreeIn(block_, lib_, /*child_insts=*/1);
+    root_ = tree.root;
+    child_ = tree.child;
+
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+
+    gui::DescriptorRegistry::instance()->registerDescriptor(
+        typeid(odb::dbGroup*), new FakeGroupDescriptor(block_));
+  }
+
+  void TearDown() override
+  {
+    gui::DescriptorRegistry::instance()->unregisterDescriptor(
+        typeid(odb::dbGroup*));
+  }
+
+  boost::json::object findObjects(const std::string& json)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kFindObjects;
+    req.json = parseObj(json);
+    auto resp = handler_->handleFindObjects(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<SelectHandler> handler_;
+  SessionState state_;
+  odb::dbGroup* root_ = nullptr;
+  odb::dbGroup* child_ = nullptr;
+};
+
+// Clicking a row in the Clusters panel selects the dbGroup, and the group's
+// descriptor turns that into one highlight shape per member instance — the
+// whole point of MPL's -keep_clustering_data.
+TEST_F(GroupSelectTest, SelectGroupHighlightsEveryMemberInstance)
+{
+  WebSocketRequest req;
+  req.id = 3;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
+
+  auto resp = handler_->handleSelectGroup(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  auto obj = parseObj(payloadStr(resp));
+  EXPECT_EQ(obj.at("name").as_string(), "root");
+  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
+  EXPECT_FALSE(obj.at("highlight_truncated").as_bool());
+
+  // root's own instance plus the nested cluster's.
+  EXPECT_EQ(state_.highlight_rects.size(), 2u);
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+}
+
+TEST_F(GroupSelectTest, SelectGroupReplacesSelectionUnlessAskedToAdd)
+{
+  WebSocketRequest req;
+  req.id = 4;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
+  handler_->handleSelectGroup(req, state_);
+
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
+                      + R"(,"add_to_selection":true})");
+  handler_->handleSelectGroup(req, state_);
+  EXPECT_EQ(state_.selection_set.size(), 2u);
+
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId()) + "}");
+  handler_->handleSelectGroup(req, state_);
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+}
+
+// How the Clusters panel actually clicks a row: it shows the cluster by
+// narrowing the `_clusters` color map to that cluster's subtree, so it asks for
+// the selection (which drives the Inspector) without the overlay shapes, whose
+// yellow veil would cover the cluster's own color.
+TEST_F(GroupSelectTest, NoHighlightSelectsWithoutOverlayShapes)
+{
+  WebSocketRequest req;
+  req.id = 9;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId())
+                      + R"(,"no_highlight":true})");
+
+  auto resp = handler_->handleSelectGroup(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  auto obj = parseObj(payloadStr(resp));
+  // Still selected and still described — only the shapes are skipped.
+  EXPECT_EQ(obj.at("name").as_string(), "root");
+  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
+  EXPECT_FALSE(obj.at("highlight_truncated").as_bool());
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+  EXPECT_TRUE(state_.highlight_rects.empty());
+  EXPECT_TRUE(state_.highlight_polys.empty());
+}
+
+// Selecting with no_highlight after a normal selection must clear what the
+// previous one left on the overlay, or the old shapes would outlive it.
+TEST_F(GroupSelectTest, NoHighlightClearsShapesLeftByAPreviousSelection)
+{
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
+  handler_->handleSelectGroup(req, state_);
+  ASSERT_FALSE(state_.highlight_rects.empty());
+
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
+                      + R"(,"no_highlight":true})");
+  handler_->handleSelectGroup(req, state_);
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+// Deselecting is what the Clusters panel does when the row is clicked again or
+// the cluster is hidden: without it the member instances stay highlighted while
+// the panel shows the cluster as neither selected nor visible.
+TEST_F(GroupSelectTest, SelectGroupCanDeselect)
+{
+  WebSocketRequest req;
+  req.id = 6;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
+  handler_->handleSelectGroup(req, state_);
+  ASSERT_EQ(state_.selection_set.size(), 1u);
+  ASSERT_FALSE(state_.highlight_rects.empty());
+
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId())
+                      + R"(,"deselect":true})");
+  auto resp = handler_->handleSelectGroup(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  auto obj = parseObj(payloadStr(resp));
+  EXPECT_EQ(obj.at("selection_count").as_int64(), 0);
+  EXPECT_TRUE(state_.selection_set.empty());
+  EXPECT_TRUE(state_.highlight_rects.empty());
+  EXPECT_FALSE(state_.current_inspected);
+  // Nothing is being described, and that is not an error condition.
+  EXPECT_FALSE(obj.if_contains("error"));
+  EXPECT_FALSE(obj.if_contains("name"));
+}
+
+// Deselecting one of several keeps the others lit.
+TEST_F(GroupSelectTest, DeselectLeavesTheRestOfTheSelectionHighlighted)
+{
+  WebSocketRequest req;
+  req.id = 7;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
+  handler_->handleSelectGroup(req, state_);
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
+                      + R"(,"add_to_selection":true})");
+  handler_->handleSelectGroup(req, state_);
+  ASSERT_EQ(state_.selection_set.size(), 2u);
+
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
+                      + R"(,"deselect":true})");
+  handler_->handleSelectGroup(req, state_);
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+  // root still holds its own instance plus the nested cluster's.
+  EXPECT_EQ(state_.highlight_rects.size(), 2u);
+}
+
+// Deselecting something that was never selected is a no-op, not an error: the
+// panel fires it whenever a cluster is hidden, selected or not.
+TEST_F(GroupSelectTest, DeselectOfAnUnselectedGroupIsHarmless)
+{
+  WebSocketRequest req;
+  req.id = 8;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
+                      + R"(,"deselect":true})");
+  auto resp = handler_->handleSelectGroup(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_TRUE(state_.selection_set.empty());
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+TEST_F(GroupSelectTest, SelectGroupWithUnknownIdReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 5;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":9999})");
+
+  auto resp = handler_->handleSelectGroup(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Group not found"), std::string::npos);
+}
+
+// One glob pattern replaces the per-instance Tcl script the issue started
+// from: matching on the Group type highlights whole clusters at once.
+TEST_F(GroupSelectTest, FindObjectsMatchesGroupsByGlob)
+{
+  auto obj = findObjects(
+      R"({"object_type":"Group","pattern":"(root)_*","highlight_group":0})");
+  EXPECT_EQ(obj.at("found").as_int64(), 1);
+  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
+  EXPECT_EQ(state_.highlight_groups[0].size(), 1u);
+  // The matched cluster holds one instance, so one colored rect.
+  ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+  // gui::Painter::kHighlightColors[0] is green at alpha 100.
+  EXPECT_EQ(state_.highlight_group_rects[0].color.g, 255);
+  EXPECT_EQ(state_.highlight_group_rects[0].color.a, 100);
+  EXPECT_TRUE(state_.highlight_group_rects[0].filled);
+}
+
+// A descriptor can emit one shape per leaf — DbGroupDescriptor::highlight
+// recurses into subgroups and calls the instance descriptor per member — so the
+// shape budget has to bound what ONE object accumulates, not only the total
+// across objects.  What makes the truncation lossless is that the collector
+// keeps the union of the shapes it drops, so the single box the callers fall
+// back to is still exact.  Tested on the collector directly: reaching the real
+// cap through a handler would mean building 20 000 instances.
+TEST(ShapeCollectorBudget, DroppedShapesStillCountTowardTheUnion)
+{
+  const odb::Rect kept1(0, 0, 10, 10);
+  const odb::Rect kept2(20, 20, 30, 30);
+  const odb::Rect dropped(100, 0, 110, 10);
+  const odb::Oct dropped_oct(odb::Point(200, 200), odb::Point(200, 260), 40);
+
+  ShapeCollector collector(/*budget=*/2);
+  collector.drawRect(kept1, 0, 0);
+  collector.drawRect(kept2, 0, 0);
+  EXPECT_FALSE(collector.overflowed());
+
+  // Third and fourth shapes exceed the budget: dropped, but not forgotten.
+  collector.drawRect(dropped, 0, 0);
+  collector.drawOctagon(dropped_oct);
+
+  EXPECT_EQ(collector.rects.size(), 2u) << "budget must bound what is stored";
+  EXPECT_TRUE(collector.polys.empty());
+  EXPECT_TRUE(collector.overflowed());
+
+  odb::Rect expected = kept1;
+  expected.merge(kept2);
+  expected.merge(dropped);
+  expected.merge(odb::Polygon(dropped_oct).getEnclosingRect());
+  EXPECT_EQ(collector.unionBBox(), expected)
+      << "the union must span every shape drawn, kept or dropped";
+}
+
+// reset() is what lets a caller reuse one collector across objects (two vector
+// allocations per object otherwise) without leaking the previous object's
+// overflow state into the next one's union.
+TEST(ShapeCollectorBudget, ResetClearsShapesAndOverflow)
+{
+  ShapeCollector collector(/*budget=*/1);
+  collector.drawRect(odb::Rect(0, 0, 10, 10), 0, 0);
+  collector.drawRect(odb::Rect(500, 500, 600, 600), 0, 0);
+  ASSERT_TRUE(collector.overflowed());
+
+  collector.reset(/*budget=*/8);
+  EXPECT_TRUE(collector.rects.empty());
+  EXPECT_FALSE(collector.overflowed());
+  collector.drawRect(odb::Rect(0, 0, 5, 5), 0, 0);
+  EXPECT_EQ(collector.unionBBox(), odb::Rect(0, 0, 5, 5));
+}
+
+TEST_F(GroupSelectTest, FindObjectsMatchesEverythingWithAnEmptyPattern)
+{
+  auto obj = findObjects(R"({"object_type":"Group","pattern":""})");
+  EXPECT_EQ(obj.at("found").as_int64(), 2);
+  // No highlight_group given: select only, no colored highlight.
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+TEST_F(GroupSelectTest, FindObjectsHonorsCaseSensitivity)
+{
+  auto insensitive = findObjects(R"({"object_type":"Group","pattern":"ROOT"})");
+  EXPECT_EQ(insensitive.at("found").as_int64(), 1);
+
+  auto sensitive = findObjects(
+      R"({"object_type":"Group","pattern":"ROOT","case_sensitive":true})");
+  EXPECT_EQ(sensitive.at("found").as_int64(), 0);
+}
+
+TEST_F(GroupSelectTest, FindObjectsAnchorsGlobPatterns)
+{
+  // "root" must not match "(root)_glue_logic": Gui::select matches the whole
+  // name, and so must this.
+  auto obj = findObjects(R"({"object_type":"Group","pattern":"root"})");
+  EXPECT_EQ(obj.at("found").as_int64(), 1);
+}
+
+TEST_F(GroupSelectTest, FindObjectsSupportsRegexp)
+{
+  auto obj = findObjects(
+      R"({"object_type":"Group","pattern":".*glue.*","is_regexp":true})");
+  EXPECT_EQ(obj.at("found").as_int64(), 1);
+}
+
+TEST_F(GroupSelectTest, FindObjectsWithUnknownTypeReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 9;
+  req.type = WebSocketRequest::kFindObjects;
+  req.json = parseObj(R"({"object_type":"Nonsense","pattern":"*"})");
+
+  auto resp = handler_->handleFindObjects(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Unknown object type"), std::string::npos);
+}
+
+// Both ends of the range: -1 means "select only", so anything below it is a
+// malformed request, not a second spelling of the same thing.
+TEST_F(GroupSelectTest, FindObjectsRejectsAnOutOfRangeHighlightGroup)
+{
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kFindObjects;
+
+  for (const int group : {99, -5}) {
+    req.json = parseObj(R"({"object_type":"Group","pattern":"*",)"
+                        R"("highlight_group":)"
+                        + std::to_string(group) + "}");
+
+    auto resp = handler_->handleFindObjects(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kError) << "group " << group;
+    EXPECT_NE(payloadStr(resp).find("Invalid highlight group"),
+              std::string::npos)
+        << "group " << group;
+  }
+}
+
+TEST_F(GroupSelectTest, ClearHighlightsCanKeepTheSelection)
+{
+  findObjects(R"({"object_type":"Group","pattern":"*","highlight_group":1})");
+  ASSERT_FALSE(state_.highlight_group_rects.empty());
+  ASSERT_FALSE(state_.selection_set.empty());
+
+  WebSocketRequest req;
+  req.id = 11;
+  req.type = WebSocketRequest::kClearHighlights;
+  req.json = parseObj(R"({"keep_selection":true})");
+  auto resp = handler_->handleClearHighlights(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+  EXPECT_TRUE(state_.highlight_groups[1].empty());
+  EXPECT_FALSE(state_.selection_set.empty());
+
+  req.json = parseObj("{}");
+  handler_->handleClearHighlights(req, state_);
+  EXPECT_TRUE(state_.selection_set.empty());
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
 
 TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
 {

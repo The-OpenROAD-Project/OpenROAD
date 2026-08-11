@@ -41,10 +41,40 @@ class RequestDispatcher
            HandleFn handle,
            bool run_inline = false)
   {
+    // Wrapped here rather than at the call site: an unwrapped invocation path
+    // would terminate the process on any exception a handler lets escape (see
+    // run()), so registration is the only place that can guarantee the floor.
     Entry entry{
-        .type = type, .handle = std::move(handle), .run_inline = run_inline};
+        .type = type,
+        .handle = [h = std::move(handle)](
+                      const WebSocketRequest& req,
+                      SessionState& state) { return run(h, req, state); },
+        .run_inline = run_inline};
     by_type_[static_cast<int>(type)]
         = &by_name_.emplace(type_name, std::move(entry)).first->second;
+  }
+
+  // Run a handler, turning anything that escapes it into an error response.
+  // Most handlers validate their own input inside a try/catch and never reach
+  // this, but the ones that read req.json before entering theirs can throw on a
+  // missing key or a wrongly-typed field — and the call happens on the
+  // io_context executor, where an escaping exception does not fail one request,
+  // it terminates the process.  So this is the floor rather than a convention
+  // each handler has to remember.
+  static WebSocketResponse run(const HandleFn& handle,
+                               const WebSocketRequest& req,
+                               SessionState& state)
+  {
+    try {
+      return handle(req, state);
+    } catch (const std::exception& e) {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kError;
+      const std::string err = std::string("server error: ") + e.what();
+      resp.payload.assign(err.begin(), err.end());
+      return resp;
+    }
   }
 
   // Parse a raw JSON message into a WebSocketRequest.  On any failure

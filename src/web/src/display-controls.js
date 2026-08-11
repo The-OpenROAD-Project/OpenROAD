@@ -160,36 +160,41 @@ export function populateDisplayControls(app, visibility, selectability,
     }
 
     // Create a pseudo-layer tile layer and register it on the app.
-    // `appProp` names the app.<prop> slot (null = anonymous); `addToMap`
-    // attaches it immediately (layers whose toggle is default-ON).
-    function addPseudoLayer(name, appProp, zIndex, addToMap) {
+    // `appProp` names the app.<prop> slot (null = anonymous); `gate` names the
+    // visibility flag the layer is switched by (null = no toggle, always drawn).
+    // Every one of them is mounted here and stays mounted — see the note above.
+    function addPseudoLayer(name, appProp, zIndex, gate) {
         const layer = new WebSocketTileLayer(app.websocketManager, name, {
             zIndex,
+            gate,
         });
-        if (addToMap) layer.addTo(app.map);
+        layer.addTo(app.map);
         if (appProp) app[appProp] = layer;
         app.allLayers.push(layer);
         return layer;
     }
 
-    // The initial attach state must follow `visibility`, which was already
-    // restored from the or_visibility cookie: a hardcoded attach leaves the
-    // checkbox (rendered from `visibility`) out of sync with the map until
-    // the first toggle runs redrawAllLayers.
+    // Every pseudo layer stays mounted and is switched by the `gate` flag it
+    // already sends in the tile payload: the layer skips the round trip while
+    // the flag is off (see _gatedOff) and the renderer decides the rest.
+    // Mounting/unmounting per toggle instead made the map's layer set a second
+    // record of the flag, and once that drifted from the checkbox (a
+    // re-populate of this panel builds new layer objects without removing the
+    // old ones) the toggle silently stopped doing anything until a reload.
 
     // Instance borders layer (always below routing layers; no toggle)
-    addPseudoLayer('_instances', null, 0, true);
+    addPseudoLayer('_instances', null, 0, null);
     // IO pin markers layer (between instances and routing layers)
-    addPseudoLayer('_pins', 'pinsLayer', 1, visibility.pins);
+    addPseudoLayer('_pins', 'pinsLayer', 1, 'pins');
     // Module coloring overlay (Module view)
-    addPseudoLayer('_modules', 'modulesLayer', 2, visibility.module_view);
+    addPseudoLayer('_modules', 'modulesLayer', 2, 'module_view');
     // Access-point markers overlay (Misc > Access Points)
-    addPseudoLayer(
-        '_access_points', 'accessPointsLayer', 1000, visibility.access_points);
+    addPseudoLayer('_access_points', 'accessPointsLayer', 1000,
+                   'access_points');
     // Manufacturing-grid dots overlay (Misc > Manufacturing grid)
-    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
+    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, 'mfg_grid');
     // GCell-grid lines overlay (topmost, GUI paint order)
-    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
+    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, 'gcell_grid');
 
     // Region boundaries overlay (above access points, GUI paint order).
     // Only created when the design has dbRegions — the layer is default-ON
@@ -198,7 +203,7 @@ export function populateDisplayControls(app, visibility, selectability,
     // need a page reload to appear.)
     app.regionsLayer = null;
     if (techData && techData.has_regions) {
-        addPseudoLayer('_regions', 'regionsLayer', 1001, visibility.regions);
+        addPseudoLayer('_regions', 'regionsLayer', 1001, 'regions');
     }
 
     // --- Layers group (using CheckboxTreeModel) ---
@@ -384,6 +389,21 @@ export function populateDisplayControls(app, visibility, selectability,
             }),
         };
     }
+
+    // Cluster (dbGroup) coloring overlay layer.  Unlike the module overlay it is
+    // stacked ABOVE the routing panes: the point of the cluster plot is to read
+    // the partition at a glance, and metal over it defeats that.  The routing
+    // panes occupy zIndex 3..(pane count + 2), so this sits just above them and
+    // below the heat map (leafletLayers.length + 10).
+    //
+    // Created here, after the panes exist, and counted off leafletLayers rather
+    // than techData.layers: the latter is the name-deduplicated union across
+    // techs, while there is one pane per (chiplet, layer).  In a multi-die
+    // design the deduplicated count is the smaller one, which used to put this
+    // overlay in the middle of the routing stack — under the very metal it is
+    // meant to cover.
+    addPseudoLayer('_clusters', 'clustersLayer', leafletLayers.length + 5,
+                   'cluster_view');
 
     // ─── Build the merged panes ──────────────────────────────────────────
     //
@@ -1347,6 +1367,15 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'flywires_only', label: 'Flywires only' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
+    // Cluster coloring (the dbGroups MPL writes with -keep_clustering_data).
+    // A plain container group, not a visKey group: with a visKey the parent's
+    // tri-state would drive cluster_view, so unticking "Outlines" would turn
+    // the whole overlay off.
+    visTree.add({ label: 'Cluster view', children: [
+        { key: 'cluster_view', label: 'Colors' },
+        { key: 'cluster_outlines', label: 'Outlines',
+          disabledBy: 'cluster_view' },
+    ]});
     // Developer overlays.  All three are plain leaves under a visKey-less
     // group: giving the group `visKey: 'debug_renderers'` would tie the
     // renderer overlay to the group's tri-state, so ticking the unrelated

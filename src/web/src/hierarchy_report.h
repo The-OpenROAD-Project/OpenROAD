@@ -68,6 +68,35 @@ class HierarchyReport
 // JSON serialization (shared by handleModuleHierarchy and saveReport).
 boost::json::object serializeHierarchyResult(const HierarchyResult& result);
 
+// One node of a "color by owner" tree, as the effective-color rule sees it.
+// Both the module hierarchy and the cluster (dbGroup) tree reduce to this.
+struct OwnerColorNode
+{
+  int parent = -1;         // index into the vector, -1 for a root
+  uint32_t odb_id = 0;     // key of the resulting color map
+  Color color;             // the node's own palette color
+  bool collapsed = false;  // its subtree is folded into it in the UI
+  bool has_color = false;  // false for structural rows that carry no color
+};
+
+// Which nodes have at least one child, indexed by node id.  Both reports need
+// it to decide the default collapse state, and both rely on the same invariant
+// their DFS gives them: a node's id IS its position.
+std::vector<char> hasChildrenByIndex(size_t node_count,
+                                     const std::vector<int>& parent_ids);
+
+// Resolve each node's effective color and return odb id → color.
+//
+// The rule the panels implement: a collapsed node paints its whole subtree, and
+// with collapsed nodes nested the highest one wins.  Callers must pass nodes in
+// an order where a parent precedes its children (both reports emit DFS order),
+// which is what lets this resolve in one pass.
+//
+// Shared so that the two reports, and therefore `save_image`/`web_save_report`
+// and the live viewer, cannot disagree about what a collapsed row means.
+std::map<uint32_t, Color> computeEffectiveOwnerColors(
+    const std::vector<OwnerColorNode>& nodes);
+
 // Compute the module color map for the default UI state (depth-1+ modules
 // collapsed, all visible).  Returns odb module id → RGBA color, ready for
 // use in tile rendering.

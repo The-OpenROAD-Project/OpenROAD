@@ -100,6 +100,11 @@ struct WebSocketRequest
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
+    kGroupHierarchy,
+    kSetGroupColors,
+    kSelectGroup,
+    kFindObjects,
+    kClearHighlights,
     kSetFocusNets,
     kSetRouteGuides,
     kHeatmaps,
@@ -203,8 +208,24 @@ struct SessionState
   gui::SelectionSet selection_set;
   gui::SelectionSet::const_iterator selection_itr = selection_set.end();
 
-  std::mutex module_colors_mutex;
-  std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
+  // One entry per "color by owner" overlay, indexed by ColorOverlaySpec::index:
+  // owner id (dbModule / dbGroup) → RGBA color, as last set by the panel.  Held
+  // by shared_ptr because a tile render needs the map to outlive the lock: the
+  // renderer takes the pointer and the panel may replace the map meanwhile, so
+  // copying the handle (a refcount bump) replaces what was a deep copy of every
+  // owner's color, per tile, with the mutex held.
+  struct OwnerColors
+  {
+    std::mutex mutex;
+    std::shared_ptr<const std::map<uint32_t, Color>> colors;
+  };
+  std::array<OwnerColors, kNumColorOverlays> owner_colors;
+
+  // Colored highlight sets, mirroring the Qt GUI's 16 highlight groups.
+  // Populated by the Find dialog (handleFindObjects); rendered as
+  // ColoredRects on the overlay using gui::Painter::kHighlightColors.
+  gui::HighlightSet highlight_groups;
+  std::vector<ColoredRect> highlight_group_rects;
 
   std::mutex focus_nets_mutex;
   std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
@@ -283,6 +304,12 @@ class SelectHandler
                                      SessionState& state);
   WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
                                       SessionState& state);
+  WebSocketResponse handleSelectGroup(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleFindObjects(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleClearHighlights(const WebSocketRequest& req,
+                                          SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
@@ -363,8 +390,12 @@ class TileHandler
   WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
                                       SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
-  WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
-                                          SessionState& state);
+  WebSocketResponse handleGroupHierarchy(const WebSocketRequest& req);
+  // Backs set_module_colors and set_group_colors; `overlay_index` is
+  // ColorOverlaySpec::index, i.e. which overlay's slot to fill.
+  WebSocketResponse handleSetOwnerColors(const WebSocketRequest& req,
+                                         SessionState& state,
+                                         size_t overlay_index);
   WebSocketResponse handleHeatMaps(const WebSocketRequest& req,
                                    SessionState& state);
   WebSocketResponse handleSetActiveHeatMap(const WebSocketRequest& req,
@@ -395,7 +426,7 @@ class TileHandler
       const std::vector<odb::Polygon>& highlight_polys,
       const std::vector<ColoredRect>& colored_rects,
       const std::vector<FlightLine>& flight_lines,
-      const std::map<uint32_t, Color>* module_colors,
+      const InstColorOverlay* inst_colors,
       const std::set<uint32_t>* focus_net_ids,
       const std::set<uint32_t>* route_guide_net_ids,
       double dpr = 1.0,

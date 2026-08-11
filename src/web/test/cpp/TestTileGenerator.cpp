@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <map>
 #include <memory>
 #include <numbers>
 #include <set>
@@ -2814,7 +2815,7 @@ TEST_F(TileGeneratorTest, DebugBorderTracesFullHiDpiTile)
                                      /*highlight_polys=*/{},
                                      /*colored_rects=*/{},
                                      /*flight_lines=*/{},
-                                     /*module_colors=*/nullptr,
+                                     /*inst_colors=*/nullptr,
                                      /*focus_net_ids=*/nullptr,
                                      /*route_guide_net_ids=*/nullptr,
                                      /*dpr=*/2.0);
@@ -3658,7 +3659,7 @@ TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
                                      /*highlight_polys=*/{},
                                      /*colored_rects=*/{},
                                      /*flight_lines=*/{},
-                                     /*module_colors=*/nullptr,
+                                     /*inst_colors=*/nullptr,
                                      /*focus_net_ids=*/nullptr,
                                      /*route_guide_net_ids=*/nullptr,
                                      /*dpr=*/2.0);
@@ -3666,6 +3667,284 @@ TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
   EXPECT_EQ(w, 512u);
   EXPECT_EQ(h, 512u);
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// The `_clusters` layer colors each instance by the dbGroup it belongs to.
+// This is how MPL's clustering (rtl_macro_placer -keep_clustering_data, which
+// writes the cluster tree as nested dbGroups) becomes visible in the layout.
+TEST_F(TileGeneratorTest, ClustersLayerColorsInstancesByGroup)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  InstColorOverlay inst_colors;
+  inst_colors.colors[findColorOverlay("_clusters")->index] = &group_colors;
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     &inst_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+
+  bool found_red = false;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i] == 255 && pixels[i + 1] == 0 && pixels[i + 2] == 0
+        && pixels[i + 3] > 0) {
+      found_red = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_red) << "instance was not painted in its cluster color";
+}
+
+// Only the clusters named in the color map are painted.  This is what the
+// Clusters panel leans on to isolate a selected cluster: it narrows the map to
+// that cluster's subtree, and every other cluster's instances must then fall
+// back to the plain layout.
+TEST_F(TileGeneratorTest, ClustersLayerPaintsOnlyTheGroupsInTheColorMap)
+{
+  odb::dbInst* red_inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbInst* other_inst = placeInst("BUF_X16", "buf2", 30000, 10000);
+  odb::dbGroup* red_group = odb::dbGroup::create(block_, "cluster_1");
+  red_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  red_group->addInst(red_inst);
+  odb::dbGroup* other_group = odb::dbGroup::create(block_, "cluster_2");
+  other_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  other_group->addInst(other_inst);
+  makeTileGen();
+
+  // Only cluster_1 is in the map — cluster_2 is the "isolated away" one.
+  std::map<uint32_t, Color> group_colors;
+  group_colors[red_group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  InstColorOverlay inst_colors;
+  inst_colors.colors[findColorOverlay("_clusters")->index] = &group_colors;
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     &inst_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+
+  // Every painted pixel is cluster_1's red: nothing was drawn for the cluster
+  // left out of the map.
+  size_t painted = 0;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i + 3] == 0) {
+      continue;
+    }
+    ++painted;
+    EXPECT_EQ(pixels[i], 255);
+    EXPECT_EQ(pixels[i + 1], 0);
+    EXPECT_EQ(pixels[i + 2], 0);
+  }
+  EXPECT_GT(painted, 0u) << "the cluster in the map was not painted at all";
+}
+
+// The overlay is switched by its visibility flag, not by mounting/unmounting
+// the layer in the viewer: with colors in hand but the flag off, the tile must
+// come out empty.  This is what makes toggling "Cluster view" an ordinary tile
+// refresh instead of a Leaflet layer add/remove (which used to wedge the
+// toggle until a page reload).
+TEST_F(TileGeneratorTest, ColorOverlaysAreGatedOnTheirVisibilityFlag)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  std::map<uint32_t, Color> module_colors;
+  odb::dbModule* module = inst->getModule();
+  ASSERT_NE(module, nullptr);
+  module_colors[module->getId()] = Color{.r = 0, .g = 0, .b = 255, .a = 255};
+  InstColorOverlay inst_colors;
+  inst_colors.colors[findColorOverlay("_clusters")->index] = &group_colors;
+  inst_colors.colors[findColorOverlay("_modules")->index] = &module_colors;
+
+  const auto render = [&](const char* layer, const TileVisibility& vis) {
+    auto png = tile_gen_->generateTile(layer,
+                                       0,
+                                       0,
+                                       0,
+                                       vis,
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       &inst_colors);
+    unsigned w = 0;
+    unsigned h = 0;
+    return decodePng(png, w, h);
+  };
+
+  // Flags off (the default): both overlays draw nothing.
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", {})));
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", {})));
+
+  TileVisibility clusters_on;
+  clusters_on.cluster_view = true;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_clusters", clusters_on)));
+  // One flag must not switch on the other overlay.
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", clusters_on)));
+
+  TileVisibility modules_on;
+  modules_on.module_view = true;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_modules", modules_on)));
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", modules_on)));
+}
+
+// Enabling the overlay before the Clusters/Hierarchy panel has pushed a color
+// map must leave the tile empty.  Falling through to the generic instance
+// drawing would stack a second copy of the instances layer over the design.
+TEST_F(TileGeneratorTest, ColorOverlayLayersRenderEmptyWithoutColors)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  vis.module_view = true;
+  for (const char* layer : {"_clusters", "_modules"}) {
+    auto png = tile_gen_->generateTile(layer, 0, 0, 0, vis);
+    unsigned w = 0;
+    unsigned h = 0;
+    auto pixels = decodePng(png, w, h);
+    EXPECT_FALSE(hasNonTransparentPixel(pixels))
+        << layer << " drew something without a color map";
+  }
+}
+
+// Outlines are culled below a few pixels, the same discipline kMinViewablePx
+// applies to shapes.  It is what bounds the outline pass on a design carrying
+// thousands of groups: measured on a 10k-group synthetic, a third of the boxes
+// fall under 4 px at full zoom-out, and the pass costs per box.  A cluster big
+// enough to see must still be outlined, so both halves are pinned here.
+TEST_F(TileGeneratorTest, ClusterOutlineCulledOnlyBelowAFewPixels)
+{
+  // Two clusters on opposite sides of the threshold.  Their pixel sizes are
+  // derived from the rendered scale below rather than assumed: the tile scale
+  // comes from TileGenerator::getBounds() (the block bbox), not the die area.
+  block_->setDieArea(odb::Rect(0, 0, 2000000, 2000000));
+  odb::dbInst* small1 = placeInst("BUF_X16", "small1", 100000, 100000);
+  odb::dbInst* small2 = placeInst("BUF_X16", "small2", 101000, 101000);
+  odb::dbGroup* small_group = odb::dbGroup::create(block_, "tiny_cluster");
+  small_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  small_group->addInst(small1);
+  small_group->addInst(small2);
+
+  odb::dbInst* wide1 = placeInst("BUF_X16", "wide1", 400000, 400000);
+  odb::dbInst* wide2 = placeInst("BUF_X16", "wide2", 800000, 800000);
+  odb::dbGroup* wide_group = odb::dbGroup::create(block_, "wide_cluster");
+  wide_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  wide_group->addInst(wide1);
+  wide_group->addInst(wide2);
+  makeTileGen();
+
+  // Preconditions, asserted so that a fixture change reports itself instead of
+  // quietly turning this into a test of nothing.
+  const double dbu_per_px = tile_gen_->getBounds().maxDXDY() / 256.0;
+  const odb::Rect small_box = small1->getBBox()->getBox();
+  const double small_px
+      = std::min(small_box.dx(), small_box.dy() + 1000) / dbu_per_px;
+  const double wide_px = 400000 / dbu_per_px;
+  ASSERT_LT(small_px, 4.0) << "small cluster is not below the cull threshold";
+  ASSERT_GT(wide_px, 8.0) << "wide cluster is not clearly above it";
+
+  // The clean signal is the tile itself: render each cluster with and without
+  // the outline pass.  For a culled box the two tiles must be byte-identical,
+  // for a visible one they must differ.  Counting "opaque" pixels instead
+  // measures the fill, whose alpha compounds where instances overlap.
+  const auto tilePixels = [&](odb::dbGroup* group, const bool outlines) {
+    std::map<uint32_t, Color> group_colors;
+    group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 100};
+    InstColorOverlay inst_colors;
+    inst_colors.colors[findColorOverlay("_clusters")->index] = &group_colors;
+    TileVisibility vis;
+    vis.cluster_view = true;
+    vis.cluster_outlines = outlines;
+    auto png = tile_gen_->generateTile("_clusters",
+                                       0,
+                                       0,
+                                       0,
+                                       vis,
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       &inst_colors);
+    unsigned w = 0;
+    unsigned h = 0;
+    return decodePng(png, w, h);
+  };
+
+  EXPECT_NE(tilePixels(wide_group, true), tilePixels(wide_group, false))
+      << "a cluster tens of pixels across must still be outlined";
+  EXPECT_EQ(tilePixels(small_group, true), tilePixels(small_group, false))
+      << "a cluster below the pixel threshold must not be outlined";
+}
+
+// An instance outside every colored group must stay transparent, otherwise the
+// overlay would claim a cluster membership the database does not have.
+TEST_F(TileGeneratorTest, ClustersLayerSkipsUngroupedInstances)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "empty_cluster");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  InstColorOverlay inst_colors;
+  inst_colors.colors[findColorOverlay("_clusters")->index] = &group_colors;
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     &inst_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
 }
 
 TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
