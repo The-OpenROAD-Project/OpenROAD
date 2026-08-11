@@ -423,11 +423,12 @@ bool IOPlacer::checkBlocked(Edge edge,
   bool vertical_pin = (edge == Edge::polygonEdge)
                           ? line.pt0().getY() == line.pt1().getY()
                           : (edge == Edge::top || edge == Edge::bottom);
-  if (!layer_fixed_pins_shapes_[layer].empty()) {
+  const auto fixed_shapes = layer_fixed_pins_shapes_.find(layer);
+  if (fixed_shapes != layer_fixed_pins_shapes_.end()) {
     // pad fixed shapes so the new pin geometry keeps min spacing to them
     int half_width, height;
     computePinSize(layer, vertical_pin, half_width, height);
-    for (const odb::Rect& fixed_pin_shape : layer_fixed_pins_shapes_[layer]) {
+    for (const odb::Rect& fixed_pin_shape : fixed_shapes->second) {
       const int shape_width
           = std::min(fixed_pin_shape.dx(), fixed_pin_shape.dy());
       const int spacing = computeLayerSpacing(
@@ -2811,19 +2812,45 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                                     empty_line,
                                     odb::Point(pos.x() + width / 2, pos.y()),
                                     layer_level);
+    // keep the search inside the die area, so the pin is never pushed out of it
+    const int max_offset = horizontal
+                               ? die_boundary.yMax() - height / 2 - pos.y()
+                               : die_boundary.xMax() - width / 2 - pos.x();
+    const int min_offset = horizontal
+                               ? die_boundary.yMin() + height / 2 - pos.y()
+                               : die_boundary.xMin() + width / 2 - pos.x();
     bool sum = true;
     int offset_sum = 1;
     int offset_sub = 1;
     int offset = 0;
     while (placed_at_blocked) {
-      if (sum) {
-        offset = offset_sum * min_spacing;
+      const int next_sum = offset_sum * min_spacing;
+      const int next_sub = -(offset_sub * min_spacing);
+      const bool sum_valid = next_sum <= max_offset;
+      const bool sub_valid = next_sub >= min_offset;
+      if (!sum_valid && !sub_valid) {
+        logger_->error(
+            PPL,
+            122,
+            "Pin {} cannot be placed at the {} edge. The edge does "
+            "not have space for the pin outside the blocked regions.",
+            bterm->getName(),
+            getEdgeString(edge));
+      }
+      if (sum && sum_valid) {
+        offset = next_sum;
         offset_sum++;
         sum = false;
-      } else {
-        offset = -(offset_sub * min_spacing);
+      } else if (!sum && sub_valid) {
+        offset = next_sub;
         offset_sub++;
         sum = true;
+      } else if (sum_valid) {
+        offset = next_sum;
+        offset_sum++;
+      } else {
+        offset = next_sub;
+        offset_sub++;
       }
 
       // check the whole pin shape to make sure no overlaps will happen

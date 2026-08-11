@@ -113,6 +113,7 @@ or_integration_tests(
     place_pin5
     place_pin6
     place_pin7
+    place_pin_blocked_edge
     place_pin_error1
     place_pin_error2
     place_pin_error3
