@@ -1558,11 +1558,11 @@ static bool outputPortReferencesState(sta::LibertyPort* output_port,
 }
 
 // Classify DFF-like sequentials that match OpenROAD's register symbols.
-// Unsupported cells fall back to generic boxes.
 static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
 {
-  if (network == nullptr) {
-    return {};
+  GateClass result;
+  if (network == nullptr || inst == nullptr) {
+    return result;
   }
 
   // Exactly one sequential: multi-bit and statetable cells have no symbol.
