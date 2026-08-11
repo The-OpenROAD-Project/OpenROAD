@@ -7,6 +7,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -99,8 +100,10 @@ class PlacementDRC::FixedSupplyVias
 
     std::unordered_set<odb::dbMaster*> masters;
     for (odb::dbInst* inst : block->getInsts()) {
-      if (inst->getMaster() != nullptr) {
-        masters.insert(inst->getMaster());
+      odb::dbMaster* master = inst->getMaster();
+      if (master != nullptr && master->isCoreAutoPlaceable()
+          && !master->isBlock()) {
+        masters.insert(master);
       }
     }
     for (odb::dbMaster* master : masters) {
@@ -120,16 +123,36 @@ class PlacementDRC::FixedSupplyVias
       return;
     }
 
+    // Standard cells can only be placed at legal row origins. Merge their
+    // geometry vertically per physical row to prove when no via can conflict.
+    const LayerVerticalRanges cell_ranges = cellVerticalRanges(masters, block);
+    size_t vertically_safe_shape_count = 0;
+    for (auto& [layer, data] : layers_) {
+      data.max_spacing = maximumSpacing(layer, data);
+      data.query_halo = std::max(0, data.max_spacing - 1);
+      if (data.max_spacing == 0
+          || !hasPotentialVerticalConflict(data, cell_ranges.at(layer))) {
+        vertically_safe_shape_count += data.shapes.size();
+      }
+    }
+    if (vertically_safe_shape_count == fixedShapeCount()) {
+      legal_sites_safe_ = true;
+      if (logger_->debugCheck(DPL, "fixed_supply_via", 1)) {
+        debugPrint(logger_,
+                   DPL,
+                   "fixed_supply_via",
+                   1,
+                   "skipped fixed supply via checks at legal sites for {} "
+                   "vertically separated shapes",
+                   vertically_safe_shape_count);
+      }
+      return;
+    }
+
     size_t fixed_shape_count = 0;
     int max_query_halo = 0;
-    for (auto& [layer, data] : layers_) {
-      std::vector<IndexValue> values;
-      values.reserve(data.shapes.size());
-      for (size_t i = 0; i < data.shapes.size(); ++i) {
-        values.emplace_back(data.shapes[i].rect, i);
-      }
-      data.index = std::make_unique<ShapeIndex>(values.begin(), values.end());
-      data.query_halo = queryHalo(layer, data);
+    buildIndexes();
+    for (const auto& [layer, data] : layers_) {
       fixed_shape_count += data.shapes.size();
       max_query_halo = std::max(max_query_halo, data.query_halo);
     }
@@ -161,6 +184,17 @@ class PlacementDRC::FixedSupplyVias
       return true;
     }
     odb::dbMaster* master = cell->getMaster()->getDbMaster();
+    if (legal_sites_safe_) {
+      const std::optional<odb::dbOrientType> site_orientation
+          = grid_->getSiteOrientation(x, y, master->getSite());
+      const int64_t origin_y = static_cast<int64_t>(grid_->getCore().yMin())
+                               + grid_->gridYToDbu(y).v;
+      if (site_orientation.has_value() && site_orientation.value() == orient
+          && origin_y + master->getHeight() <= grid_->getCore().yMax()) {
+        return true;
+      }
+      buildIndexes();
+    }
     const int page = x.v / page_size_;
     const PhysicalPageKey page_key{master, orient.getValue(), y.v, page};
     auto page_it = physical_pages_.find(page_key);
@@ -220,6 +254,23 @@ class PlacementDRC::FixedSupplyVias
     std::vector<RecipeEntry> entries;
   };
 
+  struct VerticalRange
+  {
+    int y_min{std::numeric_limits<int>::max()};
+    int y_max{std::numeric_limits<int>::min()};
+
+    bool empty() const { return y_min > y_max; }
+
+    void merge(const int low, const int high)
+    {
+      if (low > high) {
+        return;
+      }
+      y_min = std::min(y_min, low);
+      y_max = std::max(y_max, high);
+    }
+  };
+
   struct RecipeEntryKey
   {
     odb::dbMTerm* term;
@@ -254,12 +305,40 @@ class PlacementDRC::FixedSupplyVias
     std::vector<Shape> shapes;
     std::set<DimensionClass> fixed_dimensions;
     std::unique_ptr<ShapeIndex> index;
+    int max_spacing{0};
     int query_halo{0};
   };
 
   using GeometryKey = std::pair<odb::dbMaster*, int>;
   using PhysicalPageKey = std::tuple<odb::dbMaster*, int, int, int>;
+  using LayerVerticalRanges
+      = std::unordered_map<odb::dbTechLayer*, std::vector<VerticalRange>>;
+  using RowOrientations = std::vector<std::vector<odb::dbOrientType>>;
   static constexpr int page_size_ = 64;
+
+  size_t fixedShapeCount() const
+  {
+    size_t count = 0;
+    for (const auto& [layer, data] : layers_) {
+      count += data.shapes.size();
+    }
+    return count;
+  }
+
+  void buildIndexes()
+  {
+    for (auto& [layer, data] : layers_) {
+      if (data.index != nullptr) {
+        continue;
+      }
+      std::vector<IndexValue> values;
+      values.reserve(data.shapes.size());
+      for (size_t i = 0; i < data.shapes.size(); ++i) {
+        values.emplace_back(data.shapes[i].rect, i);
+      }
+      data.index = std::make_unique<ShapeIndex>(values.begin(), values.end());
+    }
+  }
 
   static bool isUsedShapeLayer(odb::dbTechLayer* layer)
   {
@@ -384,22 +463,149 @@ class PlacementDRC::FixedSupplyVias
     data.fixed_dimensions.insert({rect.dx(), rect.dy()});
   }
 
-  int queryHalo(odb::dbTechLayer* layer, const LayerData& data) const
+  int maximumSpacing(odb::dbTechLayer* layer, const LayerData& data) const
   {
-    int halo = 0;
+    int max_spacing = 0;
     const auto dimensions_it = master_dimensions_.find(layer);
     if (dimensions_it == master_dimensions_.end()) {
-      return halo;
+      return max_spacing;
     }
     for (const DimensionClass& fixed : data.fixed_dimensions) {
       const odb::Rect fixed_rect(0, 0, fixed.first, fixed.second);
       for (const DimensionClass& cell : dimensions_it->second) {
         const odb::Rect cell_rect(0, 0, cell.first, cell.second);
-        halo = std::max(halo,
-                        std::max(0, spacing(layer, fixed_rect, cell_rect) - 1));
+        max_spacing
+            = std::max(max_spacing, spacing(layer, fixed_rect, cell_rect));
       }
     }
-    return halo;
+    return max_spacing;
+  }
+
+  RowOrientations rowOrientations(odb::dbBlock* block,
+                                  odb::dbSite* master_site) const
+  {
+    const odb::Rect core = grid_->getCore();
+    RowOrientations orientations(grid_->getRowCount().v);
+    auto add_orientation = [](std::vector<odb::dbOrientType>& row_orientations,
+                              const odb::dbOrientType orient) {
+      if (std::ranges::none_of(row_orientations, [&](const auto& existing) {
+            return existing == orient;
+          })) {
+        row_orientations.push_back(orient);
+      }
+    };
+    bool matching_row_found = false;
+    for (odb::dbRow* row : block->getRows()) {
+      if (row->getSite() != master_site) {
+        continue;
+      }
+      matching_row_found = true;
+      const int grid_row = std::clamp(
+          grid_->gridSnapDownY(DbuY{row->getOrigin().y() - core.yMin()}).v,
+          0,
+          grid_->getRowCount().v - 1);
+      const odb::dbOrientType orient = row->getOrient();
+      if (orient == odb::dbOrientType::R0 || orient == odb::dbOrientType::MY) {
+        add_orientation(orientations[grid_row], odb::dbOrientType::R0);
+      } else if (orient == odb::dbOrientType::MX
+                 || orient == odb::dbOrientType::R180) {
+        add_orientation(orientations[grid_row], odb::dbOrientType::MX);
+      } else {
+        add_orientation(orientations[grid_row], odb::dbOrientType::R0);
+        add_orientation(orientations[grid_row], odb::dbOrientType::MX);
+      }
+    }
+    if (!matching_row_found || master_site == nullptr
+        || master_site->hasRowPattern()) {
+      for (std::vector<odb::dbOrientType>& row_orientations : orientations) {
+        add_orientation(row_orientations, odb::dbOrientType::R0);
+        add_orientation(row_orientations, odb::dbOrientType::MX);
+      }
+    }
+    return orientations;
+  }
+
+  LayerVerticalRanges cellVerticalRanges(
+      const std::unordered_set<odb::dbMaster*>& masters,
+      odb::dbBlock* block)
+  {
+    const int row_count = grid_->getRowCount().v;
+    LayerVerticalRanges ranges;
+    for (const auto& [layer, data] : layers_) {
+      ranges.emplace(layer, std::vector<VerticalRange>(row_count));
+    }
+
+    const odb::Rect core = grid_->getCore();
+    for (odb::dbMaster* master : masters) {
+      const RowOrientations row_orientations
+          = rowOrientations(block, master->getSite());
+      for (int start_row = 0; start_row < row_count; ++start_row) {
+        for (const odb::dbOrientType& orient : row_orientations[start_row]) {
+          const std::vector<MasterShape>& shapes = masterShapes(master, orient);
+          const int origin_y
+              = core.yMin() + grid_->gridYToDbu(GridY{start_row}).v;
+          if (static_cast<int64_t>(origin_y) + master->getHeight()
+              > core.yMax()) {
+            continue;
+          }
+          for (const MasterShape& shape : shapes) {
+            const int shape_y_min
+                = clipToInt(static_cast<int64_t>(origin_y) + shape.rect.yMin());
+            const int shape_y_max
+                = clipToInt(static_cast<int64_t>(origin_y) + shape.rect.yMax());
+            const int first_row = std::clamp(
+                grid_->gridSnapDownY(DbuY{shape_y_min - core.yMin()}).v,
+                0,
+                row_count - 1);
+            const int last_row
+                = std::clamp(grid_->gridEndY(DbuY{shape_y_max - core.yMin()}).v,
+                             0,
+                             row_count - 1);
+            std::vector<VerticalRange>& layer_ranges = ranges.at(shape.layer);
+            for (int row = first_row; row <= last_row; ++row) {
+              const int row_y_min
+                  = core.yMin() + grid_->gridYToDbu(GridY{row}).v;
+              const int row_y_max
+                  = core.yMin() + grid_->gridYToDbu(GridY{row + 1}).v;
+              layer_ranges[row].merge(std::max(shape_y_min, row_y_min),
+                                      std::min(shape_y_max, row_y_max));
+            }
+          }
+        }
+      }
+    }
+    return ranges;
+  }
+
+  bool hasPotentialVerticalConflict(
+      const LayerData& data,
+      const std::vector<VerticalRange>& cell_ranges) const
+  {
+    const odb::Rect core = grid_->getCore();
+    const int row_count = grid_->getRowCount().v;
+    for (const Shape& fixed : data.shapes) {
+      const int y_min = clipToInt(static_cast<int64_t>(fixed.rect.yMin())
+                                  - data.query_halo - core.yMin());
+      const int y_max = clipToInt(static_cast<int64_t>(fixed.rect.yMax())
+                                  + data.query_halo - core.yMin());
+      const int first_row
+          = std::clamp(grid_->gridSnapDownY(DbuY{y_min}).v, 0, row_count - 1);
+      const int last_row
+          = std::clamp(grid_->gridEndY(DbuY{y_max}).v, 0, row_count - 1);
+      for (int row = first_row; row <= last_row; ++row) {
+        const VerticalRange& cell = cell_ranges[row];
+        if (cell.empty()) {
+          continue;
+        }
+        if (static_cast<int64_t>(fixed.rect.yMax()) + data.query_halo
+                >= cell.y_min
+            && static_cast<int64_t>(cell.y_max) + data.query_halo
+                   >= fixed.rect.yMin()) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   odb::Rect pageQueryRect(const MasterShape& cell_shape,
@@ -598,6 +804,7 @@ class PlacementDRC::FixedSupplyVias
   std::map<GeometryKey, std::vector<MasterShape>> master_shapes_;
   // Placement DRC currently calls check() from one thread. These lazy caches
   // intentionally rely on that contract and need synchronization if it changes.
+  bool legal_sites_safe_{false};
   std::unordered_map<PhysicalPageKey, PageRecipe, boost::hash<PhysicalPageKey>>
       physical_pages_;
 };
