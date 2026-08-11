@@ -7,5 +7,6 @@ or_integration_tests(
     check_disjoint_stubs
     check_drt1
     check_grt1
+    check_output_pin_bridge
 )
 

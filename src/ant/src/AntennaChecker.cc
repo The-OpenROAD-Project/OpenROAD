@@ -531,23 +531,30 @@ void AntennaChecker::Impl::calculateAreas(
         }
       }
     }
-    // nodes sharing a gate are one physical piece of metal (the pin geometry
-    // bridges them), so merge them transitively
+    // nodes sharing an iterm are one physical piece of metal (the pin
+    // geometry bridges them, whatever the pin's direction), so merge them
+    // transitively
     utl::UnionFind groups(node_count);
     for (const auto& [iterm, node_ids] : nodes_by_iterm) {
-      if (getGateData(iterm->getMTerm()).is_valid) {
-        for (const int node_id : node_ids) {
-          groups.unite(node_ids.front(), node_id);
-        }
+      for (const int node_id : node_ids) {
+        groups.unite(node_ids.front(), node_id);
       }
     }
-    // sum the geometry of each group's nodes
-    std::unordered_map<size_t, NodeInfo> info_by_group;
+    // a group is checked when any of its nodes reaches a valid gate
+    std::vector<bool> group_has_gate(node_count, false);
     for (int i = 0; i < node_count; i++) {
-      if (!has_gate[i]) {
+      if (has_gate[i]) {
+        group_has_gate[groups.find(i)] = true;
+      }
+    }
+    // sum the geometry of each checked group's nodes
+    std::vector<NodeInfo> info_by_group(node_count);
+    for (int i = 0; i < node_count; i++) {
+      const size_t group = groups.find(i);
+      if (!group_has_gate[group]) {
         continue;
       }
-      NodeInfo& info = info_by_group[groups.find(i)];
+      NodeInfo& info = info_by_group[group];
       const auto area = static_cast<int64_t>(gtl::area(it.second[i]->pol));
       info.area += block_->dbuAreaToMicrons(area);
       if (it.first->getRoutingLevel() != 0) {
@@ -560,13 +567,14 @@ void AntennaChecker::Impl::calculateAreas(
     for (const auto& [iterm, node_ids] : nodes_by_iterm) {
       std::set<size_t> iterm_groups;
       for (const int node_id : node_ids) {
-        if (has_gate[node_id]) {
-          iterm_groups.insert(groups.find(node_id));
+        const size_t group = groups.find(node_id);
+        if (group_has_gate[group]) {
+          iterm_groups.insert(group);
         }
       }
       const GateData& data = getGateData(iterm->getMTerm());
       for (const size_t group : iterm_groups) {
-        NodeInfo& info = info_by_group.at(group);
+        NodeInfo& info = info_by_group[group];
         if (data.is_valid) {
           info.iterms.push_back(iterm);
         }
@@ -578,7 +586,7 @@ void AntennaChecker::Impl::calculateAreas(
     for (const auto& [iterm, node_ids] : nodes_by_iterm) {
       if (getGateData(iterm->getMTerm()).is_valid) {
         gate_info[iterm][it.first]
-            = info_by_group.at(groups.find(node_ids.front()));
+            = info_by_group[groups.find(node_ids.front())];
       }
     }
   }

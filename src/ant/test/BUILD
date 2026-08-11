@@ -11,6 +11,7 @@ COMPULSORY_TESTS = [
     "check_disjoint_stubs",
     "check_drt1",
     "check_grt1",
+    "check_output_pin_bridge",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -53,6 +54,9 @@ filegroup(
                 "sky130hs/sky130hs_tt.lib",
                 "sky130hs/sky130hs_std_cell.lef",
                 "sky130hs/sky130hs.tlef",
+            ],
+            "check_output_pin_bridge": [
+                "ant_check.lef",
             ],
             "no-check_grt1": [
                 "gcd_sky130.def",
