@@ -370,6 +370,7 @@ void AntennaChecker::Impl::saveGates(odb::dbNet* db_net,
     }
     for (auto& node_it : node_by_layer_map[iter]) {
       int id_u = node_it->id;
+      node_it->component = dsu.find_set(id_u);
       // check gates in same set (first Nodes x gates)
       for (const auto& gate_it : pin_nbrs) {
         for (const int& nbr_id : gate_it.second) {
@@ -491,10 +492,34 @@ void AntennaChecker::Impl::calculateAreas(
     const LayerToGraphNodes& node_by_layer_map,
     GateToLayerToNodeInfo& gate_info)
 {
+  struct NodeAreas
+  {
+    double area = 0.0;
+    double side_area = 0.0;
+  };
   for (const auto& it : node_by_layer_map) {
-    // group the layer nodes by the valid gates they reach
+    double wire_thickness = 0.0;
+    if (it.first->getRoutingLevel() != 0) {
+      uint32_t wire_thickness_dbu = 0;
+      it.first->getThickness(wire_thickness_dbu);
+      wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
+    }
+    // compute each node's geometry once and group nodes by the gates they
+    // reach
+    std::unordered_map<const GraphNode*, NodeAreas> areas_by_node;
     odb::PtrMap<odb::dbITerm, std::vector<GraphNode*>> nodes_by_gate;
     for (const auto& node_it : it.second) {
+      NodeAreas& areas = areas_by_node[node_it.get()];
+      double area = gtl::area(node_it->pol);
+      // convert from dbu^2 to microns^2
+      area = block_->dbuToMicrons(area);
+      area = block_->dbuToMicrons(area);
+      areas.area = area;
+      if (it.first->getRoutingLevel() != 0) {
+        // Calculate side area of wire
+        areas.side_area = block_->dbuToMicrons(gtl::perimeter(node_it->pol)
+                                               * wire_thickness);
+      }
       for (const auto& gate : node_it->gates) {
         if (gate.is_iterm && isValidGate(gate.iterm->getMTerm())) {
           nodes_by_gate[gate.iterm].push_back(node_it.get());
@@ -502,26 +527,21 @@ void AntennaChecker::Impl::calculateAreas(
       }
     }
     // build each gate record from the union of its nodes, so the result does
-    // not depend on node visit order and no iterm is counted twice
+    // not depend on node visit order and no iterm is counted twice; nodes of
+    // the same component carry identical gate sets, so one representative
+    // node per component is enough
     for (const auto& [gate_iterm, nodes] : nodes_by_gate) {
       NodeInfo info;
       odb::PtrSet<odb::dbITerm> visited_iterms;
+      std::set<int> visited_components;
       for (const GraphNode* node : nodes) {
-        double area = gtl::area(node->pol);
-        // convert from dbu^2 to microns^2
-        area = block_->dbuToMicrons(area);
-        area = block_->dbuToMicrons(area);
-        info.area += area;
+        const NodeAreas& areas = areas_by_node.at(node);
+        info.area += areas.area;
+        info.side_area += areas.side_area;
 
-        if (it.first->getRoutingLevel() != 0) {
-          // Calculate side area of wire
-          uint32_t wire_thickness_dbu = 0;
-          it.first->getThickness(wire_thickness_dbu);
-          double wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
-          info.side_area += block_->dbuToMicrons(gtl::perimeter(node->pol)
-                                                 * wire_thickness);
+        if (!visited_components.insert(node->component).second) {
+          continue;
         }
-
         for (const auto& gate : node->gates) {
           if (!gate.is_iterm || !visited_iterms.insert(gate.iterm).second) {
             continue;
@@ -533,7 +553,7 @@ void AntennaChecker::Impl::calculateAreas(
           info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
         }
       }
-      gate_info[gate_iterm][it.first] = info;
+      gate_info[gate_iterm][it.first] = std::move(info);
     }
   }
 }
