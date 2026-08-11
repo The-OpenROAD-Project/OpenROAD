@@ -37,12 +37,12 @@ filegroup(
                 "ant_check.lef",
                 "ant_check.def",
             ],
-            "check_disjoint_stubs": [
-                "ant_check.lef",
-            ],
             "check_api1": [
                 "merged_spacing.lef",
                 "sw130_random.def",
+            ],
+            "check_disjoint_stubs": [
+                "ant_check.lef",
             ],
             "check_drt1": [
                 "merged_spacing.lef",
