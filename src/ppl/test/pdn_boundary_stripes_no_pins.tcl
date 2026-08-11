@@ -3,8 +3,8 @@
 # entirely on place_pins checking the special net wires (dbSBox)
 source "helpers.tcl"
 
-# slot count and HPWL change once boundary PDN shapes block slots
-suppress_message PPL 1
+# the available slot count is kept in the log, since it is the main observable
+# of the shapes blocking slots; HPWL changes with the pin assignment
 suppress_message PPL 12
 
 read_lef Nangate45/Nangate45.lef
