@@ -506,38 +506,65 @@ void AntennaChecker::Impl::calculateAreas(
     }
     // compute each node's geometry once and group nodes by the gates they
     // reach
-    std::unordered_map<const GraphNode*, NodeAreas> areas_by_node;
-    odb::PtrMap<odb::dbITerm, std::vector<GraphNode*>> nodes_by_gate;
-    for (const auto& node_it : it.second) {
-      NodeAreas& areas = areas_by_node[node_it.get()];
+    const int node_count = it.second.size();
+    std::vector<NodeAreas> areas(node_count);
+    std::vector<bool> has_gate(node_count, false);
+    odb::PtrMap<odb::dbITerm, std::vector<int>> nodes_by_gate;
+    for (int i = 0; i < node_count; i++) {
+      const auto& node_it = it.second[i];
       double area = gtl::area(node_it->pol);
       // convert from dbu^2 to microns^2
       area = block_->dbuToMicrons(area);
       area = block_->dbuToMicrons(area);
-      areas.area = area;
+      areas[i].area = area;
       if (it.first->getRoutingLevel() != 0) {
         // Calculate side area of wire
-        areas.side_area = block_->dbuToMicrons(gtl::perimeter(node_it->pol)
-                                               * wire_thickness);
+        areas[i].side_area = block_->dbuToMicrons(gtl::perimeter(node_it->pol)
+                                                  * wire_thickness);
       }
       for (const auto& gate : node_it->gates) {
         if (gate.is_iterm && isValidGate(gate.iterm->getMTerm())) {
-          nodes_by_gate[gate.iterm].push_back(node_it.get());
+          nodes_by_gate[gate.iterm].push_back(i);
+          has_gate[i] = true;
         }
       }
     }
-    // build each gate record from the union of its nodes, so the result does
-    // not depend on node visit order and no iterm is counted twice; nodes of
-    // the same component carry identical gate sets, so one representative
-    // node per component is enough
-    for (const auto& [gate_iterm, nodes] : nodes_by_gate) {
+    // nodes sharing a gate are one physical piece of metal (the pin geometry
+    // bridges them), so close the grouping transitively
+    std::vector<int> dsu_parent(node_count);
+    std::vector<int> dsu_size(node_count, 1);
+    for (int i = 0; i < node_count; i++) {
+      dsu_parent[i] = i;
+    }
+    boost::disjoint_sets<int*, int*> dsu(dsu_size.data(), dsu_parent.data());
+    for (const auto& [gate_iterm, node_ids] : nodes_by_gate) {
+      const int first = node_ids.front();
+      for (const int node_id : node_ids) {
+        if (dsu.find_set(first) != dsu.find_set(node_id)) {
+          dsu.union_set(first, node_id);
+        }
+      }
+    }
+    // collect the nodes of each group
+    std::unordered_map<int, std::vector<int>> group_nodes;
+    for (int i = 0; i < node_count; i++) {
+      if (has_gate[i]) {
+        group_nodes[dsu.find_set(i)].push_back(i);
+      }
+    }
+    // build one record per group from the union of its nodes, so the result
+    // does not depend on node visit order and no iterm is counted twice;
+    // nodes of the same component carry identical gate sets, so one
+    // representative node per component is enough
+    std::unordered_map<int, NodeInfo> info_by_group;
+    for (const auto& [group, node_ids] : group_nodes) {
       NodeInfo info;
       odb::PtrSet<odb::dbITerm> visited_iterms;
       std::set<int> visited_components;
-      for (const GraphNode* node : nodes) {
-        const NodeAreas& areas = areas_by_node.at(node);
-        info.area += areas.area;
-        info.side_area += areas.side_area;
+      for (const int node_id : node_ids) {
+        const GraphNode* node = it.second[node_id].get();
+        info.area += areas[node_id].area;
+        info.side_area += areas[node_id].side_area;
 
         if (!visited_components.insert(node->component).second) {
           continue;
@@ -546,14 +573,20 @@ void AntennaChecker::Impl::calculateAreas(
           if (!gate.is_iterm || !visited_iterms.insert(gate.iterm).second) {
             continue;
           }
-          if (isValidGate(gate.iterm->getMTerm())) {
+          odb::dbMTerm* mterm = gate.iterm->getMTerm();
+          if (isValidGate(mterm)) {
             info.iterms.push_back(gate.iterm);
           }
-          info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
-          info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
+          info.iterm_gate_area += gateArea(mterm);
+          info.iterm_diff_area += diffArea(mterm);
         }
       }
-      gate_info[gate_iterm][it.first] = std::move(info);
+      info_by_group[group] = std::move(info);
+    }
+    // every gate of a group shares the same record
+    for (const auto& [gate_iterm, node_ids] : nodes_by_gate) {
+      gate_info[gate_iterm][it.first]
+          = info_by_group.at(dsu.find_set(node_ids.front()));
     }
   }
 }

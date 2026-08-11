@@ -17,13 +17,13 @@ Net: n1
 
   Pin:   u2/A (sky130_fd_sc_ms__buf_1)
     Layer: li1
-      Partial area ratio:   16.03
+      Partial area ratio:   16.93
       Required ratio:    0.00 (Gate area) 
-      Cumulative area ratio:   16.03
+      Cumulative area ratio:   16.93
       Required ratio:    0.00 (Cumulative area) 
-      Partial area ratio:   18.94
+      Partial area ratio:   20.08
       Required ratio:    5.00 (Side area) (VIOLATED)
-      Cumulative area ratio:   18.94
+      Cumulative area ratio:   20.08
       Required ratio:    0.00 (Cumulative side area) 
 
 
