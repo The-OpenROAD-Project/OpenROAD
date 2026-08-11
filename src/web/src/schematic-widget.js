@@ -359,6 +359,8 @@ export class SchematicWidget {
         }
     }
 
+    // The walk that used to be inline here lives in _cellHitFromTarget now, so
+    // double-click expansion resolves a click the same way this does.
     _handleSelectClick(e) {
         if (!this._svgEl) return;
 
@@ -399,6 +401,8 @@ export class SchematicWidget {
         return this._expandFromInstance(name, previousSnapshot);
     }
 
+    // Returns a promise so callers can wait for the inspect to land. It used to
+    // return nothing, which left double-click expansion nothing to wait on.
     _fetchInspect(instName) {
         const wm = this.appState.websocketManager;
         if (!wm) return Promise.resolve(false);
@@ -833,7 +837,10 @@ export class SchematicWidget {
             return;
         }
 
-        // Map both id forms back to the real ODB instance name.
+        // Map both id forms back to the real ODB instance name. The old code
+        // probed the SVG and kept whichever id it found, but a skin symbol
+        // carries the name on a child's class rather than the group id, so the
+        // probe came up empty and the cell was left unclickable.
         const prefixed = 'cell_' + instName;
         this._svgIdToInstName.set(prefixed, instName);
         this._svgIdToInstName.set(instName, instName);
@@ -1734,6 +1741,9 @@ function skinPidForGatePort(symbolPort) {
 // whose computed type has no symbol — are returned unchanged so they render as
 // a labelled generic box with their real pin names.
 export function canonicalizeCell(cell) {
+    // A cell with no `gate_kind` gets one more chance as a register, since the
+    // backend only tags combinational cells and flops would otherwise fall
+    // through to a generic box.
     const inferredRegister = cell && !cell.gate_kind
         ? inferredRegisterPortMap(cell)
         : null;
