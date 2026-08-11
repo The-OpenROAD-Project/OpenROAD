@@ -94,8 +94,9 @@ void MultiChipExtractor::loadRules()
       = parseInterChipRules(assembly_extraction_rules_file_, logger_);
 
   // Avoid leaving the block pointing at the extractor we destroy.
-  if (auxiliary_extractor) {
-    auxiliary_extractor->getBlock()->setExtmi(nullptr);
+  odb::dbBlock* block = auxiliary_extractor->getBlock();
+  if (block) {
+    block->setExtmi(nullptr);
   }
 }
 

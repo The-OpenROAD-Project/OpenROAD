@@ -27,8 +27,15 @@ std::string stripSuffix(const std::string& target, const std::string& suffix)
   return target;
 }
 
-char pinDirection(odb::dbBTerm* bterm)
+char pinDirection(odb::dbBTerm* bterm, utl::Logger* logger)
 {
+  if (!bterm) {
+    logger->error(utl::RCX,
+                  490,
+                  "Could not determine the pin direction. The boundary "
+                  "terminal does not exist.");
+  }
+
   char direction = 'B';
 
   switch (bterm->getIoType().getValue()) {
@@ -192,7 +199,7 @@ std::string MultiChipSpefWriter::chipNetSpefString(odb::dbChipNet* chip_net)
   out << "*CONN\n";
   for (odb::dbChipCapNode* cap_node : chip_net->getChipCapNodes()) {
     out << "*I " << bondNodeName(cap_node) << " "
-        << pinDirection(cap_node->getBTerm()) << "\n";
+        << pinDirection(cap_node->getBTerm(), logger_) << "\n";
   }
 
   out << "*RES\n";
