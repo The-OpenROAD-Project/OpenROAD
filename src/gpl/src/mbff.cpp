@@ -104,7 +104,7 @@ std::string MBFF::Mask::to_string() const
                      (int) inv_output,
                      func_idx,
                      (int) is_scan_cell,
-                     static_cast<int>(is_register));
+                     (int) is_register);
 }
 
 bool MBFF::Mask::operator<(const Mask& rhs) const
