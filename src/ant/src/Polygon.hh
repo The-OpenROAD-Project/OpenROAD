@@ -31,9 +31,6 @@ struct GraphNode
   Polygon pol;
   std::vector<int> low_adj;
   std::set<PinType, PinTypeCmp> gates;
-  // connected-component id at this node's layer step; nodes of the same
-  // component carry identical gate sets (set by saveGates)
-  int component = -1;
   GraphNode() = default;
   GraphNode(int id, bool is_via, const Polygon& pol)
       : id(id), is_via(is_via), pol(pol)
