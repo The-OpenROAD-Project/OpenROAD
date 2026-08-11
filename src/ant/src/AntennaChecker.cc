@@ -492,55 +492,48 @@ void AntennaChecker::Impl::calculateAreas(
     GateToLayerToNodeInfo& gate_info)
 {
   for (const auto& it : node_by_layer_map) {
+    // group the layer nodes by the valid gates they reach
+    odb::PtrMap<odb::dbITerm, std::vector<GraphNode*>> nodes_by_gate;
     for (const auto& node_it : it.second) {
+      for (const auto& gate : node_it->gates) {
+        if (gate.is_iterm && isValidGate(gate.iterm->getMTerm())) {
+          nodes_by_gate[gate.iterm].push_back(node_it.get());
+        }
+      }
+    }
+    // build each gate record from the union of its nodes, so the result does
+    // not depend on node visit order and no iterm is counted twice
+    for (const auto& [gate_iterm, nodes] : nodes_by_gate) {
       NodeInfo info;
-      double area = gtl::area(node_it->pol);
-      // convert from dbu^2 to microns^2
-      area = block_->dbuToMicrons(area);
-      area = block_->dbuToMicrons(area);
-      info.area = area;
-      int gates_count = 0;
-      std::vector<odb::dbITerm*> iterms;
-      for (const auto& gate : node_it->gates) {
-        if (!gate.is_iterm) {
-          continue;
+      odb::PtrSet<odb::dbITerm> visited_iterms;
+      for (const GraphNode* node : nodes) {
+        double area = gtl::area(node->pol);
+        // convert from dbu^2 to microns^2
+        area = block_->dbuToMicrons(area);
+        area = block_->dbuToMicrons(area);
+        info.area += area;
+
+        if (it.first->getRoutingLevel() != 0) {
+          // Calculate side area of wire
+          uint32_t wire_thickness_dbu = 0;
+          it.first->getThickness(wire_thickness_dbu);
+          double wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
+          info.side_area += block_->dbuToMicrons(gtl::perimeter(node->pol)
+                                                 * wire_thickness);
         }
 
-        if (isValidGate(gate.iterm->getMTerm())) {
-          info.iterms.push_back(gate.iterm);
-        }
-        info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
-        info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
-        gates_count++;
-      }
-      if (gates_count == 0) {
-        continue;
-      }
-
-      if (it.first->getRoutingLevel() != 0) {
-        // Calculate side area of wire
-        uint32_t wire_thickness_dbu = 0;
-        it.first->getThickness(wire_thickness_dbu);
-        double wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
-        info.side_area = block_->dbuToMicrons(gtl::perimeter(node_it->pol)
-                                              * wire_thickness);
-      }
-      // put values on struct
-      for (const auto& gate : node_it->gates) {
-        if (!gate.is_iterm) {
-          continue;
-        }
-        if (!isValidGate(gate.iterm->getMTerm())) {
-          continue;
-        }
-        // check if has another node with gate in the layer, then merge area
-        if (gate_info[gate.iterm].find(it.first)
-            != gate_info[gate.iterm].end()) {
-          gate_info[gate.iterm][it.first] += info;
-        } else {
-          gate_info[gate.iterm][it.first] = info;
+        for (const auto& gate : node->gates) {
+          if (!gate.is_iterm || !visited_iterms.insert(gate.iterm).second) {
+            continue;
+          }
+          if (isValidGate(gate.iterm->getMTerm())) {
+            info.iterms.push_back(gate.iterm);
+          }
+          info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
+          info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
         }
       }
+      gate_info[gate_iterm][it.first] = info;
     }
   }
 }
