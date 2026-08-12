@@ -36,9 +36,6 @@ export class HierarchyBrowser {
 
         this._build(container);
 
-        // Expose on app so display-controls can interact
-        app.hierarchyBrowser = this;
-
         // Auto-load in static mode (data is already cached).
         if (isStaticMode(app)) {
             this.update();

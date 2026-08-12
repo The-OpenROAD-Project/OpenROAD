@@ -106,7 +106,6 @@ const app = {
     regionsLayer: null,
     mfgGridLayer: null,
     gcellGridLayer: null,
-    hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),

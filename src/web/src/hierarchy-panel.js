@@ -65,9 +65,8 @@ export class HierarchyPanel {
     }
 
     // Re-render after something that changes how the rows are formatted (the
-    // DBU toggle).  A hidden table cannot be measured, so its columns would
-    // come out collapsed; the inactive views are only marked and re-rendered
-    // when they are next shown.
+    // DBU toggle).  Only the view on screen: a hidden one is a full table
+    // rebuild nobody is looking at, so it is marked and rendered when shown.
     refresh() {
         for (const [name, widget] of this._widgets) {
             if (name === this._activeView) {
