@@ -412,8 +412,10 @@ bool NegotiationLegalizer::initFromDb()
     int db_y = 0;
     db_inst->getLocation(db_x, db_y);
     // Snap to grid, findBestLocation() and snapToLegal() iterate over grid
-    // positions
-    cell.init_x = dpl_grid->gridX(DbuX{db_x - die_xlo_}).v;
+    // positions.  Round to the nearest site/row in both directions (as
+    // Opendp::legalPt does) so an already-legal instance keeps its position
+    // instead of drifting left/down by up to one site.
+    cell.init_x = dpl_grid->gridRoundX(DbuX{db_x - die_xlo_}).v;
     cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
 
     // Width/height must be computed before clamping so the upper bounds
@@ -433,10 +435,10 @@ bool NegotiationLegalizer::initFromDb()
     cell.x = cell.init_x;
     cell.y = cell.init_y;
 
-    // gridX() / gridRoundY() don't check whether a site actually exists at the
-    // computed position.  Instances near the chip boundary or in sparse-row
-    // designs can land on invalid (is_valid=false) pixels.  Fix those with a
-    // 4-direction linear search (based on Opendp::moveHopeless).
+    // gridRoundX() / gridRoundY() don't check whether a site actually exists
+    // at the computed position.  Instances near the chip boundary or in
+    // sparse-row designs can land on invalid (is_valid=false) pixels.  Fix
+    // those with a 4-direction linear search (based on Opendp::moveHopeless).
     if (!cell.fixed) {
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
