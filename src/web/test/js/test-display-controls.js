@@ -422,13 +422,10 @@ describe('layer row selection', () => {
        });
 });
 
-// The color-by-owner overlays (`_modules`, `_clusters`) and the pin-marker
-// layer are mounted once and stay mounted: their visibility rides in the tile
-// payload and the renderer decides whether to draw.  Toggling one used to
-// mount/unmount the Leaflet layer instead, which made the map's layer set a
-// second record of the flag — once it drifted from the checkbox (a re-populate
-// of this panel builds new layer objects without removing the old ones from the
-// map), the toggle silently stopped having any effect until a page reload.
+// The color-by-owner overlays (`_modules`, `_clusters`) and the pin-marker layer
+// are mounted once and stay mounted: their visibility rides in the tile payload
+// and the renderer decides whether to draw.  Mounting/unmounting them instead
+// would make the map's layer set a second record of the flag, free to drift.
 describe('overlay layer toggles', () => {
     let app, visibility, mapOps, redraws, techData;
 
@@ -506,11 +503,8 @@ describe('overlay layer toggles', () => {
         assert.equal(mapOps.filter(op => op === 'add:_clusters').length, 1);
     });
 
-    // Every switchable pseudo layer is mounted up front and switched by its
-    // `gate` instead: the layer skips the round trip while the flag is off, and
-    // the map's layer set never becomes a second copy of the flag that can
-    // drift from the checkbox.  A layer mounted with no gate would request
-    // tiles forever; one gated on a flag that does not exist would go blank.
+    // A switchable pseudo layer needs a gate: without one it would request tiles
+    // forever, and gated on a flag that does not exist it would go blank.
     it('gates every switchable pseudo layer instead of unmounting it', () => {
         const expected = {
             _pins: 'pins',
@@ -532,10 +526,9 @@ describe('overlay layer toggles', () => {
         assert.equal(instances.options.gate, null);
     });
 
-    // techData.layers is the name-deduplicated union across techs, but there is
-    // one routing pane per (chiplet, layer).  Counting the cluster overlay off
-    // the deduplicated list buried it inside the routing stack on a multi-die
-    // design — under the very metal it exists to cover.
+    // techData.layers is deduplicated by name, but there is one routing pane per
+    // (chiplet, layer): counting the overlay's z-index off the list would bury it
+    // inside the routing stack on a multi-die design.
     it('stacks the cluster overlay above every routing pane of a multi-die '
        + 'design', () => {
         // Four names shared by two dies: the deduplicated count (4) is well
@@ -568,7 +561,7 @@ describe('overlay layer toggles', () => {
         for (let i = 0; i < 4; i++) {
             mapOps = [];
             const before = visibility.cluster_view;
-            toggle('cluster_view', 'Cluster view');
+            toggle('cluster_view');
             assert.equal(visibility.cluster_view, !before,
                          'flag flips on toggle ' + i);
             assert.equal(redraws, i + 1, 'redraw requested on toggle ' + i);
@@ -592,18 +585,5 @@ describe('overlay layer toggles', () => {
                                     || op.startsWith('remove:')),
                 []);
         }
-    });
-
-    // Outlines is a sibling of Colors, not its parent's tri-state, so it must
-    // not drag the color overlay off with it.
-    it('toggles cluster outlines without disturbing the colors', () => {
-        toggle('cluster_view', 'Cluster view');
-        assert.equal(visibility.cluster_view, true);
-        toggle('cluster_outlines', 'Cluster view');
-        assert.equal(visibility.cluster_outlines, true);
-        assert.equal(visibility.cluster_view, true);
-        toggle('cluster_outlines', 'Cluster view');
-        assert.equal(visibility.cluster_outlines, false);
-        assert.equal(visibility.cluster_view, true);
     });
 });

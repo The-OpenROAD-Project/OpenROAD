@@ -55,12 +55,9 @@ class RequestDispatcher
   }
 
   // Run a handler, turning anything that escapes it into an error response.
-  // Most handlers validate their own input inside a try/catch and never reach
-  // this, but the ones that read req.json before entering theirs can throw on a
-  // missing key or a wrongly-typed field — and the call happens on the
-  // io_context executor, where an escaping exception does not fail one request,
-  // it terminates the process.  So this is the floor rather than a convention
-  // each handler has to remember.
+  // The call happens on the io_context executor, where an escaping exception
+  // terminates the process rather than failing one request, so this is the
+  // floor under whatever validation each handler does itself.
   static WebSocketResponse run(const HandleFn& handle,
                                const WebSocketRequest& req,
                                SessionState& state)

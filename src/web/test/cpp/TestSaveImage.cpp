@@ -174,10 +174,8 @@ TEST_F(SaveImageTest, ClusterViewColorsInstancesByGroup)
   EXPECT_TRUE(reddish) << "no cluster-colored pixel in the saved image";
 }
 
-// The sibling overlay, and the reason both save paths are driven by
-// colorOverlayLayers() instead of a branch per overlay: `module_view` used to
-// parse, reach the renderer, and then paint nothing, because only
-// `cluster_view` had been wired up here.
+// The sibling overlay: both save paths go through colorOverlayLayers() so that
+// neither one can be wired up without the other.
 TEST_F(SaveImageTest, ModuleViewColorsInstancesByModule)
 {
   // Needs a generator with STA: the module report — and so the default color

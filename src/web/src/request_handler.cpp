@@ -483,11 +483,10 @@ static void collectSpecialWireShapes(odb::dbNet* net,
 // toggle off, unrouted nets still get flywires (GUI fallback — the
 // descriptor emits them via painter.drawLine, which ShapeCollector
 // drops, so they are recomputed here).
-// `collector` is supplied by the caller so it can bound what one object may
-// accumulate (see kMaxHighlightShapes) and reuse the allocation across a whole
-// selection set.  Nothing is appended for an object that exceeded the budget —
-// ask the collector (overflowed()) and stand in for it with standInBox().  A
-// default-constructed collector has no budget, which is the uncapped behavior.
+// `collector` comes from the caller so it can bound one object (see
+// kMaxHighlightShapes) and reuse the allocation.  Nothing is appended for an
+// object that overflowed: ask the collector and stand in for it with
+// standInBox().
 static void appendHighlightShapes(const gui::Selected& sel,
                                   std::vector<odb::Rect>& rects,
                                   std::vector<odb::Polygon>& polys,
@@ -526,14 +525,10 @@ static void appendHighlightShapes(const gui::Selected& sel,
   polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
 }
 
-// The single box that stands in for an object whose shapes did not fit: its own
-// if it has one (a dbGroup only reports a bbox when it has a region), otherwise
-// the union of everything it tried to draw, kept and dropped alike.  Inverted
-// when there is nothing to draw at all.
-//
-// Shared because this degradation rule is what the highlight paths have in
-// common: the selection veil and the Find dialog's color groups must coarsen
-// the same oversized cluster the same way.
+// The single box standing in for an object whose shapes did not fit: its own if
+// it has one (a dbGroup only reports a bbox when it has a region), else the
+// union of what it tried to draw.  Inverted when there is nothing to draw.
+// Shared so both highlight paths coarsen an oversized cluster the same way.
 static odb::Rect standInBox(const gui::Selected& sel,
                             const ShapeCollector& collector)
 {
@@ -571,23 +566,14 @@ static int selectionIteratorPosition(const gui::SelectionSet& set,
   return static_cast<int>(std::distance(set.begin(), itr));
 }
 
-// Maximum number of highlight shapes one request may push onto the overlay.
-// A cluster can hold tens of thousands of instances and the overlay renderer
-// walks every shape for every tile, so past this point shapes are coarsened to
-// one bounding box per object and finally dropped, with the response flagging
-// the truncation.  The per-instance view of a big cluster is the `_clusters`
-// color layer, which is drawn per tile from the spatial index and is not
-// affected by this cap.
+// Maximum highlight shapes one request may push onto the overlay, which the
+// renderer walks per tile.  Past this, objects are coarsened to one box each
+// and the response flags the truncation.
 constexpr size_t kMaxHighlightShapes = 20000;
 
-// Maximum number of objects one find_objects request may select.  The walk is
-// unfiltered when the pattern is empty and matches everything on `*`, so
-// without a cap a single message selects every instance in the design:
-// gui::Selected copies for all of them, then that many inserts into a std::set
-// whose comparator is a virtual call plus two any_casts — minutes of CPU
-// holding the STA mutex, which blocks the Tcl console and every timing request
-// meanwhile. Selecting more than this is not a useful answer anyway; the
-// response reports the truncation the same way the shape cap does.
+// Maximum objects one find_objects request may select: `*` matches everything,
+// and inserting a whole design into the selection set costs minutes of CPU
+// while holding the STA mutex.  The response reports the truncation.
 constexpr size_t kMaxFindResults = 50000;
 
 // Accumulate highlight shapes from all items in a selection set, degrading
@@ -610,11 +596,9 @@ static bool collectMultiHighlightShapes(const gui::SelectionSet& selections,
     if (!sel) {
       continue;
     }
-    // `>=`, not `== budget`: the net paths below write their special-wire
-    // shapes straight into `rects` with no budget of their own, so the total
-    // can already be past the cap — and computing the room left as an unsigned
-    // subtraction would then wrap into a huge number and switch the cap off for
-    // the rest of the selection.
+    // `>=`, not `== 0`: the net paths write special-wire shapes into `rects`
+    // with no budget, so the total can already be past the cap and the unsigned
+    // subtraction below would wrap.
     const size_t used = rects.size() + polys.size();
     if (used >= kMaxHighlightShapes) {
       // Budget exhausted even for one box per object.
@@ -658,11 +642,8 @@ static void refreshHighlightGroupRects(SessionState& state)
         continue;
       }
       // Budget each object to the room left, and coarsen it to one box if it
-      // does not fit — the same degradation the selection overlay does. Without
-      // this the cap is only checked *between* objects, so one root cluster
-      // (one shape per member instance, recursively) pushes millions of rects
-      // into session state, which the overlay renderer then walks for every
-      // tile.
+      // does not fit.  Checking the cap only *between* objects would let a
+      // single root cluster push one rect per member instance.
       const size_t room
           = kMaxHighlightShapes - state.highlight_group_rects.size();
       if (room == 0) {
@@ -1553,13 +1534,9 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
 }
 
 // Select (or deselect) a cluster (dbGroup) by its ODB id.  Driven by a row
-// click in the Clusters panel; the group's descriptor highlights every member
-// instance, which is the whole point of MPL's -keep_clustering_data.
-//
-// `deselect` exists because the panel is the only place that selection can be
-// undone from: clicking the row again, or hiding the cluster, has to be able to
-// drop it — otherwise the instances stay highlighted while the panel claims the
-// cluster is neither selected nor shown.
+// click in the Clusters panel, which is also the only place the selection can
+// be undone from — hence `deselect`: clicking the row again, or hiding the
+// cluster, has to be able to drop it.
 WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
                                                    SessionState& state)
 {
@@ -1627,12 +1604,9 @@ WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
                                      : state.selection_set.find(sel);
 
       if (no_highlight) {
-        // The Clusters panel paints the selected cluster through the
-        // `_clusters` tile layer instead, which draws per tile from the spatial
-        // index: it shows every instance of the cluster (no
-        // kMaxHighlightShapes ceiling) in the cluster's own color, and the
-        // yellow selection veil would sit on top of that very color.  Skipping
-        // the collection also saves walking up to 20k shapes per click.
+        // The Clusters view paints the selection through the `_clusters` layer
+        // instead, in the cluster's own color, which the selection veil would
+        // cover.
         clearSelectionHighlights(state);
       } else {
         truncated = setSelectionSetHighlights(state);
@@ -1675,11 +1649,9 @@ WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
   return resp;
 }
 
-// Batch select/highlight by name pattern — the web counterpart of the Qt
-// GUI's Find dialog and of `select -type ... -name ... -highlight`
-// (Gui::select, which needs a MainWindow and so is unavailable here).
-// Matching a whole descriptor type in one request is what makes highlighting
-// an MPL cluster tree affordable: `type=Group` walks every dbGroup once.
+// Batch select/highlight by name pattern — the web counterpart of the Qt GUI's
+// Find dialog and of `select -type ... -name ... -highlight` (Gui::select,
+// which needs a MainWindow and so is unavailable here).
 WebSocketResponse SelectHandler::handleFindObjects(const WebSocketRequest& req,
                                                    SessionState& state)
 {
@@ -1700,9 +1672,7 @@ WebSocketResponse SelectHandler::handleFindObjects(const WebSocketRequest& req,
     // highlight_group argument of Gui::select.
     const int highlight_group
         = static_cast<int>(jsonOr<int64_t>(req.json, "highlight_group", -1));
-    // Below -1 is rejected rather than clamped: it is not a second spelling of
-    // "select only", it is a malformed request, and silently answering it as if
-    // it were -1 hides the client bug that sent it.
+    // Below -1 is a malformed request, not a second spelling of "select only".
     if (highlight_group < -1 || highlight_group >= gui::kNumHighlightSet) {
       throw std::runtime_error("Invalid highlight group: "
                                + std::to_string(highlight_group));

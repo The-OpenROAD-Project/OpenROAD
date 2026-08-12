@@ -90,9 +90,7 @@ describe('ClustersWidget', () => {
     });
 
     // Straight from the constructor, with no _render() of our own: the panel has
-    // to say what it wants as soon as it is opened.  Rendering it by hand here
-    // is what used to hide the fact that a freshly built panel drew nothing at
-    // all — not even the column headers.
+    // to say what it wants as soon as it is opened.
     it('asks for an Update before anything is loaded', () => {
         const app = createMockApp();
         const widget = new ClustersWidget(makeContainer(), app, () => {});
@@ -167,10 +165,9 @@ describe('ClustersWidget', () => {
         assert.equal(parts.length, 4);
         assert.ok(parts.includes('11:0,255,0,100'));
 
-        // Unchecking the root drops every cluster from the color map (the
-        // checkbox model propagates to descendants).  Driven through the model
-        // so the widget's own onChange runs — copying that callback into the
-        // test would let it pass with the widget's wiring broken.
+        // Unchecking the root drops every cluster from the color map, since the
+        // checkbox model propagates to descendants.  Driven through the model so
+        // that the widget's own onChange runs.
         widget._checkModel.check(0, false);
         await waitForMicrotasks();
         const last = app.sent.filter(m => m.type === 'set_group_colors').at(-1);
@@ -281,11 +278,9 @@ describe('ClustersWidget', () => {
         assert.match(marked[0].children[0].textContent, /root/);
     });
 
-    // The point of clicking a cluster: its instances — including those owned by
-    // its nested clusters — are the only ones the `_clusters` layer paints, in
-    // the color of the row's swatch.  The layer keys off each instance's own
-    // dbGroup, so the map has to carry the whole subtree, not just the clicked
-    // cluster.
+    // Clicking a cluster leaves only its instances painted, in the row's color.
+    // The layer keys off each instance's own dbGroup, so the map has to carry the
+    // whole subtree, not just the clicked cluster.
     it('isolates the selected cluster subtree in the color map', async () => {
         const app = createMockApp();
         const widget = new ClustersWidget(makeContainer(), app, () => {});
@@ -329,10 +324,8 @@ describe('ClustersWidget', () => {
         assert.equal(widget._statusLabel.textContent, '4 clusters');
     });
 
-    // A double click delivers click(detail 1), click(detail 2) and then
-    // dblclick.  Acting on the second click undid the first — the cluster ended
-    // up zoomed to but deselected, and the layout flashed from the isolated map
-    // back to the full one.
+    // A double click delivers click(detail 1), click(detail 2) and then dblclick;
+    // acting on the second one deselects the cluster the first just isolated.
     it('keeps the cluster selected through a double click', async () => {
         const app = createMockApp();
         const widget = new ClustersWidget(makeContainer(), app, () => {});
@@ -392,11 +385,9 @@ describe('ClustersWidget', () => {
            await waitForMicrotasks();
 
            assert.equal(widget._isolatedOdbIds(), null);
-           // The unticked subtree drops out, and so does root: with only part of
-           // its subtree ticked its checkbox goes indeterminate, which
-           // CheckboxTreeModel reports as unchecked.  What matters here is that
-           // the map is no longer the isolated one — macro_cluster, untouched by
-           // the click, paints again.
+           // The unticked subtree drops out, and so does root: partly ticked, its
+           // checkbox goes indeterminate, which the model reports as unchecked.
+           // The point is that the map is no longer the isolated one.
            const parts = app.sent.filter(m => m.type === 'set_group_colors')
                              .at(-1).colors.split(';').sort();
            assert.deepEqual(parts, ['13:255,255,0,100']);

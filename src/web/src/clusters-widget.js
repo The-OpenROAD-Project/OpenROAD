@@ -1,21 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Clusters widget — dbGroup tree with per-cluster coloring.
-//
-// MPL stores its clustering hierarchy in ODB as nested dbGroups of type
-// VISUAL_DEBUG when `rtl_macro_placer -keep_clustering_data` is used, which is
-// what makes the soft-macro placement inspectable after the fact (issue
-// #7959).  Other dbGroup users (power/voltage domains) show up here too, told
-// apart by the Type column.
-//
-// The tree mirrors HierarchyBrowser: a checkbox controls whether the cluster
-// contributes its color to the `_clusters` tile layer, the swatch shows the
-// effective color, and collapsing a node makes its subtree paint in the
-// node's own color.  Clicking a row selects the dbGroup — the Inspector
-// describes it and the layout paints *only* that cluster's instances, in its
-// own color (see _selectRow); clicking it again brings the other clusters
-// back.  Double-clicking zooms to the cluster's bounding box.
+// Clusters widget — dbGroup tree with per-cluster coloring, mirroring
+// HierarchyBrowser.  A checkbox feeds the cluster's color to the `_clusters`
+// layer, a click isolates it there (see _selectRow), a double click zooms.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import {
@@ -59,14 +47,9 @@ export class ClustersWidget {
         // Expose on app so display-controls / tests can interact.
         app.clustersWidget = this;
 
-        // Another panel taking the selection leaves this row's highlight
-        // claiming a selection the server no longer holds — and its isolated
-        // color map showing one cluster for a selection that moved elsewhere.
-        //
-        // Guarded on being the live panel: the resetter list has no unregister,
-        // so a panel closed and reopened by the layout would otherwise leave its
-        // dead predecessors resending the full map on every selection, undoing
-        // the isolation the live one just set up.
+        // Another panel taking the selection releases this row and its
+        // isolation.  Guarded on being the live panel: the resetter list has no
+        // unregister, so predecessors would keep resending the full map.
         onSelectionReset(app, () => {
             if (app.clustersWidget !== this) return;
             const wasIsolated = this._selectedOdbId != null;
@@ -85,9 +68,13 @@ export class ClustersWidget {
     _build(container) {
         const el = document.createElement('div');
         el.className = 'hierarchy-widget';
+        // Kept so HierarchyPanel can show/hide this view and drop its view
+        // selector into the toolbar, next to Update.
+        this.element = el;
 
         const toolbar = document.createElement('div');
         toolbar.className = 'timing-toolbar';
+        this.toolbar = toolbar;
 
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';
@@ -119,10 +106,8 @@ export class ClustersWidget {
         this._render();
     }
 
-    // One set of listeners on the table, resolving the row from the event, for
-    // the whole life of the panel.  Attaching them per row instead cost 2-4
-    // closures per row on every rebuild: measured on this widget, a checkbox
-    // click went from 14 ms at 100 rows to 530 ms at 5000, all of it DOM churn.
+    // Delegated once on the table, for the panel's whole life: per-row
+    // listeners made a checkbox click cost 530 ms at 5000 rows.
     _installTableHandlers() {
         const rowOf = (e) => {
             const tr = e.target.closest ? e.target.closest('tr[data-row-id]')
@@ -149,12 +134,8 @@ export class ClustersWidget {
             // The checkbox reports through `change`; letting its click through
             // here would also select the row.
             if (isCheckbox(e.target)) return;
-            // A double click delivers two clicks before `dblclick`.  Acting on
-            // the second one undid the first: it selected the cluster and then
-            // deselected it, so zooming to a cluster left it unselected, with the
-            // layout flashing between the isolated and the full color map.  The
-            // collapse arrow had the same problem — two toggles back to where it
-            // started.
+            // A double click delivers two clicks first, and acting on the
+            // second one undoes the first (deselect, or a second toggle).
             if (e.detail > 1) return;
             const row = rowOf(e);
             if (!row) return;
@@ -229,10 +210,9 @@ export class ClustersWidget {
             this._selectedOdbId = null;
         }
 
-        // Default collapse state: every non-root cluster that has children
-        // starts collapsed, so a top-level cluster paints its whole subtree in
-        // one color.  computeDefaultGroupColors() on the server mirrors this,
-        // which is what keeps `save_image -web` consistent with the viewer.
+        // Every non-root cluster with children starts collapsed, so a
+        // top-level cluster paints its whole subtree in one color.
+        // computeDefaultGroupColors() on the server mirrors this.
         for (const n of this._nodes) {
             const children = this._childrenMap.get(n.id);
             if (!children || children.length === 0) continue;
@@ -282,24 +262,17 @@ export class ClustersWidget {
         }
     }
 
-    // When a cluster is collapsed, all descendants inherit its effective color
-    // (the highest collapsed ancestor wins) — the rule lives in color-tree.js,
-    // shared with the Hierarchy panel and mirrored by the server's save-image
-    // path.
+    // A collapsed cluster paints its whole subtree; the rule lives in
+    // color-tree.js, shared with the Hierarchy view and the server.
     _computeEffectiveColors() {
         computeEffectiveColors(this._rows, this._nodeMap, this._groupState,
                                this._collapsed);
     }
 
-    // The clusters the color map is narrowed to while one is selected: the
-    // selected cluster and everything under it, since the `_clusters` layer
-    // keys off each instance's own dbGroup and a map holding only the top
-    // cluster would leave the nested ones unpainted.  null = no selection, so
-    // every checked cluster paints.
-    //
-    // Derived rather than stored: a cached set is a second copy of the
-    // selection that every path changing it has to remember to repair, and a
-    // stale one filters the map down to nothing.
+    // While a cluster is selected, the color map is narrowed to it and its
+    // subtree — the `_clusters` layer keys off each instance's own dbGroup, so
+    // nested clusters need their own entries.  null = no selection.
+    // Derived, not stored: a cached set is a second copy of the selection.
     _isolatedOdbIds() {
         if (this._selectedOdbId == null) return null;
         const selected
@@ -325,8 +298,8 @@ export class ClustersWidget {
     _hintIfClusterViewOff() {
         if (this._app.visibility
             && this._app.visibility.cluster_view === false) {
-            this._statusLabel.textContent = 'Cluster view is off — enable '
-                + 'Display Controls → Cluster view → Colors';
+            this._statusLabel.textContent = 'Cluster view is off — enable it '
+                + 'in Display Controls';
             return true;
         }
         return false;
@@ -375,18 +348,14 @@ export class ClustersWidget {
         if (row) {
             row.classList.remove('selected');
         }
-        // Dropping the selection drops the isolation with it (_isolatedOdbIds
-        // reads this field), so the map goes back to whatever the checkboxes
-        // say.  The colors are not resent here — callers do that once they know
-        // whether a new selection follows, so switching clusters costs one
-        // set_group_colors, not two.
+        // Also drops the isolation, since _isolatedOdbIds reads this field.
+        // Callers resend the colors once they know whether a new selection
+        // follows, so switching clusters costs one set_group_colors, not two.
         this._selectedOdbId = null;
     }
 
-    // Drop `odbId` from the server's selection so its instances stop being
-    // painted in its color.  Used when the row is clicked again and when the
-    // cluster is hidden: leaving the isolation up would color a cluster the
-    // panel says is neither selected nor visible.
+    // Drop `odbId` from the server's selection and release the isolation.
+    // Used when the row is clicked again and when the cluster is hidden.
     _deselectCluster(odbId) {
         this._clearSelectedRow();
         // Back to the full map: every checked cluster paints again.
@@ -413,13 +382,9 @@ export class ClustersWidget {
         }).catch(err => console.error('select_group (deselect) failed:', err));
     }
 
-    // Select the dbGroup so the Inspector shows its properties, and isolate it
-    // in the layout: its instances — and those of its nested clusters — are the
-    // only ones the `_clusters` overlay paints, each in the color its swatch
-    // shows.  That overlay draws per tile from the spatial index, so it shows
-    // the whole cluster no matter how many instances it holds, which the
-    // selection highlight could not (kMaxHighlightShapes).  Hence `no_highlight`
-    // below: the yellow veil would sit on top of the very color being shown.
+    // Select the dbGroup for the Inspector and isolate it in the layout: only
+    // its subtree's instances stay colored.  `no_highlight` because the
+    // selection veil would cover that color, and the overlay has no shape cap.
     _selectRow(tr, node) {
         if (isStaticMode(this._app)) return;
         // Clicking the selected row again is how a selection is undone from
@@ -428,11 +393,8 @@ export class ClustersWidget {
             this._deselectCluster(node.odb_id);
             return;
         }
-        // Cleared before beginSelection, which runs this panel's own reset
-        // handler: with the selection already gone the handler has nothing to
-        // restore, so the isolated map below is the only one sent.  Two color
-        // maps in flight per click is one round trip too many — and, with more
-        // than one server io thread, an order the session could apply backwards.
+        // Cleared before beginSelection so this panel's own reset handler has
+        // nothing to restore: the isolated map below is the only one sent.
         this._clearSelectedRow();
         const token = beginSelection(this._app);
         this._selectedOdbId = node.odb_id;
@@ -560,10 +522,8 @@ export class ClustersWidget {
             if (!isStaticMode(this._app)) {
                 tr.style.cursor = 'pointer';
             }
-            // The table is rebuilt on every collapse/checkbox change, so the
-            // selected row has to be re-marked from the remembered cluster id
-            // — otherwise the highlight in the layout would have no visible
-            // owner in the panel.
+            // The table is rebuilt on every collapse change, so the selected
+            // row is re-marked from the remembered cluster id.
             if (node.odb_id != null && node.odb_id === this._selectedOdbId) {
                 tr.classList.add('selected');
             }

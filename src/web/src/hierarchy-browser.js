@@ -48,10 +48,14 @@ export class HierarchyBrowser {
     _build(container) {
         const el = document.createElement('div');
         el.className = 'hierarchy-widget';
+        // Kept so HierarchyPanel can show/hide this view and drop its view
+        // selector into the toolbar, next to Update.
+        this.element = el;
 
         // Toolbar
         const toolbar = document.createElement('div');
         toolbar.className = 'timing-toolbar';
+        this.toolbar = toolbar;
 
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';

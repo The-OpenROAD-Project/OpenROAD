@@ -88,12 +88,9 @@ std::vector<char> hasChildrenByIndex(size_t node_count,
 // Resolve each node's effective color and return odb id → color.
 //
 // The rule the panels implement: a collapsed node paints its whole subtree, and
-// with collapsed nodes nested the highest one wins.  Callers must pass nodes in
-// an order where a parent precedes its children (both reports emit DFS order),
-// which is what lets this resolve in one pass.
-//
-// Shared so that the two reports, and therefore `save_image`/`web_save_report`
-// and the live viewer, cannot disagree about what a collapsed row means.
+// with collapsed nodes nested the highest one wins.  Callers must pass nodes
+// parent-before-child (both reports emit DFS order).  Shared so the two reports
+// cannot disagree about what a collapsed row means.
 std::map<uint32_t, Color> computeEffectiveOwnerColors(
     const std::vector<OwnerColorNode>& nodes);
 

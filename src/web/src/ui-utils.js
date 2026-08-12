@@ -45,11 +45,8 @@ export function onSelectionReset(app, fn) {
     app.selectionResetters.push(fn);
 }
 
-// Fit the map to a DBU rectangle [xMin, yMin, xMax, yMax].
-//
-// Shared because three panels grew their own copy of the conversion +
-// fitBounds + padding (the Inspector's "Zoom to", the Clusters panel's
-// double-click, the DRC widget's marker zoom).
+// Fit the map to a DBU rectangle [xMin, yMin, xMax, yMax].  Shared by the
+// Inspector's "Zoom to", the Clusters panel's double-click and the DRC widget.
 export function zoomToBBox(app, bbox, padding = 20) {
     if (!bbox || !app || !app.map || !app.designScale) return;
     const [x1, y1, x2, y2] = bbox;

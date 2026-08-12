@@ -1382,6 +1382,18 @@ html, body {
 
 /* ─── Hierarchy Browser ──────────────────────────────────────────────── */
 
+/* View selector in the Hierarchy toolbar.  Same look as the DRC category
+   select, without its `flex: 1` — here it shares the row with Update and the
+   status label, so it must stay at its content width. */
+.hierarchy-view-select {
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 3px 4px;
+    font-size: 12px;
+}
+
 .hierarchy-widget {
     display: flex;
     flex-direction: column;

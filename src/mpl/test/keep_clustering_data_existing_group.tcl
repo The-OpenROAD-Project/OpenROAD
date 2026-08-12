@@ -1,12 +1,9 @@
-# An instance that already belongs to someone else's group — a UPF power domain,
-# a region the placer honors — must stay in it.  A dbInst belongs to exactly one
-# dbGroup and dbGroup::addInst silently moves it, so writing the clustering data
-# over such an instance would take it out of the group dpl/gpl read (see
-# dbToOpendp.cpp, which builds its regions from dbGroup::getInsts).
+# An instance that already belongs to someone else's group — a power domain, a
+# region the placer honors — must stay in it.  A dbInst belongs to exactly one
+# dbGroup and dbGroup::addInst silently moves it, so the clustering data would
+# otherwise take it out of the group dpl/gpl read.
 #
-# The DEF's GROUPS section carries each group's exact membership, so the golden
-# file is the check: pd_always_on keeps _001_/_002_ and no cluster claims them.
-# MPL-0078 in the log says the same thing in one line.
+# The golden DEF is the check: pd_always_on keeps _001_/_002_.
 source "helpers.tcl"
 
 read_lef Nangate45/Nangate45.lef

@@ -313,15 +313,13 @@ describe('buildTileRequest', () => {
     it('carries the module/cluster overlay flags', () => {
         const overlayCtx = {
             ...ctx,
-            visibility: { module_view: false, cluster_view: true,
-                          cluster_outlines: true },
+            visibility: { module_view: false, cluster_view: true },
         };
         const req = buildTileRequest({ z: 0, x: 0, y: 0 }, '_clusters',
                                      overlayCtx);
         assert.equal(req.layer, '_clusters');
         assert.equal(req.module_view, false);
         assert.equal(req.cluster_view, true);
-        assert.equal(req.cluster_outlines, true);
     });
 
     it('omits pattern when the layer is solid or unset', () => {

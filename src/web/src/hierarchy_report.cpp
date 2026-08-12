@@ -350,22 +350,13 @@ std::vector<char> hasChildrenByIndex(const size_t node_count,
 std::map<uint32_t, Color> computeEffectiveOwnerColors(
     const std::vector<OwnerColorNode>& nodes)
 {
-  // One pass: a parent always precedes its children, so by the time a node is
-  // reached its parent's answer is final and the walk back up the tree the
-  // panels used to do is unnecessary.
+  // One pass, since a parent always precedes its children.  `inheriting`
+  // carries "the HIGHEST collapsed ancestor wins" down the tree: an expanded
+  // node inside a collapsed one must not hand its own color on.
   //
-  // `inheriting` is what makes "the HIGHEST collapsed ancestor wins" hold
-  // transitively: a node is painted by an ancestor either because its parent is
-  // collapsed, or because its parent was itself being painted by one — an
-  // expanded node nested inside a collapsed one must not hand its own color
-  // back to its children.
-  // `paint[i]` is the color node i hands down, empty when it has none to give.
-  // Empty is the panels' structural rows ("Leaf instances", the per-type
-  // folders): collapsed by default and colorless, they must not paint the
-  // subtree below them.  The viewer's twin gets that for free — its state map
-  // has no entry for such a row — and holding an optional here, rather than a
-  // Color plus a flag saying whether it means anything, makes passing off a
-  // default-constructed Color as an inherited one unrepresentable.
+  // `paint[i]` is the color node i hands down, empty when it has none to give —
+  // the panels' structural rows ("Leaf instances", the per-type folders) are
+  // colorless, and must not paint the subtree below them.
   std::vector<std::optional<Color>> paint(nodes.size());
   std::vector<bool> inheriting(nodes.size(), false);
   std::map<uint32_t, Color> colors;

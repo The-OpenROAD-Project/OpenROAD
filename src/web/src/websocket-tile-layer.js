@@ -26,9 +26,8 @@ export function buildTileRequest(coords, layerName, ctx) {
                                tileSizeCss());
 }
 
-// A 1x1 transparent PNG.  Stands in for a tile the server would render empty
-// anyway (see the `gate` option below): no round trip, and the decoded bitmap
-// is one pixel instead of (256*dpr)².
+// A 1x1 transparent PNG, for a tile the server would render empty anyway
+// (see the `gate` option below): no round trip and a one-pixel bitmap.
 const EMPTY_TILE
     = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
 
@@ -58,14 +57,10 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 this, withDeviceExactTileSize(options));
         },
 
-        // A layer whose content is switched by one visibility flag can be left
-        // mounted (which is what keeps the toggle honest — the map's layer set
-        // is not a second copy of the flag) without paying for it: while the
-        // flag is off the server would render an empty tile, so don't ask.
-        // The flag is named by whoever creates the layer, via `options.gate`.
-        // A name that is not a real visibility flag would read undefined and
-        // gate the layer off forever, with nothing on screen and no error to
-        // explain it; fail open and say so instead.
+        // A layer switched by one visibility flag stays mounted and simply
+        // skips the request while the flag is off.  `options.gate` names the
+        // flag; an unknown name would gate the layer off forever, so fail open
+        // and warn instead.
         _gatedOff: function() {
             const gate = this.options.gate;
             if (gate == null) return false;
@@ -163,15 +158,10 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                     tile._websocketRequestId = undefined;
                 }
 
-                // Switched off: blank the tile in place.  Leaving the previous
-                // image up would keep showing an overlay the user just turned
-                // off, and asking the server for a tile it renders empty is a
-                // round trip for 102 bytes.
+                // Switched off: blank the tile in place rather than keep an
+                // overlay the user just turned off.  Only if not already blank —
+                // redrawAllLayers walks every layer on any visibility change.
                 if (gated) {
-                    // Only when it is not already blank: redrawAllLayers walks
-                    // every layer on any visibility change, so an overlay that
-                    // has been off the whole time would re-decode the same
-                    // placeholder across its whole tile grid each time.
                     if (tile.src !== EMPTY_TILE) {
                         this._setTileSrc(tile, EMPTY_TILE);
                     }

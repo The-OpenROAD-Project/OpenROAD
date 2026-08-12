@@ -209,11 +209,9 @@ struct SessionState
   gui::SelectionSet::const_iterator selection_itr = selection_set.end();
 
   // One entry per "color by owner" overlay, indexed by ColorOverlaySpec::index:
-  // owner id (dbModule / dbGroup) → RGBA color, as last set by the panel.  Held
-  // by shared_ptr because a tile render needs the map to outlive the lock: the
-  // renderer takes the pointer and the panel may replace the map meanwhile, so
-  // copying the handle (a refcount bump) replaces what was a deep copy of every
-  // owner's color, per tile, with the mutex held.
+  // owner id (dbModule / dbGroup) → RGBA color, as last set by the panel.  By
+  // shared_ptr so a tile render can keep the map past the lock while the panel
+  // replaces it, without deep-copying every owner's color per tile.
   struct OwnerColors
   {
     std::mutex mutex;

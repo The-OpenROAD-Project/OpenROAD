@@ -424,9 +424,7 @@ TEST_F(SaveReportTest, ZeroPathsReport)
 //
 // The rule the saved report and the viewer must agree on: a collapsed node
 // paints its whole subtree, and where collapsed nodes nest the highest one
-// wins.  The viewer's copy lives in color-tree.js (test-color-tree.js covers
-// the same shapes); these guard the C++ side, which is what `save_image -web`
-// and `web_save_report` paint from.  No DB needed — the helper is pure.
+// wins.  The viewer's copy lives in color-tree.js.
 
 constexpr Color kRed{255, 0, 0, 255};
 constexpr Color kGreen{0, 255, 0, 255};
@@ -493,9 +491,7 @@ TEST(OwnerColors, HighestCollapsedAncestorWinsThroughExpandedNode)
 TEST(OwnerColors, CollapsedNodeWithoutColorDoesNotPaintItsSubtree)
 {
   // The Hierarchy panel's structural rows ("Leaf instances", per-type folders)
-  // are collapsed by default and have no color.  The viewer skips them because
-  // its state map has no entry; this side must not hand down a
-  // default-constructed Color instead.
+  // have no color, and must not hand a default-constructed one down.
   const std::vector<OwnerColorNode> nodes = {
       {.parent = -1,
        .odb_id = 0,

@@ -1,17 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Shared logic for the "color by owner" tree panels — the Hierarchy browser
-// (dbModules) and the Clusters panel (dbGroups).  Both receive the same flat
-// {id, parent_id, color, odb_id} node list from the server, present it as a
-// collapsible tree, and send back one color per visible owner.
-//
-// The rule that matters here, and the reason this is one module instead of two
-// copies: a COLLAPSED node paints its whole subtree, and where collapsed nodes
-// nest, the highest one wins.  The server implements the same rule for
-// `save_image -web` / `web_save_report` (computeEffectiveOwnerColors in
-// hierarchy_report.cpp), so a second copy on this side is a silent way for the
-// saved image to disagree with the viewer.
+// Shared logic for the "color by owner" tree views — modules and clusters.
+// The rule this module exists to keep in one place: a COLLAPSED node paints its
+// whole subtree, and where collapsed nodes nest the highest one wins.  The
+// server implements the same rule in computeEffectiveOwnerColors().
 
 // Index a flat node list into {childrenMap, nodeMap} and a DFS row order.
 // `rows` carries the tree depth each panel needs for indentation.
@@ -53,18 +46,12 @@ export function isHidden(node, nodeMap, collapsed) {
 }
 
 // Resolve `effectiveColor` for every entry of `state` (odb_id → {color,
-// effectiveColor, ...}) from the current collapse set.
-//
-// `rows` must be in DFS order (parent before child), which buildTreeIndex
-// guarantees — that is what lets the highest collapsed ancestor win without
-// walking back up the tree per node.
+// effectiveColor, ...}) from the current collapse set.  `rows` must be in DFS
+// order (parent before child), which is what makes this a single pass.
 export function computeEffectiveColors(rows, nodeMap, state, collapsed) {
     const byNodeId = new Map();
-    // `inheriting` is what makes "the HIGHEST collapsed ancestor wins" hold
-    // transitively: a node is painted by an ancestor either because its parent
-    // is collapsed, or because its parent was itself being painted by one — an
-    // expanded node nested inside a collapsed one must not hand its own color
-    // back to its children.
+    // `inheriting` carries "the HIGHEST collapsed ancestor wins" down the tree:
+    // an expanded node inside a collapsed one must not hand its own color on.
     const inheriting = new Set();
     for (const row of rows) {
         const node = nodeMap.get(row.id);
@@ -82,13 +69,8 @@ export function computeEffectiveColors(rows, nodeMap, state, collapsed) {
 }
 
 // The wire form both set_module_colors and set_group_colors take:
-// "<odb id>:<r>,<g>,<b>,<a>;..." over the visible entries only.
-//
-// `only`, when given, is a Set of odb ids to restrict the map to — what the
-// Clusters panel uses to isolate the selected cluster's subtree.  It filters
-// *which* owners are sent, never which color each one gets: the effective
-// colors are already resolved by computeEffectiveColors above, so an isolated
-// map paints exactly the colors the swatches show.
+// "<odb id>:<r>,<g>,<b>,<a>;..." over the visible entries only.  `only`, a Set
+// of odb ids, restricts which owners are sent — never which color each gets.
 export function serializeColorMap(state, alpha = 100, only = null) {
     const parts = [];
     for (const [odbId, st] of state) {

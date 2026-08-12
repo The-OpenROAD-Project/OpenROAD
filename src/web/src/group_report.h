@@ -18,11 +18,9 @@ class dbBlock;
 
 namespace web {
 
-// One row of the Clusters panel: a dbGroup.  MPL writes its clustering
-// tree into ODB as nested dbGroups of type VISUAL_DEBUG when
-// `rtl_macro_placer -keep_clustering_data` is used, which is what this
-// report exists to visualize.  Power/voltage-domain groups show up too,
-// distinguished by `type`.
+// One row of the Clusters view: a dbGroup.  MPL writes its clustering tree as
+// nested VISUAL_DEBUG groups; power/voltage domains show up too, told apart by
+// `type`.
 struct GroupNode
 {
   int id = 0;
@@ -60,9 +58,8 @@ class GroupReport
 // JSON serialization (shared by handleGroupHierarchy and saveReport).
 boost::json::object serializeGroupResult(const GroupResult& result);
 
-// Compute the group color map for the default UI state (child groups
-// collapsed under their top-level parent, all visible).  Returns odb
-// group id → RGBA color, ready for use in tile rendering.
+// Group color map for the default UI state (child groups collapsed under their
+// top-level parent, all visible): odb group id → RGBA.
 std::map<uint32_t, Color> computeDefaultGroupColors(const GroupResult& result);
 
 }  // namespace web

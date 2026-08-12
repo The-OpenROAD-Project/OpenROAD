@@ -82,7 +82,6 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `cluster_view` | false | Color each instance by the `dbGroup` (cluster) it belongs to |
-| `cluster_outlines` | false | Outline each cluster's bounding box (needs `cluster_view`) |
 
 Cluster coloring reads the `dbGroup`s that
 [`rtl_macro_placer -keep_clustering_data`](../mpl/README.md) writes into the
@@ -121,11 +120,10 @@ save_image -web -display_option {routing false} \
                 -display_option {net_power false} \
                 layout.png
 
-# Plot the MPL clustering result (one color per cluster, boxes outlined)
+# Plot the MPL clustering result (one color per cluster)
 rtl_macro_placer -keep_clustering_data
 save_image -web -width 1200 \
                 -display_option {cluster_view true} \
-                -display_option {cluster_outlines true} \
                 clusters.png
 ```
 

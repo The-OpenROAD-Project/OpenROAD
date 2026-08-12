@@ -5,9 +5,7 @@ import { isStaticMode } from './ui-utils.js';
 
 // Object types the Find dialog can search.  The values are descriptor type
 // names as registered in gui::DescriptorRegistry, which is what the server's
-// find_objects handler matches against.  "Group" covers MPL's clustering data
-// (`rtl_macro_placer -keep_clustering_data`), where one pattern can highlight a
-// whole cluster in a single request.
+// find_objects handler matches against.
 const FIND_TYPES = [
     { label: 'Instance', value: 'Inst' },
     { label: 'Net', value: 'Net' },
@@ -17,15 +15,21 @@ const FIND_TYPES = [
 
 // The highlight-group palette comes from the server (`highlight_colors` in the
 // tech response), which reads gui::Painter::kHighlightColors — the same array
-// the overlay paints with and validates group indices against.  Transcribing it
-// here would be 16 hand-typed triples that nothing keeps honest, and the
-// swatch would lose the palette's alpha.
+// the overlay paints with, alpha included.
 function highlightColors(app) {
     const colors = app.techData && app.techData.highlight_colors;
     return Array.isArray(colors) ? colors : [];
 }
 
 // Is the Find dialog usable?  Needs a design, and a server to search it.
+// Focus the Hierarchy tab and switch it to one of its tree views.
+function showHierarchyView(app, view) {
+    app.focusComponent('Browser');
+    if (app.hierarchyPanel) {
+        app.hierarchyPanel.selectView(view);
+    }
+}
+
 export function canFind(app) {
     return !!app.designScale && !isStaticMode(app);
 }
@@ -64,8 +68,9 @@ export function createMenuBar(app) {
             { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
-            { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
-            { label: 'Clusters', action: () => app.focusComponent('ClustersWidget') },
+            // Both live in the Hierarchy panel now, as two views of one tab.
+            { label: 'Hierarchy Browser', action: () => showHierarchyView(app, 'instances') },
+            { label: 'Clusters', action: () => showHierarchyView(app, 'clusters') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
             { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },
@@ -187,10 +192,7 @@ export function createMenuBar(app) {
 // ─── Find Dialog ────────────────────────────────────────────────────────────
 //
 // Batch select/highlight by name pattern, the web counterpart of the Qt GUI's
-// Find dialog and of `select -type ... -name ... -highlight`.  Selecting a
-// whole descriptor type in one request is what makes highlighting an MPL
-// cluster affordable: one `Group` pattern replaces a per-instance Tcl script
-// (issue #7959).
+// Find dialog and of `select -type ... -name ... -highlight`.
 export function showFindDialog(app) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';

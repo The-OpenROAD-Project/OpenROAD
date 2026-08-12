@@ -46,8 +46,8 @@ GroupStats addGroup(odb::dbGroup* group,
   nodes[my_id].type = group->getType().getString();
   nodes[my_id].odb_id = group->getId();
 
-  // Count direct member instances.  Fillers are skipped to match the
-  // _clusters overlay, which never colors them.
+  // Fillers are skipped to match the _clusters overlay, which never colors
+  // them.
   GroupStats local;
   local.bbox.mergeInit();
   for (odb::dbInst* inst : group->getInsts()) {
@@ -104,10 +104,8 @@ GroupResult GroupReport::getReport() const
   }
 
   // One node per dbGroup, and getGroups() is the flat table of every group in
-  // the block — nested ones included — so this is the exact final size, not an
-  // estimate.  A dbSet over a dbTable reports it in O(1) (dbTable::size()), and
-  // reserving keeps addGroup's per-group emplace_back from repeatedly moving
-  // the names accumulated so far.
+  // the block, so this is the exact final size.  dbSet over a dbTable reports
+  // it in O(1).
   result.nodes.reserve(block_->getGroups().size());
 
   // dbBlock::getGroups() is the flat group table, so child groups appear
@@ -172,11 +170,8 @@ boost::json::object serializeGroupResult(const GroupResult& result)
 
 std::map<uint32_t, Color> computeDefaultGroupColors(const GroupResult& result)
 {
-  // Mirrors the widget's default state (ClustersWidget._buildTree): every
-  // non-root group that has children starts collapsed, so a top-level cluster
-  // paints its whole subtree in one color.  The rule itself lives in
-  // computeEffectiveOwnerColors, shared with the module hierarchy — two copies
-  // of it would let `save_image`/`web_save_report` drift from the viewer.
+  // Mirrors ClustersWidget._buildTree: every non-root group with children
+  // starts collapsed, so a top-level cluster paints its whole subtree.
   std::vector<int> parent_ids;
   parent_ids.reserve(result.nodes.size());
   for (const auto& n : result.nodes) {

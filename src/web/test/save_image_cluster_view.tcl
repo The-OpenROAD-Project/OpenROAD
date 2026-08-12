@@ -1,12 +1,10 @@
 # End-to-end check of `save_image -web -display_option ...`, including the
-# cluster overlay that visualizes MPL's clustering data (dbGroups written by
-# `rtl_macro_placer -keep_clustering_data`).
+# cluster overlay over MPL's clustering data.
 #
-# The display options travel from Tcl to the renderer as a JSON payload, and a
-# wrongly-typed value makes save_image_cmd discard the whole payload with a
-# WEB-0042 warning — silently rendering the default image.  Nothing covered
-# that path before, so every option was ignored for a while.  This test asserts
-# on the rendered bytes, which is the only thing that catches it.
+# The options travel from Tcl to the renderer as a JSON payload, and a
+# wrongly-typed value makes save_image_cmd drop the whole payload with a
+# WEB-0042 warning, silently rendering the default image.  Asserting on the
+# rendered bytes is what catches that.
 source "helpers.tcl"
 
 read_lef Nangate45/Nangate45.lef
@@ -48,7 +46,6 @@ foreach inst $insts {
 
 save_image -web -width 200 \
   -display_option {cluster_view true} \
-  -display_option {cluster_outlines true} \
   $colored
 
 set failures {}

@@ -46,6 +46,7 @@ genrule(
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/clusters-widget.js",
+        "src/hierarchy-panel.js",
         "src/menu-bar.js",
         "src/title.js",
         "src/clock-tree-widget.js",
@@ -78,6 +79,7 @@ genrule(
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/clusters-widget.js)" +
+          " $(location src/hierarchy-panel.js)" +
           " $(location src/menu-bar.js)" +
           " $(location src/title.js)" +
           " $(location src/clock-tree-widget.js)" +
@@ -111,6 +113,7 @@ _WEB_ASSET_FILES = [
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/clusters-widget.js",
+    "src/hierarchy-panel.js",
     "src/menu-bar.js",
     "src/title.js",
     "src/clock-tree-widget.js",

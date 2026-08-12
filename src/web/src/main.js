@@ -19,8 +19,7 @@ import {
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
-import { ClustersWidget } from './clusters-widget.js';
-import { HierarchyBrowser } from './hierarchy-browser.js';
+import { HierarchyPanel } from './hierarchy-panel.js';
 import { createInspectorPanel } from './inspector.js';
 import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection }
     from './ui-utils.js';
@@ -238,7 +237,6 @@ const visibility = {
     module_view: false,
     // Cluster (dbGroup) view
     cluster_view: false,
-    cluster_outlines: false,
     // Misc
     detailed: false,
     rulers: true,
@@ -260,11 +258,9 @@ try {
     // Ignore malformed cookie.
 }
 
-// Console handle.  main.js is an ES module, so nothing above is reachable from
-// the DevTools console — a state question as basic as "is the cluster overlay
-// flag on?" could not be answered without editing the source.  One global, set
-// once, with the two state maps attached (they are module-level consts, not app
-// fields, so the console needs them hung here explicitly).
+// Console handle: main.js is an ES module, so nothing here is reachable from
+// DevTools otherwise.  The two state maps are module-level consts rather than
+// app fields, so they have to be hung on it explicitly.
 if (typeof window !== 'undefined') {
     window.orApp = app;
 }
@@ -515,11 +511,8 @@ function redrawAllLayers() {
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
 
-    // Every layer refreshes, pseudo layers included: they stay mounted and are
-    // gated on the visibility flag each request already carries (the `gate`
-    // option in display-controls.js, TileVisibility on the server).  Adding and
-    // removing them here instead made the map's layer set a second copy of the
-    // flag, and the two drifted.
+    // Pseudo layers included: they stay mounted and are gated on the visibility
+    // flag each request carries (`gate` in display-controls.js).
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }
@@ -783,11 +776,7 @@ app.navigateInspector = inspector.navigateInspector;
 app.refreshInspector = inspector.refreshInspector;
 
 function createBrowser(container) {
-    new HierarchyBrowser(container, app, redrawAllLayers);
-}
-
-function createClustersWidget(container) {
-    new ClustersWidget(container, app, redrawAllLayers);
+    new HierarchyPanel(container, app, redrawAllLayers);
 }
 
 function createTimingWidget(container) {
@@ -910,11 +899,6 @@ const defaultLayoutConfig = {
                     },
                     {
                         type: 'component',
-                        componentType: 'ClustersWidget',
-                        title: 'Clusters',
-                    },
-                    {
-                        type: 'component',
                         componentType: 'TimingWidget',
                         title: 'Timing',
                     },
@@ -953,7 +937,6 @@ app.goldenLayout.registerComponentFactoryFunction('DisplayControls', createDispl
 app.goldenLayout.registerComponentFactoryFunction('TclConsole', createTclConsole);
 app.goldenLayout.registerComponentFactoryFunction('Inspector', createInspector);
 app.goldenLayout.registerComponentFactoryFunction('Browser', createBrowser);
-app.goldenLayout.registerComponentFactoryFunction('ClustersWidget', createClustersWidget);
 app.goldenLayout.registerComponentFactoryFunction('TimingWidget', createTimingWidget);
 app.goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
 app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
@@ -964,7 +947,7 @@ app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 4;
+const LAYOUT_VERSION = 5;
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
@@ -1017,7 +1000,6 @@ const componentTitles = {
     TclConsole: 'Tcl Console',
     Inspector: 'Inspector',
     Browser: 'Hierarchy',
-    ClustersWidget: 'Clusters',
     TimingWidget: 'Timing',
     DRCWidget: 'DRC',
     ClockWidget: 'Clock Tree',
@@ -1070,8 +1052,9 @@ app.toggleShowDbu = function() {
     setCookie('or_show_dbu', app.showDbu ? '1' : '0');
     // Re-render rulers so their labels update.
     if (app.rulerManager) app.rulerManager._rerenderAll();
-    // Re-render hierarchy browser if present.
+    // Both views format area through fmtArea(app, ...), which reads showDbu.
     if (app.hierarchyBrowser) app.hierarchyBrowser._render();
+    if (app.clustersWidget) app.clustersWidget._render();
     // Update scale bar.
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
@@ -1420,11 +1403,9 @@ document.addEventListener('keydown', (e) => {
 
     const key = e.key.toLowerCase();
     if (key === 'f' && (e.ctrlKey || e.metaKey)) {
-        // Find dialog.  Preventing the default keeps the browser's own
-        // find-in-page bar from opening over the viewer — but only when there is
-        // a dialog to open in its place.  In a saved static report canFind() is
-        // false, and swallowing the key there just took find-in-page away and
-        // gave nothing back.
+        // Find dialog.  Only swallow the key when there is a dialog to open in
+        // place of the browser's find-in-page bar: a saved static report has
+        // none, and would be left with neither.
         if (canFind(app)) {
             e.preventDefault();
             showFindDialog(app);

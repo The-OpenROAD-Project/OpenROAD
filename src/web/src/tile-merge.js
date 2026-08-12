@@ -153,12 +153,10 @@ export function setItemVisible(item, visible) {
 
 // Panes that stay unmerged and so are not counted by the grouping, but do hold
 // a full grid of tiles each: _instances, _pins, and the always-on highlight
-// overlay.  `_modules` and `_clusters` are mounted for the whole session too
-// (their visibility rides in the tile payload rather than the map's layer set,
-// see display-controls.js), but while switched off their tiles are a shared 1x1
-// transparent PNG, so they hold no grid worth reserving for — same reasoning as
-// the heat map, which is mounted on demand.  Switching one on pushes the total
-// up by a pane.
+// overlay.  `_modules` and `_clusters` stay mounted too (see
+// display-controls.js), but while switched off their tiles are a shared 1x1
+// transparent PNG, so they hold no grid worth reserving for; switching one on
+// pushes the total up by a pane.
 //
 // At dpr 1 these are ~6 MB each and hardly matter.  At dpr 3 a tile is 2.25 MB,
 // so a pane is ~54 MB and the three together are ~162 MB — enough that a budget

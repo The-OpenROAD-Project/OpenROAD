@@ -16,13 +16,9 @@ namespace web {
 // A gui::Painter that collects the rectangles and polygons a
 // descriptor->highlight() draws, for the overlay renderer to paint.
 //
-// `budget` bounds what one object may accumulate.  It matters because a single
-// descriptor can emit one shape per leaf: DbGroupDescriptor::highlight recurses
-// into subgroups and calls the instance descriptor per member, so collecting a
-// root cluster of a million-instance design would allocate a million odb::Rect
-// before the caller got to decide the set is too big to send.  Past the budget
-// the shapes are dropped and only their union is kept, which is exactly what
-// the caller falls back to anyway — so nothing is lost and the peak is bounded.
+// `budget` bounds what one object may accumulate: a descriptor can emit one
+// shape per leaf.  Past it only the union of the dropped shapes is kept, which
+// is what the caller falls back to anyway.
 class ShapeCollector : public gui::Painter
 {
  public:
@@ -40,9 +36,8 @@ class ShapeCollector : public gui::Painter
 
   bool overflowed() const { return !overflow_bbox.isInverted(); }
 
-  // Ready the collector for another object, with a new budget.  Resetting
-  // through one call is what keeps a reusing caller from clearing the shape
-  // vectors and forgetting the overflow box.
+  // Ready the collector for another object.  One call, so a reusing caller
+  // cannot clear the vectors and forget the overflow box.
   void reset(size_t budget)
   {
     rects.clear();

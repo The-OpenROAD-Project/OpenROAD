@@ -1111,9 +1111,8 @@ void WebServer::saveReport(const std::string& filename,
   const std::string groups_json
       = boost::json::serialize(serializeGroupResult(group_result));
 
-  // Fill one slot per color overlay.  Not via ColorOverlaySpec::default_colors
-  // (which save_image uses): both reports are already built above for the JSON,
-  // and going through the table would compute each tree a second time.
+  // Not via ColorOverlaySpec::default_colors: both reports are already built
+  // above, and the table would compute each tree a second time.
   std::array<std::map<uint32_t, Color>, kNumColorOverlays> owner_colors;
   owner_colors[findColorOverlay("_modules")->index]
       = computeDefaultModuleColors(hier_result);
@@ -1135,20 +1134,16 @@ void WebServer::saveReport(const std::string& filename,
   const int num_tiles = 1 << kZ;
 
   TileVisibility vis;
-  // The color-by-owner overlays are gated on these flags in the renderer (the
-  // viewer's Module/Cluster view checkboxes drive them), so the pre-rendered
-  // `_modules`/`_clusters` tiles must be produced with them on — otherwise the
-  // report caches empty tiles and both overlays are dead in the saved HTML.
-  // They are ignored by every other layer.
+  // The renderer gates these overlays on the flags, so the pre-rendered tiles
+  // must be produced with them on or the saved HTML caches empty ones.
   vis.module_view = true;
   vis.cluster_view = true;
   // A 256x256 fully-transparent RGBA PNG is exactly 102 bytes with lodepng.
   // Any tile with visible content will be larger.
   constexpr size_t kEmptyPngSize = 102;
 
-  // All layers to cache tiles for, in the z order save_image composites them —
-  // one list, derived from `vis`, so a layer added to the table is cached here
-  // without this code learning about it.
+  // In the z order save_image composites them, derived from `vis`, so a new
+  // layer is cached here without this code learning about it.
   std::vector<std::string> all_layers
       = TileGenerator::saveImageLayerOrder(vis, tech_layers);
   // An overlay with no colors renders nothing, so caching its tiles would only

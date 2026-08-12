@@ -225,12 +225,10 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
   }
 };
 
-// Stand-in for gui::DbGroupDescriptor, which lives in the Qt-independent but
-// separately-linked dbDescriptors library that this test binary does not pull
-// in.  It mirrors the behavior the handlers rely on: the type name "Group",
-// no bbox of its own (the real one only has one for groups with a region), a
-// highlight built from the member instances, and visitAllObjects over the
-// block's groups.
+// Stand-in for gui::DbGroupDescriptor, which lives in a library this test
+// binary does not link.  Mirrors what the handlers rely on: the type name
+// "Group", no bbox of its own, a highlight built from the member instances,
+// and visitAllObjects over the block's groups.
 class FakeGroupDescriptor : public gui::Descriptor
 {
  public:
@@ -1334,11 +1332,9 @@ TEST_F(GroupHandlerTest, SetGroupColorsStoresTheMap)
   EXPECT_TRUE(ownerColors("_modules").empty());
 }
 
-// The Clusters/Hierarchy panels push a color map as soon as they load, and
-// those maps are not part of the tile cache key.  Only a color-overlay tile
-// that is actually drawing may be excluded from the cache for that reason:
-// dropping every layer would throw away the whole session's cached routing
-// tiles, and the same layer with its flag off is a constant empty tile.
+// Color maps are not part of the tile cache key, so a color-overlay tile that
+// is actually drawing must not be cached.  Only that one: caching is what keeps
+// the routing tiles, and the same layer with its flag off is always empty.
 TEST_F(GroupHandlerTest, OnlyADrawingColorOverlayBypassesTheTileCache)
 {
   odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
@@ -1527,10 +1523,9 @@ TEST_F(GroupSelectTest, SelectGroupReplacesSelectionUnlessAskedToAdd)
   EXPECT_EQ(state_.selection_set.size(), 1u);
 }
 
-// How the Clusters panel actually clicks a row: it shows the cluster by
-// narrowing the `_clusters` color map to that cluster's subtree, so it asks for
-// the selection (which drives the Inspector) without the overlay shapes, whose
-// yellow veil would cover the cluster's own color.
+// How the Clusters panel clicks a row: it isolates the cluster through the
+// `_clusters` color map, so it wants the selection (for the Inspector) without
+// the overlay shapes, whose yellow veil would cover the cluster's color.
 TEST_F(GroupSelectTest, NoHighlightSelectsWithoutOverlayShapes)
 {
   WebSocketRequest req;
@@ -1661,13 +1656,9 @@ TEST_F(GroupSelectTest, FindObjectsMatchesGroupsByGlob)
   EXPECT_TRUE(state_.highlight_group_rects[0].filled);
 }
 
-// A descriptor can emit one shape per leaf — DbGroupDescriptor::highlight
-// recurses into subgroups and calls the instance descriptor per member — so the
-// shape budget has to bound what ONE object accumulates, not only the total
-// across objects.  What makes the truncation lossless is that the collector
-// keeps the union of the shapes it drops, so the single box the callers fall
-// back to is still exact.  Tested on the collector directly: reaching the real
-// cap through a handler would mean building 20 000 instances.
+// A descriptor can emit one shape per leaf, so the budget has to bound what ONE
+// object accumulates, not only the total.  Driven on the collector: reaching
+// the real cap through a handler would need 20 000 instances.
 TEST(ShapeCollectorBudget, DroppedShapesStillCountTowardTheUnion)
 {
   const odb::Rect kept1(0, 0, 10, 10);

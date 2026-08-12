@@ -113,10 +113,7 @@ struct TileFrame
 inline constexpr size_t kNumColorOverlays = 2;
 
 // Per-instance color overrides for the "color by owner" overlays, indexed by
-// ColorOverlaySpec::index: the `_modules` layer keyed by dbModule id (Hierarchy
-// panel) and the `_clusters` layer keyed by dbGroup id (Clusters panel).  A
-// null slot means that overlay paints nothing, so a caller that wants none of
-// them passes a null overlay.
+// ColorOverlaySpec::index.  A null slot means that overlay paints nothing.
 struct InstColorOverlay
 {
   std::array<const std::map<uint32_t, Color>*, kNumColorOverlays> colors{};
@@ -292,15 +289,10 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
-  // "Color by owner" overlays.  Both are plain visibility flags, exactly like
-  // `rows` or `fills`: the client keeps the `_modules`/`_clusters` tile layers
-  // mounted at all times and these decide whether the layer draws anything, so
-  // toggling one is a tile refresh and never a layer mount/unmount (the old
-  // add/remove-per-toggle design let the map's layer set drift out of sync with
-  // the checkbox, which wedged the toggle until a page reload).
-  bool module_view = false;       // color instances by their dbModule
-  bool cluster_view = false;      // color instances by their dbGroup
-  bool cluster_outlines = false;  // outline + name each cluster's bbox
+  // "Color by owner" overlays.  Plain visibility flags: the client keeps the
+  // `_modules`/`_clusters` layers mounted and these decide whether they draw.
+  bool module_view = false;   // color instances by their dbModule
+  bool cluster_view = false;  // color instances by their dbGroup
 
   // Debug
   bool debug = false;
@@ -401,38 +393,30 @@ struct TileVisibility
   bool isLayerSelectable(const std::string& layer_name) const;
 };
 
-// The synthetic layers that paint each instance in the color of its owner.
-// One table so everything that needs the rule agrees by construction: the
-// renderer (which draws only when the flag is on and a color map is present),
-// handleTile (which must keep such a tile out of the session-independent tile
-// cache, since the color map is session state the cache key does not carry, and
-// which reads the session map by `index`), and the two headless save paths
-// (which have no session and build `default_colors` instead).  Adding an
-// overlay — by power domain, by region — is one row here plus one array slot.
+// The synthetic layers that paint each instance in the color of its owner.  One
+// table, so the renderer, handleTile (which must keep such a tile out of the
+// tile cache) and the headless save paths cannot disagree.  Adding an overlay
+// is one row here plus one array slot.
 struct ColorOverlaySpec
 {
   const char* layer;           // synthetic layer name
   bool TileVisibility::*flag;  // gating visibility flag
-  // Slot in InstColorOverlay::colors and in SessionState::owner_colors. Keeping
-  // the index in the row is what lets the session side stay a plain array:
-  // there is no second table whose row order has to match this one.
+  // Slot in InstColorOverlay::colors and SessionState::owner_colors, kept in
+  // the row so the session side stays a plain array.
   size_t index;
   // Owner id of `inst` for this overlay, or 0 when it has no owner.
   uint32_t (*owner_id)(odb::dbInst* inst);
-  // Colors for `save_image -web` / `web_save_report`, which have no session to
-  // read: the same defaults the panel starts with, so the saved artifact
-  // matches what the viewer shows before the user touches anything.
+  // Colors for the headless save paths, which have no session: the same
+  // defaults the panel starts with.
   std::map<uint32_t, Color> (*default_colors)(odb::dbBlock* block,
                                               sta::dbSta* sta);
-  // Request keys only this layer's rendering depends on.  The tile cache key
-  // drops them for every other layer, so toggling an overlay cannot invalidate
-  // the cached tiles of layers it does not affect.  Unused slots are null.
+  // Request keys only this layer's rendering depends on; the tile cache key
+  // drops them for every other layer.  Unused slots are null.
   std::array<const char*, 2> keys;
   // Where the layer sits in the stack, so saveImageLayerOrder composites it in
-  // the order the viewer draws it.  Same scale as PseudoLayerDef::z_index, and
-  // the same relative order as the client's zIndex — not the same numbers: the
-  // client derives the cluster overlay's from the routing pane count, which is
-  // per design, so this is a fixed value above the tech layers instead.
+  // the order the viewer draws it.  Same scale as PseudoLayerDef::z_index; the
+  // client's numbers differ (it derives them from the pane count), the relative
+  // order does not.
   int z_index;
 };
 
@@ -811,37 +795,6 @@ class TileGenerator
   mutable uint64_t geom_cache_revision_ = 0;
   mutable uint64_t geom_cache_chiplet_generation_ = 0;
   std::shared_ptr<const GeomCache> buildGeomCache() const;
-
-  // Bounding box of every dbGroup's members (recursive), keyed by group id,
-  // per block.  Only built when the `_clusters` layer asks for outlines;
-  // dropped wholesale when Search::revision() moves, since placement edits move
-  // the boxes.  Keyed by block because dbGroup ids are per-block: a multi-die
-  // design renders one chiplet block per tile pass, and a single shared map
-  // would answer every block with the first one's boxes.
-  //
-  // Search registers no dbGroup callbacks, so the revision alone would not
-  // notice groups appearing after the first render — the entry carries the
-  // group count it was built from.  What that still misses is an instance added
-  // to an existing group with no placement edit anywhere; a dbGroup callback in
-  // Search is the only complete answer, and it does not exist yet.
-  using GroupBoxes = std::map<uint32_t, odb::Rect>;
-  struct GroupBoxesEntry
-  {
-    size_t group_count = 0;
-    std::shared_ptr<const GroupBoxes> boxes;
-  };
-  mutable std::mutex group_boxes_mutex_;
-  mutable odb::PtrMap<odb::dbBlock, GroupBoxesEntry> group_boxes_by_block_;
-  mutable uint64_t group_boxes_revision_ = 0;
-  std::shared_ptr<const GroupBoxes> groupBoxes(odb::dbBlock* block) const;
-
-  // Outline + label each colored cluster on the `_clusters` layer.  Only
-  // groups whose color differs from their parent's are drawn, so a subtree
-  // that inherited its parent's color contributes a single box.
-  void drawClusterOutlines(std::vector<unsigned char>& image,
-                           odb::dbBlock* block,
-                           const std::map<uint32_t, Color>& group_colors,
-                           const TileFrame& frame) const;
 
   // Cached chiplet traversal.  See chiplets().  Invalidated in
   // eagerInit() and also auto-invalidated when the chiplet hierarchy
