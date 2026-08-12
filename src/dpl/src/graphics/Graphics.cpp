@@ -162,11 +162,12 @@ void Graphics::redrawAndPause()
 
 void Graphics::drawObjects(gui::Painter& painter)
 {
+  // Held for the whole draw: placement runs concurrently on the main thread.
+  const std::lock_guard<std::mutex> lock(state_mutex_);
+
   if (!block_) {
     return;
   }
-  // Held for the whole draw: placement runs concurrently on the main thread.
-  const std::lock_guard<std::mutex> lock(state_mutex_);
 
   // Create a set of selected instances for fast lookup
   odb::PtrSet<odb::dbInst> selected_insts;
