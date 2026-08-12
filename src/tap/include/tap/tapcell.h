@@ -40,6 +40,7 @@ struct Options
   int halo_x = -1;  // default = 2um
   int halo_y = -1;  // default = 2um
   int row_min_width = -1;
+  int row_min_height = 0;  // 0 = disabled
   odb::dbMaster* cnrcap_nwin_master = nullptr;
   odb::dbMaster* cnrcap_nwout_master = nullptr;
   odb::dbMaster* tap_nwintie_master = nullptr;
@@ -188,6 +189,7 @@ class Tapcell
                     const InstTree& fixed_instances);
 
   int defaultDistance() const;
+  int maxCoreCellHeight() const;
 
   std::vector<Polygon90> getBoundaryAreas() const;
   std::vector<Edge> getBoundaryEdges(const Polygon& area, bool outer) const;
