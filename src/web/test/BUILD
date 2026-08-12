@@ -178,6 +178,20 @@ js_test(
 )
 
 js_test(
+    name = "dpr_test",
+    data = JS_FILES,
+    entry_point = "js/test-dpr.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "device_pixels_test",
+    data = JS_FILES,
+    entry_point = "js/test-device-pixels.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "theme_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-theme.js",

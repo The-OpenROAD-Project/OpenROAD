@@ -223,6 +223,7 @@ TESTS = [
     "report_dont_use",
     "report_dont_use_corners",
     "report_equiv_cells",
+    "unset_dont_use_equiv_cells",
     "report_floating_nets1",
     "report_floating_nets2",
     "report_floating_nets3",

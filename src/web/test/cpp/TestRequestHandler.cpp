@@ -17,6 +17,7 @@
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "gtest/gtest.h"
+#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -80,6 +81,101 @@ class FakeDescriptor : public gui::Descriptor
   void highlight(const std::any& object, gui::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
+  }
+};
+
+// Minimal dbNet descriptor so tests can build a gui::Selected whose
+// isNet() is true; highlight() stands in for the wire-shape drawing of
+// the real NetDescriptor (a big rect the flywire mode must suppress).
+class FakeNetDescriptor : public gui::Descriptor
+{
+ public:
+  static constexpr int kWireRectSize = 90000;
+
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbNet*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Net"; }
+
+  std::string getTypeName(const std::any&) const override { return "Net"; }
+
+  bool getBBox(const std::any&, odb::Rect& bbox) const override
+  {
+    bbox = odb::Rect(0, 0, kWireRectSize, kWireRectSize);
+    return true;
+  }
+
+  bool isNet(const std::any&) const override { return true; }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbNet*>(l) < std::any_cast<odb::dbNet*>(r);
+  }
+
+  void highlight(const std::any&, gui::Painter& painter) const override
+  {
+    painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
+  }
+};
+
+// Minimal dbInst descriptor reporting the instance bbox in its OWN block's
+// coordinates, which is what every real gui::Descriptor does.  Registering it
+// lets a select request reach writeInspectPayload without a dbSta (the real
+// DbInstDescriptor dereferences one in getProperties).
+class LocalBBoxInstDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbInst*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Inst"; }
+
+  std::string getTypeName(const std::any&) const override { return "Inst"; }
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  {
+    bbox = std::any_cast<odb::dbInst*>(object)->getBBox()->getBox();
+    return true;
+  }
+
+  bool isInst(const std::any&) const override { return true; }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbInst*>(l) < std::any_cast<odb::dbInst*>(r);
+  }
+
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
@@ -164,6 +260,50 @@ class TileHandlerTest : public tst::Nangate45Fixture
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     handler_ = std::make_unique<TileHandler>(gen_);
+  }
+
+  // Driver (buf1.Z) and sink (buf2.A) placed buffers on a new net.
+  odb::dbNet* makeConnectedNet(const char* net_name)
+  {
+    odb::dbMaster* master = lib_->findMaster("BUF_X16");
+    if (!master) {
+      return nullptr;
+    }
+    const std::string base = net_name;
+    odb::dbInst* buf1
+        = odb::dbInst::create(block_, master, (base + "_drv").c_str());
+    buf1->setLocation(10000, 10000);
+    buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbInst* buf2
+        = odb::dbInst::create(block_, master, (base + "_snk").c_str());
+    buf2->setLocation(60000, 60000);
+    buf2->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbNet* net = odb::dbNet::create(block_, net_name);
+    buf1->findITerm("Z")->connect(net);
+    buf2->findITerm("A")->connect(net);
+    return net;
+  }
+
+  // Prime the highlight state the way an inspect would, so an overlay request
+  // can exercise a "Flywires only" flip against it.
+  void primeInspected(const gui::Selected& sel)
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = sel;
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  // An overlay-tile request with the "Flywires only" toggle in a given
+  // position.
+  static WebSocketRequest overlayRequest(uint32_t id, bool flywires_only)
+  {
+    WebSocketRequest req;
+    req.id = id;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(flywires_only
+                            ? R"({"z":0,"x":0,"y":0,"flywires_only":true})"
+                            : R"({"z":0,"x":0,"y":0,"flywires_only":false})");
+    return req;
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -317,6 +457,96 @@ TEST_F(TileHandlerTest, ClampsDprIntoRange)
   }
 }
 
+// The client names the exact device-pixel square the tile will be displayed in,
+// because neither end can derive it: a tile's CSS box is a whole number of
+// device pixels only when tileSize*dpr is, and at a 1.6667 display scale
+// 256*dpr is 426.67 -- a size no image can have.  A tile that is not the size
+// of its box is resampled by the browser, which fades its edges into its
+// neighbours: the tile seams this replaced.
+TEST_F(TileHandlerTest, HonoursTheClientRequestedPixelCount)
+{
+  // The sizes a 240 CSS px tile works out to across real display ratios.
+  for (const uint32_t px : {240u, 300u, 320u, 360u, 400u, 420u, 480u, 720u}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1.67,"tile_px":)"
+        + std::to_string(px) + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << px;
+    EXPECT_EQ(pngWidth(resp.payload), px)
+        << "asked for " << px << " px and must not get 256*dpr";
+  }
+}
+
+TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
+{
+  // The two are independent inputs: the count sizes the tile, the ratio scales
+  // what is authored in CSS px (fonts, stroke widths, the sub-resolution cull).
+  for (const char* dpr : {"1", "1.25", "1.67", "3"}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],"dpr":)"
+        + std::string(dpr) + R"(,"tile_px":400})");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << dpr;
+    EXPECT_EQ(pngWidth(resp.payload), 400u) << "dpr " << dpr;
+  }
+}
+
+TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
+{
+  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // hostile count must not be taken at face value.  0 and negatives mean "not
+  // specified" and fall back to 256*dpr.
+  const std::vector<std::pair<std::string, uint32_t>> cases = {
+      {"0", 256},        // unspecified -> 256 * dpr(1)
+      {"-5", 256},       // nonsense -> same
+      {"16", 32},        // below the floor
+      {"100000", 2048},  // above the ceiling
+  };
+  for (const auto& [requested, expected] : cases) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1,"tile_px":)"
+        + requested + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << requested;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << "tile_px " << requested;
+  }
+}
+
+TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
+{
+  // Two clients on different displays ask for different pixel counts of the
+  // same tile, and they are different images.  Without this in the key the
+  // second one is served the first one's size and the browser rescales it.
+  const auto render = [&](const std::string& px) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1.67,"tile_px":)"
+        + px + "}");
+    auto resp = handler_->handleTile(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+    return pngWidth(resp.payload);
+  };
+  EXPECT_EQ(render("400"), 400u);
+  EXPECT_EQ(render("480"), 480u);
+  // ...and back, which must come from the cache at its own size, not the last
+  // one rendered.
+  EXPECT_EQ(render("400"), 400u);
+}
+
 TEST_F(TileHandlerTest, TileReturnsPng)
 {
   WebSocketRequest req;
@@ -389,6 +619,46 @@ TEST_F(TileHandlerTest, OverlayTileReturnsPng)
   EXPECT_EQ(resp.payload[3], 'G');
 }
 
+// The overlay is composited over the layer tiles in the browser, so it has to
+// come back at the same pixel count they do; a 256 px overlay stretched over a
+// 400 px layer tile is blurry and no longer sits on the shapes it annotates.
+TEST_F(TileHandlerTest, OverlayTileHonoursTheRequestedPixelCount)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
+  for (const uint32_t px : {240u, 320u, 400u, 480u}) {
+    WebSocketRequest req;
+    req.id = 10;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,"dpr":1.67,"tile_px":)"
+                        + std::to_string(px) + "}");
+    auto resp = handler_->handleOverlayTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << px;
+    EXPECT_EQ(pngWidth(resp.payload), px) << "asked for " << px << " px";
+  }
+}
+
+TEST_F(TileHandlerTest, OverlayTileClampsAndFallsBack)
+{
+  const std::vector<std::pair<std::string, uint32_t>> cases = {
+      {R"("dpr":1)", 256},                    // unspecified -> 256 * dpr
+      {R"("dpr":2)", 512},                    // ...which follows dpr
+      {R"("dpr":1,"tile_px":0)", 256},        // explicit "not specified"
+      {R"("dpr":1,"tile_px":100000)", 2048},  // above the ceiling
+  };
+  for (const auto& [fields, expected] : cases) {
+    WebSocketRequest req;
+    req.id = 10;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,)" + fields + "}");
+    auto resp = handler_->handleOverlayTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << fields;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << fields;
+  }
+}
+
 TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
 {
   // Put a highlight rect in the state
@@ -406,6 +676,260 @@ TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
   auto resp = handler_->handleOverlayTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);
   EXPECT_FALSE(resp.payload.empty());
+}
+
+//------------------------------------------------------------------------------
+// "Flywires only" (Misc toggle) — selection flywires on the overlay
+//------------------------------------------------------------------------------
+
+TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
+{
+  odb::dbNet* net = makeConnectedNet("sig");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Toggle ON via overlay request: highlight re-derived as flywires.
+  WebSocketRequest req = overlayRequest(20, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "flywires_only should produce driver->sink lines";
+    for (const auto& r : state_.highlight_rects) {
+      EXPECT_LT(r.dx(), FakeNetDescriptor::kWireRectSize)
+          << "wire shapes must be suppressed in flywire mode";
+    }
+  }
+
+  // Toggle back OFF: unrouted net keeps its flywires (GUI fallback) and
+  // the descriptor's wire shapes are collected again.
+  req = overlayRequest(21, /*flywires_only=*/false);
+  resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "unrouted net keeps flywires with the toggle off (GUI parity)";
+    bool has_wire_rect = false;
+    for (const auto& r : state_.highlight_rects) {
+      has_wire_rect
+          = has_wire_rect || r.dx() == FakeNetDescriptor::kWireRectSize;
+    }
+    EXPECT_TRUE(has_wire_rect)
+        << "descriptor wire shapes should return when the toggle is off";
+  }
+}
+
+TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("sig2");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+    // Simulate an explicit "clear highlights" that kept the inspected
+    // object (e.g. DRC clear): vectors empty, highlights inactive.
+  }
+
+  WebSocketRequest req = overlayRequest(23, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "toggle flip must not resurrect cleared highlights";
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+TEST_F(TileHandlerTest, NonNetPayloadWithIsNetDoesNotThrow)
+{
+  // A descriptor may report isNet()==true while its payload is NOT a
+  // plain dbNet* (e.g. DbNetDescriptor::NetWithSink).  The collector
+  // must fall back to the generic highlight path instead of throwing
+  // std::bad_any_cast.
+  class FakeNetWithSinkDescriptor : public FakeNetDescriptor
+  {
+   public:
+    std::string getName(const std::any&) const override { return "nws"; }
+    void highlight(const std::any&, gui::Painter& painter) const override
+    {
+      painter.drawRect(odb::Rect(0, 0, 1000, 1000));
+    }
+  };
+  static FakeNetWithSinkDescriptor descriptor;
+  // Payload is an int — any_cast<odb::dbNet*> by value would throw.
+  primeInspected(descriptor.makeSelected(std::any(42)));
+
+  WebSocketRequest req = overlayRequest(24, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty());
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "non-dbNet payload should use the generic highlight path";
+}
+
+TEST_F(TileHandlerTest, FlywiresSkipSupplyNets)
+{
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  odb::dbInst* buf1 = odb::dbInst::create(block_, master, "buf1");
+  buf1->setLocation(10000, 10000);
+  buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  buf1->findITerm("A")->connect(pwr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(pwr)));
+
+  WebSocketRequest req = overlayRequest(22, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "supply nets must not get flywires (GUI parity)";
+}
+
+// A "Flywires only" flip must re-derive the highlight from the SAME selection
+// it came from.  Preferring current_inspected (which a click sets to the LAST
+// object hit) silently dropped every other member of a shift+click
+// multi-selection on the first flip, and flipping back did not restore them
+// (reported on the PR #10806 review).
+TEST_F(TileHandlerTest, FlywiresFlipPreservesMultiSelection)
+{
+  odb::dbNet* net_a = makeConnectedNet("multi_a");
+  odb::dbNet* net_b = makeConnectedNet("multi_b");
+  ASSERT_NE(net_a, nullptr);
+  ASSERT_NE(net_b, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    // As after two shift+clicks: both nets selected, the second one inspected.
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_a)));
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_b)));
+    state_.selection_itr = state_.selection_set.begin();
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net_b));
+    state_.highlight_source = SessionState::HighlightSource::kSelectionSet;
+  }
+
+  // Each net has one driver and one sink, so one flywire per net.
+  WebSocketRequest req = overlayRequest(25, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.highlight_lines.size(), 2u)
+        << "both selected nets must keep their flywires across the flip";
+  }
+
+  // ... and flipping back keeps both, too (the unrouted-net fallback).
+  req = overlayRequest(26, /*flywires_only=*/false);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 2u)
+      << "un-toggling must not narrow the selection either";
+}
+
+// The other half of the invariant: when the user followed an inspector link out
+// of the selection set, handleInspect deliberately narrowed the highlight to
+// that one object, so a flip must NOT widen it back to the whole set.
+TEST_F(TileHandlerTest, FlywiresFlipAfterLinkFollowKeepsSingleObject)
+{
+  odb::dbNet* net_a = makeConnectedNet("link_a");
+  odb::dbNet* net_b = makeConnectedNet("link_b");
+  odb::dbNet* linked = makeConnectedNet("link_target");
+  ASSERT_NE(net_a, nullptr);
+  ASSERT_NE(net_b, nullptr);
+  ASSERT_NE(linked, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_a)));
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_b)));
+    state_.selection_itr = state_.selection_set.end();
+    state_.current_inspected = net_descriptor.makeSelected(std::any(linked));
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  WebSocketRequest req = overlayRequest(27, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 1u)
+      << "the link target's highlight must not grow into the selection set";
+}
+
+// "Flywires only" suppresses the routed wire/guide shapes, NOT the special
+// (geometric) routing: the GUI draws SWires at the tail of
+// DbNetDescriptor::highlight regardless of the mode.
+TEST_F(TileHandlerTest, FlywiresOnlyKeepsSpecialWireShapes)
+{
+  odb::dbNet* net = makeConnectedNet("special_sig");
+  ASSERT_NE(net, nullptr);
+  net->setSpecial();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  ASSERT_NE(swire, nullptr);
+  odb::dbSBox::create(
+      swire, metal1, 20000, 20000, 30000, 21000, odb::dbWireShapeType::NONE);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  WebSocketRequest req = overlayRequest(28, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "a routed special net gets no flywires (GUI parity)";
+  const auto& rects = state_.highlight_rects;
+  EXPECT_NE(std::ranges::find(rects, odb::Rect(20000, 20000, 30000, 21000)),
+            rects.end())
+      << "the SWire shape must survive flywires-only mode";
+}
+
+// Same for supply nets, which is the worst case of the bug: their flywires AND
+// their ITerm boxes are suppressed by GUI parity, so before the fix a selected
+// power net came back with no highlight at all.
+TEST_F(TileHandlerTest, FlywiresOnlySupplyNetKeepsShapes)
+{
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD_swire");
+  pwr->setSigType(odb::dbSigType::POWER);
+  pwr->setSpecial();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbSWire* swire = odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  ASSERT_NE(swire, nullptr);
+  odb::dbSBox::create(
+      swire, metal1, 0, 40000, 100000, 41000, odb::dbWireShapeType::NONE);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(pwr)));
+
+  WebSocketRequest req = overlayRequest(29, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "supply nets must not get flywires (GUI parity)";
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "a selected supply net must still be highlighted by its SWires";
 }
 
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
@@ -662,6 +1186,31 @@ TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"error\""), std::string::npos);
+}
+
+// An inspect that resolves to nothing clears the highlight vectors, so it must
+// also clear the source tag.  Leaving it set let a later "Flywires only" flip
+// re-derive the highlight from the stale current_inspected — resurrecting
+// exactly what the tag exists to keep dismissed.
+TEST_F(SelectHandlerTest, InvalidInspectDoesNotPrimeHighlights)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":999})");
+  ASSERT_EQ(handler_->handleInspect(req, state_).type,
+            WebSocketResponse::kJson);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty());
+  EXPECT_EQ(state_.highlight_source, SessionState::HighlightSource::kNone)
+      << "an empty selection must not leave the highlights primed";
 }
 
 TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
@@ -2217,6 +2766,86 @@ TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
   std::lock_guard<std::mutex> lock(state_.cancelled_mutex);
   EXPECT_EQ(state_.cancelled_ids.count(5), 1u);
   EXPECT_EQ(state_.cancelled_ids.count(6), 1u);
+}
+
+// Regression: the inspect payload's `bbox` must be in ROOT/world coordinates.
+//
+// A gui::Descriptor reports a bbox in the object's own block coordinates, while
+// selectAt already transforms SelectionResult::bbox into world space.  The
+// client draws its selection outline from the payload's `bbox`, so if that one
+// stays block-local, every object inside a translated dbChipInst is outlined at
+// the untransformed location — off by exactly the chiplet offset.
+TEST_F(SelectHandlerTest, InspectBboxIsInWorldCoordinatesForAChiplet)
+{
+  // handleSelect resolves the picked hit through the descriptor registry, which
+  // nothing else in this binary populates.  Scoped so the process-global
+  // registry is left as it was found even if an assertion below fires.  The
+  // registry holds descriptors by unique_ptr, so this must be heap-allocated.
+  struct ScopedInstDescriptor
+  {
+    ScopedInstDescriptor() : registry(gui::DescriptorRegistry::instance())
+    {
+      registry->registerDescriptor<odb::dbInst*>(new LocalBBoxInstDescriptor);
+    }
+    ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
+    gui::DescriptorRegistry* registry;
+  } scoped_inst_descriptor;
+
+  // Re-root the design under a HIER chip holding one instance of the fixture's
+  // chip, translated far enough that a block-local bbox cannot be mistaken for
+  // a world one.
+  constexpr int kOffsetX = 400000;
+  constexpr int kOffsetY = 250000;
+  odb::dbChip* master = getDb()->getChip();
+  ASSERT_NE(master, nullptr);
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), /*tech=*/nullptr, "root", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst* chiplet = odb::dbChipInst::create(root, master, "die0");
+  chiplet->setLoc(odb::Point3D(kOffsetX, kOffsetY, 0));
+  getDb()->setTopChip(root);
+
+  // buf1 sits at the origin of its own block, so in world space it sits at the
+  // chiplet offset.
+  odb::dbInst* buf1 = block_->findInst("buf1");
+  ASSERT_NE(buf1, nullptr);
+  const odb::Rect local = buf1->getBBox()->getBox();
+
+  WebSocketRequest req;
+  req.id = 77;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(R"({"dbu_x":401000,"dbu_y":251000,"zoom":0,)"
+                      R"("visible_layers":[]})");
+  auto resp = handler_->handleSelect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object root_obj = parseObj(payloadStr(resp));
+  const auto& selected = root_obj.at("selected").as_array();
+  ASSERT_FALSE(selected.empty()) << payloadStr(resp);
+  ASSERT_TRUE(root_obj.contains("bbox")) << payloadStr(resp);
+
+  const auto& bbox = root_obj.at("bbox").as_array();
+  ASSERT_EQ(bbox.size(), 4u);
+  const odb::Rect payload_bbox(bbox[0].to_number<int>(),
+                               bbox[1].to_number<int>(),
+                               bbox[2].to_number<int>(),
+                               bbox[3].to_number<int>());
+
+  // Translated by the chiplet offset, not left in block-local space.
+  EXPECT_EQ(payload_bbox,
+            odb::Rect(local.xMin() + kOffsetX,
+                      local.yMin() + kOffsetY,
+                      local.xMax() + kOffsetX,
+                      local.yMax() + kOffsetY));
+  EXPECT_NE(payload_bbox, local);
+
+  // And it agrees with the world-space bbox selectAt reports for the same hit,
+  // which is what the two used to disagree about.
+  const auto& hit = selected[0].as_object().at("bbox").as_array();
+  EXPECT_EQ(payload_bbox,
+            odb::Rect(hit[0].to_number<int>(),
+                      hit[1].to_number<int>(),
+                      hit[2].to_number<int>(),
+                      hit[3].to_number<int>()));
 }
 
 }  // namespace
