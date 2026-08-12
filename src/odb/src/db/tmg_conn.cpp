@@ -1305,14 +1305,23 @@ int tmg_conn::getStartNode()
     }
   }
 
-  // The starting point of an input bump net is the bump iterm. Note that
-  // bump nets have a bterm that represents the logical connectivity of the
-  // bump, but it has no physical geometry and is invisible to the graph.
-  if (bt_drv && bt_drv->getBPins().empty()
-      && dbProperty::find(net_, "BUMP_ASSIGNMENT")) {
-    for (const tmg_rcterm& rc_term : termV_) {
-      if (rc_term.iterm && rc_term.iterm->isSpecial() && rc_term.pt) {
-        return (rc_term.pt - ptV_.data());
+  // On a 3D-IC design, the starting point of an input bump net is the bump
+  // iterm even though such a net does have a bterm. The bterm has no geometry
+  // and only serves to represent the logical connectivity. The following code
+  // will NOT work if a die with such a net is loaded independently as a 2D
+  // design. This will need to be revisited.
+  if (bt_drv && bt_drv->getBPins().empty()) {
+    dbChipBump* chip_bump = bt_drv->getChipBump();
+
+    if (chip_bump) {
+      dbInst* bump = chip_bump->getInst();
+
+      for (const tmg_rcterm& rc_term : termV_) {
+        dbITerm* iterm = rc_term.iterm;
+
+        if (iterm && (iterm->getInst() == bump) && rc_term.pt) {
+          return (rc_term.pt - ptV_.data());
+        }
       }
     }
   }

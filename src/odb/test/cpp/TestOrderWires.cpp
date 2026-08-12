@@ -51,13 +51,18 @@ class TestOrderWires : public tst::Fixture
                                  .iterms = {{"net", "A"}}});
 
     // The bterm associated to the bump has no geometry.
-    makeBTerm(block_, "net", {.io_type = dbIoType::INPUT, .bpins = {}});
+    dbBTerm* bterm
+        = makeBTerm(block_, "net", {.io_type = dbIoType::INPUT, .bpins = {}});
 
     bump_net.net = block_->findNet("net");
     bump_net.receiver_iterm = receiver->findITerm("A");
     bump_net.bump_iterm = bump->findITerm("A");
-    bump_net.bump_iterm->setSpecial();
-    dbStringProperty::create(bump_net.net, "BUMP_ASSIGNMENT", "ASSIGNED");
+
+    dbChipRegion* chip_region = dbChipRegion::create(
+        db_->getChip(), "R1", dbChipRegion::Side::FRONT, nullptr);
+    dbChipBump* chip_bump = dbChipBump::create(chip_region, bump);
+    chip_bump->setNet(bump_net.net);
+    chip_bump->setBTerm(bterm);
 
     bump_net.receiver_iterm->getAvgXY(&bump_net.receiver_x,
                                       &bump_net.receiver_y);
