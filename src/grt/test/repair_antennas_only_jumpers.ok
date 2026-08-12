@@ -9,8 +9,8 @@
 [INFO ANT-0001] Found 8 pin violations.
 [INFO GRT-0012] Found 8 antenna violations.
 [INFO GRT-0302] Inserted 7 jumpers for 7 nets.
-[INFO GRT-0012] Found 2 antenna violations.
-[INFO ANT-0002] Found 2 net violations.
-[INFO ANT-0001] Found 2 pin violations.
+[INFO GRT-0012] Found 1 antenna violations.
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 1 pin violations.
 No differences found.
 No differences found.
