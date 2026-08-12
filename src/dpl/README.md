@@ -47,6 +47,7 @@ detailed_placement
     [-disallow_one_site_gaps]
     [-report_file_name filename]
     [-use_diamond_legalizer]
+    [-pdn_aware]
     [-site_search_window sites]
     [-row_search_window rows]
     [-drc_penalty penalty]
@@ -63,6 +64,7 @@ detailed_placement
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_diamond_legalizer` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
+| `-pdn_aware` | Prevent cell pin and obstruction spacing conflicts with fixed vias on special power and ground nets. This check is disabled by default and works with both legalization engines. Supply pins must be connected to their special nets for same-net exemptions. The mode remains active for subsequent `optimize_mirroring` and `check_placement` commands until the next `detailed_placement` call. |
 | `-site_search_window` | NegotiationLegalizer: base number of sites a cell may be moved left or right of its initial position, capped by `-max_displacement`. Default `20`, `0` allowed (no horizontal movement). |
 | `-row_search_window` | NegotiationLegalizer: base number of rows a cell may be moved up or down from its initial position, capped by `-max_displacement`. Default `5`, `0` allowed (no row changes). |
 | `-disable_window_extension` | NegotiationLegalizer: disables all search-window extensions, so the window is fixed to the base `-site_search_window`/`-row_search_window` size regardless of cell size or nearby walls. By default, the effective search window can instead grow past base sizing in two ways: (1) it's extended to at least the cell's own width/height, and (2) extended if cut short by a macro or core boundary. |

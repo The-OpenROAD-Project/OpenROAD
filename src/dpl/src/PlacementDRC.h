@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -9,6 +10,7 @@
 #include "utl/Logger.h"
 
 namespace odb {
+class dbBlock;
 class dbTech;
 class dbOrientType;
 }  // namespace odb
@@ -41,6 +43,9 @@ class PlacementDRC
                odb::dbTech* tech,
                Padding* padding,
                bool disallow_one_site_gap);
+  ~PlacementDRC();
+  void initFixedSupplyVias(odb::dbBlock* block);
+  void clearFixedSupplyVias();
   bool checkEdgeSpacing(const Node* cell) const;
   // Check edge spacing for a cell at a given location and orientation
   bool checkEdgeSpacing(const Node* cell,
@@ -49,6 +54,11 @@ class PlacementDRC
                         const odb::dbOrientType& orient) const;
   bool checkBlockedLayers(const Node* cell) const;
   bool checkBlockedLayers(const Node* cell, GridX x, GridY y) const;
+  bool checkFixedSupplyVias(const Node* cell) const;
+  bool checkFixedSupplyVias(const Node* cell,
+                            GridX x,
+                            GridY y,
+                            const odb::dbOrientType& orient) const;
   // Check shared padding spacing conflicts
   bool checkPadding(const Node* cell) const;
   bool checkPadding(const Node* cell, GridX x, GridY y) const;
@@ -64,18 +74,21 @@ class PlacementDRC
                 GridY y,
                 const odb::dbOrientType& orient) const;
 
-  // Count the number of DRC check categories that fail (0–4)
+  // Count the number of DRC check categories that fail (0-5)
   int countDRCViolations(const Node* cell) const;
   int countDRCViolations(const Node* cell,
                          GridX x,
                          GridY y,
-                         const odb::dbOrientType& orient) const;
+                         const odb::dbOrientType& orient,
+                         bool include_fixed_supply_vias = true) const;
 
   int getEdgeTypeIdx(const std::string& edge_type) const;
   bool hasCellEdgeSpacingTable() const;
   int getMaxSpacing(int edge_type_idx) const;
 
  private:
+  class FixedSupplyVias;
+
   // Member variables
   utl::Logger* logger_{nullptr};
   Grid* grid_{nullptr};        // Pointer to the grid for placement
@@ -85,6 +98,7 @@ class PlacementDRC
       edge_spacing_table_;  // LEF58_CELLEDGESPACINGTABLE between edge type
                             // pairs [from_idx][to_idx]
   bool disallow_one_site_gap_{false};
+  std::unique_ptr<FixedSupplyVias> fixed_supply_vias_;
 
   // Helper functions
   DbuX gridToDbu(GridX grid_x, DbuX site_width) const;

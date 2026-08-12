@@ -66,7 +66,7 @@ void Opendp::diamondDPL()
   }
 
   placement_failures_.clear();
-  initGrid();
+  initGrid(pdn_aware_);
   // Paint fixed cells.
   setFixedGridCells();
   // Paint initially place2d cells (respecting already legalized ones).

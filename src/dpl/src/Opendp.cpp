@@ -133,13 +133,16 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int site_search_window,
                                const int row_search_window,
                                const double drc_penalty,
-                               const bool disable_window_extension)
+                               const bool disable_window_extension,
+                               const bool pdn_aware)
 {
   utl::Timer timer;
   incremental_ = incremental;
   use_diamond_legalizer_ |= use_diamond_legalizer;
   importDb();
   adjustNodesOrient();
+  pdn_aware_ = pdn_aware;
+  pdn_aware_block_ = block_;
   if (!incremental_) {
     for (const auto& node : network_->getNodes()) {
       if (node->getType() == Node::CELL && !node->isFixed()) {
@@ -233,14 +236,14 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         logger_->info(DPL, 35, " {}", cell->name());
       }
 
-      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
+      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {}, {});
       if (!report_file_name.empty()) {
         writeJsonReport(report_file_name);
       }
       logger_->error(DPL, 36, "Detailed placement failed inside DPL.");
     }
   } else {
-    initGrid();
+    initGrid(pdn_aware_);
     setFixedGridCells();
     // Populate pixel->group for each fence region so diamondRecovery's
     // underlying diamondSearch correctly enforces region constraints.
@@ -278,7 +281,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->metric("NL__no__converge__final_violations",
                       negotiation.numViolations());
       const auto illegal_nodes = negotiation.getIllegalNodes();
-      saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {});
+      saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {}, {});
       if (!report_file_name.empty()) {
         writeJsonReport(report_file_name);
       }
@@ -371,6 +374,17 @@ void Opendp::findDisplacementStats()
 void Opendp::optimizeMirroring()
 {
   OptimizeMirroring opt(logger_, db_);
+  if (isPdnAwareForCurrentBlock()) {
+    importDb();
+    adjustNodesOrient();
+    initGrid(true);
+    opt.setLegalPredicate(
+        [this](odb::dbInst* inst, const odb::dbOrientType& orient) {
+          Node* cell = network_->getNode(inst);
+          return drc_engine_->checkFixedSupplyVias(
+              cell, grid_->gridX(cell), grid_->gridRoundY(cell), orient);
+        });
+  }
   opt.run();
 }
 
@@ -461,10 +475,26 @@ int Opendp::padRight(odb::dbInst* inst) const
   return padding_->padRight(inst).v;
 }
 
-void Opendp::initGrid()
+bool Opendp::isPdnAwareForCurrentBlock()
+{
+  odb::dbBlock* current_block
+      = db_->getChip() == nullptr ? nullptr : db_->getChip()->getBlock();
+  if (pdn_aware_block_ != current_block) {
+    pdn_aware_ = false;
+    pdn_aware_block_ = current_block;
+  }
+  return pdn_aware_;
+}
+
+void Opendp::initGrid(const bool check_fixed_supply_vias)
 {
   grid_->initGrid(
       db_, block_, padding_, max_displacement_x_, max_displacement_y_);
+  if (check_fixed_supply_vias) {
+    drc_engine_->initFixedSupplyVias(block_);
+  } else {
+    drc_engine_->clearFixedSupplyVias();
+  }
 }
 
 void Opendp::deleteGrid()

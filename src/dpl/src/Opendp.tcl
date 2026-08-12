@@ -7,6 +7,7 @@ sta::define_cmd_args "detailed_placement" { \
                            [-incremental] \
                            [-report_file_name file_name] \
                            [-use_diamond_legalizer] \
+                           [-pdn_aware] \
                            [-site_search_window sites] \
                            [-row_search_window rows] \
                            [-drc_penalty penalty] \
@@ -16,7 +17,7 @@ proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name \
           -site_search_window -row_search_window -drc_penalty} \
-    flags {-disallow_one_site_gaps -incremental -use_diamond_legalizer \
+    flags {-disallow_one_site_gaps -incremental -use_diamond_legalizer -pdn_aware \
            -disable_window_extension}
 
   if { [info exists keys(-max_displacement)] } {
@@ -79,7 +80,8 @@ proc detailed_placement { args } {
       $file_name [info exists flags(-incremental)] \
       [info exists flags(-use_diamond_legalizer)] \
       $site_search_window $row_search_window $drc_penalty \
-      [info exists flags(-disable_window_extension)]
+      [info exists flags(-disable_window_extension)] \
+      [info exists flags(-pdn_aware)]
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."

@@ -1081,8 +1081,8 @@ bool NegotiationLegalizer::isCellLegal(int cell_idx) const
     return false;
   }
 
-  // Check placement DRCs (edge spacing, blocked layers, padding,
-  // one-site gaps) against neighbours on the DPL Grid.
+  // Check placement DRCs (edge spacing, blocked layers, padding, one-site
+  // gaps, and fixed supply vias) using the DPL Grid.
   if (opendp_ && opendp_->drc_engine_ && network_) {
     Node* node = cell.node;
     if (node != nullptr
