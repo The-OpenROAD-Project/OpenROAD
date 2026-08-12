@@ -6193,7 +6193,6 @@ bool dbNetwork::isDPin(odb::dbITerm* iterm) const
 
 int dbNetwork::getNumD(odb::dbInst* inst) const
 {
-  int cnt_d = 0;
   const Cell* cell = dbToSta(inst->getMaster());
   const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell == nullptr) {
