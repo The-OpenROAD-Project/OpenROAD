@@ -96,14 +96,15 @@ struct Flop
 
 std::string MBFF::Mask::to_string() const
 {
-  return fmt::format("{}{}{}{}{}{}{}",
+  return fmt::format("{}{}{}{}{}{}{}{}",
                      (int) clock_polarity,
                      (int) has_clear,
                      (int) has_preset,
                      (int) pos_output,
                      (int) inv_output,
                      func_idx,
-                     (int) is_scan_cell);
+                     (int) is_scan_cell,
+                     (int) is_register);
 }
 
 bool MBFF::Mask::operator<(const Mask& rhs) const
@@ -114,14 +115,16 @@ bool MBFF::Mask::operator<(const Mask& rhs) const
                   pos_output,
                   inv_output,
                   func_idx,
-                  is_scan_cell)
+                  is_scan_cell,
+                  is_register)
          < std::tie(rhs.clock_polarity,
                     rhs.has_clear,
                     rhs.has_preset,
                     rhs.pos_output,
                     rhs.inv_output,
                     rhs.func_idx,
-                    rhs.is_scan_cell);
+                    rhs.is_scan_cell,
+                    rhs.is_register);
 }
 
 namespace {
@@ -283,6 +286,7 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
   const sta::LibertyCell* lib_cell = network_->testCell(cell);
   const auto& seqs = lib_cell->sequentials();
   if (!seqs.empty()) {
+    ret.is_register = seqs.front().isRegister();
     ret.func_idx = GetMatchingFunc(seqs.front().data(), inst, isTray);
   }
 
