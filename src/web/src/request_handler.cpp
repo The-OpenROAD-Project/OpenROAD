@@ -596,8 +596,8 @@ static bool collectMultiHighlightShapes(const gui::SelectionSet& selections,
     if (!sel) {
       continue;
     }
-    // `>=`, not `== 0`: the net paths write special-wire shapes into `rects`
-    // with no budget, so the total can already be past the cap and the unsigned
+    // `>=`, not `==`: the net paths write special-wire shapes into `rects` with
+    // no budget, so `used` can already be past the cap and the unsigned
     // subtraction below would wrap.
     const size_t used = rects.size() + polys.size();
     if (used >= kMaxHighlightShapes) {

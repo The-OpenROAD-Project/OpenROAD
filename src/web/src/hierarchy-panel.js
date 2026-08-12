@@ -20,6 +20,7 @@ export class HierarchyPanel {
     constructor(container, app, redrawAllLayers) {
         this._app = app;
         this._widgets = new Map();  // view name → widget
+        this._stale = new Set();    // views to re-render when next shown
 
         this._select = document.createElement('select');
         this._select.className = 'hierarchy-view-select';
@@ -56,10 +57,25 @@ export class HierarchyPanel {
                 // cannot be left behind in the hidden view.
                 widget.toolbar.insertBefore(this._select,
                                             widget.toolbar.firstChild);
+                if (this._stale.delete(view_name)) widget._render();
             }
         }
         this._select.value = name;
         this._activeView = name;
+    }
+
+    // Re-render after something that changes how the rows are formatted (the
+    // DBU toggle).  A hidden table cannot be measured, so its columns would
+    // come out collapsed; the inactive views are only marked and re-rendered
+    // when they are next shown.
+    refresh() {
+        for (const [name, widget] of this._widgets) {
+            if (name === this._activeView) {
+                widget._render();
+            } else {
+                this._stale.add(name);
+            }
+        }
     }
 
     activeView() {

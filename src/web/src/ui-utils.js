@@ -142,10 +142,17 @@ export function makeResizableHeaders(table, widths) {
         table.style.tableLayout = 'auto';
         headers.forEach((th) => th.style.width = '');
         widths = Array.from(headers, (th) => th.offsetWidth + 'px');
+        // A table that is not laid out — one rendered inside a hidden view —
+        // measures every column at zero; locking that in collapses them.  Stay
+        // on auto and let the next render, with the table visible, lock the
+        // real widths.
+        if (widths.every((w) => w === '0px')) widths = null;
     }
     // Lock in widths and switch to fixed layout
-    headers.forEach((th, i) => th.style.width = widths[i] || '');
-    table.style.tableLayout = 'fixed';
+    if (widths) {
+        headers.forEach((th, i) => th.style.width = widths[i] || '');
+        table.style.tableLayout = 'fixed';
+    }
 
     headers.forEach((th, idx) => {
         if (idx === headers.length - 1) return; // skip last column

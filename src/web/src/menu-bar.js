@@ -21,7 +21,6 @@ function highlightColors(app) {
     return Array.isArray(colors) ? colors : [];
 }
 
-// Is the Find dialog usable?  Needs a design, and a server to search it.
 // Focus the Hierarchy tab and switch it to one of its tree views.
 function showHierarchyView(app, view) {
     app.focusComponent('Browser');
@@ -30,6 +29,7 @@ function showHierarchyView(app, view) {
     }
 }
 
+// Is the Find dialog usable?  Needs a design, and a server to search it.
 export function canFind(app) {
     return !!app.designScale && !isStaticMode(app);
 }

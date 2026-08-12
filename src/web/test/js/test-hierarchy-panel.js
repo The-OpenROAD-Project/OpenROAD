@@ -159,6 +159,49 @@ describe('HierarchyPanel', () => {
         assert.deepEqual(visibleViews(panel), ['instances']);
     });
 
+    // The DBU toggle re-renders the rows.  Doing it on a hidden view is what
+    // breaks the table: makeResizableHeaders measures the headers, gets 0 from
+    // a table that is not laid out, and locks the columns at that width.
+    it('re-renders the hidden view only once it is shown', () => {
+        const panel = new HierarchyPanel(makeContainer(), createMockApp(),
+                                         () => {});
+        const renders = new Map();
+        for (const [name, widget] of panel._widgets) {
+            renders.set(name, 0);
+            const inner = widget._render.bind(widget);
+            widget._render = () => { renders.set(name, renders.get(name) + 1);
+                                     inner(); };
+        }
+
+        panel.refresh();
+        assert.equal(renders.get('instances'), 1, 'the visible view renders');
+        assert.equal(renders.get('clusters'), 0, 'the hidden one must wait');
+
+        panel.selectView('clusters');
+        assert.equal(renders.get('clusters'), 1, 'and renders once shown');
+        // Only what refresh() marked: switching back is not a re-render.
+        panel.selectView('instances');
+        panel.selectView('clusters');
+        assert.equal(renders.get('clusters'), 1);
+    });
+
+    // jsdom does no layout, so every table here measures zero — which is
+    // exactly the state the guard is for.  It cannot prove the visible case;
+    // only a browser can.
+    it('does not lock column widths measured on a table with no layout', () => {
+        const panel = new HierarchyPanel(makeContainer(), createMockApp(),
+                                         () => {});
+        for (const [name, widget] of panel._widgets) {
+            const table = widget._table;
+            assert.notEqual(table.style.tableLayout, 'fixed',
+                            name + ' table must stay on auto layout');
+            for (const th of table.querySelectorAll('thead th')) {
+                assert.notEqual(th.style.width, '0px',
+                                name + ' column must not be locked at zero');
+            }
+        }
+    });
+
     it('registers itself on the app for the View menu', () => {
         const app = createMockApp();
         const panel = new HierarchyPanel(makeContainer(), app, () => {});

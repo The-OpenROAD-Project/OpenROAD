@@ -1053,8 +1053,7 @@ app.toggleShowDbu = function() {
     // Re-render rulers so their labels update.
     if (app.rulerManager) app.rulerManager._rerenderAll();
     // Both views format area through fmtArea(app, ...), which reads showDbu.
-    if (app.hierarchyBrowser) app.hierarchyBrowser._render();
-    if (app.clustersWidget) app.clustersWidget._render();
+    if (app.hierarchyPanel) app.hierarchyPanel.refresh();
     // Update scale bar.
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
