@@ -6200,20 +6200,10 @@ int dbNetwork::getNumD(odb::dbInst* inst) const
     return 0;
   }
 
+  int cnt_d = 0;
   for (const Sequential& seq : lib_cell->sequentials()) {
-    const FuncExpr* data = seq.data();
-    if (data) {
-      for (auto port : data->ports()) {
-        odb::dbMTerm* mterm = staToDb(port);
-        if (mterm == nullptr) {
-          continue;
-        }
-        odb::dbITerm* iterm = inst->getITerm(mterm);
-        if (iterm == nullptr) {
-          continue;
-        }
-        cnt_d += !(isScanIn(iterm) || isScanEnable(iterm));
-      }
+    if (seq.isRegister() || seq.isLatch()) {
+      cnt_d++;
     }
   }
 
