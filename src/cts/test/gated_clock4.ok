@@ -117,12 +117,7 @@
     Sinks per sub-region: 18
     Sub-region size: 1.3843 X 1.6000
 [INFO CTS-0034]     Segment length (rounded): 1.
- Level 2
-    Direction: Vertical
-    Sinks per sub-region: 9
-    Sub-region size: 1.3843 X 0.8000
-[INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
+[INFO CTS-0031]  Stop criterion found. Min length of sink region is (1).
 [INFO CTS-0035]  Number of sinks covered: 36.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net h1\/gclk2.
@@ -204,12 +199,12 @@
 [INFO CTS-0015]     Created 5 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 8:2, 10:2..
 [INFO CTS-0017]     Max level of the clock tree: 2.
-[INFO CTS-0018]     Created 5 clock buffers.
+[INFO CTS-0018]     Created 3 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
-[INFO CTS-0015]     Created 5 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 7:1, 8:1, 10:1, 11:1..
-[INFO CTS-0017]     Max level of the clock tree: 2.
+[INFO CTS-0015]     Created 3 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 17:1, 19:1..
+[INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0018]     Created 5 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
@@ -243,11 +238,11 @@
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0098] Clock net "gclk3"
-[INFO CTS-0099]  Sinks 39
+[INFO CTS-0099]  Sinks 37
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 12.66 um
+[INFO CTS-0101]  Average sink wire length 15.62 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Dummy loads inserted 3
+[INFO CTS-0207]  Dummy loads inserted 1
 [INFO CTS-0098] Clock net "h1\/gclk2"
 [INFO CTS-0099]  Sinks 39
 [INFO CTS-0100]  Leaf buffers 0

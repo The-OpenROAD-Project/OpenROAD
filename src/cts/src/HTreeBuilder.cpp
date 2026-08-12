@@ -1244,6 +1244,7 @@ void HTreeBuilder::run()
 
   initSinkRegion();
 
+  bool enableFakeLutEntries = options_->isFakeLutEntriesEnabled();
   double prevMaxHPWL = std::numeric_limits<double>::max();
   for (int level = 1; level <= clockTreeMaxDepth_; ++level) {
     const unsigned numSinksPerSubRegion
@@ -1252,10 +1253,11 @@ void HTreeBuilder::run()
     computeSubRegionSize(level, regionWidth, regionHeight);
 
     if (isSubRegionTooSmall(regionWidth, regionHeight)) {
-      if (options_->isFakeLutEntriesEnabled()) {
+      if (enableFakeLutEntries) {
         const unsigned minIndex = 1;
         techChar_->createFakeEntries(minLengthSinkRegion_, minIndex);
         minLengthSinkRegion_ = 1;
+        enableFakeLutEntries = false;
       } else {
         logger_->info(
             CTS,

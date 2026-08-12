@@ -26,28 +26,23 @@
     Sinks per sub-region: 2
     Sub-region size: 642.1429 X 0.0000
 [INFO CTS-0034]     Segment length (rounded): 321.
- Level 2
-    Direction: Vertical
-    Sinks per sub-region: 1
-    Sub-region size: 642.1429 X 0.0000
-[INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0054]  Stop criterion found. Sink region hpwl (900.000 um) did not improve and max number of sinks is 15.
+[INFO CTS-0031]  Stop criterion found. Min length of sink region is (1).
 [INFO CTS-0035]  Number of sinks covered: 3.
-[INFO CTS-0018]     Created 43 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 22.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 22.
-[INFO CTS-0015]     Created 43 clock nets.
+[INFO CTS-0018]     Created 41 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 21.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 21.
+[INFO CTS-0015]     Created 41 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 1:1, 2:1..
-[INFO CTS-0017]     Max level of the clock tree: 2.
+[INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 3
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 5371.68 um
-[INFO CTS-0102]  Path depth 22 - 22
+[INFO CTS-0101]  Average sink wire length 5371.51 um
+[INFO CTS-0102]  Path depth 21 - 21
 [INFO CTS-0207]  Dummy loads inserted 0
 Total number of Clock Roots: 1.
-Total number of Buffers Inserted: 43.
-Total number of Clock Subnets: 43.
+Total number of Buffers Inserted: 41.
+Total number of Clock Subnets: 41.
 Total number of Sinks: 3.
 Cells used:
-  CLKBUF_X3: 43
+  CLKBUF_X3: 41
