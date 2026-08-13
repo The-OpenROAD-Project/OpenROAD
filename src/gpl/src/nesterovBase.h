@@ -1454,10 +1454,8 @@ class NesterovBase
   odb::dbTechLayer* io_hor_layer_ = nullptr;
   odb::dbTechLayer* io_ver_layer_ = nullptr;
 
-  size_t ioNbPos(size_t io_index) const
-  {
-    return nb_gcells_.size() - ioPinStor_.size() + io_index;
-  }
+  // defined after GCellHandle, which nb_gcells_ needs complete
+  size_t ioNbPos(size_t io_index) const;
 
   static constexpr size_t kNoMirrorPartner = std::numeric_limits<size_t>::max();
   std::vector<std::pair<uint32_t, uint32_t>> io_mirror_pairs_;
@@ -1589,6 +1587,11 @@ class GCellHandle
   StorageVariant storage_;
   size_t storage_index_;
 };
+
+inline size_t NesterovBase::ioNbPos(size_t io_index) const
+{
+  return nb_gcells_.size() - ioPinStor_.size() + io_index;
+}
 
 inline bool isValidSigType(const odb::dbSigType& db_type)
 {
