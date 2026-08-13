@@ -8,14 +8,14 @@ This guide explores architectural patterns and concepts for advanced Design Spac
 
 The plausible-sounding story of DSE goes: *We have a flow. It takes parameters. It produces a WNS and an area number. We have an autotuner. Point the tuner at the flow, give it a machine budget, come back in the morning.*
 
-If a naive sweeping approach yields suboptimal results, users often mistakenly conclude that DSE is oversold. The reality is that the initial disappointment is due to mismanaged expectations: **OpenROAD cannot have an opinion on what makes your product perfect.**
+The misconception here is the assumption that a normal full flow is all there is, and that it must always be used as an optimization function. In reality, different approaches exist, and neither is universally "best."
 
-OpenROAD and ORFS are designed to translate RTL into physical layout and extract Power, Performance, and Area (PPA) metrics. However, true product optimization requires evaluating system-level properties—such as "useful work done per cycle" or "quality of results"—which are properties of the RTL combined with the software workload. **Only the user can write the optimization function for their design.**
+An **autotuner** is designed to run the whole flow and optimize parameters for it. This is a standard use-case for evaluating the complete pipeline and extracting final sign-off metrics.
 
-While standard metrics like `fmax` or minimum area are sufficient for many tapeouts, large-scale product optimization often involves evaluating system-level properties. In these advanced DSE scenarios, the process relies on an external optimization function that evaluates OpenROAD's PPA outputs against application-specific metrics. For example:
+However, if your use-case requires running your own optimization function, you can put together your own customized optimization flow, perhaps as a single `.tcl` script. In this scenario, you are probably interested in getting a speedy result—such as a clock frequency outside of the domain parameters for the physical codomain. You care more about converging quickly towards interesting domain parameters than having accurate, non-physical codomain values.
 
-* **General Purpose CPUs:** The optimization function typically maximizes throughput (e.g., Instructions Per Cycle for a defined software workload) given strict PPA constraints (frequency targets, thermal limits). OpenROAD determines if that specific RTL architecture is physically realizable and what its power cost is; the optimizer balances the two.
-* **Machine Learning Accelerators:** In hardware-software co-design, the true optimization function is often **Inference-per-Watt** (successful inferences per joule of energy), subject to latency and accuracy constraints. OpenROAD provides power and area estimates for the hardware architecture, while the software side (network pruning, quantization) dictates accuracy and throughput. The perfect design is found by searching across both domains simultaneously.
+OpenROAD aims to state what these use-cases are and let you pick the one that fits your project. It has no opinion on what makes your product perfect; only the user can write the optimal function for their design.
+
 
 ## 2. Rungs and Populations: Climbing the Flow
 
