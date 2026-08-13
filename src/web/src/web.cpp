@@ -5,6 +5,7 @@
 
 #include <netinet/in.h>
 
+#include <cctype>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
@@ -1058,7 +1059,8 @@ static std::string base64Encode(const std::string_view data)
 // instead (issue #11065).
 
 // Resolve a reference found inside a stylesheet ("images/x.png",
-// "../../img/y.png") against the directory the stylesheet is served from.
+// "../../img/y.png") against the directory the stylesheet is served from.  A
+// reference that starts at the root ("/third-party/...") resolves on its own.
 static std::string resolveAssetPath(const std::string_view base_dir,
                                     const std::string_view reference)
 {
@@ -1075,7 +1077,12 @@ static std::string resolveAssetPath(const std::string_view base_dir,
     }
     parts.push_back(segment);
   };
-  for (const std::string_view path : {base_dir, reference}) {
+  std::vector<std::string_view> inputs;
+  if (reference.empty() || reference.front() != '/') {
+    inputs.push_back(base_dir);
+  }
+  inputs.push_back(reference);
+  for (const std::string_view path : inputs) {
     size_t begin = 0;
     while (begin <= path.size()) {
       const size_t end = path.find('/', begin);
@@ -1095,13 +1102,23 @@ static std::string resolveAssetPath(const std::string_view base_dir,
   return result;
 }
 
-// data: URI for an embedded asset, for use as a src or href in the report.
-static std::string assetDataUri(const std::string_view path,
-                                utl::Logger* logger)
+// A miss here means the build embedded the wrong asset list, not bad input.
+static const EmbeddedAsset* reportAsset(const std::string_view path,
+                                        utl::Logger* logger)
 {
   const EmbeddedAsset* asset = findEmbeddedAsset(path);
   if (!asset) {
     logger->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
+  }
+  return asset;
+}
+
+// data: URI for an embedded asset, for use as a src or href in the report.
+static std::string assetDataUri(const std::string_view path,
+                                utl::Logger* logger)
+{
+  const EmbeddedAsset* asset = reportAsset(path, logger);
+  if (!asset) {
     return "";
   }
   return std::string("data:") + asset->content_type + ";base64,"
@@ -1126,11 +1143,25 @@ static std::string inlineStylesheetUrls(const std::string_view css,
       break;
     }
     std::string_view reference = css.substr(open + 4, close - (open + 4));
-    // Strip the optional quotes the css syntax allows.
+    // The css syntax allows padding inside the parentheses, and quotes around
+    // the reference; both have to come off before it is a path.
+    const auto trim = [&reference]() {
+      const auto space = [](const char c) {
+        return std::isspace(static_cast<unsigned char>(c)) != 0;
+      };
+      while (!reference.empty() && space(reference.front())) {
+        reference.remove_prefix(1);
+      }
+      while (!reference.empty() && space(reference.back())) {
+        reference.remove_suffix(1);
+      }
+    };
+    trim();
     if (reference.size() >= 2
         && (reference.front() == '"' || reference.front() == '\'')
         && reference.back() == reference.front()) {
       reference = reference.substr(1, reference.size() - 2);
+      trim();
     }
     // Fragment-only references (url(#default#VML)) and anything already
     // inlined are left alone.
@@ -1156,9 +1187,8 @@ static std::string stylesheetDataUri(const std::string_view path,
                                      const std::string_view base_dir,
                                      utl::Logger* logger)
 {
-  const EmbeddedAsset* asset = findEmbeddedAsset(path);
+  const EmbeddedAsset* asset = reportAsset(path, logger);
   if (!asset) {
-    logger->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
     return "";
   }
   return "data:text/css;base64,"
