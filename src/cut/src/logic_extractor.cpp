@@ -160,7 +160,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
   for (sta::Vertex* vertex : cut_vertices) {
     // If the pins in the cutset are primary outputs don't call it
     // a primary input
-    if (endpoint_vertex.contains(vertex)) {
+    if (endpoint_vertex.contains(vertex) && network->direction(vertex->pin())->isOutput()) {
       continue;
     }
 

@@ -259,6 +259,22 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
     // want the ones in the fan-in set who are filtered by STA
     // for one reason or another.
     if (endpoint_set.contains(vertex)) {
+      // Endpoint is on combinational cell; add the rest of the
+      // pins on this cell to the cut set if they are missing
+      // from it. This might happen with e.g. clock gating logic
+      if (IsCombinationalVtx(vertex)) {
+        sta::Instance* instance = network->instance(vertex->pin());
+        std::unique_ptr<sta::InstancePinIterator> iter(
+            network->pinIterator(instance));
+        while (iter->hasNext()) {
+          sta::Pin* pin = iter->next();
+          sta::Vertex* pv = network->graph()->vertex(network->vertexId(pin));
+          if (!cut_vertex_set.contains(pv)) {
+            result.push_back(pv);
+            cut_vertex_set.insert(pv);
+          }
+        }
+      }
       continue;
     }
 
