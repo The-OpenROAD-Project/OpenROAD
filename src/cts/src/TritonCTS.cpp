@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "Clock.h"
-#include "CtsOptions.h"
 #include "HTreeBuilder.h"
 #include "LatencyBalancer.h"
 #include "TechChar.h"
@@ -75,13 +74,11 @@ TritonCTS::TritonCTS(utl::Logger* logger,
   openSta_ = sta;
   resizer_ = resizer;
   estimate_parasitics_ = estimate_parasitics;
-
-  options_ = new CtsOptions(logger_, st_builder);
+  sttBuilder_ = st_builder;
 }
 
 TritonCTS::~TritonCTS()
 {
-  delete options_;
 }
 
 void TritonCTS::runTritonCts()
@@ -89,7 +86,7 @@ void TritonCTS::runTritonCts()
   utl::Timer timer;
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
-  options_->addOwner(block);
+  addOwner(block);
 
   setupCharacterization();
   findClockRoots();
@@ -101,7 +98,7 @@ void TritonCTS::runTritonCts()
     buildClockTrees();
     writeDataToDb();
     setAllClocksPropagated();
-    if (options_->getRepairClockNets()) {
+    if (this->getRepairClockNets()) {
       repairClockNets();
     }
     balanceMacroRegisterLatencies();
@@ -122,12 +119,12 @@ void TritonCTS::runTritonCts()
   sinkBuffers_.clear();
   regTreeRootBufIndex_ = 0;
   delayBufIndex_ = 0;
-  options_->setMaxWl(0);
-  options_->removeOwner();
+  this->setMaxWl(0);
+  this->removeOwner();
   logger_->info(CTS, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
-TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
+TreeBuilder* TritonCTS::addBuilder(TritonCTS* options,
                                    Clock& net,
                                    odb::dbNet* topInputNet,
                                    TreeBuilder* parent,
@@ -203,62 +200,62 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
 void TritonCTS::setupCharacterization()
 {
   // Check if CTS library is valid
-  if (options_->isCtsLibrarySet()) {
-    sta::Library* lib = network_->findLibrary(options_->getCtsLibrary());
+  if (this->isCtsLibrarySet()) {
+    sta::Library* lib = network_->findLibrary(this->getCtsLibrary());
     if (lib == nullptr) {
       logger_->error(CTS,
                      209,
                      "Library {} cannot be found because it is not "
                      "loaded or name is incorrect",
-                     options_->getCtsLibrary());
+                     this->getCtsLibrary());
     } else {
       logger_->info(CTS,
                     210,
                     "Clock buffers will be chosen from library {}",
-                    options_->getCtsLibrary());
+                    this->getCtsLibrary());
     }
   }
 
   block_ = db_->getChip()->getBlock();
-  options_->setDbUnits(block_->getDbUnitsPerMicron());
+  this->setDbUnits(block_->getDbUnitsPerMicron());
 
   openSta_->checkFanoutPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
-  options_->setRootBuffer(rootBuffer);
+  this->setFinalRootBuffer(rootBuffer);
   std::string sinkBuffer = selectSinkBuffer(sinkBuffers_);
-  options_->setSinkBuffer(sinkBuffer);
+  this->setFinalSinkBuffer(sinkBuffer);
 
   int sinkMaxFanout = getBufferFanoutLimit(sinkBuffer);
   int rootMaxFanout = getBufferFanoutLimit(rootBuffer);
 
-  if (rootMaxFanout && (options_->getNumMaxLeafSinks() > rootMaxFanout)) {
-    options_->setMaxFanout(rootMaxFanout);
+  if (rootMaxFanout && (this->getNumMaxLeafSinks() > rootMaxFanout)) {
+    this->setMaxFanout(rootMaxFanout);
   }
 
   if (sinkMaxFanout) {
-    options_->limitSinkClusteringSizes(sinkMaxFanout);
-    if (sinkMaxFanout < options_->getMaxFanout()) {
-      options_->setMaxFanout(sinkMaxFanout);
+    this->limitSinkClusteringSizes(sinkMaxFanout);
+    if (sinkMaxFanout < this->getMaxFanout()) {
+      this->setMaxFanout(sinkMaxFanout);
     }
   }
 
   double maxWlMicrons
       = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
   if (maxWlMicrons > 0) {
-    options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
+    this->setMaxWl(block_->micronsToDbu(maxWlMicrons));
   }
 
   // A new characteriztion is always created.
   techChar_ = std::make_unique<TechChar>(
-      options_, db_, openSta_, estimate_parasitics_, network_, logger_);
+      this, db_, openSta_, estimate_parasitics_, network_, logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
-  options_->setNumSinks(0);
-  options_->setNumBuffersInserted(0);
-  options_->setNumClockRoots(0);
-  options_->setNumClockSubnets(0);
+  this->setNumSinks(0);
+  this->setNumBuffersInserted(0);
+  this->setNumClockRoots(0);
+  this->setNumClockSubnets(0);
 }
 
 void TritonCTS::checkCharacterization()
@@ -285,11 +282,11 @@ void TritonCTS::checkCharacterization()
 
 void TritonCTS::findClockRoots()
 {
-  if (!options_->getClockNets().empty()) {
+  if (!this->getClockNets().empty()) {
     logger_->info(CTS,
                   1,
                   "Running TritonCTS with user-specified clock roots: {}.",
-                  options_->getClockNets());
+                  this->getClockNets());
   }
 }
 
@@ -310,7 +307,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
                                  TreeBuilder* parent)
 {
   TreeBuilder* clockBuilder = nullptr;
-  std::vector<odb::dbNet*> skipNets = options_->getSkipNets();
+  std::vector<odb::dbNet*> skipNets = this->getSkipNets();
   if (driverNet->isSpecial()) {
     logger_->info(
         CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
@@ -485,7 +482,7 @@ void TritonCTS::countSinksPostDbWrite(
       } else if (trueSink) {
         sinks_cnt++;
         double currSinkWl
-            = (dist + currWireLength) / double(options_->getDbUnits());
+            = (dist + currWireLength) / double(this->getDbUnits());
         sinkWireLength += currSinkWl;
         maxDepth = std::max(depth, maxDepth);
         if ((minDepth > 0 && depth < minDepth) || (minDepth == 0)) {
@@ -509,10 +506,10 @@ void TritonCTS::writeDataToDb()
 
   for (auto& builder : builders_) {
     writeClockNetsToDb(builder.get(), clkLeafNets);
-    if (options_->getApplyNdr() != CtsOptions::NdrStrategy::NONE) {
+    if (this->getApplyNdr() != TritonCTS::NdrStrategy::NONE) {
       writeClockNDRsToDb(builder.get());
     }
-    if (options_->dummyLoadEnabled()) {
+    if (this->dummyLoadEnabled()) {
       int nDummies = writeDummyLoadsToDb(builder->getClock(), clkDummies);
       builder->setNDummies(nDummies);
     }
@@ -559,7 +556,7 @@ void TritonCTS::writeDataToDb()
         logger_->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
       }
       logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
-      if (options_->dummyLoadEnabled()) {
+      if (this->dummyLoadEnabled()) {
         logger_->info(
             CTS, 207, " Dummy loads inserted {}", builder->getNDummies());
       }
@@ -577,7 +574,7 @@ void TritonCTS::forEachBuilder(
 
 void TritonCTS::reportCtsMetrics()
 {
-  std::string filename = options_->getMetricsFile();
+  std::string filename = this->getMetricsFile();
 
   if (!filename.empty()) {
     std::ofstream file(filename.c_str());
@@ -587,21 +584,21 @@ void TritonCTS::reportCtsMetrics()
           CTS, 87, "Could not open output metric file {}.", filename.c_str());
     }
 
-    file << "Total number of Clock Roots: " << options_->getNumClockRoots()
+    file << "Total number of Clock Roots: " << this->getNumClockRoots()
          << ".\n";
     file << "Total number of Buffers Inserted: "
-         << options_->getNumBuffersInserted() << ".\n";
-    file << "Total number of Clock Subnets: " << options_->getNumClockSubnets()
+         << this->getNumBuffersInserted() << ".\n";
+    file << "Total number of Clock Subnets: " << this->getNumClockSubnets()
          << ".\n";
-    file << "Total number of Sinks: " << options_->getNumSinks() << ".\n";
+    file << "Total number of Sinks: " << this->getNumSinks() << ".\n";
 
     file << "Buffers used:\n";
-    for (const auto& [master, count] : options_->getBufferCount()) {
+    for (const auto& [master, count] : this->getBufferCount()) {
       file << "  " << master->getName() << ": " << count << "\n";
     }
-    if (!options_->getDummyCount().empty()) {
+    if (!this->getDummyCount().empty()) {
       file << "Dummys used:\n";
-      for (const auto& [master, count] : options_->getDummyCount()) {
+      for (const auto& [master, count] : this->getDummyCount()) {
         file << "  " << master->getName() << ": " << count << "\n";
       }
     }
@@ -609,20 +606,20 @@ void TritonCTS::reportCtsMetrics()
 
   } else {
     logger_->report("Total number of Clock Roots: {}.",
-                    options_->getNumClockRoots());
+                    this->getNumClockRoots());
     logger_->report("Total number of Buffers Inserted: {}.",
-                    options_->getNumBuffersInserted());
+                    this->getNumBuffersInserted());
     logger_->report("Total number of Clock Subnets: {}.",
-                    options_->getNumClockSubnets());
-    logger_->report("Total number of Sinks: {}.", options_->getNumSinks());
+                    this->getNumClockSubnets());
+    logger_->report("Total number of Sinks: {}.", this->getNumSinks());
 
     logger_->report("Cells used:");
-    for (const auto& [master, count] : options_->getBufferCount()) {
+    for (const auto& [master, count] : this->getBufferCount()) {
       logger_->report("  {}: {}", master->getName(), count);
     }
-    if (!options_->getDummyCount().empty()) {
+    if (!this->getDummyCount().empty()) {
       logger_->report("Dummys used:");
-      for (const auto& [master, count] : options_->getDummyCount()) {
+      for (const auto& [master, count] : this->getDummyCount()) {
         logger_->report("  {}: {}", master->getName(), count);
       }
     }
@@ -634,7 +631,7 @@ int TritonCTS::setClockNets(const char* names)
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
 
-  options_->setClockNets(names);
+  clockNets_ = names;
   std::stringstream ss(names);
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
@@ -665,7 +662,7 @@ int TritonCTS::setClockNets(const char* names)
       return 1;
     }
   }
-  options_->setClockNetsObjs(netObjects);
+  this->setClockNetsObjs(netObjects);
   return 0;
 }
 
@@ -679,9 +676,9 @@ void TritonCTS::setBufferList(const char* buffers)
   // If the vector is empty, then the buffers are inferred
   if (bufferList.empty()) {
     const char* lib_name
-        = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
+        = this->isCtsLibrarySet() ? this->getCtsLibrary() : nullptr;
     resizer_->inferClockBufferList(lib_name, bufferList);
-    options_->setBufferListInferred(true);
+    this->setBufferListInferred(true);
   } else {
     // Iterate the user-defined buffer list
     std::vector<sta::LibertyCell*> selected_buffers;
@@ -702,7 +699,7 @@ void TritonCTS::setBufferList(const char* buffers)
     // Add found buffer to RSZ
     resizer_->setClockBuffersList(selected_buffers);
   }
-  options_->setBufferList(bufferList);
+  this->setBufferList(bufferList);
 }
 
 std::string TritonCTS::getRootBufferToString()
@@ -733,14 +730,14 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
 {
   // if -root_buf is not specified, choose from the buffer list
   if (buffers.empty()) {
-    buffers = options_->getBufferList();
+    buffers = this->getBufferList();
   }
 
   if (buffers.size() == 1) {
     return buffers.front();
   }
 
-  options_->setRootBufferInferred(true);
+  this->setRootBufferInferred(true);
   // estimate wire cap for root buffer
   // assume sink buffer needs to drive clk buffers at two far ends of chip
   // at midpoint
@@ -775,14 +772,14 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
 {
   // if -sink_clustering_buf is not specified, choose from the buffer list
   if (buffers.empty()) {
-    buffers = options_->getBufferList();
+    buffers = this->getBufferList();
   }
 
   if (buffers.size() == 1) {
     return buffers.front();
   }
 
-  options_->setSinkBufferInferred(true);
+  this->setSinkBufferInferred(true);
   // estimate wire cap for sink buffer
   // assume sink buffer needs to drive clk buffers at two far ends of chip
   // to account for unknown pin caps
@@ -841,11 +838,11 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     // clang-format off
     debugPrint(logger_, CTS, "buffering", 1, "{} has cap limit:{}"
                " vs. total cap:{}, derate:{}", name,
-               maxCap * (float) options_->getSinkBufferMaxCapDerate(), totalCap,
-               options_->getSinkBufferMaxCapDerate());
+               maxCap * (float) this->getSinkBufferMaxCapDerate(), totalCap,
+               this->getSinkBufferMaxCapDerate());
     // clang-format on
     if (maxCapExists
-        && ((maxCap * options_->getSinkBufferMaxCapDerate()) > totalCap)
+        && ((maxCap * this->getSinkBufferMaxCapDerate()) > totalCap)
         && area < bestArea) {
       bestBuf = name;
       bestArea = area;
@@ -920,8 +917,7 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet,
   int drvrX, drvrY;
   driver->getAvgXY(&drvrX, &drvrY);
   point2pin[{drvrX, drvrY}].push_back(driver);
-  stt::Tree ftree
-      = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, 0);
+  stt::Tree ftree = this->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, 0);
   findLongEdges(ftree, {drvrX, drvrY}, point2pin, occupiedPositions);
 }
 
@@ -931,7 +927,7 @@ void TritonCTS::findLongEdges(
     std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin,
     std::set<odb::Point>& occupiedPositions)
 {
-  const int threshold = options_->getMaxWl();
+  const int threshold = this->getMaxWl();
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
 
@@ -1215,7 +1211,7 @@ void TritonCTS::populateTritonCTS()
 
   // Checks the user input in case there are other nets that need to be added to
   // the set.
-  std::vector<odb::dbNet*> inputClkNets = options_->getClockNetsObjs();
+  std::vector<odb::dbNet*> inputClkNets = this->getClockNetsObjs();
 
   odb::PtrSet<odb::dbNet> allClkNets;
   if (!inputClkNets.empty()) {
@@ -1290,7 +1286,7 @@ void TritonCTS::populateTritonCTS()
   }
 
   logger_->info(CTS, 8, "TritonCTS found {} clock nets.", getNumClocks());
-  options_->setNumClockRoots(getNumClocks());
+  this->setNumClockRoots(getNumClocks());
 }
 
 TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
@@ -1331,7 +1327,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 
   // Build a set of all the clock buffers' masters
   std::unordered_set<odb::dbMaster*> buffer_masters;
-  for (const std::string& name : options_->getBufferList()) {
+  for (const std::string& name : this->getBufferList()) {
     auto master = db_->findMaster(name.c_str());
     if (master) {
       buffer_masters.insert(master);
@@ -1340,7 +1336,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 
   // Add the root buffer
   {
-    const std::string& name = options_->getRootBuffer();
+    const std::string& name = this->getRootBuffer();
     auto master = db_->findMaster(name.c_str());
     if (master) {
       buffer_masters.insert(master);
@@ -1387,7 +1383,7 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     return nullptr;
   }
 
-  if (!options_->insertionDelayEnabled() || macroSinks.empty()
+  if (!this->insertionDelayEnabled() || macroSinks.empty()
       || registerSinks.empty()) {
     // There is no need for separate clock trees
     for (odb::dbITerm* iterm : firstNet->getITerms()) {
@@ -1415,12 +1411,11 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
                   " Clock net \"{}\" has {} sinks.",
                   firstNet->getConstName(),
                   clockNet.getNumSinks());
-    int totalSinks = options_->getNumSinks() + clockNet.getNumSinks();
-    options_->setNumSinks(totalSinks);
+    int totalSinks = this->getNumSinks() + clockNet.getNumSinks();
+    this->setNumSinks(totalSinks);
     incrementNumClocks();
     clockNet.setNetObj(firstNet);
-    return addBuilder(
-        options_, clockNet, clkInputNet, parentBuilder, logger_, db_);
+    return addBuilder(this, clockNet, clkInputNet, parentBuilder, logger_, db_);
   }
 
   // add macro sinks to existing firstNet
@@ -1544,12 +1539,11 @@ TreeBuilder* TritonCTS::addClockSinks(
                 physicalNet->getConstName(),
                 macrosOrRegs,
                 clockNet.getNumSinks());
-  int totalSinks = options_->getNumSinks() + clockNet.getNumSinks();
-  options_->setNumSinks(totalSinks);
+  int totalSinks = this->getNumSinks() + clockNet.getNumSinks();
+  this->setNumSinks(totalSinks);
   incrementNumClocks();
   clockNet.setNetObj(physicalNet);
-  return addBuilder(
-      options_, clockNet, topInputNet, parentBuilder, logger_, db_);
+  return addBuilder(this, clockNet, topInputNet, parentBuilder, logger_, db_);
 }
 
 Clock TritonCTS::forkRegisterClockNetwork(
@@ -1588,7 +1582,7 @@ Clock TritonCTS::forkRegisterClockNetwork(
   }
 
   // create a new clock buffer
-  odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
+  odb::dbMaster* master = db_->findMaster(this->getRootBuffer().c_str());
   topBufferName = "clkbuf_regs_" + std::to_string(regTreeRootBufIndex_++) + "_"
                   + clockNet.getSdcName();
   odb::dbInst* clockBuf = odb::dbInst::create(
@@ -1805,8 +1799,8 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   }
 
   logger_->info(CTS, 15, "    Created {} clock nets.", numClkNets_);
-  int totalNets = options_->getNumClockSubnets() + numClkNets_;
-  options_->setNumClockSubnets(totalNets);
+  int totalNets = this->getNumClockSubnets() + numClkNets_;
+  this->setNumClockSubnets(totalNets);
 
   std::string fanout;
   for (auto const& x : fanoutcount) {
@@ -1987,18 +1981,18 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
   int clkNets = 0;
 
   // Apply NDR following the selected strategy (root_only, half, full)
-  switch (options_->getApplyNdr()) {
-    case CtsOptions::NdrStrategy::ROOT_ONLY:
+  switch (this->getApplyNdr()) {
+    case TritonCTS::NdrStrategy::ROOT_ONLY:
       clkNets = applyNDRToClockLevels(clockNet, clockNDR, {0});
       break;
-    case CtsOptions::NdrStrategy::HALF:
+    case TritonCTS::NdrStrategy::HALF:
       clkNets = applyNDRToFirstHalfLevels(clockNet, clockNDR);
       break;
-    case CtsOptions::NdrStrategy::FULL:
+    case TritonCTS::NdrStrategy::FULL:
       clkNets = applyNDRToClockLevels(
           clockNet, clockNDR, getAllClockTreeLevels(clockNet));
       break;
-    case CtsOptions::NdrStrategy::NONE:
+    case TritonCTS::NdrStrategy::NONE:
       // Should not be called
       break;
   }
@@ -2096,8 +2090,8 @@ void TritonCTS::createClockBuffers(Clock& clockNet, odb::dbModule* parent)
     ++numBuffers;
   });
   logger_->info(CTS, 18, "    Created {} clock buffers.", numBuffers);
-  int totalBuffers = options_->getNumBuffersInserted() + numBuffers;
-  options_->setNumBuffersInserted(totalBuffers);
+  int totalBuffers = this->getNumBuffersInserted() + numBuffers;
+  this->setNumBuffersInserted(totalBuffers);
 }
 
 odb::dbITerm* TritonCTS::getFirstInput(odb::dbInst* inst) const
@@ -2138,7 +2132,7 @@ bool TritonCTS::masterExists(const std::string& master) const
 void TritonCTS::findClockRoots(sta::Clock* clk,
                                odb::PtrSet<odb::dbNet>& clockNets)
 {
-  std::vector<odb::dbNet*> skipNets = options_->getSkipNets();
+  std::vector<odb::dbNet*> skipNets = this->getSkipNets();
   for (const sta::Pin* pin : clk->leafPins()) {
     odb::dbITerm* instTerm;
     odb::dbBTerm* port;
@@ -2198,7 +2192,7 @@ bool TritonCTS::isSink(odb::dbITerm* iterm)
 
 bool TritonCTS::hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm)
 {
-  if (options_->insertionDelayEnabled()) {
+  if (this->insertionDelayEnabled()) {
     sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
     if (libCell) {
       sta::LibertyPort* libPort
@@ -2224,7 +2218,7 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
 {
   double insDelayPerMicron = 0.0;
 
-  if (!options_->insertionDelayEnabled()) {
+  if (!this->insertionDelayEnabled()) {
     return insDelayPerMicron;
   }
 
@@ -2392,7 +2386,7 @@ void TritonCTS::findCandidateDummyCells(
     std::vector<sta::LibertyCell*>& dummyCandidates)
 {
   // Add existing buffer list
-  for (const std::string& buffer : options_->getBufferList()) {
+  for (const std::string& buffer : this->getBufferList()) {
     odb::dbMaster* master = db_->findMaster(buffer.c_str());
 
     if (master) {
@@ -2504,7 +2498,7 @@ odb::dbInst* TritonCTS::insertDummyCell(
     const std::vector<sta::LibertyCell*>& dummyCandidates)
 {
   ClockSubNet* subNet = driver2subnet_[inst];
-  if (subNet->getNumSinks() == options_->getMaxFanout()) {
+  if (subNet->getNumSinks() == this->getMaxFanout()) {
     return nullptr;
   }
   float deltaCap = inst->getIdealOutputCap() - inst->getOutputCap();
@@ -2537,7 +2531,7 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
                    dummyCell->name());
   }
   std::string cellName
-      = options_->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
+      = this->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
   dummyInst = odb::dbInst::create(block_, master, cellName.c_str());
   dummyInst->setSourceType(odb::dbSourceType::TIMING);
   dummyInst->setLocation(inst->getX(), inst->getY());
@@ -2610,7 +2604,7 @@ void TritonCTS::repairClockNets()
 // is invoked.
 void TritonCTS::balanceMacroRegisterLatencies()
 {
-  if (!options_->insertionDelayEnabled()) {
+  if (!this->insertionDelayEnabled()) {
     return;
   }
 
@@ -2627,7 +2621,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
       est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
       LatencyBalancer balancer = LatencyBalancer(builder.get(),
-                                                 options_,
+                                                 this,
                                                  logger_,
                                                  db_,
                                                  network_,
@@ -2640,6 +2634,47 @@ void TritonCTS::balanceMacroRegisterLatencies()
   if (totalDelayBuff) {
     logger_->info(CTS, 37, "Total number of delay buffers: {}", totalDelayBuff);
   }
+}
+
+TritonCTS::MasterType TritonCTS::getType(odb::dbInst* inst) const
+{
+  if (inst->getName().substr(0, dummyload_prefix_.size())
+      == dummyload_prefix_) {
+    return MasterType::DUMMY;
+  }
+
+  return MasterType::TREE;
+}
+
+void TritonCTS::inDbInstCreate(odb::dbInst* inst)
+{
+  recordBuffer(inst->getMaster(), getType(inst));
+}
+
+void TritonCTS::limitSinkClusteringSizes(unsigned limit)
+{
+  unsigned new_size = limit;
+  if (sinkClustersSizeSet_) {
+    new_size = std::min(new_size, sinkClustersSize_);
+  }
+  setSinkClusteringSize(new_size);
+}
+
+void TritonCTS::recordBuffer(odb::dbMaster* master, MasterType type)
+{
+  switch (type) {
+    case MasterType::DUMMY:
+      dummy_count_[master]++;
+      break;
+    case MasterType::TREE:
+      buffer_count_[master]++;
+      break;
+  }
+}
+
+void TritonCTS::setObserver(std::unique_ptr<CtsObserver> observer)
+{
+  observer_ = std::move(observer);
 }
 
 }  // namespace cts

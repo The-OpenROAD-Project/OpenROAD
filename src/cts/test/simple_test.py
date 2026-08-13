@@ -18,7 +18,7 @@ cts_aux.clock_tree_synthesis(
     root_buf="CLKBUF_X3",
     buf_list="CLKBUF_X3",
     wire_unit=20,
-    apply_ndr=cts.CtsOptions.NdrStrategy_ROOT_ONLY,
+    apply_ndr=cts.TritonCTS.NdrStrategy_ROOT_ONLY,
 )
 
 cts_aux.report_cts(design)

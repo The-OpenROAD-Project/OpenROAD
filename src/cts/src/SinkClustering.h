@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "CtsOptions.h"
+#include "cts/TritonCTS.h"
 #include "HTreeBuilder.h"
 #include "TechChar.h"
 #include "Util.h"
@@ -33,7 +33,7 @@ class Matching
 class SinkClustering
 {
  public:
-  SinkClustering(const CtsOptions* options,
+  SinkClustering(const TritonCTS* options,
                  TechChar* techChar,
                  HTreeBuilder* HTree);
 
@@ -83,7 +83,7 @@ class SinkClustering
   static bool isOne(double pos);
   static bool isZero(double pos);
 
-  const CtsOptions* options_;
+  const TritonCTS* options_;
   utl::Logger* logger_;
   const TechChar* techChar_;
   std::vector<Point<double>> points_;

@@ -2,6 +2,7 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
 from openroad import Design, Tech
+import utl
 
 
 def clock_tree_synthesis(
@@ -25,7 +26,7 @@ def clock_tree_synthesis(
     apply_ndr=None,
 ):
     cts = design.getTritonCts()
-    parms = cts.getParms()
+    parms = cts
 
     # Boolean
     parms.setSinkClustering(sink_clustering_enable)

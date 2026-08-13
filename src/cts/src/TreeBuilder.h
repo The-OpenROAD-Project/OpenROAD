@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "Clock.h"
-#include "CtsOptions.h"
+#include "cts/TritonCTS.h"
 #include "TechChar.h"
 #include "Util.h"
 #include "boost/functional/hash.hpp"
@@ -57,7 +57,7 @@ enum class TreeType
 class TreeBuilder
 {
  public:
-  TreeBuilder(CtsOptions* options,
+  TreeBuilder(TritonCTS* options,
               Clock& clk,
               TreeBuilder* parent,
               utl::Logger* logger,
@@ -230,7 +230,7 @@ class TreeBuilder
   void setDrivingNet(odb::dbNet* net) { drivingNet_ = net; }
 
  protected:
-  CtsOptions* options_ = nullptr;
+  TritonCTS* options_ = nullptr;
   Clock clock_;
   TechChar* techChar_ = nullptr;
   TreeBuilder* parent_;

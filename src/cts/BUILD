@@ -44,7 +44,6 @@ cc_library(
     srcs = [
         "src/Clock.cpp",
         "src/Clustering.cpp",
-        "src/CtsOptions.cpp",
         "src/HTreeBuilder.cpp",
         "src/LatencyBalancer.cpp",
         "src/SinkClustering.cpp",
@@ -54,7 +53,6 @@ cc_library(
     ],
     hdrs = [
         "include/cts/TritonCTS.h",
-        "src/CtsOptions.h",
         "src/TechChar.h",
     ],
     includes = [
@@ -133,7 +131,6 @@ python_wrap_cc(
     name = "swig-py",
     srcs = [
         "include/cts/TritonCTS.h",
-        "src/CtsOptions.h",
         "src/TritonCTS-py.i",
         "//:error_swig-py",
     ],

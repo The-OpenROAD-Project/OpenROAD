@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "CtsOptions.h"
+#include "cts/TritonCTS.h"
 #include "boost/functional/hash.hpp"
 #include "boost/unordered/unordered_map.hpp"
 #include "db_sta/dbNetwork.hh"
@@ -131,7 +131,7 @@ class WireSegment
 class TechChar
 {
  public:
-  TechChar(CtsOptions* options,
+  TechChar(TritonCTS* options,
            odb::dbDatabase* db,
            sta::dbSta* sta,
            est::EstimateParasitics* estimate_parasitics,
@@ -307,7 +307,7 @@ class TechChar
   std::deque<WireSegment> wireSegments_;
   std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
-  CtsOptions* options_;
+  TritonCTS* options_;
   odb::dbDatabase* db_;
   est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* openSta_;

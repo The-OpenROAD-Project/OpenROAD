@@ -3,7 +3,6 @@
 
 %{
 #include "cts/TritonCTS.h"
-#include "CtsOptions.h"
 #include "TechChar.h"
 #include "ord/OpenRoad.hh"
 
@@ -17,8 +16,7 @@ using namespace cts;
 %include <std_string.i>
 %include <std_vector.i>
 
-%ignore cts::CtsOptions::setObserver;
-%ignore cts::CtsOptions::getObserver;
+%ignore cts::TritonCTS::setObserver;
+%ignore cts::TritonCTS::getObserver;
 
-%include "CtsOptions.h"
 %include "cts/TritonCTS.h"

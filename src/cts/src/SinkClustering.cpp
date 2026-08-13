@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "CtsObserver.h"
-#include "CtsOptions.h"
+#include "cts/TritonCTS.h"
 #include "HTreeBuilder.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
@@ -26,7 +26,7 @@ namespace cts {
 using std::vector;
 using utl::CTS;
 
-SinkClustering::SinkClustering(const CtsOptions* options,
+SinkClustering::SinkClustering(const TritonCTS* options,
                                TechChar* techChar,
                                HTreeBuilder* HTree)
     : options_(options),

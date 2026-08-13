@@ -13,7 +13,7 @@
 
 #include "Clock.h"
 #include "CtsObserver.h"
-#include "CtsOptions.h"
+#include "cts/TritonCTS.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
 #include "Util.h"
@@ -153,7 +153,7 @@ class HTreeBuilder : public TreeBuilder
   };
 
  public:
-  HTreeBuilder(CtsOptions* options,
+  HTreeBuilder(TritonCTS* options,
                Clock& net,
                TreeBuilder* parent,
                utl::Logger* logger,

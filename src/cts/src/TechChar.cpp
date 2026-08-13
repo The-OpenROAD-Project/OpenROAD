@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include "CtsOptions.h"
+#include "cts/TritonCTS.h"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
@@ -44,7 +44,7 @@ namespace cts {
 
 using utl::CTS;
 
-TechChar::TechChar(CtsOptions* options,
+TechChar::TechChar(TritonCTS* options,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
                    est::EstimateParasitics* estimate_parasitics,

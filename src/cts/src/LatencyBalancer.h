@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "Clock.h"
-#include "CtsOptions.h"
+#include "cts/TritonCTS.h"
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "odb/db.h"
@@ -47,7 +47,7 @@ class LatencyBalancer
 {
  public:
   LatencyBalancer(TreeBuilder* root,
-                  const CtsOptions* options,
+                  const TritonCTS* options,
                   utl::Logger* logger,
                   odb::dbDatabase* db,
                   sta::dbNetwork* network,
@@ -100,7 +100,7 @@ class LatencyBalancer
   void showGraph();
 
   TreeBuilder* root_ = nullptr;
-  const CtsOptions* options_ = nullptr;
+  const TritonCTS* options_ = nullptr;
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* network_ = nullptr;

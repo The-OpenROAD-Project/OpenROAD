@@ -5,7 +5,6 @@
 #include <cstdint>
 
 #include "cts/TritonCTS.h"
-#include "CtsOptions.h"
 #include "TechChar.h"
 #include "CtsGraphics.h"
 #include "ord/OpenRoad.hh"
@@ -24,11 +23,11 @@ using ord::getTritonCts;
 %include "stdint.i"
 %include "std_string.i"
 
-%ignore cts::CtsOptions::setObserver;
-%ignore cts::CtsOptions::getObserver;
+%ignore cts::TritonCTS::setObserver;
+%ignore cts::TritonCTS::getObserver;
 
-// Enum: CtsOptions::NdrStrategy
-%typemap(typecheck) CtsOptions::NdrStrategy {
+// Enum: TritonCTS::NdrStrategy
+%typemap(typecheck) TritonCTS::NdrStrategy {
   char *str = Tcl_GetStringFromObj($input, 0);
   if (strcasecmp(str, "NONE") == 0) {
     $1 = 1;
@@ -43,16 +42,16 @@ using ord::getTritonCts;
   }
 }
 
-%typemap(in) CtsOptions::NdrStrategy {
+%typemap(in) TritonCTS::NdrStrategy {
   char *str = Tcl_GetStringFromObj($input, 0);
   if (strcasecmp(str, "ROOT_ONLY") == 0) {
-    $1 = CtsOptions::NdrStrategy::ROOT_ONLY;
+    $1 = TritonCTS::NdrStrategy::ROOT_ONLY;
   } else if (strcasecmp(str, "HALF") == 0) {
-    $1 = CtsOptions::NdrStrategy::HALF;
+    $1 = TritonCTS::NdrStrategy::HALF;
   } else if (strcasecmp(str, "FULL") == 0) {
-    $1 = CtsOptions::NdrStrategy::FULL;
+    $1 = TritonCTS::NdrStrategy::FULL;
   } else {
-    $1 = CtsOptions::NdrStrategy::NONE;
+    $1 = TritonCTS::NdrStrategy::NONE;
   };
 }
 
@@ -235,7 +234,7 @@ set_obstruction_aware(bool obs)
 }
 
 void
-set_apply_ndr(CtsOptions::NdrStrategy strategy)
+set_apply_ndr(TritonCTS::NdrStrategy strategy)
 {
   getTritonCts()->getParms()->setApplyNDR(strategy);
 }
