@@ -102,6 +102,45 @@ _WEB_ASSET_FILES = [
     "src/timing-widget.js",
     "src/drc-widget.js",
     "src/main.js",
+    # The vendored browser libraries.  They are served from the binary like any
+    # other asset so the viewer never loads code from a CDN (issue #11065); see
+    # third-party/README.md.  Their directory layout is part of the contract:
+    # the stylesheets reach their icons through relative urls.
+    "third-party/leaflet/leaflet.js",
+    "third-party/leaflet/leaflet.css",
+    "third-party/leaflet/images/layers.png",
+    "third-party/leaflet/images/layers-2x.png",
+    "third-party/leaflet/images/marker-icon.png",
+    "third-party/leaflet/images/marker-icon-2x.png",
+    "third-party/leaflet/images/marker-shadow.png",
+    "third-party/golden-layout/golden-layout.esm.js",
+    "third-party/golden-layout/css/goldenlayout-base.css",
+    "third-party/golden-layout/css/themes/goldenlayout-dark-theme.css",
+    "third-party/golden-layout/css/themes/goldenlayout-light-theme.css",
+    "third-party/golden-layout/img/lm_close_black.png",
+    "third-party/golden-layout/img/lm_close_tab_white.png",
+    "third-party/golden-layout/img/lm_close_white.png",
+    "third-party/golden-layout/img/lm_maximise_black.png",
+    "third-party/golden-layout/img/lm_maximise_white.png",
+    "third-party/golden-layout/img/lm_minimize_black.png",
+    "third-party/golden-layout/img/lm_minimize_white.png",
+    "third-party/golden-layout/img/lm_popin_black.png",
+    "third-party/golden-layout/img/lm_popin_white.png",
+    "third-party/golden-layout/img/lm_popout_black.png",
+    "third-party/golden-layout/img/lm_popout_white.png",
+    "third-party/three/three.module.min.js",
+    "third-party/elkjs/elk.bundled.js",
+    "third-party/netlistsvg/netlistsvg.bundle.js",
+]
+
+# Assets under src/ are served flat ("/main.js"); everything else keeps its
+# path ("/third-party/leaflet/images/layers.png").
+_WEB_ASSET_ARGS = [
+    "/%s=$(location %s)" % (
+        f[len("src/"):] if f.startswith("src/") else f,
+        f,
+    )
+    for f in _WEB_ASSET_FILES
 ]
 
 genrule(
@@ -109,7 +148,7 @@ genrule(
     srcs = _WEB_ASSET_FILES,
     outs = ["src/web_assets.cpp"],
     cmd = "$(execpath :embed_web_assets) --output $@ " +
-          " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
+          " ".join(_WEB_ASSET_ARGS),
     tools = [":embed_web_assets"],
 )
 
