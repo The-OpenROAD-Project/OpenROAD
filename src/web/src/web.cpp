@@ -1021,23 +1021,148 @@ WebServer::~WebServer()
 extern const std::string_view kReportCSS;
 extern const std::string_view kReportJS;
 
-static std::string base64Encode(const std::vector<unsigned char>& data)
+static std::string base64Encode(const unsigned char* data, const size_t size)
 {
   static const char kChars[]
       = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   std::string result;
-  result.reserve((data.size() + 2) / 3 * 4);
-  for (size_t i = 0; i < data.size(); i += 3) {
+  result.reserve((size + 2) / 3 * 4);
+  for (size_t i = 0; i < size; i += 3) {
     const unsigned b0 = data[i];
-    const unsigned b1 = (i + 1 < data.size()) ? data[i + 1] : 0;
-    const unsigned b2 = (i + 2 < data.size()) ? data[i + 2] : 0;
+    const unsigned b1 = (i + 1 < size) ? data[i + 1] : 0;
+    const unsigned b2 = (i + 2 < size) ? data[i + 2] : 0;
     result += kChars[b0 >> 2];
     result += kChars[((b0 & 3) << 4) | (b1 >> 4)];
-    result
-        += (i + 1 < data.size()) ? kChars[((b1 & 0xF) << 2) | (b2 >> 6)] : '=';
-    result += (i + 2 < data.size()) ? kChars[b2 & 0x3F] : '=';
+    result += (i + 1 < size) ? kChars[((b1 & 0xF) << 2) | (b2 >> 6)] : '=';
+    result += (i + 2 < size) ? kChars[b2 & 0x3F] : '=';
   }
   return result;
+}
+
+static std::string base64Encode(const std::vector<unsigned char>& data)
+{
+  return base64Encode(data.data(), data.size());
+}
+
+static std::string base64Encode(const std::string_view data)
+{
+  return base64Encode(reinterpret_cast<const unsigned char*>(data.data()),
+                      data.size());
+}
+
+// ── Inlining the vendored libraries into the saved report ──
+//
+// The report is one file, opened with no server and no network behind it, so
+// every asset index.html loads over http is inlined here as a data: URI
+// instead (issue #11065).
+
+// Resolve a reference found inside a stylesheet ("images/x.png",
+// "../../img/y.png") against the directory the stylesheet is served from.
+static std::string resolveAssetPath(const std::string_view base_dir,
+                                    const std::string_view reference)
+{
+  std::vector<std::string_view> parts;
+  const auto push = [&parts](const std::string_view segment) {
+    if (segment.empty() || segment == ".") {
+      return;
+    }
+    if (segment == "..") {
+      if (!parts.empty()) {
+        parts.pop_back();
+      }
+      return;
+    }
+    parts.push_back(segment);
+  };
+  for (const std::string_view path : {base_dir, reference}) {
+    size_t begin = 0;
+    while (begin <= path.size()) {
+      const size_t end = path.find('/', begin);
+      push(path.substr(begin, end - begin));
+      if (end == std::string_view::npos) {
+        break;
+      }
+      begin = end + 1;
+    }
+  }
+
+  std::string result;
+  for (const std::string_view part : parts) {
+    result += '/';
+    result += part;
+  }
+  return result;
+}
+
+// data: URI for an embedded asset, for use as a src or href in the report.
+static std::string assetDataUri(const std::string_view path,
+                                utl::Logger* logger)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset(path);
+  if (!asset) {
+    logger->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
+    return "";
+  }
+  return std::string("data:") + asset->content_type + ";base64,"
+         + base64Encode(asset->content());
+}
+
+// Rewrite the url() references inside a stylesheet to data: URIs.  Without
+// this the icons would resolve against the directory the report was saved in.
+static std::string inlineStylesheetUrls(const std::string_view css,
+                                        const std::string_view base_dir,
+                                        utl::Logger* logger)
+{
+  std::string result;
+  size_t pos = 0;
+  while (true) {
+    const size_t open = css.find("url(", pos);
+    if (open == std::string_view::npos) {
+      break;
+    }
+    const size_t close = css.find(')', open);
+    if (close == std::string_view::npos) {
+      break;
+    }
+    std::string_view reference = css.substr(open + 4, close - (open + 4));
+    // Strip the optional quotes the css syntax allows.
+    if (reference.size() >= 2
+        && (reference.front() == '"' || reference.front() == '\'')
+        && reference.back() == reference.front()) {
+      reference = reference.substr(1, reference.size() - 2);
+    }
+    // Fragment-only references (url(#default#VML)) and anything already
+    // inlined are left alone.
+    if (reference.empty() || reference.front() == '#'
+        || reference.rfind("data:", 0) == 0) {
+      result += css.substr(pos, close + 1 - pos);
+      pos = close + 1;
+      continue;
+    }
+
+    result += css.substr(pos, open - pos);
+    result += "url(\"";
+    result += assetDataUri(resolveAssetPath(base_dir, reference), logger);
+    result += "\")";
+    pos = close + 1;
+  }
+  result += css.substr(pos);
+  return result;
+}
+
+// data: URI for an embedded stylesheet, with its own references inlined.
+static std::string stylesheetDataUri(const std::string_view path,
+                                     const std::string_view base_dir,
+                                     utl::Logger* logger)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset(path);
+  if (!asset) {
+    logger->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
+    return "";
+  }
+  return "data:text/css;base64,"
+         + base64Encode(
+             inlineStylesheetUrls(asset->content(), base_dir, logger));
 }
 
 void WebServer::saveReport(const std::string& filename,
@@ -1177,18 +1302,48 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head — the same libraries index.html loads, inlined as data: URIs so
+  // the file opens with no server and no network.  The stylesheets stay <link>
+  // elements rather than <style> blocks because theme.js switches themes
+  // through their `disabled` property, by id.
+  constexpr const char* kLeafletDir = "/third-party/leaflet/";
+  constexpr const char* kGoldenLayoutCssDir = "/third-party/golden-layout/css/";
+  constexpr const char* kGoldenLayoutThemeDir
+      = "/third-party/golden-layout/css/themes/";
+
   out << R"(<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
+<link rel="stylesheet" href=")"
+      << stylesheetDataUri(
+             "/third-party/leaflet/leaflet.css", kLeafletDir, logger_)
+      << R"("/>
+<script src=")"
+      << assetDataUri("/third-party/leaflet/leaflet.js", logger_)
+      << R"("></script>
+<link rel="stylesheet" href=")"
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/goldenlayout-base.css",
+             kGoldenLayoutCssDir,
+             logger_)
+      << R"("/>
+<link rel="stylesheet" id="gl-theme-dark" href=")"
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/themes/"
+             "goldenlayout-dark-theme.css",
+             kGoldenLayoutThemeDir,
+             logger_)
+      << R"("/>
+<link rel="stylesheet" id="gl-theme-light" href=")"
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/themes/"
+             "goldenlayout-light-theme.css",
+             kGoldenLayoutThemeDir,
+             logger_)
+      << R"(" disabled/>
 <style>
 )" << kReportCSS
       << R"(
@@ -1272,9 +1427,22 @@ window.__STATIC_CACHE__ = {
   }
 };
 </script>
+<script type="importmap">
+{
+  "imports": {
+    "three": ")"
+      << assetDataUri("/third-party/three/three.module.min.js", logger_)
+      << R"(",
+    "golden-layout": ")"
+      << assetDataUri("/third-party/golden-layout/golden-layout.esm.js",
+                      logger_)
+      << R"("
+  }
+}
+</script>
 <script type="module">
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import { GoldenLayout, LayoutConfig } from 'golden-layout';
+import * as THREE from 'three';
 )" << kReportJS
       << R"(
 </script>

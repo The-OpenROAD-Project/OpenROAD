@@ -40,6 +40,30 @@ bool isKeyword(const std::string_view line, const std::string_view keyword)
          && next != '$';
 }
 
+// The report inlines its assets as base64 data: URIs; decoding one is the only
+// way to assert on what is inside it.
+std::string base64Decode(const std::string& encoded)
+{
+  static const std::string kChars
+      = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string result;
+  unsigned bits = 0;
+  int have = 0;
+  for (const char c : encoded) {
+    const size_t value = kChars.find(c);
+    if (value == std::string::npos) {  // padding or newline
+      continue;
+    }
+    bits = (bits << 6) | static_cast<unsigned>(value);
+    have += 6;
+    if (have >= 8) {
+      have -= 8;
+      result += static_cast<char>((bits >> have) & 0xFF);
+    }
+  }
+  return result;
+}
+
 // ─── Fixture ────────────────────────────────────────────────────────────────
 
 class SaveReportTest : public tst::Nangate45Fixture
@@ -151,8 +175,12 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-container\""));
   EXPECT_TRUE(contains(html, "id=\"menu-bar\""));
   EXPECT_TRUE(contains(html, "id=\"loading-overlay\""));
-  EXPECT_TRUE(contains(html, "leaflet.css"));
-  EXPECT_TRUE(contains(html, "goldenlayout-base.css"));
+  // The stylesheets are inlined, so their file names are gone; what has to
+  // survive is the <link> element, which theme.js toggles by id.
+  EXPECT_TRUE(
+      contains(html, "<link rel=\"stylesheet\" href=\"data:text/css;base64,"));
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-dark\""));
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-light\""));
 }
 
 TEST_F(SaveReportTest, ContainsStaticCache)
@@ -228,17 +256,69 @@ TEST_F(SaveReportTest, InlinedScriptHasNoModuleSyntaxLeft)
   EXPECT_EQ(header_imports, 2);
 }
 
-TEST_F(SaveReportTest, GoldenLayoutFromCDN)
+// The report opens from file:// with no server and no network, so everything
+// it needs is inlined: nothing may be left pointing at a remote host
+// (issue #11065).
+TEST_F(SaveReportTest, IsSelfContained)
 {
-  const std::string path = tempHtml("gl_cdn");
+  const std::string path = tempHtml("self_contained");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // GoldenLayout loaded via ES module import from CDN.
+  // Nothing may be fetched: no attribute, url() or module specifier naming a
+  // remote origin.  Bare occurrences of "http://" are left alone because the
+  // widgets carry XML namespace strings, which are identifiers, not fetches.
+  for (const char* fetch : {"src=\"http",
+                            "src='http",
+                            "href=\"http",
+                            "href='http",
+                            "url(http",
+                            "url(\"http",
+                            "url('http",
+                            "from 'http",
+                            "from \"http"}) {
+    EXPECT_FALSE(contains(html, fetch)) << fetch;
+  }
+  // And specifically not the hosts it used to load from.
+  for (const char* host :
+       {"unpkg.com", "cdn.jsdelivr.net", "esm.sh", "nturley.github.io"}) {
+    EXPECT_FALSE(contains(html, host)) << host;
+  }
+
+  // leaflet as a classic script, three and golden-layout as ES modules the
+  // import map redirects to their inlined copies.
+  EXPECT_TRUE(
+      contains(html, "<script src=\"data:application/javascript;base64,"));
+  EXPECT_TRUE(contains(html, "type=\"importmap\""));
+  EXPECT_TRUE(
+      contains(html, "\"three\": \"data:application/javascript;base64,"));
+  EXPECT_TRUE(contains(
+      html, "\"golden-layout\": \"data:application/javascript;base64,"));
   EXPECT_TRUE(contains(html, "type=\"module\""));
-  EXPECT_TRUE(contains(html, "esm.sh/golden-layout"));
-  // No vendored golden-layout bundle in the HTML.
-  EXPECT_FALSE(contains(html, "goldenlayout.umd"));
+  EXPECT_TRUE(contains(html, "from 'golden-layout'"));
+  EXPECT_TRUE(contains(html, "from 'three'"));
+}
+
+// The icons the stylesheets ask for are reached through relative urls, which
+// resolve against the saved file's directory unless they too are inlined.
+TEST_F(SaveReportTest, StylesheetIconsAreInlined)
+{
+  const std::string path = tempHtml("css_icons");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  // Every stylesheet is base64, so decode the leaflet one and look inside.
+  const std::string marker = "href=\"data:text/css;base64,";
+  const size_t begin = html.find(marker);
+  ASSERT_NE(begin, std::string::npos);
+  const size_t start = begin + marker.size();
+  const size_t end = html.find('"', start);
+  ASSERT_NE(end, std::string::npos);
+  const std::string css = base64Decode(html.substr(start, end - start));
+
+  EXPECT_TRUE(contains(css, ".leaflet-container"));
+  EXPECT_TRUE(contains(css, "url(\"data:image/png;base64,"));
+  EXPECT_FALSE(contains(css, "url(images/"));
 }
 
 // ─── Cache JSON Responses ───────────────────────────────────────────────────
