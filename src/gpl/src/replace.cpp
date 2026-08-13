@@ -377,6 +377,11 @@ int Replace::doNesterovPlace(const int threads,
                              const int start_iter)
 {
   checkHasCoreRows();
+
+  if (options.placeIosMode) {
+    log_->info(GPL, 168, "Concurrent IO placement enabled.");
+  }
+
   if (!initNesterovPlace(options, threads, true)) {
     return 0;
   }

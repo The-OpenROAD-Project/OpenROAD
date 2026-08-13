@@ -104,6 +104,9 @@ struct PlaceOptions
   int padLeft = 0;
   int padRight = 0;
 
+  // Concurrent IO pin + cell placement
+  bool placeIosMode = false;
+
   void skipIo();
   void validate(utl::Logger* log);
 };

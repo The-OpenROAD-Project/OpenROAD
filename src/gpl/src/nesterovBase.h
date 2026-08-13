@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <deque>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -83,6 +84,9 @@ class GCell
   // filler cells
   GCell(int cx, int cy, int dx, int dy);
 
+  // IO pin virtual cells (concurrent IO placement).
+  GCell(odb::dbBTerm* bterm, int cx, int cy, int dx, int dy);
+
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
@@ -137,6 +141,8 @@ class GCell
 
   bool isInstance() const;
   bool isFiller() const;
+  bool isIOPin() const { return bterm_ != nullptr; }
+  odb::dbBTerm* getBTerm() const { return bterm_; }
   bool isMacroInstance() const;
   bool isStdInstance() const;
   bool contains(odb::dbInst* db_inst) const;
@@ -146,6 +152,7 @@ class GCell
 
  private:
   std::vector<Instance*> insts_;
+  odb::dbBTerm* bterm_ = nullptr;
   std::vector<GPin*> gPins_;
   int lx_ = 0;
   int ly_ = 0;
@@ -778,6 +785,7 @@ struct NesterovBaseVars
 
   const bool isSetBinCnt;
   const bool useUniformTargetDensity;
+  bool placeIosMode = false;
   bool isMaxPhiCoefChanged = false;  // not user config
   const float targetDensity;
   const int binCntX;
@@ -1260,6 +1268,8 @@ class NesterovBase
   std::pair<int, int> calculatePlacementPerturbationOffset(
       int dbu_per_micron) const;
 
+  void updateDbIoPins();
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
@@ -1437,6 +1447,73 @@ class NesterovBase
   bool reprint_iter_header_ = false;
 
   void initFillerGCells();
+
+  // concurrent IO pin placement (-place_ios)
+  std::vector<GCell> ioPinStor_;
+  std::vector<odb::Point> io_last_written_pos_;
+  odb::dbTechLayer* io_hor_layer_ = nullptr;
+  odb::dbTechLayer* io_ver_layer_ = nullptr;
+
+  size_t ioNbPos(size_t io_index) const
+  {
+    return nb_gcells_.size() - ioPinStor_.size() + io_index;
+  }
+
+  static constexpr size_t kNoMirrorPartner = std::numeric_limits<size_t>::max();
+  std::vector<std::pair<uint32_t, uint32_t>> io_mirror_pairs_;
+  std::vector<size_t> io_master_to_follower_;
+  std::vector<char> io_is_follower_;
+  std::vector<FloatPoint> io_follower_wl_grad_;
+
+  enum class DieEdge : uint8_t
+  {
+    kLeft,
+    kRight,
+    kBottom,
+    kTop
+  };
+  static bool isHorizontalEdge(DieEdge edge)
+  {
+    return edge == DieEdge::kBottom || edge == DieEdge::kTop;
+  }
+
+  struct PerimSegment
+  {
+    DieEdge edge;
+    float lo;
+    float hi;
+  };
+  std::vector<PerimSegment> io_free_segments_;
+  std::vector<std::vector<PerimSegment>> io_constraint_segments_;
+
+  void initIoPinGCells();
+  void pickIoPinDummyLayers();
+  void initIoConstraints();
+  static std::vector<PerimSegment> mirrorSegments(
+      const std::vector<PerimSegment>& segs);
+  static std::vector<PerimSegment> intersectSegments(
+      const std::vector<PerimSegment>& a,
+      const std::vector<PerimSegment>& b);
+  bool rectToPerimSegment(const odb::Rect& r, PerimSegment& seg) const;
+  void seedIoPinGCell(size_t io_index);
+  size_t ioIndexOf(const GCellHandle& handle) const;
+  FloatPoint projectOntoSegment(const PerimSegment& seg,
+                                float x,
+                                float y) const;
+  const PerimSegment* nearestSegment(const std::vector<PerimSegment>& segs,
+                                     float x,
+                                     float y,
+                                     FloatPoint* projection) const;
+  const std::vector<PerimSegment>& ioLocus(size_t io_index) const;
+  FloatPoint projectIoPin(size_t io_index, float x, float y) const;
+  DieEdge ioEdgeOnLocus(size_t io_index, int cx, int cy) const;
+
+  FloatPoint mirrorOfIoPin(size_t master_io, const FloatPoint& p) const;
+  void applyMirrorConstraints(std::vector<FloatPoint>& coordi) const;
+  bool isMirrorFollower(size_t io_index) const
+  {
+    return io_index < io_is_follower_.size() && io_is_follower_[io_index];
+  }
 };
 
 inline std::vector<Bin>& NesterovBase::getBins()
