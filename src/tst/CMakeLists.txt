@@ -46,6 +46,23 @@ target_link_libraries(tst
     OpenSTA
 )
 
+# LEC via kepler-formal, invoked as a subprocess and never linked (GPL-3.0 vs
+# BSD-3-Clause). The binary is an external dependency resolved at run time from
+# $KEPLER_FORMAL or $PATH, so there is nothing to find_package here.
+add_library(tst_lec
+    src/lec.cpp
+)
+
+target_include_directories(tst_lec
+  PUBLIC
+    include
+)
+
+target_link_libraries(tst_lec
+  PUBLIC
+    GTest::gtest
+)
+
 # IntegratedFixture pulls in the full optimization tool chain (ant, dpl, est,
 # grt, rsz, stt). Kept separate so lightweight tst consumers don't link it.
 add_library(tst_integrated_fixture

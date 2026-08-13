@@ -2,6 +2,8 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//bazel:kepler.bzl", "transitioned_binary")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -114,6 +116,38 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
+        "@googletest//:gtest",
+    ],
+)
+
+# The kepler-formal binary, built from the pinned @kepler-formal module with
+# `-xc++` stripped from cxxopts (see //bazel:kepler.bzl). Add it to a test's
+# `data` to get the LEC engine as a runfile; lec.cpp resolves it from there,
+# falling back to $KEPLER_FORMAL / $PATH for a locally installed binary.
+transitioned_binary(
+    name = "kepler_formal_bin",
+    testonly = 1,
+    binary = ["@kepler-formal//src/bin:kepler-formal"],
+    visibility = ["//visibility:public"],
+)
+
+# LEC via kepler-formal, invoked as a subprocess and never linked (GPL-3.0 vs
+# BSD-3-Clause). The binary is resolved at run time -- from the runfiles of the
+# test that declares :kepler_formal_bin in data, or from $KEPLER_FORMAL / $PATH
+# -- so this library links nothing of it.
+cc_library(
+    name = "lec",
+    testonly = 1,
+    srcs = ["src/lec.cpp"],
+    hdrs = ["include/tst/lec.h"],
+    # Every test that LECs gets the binary in its runfiles, so under bazel the
+    # tool is never missing and the tests can never quietly degrade.
+    data = [":kepler_formal_bin"],
+    defines = ["BAZEL_BUILD"],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
     ],
 )

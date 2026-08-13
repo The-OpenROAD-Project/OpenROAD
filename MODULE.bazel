@@ -213,6 +213,31 @@ bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = Tr
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
 
+# kepler-formal: the LEC engine the hierarchy conformance tests shell out to.
+# Never linked (GPL-3.0 vs BSD-3-Clause); built here only so the tests get the
+# binary as a runfile instead of requiring a locally installed one.
+#
+# Its @onetbb dep is built with rules_foreign_cc cmake(), which reuses
+# CMAKE_CXX_FLAGS at link time; OpenROAD's global `-xc++` (.bazelrc) would then
+# make clang parse .o files as source. //bazel:kepler.bzl wraps the binary in a
+# transition that strips that one flag for this subgraph only.
+bazel_dep(name = "kepler-formal", version = "1.0.0", dev_dependency = True)
+
+# The patch stops naja's Python-embedding target from exporting
+# `-L/usr/lib/<multiarch>` as a linkopt: it precedes bazel's own -L entries, so
+# @onetbb's `-l:libtbb.so.12` / `-l:libtbbmalloc.so.2` resolve to the host's
+# system TBB (link failure under the hermetic toolchain; two TBB runtimes in
+# one process where it does link). To be proposed upstream, then dropped.
+git_override(
+    module_name = "kepler-formal",
+    commit = "5eced47bf5d4330b60dcaadc7babdfdc092b0c3b",
+    patch_strip = 1,
+    patches = [
+        "//bazel/kepler-patches:0001-python-embed-do-not-export-a-system-library-search-di.patch",
+    ],
+    remote = "https://github.com/keplertech/kepler-formal.git",
+)
+
 # JavaScript / web UI — only used for JS unit tests in src/web/test
 bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
 bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)

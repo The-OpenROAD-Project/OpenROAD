@@ -953,6 +953,31 @@ _install_bazel() {
                 yum install -y \
                 glibc-devel libxml2 ncurses-libs zlib libstdc++
         fi
+
+        # kepler-formal, the equivalence checker used by the hierarchy
+        # conformance tests, is built from source as a bazel dev_dependency.
+        # Its own dependencies reach outside bazel for these host tools:
+        #   cmake/make/pkg-config  rules_foreign_cc builds oneTBB with them
+        #   bison/flex/m4          naja's verilog scanner and parser codegen
+        #   python3 headers        naja's pyloader is on the critical path to
+        #                          the binary (KeplerFormal.cpp calls
+        #                          SNLPyLoader::loadPrimitives), and its repo
+        #                          rule hard-fails without python3-config
+        # Without them the failure surfaces inside a bazel fetch as an
+        # unhelpful repository-rule error, so install them with bazel itself.
+        if _command_exists "apt-get"; then
+            _execute "Installing kepler-formal host build tools..." \
+                apt-get -y install --no-install-recommends \
+                bison cmake flex m4 make pkg-config python3-dev
+        elif _command_exists "yum"; then
+            _execute "Installing kepler-formal host build tools..." \
+                yum install -y \
+                bison cmake flex m4 make pkgconf-pkg-config python3-devel
+        elif _command_exists "zypper"; then
+            _execute "Installing kepler-formal host build tools..." \
+                zypper -n install \
+                bison cmake flex m4 make pkg-config python3-devel
+        fi
         if [[ "${NO_GUI}" != "yes" ]]; then
             # Install xcb libraries needed for GUI support with Bazel builds
             if _command_exists "apt-get"; then
