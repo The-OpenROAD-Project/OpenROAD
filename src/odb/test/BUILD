@@ -298,6 +298,7 @@ filegroup(
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
         "data/lef58_celledgespacing_numeric.lef",
+        "data/lef58_macro_edgetype_numeric.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",
@@ -338,7 +339,7 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
-    visibility = ["//src/odb/test/cpp:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(

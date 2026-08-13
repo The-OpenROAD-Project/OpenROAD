@@ -11,6 +11,9 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
+    "3dic_cross",
+    "3dic_get_cells",
+    "3dic_read_db",
     "block_sta1",
     "check_axioms",
     "clock_pin",
@@ -19,6 +22,7 @@ ALL_TESTS = [
     "escape_slash_hier",
     "find_clks1",
     "find_clks2",
+    "get_nets1_hier",
     "get_ports1",
     "get_ports1_hier",
     "hier2",
@@ -110,6 +114,28 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "3dic_cross": [
+                "//src/odb/test:regression_resources",
+                "3dic_cross_flop.3dbv",
+                "3dic_cross_flop_a.bmap",
+                "3dic_cross_flop_a.def",
+                "3dic_cross_flop_b.bmap",
+                "3dic_cross_flop_b.def",
+                "3dic_cross_top.v",
+            ],
+            "3dic_get_cells": [
+                "//src/odb/test:regression_resources",
+            ],
+            "3dic_read_db": [
+                "//src/odb/test:regression_resources",
+                "3dic_cross.3dbx",
+                "3dic_cross_flop.3dbv",
+                "3dic_cross_flop_a.bmap",
+                "3dic_cross_flop_a.def",
+                "3dic_cross_flop_b.bmap",
+                "3dic_cross_flop_b.def",
+                "3dic_cross_top.v",
+            ],
             "block_sta1": [
                 "example1_typ.lib",
                 "example1.def",
@@ -118,6 +144,9 @@ filegroup(
             "find_clks1": [
                 "pad.lef",
                 "pad.lib",
+            ],
+            "get_nets1_hier": [
+                "hier1.v",
             ],
             "get_ports1_hier": [
                 "get_ports1.v",

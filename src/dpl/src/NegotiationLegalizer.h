@@ -5,10 +5,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -74,6 +74,7 @@ struct FenceRegion
 struct NegCell
 {
   odb::dbInst* db_inst{nullptr};
+  Node* node{nullptr};  // cached network_->getNode(db_inst)
 
   int init_x{0};     // position after global placement (sites)
   int init_y{0};     // position after global placement (rows)
@@ -92,18 +93,6 @@ struct NegCell
   {
     return std::abs(x - init_x) + std::abs(y - init_y);
   }
-};
-
-// ---------------------------------------------------------------------------
-// AbacusCluster – transient state during the Abacus row sweep
-// ---------------------------------------------------------------------------
-struct AbacusCluster
-{
-  std::vector<int> cell_indices;  // ordered left-to-right within the row
-  double optimal_x{0.0};          // solved optimal left-edge (fractional)
-  double total_weight{0.0};
-  double total_q{0.0};  // Σ w_i * x_i^0
-  int total_width{0};   // Σ cell widths (sites)
 };
 
 // ---------------------------------------------------------------------------
@@ -134,7 +123,6 @@ class NegotiationLegalizer
   void commitNegotiationPosToDpl();
 
   // Tuning knobs (all have paper-default values)
-  void setRunAbacus(bool run) { run_abacus_ = run; }
   void setMf(double mf) { max_disp_multiplier_ = mf; }
   void setTh(int th) { max_disp_threshold_ = th; }
   void setMaxIterNeg(int n) { max_iter_neg_ = n; }
@@ -165,11 +153,6 @@ class NegotiationLegalizer
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);
 
-  // Abacus pass
-  [[nodiscard]] std::vector<int> runAbacus();
-  void abacusRow(int rowIdx, std::vector<int>& cellsInRow);
-  void collapseClusters(std::vector<AbacusCluster>& clusters, int rowIdx);
-  void assignClusterPositions(const AbacusCluster& cluster, int rowIdx);
   [[nodiscard]] bool isCellLegal(int cell_idx) const;
 
   // Negotiation pass
@@ -182,8 +165,12 @@ class NegotiationLegalizer
   void place(int cell_idx, int x, int y);
   [[nodiscard]] std::pair<int, int> findBestLocation(int cell_idx,
                                                      int iter = 0) const;
-  [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double negotiationCost(int cell_idx,
+                                       int x,
+                                       int y,
+                                       double abort_bound) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double targetCostFromDisp(int disp) const;
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
@@ -198,9 +185,7 @@ class NegotiationLegalizer
       const std::unordered_map<int, int>& no_cand_by_height,
       const std::unordered_map<int, int>& same_pos_by_height) const;
 
-  // Post-optimisation
-  void greedyImprove(int passes);
-  void cellSwap();
+  // Stall recovery
   void diamondRecovery(const std::vector<int>& activeCells);
 
   // Constraint helpers
@@ -247,10 +232,6 @@ class NegotiationLegalizer
       int base_x,
       int target_y,
       int site_window) const;
-  [[nodiscard]] std::pair<int, int> snapToLegal(int cell_idx,
-                                                int x,
-                                                int y) const;
-
   // DPL Grid synchronisation helpers – keep the Opendp pixel grid in sync
   // with NegotiationLegalizer cell positions so that PlacementDRC neighbour
   // lookups (edge spacing, padding, one-site gaps) see correct data.
@@ -304,9 +285,9 @@ class NegotiationLegalizer
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
 
-  // Reusable scratch set for updateHistoryCosts() pixel deduplication,
-  // kept as a member so the per-iteration allocation is amortized.
-  std::unordered_set<int> hist_seen_pixels_;
+  // Per-pixel "already bumped this call" marker for updateHistoryCosts().
+  std::vector<uint32_t> hist_seen_stamp_;
+  uint32_t hist_gen_{0};
 
   double max_disp_multiplier_{kMfDefault};  // mf on the paper
   int max_disp_threshold_{kThDefault};      // th on the paper
@@ -322,24 +303,9 @@ class NegotiationLegalizer
   int last_illegal_cells_{0};
   int last_illegal_sites_{0};
 
-  // Cells that actually changed position during the current negotiation
-  // iteration. Passed to the debug observer so cells from prior iterations
-  // are rendered in grey while current-iteration movers keep directional
-  // colors.
-  std::unordered_set<odb::dbInst*> current_iter_movers_;
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
-  bool run_abacus_{false};
   bool disable_window_extension_{false};
-
-  // Mutable profiling accumulators for findBestLocation breakdown (seconds).
-  mutable double prof_init_search_s_{0};
-  mutable double prof_curr_search_s_{0};
-  mutable double prof_filter_s_{0};
-  mutable double prof_neg_cost_s_{0};
-  mutable double prof_drc_s_{0};
-  mutable int prof_candidates_evaluated_{0};
-  mutable int prof_candidates_filtered_{0};
 
   // Stuck-cell tallies for the current runNegotiation call. Reset at the
   // start of runNegotiation and printed at the end. The per-height maps are

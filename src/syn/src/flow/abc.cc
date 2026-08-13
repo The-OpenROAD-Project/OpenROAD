@@ -71,11 +71,26 @@ static Literal AND(Graph& g, Literal a, Literal b)
   return Literal::neg(g.add<Or>(a.net(), b.net()).asNet());
 }
 
-void abcRoundtrip(Graph& g, const std::string& commands, utl::Logger* logger)
+void abcRoundtrip(Graph& g,
+                  const std::string& commands,
+                  utl::Logger* logger,
+                  int naming_threshold)
 {
   g.normalize();
 
   // === Phase 1: Export graph to GIA ===
+
+  std::vector<int> fanout;
+  if (naming_threshold >= 0) {
+    // Build fanout number map to apply the threshold and decide
+    // which names to keep
+    fanout.resize(g.tableSize(), 0);
+    g.forEachInstance([&](const Instance* inst) {
+      if (!inst->is<Name>() || !inst->as<Name>()->tentative()) {
+        inst->visit([&](Net fanin) { fanout[Graph::netId(fanin)]++; });
+      }
+    });
+  }
 
   std::vector<int> net2lit(g.tableSize(), -1);
   std::vector<Net> ci2net;  // CI index → original Net
@@ -158,10 +173,15 @@ void abcRoundtrip(Graph& g, const std::string& commands, utl::Logger* logger)
       return;
     }
     if (inst->is<TieLow>() || inst->is<TieHigh>() || inst->is<TieX>()
-        || (inst->is<Name>() && inst->as<Name>()->tentative())
         || inst->is<Not>()) {
       return;
     }
+
+    bool tentative_name = inst->is<Name>() && inst->as<Name>()->tentative();
+    if (tentative_name && naming_threshold < 0) {
+      return;  // naming threshold not in use; ignore tentative names
+    }
+
     inst->visit([&](Net fanin) {
       if (fanin.isConst()) {
         return;
@@ -170,6 +190,11 @@ void abcRoundtrip(Graph& g, const std::string& commands, utl::Logger* logger)
       if (net2lit[fid] < 0) {
         return;  // not in the AIG
       }
+
+      if (tentative_name && fanout[Graph::netId(fanin)] < naming_threshold) {
+        return;
+      }
+
       // Only add if this net is produced by an AIG gate, or is
       // the complement of such
       auto [producer, off] = g.resolve(fanin);

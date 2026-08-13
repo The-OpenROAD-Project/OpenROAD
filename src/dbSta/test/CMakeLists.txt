@@ -1,6 +1,9 @@
 or_integration_tests(
   "dbSta"
   TESTS
+    3dic_cross
+    3dic_get_cells
+    3dic_read_db
     block_sta1
     check_axioms
     clock_pin
@@ -9,6 +12,7 @@ or_integration_tests(
     escape_slash_hier
     find_clks1
     find_clks2
+    get_nets1_hier
     get_ports1
     get_ports1_hier
     hier2

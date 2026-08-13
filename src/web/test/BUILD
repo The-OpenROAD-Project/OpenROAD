@@ -80,6 +80,13 @@ js_test(
 )
 
 js_test(
+    name = "websocket_tile_layer_test",
+    data = JS_FILES,
+    entry_point = "js/test-websocket-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "checkbox_tree_model_test",
     data = JS_FILES,
     entry_point = "js/test-checkbox-tree-model.js",
@@ -88,7 +95,7 @@ js_test(
 
 js_test(
     name = "display_controls_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -157,6 +164,34 @@ js_test(
 )
 
 js_test(
+    name = "merged_tile_layer_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-merged-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "tile_merge_test",
+    data = JS_FILES,
+    entry_point = "js/test-tile-merge.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "dpr_test",
+    data = JS_FILES,
+    entry_point = "js/test-dpr.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "device_pixels_test",
+    data = JS_FILES,
+    entry_point = "js/test-device-pixels.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "theme_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-theme.js",
@@ -212,6 +247,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",

@@ -1725,6 +1725,8 @@ class extMain
 {
   // --------------------- dkf 092024 ------------------------
  public:
+  void run();
+
   extSolverGen* _currentSolverGen;
 
   // v2 -----------------------------------------------------
@@ -1828,6 +1830,15 @@ class extMain
                                const char* postfix,
                                bool v = false);
   bool modelExists();
+
+  void setExtractionRulesFile(const std::string& extraction_rules_file)
+  {
+    extraction_rules_file_ = extraction_rules_file;
+  }
+  const std::string& getExtractionRulesFile() const
+  {
+    return extraction_rules_file_;
+  }
 
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
@@ -2054,14 +2065,6 @@ class extMain
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
 
-  int setMinTypMax(bool min,
-                   bool typ,
-                   bool max,
-                   int setMin,
-                   int setTyp,
-                   int setMax,
-                   uint32_t extDbCnt);
-
   extRCModel* getRCmodel(uint32_t n);
 
   void calcRes0(double* deltaRes,
@@ -2124,7 +2127,9 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  void makeBlockRCsegs();
+  void setCornerCount();
+
+  Array1D<extCorner*>* getProcessCornerTable() { return _processCornerTable; }
 
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,
@@ -2665,6 +2670,8 @@ class extMain
  private:
   utl::Logger* logger_;
 
+  std::string extraction_rules_file_;
+
   bool _batchScaleExt = true;
   Array1D<extCorner*>* _processCornerTable = nullptr;
   Array1D<extCorner*>* _scaledCornerTable = nullptr;
@@ -2829,6 +2836,7 @@ class extMain
 
 std::unique_ptr<extRCModel> parseRules(
     odb::dbTech* tech,
+    const std::string& rules_file,
     const Array1D<extCorner*>* extractor_corner_table,
     bool is_v2,
     utl::Logger* logger);

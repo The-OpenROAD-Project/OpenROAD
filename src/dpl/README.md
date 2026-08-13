@@ -47,7 +47,6 @@ detailed_placement
     [-disallow_one_site_gaps]
     [-report_file_name filename]
     [-use_diamond_legalizer]
-    [-abacus]
     [-site_search_window sites]
     [-row_search_window rows]
     [-drc_penalty penalty]
@@ -64,7 +63,6 @@ detailed_placement
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_diamond_legalizer` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
-| `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
 | `-site_search_window` | NegotiationLegalizer: base number of sites a cell may be moved left or right of its initial position, capped by `-max_displacement`. Default `20`, `0` allowed (no horizontal movement). |
 | `-row_search_window` | NegotiationLegalizer: base number of rows a cell may be moved up or down from its initial position, capped by `-max_displacement`. Default `5`, `0` allowed (no row changes). |
 | `-disable_window_extension` | NegotiationLegalizer: disables all search-window extensions, so the window is fixed to the base `-site_search_window`/`-row_search_window` size regardless of cell size or nearby walls. By default, the effective search window can instead grow past base sizing in two ways: (1) it's extended to at least the cell's own width/height, and (2) extended if cut short by a macro or core boundary. |
@@ -211,27 +209,17 @@ Simply run the following script:
 
 The following limitations apply when using the NegotiationLegalizer (default):
 
-1. **Abacus cluster chain**: The current Abacus implementation uses a
-   simplified cluster structure. A production version should maintain an
-   explicit doubly-linked list of cells within each cluster, as in the
-   original Spindler et al. paper.
-
-2. **Multithreading**: The negotiation pass is single-threaded.
+1. **Multithreading**: The negotiation pass is single-threaded.
    Extend with the inter-region parallelism from NBLG (Algorithm 2, dynamic
    region adjustment) using OpenMP or std::thread.
 
-3. **Fence region R-tree**: Replace linear scan in `FenceRegion::nearestRect()`
+2. **Fence region R-tree**: Replace linear scan in `FenceRegion::nearestRect()`
    with a spatial index (Boost.Geometry rtree or OpenROAD's existing RTree)
    for large designs with many fence sub-rectangles.
 
-4. **Row rail inference**: Currently uses row-index parity as a proxy for
+3. **Row rail inference**: Currently uses row-index parity as a proxy for
    VDD/VSS. Replace with actual LEF pg_pin parsing once available in the
    build context.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+opendp+in%3Atitle)
-about this tool.
 
 ## Authors
 
@@ -242,9 +230,8 @@ about this tool.
 ## References
 
 1. Do, S., Woo, M., & Kang, S. (2019, May). Fence-region-aware mixed-height standard cell legalization. In Proceedings of the 2019 on Great Lakes Symposium on VLSI (pp. 259-262). [(.pdf)](https://dl.acm.org/doi/10.1145/3299874.3318012)
-2. P. Spindler et al., "Abacus: Fast legalization of standard cell circuits with minimal movement," ISPD 2008.
-3. J. Chen et al., "NBLG: A Robust Legalizer for Mixed-Cell-Height Modern Design," IEEE TCAD, vol. 41, no. 11, 2022.
-4. L. McMurchie and C. Ebeling, "PathFinder: A negotiation-based performance-driven router for FPGAs," 1995.
+2. J. Chen et al., "NBLG: A Robust Legalizer for Mixed-Cell-Height Modern Design," IEEE TCAD, vol. 41, no. 11, 2022.
+3. L. McMurchie and C. Ebeling, "PathFinder: A negotiation-based performance-driven router for FPGAs," 1995.
 
 ## License
 

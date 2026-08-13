@@ -6,7 +6,7 @@
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
-load("//test:regression.bzl", "doc_check_test", "regression_rule_test", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -18,6 +18,7 @@ COMPULSORY_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",
+    "ndr_no_auto_taper",
     "obstruction",
     "single_step",
     "ta_ap_aligned",
@@ -36,6 +37,7 @@ ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 BIG_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
+    "ndr_no_auto_taper",
 ]
 
 PY_TESTS = [
@@ -222,19 +224,15 @@ doc_check_test(
     visibility = ["//visibility:public"],
 )
 
-regression_rule_test(
-    name = "aes_nangate45-py_test",
-    bazel_test_sh = "//test:bazel_test.sh",
+regression_test(
+    name = "aes_nangate45",
+    timeout = "long",
     check_log = False,
     data = [
         "aes_nangate45.route_guide",
         "aes_nangate45_preroute.def",
         ":regression_resources",
     ],
-    openroad = "//:openroad",
-    regression_test = "//test:regression_test.sh",
     tags = ["manual"],
-    test_file = "aes_nangate45.py",
-    test_name = "aes_nangate45",
     visibility = ["//visibility:public"],
 )

@@ -40,6 +40,7 @@ struct Options
   int halo_x = -1;  // default = 2um
   int halo_y = -1;  // default = 2um
   int row_min_width = -1;
+  int row_min_height = 0;  // 0 = disabled
   odb::dbMaster* cnrcap_nwin_master = nullptr;
   odb::dbMaster* cnrcap_nwout_master = nullptr;
   odb::dbMaster* tap_nwintie_master = nullptr;
@@ -156,6 +157,9 @@ class Tapcell
                                       InstIndexableGetter>;
 
   std::vector<odb::dbBox*> findBlockages();
+  void checkPlaceable(odb::dbMaster* master, const std::string& option) const;
+  void checkPlaceable(const Options& options) const;
+  void checkPlaceable(const EndcapCellOptions& options) const;
   bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
   odb::dbInst* makeInstance(odb::dbBlock* block,
                             odb::dbMaster* master,
@@ -185,6 +189,7 @@ class Tapcell
                     const InstTree& fixed_instances);
 
   int defaultDistance() const;
+  int maxCoreCellHeight() const;
 
   std::vector<Polygon90> getBoundaryAreas() const;
   std::vector<Edge> getBoundaryEdges(const Polygon& area, bool outer) const;
@@ -205,8 +210,9 @@ class Tapcell
                                    bool outer,
                                    const EndcapCellOptions& options);
 
-  CornerMap placeEndcapCorner(const Corner& corner,
-                              const EndcapCellOptions& options);
+  void placeEndcapCorner(const Corner& corner,
+                         const EndcapCellOptions& options,
+                         odb::PtrSet<odb::dbInst>& area_corners);
   int placeEndcapEdge(const Edge& edge,
                       const CornerMap& corners,
                       const EndcapCellOptions& options);
@@ -220,8 +226,10 @@ class Tapcell
                      EdgeType edge_type,
                      const std::string& prefix);
   int placeEndcapEdgeVertical(const Edge& edge,
-                              const CornerMap& corners,
                               const EndcapCellOptions& options);
+  bool isRowSpanOccupied(odb::dbRow* row, int x_min, int x_max) const;
+  bool overlapsPlacedCell(odb::dbRow* row, int x_min, int x_max) const;
+  std::vector<std::pair<int, int>> occupiedSpans(odb::dbRow* row) const;
 
   EndcapCellOptions correctEndcapOptions(
       const EndcapCellOptions& options) const;
@@ -240,9 +248,8 @@ class Tapcell
   std::string tap_prefix_;
   std::string endcap_prefix_;
   std::vector<Edge> filled_edges_;
-  // x-ranges already filled by horizontal endcap edges, per row.
-  odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>>
-      filled_horizontal_edges_;
+  // x-spans already occupied by endcap cells, per row.
+  odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>> occupied_row_spans_;
   // corner cells placed so far, per row, persisted across areas/holes.
   CornerMap placed_corners_;
 };

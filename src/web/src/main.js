@@ -4,13 +4,25 @@
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
-import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
+import {
+    createWebSocketTileLayer,
+    createOverlayTileLayer,
+    currentDpr,
+    floorClampZoom,
+} from './websocket-tile-layer.js';
+import { createMergedTileLayer } from './merged-tile-layer.js';
+import { installDeviceGridSnapping } from './device-pixels.js';
+import {
+    tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
+    watchDevicePixelRatio, tileSizeFields,
+} from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection }
+    from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -89,6 +101,10 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
+    accessPointsLayer: null,
+    regionsLayer: null,
+    mfgGridLayer: null,
+    gcellGridLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -103,6 +119,10 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
+    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
+    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // display-controls.js and read lazily by websocket-tile-layer.js.
+    layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
     showDbu: getCookie('or_show_dbu') === '1',
     selectableLayers: new Set(),
@@ -112,6 +132,11 @@ const app = {
     heatMapLegendEl: null,
     renderHeatMapControls: null,
     rulerManager: null,
+    // Bumped by beginSelection() whenever a panel takes over the selection;
+    // see ui-utils.js.  Panels register their reset callbacks in
+    // `selectionResetters` via onSelectionReset().
+    selectionToken: 0,
+    selectionResetters: [],
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
     },
@@ -185,6 +210,17 @@ const visibility = {
     srouting_vias: true,
     pins: true,
     pin_names: true,
+    // Access points (dbAccessPoint X markers) — off by default, matching GUI
+    access_points: false,
+    // Region (dbRegion) boundaries — on by default, matching GUI
+    regions: true,
+    // Manufacturing-grid dots — off by default, matching GUI
+    mfg_grid: false,
+    // GCell grid lines — off by default, matching GUI
+    gcell_grid: false,
+    // Flywires only (selected nets as straight driver->sink lines) —
+    // off by default, matching GUI
+    flywires_only: false,
     blockages: true,
     // Blockages
     placement_blockages: true,
@@ -199,6 +235,7 @@ const visibility = {
     // Module view
     module_view: false,
     // Misc
+    detailed: false,
     rulers: true,
     scale_bar: true,
     // Debug
@@ -279,6 +316,48 @@ try {
 const WebSocketTileLayer = createWebSocketTileLayer(
     visibility, app.visibleLayerNames, selectability, app.selectableLayers,
     app);
+
+// ─── Tile grouping ──────────────────────────────────────────────────────────
+//
+// One pane per tech layer per chiplet puts a multi-die design at ~97 panes and
+// ~582 MB of decoded tile images, past the browser's ~458 MB ceiling, where
+// Chrome discards decodes and the discarded regions paint white until something
+// forces a full invalidation.  Merging the routing layers into N canvas panes,
+// N derived from a memory budget, bounds the total regardless of how many layers
+// or chiplets the design has.
+//
+//   ?mergetiles=0        legacy one-pane-per-layer, for A/B comparison
+//   ?tilebudget=<MB>     override the budget (default 350 MB)
+//   ?mergegroups=<N>     pin N directly, bypassing the budget
+(function configureTileMerging() {
+    let params = null;
+    try {
+        params = new URLSearchParams(window.location.search);
+    } catch (_) {
+        params = null;
+    }
+    const param = (name) => (params ? params.get(name) : null);
+
+    app.mergeTiles = param('mergetiles') !== '0';
+    const budgetMB = Number(param('tilebudget'));
+    if (Number.isFinite(budgetMB) && budgetMB > 0) {
+        app.tileBudgetBytes = Math.round(budgetMB * 1024 * 1024);
+    }
+    const groups = Number(param('mergegroups'));
+    if (Number.isFinite(groups) && groups > 0) {
+        app.mergeGroupCount = Math.floor(groups);
+    }
+    // display-controls reads dpr through app so it does not have to import a
+    // layer module just to size the memory budget.
+    app.tileDpr = currentDpr;
+    app.MergedTileLayer = createMergedTileLayer({
+        visibility,
+        selectability,
+        visibleLayers: app.visibleLayerNames,
+        selectableLayers: app.selectableLayers,
+        app,
+    }, { dpr: currentDpr });
+})();
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -286,7 +365,16 @@ const HeatMapTileLayer = L.GridLayer.extend({
     initialize: function(websocketManager, appState, options) {
         this._websocketManager = websocketManager;
         this._appState = appState;
-        L.GridLayer.prototype.initialize.call(this, options);
+        // Same grid as the layer tiles it is drawn over.
+        L.GridLayer.prototype.initialize.call(
+            this, withDeviceExactTileSize(options));
+    },
+
+    // Upscale-only display, same as the layout tile layer: the map rests on
+    // integer zoom so heatmap tiles show 1:1 with no fractional rescaling.
+    _clampZoom: function(zoom) {
+        return L.GridLayer.prototype._clampZoom.call(
+            this, floorClampZoom(this, zoom));
     },
 
     createTile: function(coords, done) {
@@ -322,6 +410,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
             z: coords.z,
             x: coords.x,
             y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
             tile.src = URL.createObjectURL(blob);
         }).catch(() => {
@@ -349,6 +441,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 z: coords.z,
                 x: coords.x,
                 y: coords.y,
+                ...tileSizeFields(currentDpr(), this.getTileSize().x),
             }).then(blob => {
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
@@ -406,20 +499,21 @@ function redrawAllLayers() {
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
 
-    // Show/hide modules layer based on module_view visibility
-    if (app.modulesLayer) {
-        if (visibility.module_view && !app.map.hasLayer(app.modulesLayer)) {
-            app.modulesLayer.addTo(app.map);
-        } else if (!visibility.module_view && app.map.hasLayer(app.modulesLayer)) {
-            app.map.removeLayer(app.modulesLayer);
-        }
-    }
-    // Show/hide pin markers layer (controlled by Shapes > Pins)
-    if (app.pinsLayer) {
-        if (visibility.pins && !app.map.hasLayer(app.pinsLayer)) {
-            app.pinsLayer.addTo(app.map);
-        } else if (!visibility.pins && app.map.hasLayer(app.pinsLayer)) {
-            app.map.removeLayer(app.pinsLayer);
+    // Show/hide the toggleable pseudo-layer tile layers.
+    const toggleableLayers = [
+        [app.modulesLayer, visibility.module_view],   // Module view
+        [app.pinsLayer, visibility.pins],             // Shapes > Pins
+        [app.accessPointsLayer, visibility.access_points],
+        [app.regionsLayer, visibility.regions],
+        [app.mfgGridLayer, visibility.mfg_grid],
+        [app.gcellGridLayer, visibility.gcell_grid],
+    ];
+    for (const [layer, visible] of toggleableLayers) {
+        if (!layer) continue;
+        if (visible && !app.map.hasLayer(layer)) {
+            layer.addTo(app.map);
+        } else if (!visible && app.map.hasLayer(layer)) {
+            app.map.removeLayer(layer);
         }
     }
     for (const layer of app.allLayers) {
@@ -464,13 +558,16 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
-    app.map = L.map(mapDiv, {
-        crs: L.CRS.Simple,
-        zoom: 1,
-        zoomSnap: 0,
-        fadeAnimation: false,
-        attributionControl: false,
-    });
+    app.map = L.map(mapDiv, buildMapOptions());
+    // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
+    // boundaries mid-device-pixel and they show as dark hairlines; this nudges
+    // each tile container back onto the grid after every move.
+    installDeviceGridSnapping(app.map);
+    // Tiles are rasterized for the ratio in force when they were requested and
+    // are never revisited on their own, so a window moved to another monitor —
+    // or a browser zoom change — leaves every tile stretched from the old ratio
+    // into the new box until something forces a refresh. Nothing did.
+    watchDevicePixelRatio(() => redrawAllLayers());
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';
@@ -861,6 +958,9 @@ const LAYOUT_VERSION = 3;
 
 const staticCache = window.__STATIC_CACHE__ || null;
 if (staticCache) {
+    // Before any layer or the map scale is built: a report's tiles are baked at
+    // a fixed size and cannot be re-rendered to fit a different box.
+    useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
@@ -1070,7 +1170,9 @@ app.websocketManager.readyPromise.then(async () => {
         // No design loaded — skip map setup, let user open a DB via menu.
         const hasDesign = designWidth > 0 && designHeight > 0;
         if (hasDesign) {
-            const tileSize = 256;
+            // The map's whole coordinate system is defined in units of one
+            // tile, so this must be the size the layers actually use.
+            const tileSize = tileSizeCss();
             const maxDXDY = Math.max(designWidth, designHeight);
             const scale = tileSize / maxDXDY;
             app.designScale = scale;
@@ -1147,8 +1249,14 @@ app.websocketManager.readyPromise.then(async () => {
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
+            const token = beginSelection(app);
             app.websocketManager.request(selectRequest)
                 .then(data => {
+                    // A newer selection (another click, a layer row, the
+                    // Inspector) has already replaced this one on the server;
+                    // this response describes a selection that no longer
+                    // exists, so it must not drive the Inspector.
+                    if (!isCurrentSelection(app, token)) return;
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {
@@ -1161,11 +1269,22 @@ app.websocketManager.readyPromise.then(async () => {
                         }
                         updateInspector(data);
                         focusComponent('Inspector');
-                        // Highlight selected instance bbox
-                        if (inst.bbox) {
-                            highlightBBox(inst.bbox[0], inst.bbox[1],
-                                          inst.bbox[2], inst.bbox[3]);
-                            pulseHighlight(inst.bbox);
+                        // Outline the object the Inspector is showing, using
+                        // ITS bbox — `data.bbox` — not `selected[0].bbox`.
+                        // For a net the two are different rects: selected[]
+                        // carries the hit-test bbox (dbNet::getTermBBox,
+                        // terminals only) while data.bbox is the descriptor's
+                        // full extent (wire ∪ terminals).  On a power net whose
+                        // straps span the design they differ by ~2x, so the box
+                        // landed nowhere near the net the Inspector was
+                        // describing.  selected[0] is also the wrong OBJECT
+                        // whenever the server cycled `pick` through overlapping
+                        // hits.  Instances are unaffected either way: their
+                        // hit-test bbox IS the descriptor bbox.
+                        if (data.bbox) {
+                            highlightBBox(data.bbox[0], data.bbox[1],
+                                          data.bbox[2], data.bbox[3]);
+                            pulseHighlight(data.bbox);
                         }
                     } else if (!selectRequest.add_to_selection) {
                         // Shift+click on empty space preserves the existing

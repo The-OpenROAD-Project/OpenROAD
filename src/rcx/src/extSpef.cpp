@@ -12,7 +12,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <iomanip>
 #include <limits>
+#include <sstream>
 #include <vector>
 
 #include "name.h"
@@ -91,21 +93,13 @@ extSpef::extSpef(odb::dbTech* tech,
   _ext = extmain;
   _tech = tech;
   _block = blk;
-  _version = version;
+  if (version) {
+    spef_header_.version = version;
+  }
 
   if (blk != nullptr) {
     _blockId = blk->getId();
   }
-
-  strcpy(_divider, "/");
-  strcpy(_delimiter, ":");
-  strcpy(_bus_delimiter, "[]");
-
-  strcpy(_res_unit_word, "OHM");
-  strcpy(_cap_unit_word, "FF");
-  strcpy(_time_unit_word, "NS");
-  strcpy(_ind_unit_word, "HENRY");
-  _design[0] = '\0';
 
   // for ABNORMAL and sparse map numbers should be a hash table
   _idMapTable = new Array1D<uint32_t>(128000);
@@ -170,11 +164,6 @@ void extSpef::set_single_pi(const bool v)
 void extSpef::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
-}
-
-char* extSpef::getDelimiter()
-{
-  return _delimiter;
 }
 
 void extSpef::setupMappingForWrite(uint32_t btermCnt, uint32_t itermCnt)
@@ -312,7 +301,9 @@ void extSpef::reinitCapTable(Array1D<double*>* table, const uint32_t n)
 
 void extSpef::setDesign(const char* name)
 {
-  strcpy(_design, name);
+  if (name) {
+    spef_header_.design_name = name;
+  }
 }
 
 uint32_t extSpef::getInstMapId(const uint32_t id)
@@ -350,13 +341,13 @@ void extSpef::writeITermNode(const uint32_t node)
       sprintf(_msgBuf1,
               "*%d%s%s ",
               getInstMapId(inst->getId()),
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     } else {
       sprintf(_msgBuf1,
               "%s%s%s ",
               addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     }
     strcat(_bufString, _msgBuf1);
@@ -365,13 +356,13 @@ void extSpef::writeITermNode(const uint32_t node)
       fprintf(_outFP,
               "*%d%s%s ",
               getInstMapId(inst->getId()),
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     } else {
       fprintf(_outFP,
               "%s%s%s ",
               addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     }
   }
@@ -429,23 +420,24 @@ void extSpef::writeNode(const uint32_t netId, const uint32_t node)
   dbNet* tnet = _d_net;
   if (_bufString) {
     if (_writeNameMap) {
-      sprintf(_msgBuf1, "*%d%s%d ", netId, _delimiter, node);
+      sprintf(
+          _msgBuf1, "*%d%s%d ", netId, spef_header_.delimiter.c_str(), node);
     } else {
       sprintf(_msgBuf1,
               "%s%s%d ",
               addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               node);
     }
     strcat(_bufString, _msgBuf1);
   } else {
     if (_writeNameMap) {
-      fprintf(_outFP, "*%d%s%d ", netId, _delimiter, node);
+      fprintf(_outFP, "*%d%s%d ", netId, spef_header_.delimiter.c_str(), node);
     } else {
       fprintf(_outFP,
               "%s%s%d ",
               addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               node);
     }
   }
@@ -547,7 +539,7 @@ void extSpef::writePort(const uint32_t node)
 void extSpef::writeSingleRC(const double val, const bool delimiter)
 {
   if (delimiter) {
-    fprintf(_outFP, "%s%g", _delimiter, val * _cap_unit);
+    fprintf(_outFP, "%s%g", spef_header_.delimiter.c_str(), val * _cap_unit);
   } else {
     fprintf(_outFP, "%g", val * _cap_unit);
   }
@@ -557,8 +549,10 @@ void extSpef::writeRCvalue(const double* totCap, const double units)
 {
   fprintf(_outFP, "%g", totCap[_active_corner_number[0]] * units);
   for (int ii = 1; ii < _active_corner_cnt; ii++) {
-    fprintf(
-        _outFP, "%s%g", _delimiter, totCap[_active_corner_number[ii]] * units);
+    fprintf(_outFP,
+            "%s%g",
+            spef_header_.delimiter.c_str(),
+            totCap[_active_corner_number[ii]] * units);
   }
 }
 
@@ -981,7 +975,7 @@ void extSpef::writeCouplingCapsNoSort(dbSet<dbCCSeg>& capSet,
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
     }
     fprintf(_outFP, "\n");
@@ -1008,7 +1002,7 @@ void extSpef::writeCouplingCaps(dbSet<dbCCSeg>& capSet, const uint32_t netId)
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
     }
     fprintf(_outFP, "\n");
@@ -1058,7 +1052,7 @@ void extSpef::writeCouplingCaps(const std::vector<dbCCSeg*>& vec_cc,
       for (int ii = 1; ii < _active_corner_cnt; ii++) {
         sprintf(&msg1[0],
                 "%s%g",
-                _delimiter,
+                spef_header_.delimiter.c_str(),
                 cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
         strcat(_bufString, &msg1[0]);
       }
@@ -1077,7 +1071,7 @@ void extSpef::writeCouplingCaps(const std::vector<dbCCSeg*>& vec_cc,
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               cc->getCapacitance(_active_corner_number[ii]) * _cap_unit);
     }
 
@@ -1153,7 +1147,7 @@ void extSpef::writeRes(const uint32_t netId, dbSet<dbRSeg>& rSet)
     for (int ii = 1; ii < _active_corner_cnt; ii++) {
       fprintf(_outFP,
               "%s%g",
-              _delimiter,
+              spef_header_.delimiter.c_str(),
               rc->getResistance(_active_corner_number[ii]) * _res_unit);
     }
     fprintf(_outFP, " \n");
@@ -1559,14 +1553,14 @@ void extSpef::writeBlock(const char* nodeCoord,
   if (!_stopBeforeDnets && !_stopAfterNameMap) {
     if (strcmp("PF", capUnit) == 0) {
       _cap_unit = 0.001;
-      strcpy(_cap_unit_word, capUnit);
+      spef_header_.capacitance_unit_word = capUnit;
     }
     if (strcmp("MOHM", resUnit) == 0) {
       _res_unit = 1000.0;
-      strcpy(_res_unit_word, resUnit);
+      spef_header_.resistance_unit_word = resUnit;
     } else if (strcmp("KOHM", resUnit) == 0) {
       _res_unit = 0.001;
-      strcpy(_res_unit_word, resUnit);
+      spef_header_.resistance_unit_word = resUnit;
     }
     setCornerCnt(_block->getCornerCount());
 
@@ -1574,7 +1568,7 @@ void extSpef::writeBlock(const char* nodeCoord,
       setupMappingForWrite();
     }
 
-    writeHeaderInfo();
+    fprintf(_outFP, "%s", spef_header_.string(logger_).c_str());
 
     if (_writeNameMap) {
       writeKeyword("\n*NAME_MAP");
@@ -1677,33 +1671,39 @@ uint32_t extSpef::getMappedBTermId(const uint32_t spefId)
   return bterm->getId();
 }
 
-void extSpef::writeHeaderInfo()
+std::string SpefHeader::string(utl::Logger* logger) const
 {
-  fprintf(_outFP, "*SPEF \"ieee 1481-1999\"\n");
-  fprintf(_outFP, "*DESIGN \"%s\"\n", _design);
+  std::ostringstream out;
 
-  std::time_t currentTime = std::time(nullptr);
+  out << "*SPEF \"ieee 1481-1999\"\n";
+  out << "*DESIGN \"" << design_name << "\"\n";
 
-  // Format the current time as a string
-  char buffer[128];
-  std::strftime(buffer,
-                sizeof(buffer),
-                "%H:%M:%S %A %B %d, %Y",
-                std::localtime(&currentTime));
+  const std::time_t current_time = std::time(nullptr);
+  const std::tm* local_time = std::localtime(&current_time);
 
-  fprintf(_outFP, "*DATE \"%s\"\n", buffer);
+  out << "*DATE \"";
 
-  fprintf(_outFP, "*VENDOR \"The OpenROAD Project\"\n");
-  fprintf(_outFP, "*PROGRAM \"OpenROAD\"\n");
-  fprintf(_outFP, "*VERSION \"%s\"\n", _version);
-  fprintf(_outFP, "*DESIGN_FLOW \"NAME_SCOPE LOCAL\" \"PIN_CAP NONE\"\n");
-  fprintf(_outFP, "*DIVIDER %s\n", _divider);
-  fprintf(_outFP, "*DELIMITER %s\n", _delimiter);
-  fprintf(_outFP, "*BUS_DELIMITER %s\n", _bus_delimiter);
-  fprintf(_outFP, "*T_UNIT %d %s\n", _time_unit, _time_unit_word);
-  fprintf(_outFP, "*C_UNIT %d %s\n", 1, _cap_unit_word);
-  fprintf(_outFP, "*R_UNIT %d %s\n", 1, _res_unit_word);
-  fprintf(_outFP, "*L_UNIT %d %s\n", _ind_unit, _ind_unit_word);
+  if (local_time) {
+    out << std::put_time(local_time, "%H:%M:%S %A %B %d, %Y");
+  } else {
+    logger->warn(RCX, 528, "Could not format the SPEF header date.");
+  }
+
+  out << "\"\n";
+
+  out << "*VENDOR \"The OpenROAD Project\"\n";
+  out << "*PROGRAM \"OpenROAD\"\n";
+  out << "*VERSION \"" << version << "\"\n";
+  out << "*DESIGN_FLOW \"NAME_SCOPE LOCAL\" \"PIN_CAP NONE\"\n";
+  out << "*DIVIDER " << divider << "\n";
+  out << "*DELIMITER " << delimiter << "\n";
+  out << "*BUS_DELIMITER " << bus_delimiter << "\n";
+  out << "*T_UNIT 1 " << time_unit_word << "\n";
+  out << "*C_UNIT 1 " << capacitance_unit_word << "\n";
+  out << "*R_UNIT 1 " << resistance_unit_word << "\n";
+  out << "*L_UNIT 1 " << inductance_unit_word << "\n";
+
+  return out.str();
 }
 
 }  // namespace rcx
