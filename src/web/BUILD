@@ -2,7 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -29,6 +29,20 @@ py_binary(
     name = "embed_web_assets",
     srcs = ["src/embed_web_assets.py"],
     main = "src/embed_web_assets.py",
+)
+
+# The vendored libraries are generated files (see third-party/README.md); this
+# is what catches one being edited in place instead of through the script.
+py_test(
+    name = "vendor_lock_test",
+    srcs = ["third-party/update_vendor.py"],
+    args = ["--check"],
+    data = glob(
+        ["third-party/**"],
+        exclude = ["third-party/update_vendor.py"],
+    ),
+    legacy_create_init = 0,
+    main = "third-party/update_vendor.py",
 )
 
 # The report inlines these into one <script type="module">, so the order is
@@ -178,7 +192,6 @@ cc_library(
         "src/tile_generator.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
-        "src/web_assets.h",
         "src/web_chart.cpp",
         "src/web_painter.cpp",
         "src/web_serve.cpp",
@@ -202,6 +215,7 @@ cc_library(
         "src/web_viewer_hook.h",
         "src/request_handler.h",
         "src/clock_tree_report.h",
+        "src/web_assets.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",

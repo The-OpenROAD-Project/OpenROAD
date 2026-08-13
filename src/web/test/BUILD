@@ -69,6 +69,18 @@ test_suite(
     tests = [
         ":request_handler_test",
         ":tile_generator_test",
+        ":web_assets_test",
+    ],
+)
+
+cc_test(
+    name = "web_assets_test",
+    srcs = ["cpp/TestWebAssets.cpp"],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 

@@ -91,6 +91,8 @@ static http::response<http::string_body> handle_request(
   res.set(http::field::content_type, "text/plain");
   res.keep_alive(req.keep_alive());
   res.set(http::field::access_control_allow_origin, "*");
+  res.set("Content-Security-Policy", contentSecurityPolicy());
+  res.set("X-Content-Type-Options", "nosniff");
 
   if (req.method() == http::verb::get) {
     const std::string file_path = assetPathFromTarget(req.target());
@@ -1316,6 +1318,8 @@ void WebServer::saveReport(const std::string& filename,
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content=")"
+      << kReportContentSecurityPolicy << R"(">
 <title>OpenROAD Timing Report</title>
 <link rel="stylesheet" href=")"
       << stylesheetDataUri(
