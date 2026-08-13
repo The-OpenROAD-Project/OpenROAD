@@ -273,6 +273,153 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         issue = "TBD",
+        symptom = "tool-error - 'SNLDesign top contains already a SNLInstance named - x/y' — exact known pattern",
+        netlists = [
+            "bx_naming_escaped_slashcol_inst.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - 'SNLDesign top contains already a SNLInstance named - x/y/z' — depth-3 path variant",
+        netlists = [
+            "bx_naming_escaped_slashcol_inst3.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - duplicate 'wire \\u1/w+w ;' — escaped sub net \\w+w flattened to u1/w+w collides with top escaped ne",
+        netlists = [
+            "bx_naming_escaped_slashcol_escnet.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - duplicate 'wire \\x/p ;' — net synthesized for unconnected output port p of instance x collides wit",
+        netlists = [
+            "bx_naming_escaped_slashcol_port.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - emitted 'INV_X1 assign (...)' unescaped, 'unexpected ASSIGN_KW'",
+        netlists = [
+            "bx_naming_escaped_inst_kw_assign.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - emitted 'module module (' — top module keyword name unescaped",
+        netlists = [
+            "bx_naming_escaped_top_kw.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - emitted 'module top (input, z); input input;' unescaped — illegal",
+        netlists = [
+            "bx_naming_escaped_port_kw_input.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - emitted netlist illegal, 'unexpected MODULE_KW' (writer emitted 'wire module;')",
+        netlists = [
+            "bx_naming_escaped_net_kw_module.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - emitted netlist illegal, 'unexpected WIRE_KW' (writer emitted 'wire wire;')",
+        netlists = [
+            "bx_naming_escaped_net_kw_wire.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error - hier writer emitted 'INV_X1 assign (...)' inside submodule — illegal; flat proved only because the",
+        netlists = [
+            "bx_naming_escaped_d2_inst_kw.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error - hier writer emitted 'module module (' and 'module u1 (...)' unescaped — illegal; flat proved becau",
+        netlists = [
+            "bx_naming_escaped_mod_kw.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error - hier writer emitted 'output output;' and '.output(z)' unescaped — illegal; flat proved only becaus",
+        netlists = [
+            "bx_naming_escaped_d2_port_kw.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error - out_flat.v declares 'wire \\x/y ;' TWICE with two different drivers (top escaped net vs flattened s",
+        netlists = [
+            "bx_naming_escaped_slashcol_net.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error - same",
+        netlists = [
+            "bx_naming_escaped_inst_kw_assign.v",
+            "bx_naming_escaped_port_kw_input.v",
+            "bx_naming_escaped_top_kw.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error - same, 'wire module;' unescaped",
+        netlists = [
+            "bx_naming_escaped_net_kw_module.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error - same, 'wire wire;' unescaped",
+        netlists = [
+            "bx_naming_escaped_net_kw_wire.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -A port cannot be found in INV_X1 model (out_hier.v line 22)",
+        netlists = [
+            "bx_collisions_uniq_clone_eq_libcell.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -SEC cannot run - no aligned observed outputs remain after skipping multi-driver cones",
+        netlists = [
+            "bx_collisions_outport_vs_flatnet.v",
+            "bx_collisions_port_in_vs_flatnet.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
         symptom = "tool-error -SEC cannot run on this design pair - Missing observed output expression for `197.0.`",
         netlists = [
             "nameorder_out_before_in.v",
@@ -299,6 +446,89 @@ CONFORMANCE_EXPECTED_FAIL = [
             "sub_out_from_out.v",
             "sub_out_from_out_bus.v",
             "sub_out_from_out_deep3.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - a/b/c",
+        netlists = [
+            "bx_collisions_inst_deep3.v",
+            "bx_collisions_synth_inst.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - m/c/d",
+        netlists = [
+            "bx_collisions_submodule_esc_vs_path.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y",
+        netlists = [
+            "bx_collisions_known3_esc_first.v",
+            "bx_collisions_known3_inst_vs_path.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y/z",
+        netlists = [
+            "bx_collisions_inst_mixed_esc.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y[0]",
+        netlists = [
+            "bx_collisions_escbracket_vs_path.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -wire collision for net a/b/n (out_flat.v line 11)",
+        netlists = [
+            "bx_collisions_net_deep3.v",
+            "bx_collisions_synth_net.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -wire collision for net m/c/n (out_flat.v line 11)",
+        netlists = [
+            "bx_collisions_subnet_esc_vs_path.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -wire collision for net x/p (out_flat.v line 11)",
+        netlists = [
+            "bx_collisions_unconn_port_vs_esc.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -wire collision for net x/q (out_flat.v line 13)",
+        netlists = [
+            "bx_collisions_dff_net_vs_esc.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -wire collision for net x/y (out_flat.v line 11)",
+        netlists = [
+            "bx_collisions_net_vs_flatnet.v",
         ],
     ),
 ]
@@ -375,6 +605,11 @@ STRUCTURAL_EXPECTED_FAIL = [
         issue = "TBD",
         symptom = "the emitted netlist cannot be read back (STA-0171)",
         netlists = [
+            "bx_naming_escaped_inst_kw_assign.v",
+            "bx_naming_escaped_net_kw_module.v",
+            "bx_naming_escaped_net_kw_wire.v",
+            "bx_naming_escaped_port_kw_input.v",
+            "bx_naming_escaped_top_kw.v",
             "structural/wb_writer_wire_index_overflow.v",
         ],
     ),
@@ -431,6 +666,14 @@ STRUCTURAL_EXPECTED_FAIL = [
         issue = "TBD",
         symptom = "the emitted netlist cannot be read back (STA-0171)",
         netlists = [
+            "bx_naming_escaped_d2_inst_kw.v",
+            "bx_naming_escaped_d2_port_kw.v",
+            "bx_naming_escaped_inst_kw_assign.v",
+            "bx_naming_escaped_mod_kw.v",
+            "bx_naming_escaped_net_kw_module.v",
+            "bx_naming_escaped_net_kw_wire.v",
+            "bx_naming_escaped_port_kw_input.v",
+            "bx_naming_escaped_top_kw.v",
             "structural/wb_writer_wire_index_overflow.v",
         ],
     ),
@@ -459,6 +702,29 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "hier uniquification clones a module per instance",
         netlists = [
             "busslice_two_insts.v",
+            "bx_collisions_base_uniq2.v",
+            "bx_collisions_escmod_uniq.v",
+            "bx_collisions_inst_named_module_x2.v",
+            "bx_collisions_module_prefix_multi.v",
+            "bx_collisions_uniq_chain.v",
+            "bx_collisions_uniq_clone_eq_libcell.v",
+            "bx_collisions_uniq_clone_steals_top.v",
+            "bx_collisions_uniq_cross_prefix.v",
+            "bx_collisions_uniq_inst_named_sub1.v",
+            "bx_collisions_uniq_ports_tied_diff.v",
+            "bx_collisions_uniq_resolution_suffix.v",
+            "bx_collisions_uniq_same_instname2.v",
+            "bx_collisions_uniq_same_instname3.v",
+            "bx_collisions_uniq_synth_eq_existing.v",
+            "bx_collisions_uniq_theft_order_a.v",
+            "bx_collisions_uniq_theft_order_z.v",
+            "bx_collisions_uniq_theft_victim_below.v",
+            "bx_collisions_uniq_user_mod_below_top.v",
+            "bx_collisions_uniq_vs_module_collide.v",
+            "bx_collisions_uniq_vs_module_collide_rev.v",
+            "bx_collisions_uniq_vs_module_same.v",
+            "bx_collisions_uniq_wire_named_clone.v",
+            "bx_naming_plain_case_insts_d3.v",
             "escaped_hier_names.v",
             "fanout_two_subs.v",
             "four_subs_chained.v",
@@ -494,6 +760,28 @@ STRUCTURAL_EXPECTED_FAIL = [
             "busslice_same_in_two_outs.v",
             "busslice_top.v",
             "busslice_two_insts.v",
+            "bx_collisions_bracket_underscore_alias.v",
+            "bx_collisions_bracket_underscore_suffix.v",
+            "bx_collisions_dff_net_vs_esc.v",
+            "bx_collisions_escaped_bracket_form.v",
+            "bx_collisions_port_in_vs_flatnet.v",
+            "bx_collisions_topport_escaped.v",
+            "bx_naming_escaped_busbit_port_collide.v",
+            "bx_naming_escaped_d2_busport.v",
+            "bx_naming_escaped_dotpath_net.v",
+            "bx_naming_escaped_instbit_lookalike.v",
+            "bx_naming_escaped_portbit_collide.v",
+            "bx_naming_escaped_slashcol_escnet.v",
+            "bx_naming_escaped_slashcol_inst.v",
+            "bx_naming_escaped_slashcol_instnet.v",
+            "bx_naming_escaped_slashcol_net.v",
+            "bx_naming_escaped_slashcol_port.v",
+            "bx_naming_escaped_trailchar.v",
+            "bx_naming_plain_case_ports_d1.v",
+            "bx_naming_plain_dollar_port_d1.v",
+            "bx_naming_plain_keywordish_ports_d1.v",
+            "bx_naming_plain_shadow_module_dff_comb.v",
+            "bx_naming_plain_underscore_ports_d1.v",
             "chain1_sub.v",
             "chain1_top.v",
             "chain2_sub.v",
@@ -591,6 +879,15 @@ STRUCTURAL_EXPECTED_FAIL = [
         ],
     ),
     structural_xfail(
+        path = "flat",
+        check = "top_ports",
+        issue = "TBD",
+        symptom = "port list reordered and a port lost",
+        netlists = [
+            "bx_naming_escaped_port_kw_input.v",
+        ],
+    ),
+    structural_xfail(
         path = "hier",
         check = "top_ports",
         issue = "TBD",
@@ -607,6 +904,28 @@ STRUCTURAL_EXPECTED_FAIL = [
             "busslice_same_in_two_outs.v",
             "busslice_top.v",
             "busslice_two_insts.v",
+            "bx_collisions_bracket_underscore_alias.v",
+            "bx_collisions_bracket_underscore_suffix.v",
+            "bx_collisions_dff_net_vs_esc.v",
+            "bx_collisions_escaped_bracket_form.v",
+            "bx_collisions_port_in_vs_flatnet.v",
+            "bx_collisions_topport_escaped.v",
+            "bx_naming_escaped_busbit_port_collide.v",
+            "bx_naming_escaped_d2_busport.v",
+            "bx_naming_escaped_dotpath_net.v",
+            "bx_naming_escaped_instbit_lookalike.v",
+            "bx_naming_escaped_portbit_collide.v",
+            "bx_naming_escaped_slashcol_escnet.v",
+            "bx_naming_escaped_slashcol_inst.v",
+            "bx_naming_escaped_slashcol_instnet.v",
+            "bx_naming_escaped_slashcol_net.v",
+            "bx_naming_escaped_slashcol_port.v",
+            "bx_naming_escaped_trailchar.v",
+            "bx_naming_plain_case_ports_d1.v",
+            "bx_naming_plain_dollar_port_d1.v",
+            "bx_naming_plain_keywordish_ports_d1.v",
+            "bx_naming_plain_shadow_module_dff_comb.v",
+            "bx_naming_plain_underscore_ports_d1.v",
             "chain1_sub.v",
             "chain1_top.v",
             "chain2_sub.v",
@@ -703,6 +1022,15 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_sta_reader_header_bitselect_port.v",
         ],
     ),
+    structural_xfail(
+        path = "hier",
+        check = "top_ports",
+        issue = "TBD",
+        symptom = "port list reordered and a port lost",
+        netlists = [
+            "bx_naming_escaped_port_kw_input.v",
+        ],
+    ),
 
     # ----------------------------------------------------------------------
     # submodule_ports
@@ -725,6 +1053,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         issue = "TBD",
         symptom = "port list reordered and a port lost",
         netlists = [
+            "bx_naming_escaped_d2_port_kw.v",
             "structural/bx_port_rewiring_explicit_port_bus_halves_crossed.v",
             "structural/bx_port_rewiring_explicit_port_bus_whole.v",
             "structural/bx_port_rewiring_explicit_port_concat_perm.v",
@@ -751,6 +1080,8 @@ STRUCTURAL_EXPECTED_FAIL = [
             "alias_both_used.v",
             "alias_both_used_bus.v",
             "alias_net_on_port.v",
+            "bx_naming_escaped_net_kw_logic.v",
+            "bx_naming_escaped_net_kw_wire.v",
             "chain2_top.v",
             "chain4_top.v",
             "chain_across_boundary.v",
@@ -857,6 +1188,8 @@ STRUCTURAL_EXPECTED_FAIL = [
             "alias_both_used_bus.v",
             "alias_net_on_port.v",
             "busslice_mid.v",
+            "bx_naming_escaped_net_kw_logic.v",
+            "bx_naming_escaped_net_kw_wire.v",
             "chain2_sub.v",
             "chain2_top.v",
             "chain4_sub.v",
@@ -945,6 +1278,29 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "instances rebound to a uniquified clone or to another master",
         netlists = [
             "busslice_two_insts.v",
+            "bx_collisions_base_uniq2.v",
+            "bx_collisions_escmod_uniq.v",
+            "bx_collisions_inst_named_module_x2.v",
+            "bx_collisions_module_prefix_multi.v",
+            "bx_collisions_uniq_chain.v",
+            "bx_collisions_uniq_clone_eq_libcell.v",
+            "bx_collisions_uniq_clone_steals_top.v",
+            "bx_collisions_uniq_cross_prefix.v",
+            "bx_collisions_uniq_inst_named_sub1.v",
+            "bx_collisions_uniq_ports_tied_diff.v",
+            "bx_collisions_uniq_resolution_suffix.v",
+            "bx_collisions_uniq_same_instname2.v",
+            "bx_collisions_uniq_same_instname3.v",
+            "bx_collisions_uniq_synth_eq_existing.v",
+            "bx_collisions_uniq_theft_order_a.v",
+            "bx_collisions_uniq_theft_order_z.v",
+            "bx_collisions_uniq_theft_victim_below.v",
+            "bx_collisions_uniq_user_mod_below_top.v",
+            "bx_collisions_uniq_vs_module_collide.v",
+            "bx_collisions_uniq_vs_module_collide_rev.v",
+            "bx_collisions_uniq_vs_module_same.v",
+            "bx_collisions_uniq_wire_named_clone.v",
+            "bx_naming_plain_case_insts_d3.v",
             "escaped_hier_names.v",
             "fanout_two_subs.v",
             "four_subs_chained.v",
@@ -977,13 +1333,37 @@ STRUCTURAL_EXPECTED_FAIL = [
         issue = "TBD",
         symptom = "a clone takes an existing module name, so the name denotes the wrong module",
         netlists = [
+            "bx_collisions_uniq_chain.v",
+            "bx_collisions_uniq_theft_order_z.v",
+            "bx_collisions_uniq_theft_victim_below.v",
+            "bx_collisions_uniq_vs_module_collide.v",
+            "bx_collisions_uniq_vs_module_collide_rev.v",
+            "bx_collisions_uniq_vs_module_same.v",
             "structural/bx_collisions_uniq_vs_module_uninst.v",
+        ],
+    ),
+    structural_xfail(
+        path = "hier",
+        check = "name_identity",
+        issue = "TBD",
+        symptom = "one clone name is the uniquification name of two different modules",
+        netlists = [
+            "bx_collisions_uniq_cross_prefix.v",
         ],
     ),
 
     # ----------------------------------------------------------------------
     # cell_census
     #
+    structural_xfail(
+        path = "hier",
+        check = "cell_census",
+        issue = "TBD",
+        symptom = "the elaborated leaf instance count changed",
+        netlists = [
+            "bx_collisions_uniq_clone_eq_libcell.v",
+        ],
+    ),
 
     # ----------------------------------------------------------------------
     # assigns
@@ -1089,13 +1469,51 @@ STRUCTURAL_EXPECTED_FAIL = [
     # ----------------------------------------------------------------------
     # namespace
     #
+    # The emitted netlist breaks Verilog's one-namespace-per-module rule, or
+    # emits an identifier that needed an escape without it. These netlists are
+    # not readable by a conforming tool, and OpenROAD itself silently merges the
+    # duplicate on re-read.
+    structural_xfail(
+        path = "flat",
+        check = "namespace",
+        issue = "TBD",
+        symptom = "a name is declared twice in one module",
+        netlists = [
+            "bx_collisions_dff_net_vs_esc.v",
+            "bx_collisions_net_deep3.v",
+            "bx_collisions_net_vs_flatnet.v",
+            "bx_collisions_subnet_esc_vs_path.v",
+            "bx_collisions_synth_net.v",
+            "bx_collisions_unconn_port_vs_esc.v",
+            "bx_naming_escaped_slashcol_escnet.v",
+            "bx_naming_escaped_slashcol_net.v",
+            "bx_naming_escaped_slashcol_port.v",
+        ],
+    ),
     structural_xfail(
         path = "flat",
         check = "namespace",
         issue = "TBD",
         symptom = "an identifier is emitted without the escape it needs",
         netlists = [
+            "bx_naming_escaped_net_kw_logic.v",
+            "bx_naming_escaped_net_kw_wire.v",
+            "bx_naming_escaped_port_kw_input.v",
             "structural/wb_writer_wire_index_overflow.v",
+        ],
+    ),
+    structural_xfail(
+        path = "flat",
+        check = "namespace",
+        issue = "TBD",
+        symptom = "one name is used for a net and an instance",
+        netlists = [
+            "bx_collisions_inst_vs_net_cross.v",
+            "bx_collisions_net_and_inst_same_name.v",
+            "bx_collisions_net_vs_inst_cross.v",
+            "bx_collisions_outport_vs_instpath.v",
+            "bx_collisions_topport_escaped.v",
+            "bx_naming_escaped_slashcol_instnet.v",
         ],
     ),
     structural_xfail(
@@ -1104,7 +1522,20 @@ STRUCTURAL_EXPECTED_FAIL = [
         issue = "TBD",
         symptom = "an identifier is emitted without the escape it needs",
         netlists = [
+            "bx_naming_escaped_d2_port_kw.v",
+            "bx_naming_escaped_net_kw_logic.v",
+            "bx_naming_escaped_net_kw_wire.v",
+            "bx_naming_escaped_port_kw_input.v",
             "structural/wb_writer_wire_index_overflow.v",
+        ],
+    ),
+    structural_xfail(
+        path = "hier",
+        check = "namespace",
+        issue = "TBD",
+        symptom = "one name is used for a net and an instance",
+        netlists = [
+            "bx_collisions_net_and_inst_same_name.v",
         ],
     ),
 ]

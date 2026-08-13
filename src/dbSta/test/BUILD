@@ -368,6 +368,11 @@ cc_test(
 # are cases where the top module's odd name IS the hazard under test (a keyword,
 # a digit-leading name, a name that collides with a uniquified clone).
 HIER_TOP_OVERRIDES = {
+    "bx_collisions_uniq_clone_steals_top.v": "sub_i2",
+    "bx_naming_escaped_top_kw.v": "module",
+    "bx_naming_escaped_top_special.v": "t+p",
+    "bx_naming_plain_dollar_top.v": "top$1",
+    "bx_naming_plain_topname_TOP_sub_top.v": "TOP",
 }
 
 HIER_TOP_OVERRIDES_ENV = {"HIER_TOP_OVERRIDES": ",".join([
