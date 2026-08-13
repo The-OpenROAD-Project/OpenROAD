@@ -92,7 +92,6 @@ static http::response<http::string_body> handle_request(
   res.keep_alive(req.keep_alive());
   res.set(http::field::access_control_allow_origin, "*");
   res.set("Content-Security-Policy", contentSecurityPolicy());
-  res.set("X-Content-Type-Options", "nosniff");
 
   if (req.method() == http::verb::get) {
     const std::string file_path = assetPathFromTarget(req.target());

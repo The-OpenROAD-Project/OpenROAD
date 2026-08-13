@@ -239,26 +239,42 @@ def extract_member(tar, name, dest):
         shutil.copyfileobj(src, out)
 
 
-def esbuild_binary(lock, work_dir):
+def esbuild_binary(lock, work_dir, rewrite_lock):
     """Download the pinned esbuild for this host and return its path."""
     key = (platform.system(), platform.machine())
     if key not in ESBUILD_PLATFORMS:
         raise RuntimeError(
-            f"no pinned esbuild for {key[0]}/{key[1]}; add it to ESBUILD_PLATFORMS "
-            "and to vendor.lock.json"
+            f"no esbuild mapping for {key[0]}/{key[1]}; add it to ESBUILD_PLATFORMS "
+            "and re-run with --rewrite-lock"
         )
     plat = ESBUILD_PLATFORMS[key]
-    data = download(f"@esbuild/{plat}", ESBUILD_VERSION)
 
-    digest = sha256_bytes(data)
     tools = lock.setdefault("tools", {}).setdefault("esbuild", {})
-    tools["version"] = ESBUILD_VERSION
-    platforms = tools.setdefault("platforms", {})
-    if platforms.get(plat) not in (None, digest):
+    pinned = (
+        tools.get("platforms", {}) if tools.get("version") == ESBUILD_VERSION else {}
+    )
+    downloaded = {}
+    if rewrite_lock:
+        # Record every platform, not only this host's: with one machine's digest
+        # in the lock, the first run anywhere else would have nothing to verify
+        # the binary it is about to execute against.
+        for name in sorted(set(ESBUILD_PLATFORMS.values())):
+            downloaded[name] = download(f"@esbuild/{name}", ESBUILD_VERSION)
+        pinned = {name: sha256_bytes(data) for name, data in downloaded.items()}
+        tools["version"] = ESBUILD_VERSION
+        tools["platforms"] = pinned
+    if plat not in pinned:
         raise RuntimeError(
-            f"esbuild {plat} sha256 mismatch: expected {platforms[plat]}, got {digest}"
+            f"esbuild {ESBUILD_VERSION} for {plat} is not pinned in vendor.lock.json; "
+            "re-run with --rewrite-lock to record it"
         )
-    platforms[plat] = digest
+
+    data = downloaded.get(plat) or download(f"@esbuild/{plat}", ESBUILD_VERSION)
+    digest = sha256_bytes(data)
+    if digest != pinned[plat]:
+        raise RuntimeError(
+            f"esbuild {plat} sha256 mismatch: expected {pinned[plat]}, got {digest}"
+        )
 
     archive = os.path.join(work_dir, "esbuild.tgz")
     with open(archive, "wb") as f:
@@ -270,7 +286,7 @@ def esbuild_binary(lock, work_dir):
     return binary
 
 
-def bundle(spec, tar, lock, work_dir):
+def bundle(spec, tar, lock, work_dir, rewrite_lock):
     """Bundle a package's ES module tree into one file with esbuild."""
     tree_dir = os.path.join(work_dir, "tree")
     prefix = "package/" + spec["tree"]
@@ -279,21 +295,25 @@ def bundle(spec, tar, lock, work_dir):
             rel = member.name[len("package/") :]
             extract_member(tar, member.name, os.path.join(tree_dir, rel))
 
-    entry = os.path.join(tree_dir, spec["entry"])
-    if not os.path.exists(entry):
+    if not os.path.exists(os.path.join(tree_dir, spec["entry"])):
         raise RuntimeError(f"bundle entry point not found: {spec['entry']}")
 
     output = os.path.join(THIS_DIR, spec["output"])
     os.makedirs(os.path.dirname(output), exist_ok=True)
+    # Run from the extracted tree with a relative entry point: esbuild writes
+    # the path of every module into a comment, so an absolute one would put this
+    # run's temporary directory in the output and the bundle would differ from
+    # one run to the next.
     subprocess.run(
         [
-            esbuild_binary(lock, work_dir),
-            entry,
+            esbuild_binary(lock, work_dir, rewrite_lock),
+            spec["entry"],
             "--bundle",
             "--format=esm",
             "--legal-comments=inline",
             f"--outfile={output}",
         ],
+        cwd=tree_dir,
         check=True,
     )
     return spec["output"]
@@ -333,7 +353,9 @@ def update(lock, rewrite_lock):
                     )
                     written.append(dest)
                 if "bundle" in spec:
-                    written.append(bundle(spec["bundle"], tar, lock, work_dir))
+                    written.append(
+                        bundle(spec["bundle"], tar, lock, work_dir, rewrite_lock)
+                    )
 
     stale = set(vendored_files()) - {path.replace("/", os.sep) for path in written}
     for rel in sorted(stale):

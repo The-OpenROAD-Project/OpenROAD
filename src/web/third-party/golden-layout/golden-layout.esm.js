@@ -1,4 +1,4 @@
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/errors/external-error.js
+// dist/esm/ts/errors/external-error.js
 var ExternalError = class extends Error {
   /** @internal */
   constructor(type, message) {
@@ -32,7 +32,7 @@ var BindError = class extends ExternalError {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/errors/internal-error.js
+// dist/esm/ts/errors/internal-error.js
 var InternalError = class extends Error {
   constructor(type, code, message) {
     super(`${type}: ${code}${message === void 0 ? "" : ": " + message}`);
@@ -59,7 +59,7 @@ var UnexpectedUndefinedError = class extends InternalError {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/i18n-strings.js
+// dist/esm/ts/utils/i18n-strings.js
 var I18nStrings;
 (function(I18nStrings2) {
   let initialised = false;
@@ -124,7 +124,7 @@ var I18nStrings;
 })(I18nStrings || (I18nStrings = {}));
 var i18nStrings = new Array(I18nStrings.idCount);
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/style-constants.js
+// dist/esm/ts/utils/style-constants.js
 var StyleConstants;
 (function(StyleConstants2) {
   StyleConstants2.defaultComponentBaseZIndex = "auto";
@@ -132,7 +132,7 @@ var StyleConstants;
   StyleConstants2.defaultComponentStackMaximisedZIndex = "41";
 })(StyleConstants || (StyleConstants = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/types.js
+// dist/esm/ts/utils/types.js
 var WidthOrHeightPropertyName;
 (function(WidthOrHeightPropertyName2) {
   WidthOrHeightPropertyName2.width = "width";
@@ -221,7 +221,7 @@ var SizeUnitEnum;
   SizeUnitEnum2.format = format;
 })(SizeUnitEnum || (SizeUnitEnum = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/utils.js
+// dist/esm/ts/utils/utils.js
 function numberToPixels(value) {
   return value.toString(10) + "px";
 }
@@ -367,7 +367,7 @@ function getErrorMessage(e) {
   }
 }
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/config-minifier.js
+// dist/esm/ts/utils/config-minifier.js
 var ConfigMinifier;
 (function(ConfigMinifier2) {
   const keys = [
@@ -525,7 +525,7 @@ var ConfigMinifier;
   }
 })(ConfigMinifier || (ConfigMinifier = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/config/resolved-config.js
+// dist/esm/ts/config/resolved-config.js
 var ResolvedItemConfig;
 (function(ResolvedItemConfig2) {
   ResolvedItemConfig2.defaults = {
@@ -974,7 +974,7 @@ var ResolvedPopoutLayoutConfig;
   ResolvedPopoutLayoutConfig2.createCopy = createCopy;
 })(ResolvedPopoutLayoutConfig || (ResolvedPopoutLayoutConfig = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/config/config.js
+// dist/esm/ts/config/config.js
 var ItemConfig;
 (function(ItemConfig2) {
   function resolve(itemConfig, rowAndColumnChildLegacySizeDefault) {
@@ -1752,7 +1752,7 @@ function formatUndefinableSize(size, sizeUnit) {
   }
 }
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/event-emitter.js
+// dist/esm/ts/utils/event-emitter.js
 var EventEmitter = class _EventEmitter {
   constructor() {
     this._allEventSubscriptions = [];
@@ -1930,7 +1930,7 @@ var EventEmitter = class _EventEmitter {
   EventEmitter2.TouchStartBubblingEvent = TouchStartBubblingEvent;
 })(EventEmitter || (EventEmitter = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/container/component-container.js
+// dist/esm/ts/container/component-container.js
 var ComponentContainer = class extends EventEmitter {
   /** @internal */
   constructor(_config, _parent, _layoutManager, _element, _updateItemConfigEvent, _showEvent, _hideEvent, _focusEvent, _blurEvent) {
@@ -2329,7 +2329,7 @@ var ComponentContainer = class extends EventEmitter {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/browser-popout.js
+// dist/esm/ts/controls/browser-popout.js
 var BrowserPopout = class extends EventEmitter {
   /**
    * @param _config - GoldenLayout item config
@@ -2564,7 +2564,7 @@ var BrowserPopout = class extends EventEmitter {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/items/content-item.js
+// dist/esm/ts/items/content-item.js
 var ContentItem = class extends EventEmitter {
   /** @internal */
   constructor(layoutManager, config, _parent, _element) {
@@ -2918,7 +2918,7 @@ var ContentItem = class extends EventEmitter {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/items/component-item.js
+// dist/esm/ts/items/component-item.js
 var ComponentItem = class extends ContentItem {
   /** @internal */
   constructor(layoutManager, config, _parentItem) {
@@ -3118,7 +3118,7 @@ var ComponentItem = class extends ContentItem {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/items/component-parentable-item.js
+// dist/esm/ts/items/component-parentable-item.js
 var ComponentParentableItem = class extends ContentItem {
   constructor() {
     super(...arguments);
@@ -3133,7 +3133,7 @@ var ComponentParentableItem = class extends ContentItem {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/drag-listener.js
+// dist/esm/ts/utils/drag-listener.js
 var DragListener = class extends EventEmitter {
   constructor(_eElement, extraAllowableChildTargets) {
     super();
@@ -3259,7 +3259,7 @@ var DragListener = class extends EventEmitter {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/splitter.js
+// dist/esm/ts/controls/splitter.js
 var Splitter = class {
   constructor(_isVertical, _size, grabSize) {
     this._isVertical = _isVertical;
@@ -3308,7 +3308,7 @@ var Splitter = class {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/items/row-or-column.js
+// dist/esm/ts/items/row-or-column.js
 var RowOrColumn = class _RowOrColumn extends ContentItem {
   /** @internal */
   constructor(isColumn, layoutManager, config, _rowOrColumnParent) {
@@ -3852,7 +3852,7 @@ var RowOrColumn = class _RowOrColumn extends ContentItem {
   RowOrColumn2.createElement = createElement;
 })(RowOrColumn || (RowOrColumn = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/items/ground-item.js
+// dist/esm/ts/items/ground-item.js
 var GroundItem = class _GroundItem extends ComponentParentableItem {
   constructor(layoutManager, rootItemConfig, containerElement) {
     super(layoutManager, ResolvedGroundItemConfig.create(rootItemConfig), null, _GroundItem.createElement(document));
@@ -4166,7 +4166,7 @@ var GroundItem = class _GroundItem extends ComponentParentableItem {
   GroundItem2.createElement = createElement;
 })(GroundItem || (GroundItem = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/header-button.js
+// dist/esm/ts/controls/header-button.js
 var HeaderButton = class {
   constructor(_header, label, cssClass, _pushEvent) {
     this._header = _header;
@@ -4198,7 +4198,7 @@ var HeaderButton = class {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/tab.js
+// dist/esm/ts/controls/tab.js
 var Tab = class {
   /** @internal */
   constructor(_layoutManager, _componentItem, _closeEvent, _focusEvent, _dragStartEvent) {
@@ -4456,7 +4456,7 @@ var Tab = class {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/tabs-container.js
+// dist/esm/ts/controls/tabs-container.js
 var TabsContainer = class {
   constructor(_layoutManager, _componentRemoveEvent, _componentFocusEvent, _componentDragStartEvent, _dropdownActiveChangedEvent) {
     this._layoutManager = _layoutManager;
@@ -4674,7 +4674,7 @@ var TabsContainer = class {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/header.js
+// dist/esm/ts/controls/header.js
 var Header = class extends EventEmitter {
   /** @internal */
   constructor(_layoutManager, _parent, settings, _configClosable, _getActiveComponentItemEvent, closeEvent, _popoutEvent, _maximiseToggleEvent, _clickEvent, _touchStartEvent, _componentRemoveEvent, _componentFocusEvent, _componentDragStartEvent) {
@@ -5009,7 +5009,7 @@ var Header = class extends EventEmitter {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/items/stack.js
+// dist/esm/ts/items/stack.js
 var Stack = class _Stack extends ComponentParentableItem {
   /** @internal */
   constructor(layoutManager, config, parent) {
@@ -5792,7 +5792,7 @@ var Stack = class _Stack extends ComponentParentableItem {
   Stack2.createElement = createElement;
 })(Stack || (Stack = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/drag-proxy.js
+// dist/esm/ts/controls/drag-proxy.js
 var DragProxy = class extends EventEmitter {
   /**
    * @param x - The initial x position
@@ -5994,7 +5994,7 @@ var DragProxy = class extends EventEmitter {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/drag-source.js
+// dist/esm/ts/controls/drag-source.js
 var DragSource = class _DragSource {
   /** @internal */
   constructor(_layoutManager, _element, _extraAllowableChildTargets, _componentTypeOrFtn, _componentState, _title, _id) {
@@ -6097,7 +6097,7 @@ var DragSource = class _DragSource {
   DragSource2.isDragSourceComponentItemConfig = isDragSourceComponentItemConfig;
 })(DragSource || (DragSource = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/drop-target-indicator.js
+// dist/esm/ts/controls/drop-target-indicator.js
 var DropTargetIndicator = class {
   constructor() {
     this._element = document.createElement("div");
@@ -6128,7 +6128,7 @@ var DropTargetIndicator = class {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/controls/transition-indicator.js
+// dist/esm/ts/controls/transition-indicator.js
 var TransitionIndicator = class {
   constructor() {
     this._element = document.createElement("div");
@@ -6162,7 +6162,7 @@ var TransitionIndicator = class {
   }
 };
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/utils/event-hub.js
+// dist/esm/ts/utils/event-hub.js
 var EventHub = class _EventHub extends EventEmitter {
   /**
    * Creates a new EventHub instance
@@ -6263,7 +6263,7 @@ var EventHub = class _EventHub extends EventEmitter {
   EventHub2.ChildEventName = "gl_child_event";
 })(EventHub || (EventHub = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/layout-manager.js
+// dist/esm/ts/layout-manager.js
 var LayoutManager = class _LayoutManager extends EventEmitter {
   /**
   * @param container - A Dom HTML element. Defaults to body
@@ -7736,7 +7736,7 @@ var LayoutManager = class _LayoutManager extends EventEmitter {
   ];
 })(LayoutManager || (LayoutManager = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/virtual-layout.js
+// dist/esm/ts/virtual-layout.js
 var VirtualLayout = class _VirtualLayout extends LayoutManager {
   /** @internal */
   constructor(configOrOptionalContainer, containerOrBindComponentEventHandler, unbindComponentEventHandler, skipInit) {
@@ -7945,7 +7945,7 @@ var VirtualLayout = class _VirtualLayout extends LayoutManager {
   VirtualLayout2.createLayoutManagerConstructorParameters = createLayoutManagerConstructorParameters;
 })(VirtualLayout || (VirtualLayout = {}));
 
-// ../../../../../../../../tmp/tmp5c910ena/tree/dist/esm/ts/golden-layout.js
+// dist/esm/ts/golden-layout.js
 var GoldenLayout = class extends VirtualLayout {
   /** @internal */
   constructor(configOrOptionalContainer, containerOrBindComponentEventHandler, unbindComponentEventHandler) {

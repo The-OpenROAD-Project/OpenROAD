@@ -45,19 +45,18 @@ std::string_view inlineScriptHashes();
 // code (issue #11065).  base-uri matters for the same reason -- the assets are
 // loaded through relative paths, which an injected <base href> would redirect.
 //
-// The relaxations are what the libraries need, and none of them lets a remote
-// origin back in:
+// Each relaxation is one the viewer is measurably broken without, and none of
+// them lets a remote origin back in.  Nothing is listed for a use the viewer
+// does not have yet: default-src 'none' then denies it, and a denial names the
+// missing directive in the console.
 //   script-src <hashes>       the import map in index.html
 //   script-src 'unsafe-eval'  netlistsvg validates its input with ajv, which
 //                             compiles JSON schemas through new Function()
 //   style-src 'unsafe-inline' the widgets set element.style and the netlistsvg
 //                             skin injects a <style> block
-//   img-src data: blob:       tiles and generated images
-//   font-src data:            nothing ships a web font yet, but without this a
-//                             future one would fail against default-src, which
-//                             reads as a puzzle
-//   worker-src blob:          elk runs its layout on the main thread today,
-//                             but falls back to a real Worker when it can
+//   img-src data: blob:       tiles arrive as data: URIs from the cache and as
+//                             blobs from the socket
+//   connect-src 'self'        the WebSocket
 inline const std::string& contentSecurityPolicy()
 {
   static const std::string policy
@@ -66,9 +65,7 @@ inline const std::string& contentSecurityPolicy()
         + "; "
           "style-src 'self' 'unsafe-inline'; "
           "img-src 'self' data: blob:; "
-          "font-src 'self' data:; "
           "connect-src 'self'; "
-          "worker-src 'self' blob:; "
           "base-uri 'none'; "
           "object-src 'none'";
   return policy;
@@ -83,7 +80,6 @@ inline constexpr std::string_view kReportContentSecurityPolicy
       "script-src 'unsafe-inline' 'unsafe-eval' data:; "
       "style-src 'unsafe-inline' data:; "
       "img-src data: blob:; "
-      "font-src data:; "
       "connect-src 'none'; "
       "base-uri 'none'; "
       "object-src 'none'";

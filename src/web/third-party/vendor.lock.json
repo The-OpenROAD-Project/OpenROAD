@@ -6,7 +6,7 @@
     "golden-layout/css/goldenlayout-base.css": "7b47240817e5a2cd1e24fd1f47e0933dee723b8bd99d220f27a352af2f92477b",
     "golden-layout/css/themes/goldenlayout-dark-theme.css": "818c38af69eec4ed9036c11f93cde774908892734a355dd867666aa1a900523e",
     "golden-layout/css/themes/goldenlayout-light-theme.css": "3a32668a558465c8799d04311a004a5e3344bc52b95250b556a05cb29b2bda31",
-    "golden-layout/golden-layout.esm.js": "2d9e379ba08897f6b934f678aafd69420e9672f1766417326415bd82917a700a",
+    "golden-layout/golden-layout.esm.js": "599dc968ffb6e59f334ae8b9a383843b1c4e62087c4d84c81ba9decc75a46f25",
     "golden-layout/img/lm_close_black.png": "9c591dff4b8fbe738ae73feabb6ee60c25ac796f4a9279d66f9e7cd2fe2ea3da",
     "golden-layout/img/lm_close_tab_white.png": "3a42999f6301aca6ed08ccd91db6ac8f21149975277f8efcef49222aa3b491a2",
     "golden-layout/img/lm_close_white.png": "d0faa564c08b45aabc4276bc4398628b9ba4e3a3afb4144babf6a97d03ed775b",
@@ -56,6 +56,9 @@
   "tools": {
     "esbuild": {
       "platforms": {
+        "darwin-arm64": "1980cde09749094452b20d36ff267585ccb3f72749c7bc97291cd9996ccf5a2a",
+        "darwin-x64": "abb6a7a895aaf2cc0df36fecc3bf0042479ffec51a643a056d54e9109f27db55",
+        "linux-arm64": "a96dbfa41d3ef5dbd1ef22b1c10d5187be9267e86093a870f06402a7ec931596",
         "linux-x64": "9573bb2233aab0f9ea7647d5cca9726113cc1768de61d66b17267f4db84488f6"
       },
       "version": "0.28.2"
