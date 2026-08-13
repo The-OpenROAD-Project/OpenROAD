@@ -12,6 +12,7 @@
 #include <cstring>
 #include <deque>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <ios>
@@ -1023,16 +1024,20 @@ WebServer::~WebServer()
 extern const std::string_view kReportCSS;
 extern const std::string_view kReportJS;
 
-static std::string base64Encode(const unsigned char* data, const size_t size)
+static std::string base64Encode(const std::string_view data)
 {
   static const char kChars[]
       = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const size_t size = data.size();
+  const auto byte = [data](const size_t i) {
+    return static_cast<unsigned>(static_cast<unsigned char>(data[i]));
+  };
   std::string result;
   result.reserve((size + 2) / 3 * 4);
   for (size_t i = 0; i < size; i += 3) {
-    const unsigned b0 = data[i];
-    const unsigned b1 = (i + 1 < size) ? data[i + 1] : 0;
-    const unsigned b2 = (i + 2 < size) ? data[i + 2] : 0;
+    const unsigned b0 = byte(i);
+    const unsigned b1 = (i + 1 < size) ? byte(i + 1) : 0;
+    const unsigned b2 = (i + 2 < size) ? byte(i + 2) : 0;
     result += kChars[b0 >> 2];
     result += kChars[((b0 & 3) << 4) | (b1 >> 4)];
     result += (i + 1 < size) ? kChars[((b1 & 0xF) << 2) | (b2 >> 6)] : '=';
@@ -1043,13 +1048,8 @@ static std::string base64Encode(const unsigned char* data, const size_t size)
 
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
-  return base64Encode(data.data(), data.size());
-}
-
-static std::string base64Encode(const std::string_view data)
-{
-  return base64Encode(reinterpret_cast<const unsigned char*>(data.data()),
-                      data.size());
+  return base64Encode(std::string_view(
+      reinterpret_cast<const char*>(data.data()), data.size()));
 }
 
 // ── Inlining the vendored libraries into the saved report ──
@@ -1060,46 +1060,14 @@ static std::string base64Encode(const std::string_view data)
 
 // Resolve a reference found inside a stylesheet ("images/x.png",
 // "../../img/y.png") against the directory the stylesheet is served from.  A
-// reference that starts at the root ("/third-party/...") resolves on its own.
+// reference that starts at the root replaces the directory, which operator/
+// already does.  The result is a lookup key, not a file name.
 static std::string resolveAssetPath(const std::string_view base_dir,
                                     const std::string_view reference)
 {
-  std::vector<std::string_view> parts;
-  const auto push = [&parts](const std::string_view segment) {
-    if (segment.empty() || segment == ".") {
-      return;
-    }
-    if (segment == "..") {
-      if (!parts.empty()) {
-        parts.pop_back();
-      }
-      return;
-    }
-    parts.push_back(segment);
-  };
-  std::vector<std::string_view> inputs;
-  if (reference.empty() || reference.front() != '/') {
-    inputs.push_back(base_dir);
-  }
-  inputs.push_back(reference);
-  for (const std::string_view path : inputs) {
-    size_t begin = 0;
-    while (begin <= path.size()) {
-      const size_t end = path.find('/', begin);
-      push(path.substr(begin, end - begin));
-      if (end == std::string_view::npos) {
-        break;
-      }
-      begin = end + 1;
-    }
-  }
-
-  std::string result;
-  for (const std::string_view part : parts) {
-    result += '/';
-    result += part;
-  }
-  return result;
+  return (std::filesystem::path(base_dir) / std::filesystem::path(reference))
+      .lexically_normal()
+      .string();
 }
 
 // A miss here means the build embedded the wrong asset list, not bad input.
@@ -1166,7 +1134,7 @@ static std::string inlineStylesheetUrls(const std::string_view css,
     // Fragment-only references (url(#default#VML)) and anything already
     // inlined are left alone.
     if (reference.empty() || reference.front() == '#'
-        || reference.rfind("data:", 0) == 0) {
+        || reference.starts_with("data:")) {
       result += css.substr(pos, close + 1 - pos);
       pos = close + 1;
       continue;
@@ -1182,15 +1150,17 @@ static std::string inlineStylesheetUrls(const std::string_view css,
   return result;
 }
 
-// data: URI for an embedded stylesheet, with its own references inlined.
+// data: URI for an embedded stylesheet, with its own references inlined.  The
+// references resolve against the directory the stylesheet is served from, which
+// is the path itself minus the file name.
 static std::string stylesheetDataUri(const std::string_view path,
-                                     const std::string_view base_dir,
                                      utl::Logger* logger)
 {
   const EmbeddedAsset* asset = reportAsset(path, logger);
   if (!asset) {
     return "";
   }
+  const std::string_view base_dir = path.substr(0, path.rfind('/') + 1);
   return "data:text/css;base64,"
          + base64Encode(
              inlineStylesheetUrls(asset->content(), base_dir, logger));
@@ -1337,11 +1307,6 @@ void WebServer::saveReport(const std::string& filename,
   // the file opens with no server and no network.  The stylesheets stay <link>
   // elements rather than <style> blocks because theme.js switches themes
   // through their `disabled` property, by id.
-  constexpr const char* kLeafletDir = "/third-party/leaflet/";
-  constexpr const char* kGoldenLayoutCssDir = "/third-party/golden-layout/css/";
-  constexpr const char* kGoldenLayoutThemeDir
-      = "/third-party/golden-layout/css/themes/";
-
   out << R"(<!DOCTYPE html>
 <html>
 <head>
@@ -1351,30 +1316,25 @@ void WebServer::saveReport(const std::string& filename,
       << kReportContentSecurityPolicy << R"(">
 <title>OpenROAD Timing Report</title>
 <link rel="stylesheet" href=")"
-      << stylesheetDataUri(
-             "/third-party/leaflet/leaflet.css", kLeafletDir, logger_)
+      << stylesheetDataUri("/third-party/leaflet/leaflet.css", logger_)
       << R"("/>
 <script src=")"
       << assetDataUri("/third-party/leaflet/leaflet.js", logger_)
       << R"("></script>
 <link rel="stylesheet" href=")"
       << stylesheetDataUri(
-             "/third-party/golden-layout/css/goldenlayout-base.css",
-             kGoldenLayoutCssDir,
-             logger_)
+             "/third-party/golden-layout/css/goldenlayout-base.css", logger_)
       << R"("/>
 <link rel="stylesheet" id="gl-theme-dark" href=")"
       << stylesheetDataUri(
              "/third-party/golden-layout/css/themes/"
              "goldenlayout-dark-theme.css",
-             kGoldenLayoutThemeDir,
              logger_)
       << R"("/>
 <link rel="stylesheet" id="gl-theme-light" href=")"
       << stylesheetDataUri(
              "/third-party/golden-layout/css/themes/"
              "goldenlayout-light-theme.css",
-             kGoldenLayoutThemeDir,
              logger_)
       << R"(" disabled/>
 <style>

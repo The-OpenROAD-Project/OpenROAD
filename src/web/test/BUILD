@@ -361,6 +361,7 @@ cc_test(
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
+        "//src/utl",
         "//src/web",
         "@boost.json",
         "@googletest//:gtest",

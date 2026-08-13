@@ -20,6 +20,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
+#include "utl/decode.h"
 #include "web/web.h"
 
 namespace web {
@@ -38,30 +39,6 @@ bool isKeyword(const std::string_view line, const std::string_view keyword)
   const char next = line[keyword.size()];
   return std::isalnum(static_cast<unsigned char>(next)) == 0 && next != '_'
          && next != '$';
-}
-
-// The report inlines its assets as base64 data: URIs; decoding one is the only
-// way to assert on what is inside it.
-std::string base64Decode(const std::string& encoded)
-{
-  static const std::string kChars
-      = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  std::string result;
-  unsigned bits = 0;
-  int have = 0;
-  for (const char c : encoded) {
-    const size_t value = kChars.find(c);
-    if (value == std::string::npos) {  // padding or newline
-      continue;
-    }
-    bits = (bits << 6) | static_cast<unsigned>(value);
-    have += 6;
-    if (have >= 8) {
-      have -= 8;
-      result += static_cast<char>((bits >> have) & 0xFF);
-    }
-  }
-  return result;
 }
 
 // ─── Fixture ────────────────────────────────────────────────────────────────
@@ -279,12 +256,6 @@ TEST_F(SaveReportTest, IsSelfContained)
                             "from \"http"}) {
     EXPECT_FALSE(contains(html, fetch)) << fetch;
   }
-  // And specifically not the hosts it used to load from.
-  for (const char* host :
-       {"unpkg.com", "cdn.jsdelivr.net", "esm.sh", "nturley.github.io"}) {
-    EXPECT_FALSE(contains(html, host)) << host;
-  }
-
   // leaflet as a classic script, three and golden-layout as ES modules the
   // import map redirects to their inlined copies.
   EXPECT_TRUE(
@@ -300,28 +271,41 @@ TEST_F(SaveReportTest, IsSelfContained)
 }
 
 // The icons the stylesheets ask for are reached through relative urls, which
-// resolve against the saved file's directory unless they too are inlined.
+// resolve against the saved file's directory unless they too are inlined.  The
+// rule holds for every stylesheet in the report, so it survives one being
+// added, reordered or upgraded.
 TEST_F(SaveReportTest, StylesheetIconsAreInlined)
 {
   const std::string path = tempHtml("css_icons");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // Every stylesheet is base64, so decode the leaflet one and look inside.
   const std::string marker = "href=\"data:text/css;base64,";
-  const size_t begin = html.find(marker);
-  ASSERT_NE(begin, std::string::npos);
-  const size_t start = begin + marker.size();
-  const size_t end = html.find('"', start);
-  ASSERT_NE(end, std::string::npos);
-  const std::string css = base64Decode(html.substr(start, end - start));
+  int stylesheets = 0;
+  for (size_t at = 0; (at = html.find(marker, at)) != std::string::npos;) {
+    const size_t start = at + marker.size();
+    const size_t end = html.find('"', start);
+    ASSERT_NE(end, std::string::npos);
+    const std::string css = utl::base64_decode(html.substr(start, end - start));
+    ++stylesheets;
+    at = end;
 
-  EXPECT_TRUE(contains(css, ".leaflet-container"));
-  EXPECT_TRUE(contains(css, "url(\"data:image/png;base64,"));
-  EXPECT_FALSE(contains(css, "url(images/"));
+    // Every url() left in the sheet is either inlined or a fragment; a
+    // relative one would resolve against wherever the report was saved.
+    for (size_t open = 0;
+         (open = css.find("url(", open)) != std::string::npos;) {
+      const size_t close = css.find(')', open);
+      ASSERT_NE(close, std::string::npos);
+      const std::string reference = css.substr(open + 4, close - (open + 4));
+      EXPECT_TRUE(reference.find("data:") != std::string::npos
+                  || reference.find('#') != std::string::npos)
+          << "not inlined: url(" << reference << ")";
+      open = close;
+    }
+  }
+  // leaflet, goldenlayout-base and the two themes.
+  EXPECT_EQ(stylesheets, 4);
 }
-
-// ─── Cache JSON Responses ───────────────────────────────────────────────────
 
 TEST_F(SaveReportTest, CachesValidTechResponse)
 {

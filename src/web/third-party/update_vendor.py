@@ -182,15 +182,12 @@ def download(name, version):
 def vendored_files():
     """Every file under this directory that a package is expected to provide."""
     found = []
-    for dirpath, _, filenames in os.walk(THIS_DIR):
+    for dirpath, dirnames, filenames in os.walk(THIS_DIR):
+        dirnames[:] = [name for name in dirnames if name != "__pycache__"]
         for filename in filenames:
-            path = os.path.join(dirpath, filename)
-            rel = os.path.relpath(path, THIS_DIR)
-            if rel in NON_VENDORED or rel.endswith(".pyc"):
-                continue
-            if os.sep + "__pycache__" + os.sep in os.sep + rel:
-                continue
-            found.append(rel)
+            rel = os.path.relpath(os.path.join(dirpath, filename), THIS_DIR)
+            if rel not in NON_VENDORED:
+                found.append(rel)
     return sorted(found)
 
 
@@ -214,7 +211,7 @@ def check(lock):
             )
 
     for rel in vendored_files():
-        if rel.replace(os.sep, "/") not in expected:
+        if rel not in expected:
             problems.append(f"not in lock: {rel}")
 
     if problems:
@@ -357,7 +354,7 @@ def update(lock, rewrite_lock):
                         bundle(spec["bundle"], tar, lock, work_dir, rewrite_lock)
                     )
 
-    stale = set(vendored_files()) - {path.replace("/", os.sep) for path in written}
+    stale = set(vendored_files()) - set(written)
     for rel in sorted(stale):
         print(f"  removing stale file: {rel}")
         os.remove(os.path.join(THIS_DIR, rel))

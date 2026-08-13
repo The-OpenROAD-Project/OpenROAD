@@ -77,9 +77,18 @@ def inline_script_hashes(assets):
     the markup: an inline block with no matching hash is simply not executed.
     """
     hashes = []
+    pages = 0
     for served, _, _, data in assets:
         if not served.endswith(".html"):
             continue
+        pages += 1
+        if pages > 1:
+            # One policy is served with every response, so hashes from a second
+            # page would silently widen what the first one may execute.
+            raise SystemExit(
+                f"{served} is a second HTML asset; the policy is shared, so the "
+                "hashes have to become a property of each page first"
+            )
         # Comments first: one of them mentions <script>, and a tag matched
         # inside a comment would swallow the real block that follows it and
         # hash the wrong bytes.
