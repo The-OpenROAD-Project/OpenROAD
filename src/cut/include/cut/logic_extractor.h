@@ -97,12 +97,6 @@ class LogicExtractorFactory
   std::vector<sta::Vertex*> AddMissingVertices(
       std::vector<sta::Vertex*>& cut_vertices,
       T& library);
-  template <std::predicate<sta::Pin*> T>
-  std::vector<sta::Pin*> AddMissingTopIO(std::vector<sta::Pin*>& pins, T pred);
-  std::vector<sta::Pin*> AddMissingPrimaryInputs(
-      std::vector<sta::Pin*>& primary_inputs);
-  std::vector<sta::Pin*> AddMissingPrimaryOutputs(
-      std::vector<sta::Pin*>& primary_outputs);
   bool IsCombinationalVtx(sta::Vertex* vertex);
 
   std::vector<sta::Vertex*> endpoints_;
@@ -195,13 +189,6 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);
   sta::InstanceSet cut_instances
       = GetCutInstances(cut_vertices, supported_cells);
-
-  if constexpr (is_mockturtle_library_v<T>) {
-    // sometimes part of top I/O is missing, causing errors when mockturtle is
-    // used
-    primary_inputs = AddMissingPrimaryInputs(primary_inputs);
-    primary_outputs = AddMissingPrimaryOutputs(primary_outputs);
-  }
 
   // Remove primary outputs who are undriven. This can happen when a flop
   // feeds into another flop where the logic cone is essentially just a wire.
@@ -316,27 +303,6 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
       cut_vertex_set.insert(constant_vertex);
     }
   }
-  return result;
-}
-
-template <std::predicate<sta::Pin*> T>
-std::vector<sta::Pin*> LogicExtractorFactory::AddMissingTopIO(
-    std::vector<sta::Pin*>& pins,
-    T pred)
-{
-  std::vector<sta::Pin*> result(pins.begin(), pins.end());
-  std::unordered_set<sta::Pin*> used_pins(pins.begin(), pins.end());
-  auto network = open_sta_->getDbNetwork();
-
-  auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
-      network->pinIterator(network->topInstance()));
-  while (pin_iterator->hasNext()) {
-    sta::Pin* pin = pin_iterator->next();
-    if (pred(pin) && used_pins.insert(pin).second) {
-      result.push_back(pin);
-    }
-  }
-
   return result;
 }
 

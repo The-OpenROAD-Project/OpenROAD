@@ -333,20 +333,4 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   return result;
 }
 
-std::vector<sta::Pin*> LogicExtractorFactory::AddMissingPrimaryInputs(
-    std::vector<sta::Pin*>& primary_inputs)
-{
-  return AddMissingTopIO(primary_inputs, [&](sta::Pin* pin) {
-    return open_sta_->network()->direction(pin)->isInput();
-  });
-}
-
-std::vector<sta::Pin*> LogicExtractorFactory::AddMissingPrimaryOutputs(
-    std::vector<sta::Pin*>& primary_outputs)
-{
-  return AddMissingTopIO(primary_outputs, [&](sta::Pin* pin) {
-    return open_sta_->network()->direction(pin)->isOutput();
-  });
-}
-
 }  // namespace cut
