@@ -2580,6 +2580,7 @@ void NesterovBase::initIoPinGCells()
 
   // Keep fixed ports as anchors, as in the sequential flow.
   std::vector<odb::dbBTerm*> movable_bterms;
+  int area_constrained = 0;
   for (odb::dbBTerm* bterm : block->getBTerms()) {
     // Exclude ports without a GPin; they have no wirelength gradient.
     if (nbc_->dbToNb(bterm) == nullptr) {
@@ -2588,7 +2589,22 @@ void NesterovBase::initIoPinGCells()
     if (bterm->getFirstPinPlacementStatus().isFixed()) {
       continue;
     }
+    const std::optional<odb::Rect> cr = bterm->getConstraintRegion();
+    if (cr.has_value() && cr->xMin() != cr->xMax()
+        && cr->yMin() != cr->yMax()) {
+      ++area_constrained;
+      continue;
+    }
     movable_bterms.push_back(bterm);
+  }
+
+  if (area_constrained > 0) {
+    log_->warn(GPL,
+               172,
+               "Concurrent IO placement: {} IO pins have 2D/top-layer "
+               "constraint regions and are handled by place_pins instead of "
+               "the concurrent perimeter model.",
+               area_constrained);
   }
 
   ioPinStor_.reserve(movable_bterms.size());
@@ -2798,7 +2814,7 @@ void NesterovBase::initIoConstraints()
     for (const auto& [b_lo, b_hi] : blk) {
       const float lo = std::max(span_lo, b_lo);
       const float hi = std::min(span_hi, b_hi);
-      if (hi <= cursor) {
+      if (lo >= hi || hi <= cursor) {
         continue;
       }
       if (lo > cursor) {
@@ -2844,12 +2860,6 @@ void NesterovBase::initIoConstraints()
                     ioPinStor_[i].getBTerm()->getConstName());
       }
       ++constrained;
-    } else {
-      log_->warn(GPL,
-                 172,
-                 "Concurrent IO placement: constraint region of pin {} is not "
-                 "a die-edge interval; placing it on the free perimeter.",
-                 ioPinStor_[i].getBTerm()->getConstName());
     }
   }
 
@@ -5561,6 +5571,9 @@ static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
                          const size_t n)
 {
+  if (n == 0) {
+    return 0.0f;
+  }
   float sumDistance = 0.0f;
   for (size_t i = 0; i < n; i++) {
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);

@@ -5,6 +5,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <cstddef>
+#include <functional>
 #include <vector>
 
 #include "deviceState_kokkos.h"
@@ -19,7 +20,8 @@ namespace {
 int indexOfGCell(const std::vector<GCell>& gCellStor, const GCell* gCell)
 {
   const GCell* base = gCellStor.data();
-  if (gCell < base || gCell >= base + gCellStor.size()) {
+  const std::less<const GCell*> before;
+  if (before(gCell, base) || !before(gCell, base + gCellStor.size())) {
     return -1;
   }
   return static_cast<int>(gCell - base);
