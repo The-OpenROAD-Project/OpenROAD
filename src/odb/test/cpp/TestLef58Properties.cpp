@@ -710,8 +710,9 @@ TEST_F(Fixture, TestLef58MacroNumericEdgeType)
   EXPECT_EQ((*it)->getEdgeType(), "TYPE1");
 }
 
-// Regression test for issue #4252: LEF58_MINWIDTH with WRONGDIRECTION and trailing
-// whitespace after the terminating semicolon must parse without warnings.
+// Regression test for issue #4252: LEF58_MINWIDTH with WRONGDIRECTION and
+// trailing whitespace after the terminating semicolon must parse without
+// warnings.
 TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
 {
   const char* libname = "lef58_minwidth_wrongdirection.lef";
