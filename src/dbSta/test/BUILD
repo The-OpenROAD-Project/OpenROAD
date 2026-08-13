@@ -4,8 +4,16 @@
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+load(
+    ":hier_expected_fail.bzl",
+    "CONFORMANCE_EXPECTED_FAIL",
+    "STRUCTURAL_EXPECTED_FAIL",
+    "conformance_manifest",
+    "structural_manifest",
+)
 
 package(features = ["layering_check"])
 
@@ -344,6 +352,109 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Both hierarchy suites below take their whole corpus from a directory scan:
+# every netlist in cpp/hier_cases/ (and its inherited/ and structural/
+# subdirectories) is a case, so adding one means adding a file and nothing else.
+# What a folder listing cannot carry -- a case's top module, and which defects
+# it is known to hit -- lives here in the build rules instead, so none of it
+# sits in a text file that a contributor has to find and hand-edit.
+#
+# Top-level module of each netlist. Nearly every case uses "top"; the exceptions
+# are cases where the top module's odd name IS the hazard under test (a keyword,
+# a digit-leading name, a name that collides with a uniquified clone).
+HIER_TOP_OVERRIDES = {
+}
+
+HIER_TOP_OVERRIDES_ENV = {"HIER_TOP_OVERRIDES": ",".join([
+    "%s=%s" % (netlist, top)
+    for netlist, top in HIER_TOP_OVERRIDES.items()
+])}
+
+# Each suite reads its known-failure list as a colon-separated manifest, which
+# these rules render from hier_expected_fail.bzl. Generating it rather than
+# checking one in keeps every piece of a case's metadata -- its top module, and
+# which defects it is known to hit -- in the build rules, and lets Starlark
+# reject a malformed entry when the package loads instead of the C++ parser
+# dropping it silently at run time.
+write_file(
+    name = "hier_expected_fail_manifest",
+    out = "cpp/hier_cases/expected_fail.txt",
+    content = conformance_manifest(CONFORMANCE_EXPECTED_FAIL),
+)
+
+write_file(
+    name = "hier_structural_expected_fail_manifest",
+    out = "cpp/hier_cases/structural_expected_fail.txt",
+    content = structural_manifest(STRUCTURAL_EXPECTED_FAIL),
+)
+
+# Hierarchy conformance: both link modes LEC'd against the input netlist.
+#
+# Needs the external kepler-formal binary at run time (resolved from
+# $KEPLER_FORMAL or the test's runfiles -- see src/tst/include/tst/lec.h);
+# without it the tests fail with an actionable message rather than skipping.
+cc_test(
+    name = "dbsta_hier_conformance",
+    srcs = ["cpp/TestHierConformance.cpp"],
+    data = [
+        ":hier_expected_fail_manifest",
+        "//src/odb/test:hier_corpus_netlists",
+        "//src/rsz/test:hier_corpus_netlists",
+    ] + glob(["*.v"]) + glob(["cpp/*.v"]) + glob(
+        ["cpp/hier_cases/*.v"],
+        allow_empty = True,
+    ) + glob(
+        ["cpp/hier_cases/inherited/*.v"],
+        allow_empty = True,
+    ),
+    env = HIER_TOP_OVERRIDES_ENV,
+    # ~2200 LEC round trips; sharded to stay inside the default test timeout.
+    shard_count = 10,
+    deps = [
+        "//src/tst:db_fixture",
+        "//src/tst:lec",
+        "//src/tst:loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Structural conformance: both link modes' emitted netlists diffed against the
+# input netlist for names, port order, module set, declared objects and instance
+# bindings -- the fidelity aspects a LEC is blind to. Needs no external tool.
+#
+# The corpus is dbsta_hier_conformance's plus cpp/hier_cases/structural/*.v,
+# which only this suite runs: a LEC cannot adjudicate those cases (several are
+# refused by the reader outright), while a structural diff can. Note that
+# cpp/hier_cases/crash/*.v is a data dependency of neither suite -- those
+# netlists kill the process.
+cc_test(
+    name = "dbsta_hier_structural",
+    srcs = ["cpp/TestHierStructural.cpp"],
+    data = [
+        ":hier_structural_expected_fail_manifest",
+        "//src/odb/test:hier_corpus_netlists",
+        "//src/rsz/test:hier_corpus_netlists",
+    ] + glob(["*.v"]) + glob(["cpp/*.v"]) + glob(
+        ["cpp/hier_cases/*.v"],
+        allow_empty = True,
+    ) + glob(
+        ["cpp/hier_cases/inherited/*.v"],
+        allow_empty = True,
+    ) + glob(
+        ["cpp/hier_cases/structural/*.v"],
+        allow_empty = True,
+    ),
+    env = HIER_TOP_OVERRIDES_ENV,
+    shard_count = 10,
+    deps = [
+        "//src/tst:db_fixture",
+        "//src/tst:loaded_design",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

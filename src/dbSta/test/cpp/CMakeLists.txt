@@ -111,3 +111,53 @@ gtest_discover_tests(TestWriteVerilog
 
 add_dependencies(build_and_test TestWriteVerilog
 )
+
+# Hierarchy conformance: both link modes LEC'd against the input netlist.
+# Needs the external kepler-formal binary at run time (resolved from
+# $KEPLER_FORMAL or $PATH); without it the tests fail with an actionable
+# message rather than skipping.
+add_executable(TestHierConformance TestHierConformance.cpp)
+target_link_libraries(TestHierConformance
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        odb
+        tst_base
+        tst_lec
+        tst_loaded_design
+        ${TCL_LIBRARY}
+)
+
+gtest_discover_tests(TestHierConformance
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestHierConformance
+)
+
+# Structural conformance: the emitted netlist is diffed against the input
+# netlist for the fidelity aspects a LEC cannot see (names, port order, module
+# set, declared objects, instance bindings). Needs no external tool.
+add_executable(TestHierStructural TestHierStructural.cpp)
+target_link_libraries(TestHierStructural
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        odb
+        tst_base
+        tst_loaded_design
+        ${TCL_LIBRARY}
+)
+
+gtest_discover_tests(TestHierStructural
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestHierStructural
+)

@@ -342,6 +342,14 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# Hierarchical Verilog reused as corpus input by
+# //src/dbSta/test:dbsta_hier_conformance.
+filegroup(
+    name = "hier_corpus_netlists",
+    srcs = ["replace_hier_mod1.v"],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "design_odb_data",
     srcs = ["data/design.odb"],
