@@ -238,6 +238,19 @@ git_override(
     remote = "https://github.com/keplertech/kepler-formal.git",
 )
 
+# kepler-formal asks for fmt 12.2.0, and minimal version selection applies that
+# to the WHOLE graph, not just to kepler. Without this, adding kepler as a test
+# dependency silently moves every other consumer off 12.1.0 -- and slang does
+# not compile against 12.2.0 ("no member named 'format' in namespace 'fmt'" in
+# slang/util/CommandLine.h). Pinning keeps the resolved version exactly what it
+# was before kepler was added, so a test-only dependency cannot change what the
+# shipped tools are built from. Drop this once slang and kepler agree on a
+# version.
+single_version_override(
+    module_name = "fmt",
+    version = "12.1.0",
+)
+
 # JavaScript / web UI — only used for JS unit tests in src/web/test
 bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
 bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
