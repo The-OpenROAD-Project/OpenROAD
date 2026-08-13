@@ -5,14 +5,14 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[INFO ANT-0002] Found 13 net violations.
-[INFO ANT-0001] Found 14 pin violations.
-[INFO GRT-0012] Found 13 antenna violations.
-[INFO GRT-0302] Inserted 13 jumpers for 9 nets.
+[INFO ANT-0002] Found 12 net violations.
+[INFO ANT-0001] Found 13 pin violations.
+[INFO GRT-0012] Found 12 antenna violations.
+[INFO GRT-0302] Inserted 10 jumpers for 8 nets.
 [INFO GRT-0012] Found 4 antenna violations.
 [INFO DPL-0006] Core area: 221001.18 um^2
-[INFO DPL-0007] Movable instances area: 3816.98 um^2
-[INFO DPL-0008] Fixed instances area within core: 2435.96 um^2
+[INFO DPL-0007] Movable instances area: 3831.36 um^2
+[INFO DPL-0008] Fixed instances area within core: 2421.58 um^2
 [INFO DPL-0009] Utilization: 2.8%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.

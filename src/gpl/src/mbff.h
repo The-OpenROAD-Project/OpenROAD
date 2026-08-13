@@ -89,6 +89,7 @@ class MBFF
     bool pos_output{false};
     bool inv_output{false};
     bool is_scan_cell{false};
+    bool is_register{false};
 
     std::string to_string() const;
     bool operator<(const Mask& rhs) const;
