@@ -9,10 +9,10 @@
 #include <utility>
 #include <vector>
 
-#include "cts/TritonCTS.h"
 #include "HTreeBuilder.h"
 #include "TechChar.h"
 #include "Util.h"
+#include "cts/TritonCTS.h"
 #include "utl/Logger.h"
 
 namespace cts {

@@ -78,7 +78,8 @@ TEST(SinkClusteringTest, ZeroHeightRegion)
 {
   // Setup
   utl::Logger logger;
-  TritonCTS options(&logger, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+  TritonCTS options(
+      &logger, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
   TechChar techChar(&options, nullptr, nullptr, nullptr, nullptr, &logger);
   Clock net("clock", "clock", "clock", 0, 0);
   HTreeBuilder HTree(&options, net, nullptr, &logger, nullptr);

@@ -13,10 +13,10 @@
 
 #include "Clock.h"
 #include "CtsObserver.h"
-#include "cts/TritonCTS.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"
 #include "Util.h"
+#include "cts/TritonCTS.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
 

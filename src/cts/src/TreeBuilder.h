@@ -12,12 +12,12 @@
 #include <vector>
 
 #include "Clock.h"
-#include "cts/TritonCTS.h"
 #include "TechChar.h"
 #include "Util.h"
 #include "boost/functional/hash.hpp"
 #include "boost/unordered/unordered_map.hpp"
 #include "boost/unordered/unordered_set.hpp"
+#include "cts/TritonCTS.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

@@ -15,9 +15,9 @@
 #include <vector>
 
 #include "Clock.h"
-#include "cts/TritonCTS.h"
 #include "TreeBuilder.h"
 #include "Util.h"
+#include "cts/TritonCTS.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"

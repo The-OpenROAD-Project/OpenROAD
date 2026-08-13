@@ -141,14 +141,14 @@ class TritonCTS : public odb::dbBlockCallBackObj
   void setClockTreeMaxDepth(unsigned depth) { clockTreeMaxDepth_ = depth; }
   unsigned getClockTreeMaxDepth() const { return clockTreeMaxDepth_; }
   void setEnableFakeLutEntries(bool enable) { enableFakeLutEntries_ = enable; }
-  unsigned isFakeLutEntriesEnabled() const { return enableFakeLutEntries_; }
+  bool isFakeLutEntriesEnabled() const { return enableFakeLutEntries_; }
   void setForceBuffersOnLeafLevel(bool force)
   {
     forceBuffersOnLeafLevel_ = force;
   }
   bool forceBuffersOnLeafLevel() const { return forceBuffersOnLeafLevel_; }
   void setBufDistRatio(double ratio) { bufDistRatio_ = ratio; }
-  double getBufDistRatio() { return bufDistRatio_; }
+  double getBufDistRatio() const { return bufDistRatio_; }
   void setClockNetsObjs(const std::vector<odb::dbNet*>& nets)
   {
     clockNetsObjs_ = nets;
@@ -335,8 +335,8 @@ class TritonCTS : public odb::dbBlockCallBackObj
   std::string getDummyLoadPrefix() const { return dummyload_prefix_; }
   void setCtsLibrary(const char* name) { ctsLibrary_ = name; }
   void resetCtsLibrary() { ctsLibrary_.clear(); }
-  const char* getCtsLibrary() { return ctsLibrary_.c_str(); }
-  bool isCtsLibrarySet() { return !ctsLibrary_.empty(); }
+  const char* getCtsLibrary() const { return ctsLibrary_.c_str(); }
+  bool isCtsLibrarySet() const { return !ctsLibrary_.empty(); }
 
   void recordBuffer(odb::dbMaster* master, MasterType type);
   const MasterCount& getBufferCount() const { return buffer_count_; }
@@ -348,7 +348,7 @@ class TritonCTS : public odb::dbBlockCallBackObj
   void inDbInstCreate(odb::dbInst* inst) override;
 
   void setRepairClockNets(bool value) { repairClockNets_ = value; }
-  bool getRepairClockNets() { return repairClockNets_; }
+  bool getRepairClockNets() const { return repairClockNets_; }
 
   // NDR strategies
   void setApplyNDR(NdrStrategy strategy) { ndrStrategy_ = strategy; }
@@ -370,12 +370,13 @@ class TritonCTS : public odb::dbBlockCallBackObj
   }
 
   TritonCTS* getParms() { return this; }
-  TechChar* getCharacterization() { return techChar_.get(); }
-  odb::dbBlock* getBlock() { return db_->getChip()->getBlock(); }
+  const TritonCTS* getParms() const { return this; }
+  TechChar* getCharacterization() const { return techChar_.get(); }
+  odb::dbBlock* getBlock() const { return db_->getChip()->getBlock(); }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void setRootBuffer(const char* buffers);
-  std::string getRootBufferToString();
+  std::string getRootBufferToString() const;
   void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
 
@@ -401,7 +402,7 @@ class TritonCTS : public odb::dbBlockCallBackObj
   void writeDataToDb();
 
   // NDR functions
-  std::vector<int> getAllClockTreeLevels(Clock& clockNet);
+  std::vector<int> getAllClockTreeLevels(Clock& clockNet) const;
   int applyNDRToClockLevels(Clock& clockNet,
                             odb::dbTechNonDefaultRule* clockNDR,
                             const std::vector<int>& targetLevels);
@@ -491,9 +492,9 @@ class TritonCTS : public odb::dbBlockCallBackObj
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   odb::dbITerm* getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const;
   void findClockRoots(sta::Clock* clk, odb::PtrSet<odb::dbNet>& clockNets);
-  float getInputPinCap(odb::dbITerm* iterm);
+  float getInputPinCap(odb::dbITerm* iterm) const;
   bool isSink(odb::dbITerm* iterm);
-  ClockInst* getClockFromInst(odb::dbInst* inst);
+  ClockInst* getClockFromInst(odb::dbInst* inst) const;
   bool hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm);
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
