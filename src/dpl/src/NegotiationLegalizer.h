@@ -9,7 +9,6 @@
 #include <limits>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -304,11 +303,6 @@ class NegotiationLegalizer
   int last_illegal_cells_{0};
   int last_illegal_sites_{0};
 
-  // Cells that actually changed position during the current negotiation
-  // iteration. Passed to the debug observer so cells from prior iterations
-  // are rendered in grey while current-iteration movers keep directional
-  // colors.
-  std::unordered_set<odb::dbInst*> current_iter_movers_;
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool disable_window_extension_{false};

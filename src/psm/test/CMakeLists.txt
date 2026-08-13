@@ -35,6 +35,7 @@ or_integration_tests(
     insert_decap_with_padding1
     missing_resistance
     pad_connected_by_abutment
+    report_writers_require_solution
     switch_top_grid
     top_grid_settings
     zerosoc_pads

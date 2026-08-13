@@ -101,6 +101,10 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
+    accessPointsLayer: null,
+    regionsLayer: null,
+    mfgGridLayer: null,
+    gcellGridLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -206,6 +210,17 @@ const visibility = {
     srouting_vias: true,
     pins: true,
     pin_names: true,
+    // Access points (dbAccessPoint X markers) — off by default, matching GUI
+    access_points: false,
+    // Region (dbRegion) boundaries — on by default, matching GUI
+    regions: true,
+    // Manufacturing-grid dots — off by default, matching GUI
+    mfg_grid: false,
+    // GCell grid lines — off by default, matching GUI
+    gcell_grid: false,
+    // Flywires only (selected nets as straight driver->sink lines) —
+    // off by default, matching GUI
+    flywires_only: false,
     blockages: true,
     // Blockages
     placement_blockages: true,
@@ -484,20 +499,21 @@ function redrawAllLayers() {
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
 
-    // Show/hide modules layer based on module_view visibility
-    if (app.modulesLayer) {
-        if (visibility.module_view && !app.map.hasLayer(app.modulesLayer)) {
-            app.modulesLayer.addTo(app.map);
-        } else if (!visibility.module_view && app.map.hasLayer(app.modulesLayer)) {
-            app.map.removeLayer(app.modulesLayer);
-        }
-    }
-    // Show/hide pin markers layer (controlled by Shapes > Pins)
-    if (app.pinsLayer) {
-        if (visibility.pins && !app.map.hasLayer(app.pinsLayer)) {
-            app.pinsLayer.addTo(app.map);
-        } else if (!visibility.pins && app.map.hasLayer(app.pinsLayer)) {
-            app.map.removeLayer(app.pinsLayer);
+    // Show/hide the toggleable pseudo-layer tile layers.
+    const toggleableLayers = [
+        [app.modulesLayer, visibility.module_view],   // Module view
+        [app.pinsLayer, visibility.pins],             // Shapes > Pins
+        [app.accessPointsLayer, visibility.access_points],
+        [app.regionsLayer, visibility.regions],
+        [app.mfgGridLayer, visibility.mfg_grid],
+        [app.gcellGridLayer, visibility.gcell_grid],
+    ];
+    for (const [layer, visible] of toggleableLayers) {
+        if (!layer) continue;
+        if (visible && !app.map.hasLayer(layer)) {
+            layer.addTo(app.map);
+        } else if (!visible && app.map.hasLayer(layer)) {
+            app.map.removeLayer(layer);
         }
     }
     for (const layer of app.allLayers) {
@@ -1253,11 +1269,22 @@ app.websocketManager.readyPromise.then(async () => {
                         }
                         updateInspector(data);
                         focusComponent('Inspector');
-                        // Highlight selected instance bbox
-                        if (inst.bbox) {
-                            highlightBBox(inst.bbox[0], inst.bbox[1],
-                                          inst.bbox[2], inst.bbox[3]);
-                            pulseHighlight(inst.bbox);
+                        // Outline the object the Inspector is showing, using
+                        // ITS bbox — `data.bbox` — not `selected[0].bbox`.
+                        // For a net the two are different rects: selected[]
+                        // carries the hit-test bbox (dbNet::getTermBBox,
+                        // terminals only) while data.bbox is the descriptor's
+                        // full extent (wire ∪ terminals).  On a power net whose
+                        // straps span the design they differ by ~2x, so the box
+                        // landed nowhere near the net the Inspector was
+                        // describing.  selected[0] is also the wrong OBJECT
+                        // whenever the server cycled `pick` through overlapping
+                        // hits.  Instances are unaffected either way: their
+                        // hit-test bbox IS the descriptor bbox.
+                        if (data.bbox) {
+                            highlightBBox(data.bbox[0], data.bbox[1],
+                                          data.bbox[2], data.bbox[3]);
+                            pulseHighlight(data.bbox);
                         }
                     } else if (!selectRequest.add_to_selection) {
                         // Shift+click on empty space preserves the existing
