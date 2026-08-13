@@ -162,6 +162,7 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_constants_sub_zero_capture.v",
             "bx_constants_user_one_wire.v",
             "bx_constants_user_zero_wire.v",
+            "wb_sta_reader_module_shadows_cell_after.v",
         ],
     ),
     xfail(
@@ -173,6 +174,9 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_constants_sub_zero_capture.v",
             "bx_constants_user_one_wire.v",
             "bx_constants_user_zero_wire.v",
+            "wb_dbsta_link_escslash_port_tail_after.v",
+            "wb_dbsta_link_escslash_port_tail_depth2.v",
+            "wb_sta_reader_module_shadows_cell_after.v",
         ],
     ),
     # The flat writer drops sub_module's `assign out_bus = in_bus[3:2];`
@@ -247,12 +251,48 @@ CONFORMANCE_EXPECTED_FAIL = [
         ],
     ),
     xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "or-error -Error - out_flat.tcl, 4 stoi - no conversion",
+        netlists = [
+            "wb_dbsta_link_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_survival.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "or-error -Error - out_flat.tcl, 4 stoi - out of range",
+        netlists = [
+            "wb_sta_reader_attr_src_line_overflow.v",
+        ],
+    ),
+    xfail(
         path = "hier",
         issue = "TBD",
         symptom = "or-error -Error - out_hier.tcl, 3 stol - no conversion",
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "or-error -Error - out_hier.tcl, 4 stoi - no conversion",
+        netlists = [
+            "wb_dbsta_link_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_survival.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "or-error -Error - out_hier.tcl, 4 stoi - out of range",
+        netlists = [
+            "wb_sta_reader_attr_src_line_overflow.v",
         ],
     ),
     xfail(
@@ -271,6 +311,22 @@ CONFORMANCE_EXPECTED_FAIL = [
         netlists = [
             "bx_bus_geometry_concat_replicate.v",
             "bx_bus_geometry_replicate_assign.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "or-error -[ERROR ORD-2013] instance u LEF master missing_mod not found.",
+        netlists = [
+            "wb_dbsta_link_unresolved_module.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "or-error -[ERROR ORD-2013] instance u LEF master missing_mod not found.",
+        netlists = [
+            "wb_dbsta_link_unresolved_module.v",
         ],
     ),
     xfail(
@@ -344,6 +400,22 @@ CONFORMANCE_EXPECTED_FAIL = [
         symptom = "or-error -[ERROR STA-0171] ...line 9, syntax error",
         netlists = [
             "bx_dangling_positional_hole_leaf.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "or-error -[ERROR STA-0171] /home/pgadfort/hier-lec-artifacts/recovered/survey/sta_reader/wb_sta_reader_attr_bef",
+        netlists = [
+            "wb_sta_reader_attr_before_assign.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "or-error -[ERROR STA-0171] /home/pgadfort/hier-lec-artifacts/recovered/survey/sta_reader/wb_sta_reader_attr_bef",
+        netlists = [
+            "wb_sta_reader_attr_before_assign.v",
         ],
     ),
     xfail(
@@ -474,6 +546,7 @@ CONFORMANCE_EXPECTED_FAIL = [
             "getports_nocell.v",
             "min_ft_one_read_only.v",
             "nameorder_wire_before.v",
+            "wb_dbsta_link_supply_net_hier_boundary.v",
         ],
     ),
     xfail(
@@ -492,6 +565,7 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_constants_sub_tiehi_sibling.v",
             "sub_two_outs_one_driver.v",
             "sub_two_outs_one_to_gate.v",
+            "wb_dbsta_link_supply_net_hier_boundary.v",
         ],
     ),
     xfail(
@@ -520,6 +594,7 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_constants_assign_out_bitsel.v",
             "fanout_two_subs.v",
             "sub_in_to_two_outs.v",
+            "wb_writer_nc_drift_captures_user_net.v",
         ],
     ),
     xfail(
@@ -695,6 +770,55 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "hier",
         issue = "TBD",
+        symptom = "tool-error -Netlist loading failed - ... wire collision for net ab",
+        netlists = [
+            "wb_dbnetwork_overlay_netname_header_single_bslash.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -Netlist loading failed - ... wire collision for net n",
+        netlists = [
+            "wb_dbnetwork_overlay_dcflat_hier_mixed.v",
+            "wb_dbnetwork_overlay_dcflat_pathnames_short.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -Netlist loading failed - ... wire collision for net u1/w",
+        netlists = [
+            "wb_dbnetwork_overlay_stamped_path_dup_decl.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -Netlist loading failed - ... wire collision for net x",
+        netlists = [
+            "wb_dbnetwork_overlay_erase_overshoot_net_victim.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -Netlist loading failed - vector - -_M_fill_append",
+        netlists = [
+            "wb_writer_wire_index_intmax.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -Netlist loading failed - vector - -_M_fill_append",
+        netlists = [
+            "wb_writer_wire_index_intmax.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
         symptom = "tool-error -Netlist loading failed - wire collision for net _NC1",
         netlists = [
             "bx_dangling_busport_ncname_collision.v",
@@ -771,6 +895,24 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         issue = "TBD",
+        symptom = "tool-error -SEC cannot run - No aligned observed outputs remain after skipping cones with no-driver, multi-drive",
+        netlists = [
+            "wb_dbsta_link_supply_net_sigtype.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -SEC cannot run - No aligned observed outputs remain after skipping cones with no-driver, multi-drive",
+        netlists = [
+            "wb_dbsta_link_escslash_bus_tail.v",
+            "wb_dbsta_link_escslash_port_tail_iodir.v",
+            "wb_dbsta_link_supply_net_sigtype.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
         symptom = "tool-error -SEC cannot run - no aligned observed outputs remain after skipping multi-driver cones",
         netlists = [
             "bx_collisions_outport_vs_flatnet.v",
@@ -798,6 +940,7 @@ CONFORMANCE_EXPECTED_FAIL = [
             "nameorder_deep_chain.v",
             "nameorder_h_before_i.v",
             "nameorder_minimal_repro.v",
+            "wb_sta_reader_supply_tie.v",
         ],
     ),
     xfail(
@@ -808,6 +951,9 @@ CONFORMANCE_EXPECTED_FAIL = [
             "sub_out_from_out.v",
             "sub_out_from_out_bus.v",
             "sub_out_from_out_deep3.v",
+            "wb_dbnetwork_overlay_depth0_escslash_rename_port.v",
+            "wb_dbnetwork_overlay_netname_erase_overshoot_port.v",
+            "wb_sta_reader_supply_tie.v",
         ],
     ),
     xfail(
@@ -1023,6 +1169,73 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         issue = "TBD",
+        symptom = "tool-error -rhs=[t[0], y[0]]",
+        netlists = [
+            "wb_sta_reader_supply_port_modifier.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -rhs=[t[0], y[0]]",
+        netlists = [
+            "wb_sta_reader_supply_port_modifier.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK",
+        netlists = [
+            "wb_writer_digit_module.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting ID",
+        netlists = [
+            "wb_writer_alldigit_net.v",
+            "wb_writer_digit_bus_net.v",
+            "wb_writer_digit_inst.v",
+            "wb_writer_digit_net.v",
+            "wb_writer_digit_topmodule.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting ID",
+        netlists = [
+            "wb_writer_alldigit_net.v",
+            "wb_writer_digit_bus_net.v",
+            "wb_writer_digit_inst.v",
+            "wb_writer_digit_inst_in_sub.v",
+            "wb_writer_digit_net.v",
+            "wb_writer_digit_topmodule.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
+        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting IN",
+        netlists = [
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_port.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        issue = "TBD",
+        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting IN",
+        netlists = [
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_port.v",
+        ],
+    ),
+    xfail(
+        path = "flat",
+        issue = "TBD",
         symptom = "tool-error -wire collision for net a/b/n (out_flat.v line 11)",
         netlists = [
             "bx_collisions_net_deep3.v",
@@ -1085,6 +1298,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         netlists = [
             "structural/wb_sta_reader_blackbox_bus_bit_order.v",
             "structural/wb_sta_reader_blackbox_ordered_ports.v",
+            "wb_dbsta_link_unresolved_module.v",
         ],
     ),
     structural_xfail(
@@ -1111,6 +1325,7 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_port_rewiring_positional_gap_output.v",
             "structural/wb_sta_reader_empty_specify.v",
             "structural/wb_sta_reader_tri0_net_type.v",
+            "wb_sta_reader_attr_before_assign.v",
         ],
     ),
     structural_xfail(
@@ -1131,6 +1346,10 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
             "structural/wb_sta_reader_const_negative_width.v",
+            "wb_dbsta_link_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_src_line_overflow.v",
+            "wb_sta_reader_attr_survival.v",
         ],
     ),
     # Moved here from the LEC corpus 2026-08-12: 1'bx has no binary value, so a
@@ -1162,6 +1381,13 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_naming_escaped_port_kw_input.v",
             "bx_naming_escaped_top_kw.v",
             "structural/wb_writer_wire_index_overflow.v",
+            "wb_writer_alldigit_net.v",
+            "wb_writer_digit_bus_net.v",
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_inst.v",
+            "wb_writer_digit_net.v",
+            "wb_writer_digit_port.v",
+            "wb_writer_digit_topmodule.v",
         ],
     ),
     structural_xfail(
@@ -1172,6 +1398,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         netlists = [
             "structural/wb_sta_reader_blackbox_bus_bit_order.v",
             "structural/wb_sta_reader_blackbox_ordered_ports.v",
+            "wb_dbsta_link_unresolved_module.v",
         ],
     ),
     structural_xfail(
@@ -1198,6 +1425,7 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_port_rewiring_positional_gap_output.v",
             "structural/wb_sta_reader_empty_specify.v",
             "structural/wb_sta_reader_tri0_net_type.v",
+            "wb_sta_reader_attr_before_assign.v",
         ],
     ),
     structural_xfail(
@@ -1218,6 +1446,10 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
             "structural/wb_sta_reader_const_negative_width.v",
+            "wb_dbsta_link_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_dont_touch_string.v",
+            "wb_sta_reader_attr_src_line_overflow.v",
+            "wb_sta_reader_attr_survival.v",
         ],
     ),
     structural_xfail(
@@ -1247,6 +1479,15 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_naming_escaped_port_kw_input.v",
             "bx_naming_escaped_top_kw.v",
             "structural/wb_writer_wire_index_overflow.v",
+            "wb_writer_alldigit_net.v",
+            "wb_writer_digit_bus_net.v",
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_inst.v",
+            "wb_writer_digit_inst_in_sub.v",
+            "wb_writer_digit_module.v",
+            "wb_writer_digit_net.v",
+            "wb_writer_digit_port.v",
+            "wb_writer_digit_topmodule.v",
         ],
     ),
 
@@ -1265,6 +1506,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "a module definition is dropped",
         netlists = [
             "structural/bx_dangling_module_never_instantiated.v",
+            "wb_sta_reader_module_shadows_cell_after.v",
         ],
     ),
     structural_xfail(
@@ -1356,6 +1598,15 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/bx_sequential_shift8_4mods.v",
             "two_subs_chained.v",
             "uniquified_module_collision.v",
+            "wb_dbsta_link_attr_impl_oper_stolen_name.v",
+            "wb_dbsta_link_uniq_clone_base_ambiguity.v",
+            "wb_dbsta_link_uniq_clone_eq_top_name.v",
+            "wb_dbsta_link_uniq_clone_eq_top_name2.v",
+            "wb_dbsta_link_uniq_fallback_slot_taken.v",
+            "wb_writer_nc_crossmodule.v",
+            "wb_writer_nc_drift_captures_user_net.v",
+            "wb_writer_nc_drift_three.v",
+            "wb_writer_nc_same_module_two.v",
         ],
     ),
 
@@ -1562,6 +1813,14 @@ STRUCTURAL_EXPECTED_FAIL = [
             "swap_slices_sub.v",
             "two_subs_chained.v",
             "twoout_ft_topwires.v",
+            "wb_dbsta_link_open_out_formal_bus_fanout.v",
+            "wb_sta_reader_ansi_bus_continuation.v",
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_port.v",
+            "wb_writer_escbusbit_vs_realbus.v",
+            "wb_writer_hier_bus_mixed_concat.v",
+            "wb_writer_portorder_bus_last.v",
+            "wb_writer_portorder_netname_key.v",
         ],
     ),
     structural_xfail(
@@ -1571,6 +1830,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "port list reordered and a direction or bus range changed",
         netlists = [
             "structural/wb_sta_reader_header_bitselect_port.v",
+            "wb_sta_reader_supply_port_modifier.v",
         ],
     ),
     structural_xfail(
@@ -1781,6 +2041,14 @@ STRUCTURAL_EXPECTED_FAIL = [
             "swap_slices_sub.v",
             "two_subs_chained.v",
             "twoout_ft_topwires.v",
+            "wb_dbsta_link_open_out_formal_bus_fanout.v",
+            "wb_sta_reader_ansi_bus_continuation.v",
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_port.v",
+            "wb_writer_escbusbit_vs_realbus.v",
+            "wb_writer_hier_bus_mixed_concat.v",
+            "wb_writer_portorder_bus_last.v",
+            "wb_writer_portorder_netname_key.v",
         ],
     ),
     structural_xfail(
@@ -1790,6 +2058,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "port list reordered and a direction or bus range changed",
         netlists = [
             "structural/wb_sta_reader_header_bitselect_port.v",
+            "wb_sta_reader_supply_port_modifier.v",
         ],
     ),
     structural_xfail(
@@ -1932,6 +2201,13 @@ STRUCTURAL_EXPECTED_FAIL = [
             "sub_two_outs_to_topwires.v",
             "two_subs_chained.v",
             "twoout_ft_topwires.v",
+            "wb_dbnetwork_overlay_child_out_alias_two_ports.v",
+            "wb_dbsta_link_supply_net_hier_boundary.v",
+            "wb_dbsta_link_supply_net_sigtype.v",
+            "wb_sta_reader_supply_tie.v",
+            "wb_writer_wire_bus_5to5.v",
+            "wb_writer_wire_index_intmax.v",
+            "wb_writer_wire_lsbfirst_flip.v",
         ],
     ),
     structural_xfail(
@@ -2002,6 +2278,12 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/bx_port_rewiring_width_wide_outport_to_narrow_net.v",
             "structural/s2_portwiring_width_pad_positional_d1.v",
             "structural/s2_portwiring_width_trunc_named_d1.v",
+            "wb_dbsta_link_open_out_formal_bus_fanout.v",
+            "wb_writer_nc_crossmodule.v",
+            "wb_writer_nc_drift_captures_user_net.v",
+            "wb_writer_nc_drift_three.v",
+            "wb_writer_nc_inout_vector.v",
+            "wb_writer_nc_same_module_two.v",
         ],
     ),
     structural_xfail(
@@ -2063,6 +2345,20 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_sta_reader_wor_resolution.v",
             "structural/wb_writer_bitsel_index_stoi_range.v",
             "structural/wb_writer_wire_index_overflow.v",
+            "wb_dbnetwork_overlay_depth0_escslash_rename_port.v",
+            "wb_dbnetwork_overlay_erase_overshoot_net_victim.v",
+            "wb_dbnetwork_overlay_netname_erase_overshoot_port.v",
+            "wb_dbnetwork_overlay_netname_header_single_bslash.v",
+            "wb_dbnetwork_overlay_stamped_path_dup_decl.v",
+            "wb_dbsta_link_alias_name_after_port.v",
+            "wb_dbsta_link_alias_name_before_port.v",
+            "wb_dbsta_link_supply_net_hier_boundary.v",
+            "wb_dbsta_link_supply_net_sigtype.v",
+            "wb_sta_reader_supply_tie.v",
+            "wb_writer_hier_input_alias_orphan.v",
+            "wb_writer_wire_bus_5to5.v",
+            "wb_writer_wire_index_intmax.v",
+            "wb_writer_wire_lsbfirst_flip.v",
         ],
     ),
     structural_xfail(
@@ -2109,6 +2405,8 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/bx_port_rewiring_explicit_port_concat_perm.v",
             "structural/bx_port_rewiring_explicit_port_positional_bus.v",
             "structural/wb_dbnetwork_overlay_depth0_escslash_rename.v",
+            "wb_dbnetwork_overlay_dcflat_hier_mixed.v",
+            "wb_dbnetwork_overlay_dcflat_pathnames_short.v",
         ],
     ),
     structural_xfail(
@@ -2242,6 +2540,15 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_sta_reader_ifdef_body_compiled.v",
             "two_subs_chained.v",
             "uniquified_module_collision.v",
+            "wb_dbsta_link_attr_impl_oper_stolen_name.v",
+            "wb_dbsta_link_uniq_clone_base_ambiguity.v",
+            "wb_dbsta_link_uniq_clone_eq_top_name.v",
+            "wb_dbsta_link_uniq_clone_eq_top_name2.v",
+            "wb_dbsta_link_uniq_fallback_slot_taken.v",
+            "wb_writer_nc_crossmodule.v",
+            "wb_writer_nc_drift_captures_user_net.v",
+            "wb_writer_nc_drift_three.v",
+            "wb_writer_nc_same_module_two.v",
         ],
     ),
 
@@ -2279,12 +2586,24 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "one clone name is the uniquification name of two different modules",
         netlists = [
             "bx_collisions_uniq_cross_prefix.v",
+            "wb_dbsta_link_uniq_clone_base_ambiguity.v",
         ],
     ),
 
     # ----------------------------------------------------------------------
     # cell_census
     #
+    # The number of elaborated leaf instances changed -- gates were gained or
+    # lost outright.
+    structural_xfail(
+        path = "flat",
+        check = "cell_census",
+        issue = "TBD",
+        symptom = "the elaborated leaf instance count changed",
+        netlists = [
+            "wb_sta_reader_module_shadows_cell_after.v",
+        ],
+    ),
     structural_xfail(
         path = "hier",
         check = "cell_census",
@@ -2292,6 +2611,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "the elaborated leaf instance count changed",
         netlists = [
             "bx_collisions_uniq_clone_eq_libcell.v",
+            "wb_sta_reader_module_shadows_cell_after.v",
         ],
     ),
 
@@ -2402,6 +2722,9 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_sta_reader_bus_dcl_initializer.v",
             "structural/wb_sta_reader_scalar_dcl_initializer.v",
             "structural/wb_sta_reader_wor_resolution.v",
+            "wb_dbsta_link_alias_name_after_port.v",
+            "wb_dbsta_link_alias_name_before_port.v",
+            "wb_writer_hier_input_alias_orphan.v",
         ],
     ),
     structural_xfail(
@@ -2473,6 +2796,12 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_naming_escaped_net_kw_wire.v",
             "bx_naming_escaped_port_kw_input.v",
             "structural/wb_writer_wire_index_overflow.v",
+            "wb_writer_alldigit_net.v",
+            "wb_writer_digit_bus_net.v",
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_inst.v",
+            "wb_writer_digit_net.v",
+            "wb_writer_digit_port.v",
         ],
     ),
     structural_xfail(
@@ -2502,6 +2831,11 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_dangling_nc_collision_scalar_live.v",
             "bx_dangling_nc_filler_all4_taken.v",
             "bx_dangling_undriven_leak_collide.v",
+            "wb_dbnetwork_overlay_dcflat_hier_mixed.v",
+            "wb_dbnetwork_overlay_dcflat_pathnames_short.v",
+            "wb_dbnetwork_overlay_erase_overshoot_net_victim.v",
+            "wb_dbnetwork_overlay_netname_header_single_bslash.v",
+            "wb_dbnetwork_overlay_stamped_path_dup_decl.v",
         ],
     ),
     structural_xfail(
@@ -2518,6 +2852,13 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_naming_escaped_net_kw_wire.v",
             "bx_naming_escaped_port_kw_input.v",
             "structural/wb_writer_wire_index_overflow.v",
+            "wb_writer_alldigit_net.v",
+            "wb_writer_digit_bus_net.v",
+            "wb_writer_digit_bus_port.v",
+            "wb_writer_digit_inst.v",
+            "wb_writer_digit_inst_in_sub.v",
+            "wb_writer_digit_net.v",
+            "wb_writer_digit_port.v",
         ],
     ),
     structural_xfail(

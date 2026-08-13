@@ -373,6 +373,9 @@ HIER_TOP_OVERRIDES = {
     "bx_naming_escaped_top_special.v": "t+p",
     "bx_naming_plain_dollar_top.v": "top$1",
     "bx_naming_plain_topname_TOP_sub_top.v": "TOP",
+    "wb_dbsta_link_uniq_clone_eq_top_name.v": "sub_u1",
+    "wb_dbsta_link_uniq_clone_eq_top_name2.v": "sub_u2",
+    "wb_writer_digit_topmodule.v": "1top",
 }
 
 HIER_TOP_OVERRIDES_ENV = {"HIER_TOP_OVERRIDES": ",".join([
