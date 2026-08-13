@@ -91,6 +91,36 @@ cc_library(
     ],
 )
 
+# LoadedDesign: one netlist loaded through one link mode, owning its own
+# db/sta. Deliberately separate from integrated_fixture so consumers that only
+# need to read/link/write a netlist do not link the optimization tool chain.
+cc_library(
+    name = "loaded_design",
+    testonly = 1,
+    srcs = ["src/loaded_design.cpp"],
+    hdrs = ["include/tst/loaded_design.h"],
+    data = [
+        "//test:nangate45_data",
+        "//test:sky130hd_data",
+    ],
+    defines = [
+        "BAZEL_BUILD",
+    ],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":db_fixture",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbReadVerilog",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@tcl_lang//:tcl",
+    ],
+)
+
 cc_library(
     name = "integrated_fixture",
     testonly = 1,
@@ -103,6 +133,7 @@ cc_library(
     includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [
+        ":loaded_design",
         ":tst",
         "//src/ant",
         "//src/dbSta",
@@ -149,5 +180,37 @@ cc_library(
     deps = [
         "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
+    ],
+)
+
+# Test Parity Note: registered in bazel only. See src/dbSta/test/BUILD for the
+# rationale behind bazel-only C++ test registration in this area.
+cc_test(
+    name = "TestLoadedDesign",
+    srcs = [
+        "test/cpp/TestLoadedDesign.cpp",
+        "test/cpp/TestNetlists.h",
+    ],
+    deps = [
+        ":db_fixture",
+        ":loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Test Parity Note: bazel only, as above.
+cc_test(
+    name = "TestLec",
+    srcs = [
+        "test/cpp/TestLec.cpp",
+        "test/cpp/TestNetlists.h",
+    ],
+    deps = [
+        ":db_fixture",
+        ":lec",
+        ":loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

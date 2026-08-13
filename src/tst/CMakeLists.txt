@@ -63,6 +63,29 @@ target_link_libraries(tst_lec
     GTest::gtest
 )
 
+# LoadedDesign: one netlist loaded through one link mode, owning its own
+# db/sta. Separate from tst_integrated_fixture so consumers that only need to
+# read/link/write a netlist don't link the optimization tool chain.
+add_library(tst_loaded_design
+    src/loaded_design.cpp
+)
+
+target_include_directories(tst_loaded_design
+  PUBLIC
+    include
+)
+
+target_link_libraries(tst_loaded_design
+  PUBLIC
+    tst_base
+    dbSta_lib
+  PRIVATE
+    utl_lib
+    db
+    lefin
+    OpenSTA
+)
+
 # IntegratedFixture pulls in the full optimization tool chain (ant, dpl, est,
 # grt, rsz, stt). Kept separate so lightweight tst consumers don't link it.
 add_library(tst_integrated_fixture
@@ -77,6 +100,7 @@ target_include_directories(tst_integrated_fixture
 target_link_libraries(tst_integrated_fixture
   PUBLIC
     tst
+    tst_loaded_design
     dbSta_lib
     ant_lib
     dpl_lib
