@@ -54,6 +54,6 @@ Total            91583          3046            3.33%             0 /  0 /  0
 [INFO GRT-0018] Total wirelength: 29944 um
 [INFO GRT-0014] Routed nets: 411
 [INFO GRT-0006] Repairing antennas, iteration 1.
-[INFO GRT-0012] Found 11 antenna violations.
-[INFO GRT-0302] Inserted 14 jumpers for 11 nets.
+[INFO GRT-0012] Found 12 antenna violations.
+[INFO GRT-0302] Inserted 15 jumpers for 12 nets.
 [INFO GRT-0012] Found 0 antenna violations.

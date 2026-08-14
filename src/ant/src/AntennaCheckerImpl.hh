@@ -54,6 +54,8 @@ struct NodeInfo
 
   std::vector<odb::dbITerm*> iterms;
 
+  // Accumulates per-layer ratios for CAR/CSR; iterm areas are per-gate
+  // constants and must not be summed (see calculateAreas)
   NodeInfo& operator+=(const NodeInfo& a)
   {
     par += a.par;
