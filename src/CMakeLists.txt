@@ -438,6 +438,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dft_py
       par_py
       web_py
+      wmk_py
   )
   target_link_libraries(openroad ${OPENROAD_PYTHON_MODULES})
 

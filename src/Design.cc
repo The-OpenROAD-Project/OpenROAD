@@ -25,6 +25,7 @@
 #include "tcl.h"
 #include "tclDecls.h"
 #include "utl/Logger.h"
+#include "wmk/Watermark.h"
 
 namespace ord {
 
@@ -258,6 +259,11 @@ dpl::Opendp* Design::getOpendp()
 exa::Example* Design::getExample()
 {
   return getOpenRoad()->getExample();
+}
+
+wmk::Watermark* Design::getWatermark()
+{
+  return getOpenRoad()->getWatermark();
 }
 
 mpl::MacroPlacer* Design::getMacroPlacer()

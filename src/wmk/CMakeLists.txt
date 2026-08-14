@@ -36,6 +36,33 @@ messages(
   TARGET wmk
 )
 
+################################################################
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          wmk_py
+           NAMESPACE     wmk
+           LANGUAGE      python
+           I_FILE        src/watermark-py.i
+           SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/wmk_py.py
+  )
+
+  target_include_directories(wmk_py
+    PRIVATE
+      src
+  )
+
+  # odb is listed explicitly: wmk links it privately, so the public header's
+  # odb/db.h include is not satisfied through wmk alone.
+  target_link_libraries(wmk_py
+    PUBLIC
+      wmk
+      odb
+  )
+
+endif()
+
 if(ENABLE_TESTS)
   add_subdirectory(test)
 endif()

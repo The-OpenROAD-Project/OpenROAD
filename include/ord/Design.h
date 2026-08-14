@@ -53,6 +53,10 @@ namespace exa {
 class Example;
 }
 
+namespace wmk {
+class Watermark;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -184,6 +188,7 @@ class Design
   rsz::Resizer* getResizer();
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
   tap::Tapcell* getTapcell();
+  wmk::Watermark* getWatermark();
 
   // Needed by standalone startup, not for general use.
   ord::OpenRoad* getOpenRoad();
