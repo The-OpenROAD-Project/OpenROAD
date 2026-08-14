@@ -29,7 +29,7 @@
     Sinks per sub-region: 1
     Sub-region size: 0.0714 X 0.0357
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0136]  Stop criterion found. Sink region has 1 sink(s).
 [INFO CTS-0035]  Number of sinks covered: 2.
 [INFO CTS-0018]     Created 3 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.

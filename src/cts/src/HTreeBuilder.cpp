@@ -1268,6 +1268,14 @@ void HTreeBuilder::run()
 
     computeLevelTopology(level, regionWidth, regionHeight);
 
+    if (numSinksPerSubRegion <= 1) {
+      logger_->info(CTS,
+                    136,
+                    " Stop criterion found. Sink region has {} sink(s).",
+                    numSinksPerSubRegion);
+      break;
+    }
+
     if (isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
       if (options_->getMaxWl()) {
         double maxHPWL = topologyForEachLevel_.back().getLargestSinkRegionHPWL(
