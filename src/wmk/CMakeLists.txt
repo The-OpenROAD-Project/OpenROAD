@@ -35,3 +35,7 @@ target_link_libraries(wmk
 messages(
   TARGET wmk
 )
+
+if(ENABLE_TESTS)
+  add_subdirectory(test)
+endif()
