@@ -364,6 +364,9 @@
     "https://bcr.bazel.build/modules/envoy_api/0.0.0-20241214-918efc9/source.json": "212043ab69d87f7a04aa4f627f725b540cff5e145a3a31a9403d8b6ec2e920c9",
     "https://bcr.bazel.build/modules/flex/2.6.4.bcr.5/MODULE.bazel": "72575f9a1926e50e7a9c7a61a98394390c36a22f28ba16c7d94b51534cfb974c",
     "https://bcr.bazel.build/modules/flex/2.6.4.bcr.5/source.json": "58ea819b72b59020743c12c11799624dcea18efcdbc4b3f0b470f43c7ea24d5e",
+    "https://bcr.bazel.build/modules/fmt/11.1.3/MODULE.bazel": "3f422eb59fec5a54faf6d6c5b4cfbd173ad989e2ee5a2da944e19a39a8a90e00",
+    "https://bcr.bazel.build/modules/fmt/11.2.0.bcr.1/MODULE.bazel": "3a90c5cfcb4650166bebc6dac8c4ebcfcbf629f5cfa36267e208dd65be886eec",
+    "https://bcr.bazel.build/modules/fmt/12.0.0/MODULE.bazel": "5308b44200f97df17217c053367537c6d469fe46a61ab0dfc1038c04ceb1d735",
     "https://bcr.bazel.build/modules/fmt/12.1.0/MODULE.bazel": "c6b460c936f408b371bf12ccee5ecbd5aed8f6abfb6e8b63fad0c622715fd458",
     "https://bcr.bazel.build/modules/fmt/12.1.0/source.json": "d7b35221043d8d7c69e2a64d6a0783c97aa49c5ce198ee0a5ccd18c99f070b1a",
     "https://bcr.bazel.build/modules/freetype/2.13.3.bcr.2/MODULE.bazel": "f942e7befffbf36f03c24e97a9348048851201a61414ae1e05c3dc3d4d9ffdde",
@@ -460,6 +463,8 @@
     "https://bcr.bazel.build/modules/nlohmann_json/3.12.0.bcr.1/MODULE.bazel": "a1c8bb07b5b91d971727c635f449d05623ac9608f6fe4f5f04254ea12f08e349",
     "https://bcr.bazel.build/modules/nlohmann_json/3.12.0.bcr.1/source.json": "93f82a5ae985eb935c539bfee95e04767187818189241ac956f3ccadbdb8fb02",
     "https://bcr.bazel.build/modules/nlohmann_json/3.6.1/MODULE.bazel": "6f7b417dcc794d9add9e556673ad25cb3ba835224290f4f848f8e2db1e1fca74",
+    "https://bcr.bazel.build/modules/onetbb/2022.3.0/MODULE.bazel": "e3967c95be6bccd0a5e162795b2df152247a98ff2ef0651b5cbd5f2b05c37160",
+    "https://bcr.bazel.build/modules/onetbb/2022.3.0/source.json": "b18515149493febb6862fa21e80a7d105c7298e9e1a7cddd154727eac04dc6a7",
     "https://bcr.bazel.build/modules/opencensus-cpp/0.0.0-20230502-50eb5de/MODULE.bazel": "02201d2921dadb4ec90c4980eca4b2a02904eddcf6fa02f3da7594fb7b0d821c",
     "https://bcr.bazel.build/modules/opencensus-cpp/0.0.0-20230502-50eb5de/source.json": "f50efc07822f5425bd1d3e40e977484f9c0142463052717d40ec85cd6744243e",
     "https://bcr.bazel.build/modules/opencensus-proto/0.4.1/MODULE.bazel": "4a2e8b4d0b544002502474d611a5a183aa282251e14f6a01afe841c0c1b10372",
@@ -815,9 +820,8 @@
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.6/MODULE.bazel": "e937cf0a3772f93ad91f3c7af4f330b76a878bbfee06527ca1a9673b790eb896",
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.7/MODULE.bazel": "26a6764cda2bfa720e5ea6bea9e6aa4282b69f96d3b9cfcfbce1ef596ce30e43",
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.8/MODULE.bazel": "772c674bb78a0342b8caf32ab5c25085c493ca4ff08398208dcbe4375fe9f776",
+    "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.8/source.json": "cf377d76800dfc3d3b71e9dd4a8c53a62837cbce37cc4f25e6207b15fc1e8f2b",
     "https://bcr.bazel.build/modules/zlib/1.3.1/MODULE.bazel": "751c9940dcfe869f5f7274e1295422a34623555916eb98c174c1e945594bf198",
-    "https://bcr.bazel.build/modules/zlib/1.3.2/MODULE.bazel": "7303cb87d80e438f313194fc640e38475a8d337b8c70ff6a0725f55236566a33",
-    "https://bcr.bazel.build/modules/zlib/1.3.2/source.json": "8f35ed65174ee2ad9630baeccd243cadf482b72d2ab32b57f9d84dc30ab076e0",
     "https://bcr.bazel.build/modules/zlib/1.3/MODULE.bazel": "6a9c02f19a24dcedb05572b2381446e27c272cd383aed11d41d99da9e3167a72",
     "https://bcr.bazel.build/modules/zstd/1.5.7/MODULE.bazel": "f5780cdbd6f4c5bb985a20f839844316fe48fb5e463056f372dbc37cfabdf450",
     "https://bcr.bazel.build/modules/zstd/1.5.7/source.json": "f72c48184b6528ffc908a5a2bcbf3070c6684f3db03da2182c8ca999ae5f5cfd",
@@ -1425,7 +1429,7 @@
     },
     "@@kepler-formal+//bazel:deps.bzl%deps": {
       "general": {
-        "bzlTransitiveDigest": "d9cfJaNGxO6fSCn8gL8RuLhA5CQteJi7LcddL+tniYQ=",
+        "bzlTransitiveDigest": "hayn3TerRwNj+3QmEaFZB47FLvCgeLEwivAd073rFxU=",
         "usagesDigest": "NGlTnl+c579bDhWB6NLbqkJQOniqcySno1qy4bSTx4k=",
         "recordedInputs": [
           "REPO_MAPPING:kepler-formal+,bazel_tools bazel_tools"
@@ -1438,15 +1442,6 @@
               "sha256": "fa02378ad522b318916b9ad928d1372fc9abd43dd1f4f0392e50450f5c87828f",
               "strip_prefix": "capnproto-c++-1.4.0",
               "build_file": "@@kepler-formal+//bazel:capnproto.BUILD.bazel"
-            }
-          },
-          "onetbb": {
-            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
-            "attributes": {
-              "url": "https://github.com/uxlfoundation/oneTBB/archive/refs/tags/v2022.3.0.tar.gz",
-              "sha256": "01598a46c1162c27253a0de0236f520fd8ee8166e9ebb84a4243574f88e6e50a",
-              "strip_prefix": "oneTBB-2022.3.0",
-              "build_file": "@@kepler-formal+//bazel:onetbb.BUILD.bazel"
             }
           },
           "boost_headers": {
@@ -1506,8 +1501,8 @@
             "repoRuleId": "@@kepler-formal+//bazel:naja_repositories.bzl%alias_repository",
             "attributes": {
               "aliases": {
-                "tbb": "@onetbb//:onetbb",
-                "tbbmalloc": "@onetbb//:onetbb"
+                "tbb": "@onetbb//:tbb",
+                "tbbmalloc": "@onetbb//:tbbmalloc"
               }
             }
           },

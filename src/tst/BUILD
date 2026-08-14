@@ -3,7 +3,6 @@
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//bazel:kepler.bzl", "transitioned_binary")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -151,14 +150,21 @@ cc_library(
     ],
 )
 
-# The kepler-formal binary, built from the pinned @kepler-formal module with
-# `-xc++` stripped from cxxopts (see //bazel:kepler.bzl). Add it to a test's
-# `data` to get the LEC engine as a runfile; lec.cpp resolves it from there,
-# falling back to $KEPLER_FORMAL / $PATH for a locally installed binary.
-transitioned_binary(
+# The kepler-formal binary, built from the pinned @kepler-formal module. Add it
+# to a test's `data` to get the LEC engine as a runfile; lec.cpp resolves it
+# from there, falling back to $KEPLER_FORMAL / $PATH for a locally installed
+# binary.
+#
+# A plain alias: nothing in this subgraph is built with rules_foreign_cc, so
+# the build needs no accommodation for OpenROAD's global `-xc++`. That flag is
+# inert for a normal Bazel C++ compile and only ever mattered because
+# rules_foreign_cc copies cxxopts into CMAKE_CXX_FLAGS, which CMake then reuses
+# at link time; with TBB coming from the BCR module instead of a cmake() target
+# there is no such build left.
+alias(
     name = "kepler_formal_bin",
     testonly = 1,
-    binary = ["@kepler-formal//src/bin:kepler-formal"],
+    actual = "@kepler-formal//src/bin:kepler-formal",
     visibility = ["//visibility:public"],
 )
 
