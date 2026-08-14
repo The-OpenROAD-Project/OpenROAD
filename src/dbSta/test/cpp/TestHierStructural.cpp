@@ -189,16 +189,34 @@ struct Token
   bool escaped{false};
 };
 
+// ASCII-only character classification. The <cctype> functions are
+// locale-dependent, and Verilog identifiers are ASCII by definition, so under
+// a locale that classifies a byte differently a netlist would tokenize
+// differently -- a difference that would show up as a corpus case mysteriously
+// changing verdict on one machine.
+bool isAsciiDigit(char c)
+{
+  return c >= '0' && c <= '9';
+}
+
+bool isAsciiAlpha(char c)
+{
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+bool isAsciiAlnum(char c)
+{
+  return isAsciiAlpha(c) || isAsciiDigit(c);
+}
+
 bool isIdentStart(char c)
 {
-  return std::isalpha(static_cast<unsigned char>(c)) != 0 || c == '_'
-         || c == '$';
+  return isAsciiAlpha(c) || c == '_' || c == '$';
 }
 
 bool isIdentChar(char c)
 {
-  return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_'
-         || c == '$';
+  return isAsciiAlnum(c) || c == '_' || c == '$';
 }
 
 std::vector<Token> tokenize(const std::string& src)
@@ -273,12 +291,11 @@ std::vector<Token> tokenize(const std::string& src)
       tokens.push_back({Token::Kind::kIdent, src.substr(begin, i - begin)});
       continue;
     }
-    if (std::isdigit(static_cast<unsigned char>(c)) != 0 || c == '\'') {
+    if (isAsciiDigit(c) || c == '\'') {
       const std::size_t begin = i;
       ++i;
       while (i < n
-             && (std::isalnum(static_cast<unsigned char>(src[i])) != 0
-                 || src[i] == '_' || src[i] == '\'')) {
+             && (isAsciiAlnum(src[i]) || src[i] == '_' || src[i] == '\'')) {
         ++i;
       }
       tokens.push_back({Token::Kind::kNumber, src.substr(begin, i - begin)});
@@ -930,14 +947,14 @@ std::string entryName(const ::testing::TestParamInfo<CorpusEntry>& info)
 {
   std::string name = info.param.name;
   for (char& c : name) {
-    if (!std::isalnum(static_cast<unsigned char>(c))) {
+    if (!isAsciiAlnum(c)) {
       c = '_';
     }
   }
   return name;
 }
 
-std::string workDir()
+std::filesystem::path workDir()
 {
   const char* tmp = std::getenv("TEST_TMPDIR");
   return tmp != nullptr ? tmp : ".";
@@ -950,8 +967,7 @@ std::string fileStem(const std::string& name)
 {
   std::string stem = name;
   for (char& c : stem) {
-    if (std::isalnum(static_cast<unsigned char>(c)) == 0 && c != '.' && c != '-'
-        && c != '_') {
+    if (!isAsciiAlnum(c) && c != '.' && c != '-' && c != '_') {
       c = '_';
     }
   }
@@ -982,17 +998,6 @@ bool isComment(const std::string& line)
 {
   const std::string::size_type first = line.find_first_not_of(" \t\r");
   return first == std::string::npos || line[first] == '#';
-}
-
-std::optional<Technology> parseTechnology(const std::string& name)
-{
-  if (name == "nangate45") {
-    return Technology::kNangate45;
-  }
-  if (name == "sky130hd") {
-    return Technology::kSky130hd;
-  }
-  return std::nullopt;
 }
 
 std::vector<CorpusEntry> corpusLoadError(const std::string& message)
@@ -1537,9 +1542,8 @@ bool decodesToClone(const std::string& emitted,
     return false;
   }
   const std::string suffix = emitted.substr(base.size() + 1);
-  return std::all_of(suffix.begin(), suffix.end(), [](char c) {
-    return std::isdigit(static_cast<unsigned char>(c)) != 0;
-  });
+  return std::all_of(
+      suffix.begin(), suffix.end(), [](char c) { return isAsciiDigit(c); });
 }
 
 // Name identity: every module name in the emitted netlist must map back to the
@@ -1745,8 +1749,8 @@ void checkStructure(const CorpusEntry& entry, Path path)
   ASSERT_TRUE(entry.load_error.empty()) << entry.load_error;
 
   const bool hierarchy = path == Path::kHier;
-  const std::string out_v = workDir() + "/" + fileStem(entry.name) + "."
-                            + toString(path) + ".struct.v";
+  const std::filesystem::path out_v
+      = workDir() / (fileStem(entry.name) + "." + toString(path) + ".struct.v");
 
   // Only one design is kept live at a time: LoadedDesign owns a dbSta, and
   // sta::Sta keeps a global pointer to the first one constructed.

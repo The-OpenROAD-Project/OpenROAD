@@ -11,6 +11,7 @@
 // testing is visible in the code instead of being a comment on a copy that can
 // drift.
 
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -93,11 +94,11 @@ inline std::string droppedPortNetlist()
 }
 
 // Writes `text` into `work_dir` and returns the path.
-inline std::string writeNetlist(const std::string& work_dir,
-                                const std::string& name,
-                                const std::string& text)
+inline std::filesystem::path writeNetlist(const std::filesystem::path& work_dir,
+                                          const std::string& name,
+                                          const std::string& text)
 {
-  const std::string path = work_dir + "/" + name;
+  const std::filesystem::path path = work_dir / name;
   std::ofstream out(path);
   out << text;
   return path;

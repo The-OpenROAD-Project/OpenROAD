@@ -5,6 +5,7 @@
 // reports a problem without a nonzero exit code.
 
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -18,19 +19,19 @@
 namespace tst {
 namespace {
 
-std::string workDir()
+std::filesystem::path workDir()
 {
   const char* tmp = std::getenv("TEST_TMPDIR");
   return tmp != nullptr ? tmp : ".";
 }
 
-std::vector<std::string> nangate45Liberty()
+std::vector<std::filesystem::path> nangate45Liberty()
 {
   return {getRunfilePath("_main/test/Nangate45/Nangate45_typ.lib")};
 }
 
 // The gold netlist for every case below.
-std::string netlistPath()
+std::filesystem::path netlistPath()
 {
   return writeNetlist(workDir(), "lec_gold.v", kHierNetlist);
 }
@@ -38,16 +39,17 @@ std::string netlistPath()
 // Writes `text` into the work dir and returns the path. The defective variants
 // are derived from the gold rather than from emitted Verilog, so the tests do
 // not depend on write_verilog's formatting.
-std::string writeTemp(const std::string& name, const std::string& text)
+std::filesystem::path writeTemp(const std::string& name,
+                                const std::string& text)
 {
   return writeNetlist(workDir(), name, text);
 }
 
 // Emits the netlist through one link mode and returns the output path.
-std::string emit(bool hierarchy, const std::string& name)
+std::filesystem::path emit(bool hierarchy, const std::string& name)
 {
   LoadedDesign d(Technology::kNangate45, netlistPath(), "top", hierarchy);
-  const std::string out = workDir() + "/" + name;
+  const std::filesystem::path out = workDir() / name;
   d.writeVerilog(out);
   return out;
 }
@@ -61,7 +63,7 @@ TEST(TestLec, ResolutionReportsMissingBinary)
 
   EXPECT_FALSE(isLecAvailable());
   const LecOutcome outcome
-      = runLec("gold.v", "gate.v", {}, LecMode::kSec, workDir());
+      = runLec("gold.v", "gate.v", {}, LecMode::kSequential, workDir());
   EXPECT_EQ(outcome.result, LecResult::kNotInstalled);
   // The message has to say how to fix it, not just that it broke.
   EXPECT_NE(outcome.detail.find("KEPLER_FORMAL"), std::string::npos);
@@ -79,7 +81,7 @@ TEST(TestLec, ProvesHierOutputAgainstInput)
   const std::string gate = emit(/*hierarchy=*/true, "lec_hier.v");
 
   const LecOutcome outcome = runLec(
-      netlistPath(), gate, nangate45Liberty(), LecMode::kSec, workDir());
+      netlistPath(), gate, nangate45Liberty(), LecMode::kSequential, workDir());
   EXPECT_EQ(outcome.result, LecResult::kProved)
       << toString(outcome.result) << "\n"
       << outcome.detail;
@@ -90,10 +92,11 @@ TEST(TestLec, ProvesFlatOutputAgainstInput)
   TST_REQUIRE_LEC();
   const std::string gate = emit(/*hierarchy=*/false, "lec_flat.v");
 
-  // The flat writer renames every instance, which kLec would reject as a
-  // boundary mismatch; kSec compares transition systems and tolerates it.
+  // The flat writer renames every instance, which kCombinational would reject
+  // as a boundary mismatch; kSequential compares transition systems and
+  // tolerates it.
   const LecOutcome outcome = runLec(
-      netlistPath(), gate, nangate45Liberty(), LecMode::kSec, workDir());
+      netlistPath(), gate, nangate45Liberty(), LecMode::kSequential, workDir());
   EXPECT_EQ(outcome.result, LecResult::kProved)
       << toString(outcome.result) << "\n"
       << outcome.detail;
@@ -108,7 +111,7 @@ TEST(TestLec, DetectsCounterexample)
       = runLec(netlistPath(),
                writeTemp("lec_counterexample.v", counterexampleNetlist()),
                nangate45Liberty(),
-               LecMode::kSec,
+               LecMode::kSequential,
                workDir());
   EXPECT_EQ(outcome.result, LecResult::kCounterexample)
       << toString(outcome.result) << "\n"
@@ -125,7 +128,7 @@ TEST(TestLec, DetectsDroppedPort)
       = runLec(netlistPath(),
                writeTemp("lec_dropped_port.v", droppedPortNetlist()),
                nangate45Liberty(),
-               LecMode::kSec,
+               LecMode::kSequential,
                workDir());
   // The assertion that matters: a netlist missing a top-level output must not
   // be reported as equivalent, whichever failure category it lands in.
@@ -144,7 +147,7 @@ TEST(TestLec, ReportsToolErrorForUnparseableNetlist)
   const std::string gate = writeTemp("lec_garbage.v", "this is not verilog\n");
 
   const LecOutcome outcome = runLec(
-      netlistPath(), gate, nangate45Liberty(), LecMode::kSec, workDir());
+      netlistPath(), gate, nangate45Liberty(), LecMode::kSequential, workDir());
   EXPECT_EQ(outcome.result, LecResult::kToolError)
       << toString(outcome.result) << "\n"
       << outcome.detail;

@@ -132,7 +132,7 @@ void assertLecAvailable();
 // Compares `gate_v` against `gold_v`. Writes a config and a log into
 // `work_dir`; both paths come back in the outcome.
 //
-// In kSec mode this sets `sec_encoding: dual_rail_steady`. That is not a
+// In kSequential mode this sets `sec_encoding: dual_rail_steady`. That is not a
 // detail, and the right answer has already changed once with the kepler
 // revision -- see the comment at the `sec_encoding` line in lec.cpp before
 // touching it.

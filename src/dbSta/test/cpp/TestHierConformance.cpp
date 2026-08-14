@@ -90,12 +90,32 @@ void PrintTo(const CorpusEntry& entry, std::ostream* os)
   *os << entry.name << " (top " << entry.top << ")";
 }
 
+// ASCII-only character classification. The <cctype> functions are
+// locale-dependent, and Verilog identifiers are ASCII by definition, so under
+// a locale that classifies a byte differently a netlist would tokenize
+// differently -- a difference that would show up as a corpus case mysteriously
+// changing verdict on one machine.
+bool isAsciiDigit(char c)
+{
+  return c >= '0' && c <= '9';
+}
+
+bool isAsciiAlpha(char c)
+{
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+bool isAsciiAlnum(char c)
+{
+  return isAsciiAlpha(c) || isAsciiDigit(c);
+}
+
 // Makes gtest report the netlist name instead of GetParam(0).
 std::string entryName(const ::testing::TestParamInfo<CorpusEntry>& info)
 {
   std::string name = info.param.name;
   for (char& c : name) {
-    if (!std::isalnum(static_cast<unsigned char>(c))) {
+    if (!isAsciiAlnum(c)) {
       c = '_';
     }
   }

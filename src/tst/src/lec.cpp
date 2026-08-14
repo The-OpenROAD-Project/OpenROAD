@@ -102,7 +102,7 @@ std::string capture(const std::string& command, int* exit_code)
 }
 
 // Extracts the SEC coverage percentage. Returns -1 when the line is absent
-// (which is normal for kLec mode).
+// (which is normal for kCombinational mode).
 double coveragePercent(const std::string& text)
 {
   static const std::regex re(R"(checked-output coverage: ([0-9.]+)%)");
@@ -186,7 +186,8 @@ std::filesystem::path findKeplerFormal()
 
   // Prefer the runfile over $PATH: a bazel test must use the binary its own
   // dependency graph built, not whatever happens to be installed.
-  if (const std::filesystem::path runfile = keplerFormalRunfile(); !runfile.empty()) {
+  if (const std::filesystem::path runfile = keplerFormalRunfile();
+      !runfile.empty()) {
     return runfile;
   }
 
@@ -251,7 +252,8 @@ LecOutcome runLec(const std::filesystem::path& gold_v,
   {
     std::ofstream cfg(outcome.config_path);
     cfg << "format: verilog\n";
-    cfg << "verification: " << (mode == LecMode::kSequential ? "sec" : "lec") << "\n";
+    cfg << "verification: " << (mode == LecMode::kSequential ? "sec" : "lec")
+        << "\n";
     if (mode == LecMode::kSequential) {
       // Encoding choice, and it has flipped once already -- do not change it
       // without re-running a mutation battery, because both options have been
@@ -300,8 +302,9 @@ LecOutcome runLec(const std::filesystem::path& gold_v,
   // directly would otherwise find them littering their working tree.
   int exit_code = 0;
   const std::string stdout_text
-      = capture("cd '" + work_dir.string() + "' && " + loaderEnvPrefix(binary) + "'"
-                    + binary.string() + "' --config '" + outcome.config_path.string() + "'",
+      = capture("cd '" + work_dir.string() + "' && " + loaderEnvPrefix(binary)
+                    + "'" + binary.string() + "' --config '"
+                    + outcome.config_path.string() + "'",
                 &exit_code);
   const std::string log_text = readAll(outcome.log_path);
   const std::string all = stdout_text + log_text;
@@ -383,10 +386,11 @@ LecOutcome runLec(const std::filesystem::path& gold_v,
     return outcome;
   }
 
-  // kLec only: the boundary-point counts live in the log, not on stdout. An
-  // older kepler-formal silently compares just the intersection and calls that
-  // IDENTICAL, so check the counts rather than trusting the verdict. (Newer
-  // builds stop before solving instead, which lands in kBoundaryMismatch.)
+  // kCombinational only: the boundary-point counts live in the log, not on
+  // stdout. An older kepler-formal silently compares just the intersection and
+  // calls that IDENTICAL, so check the counts rather than trusting the verdict.
+  // (Newer builds stop before solving instead, which lands in
+  // kBoundaryMismatch.)
   static const std::regex diff_re(
       R"(size of diff[01] (?:in|out)puts: ([0-9]+))");
   for (auto it
