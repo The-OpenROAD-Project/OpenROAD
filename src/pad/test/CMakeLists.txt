@@ -15,6 +15,8 @@ or_integration_tests(
     make_io_sites_different_sites
     make_io_sites_rotations
     non_top_layer
+    order_net_match_different
+    order_net_match_unconnected
     place_bondpad
     place_bondpad_stagger
     place_corners_avoid_bumps
