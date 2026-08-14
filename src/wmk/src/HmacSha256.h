@@ -15,13 +15,16 @@
 namespace wmk {
 
 // Compute HMAC-SHA256(key, msg) and write the 32-byte digest into out.
-void hmac_sha256(const std::uint8_t* key, std::size_t key_len,
-                 const std::uint8_t* msg, std::size_t msg_len,
+void hmac_sha256(const std::uint8_t* key,
+                 std::size_t key_len,
+                 const std::uint8_t* msg,
+                 std::size_t msg_len,
                  std::uint8_t out[32]);
 
 // Convenience overload: key is 32 bytes, msg is a std::string.
 std::array<std::uint8_t, 32> hmac_sha256_key32(
-    const std::array<std::uint8_t, 32>& key, const std::string& msg);
+    const std::array<std::uint8_t, 32>& key,
+    const std::string& msg);
 
 // Parse a 64-character hex string into a 32-byte key.  Returns false on
 // invalid input (length, non-hex characters); on success the parsed bytes are

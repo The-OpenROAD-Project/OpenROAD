@@ -73,7 +73,8 @@ bool isRoutableSignal(dbNet* net)
 // given routed net, in DBU.  Vias contribute nothing (zero-length in
 // the plane); PATH/POINT/POINT_EXT give rectilinear segments on the
 // current layer.
-void measureNetWirelength(dbNet* net, std::int64_t& wl_tot,
+void measureNetWirelength(dbNet* net,
+                          std::int64_t& wl_tot,
                           std::int64_t& wl_way)
 {
   wl_tot = 0;
@@ -184,8 +185,7 @@ double binomialTail(int X, int x, double p)
     const double lt = logChoose(X, i) + (X - i) * log_p + i * log_q;
     log_terms.push_back(lt);
   }
-  const double max_lt
-      = *std::max_element(log_terms.begin(), log_terms.end());
+  const double max_lt = *std::max_element(log_terms.begin(), log_terms.end());
   double acc = 0.0;
   for (double lt : log_terms) {
     acc += std::exp(lt - max_lt);
@@ -220,10 +220,8 @@ int Watermark::clearWatermark()
 int Watermark::selectNets(const std::string& message, double fraction)
 {
   if (fraction <= 0.0 || fraction > 1.0) {
-    logger_->error(utl::WMK,
-                   2,
-                   "fraction must be in (0, 1]; got {:.3f}.",
-                   fraction);
+    logger_->error(
+        utl::WMK, 2, "fraction must be in (0, 1]; got {:.3f}.", fraction);
     return 0;
   }
   dbBlock* block = db_->getChip() ? db_->getChip()->getBlock() : nullptr;
@@ -245,11 +243,9 @@ int Watermark::selectNets(const std::string& message, double fraction)
       candidates.push_back(net);
     }
   }
-  std::sort(candidates.begin(),
-            candidates.end(),
-            [](dbNet* a, dbNet* b) {
-              return a->getName() < b->getName();
-            });
+  std::sort(candidates.begin(), candidates.end(), [](dbNet* a, dbNet* b) {
+    return a->getName() < b->getName();
+  });
 
   const int n_candidates = static_cast<int>(candidates.size());
   if (n_candidates == 0) {
@@ -293,10 +289,8 @@ int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,
                                double fraction)
 {
   if (fraction <= 0.0 || fraction > 1.0) {
-    logger_->error(utl::WMK,
-                   12,
-                   "fraction must be in (0, 1]; got {:.3f}.",
-                   fraction);
+    logger_->error(
+        utl::WMK, 12, "fraction must be in (0, 1]; got {:.3f}.", fraction);
     return 0;
   }
   dbBlock* block = db_->getChip() ? db_->getChip()->getBlock() : nullptr;
@@ -309,8 +303,8 @@ int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,
 
   // Threshold = floor(fraction * 2^32).  Selecting iff u32 < threshold yields
   // the same Bernoulli rule as the paper's u_R(n) < fraction.
-  const std::uint64_t threshold = static_cast<std::uint64_t>(
-      std::llround(fraction * 4294967296.0));
+  const std::uint64_t threshold
+      = static_cast<std::uint64_t>(std::llround(fraction * 4294967296.0));
 
   int n_candidates = 0;
   int n_pick = 0;
@@ -343,11 +337,10 @@ int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,
     }
     std::uint8_t mac[32];
     hmac_sha256(key.data(), key.size(), msg.data(), msg.size(), mac);
-    const std::uint64_t u32 =
-        static_cast<std::uint64_t>(mac[0])
-        | (static_cast<std::uint64_t>(mac[1]) << 8)
-        | (static_cast<std::uint64_t>(mac[2]) << 16)
-        | (static_cast<std::uint64_t>(mac[3]) << 24);
+    const std::uint64_t u32 = static_cast<std::uint64_t>(mac[0])
+                              | (static_cast<std::uint64_t>(mac[1]) << 8)
+                              | (static_cast<std::uint64_t>(mac[2]) << 16)
+                              | (static_cast<std::uint64_t>(mac[3]) << 24);
     if (u32 < threshold) {
       dbBoolProperty::create(net, "watermark", true);
       ++n_pick;
@@ -401,28 +394,24 @@ double Watermark::reportWatermark(double p)
     total_way += wl_way;
     const double ratio
         = static_cast<double>(wl_way) / static_cast<double>(wl_tot);
-    const bool is_wm
-        = (dbBoolProperty::find(net, "watermark") != nullptr);
+    const bool is_wm = (dbBoolProperty::find(net, "watermark") != nullptr);
     rows.push_back({net, ratio, is_wm});
   }
 
   if (rows.empty()) {
-    logger_->warn(utl::WMK,
-                  8,
-                  "No routed signal nets found; run after detailed_route.");
+    logger_->warn(
+        utl::WMK, 8, "No routed signal nets found; run after detailed_route.");
     return 1.0;
   }
 
   // Rank all nets by ascending wrong-way ratio.  Ties broken by net
   // name for determinism.
-  std::sort(rows.begin(),
-            rows.end(),
-            [](const Row& a, const Row& b) {
-              if (a.ratio != b.ratio) {
-                return a.ratio < b.ratio;
-              }
-              return a.net->getName() < b.net->getName();
-            });
+  std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {
+    if (a.ratio != b.ratio) {
+      return a.ratio < b.ratio;
+    }
+    return a.net->getName() < b.net->getName();
+  });
 
   // Cutoff rank = p-quantile (0-based exclusive index).  A net ranked
   // strictly below cutoff passes.
@@ -459,10 +448,9 @@ double Watermark::reportWatermark(double p)
                 "({:.3f}%).",
                 total_wl,
                 total_way,
-                total_wl > 0
-                    ? 100.0 * static_cast<double>(total_way)
-                          / static_cast<double>(total_wl)
-                    : 0.0);
+                total_wl > 0 ? 100.0 * static_cast<double>(total_way)
+                                   / static_cast<double>(total_wl)
+                             : 0.0);
   logger_->info(utl::WMK, 11, "Signature strength Pc = {:.3e}.", Pc);
   return Pc;
 }
