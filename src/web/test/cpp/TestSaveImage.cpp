@@ -425,9 +425,10 @@ class TestRUDYHeatMap : public gui::HeatMapDataSource
 
 TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
 {
+  auto logger = getLogger();
   gui::registerHeatMapSource(
-      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [this]() {
-        return std::make_shared<TestRUDYHeatMap>(getLogger());
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger]() {
+        return std::make_shared<TestRUDYHeatMap>(logger);
       });
 
   const std::string path_no_rudy = tempPng("no_rudy");
