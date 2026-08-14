@@ -407,6 +407,14 @@ write_file(
 # Needs the external kepler-formal binary at run time (resolved from
 # $KEPLER_FORMAL or the test's runfiles -- see src/tst/include/tst/lec.h);
 # without it the tests fail with an actionable message rather than skipping.
+#
+# Test Parity Note: this suite and dbsta_hier_structural below are registered in
+# bazel ONLY, deliberately. Both read a generated manifest and take their
+# per-case metadata from HIER_TOP_OVERRIDES, and this one needs the
+# kepler-formal binary, all three of which are produced by rules here. A CMake
+# registration would build and then fail on every case for want of them, so
+# there is nothing to gain by adding one until the metadata has a
+# build-system-independent home.
 cc_test(
     name = "dbsta_hier_conformance",
     srcs = ["cpp/TestHierConformance.cpp"],

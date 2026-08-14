@@ -46,26 +46,13 @@ target_link_libraries(tst
     OpenSTA
 )
 
-# LEC via kepler-formal, invoked as a subprocess and never linked (GPL-3.0 vs
-# BSD-3-Clause). The binary is an external dependency resolved at run time from
-# $KEPLER_FORMAL or $PATH, so there is nothing to find_package here.
-add_library(tst_lec
-    src/lec.cpp
-)
-
-target_include_directories(tst_lec
-  PUBLIC
-    include
-)
-
-target_link_libraries(tst_lec
-  PUBLIC
-    GTest::gtest
-)
-
 # LoadedDesign: one netlist loaded through one link mode, owning its own
 # db/sta. Separate from tst_integrated_fixture so consumers that only need to
 # read/link/write a netlist don't link the optimization tool chain.
+#
+# The LEC wrapper (src/lec.cpp) is deliberately NOT built here: its only
+# consumers are the hierarchy conformance suites, which are bazel-only. See the
+# note on them in src/dbSta/test/BUILD.
 add_library(tst_loaded_design
     src/loaded_design.cpp
 )
