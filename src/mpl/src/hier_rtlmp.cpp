@@ -2556,6 +2556,11 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
         // Skip if it is part of a child cluster
         continue;
       }
+
+      if (inst->isBlock() && cluster->getClusterType() == StdCellCluster) {
+        continue;
+      }
+
       cluster_group->addInst(inst);
     }
   }
