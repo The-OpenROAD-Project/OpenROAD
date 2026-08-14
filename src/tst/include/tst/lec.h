@@ -54,9 +54,11 @@ enum class LecResult
   // A failure: "inconclusive" treated as success is how an equivalence
   // harness becomes decorative.
   kPartial,
-  // Ran but emitted no recognized verdict. A failure, deliberately: the tool
-  // exits 0 for both "proved" and "found a difference", so anything
-  // unrecognized must not be read as success.
+  // Ran but the output could not be read as a proof: no recognized verdict, or
+  // (in kSequential) a verdict with no coverage figure attached. A failure,
+  // deliberately -- an unrecognized output must never be read as success, since
+  // that is how a harness keeps reporting green after the tool it depends on
+  // changes underneath it.
   kInconclusive,
   // Not equivalent; a counterexample was found.
   kCounterexample,

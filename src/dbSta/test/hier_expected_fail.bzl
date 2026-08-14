@@ -12,14 +12,45 @@ Entries are grouped by failure mode -- one xfail() per (path, symptom), listing
 every netlist that fails that way -- so the corpus reads as a list of defects
 rather than a list of rows. Adding a case to a known defect is one line.
 
-Every entry should cite an OpenROAD issue number, so "expected to fail" never
-becomes a shrug. File the issue first; do not fix the bug here. The campaign that
-produced these has issues pending, hence the TBD placeholders.
+A conformance entry also records *how* the case fails, and the suite holds it to
+that: an XFAIL that accepts any failure would keep passing after a
+counterexample turned into a crash. See _MODES.
+
+An entry may cite an OpenROAD issue, and should once one exists, so that
+"expected to fail" does not become a shrug. It is optional because the alternative
+is a file full of "TBD" -- a required field with nothing to put in it teaches
+everyone to write a placeholder, which is worse than an empty one: the reader
+cannot tell a defect nobody has filed from one whose number was never
+backfilled.
 
 src/dbSta/test/BUILD renders these into the manifests the two suites read.
 """
 
 _PATHS = ["hier", "flat"]
+
+# How a conformance case fails. TestHierConformance.cpp derives the same tokens
+# from what it observes, and compares. Recording the mode is what keeps an XFAIL
+# from degrading into "this case is allowed to be broken in any way at all":
+# with it, a case that starts failing differently is a finding.
+_MODES = [
+    # read_verilog or link_design rejected the netlist (an OpenROAD error).
+    "or-error",
+    # write_verilog threw.
+    "write-error",
+    # The emitted netlist is not equivalent to the input.
+    "counterexample",
+    # The two designs' boundary sets differ, so the check never ran -- usually a
+    # dropped or renamed port.
+    "boundary-mismatch",
+    # Proved, but not over every output: a dropped connection leaves outputs in
+    # a cone with no driver, and those are skipped rather than compared.
+    "partial",
+    # The checker produced no verdict we can read.
+    "inconclusive",
+    # The checker could not run on the pair at all, most often because the
+    # emitted netlist does not parse.
+    "tool-error",
+]
 
 # The aspects TestHierStructural compares. A key includes the check, unlike the
 # conformance manifest: with one key per (netlist, path) the top-port-order
@@ -38,17 +69,27 @@ _CHECKS = [
     "namespace",
 ]
 
-def _validate(path, issue, symptom, netlists, check = None):
+# Values that mean "no issue" while looking like one. Rejected so that the field
+# is either a real reference or visibly absent, never a placeholder that outlives
+# whoever wrote it.
+_NON_ISSUES = ["tbd", "todo", "n/a", "na", "none", "?", "-", "xxx", "fixme"]
+
+def _validate(path, issue, symptom, netlists, check = None, mode = None):
     if path not in _PATHS:
         fail("unknown path '%s'; expected one of %s" % (path, _PATHS))
     if check != None and check not in _CHECKS:
         fail("unknown check '%s'; expected one of %s" % (check, _CHECKS))
+    if mode != None and mode not in _MODES:
+        fail("unknown mode '%s'; expected one of %s" % (mode, _MODES))
     if not netlists:
         fail("xfail for '%s' lists no netlists" % symptom)
+    if issue != None and issue.lower() in _NON_ISSUES:
+        fail("'%s' is a placeholder, not an issue reference; omit `issue` " %
+             issue + "until one is filed for '%s'" % symptom)
 
     # The rendered manifest is colon-separated, so a colon anywhere in a field
     # would silently truncate the entry when the test parses it back.
-    for field in [path, issue, symptom] + netlists:
+    for field in [path, symptom, issue or "", mode or ""] + netlists:
         if ":" in field:
             fail("':' is the manifest field separator, so it cannot appear " +
                  "in '%s'" % field)
@@ -61,35 +102,38 @@ def _reject_duplicate(seen, key, symptom):
              (key, seen[key], symptom) + "the other is never reported")
     seen[key] = symptom
 
-def xfail(path, issue, symptom, netlists):
+def xfail(path, mode, symptom, netlists, issue = None):
     """One conformance failure mode.
 
     Args:
       path: "hier" or "flat" -- which link mode fails. Keyed on (netlist, path)
         because the hier path can be broken while the flat path is clean, which
         is the expected shape of a finding here.
-      issue: the OpenROAD issue number, or "TBD" while one is being filed.
+      mode: how the case fails; one of _MODES. The suite fails the case if it
+        stops failing this way, so every netlist listed must share it -- split
+        the entry rather than widening it.
       symptom: what the LEC reported, short enough to read in a failure message.
       netlists: the netlists that fail this way, by file name.
+      issue: the OpenROAD issue number, if one has been filed.
 
     Returns:
       A struct the BUILD file renders into a manifest line per netlist.
     """
-    _validate(path, issue, symptom, netlists)
+    _validate(path, issue, symptom, netlists, mode = mode)
     return struct(
         path = path,
+        mode = mode,
         issue = issue,
         symptom = symptom,
         netlists = netlists,
     )
 
-def structural_xfail(path, check, issue, symptom, netlists):
+def structural_xfail(path, check, symptom, netlists, issue = None):
     """One structural failure mode.
 
     Args:
       path: "hier" or "flat" -- which link mode fails.
       check: which comparison fails; one of _CHECKS.
-      issue: the OpenROAD issue number, or "TBD" while one is being filed.
       symptom: what the structural diff reported.
       netlists: the netlists that fail this way. A netlist from the
         hier_cases/structural/ subdirectory keeps that prefix in its key
@@ -111,7 +155,7 @@ def structural_xfail(path, check, issue, symptom, netlists):
     )
 
 def conformance_manifest(entries):
-    """Renders conformance entries as `netlist : path : issue : symptom` lines.
+    """Renders entries as `netlist : path : mode : issue : symptom` lines.
 
     Args:
       entries: xfail() structs.
@@ -125,7 +169,12 @@ def conformance_manifest(entries):
         for netlist in e.netlists:
             key = netlist + " : " + e.path
             _reject_duplicate(seen, key, e.symptom)
-            lines.append(" : ".join([netlist, e.path, e.issue, e.symptom]))
+
+            # Every field is emitted even when empty, so the row keeps a fixed
+            # arity and the reader never has to guess which field is missing.
+            lines.append(
+                " : ".join([netlist, e.path, e.mode, e.issue or "", e.symptom]),
+            )
     return lines
 
 def structural_manifest(entries):
@@ -144,7 +193,9 @@ def structural_manifest(entries):
             key = " : ".join([netlist, e.path, e.check])
             _reject_duplicate(seen, key, e.symptom)
             lines.append(
-                " : ".join([netlist, e.path, e.check, e.issue, e.symptom]),
+                " : ".join(
+                    [netlist, e.path, e.check, e.issue or "", e.symptom],
+                ),
             )
     return lines
 
@@ -154,7 +205,7 @@ def structural_manifest(entries):
 CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "counterexample",
         symptom = "counterexample",
         netlists = [
             "bx_constants_esc_subzero_net_buf.v",
@@ -167,7 +218,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
+        mode = "counterexample",
         symptom = "counterexample",
         netlists = [
             "bx_constants_port_named_zero.v",
@@ -185,7 +236,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     # correctly.
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "partial",
         symptom = "flat write drops a submodule bus-slice feedthrough assign, leaving two top outputs undriven",
         netlists = [
             "get_ports1.v",
@@ -200,7 +251,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     # keeps them distinct.
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "flat write emits a duplicate instance name when an escaped identifier collides with a synthesized hierarchy path",
         netlists = [
             "escaped_name_path_collision.v",
@@ -212,7 +263,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     # clean.
     xfail(
         path = "hier",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "hier write adds a duplicate driver on an already-driven output port",
         netlists = [
             "TestInsertBuffer_BeforeLoads_Case33_post.v",
@@ -227,7 +278,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     # checked. Delete this entry once kepler models CLKGATE_X1.
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "kepler cannot model CLKGATE_X1 (arity mismatch)",
         netlists = [
             "bx_sequential_probe_clkgate.v",
@@ -235,7 +286,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "kepler cannot model CLKGATE_X1 (arity mismatch)",
         netlists = [
             "bx_sequential_probe_clkgate.v",
@@ -243,8 +294,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -Error - out_flat.tcl, 3 stol - no conversion",
+        mode = "or-error",
+        symptom = "Error - out_flat.tcl, 3 stol - no conversion",
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
@@ -252,8 +303,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -Error - out_flat.tcl, 4 stoi - no conversion",
+        mode = "or-error",
+        symptom = "Error - out_flat.tcl, 4 stoi - no conversion",
         netlists = [
             "wb_dbsta_link_attr_dont_touch_string.v",
             "wb_sta_reader_attr_dont_touch_string.v",
@@ -262,16 +313,16 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -Error - out_flat.tcl, 4 stoi - out of range",
+        mode = "or-error",
+        symptom = "Error - out_flat.tcl, 4 stoi - out of range",
         netlists = [
             "wb_sta_reader_attr_src_line_overflow.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -Error - out_hier.tcl, 3 stol - no conversion",
+        mode = "or-error",
+        symptom = "Error - out_hier.tcl, 3 stol - no conversion",
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
@@ -279,8 +330,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -Error - out_hier.tcl, 4 stoi - no conversion",
+        mode = "or-error",
+        symptom = "Error - out_hier.tcl, 4 stoi - no conversion",
         netlists = [
             "wb_dbsta_link_attr_dont_touch_string.v",
             "wb_sta_reader_attr_dont_touch_string.v",
@@ -289,16 +340,16 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -Error - out_hier.tcl, 4 stoi - out of range",
+        mode = "or-error",
+        symptom = "Error - out_hier.tcl, 4 stoi - out of range",
         netlists = [
             "wb_sta_reader_attr_src_line_overflow.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -STA-0171-syntax-error",
+        mode = "or-error",
+        symptom = "STA-0171-syntax-error",
         netlists = [
             "bx_bus_geometry_concat_replicate.v",
             "bx_bus_geometry_replicate_assign.v",
@@ -306,8 +357,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -STA-0171-syntax-error",
+        mode = "or-error",
+        symptom = "STA-0171-syntax-error",
         netlists = [
             "bx_bus_geometry_concat_replicate.v",
             "bx_bus_geometry_replicate_assign.v",
@@ -315,72 +366,72 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR ORD-2013] instance u LEF master missing_mod not found.",
+        mode = "or-error",
+        symptom = "[ERROR ORD-2013] instance u LEF master missing_mod not found.",
         netlists = [
             "wb_dbsta_link_unresolved_module.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR ORD-2013] instance u LEF master missing_mod not found.",
+        mode = "or-error",
+        symptom = "[ERROR ORD-2013] instance u LEF master missing_mod not found.",
         netlists = [
             "wb_dbsta_link_unresolved_module.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...bx_dangling_positional_all_empty.v line 14, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...bx_dangling_positional_all_empty.v line 14, syntax error",
         netlists = [
             "bx_dangling_positional_all_empty.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...bx_dangling_positional_hole_leaf.v line 9, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...bx_dangling_positional_hole_leaf.v line 9, syntax error",
         netlists = [
             "bx_dangling_positional_hole_leaf.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...bx_dangling_subin_positional_hole.v line 16, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...bx_dangling_subin_positional_hole.v line 16, syntax error",
         netlists = [
             "bx_dangling_subin_positional_hole.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...bx_dangling_subin_positional_trailing.v line 16, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...bx_dangling_subin_positional_trailing.v line 16, syntax error",
         netlists = [
             "bx_dangling_subin_positional_trailing.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...bx_dangling_subout_positional_hole.v line 17, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...bx_dangling_subout_positional_hole.v line 17, syntax error",
         netlists = [
             "bx_dangling_subout_positional_hole.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...line 14, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...line 14, syntax error",
         netlists = [
             "bx_dangling_positional_all_empty.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...line 16, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...line 16, syntax error",
         netlists = [
             "bx_dangling_subin_positional_hole.v",
             "bx_dangling_subin_positional_trailing.v",
@@ -388,40 +439,40 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...line 17, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...line 17, syntax error",
         netlists = [
             "bx_dangling_subout_positional_hole.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] ...line 9, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] ...line 9, syntax error",
         netlists = [
             "bx_dangling_positional_hole_leaf.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] /home/pgadfort/hier-lec-artifacts/recovered/survey/sta_reader/wb_sta_reader_attr_bef",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] /home/pgadfort/hier-lec-artifacts/recovered/survey/sta_reader/wb_sta_reader_attr_bef",
         netlists = [
             "wb_sta_reader_attr_before_assign.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] /home/pgadfort/hier-lec-artifacts/recovered/survey/sta_reader/wb_sta_reader_attr_bef",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] /home/pgadfort/hier-lec-artifacts/recovered/survey/sta_reader/wb_sta_reader_attr_bef",
         netlists = [
             "wb_sta_reader_attr_before_assign.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] line 10, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] line 10, syntax error",
         netlists = [
             "bx_port_rewiring_positional_gap_input.v",
             "bx_port_rewiring_positional_gap_last.v",
@@ -430,8 +481,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] line 10, syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] line 10, syntax error",
         netlists = [
             "bx_port_rewiring_positional_gap_input.v",
             "bx_port_rewiring_positional_gap_last.v",
@@ -440,24 +491,24 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] line 15 syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] line 15 syntax error",
         netlists = [
             "bx_constants_repl_concat.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] line 15 syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] line 15 syntax error",
         netlists = [
             "bx_constants_repl_concat.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] line 16 syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] line 16 syntax error",
         netlists = [
             "bx_constants_repl_signal.v",
             "bx_constants_repl_simple.v",
@@ -465,8 +516,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] line 16 syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] line 16 syntax error",
         netlists = [
             "bx_constants_repl_signal.v",
             "bx_constants_repl_simple.v",
@@ -474,8 +525,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] syntax error",
         netlists = [
             "bx_port_rewiring_concat_replication_port_conn.v",
             "bx_port_rewiring_instance_array_bus_split.v",
@@ -484,8 +535,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "or-error -[ERROR STA-0171] syntax error",
+        mode = "or-error",
+        symptom = "[ERROR STA-0171] syntax error",
         netlists = [
             "bx_port_rewiring_concat_replication_port_conn.v",
             "bx_port_rewiring_instance_array_bus_split.v",
@@ -494,24 +545,24 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "partial -20.00%",
+        mode = "partial",
+        symptom = "SEC coverage 20.00%",
         netlists = [
             "bx_bus_geometry_concat_all_const.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "partial -20.00%",
+        mode = "partial",
+        symptom = "SEC coverage 20.00%",
         netlists = [
             "bx_bus_geometry_concat_all_const.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "partial -25.00%",
+        mode = "partial",
+        symptom = "SEC coverage 25.00%",
         netlists = [
             "getports_wholein.v",
             "gp_bitassign_top.v",
@@ -519,8 +570,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "partial -33.33%",
+        mode = "partial",
+        symptom = "SEC coverage 33.33%",
         netlists = [
             "gp_no_bus_ft.v",
             "gp_no_scalar_ft.v",
@@ -528,16 +579,16 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "partial -33.33%",
+        mode = "partial",
+        symptom = "SEC coverage 33.33%",
         netlists = [
             "sub_three_outs_one_driver.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "partial -50.00%",
+        mode = "partial",
+        symptom = "SEC coverage 50.00%",
         netlists = [
             "bx_bus_geometry_concat_const_mix.v",
             "bx_bus_geometry_const_gatepin_top.v",
@@ -551,8 +602,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "partial -50.00%",
+        mode = "partial",
+        symptom = "SEC coverage 50.00%",
         netlists = [
             "bx_bus_geometry_concat_const_mix.v",
             "bx_bus_geometry_const_gatepin_top.v",
@@ -570,16 +621,16 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "partial -60.00%",
+        mode = "partial",
+        symptom = "SEC coverage 60.00%",
         netlists = [
             "busslice_same_in_two_outs.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "partial -66.67%",
+        mode = "partial",
+        symptom = "SEC coverage 66.67%",
         netlists = [
             "bx_constants_assign_out_bitsel.v",
             "getports_bitassign.v",
@@ -588,8 +639,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "partial -66.67%",
+        mode = "partial",
+        symptom = "SEC coverage 66.67%",
         netlists = [
             "bx_constants_assign_out_bitsel.v",
             "fanout_two_subs.v",
@@ -599,120 +650,120 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "partial -80.00%",
+        mode = "partial",
+        symptom = "SEC coverage 80.00%",
         netlists = [
             "overlap_rhs_sub.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - 'SNLDesign top contains already a SNLInstance named - x/y' — exact known pattern",
+        mode = "tool-error",
+        symptom = "'SNLDesign top contains already a SNLInstance named - x/y' — exact known pattern",
         netlists = [
             "bx_naming_escaped_slashcol_inst.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - 'SNLDesign top contains already a SNLInstance named - x/y/z' — depth-3 path variant",
+        mode = "tool-error",
+        symptom = "'SNLDesign top contains already a SNLInstance named - x/y/z' — depth-3 path variant",
         netlists = [
             "bx_naming_escaped_slashcol_inst3.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - duplicate 'wire \\u1/w+w ;' — escaped sub net \\w+w flattened to u1/w+w collides with top escaped ne",
+        mode = "tool-error",
+        symptom = "duplicate 'wire \\u1/w+w ;' — escaped sub net \\w+w flattened to u1/w+w collides with top escaped ne",
         netlists = [
             "bx_naming_escaped_slashcol_escnet.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - duplicate 'wire \\x/p ;' — net synthesized for unconnected output port p of instance x collides wit",
+        mode = "tool-error",
+        symptom = "duplicate 'wire \\x/p ;' — net synthesized for unconnected output port p of instance x collides wit",
         netlists = [
             "bx_naming_escaped_slashcol_port.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - emitted 'INV_X1 assign (...)' unescaped, 'unexpected ASSIGN_KW'",
+        mode = "tool-error",
+        symptom = "emitted 'INV_X1 assign (...)' unescaped, 'unexpected ASSIGN_KW'",
         netlists = [
             "bx_naming_escaped_inst_kw_assign.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - emitted 'module module (' — top module keyword name unescaped",
+        mode = "tool-error",
+        symptom = "emitted 'module module (' — top module keyword name unescaped",
         netlists = [
             "bx_naming_escaped_top_kw.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - emitted 'module top (input, z); input input;' unescaped — illegal",
+        mode = "tool-error",
+        symptom = "emitted 'module top (input, z); input input;' unescaped — illegal",
         netlists = [
             "bx_naming_escaped_port_kw_input.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - emitted netlist illegal, 'unexpected MODULE_KW' (writer emitted 'wire module;')",
+        mode = "tool-error",
+        symptom = "emitted netlist illegal, 'unexpected MODULE_KW' (writer emitted 'wire module;')",
         netlists = [
             "bx_naming_escaped_net_kw_module.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - emitted netlist illegal, 'unexpected WIRE_KW' (writer emitted 'wire wire;')",
+        mode = "tool-error",
+        symptom = "emitted netlist illegal, 'unexpected WIRE_KW' (writer emitted 'wire wire;')",
         netlists = [
             "bx_naming_escaped_net_kw_wire.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error - hier writer emitted 'INV_X1 assign (...)' inside submodule — illegal; flat proved only because the",
+        mode = "tool-error",
+        symptom = "hier writer emitted 'INV_X1 assign (...)' inside submodule — illegal; flat proved only because the",
         netlists = [
             "bx_naming_escaped_d2_inst_kw.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error - hier writer emitted 'module module (' and 'module u1 (...)' unescaped — illegal; flat proved becau",
+        mode = "tool-error",
+        symptom = "hier writer emitted 'module module (' and 'module u1 (...)' unescaped — illegal; flat proved becau",
         netlists = [
             "bx_naming_escaped_mod_kw.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error - hier writer emitted 'output output;' and '.output(z)' unescaped — illegal; flat proved only becaus",
+        mode = "tool-error",
+        symptom = "hier writer emitted 'output output;' and '.output(z)' unescaped — illegal; flat proved only becaus",
         netlists = [
             "bx_naming_escaped_d2_port_kw.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error - out_flat.v declares 'wire \\x/y ;' TWICE with two different drivers (top escaped net vs flattened s",
+        mode = "tool-error",
+        symptom = "out_flat.v declares 'wire \\x/y ;' TWICE with two different drivers (top escaped net vs flattened s",
         netlists = [
             "bx_naming_escaped_slashcol_net.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error - same",
+        mode = "tool-error",
+        symptom = "same",
         netlists = [
             "bx_naming_escaped_inst_kw_assign.v",
             "bx_naming_escaped_port_kw_input.v",
@@ -721,64 +772,64 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error - same, 'wire module;' unescaped",
+        mode = "tool-error",
+        symptom = "same, 'wire module;' unescaped",
         netlists = [
             "bx_naming_escaped_net_kw_module.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error - same, 'wire wire;' unescaped",
+        mode = "tool-error",
+        symptom = "same, 'wire wire;' unescaped",
         netlists = [
             "bx_naming_escaped_net_kw_wire.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -A port cannot be found in INV_X1 model (out_hier.v line 22)",
+        mode = "tool-error",
+        symptom = "A port cannot be found in INV_X1 model (out_hier.v line 22)",
         netlists = [
             "bx_collisions_uniq_clone_eq_libcell.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - ... out_flat.v at line 11, column 2 - wire collision for net u/c/ckb",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - ... out_flat.v at line 11, column 2 - wire collision for net u/c/ckb",
         netlists = [
             "bx_sequential_esc_clknet_collide_d2.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - ... out_flat.v at line 11, column 2 - wire collision for net u/ckb",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - ... out_flat.v at line 11, column 2 - wire collision for net u/ckb",
         netlists = [
             "bx_sequential_esc_clknet_collide.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - ... out_flat.v at line 11, column 2 - wire collision for net u/qi",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - ... out_flat.v at line 11, column 2 - wire collision for net u/qi",
         netlists = [
             "bx_sequential_esc_qnet_collide.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - ... wire collision for net ab",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - ... wire collision for net ab",
         netlists = [
             "wb_dbnetwork_overlay_netname_header_single_bslash.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - ... wire collision for net n",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - ... wire collision for net n",
         netlists = [
             "wb_dbnetwork_overlay_dcflat_hier_mixed.v",
             "wb_dbnetwork_overlay_dcflat_pathnames_short.v",
@@ -786,40 +837,40 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - ... wire collision for net u1/w",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - ... wire collision for net u1/w",
         netlists = [
             "wb_dbnetwork_overlay_stamped_path_dup_decl.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - ... wire collision for net x",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - ... wire collision for net x",
         netlists = [
             "wb_dbnetwork_overlay_erase_overshoot_net_victim.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - vector - -_M_fill_append",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - vector - -_M_fill_append",
         netlists = [
             "wb_writer_wire_index_intmax.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - vector - -_M_fill_append",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - vector - -_M_fill_append",
         netlists = [
             "wb_writer_wire_index_intmax.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - wire collision for net _NC1",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - wire collision for net _NC1",
         netlists = [
             "bx_dangling_busport_ncname_collision.v",
             "bx_dangling_nc_collision_bus.v",
@@ -830,24 +881,24 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - wire collision for net _NC2",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - wire collision for net _NC2",
         netlists = [
             "bx_dangling_busport_nc2_collision.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -Netlist loading failed - wire collision for net u1/und",
+        mode = "tool-error",
+        symptom = "Netlist loading failed - wire collision for net u1/und",
         netlists = [
             "bx_dangling_undriven_leak_collide.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run - Missing observed output expression",
+        mode = "tool-error",
+        symptom = "SEC cannot run - Missing observed output expression",
         netlists = [
             "bx_port_rewiring_leaf_positional_buf.v",
             "bx_port_rewiring_leaf_positional_inv.v",
@@ -855,8 +906,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run - Missing observed output expression",
+        mode = "tool-error",
+        symptom = "SEC cannot run - Missing observed output expression",
         netlists = [
             "bx_port_rewiring_leaf_positional_buf.v",
             "bx_port_rewiring_leaf_positional_inv.v",
@@ -864,8 +915,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run - No aligned observed outputs remain",
+        mode = "tool-error",
+        symptom = "SEC cannot run - No aligned observed outputs remain",
         netlists = [
             "bx_port_rewiring_leaf_positional_aoi21.v",
             "bx_port_rewiring_leaf_positional_dff.v",
@@ -879,8 +930,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run - No aligned observed outputs remain",
+        mode = "tool-error",
+        symptom = "SEC cannot run - No aligned observed outputs remain",
         netlists = [
             "bx_port_rewiring_leaf_positional_aoi21.v",
             "bx_port_rewiring_leaf_positional_dff.v",
@@ -894,26 +945,37 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run - No aligned observed outputs remain after skipping cones with no-driver, multi-drive",
+        mode = "tool-error",
+        symptom = "SEC cannot run - No aligned observed outputs remain after skipping cones with no-driver, multi-drive",
         netlists = [
             "wb_dbsta_link_supply_net_sigtype.v",
         ],
     ),
+    # The escaped bus `\x/y [1:0]` yields bit names that tail-match the plain
+    # bus `y[1:0]` created before it, and dbBusPort::create re-parents y's
+    # aggregate sentinel to the new port -- one bus port swallows the other and
+    # the two inputs come back crossed.
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run - No aligned observed outputs remain after skipping cones with no-driver, multi-drive",
+        mode = "counterexample",
+        symptom = "an escaped bus port and a plain bus port are wired to each other's nets",
         netlists = [
             "wb_dbsta_link_escslash_bus_tail.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        mode = "tool-error",
+        symptom = "SEC cannot run - No aligned observed outputs remain after skipping cones with no-driver, multi-drive",
+        netlists = [
             "wb_dbsta_link_escslash_port_tail_iodir.v",
             "wb_dbsta_link_supply_net_sigtype.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run - no aligned observed outputs remain after skipping multi-driver cones",
+        mode = "tool-error",
+        symptom = "SEC cannot run - no aligned observed outputs remain after skipping multi-driver cones",
         netlists = [
             "bx_collisions_outport_vs_flatnet.v",
             "bx_collisions_port_in_vs_flatnet.v",
@@ -921,16 +983,16 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run on this design pair - Missing observed output expression for `197.0.`",
+        mode = "tool-error",
+        symptom = "SEC cannot run on this design pair - Missing observed output expression for `197.0.`",
         netlists = [
             "nameorder_out_before_in.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
+        mode = "tool-error",
+        symptom = "SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
         netlists = [
             "bx_dangling_positional_inv_live.v",
             "bx_dangling_positional_leaf_live.v",
@@ -945,8 +1007,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
+        mode = "tool-error",
+        symptom = "SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
         netlists = [
             "sub_out_from_out.v",
             "sub_out_from_out_bus.v",
@@ -958,8 +1020,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -SEC cannot run on this design pair - No aligned observed outputs remain...",
+        mode = "tool-error",
+        symptom = "SEC cannot run on this design pair - No aligned observed outputs remain...",
         netlists = [
             "bx_dangling_positional_inv_live.v",
             "bx_dangling_positional_leaf_live.v",
@@ -967,8 +1029,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - a/b/c",
+        mode = "tool-error",
+        symptom = "SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - a/b/c",
         netlists = [
             "bx_collisions_inst_deep3.v",
             "bx_collisions_synth_inst.v",
@@ -976,16 +1038,16 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - m/c/d",
+        mode = "tool-error",
+        symptom = "SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - m/c/d",
         netlists = [
             "bx_collisions_submodule_esc_vs_path.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y",
+        mode = "tool-error",
+        symptom = "SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y",
         netlists = [
             "bx_collisions_known3_esc_first.v",
             "bx_collisions_known3_inst_vs_path.v",
@@ -993,24 +1055,24 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y/z",
+        mode = "tool-error",
+        symptom = "SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y/z",
         netlists = [
             "bx_collisions_inst_mixed_esc.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y[0]",
+        mode = "tool-error",
+        symptom = "SNLVRLConstructor - SNLDesign top contains already a SNLInstance named - x/y[0]",
         netlists = [
             "bx_collisions_escbracket_vs_path.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -boundary-input-set-mismatch",
+        mode = "boundary-mismatch",
+        symptom = "boundary-input-set-mismatch",
         netlists = [
             "bx_bus_geometry_neg_partsel.v",
             "bx_bus_geometry_neg_top.v",
@@ -1019,8 +1081,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -boundary-input-set-mismatch",
+        mode = "boundary-mismatch",
+        symptom = "boundary-input-set-mismatch",
         netlists = [
             "bx_bus_geometry_neg_partsel.v",
             "bx_bus_geometry_neg_top.v",
@@ -1029,8 +1091,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -emitted-verilog-syntax-error",
+        mode = "tool-error",
+        symptom = "emitted-verilog-syntax-error",
         netlists = [
             "bx_bus_geometry_negwire_allneg.v",
             "bx_bus_geometry_negwire_desc.v",
@@ -1039,8 +1101,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -emitted-verilog-syntax-error",
+        mode = "tool-error",
+        symptom = "emitted-verilog-syntax-error",
         netlists = [
             "bx_bus_geometry_negwire_allneg.v",
             "bx_bus_geometry_negwire_desc.v",
@@ -1049,8 +1111,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -missing observed output expression",
+        mode = "tool-error",
+        symptom = "missing observed output expression",
         netlists = [
             "bx_constants_alias_out.v",
             "bx_constants_assign_busout_top.v",
@@ -1061,8 +1123,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -missing observed output expression",
+        mode = "tool-error",
+        symptom = "missing observed output expression",
         netlists = [
             "bx_constants_alias_out.v",
             "bx_constants_assign_busout_top.v",
@@ -1072,8 +1134,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -no aligned observed outputs (no-driver cones)",
+        mode = "tool-error",
+        symptom = "no aligned observed outputs (no-driver cones)",
         netlists = [
             "bx_constants_assign_out_sub.v",
             "bx_constants_assign_partsel.v",
@@ -1116,8 +1178,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -no aligned observed outputs (no-driver cones)",
+        mode = "tool-error",
+        symptom = "no aligned observed outputs (no-driver cones)",
         netlists = [
             "bx_constants_assign_out_sub.v",
             "bx_constants_assign_partsel.v",
@@ -1160,40 +1222,40 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -no-aligned-outputs-remain",
+        mode = "tool-error",
+        symptom = "no-aligned-outputs-remain",
         netlists = [
             "bx_bus_geometry_negonly_child.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -rhs=[t[0], y[0]]",
+        mode = "boundary-mismatch",
+        symptom = "rhs=[t[0], y[0]]",
         netlists = [
             "wb_sta_reader_supply_port_modifier.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -rhs=[t[0], y[0]]",
+        mode = "boundary-mismatch",
+        symptom = "rhs=[t[0], y[0]]",
         netlists = [
             "wb_sta_reader_supply_port_modifier.v",
         ],
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK",
+        mode = "tool-error",
+        symptom = "syntax error, unexpected CONSTVAL_TK",
         netlists = [
             "wb_writer_digit_module.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting ID",
+        mode = "tool-error",
+        symptom = "syntax error, unexpected CONSTVAL_TK, expecting ID",
         netlists = [
             "wb_writer_alldigit_net.v",
             "wb_writer_digit_bus_net.v",
@@ -1204,8 +1266,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting ID",
+        mode = "tool-error",
+        symptom = "syntax error, unexpected CONSTVAL_TK, expecting ID",
         netlists = [
             "wb_writer_alldigit_net.v",
             "wb_writer_digit_bus_net.v",
@@ -1217,8 +1279,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting IN",
+        mode = "tool-error",
+        symptom = "syntax error, unexpected CONSTVAL_TK, expecting IN",
         netlists = [
             "wb_writer_digit_bus_port.v",
             "wb_writer_digit_port.v",
@@ -1226,8 +1288,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
-        symptom = "tool-error -syntax error, unexpected CONSTVAL_TK, expecting IN",
+        mode = "tool-error",
+        symptom = "syntax error, unexpected CONSTVAL_TK, expecting IN",
         netlists = [
             "wb_writer_digit_bus_port.v",
             "wb_writer_digit_port.v",
@@ -1235,8 +1297,8 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -wire collision for net a/b/n (out_flat.v line 11)",
+        mode = "tool-error",
+        symptom = "wire collision for net a/b/n (out_flat.v line 11)",
         netlists = [
             "bx_collisions_net_deep3.v",
             "bx_collisions_synth_net.v",
@@ -1244,39 +1306,39 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -wire collision for net m/c/n (out_flat.v line 11)",
+        mode = "tool-error",
+        symptom = "wire collision for net m/c/n (out_flat.v line 11)",
         netlists = [
             "bx_collisions_subnet_esc_vs_path.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -wire collision for net x/p (out_flat.v line 11)",
+        mode = "tool-error",
+        symptom = "wire collision for net x/p (out_flat.v line 11)",
         netlists = [
             "bx_collisions_unconn_port_vs_esc.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -wire collision for net x/q (out_flat.v line 13)",
+        mode = "tool-error",
+        symptom = "wire collision for net x/q (out_flat.v line 13)",
         netlists = [
             "bx_collisions_dff_net_vs_esc.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
-        symptom = "tool-error -wire collision for net x/y (out_flat.v line 11)",
+        mode = "tool-error",
+        symptom = "wire collision for net x/y (out_flat.v line 11)",
         netlists = [
             "bx_collisions_net_vs_flatnet.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "flat bus regroup declares its base name over an existing escaped net",
         netlists = [
             "s2_collisions_busbase_vs_escbus.v",
@@ -1288,7 +1350,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "flat hierarchy path join collides with an escaped user name",
         netlists = [
             "s2_collisions_implicit_net_vs_path.v",
@@ -1298,7 +1360,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "two synthesized flat names collide with each other",
         netlists = [
             "s2_collisions_dangling_out_two_paths.v",
@@ -1306,18 +1368,29 @@ CONFORMANCE_EXPECTED_FAIL = [
             "s2_collisions_synth_net_split4.v",
         ],
     ),
+    # One defect, two ways out: when the hijacked _NC name still leaves an
+    # output reachable the checker proves what it can and skips the rest, and
+    # when it does not the checker cannot run at all. Split because the mode is
+    # part of what each case pins down.
     xfail(
         path = "hier",
-        issue = "TBD",
+        mode = "partial",
         symptom = "_NC filler wire takes a name the netlist already uses",
         netlists = [
             "s2_collisions_nc_capture_observable.v",
+        ],
+    ),
+    xfail(
+        path = "hier",
+        mode = "tool-error",
+        symptom = "_NC filler wire takes a name the netlist already uses",
+        netlists = [
             "s2_collisions_nc_two_digit.v",
         ],
     ),
     xfail(
         path = "flat",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "a keyword-named bus is emitted without the escape it needs",
         netlists = [
             "s2_escaping_kw_bus_net_d1.v",
@@ -1325,7 +1398,7 @@ CONFORMANCE_EXPECTED_FAIL = [
     ),
     xfail(
         path = "hier",
-        issue = "TBD",
+        mode = "tool-error",
         symptom = "a keyword-named bus is emitted without the escape it needs",
         netlists = [
             "s2_escaping_kw_bus_net_d1.v",
@@ -1351,7 +1424,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist (ORD-2013)",
         netlists = [
             "structural/wb_sta_reader_blackbox_bus_bit_order.v",
@@ -1362,7 +1434,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist (STA-0171)",
         netlists = [
             "bx_bus_geometry_concat_replicate.v",
@@ -1389,7 +1460,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist (STA-1390)",
         netlists = [
             "structural/wb_dbsta_link_attr_impl_oper_unused.v",
@@ -1398,7 +1468,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
             "bx_constants_unsized_b0.v",
@@ -1418,7 +1487,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "round_trip",
-        issue = "TBD",
         symptom = "reader rejects an uppercase X digit (STA-0171) though lowercase x is accepted silently",
         netlists = [
             "structural/wb_sta_reader_const_upper_x_digit.v",
@@ -1427,7 +1495,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "round_trip",
-        issue = "TBD",
         symptom = "the emitted netlist cannot be read back (STA-0171)",
         netlists = [
             "bx_bus_geometry_negwire_allneg.v",
@@ -1452,7 +1519,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist (ORD-2013)",
         netlists = [
             "structural/wb_sta_reader_blackbox_bus_bit_order.v",
@@ -1463,7 +1529,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist (STA-0171)",
         netlists = [
             "bx_bus_geometry_concat_replicate.v",
@@ -1490,7 +1555,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist (STA-1390)",
         netlists = [
             "structural/wb_dbsta_link_attr_impl_oper_unused.v",
@@ -1499,7 +1563,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "round_trip",
-        issue = "TBD",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
             "bx_constants_unsized_b0.v",
@@ -1514,7 +1577,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "round_trip",
-        issue = "TBD",
         symptom = "reader rejects an uppercase X digit (STA-0171) though lowercase x is accepted silently",
         netlists = [
             "structural/wb_sta_reader_const_upper_x_digit.v",
@@ -1523,7 +1585,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "round_trip",
-        issue = "TBD",
         symptom = "the emitted netlist cannot be read back (STA-0171)",
         netlists = [
             "bx_bus_geometry_negwire_allneg.v",
@@ -1563,7 +1624,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "module_set",
-        issue = "TBD",
         symptom = "a module definition is dropped",
         netlists = [
             "structural/bx_dangling_module_never_instantiated.v",
@@ -1573,7 +1633,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "module_set",
-        issue = "TBD",
         symptom = "hier uniquification clones a module per instance",
         netlists = [
             "busslice_two_insts.v",
@@ -1689,7 +1748,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "top_ports",
-        issue = "TBD",
         symptom = "port list reordered",
         netlists = [
             "alias_net_on_port.v",
@@ -1904,7 +1962,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "top_ports",
-        issue = "TBD",
         symptom = "port list reordered and a direction or bus range changed",
         netlists = [
             "structural/wb_sta_reader_header_bitselect_port.v",
@@ -1914,7 +1971,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "top_ports",
-        issue = "TBD",
         symptom = "port list reordered and a port lost",
         netlists = [
             "bx_bus_geometry_neg_partsel.v",
@@ -1926,7 +1982,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "top_ports",
-        issue = "TBD",
         symptom = "port list reordered",
         netlists = [
             "alias_net_on_port.v",
@@ -2141,7 +2196,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "top_ports",
-        issue = "TBD",
         symptom = "port list reordered and a direction or bus range changed",
         netlists = [
             "structural/wb_sta_reader_header_bitselect_port.v",
@@ -2151,7 +2205,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "top_ports",
-        issue = "TBD",
         symptom = "port list reordered and a port lost",
         netlists = [
             "bx_bus_geometry_neg_partsel.v",
@@ -2168,7 +2221,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "submodule_ports",
-        issue = "TBD",
         symptom = "port list reordered and a direction or bus range changed",
         netlists = [
             "structural/bx_port_rewiring_explicit_port_concat_scalars.v",
@@ -2179,7 +2231,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "submodule_ports",
-        issue = "TBD",
         symptom = "port list reordered and a port lost",
         netlists = [
             "bx_naming_escaped_d2_port_kw.v",
@@ -2203,7 +2254,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a declared net or port is erased",
         netlists = [
             "alias_both_used.v",
@@ -2300,7 +2350,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a declared net or port is erased; a name absent from the input is invented",
         netlists = [
             "bx_bus_geometry_neg_partsel.v",
@@ -2311,7 +2360,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a name absent from the input is invented",
         netlists = [
             "structural/wb_sta_reader_hier_ref_dotted_id.v",
@@ -2325,7 +2373,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "wire w carrying the x constant is erased from the output",
         netlists = [
             "structural/bx_constants_assign_x_wire.v",
@@ -2334,7 +2381,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "_NC filler wires are invented",
         netlists = [
             "bx_dangling_bus_in_empty.v",
@@ -2380,7 +2426,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a declared net or port is erased",
         netlists = [
             "alias_both_used.v",
@@ -2455,7 +2500,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a declared net or port is erased; _NC filler wires are invented",
         netlists = [
             "structural/wb_sta_reader_bus_dcl_initializer.v",
@@ -2464,7 +2508,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a declared net or port is erased; a module-local net is renamed to an instance path",
         netlists = [
             "bx_dangling_gate_island_leaf.v",
@@ -2485,7 +2528,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a declared net or port is erased; a name absent from the input is invented",
         netlists = [
             "bx_bus_geometry_neg_partsel.v",
@@ -2503,7 +2545,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "a name absent from the input is invented",
         netlists = [
             "structural/wb_sta_reader_hier_ref_dotted_id.v",
@@ -2512,7 +2553,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "an undeclared constant net is referenced",
         netlists = [
             "bx_constants_assign_out_sub.v",
@@ -2524,7 +2564,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        issue = "TBD",
         symptom = "wire w carrying the x constant is erased from the output",
         netlists = [
             "structural/bx_constants_assign_x_wire.v",
@@ -2540,7 +2579,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "instances",
-        issue = "TBD",
         symptom = "instances rebound to a uniquified clone or to another master",
         netlists = [
             "busslice_two_insts.v",
@@ -2664,7 +2702,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "name_identity",
-        issue = "TBD",
         symptom = "a clone takes an existing module name, so the name denotes the wrong module",
         netlists = [
             "bx_collisions_uniq_chain.v",
@@ -2681,7 +2718,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "name_identity",
-        issue = "TBD",
         symptom = "one clone name is the uniquification name of two different modules",
         netlists = [
             "bx_collisions_uniq_cross_prefix.v",
@@ -2697,7 +2733,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "cell_census",
-        issue = "TBD",
         symptom = "the elaborated leaf instance count changed",
         netlists = [
             "wb_sta_reader_module_shadows_cell_after.v",
@@ -2706,7 +2741,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "cell_census",
-        issue = "TBD",
         symptom = "the elaborated leaf instance count changed",
         netlists = [
             "bx_collisions_uniq_clone_eq_libcell.v",
@@ -2723,7 +2757,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "assigns",
-        issue = "TBD",
         symptom = "a continuous assign is dropped",
         netlists = [
             "alias_both_used.v",
@@ -2769,7 +2802,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "assigns",
-        issue = "TBD",
         symptom = "the assign driving the x constant is dropped with its wire",
         netlists = [
             "structural/bx_constants_assign_x_wire.v",
@@ -2778,7 +2810,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "assigns",
-        issue = "TBD",
         symptom = "a continuous assign is dropped",
         netlists = [
             "alias_both_used.v",
@@ -2829,7 +2860,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "assigns",
-        issue = "TBD",
         symptom = "an extra continuous assign is added",
         netlists = [
             "busslice_same_in_two_outs.v",
@@ -2848,7 +2878,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "assigns",
-        issue = "TBD",
         symptom = "the assign driving the x constant is dropped with its wire",
         netlists = [
             "structural/bx_constants_assign_x_wire.v",
@@ -2865,7 +2894,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "namespace",
-        issue = "TBD",
         symptom = "a name is declared twice in one module",
         netlists = [
             "bx_collisions_dff_net_vs_esc.v",
@@ -2893,7 +2921,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "namespace",
-        issue = "TBD",
         symptom = "an identifier is emitted without the escape it needs",
         netlists = [
             "bx_bus_geometry_negwire_allneg.v",
@@ -2914,7 +2941,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "flat",
         check = "namespace",
-        issue = "TBD",
         symptom = "one name is used for a net and an instance",
         netlists = [
             "bx_collisions_inst_vs_net_cross.v",
@@ -2929,7 +2955,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "namespace",
-        issue = "TBD",
         symptom = "a name is declared twice in one module",
         netlists = [
             "bx_dangling_busport_nc2_collision.v",
@@ -2950,7 +2975,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "namespace",
-        issue = "TBD",
         symptom = "an identifier is emitted without the escape it needs",
         netlists = [
             "bx_bus_geometry_negwire_allneg.v",
@@ -2973,7 +2997,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "namespace",
-        issue = "TBD",
         symptom = "one name is used for a net and an instance",
         netlists = [
             "bx_collisions_net_and_inst_same_name.v",
@@ -2982,7 +3005,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "submodule_ports",
-        issue = "TBD",
         symptom = "port list reordered",
         netlists = [
             "s2_escaping_kw_bus_port_d2.v",

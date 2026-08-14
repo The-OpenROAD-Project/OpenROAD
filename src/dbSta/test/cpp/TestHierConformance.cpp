@@ -32,8 +32,10 @@
 #include <map>
 #include <optional>
 #include <ostream>
+#include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -76,15 +78,15 @@ struct CorpusEntry
   std::string origin;
   // Set when the corpus could not be loaded, so the suite reports that rather
   // than silently instantiating zero cases.
-  std::string load_error;
+  std::optional<std::string> load_error;
 };
 
 // Without this gtest hex-dumps the struct into every failure message. Must be
 // found by ADL, so it lives in the same namespace as CorpusEntry.
 void PrintTo(const CorpusEntry& entry, std::ostream* os)
 {
-  if (!entry.load_error.empty()) {
-    *os << "<corpus load error: " << entry.load_error << ">";
+  if (entry.load_error.has_value()) {
+    *os << "<corpus load error: " << *entry.load_error << ">";
     return;
   }
   *os << entry.name << " (top " << entry.top << ")";
@@ -181,10 +183,67 @@ std::vector<CorpusEntry> corpusLoadError(const std::string& message)
   return {entry};
 }
 
+// How a case fails, as recorded in the manifest and as observed by a run. An
+// XFAIL that accepts *any* failure is barely stronger than a disabled test: a
+// case recorded as producing a counterexample would keep passing after it
+// starts crashing the linker instead, and the regression would be invisible
+// because the case was already expected to be red. Recording the mode makes the
+// manifest say what the defect is, so a case that changes how it fails is a
+// finding rather than a silent one.
+//
+// The two stage tokens name where in the round trip the case died; the rest are
+// LEC verdicts. Kept as strings because they cross a file boundary -- these are
+// the same tokens hier_expected_fail.bzl validates against.
+constexpr const char* kModeOrError = "or-error";
+constexpr const char* kModeWriteError = "write-error";
+
+const char* modeOf(LecResult result)
+{
+  switch (result) {
+    case LecResult::kCounterexample:
+      return "counterexample";
+    case LecResult::kBoundaryMismatch:
+      return "boundary-mismatch";
+    case LecResult::kPartial:
+      return "partial";
+    case LecResult::kInconclusive:
+      return "inconclusive";
+    case LecResult::kToolError:
+      return "tool-error";
+    case LecResult::kProved:
+    case LecResult::kNotInstalled:
+      break;
+  }
+  // Neither is a failure mode: kProved is not a failure at all, and
+  // kNotInstalled is caught by an ASSERT before any of this runs.
+  return "unexpected";
+}
+
 struct ExpectedFailure
 {
+  // One of the tokens above: which way this case is known to fail.
+  std::string mode;
+  // The OpenROAD issue, when one has been filed. Empty otherwise -- see
+  // hier_expected_fail.bzl for why that is allowed to be empty rather than
+  // carrying a placeholder.
   std::string issue;
   std::string symptom;
+};
+
+// "issue 1234, " when one is recorded, "" otherwise, so a message about an
+// unfiled defect does not read as a formatting bug.
+std::string issuePrefix(const std::string& issue)
+{
+  return issue.empty() ? std::string() : "issue " + issue + ", ";
+}
+
+struct ParsedManifest
+{
+  std::vector<std::tuple<std::string, Path, ExpectedFailure>> entries;
+  // Rows this parser could not read. Reported by ManifestIsWellFormed rather
+  // than dropped: an unreadable row silently removes an XFAIL, and the case
+  // then reads as one that is expected to pass.
+  std::vector<std::string> malformed;
 };
 
 // Parses the XFAIL manifest into a (netlist, path) -> reason map. The manifest
@@ -193,35 +252,36 @@ struct ExpectedFailure
 // grouping the netlists under one entry per failure mode keeps the list
 // readable, and Starlark rejects a malformed entry when the package loads
 // rather than leaving it to be dropped here.
-const std::vector<std::tuple<std::string, Path, ExpectedFailure>>&
-expectedFailures()
+const ParsedManifest& expectedFailures()
 {
-  static const std::vector<std::tuple<std::string, Path, ExpectedFailure>> all
-      = []() {
-          std::vector<std::tuple<std::string, Path, ExpectedFailure>> parsed;
-          std::ifstream in(
-              getRunfilePath(std::string(kCasesDir) + "expected_fail.txt"));
-          std::string line;
-          while (std::getline(in, line)) {
-            if (isComment(line)) {
-              continue;
-            }
-            const std::vector<std::string> f = splitFields(line);
-            if (f.size() < 3) {
-              continue;
-            }
-            const Path path = f[1] == "hier" ? Path::kHier : Path::kFlat;
-            parsed.emplace_back(
-                f[0], path, ExpectedFailure{f[2], f.size() > 3 ? f[3] : ""});
-          }
-          return parsed;
-        }();
+  static const ParsedManifest all = []() {
+    ParsedManifest parsed;
+    std::ifstream in(
+        getRunfilePath(std::string(kCasesDir) + "expected_fail.txt"));
+    std::string line;
+    while (std::getline(in, line)) {
+      if (isComment(line)) {
+        continue;
+      }
+      // netlist : path : mode : issue : symptom. The generator always emits
+      // all five fields, though `issue` is empty until one is filed.
+      const std::vector<std::string> f = splitFields(line);
+      if (f.size() < 5) {
+        parsed.malformed.push_back(line);
+        continue;
+      }
+      const Path path = f[1] == "hier" ? Path::kHier : Path::kFlat;
+      parsed.entries.emplace_back(
+          f[0], path, ExpectedFailure{f[2], f[3], f[4]});
+    }
+    return parsed;
+  }();
   return all;
 }
 
 const ExpectedFailure* expectedFailure(const std::string& netlist, Path path)
 {
-  for (const auto& [name, entry_path, failure] : expectedFailures()) {
+  for (const auto& [name, entry_path, failure] : expectedFailures().entries) {
     if (name == netlist && entry_path == path) {
       return &failure;
     }
@@ -347,26 +407,48 @@ const std::vector<CorpusEntry>& corpus()
 
 // Inverts the expectation for a known failure, so an accidental fix turns the
 // suite red with an actionable message rather than silently losing coverage.
+//
+// `mode` is how this run failed, and is compared against the recorded mode: a
+// known failure is only "as expected" if it still fails the recorded way. It is
+// ignored when the case passed, since there is no failure to classify.
 void expectOrXfail(const CorpusEntry& entry,
                    Path path,
                    bool proved,
+                   const char* mode,
                    const std::string& detail)
 {
-  if (const ExpectedFailure* failure = expectedFailure(entry.name, path)) {
-    EXPECT_FALSE(proved) << entry.name << " [" << toString(path)
-                         << "] is a known failure (issue " << failure->issue
-                         << ": " << failure->symptom
-                         << "). It now PASSES -- delete it from "
-                         << "CONFORMANCE_EXPECTED_FAIL in "
-                            "src/dbSta/test/hier_expected_fail.bzl.";
-  } else {
+  const ExpectedFailure* failure = expectedFailure(entry.name, path);
+  if (failure == nullptr) {
     EXPECT_TRUE(proved) << detail;
+    return;
   }
+
+  if (proved) {
+    ADD_FAILURE() << entry.name << " [" << toString(path)
+                  << "] is a known failure (" << issuePrefix(failure->issue)
+                  << failure->mode << ": " << failure->symptom
+                  << "). It now PASSES -- delete it from "
+                  << "CONFORMANCE_EXPECTED_FAIL in "
+                     "src/dbSta/test/hier_expected_fail.bzl.";
+    return;
+  }
+
+  // Still failing, but not the recorded way. Worth a failure of its own: a
+  // counterexample degrading into a crash, or a crash into a tool error, is a
+  // change in behavior that an XFAIL keyed only on "fails somehow" would hide
+  // for as long as the entry survives.
+  EXPECT_EQ(failure->mode, mode)
+      << entry.name << " [" << toString(path)
+      << "] is a known failure, but it now fails a different way. Recorded '"
+      << failure->mode << "' (" << failure->symptom << "), observed '" << mode
+      << "':\n"
+      << detail << "\nIf the new mode is expected, update the entry in "
+      << "CONFORMANCE_EXPECTED_FAIL in src/dbSta/test/hier_expected_fail.bzl.";
 }
 
 void checkPathAgainstInput(const CorpusEntry& entry, Path path)
 {
-  ASSERT_TRUE(entry.load_error.empty()) << entry.load_error;
+  ASSERT_FALSE(entry.load_error.has_value()) << *entry.load_error;
   TST_REQUIRE_LEC();
 
   const bool hierarchy = path == Path::kHier;
@@ -389,7 +471,7 @@ void checkPathAgainstInput(const CorpusEntry& entry, Path path)
     detail += hierarchy ? " -hier" : "";
     detail += " rejected the netlist: ";
     detail += e.what();
-    expectOrXfail(entry, path, /*proved=*/false, detail);
+    expectOrXfail(entry, path, /*proved=*/false, kModeOrError, detail);
     return;
   }
 
@@ -403,7 +485,7 @@ void checkPathAgainstInput(const CorpusEntry& entry, Path path)
     detail += toString(path);
     detail += "]: write_verilog threw: ";
     detail += e.what();
-    expectOrXfail(entry, path, /*proved=*/false, detail);
+    expectOrXfail(entry, path, /*proved=*/false, kModeWriteError, detail);
     return;
   }
 
@@ -425,7 +507,11 @@ void checkPathAgainstInput(const CorpusEntry& entry, Path path)
   detail += outcome.detail;
   detail += "\n  emitted: " + out_v;
 
-  expectOrXfail(entry, path, outcome.result == LecResult::kProved, detail);
+  expectOrXfail(entry,
+                path,
+                outcome.result == LecResult::kProved,
+                modeOf(outcome.result),
+                detail);
 }
 
 class TestHierPath : public ::testing::TestWithParam<CorpusEntry>
@@ -502,13 +588,46 @@ TEST(TestHierConformanceCorpus, TargetsAreUnique)
   }
 }
 
+// Two ways the manifest can be wrong that no individual case would report
+// clearly.
+//
+// An unreadable row drops an XFAIL, which does turn the suite red -- but as a
+// pile of cases failing for no stated reason, several steps from the typo that
+// caused it. One message naming the row is worth the check.
+//
+// A row naming a netlist that is not in the corpus reports nothing at all: it
+// is dead text that still reads as coverage of a known defect, which is exactly
+// what an XFAIL list must never accumulate. It is how a case gets deleted or
+// renamed while its entry stays behind, describing a defect nothing tests.
+TEST(TestHierConformanceCorpus, ManifestIsWellFormed)
+{
+  for (const std::string& line : expectedFailures().malformed) {
+    ADD_FAILURE() << "unreadable XFAIL row, expected "
+                  << "`netlist : path : mode : issue : symptom`: " << line;
+  }
+  EXPECT_FALSE(expectedFailures().entries.empty())
+      << "the XFAIL manifest parsed as empty; every known failure would be "
+         "reported as a new one";
+
+  std::set<std::string> names;
+  for (const CorpusEntry& entry : corpus()) {
+    names.insert(entry.name);
+  }
+  for (const auto& [netlist, path, failure] : expectedFailures().entries) {
+    EXPECT_TRUE(names.count(netlist) > 0)
+        << netlist << " [" << toString(path)
+        << "] is listed in CONFORMANCE_EXPECTED_FAIL, but no such netlist is "
+           "in the corpus. Remove the entry, or restore the case it names.";
+  }
+}
+
 // Guards against the failure mode this whole suite exists to avoid: a corpus
 // that loaded as zero cases would make both suites above vacuously green.
 TEST(TestHierConformanceCorpus, IsLoaded)
 {
   ASSERT_FALSE(corpus().empty());
   for (const CorpusEntry& entry : corpus()) {
-    ASSERT_TRUE(entry.load_error.empty()) << entry.load_error;
+    ASSERT_FALSE(entry.load_error.has_value()) << *entry.load_error;
   }
   EXPECT_GT(corpus().size(), 1U)
       << "only one corpus case resolved; the manifest is probably not being "

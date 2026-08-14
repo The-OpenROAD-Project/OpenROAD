@@ -1135,9 +1135,19 @@ struct ExpectedFailure
   std::string pattern;
   Path path;
   std::string check;
-  std::string issue;
+  // The OpenROAD issue, when one has been filed. Empty otherwise -- see
+  // hier_expected_fail.bzl for why that is allowed to be empty rather than
+  // carrying a placeholder.
+  std::optional<std::string> issue;
   std::string symptom;
 };
+
+// "issue 1234, " when one is recorded, "" otherwise, so a message about an
+// unfiled defect does not read as a formatting bug.
+std::string issuePrefix(const std::optional<std::string>& issue)
+{
+  return !issue.has_value() ? std::string() : "issue " + *issue + ", ";
+}
 
 // '*' matches any run of characters; nothing else is special.
 bool globMatch(const std::string& pattern, const std::string& text)
@@ -1223,7 +1233,7 @@ void expectOrXfail(const CorpusEntry& entry,
   if (failure != nullptr) {
     EXPECT_FALSE(problems.empty())
         << entry.name << " [" << toString(path) << "/" << toString(check)
-        << "] is a known failure (issue " << failure->issue << ": "
+        << "] is a known failure (" << issuePrefix(failure->issue)
         << failure->symptom << "). It now PASSES -- delete '"
         << failure->pattern
         << "' from STRUCTURAL_EXPECTED_FAIL in "

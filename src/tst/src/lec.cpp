@@ -101,8 +101,9 @@ std::string capture(const std::string& command, int* exit_code)
   return output;
 }
 
-// Extracts the SEC coverage percentage. Returns -1 when the line is absent
-// (which is normal for kCombinational mode).
+// Extracts the SEC coverage percentage. Returns -1 when the line is absent,
+// which is normal for kCombinational mode and a defect anywhere else -- see the
+// call site, which must not read the sentinel as full coverage.
 double coveragePercent(const std::string& text)
 {
   static const std::regex re(R"(checked-output coverage: ([0-9.]+)%)");
@@ -333,15 +334,42 @@ LecOutcome runLec(const std::filesystem::path& gold_v,
     return outcome;
   }
 
-  // No verdict in the output, so a nonzero exit is a tool-level failure: a bad
-  // config key, an unparseable netlist, or the SEC boundary-set mismatch.
-  if (exit_code != 0) {
-    const std::string mismatch = firstLineContaining(all, "Mismatched");
-    if (!mismatch.empty()) {
-      outcome.result = LecResult::kBoundaryMismatch;
-      outcome.detail = detail(mismatch);
-      return outcome;
+  // The two designs' boundary sets differed, so the tool stopped before
+  // solving. Read before the partial verdict below: a refusal to compare is not
+  // a partial comparison.
+  const std::string mismatch = firstLineContaining(all, "Mismatched");
+  if (exit_code != 0 && !mismatch.empty()) {
+    outcome.result = LecResult::kBoundaryMismatch;
+    outcome.detail = detail(mismatch);
+    return outcome;
+  }
+
+  // "SEC partially proved equivalence at k = 0: 1/2 outputs proved" -- a
+  // verdict, and one kepler-formal delivers with a nonzero exit and none of the
+  // success wording below, so it has to be recognized before the exit code is
+  // read as a tool failure. Older builds reported the same situation as a plain
+  // proof carrying a sub-100 coverage figure, which the coverage test further
+  // down still catches; both are handled because the difference is only a
+  // kepler version apart.
+  //
+  // Getting this wrong is not cosmetic. A partial proof is the exact signature
+  // of a dropped connection -- the outputs in the orphaned cone become
+  // unprovable and are skipped -- so filing it as "the checker broke" hides the
+  // class of defect this harness exists to find, and hides it as tooling noise
+  // that nobody re-examines.
+  if (all.find("partially proved equivalence") != std::string::npos) {
+    outcome.result = LecResult::kPartial;
+    std::string why = firstLineContaining(all, "checked-output coverage");
+    if (why.empty()) {
+      why = firstLineContaining(all, "partially proved equivalence");
     }
+    outcome.detail = detail(why);
+    return outcome;
+  }
+
+  // No verdict in the output, so a nonzero exit is a tool-level failure: a bad
+  // config key or an unparseable netlist.
+  if (exit_code != 0) {
     std::string why = firstLineContaining(all, "critical");
     if (why.empty()) {
       why = firstLineContaining(all, "error");
@@ -379,6 +407,22 @@ LecOutcome runLec(const std::filesystem::path& gold_v,
   // connection still reports it, while dropping coverage to a fraction of the
   // outputs -- the skipped outputs are listed in the log.
   const double coverage = coveragePercent(all);
+
+  // In SEC the coverage line is unconditional, so its absence is not "this run
+  // covered everything", it is "this output does not have the shape we parse".
+  // Reading a missing number as full coverage would turn every future change to
+  // kepler's reporting into a silently passing corpus -- the proof would stop
+  // saying anything about how many outputs were compared, and nothing would
+  // report that. Absent means unproved. (Combinational LEC never emits the
+  // line, hence the mode test rather than a blanket requirement.)
+  if (mode == LecMode::kSequential && coverage < 0.0) {
+    outcome.result = LecResult::kInconclusive;
+    outcome.detail = detail(
+        "SEC reported equivalence but no checked-output coverage, so the "
+        "verdict does not say how many outputs were compared");
+    return outcome;
+  }
+
   if (coverage >= 0.0 && coverage < 100.0) {
     outcome.result = LecResult::kPartial;
     outcome.detail
