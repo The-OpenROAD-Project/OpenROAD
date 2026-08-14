@@ -968,6 +968,11 @@ void CUGR::buildNetRoute(const GRNet* net, GRoute& route) const
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
         for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
+            // Degenerate tree edges (same gcell and layer) would become
+            // zero-length segments, which segmentIsLine rejects.
+            if (node->x() == child->x() && node->y() == child->y()) {
+              continue;
+            }
             auto [min_x, max_x] = std::minmax({node->x(), child->x()});
             auto [min_y, max_y] = std::minmax({node->y(), child->y()});
 

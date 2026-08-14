@@ -25,7 +25,7 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      27480          4310          84.32%
+met1       Horizontal      27573          4357          84.20%
 met2       Vertical        21571          5772          73.24%
 met3       Horizontal      14023         20831          -48.55%
 met4       Vertical        10804         15836          -46.58%
@@ -42,13 +42,13 @@ met5       Horizontal       3108          4551          -46.43%
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              4310            65            1.51%             0 /  0 /  0
+met1              4357            65            1.49%             0 /  0 /  0
 met2              5772            57            0.99%             0 /  0 /  0
 met3             20831            23            0.11%             0 /  0 /  0
 met4             15836            12            0.08%             0 /  0 /  0
 met5              4551             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            51300           157            0.31%             0 /  0 /  0
+Total            51347           157            0.31%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 1692 um
 [INFO GRT-0014] Routed nets: 15
