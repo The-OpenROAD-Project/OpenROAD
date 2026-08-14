@@ -853,22 +853,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         ],
     ),
     xfail(
-        path = "flat",
-        mode = "tool-error",
-        symptom = "Netlist loading failed - vector - -_M_fill_append",
-        netlists = [
-            "wb_writer_wire_index_intmax.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "tool-error",
-        symptom = "Netlist loading failed - vector - -_M_fill_append",
-        netlists = [
-            "wb_writer_wire_index_intmax.v",
-        ],
-    ),
-    xfail(
         path = "hier",
         mode = "tool-error",
         symptom = "Netlist loading failed - wire collision for net _NC1",
@@ -2344,7 +2328,7 @@ STRUCTURAL_EXPECTED_FAIL = [
             "wb_dbsta_link_supply_net_sigtype.v",
             "wb_sta_reader_supply_tie.v",
             "wb_writer_wire_bus_5to5.v",
-            "wb_writer_wire_index_intmax.v",
+            "structural/wb_writer_wire_index_intmax.v",
             "wb_writer_wire_lsbfirst_flip.v",
         ],
     ),
@@ -2494,7 +2478,7 @@ STRUCTURAL_EXPECTED_FAIL = [
             "wb_sta_reader_supply_tie.v",
             "wb_writer_hier_input_alias_orphan.v",
             "wb_writer_wire_bus_5to5.v",
-            "wb_writer_wire_index_intmax.v",
+            "structural/wb_writer_wire_index_intmax.v",
             "wb_writer_wire_lsbfirst_flip.v",
         ],
     ),
