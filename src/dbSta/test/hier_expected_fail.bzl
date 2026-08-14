@@ -141,6 +141,7 @@ def structural_xfail(path, check, symptom, netlists, issue = None):
         characters), so a systemic defect that hits the whole corpus is one
         entry rather than 378 -- XPASS semantics are unaffected, since each case
         tests its own key.
+      issue: the OpenROAD issue number, if one has been filed.
 
     Returns:
       A struct the BUILD file renders into a manifest line per netlist.

@@ -1429,7 +1429,7 @@
     },
     "@@kepler-formal+//bazel:deps.bzl%deps": {
       "general": {
-        "bzlTransitiveDigest": "hayn3TerRwNj+3QmEaFZB47FLvCgeLEwivAd073rFxU=",
+        "bzlTransitiveDigest": "xc60Sk1GgNTjSR6D4dIYGN7v6tTHbK/l3xex1h3aINg=",
         "usagesDigest": "NGlTnl+c579bDhWB6NLbqkJQOniqcySno1qy4bSTx4k=",
         "recordedInputs": [
           "REPO_MAPPING:kepler-formal+,bazel_tools bazel_tools"
@@ -1514,24 +1514,6 @@
               }
             }
           },
-          "bison_tool": {
-            "repoRuleId": "@@kepler-formal+//bazel:naja_repositories.bzl%system_tool_repository",
-            "attributes": {
-              "tool": "bison"
-            }
-          },
-          "flex_tool": {
-            "repoRuleId": "@@kepler-formal+//bazel:naja_repositories.bzl%system_tool_repository",
-            "attributes": {
-              "tool": "flex"
-            }
-          },
-          "m4_tool": {
-            "repoRuleId": "@@kepler-formal+//bazel:naja_repositories.bzl%system_tool_repository",
-            "attributes": {
-              "tool": "m4"
-            }
-          },
           "python": {
             "repoRuleId": "@@kepler-formal+//bazel:naja_repositories.bzl%python_repository",
             "attributes": {}
@@ -1565,7 +1547,8 @@
                 "-f"
               ],
               "patches": [
-                "@@kepler-formal+//bazel:naja_verilog_bazel9.patch"
+                "@@kepler-formal+//bazel:naja_verilog_bazel9.patch",
+                "@@kepler-formal+//bazel:naja_verilog_hermetic_codegen.patch"
               ]
             }
           },
@@ -1599,7 +1582,8 @@
                 "-f"
               ],
               "patches": [
-                "@@kepler-formal+//bazel:naja_ff_scan.patch"
+                "@@kepler-formal+//bazel:naja_ff_scan.patch",
+                "@@kepler-formal+//bazel:naja_version_no_sed.patch"
               ]
             }
           }
