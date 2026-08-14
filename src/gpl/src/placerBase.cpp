@@ -508,11 +508,10 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm,
 {
   Rect bbox = bTerm->getBBox();
   if (bbox.isInverted()) {
-    if (placeIosMode) {
-      return;
+    if (!placeIosMode) {
+      logger->error(
+          GPL, 326, "{} toplevel port is not placed.", bTerm->getConstName());
     }
-    logger->error(
-        GPL, 326, "{} toplevel port is not placed.", bTerm->getConstName());
   }
 
   // Just center

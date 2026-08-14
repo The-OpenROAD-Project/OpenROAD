@@ -2562,6 +2562,25 @@ void NesterovBase::pickIoPinDummyLayers()
       "-place_ios.");
 }
 
+// A 2D up: region names a position on the define_pin_shape_pattern grid, so
+// the pin must be written on that grid's layer with that grid's pin size.
+void NesterovBase::pickIoPinTopLayerGrid()
+{
+  odb::dbBlock* block = pb_->db()->getChip()->getBlock();
+  const std::optional<odb::dbBlock::dbBTermTopLayerGrid> grid
+      = block->getBTermTopLayerGrid();
+  if (!grid.has_value() || grid->layer == nullptr) {
+    log_->error(GPL,
+                183,
+                "Concurrent IO placement: IO pins have a top-layer (up:) "
+                "constraint region but no pin placement grid exists. Call "
+                "define_pin_shape_pattern first, or drop -place_ios.");
+  }
+  io_top_layer_ = grid->layer;
+  io_top_pin_width_ = grid->pin_width;
+  io_top_pin_height_ = grid->pin_height;
+}
+
 void NesterovBase::initIoPinGCells()
 {
   if (!nbVars_.placeIosMode) {
@@ -2580,7 +2599,6 @@ void NesterovBase::initIoPinGCells()
 
   // Keep fixed ports as anchors, as in the sequential flow.
   std::vector<odb::dbBTerm*> movable_bterms;
-  int area_constrained = 0;
   for (odb::dbBTerm* bterm : block->getBTerms()) {
     // Exclude ports without a GPin; they have no wirelength gradient.
     if (nbc_->dbToNb(bterm) == nullptr) {
@@ -2589,22 +2607,7 @@ void NesterovBase::initIoPinGCells()
     if (bterm->getFirstPinPlacementStatus().isFixed()) {
       continue;
     }
-    const std::optional<odb::Rect> cr = bterm->getConstraintRegion();
-    if (cr.has_value() && cr->xMin() != cr->xMax()
-        && cr->yMin() != cr->yMax()) {
-      ++area_constrained;
-      continue;
-    }
     movable_bterms.push_back(bterm);
-  }
-
-  if (area_constrained > 0) {
-    log_->warn(GPL,
-               172,
-               "Concurrent IO placement: {} IO pins have 2D/top-layer "
-               "constraint regions and are handled by place_pins instead of "
-               "the concurrent perimeter model.",
-               area_constrained);
   }
 
   ioPinStor_.reserve(movable_bterms.size());
@@ -2621,6 +2624,22 @@ void NesterovBase::initIoPinGCells()
   io_is_follower_.assign(ioPinStor_.size(), 0);
   io_follower_wl_grad_.resize(ioPinStor_.size());
   io_last_written_pos_.assign(ioPinStor_.size(), odb::Point(INT_MIN, INT_MIN));
+
+  io_box_constraints_.assign(ioPinStor_.size(), std::nullopt);
+  int box_constrained = 0;
+  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
+    const std::optional<odb::Rect> cr
+        = ioPinStor_[i].getBTerm()->getConstraintRegion();
+    if (cr.has_value() && cr->xMin() != cr->xMax()
+        && cr->yMin() != cr->yMax()) {
+      io_box_constraints_[i] = cr;
+      ++box_constrained;
+    }
+  }
+  if (box_constrained > 0) {
+    pickIoPinTopLayerGrid();
+  }
+
   std::unordered_map<odb::dbBTerm*, size_t> bterm_to_io_index;
   bterm_to_io_index.reserve(ioPinStor_.size());
 
@@ -2644,6 +2663,10 @@ void NesterovBase::initIoPinGCells()
       continue;
     }
     const size_t partner = partner_it->second;
+    // Mirroring reflects across a die edge, which a box locus does not have.
+    if (isIoBoxConstrained(i) || isIoBoxConstrained(partner)) {
+      continue;
+    }
     // Build mirror pairs so followers are derived from their masters.
     if (io_master_to_follower_[i] != kNoMirrorPartner || io_is_follower_[i]
         || io_master_to_follower_[partner] != kNoMirrorPartner
@@ -2831,17 +2854,24 @@ void NesterovBase::initIoConstraints()
   addFreeEdge(DieEdge::kBottom, die.dieLx(), die.dieUx());
   addFreeEdge(DieEdge::kTop, die.dieLx(), die.dieUx());
 
-  // Keep the full perimeter as a fallback so every IO pin has a legal locus.
-  if (io_free_segments_.empty()) {
-    io_free_segments_
-        = {{DieEdge::kLeft, (float) die.dieLy(), (float) die.dieUy()},
-           {DieEdge::kRight, (float) die.dieLy(), (float) die.dieUy()},
-           {DieEdge::kBottom, (float) die.dieLx(), (float) die.dieUx()},
-           {DieEdge::kTop, (float) die.dieLx(), (float) die.dieUx()}};
+  bool any_perimeter_pin = false;
+  for (size_t i = 0; i < ioPinStor_.size(); ++i) {
+    any_perimeter_pin |= !isIoBoxConstrained(i);
+  }
+  if (io_free_segments_.empty() && any_perimeter_pin) {
+    log_->error(GPL,
+                180,
+                "Concurrent IO placement: the excluded IO pin regions cover "
+                "the whole die perimeter, so no perimeter IO pin has a legal "
+                "position.");
   }
 
   int constrained = 0;
   for (size_t i = 0; i < ioPinStor_.size(); ++i) {
+    // Box-constrained pins are clamped in projectIoPin, not projected here.
+    if (isIoBoxConstrained(i)) {
+      continue;
+    }
     const std::optional<odb::Rect> cr
         = ioPinStor_[i].getBTerm()->getConstraintRegion();
     if (!cr.has_value()) {
@@ -2955,6 +2985,15 @@ const std::vector<NesterovBase::PerimSegment>& NesterovBase::ioLocus(
 
 FloatPoint NesterovBase::projectIoPin(size_t io_index, float x, float y) const
 {
+  if (isIoBoxConstrained(io_index)) {
+    // A box is convex, so clamping is the projection the Nesterov step needs.
+    const odb::Rect& box = *io_box_constraints_[io_index];
+    return FloatPoint(
+        std::clamp(
+            x, static_cast<float>(box.xMin()), static_cast<float>(box.xMax())),
+        std::clamp(
+            y, static_cast<float>(box.yMin()), static_cast<float>(box.yMax())));
+  }
   FloatPoint projection;
   nearestSegment(ioLocus(io_index), x, y, &projection);
   return projection;
@@ -3024,10 +3063,22 @@ void NesterovBase::updateDbIoPins()
       continue;
     }
 
-    // ppl's convention: a horizontal die edge carries vertical-layer pins.
-    odb::dbTechLayer* layer = isHorizontalEdge(ioEdgeOnLocus(i, cx, cy))
-                                  ? io_ver_layer_
-                                  : io_hor_layer_;
+    odb::dbTechLayer* layer;
+    int half_w, half_h;
+    if (isIoBoxConstrained(i)) {
+      layer = io_top_layer_;
+      half_w = io_top_pin_width_ / 2;
+      half_h = io_top_pin_height_ / 2;
+    } else {
+      // ppl's convention: a horizontal die edge carries vertical-layer pins.
+      layer = isHorizontalEdge(ioEdgeOnLocus(i, cx, cy)) ? io_ver_layer_
+                                                         : io_hor_layer_;
+      half_w = io.dx() / 2;
+      half_h = io.dy() / 2;
+    }
+    const int min_half = static_cast<int>(layer->getWidth()) / 2;
+    half_w = std::max(half_w, min_half);
+    half_h = std::max(half_h, min_half);
 
     // place_pins re-legalizes the pin, so only the center location
     odb::dbSet<odb::dbBPin> bpins = bterm->getBPins();
@@ -3035,9 +3086,6 @@ void NesterovBase::updateDbIoPins()
       it = odb::dbBPin::destroy(it);
     }
 
-    const int min_half = static_cast<int>(layer->getWidth()) / 2;
-    const int half_w = std::max(io.dx() / 2, min_half);
-    const int half_h = std::max(io.dy() / 2, min_half);
     odb::dbBPin* bpin = odb::dbBPin::create(bterm);
     odb::dbBox::create(
         bpin, layer, cx - half_w, cy - half_h, cx + half_w, cy + half_h);
@@ -3501,7 +3549,7 @@ void NesterovBase::initDensity1()
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     GCell* gCell = *it;  // old-style loop for old OpenMP
-    // IO pins lie on the die perimeter, outside the core bin grid.
+    // IO pins have their own locus and contribute no density.
     if (!gCell->isIOPin()) {
       updateDensityCoordiLayoutInside(gCell);
     }

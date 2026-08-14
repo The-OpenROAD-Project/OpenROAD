@@ -1453,6 +1453,10 @@ class NesterovBase
   std::vector<odb::Point> io_last_written_pos_;
   odb::dbTechLayer* io_hor_layer_ = nullptr;
   odb::dbTechLayer* io_ver_layer_ = nullptr;
+  // define_pin_shape_pattern grid, used by pins with a 2D up: region.
+  odb::dbTechLayer* io_top_layer_ = nullptr;
+  int io_top_pin_width_ = 0;
+  int io_top_pin_height_ = 0;
 
   // defined after GCellHandle, which nb_gcells_ needs complete
   size_t ioNbPos(size_t io_index) const;
@@ -1483,9 +1487,13 @@ class NesterovBase
   };
   std::vector<PerimSegment> io_free_segments_;
   std::vector<std::vector<PerimSegment>> io_constraint_segments_;
+  // A 2D up: region is an area on the top-layer grid, not a perimeter
+  // interval, so these pins are clamped to the box instead of projected.
+  std::vector<std::optional<odb::Rect>> io_box_constraints_;
 
   void initIoPinGCells();
   void pickIoPinDummyLayers();
+  void pickIoPinTopLayerGrid();
   void initIoConstraints();
   static std::vector<PerimSegment> mirrorSegments(
       const std::vector<PerimSegment>& segs);
@@ -1511,6 +1519,11 @@ class NesterovBase
   bool isMirrorFollower(size_t io_index) const
   {
     return io_index < io_is_follower_.size() && io_is_follower_[io_index];
+  }
+  bool isIoBoxConstrained(size_t io_index) const
+  {
+    return io_index < io_box_constraints_.size()
+           && io_box_constraints_[io_index].has_value();
   }
 };
 
