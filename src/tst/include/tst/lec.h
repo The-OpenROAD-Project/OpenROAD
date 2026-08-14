@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -37,11 +38,11 @@ enum class LecMode
   // Combinational equivalence, cutting sequential boundaries. Matches
   // boundary points by name, so it cannot compare a hierarchical netlist
   // against a flat one (flat write_verilog renames every instance).
-  kLec,
+  kCombinational,
   // Sequential equivalence, comparing transition systems. Tolerates the
   // instance renaming, and is strict about boundary sets. Always paired with
   // the `binary` encoding -- see runLec.
-  kSec,
+  kSequential,
 };
 
 enum class LecResult
@@ -75,9 +76,9 @@ struct LecOutcome
   // differed, or the counterexample. A bare "not equivalent" is unactionable.
   std::string detail;
   // Path to kepler-formal's own log, which carries the per-output detail.
-  std::string log_path;
+  std::filesystem::path log_path;
   // Path to the generated config, kept so a failure can be reproduced by hand.
-  std::string config_path;
+  std::filesystem::path config_path;
 };
 
 // Locates the kepler-formal binary. Resolution order:
@@ -102,7 +103,7 @@ struct LecOutcome
 // which is deliberately not set repo-wide: the pinned runfile is what CI and a
 // normal developer run should use, and forwarding it by default would let a
 // stray value in someone's shell silently replace it.
-std::string findKeplerFormal();
+std::filesystem::path findKeplerFormal();
 
 // True when findKeplerFormal() returns a usable path.
 bool isLecAvailable();
@@ -135,11 +136,11 @@ void assertLecAvailable();
 // detail, and the right answer has already changed once with the kepler
 // revision -- see the comment at the `sec_encoding` line in lec.cpp before
 // touching it.
-LecOutcome runLec(const std::string& gold_v,
-                  const std::string& gate_v,
-                  const std::vector<std::string>& liberty,
+LecOutcome runLec(const std::filesystem::path& gold_v,
+                  const std::filesystem::path& gate_v,
+                  const std::vector<std::filesystem::path>& liberty,
                   LecMode mode,
-                  const std::string& work_dir);
+                  const std::filesystem::path& work_dir);
 
 // "proved" / "counterexample" / ... for test messages.
 const char* toString(LecResult result);

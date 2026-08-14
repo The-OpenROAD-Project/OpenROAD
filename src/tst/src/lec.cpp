@@ -51,7 +51,7 @@ bool isExecutableFile(const std::filesystem::path& path)
   return ::access(path.c_str(), X_OK) == 0;
 }
 
-std::string readAll(const std::string& path)
+std::string readAll(const std::filesystem::path& path)
 {
   std::ifstream in(path);
   if (!in) {
@@ -66,7 +66,7 @@ std::string readAll(const std::string& path)
 // default. Point the loader at both so callers do not have to set
 // LD_LIBRARY_PATH by hand. An existing LD_LIBRARY_PATH is preserved, appended
 // after the derived entries.
-std::string loaderEnvPrefix(const std::string& binary)
+std::string loaderEnvPrefix(const std::filesystem::path& binary)
 {
   const std::filesystem::path bin_dir
       = std::filesystem::absolute(binary).parent_path();
@@ -151,7 +151,7 @@ const char* toString(LecResult result)
 
 // The binary as a bazel runfile. Empty outside a bazel test, or when the test
 // did not declare //src/tst:kepler_formal_bin in its data.
-std::string keplerFormalRunfile()
+std::filesystem::path keplerFormalRunfile()
 {
 #ifdef BAZEL_BUILD
   using bazel::tools::cpp::runfiles::Runfiles;
@@ -174,19 +174,19 @@ std::string keplerFormalRunfile()
   return {};
 }
 
-std::string findKeplerFormal()
+std::filesystem::path findKeplerFormal()
 {
   if (const char* env = std::getenv("KEPLER_FORMAL");
       env != nullptr && *env != '\0') {
     // An explicit override that does not resolve is a configuration error the
     // caller wants to hear about, so do not silently fall through to the
     // runfile or $PATH.
-    return isExecutableFile(env) ? env : "";
+    return isExecutableFile(env) ? std::filesystem::path(env) : "";
   }
 
   // Prefer the runfile over $PATH: a bazel test must use the binary its own
   // dependency graph built, not whatever happens to be installed.
-  if (const std::string runfile = keplerFormalRunfile(); !runfile.empty()) {
+  if (const std::filesystem::path runfile = keplerFormalRunfile(); !runfile.empty()) {
     return runfile;
   }
 
@@ -200,7 +200,7 @@ std::string findKeplerFormal()
       const std::filesystem::path candidate
           = std::filesystem::path(dir) / "kepler-formal";
       if (isExecutableFile(candidate)) {
-        return candidate.string();
+        return candidate;
       }
     }
   }
@@ -226,15 +226,15 @@ void assertLecAvailable()
   FAIL() << kInstallHint;
 }
 
-LecOutcome runLec(const std::string& gold_v,
-                  const std::string& gate_v,
-                  const std::vector<std::string>& liberty,
+LecOutcome runLec(const std::filesystem::path& gold_v,
+                  const std::filesystem::path& gate_v,
+                  const std::vector<std::filesystem::path>& liberty,
                   LecMode mode,
-                  const std::string& work_dir)
+                  const std::filesystem::path& work_dir)
 {
   LecOutcome outcome;
 
-  const std::string binary = findKeplerFormal();
+  const std::filesystem::path binary = findKeplerFormal();
   if (binary.empty()) {
     outcome.result = LecResult::kNotInstalled;
     outcome.detail = kInstallHint;
@@ -244,15 +244,15 @@ LecOutcome runLec(const std::string& gold_v,
   // Name the artifacts after the gate netlist so several runs in one test do
   // not overwrite each other's evidence.
   const std::string stem = std::filesystem::path(gate_v).stem().string()
-                           + (mode == LecMode::kSec ? "_sec" : "_lec");
-  outcome.config_path = work_dir + "/" + stem + ".yaml";
-  outcome.log_path = work_dir + "/" + stem + ".log";
+                           + (mode == LecMode::kSequential ? "_sec" : "_lec");
+  outcome.config_path = work_dir / (stem + ".yaml");
+  outcome.log_path = work_dir / (stem + ".log");
 
   {
     std::ofstream cfg(outcome.config_path);
     cfg << "format: verilog\n";
-    cfg << "verification: " << (mode == LecMode::kSec ? "sec" : "lec") << "\n";
-    if (mode == LecMode::kSec) {
+    cfg << "verification: " << (mode == LecMode::kSequential ? "sec" : "lec") << "\n";
+    if (mode == LecMode::kSequential) {
       // Encoding choice, and it has flipped once already -- do not change it
       // without re-running a mutation battery, because both options have been
       // unsound at some point:
@@ -282,7 +282,7 @@ LecOutcome runLec(const std::string& gold_v,
     cfg << "  - " << gold_v << "\n";
     cfg << "  - " << gate_v << "\n";
     cfg << "liberty_files:\n";
-    for (const std::string& lib : liberty) {
+    for (const std::filesystem::path& lib : liberty) {
       cfg << "  - " << lib << "\n";
     }
     cfg << "log_file: " << outcome.log_path << "\n";
@@ -300,16 +300,16 @@ LecOutcome runLec(const std::string& gold_v,
   // directly would otherwise find them littering their working tree.
   int exit_code = 0;
   const std::string stdout_text
-      = capture("cd '" + work_dir + "' && " + loaderEnvPrefix(binary) + "'"
-                    + binary + "' --config '" + outcome.config_path + "'",
+      = capture("cd '" + work_dir.string() + "' && " + loaderEnvPrefix(binary) + "'"
+                    + binary.string() + "' --config '" + outcome.config_path.string() + "'",
                 &exit_code);
   const std::string log_text = readAll(outcome.log_path);
   const std::string all = stdout_text + log_text;
 
   auto detail = [&](const std::string& head) {
     std::string text = head;
-    text += "\n  config: " + outcome.config_path;
-    text += "\n  log:    " + outcome.log_path;
+    text += "\n  config: " + outcome.config_path.string();
+    text += "\n  log:    " + outcome.log_path.string();
     return text;
   };
 

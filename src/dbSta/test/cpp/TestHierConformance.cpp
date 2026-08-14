@@ -102,13 +102,13 @@ std::string entryName(const ::testing::TestParamInfo<CorpusEntry>& info)
   return name;
 }
 
-std::string workDir()
+std::filesystem::path workDir()
 {
   const char* tmp = std::getenv("TEST_TMPDIR");
   return tmp != nullptr ? tmp : ".";
 }
 
-std::vector<std::string> libertyFor(Technology tech)
+std::vector<std::filesystem::path> libertyFor(Technology tech)
 {
   switch (tech) {
     case Technology::kNangate45:
@@ -124,7 +124,7 @@ std::vector<std::string> libertyFor(Technology tech)
 // attached to the choice.
 LecMode modeFor(Path /* path */)
 {
-  return LecMode::kSec;
+  return LecMode::kSequential;
 }
 
 const char* kCasesDir = "_main/src/dbSta/test/cpp/hier_cases/";
@@ -150,17 +150,6 @@ bool isComment(const std::string& line)
 {
   const std::string::size_type first = line.find_first_not_of(" \t\r");
   return first == std::string::npos || line[first] == '#';
-}
-
-std::optional<Technology> parseTechnology(const std::string& name)
-{
-  if (name == "nangate45") {
-    return Technology::kNangate45;
-  }
-  if (name == "sky130hd") {
-    return Technology::kSky130hd;
-  }
-  return std::nullopt;
 }
 
 // A one-entry corpus that reports why the real one could not be loaded.
@@ -385,7 +374,7 @@ void checkPathAgainstInput(const CorpusEntry& entry, Path path)
   }
 
   const std::string out_v
-      = workDir() + "/" + entry.name + "." + toString(path) + ".v";
+      = workDir() / (entry.name + "." + toString(path) + ".v");
   try {
     design->writeVerilog(out_v);
   } catch (const std::exception& e) {
