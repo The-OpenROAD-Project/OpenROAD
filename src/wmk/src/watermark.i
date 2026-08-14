@@ -52,4 +52,23 @@ clear_routing_watermark_cmd()
   return w->clearWatermark();
 }
 
+// Verification returns the extraction rate; the caller compares it against the
+// ownership threshold.  A stage with no checkable claims returns -1 so that it
+// is distinguishable from a stage where every claim failed.
+double
+verify_placement_watermark_cmd(const char* claims_file)
+{
+  auto* w = ord::OpenRoad::openRoad()->getWatermark();
+  const wmk::VerifyResult r = w->verifyPlacement(std::string(claims_file));
+  return r.checked > 0 ? r.rate() : -1.0;
+}
+
+double
+verify_cts_watermark_cmd(const char* claims_file)
+{
+  auto* w = ord::OpenRoad::openRoad()->getWatermark();
+  const wmk::VerifyResult r = w->verifyCts(std::string(claims_file));
+  return r.checked > 0 ? r.rate() : -1.0;
+}
+
 %}  // inline

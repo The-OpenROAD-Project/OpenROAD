@@ -12,6 +12,8 @@ swig_lib(NAME      wmk
 target_sources(wmk
   PRIVATE
     src/Watermark.cpp
+    src/Verify.cpp
+    src/Claims.cpp
     src/MakeWatermark.cpp
     src/HmacSha256.cpp
 )

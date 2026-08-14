@@ -29,6 +29,20 @@
 
 namespace wmk {
 
+// Outcome of checking one stage's claims against a design.  Ownership is
+// decided by the extraction rate against a threshold rather than by an exact
+// match, because routing and filling disturb a few marked objects.
+struct VerifyResult
+{
+  int checked = 0;
+  int held = 0;
+
+  double rate() const
+  {
+    return checked > 0 ? static_cast<double>(held) / checked : 0.0;
+  }
+};
+
 class Watermark
 {
  public:
@@ -62,6 +76,16 @@ class Watermark
   // block.  Useful for iterating on signature-selection parameters
   // without re-loading the design.
   int clearWatermark();
+
+  // Check the placement claims in ``claims_file`` against the loaded design.
+  // Each claim names a pair of cells and the bit they were driven to, which is
+  // which of the two sits further left.
+  VerifyResult verifyPlacement(const std::string& claims_file);
+
+  // Check the CTS claims in ``claims_file`` against the loaded design.  Each
+  // claim names a leaf clock buffer and the parity its sequential fanout was
+  // driven to.
+  VerifyResult verifyCts(const std::string& claims_file);
 
  private:
   odb::dbDatabase* db_ = nullptr;
