@@ -22,6 +22,7 @@
 #include <variant>
 
 #include "gui/descriptor_registry.h"
+#include "gui/heatMap.h"
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else
@@ -29,6 +30,7 @@
 #endif
 #include <cmath>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -38,7 +40,6 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
-#include "gif.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -51,6 +52,7 @@
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
+#include "third-party/gif-h/gif.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
@@ -233,12 +235,18 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 bool Gui::enabled()
 {
+  Gui* self = Gui::get();
+  return main_window != nullptr || self->headless_viewer_ != nullptr;
+}
+
+bool Gui::hasUI()
+{
   return main_window != nullptr;
 }
 
 void Gui::registerRenderer(Renderer* renderer)
 {
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->getControls()->registerRenderer(renderer);
   }
 
@@ -252,7 +260,7 @@ void Gui::unregisterRenderer(Renderer* renderer)
     return;
   }
 
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->getControls()->unregisterRenderer(renderer);
   }
 
@@ -262,20 +270,42 @@ void Gui::unregisterRenderer(Renderer* renderer)
 
 void Gui::redraw()
 {
-  if (!Gui::enabled()) {
+  if (main_window != nullptr) {
+    main_window->redraw();
     return;
   }
-  main_window->redraw();
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->redraw();
+  }
 }
 
 void Gui::status(const std::string& message)
 {
-  main_window->status(message);
+  if (main_window != nullptr) {
+    main_window->status(message);
+  }
+  // No status surface in headless mode; silently drop.
 }
 
 void Gui::pause(int timeout)
 {
-  main_window->pause(timeout);
+  if (main_window != nullptr) {
+    main_window->pause(timeout);
+    return;
+  }
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->pause(timeout);
+  }
+}
+
+void Gui::setHeadlessViewer(HeadlessViewer* viewer)
+{
+  headless_viewer_ = viewer;
+}
+
+void Gui::setChartFactory(ChartFactory factory)
+{
+  chart_factory_ = std::move(factory);
 }
 
 Selected Gui::makeSelected(const std::any& object)
@@ -285,16 +315,25 @@ Selected Gui::makeSelected(const std::any& object)
 
 void Gui::setSelected(const Selected& selection)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->setSelected(selection);
 }
 
 void Gui::removeSelectedByType(const std::string& type)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->removeSelectedByType(type);
 }
 
 void Gui::addSelectedNet(const char* name)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -310,6 +349,9 @@ void Gui::addSelectedNet(const char* name)
 
 void Gui::addSelectedInst(const char* name)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -325,16 +367,26 @@ void Gui::addSelectedInst(const char* name)
 
 const SelectionSet& Gui::selection()
 {
+  if (!hasUI()) {
+    static const SelectionSet empty_selection;
+    return empty_selection;
+  }
   return main_window->selection();
 }
 
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
 {
+  if (!hasUI()) {
+    return false;
+  }
   return main_window->anyObjectInSet(selection_set, obj_type);
 }
 
 void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
 }
 void Gui::selectHighlightConnectedNets(bool select_flag,
@@ -342,6 +394,9 @@ void Gui::selectHighlightConnectedNets(bool select_flag,
                                        bool input,
                                        int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
 }
@@ -349,12 +404,18 @@ void Gui::selectHighlightConnectedNets(bool select_flag,
 void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
                                               int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->selectHighlightConnectedBufferTrees(select_flag,
                                                    highlight_group);
 }
 
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -372,6 +433,9 @@ void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 
 void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   auto block = getBlock(main_window->getDb());
   if (!block) {
     return;
@@ -389,21 +453,33 @@ void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 
 int Gui::selectAt(const odb::Rect& area, bool append)
 {
+  if (!hasUI()) {
+    return 0;
+  }
   return main_window->getLayoutViewer()->selectArea(area, append);
 }
 
 int Gui::selectNext()
 {
+  if (!hasUI()) {
+    return 0;
+  }
   return main_window->getInspector()->selectNext();
 }
 
 int Gui::selectPrevious()
 {
+  if (!hasUI()) {
+    return 0;
+  }
   return main_window->getInspector()->selectPrevious();
 }
 
 void Gui::animateSelection(int repeat)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->selectionAnimation(repeat);
 }
 
@@ -415,11 +491,17 @@ std::string Gui::addLabel(int x,
                           std::optional<Painter::Anchor> anchor,
                           const std::optional<std::string>& name)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addLabel(x, y, text, color, size, anchor, name);
 }
 
 void Gui::deleteLabel(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->deleteLabel(name);
 }
 
@@ -431,11 +513,17 @@ std::string Gui::addRuler(int x0,
                           const std::string& name,
                           bool euclidian)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
 }
 
 void Gui::deleteRuler(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->deleteRuler(name);
 }
 
@@ -478,6 +566,9 @@ int Gui::select(const std::string& type,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
+  if (!hasUI()) {
+    return 0;
+  }
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   // Define case sensitivity options for QRegularExpression
   const QRegularExpression::PatternOptions options
@@ -598,21 +689,33 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
 
 void Gui::clearSelections()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->setSelected(Selected());
 }
 
 void Gui::clearHighlights(int highlight_group)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->clearHighlighted(highlight_group);
 }
 
 void Gui::clearLabels()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->clearLabels();
 }
 
 void Gui::clearRulers()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->clearRulers();
 }
 
@@ -621,12 +724,18 @@ std::string Gui::addToolbarButton(const std::string& name,
                                   const std::string& script,
                                   bool echo)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addToolbarButton(
       name, QString::fromStdString(text), QString::fromStdString(script), echo);
 }
 
 void Gui::removeToolbarButton(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->removeToolbarButton(name);
 }
 
@@ -637,6 +746,9 @@ std::string Gui::addMenuItem(const std::string& name,
                              const std::string& shortcut,
                              bool echo)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->addMenuItem(name,
                                   QString::fromStdString(path),
                                   QString::fromStdString(text),
@@ -647,97 +759,165 @@ std::string Gui::addMenuItem(const std::string& name,
 
 void Gui::removeMenuItem(const std::string& name)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->removeMenuItem(name);
 }
 
 std::string Gui::requestUserInput(const std::string& title,
                                   const std::string& question)
 {
+  if (!hasUI()) {
+    return "";
+  }
   return main_window->requestUserInput(QString::fromStdString(title),
                                        QString::fromStdString(question));
 }
 
 void Gui::selectMarkers(odb::dbMarkerCategory* markers)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getDRCViewer()->selectCategory(markers);
 }
 
 void Gui::setDisplayControlsColor(const std::string& name,
                                   const Painter::Color& color)
 {
+  if (!hasUI()) {
+    // No Qt DisplayControls in headless mode; color is a GUI-only concept.
+    return;
+  }
   const QColor qcolor(color.r, color.g, color.b, color.a);
   main_window->getControls()->setControlByPath(name, qcolor);
 }
 
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      headless_viewer_->setDisplayControlVisible(name, value);
+    }
+    return;
+  }
   main_window->getControls()->setControlByPath(
       name, true, value ? Qt::Checked : Qt::Unchecked);
 }
 
 bool Gui::checkDisplayControlsVisible(const std::string& name)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      return headless_viewer_->checkDisplayControlVisible(name);
+    }
+    return true;
+  }
   return main_window->getControls()->checkControlByPath(name, true);
 }
 
 void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      headless_viewer_->setDisplayControlSelectable(name, value);
+    }
+    return;
+  }
   main_window->getControls()->setControlByPath(
       name, false, value ? Qt::Checked : Qt::Unchecked);
 }
 
 bool Gui::checkDisplayControlsSelectable(const std::string& name)
 {
+  if (!hasUI()) {
+    if (headless_viewer_ != nullptr) {
+      return headless_viewer_->checkDisplayControlSelectable(name);
+    }
+    return false;
+  }
   return main_window->getControls()->checkControlByPath(name, false);
 }
 
 void Gui::saveDisplayControls()
 {
+  if (!hasUI()) {
+    // Nothing to persist without the Qt DisplayControls widget.
+    return;
+  }
   main_window->getControls()->save();
 }
 
 void Gui::restoreDisplayControls()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getControls()->restore();
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->zoomTo(rect_dbu);
 }
 
 void Gui::zoomTo(const odb::Point& focus, int diameter)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->zoomTo(focus, diameter);
 }
 
 void Gui::zoomIn()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomIn();
 }
 
 void Gui::zoomIn(const odb::Point& focus_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomIn(focus_dbu);
 }
 
 void Gui::zoomOut()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomOut();
 }
 
 void Gui::zoomOut(const odb::Point& focus_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->zoomOut(focus_dbu);
 }
 
 void Gui::centerAt(const odb::Point& focus_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->centerAt(focus_dbu);
 }
 
 void Gui::setResolution(double pixels_per_dbu)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
 }
 
@@ -777,7 +957,7 @@ void Gui::saveImage(const std::string& filename,
     save_region.bloat(bloat, save_region);
   }
 
-  if (!enabled()) {
+  if (!hasUI()) {
     const double dbu_per_micron = db_->getDbuPerMicron();
 
     std::string save_cmds;
@@ -826,7 +1006,7 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
                              int width_px,
                              int height_px)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   std::optional<int> width;
@@ -846,7 +1026,7 @@ void Gui::saveHistogramImage(const std::string& filename,
                              int width_px,
                              int height_px)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   std::optional<int> width;
@@ -865,7 +1045,7 @@ void Gui::saveHistogramImage(const std::string& filename,
 
 void Gui::showWorstTimingPath(bool setup)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   main_window->getTimingWidget()->showWorstTimingPath(setup);
@@ -873,7 +1053,7 @@ void Gui::showWorstTimingPath(bool setup)
 
 void Gui::clearTimingPath()
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   main_window->getTimingWidget()->clearSelection();
@@ -882,7 +1062,7 @@ void Gui::clearTimingPath()
 void Gui::selectClockviewerClock(const std::string& clock_name,
                                  std::optional<int> depth)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
   main_window->getClockViewer()->selectClock(clock_name, depth);
@@ -892,6 +1072,10 @@ static QWidget* findWidget(const std::string& name)
 {
   if (name == "main_window" || name == "OpenROAD") {
     return main_window;
+  }
+
+  if (main_window == nullptr) {
+    return nullptr;
   }
 
   const QString find_name = QString::fromStdString(name);
@@ -963,7 +1147,7 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
       [this](HeatMapDataSource* source) { unregisterHeatMap(source); });
   registerRenderer(renderer.get());
   heat_map_renderers_[heatmap] = std::move(renderer);
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->registerHeatMap(heatmap);
   }
 }
@@ -982,14 +1166,38 @@ void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
     unregisterRenderer(renderer_itr->second.get());
     heat_map_renderers_.erase(renderer_itr);
   }
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->unregisterHeatMap(heatmap);
   }
   heat_maps_.erase(heatmap);
 }
 
+void Gui::syncHeatMapChips()
+{
+  if (hasUI() || db_ == nullptr) {
+    return;
+  }
+
+  // Console and headless sessions do not receive MainWindow::setBlock().
+  auto* chip = db_->getChip();
+  for (auto* heat_map : heat_maps_) {
+    if (heat_map->getChip() != chip) {
+      heat_map->setChip(chip);
+      heat_map->destroyMap();
+    }
+  }
+}
+
+const std::set<HeatMapDataSource*>& Gui::getHeatMaps()
+{
+  syncHeatMapChips();
+  return heat_maps_;
+}
+
 HeatMapDataSource* Gui::getHeatMap(const std::string& name)
 {
+  syncHeatMapChips();
+
   HeatMapDataSource* source = nullptr;
 
   for (auto* heat_map : heat_maps_) {
@@ -1360,6 +1568,9 @@ void DiscreteLegend::draw(Painter& painter) const
 
 void Gui::fit()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->fit();
 }
 
@@ -1381,26 +1592,42 @@ void Gui::unregisterDescriptor(const std::type_info& type)
 
 const Selected& Gui::getInspectorSelection()
 {
+  if (!hasUI()) {
+    static const Selected empty_selection;
+    return empty_selection;
+  }
   return main_window->getInspector()->getSelection();
 }
 
 void Gui::timingCone(Term term, bool fanin, bool fanout)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->timingCone(term, fanin, fanout);
 }
 
 void Gui::timingPathsThrough(const std::set<Term>& terms)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->timingPathsThrough(terms);
 }
 
 void Gui::addFocusNet(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->addFocusNet(net);
 }
 
 void Gui::addRouteGuides(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->addRouteGuides(net);
 }
 
@@ -1408,41 +1635,68 @@ Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
 {
-  return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
+  if (main_window != nullptr) {
+    return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
+  }
+  if (chart_factory_) {
+    return chart_factory_(name, x_label, y_labels);
+  }
+  return nullptr;
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->removeRouteGuides(net);
 }
 
 void Gui::addNetTracks(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->addNetTracks(net);
 }
 
 void Gui::removeNetTracks(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->removeNetTracks(net);
 }
 
 void Gui::removeFocusNet(odb::dbNet* net)
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->removeFocusNet(net);
 }
 
 void Gui::clearFocusNets()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->clearFocusNets();
 }
 
 void Gui::clearRouteGuides()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->clearRouteGuides();
 }
 
 void Gui::clearNetTracks()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getLayoutTabs()->clearNetTracks();
 }
 
@@ -1455,7 +1709,7 @@ void Gui::setLogger(utl::Logger* logger)
   logger_ = logger;
   qInstallMessageHandler(message_handler);
 
-  if (enabled()) {
+  if (hasUI()) {
     // gui already requested, so go ahead and set the logger
     main_window->setLogger(logger);
   }
@@ -1463,6 +1717,9 @@ void Gui::setLogger(utl::Logger* logger)
 
 void Gui::hideGui()
 {
+  if (!hasUI()) {
+    return;
+  }
   // ensure continue after close is true, since we want to return to tcl
   setContinueAfterClose();
   main_window->exit();
@@ -1484,11 +1741,17 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
 
 void Gui::minimize()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->showMinimized();
 }
 
 void Gui::unminimize()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->showNormal();
 }
 
@@ -1518,7 +1781,7 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 
 void Gui::selectHelp(const std::string& item)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
 
@@ -1527,7 +1790,7 @@ void Gui::selectHelp(const std::string& item)
 
 void Gui::selectChart(const std::string& name)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     return;
   }
 
@@ -1538,12 +1801,15 @@ void Gui::selectChart(const std::string& name)
 
 void Gui::updateTimingReport()
 {
+  if (!hasUI()) {
+    return;
+  }
   main_window->getTimingWidget()->populatePaths();
 }
 
 int Gui::gifStart(const std::string& filename)
 {
-  if (!enabled()) {
+  if (!hasUI()) {
     logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
   }
 
@@ -1563,6 +1829,9 @@ void Gui::gifAddFrame(std::optional<int> key,
                       double dbu_per_pixel,
                       std::optional<int> delay)
 {
+  if (!hasUI()) {
+    return;
+  }
   if (!key.has_value()) {
     key = gifs_.size() - 1;
   }
@@ -1579,10 +1848,8 @@ void Gui::gifAddFrame(std::optional<int> key,
 
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
-  const bool is_offscreen
-      = main_window == nullptr
-        || main_window->testAttribute(
-            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
+  const bool is_offscreen = main_window->testAttribute(
+      Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
   if (is_offscreen
       && use_die_area) {  // if gui is active and interactive the visible are of
                           // the layout viewer will be used.

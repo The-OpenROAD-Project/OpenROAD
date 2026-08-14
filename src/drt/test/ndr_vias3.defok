@@ -214,13 +214,11 @@ PINS 1 ;
 END PINS
 NETS 8 ;
     - clk ( PIN clk ) ( clkbuf_0_clk A ) + USE CLOCK + NONDEFAULTRULE NDR_3W_3S
-      + ROUTED met2 ( 89470 340 0 ) ( * 150110 )
-      NEW met1 ( 89470 150110 ) ( 131100 * )
-      NEW met1 ( 131100 150110 ) ( * 151130 )
-      NEW met1 ( 131100 151130 ) ( 149500 * )
-      NEW met1 TAPER ( 149500 151130 ) ( 151110 * )
-      NEW met1 ( 89470 150110 ) M1M2_PR_R
-      NEW li1 TAPER ( 151110 151130 ) L1M1_PR_R ;
+      + ROUTED met2 ( 89470 340 0 ) ( * 151470 )
+      NEW met1 TAPER ( 149500 151470 ) ( 151110 * )
+      NEW met1 ( 89470 151470 ) ( 149500 * )
+      NEW met1 ( 89470 151470 ) M1M2_PR_R
+      NEW li1 TAPER ( 151110 151470 ) L1M1_PR_R ;
     - clknet_0_clk ( clkbuf_2_3__f_clk A ) ( clkbuf_2_2__f_clk A ) ( clkbuf_2_1__f_clk A ) ( clkbuf_2_0__f_clk A ) ( clkbuf_0_clk X ) + USE CLOCK + NONDEFAULTRULE NDR_3W_3S
       + ROUTED met1 TAPER ( 116610 118490 ) ( 118220 * )
       NEW met1 ( 118220 118490 ) ( 131100 * )
@@ -359,9 +357,9 @@ NETS 8 ;
       NEW met1 ( 96830 183770 ) ( 107410 * )
       NEW met1 TAPER ( 107410 183770 ) ( 109250 * )
       NEW met2 ( 96830 183770 ) ( 97290 * )
-      NEW met1 ( 97290 151130 ) ( 98210 * )
-      NEW met1 TAPER ( 98210 151130 ) ( 100050 * )
-      NEW met2 ( 97290 151130 ) ( * 183770 )
+      NEW met1 ( 97290 150790 ) ( 98210 * )
+      NEW met1 TAPER ( 98210 150790 ) ( 100050 * )
+      NEW met2 ( 97290 150790 ) ( * 183770 )
       NEW met1 TAPER ( 137770 210630 ) ( 139610 * )
       NEW met1 ( 139610 210630 ) ( 148810 * )
       NEW met1 TAPER ( 148810 210630 ) ( 150650 * )
@@ -387,8 +385,8 @@ NETS 8 ;
       NEW li1 TAPER ( 96830 186150 ) L1M1_PR_R
       NEW met1 TAPER ( 96830 186150 ) M1M2_PR_R
       NEW met1 ( 96830 183770 ) M1M2_PR_R
-      NEW met1 ( 97290 151130 ) M1M2_PR_R
-      NEW li1 TAPER ( 100050 151130 ) L1M1_PR_R
+      NEW met1 ( 97290 150790 ) M1M2_PR_R
+      NEW li1 TAPER ( 100050 150790 ) L1M1_PR_R
       NEW li1 TAPER ( 137770 210630 ) L1M1_PR_R
       NEW li1 TAPER ( 150650 210630 ) L1M1_PR_R
       NEW met1 ( 131790 183770 ) M1M2_PR_R

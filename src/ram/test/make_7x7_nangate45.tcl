@@ -21,10 +21,8 @@ generate_ram \
   -mask_size 7 \
   -word_size 7 \
   -num_words 7 \
-  -read_ports 1 \
+  -rw_ports 1 \
   -storage_cell DFF_X1 \
-  -power_pin VDD \
-  -ground_pin VSS \
   -routing_layer {metal1 0.08} \
   -ver_layer {metal4 0.14 9} \
   -hor_layer {metal3 0.08 8} \
@@ -34,7 +32,7 @@ generate_ram \
   -write_behavioral_verilog $behavioral_file
 
 set lef_file [make_result_file make_7x7_nangate45.lef]
-write_abstract_lef $lef_file
+write_abstract_lef -bloat_occupied_layers $lef_file
 diff_files make_7x7_nangate45.lefok $lef_file
 
 set def_file [make_result_file make_7x7_nangate45.def]

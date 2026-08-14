@@ -49,7 +49,7 @@ struct Tree
 class SteinerTreeBuilder
 {
  public:
-  SteinerTreeBuilder(odb::dbDatabase* db, utl::Logger* logger);
+  explicit SteinerTreeBuilder(utl::Logger* logger);
   ~SteinerTreeBuilder();
 
   Tree makeSteinerTree(const std::vector<int>& x,
@@ -89,14 +89,13 @@ class SteinerTreeBuilder
  private:
   int computeHPWL(odb::dbNet* net);
 
-  static constexpr int flute_accuracy = 3;
+  static constexpr int kFluteAccuracy = 3;
   float alpha_;
   std::map<const odb::dbNet*, float> net_alpha_map_;
   std::pair<int, float> min_fanout_alpha_;
   std::pair<int, float> min_hpwl_alpha_;
 
   utl::Logger* logger_;
-  odb::dbDatabase* db_;
   std::unique_ptr<flt::Flute> flute_;
 };
 

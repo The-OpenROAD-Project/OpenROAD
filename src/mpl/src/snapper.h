@@ -6,6 +6,8 @@
 #include <map>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
+
 namespace odb {
 class dbInst;
 class dbITerm;
@@ -41,7 +43,7 @@ class Snapper
   // ordered by TrackGrid layer number
   using LayerDataList = std::vector<LayerData>;
   using TrackGridToPinListMap
-      = std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>>;
+      = odb::PtrMap<odb::dbTrackGrid, std::vector<odb::dbITerm*>>;
 
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);

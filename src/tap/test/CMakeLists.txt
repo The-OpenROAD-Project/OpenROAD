@@ -1,6 +1,8 @@
 or_integration_tests(
   "tap"
   TESTS
+    abutting_macros_step
+    abutting_macros_step_no_corners
     aes_gf180
     allow_one_site_gaps
     avoid_overlap
@@ -33,11 +35,14 @@ or_integration_tests(
     gcd_sky130
     gcd_sky130_separate
     invalid_cells
+    invalid_master_class
     jpeg_gf180
     multiple_calls
     no_endcap
     overlap_cover
     region1
+    single_row_macros
+    single_row_macros_offset
     symmetry
 )
 

@@ -18,6 +18,7 @@
 #include "debug_gui.h"
 #include "ir_network.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "psm/pdnsim.h"
@@ -64,8 +65,8 @@ class IRSolver
     std::set<ITermNode*, Node::Compare> unconnected_iterms;
   };
 
-  using UserVoltages = std::map<odb::dbNet*, std::map<sta::Scene*, Voltage>>;
-  using UserPowers = std::map<odb::dbInst*, std::map<sta::Scene*, Power>>;
+  using UserVoltages = odb::PtrMap<odb::dbNet, std::map<sta::Scene*, Voltage>>;
+  using UserPowers = odb::PtrMap<odb::dbInst, std::map<sta::Scene*, Power>>;
 
   IRSolver(odb::dbNet* net,
            bool floorplanning,
@@ -109,6 +110,12 @@ class IRSolver
 
   std::vector<sta::Scene*> getCorners() const;
   bool hasSolution(sta::Scene* corner) const;
+  // Report that no solve has produced data for this corner, and stop, so a
+  // report derived from one fails with a usable message instead of an
+  // out-of-range map lookup. Each writer tests the map it actually reads
+  // rather than hasSolution(): a grid solved with no powered instances has
+  // voltages and an empty current map, and voltages are still reportable.
+  void reportNoSolution(sta::Scene* corner) const;
   Voltage getNetVoltage(sta::Scene* corner) const;
   std::optional<Voltage> getVoltage(sta::Scene* corner, Node* node) const;
 
@@ -137,7 +144,7 @@ class IRSolver
   bool checkBTerms() const;
   bool checkShort() const;
 
-  std::map<odb::dbInst*, Power> getInstancePower(sta::Scene* corner) const;
+  odb::PtrMap<odb::dbInst, Power> getInstancePower(sta::Scene* corner) const;
   Voltage getPowerNetVoltage(sta::Scene* corner) const;
 
   Connection::ConnectionMap<Current> generateCurrentMap(

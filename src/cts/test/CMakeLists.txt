@@ -9,6 +9,7 @@ or_integration_tests(
     array_max_wl
     array_no_blockages
     array_repair_clock_nets
+    buffer_ports
     check_buffers
     check_buffers_blockages
     colocated_sinks
@@ -35,6 +36,7 @@ or_integration_tests(
     inverters
     lvt_lib
     max_cap
+    max_wl_two_sinks
     no_clocks
     no_sinks
     post_cts_opt
@@ -45,6 +47,7 @@ or_integration_tests(
     sink_clustering_collision
     skip_nets
     twice
+    virtual_clock_latency
 )
 
 add_executable(cts_unittest cts_unittest.cc)
@@ -68,4 +71,3 @@ gtest_discover_tests(cts_unittest
 )
 
 add_dependencies(build_and_test cts_unittest)
-

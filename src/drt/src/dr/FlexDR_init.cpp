@@ -13,6 +13,7 @@
 #include <set>
 #include <stack>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -48,6 +49,38 @@ using odb::dbTechLayerType;
 namespace drt {
 
 namespace bgi = boost::geometry::index;
+
+namespace {
+
+std::tuple<int, std::string, int> getBlockObjectSortKey(frBlockObject* obj)
+{
+  if (obj == nullptr) {
+    return {-1, "", -1};
+  }
+
+  switch (obj->typeId()) {
+    case frcNet: {
+      auto* net = static_cast<frNet*>(obj);
+      return {obj->typeId(), net->getName(), net->getId()};
+    }
+    case frcBTerm: {
+      auto* term = static_cast<frBTerm*>(obj);
+      return {obj->typeId(), term->getName(), term->getId()};
+    }
+    case frcInstTerm: {
+      auto* term = static_cast<frInstTerm*>(obj);
+      return {obj->typeId(), term->getName(), term->getId()};
+    }
+    case drcNet: {
+      auto* net = static_cast<drNet*>(obj);
+      return {obj->typeId(), net->getFrNet()->getName(), net->getId()};
+    }
+    default:
+      return {obj->typeId(), "", obj->getId()};
+  }
+}
+
+}  // namespace
 
 bool FlexDRWorker::isRoutePatchWire(const frPatchWire* pwire) const
 {
@@ -308,15 +341,10 @@ void FlexDRWorker::initNetObjs(
       odb::Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
       odb::Rect bbox = design_->getTopBlock()->getGCellBox(bpIdx);
       odb::Rect ebox = design_->getTopBlock()->getGCellBox(epIdx);
-      frLayerNum bNum = guide->getBeginLayerNum();
-      frLayerNum eNum = guide->getEndLayerNum();
       frRect rect;
       rect.setBBox({bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()});
-      for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
-           lNum += 2) {
-        rect.setLayerNum(lNum);
-        netGuides[guide->getNet()].push_back(rect);
-      }
+      rect.setLayerNum(guide->getLayerNum());
+      netGuides[guide->getNet()].push_back(rect);
     }
   }
 }
@@ -1883,13 +1911,13 @@ void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx& mi,
       break;
     }
     if (isAddPathCost) {
-      gridGraph_.setGridCost(x, y, z, dir);
-      gridGraph_.setGridCost(x, y, z, frDirEnum::D);
-      gridGraph_.setGridCost(x, y, z, frDirEnum::U);
+      gridGraph_.setApCost(x, y, z, dir);
+      gridGraph_.setApCost(x, y, z, frDirEnum::D);
+      gridGraph_.setApCost(x, y, z, frDirEnum::U);
     } else {
-      gridGraph_.resetGridCost(x, y, z, dir);
-      gridGraph_.resetGridCost(x, y, z, frDirEnum::D);
-      gridGraph_.resetGridCost(x, y, z, frDirEnum::U);
+      gridGraph_.resetApCost(x, y, z, dir);
+      gridGraph_.resetApCost(x, y, z, frDirEnum::D);
+      gridGraph_.resetApCost(x, y, z, frDirEnum::U);
     }
     switch (dir) {
       case frDirEnum::W:
@@ -1915,53 +1943,52 @@ void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx& mi,
 
 void FlexDRWorker::initMazeCost_ap_helper(drNet* net, const bool isAddPathCost)
 {
-  const int planarGridBloatNumWidth = 10;
+  const int planar_grid_bloat_num_width = 10;
   for (auto& pin : net->getPins()) {
     bool isStdCellPin = true;
     auto term = pin->getFrTerm();
-    if (term) {
-      switch (term->typeId()) {
-        case frcInstTerm: {  // macro cell or stdcell
-          const odb::dbMasterType masterType = static_cast<frInstTerm*>(term)
-                                                   ->getInst()
-                                                   ->getMaster()
-                                                   ->getMasterType();
-          if (masterType.isBlock() || masterType.isPad()
-              || masterType == odb::dbMasterType::RING) {
-            isStdCellPin = false;
-          }
-          break;
-        }
-        case frcBTerm: {  // IO
-          isStdCellPin = false;
-          break;
-        }
-        default:
-          break;
-      }
-    } else {
+    if (!term) {
       continue;
+    }
+
+    switch (term->typeId()) {
+      case frcInstTerm: {  // macro cell or stdcell
+        const odb::dbMasterType masterType = static_cast<frInstTerm*>(term)
+                                                 ->getInst()
+                                                 ->getMaster()
+                                                 ->getMasterType();
+        if (masterType.isBlock() || masterType.isPad()
+            || masterType == odb::dbMasterType::RING) {
+          isStdCellPin = false;
+        }
+        break;
+      }
+      case frcBTerm: {  // IO
+        isStdCellPin = false;
+        break;
+      }
+      default:
+        break;
     }
 
     bool hasUpperOnTrackAP = false;
     if (isStdCellPin) {
       for (auto& ap : pin->getAccessPatterns()) {
         const frLayerNum lNum = ap->getBeginLayerNum();
-        if (ap->hasValidAccess(frDirEnum::U)) {
-          if (lNum + 2 > getTech()->getTopLayerNum()) {
-            continue;
-          }
-          if (getTech()->getLayer(lNum + 2)->isHorizontal()
-              && ap->isOnTrack(true)) {
-            hasUpperOnTrackAP = true;
-            break;
-          }
-          if (getTech()->getLayer(lNum + 2)->getDir()
-                  == dbTechLayerDir::VERTICAL
-              && ap->isOnTrack(false)) {
-            hasUpperOnTrackAP = true;
-            break;
-          }
+        if (!ap->hasValidAccess(frDirEnum::U)) {
+          continue;
+        }
+        if (lNum + 2 > getTech()->getTopLayerNum()) {
+          continue;
+        }
+        const frLayer* upper_layer = getTech()->getLayer(lNum + 2);
+        if (upper_layer->isHorizontal() && ap->isOnTrack(true)) {
+          hasUpperOnTrackAP = true;
+          break;
+        }
+        if (upper_layer->isVertical() && ap->isOnTrack(false)) {
+          hasUpperOnTrackAP = true;
+          break;
         }
       }
     }
@@ -1970,58 +1997,47 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, const bool isAddPathCost)
       const FlexMazeIdx mi = ap->getMazeIdx();
       const frLayerNum lNum = ap->getBeginLayerNum();
       const frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
-      if (ap->hasValidAccess(frDirEnum::U)) {
-        if (lNum + 2 <= getTech()->getTopLayerNum()) {
-          const auto upperDefaultWidth
-              = getTech()->getLayer(lNum + 2)->getWidth();
-          if (getTech()->getLayer(lNum + 2)->getDir()
-                  == dbTechLayerDir::HORIZONTAL
-              && !ap->isOnTrack(true)) {
-            if (!hasUpperOnTrackAP) {
-              const auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
-              initMazeCost_ap_planarGrid_helper(
-                  upperMi,
-                  frDirEnum::W,
-                  planarGridBloatNumWidth * upperDefaultWidth,
-                  isAddPathCost);
-              initMazeCost_ap_planarGrid_helper(
-                  upperMi,
-                  frDirEnum::E,
-                  planarGridBloatNumWidth * upperDefaultWidth,
-                  isAddPathCost);
-            }
-          }
-          if (getTech()->getLayer(lNum + 2)->getDir()
-                  == dbTechLayerDir::VERTICAL
-              && !ap->isOnTrack(false)) {
-            if (!hasUpperOnTrackAP) {
-              const auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
-              initMazeCost_ap_planarGrid_helper(
-                  upperMi,
-                  frDirEnum::N,
-                  planarGridBloatNumWidth * upperDefaultWidth,
-                  isAddPathCost);
-              initMazeCost_ap_planarGrid_helper(
-                  upperMi,
-                  frDirEnum::S,
-                  planarGridBloatNumWidth * upperDefaultWidth,
-                  isAddPathCost);
-            }
-          }
-        }
-
-        if (isAddPathCost) {
-          gridGraph_.resetOverrideShapeCostVia(mi.x(), mi.y(), mi.z());
-        } else {
-          gridGraph_.setOverrideShapeCostVia(mi.x(), mi.y(), mi.z());
-        }
-      }
 
       if (!isStdCellPin) {
         for (const auto dir : frDirEnumPlanar) {
           initMazeCost_ap_planarGrid_helper(
-              mi, dir, planarGridBloatNumWidth * defaultWidth, isAddPathCost);
+              mi,
+              dir,
+              planar_grid_bloat_num_width * defaultWidth,
+              isAddPathCost);
         }
+      }
+
+      if (!ap->hasValidAccess(frDirEnum::U)) {
+        continue;
+      }
+
+      if (isAddPathCost) {
+        gridGraph_.resetOverrideShapeCostVia(mi.x(), mi.y(), mi.z());
+      } else {
+        gridGraph_.setOverrideShapeCostVia(mi.x(), mi.y(), mi.z());
+      }
+
+      if (lNum + 2 > getTech()->getTopLayerNum() || hasUpperOnTrackAP) {
+        continue;
+      }
+
+      const frLayer* upper_layer = getTech()->getLayer(lNum + 2);
+      const int planar_grid_bloat
+          = planar_grid_bloat_num_width * upper_layer->getWidth();
+      const auto upperMi = FlexMazeIdx(mi.x(), mi.y(), mi.z() + 1);
+
+      if (upper_layer->isHorizontal() && !ap->isOnTrack(true)) {
+        initMazeCost_ap_planarGrid_helper(
+            upperMi, frDirEnum::W, planar_grid_bloat, isAddPathCost);
+        initMazeCost_ap_planarGrid_helper(
+            upperMi, frDirEnum::E, planar_grid_bloat, isAddPathCost);
+      }
+      if (upper_layer->isVertical() && !ap->isOnTrack(false)) {
+        initMazeCost_ap_planarGrid_helper(
+            upperMi, frDirEnum::N, planar_grid_bloat, isAddPathCost);
+        initMazeCost_ap_planarGrid_helper(
+            upperMi, frDirEnum::S, planar_grid_bloat, isAddPathCost);
       }
     }
   }
@@ -2072,8 +2088,8 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
         continue;
       }
       // add history cost
-      // get points to mark up, markup up to "width" grid points to the left and
-      // right of pathseg
+      // get points to mark up, markup up to "width" grid points to the left
+      // and right of pathseg
       const frSegStyle segStyle = obj->getStyle();
       const frCoord width = segStyle.getWidth();
       odb::Rect bloatBox;
@@ -2088,9 +2104,9 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
       // the startpoint is
       for (int i = 0; i < 5; i++) {
         if (i == 4) {
-          std::cout
-              << "Warning: marker bloat 4x width but could not find two grids "
-                 "to add marker cost\n";
+          std::cout << "Warning: marker bloat 4x width but could not find "
+                       "two grids "
+                       "to add marker cost\n";
           std::cout << "  marker -- src: ";
           for (auto src : marker.getSrcs()) {
             if (src) {
@@ -2385,17 +2401,32 @@ void FlexDRWorker::route_queue_update_queue(
     const std::vector<RouteQueueEntry>& routes,
     std::queue<RouteQueueEntry>& rerouteQueue)
 {
-  for (auto& route : routes) {
+  auto sorted_routes = routes;
+  auto sorted_checks = checks;
+  auto compare_route_queue_entry
+      = [](const RouteQueueEntry& lhs, const RouteQueueEntry& rhs) {
+          return std::make_tuple(lhs.doRoute,
+                                 lhs.numReroute,
+                                 getBlockObjectSortKey(lhs.block),
+                                 getBlockObjectSortKey(lhs.checkingObj))
+                 < std::make_tuple(rhs.doRoute,
+                                   rhs.numReroute,
+                                   getBlockObjectSortKey(rhs.block),
+                                   getBlockObjectSortKey(rhs.checkingObj));
+        };
+  std::ranges::sort(sorted_routes, compare_route_queue_entry);
+  std::ranges::sort(sorted_checks, compare_route_queue_entry);
+  for (auto& route : sorted_routes) {
     rerouteQueue.push(route);
   }
-  for (auto& check : checks) {
+  for (auto& check : sorted_checks) {
     rerouteQueue.push(check);
   }
 }
 
 //*****************************************************************************************//
-// EXPONENTIAL QUEUE SIZE IF NOT MAKE AGGRESSORS AND VICTIMS UNIQUE FOR A SET OF
-// MARKERS!! // NET A --> PUSH ROUTE A --> PUSH CHECK A * 3 --> //
+// EXPONENTIAL QUEUE SIZE IF NOT MAKE AGGRESSORS AND VICTIMS UNIQUE FOR A SET
+// OF MARKERS!! // NET A --> PUSH ROUTE A --> PUSH CHECK A * 3 --> //
 //        |                                      | //
 //        ---------------------------------------- //
 //*****************************************************************************************//
@@ -2691,6 +2722,14 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     result.clear();
     if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::ROUTING) {
       isRoutingLayer = true;
+      // The grid graph need not span the full layer stack: TOP_ROUTING_LAYER
+      // can trim routing layers above it out of the grid. Skip fixed-shape
+      // costing on layers absent from the grid so getMazeZIdx / getLayerNum
+      // stay in range. No-op when the grid spans every routing layer.
+      if (layerNum < gridGraph_.getMinLayerNum()
+          || layerNum > gridGraph_.getMaxLayerNum()) {
+        continue;
+      }
       zIdx = gridGraph_.getMazeZIdx(layerNum);
     } else if (getTech()->getLayer(layerNum)->getType()
                == dbTechLayerType::CUT) {
@@ -2698,6 +2737,10 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
       if (getTech()->getBottomLayerNum() <= layerNum - 1
           && getTech()->getLayer(layerNum - 1)->getType()
                  == dbTechLayerType::ROUTING) {
+        if (layerNum - 1 < gridGraph_.getMinLayerNum()
+            || layerNum - 1 > gridGraph_.getMaxLayerNum()) {
+          continue;
+        }
         zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
       } else {
         continue;
@@ -2863,6 +2906,12 @@ void FlexDRWorker::initMazeCost_terms(
             if (getTech()->getLayer(layerNum)->getType()
                 == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
+              // Grid may not span the full stack (TOP_ROUTING_LAYER trim);
+              // skip layers absent from the grid. No-op when fully spanned.
+              if (layerNum < gridGraph_.getMinLayerNum()
+                  || layerNum > gridGraph_.getMaxLayerNum()) {
+                continue;
+              }
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
                        == dbTechLayerType::CUT) {
@@ -2870,6 +2919,10 @@ void FlexDRWorker::initMazeCost_terms(
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
                          == dbTechLayerType::ROUTING) {
+                if (layerNum - 1 < gridGraph_.getMinLayerNum()
+                    || layerNum - 1 > gridGraph_.getMaxLayerNum()) {
+                  continue;
+                }
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;
@@ -2940,6 +2993,12 @@ void FlexDRWorker::initMazeCost_terms(
             if (getTech()->getLayer(layerNum)->getType()
                 == dbTechLayerType::ROUTING) {
               isRoutingLayer = true;
+              // Grid may not span the full stack (TOP_ROUTING_LAYER trim);
+              // skip layers absent from the grid. No-op when fully spanned.
+              if (layerNum < gridGraph_.getMinLayerNum()
+                  || layerNum > gridGraph_.getMaxLayerNum()) {
+                continue;
+              }
               zIdx = gridGraph_.getMazeZIdx(layerNum);
             } else if (getTech()->getLayer(layerNum)->getType()
                        == dbTechLayerType::CUT) {
@@ -2947,6 +3006,10 @@ void FlexDRWorker::initMazeCost_terms(
               if (getTech()->getBottomLayerNum() <= layerNum - 1
                   && getTech()->getLayer(layerNum - 1)->getType()
                          == dbTechLayerType::ROUTING) {
+                if (layerNum - 1 < gridGraph_.getMinLayerNum()
+                    || layerNum - 1 > gridGraph_.getMaxLayerNum()) {
+                  continue;
+                }
                 zIdx = gridGraph_.getMazeZIdx(layerNum - 1);
               } else {
                 continue;

@@ -14,22 +14,22 @@
     },
     {
       "name": "scan_in_",
-      "type": "dbId<dbScanPin>",
+      "type": "dbId<_dbScanPin>",
       "flags": ["private"]
     },
     {
       "name": "scan_out_",
-      "type": "dbId<dbScanPin>",
+      "type": "dbId<_dbScanPin>",
       "flags": ["private"]
     },
     {
       "name": "scan_enable_",
-      "type": "dbId<dbScanPin>",
+      "type": "dbId<_dbScanPin>",
       "flags": ["private"]
     },
     {
       "name": "test_mode_",
-      "type": "dbId<dbScanPin>",
+      "type": "dbId<_dbScanPin>",
       "flags": ["private"]
     },
     {

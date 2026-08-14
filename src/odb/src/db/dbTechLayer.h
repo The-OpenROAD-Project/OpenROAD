@@ -70,7 +70,8 @@ struct dbTechLayerFlags
   bool right_way_on_grid_only_check_mask : 1;
   bool rect_only_except_non_core_pins : 1;
   uint32_t lef58_type : 5;
-  uint32_t spare_bits : 4;
+  bool is_backside : 1;
+  uint32_t spare_bits : 3;
 };
 
 class _dbTechLayer : public _dbObject
@@ -134,7 +135,7 @@ class _dbTechLayer : public _dbObject
   uint32_t wire_extension_;
   uint32_t number_;
   uint32_t rlevel_;
-  double area_;
+  int64_t area_;
   uint32_t thickness_;
   uint32_t max_width_;
   int min_width_;

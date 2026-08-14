@@ -42,7 +42,7 @@
 	},
 	{
       	    "name":"moditerms_",
-	    "type":"dbId<_dbModITerm >",
+	    "type":"dbId<_dbModITerm>",
 	    "flags":["no-get","no-set","no-serial"],	
 	    "parent":"dbBlock"
 	}

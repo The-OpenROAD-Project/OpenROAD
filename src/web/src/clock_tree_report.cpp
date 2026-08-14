@@ -36,17 +36,17 @@ namespace web {
 const char* ClockTreeNode::typeToString(Type t)
 {
   switch (t) {
-    case ROOT:
+    case kRoot:
       return "root";
-    case BUFFER:
+    case kBuffer:
       return "buffer";
-    case INVERTER:
+    case kInverter:
       return "inverter";
-    case CLOCK_GATE:
+    case kClockGate:
       return "clock_gate";
-    case REGISTER:
+    case kRegister:
       return "register";
-    case MACRO:
+    case kMacro:
       return "macro";
     default:
       return "unknown";
@@ -198,22 +198,22 @@ ClockTreeNode::Type classifyDriver(const sta::Pin* pin, sta::dbNetwork* network)
 {
   sta::Instance* inst = network->instance(pin);
   if (!inst) {
-    return ClockTreeNode::ROOT;
+    return ClockTreeNode::kRoot;
   }
   sta::LibertyCell* cell = network->libertyCell(inst);
   if (!cell) {
-    return ClockTreeNode::UNKNOWN;
+    return ClockTreeNode::kUnknown;
   }
   if (cell->isClockGate()) {
-    return ClockTreeNode::CLOCK_GATE;
+    return ClockTreeNode::kClockGate;
   }
   if (cell->isInverter()) {
-    return ClockTreeNode::INVERTER;
+    return ClockTreeNode::kInverter;
   }
   if (cell->isBuffer()) {
-    return ClockTreeNode::BUFFER;
+    return ClockTreeNode::kBuffer;
   }
-  return ClockTreeNode::UNKNOWN;
+  return ClockTreeNode::kUnknown;
 }
 
 struct ResolvedPin
@@ -234,16 +234,16 @@ ClockTreeNode::Type classifyLeaf(const sta::Pin* pin, sta::dbNetwork* network)
 {
   sta::Instance* inst = network->instance(pin);
   if (!inst) {
-    return ClockTreeNode::UNKNOWN;
+    return ClockTreeNode::kUnknown;
   }
   auto [iterm, bterm] = resolveStaPin(pin, network);
   if (iterm) {
     odb::dbInst* db_inst = iterm->getInst();
     if (db_inst->getMaster()->getType().isBlock()) {
-      return ClockTreeNode::MACRO;
+      return ClockTreeNode::kMacro;
     }
   }
-  return ClockTreeNode::REGISTER;
+  return ClockTreeNode::kRegister;
 }
 
 void getPinLocation(const sta::Pin* pin,
@@ -320,7 +320,7 @@ void flattenNode(const TreeNode* tree,
       root_node.id = static_cast<int>(data.nodes.size());
       root_node.parent_id = -1;
       root_node.name = clock_name;
-      root_node.type = ClockTreeNode::ROOT;
+      root_node.type = ClockTreeNode::kRoot;
       root_node.level = 0;
       root_node.fanout
           = static_cast<int>(tree->fanout.size() + tree->leaves.size());
@@ -339,7 +339,7 @@ void flattenNode(const TreeNode* tree,
       leaf.name = getInstName(leaf_pin, network);
       leaf.pin_name = getPinName(leaf_pin, network);
       leaf.type = classifyLeaf(leaf_pin, network);
-      leaf.arrival = static_cast<float>(leaf_arrival / time_scale);
+      leaf.arrival = leaf_arrival / time_scale;
       leaf.level = tree->level + 1;
       leaf.fanout = 0;
       getPinLocation(leaf_pin, network, leaf.dbu_x, leaf.dbu_y);
@@ -369,14 +369,14 @@ void flattenNode(const TreeNode* tree,
     // Position the node at its INPUT arrival (from parent's child_sinks)
     // and compute delay as the cell delay (output - input).
     // For the root (no parent), use the driver arrival directly.
-    node.arrival = static_cast<float>(arrival / time_scale);
+    node.arrival = arrival / time_scale;
     if (tree->parent) {
       sta::Instance* inst = network->instance(pin);
       if (inst) {
         for (const auto& [sink_pin, sink_arr] : tree->parent->child_sinks) {
           if (network->instance(sink_pin) == inst) {
-            node.arrival = static_cast<float>(sink_arr / time_scale);
-            node.delay = static_cast<float>((arrival - sink_arr) / time_scale);
+            node.arrival = sink_arr / time_scale;
+            node.delay = (arrival - sink_arr) / time_scale;
             break;
           }
         }
@@ -399,7 +399,7 @@ void flattenNode(const TreeNode* tree,
       leaf.name = getInstName(leaf_pin, network);
       leaf.pin_name = getPinName(leaf_pin, network);
       leaf.type = classifyLeaf(leaf_pin, network);
-      leaf.arrival = static_cast<float>(leaf_arrival / time_scale);
+      leaf.arrival = leaf_arrival / time_scale;
       leaf.level = tree->level + 1;
       leaf.fanout = 0;
       getPinLocation(leaf_pin, network, leaf.dbu_x, leaf.dbu_y);

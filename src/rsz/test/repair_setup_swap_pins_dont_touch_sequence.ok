@@ -1,0 +1,25 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: td1
+[INFO ODB-0252]     Updated 9 pins.
+[INFO ODB-0253]     Updated 4 components.
+[INFO ODB-0254]     Updated 11 nets and 13 connections.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        11
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0100] Repair move sequence: SwapPinsMove 
+[INFO RSZ-0094] Found 2 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+       3* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+       4* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+       4* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.04
+tns max -0.046

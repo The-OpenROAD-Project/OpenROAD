@@ -18,10 +18,9 @@ genrule(
         "src/flt/etc/POST9.dat",
     ],
     outs = ["src/flt/etc/POST9.cpp"],
-    cmd = "$(execpath //etc:file_to_string) --inputs $(location src/flt/etc/POST9.dat) --output \"$@\" --varname post9 --namespace stt::flt",
-    tools = [
-        "//etc:file_to_string",
-    ],
+    cmd = "$(PYTHON3) $(execpath //etc:file_to_string.py) --inputs $(location src/flt/etc/POST9.dat) --output \"$@\" --varname post9 --namespace stt::flt",
+    toolchains = ["@rules_python//python:current_py_toolchain"],
+    tools = ["//etc:file_to_string.py"],
 )
 
 genrule(
@@ -30,10 +29,9 @@ genrule(
         "src/flt/etc/POWV9.dat",
     ],
     outs = ["src/flt/etc/POWV9.cpp"],
-    cmd = "$(execpath //etc:file_to_string) --inputs $(location src/flt/etc/POWV9.dat) --output \"$@\" --varname powv9 --namespace stt::flt",
-    tools = [
-        "//etc:file_to_string",
-    ],
+    cmd = "$(PYTHON3) $(execpath //etc:file_to_string.py) --inputs $(location src/flt/etc/POWV9.dat) --output \"$@\" --varname powv9 --namespace stt::flt",
+    toolchains = ["@rules_python//python:current_py_toolchain"],
+    tools = ["//etc:file_to_string.py"],
 )
 
 cc_library(
@@ -54,7 +52,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.heap",
         "@boost.multi_array",
@@ -85,9 +83,8 @@ cc_library(
         ":stt",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
-        "@boost.multi_array",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -142,5 +139,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/stt/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/stt/test:__pkg__",
+    ],
 )

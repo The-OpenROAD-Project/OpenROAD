@@ -14,23 +14,41 @@ cc_library(
     name = "private_hdrs",
     hdrs = [
         "src/AbstractSteinerRenderer.h",
-        "src/EstimateParasiticsCallBack.h",
         "src/MakeWireParasitics.h",
         "src/OdbCallBack.h",
         "src/SteinerRenderer.h",
     ],
+    includes = [
+        "src",
+    ],
     visibility = ["//visibility:private"],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/grt",
         "//src/grt:groute",
+        "//src/grt:route_pt",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
-    ],
+    ] + select({
+        "//:platform_cli": ["//src/gui"],
+        "//:platform_gui": ["//src/gui:gui_qt"],
+    }),
+)
+
+# Abstract service interface published through utl::ServiceRegistry.
+# Consumers depend only on this target, not on //src/est, which keeps
+# them free of the full est implementation surface.
+cc_library(
+    name = "parasitics_service",
+    hdrs = ["include/est/ParasiticsService.h"],
+    includes = ["include"],
 )
 
 cc_library(
     name = "est",
     srcs = [
         "src/EstimateParasitics.cpp",
-        "src/EstimateParasiticsCallBack.cpp",
         "src/MakeWireParasitics.cpp",
         "src/OdbCallBack.cpp",
         "src/SteinerTree.cpp",
@@ -43,19 +61,17 @@ cc_library(
         "include",
     ],
     deps = [
+        ":parasitics_service",
         ":private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/grt:groute",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
-        "@boost.container_hash",
-        "@boost.multi_array",
-        "@spdlog",
     ],
 )
 
@@ -82,18 +98,12 @@ cc_library(
         ":est",
         ":private_hdrs",
         "//:ord",
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/grt",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
-        "//src/stt",
         "//src/utl",
-        "@boost.container_hash",
-        "@boost.multi_array",
         "@boost.stacktrace",
-        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )

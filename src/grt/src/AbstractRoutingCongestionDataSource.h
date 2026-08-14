@@ -10,8 +10,7 @@ class AbstractRoutingCongestionDataSource
  public:
   virtual ~AbstractRoutingCongestionDataSource() = default;
 
-  virtual void registerHeatMap() = 0;
-  virtual void update() = 0;
+  virtual void invalidate() = 0;
 };
 
 }  // namespace grt

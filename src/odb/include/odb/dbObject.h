@@ -58,17 +58,20 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin DbObjectType
   dbAccessPointObj,
+  dbAlignmentMarkerRuleObj,
   dbBusPortObj,
   dbCellEdgeSpacingObj,
   dbChipObj,
   dbChipBumpObj,
   dbChipBumpInstObj,
+  dbChipCapNodeObj,
   dbChipConnObj,
   dbChipInstObj,
   dbChipNetObj,
   dbChipPathObj,
   dbChipRegionObj,
   dbChipRegionInstObj,
+  dbChipRSegObj,
   dbDatabaseObj,
   dbDftObj,
   dbGCellGridObj,
@@ -126,6 +129,11 @@ enum dbObjectType
   dbTechLayerVoltageSpacingObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
+  dbUnfoldedChipBumpInstObj,
+  dbUnfoldedChipConnObj,
+  dbUnfoldedChipInstObj,
+  dbUnfoldedChipNetObj,
+  dbUnfoldedChipRegionInstObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

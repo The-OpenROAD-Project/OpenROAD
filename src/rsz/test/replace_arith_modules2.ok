@@ -14,11 +14,11 @@
 number instances in verilog is 39324
 wns max -85.02
 tns max -174555.69
-replace_arith_modules -path_count 100 -target setup -slack_threshold 0.0
+replace_arith_modules -path_count 10 -target setup -slack_threshold 0.0
 [INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
-[INFO RSZ-0152] Analyzing 100 critical paths with slack < 0.00
+[INFO RSZ-0152] Analyzing 10 critical paths with slack < 0.00
 [INFO RSZ-0153] Identified 3787 violating endpoints
-[INFO RSZ-0154] Identified 64 critical arithmetic instances
+[INFO RSZ-0154] Identified 10 critical arithmetic instances
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
@@ -29,134 +29,6 @@ replace_arith_modules -path_count 100 -target setup -slack_threshold 0.0
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO RSZ-0160] 64 arithmetic instances have swapped to improve 'setup' target
-wns max -50.87
-tns max -109842.09
-[WARNING ORD-2043] SanityCheck: Module 'ALU_20_0_25_0_25_unused_CO_X_BRENT_KUNG' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_20_0_25_0_25_unused_CO_X_KOGGE_STONE' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_20_0_25_0_25_unused_CO_X_SKLANSKY' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_22_0_22_0_22_unused_CO_X_BRENT_KUNG' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_22_0_22_0_22_unused_CO_X_KOGGE_STONE' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_22_0_22_0_22_unused_CO_X_SKLANSKY' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_25_0_20_0_25_unused_CO_X_BRENT_KUNG' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_25_0_20_0_25_unused_CO_X_KOGGE_STONE' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'ALU_25_0_20_0_25_unused_CO_X_SKLANSKY' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BASE' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_1' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_2' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_3' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_4' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_5' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_6' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_7' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_8' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_9' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_10' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_11' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_12' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_13' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_14' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_15' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_16' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_17' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_18' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_19' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_20' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_21' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_22' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_23' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_24' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_25' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_26' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_27' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_28' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_29' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_30' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_31' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_32' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_33' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_34' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_35' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_36' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_37' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_38' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_39' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_40' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_41' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_42' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_43' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_44' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_45' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_46' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_47' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_48' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_49' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_50' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_51' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_52' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_53' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_54' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_55' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_56' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_57' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_58' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_59' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_60' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_61' is defined but never instantiated.
-[WARNING ORD-2043] SanityCheck: Module 'MACC_14'10001011010100_19_BOOTH_booth_62' is defined but never instantiated.
+[INFO RSZ-0160] 10 arithmetic instances have swapped to improve 'setup' target
+wns max -74.50
+tns max -163086.14

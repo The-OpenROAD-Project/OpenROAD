@@ -231,7 +231,8 @@ describe('TclCompleter', () => {
             completer._showPopup(['place_cell', 'place_design'], 0, 3);
             completer._selectedIndex = 1;
             completer._acceptCompletion();
-            assert.equal(input.value, 'place_design');
+            // readline-style: trailing space after the accepted completion.
+            assert.equal(input.value, 'place_design ');
         });
 
         it('preserves text after cursor', () => {
@@ -247,7 +248,203 @@ describe('TclCompleter', () => {
             completer._selectedIndex = 0;
             const handled = completer.handleKeyDown(makeKeyEvent('Enter'));
             assert.ok(handled);
-            assert.equal(input.value, 'place_cell');
+            // readline-style: trailing space after the accepted completion.
+            assert.equal(input.value, 'place_cell ');
+        });
+    });
+
+    describe('_advanceToCommonPrefix', () => {
+        it('advances buffer to LCP and returns true', () => {
+            input.value = 'pl';
+            input.setSelectionRange(2, 2);
+            completer._items = ['place_pins', 'place_pads', 'place_cell'];
+            completer._replaceStart = 0;
+            completer._replaceEnd = 2;
+            const advanced = completer._advanceToCommonPrefix();
+            assert.equal(advanced, true);
+            assert.equal(input.value, 'place_');
+            assert.equal(completer._replaceEnd, 6);
+        });
+
+        it('returns false when no further common prefix', () => {
+            input.value = 'place_';
+            completer._items = ['place_pins', 'place_pads', 'place_cell'];
+            completer._replaceStart = 0;
+            completer._replaceEnd = 6;
+            const advanced = completer._advanceToCommonPrefix();
+            assert.equal(advanced, false);
+            assert.equal(input.value, 'place_');
+        });
+
+        it('returns false with fewer than two items', () => {
+            input.value = 'pl';
+            completer._items = ['place_design'];
+            completer._replaceStart = 0;
+            completer._replaceEnd = 2;
+            assert.equal(completer._advanceToCommonPrefix(), false);
+            assert.equal(input.value, 'pl');
+        });
+    });
+
+    describe('_tabAccept (popup populated)', () => {
+        it('inserts unique candidate and hides popup', () => {
+            input.value = 'pla';
+            completer._showPopup(['place_design'], 0, 3);
+            // _showPopup hides on exact match; force the populated state.
+            completer._items = ['place_design'];
+            completer._replaceStart = 0;
+            completer._replaceEnd = 3;
+            completer._popup.style.display = 'block';
+            completer._tabAccept();
+            assert.equal(input.value, 'place_design ');
+            assert.equal(completer._popup.style.display, 'none');
+        });
+
+        it('advances to LCP with multiple items, popup stays', () => {
+            input.value = 'pl';
+            completer._showPopup(['place_pins', 'place_pads', 'place_cell'], 0, 2);
+            completer._tabAccept();
+            assert.equal(input.value, 'place_');
+            assert.notEqual(completer._popup.style.display, 'none');
+        });
+
+        it('no LCP advance leaves popup and buffer unchanged', () => {
+            input.value = 'place_';
+            completer._showPopup(['place_pins', 'place_pads', 'place_cell'], 0, 6);
+            completer._tabAccept();
+            assert.equal(input.value, 'place_');
+            assert.notEqual(completer._popup.style.display, 'none');
+        });
+    });
+
+    describe('_tabComplete (no popup yet)', () => {
+        it('inserts unique candidate from server', async () => {
+            ws.onRequest((msg) => ({
+                completions: ['read_lef'],
+                mode: 'commands',
+                prefix: 'read_l',
+                replace_start: 0,
+                replace_end: 6,
+            }));
+            input.value = 'read_l';
+            input.setSelectionRange(6, 6);
+            completer._tabComplete(input.value, 6);
+            await new Promise(r => setTimeout(r, 10));
+            assert.equal(input.value, 'read_lef ');
+            assert.equal(completer._popup.style.display, 'none');
+        });
+
+        it('LCP-advances on multiple candidates and shows popup', async () => {
+            ws.onRequest((msg) => ({
+                completions: ['place_pins', 'place_pads', 'place_cell'],
+                mode: 'commands',
+                prefix: 'pl',
+                replace_start: 0,
+                replace_end: 2,
+            }));
+            input.value = 'pl';
+            input.setSelectionRange(2, 2);
+            completer._tabComplete(input.value, 2);
+            await new Promise(r => setTimeout(r, 10));
+            assert.equal(input.value, 'place_');
+            assert.notEqual(completer._popup.style.display, 'none');
+        });
+
+        it('empty result hides popup', async () => {
+            ws.onRequest(() => ({
+                completions: [],
+                mode: 'commands',
+                prefix: 'zzzz',
+                replace_start: 0,
+                replace_end: 4,
+            }));
+            input.value = 'zzzz';
+            input.setSelectionRange(4, 4);
+            completer._tabComplete(input.value, 4);
+            await new Promise(r => setTimeout(r, 10));
+            assert.equal(completer._popup.style.display, 'none');
+            assert.equal(input.value, 'zzzz');
+        });
+    });
+
+    describe('trailing-space on accept', () => {
+        it('appends space after a unique command', () => {
+            input.value = 'pla';
+            completer._items = ['place_design'];
+            completer._replaceStart = 0;
+            completer._replaceEnd = 3;
+            completer._selectedIndex = 0;
+            completer._acceptCompletion();
+            assert.equal(input.value, 'place_design ');
+        });
+
+        it('does not append space when candidate ends in /', () => {
+            input.value = 'fo';
+            completer._items = ['foo/'];
+            completer._replaceStart = 0;
+            completer._replaceEnd = 2;
+            completer._selectedIndex = 0;
+            completer._acceptCompletion();
+            assert.equal(input.value, 'foo/');
+        });
+
+        it('does not double-space when next char is already whitespace', () => {
+            input.value = 'pla -verbose';
+            completer._items = ['place_design'];
+            completer._replaceStart = 0;
+            completer._replaceEnd = 3;
+            completer._selectedIndex = 0;
+            completer._acceptCompletion();
+            assert.equal(input.value, 'place_design -verbose');
+        });
+    });
+
+    describe('argument-position routing', () => {
+        it('TAB at argument position queries the server even with cache', async () => {
+            completer._commandCache = ['read_lef', 'read_def', 'place_design'];
+            let saw_request = false;
+            ws.onRequest((msg) => {
+                if (msg.type === 'tcl_complete'
+                    && msg.line === 'read_lef '
+                    && msg.cursor_pos === 9) {
+                    saw_request = true;
+                    return {
+                        completions: ['ord_tclsh_completion.tcl', 'helpers.tcl'],
+                        mode: 'files',
+                        prefix: '',
+                        replace_start: 9,
+                        replace_end: 9,
+                    };
+                }
+                return { completions: [], mode: 'commands', prefix: '',
+                         replace_start: 0, replace_end: 0 };
+            });
+            input.value = 'read_lef ';
+            input.setSelectionRange(9, 9);
+            completer.handleKeyDown(makeKeyEvent('Tab'));
+            await new Promise(r => setTimeout(r, 10));
+            assert.ok(saw_request,
+                'argument-position TAB must round-trip to the server');
+        });
+
+        it('TAB at command position uses cache (no server request)', async () => {
+            // Three place_* with diverging next chars → LCP is 'place_'.
+            completer._commandCache
+                = ['place_pins', 'place_design', 'place_cell', 'route'];
+            let saw_request = false;
+            ws.onRequest(() => {
+                saw_request = true;
+                return { completions: [], mode: 'commands', prefix: '',
+                         replace_start: 0, replace_end: 0 };
+            });
+            input.value = 'pl';
+            input.setSelectionRange(2, 2);
+            completer.handleKeyDown(makeKeyEvent('Tab'));
+            await new Promise(r => setTimeout(r, 10));
+            assert.equal(saw_request, false,
+                'command-position TAB should be served by the local cache');
+            // And the buffer should have advanced to the LCP of the cache.
+            assert.equal(input.value, 'place_');
         });
     });
 

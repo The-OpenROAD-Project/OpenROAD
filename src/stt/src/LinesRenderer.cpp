@@ -8,7 +8,7 @@
 
 namespace stt {
 
-LinesRenderer* LinesRenderer::lines_renderer = nullptr;
+LinesRenderer* LinesRenderer::lines_renderer_ = nullptr;
 
 void LinesRenderer::highlight(const LineSegments& lines,
                               const gui::Painter::Color& color)
@@ -30,9 +30,9 @@ void LinesRenderer::drawObjects(gui::Painter& painter)
 void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
 {
   if (gui::Gui::enabled()) {
-    if (LinesRenderer::lines_renderer == nullptr) {
-      LinesRenderer::lines_renderer = new LinesRenderer();
-      gui->registerRenderer(LinesRenderer::lines_renderer);
+    if (LinesRenderer::lines_renderer_ == nullptr) {
+      LinesRenderer::lines_renderer_ = new LinesRenderer();
+      gui->registerRenderer(LinesRenderer::lines_renderer_);
     }
     LinesRenderer::LineSegments lines;
     for (int i = 0; i < tree.branchCount(); i++) {
@@ -44,7 +44,7 @@ void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
       const int y2 = neighbor.y;
       lines.emplace_back(odb::Point(x1, y1), odb::Point(x2, y2));
     }
-    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::kRed);
+    LinesRenderer::lines_renderer_->highlight(lines, gui::Painter::kRed);
   }
 }
 

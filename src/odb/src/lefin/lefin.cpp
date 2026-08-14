@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
@@ -23,6 +24,8 @@
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
+#include "lefiLayer.hpp"
+#include "lefiMisc.hpp"
 #include "lefiUtil.hpp"
 #include "lefrReader.hpp"
 #include "odb/db.h"
@@ -125,6 +128,7 @@ static void create_path_box(dbObject* obj,
                             dbTechLayer* layer,
                             int dw,
                             int designRuleWidth,
+                            int minSpacing,
                             int prev_x,
                             int prev_y,
                             int cur_x,
@@ -145,6 +149,7 @@ static void create_path_box(dbObject* obj,
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
     }
     box->setDesignRuleWidth(designRuleWidth);
+    box->setMinSpacing(minSpacing);
   } else if (cur_x == prev_x) {  // vert. path
     x1 = cur_x - dw;
     x2 = cur_x + dw;
@@ -163,6 +168,7 @@ static void create_path_box(dbObject* obj,
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
     }
     box->setDesignRuleWidth(designRuleWidth);
+    box->setMinSpacing(minSpacing);
   } else if (cur_y == prev_y) {  // horiz. path
     y1 = cur_y - dw;
     y2 = cur_y + dw;
@@ -181,6 +187,7 @@ static void create_path_box(dbObject* obj,
       box = dbBox::create((dbMaster*) obj, layer, x1, y1, x2, y2);
     }
     box->setDesignRuleWidth(designRuleWidth);
+    box->setMinSpacing(minSpacing);
   } else {
     logger->warn(utl::ODB, 175, "illegal: non-orthogonal-path at Pin");
   }
@@ -197,6 +204,7 @@ bool lefinReader::addGeoms(dbObject* object,
   dbTechLayer* layer = nullptr;
   int dw = 0;
   int designRuleWidth = -1;
+  int minSpacing = -1;
 
   for (int i = 0; i < count; i++) {
     master_modified_ = true;
@@ -215,6 +223,7 @@ bool lefinReader::addGeoms(dbObject* object,
 
         dw = dbdist(layer->getWidth()) >> 1;
         designRuleWidth = -1;
+        minSpacing = -1;
         break;
       }
       case LefParser::lefiGeomWidthE: {
@@ -227,8 +236,17 @@ bool lefinReader::addGeoms(dbObject* object,
         if (path->numPoints == 1) {
           int x = dbdist(path->x[0]);
           int y = dbdist(path->y[0]);
-          create_path_box(
-              object, is_pin, layer, dw, designRuleWidth, x, y, x, y, logger_);
+          create_path_box(object,
+                          is_pin,
+                          layer,
+                          dw,
+                          designRuleWidth,
+                          minSpacing,
+                          x,
+                          y,
+                          x,
+                          y,
+                          logger_);
           break;
         }
 
@@ -244,6 +262,7 @@ bool lefinReader::addGeoms(dbObject* object,
                           layer,
                           dw,
                           designRuleWidth,
+                          minSpacing,
                           prev_x,
                           prev_y,
                           cur_x,
@@ -282,6 +301,7 @@ bool lefinReader::addGeoms(dbObject* object,
                               layer,
                               dw,
                               designRuleWidth,
+                              minSpacing,
                               x,
                               y,
                               x,
@@ -304,6 +324,7 @@ bool lefinReader::addGeoms(dbObject* object,
                               layer,
                               dw,
                               designRuleWidth,
+                              minSpacing,
                               cur_x,
                               cur_y,
                               prev_x,
@@ -330,6 +351,7 @@ bool lefinReader::addGeoms(dbObject* object,
           box = dbBox::create((dbMaster*) object, layer, x1, y1, x2, y2);
         }
         box->setDesignRuleWidth(designRuleWidth);
+        box->setMinSpacing(minSpacing);
         break;
       }
       case LefParser::lefiGeomRectIterE: {
@@ -359,6 +381,7 @@ bool lefinReader::addGeoms(dbObject* object,
                                   y2 + dy);
             }
             box->setDesignRuleWidth(designRuleWidth);
+            box->setMinSpacing(minSpacing);
           }
         }
         break;
@@ -450,10 +473,13 @@ bool lefinReader::addGeoms(dbObject* object,
         designRuleWidth = dbdist(geometry->getLayerRuleWidth(i));
         break;
       }
+      case LefParser::lefiGeomLayerMinSpacingE: {
+        minSpacing = dbdist(geometry->getLayerMinSpacing(i));
+        break;
+      }
       // FIXME??
       case LefParser::lefiGeomUnknown:  // error
       case LefParser::lefiGeomLayerExceptPgNetE:
-      case LefParser::lefiGeomLayerMinSpacingE:
       case LefParser::lefiGeomClassE:
 
       default:
@@ -677,6 +703,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_RECTONLY")) {
         valid
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_BACKSIDE")) {
+        valid
+            = lefTechLayerBacksideParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
@@ -739,6 +768,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
         valid = parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_BACKSIDE")) {
+        valid
+            = lefTechLayerBacksideParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_KEEPOUTZONE")) {
         KeepOutZoneParser parser(l, this);
         parser.parse(layer->propValue(iii));
@@ -831,7 +863,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       cur_rule->setSpacingNotchLengthValid(layer->hasSpacingNotchLength(j));
 
       if (layer->hasSpacingArea(j)) {
-        cur_rule->setCutArea(dbdist(layer->spacingArea(j)));
+        cur_rule->setCutArea(dbarea(layer->spacingArea(j)));
       }
 
       if (layer->hasSpacingRange(j)) {
@@ -1123,7 +1155,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   }
 
   if (layer->hasArea()) {
-    l->setArea(layer->area());
+    l->setArea(dbarea(layer->area()));
   }
 
   if (layer->hasThickness()) {
@@ -1253,6 +1285,8 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
       valid = lefMacroClassTypeParser::parse(macro->propValue(i), master_);
     } else if (!strcmp(macro->propName(i), "LEF58_EDGETYPE")) {
       lefMacroEdgeTypeParser(master_, this).parse(macro->propValue(i));
+    } else if (!strcmp(macro->propName(i), "LEF58_BACKSIDE_BRIDGE")) {
+      valid = lefMacroBacksideBridgeParser::parse(macro->propValue(i), master_);
     } else {
       dbStringProperty::create(
           master_, macro->propName(i), macro->propValue(i));
@@ -2592,6 +2626,11 @@ lefin::~lefin()
 int lefin::dbdist(double value)
 {
   return reader_->dbdist(value);
+}
+
+int64_t lefin::dbarea(double value)
+{
+  return reader_->dbarea(value);
 }
 
 dbTech* lefin::createTech(const char* name, const char* lef_file)

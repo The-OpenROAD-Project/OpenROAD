@@ -25,6 +25,7 @@
 #include "est/EstimateParasitics.h"
 #include "ir_network.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -124,18 +125,22 @@ bool IRSolver::check(bool check_bterms)
     return connected_.value();
   }
 
-  // set to true and unset if it failed
-  connected_ = true;
-  if (check_bterms && !checkBTerms()) {
-    reportMissingBTerm();
+  if (!network_->hasNodes()) {
     connected_ = false;
-  }
-  if (!checkOpen()) {
-    reportUnconnectedNodes();
-    connected_ = false;
-  }
-  if (!checkShort()) {
-    connected_ = false;
+  } else {
+    // set to true and unset if it failed
+    connected_ = true;
+    if (check_bterms && !checkBTerms()) {
+      reportMissingBTerm();
+      connected_ = false;
+    }
+    if (!checkOpen()) {
+      reportUnconnectedNodes();
+      connected_ = false;
+    }
+    if (!checkShort()) {
+      connected_ = false;
+    }
   }
 
   return connected_.value();
@@ -292,7 +297,7 @@ void IRSolver::reportUnconnectedNodes() const
         marker->addShape(node->getPoint());
       }
     }
-    std::map<odb::dbTechLayer*, IRNetwork::ShapeTree> shapes;
+    odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> shapes;
     odb::dbMarkerCategory* category
         = odb::dbMarkerCategory::create(net_category, "Unconnected shape");
 
@@ -338,7 +343,7 @@ void IRSolver::reportUnconnectedNodes() const
   }
 
   if (!results.unconnected_iterms.empty()) {
-    std::set<odb::dbInst*> insts;
+    odb::PtrSet<odb::dbInst> insts;
     for (const auto& node : results.unconnected_iterms) {
       insts.insert(node->getITerm()->getInst());
       logger_->warn(utl::PSM,
@@ -818,7 +823,7 @@ IRSolver::Power IRSolver::buildNodeCurrentMap(
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
   // Build power map
-  std::map<odb::dbInst*, Power> instance_powers;
+  odb::PtrMap<odb::dbInst, Power> instance_powers;
   const auto inst_nodes = network_->getInstanceNodeMapping();
   const Voltage power_voltage = getPowerNetVoltage(corner);
   if (power_voltage == 0) {
@@ -1001,6 +1006,14 @@ void IRSolver::solve(sta::Scene* corner,
     network_->construct();
   }
 
+  if (!network_->hasNodes()) {
+    voltages_.erase(corner);
+    currents_.erase(corner);
+    solution_voltages_.erase(corner);
+    solution_power_.erase(corner);
+    return;
+  }
+
   assertResistanceMap(corner);
 
   // Reset
@@ -1153,13 +1166,13 @@ void IRSolver::solve(sta::Scene* corner,
   solution_power_[corner] = total_power;
 }
 
-std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
+odb::PtrMap<odb::dbInst, IRSolver::Power> IRSolver::getInstancePower(
     sta::Scene* corner) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Power calculation: {}");
 
-  std::map<odb::dbInst*, IRSolver::Power> inst_power;
+  odb::PtrMap<odb::dbInst, IRSolver::Power> inst_power;
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
@@ -1335,6 +1348,16 @@ bool IRSolver::hasSolution(sta::Scene* corner) const
   return false;
 }
 
+void IRSolver::reportNoSolution(sta::Scene* corner) const
+{
+  logger_->error(utl::PSM,
+                 92,
+                 "No solution available for {} on corner {}. Run "
+                 "analyze_power_grid first.",
+                 net_->getName(),
+                 corner != nullptr ? corner->name() : "default");
+}
+
 IRSolver::Results IRSolver::getSolution(sta::Scene* corner) const
 {
   Results results;
@@ -1442,8 +1465,10 @@ void IRSolver::report(sta::Scene* corner) const
 
   logger_->metric(getMetricKey("design_powergrid__voltage__worst", corner),
                   results.worst_voltage);
-  logger_->metric(getMetricKey("design_powergrid__drop__average", corner),
+  logger_->metric(getMetricKey("design_powergrid__voltage__average", corner),
                   results.avg_voltage);
+  logger_->metric(getMetricKey("design_powergrid__drop__average", corner),
+                  results.avg_ir_drop);
   logger_->metric(getMetricKey("design_powergrid__drop__worst", corner),
                   results.worst_ir_drop);
 }
@@ -1492,6 +1517,10 @@ void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
     return;
   }
 
+  if (voltages_.find(corner) == voltages_.end()) {
+    reportNoSolution(corner);
+  }
+
   std::ofstream report(voltage_file);
   if (!report) {
     logger_->error(utl::PSM,
@@ -1532,6 +1561,12 @@ void IRSolver::writeEMFile(const std::string& em_file, sta::Scene* corner) const
     return;
   }
 
+  // generateCurrentMap() below derives per-connection current from the node
+  // voltages, so voltages are what this writer requires.
+  if (voltages_.find(corner) == voltages_.end()) {
+    reportNoSolution(corner);
+  }
+
   std::ofstream report(em_file);
   if (!report) {
     logger_->error(utl::PSM, 91, "Unable to open {} to write EM file", em_file);
@@ -1563,6 +1598,10 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
                               sta::Scene* corner,
                               const std::string& voltage_source_file) const
 {
+  if (currents_.find(corner) == currents_.end()) {
+    reportNoSolution(corner);
+  }
+
   std::ofstream spice(spice_file);
   if (!spice.is_open()) {
     logger_->error(
@@ -1593,7 +1632,13 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
   const auto& currents = currents_.at(corner);
   std::size_t current_number = 0;
   for (const auto& node : network_->getITermNodes()) {
-    const auto current = currents.at(node.get());
+    // The current map only holds nodes of instances that draw power, so an
+    // instance with none -- a filler, tap or decap -- has no entry at all.
+    const auto find_current = currents.find(node.get());
+    if (find_current == currents.end()) {
+      continue;
+    }
+    const auto current = find_current->second;
     if (std::abs(current) < kSpiceFileMinCurrent) {
       continue;
     }

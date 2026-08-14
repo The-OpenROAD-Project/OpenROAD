@@ -64,48 +64,14 @@ bool GRNet::isInsideLayerRange(int layer_index) const
          && layer_index <= layer_range_.max_layer;
 }
 
-void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
-{
-  if (auto it = pin_index_to_iterm_.find(pin_index);
-      it != pin_index_to_iterm_.end()) {
-    odb::dbITerm* iterm = it->second;
-    iterm_to_ap_[iterm] = ap;
-  } else if (auto it = pin_index_to_bterm_.find(pin_index);
-             it != pin_index_to_bterm_.end()) {
-    odb::dbBTerm* bterm = it->second;
-    bterm_to_ap_[bterm] = ap;
-  }
-}
-
-void GRNet::addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap)
-{
-  bterm_to_ap_[bterm] = ap;
-}
-
-void GRNet::addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap)
-{
-  iterm_to_ap_[iterm] = ap;
-}
-
 bool GRNet::isLocal() const
 {
-  PointT first_ap;
-
-  if (!iterm_to_ap_.empty()) {
-    first_ap = iterm_to_ap_.begin()->second.point;
-  } else if (!bterm_to_ap_.empty()) {
-    first_ap = bterm_to_ap_.begin()->second.point;
-  } else {
+  if (preferred_aps_.empty()) {
     return true;
   }
 
-  for (const auto& [_, ap] : iterm_to_ap_) {
-    if (ap.point != first_ap) {
-      return false;
-    }
-  }
-
-  for (const auto& [_, ap] : bterm_to_ap_) {
+  const PointT first_ap = preferred_aps_.begin()->second.point;
+  for (const auto& [_, ap] : preferred_aps_) {
     if (ap.point != first_ap) {
       return false;
     }

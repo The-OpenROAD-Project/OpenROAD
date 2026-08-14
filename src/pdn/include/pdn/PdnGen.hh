@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -18,23 +19,23 @@ namespace pdn {
 
 enum ExtensionMode
 {
-  CORE,
-  RINGS,
-  BOUNDARY,
-  FIXED
+  kCore,
+  kRings,
+  kBoundary,
+  kFixed
 };
 
 enum StartsWith
 {
-  GRID,
-  POWER,
-  GROUND
+  kGrid,
+  kPower,
+  kGround
 };
 
 enum PowerSwitchNetworkType
 {
-  STAR,
-  DAISY
+  kStar,
+  kDaisy
 };
 
 class VoltageDomain;
@@ -82,7 +83,8 @@ class PdnGen
 
   // Grids
   void buildGrids(bool trim);
-  std::vector<Grid*> findGrid(const std::string& name) const;
+  std::vector<Grid*> findGrid(const std::string& name,
+                              bool error = false) const;
   void makeCoreGrid(VoltageDomain* domain,
                     const std::string& name,
                     StartsWith starts_with,
@@ -102,6 +104,8 @@ class PdnGen
       bool default_grid,
       const std::vector<odb::dbTechLayer*>& generate_obstructions,
       bool is_bump);
+  void makeDummyInstanceGrid(VoltageDomain* domain, const std::string& name);
+  void removeDummyInstanceGrid(const std::string& name);
   void makeExistingGrid(
       const std::string& name,
       const std::vector<odb::dbTechLayer*>& generate_obstructions);
@@ -148,7 +152,8 @@ class PdnGen
       int max_rows,
       int max_columns,
       const std::vector<odb::dbTechLayer*>& ongrid,
-      const std::map<odb::dbTechLayer*, std::pair<int, bool>>& split_cuts,
+      const std::vector<odb::dbTechLayer*>& min_width_layers,
+      const odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>>& split_cuts,
       const std::string& dont_use_vias);
 
   void writeToDb(bool add_pins, const std::string& report_file = "") const;
@@ -161,10 +166,10 @@ class PdnGen
 
   void checkSetup() const;
 
-  void repairVias(const std::set<odb::dbNet*>& nets);
+  void repairVias(const odb::PtrSet<odb::dbNet>& nets);
 
   void createSrouteWires(const char* net,
-                         const char* outerNet,
+                         const char* outer_net,
                          odb::dbTechLayer* layer0,
                          odb::dbTechLayer* layer1,
                          int cut_pitch_x,
@@ -174,10 +179,11 @@ class PdnGen
                          int max_rows,
                          int max_columns,
                          const std::vector<odb::dbTechLayer*>& ongrid,
-                         const std::vector<int>& metalWidths,
+                         const std::vector<int>& metal_widths,
                          const std::vector<int>& metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
+  std::vector<Grid*> getGrids(bool exclude_dummy = false) const;
   PDNRenderer* getDebugRenderer() const { return debug_renderer_.get(); }
 
  private:
@@ -187,7 +193,6 @@ class PdnGen
 
   void checkDesign(odb::dbBlock* block) const;
 
-  std::vector<Grid*> getGrids() const;
   Grid* instanceGrid(odb::dbInst* inst) const;
 
   VoltageDomain* getCoreDomain() const;

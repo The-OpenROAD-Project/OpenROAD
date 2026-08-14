@@ -4,6 +4,7 @@
 #include "grt/Rudy.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <optional>
 #include <set>
@@ -11,6 +12,7 @@
 
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -114,7 +116,7 @@ void Rudy::getResourceReductions()
   }
 }
 
-void Rudy::calculateRudy(std::optional<std::set<odb::dbNet*>*> selection)
+void Rudy::calculateRudy(std::optional<odb::PtrSet<odb::dbNet>*> selection)
 {
   // Clear previous computation
   for (auto& grid_column : grid_) {
@@ -147,6 +149,9 @@ void Rudy::processNet(odb::dbNet* net)
 
 void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
 {
+  if (net_rect.isInverted()) {
+    return;
+  }
   const auto net_area = net_rect.area();
   if (net_area == 0) {
     // TODO: handle nets with 0 area from getTermBBox()

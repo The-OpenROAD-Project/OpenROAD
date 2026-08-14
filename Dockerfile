@@ -26,6 +26,9 @@ if echo "$fromImage" | grep -q "ubuntu"; then
 else
     echo "Skipping strip command as fromImage does not contain 'ubuntu'"
 fi
+if command -v apt-get >/dev/null 2>&1; then
+    rm -rf /var/lib/apt/lists/*
+fi
 rm -f /tmp/DependencyInstaller.sh
 EOF
 

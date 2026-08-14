@@ -19,10 +19,10 @@
 #include "db/obj/frMarker.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gc/FlexGC_impl.h"
-#include "global.h"
 #include "utl/Logger.h"
 
 namespace drt {

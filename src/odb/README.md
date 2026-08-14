@@ -179,6 +179,27 @@ set_ndr_rules
 | `values` | Single value (applied to all layers) or a list of `{layer value}` pairs. |
 | `isSpacing` | Boolean — `1` to set spacing, `0` to set width. |
 
+### Set Routing Auto-Taper
+
+This command controls the detailed router's auto-taper behavior on a per-net basis. By default the detailed router tapers non-default-rule (NDR, i.e. wide) nets down to minimum width near pin connections so that they fit the pin access geometry. For some nets (for example wide analog/pad traces) this
+tapering is undesirable and the net must keep its full NDR width all the way to the pin. The setting is stored on `dbNet` and honored by the detailed
+router. It only affects nets that have an NDR assigned.
+
+```tcl
+set_routing_auto_taper
+    (-net name | -all_clocks)
+    (-enable | -disable)
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Name of the net to mark. Mutually exclusive with `-all_clocks`. |
+| `-all_clocks` | Apply to all clock nets. Mutually exclusive with `-net`. |
+| `-disable` | Disable auto-taper for the selected net(s), keeping the full NDR width all the way to the pin. |
+| `-enable` | Enable auto-taper for the selected net(s), restoring the default behavior. Exactly one of `-enable` or `-disable` must be given. |
+
 ### Create Voltage Domain
 
 Description TBC.
@@ -441,6 +462,18 @@ create_obstruction
 | `effective_width` | (optional): Add an effective width to the obstruction.  |
 
 
+### Report 3DIC Summary
+
+Prints a structural summary of a 3DIC (3DBlox) design loaded via `read_3dbx`:
+the chiplet, top-level chip-net, 3D bond-region and bump-pad counts, plus each
+chip instance and the chiplet master it references. Useful as a post-read
+sanity check before cross-chiplet timing. Takes no arguments.
+
+```tcl
+report_3dic_summary
+```
+
+
 ## Example scripts
 
 After building successfully, run OpenDB Tcl shell using
@@ -464,6 +497,31 @@ This command checks if the IO pins of the design have a placement status of `PLA
 ```tcl
 all_pins_placed
 ```
+
+### Add 3DBlox Alignment Marker Rule
+
+This command registers a 3DBlox alignment marker rule between two cell masters. The 3DBlox checker uses these rules to verify that paired alignment marker instances on bonded chiplets are co-located and (optionally) match a relative orientation constraint.
+
+```tcl
+add_3dblox_alignment_marker_rule
+    [-lib_a lib_a]
+    -master_a master_a
+    [-lib_b lib_b]
+    -master_b master_b
+    [-tolerance tolerance_um]
+    [-relative_orientations relative_orientations]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-lib_a` | Optional library to scope `-master_a` lookup. Required only when the master name is ambiguous across libraries. |
+| `-master_a` | Cell master used as side A of the alignment pair. |
+| `-lib_b` | Optional library to scope `-master_b` lookup. |
+| `-master_b` | Cell master used as side B of the alignment pair. |
+| `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
+| `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
 
 ## Regression tests
 
@@ -531,13 +589,6 @@ batch mode operation (route the whole chip, extract the whole chip, run
 DRC on the whole chip).
 
 ## Limitations
-
-## FAQs
-
-Check out
-[GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+odb+in%3Atitle)
-about this tool.
-
 
 ## LICENSE
 

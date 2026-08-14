@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+=== initial ===
+worst slack max -0.09
+tns max -2.35
+=== pass 1 ===
+[INFO SYN-0064] acd_resynth: applied 33 of 71 substitutions, 61 gates out
+worst slack max -0.07
+tns max -1.46
+=== pass 2 ===
+[INFO SYN-0064] acd_resynth: applied 9 of 62 substitutions, 23 gates out
+worst slack max -0.06
+tns max -1.19

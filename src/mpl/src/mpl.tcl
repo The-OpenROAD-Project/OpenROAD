@@ -29,6 +29,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
+                                          -use_full_halo \
                                         }
 proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
@@ -43,7 +44,7 @@ proc rtl_macro_placer { args } {
          -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-keep_clustering_data}
+    flags {-keep_clustering_data -use_full_halo}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -109,7 +110,7 @@ proc rtl_macro_placer { args } {
 
   if { [info exists keys(-halo_width)] || [info exists keys(-halo_height)] } {
     utl::warn MPL 74 "-halo_width/-halo_height are deprecated, use\
-                      the set_macro_default_halo command instead."
+                      the set_macro_base_halo command instead."
     set halo_width 0.0
     set halo_height 0.0
 
@@ -125,7 +126,7 @@ proc rtl_macro_placer { args } {
       }
     }
 
-    mpl::set_default_halo $halo_width $halo_height $halo_width $halo_height
+    mpl::set_base_halo $halo_width $halo_height $halo_width $halo_height
   }
 
   if { [info exists keys(-fence_lx)] } {
@@ -206,7 +207,8 @@ proc rtl_macro_placer { args } {
       $target_util \
       $min_ar \
       $report_directory \
-      [info exists flags(-keep_clustering_data)]]
+      [info exists flags(-keep_clustering_data)] \
+      [info exists flags(-use_full_halo)]]
   } {
     return false
   }
@@ -298,13 +300,19 @@ proc set_macro_guidance_region { args } {
   mpl::add_guidance_region $macro $x1 $y1 $x2 $y2
 }
 
-sta::define_cmd_args "set_macro_default_halo" { halo }
-proc set_macro_default_halo { args } {
-  sta::parse_key_args "set_macro_default_halo" args \
+sta::define_cmd_args "set_macro_base_halo" { halo }
+proc set_macro_base_halo { args } {
+  sta::parse_key_args "set_macro_base_halo" args \
     keys {} flags {}
 
   lassign [mpl::parse_halo $args] left bottom right top
-  mpl::set_default_halo $left $bottom $right $top
+  mpl::set_base_halo $left $bottom $right $top
+}
+
+proc set_macro_default_halo { args } {
+  utl::warn MPL 75 "set_macro_default_halo is deprecated, use\
+                    set_macro_base_halo instead."
+  set_macro_base_halo {*}$args
 }
 
 sta::define_cmd_args "set_macro_halo" { -macro_name macro_name \
@@ -331,6 +339,20 @@ proc set_macro_halo { args } {
 
   lassign [mpl::parse_halo $halo] left bottom right top
   mpl::set_macro_halo $macro $left $bottom $right $top
+}
+
+sta::define_cmd_args "block_macro_channels" {}
+proc block_macro_channels { args } {
+  sta::parse_key_args "block_macro_channels" args \
+    keys {} flags {}
+
+  sta::check_argc_eq0 "block_macro_channels" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error MPL 77 "Could not block macro channels. No block found."
+  }
+
+  mpl::block_macro_channels
 }
 
 namespace eval mpl {

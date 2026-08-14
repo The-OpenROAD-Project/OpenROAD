@@ -8,6 +8,8 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "abutting_macros_step",
+    "abutting_macros_step_no_corners",
     "aes_gf180",
     "allow_one_site_gaps",
     "avoid_overlap",
@@ -40,11 +42,14 @@ COMPULSORY_TESTS = [
     "gcd_sky130",
     "gcd_sky130_separate",
     "invalid_cells",
+    "invalid_master_class",
     "jpeg_gf180",
     "multiple_calls",
     "no_endcap",
     "overlap_cover",
     "region1",
+    "single_row_macros",
+    "single_row_macros_offset",
     "symmetry",
 ]
 
@@ -145,6 +150,8 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "abutting_macros_step": [],
+            "abutting_macros_step_no_corners": ["abutting_macros_step.def"],
             "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
             "cut_rows_min_step_bottom_left": ["cut_rows_min_step.def"],
@@ -159,6 +166,8 @@ filegroup(
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
             "overlap_cover": ["sky130hs_data/cover.lef"],
+            "single_row_macros": [],
+            "single_row_macros_offset": [],
         }.get(
             test_name,
             ["boundary_macros.def"],

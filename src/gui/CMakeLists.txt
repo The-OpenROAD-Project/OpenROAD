@@ -113,7 +113,6 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/colorGenerator.cpp
     src/bufferTreeDescriptor.cpp
     src/chartsWidget.cpp
-    src/chiplet3DWidget.cpp
     src/GUIProgress.cpp
     src/dropdownCheckboxes.cpp
     resources/resource.qrc
@@ -153,6 +152,7 @@ messages(
 else()
   if(BUILD_GUI)
     message(STATUS "QT5 not found. GUI is disabled")
+    set(BUILD_GUI OFF CACHE BOOL "Build the GUI" FORCE)
   else()
     message(STATUS "GUI is not enabled")
   endif()
@@ -174,7 +174,7 @@ else()
   )
   target_include_directories(gui
     PRIVATE
-      ${OPENROAD_HOME}/third-party/gif-h
+      ${OPENROAD_HOME}
   )
 endif()
 
@@ -184,7 +184,7 @@ target_include_directories(gui
   PRIVATE
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
-    ${OPENROAD_HOME}/third-party/gif-h
+    ${OPENROAD_HOME}
 )
 
 add_subdirectory(test)

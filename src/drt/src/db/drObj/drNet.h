@@ -21,8 +21,8 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
-#include "global.h"
 
 namespace drt {
 class frNet;
@@ -60,6 +60,10 @@ class drNet : public drBlockObject
   void clearRouteConnFigs() { routeConnFigs_.clear(); }
   frNet* getFrNet() const { return fNet_; }
   void setFrNet(frNet* net) { fNet_ = net; }
+  // True when this net should still be auto-tapered to min width near pins.
+  // Honors both the global AUTO_TAPER_NDR_NETS config and the per-net
+  // setting carried on the frNet.
+  bool autoTaperEnabled(bool global_enabled) const;
   const frOrderedIdSet<frBlockObject*>& getFrNetTerms() const
   {
     return fNetTerms_;

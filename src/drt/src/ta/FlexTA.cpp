@@ -13,10 +13,10 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
-#include "global.h"
 #include "odb/dbTypes.h"
 #include "omp.h"
 #include "ta/AbstractTAGraphics.h"

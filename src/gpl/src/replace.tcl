@@ -6,9 +6,9 @@ sta::define_cmd_args "global_placement" {\
     [-force_center_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
+    [-timing_driven_repair_timing]\
     [-routability_driven]\
-    [-disable_timing_driven]\
-    [-disable_routability_driven]\
+    [-virtual_cts]\
     [-incremental]\
     [-skip_io]\
     [-bin_grid_count grid_count]\
@@ -33,10 +33,14 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]\
     [-enable_routing_congestion]
 }
 
@@ -56,13 +60,19 @@ proc global_placement { args } {
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
+      -timing_driven_repair_tns_end_percent \
       -keep_resize_below_overflow \
+      -virtual_cts_max_skew_fraction \
+      -random_seed \
+      -perturb_dist \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -force_center_initial_place \
       -skip_nesterov_place \
       -timing_driven \
+      -timing_driven_repair_timing \
       -routability_driven \
+      -virtual_cts \
       -routability_use_grt \
       -skip_io \
       -incremental \
@@ -89,11 +99,13 @@ sta::define_cmd_args "cluster_flops" {\
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
     [-num_paths num_paths]\
+    [-clock_power_weight clock_power_weight]\
 }
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
-    keys { -tray_weight -timing_weight -max_split_size -num_paths } \
+    keys { -tray_weight -timing_weight -max_split_size -num_paths \
+      -clock_power_weight } \
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
@@ -104,6 +116,7 @@ proc cluster_flops { args } {
   set timing_weight 0.1
   set max_split_size 500
   set num_paths 0
+  set clock_power_weight 0.0
 
   if { [info exists keys(-tray_weight)] } {
     set tray_weight $keys(-tray_weight)
@@ -121,7 +134,14 @@ proc cluster_flops { args } {
     set num_paths $keys(-num_paths)
   }
 
-  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight $num_paths
+  if { [info exists keys(-clock_power_weight)] } {
+    # Non-negativity is enforced in MBFF::Run so that non-Tcl callers
+    # (Python, direct C++) are validated too; see src/gpl/src/mbff.cpp.
+    set clock_power_weight $keys(-clock_power_weight)
+  }
+
+  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight \
+    $num_paths $clock_power_weight
 }
 
 sta::define_cmd_args "global_placement_debug" {

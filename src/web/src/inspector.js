@@ -3,7 +3,8 @@
 
 // Inspector panel — property tree, hover highlights, bbox display.
 
-import { dbuToLatLng, dbuRectToBounds } from './coordinates.js';
+import { dbuRectToBounds } from './coordinates.js';
+import { beginSelection, isCurrentSelection } from './ui-utils.js';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -50,9 +51,23 @@ const CLEAR_FOCUS_SVG =
     '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>' +
     '</svg>';
 
-export function createInspectorPanel(app, redrawAllLayers) {
+// Chevron left: Material "chevron_left"
+const CHEVRON_LEFT_SVG =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>' +
+    '</svg>';
+
+// Chevron right: Material "chevron_right"
+const CHEVRON_RIGHT_SVG =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>' +
+    '</svg>';
+
+export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
+    refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
     let pendingInspectId = null;
+    let pendingHoverId = null;
     const kMinHoverBoxPixels = 10;
 
     function showLoading() {
@@ -105,7 +120,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         } catch (err) {
             console.error('set_route_guides failed:', err);
         }
-        redrawAllLayers();
+        refreshOverlay();
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
@@ -190,17 +205,84 @@ export function createInspectorPanel(app, redrawAllLayers) {
             navigateInspector(selectId);
         });
         el.addEventListener('mouseenter', () => {
-            app.websocketManager.request({ type: 'hover', select_id: selectId })
-                .then(data => {
-                    renderHoverRects(data.rects || []);
-                    redrawAllLayers();
-                })
-                .catch(() => {});
+            // Cancel any in-flight hover request: out-of-order responses
+            // would otherwise render hover rects for the wrong element
+            // when the user moves between inspector-links quickly.
+            // Mirrors the cancel pattern used by navigateInspector.
+            if (pendingHoverId !== null) {
+                app.websocketManager.cancel(pendingHoverId);
+                pendingHoverId = null;
+            }
+            const promise = app.websocketManager.request(
+                { type: 'hover', select_id: selectId });
+            pendingHoverId = promise.requestId;
+            promise.then(data => {
+                pendingHoverId = null;
+                renderHoverRects(data.rects || []);
+                refreshOverlay();
+            }).catch(() => {
+                pendingHoverId = null;
+            });
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
-            redrawAllLayers();
+            refreshOverlay();
         });
+    }
+
+    function cycleSelection(direction) {
+        const reqType = direction > 0 ? 'select_next' : 'select_prev';
+        if (pendingInspectId !== null) {
+            app.websocketManager.cancel(pendingInspectId);
+            pendingInspectId = null;
+        }
+        showLoading();
+        // Cycling moves the inspected object, so it owns the selection from
+        // here on: a response from an older selection path must not overwrite
+        // it, and panels painting their own selection must let go.
+        const token = beginSelection(app);
+        const promise = app.websocketManager.request({ type: reqType, use_dbu: app.showDbu });
+        pendingInspectId = promise.requestId;
+        promise
+            .then(data => {
+                pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
+                if (data.error) {
+                    console.error('Selection cycle error:', data.error);
+                    updateInspector(lastInspectData);
+                    return;
+                }
+                updateInspector(data);
+                // Keep schematic in sync when cycling to an instance.
+                if (data.type === 'Inst' && data.name) {
+                    app.selectedInstanceName = data.name;
+                    if (app.schematicWidget) {
+                        app.schematicWidget.refresh();
+                    }
+                }
+                if (app.map) {
+                    app.map.closePopup();
+                }
+                clearClientHoverHighlight();
+                if (app.highlightRect && app.map) {
+                    app.map.removeLayer(app.highlightRect);
+                    app.highlightRect = null;
+                }
+                if (data.bbox && app.map && app.designScale) {
+                    const [x1, y1, x2, y2] = data.bbox;
+                    if (data.type !== 'Inst') {
+                        highlightBBox(x1, y1, x2, y2);
+                    }
+                    pulseHighlight(data.bbox);
+                }
+                // Redraw tiles to restore selection-set highlights.
+                redrawAllLayers();
+            })
+            .catch(err => {
+                pendingInspectId = null;
+                console.error('Selection cycle failed:', err);
+                updateInspector(lastInspectData);
+            });
     }
 
     function navigateInspector(selectId) {
@@ -213,13 +295,15 @@ export function createInspectorPanel(app, redrawAllLayers) {
         // Show loading state immediately
         showLoading();
 
+        const token = beginSelection(app);
         const promise = app.websocketManager.request(
-            { type: 'inspect', select_id: selectId });
+            { type: 'inspect', select_id: selectId, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect error:', data.error);
                     return;
@@ -239,9 +323,10 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     if (data.type !== 'Inst') {
                         highlightBBox(x1, y1, x2, y2);
                     }
+                    pulseHighlight(data.bbox);
                 }
-                // Redraw tiles to update instance highlight
-                redrawAllLayers();
+                // Refresh overlay to update instance highlight
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -257,12 +342,14 @@ export function createInspectorPanel(app, redrawAllLayers) {
 
         showLoading();
 
-        const promise = app.websocketManager.request({ type: 'inspect_back' });
+        const token = beginSelection(app);
+        const promise = app.websocketManager.request({ type: 'inspect_back', use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
             .then(data => {
                 pendingInspectId = null;
+                if (!isCurrentSelection(app, token)) return;
                 if (data.error) {
                     console.error('Inspect back error:', data.error);
                     return;
@@ -275,11 +362,14 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     app.map.removeLayer(app.highlightRect);
                     app.highlightRect = null;
                 }
-                if (data.bbox && app.map && app.designScale && data.type !== 'Inst') {
-                    const [x1, y1, x2, y2] = data.bbox;
-                    highlightBBox(x1, y1, x2, y2);
+                if (data.bbox && app.map && app.designScale) {
+                    if (data.type !== 'Inst') {
+                        const [x1, y1, x2, y2] = data.bbox;
+                        highlightBBox(x1, y1, x2, y2);
+                    }
+                    pulseHighlight(data.bbox);
                 }
-                redrawAllLayers();
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -297,48 +387,160 @@ export function createInspectorPanel(app, redrawAllLayers) {
         }).addTo(app.map);
     }
 
-    function renderProperty(prop) {
-        // Group with children (PropertyList or SelectionSet)
-        if (prop.children) {
-            const group = document.createElement('div');
-            group.className = 'inspector-group';
+    // Briefly pulse the object's bbox so the user can see which object
+    // the inspector is now showing — mirrors the Qt GUI's selection
+    // animation.  The pulse is a filled rectangle that fades in and out
+    // several times, then removes itself.
+    let pulseLayer = null;
+    function pulseHighlight(bbox) {
+        if (!bbox || !app.map || !app.designScale) return;
+        if (pulseLayer) {
+            app.map.removeLayer(pulseLayer);
+            pulseLayer = null;
+        }
+        const [x1, y1, x2, y2] = bbox;
+        const bounds = dbuRectToBounds(
+            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
+        pulseLayer = L.rectangle(bounds, {
+            color: '#ff0',
+            weight: 3,
+            fill: true,
+            fillColor: '#ff0',
+            fillOpacity: 0.25,
+            opacity: 1,
+            interactive: false,
+            className: 'selection-pulse',
+            pane: app.hoverHighlightPane,
+        }).addTo(app.map);
+        // Remove after the animation finishes (3 cycles × 350ms = 1050ms).
+        const layerToRemove = pulseLayer;
+        setTimeout(() => {
+            if (layerToRemove && app.map && app.map.hasLayer(layerToRemove)) {
+                app.map.removeLayer(layerToRemove);
+            }
+            if (pulseLayer === layerToRemove) {
+                pulseLayer = null;
+            }
+        }, 1100);
+    }
 
-            const header = document.createElement('div');
-            header.className = 'inspector-group-header';
-            const arrow = document.createElement('span');
-            arrow.className = 'vis-arrow';
-            arrow.textContent = '▶';
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'inspector-prop-name';
-            nameSpan.textContent = prop.name;
+    // Build the collapsible shell (header row + body) shared by the group and
+    // table property renderers.  `count` is the parenthesised badge after the
+    // name; pass null to omit it.
+    function makeCollapsibleGroup(name, count, collapsed) {
+        const group = document.createElement('div');
+        group.className = 'inspector-group';
+
+        const header = document.createElement('div');
+        header.className = 'inspector-group-header';
+        const arrow = document.createElement('span');
+        arrow.className = 'vis-arrow';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'inspector-prop-name';
+        nameSpan.textContent = name;
+        nameSpan.title = name;
+        header.appendChild(arrow);
+        header.appendChild(nameSpan);
+        if (count !== null) {
             const countSpan = document.createElement('span');
             countSpan.className = 'inspector-count';
-            countSpan.textContent = `(${prop.children.length})`;
-            header.appendChild(arrow);
-            header.appendChild(nameSpan);
+            countSpan.textContent = `(${count})`;
             header.appendChild(countSpan);
-            group.appendChild(header);
+        }
+        group.appendChild(header);
 
-            const kids = document.createElement('div');
-            const autoExpand = prop.children.length < 10;
-            kids.className = 'inspector-group-children' + (autoExpand ? '' : ' collapsed');
-            arrow.textContent = autoExpand ? '▼' : '▶';
-            for (const child of prop.children) {
-                kids.appendChild(renderProperty(child));
+        const body = document.createElement('div');
+        body.className = 'inspector-group-children'
+            + (collapsed ? ' collapsed' : '');
+        arrow.textContent = collapsed ? '▶' : '▼';
+        group.appendChild(body);
+
+        // One listener, on the header.  The arrow lives inside the header, so
+        // clicking it expands/collapses too — which is what users reach for
+        // first.  A second listener on the arrow itself would also see the
+        // click bubble up to the header and toggle twice, leaving the group
+        // exactly as it was.
+        header.addEventListener('click', () => {
+            body.classList.toggle('collapsed');
+            arrow.textContent = body.classList.contains('collapsed')
+                ? '▶' : '▼';
+        });
+
+        return { group, header, arrow, body };
+    }
+
+    // Render a PropertyTable (e.g. a layer's two-widths spacing table) as a
+    // grid, matching the Qt inspector.  Row and column headers are optional:
+    // a table that has none is drawn as a bare grid rather than with a blank
+    // header row/column.
+    function renderTable(table) {
+        const columns = table.column_headers || [];
+        const rowHeaders = table.row_headers || [];
+        const data = table.data || [];
+        const hasColumnHeaders = columns.some(h => h !== '');
+        const hasRowHeaders = rowHeaders.some(h => h !== '');
+
+        const el = document.createElement('table');
+        el.className = 'inspector-table';
+
+        if (hasColumnHeaders) {
+            const head = document.createElement('thead');
+            const tr = document.createElement('tr');
+            if (hasRowHeaders) {
+                // Empty corner cell above the row-header column.
+                tr.appendChild(document.createElement('th'));
             }
-            group.appendChild(kids);
+            for (const header of columns) {
+                const th = document.createElement('th');
+                th.textContent = header;
+                tr.appendChild(th);
+            }
+            head.appendChild(tr);
+            el.appendChild(head);
+        }
 
-            arrow.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
-            header.addEventListener('click', () => {
-                kids.classList.toggle('collapsed');
-                arrow.textContent = kids.classList.contains('collapsed')
-                    ? '▶' : '▼';
-            });
+        const body = document.createElement('tbody');
+        data.forEach((row, i) => {
+            const tr = document.createElement('tr');
+            if (hasRowHeaders) {
+                const th = document.createElement('th');
+                th.textContent = rowHeaders[i] || '';
+                tr.appendChild(th);
+            }
+            for (const cell of row) {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+            }
+            body.appendChild(tr);
+        });
+        el.appendChild(body);
 
+        return el;
+    }
+
+    function renderProperty(prop, data) {
+        // Table-valued property (PropertyTable)
+        if (prop.table) {
+            const rows = (prop.table.data || []).length;
+            const { group, body } = makeCollapsibleGroup(
+                prop.name, rows, /*collapsed=*/rows >= 10);
+            const scroller = document.createElement('div');
+            scroller.className = 'inspector-table-scroll';
+            scroller.appendChild(renderTable(prop.table));
+            body.appendChild(scroller);
+            return group;
+        }
+
+        // Group with children (PropertyList, SelectionSet or value list)
+        if (prop.children) {
+            const autoExpand = prop.children.length < 10;
+            const { group, body } = makeCollapsibleGroup(
+                prop.name, prop.children.length, /*collapsed=*/!autoExpand);
+            for (const child of prop.children) {
+                body.appendChild(renderProperty(child, data));
+            }
             return group;
         }
 
@@ -348,11 +550,29 @@ export function createInspectorPanel(app, redrawAllLayers) {
         const nameEl = document.createElement('span');
         nameEl.className = 'inspector-prop-name';
         nameEl.textContent = prop.name || '';
+        // The column clips long names, so keep the full text reachable.
+        nameEl.title = prop.name || '';
         const valEl = document.createElement('span');
         valEl.className = 'inspector-prop-value';
         valEl.textContent = prop.value || '';
         row.appendChild(nameEl);
         row.appendChild(valEl);
+
+        // Editable property: make value contentEditable with Enter/Escape keys.
+        if (prop.editable && data && data.onPropertyChange) {
+            valEl.contentEditable = true;
+            valEl.classList.add('inspector-editable');
+            valEl.addEventListener('blur', () => {
+                const newVal = valEl.textContent;
+                if (newVal !== prop.value) {
+                    data.onPropertyChange(prop.name, newVal);
+                }
+            });
+            valEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); valEl.blur(); }
+                if (e.key === 'Escape') { valEl.textContent = prop.value; valEl.blur(); }
+            });
+        }
 
         // For single-target rows like SelectionSet entries, make the whole row
         // interactive so hover is easy to hit.
@@ -367,6 +587,52 @@ export function createInspectorPanel(app, redrawAllLayers) {
         }
 
         return row;
+    }
+
+    // Width of the property-name column, in pixels.  Held here rather than in
+    // the DOM because updateInspector() rebuilds the panel from scratch on
+    // every selection, which would otherwise reset a width the user set.
+    const kDefaultNameWidth = 140;
+    const kMinNameWidth = 60;
+    const kMaxNameWidth = 500;
+    let nameColumnWidth = kDefaultNameWidth;
+
+    function applyNameColumnWidth() {
+        if (!app.inspectorEl) return;
+        app.inspectorEl.style.setProperty(
+            '--inspector-name-w', nameColumnWidth + 'px');
+    }
+
+    // Divider between the name and value columns; drag to widen the name
+    // column when a property name is clipped.
+    function makeColumnResizer() {
+        const grip = document.createElement('div');
+        grip.className = 'inspector-col-resizer';
+        grip.title = 'Drag to resize the name column';
+
+        grip.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startWidth = nameColumnWidth;
+            grip.classList.add('dragging');
+
+            const onMove = (ev) => {
+                nameColumnWidth = Math.max(
+                    kMinNameWidth,
+                    Math.min(kMaxNameWidth,
+                             startWidth + ev.clientX - startX));
+                applyNameColumnWidth();
+            };
+            const onUp = () => {
+                grip.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        return grip;
     }
 
     function zoomToBBox(bbox) {
@@ -448,9 +714,44 @@ export function createInspectorPanel(app, redrawAllLayers) {
             app.inspectorEl.appendChild(toolbar);
         }
 
-        for (const prop of data.properties) {
-            app.inspectorEl.appendChild(renderProperty(prop));
+        // Selection navigation bar (visible when multiple objects selected)
+        const selCount = data.selection_count || 0;
+        const selIndex = typeof data.selection_index === 'number'
+            ? data.selection_index : -1;
+        if (selCount > 1 && selIndex >= 0) {
+            const nav = document.createElement('div');
+            nav.className = 'inspector-selection-nav';
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'inspector-btn';
+            prevBtn.title = 'Previous (Shift+click to multi-select)';
+            prevBtn.innerHTML = CHEVRON_LEFT_SVG;
+            prevBtn.addEventListener('click', () => cycleSelection(-1));
+
+            const label = document.createElement('span');
+            label.className = 'inspector-selection-label';
+            label.textContent = (selIndex + 1) + ' / ' + selCount;
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'inspector-btn';
+            nextBtn.title = 'Next';
+            nextBtn.innerHTML = CHEVRON_RIGHT_SVG;
+            nextBtn.addEventListener('click', () => cycleSelection(+1));
+
+            nav.appendChild(prevBtn);
+            nav.appendChild(label);
+            nav.appendChild(nextBtn);
+            app.inspectorEl.appendChild(nav);
         }
+
+        const rows = document.createElement('div');
+        rows.className = 'inspector-rows';
+        for (const prop of data.properties) {
+            rows.appendChild(renderProperty(prop, data));
+        }
+        rows.appendChild(makeColumnResizer());
+        app.inspectorEl.appendChild(rows);
+        applyNameColumnWidth();
     }
 
     function createInspector(container) {
@@ -463,5 +764,20 @@ export function createInspectorPanel(app, redrawAllLayers) {
         updateInspector(null);
     }
 
-    return { createInspector, updateInspector, highlightBBox };
+    // Re-request the currently inspected object from the server
+    // (e.g. after toggling show-DBU so property formatting changes).
+    // Rulers are client-side so we re-select instead of re-requesting.
+    function refreshInspector() {
+        if (!lastInspectData) return;
+        if (lastInspectData.type === 'Ruler') {
+            if (app.rulerManager && app.rulerManager._selectedRulerId !== null) {
+                app.rulerManager._selectRuler(app.rulerManager._selectedRulerId);
+            }
+            return;
+        }
+        if (!app.websocketManager) return;
+        navigateInspector(-1);
+    }
+
+    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector, refreshInspector };
 }

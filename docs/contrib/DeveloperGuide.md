@@ -152,6 +152,33 @@ exits. If the error is encountered while reading a file with the `source`
 or `read_sdc` commands and `file_continue_on_error` is `0` then no other
 commands are read from the file.
 
+## Support for Design Space Exploration (DSE) & Automated Tools
+
+OpenROAD supports automated Design Space Exploration (DSE) tools and autotuners across all stages of physical design. Automated tools run across a wide spectrum:
+* **Early RTL & Floorplan Exploration**: Fast feedback loops using custom project Tcl script snippets developed for a specific phase in a project.
+* **Late-Stage Pre-Tapeout Sweeps**: Full, unmodified flow runs through final parasitic extraction (`rcx`) to eke out a few percent improvement in timing and area via seed and parameter sweeps.
+
+For a comprehensive guide on DSE orchestration, managing expectations with optimization functions, early-stopping strategies, and framework inversion, see the [Design Space Exploration Guide](./DesignSpaceExploration.md).
+
+To support automated workflows, optimization passes must follow these guidelines for non-convergent ("doomed") runs:
+
+### 1. Zero-Config Futility Guards
+Optimization passes (e.g., gate sizing, buffer insertion, congestion repair) must detect when an iteration loop diverges or hits diminishing returns.
+* Futility guards **must be automatic and zero-config**. They must not require CLI options or user parameters.
+* Automated tools encounter futile states when exploring unclosable RTL or searching outside the valid solution domain. Users cannot configure options for unknown failure modes.
+
+### 2. Pass Termination Without Flow Interruption
+When an optimization pass hits a futility limit:
+* The pass must **stop its internal iteration loop** and issue a clear warning (`utl::warn`).
+* The overall flow **must run to completion**.
+
+### 3. Downstream Metric Evaluation
+Small upstream variations (e.g., placement seed changes) cause large downstream effects ("placement lottery"). Accurate clock period and parasitic-aware timing signals often emerge late in the flow:
+* Global routing (`grt`) provides realistic clock period estimates.
+* Detailed routing (`drt`) and parasitic extraction (`rcx`) resolve local congestion and extract wire parasitics.
+
+Completing the flow allows autotuners to collect final metrics and extract actionable signals, even when an intermediate pass halts early.
+
 ## Test
 
 Each "tool" has a `/test` directory containing a script named
@@ -304,6 +331,23 @@ cmake . -B build  # generate build files
 ln -sf build/compile_commands.json .  # make compilation db visible
 /bin/sh etc/run-clang-tidy-cached.cc
 ```
+
+Alternatively, you can run `clang-tidy` hermetically through Bazel — no
+cmake configuration or Clang Tooling setup is required, and the toolchain
+matches what CI will use:
+
+```shell
+# Single module:
+bazel build --config=lint //src/<module>/...
+
+# Full lint scope (excludes upstream submodules):
+bazel build --config=lint -- //src/... //third-party/... \
+    -//src/sta/... -//third-party/abc/...
+```
+
+Reports land under `bazel-bin/<pkg>/<target>_rules_lint/` as
+`*.AspectRulesLintClangTidy.out` files. Generated files (SWIG, bison, flex)
+and targets tagged `no-lint` are skipped automatically.
 
 ## Doxygen
 

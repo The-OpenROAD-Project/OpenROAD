@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -26,6 +27,7 @@
 #include "sta/StringUtil.hh"
 #include "upf/upf.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "utl/validation.h"
 
 namespace ifp {
@@ -103,9 +105,10 @@ void InitFloorplan::initFloorplan(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDieUtilization(utilization,
@@ -123,6 +126,7 @@ void InitFloorplan::initFloorplan(
                       row_parity,
                       flipped_sites,
                       gap);
+  logger_->info(IFP, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 // The base_site determines the single-height rows.  For hybrid rows it is
@@ -133,13 +137,15 @@ void InitFloorplan::initFloorplan(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDie(die);
   makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
+  logger_->info(IFP, 501, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void InitFloorplan::makeDieUtilization(double utilization,
@@ -262,7 +268,7 @@ void InitFloorplan::makePolygonRows(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
   checkGap(gap);
@@ -382,12 +388,12 @@ static int divCeil(int dividend, int divisor)
 static int applyRowParity(int rows_y, const RowParity row_parity)
 {
   switch (row_parity) {
-    case RowParity::NONE:
+    case RowParity::kNone:
       break;
-    case RowParity::EVEN:
+    case RowParity::kEven:
       rows_y = (rows_y / 2) * 2;
       break;
-    case RowParity::ODD:
+    case RowParity::kOdd:
       if (rows_y > 0 && rows_y % 2 == 0) {
         rows_y--;
       }
@@ -404,7 +410,7 @@ void InitFloorplan::makeRowsWithSpacing(
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
   checkGap(gap);
@@ -443,7 +449,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
                              odb::dbSite* base_site,
                              const std::vector<odb::dbSite*>& additional_sites,
                              RowParity row_parity,
-                             const std::set<odb::dbSite*>& flipped_sites,
+                             const odb::PtrSet<odb::dbSite>& flipped_sites,
                              const int gap)
 {
   checkGap(gap);
@@ -498,7 +504,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
     }
 
     if (base_site->hasRowPattern()) {
-      if (row_parity != RowParity::NONE) {
+      if (row_parity != RowParity::kNone) {
         logger_->error(
             IFP,
             51,
@@ -520,6 +526,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 
   odb::cutRows(block_,
                /* min_row_width */ 0,
+               0,
                blockage_bboxes,
                /* halo_x */ 0,
                /* halo_y */ 0,
@@ -704,11 +711,12 @@ void InitFloorplan::addUsedSites(
 }
 
 // Create the rows for the core area
-void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
-                                    const SitesByName& sites_by_name,
-                                    const odb::Rect& core,
-                                    RowParity row_parity,
-                                    const std::set<odb::dbSite*>& flipped_sites)
+void InitFloorplan::makeUniformRows(
+    odb::dbSite* base_site,
+    const SitesByName& sites_by_name,
+    const odb::Rect& core,
+    RowParity row_parity,
+    const odb::PtrSet<odb::dbSite>& flipped_sites)
 {
   const int core_dx = core.dx();
   const int core_dy = core.dy();
@@ -1149,7 +1157,7 @@ void InitFloorplan::makePolygonRowsScanline(
     odb::dbSite* base_site,
     const SitesByName& sites_by_name,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites,
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
   // Get the bounding box for the polygon
@@ -1216,6 +1224,7 @@ void InitFloorplan::makePolygonRowsScanline(
 
   odb::cutRows(block_,
                /* min_row_width */ 0,
+               0,
                blockage_bboxes,
                /* halo_x */ 0,
                /* halo_y */ 0,
@@ -1287,7 +1296,7 @@ void InitFloorplan::makeUniformRowsPolygon(
     const odb::Polygon& core_polygon,
     const odb::Rect& core_bbox,
     RowParity row_parity,
-    const std::set<odb::dbSite*>& flipped_sites)
+    const odb::PtrSet<odb::dbSite>& flipped_sites)
 {
   const uint32_t site_dx = site->getWidth();
   const uint32_t site_dy = site->getHeight();

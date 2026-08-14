@@ -12,6 +12,7 @@ add_library(lefin
     lefTechLayerSpacingTablePrlParser.cpp
     lefTechLayerRightWayOnGridOnlyParser.cpp
     lefTechLayerRectOnlyParser.cpp
+    lefTechLayerBacksideParser.cpp
     lefTechLayerCutClassParser.cpp
     lefTechLayerCutSpacingParser.cpp
     lefTechLayerCutSpacingTableParser.cpp
@@ -24,6 +25,7 @@ add_library(lefin
     lefTechLayerForbiddenSpacingRuleParser.cpp
     lefTechLayerTwoWiresForbiddenSpcRuleParser.cpp
     lefTechLayerVoltageSpacing.cpp
+    lefMacroBacksideBridgeParser.cpp
     lefMacroClassParser.cpp
     lefMacroEdgeTypeParser.cpp
     CellEdgeSpacingTableParser.cpp

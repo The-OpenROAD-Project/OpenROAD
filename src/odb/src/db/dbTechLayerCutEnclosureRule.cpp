@@ -9,6 +9,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
@@ -813,6 +814,18 @@ bool dbTechLayerCutEnclosureRule::isConcaveCornersValid() const
   return obj->flags_.concave_corners_valid;
 }
 
+dbTechLayerCutEnclosureRule* dbTechLayerCutEnclosureRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerCutEnclosureRule*) _parent->cut_enc_rules_tbl_->create();
+}
+void dbTechLayerCutEnclosureRule::destroy(dbTechLayerCutEnclosureRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->cut_enc_rules_tbl_->destroy((_dbTechLayerCutEnclosureRule*) obj);
+}
 // User Code Begin dbTechLayerCutEnclosureRulePublicMethods
 void dbTechLayerCutEnclosureRule::setType(ENC_TYPE type)
 {
@@ -828,27 +841,12 @@ dbTechLayerCutEnclosureRule::ENC_TYPE dbTechLayerCutEnclosureRule::getType()
 
   return (dbTechLayerCutEnclosureRule::ENC_TYPE) obj->flags_.type;
 }
-
-dbTechLayerCutEnclosureRule* dbTechLayerCutEnclosureRule::create(
-    dbTechLayer* _layer)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerCutEnclosureRule* newrule = layer->cut_enc_rules_tbl_->create();
-  return ((dbTechLayerCutEnclosureRule*) newrule);
-}
-
 dbTechLayerCutEnclosureRule*
 dbTechLayerCutEnclosureRule::getTechLayerCutEnclosureRule(dbTechLayer* inly,
                                                           uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCutEnclosureRule*) layer->cut_enc_rules_tbl_->getPtr(dbid);
-}
-void dbTechLayerCutEnclosureRule::destroy(dbTechLayerCutEnclosureRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->cut_enc_rules_tbl_->destroy((_dbTechLayerCutEnclosureRule*) rule);
 }
 // User Code End dbTechLayerCutEnclosureRulePublicMethods
 }  // namespace odb

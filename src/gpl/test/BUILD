@@ -17,7 +17,10 @@ TESTS = [
     "diverge01",
     "error01",
     "incremental01",
-    "incremental02",
+    "mbff_hier",
+    "mbff_orig_name",
+    "mbff_clock_power_off",
+    "mbff_clock_power_on",
     "nograd01",
     "simple01",
     "simple01-obs",
@@ -25,8 +28,14 @@ TESTS = [
     "simple01-ref",
     "simple01-skip-io",
     "simple01-td",
+    "simple01-td-net-percentage",
     "simple01-td-tune",
+    "simple01-td-repair",
     "simple01-uniform",
+    "simple01-vcts",
+    "simple01-vcts-clamp",
+    "simple01-vcts-noclk",
+    "simple01-vcts-userlat",
     "simple02",
     "simple02-rd",
     "simple03",
@@ -41,6 +50,29 @@ TESTS = [
     "simple10",
     "region01",
 ]
+
+PASSFAIL_TESTS = [
+    "incremental02",
+]
+
+# Longer-running regression tests (see regression_tests_large.tcl). These are
+# tagged "manual" so they are excluded from the default `bazel test //...`
+# wildcard and must be requested explicitly, e.g. via the :large_tests suite.
+LARGE_TESTS = [
+    "macro01",
+    "macro02",
+    "macro03",
+    "medium01",
+    "medium02",
+    "medium03",
+    "medium04",
+    "medium05",
+    "medium06",
+    "large01",
+    "large02",
+]
+
+ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 py_library(
     name = "helpers",
@@ -70,7 +102,7 @@ filegroup(
         ["**/*"],
         exclude = [
             test + "." + ext
-            for test in TESTS
+            for test in ALL_TESTS + LARGE_TESTS
             for ext in [
                 "tcl",
                 "py",
@@ -79,16 +111,27 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "incremental02",
-]
+[regression_test(
+    name = test_name,
+    check_log = False if test_name in PASSFAIL_TESTS else True,
+    check_passfail = True if test_name in PASSFAIL_TESTS else False,
+    data = [":test_resources"],
+) for test_name in ALL_TESTS]
 
 [regression_test(
     name = test_name,
+    size = "enormous",
     data = [":test_resources"],
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
-) for test_name in TESTS]
+    tags = ["manual"],
+) for test_name in LARGE_TESTS]
+
+# Convenience suite to run all long-running tests explicitly:
+#   bazel test //src/gpl/test:large_tests
+test_suite(
+    name = "large_tests",
+    tags = ["manual"],
+    tests = [":" + test_name + "-tcl_test" for test_name in LARGE_TESTS],
+)
 
 PY_TESTS = [
     "ar01",
@@ -103,7 +146,9 @@ PY_TESTS = [
     "simple01-ref",
     "simple01-skip-io",
     "simple01-td",
+    "simple01-td-net-percentage",
     "simple01-td-tune",
+    "simple01-td-repair",
     "simple01-uniform",
     "simple02",
     "simple03",
@@ -133,10 +178,10 @@ PY_TESTS = [
 cc_test(
     name = "gpl_fft_unittest",
     srcs = ["fft_test.cc"],
-    features = ["-layering_check"],  # TODO: includes private headers
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//src/gpl",
+        "//src/gpl",  # buildcleaner: keep: needs fixing gpl layering first.
+        "//src/gpl:gpl_private_hdrs",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",
@@ -151,15 +196,14 @@ cc_test(
         "library/test/test0.lib",
     ],
     deps = [
-        "//:openroad_lib",
         "//src/ant",
-        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/dbSta:dbReadVerilog",
         "//src/dpl",
         "//src/est",
         "//src/gpl",
         "//src/grt",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/stt",
         "//src/tst",
@@ -185,4 +229,10 @@ doc_check_test(
         "//src/gpl:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+doc_check_test(
+    name = "gpl_messages_txt_check",
+    check_log = False,
+    data = ["//src/gpl:messages_txt"],
 )

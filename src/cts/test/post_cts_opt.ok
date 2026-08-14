@@ -15,7 +15,7 @@
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0206] Best clustering solution was found from clustering size of 30 and clustering diameter of 50.
+[INFO CTS-0206] Best clustering solution was found from max clustering size of 14 and max clustering diameter of 118.
 [INFO CTS-0019]  Total number of sinks after clustering: 22.
 [INFO CTS-0024]  Normalized sink region: [(0.910944, 2.80452), (13.7793, 14.972)].
 [INFO CTS-0025]     Width:  12.8684.
@@ -25,7 +25,7 @@
     Sinks per sub-region: 11
     Sub-region size: 6.4342 X 12.1675
 [INFO CTS-0034]     Segment length (rounded): 4.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (832.619 um) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 22.
 [INFO CTS-0018]     Created 25 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.

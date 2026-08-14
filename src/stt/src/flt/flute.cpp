@@ -134,9 +134,9 @@ static const char* readDecimalInt(const char* s, int& value)
   if (negative || *s == '+') {
     ++s;
   }
-  constexpr int zero_code = int('0');
+  constexpr int kZeroCode = int('0');
   while (*s >= '0' && *s <= '9') {
-    value = 10 * value + (int(*s) - zero_code);
+    value = 10 * value + (int(*s) - kZeroCode);
     ++s;
   }
   if (negative) {
@@ -445,15 +445,15 @@ int Flute::flutes_wl_medium_degree(int d,
   const int ub = d - 1 - lb;
 
   // Compute scores
-  constexpr double AAWL = 0.6;
-  constexpr double BBWL = 0.3;
-  const float CCWL = 7.4 / ((d + 10.) * (d - 3.));
-  const float DDWL = 4.8 / (d - 1);
+  constexpr double kAawl = 0.6;
+  constexpr double kBbwl = 0.3;
+  const float ccwl = 7.4 / ((d + 10.) * (d - 3.));
+  const float ddwl = 4.8 / (d - 1);
 
   // Compute penalty[]
   std::vector<float> penalty(degree);
-  const float dx = CCWL * (xs[d - 2] - xs[1]);
-  const float dy = CCWL * (ys[d - 2] - ys[1]);
+  const float dx = ccwl * (xs[d - 2] - xs[1]);
+  const float dy = ccwl * (ys[d - 2] - ys[1]);
   float pnlty = 0;
   for (int r = d / 2; r >= 0; r--, pnlty += dx) {
     penalty[r] = pnlty;
@@ -529,19 +529,19 @@ int Flute::flutes_wl_medium_degree(int d,
   for (int r = lb; r <= ub; r++) {
     if (si[r] == 0 || si[r] == d - 1) {
       score[nbp] = (xs[r + 1] - xs[r - 1]) - penalty[r]
-                   - AAWL * (ys[d - 2] - ys[1]) - DDWL * disty[r];
+                   - kAawl * (ys[d - 2] - ys[1]) - ddwl * disty[r];
     } else {
       score[nbp] = (xs[r + 1] - xs[r - 1]) - penalty[r]
-                   - BBWL * (ys[si[r] + 1] - ys[si[r] - 1]) - DDWL * disty[r];
+                   - kBbwl * (ys[si[r] + 1] - ys[si[r] - 1]) - ddwl * disty[r];
     }
     nbp++;
 
     if (s[r] == 0 || s[r] == d - 1) {
       score[nbp] = (ys[r + 1] - ys[r - 1]) - penalty[s[r]]
-                   - AAWL * (xs[d - 2] - xs[1]) - DDWL * distx[r];
+                   - kAawl * (xs[d - 2] - xs[1]) - ddwl * distx[r];
     } else {
       score[nbp] = (ys[r + 1] - ys[r - 1]) - penalty[s[r]]
-                   - BBWL * (xs[s[r] + 1] - xs[s[r] - 1]) - DDWL * distx[r];
+                   - kBbwl * (xs[s[r] + 1] - xs[s[r] - 1]) - ddwl * distx[r];
     }
     nbp++;
   }
@@ -991,15 +991,15 @@ Tree Flute::flutes_medium_degree(const int d,
   const int ub = d - 1 - lb;
 
   // Compute scores
-  constexpr double AA = 0.6;  // 2.0*BB
-  constexpr double BB = 0.3;
+  constexpr double kAa = 0.6;  // 2.0*BB
+  constexpr double kBb = 0.3;
 
-  const float CC = 7.4 / ((d + 10.) * (d - 3.));
-  const float DD = 4.8 / (d - 1);
+  const float cc = 7.4 / ((d + 10.) * (d - 3.));
+  const float dd = 4.8 / (d - 1);
 
   // Compute penalty[]
-  const float dx = CC * (xs[d - 2] - xs[1]);
-  const float dy = CC * (ys[d - 2] - ys[1]);
+  const float dx = cc * (xs[d - 2] - xs[1]);
+  const float dy = cc * (ys[d - 2] - ys[1]);
   float pnlty = 0;
   for (int r = d / 2; r >= 2; r--, pnlty += dx) {
     penalty[r] = pnlty, penalty[d - 1 - r] = pnlty;
@@ -1057,26 +1057,26 @@ Tree Flute::flutes_medium_degree(const int d,
   int nbp = 0;
   for (int r = lb; r <= ub; r++) {
     if (si[r] <= 1) {
-      score[nbp] = (xs[r + 1] - xs[r - 1]) - penalty[r] - AA * (ys[2] - ys[1])
-                   - DD * disty[r];
+      score[nbp] = (xs[r + 1] - xs[r - 1]) - penalty[r] - kAa * (ys[2] - ys[1])
+                   - dd * disty[r];
     } else if (si[r] >= d - 2) {
       score[nbp] = (xs[r + 1] - xs[r - 1]) - penalty[r]
-                   - AA * (ys[d - 2] - ys[d - 3]) - DD * disty[r];
+                   - kAa * (ys[d - 2] - ys[d - 3]) - dd * disty[r];
     } else {
       score[nbp] = (xs[r + 1] - xs[r - 1]) - penalty[r]
-                   - BB * (ys[si[r] + 1] - ys[si[r] - 1]) - DD * disty[r];
+                   - kBb * (ys[si[r] + 1] - ys[si[r] - 1]) - dd * disty[r];
     }
     nbp++;
 
     if (s[r] <= 1) {
       score[nbp] = (ys[r + 1] - ys[r - 1]) - penalty[s[r]]
-                   - AA * (xs[2] - xs[1]) - DD * distx[r];
+                   - kAa * (xs[2] - xs[1]) - dd * distx[r];
     } else if (s[r] >= d - 2) {
       score[nbp] = (ys[r + 1] - ys[r - 1]) - penalty[s[r]]
-                   - AA * (xs[d - 2] - xs[d - 3]) - DD * distx[r];
+                   - kAa * (xs[d - 2] - xs[d - 3]) - dd * distx[r];
     } else {
       score[nbp] = (ys[r + 1] - ys[r - 1]) - penalty[s[r]]
-                   - BB * (xs[s[r] + 1] - xs[s[r] - 1]) - DD * distx[r];
+                   - kBb * (xs[s[r] + 1] - xs[s[r] - 1]) - dd * distx[r];
     }
     nbp++;
   }

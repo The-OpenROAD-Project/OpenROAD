@@ -210,6 +210,39 @@ proc create_ndr { args } {
   }
 }
 
+sta::define_cmd_args "set_routing_auto_taper" \
+  { (-net name | -all_clocks) (-enable | -disable) }
+
+# Per-net control of the detailed router's auto-taper behavior.  By default
+# the detailed router tapers NDR (wide) nets down to minimum width near pin
+# connections.  Some nets (e.g. wide analog/NDR traces) must keep their full
+# width all the way to the pin; use -disable to suppress auto-taper for those
+# nets without recompiling.  Use -enable to restore the default behavior.
+proc set_routing_auto_taper { args } {
+  sta::parse_key_args "set_routing_auto_taper" args \
+    keys {-net} flags {-all_clocks -enable -disable}
+  if { !([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
+    utl::error ODB 1023 "Exactly one of -net or -all_clocks must be specified."
+  }
+  if { !([info exists flags(-enable)] ^ [info exists flags(-disable)]) } {
+    utl::error ODB 1024 "Exactly one of -enable or -disable must be specified."
+  }
+  set enable [info exists flags(-enable)]
+  set block [ord::get_db_block]
+  if { [info exists keys(-net)] } {
+    set netName $keys(-net)
+    set net [$block findNet $netName]
+    if { $net == "NULL" } {
+      utl::error ODB 1025 "No net named ${netName} found."
+    }
+    $net setAutoTaper $enable
+  } else {
+    foreach net [sta::find_all_clk_nets] {
+      $net setAutoTaper $enable
+    }
+  }
+}
+
 sta::define_cmd_args "create_voltage_domain" {domain_name -area {llx lly urx ury}}
 
 proc create_voltage_domain { args } {
@@ -1163,7 +1196,131 @@ proc all_pins_placed { args } {
   return 1
 }
 
+sta::define_cmd_args "add_3dblox_alignment_marker_rule" \
+  {[-lib_a lib_a] -master_a master_a \
+   [-lib_b lib_b] -master_b master_b \
+   [-tolerance tolerance_um] \
+   [-relative_orientations relative_orientations]}
+
+proc add_3dblox_alignment_marker_rule { args } {
+  sta::parse_key_args "add_3dblox_alignment_marker_rule" args \
+    keys {-lib_a -master_a -lib_b -master_b -tolerance -relative_orientations} \
+    flags {}
+  sta::check_argc_eq0 "add_3dblox_alignment_marker_rule" $args
+
+  foreach req {-master_a -master_b} {
+    if { ![info exists keys($req)] } {
+      utl::error ODB 475 "$req is required"
+    }
+  }
+
+  set lib_a ""
+  if { [info exists keys(-lib_a)] } {
+    set lib_a $keys(-lib_a)
+  }
+  set lib_b ""
+  if { [info exists keys(-lib_b)] } {
+    set lib_b $keys(-lib_b)
+  }
+
+  set master_a [odb::resolve_master $keys(-master_a) $lib_a]
+  set master_b [odb::resolve_master $keys(-master_b) $lib_b]
+
+  set rule [odb::dbAlignmentMarkerRule_create $master_a $master_b]
+
+  if { [info exists keys(-tolerance)] } {
+    set tol $keys(-tolerance)
+    sta::check_positive_float "-tolerance" $tol
+    set db [ord::get_db]
+    set tol_dbu [expr { int(round($tol * [$db getDbuPerMicron])) }]
+    $rule setTolerance $tol_dbu
+  }
+
+  if { [info exists keys(-relative_orientations)] } {
+    foreach o $keys(-relative_orientations) {
+      $rule addRelativeOrientation $o
+    }
+  }
+}
+
+# On-demand structural summary of a 3DIC (3DBlox) design: chiplet, chip-net,
+# bond-region and bump counts, plus per-chip-inst master references. Useful as
+# a post-read sanity check before cross-chiplet timing.
+sta::define_cmd_args "report_3dic_summary" {}
+proc report_3dic_summary { args } {
+  sta::parse_key_args "report_3dic_summary" args keys {} flags {}
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::warn ODB 405 "No chip loaded; nothing to report."
+    return
+  }
+  set chip_insts [$chip getChipInsts]
+  set chip_nets [$chip getChipNets]
+  set chip_conns [$chip getChipConns]
+  # Connected bumps sit on top-level chip-nets; total counts every pad of
+  # every placement (spare/reserved pads included -- often the majority).
+  set connected_bump_count 0
+  foreach n $chip_nets {
+    incr connected_bump_count [$n getNumBumpInsts]
+  }
+  set bump_pad_count 0
+  foreach ci $chip_insts {
+    set master [$ci getMasterChip]
+    if { $master == "NULL" } {
+      continue
+    }
+    foreach region [$master getChipRegions] {
+      incr bump_pad_count [llength [$region getChipBumps]]
+    }
+  }
+  utl::report "3DIC summary for chip [$chip getName]:"
+  utl::report "  chiplets        : [llength $chip_insts]"
+  utl::report "  top-level nets  : [llength $chip_nets]"
+  utl::report "  3D bond regions : [llength $chip_conns]"
+  utl::report "  bump pads       : $bump_pad_count ($connected_bump_count connected)"
+  if { [llength $chip_insts] > 0 } {
+    utl::report "  chiplet instances:"
+    foreach ci $chip_insts {
+      set ref [$ci getMasterChip]
+      set ref_name [expr { $ref == "NULL" ? "<unbound>" : [$ref getName] }]
+      utl::report "    [$ci getName] (reference: $ref_name)"
+    }
+  }
+}
+
 namespace eval odb {
+proc resolve_master { cell { lib_name "" } } {
+  set db [ord::get_db]
+  if { $lib_name ne "" } {
+    set lib [$db findLib $lib_name]
+    if { $lib == "NULL" } {
+      utl::error ODB 473 "Library '$lib_name' not found"
+    }
+    set m [$lib findMaster $cell]
+    if { $m == "NULL" } {
+      utl::error ODB 474 "Master '$cell' not found in library '$lib_name'"
+    }
+    return $m
+  }
+  set matches {}
+  foreach lib [$db getLibs] {
+    set m [$lib findMaster $cell]
+    if { $m != "NULL" } {
+      lappend matches [list [$lib getName] $m]
+    }
+  }
+  if { [llength $matches] == 0 } {
+    utl::error ODB 472 "Master '$cell' not found in any library"
+  }
+  if { [llength $matches] > 1 } {
+    set libs [join [lmap p $matches { lindex $p 0 }] ", "]
+    utl::error ODB 412 \
+      "Master '$cell' is ambiguous (found in: $libs). Use -lib_<side>."
+  }
+  return [lindex [lindex $matches 0] 1]
+}
+
 proc add_direction_constraint { dir edge begin end } {
   set block [get_block]
 

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -253,6 +254,11 @@ class HardMacro
 
     Halo() = default;
 
+    Halo(int spacing)
+        : left(spacing), bottom(spacing), right(spacing), top(spacing)
+    {
+    }
+
     Halo(int left, int bottom, int right, int top)
         : left(left), bottom(bottom), right(right), top(top)
     {
@@ -264,6 +270,14 @@ class HardMacro
       bottom = halo->yMin();
       right = halo->xMax();
       top = halo->yMax();
+    }
+
+    Halo floorTo(const Halo& minimum) const
+    {
+      return {std::max(left, minimum.left),
+              std::max(bottom, minimum.bottom),
+              std::max(right, minimum.right),
+              std::max(top, minimum.top)};
     }
 
     bool isZero() const

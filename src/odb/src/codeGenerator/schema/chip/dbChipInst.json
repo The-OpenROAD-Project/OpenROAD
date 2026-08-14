@@ -14,8 +14,7 @@
     },
     {
       "name": "orient_",
-      "type": "dbOrientType3D",
-      "flags": ["no-set"]
+      "type": "dbOrientType3D"
     },
     {
       "name": "master_chip_",
@@ -49,6 +48,5 @@
   "h_includes": [
     "odb/geom.h",
     "odb/dbTypes.h"
-  ],
-  "cpp_includes": []
+  ]
 }

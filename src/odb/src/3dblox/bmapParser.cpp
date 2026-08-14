@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "objects.h"
+#include "utl/CFileUtils.h"
 #include "utl/Logger.h"
 namespace odb {
 
@@ -20,11 +21,7 @@ BmapParser::BmapParser(utl::Logger* logger) : logger_(logger)
 BumpMapData BmapParser::parseFile(const std::string& filename)
 {
   current_file_path_ = filename;
-  std::ifstream file(filename);
-  if (!file.is_open()) {
-    logger_->error(
-        utl::ODB, 535, "Bump Map Parser Error: Cannot open file: {}", filename);
-  }
+  std::ifstream file = utl::OpenInputStream(filename, logger_);
 
   std::stringstream buffer;
   buffer << file.rdbuf();

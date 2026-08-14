@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"
@@ -283,15 +284,15 @@ void dumpAPs(odb::dbBlock* block, const std::string& file_name)
       }
 
       auto mterm = iterm->getMTerm();
-      auto aps = iterm->getAccessPoints();
+      auto aps_map = iterm->getAccessPoints();
       os << "  iterm: " << mterm->getName() << "\n";
 
       for (auto mpin : mterm->getMPins()) {
         auto bbox = mpin->getBBox();
         os << "    pin (" << bbox.xMin() << ", " << bbox.yMin() << "):\n";
 
-        auto pin_aps_it = aps.find(mpin);
-        if (pin_aps_it == aps.end()) {
+        auto pin_aps_it = aps_map.find(mpin);
+        if (pin_aps_it == aps_map.end()) {
           continue;
         }
         for (auto ap : pin_aps_it->second) {

@@ -5,8 +5,9 @@
 
 #include <limits>
 
-#include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"  // IWYU pragma: keep (DbuX type)
+
 namespace dpl {
 class DetailedSeg
 {

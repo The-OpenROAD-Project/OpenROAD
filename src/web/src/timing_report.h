@@ -7,7 +7,11 @@
 #include <string>
 #include <vector>
 
-#include "json_builder.h"
+#include "boost/json/object.hpp"
+
+namespace odb {
+class dbBlock;
+}  // namespace odb
 
 namespace sta {
 class dbSta;
@@ -67,6 +71,19 @@ struct ChartFilters
   std::vector<std::string> clocks;
 };
 
+struct FanoutHistogramBin
+{
+  int lower;  // bin lower edge (inclusive, in loads)
+  int upper;  // bin upper edge (exclusive, in loads)
+  int count;  // number of nets in this bin
+};
+
+struct FanoutHistogramResult
+{
+  std::vector<FanoutHistogramBin> bins;
+  int total_nets = 0;
+};
+
 class TimingReport
 {
  public:
@@ -98,11 +115,16 @@ class TimingReport
 
 // ── JSON serialization helpers (shared by request_handler and saveReport) ──
 
-void serializeTimingNode(JsonBuilder& b, const TimingNode& n);
-void serializeTimingPath(JsonBuilder& b, const TimingPathSummary& p);
-void serializeTimingPaths(JsonBuilder& b,
-                          const std::vector<TimingPathSummary>& paths);
-void serializeSlackHistogram(JsonBuilder& b, const SlackHistogramResult& h);
-void serializeChartFilters(JsonBuilder& b, const ChartFilters& f);
+boost::json::object serializeTimingNode(const TimingNode& n);
+boost::json::object serializeTimingPath(const TimingPathSummary& p);
+boost::json::object serializeTimingPaths(
+    const std::vector<TimingPathSummary>& paths);
+boost::json::object serializeSlackHistogram(const SlackHistogramResult& h);
+boost::json::object serializeChartFilters(const ChartFilters& f);
+
+// Net fanout histogram (loads = term_count - 1, skipping power/ground nets).
+// Free function: depends only on odb, not STA.
+FanoutHistogramResult computeFanoutHistogram(odb::dbBlock* block);
+boost::json::object serializeFanoutHistogram(const FanoutHistogramResult& h);
 
 }  // namespace web

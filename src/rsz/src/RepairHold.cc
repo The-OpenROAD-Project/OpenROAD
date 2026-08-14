@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "BufferMove.hh"
-#include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -23,7 +21,6 @@
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
@@ -395,6 +392,7 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
   sta::Slack worst_slack;
   findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
   inserted_buffer_count_ = 0;
+  resize_count_ = 0;
   if (!hold_failures.empty()) {
     logger_->info(RSZ,
                   46,
@@ -443,6 +441,9 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
       logger_->warn(RSZ, 64, "Unable to repair all hold checks within margin.");
     }
 
+    if (resize_count_ > 0) {
+      logger_->info(RSZ, 132, "Resized {} instances.", resize_count_);
+    }
     if (inserted_buffer_count_ > 0) {
       repaired = true;
       logger_->info(
@@ -508,7 +509,6 @@ void RepairHold::repairHoldPass(sta::VertexSeq& hold_failures,
       printProgress(pass, false, false);
     }
 
-    estimate_parasitics_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,
@@ -579,6 +579,13 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
             if (pred.searchTo(fanout, mode) && pred.searchThru(edge, mode)) {
               sta::Slack fanout_hold_slack = sta_->slack(fanout, min_);
               sta::Pin* load_pin = fanout->pin();
+              if (load_pin == nullptr) {
+                continue;
+              }
+              if (!network_->direction(load_pin)->isAnyInput()
+                  && !network_->isTopLevelPort(load_pin)) {
+                continue;
+              }
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
                 Slacks fanout_slacks;
@@ -645,19 +652,19 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
               // Despite checking for setup slack to insert the bufffer,
               // increased slews downstream can increase delays and
               // reduce setup slack in ways that are too expensive to
-              // predict. Use the journal to back out the change if
-              // the hold buffer blows through the setup margin.
+              // predict. Open a journal so a failed hold fix can be
+              // rolled back via journalRestore().
               resizer_->journalBegin();
               sta::Slack setup_slack_before = sta_->worstSlack(max_);
               sta::Slew slew_before = sta_->slew(path_vertex,
                                                  sta::RiseFallBoth::riseFall(),
                                                  sta_->scenes(),
                                                  max_);
-              makeHoldDelay(path_vertex,
-                            load_pins,
-                            loads_have_out_port,
-                            buffer_cell,
-                            buffer_loc);
+              const HoldMoveStats move = makeHoldDelay(path_vertex,
+                                                       load_pins,
+                                                       loads_have_out_port,
+                                                       buffer_cell,
+                                                       buffer_loc);
               sta::Slew slew_after = sta_->slew(path_vertex,
                                                 sta::RiseFallBoth::riseFall(),
                                                 sta_->scenes(),
@@ -671,9 +678,10 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                       && sta::fuzzyLess(setup_slack_after, setup_slack_before)
                       && setup_slack_after < setup_margin)) {
                 resizer_->journalRestore();
-                inserted_buffer_count_ = 0;
               } else {
                 resizer_->journalEnd();
+                inserted_buffer_count_ += move.buffers;
+                resize_count_ += move.resizes;
               }
             }
           }
@@ -703,24 +711,20 @@ void RepairHold::mergeInto(Slacks& from, Slacks& result)
       = max(result[fall_index_][max_index_], from[fall_index_][max_index_]);
 }
 
-void RepairHold::makeHoldDelay(sta::Vertex* drvr,
-                               sta::PinSeq& load_pins,
-                               bool loads_have_out_port,  // top level port
-                               sta::LibertyCell* buffer_cell,
-                               const odb::Point& loc)
+RepairHold::HoldMoveStats RepairHold::makeHoldDelay(
+    sta::Vertex* drvr,
+    sta::PinSeq& load_pins,
+    bool loads_have_out_port,  // top level port
+    sta::LibertyCell* buffer_cell,
+    const odb::Point& loc)
 {
+  HoldMoveStats stats;
   sta::Instance* buffer = nullptr;
   sta::Pin* buffer_out_pin = nullptr;
 
   // New insert buffer behavior
   sta::Pin* drvr_pin = drvr->pin();
-  odb::dbObject* drvr_db_pin = db_network_->staToDb(drvr_pin);
-  odb::dbNet* drvr_dbnet = nullptr;
-  if (drvr_db_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
-    drvr_dbnet = static_cast<odb::dbBTerm*>(drvr_db_pin)->getNet();
-  } else {
-    drvr_dbnet = static_cast<odb::dbITerm*>(drvr_db_pin)->getNet();
-  }
+  odb::dbNet* drvr_dbnet = db_network_->findFlatDbNet(drvr_pin);
 
   sta::Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
 
@@ -734,6 +738,9 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
       load_pins_set.insert(const_cast<sta::Pin*>(load_pin));
     }
   }
+  if (load_pins_set.empty()) {
+    return stats;
+  }
 
   buffer = resizer_->insertBufferBeforeLoads(
       drvr_net, &load_pins_set, buffer_cell, &loc, "hold");
@@ -743,16 +750,15 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
                    3009,
                    "insert_buffer failed on drvr_pin '{}'.",
                    drvr_pin_name.empty() ? "<unknown>" : drvr_pin_name);
-    return;
+    return stats;
   }
+  stats.buffers = 1;
 
   odb::dbInst* new_buffer = db_network_->staToDb(buffer);
   debugPrint(
       logger_, RSZ, "repair_hold", 3, " insert {}", new_buffer->getName());
 
   buffer_out_pin = db_network_->dbToSta(new_buffer->getFirstOutput());
-
-  inserted_buffer_count_++;
 
   // Update RC and delay. Resize if necessary
   sta::Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
@@ -762,8 +768,9 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
   if (!checkMaxSlewCap(buffer_out_pin)
       && resizer_->resizeToTargetSlew(buffer_out_pin)) {
     estimate_parasitics_->updateParasitics();
-    resize_count_++;
+    stats.resizes = 1;
   }
+  return stats;
 }
 
 bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)

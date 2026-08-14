@@ -381,6 +381,11 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   }
   stream >> *tech.name_cache_;
   stream >> tech.via_hash_;
+  if (db->isSchema(kSchemaTechExtractionRulesFile)
+      && db->isLessThanSchema(kSchemaRemoveTechExtractionRulesFile)) {
+    std::string obsolete_extraction_rules_file;
+    stream >> obsolete_extraction_rules_file;
+  }
 
   return stream;
 }
@@ -497,6 +502,33 @@ dbTechLayer* dbTech::findRoutingLayer(int level_number)
     }
   }
 
+  return nullptr;
+}
+
+dbTechLayer* dbTech::firstFrontsideRoutingLayer()
+{
+  const int n = getRoutingLayerCount();
+  for (int level = 1; level <= n; ++level) {
+    dbTechLayer* layer = findRoutingLayer(level);
+    if (layer != nullptr && !layer->isBackside()) {
+      return layer;
+    }
+  }
+  return nullptr;
+}
+
+dbTechLayer* dbTech::firstBacksideRoutingLayer()
+{
+  // Backside layers appear before frontside layers in the LEF, ordered
+  // outward from the substrate (BPR ... BM1 ... BRDL). Iterate top-down
+  // so we return the backside layer closest to the substrate.
+  const int n = getRoutingLayerCount();
+  for (int level = n; level >= 1; --level) {
+    dbTechLayer* layer = findRoutingLayer(level);
+    if (layer != nullptr && layer->isBackside()) {
+      return layer;
+    }
+  }
   return nullptr;
 }
 

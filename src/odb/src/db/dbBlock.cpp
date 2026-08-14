@@ -118,6 +118,7 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -130,6 +131,7 @@
 #include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 #include "odb/poly_decomp.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -2515,7 +2517,20 @@ int dbBlock::getGCellTileSize()
   // lambda function to get the average track spacing of a given layer
   auto getAverageTrackSpacing = [this](int layer_idx) -> int {
     dbTech* tech = getTech();
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    // Skip backside routing layers (e.g. BSPDN BPR/BM*/BRDL) so the Nth
+    // routing layer is counted among frontside metals regardless of LEF
+    // ordering.
+    odb::dbTechLayer* tech_layer = nullptr;
+    int count = 0;
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING || layer->isBackside()) {
+        continue;
+      }
+      if (++count == layer_idx) {
+        tech_layer = layer;
+        break;
+      }
+    }
     odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
 
     if (track_grid == nullptr) {
@@ -2742,12 +2757,6 @@ int dbBlock::getCornersPerBlock()
   return block->corners_per_block_;
 }
 
-bool dbBlock::extCornersAreIndependent()
-{
-  bool independent = getExtControl()->_independentExtCorners;
-  return independent;
-}
-
 int dbBlock::getExtDbCount()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2820,13 +2829,6 @@ void dbBlock::initParasiticsValueTables()
   block->c_val_tbl_->push_back(0.0);
 }
 
-void dbBlock::setCornersPerBlock(int cornersPerBlock)
-{
-  initParasiticsValueTables();
-  _dbBlock* block = (_dbBlock*) this;
-  block->corners_per_block_ = cornersPerBlock;
-}
-
 void dbBlock::setCornerCount(int cornersStoredCnt,
                              int extDbCnt,
                              const char* name_list)
@@ -2868,54 +2870,6 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
     }
     block->corner_name_list_ = strdup((char*) name_list);
   }
-}
-dbBlock* dbBlock::getExtCornerBlock(uint32_t corner)
-{
-  dbBlock* block = findExtCornerBlock(corner);
-  if (!block) {
-    block = this;
-  }
-  return block;
-}
-
-dbBlock* dbBlock::findExtCornerBlock(uint32_t corner)
-{
-  char cornerName[64];
-  sprintf(cornerName, "extCornerBlock__%d", corner);
-  return findChild(cornerName);
-}
-
-dbBlock* dbBlock::createExtCornerBlock(uint32_t corner)
-{
-  char cornerName[64];
-  sprintf(cornerName, "extCornerBlock__%d", corner);
-  dbBlock* extBlk = dbBlock::create(this, cornerName, '/');
-  assert(extBlk);
-  char name[64];
-  for (dbNet* net : getNets()) {
-    sprintf(name, "%d", net->getId());
-    dbNet* xnet = dbNet::create(extBlk, name, true);
-    if (xnet == nullptr) {
-      getImpl()->getLogger()->error(
-          utl::ODB, 8, "Cannot duplicate net {}", net->getConstName());
-    }
-    if (xnet->getId() != net->getId()) {
-      getImpl()->getLogger()->warn(utl::ODB,
-                                   9,
-                                   "id mismatch ({},{}) for net {}",
-                                   xnet->getId(),
-                                   net->getId(),
-                                   net->getConstName());
-    }
-    dbSigType ty = net->getSigType();
-    if (ty.isSupply()) {
-      xnet->setSpecial();
-    }
-
-    xnet->setSigType(ty);
-  }
-  extBlk->setCornersPerBlock(1);
-  return extBlk;
 }
 
 char* dbBlock::getCornerNameList()
@@ -3135,15 +3089,6 @@ void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
 void dbBlock::destroyParasitics(std::vector<dbNet*>& nets)
 {
   destroyCornerParasitics(nets);
-  if (!extCornersAreIndependent()) {
-    return;
-  }
-  int numcorners = getCornerCount();
-  dbBlock* extBlock;
-  for (int corner = 1; corner < numcorners; corner++) {
-    extBlock = findExtCornerBlock(corner);
-    extBlock->destroyCornerParasitics(nets);
-  }
 }
 
 void dbBlock::getCcHaloNets(std::vector<dbNet*>& changedNets,
@@ -3266,11 +3211,11 @@ void dbBlock::clearUserInstFlags()
   }
 }
 
-std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
+odb::PtrMap<dbTechLayer, odb::dbTechVia*> dbBlock::getDefaultVias()
 {
   odb::dbTech* tech = getTech();
   odb::dbSet<odb::dbTechVia> vias = tech->getVias();
-  std::map<dbTechLayer*, odb::dbTechVia*> default_vias;
+  odb::PtrMap<dbTechLayer, odb::dbTechVia*> default_vias;
 
   for (odb::dbTechVia* via : vias) {
     odb::dbStringProperty* prop
@@ -3416,7 +3361,7 @@ int dbBlock::globalConnect(dbGlobalConnect* gc, bool force, bool verbose)
 void dbBlock::clearGlobalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
-  std::set<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
+  odb::PtrSet<dbGlobalConnect> connects(gcs.begin(), gcs.end());
   for (auto* connect : connects) {
     odb::dbGlobalConnect::destroy(connect);
   }
@@ -3492,11 +3437,11 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
   std::vector<_dbGlobalConnect*> non_region_rules;
   std::vector<_dbGlobalConnect*> region_rules;
 
-  std::set<dbITerm*> connected_iterms;
-  std::set<dbITerm*> skipped_iterms;
+  odb::PtrSet<dbITerm> connected_iterms;
+  odb::PtrSet<dbITerm> skipped_iterms;
   // only search for instances once
   std::map<std::string, std::vector<dbInst*>> inst_map;
-  std::set<dbInst*> donottouchinsts;
+  odb::PtrSet<dbInst> donottouchinsts;
   for (dbGlobalConnect* connect : connects) {
     _dbGlobalConnect* gc = (_dbGlobalConnect*) connect;
     if (gc->region_ != 0) {
@@ -3511,7 +3456,7 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
     std::vector<dbInst*> insts = connect->getInsts();
 
     // remove insts marked do not touch
-    std::set<dbInst*> remove_insts;
+    odb::PtrSet<dbInst> remove_insts;
     for (dbInst* inst : insts) {
       if (inst->isDoNotTouch()) {
         remove_insts.insert(inst);
@@ -3928,18 +3873,39 @@ std::string _dbBlock::makeNewName(
 // (strict mode for flat net creation).
 // If corresponding_flat_net is non-null, only internal flat nets excluding
 // the corresponding one collide (lenient mode for ModNet creation).
+// If associated_bterm is non-null, that exact top-level port may reuse the
+// candidate name while its net association is being updated.
 std::string dbBlock::makeNewNetName(const dbModule* parent,
                                     const char* base_name,
                                     const dbNameUniquifyType& uniquify,
-                                    dbNet* corresponding_flat_net)
+                                    dbNet* corresponding_flat_net,
+                                    const dbBTerm* associated_bterm)
 {
   const dbModule* scope = parent ? parent : getTopModule();
   dbModInst* mod_inst = scope ? scope->getModInst() : nullptr;
 
-  auto exists = [this, scope, corresponding_flat_net](const char* name) {
+  auto exists = [this, scope, corresponding_flat_net, associated_bterm](
+                    const char* name) {
     if (scope != nullptr) {
       const char* base = getBaseName(name);
-      if (scope->getModNet(base) || scope->findModBTerm(base)) {
+      dbBTerm* top_bterm = scope == getTopModule() ? findBTerm(base) : nullptr;
+      const bool bterm_associated
+          = top_bterm != nullptr
+            && ((corresponding_flat_net != nullptr
+                 && top_bterm->getNet() == corresponding_flat_net)
+                || top_bterm == associated_bterm);
+      const bool bterm_collision = top_bterm != nullptr && !bterm_associated;
+      // A net/port name must also be unique against instance names in the
+      // scope: a net/port and an instance cannot share a name in one
+      // Verilog scope.  OpenROAD can promote an anonymous net ("_NNNNN_")
+      // to a module boundary port, and yosys/ABC name anonymous cells
+      // "_NNNNN_" too, so without this check the promoted port collides
+      // with a leaf or hierarchical instance of the same name -- illegal
+      // Verilog that Verilator rejects with "Instance has the same name
+      // as port".
+      if (findInst(name) || scope->getModNet(base) || scope->findModBTerm(base)
+          || scope->findModInst(base) || scope->findDbInst(base)
+          || bterm_collision) {
         return true;
       }
     }
@@ -3951,8 +3917,8 @@ std::string dbBlock::makeNewNetName(const dbModule* parent,
         // Strict mode: any flat net hit is a collision
         return true;
       }
-      // Lenient mode: only internal flat nets (excluding the corresponding
-      // one) are collisions
+      // Lenient mode: only internal flat nets (excluding the
+      // corresponding one) are collisions
       if (existing_net != corresponding_flat_net
           && existing_net->isInternalTo(scope)) {
         return true;
@@ -3979,8 +3945,22 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
   // does not have to be some massive string like root/X/Y/U1.
   //
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  auto exists = [this](const char* name) {
-    return findInst(name) != nullptr || findModInst(name) != nullptr;
+  const dbModule* scope = parent ? parent->getMaster() : getTopModule();
+  auto exists = [this, scope](const char* name) {
+    // An instance name must also be unique against net/port names in the
+    // scope: a net/port and an instance cannot share a name in one
+    // Verilog scope (mirror of the instance check in makeNewNetName).
+    if (scope != nullptr) {
+      const char* base = getBaseName(name);
+      if (findInst(name) || scope->findDbInst(base) || scope->findModInst(base)
+          || scope->getModNet(base) || scope->findModBTerm(base)
+          || (scope == getTopModule() && findBTerm(base) != nullptr)) {
+        return true;
+      }
+    }
+
+    // Flat net collision check
+    return findNet(name) != nullptr;
   };
   return block->makeNewName(
       parent, base_name, uniquify, block->unique_inst_index_, exists);
@@ -3988,15 +3968,17 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
 
 const char* dbBlock::getBaseName(const char* full_name) const
 {
-  // If name contains the hierarchy delimiter, use the partial string
-  // after the last occurrence of the hierarchy delimiter.
-  // This prevents a very long term/net name creation when the name
-  // begins with a back-slash as "\soc/module1/instance_a/.../clk_port"
-  const char* last_hier_delimiter = strrchr(full_name, getHierarchyDelimiter());
-  if (last_hier_delimiter != nullptr) {
-    return last_hier_delimiter + 1;
+  const char hierarchy_delimiter = getHierarchyDelimiter();
+  const char* base_name = full_name;
+  size_t backslash_run = 0;
+  for (const char* cursor = full_name; *cursor != '\0'; cursor++) {
+    // Escaped delimiters belong to the local Verilog identifier.
+    if (*cursor == hierarchy_delimiter && backslash_run % 2 == 0) {
+      base_name = cursor + 1;
+    }
+    backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
   }
-  return full_name;
+  return base_name;
 }
 
 dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)

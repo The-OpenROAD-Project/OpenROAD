@@ -15,9 +15,9 @@
 #include "db/obj/frTrackPattern.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/drUpdate.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
-#include "global.h"
 #include "utl/Logger.h"
 
 namespace drt {

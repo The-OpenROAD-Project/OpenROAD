@@ -103,7 +103,6 @@ To add a new linter (e.g., C++ tidy):
 The following linters and formatters are planned for `//:lint_test` and
 `//:fix_lint`, replacing their ad-hoc CI equivalents:
 
-- **C++ clang-tidy** — static analysis for C++ sources
 - **C++ clang-format** — formatting check/fix for C++ and header files
 - **Python ruff** — lint + format for Python scripts in `etc/`, `docs/`, tests
 - **ShellCheck** — lint for bash scripts in `test/`, `bazel/`, `etc/`
@@ -121,3 +120,9 @@ The GitHub Actions workflow (`.github/workflows/github-actions-lint-tcl.yml`)
 runs the same `tclint` and `tclfmt` checks. Once Bazel lint targets are
 validated in CI, the GitHub Actions workflow can be retired. The same applies
 to the Jenkins documentation and duplicate ID check stages.
+
+C++ clang-tidy is provided via a separate Bazel aspect (`--config=lint`)
+rather than the `//:lint_test` umbrella. Aspects participate in Bazel's
+per-action cache, which the `sh_test`-based umbrella does not, so incremental
+C++ lint scales better that way. See the "Code Linting and Formatting"
+section of `docs/contrib/DeveloperGuide.md` for usage.

@@ -1,0 +1,88 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING ODB-1003] (metal1) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.07
+[WARNING ODB-1003] (metal7) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.4
+[WARNING ODB-1003] (metal8) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.4
+[WARNING ODB-1003] (metal9) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.8
+[WARNING ODB-1003] (metal10) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.8
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 0
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
+Design statistics
+Nets:                563
+Special nets:        0
+Routing layers:      10
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        17918          1792          90.00%
+metal3     Horizontal      24480          2448          90.00%
+metal4     Vertical        12172          1217          90.00%
+metal5     Horizontal      12240          1224          90.00%
+metal6     Vertical        12172          1217          90.00%
+metal7     Horizontal       4284          1190          72.22%
+metal8     Vertical         4284          1190          72.22%
+metal9     Horizontal       2142          1190          44.44%
+metal10    Vertical         2142          1190          44.44%
+---------------------------------------------------------------
+
+Stage 1: Pattern routing.
+Stage 3: Pattern routing with detours.
+Stage 4: Maze routing on sparsified graph.
+Stage 5: Iterative rip-up and re-route.
+[INFO GRT-0117] Start extra iteration 1/5
+[WARNING GRT-0305] Demoted 4 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[INFO GRT-0117] Start extra iteration 2/5
+[INFO GRT-0117] Start extra iteration 3/5
+[INFO GRT-0117] Start extra iteration 4/5
+[INFO GRT-0117] Start extra iteration 5/5
+[INFO GRT-0306] Iterative RRR soft-demoted 4 NDR net(s) total.
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (372).
+Routing statistics
+Wire length:           45705
+Total via count:       4123
+Total congestion:      372.54
+Min resource:          -1.79
+Bottleneck:            (2, 12, 13)
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
+--------------------------------------------------------------------------------------------------------------
+metal1    H         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
+metal2    V      1791.80       664.00       181.41       845.41      47.18      76.84      25.06          1.48
+metal3    H      2448.00       939.00       175.65      1114.65      45.53      79.44      21.01          1.79
+metal4    V      1217.20       334.00       109.42       443.42      36.43      44.52      15.31          1.10
+metal5    H      1224.00       347.00        76.81       423.81      34.62      31.58       7.32          0.49
+metal6    V      1217.20       358.00        46.54       404.54      33.23      19.50       3.25          0.39
+metal7    H      1190.00       200.00        69.61       269.61      22.66      21.71       6.64          0.70
+metal8    V      1190.00       156.00        30.04       186.04      15.63      11.49       2.69          0.42
+metal9    H      1190.00        26.00        14.60        40.60       3.41       3.79       1.27          0.56
+metal10   V      1190.00        19.00         2.25        21.25       1.79       0.88       0.25          0.28
+--------------------------------------------------------------------------------------------------------------
+Total           12658.20      3043.00       706.31      3749.31      29.62     289.75      82.79          1.79
+[INFO GRT-0018] Total wirelength: 12371 um
+[INFO GRT-0014] Routed nets: 563
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
+No differences found.

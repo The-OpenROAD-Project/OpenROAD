@@ -27,24 +27,13 @@ BAZEL_OPTS="${BAZEL_OPTS:--c opt ${BAZEL_REMOTE_MATERIALIZE}}"
 "${BAZEL}" fetch "${BAZEL_REMOTE_MATERIALIZE}" //src/...
 "${BAZEL}" build -k ${BAZEL_OPTS} \
   @openmp//:omp_header \
-  $("${BANT}" list-targets -g "genrule|tcl_encode|tcl_wrap_cc" -g "//src" | awk '{print $3}')
+  $("${BANT}" list-targets ... -g "genrule|tcl_encode|tcl_wrap_cc" -g "//src" -c3)
 
 # Create compilation DB. Command 'compilation-db' would create a huge *.json file,
 # but compile_flags.txt is perfectly sufficient and easier for tools to use as
 # these tools will require much less memory.
 
 "${BANT}" compile-flags -o compile_flags.txt
-
-# The QT headers are not properly picked up; add them manually.
-for f in bazel-out/../../../external/qt-bazel*/qt_source/qtbase*/build/include \
-  bazel-out/../../../external/qt-bazel*/qt_source/qtbase*/build/include/Q* \
-  bazel-out/../../../external/qt-bazel*/qt_source/qtcharts*/include/QtCharts
-do
-  echo "-I$f"
-  # There is a bug in clangd that does not properly follow symbolic links.
-  # So expand them here as well for interactive use.
-  echo "-I$(realpath $f)"
-done >> compile_flags.txt
 
 # Qt include files check for this
 echo '-fPIC' >> compile_flags.txt
@@ -60,7 +49,7 @@ for f in bazel-out/../../../external/*/include/python3.*/Python.h; do
 done >> compile_flags.txt
 
 # Since we don't do per-file define extraction in compile_flag.txt,
-# add them here globally
+# to avoid polluting the global namespace, selectively add necessary ones here.
 cat >> compile_flags.txt <<EOF
 -DABC_USE_STDINT_H=1
 -DABC_NAMESPACE=abc
@@ -68,6 +57,8 @@ cat >> compile_flags.txt <<EOF
 -DBUILD_TYPE="opt"
 -DBUILD_PYTHON=false
 -DBUILD_GUI=true
+-DSLANG_NO_YOSYS
+-DSLANG_MUX_LOWERING
 EOF
 
 # If there are two styles of comp-dbs, tools might choose wrong one. Warn user.
