@@ -2,27 +2,6 @@ source "helpers.tcl"
 source "flow_helpers.tcl"
 source "sky130hd/sky130hd.vars"
 
-proc write_regions_section { input_def output_regions } {
-  set in_stream [open $input_def r]
-  set out_stream [open $output_regions w]
-  set copy_lines 0
-
-  while { [gets $in_stream line] >= 0 } {
-    if { [string match "REGIONS *" $line] } {
-      set copy_lines 1
-    }
-    if { $copy_lines } {
-      puts $out_stream $line
-      if { [string trim $line] == "END REGIONS" } {
-        break
-      }
-    }
-  }
-
-  close $in_stream
-  close $out_stream
-}
-
 read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
@@ -57,12 +36,44 @@ detailed_placement -max_displacement 650
 improve_placement
 check_placement
 
-set def_file [make_result_file upf_aes.def]
-write_def $def_file
-if { [info exists ::env(BAZEL_TEST)] } {
-  set regions_file [make_result_file upf_aes.regions]
-  write_regions_section $def_file $regions_file
-  diff_file $regions_file upf_aes.regionsok
-} else {
-  diff_file $def_file upf_aes.defok
+set block [ord::get_db_block]
+set regions [$block getRegions]
+
+if { [llength $regions] != 2 } {
+  utl::error "UPF" 1 "Expected 2 regions, found [llength $regions]"
+}
+
+set dbu [$block getDefUnits]
+foreach region $regions {
+  set name [$region getName]
+  set boxes [$region getBoxes]
+
+  if { [llength $boxes] == 0 } {
+    utl::error "UPF" 5 "Region $name has no boundaries"
+  }
+
+  foreach box $boxes {
+    set xmin [$box xMin]
+    set ymin [$box yMin]
+    set xmax [$box xMax]
+    set ymax [$box yMax]
+
+    if { $name eq "PD_AES_1" } {
+      if {
+        $xmin != 30 * $dbu || $ymin != 30 * $dbu
+        || $xmax != 650 * $dbu || $ymax != 490 * $dbu
+      } {
+        utl::error "UPF" 2 "Region PD_AES_1 boundary mismatch (in DBU): $xmin $ymin $xmax $ymax"
+      }
+    } elseif { $name eq "PD_AES_2" } {
+      if {
+        $xmin != 30 * $dbu || $ymin != 510 * $dbu
+        || $xmax != 650 * $dbu || $ymax != 970 * $dbu
+      } {
+        utl::error "UPF" 3 "Region PD_AES_2 boundary mismatch (in DBU): $xmin $ymin $xmax $ymax"
+      }
+    } else {
+      utl::error "UPF" 4 "Unknown region $name"
+    }
+  }
 }
