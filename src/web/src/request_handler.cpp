@@ -1987,7 +1987,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   static constexpr int kMaxConeInsts = 150;
-  static constexpr int kMaxNetFanout = 30;
+  static constexpr uint32_t kMaxNetFanout = 30;
 
   try {
     const std::string inst_name
@@ -2023,8 +2023,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
             }
             odb::dbNet* net = iterm->getNet();
             if (!net || seen_nets.contains(net)
-                || net->getITerms().hasMoreThan(
-                    static_cast<uint32_t>(kMaxNetFanout))) {
+                || net->getITerms().hasMoreThan(kMaxNetFanout)) {
               continue;
             }
             seen_nets.insert(net);
@@ -2066,8 +2065,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
             }
             odb::dbNet* net = iterm->getNet();
             if (!net || seen_nets.contains(net)
-                || net->getITerms().hasMoreThan(
-                    static_cast<uint32_t>(kMaxNetFanout))) {
+                || net->getITerms().hasMoreThan(kMaxNetFanout)) {
               continue;
             }
             seen_nets.insert(net);

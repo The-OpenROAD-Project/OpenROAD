@@ -129,8 +129,7 @@ void OptimizeMirroring::findNetBoxes()
                   // Reducing HPWL on large nets (like clocks) is irrelevant
                   // to mirroring criteria. hasMoreThan() walks the iterms
                   // (bounded), so check once here and cache the result.
-                  || net->getITerms().hasMoreThan(
-                      static_cast<uint32_t>(mirror_max_iterm_count_));
+                  || net->getITerms().hasMoreThan(mirror_max_iterm_count_);
     if (ignore) {
       debugPrint(
           logger_, DPL, "opt_mirror", 2, "ignore {}", net->getConstName());
