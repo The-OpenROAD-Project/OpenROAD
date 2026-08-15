@@ -130,6 +130,7 @@ filegroup(
 # From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
     "commands_without_load",
+    "upf_aes",
 ]
 
 COMPULSORY_TESTS = [
@@ -138,7 +139,6 @@ COMPULSORY_TESTS = [
     "ord_tclsh_completion",
     "place_inst",
     "upf_test",
-    "upf_aes",
     "write_db",
 ] + PASSFAIL_TESTS
 
