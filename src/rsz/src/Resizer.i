@@ -320,8 +320,8 @@ repair_design_cmd(double max_length,
                         pre_placement,
                         match_cell_footprint,
                         reroute,
-                        false, // is_estimation
-                        verbose);
+                        verbose,
+                        false); // is_estimation
 }
 
 int

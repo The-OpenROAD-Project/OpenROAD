@@ -102,8 +102,8 @@ void RepairDesign::repairDesign(double max_wire_length,
                                 double slew_margin,
                                 double cap_margin,
                                 double buffer_gain,
-                                bool is_estimation,
-                                bool verbose)
+                                bool verbose,
+                                bool is_estimation)
 {
   init();
 
@@ -113,8 +113,8 @@ void RepairDesign::repairDesign(double max_wire_length,
                slew_margin,
                cap_margin,
                buffer_gain != 0.0,
-               is_estimation,
                verbose,
+               is_estimation,
                repaired_net_count,
                slew_violations,
                cap_violations,
@@ -245,8 +245,8 @@ void RepairDesign::repairDesign(
     double slew_margin,
     double cap_margin,
     bool initial_sizing,
-    bool is_estimation,
     bool verbose,
+    bool is_estimation,
     int& repaired_net_count,
     int& slew_violations,
     int& cap_violations,

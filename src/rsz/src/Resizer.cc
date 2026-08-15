@@ -3170,8 +3170,8 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
                                0.0,
                                0.0,
                                false,  // initial_sizing
-                               true,   // is_estimation
                                false,  // verbose
+                               true,   // is_estimation
                                repaired_net_count,
                                slew_violations,
                                cap_violations,
@@ -4990,8 +4990,8 @@ void Resizer::repairDesign(double max_wire_length,
                            double buffer_gain,
                            bool match_cell_footprint,
                            bool reroute,
-                           bool is_estimation,
-                           bool verbose)
+                           bool verbose,
+                           bool is_estimation)
 {
   utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
@@ -5008,8 +5008,8 @@ void Resizer::repairDesign(double max_wire_length,
                                slew_margin,
                                cap_margin,
                                buffer_gain,
-                               is_estimation,
-                               verbose);
+                               verbose,
+                               is_estimation);
   logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
 }
 
