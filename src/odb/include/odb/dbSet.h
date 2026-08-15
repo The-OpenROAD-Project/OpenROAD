@@ -135,28 +135,36 @@ class dbSet
 
   ///
   /// Returns true if this set has more than `count` elements.
+  /// Walks at most `count` + 1 elements; prefer this over comparing
+  /// against size(), which walks the whole set.
   ///
   bool hasMoreThan(uint32_t count) const
   {
     iterator it = begin();
     const iterator end_it = end();
-    while (count > 0) {
-      if (it == end_it) {
-        return false;
-      }
-      ++it;
-      --count;
-    }
-    return it != end_it;
+    return advanceBy(it, end_it, count) && it != end_it;
   }
 
   ///
   /// Returns true if this set has exactly `count` elements.
+  /// Walks at most `count` + 1 elements; prefer this over comparing
+  /// against size(), which walks the whole set. For `count` == 0
+  /// prefer empty().
   ///
   bool hasExactly(uint32_t count) const
   {
     iterator it = begin();
     const iterator end_it = end();
+    return advanceBy(it, end_it, count) && it == end_it;
+  }
+
+ private:
+  ///
+  /// Advances `it` by up to `count` elements, stopping at `end_it`.
+  /// Returns true if all `count` elements were traversed.
+  ///
+  static bool advanceBy(iterator& it, const iterator& end_it, uint32_t count)
+  {
     while (count > 0) {
       if (it == end_it) {
         return false;
@@ -164,10 +172,9 @@ class dbSet
       ++it;
       --count;
     }
-    return it == end_it;
+    return true;
   }
 
- private:
   dbIterator* itr_{nullptr};
   dbObject* parent_{nullptr};
 };
