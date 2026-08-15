@@ -129,9 +129,37 @@ class dbSet
   void reverse() { itr_->reverse(parent_); }
 
   ///
-  /// Returns true if set is empty
+  /// Returns true if this set is empty
   ///
   bool empty() const { return begin() == end(); }
+
+  ///
+  /// Returns true if this set has more than `count` elements.
+  ///
+  bool hasMoreThan(uint32_t count) const
+  {
+    uint32_t c = 0;
+    for (iterator it = begin(); it != end(); ++it) {
+      if (++c > count) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ///
+  /// Returns true if this set has exactly `count` elements.
+  ///
+  bool hasExactly(uint32_t count) const
+  {
+    uint32_t c = 0;
+    for (iterator it = begin(); it != end(); ++it) {
+      if (++c > count) {
+        return false;
+      }
+    }
+    return c == count;
+  }
 
  private:
   dbIterator* itr_{nullptr};
