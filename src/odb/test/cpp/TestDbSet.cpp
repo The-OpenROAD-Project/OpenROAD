@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cstdint>
+#include <limits>
+
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
@@ -61,6 +64,14 @@ TEST_F(TestDbSet, HasExactlyBoundaries)
   EXPECT_FALSE(iterms.hasExactly(1));
   EXPECT_TRUE(iterms.hasExactly(2));
   EXPECT_FALSE(iterms.hasExactly(3));
+}
+
+TEST_F(TestDbSet, HugeCountTerminatesAtEnd)
+{
+  constexpr uint32_t kHuge = std::numeric_limits<uint32_t>::max();
+  dbSet<dbITerm> iterms = block_->findNet("n5")->getITerms();
+  EXPECT_FALSE(iterms.hasMoreThan(kHuge));
+  EXPECT_FALSE(iterms.hasExactly(kHuge));
 }
 
 TEST_F(TestDbSet, SequentialIteratorSet)

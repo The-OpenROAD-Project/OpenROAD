@@ -136,7 +136,8 @@ class dbSet
   ///
   /// Returns true if this set has more than `count` elements.
   /// Walks at most `count` + 1 elements; prefer this over comparing
-  /// against size(), which walks the whole set.
+  /// against size(), which walks the whole set. hasMoreThan(0) is
+  /// equivalent to !empty().
   ///
   bool hasMoreThan(uint32_t count) const
   {
