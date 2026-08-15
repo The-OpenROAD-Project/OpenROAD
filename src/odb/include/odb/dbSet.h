@@ -139,14 +139,15 @@ class dbSet
   bool hasMoreThan(uint32_t count) const
   {
     iterator it = begin();
+    const iterator end_it = end();
     while (count > 0) {
-      if (it == end()) {
+      if (it == end_it) {
         return false;
       }
       ++it;
       --count;
     }
-    return it != end();
+    return it != end_it;
   }
 
   ///
@@ -155,14 +156,15 @@ class dbSet
   bool hasExactly(uint32_t count) const
   {
     iterator it = begin();
+    const iterator end_it = end();
     while (count > 0) {
-      if (it == end()) {
+      if (it == end_it) {
         return false;
       }
       ++it;
       --count;
     }
-    return it == end();
+    return it == end_it;
   }
 
  private:
