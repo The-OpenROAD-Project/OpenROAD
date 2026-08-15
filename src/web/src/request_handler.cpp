@@ -2023,7 +2023,8 @@ WebSocketResponse SelectHandler::handleSchematicCone(
             }
             odb::dbNet* net = iterm->getNet();
             if (!net || seen_nets.contains(net)
-                || net->getITerms().hasMoreThan(static_cast<uint32_t>(kMaxNetFanout))) {
+                || net->getITerms().hasMoreThan(
+                    static_cast<uint32_t>(kMaxNetFanout))) {
               continue;
             }
             seen_nets.insert(net);
@@ -2065,7 +2066,8 @@ WebSocketResponse SelectHandler::handleSchematicCone(
             }
             odb::dbNet* net = iterm->getNet();
             if (!net || seen_nets.contains(net)
-                || net->getITerms().hasMoreThan(static_cast<uint32_t>(kMaxNetFanout))) {
+                || net->getITerms().hasMoreThan(
+                    static_cast<uint32_t>(kMaxNetFanout))) {
               continue;
             }
             seen_nets.insert(net);

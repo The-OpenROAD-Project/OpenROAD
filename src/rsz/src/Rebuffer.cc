@@ -1680,8 +1680,7 @@ static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst)
     odb::dbInst* db_inst = network->staToDb(inst);
     for (odb::dbITerm* iterm : db_inst->getITerms()) {
       odb::dbNet* net = iterm->getNet();
-      if (net && net->getITerms().hasExactly(1)
-          && !net->getBTerms().empty()) {
+      if (net && net->getITerms().hasExactly(1) && !net->getBTerms().empty()) {
         return true;
       }
     }
