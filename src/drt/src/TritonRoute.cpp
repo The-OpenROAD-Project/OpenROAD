@@ -1042,7 +1042,7 @@ int TritonRoute::main()
   }
   if (!has_grt_guides) {
     logger_->error(DRT,
-                   42,
+                   47,
                    "Design has no global routing guides. Global routing must "
                    "be run before detailed routing.");
   }
