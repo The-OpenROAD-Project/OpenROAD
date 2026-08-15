@@ -1021,7 +1021,7 @@ int TritonRoute::main()
   initDesign();
   bool has_routable_nets = false;
   bool has_grt_guides = false;
-  for (auto net : db_->getChip()->getBlock()->getNets()) {
+  for (auto* net : db_->getChip()->getBlock()->getNets()) {
     auto iterms = net->getITerms();
     auto bterms = net->getBTerms();
     if (!has_routable_nets
