@@ -430,7 +430,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       double buffer_gain,
       bool match_cell_footprint,
       bool reroute,
-      bool verbose);
+      bool is_estimation = false,
+      bool verbose = false);
   int repairDesignBufferCount() const;
   // Try to reroute the net driven by drvr_pin to a lower-resistance layer.
   // Returns true if the reroute was accepted (net marked dirty for incremental

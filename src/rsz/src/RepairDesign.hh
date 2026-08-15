@@ -55,11 +55,13 @@ class RepairDesign : sta::dbStaState
                     double slew_margin,
                     double cap_margin,
                     double buffer_gain,
+                    bool is_estimation,
                     bool verbose);
   void repairDesign(double max_wire_length,  // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
                     bool initial_sizing,
+                    bool is_estimation,
                     bool verbose,
                     int& repaired_net_count,
                     int& slew_violations,

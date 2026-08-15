@@ -102,6 +102,7 @@ void RepairDesign::repairDesign(double max_wire_length,
                                 double slew_margin,
                                 double cap_margin,
                                 double buffer_gain,
+                                bool is_estimation,
                                 bool verbose)
 {
   init();
@@ -111,7 +112,8 @@ void RepairDesign::repairDesign(double max_wire_length,
   repairDesign(max_wire_length,
                slew_margin,
                cap_margin,
-               buffer_gain,
+               buffer_gain != 0.0,
+               is_estimation,
                verbose,
                repaired_net_count,
                slew_violations,
@@ -243,6 +245,7 @@ void RepairDesign::repairDesign(
     double slew_margin,
     double cap_margin,
     bool initial_sizing,
+    bool is_estimation,
     bool verbose,
     int& repaired_net_count,
     int& slew_violations,
@@ -356,7 +359,7 @@ void RepairDesign::repairDesign(
     const int max_allowed_buffers
         = std::max(5000, static_cast<int>(driver_vertices.size() * 0.05));
     for (int i = driver_vertices.size() - 1; i >= 0; i--) {
-      if (inserted_buffer_count_ > max_allowed_buffers) {
+      if (!is_estimation && inserted_buffer_count_ > max_allowed_buffers) {
         logger_->warn(
             RSZ,
             3310,
