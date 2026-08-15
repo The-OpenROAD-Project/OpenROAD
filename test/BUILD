@@ -185,7 +185,7 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "enormous" if test_name in BIG_TESTS else "medium",
-        check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS + ["upf_aes"] else True,
+        check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
         tags = ["manual"] if test_name in BIG_TESTS else [],

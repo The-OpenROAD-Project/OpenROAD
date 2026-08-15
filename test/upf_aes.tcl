@@ -43,37 +43,52 @@ if { [llength $regions] != 2 } {
   utl::error "UPF" 1 "Expected 2 regions, found [llength $regions]"
 }
 
+set expected_regions [dict create "PD_AES_1" 0 "PD_AES_2" 0]
+
 set dbu [$block getDefUnits]
 foreach region $regions {
   set name [$region getName]
-  set boxes [$region getBoxes]
+  set boundaries [$region getBoundaries]
 
-  if { [llength $boxes] == 0 } {
-    utl::error "UPF" 5 "Region $name has no boundaries"
+  if { [llength $boundaries] != 1 } {
+    utl::error "UPF" 5 "Region $name expected 1 box, found [llength $boundaries]"
   }
 
-  foreach box $boxes {
-    set xmin [$box xMin]
-    set ymin [$box yMin]
-    set xmax [$box xMax]
-    set ymax [$box yMax]
+  if { [dict exists $expected_regions $name] } {
+    dict incr expected_regions $name
+  } else {
+    utl::error "UPF" 4 "Unknown region $name"
+  }
 
-    if { $name eq "PD_AES_1" } {
-      if {
-        $xmin != 30 * $dbu || $ymin != 30 * $dbu
-        || $xmax != 650 * $dbu || $ymax != 490 * $dbu
-      } {
-        utl::error "UPF" 2 "Region PD_AES_1 boundary mismatch (in DBU): $xmin $ymin $xmax $ymax"
-      }
-    } elseif { $name eq "PD_AES_2" } {
-      if {
-        $xmin != 30 * $dbu || $ymin != 510 * $dbu
-        || $xmax != 650 * $dbu || $ymax != 970 * $dbu
-      } {
-        utl::error "UPF" 3 "Region PD_AES_2 boundary mismatch (in DBU): $xmin $ymin $xmax $ymax"
-      }
-    } else {
-      utl::error "UPF" 4 "Unknown region $name"
+  set box [lindex $boundaries 0]
+  set xmin [$box xMin]
+  set ymin [$box yMin]
+  set xmax [$box xMax]
+  set ymax [$box yMax]
+
+  if { [$region getRegionType] ne "EXCLUSIVE" } {
+    utl::error "UPF" 7 "Region $name type mismatch: expected EXCLUSIVE, got [$region getRegionType]"
+  }
+
+  if { $name eq "PD_AES_1" } {
+    if {
+      $xmin != (30 * $dbu) || $ymin != (30 * $dbu)
+      || $xmax != (650 * $dbu) || $ymax != (490 * $dbu)
+    } {
+      utl::error "UPF" 2 "Region PD_AES_1 boundary mismatch (in DBU): $xmin $ymin $xmax $ymax"
     }
+  } elseif { $name eq "PD_AES_2" } {
+    if {
+      $xmin != (30 * $dbu) || $ymin != (510 * $dbu)
+      || $xmax != (650 * $dbu) || $ymax != (970 * $dbu)
+    } {
+      utl::error "UPF" 3 "Region PD_AES_2 boundary mismatch (in DBU): $xmin $ymin $xmax $ymax"
+    }
+  }
+}
+
+dict for {name count} $expected_regions {
+  if { $count != 1 } {
+    utl::error "UPF" 6 "Expected exactly 1 region named $name, found $count"
   }
 }
