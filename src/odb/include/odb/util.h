@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace utl {
@@ -23,12 +24,16 @@ class dbTechLayer;
 class Rect;
 class Polygon;
 
+// Replaces bare and escaped brackets in generated scalar names.
+std::string replaceBracketsWithUnderscores(std::string_view name);
+
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);
 
 bool hasOneSiteMaster(dbDatabase* db);
 
 void cutRows(dbBlock* block,
              int min_row_width,
+             int min_row_height,
              const std::vector<dbBox*>& blockages,
              int halo_x,
              int halo_y,

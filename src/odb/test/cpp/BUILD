@@ -208,6 +208,7 @@ cc_test(
         "TestDbNet.cpp",
         "TestDbWire.cc",
         "TestDesignIsRouted.cpp",
+        "TestOrderWires.cpp",
         "TestPolygonalFloorplan.cc",
     ],
     args = [],
