@@ -92,4 +92,3 @@ dict for {name count} $expected_regions {
     utl::error "UPF" 6 "Expected exactly 1 region named $name, found $count"
   }
 }
-pass
