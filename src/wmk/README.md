@@ -128,6 +128,58 @@ verify_watermark
 
 At least one claim file is required.
 
+#### Claim file format
+
+A claim file records what an embedder committed to: which objects it marked and
+what value it drove each one to. It is the evidence a verifier checks, so its
+format is defined here rather than by whichever tool produced it.
+
+The file is comma-separated with a header row naming the columns. Columns are
+matched by name, so a producer may emit them in any order and may add columns of
+its own; the ones below are the only ones read. Values are not quoted, and
+instance names must therefore not contain commas.
+
+A row is checked unless `skipped_reason` is non-empty, with one exception:
+`already_satisfied` means the object already carried the target value and needed
+no edit, which is still a claim the owner can verify.
+
+**Placement claims** describe pairs of cells in the same row. The bit is which of
+the two sits further left, comparing the x coordinate of each instance bounding
+box.
+
+| Column | Meaning |
+| ----- | ----- |
+| `kind` | `pair`; rows of any other kind are ignored. |
+| `A_name`, `B_name` | Instance names of the marked pair. |
+| `target_bit` | `0` if A was driven to sit left of B, `1` otherwise. |
+| `skipped_reason` | Empty or `already_satisfied` to be checked; any other value skips the row. |
+
+```text
+kind,id,A_name,B_name,target_bit,skipped_reason
+pair,_101770_|_101842_,_101842_,_101770_,0,already_satisfied
+pair,_070839_|_070816_,_070839_,_070816_,1,
+```
+
+**CTS claims** describe leaf clock buffers. The bit is the parity of the buffer's
+sequential fanout: the number of sequential clock sinks on the net its single
+output drives.
+
+| Column | Meaning |
+| ----- | ----- |
+| `target_lcb` | Instance name of the marked leaf clock buffer. |
+| `target_bit` | Parity the sequential fanout was driven to, `0` or `1`. |
+| `final_bit` | Parity actually achieved. A row whose `final_bit` differs from `target_bit` was not committed and is skipped. |
+| `skipped_reason` | As above. |
+
+```text
+pair_idx,target_lcb,other_lcb,target_bit,final_bit,skipped_reason
+0,clkbuf_leaf_314_clk,clkbuf_leaf_313_clk,1,1,
+```
+
+A claim naming an instance that is not in the design counts against the
+extraction rate rather than aborting the check, so a partially disturbed layout
+still produces a verdict.
+
 ## Example scripts
 
 Tag a keyed subset, route with the bias applied, then report:
