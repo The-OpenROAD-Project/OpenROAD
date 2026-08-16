@@ -45,6 +45,7 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "place_macro_rotated",
     "placement_blockages1",
     "unfixed_cells_dont_fit_in_core",
 ]

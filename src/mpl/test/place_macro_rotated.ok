@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/place_macro_rotated.lef, created 1 library cells
+[INFO ODB-0128] Design: place_macro_rotated
+[INFO ODB-0131]     Created 1 components and 1 component-terminals.
+[WARNING MPL-0036] Orientation R90 specified for macro macro is a right angle rotation. Snapping is not possible.
+[INFO MPL-0035] Macro macro placed. Bounding box (20.000um, 20.000um), (420.000um, 120.000um). Orientation R90
+[ERROR MPL-0034] Cannot place macro at (20, 20) (120, 420), outside of the core (0, 0) (499.89, 198.8).
+R0 correctly rejected
+No differences found.
