@@ -361,12 +361,15 @@ RoutingStat Watermark::verifyRouting(const std::array<std::uint8_t, 32>& key,
   stat.zero_wrongway_nets = zero_ww;
 
   // The null is over which nets are marked, so the same q_R values are simply
-  // relabelled.  Both groups therefore feed the sample in the order they were
-  // collected, which is database order and identical between runs.
+  // relabelled and only the multiset matters.  Sorting it fixes the draws to
+  // depend on the design alone: two keys that select the same number of nets
+  // then face the same null, and the p-value does not shift with the order the
+  // groups happened to be collected in.
   std::vector<double> all;
   all.reserve(q_marked.size() + q_rest.size());
   all.insert(all.end(), q_marked.begin(), q_marked.end());
   all.insert(all.end(), q_rest.begin(), q_rest.end());
+  std::sort(all.begin(), all.end());
   const std::array<std::uint8_t, 32> seed_bytes = sha256(block->getName());
   std::uint64_t seed = 0;
   for (int i = 0; i < 8; ++i) {
