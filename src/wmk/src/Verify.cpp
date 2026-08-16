@@ -195,13 +195,13 @@ VerifyResult Watermark::verifyCts(const std::string& claims_file)
     if (lcb_name.empty()) {
       continue;
     }
-    // A claim whose recorded outcome differs from its target was not committed
-    // by the embedder and is not evidence of ownership.
-    const std::string final_bit = claimField(row, "final_bit");
+    // The row's own record of how the embedding turned out is deliberately not
+    // consulted.  Skipping the claims that record a failure would let a claim
+    // file decide its own denominator, and the rate would come out at one for
+    // any file that was honest about what it could not set -- on any design,
+    // marked or not.  What the design shows is measured against what the key
+    // asked for, and nothing else.
     const std::string target_bit = claimField(row, "target_bit");
-    if (!final_bit.empty() && final_bit != target_bit) {
-      continue;
-    }
     ++result.checked;
 
     dbInst* lcb = block->findInst(lcb_name.c_str());

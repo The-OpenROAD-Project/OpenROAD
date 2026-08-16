@@ -137,6 +137,17 @@ void sha256_final(Sha256Ctx& c, std::uint8_t out[32])
 
 }  // namespace
 
+std::array<std::uint8_t, 32> sha256(const std::string& msg)
+{
+  Sha256Ctx c;
+  sha256_init(c);
+  sha256_update(
+      c, reinterpret_cast<const std::uint8_t*>(msg.data()), msg.size());
+  std::array<std::uint8_t, 32> out;
+  sha256_final(c, out.data());
+  return out;
+}
+
 void hmac_sha256(const std::uint8_t* key,
                  std::size_t key_len,
                  const std::uint8_t* msg,
@@ -215,6 +226,25 @@ bool parse_hex_key32(const std::string& hex,
     key_out[i] = static_cast<std::uint8_t>((hi << 4) | lo);
   }
   return true;
+}
+
+std::array<std::uint8_t, 32> hmac_digest(
+    const std::array<std::uint8_t, 32>& key,
+    const std::vector<std::string>& parts)
+{
+  // Build the length-prefixed message, then hash it in one call.
+  std::vector<std::uint8_t> msg;
+  for (const std::string& p : parts) {
+    const std::uint32_t len = static_cast<std::uint32_t>(p.size());
+    msg.push_back(static_cast<std::uint8_t>((len >> 24) & 0xff));
+    msg.push_back(static_cast<std::uint8_t>((len >> 16) & 0xff));
+    msg.push_back(static_cast<std::uint8_t>((len >> 8) & 0xff));
+    msg.push_back(static_cast<std::uint8_t>(len & 0xff));
+    msg.insert(msg.end(), p.begin(), p.end());
+  }
+  std::array<std::uint8_t, 32> out{};
+  hmac_sha256(key.data(), key.size(), msg.data(), msg.size(), out.data());
+  return out;
 }
 
 }  // namespace wmk

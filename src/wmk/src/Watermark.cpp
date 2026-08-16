@@ -11,12 +11,19 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <vector>
 
 #include "HmacSha256.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/Scene.hh"
+#include "sta/Transition.hh"
 #include "utl/Logger.h"
 
 namespace wmk {
@@ -175,9 +182,56 @@ double binomialTail(int X, int x, double p)
 
 }  // namespace
 
-Watermark::Watermark(odb::dbDatabase* db, utl::Logger* logger)
-    : db_(db), logger_(logger)
+Watermark::Watermark(odb::dbDatabase* db,
+                     sta::dbSta* sta,
+                     dpl::Opendp* opendp,
+                     utl::Logger* logger)
+    : db_(db), sta_(sta), opendp_(opendp), logger_(logger)
 {
+}
+
+float Watermark::worstClockSkew() const
+{
+  if (sta_ == nullptr) {
+    return 0.0f;
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  if (network == nullptr || network->defaultLibertyLibrary() == nullptr) {
+    return 0.0f;
+  }
+  const float skew = sta_->findWorstClkSkew(
+      sta::MinMax::max(), /* include_internal_latency */ false);
+  return std::isfinite(skew) ? skew : 0.0f;
+}
+
+float Watermark::worstSlack(odb::dbInst* inst) const
+{
+  if (sta_ == nullptr) {
+    return std::numeric_limits<float>::max();
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  // Without liberty there is no timing to consult.  Report unbounded slack so
+  // the caller's screening is simply inactive, rather than failing the whole
+  // run: a design read straight from a db has no libraries attached.
+  if (network == nullptr || network->defaultLibertyLibrary() == nullptr) {
+    return std::numeric_limits<float>::max();
+  }
+  float worst = std::numeric_limits<float>::max();
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getNet() == nullptr) {
+      continue;
+    }
+    sta::Pin* pin = network->dbToSta(iterm);
+    if (pin == nullptr) {
+      continue;
+    }
+    const float slack = sta_->slack(pin,
+                                    sta::RiseFallBoth::riseFall(),
+                                    sta_->scenes(),
+                                    sta::MinMax::max());
+    worst = std::min(worst, slack);
+  }
+  return worst;
 }
 
 int Watermark::clearWatermark()

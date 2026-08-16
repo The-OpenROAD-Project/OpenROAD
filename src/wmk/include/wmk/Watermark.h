@@ -28,7 +28,91 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
+namespace sta {
+class dbSta;
+}
+
+namespace dpl {
+class Opendp;
+}
+
 namespace wmk {
+
+// Knobs for the placement watermark.  The defaults are the values the scheme
+// was characterised with; they trade capacity against how much timing and
+// wirelength slack the marks are allowed to consume.
+struct PlacementOptions
+{
+  int grid_nx = 8;
+  int grid_ny = 8;
+  double pair_dist_um = 1.0;
+  int pairs_per_tile = 4;
+  // Cells with less slack than this are left alone, so the watermark does not
+  // land on the paths that decide the clock period.
+  double slack_threshold_ns = 0.20;
+  // A swap that changes half-perimeter wirelength by more than this is
+  // reverted, keeping the mark invisible in wirelength.
+  int hpwl_eps_dbu = 100;
+  // How far legalization may move a cell afterwards, in microns.
+  int max_disp_um = 5;
+};
+
+// One committed placement mark: the pair, and which order the key called for.
+struct PlacementClaim
+{
+  std::string a_name;
+  std::string b_name;
+  int target_bit = 0;
+  bool already_satisfied = false;
+};
+
+// Knobs for the clock tree watermark.
+struct CtsOptions
+{
+  // Upper bound on how many buffer pairs to mark.  Each pair carries one bit.
+  int num_pairs = 32;
+  // Two buffers are only paired if their centres are within this distance, so
+  // a moved sink stays local and the skew cost stays small.
+  double sibling_dist_um = 20.0;
+  // A pair is rejected if it makes the clock's worst skew worse by more than
+  // this.
+  double skew_margin_ns = 0.0;
+};
+
+// One committed clock tree mark.
+struct CtsClaim
+{
+  std::string pair_key;
+  std::string target_lcb;
+  std::string other_lcb;
+  int target_bit = 0;
+  int final_bit = 0;
+};
+
+// Outcome of the routing watermark test.  Unlike placement and CTS this is a
+// population statistic, not a count of claims: the marked nets should carry
+// less wrong-way metal than the rest.
+struct RoutingStat
+{
+  int eligible = 0;
+  int marked = 0;
+  double q_marked = 0.0;
+  double q_rest = 0.0;
+  // Difference in mean wrong-way fraction.  More negative is stronger.
+  //
+  // The sign alone is not evidence: on a design carrying no watermark it is a
+  // coin flip, so the decision is made on p_r, not on this.
+  double t_r = 0.0;
+  // Randomization p-value: the fraction of uniformly drawn marked sets of the
+  // same size whose T_R is at least as negative.  Floored at 1/(B+1).
+  double p_r = 1.0;
+  // log10 of an upper bound on the same tail, computed in closed form.  It is
+  // exact when the marked nets carry no wrong-way metal at all, which is the
+  // case where the sampling floor above is far too coarse to be useful.  0.0
+  // means the bound is vacuous.
+  double log10_tail = 0.0;
+  int zero_wrongway_nets = 0;
+};
 
 // Outcome of checking one stage's claims against a design.  Ownership is
 // decided by the extraction rate against a threshold rather than by an exact
@@ -47,7 +131,10 @@ struct VerifyResult
 class Watermark
 {
  public:
-  Watermark(odb::dbDatabase* db, utl::Logger* logger);
+  Watermark(odb::dbDatabase* db,
+            sta::dbSta* sta,
+            dpl::Opendp* opendp,
+            utl::Logger* logger);
 
   // Select the watermark nets (PDMarks paper, Eq. eq:routing_selection):
   //   u_R(n) = first 4 bytes of HMAC-SHA256(key, "net\0" || net_name)
@@ -84,8 +171,48 @@ class Watermark
   // driven to.
   VerifyResult verifyCts(const std::string& claims_file);
 
+  // Put a keyed subset of same-row, same-width cell pairs into a keyed
+  // left-to-right order, and report the pairs committed in ``claims``.  The
+  // caller is responsible for legalizing afterwards.
+  int embedPlacement(const std::array<std::uint8_t, 32>& key,
+                     const PlacementOptions& opts,
+                     std::vector<PlacementClaim>& claims);
+
+  // Embed the placement watermark and write its claims.  Legalizes afterwards
+  // and drops any pair whose cells lost slack, so a mark never costs timing.
+  // Returns the number of pairs that survived.
+  int placementWatermark(const std::array<std::uint8_t, 32>& key,
+                         const PlacementOptions& opts,
+                         const std::string& claims_file);
+
+  // Set the sequential fanout parity of a keyed subset of leaf clock buffers
+  // and write the committed pairs.  A pair is only claimed if the move it
+  // needed did not worsen clock skew.
+  int ctsWatermark(const std::array<std::uint8_t, 32>& key,
+                   const CtsOptions& opts,
+                   const std::string& claims_file);
+
+  // Test the routing watermark on a routed design.  The marked set is
+  // recovered from the key, so no record from embed time is needed.
+  // ``permutations`` is the number of null draws behind p_r; it bounds the
+  // smallest reportable p-value at 1/(permutations + 1).
+  RoutingStat verifyRouting(const std::array<std::uint8_t, 32>& key,
+                            double fraction,
+                            int permutations = 100000);
+
  private:
+  // Worst slack over an instance's pins, in seconds.  Returns the maximum
+  // representable value when no timing has been set up, so that an unscreened
+  // design does not silently reject every candidate.
+  float worstSlack(odb::dbInst* inst) const;
+
+  // Worst clock skew over the design, or 0 when there is no timing to
+  // consult, so a design without liberty is simply unscreened.
+  float worstClockSkew() const;
+
   odb::dbDatabase* db_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
+  dpl::Opendp* opendp_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
 

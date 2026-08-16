@@ -11,7 +11,9 @@
 %include <std_string.i>
 
 %{
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include "HmacSha256.h"
 %}
@@ -43,6 +45,69 @@ clear_routing_watermark_cmd()
 {
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
   return w->clearWatermark();
+}
+
+int
+place_watermark_cmd(const char* key_hex,
+                    const char* claims_file,
+                    int grid_nx,
+                    int grid_ny,
+                    double pair_dist_um,
+                    int pairs_per_tile,
+                    double slack_threshold_ns,
+                    int hpwl_eps_dbu,
+                    int max_disp_um)
+{
+  std::array<std::uint8_t, 32> key;
+  if (!wmk::parse_hex_key32(std::string(key_hex), key)) {
+    return -1;
+  }
+  wmk::PlacementOptions opts;
+  opts.grid_nx = grid_nx;
+  opts.grid_ny = grid_ny;
+  opts.pair_dist_um = pair_dist_um;
+  opts.pairs_per_tile = pairs_per_tile;
+  opts.slack_threshold_ns = slack_threshold_ns;
+  opts.hpwl_eps_dbu = hpwl_eps_dbu;
+  opts.max_disp_um = max_disp_um;
+  auto* w = ord::OpenRoad::openRoad()->getWatermark();
+  return w->placementWatermark(key, opts, std::string(claims_file));
+}
+
+int
+cts_watermark_cmd(const char* key_hex,
+                  const char* claims_file,
+                  int num_pairs,
+                  double sibling_dist_um,
+                  double skew_margin_ns)
+{
+  std::array<std::uint8_t, 32> key;
+  if (!wmk::parse_hex_key32(std::string(key_hex), key)) {
+    return -1;
+  }
+  wmk::CtsOptions opts;
+  opts.num_pairs = num_pairs;
+  opts.sibling_dist_um = sibling_dist_um;
+  opts.skew_margin_ns = skew_margin_ns;
+  auto* w = ord::OpenRoad::openRoad()->getWatermark();
+  return w->ctsWatermark(key, opts, std::string(claims_file));
+}
+
+// Routing verification returns the p-value the ownership decision is made on:
+// the sampled one, or the closed-form tail when that is tighter.  T_R and both
+// components are reported by the module.  Returns -1 on a bad key.
+double
+verify_routing_watermark_cmd(const char* key_hex,
+                             double fraction,
+                             int permutations)
+{
+  std::array<std::uint8_t, 32> key;
+  if (!wmk::parse_hex_key32(std::string(key_hex), key)) {
+    return -1.0;
+  }
+  auto* w = ord::OpenRoad::openRoad()->getWatermark();
+  const wmk::RoutingStat s = w->verifyRouting(key, fraction, permutations);
+  return std::min(s.p_r, std::pow(10.0, s.log10_tail));
 }
 
 // Verification returns the extraction rate; the caller compares it against the

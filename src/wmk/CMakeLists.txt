@@ -12,6 +12,10 @@ swig_lib(NAME      wmk
 target_sources(wmk
   PRIVATE
     src/Watermark.cpp
+    src/PlacementWatermark.cpp
+    src/CtsWatermark.cpp
+    src/RoutingStat.cpp
+    src/ClockTree.cpp
     src/Verify.cpp
     src/Claims.cpp
     src/MakeWatermark.cpp
@@ -25,11 +29,16 @@ target_include_directories(wmk
     src
 )
 
+# dbSta and OpenSTA are needed to screen candidates on slack, so the watermark
+# does not land on timing-critical cells; dpl_lib re-legalizes after a swap.
 target_link_libraries(wmk
   PRIVATE
     ${TCL_LIBRARY}
     odb
     utl_lib
+    OpenSTA
+    dbSta_lib
+    dpl_lib
 )
 
 messages(

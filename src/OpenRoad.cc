@@ -277,7 +277,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
-  watermark_ = new wmk::Watermark(db_, logger_);
+  watermark_ = new wmk::Watermark(db_, sta_, opendp_, logger_);
 
   // Init components.
   Ord_Init(tcl_interp);
