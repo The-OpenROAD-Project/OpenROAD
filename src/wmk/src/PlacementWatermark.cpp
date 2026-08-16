@@ -186,7 +186,7 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
   sta::dbSta* sta = opts.slack_threshold_ns > 0.0 ? sta_ : nullptr;
 
   int committed = 0;
-  int rejected_distance = 0;
+  int unpaired = 0;
   int rejected_slack = 0;
   int rejected_hpwl = 0;
   std::map<std::pair<int, int>, int> per_tile;
@@ -231,14 +231,17 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
       // consulted once the partner is settled.
       dbInst* b = nullptr;
       size_t b_index = 0;
-      bool needs_swap = false;
       for (size_t j = i + 1; j < bucket.insts.size(); ++j) {
+        // Skip cells already spoken for before reading any coordinate: a
+        // committed swap moved two of them, so the sort order only still
+        // describes the ones left, and stopping on a moved cell would cut the
+        // search short.
+        if (paired[j]) {
+          continue;
+        }
         dbInst* cand = bucket.insts[j];
         if (cand->getBBox()->xMin() - ax > pair_dist) {
           break;
-        }
-        if (paired[j]) {
-          continue;
         }
         if (sta != nullptr
             && worstSlack(cand) < opts.slack_threshold_ns * 1e-9) {
@@ -260,7 +263,7 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
         ++rejected_hpwl;
       }
       if (b == nullptr) {
-        ++rejected_distance;
+        ++unpaired;
         continue;
       }
 
@@ -291,9 +294,8 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
       claim.b_name = second;
       claim.target_bit = target;
       claim.already_satisfied = observed == target;
-      needs_swap = !claim.already_satisfied;
 
-      if (needs_swap) {
+      if (!claim.already_satisfied) {
         const odb::Point a_loc = a->getLocation();
         const odb::Point b_loc = b->getLocation();
         a->setLocation(b_loc.x(), a_loc.y());
@@ -311,11 +313,11 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
   logger_->info(utl::WMK,
                 52,
                 "Placement watermark: {} pairs committed from {} eligible "
-                "cells ({} rejected on distance, {} on slack, {} on "
-                "wirelength).",
+                "cells ({} found no partner in range, {} rejected on slack, {} "
+                "candidate swaps rejected on wirelength).",
                 committed,
                 n_eligible,
-                rejected_distance,
+                unpaired,
                 rejected_slack,
                 rejected_hpwl);
   return committed;
