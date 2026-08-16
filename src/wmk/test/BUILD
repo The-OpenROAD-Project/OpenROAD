@@ -7,6 +7,12 @@ package(features = ["layering_check"])
 TESTS = [
     "bias",
     "bias_neutral",
+    "cts",
+    "cts_guard",
+    "place",
+    "place_unmarked",
+    "route_stat",
+    "route_verify",
     "select",
     "strength",
     "verify",
