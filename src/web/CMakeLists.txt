@@ -55,7 +55,10 @@ add_custom_command(
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_report_assets.py
     --output ${REPORT_ASSETS_CPP}
     --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
+    # Same order as the report_assets genrule in BUILD: the files are
+    # concatenated into one scope, so the order is what runs.
     --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
@@ -78,7 +81,6 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py

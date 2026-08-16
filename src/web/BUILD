@@ -11,6 +11,14 @@ package(
     features = ["layering_check"],
 )
 
+# Read by //src/web/test:asset_list_parity_test, which holds the two build
+# systems' asset lists to each other, and by the test of the report bundler.
+exports_files([
+    "BUILD",
+    "CMakeLists.txt",
+    "src/embed_report_assets.py",
+])
+
 py_binary(
     name = "embed_report_assets",
     srcs = ["src/embed_report_assets.py"],
@@ -23,65 +31,45 @@ py_binary(
     main = "src/embed_web_assets.py",
 )
 
+# The report inlines these into one <script type="module">, so the order is
+# what runs.  Listed once and used for both srcs and the command line.
+_REPORT_JS_FILES = [
+    "src/theme.js",
+    "src/3d-viewer-widget.js",
+    "src/coordinates.js",
+    "src/ui-utils.js",
+    "src/checkbox-tree-model.js",
+    "src/vis-tree.js",
+    "src/websocket-manager.js",
+    "src/tile-merge.js",
+    "src/tile-request.js",
+    "src/device-pixels.js",
+    "src/websocket-tile-layer.js",
+    "src/merged-tile-layer.js",
+    "src/display-controls.js",
+    "src/inspector.js",
+    "src/ruler.js",
+    "src/tcl-completer.js",
+    "src/hierarchy-browser.js",
+    "src/menu-bar.js",
+    "src/title.js",
+    "src/clock-tree-widget.js",
+    "src/schematic-widget.js",
+    "src/charts-widget.js",
+    "src/timing-widget.js",
+    "src/drc-widget.js",
+    "src/main.js",
+]
+
 genrule(
     name = "report_assets",
-    srcs = [
-        "src/style.css",
-        "src/theme.js",
-        "src/3d-viewer-widget.js",
-        "src/coordinates.js",
-        "src/ui-utils.js",
-        "src/checkbox-tree-model.js",
-        "src/vis-tree.js",
-        "src/websocket-manager.js",
-        "src/tile-merge.js",
-        "src/tile-request.js",
-        "src/device-pixels.js",
-        "src/websocket-tile-layer.js",
-        "src/merged-tile-layer.js",
-        "src/display-controls.js",
-        "src/inspector.js",
-        "src/ruler.js",
-        "src/tcl-completer.js",
-        "src/hierarchy-browser.js",
-        "src/menu-bar.js",
-        "src/title.js",
-        "src/clock-tree-widget.js",
-        "src/schematic-widget.js",
-        "src/charts-widget.js",
-        "src/timing-widget.js",
-        "src/drc-widget.js",
-        "src/main.js",
-    ],
+    srcs = ["src/style.css"] + _REPORT_JS_FILES,
     outs = ["src/report_assets.cpp"],
     cmd = "$(execpath :embed_report_assets)" +
           " --output $@" +
           " --css $(location src/style.css)" +
-          " --js $(location src/theme.js)" +
-          " $(location src/3d-viewer-widget.js)" +
-          " $(location src/coordinates.js)" +
-          " $(location src/ui-utils.js)" +
-          " $(location src/checkbox-tree-model.js)" +
-          " $(location src/vis-tree.js)" +
-          " $(location src/websocket-manager.js)" +
-          " $(location src/tile-merge.js)" +
-          " $(location src/tile-request.js)" +
-          " $(location src/device-pixels.js)" +
-          " $(location src/websocket-tile-layer.js)" +
-          " $(location src/merged-tile-layer.js)" +
-          " $(location src/display-controls.js)" +
-          " $(location src/inspector.js)" +
-          " $(location src/ruler.js)" +
-          " $(location src/tcl-completer.js)" +
-          " $(location src/hierarchy-browser.js)" +
-          " $(location src/menu-bar.js)" +
-          " $(location src/title.js)" +
-          " $(location src/clock-tree-widget.js)" +
-          " $(location src/schematic-widget.js)" +
-          " $(location src/charts-widget.js)" +
-          " $(location src/timing-widget.js)" +
-          " $(location src/drc-widget.js)" +
-          " $(location src/main.js)",
+          " --js" +
+          "".join([" $(location %s)" % f for f in _REPORT_JS_FILES]),
     tools = [":embed_report_assets"],
 )
 
