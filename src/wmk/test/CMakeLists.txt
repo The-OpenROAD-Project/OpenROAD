@@ -10,3 +10,5 @@ or_integration_tests(
     strength
     verify
 )
+
+add_subdirectory(cpp)
