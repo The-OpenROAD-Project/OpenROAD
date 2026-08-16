@@ -13,13 +13,13 @@ set block [ord::get_db_block]
 
 # Widen the count column: 120000 buffers on top of the 676 cells in the design.
 set buffer [$db findMaster "BUF_X1"]
-for {set i 0} {$i < 120000} {incr i} {
+for { set i 0 } { $i < 120000 } { incr i } {
   odb::dbInst_create $block $buffer "wide_buf_$i"
 }
 
 # Widen the area column: each macro is 104.5 x 317.8 = 33210.1 um^2.
 set macro [$db findMaster "fakeram45_1024x32"]
-for {set i 0} {$i < 400} {incr i} {
+for { set i 0 } { $i < 400 } { incr i } {
   odb::dbInst_create $block $macro "wide_macro_$i"
 }
 
