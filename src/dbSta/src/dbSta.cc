@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <format>
 #include <fstream>
 #include <functional>
 #include <map>
@@ -780,15 +779,15 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   const int area_width
       = std::max(10,
                  static_cast<int>(
-                     std::format("{:.2f}", total_area / area_to_microns).size())
+                     fmt::format("{:.2f}", total_area / area_to_microns).size())
                      + column_padding);
   const int type_width = std::max({37,
                                    max_master_name_length + column_padding,
                                    max_type_name_length + column_padding});
 
-  const std::string header_format = std::format(
+  const std::string header_format = fmt::format(
       "{{:{}}} {{:>{}}} {{:>{}}}", type_width, count_width, area_width);
-  const std::string format = std::format("  {{:{}}} {{:>{}}} {{:>{}.2f}}",
+  const std::string format = fmt::format("  {{:{}}} {{:>{}}} {{:>{}.2f}}",
                                          type_width - 2,
                                          count_width,
                                          area_width);
