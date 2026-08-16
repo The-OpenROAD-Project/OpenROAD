@@ -8,11 +8,12 @@
 //   H. Wang and G. Wolfe, "Robust IP Watermarking Methodologies for
 //   Physical Design", in ISPD'98.
 //
-// The idea: hash a user-supplied message to deterministically select a
-// subset of signal nets (the watermark nets) and impose a strong upper
-// bound on the amount of wrong-way (non-preferred-direction) wiring used
-// to route them.  Detection compares, for every net, the ratio
-// WL_way / WL_tot; watermark nets are expected to rank at the low end.
+// The idea: use a keyed PRF to select a subset of signal nets (the
+// watermark nets) and impose a strong upper bound on the amount of
+// wrong-way (non-preferred-direction) wiring used to route them.
+// Detection compares, for every net, the ratio WL_way / WL_tot; watermark
+// nets are expected to rank at the low end.  Because selection is keyed,
+// the marked set is unpredictable without the key.
 //
 // This header is the public API for the wmk module; it is SWIG-wrapped
 // for Tcl.
@@ -48,11 +49,7 @@ class Watermark
  public:
   Watermark(odb::dbDatabase* db, utl::Logger* logger);
 
-  // Legacy: pick ~round(fraction * N) nets using std::seed_seq(message) as the
-  // PRNG seed.  Retained for backward compatibility.
-  int selectNets(const std::string& message, double fraction);
-
-  // Kerckhoffs-compliant variant (PDMarks paper, Eq. eq:routing_selection):
+  // Select the watermark nets (PDMarks paper, Eq. eq:routing_selection):
   //   u_R(n) = first 4 bytes of HMAC-SHA256(key, "net\0" || net_name)
   //                interpreted as little-endian uint32, divided by 2^32
   //   net selected iff u_R(n) < fraction

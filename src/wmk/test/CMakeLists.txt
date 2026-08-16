@@ -4,6 +4,8 @@
 or_integration_tests(
   "wmk"
   TESTS
+    bias
+    bias_neutral
     select
     strength
     verify

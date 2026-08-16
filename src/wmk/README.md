@@ -30,8 +30,7 @@ first, so repeated calls are idempotent. Call it before `detailed_route`.
 
 ```tcl
 set_routing_watermark
-    [-key_hex key_hex]
-    [-message message]
+    -key_hex key_hex
     [-fraction fraction]
 ```
 
@@ -40,7 +39,6 @@ set_routing_watermark
 | Switch Name | Description |
 | ----- | ----- |
 | `-key_hex` | A 64-character hex string, the 32-byte routing key. Each net is selected when the first four bytes of `HMAC-SHA256(key, "net\0" + name)`, read as a little-endian integer over 2^32, fall below `-fraction`. |
-| `-message` | Legacy unkeyed selection, seeded by a public string. Superseded by `-key_hex`; the two are mutually exclusive. |
 | `-fraction` | Expected fraction of eligible signal nets to tag. Each net is an independent draw, so the realized count varies. Defaults to 0.05. |
 
 ### Set Routing Watermark Strength

@@ -5,6 +5,8 @@ load("//test:regression.bzl", "regression_test")
 package(features = ["layering_check"])
 
 TESTS = [
+    "bias",
+    "bias_neutral",
     "select",
     "strength",
     "verify",

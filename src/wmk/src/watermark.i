@@ -19,14 +19,7 @@
 %inline %{
 
 int
-set_routing_watermark_cmd(const char* message, double fraction)
-{
-  auto* w = ord::OpenRoad::openRoad()->getWatermark();
-  return w->selectNets(std::string(message), fraction);
-}
-
-int
-set_routing_watermark_keyed_cmd(const char* key_hex, double fraction)
+set_routing_watermark_cmd(const char* key_hex, double fraction)
 {
   std::array<std::uint8_t, 32> key;
   if (!wmk::parse_hex_key32(std::string(key_hex), key)) {

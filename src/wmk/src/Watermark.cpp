@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -32,25 +31,6 @@ using odb::dbWire;
 using odb::dbWireDecoder;
 
 namespace {
-
-// Deterministically build a 32-bit PRNG seed from a message.  We avoid
-// an MD5 dependency: the scheme in Kahng et al. uses MD5/RSA/RC4 but
-// any cryptographically strong PRNG will do for signature selection.
-// For the MVP we use std::seed_seq over the message bytes, which gives
-// reproducible selection for a given (message, net-count, fraction).
-std::mt19937 makePrng(const std::string& message)
-{
-  std::vector<std::uint32_t> seed_bytes;
-  seed_bytes.reserve(message.size() + 1);
-  for (unsigned char c : message) {
-    seed_bytes.push_back(static_cast<std::uint32_t>(c));
-  }
-  // Length terminator so that messages of the form "foo" and "foo\0..."
-  // still differ.
-  seed_bytes.push_back(static_cast<std::uint32_t>(message.size()));
-  std::seed_seq seq(seed_bytes.begin(), seed_bytes.end());
-  return std::mt19937(seq);
-}
 
 // A signal net we are allowed to watermark.  Matches the paper: we
 // skip special / supply / clock nets.
@@ -215,74 +195,6 @@ int Watermark::clearWatermark()
     }
   }
   return cleared;
-}
-
-int Watermark::selectNets(const std::string& message, double fraction)
-{
-  if (fraction <= 0.0 || fraction > 1.0) {
-    logger_->error(
-        utl::WMK, 2, "fraction must be in (0, 1]; got {:.3f}.", fraction);
-    return 0;
-  }
-  dbBlock* block = db_->getChip() ? db_->getChip()->getBlock() : nullptr;
-  if (block == nullptr) {
-    logger_->error(utl::WMK, 3, "No block loaded; run after read_def.");
-    return 0;
-  }
-
-  // Clear any previously tagged nets so re-selection is idempotent.
-  clearWatermark();
-
-  // Build a name-sorted list of routable signal nets.  Sorting by name
-  // makes the selection netlist-stable and floorplan-independent (see
-  // footnote 8 of Kahng et al.).
-  std::vector<dbNet*> candidates;
-  candidates.reserve(block->getNets().size());
-  for (dbNet* net : block->getNets()) {
-    if (isRoutableSignal(net)) {
-      candidates.push_back(net);
-    }
-  }
-  std::sort(candidates.begin(), candidates.end(), [](dbNet* a, dbNet* b) {
-    return a->getName() < b->getName();
-  });
-
-  const int n_candidates = static_cast<int>(candidates.size());
-  if (n_candidates == 0) {
-    logger_->warn(utl::WMK, 4, "No routable signal nets found.");
-    return 0;
-  }
-
-  int n_pick = static_cast<int>(std::lround(fraction * n_candidates));
-  n_pick = std::clamp(n_pick, 1, n_candidates);
-
-  // Signature-driven Fisher-Yates partial shuffle: draw n_pick distinct
-  // indices using the message-seeded PRNG.
-  std::mt19937 prng = makePrng(message);
-  std::vector<int> idxs(n_candidates);
-  for (int i = 0; i < n_candidates; ++i) {
-    idxs[i] = i;
-  }
-  for (int i = 0; i < n_pick; ++i) {
-    std::uniform_int_distribution<int> dist(i, n_candidates - 1);
-    const int j = dist(prng);
-    std::swap(idxs[i], idxs[j]);
-  }
-
-  for (int i = 0; i < n_pick; ++i) {
-    dbNet* net = candidates[idxs[i]];
-    dbBoolProperty::create(net, "watermark", true);
-  }
-
-  logger_->info(utl::WMK,
-                5,
-                "Tagged {} / {} signal nets as watermark nets"
-                " (fraction={:.3f}, message=\"{}\").",
-                n_pick,
-                n_candidates,
-                fraction,
-                message);
-  return n_pick;
 }
 
 int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,

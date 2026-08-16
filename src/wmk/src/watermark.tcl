@@ -1,13 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-sta::define_cmd_args "set_routing_watermark" {[-message message] \
-                                              [-key_hex key_hex] \
+sta::define_cmd_args "set_routing_watermark" {-key_hex key_hex \
                                               [-fraction fraction]}
 
+# Tag a keyed subset of signal nets as watermark nets, returning the number
+# tagged.  Selection is keyed unconditionally: a net is selected when the
+# first four bytes of HMAC-SHA256(key, "net\0" || name), read as a
+# little-endian integer over 2^32, fall below the fraction.  Any previous
+# tags are cleared first, so repeated calls are idempotent.
 proc set_routing_watermark { args } {
   sta::parse_key_args "set_routing_watermark" args \
-    keys {-message -key_hex -fraction} flags {}
+    keys {-key_hex -fraction} flags {}
 
   set fraction 0.05
   if { [info exists keys(-fraction)] } {
@@ -17,34 +21,26 @@ proc set_routing_watermark { args } {
     utl::error WMK 21 "The -fraction argument must be in (0, 1]."
   }
 
-  set have_key [info exists keys(-key_hex)]
-  set have_msg [info exists keys(-message)]
-  if { !$have_key && !$have_msg } {
-    utl::error WMK 20 "Either -key_hex or -message is required."
+  if { ![info exists keys(-key_hex)] } {
+    utl::error WMK 20 "The -key_hex argument is required."
   }
-  if { $have_key && $have_msg } {
-    utl::error WMK 23 "Pass either -key_hex (Kerckhoffs-compliant) or\
-                       -message (legacy), not both."
+  set key_hex $keys(-key_hex)
+  if { [string length $key_hex] != 64 } {
+    utl::error WMK 24 "The -key_hex argument must be a 64-character hex\
+                       string (32 bytes)."
   }
-
-  if { $have_key } {
-    set key_hex $keys(-key_hex)
-    if { [string length $key_hex] != 64 } {
-      utl::error WMK 24 "The -key_hex argument must be a 64-character hex\
-                         string (32 bytes)."
-    }
-    set rc [wmk::set_routing_watermark_keyed_cmd $key_hex $fraction]
-    if { $rc < 0 } {
-      utl::error WMK 25 "Failed to parse -key_hex: must be 64 hex chars."
-    }
-    return $rc
-  } else {
-    wmk::set_routing_watermark_cmd $keys(-message) $fraction
+  set rc [wmk::set_routing_watermark_cmd $key_hex $fraction]
+  if { $rc < 0 } {
+    utl::error WMK 25 "Failed to parse -key_hex: must be 64 hex chars."
   }
+  return $rc
 }
 
 sta::define_cmd_args "report_routing_watermark" {[-p p]}
 
+# Rank every routed signal net by its wrong-way wirelength fraction and
+# report how many watermark nets fall below the p-quantile cutoff, with the
+# resulting coincidence probability.  Run after detailed_route.
 proc report_routing_watermark { args } {
   sta::parse_key_args "report_routing_watermark" args \
     keys {-p} flags {}
@@ -60,18 +56,23 @@ proc report_routing_watermark { args } {
   wmk::report_routing_watermark_cmd $p
 }
 
+sta::define_cmd_args "clear_routing_watermark" {}
+
+# Remove every watermark tag from the current block, returning the number
+# cleared.
 proc clear_routing_watermark { args } {
+  sta::check_argc_eq0 "clear_routing_watermark" $args
   wmk::clear_routing_watermark_cmd
 }
 
-sta::define_cmd_args "verify_watermark" {[-placement_claims file] \
-                                         [-cts_claims file] \
+sta::define_cmd_args "verify_watermark" {[-cts_claims file] \
+                                         [-placement_claims file] \
                                          [-tau tau]}
 
-# Check the placement and CTS watermarks against the loaded design.
+# Check the committed placement and CTS watermarks against the loaded design.
 #
-# Ownership is decided by the extraction rate, the fraction of committed claims
-# that still hold, against the threshold tau. An exact match is not expected:
+# Ownership is decided by the extraction rate, the fraction of claims that
+# still hold, against the threshold tau. An exact match is not expected:
 # routing and filling legitimately disturb a few marked objects.
 #
 # Returns 1 when every stage that had claims met the threshold, otherwise 0.
