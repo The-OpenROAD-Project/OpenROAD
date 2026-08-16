@@ -272,39 +272,53 @@ TEST_F(SaveReportTest, IsSelfContained)
 
 // The icons the stylesheets ask for are reached through relative urls, which
 // resolve against the saved file's directory unless they too are inlined.  The
-// rule holds for every stylesheet in the report, so it survives one being
-// added, reordered or upgraded.
+// rule holds for every stylesheet in the report -- the inlined <style> block as
+// much as the vendored ones -- so it survives one being added or upgraded.
 TEST_F(SaveReportTest, StylesheetIconsAreInlined)
 {
   const std::string path = tempHtml("css_icons");
   generateReport(path);
   const std::string html = readFile(path);
 
+  const auto expectNoRelativeUrl = [](const std::string& css,
+                                      const std::string& what) {
+    for (size_t open = 0;
+         (open = css.find("url(", open)) != std::string::npos;) {
+      const size_t close = css.find(')', open);
+      ASSERT_NE(close, std::string::npos) << what;
+      const std::string reference = css.substr(open + 4, close - (open + 4));
+      EXPECT_TRUE(reference.find("data:") != std::string::npos
+                  || reference.find('#') != std::string::npos)
+          << what << " has an unresolved url(" << reference << ")";
+      open = close;
+    }
+  };
+
+  // The vendored stylesheets travel as data: URIs.
   const std::string marker = "href=\"data:text/css;base64,";
   int stylesheets = 0;
   for (size_t at = 0; (at = html.find(marker, at)) != std::string::npos;) {
     const size_t start = at + marker.size();
     const size_t end = html.find('"', start);
     ASSERT_NE(end, std::string::npos);
-    const std::string css = utl::base64_decode(html.substr(start, end - start));
+    expectNoRelativeUrl(utl::base64_decode(html.substr(start, end - start)),
+                        "a vendored stylesheet");
     ++stylesheets;
     at = end;
-
-    // Every url() left in the sheet is either inlined or a fragment; a
-    // relative one would resolve against wherever the report was saved.
-    for (size_t open = 0;
-         (open = css.find("url(", open)) != std::string::npos;) {
-      const size_t close = css.find(')', open);
-      ASSERT_NE(close, std::string::npos);
-      const std::string reference = css.substr(open + 4, close - (open + 4));
-      EXPECT_TRUE(reference.find("data:") != std::string::npos
-                  || reference.find('#') != std::string::npos)
-          << "not inlined: url(" << reference << ")";
-      open = close;
-    }
   }
   // leaflet, goldenlayout-base and the two themes.
   EXPECT_EQ(stylesheets, 4);
+
+  // The viewer's own style.css is inlined as a <style> block, and goes through
+  // the same rewriting.
+  const std::string opening = "<style>";
+  const size_t begin = html.find(opening);
+  ASSERT_NE(begin, std::string::npos);
+  const size_t end = html.find("</style>", begin);
+  ASSERT_NE(end, std::string::npos);
+  expectNoRelativeUrl(
+      html.substr(begin + opening.size(), end - begin - opening.size()),
+      "the inlined style.css");
 }
 
 TEST_F(SaveReportTest, CachesValidTechResponse)

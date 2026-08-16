@@ -1338,7 +1338,7 @@ void WebServer::saveReport(const std::string& filename,
              logger_)
       << R"(" disabled/>
 <style>
-)" << kReportCSS
+)" << inlineStylesheetUrls(kReportCSS, "/", logger_)
       << R"(
 </style>
 </head>
