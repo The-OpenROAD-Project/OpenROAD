@@ -230,6 +230,10 @@ filegroup(
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "place_macro_rotated": [
+                    "testcases/place_macro_rotated.def",
+                    "testcases/place_macro_rotated.lef",
+                ],
                 "placement_blockages1": [
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
