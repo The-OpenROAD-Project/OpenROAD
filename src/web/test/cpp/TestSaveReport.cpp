@@ -3,11 +3,13 @@
 
 #include <unistd.h>
 
+#include <cctype>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -22,6 +24,21 @@
 
 namespace web {
 namespace {
+
+// Does the line start with this keyword, as a keyword?  "importantly" and
+// "exports" are identifiers, not module syntax.
+bool isKeyword(const std::string_view line, const std::string_view keyword)
+{
+  if (!line.starts_with(keyword)) {
+    return false;
+  }
+  if (line.size() == keyword.size()) {
+    return true;
+  }
+  const char next = line[keyword.size()];
+  return std::isalnum(static_cast<unsigned char>(next)) == 0 && next != '_'
+         && next != '$';
+}
 
 // ─── Fixture ────────────────────────────────────────────────────────────────
 
@@ -160,6 +177,55 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   EXPECT_TRUE(contains(html, "function computeGroupCount"));
   EXPECT_TRUE(contains(html, "TimingWidget"));
   EXPECT_TRUE(contains(html, "ChartsWidget"));
+}
+
+// The widget sources are concatenated into one <script type="module">, with
+// their own import/export statements stripped by embed_report_assets.py.  One
+// that survives is a syntax error, and a syntax error there costs every widget
+// in the report at once -- with nothing but a console message to say so.
+TEST_F(SaveReportTest, InlinedScriptHasNoModuleSyntaxLeft)
+{
+  const std::string path = tempHtml("module_syntax");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  const std::string opening = "<script type=\"module\">";
+  const size_t begin = html.find(opening);
+  ASSERT_NE(begin, std::string::npos);
+  const size_t end = html.find("</script>", begin);
+  ASSERT_NE(end, std::string::npos);
+  const std::string module
+      = html.substr(begin + opening.size(), end - begin - opening.size());
+
+  // The generator marks every source it concatenates, so the first marker is
+  // the boundary: before it, the imports web.cpp writes for the libraries the
+  // report inlines; after it, code that must carry no module syntax at all.
+  const size_t body = module.find("// ── ");
+  ASSERT_NE(body, std::string::npos);
+
+  int header_imports = 0;
+  for (size_t at = 0; at < module.size();) {
+    const size_t eol = std::min(module.find('\n', at), module.size());
+    std::string_view line(module.data() + at, eol - at);
+    const bool in_header = at < body;
+    at = eol + 1;
+
+    const size_t indent = line.find_first_not_of(" \t");
+    if (indent == std::string_view::npos) {
+      continue;
+    }
+    line.remove_prefix(indent);
+    if (!isKeyword(line, "import") && !isKeyword(line, "export")) {
+      continue;
+    }
+    if (in_header && isKeyword(line, "import")) {
+      ++header_imports;
+      continue;
+    }
+    ADD_FAILURE() << "leftover module syntax: " << line;
+  }
+  // GoldenLayout and THREE, however they are resolved.
+  EXPECT_EQ(header_imports, 2);
 }
 
 TEST_F(SaveReportTest, GoldenLayoutFromCDN)
