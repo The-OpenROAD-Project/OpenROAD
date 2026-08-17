@@ -403,7 +403,7 @@ bool NegotiationLegalizer::initFromDb()
     int db_y = 0;
     db_inst->getLocation(db_x, db_y);
     // Snap to grid, findBestLocation() iterates over grid positions
-    cell.init_x = dpl_grid->gridX(DbuX{db_x - die_xlo_}).v;
+    cell.init_x = dpl_grid->gridRoundX(DbuX{db_x - die_xlo_}).v;
     cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
 
     // Width/height must be computed before clamping so the upper bounds
