@@ -99,8 +99,9 @@ void Straps::checkLayerSpecifications() const
       getLogger()->error(
           utl::PDN,
           175,
-          "Pitch {:.4f} is too small for, must be atleast {:.4f}",
+          "Pitch {:.4f} is too small for {}, must be at least {:.4f}",
           layer.dbuToMicron(pitch_),
+          layer_->getName(),
           layer.dbuToMicron(min_pitch));
     }
   }
@@ -2356,7 +2357,8 @@ void RepairChannelStraps::repairGridChannels(
 
   if (!channels.empty() && renderer != nullptr) {
     renderer->update();
-    renderer->pause();
+    renderer->pause(fmt::format(
+        "{} channel(s) to repair in {}", channels.size(), grid->getLongName()));
   }
 
   if (channels.empty()) {

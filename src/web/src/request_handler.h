@@ -166,9 +166,32 @@ struct SessionState
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;
+  std::vector<FlightLine> highlight_lines;  // selection flywires
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;
+  // Misc > Flywires only: highlight selected nets with straight
+  // driver->sink lines instead of their routed wire/guides (GUI
+  // isFlywireHighlightOnly() parity).
+  bool flywires_only = false;
+  // Which selection the highlight_* vectors were derived from, or kNone while
+  // they hold nothing.  A flywires_only flip has to re-derive them from the
+  // SAME source: the multi-selection normally, but a single object when the
+  // user followed an inspector link out of the selection set (handleInspect
+  // deliberately narrows the highlight to the link target).  kNone doubles as
+  // the "dismissed" state, so a flip cannot resurrect highlights the user
+  // cleared.
+  //
+  // Tracking the source is a shim over the fact that selection_set and
+  // current_inspected are two overlapping answers to "what is selected"; the
+  // Qt GUI keeps only the set and narrows it on a link follow.
+  enum class HighlightSource : uint8_t
+  {
+    kNone,
+    kInspected,
+    kSelectionSet
+  };
+  HighlightSource highlight_source = HighlightSource::kNone;
 
   std::mutex selectables_mutex;
   std::vector<gui::Selected> selectables;
@@ -375,7 +398,8 @@ class TileHandler
       const std::map<uint32_t, Color>* module_colors,
       const std::set<uint32_t>* focus_net_ids,
       const std::set<uint32_t>* route_guide_net_ids,
-      double dpr = 1.0);
+      double dpr = 1.0,
+      int tile_px = 0);
 
   std::shared_ptr<TileGenerator> gen_;
 };

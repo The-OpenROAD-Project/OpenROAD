@@ -4,6 +4,7 @@
 #include "est/EstimateParasitics.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <exception>
@@ -110,13 +111,23 @@ void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
                                     double res,
                                     double cap)
 {
+  assert(layer != nullptr);
+
+  const int layer_num = layer->getNumber();
+  assert(layer_num >= 0);
+
   const size_t corner_count = sta_->scenes().size();
-  std::vector<double>& layer_res = layer_res_[layer];
-  std::vector<double>& layer_cap = layer_cap_[layer];
-  layer_res.resize(corner_count, 0.0);
-  layer_cap.resize(corner_count, 0.0);
-  layer_res[corner->index()] = res;
-  layer_cap[corner->index()] = cap;
+  const size_t req_size
+      = std::max(static_cast<size_t>(layer_num + 1),
+                 static_cast<size_t>(layer->getTech()->getLayerCount() + 1));
+  if (layer_res_.size() < req_size) {
+    layer_res_.resize(req_size);
+    layer_cap_.resize(req_size);
+  }
+  layer_res_[layer_num].resize(corner_count, 0.0);
+  layer_cap_[layer_num].resize(corner_count, 0.0);
+  layer_res_[layer_num][corner->index()] = res;
+  layer_cap_[layer_num][corner->index()] = cap;
 }
 
 void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
@@ -125,15 +136,21 @@ void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  double& res,
                                  double& cap) const
 {
-  const auto res_it = layer_res_.find(layer);
-  const auto cap_it = layer_cap_.find(layer);
+  assert(layer != nullptr);
+
+  const int layer_num = layer->getNumber();
+  assert(layer_num >= 0);
+
   const size_t corner_idx = corner->index();
-  res = res_it != layer_res_.end() && corner_idx < res_it->second.size()
-            ? res_it->second[corner_idx]
-            : 0.0;
-  cap = cap_it != layer_cap_.end() && corner_idx < cap_it->second.size()
-            ? cap_it->second[corner_idx]
-            : 0.0;
+  if (static_cast<size_t>(layer_num) < layer_res_.size()) {
+    const auto& res_v = layer_res_[layer_num];
+    const auto& cap_v = layer_cap_[layer_num];
+    res = corner_idx < res_v.size() ? res_v[corner_idx] : 0.0;
+    cap = corner_idx < cap_v.size() ? cap_v[corner_idx] : 0.0;
+  } else {
+    res = 0.0;
+    cap = 0.0;
+  }
 }
 
 ////////////////////////////////////////////////////////////////

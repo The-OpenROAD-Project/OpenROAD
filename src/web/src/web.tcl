@@ -103,10 +103,14 @@ proc save_image { args } {
         }
         set key [lindex $opt 0]
         set val [lindex $opt 1]
+        # Emit real JSON booleans: TileVisibility::parseFromJson reads every
+        # field with value_to<bool>, which rejects 1/0 — and the caller catches
+        # that by discarding the WHOLE visibility object (WEB-0042), so one
+        # integer used to turn every -display_option into a no-op.
         if { $val eq "true" || $val eq "1" } {
-          set val 1
+          set val "true"
         } else {
-          set val 0
+          set val "false"
         }
         lappend pairs "\"$key\":$val"
       }

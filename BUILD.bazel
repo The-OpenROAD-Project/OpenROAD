@@ -26,6 +26,7 @@ exports_files([
     "BUILD.bazel",
     "LICENSE",
     "MODULE.bazel",
+    "README.md",
     "src/Design.i",
     "src/Exception.i",
     "src/options.i",
@@ -532,8 +533,9 @@ build_test(
 # ---------------------------------------------------------------------------
 # Lint & tidy targets
 #
-# bazelisk test //:lint_test   — run all lint checks
-# bazelisk run  //:fix_lint    — auto-fix then lint
+# bazelisk test //:lint_test               — run all lint checks
+# bazelisk run  //:fix_lint                — auto-fix then lint in OpenROAD
+# bazelisk run  //tools/OpenROAD:fix_lint  — auto-fix then lint in ORFS / downstream repos
 # ---------------------------------------------------------------------------
 
 # --- TCL linting (tclint) -------------------------------------------------
@@ -553,6 +555,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- TCL formatting check (tclfmt --check) --------------------------------
@@ -572,6 +575,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- TCL auto-format only (tclfmt --in-place) -----------------------------
@@ -590,6 +594,7 @@ sh_binary(
         "//bazel:tclfmt",
         "@git",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel linting (buildifier -lint=warn) --------------------------------
@@ -609,6 +614,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel formatting check (buildifier -mode=check -lint=off) ------------
@@ -628,6 +634,7 @@ sh_test(
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel auto-format only (buildifier -mode=fix) ------------------------
