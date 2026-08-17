@@ -805,12 +805,7 @@ void PlacerBaseCommon::init()
   instStor_.reserve(db_insts.size());
   insts_.reserve(instStor_.size());
   for (dbInst* db_inst : db_insts) {
-    // Masters that occupy a placement site: core cells, macros and the
-    // row-based endcaps.  Pads, bumps, rings and pad-ring corners are left
-    // out -- they never stand in a row.  This is the same predicate dpl
-    // filters on (dbToOpendp.cpp), so both tools agree on what takes up a
-    // site, and its switch makes a newly added master class a compile
-    // error rather than a silent misclassification.
+    // Same ignore criteria as DPL
     if (!db_inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
