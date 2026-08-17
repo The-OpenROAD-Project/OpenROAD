@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+
+## SPDX-License-Identifier: BSD-3-Clause
+## Copyright (c) 2026, The OpenROAD Authors
+
 """A script to fit a bivariate Padé approximation for Ceff shielding factor K."""
 
 import argparse
