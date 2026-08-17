@@ -2310,6 +2310,13 @@ bool CUGR::hasAvailableResources(int layer_index,
                    "Invalid layer index {} in hasAvailableResources.",
                    layer_index);
   }
+  // Queries above the layer stack or off-grid (e.g. inside the oversized
+  // last gcell, whose positions divide past the grid) have no resources.
+  if (layer_0 >= grid_graph_->getNumLayers()
+      || tile_x >= grid_graph_->getSize(0)
+      || tile_y >= grid_graph_->getSize(1)) {
+    return false;
+  }
   return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= demand;
 }
 
