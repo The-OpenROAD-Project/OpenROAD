@@ -15,6 +15,7 @@ PASSFAIL_TESTS = [
     "place",
     "place_guard",
     "place_keyed",
+    "python_api",
     "route_verify",
 ]
 
@@ -29,6 +30,7 @@ TESTS = [
     "place_guard",
     "place_keyed",
     "place_unmarked",
+    "python_api",
     "route_stat",
     "route_verify",
     "select",

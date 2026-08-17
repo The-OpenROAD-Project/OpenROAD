@@ -391,6 +391,28 @@ A claim naming an instance that is not in the design counts against the
 extraction rate rather than aborting the check, so a partially disturbed layout
 still produces a verdict.
 
+## Python
+
+The same work can be done from `openroad -python`. The commands above are Tcl
+procedures, but what they wrap is a `Watermark` object reachable from the
+design:
+
+```python
+from openroad import Tech, Design
+import wmk
+
+watermark = design.getWatermark()
+options = wmk.PlacementOptions()
+watermark.placementWatermark(key_hex, options, "wm_place.csv")
+watermark.selectNetsKeyed(key_hex, 0.02)
+result = watermark.verifyPlacement("wm_place.csv")
+```
+
+A key is passed either as the 64-character hex string the Tcl commands take or
+as 32 raw bytes; anything else is refused rather than padded or truncated into
+a key. Key generation has no Python entry point of its own -- use
+`design.evalTclString("generate_watermark_key -design_id ...")`.
+
 ## Example scripts
 
 Mark all three stages, each at the point in the flow that produces what it

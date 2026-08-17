@@ -22,6 +22,7 @@ or_integration_tests(
     place
     place_guard
     place_keyed
+    python_api
     route_verify
 )
 
