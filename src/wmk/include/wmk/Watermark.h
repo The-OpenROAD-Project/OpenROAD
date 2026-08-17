@@ -51,7 +51,10 @@ struct PlacementOptions
   // land on the paths that decide the clock period.
   double slack_threshold_ns = 0.20;
   // A swap that changes half-perimeter wirelength by more than this is
-  // reverted, keeping the mark invisible in wirelength.
+  // reverted, keeping the mark invisible in wirelength.  Database units differ
+  // between platforms, so this is 0.05 um on NanGate45 and 1.0 um on ASAP7;
+  // it is inherited from the reference implementation rather than chosen per
+  // platform, and is worth setting deliberately on a new one.
   int hpwl_eps_dbu = 100;
   // How far legalization may move a cell afterwards, in microns.
   int max_disp_um = 5;
@@ -74,9 +77,13 @@ struct CtsOptions
   // Two buffers are only paired if their centres are within this distance, so
   // a moved sink stays local and the skew cost stays small.
   double sibling_dist_um = 20.0;
-  // A pair is rejected if it makes the clock's worst skew worse by more than
-  // this.
-  double skew_margin_ns = 0.0;
+  // How much worse a moved sink may leave the clock's worst skew.  Not zero:
+  // a sink move almost always costs a little skew, and demanding none at all
+  // turns the stage off wherever the clock is tight.  Measured on a routed
+  // ASAP7 aes, whose period is 380 ps and whose skew is 7.8 ps, a zero margin
+  // rejects 14 of 26 pairs and leaves the extraction rate at 0.46; 20 ps
+  // accepts all 26 and costs about 1 ps of skew.
+  double skew_margin_ns = 0.020;
 };
 
 // One committed clock tree mark.

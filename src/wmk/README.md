@@ -134,7 +134,7 @@ place_watermark
 | `-claims_file` | Where to write the claims, in the format below. |
 | `-key_hex` | A 64-character hex string, the 32-byte placement key. It fixes each pair's target order and nothing else; which cells are paired does not depend on it. |
 | `-grid_nx`, `-grid_ny` | Tiles across and down the core. Marks are spread over the tiling rather than clustering wherever candidates are densest. Both default to 8. |
-| `-hpwl_eps_dbu` | Largest half-perimeter wirelength change, in database units, a swap may cost. Defaults to 100. |
+| `-hpwl_eps_dbu` | Largest half-perimeter wirelength change, in database units, a swap may cost. Defaults to 100. Database units are not the same size on every platform -- 100 of them is 0.05 um on NanGate45 and 1.0 um on ASAP7 -- so this is worth setting deliberately on a platform it has not been characterised for. |
 | `-max_disp_um` | How far re-legalization may move a cell, in microns. Defaults to 5. |
 | `-pair_dist_um` | How far along the row to look for a partner, in microns. Defaults to 1.0. |
 | `-pairs_per_tile` | Most pairs to claim per tile. Defaults to 4. |
@@ -176,7 +176,7 @@ cts_watermark
 | `-key_hex` | A 64-character hex string, the 32-byte clock-tree key. It fixes which buffer of each pair carries the mark and what parity it must show. |
 | `-num_pairs` | Most pairs to mark. Each carries one bit. Defaults to 32. |
 | `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns, so a moved sink stays local. Defaults to 20.0. |
-| `-skew_margin_ns` | How much worse the clock's worst skew may get, in nanoseconds. Defaults to 0, meaning no worse than before. |
+| `-skew_margin_ns` | How much worse the clock's worst skew may get, in nanoseconds. Defaults to 0.020, that is 20 ps. Zero turns the stage off wherever the clock is tight: on a routed ASAP7 `aes` it rejects 14 of 26 pairs. |
 
 ### Set Routing Watermark
 

@@ -227,7 +227,7 @@ proc cts_watermark { args } {
 
   set num_pairs 32
   set dist 20.0
-  set margin 0.0
+  set margin 0.020
   if { [info exists keys(-num_pairs)] } { set num_pairs $keys(-num_pairs) }
   if { [info exists keys(-sibling_dist_um)] } { set dist $keys(-sibling_dist_um) }
   if { [info exists keys(-skew_margin_ns)] } { set margin $keys(-skew_margin_ns) }
