@@ -10,6 +10,7 @@ package(features = ["layering_check"])
 PASSFAIL_TESTS = [
     "cts",
     "cts_guard",
+    "keygen",
     "place",
     "place_keyed",
     "route_verify",
@@ -20,6 +21,7 @@ TESTS = [
     "bias_neutral",
     "cts",
     "cts_guard",
+    "keygen",
     "place",
     "place_keyed",
     "place_unmarked",

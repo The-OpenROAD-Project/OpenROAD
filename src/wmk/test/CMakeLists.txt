@@ -17,6 +17,7 @@ or_integration_tests(
   PASSFAIL_TESTS
     cts
     cts_guard
+    keygen
     place
     place_keyed
     route_verify

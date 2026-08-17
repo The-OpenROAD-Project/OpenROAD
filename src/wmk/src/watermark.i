@@ -16,9 +16,47 @@
 #include <cmath>
 #include <cstdint>
 #include "HmacSha256.h"
+#include "Keys.h"
 %}
 
 %inline %{
+
+// Draw a fresh secret.  Returned as hex rather than logged: the module never
+// writes a secret to the log, and never keeps one after the command returns.
+const char*
+random_hex_cmd(int n_bytes)
+{
+  static std::string result;
+  std::vector<std::uint8_t> raw;
+  if (n_bytes <= 0 || !wmk::randomBytes(static_cast<std::size_t>(n_bytes), raw)) {
+    result.clear();
+    return result.c_str();
+  }
+  result = wmk::toHex(raw.data(), raw.size());
+  return result.c_str();
+}
+
+// K_s = HMAC-SHA256(K, ID(D_0), nu, "stage=" || s).  Empty on bad input.
+const char*
+derive_stage_key_cmd(const char* master_hex,
+                     const char* design_id,
+                     const char* nonce_hex,
+                     const char* stage)
+{
+  static std::string result;
+  result.clear();
+  std::array<std::uint8_t, 32> master;
+  std::vector<std::uint8_t> nonce;
+  if (!wmk::parse_hex_key32(std::string(master_hex), master)
+      || !wmk::fromHex(std::string(nonce_hex), nonce)
+      || !wmk::isWatermarkStage(std::string(stage))) {
+    return result.c_str();
+  }
+  const std::array<std::uint8_t, 32> k = wmk::deriveStageKey(
+      master, std::string(design_id), nonce, std::string(stage));
+  result = wmk::toHex(k.data(), k.size());
+  return result.c_str();
+}
 
 int
 set_routing_watermark_cmd(const char* key_hex, double fraction)

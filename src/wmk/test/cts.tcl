@@ -34,6 +34,6 @@ set claims [make_result_file cts.csv]
 set committed [cts_watermark -key_hex $key -claims_file $claims]
 puts "committed $committed pairs"
 check "the clock tree yields its three pairs" { set committed } 3
-check "every claimed parity holds" { verify_watermark -cts_claims $claims } 1
+check "every claimed parity holds" { verify_watermark -cts_claims $claims -min_stages 1 } 1
 
 exit_summary

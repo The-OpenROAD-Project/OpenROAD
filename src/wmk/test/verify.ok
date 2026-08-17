@@ -5,10 +5,10 @@
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
 [INFO WMK-0033] Placement claim _284_|_285_: bit=1 want=0.
 [INFO WMK-0034] Placement watermark: 4 / 5 claims hold (r_P=0.8000).
-[INFO WMK-0045] Ownership evidence holds in 1 stage(s).
+[INFO WMK-0045] Ownership evidence holds in 1 of 1 stage(s) checked.
 verdict 1
 [INFO WMK-0033] Placement claim _284_|_285_: bit=1 want=0.
 [INFO WMK-0034] Placement watermark: 4 / 5 claims hold (r_P=0.8000).
 [WARNING WMK-0043] Stage placement below threshold: 0.8000 < 0.9000.
-[INFO WMK-0046] Ownership evidence does not hold.
+[INFO WMK-0046] Ownership evidence does not hold: 0 of 1 stage(s) passed, 1 required.
 strict verdict 0

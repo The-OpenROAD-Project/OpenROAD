@@ -26,6 +26,6 @@ global_route
 detailed_route -verbose 0
 
 check "the marked nets prove ownership" \
-  { verify_watermark -routing_key_hex $key -routing_fraction 0.5 } 1
+  { verify_watermark -routing_key_hex $key -routing_fraction 0.5 -min_stages 1 } 1
 
 exit_summary

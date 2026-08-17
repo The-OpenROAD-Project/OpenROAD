@@ -30,6 +30,75 @@ no evidence of anything; see [Verify Watermark](#verify-watermark).
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
+### Generate Watermark Key
+
+The `generate_watermark_key` command draws a watermark secret and derives the
+three per-stage keys from it, returning a dictionary with the entries
+`key_hex`, `nonce_hex`, `design_id`, `placement`, `cts` and `routing`.
+
+The secret and the nonce come from the system's random source unless supplied.
+A stage key is
+
+```text
+K_s = HMAC-SHA256(K, design_id, nonce, "stage=" || s)
+```
+
+so one secret can protect many designs and many revisions: the identifier and
+the nonce are what make the derived keys differ, and marks placed under one
+pair say nothing about marks placed under another.
+
+Verification needs the same stage keys, so the secret, the identifier and the
+nonce must all survive until then. The identifier and the nonce are public and
+belong with the design's records. The secret does not: this module never writes
+it to the log, and keeps no copy of it after the command returns. With `-file`
+the values are written to that path with owner-only permissions.
+
+If the system's random source cannot be read the command fails rather than
+falling back to an ordinary generator, because a key drawn from a predictable
+source is not a secret and the watermarks under it would be reproducible by
+anyone.
+
+```tcl
+generate_watermark_key
+    -design_id design_id
+    [-file file]
+    [-key_hex key_hex]
+    [-nonce_hex nonce_hex]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-design_id` | Identifier of the design version being marked. Public, and needed again to verify. |
+| `-file` | Write the secret, the nonce and the three stage keys here, readable only by the owner. |
+| `-key_hex` | Use this 64-character hex string as the secret instead of drawing one. |
+| `-nonce_hex` | Use this even-length hex string as the nonce instead of drawing one. 16 bytes when drawn. |
+
+### Derive Watermark Key
+
+The `derive_watermark_key` command re-derives one stage key from the secret,
+the design identifier and the nonce, returning it as a 64-character hex string.
+Verification runs in a later process than embedding, so this is how the keys
+that were used come back without any of them having been stored.
+
+```tcl
+derive_watermark_key
+    -design_id design_id
+    -key_hex key_hex
+    -nonce_hex nonce_hex
+    -stage stage
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-design_id` | The identifier the keys were generated with. |
+| `-key_hex` | The 64-character hex secret. |
+| `-nonce_hex` | The nonce the keys were generated with. |
+| `-stage` | `placement`, `cts` or `routing`. |
+
 ### Place Watermark
 
 The `place_watermark` command puts a keyed subset of cell pairs into a keyed
@@ -189,6 +258,13 @@ clear_routing_watermark
 The `verify_watermark` command checks the loaded design against whichever
 stages it is given, and returns 1 when every stage it checked passed.
 
+Ownership is granted when at least `-min_stages` of the checked stages pass,
+two by default. Requiring all of them would let one stage with no capacity sink
+a claim the other two prove -- a design whose clock tree cannot absorb a single
+moved sink is not thereby unowned -- and requiring one would accept on a single
+stage's evidence. Checking only one stage is still allowed, with
+`-min_stages 1`, but it is a weaker claim than the scheme intends.
+
 Placement and clock-tree marks are checked from their claim files. No key is
 needed: it was consumed at embed time to derive the target values, which the
 claim files record. Verification re-observes each claimed object and compares
@@ -207,6 +283,7 @@ a random choice of marked set, against `-routing_alpha`.
 ```tcl
 verify_watermark
     [-cts_claims file]
+    [-min_stages n]
     [-placement_claims file]
     [-routing_alpha alpha]
     [-routing_fraction fraction]
@@ -220,6 +297,7 @@ verify_watermark
 | Switch Name | Description |
 | ----- | ----- |
 | `-cts_claims` | Claim file from the clock-tree watermark. Each claim names a leaf clock buffer and the parity its sequential fanout was driven to. |
+| `-min_stages` | How many of the checked stages must pass for the design to be called watermarked. Defaults to 2. |
 | `-placement_claims` | Claim file from the placement watermark. Each claim names a pair of cells and which of the two was driven to sit further left. |
 | `-routing_alpha` | Largest p-value the routing stage may show and still pass. Defaults to 1e-4. |
 | `-routing_fraction` | The fraction the routing mark was embedded with. It must match, or the recovered set will not be the marked one. Defaults to 0.02. |
@@ -353,10 +431,15 @@ tree may have too few leaf buffers to pair. The commands report what they
 committed; a design that commits nothing has no placement or clock-tree
 evidence to offer, and the routing stage has to stand on its own.
 
-Keys are the caller's to produce and to keep. This module reads a key, uses it
-and forgets it; it does not generate, store or seal one, and it has no notion of
-who an owner is. Binding a key to an identity, and timestamping that binding so
-a mark can be dated, is the job of whatever certificate scheme sits above it.
+This module generates keys, marks a design with them and reads the marks back.
+It does not seal, notarize or store anything. Sealing the claims into an
+encrypted certificate, and registering a timestamped commitment to the key
+before the layout is released, is what makes a mark evidence of *who* owns the
+design rather than only that *someone* marked it -- and that step belongs
+outside a place-and-route tool. It needs an independent timestamping authority
+over the network, it needs key custody, and its guarantee comes from the
+timestamp rather than from anything the tool can check. The claim files and the
+stage keys are the interface to it.
 
 ## References
 

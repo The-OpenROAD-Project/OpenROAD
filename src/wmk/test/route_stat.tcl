@@ -21,8 +21,8 @@ set tempting 5555555555555555555555555555555555555555555555555555555555555555
 set ordinary 3333333333333333333333333333333333333333333333333333333333333333
 
 check "a lucky key is not ownership" \
-  { verify_watermark -routing_key_hex $tempting -routing_fraction 0.30 } 0
+  { verify_watermark -routing_key_hex $tempting -routing_fraction 0.30 -min_stages 1 } 0
 check "nor is an ordinary one" \
-  { verify_watermark -routing_key_hex $ordinary -routing_fraction 0.30 } 0
+  { verify_watermark -routing_key_hex $ordinary -routing_fraction 0.30 -min_stages 1 } 0
 
 exit_summary

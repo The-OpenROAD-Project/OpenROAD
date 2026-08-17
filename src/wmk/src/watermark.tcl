@@ -1,6 +1,115 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
+                                               [-file file] \
+                                               [-key_hex key_hex] \
+                                               [-nonce_hex nonce_hex]}
+
+# Draw a watermark secret and derive the three stage keys from it, returning
+# them as a dictionary with keys key_hex, nonce_hex, placement, cts and
+# routing.
+#
+# The secret and the nonce are drawn from the system's random source unless
+# given, so the same secret can be reused across designs and revisions: the
+# design identifier and the nonce are what make the derived keys differ.  Both
+# are needed again at verification time, so record them -- the nonce and the
+# identifier are public, the secret is not.
+#
+# Nothing is written to the log.  With -file the values are written to that
+# path with owner-only permissions instead.
+proc generate_watermark_key { args } {
+  sta::parse_key_args "generate_watermark_key" args \
+    keys {-design_id -nonce_hex -key_hex -file} flags {}
+
+  if { ![info exists keys(-design_id)] } {
+    utl::error WMK 90 "The -design_id argument is required."
+  }
+  set design_id $keys(-design_id)
+
+  if { [info exists keys(-key_hex)] } {
+    set key_hex $keys(-key_hex)
+    if { [string length $key_hex] != 64 } {
+      utl::error WMK 91 "The -key_hex argument must be a 64-character hex\
+                         string (32 bytes)."
+    }
+  } else {
+    set key_hex [wmk::random_hex_cmd 32]
+    if { $key_hex eq "" } {
+      utl::error WMK 92 "Could not read the system random source; refusing to\
+                         invent a key."
+    }
+  }
+
+  if { [info exists keys(-nonce_hex)] } {
+    set nonce_hex $keys(-nonce_hex)
+    if { [string length $nonce_hex] % 2 != 0 } {
+      utl::error WMK 93 "The -nonce_hex argument must be an even-length hex\
+                         string."
+    }
+  } else {
+    set nonce_hex [wmk::random_hex_cmd 16]
+    if { $nonce_hex eq "" } {
+      utl::error WMK 99 "Could not read the system random source; refusing to\
+                         invent a nonce."
+    }
+  }
+
+  set result [dict create key_hex $key_hex nonce_hex $nonce_hex \
+                design_id $design_id]
+  foreach stage { placement cts routing } {
+    set derived [wmk::derive_stage_key_cmd $key_hex $design_id $nonce_hex $stage]
+    if { $derived eq "" } {
+      utl::error WMK 94 "Could not derive the $stage key; check -key_hex and\
+                         -nonce_hex."
+    }
+    dict set result $stage $derived
+  }
+
+  if { [info exists keys(-file)] } {
+    set path $keys(-file)
+    set fh [open $path w]
+    # The file holds the secret, so no one but its owner should be able to read
+    # it.  Set the mode before anything is written to it.
+    catch { file attributes $path -permissions 0600 }
+    foreach name { design_id nonce_hex key_hex placement cts routing } {
+      puts $fh "$name [dict get $result $name]"
+    }
+    close $fh
+    utl::info WMK 95 "Wrote the watermark key material to $path."
+  }
+  return $result
+}
+
+sta::define_cmd_args "derive_watermark_key" {-design_id design_id \
+                                             -key_hex key_hex \
+                                             -nonce_hex nonce_hex \
+                                             -stage stage}
+
+# Re-derive one stage key from the secret, the design identifier and the nonce,
+# returning it as a 64-character hex string.  Verification needs the same stage
+# keys embedding used, and this is how to get them back without storing them.
+proc derive_watermark_key { args } {
+  sta::parse_key_args "derive_watermark_key" args \
+    keys {-key_hex -design_id -nonce_hex -stage} flags {}
+
+  foreach required { -key_hex -design_id -nonce_hex -stage } {
+    if { ![info exists keys($required)] } {
+      utl::error WMK 96 "The $required argument is required."
+    }
+  }
+  if { [lsearch -exact { placement cts routing } $keys(-stage)] < 0 } {
+    utl::error WMK 97 "The -stage argument must be placement, cts or routing."
+  }
+  set derived [wmk::derive_stage_key_cmd $keys(-key_hex) $keys(-design_id) \
+                 $keys(-nonce_hex) $keys(-stage)]
+  if { $derived eq "" } {
+    utl::error WMK 98 "Could not derive the key; -key_hex must be 64 hex chars\
+                       and -nonce_hex an even-length hex string."
+  }
+  return $derived
+}
+
 sta::define_cmd_args "set_routing_watermark" {-key_hex key_hex \
                                               [-fraction fraction]}
 
@@ -161,6 +270,7 @@ proc clear_routing_watermark { args } {
 }
 
 sta::define_cmd_args "verify_watermark" {[-cts_claims file] \
+                                         [-min_stages n] \
                                          [-placement_claims file] \
                                          [-routing_alpha alpha] \
                                          [-routing_fraction fraction] \
@@ -180,11 +290,17 @@ sta::define_cmd_args "verify_watermark" {[-cts_claims file] \
 # wirelength is under a random choice of marked set, against the threshold
 # alpha.
 #
-# Returns 1 when every stage that was checked met its threshold, otherwise 0.
+# Ownership is granted when at least -min_stages of the checked stages pass,
+# two by default.  Requiring every stage would let one stage with no capacity
+# sink a claim the other two prove: a design whose clock tree cannot absorb a
+# single moved sink is not thereby unowned.  Requiring only one would accept on
+# a single stage's evidence, which is a weaker claim than the scheme intends.
+#
+# Returns 1 when the design carries the watermark, otherwise 0.
 proc verify_watermark { args } {
   sta::parse_key_args "verify_watermark" args \
     keys {-placement_claims -cts_claims -routing_key_hex -routing_fraction \
-          -routing_alpha -routing_permutations -tau} \
+          -routing_alpha -routing_permutations -tau -min_stages} \
     flags {}
 
   set tau 0.75
@@ -200,7 +316,15 @@ proc verify_watermark { args } {
                        -routing_key_hex is required."
   }
 
-  set pass 1
+  set min_stages 2
+  if { [info exists keys(-min_stages)] } {
+    set min_stages $keys(-min_stages)
+  }
+  if { $min_stages < 1 || $min_stages > 3 } {
+    utl::error WMK 88 "The -min_stages argument must be 1, 2 or 3."
+  }
+
+  set passed 0
   set checked 0
   # Routing is a population statistic rather than a set of claims.  The sign of
   # T_R is not evidence on its own -- on an unwatermarked design it is a coin
@@ -232,10 +356,11 @@ proc verify_watermark { args } {
     }
     incr checked
     if { $p_r > $alpha } {
-      set pass 0
       utl::warn WMK 47 \
         "Routing shows no watermark: p = [format %.2e $p_r] >\
          [format %.2e $alpha]."
+    } else {
+      incr passed
     }
   }
   foreach { key stage cmd } {
@@ -252,9 +377,10 @@ proc verify_watermark { args } {
     }
     incr checked
     if { $rate < $tau } {
-      set pass 0
       utl::warn WMK 43 \
         "Stage $stage below threshold: [format %.4f $rate] < [format %.4f $tau]."
+    } else {
+      incr passed
     }
   }
 
@@ -262,10 +388,18 @@ proc verify_watermark { args } {
     utl::warn WMK 44 "No stage had checkable claims; no verdict."
     return 0
   }
-  if { $pass } {
-    utl::info WMK 45 "Ownership evidence holds in $checked stage(s)."
-  } else {
-    utl::info WMK 46 "Ownership evidence does not hold."
+  if { $checked < $min_stages } {
+    utl::warn WMK 89 "Only $checked stage(s) could be checked, fewer than the\
+                      $min_stages required; pass -min_stages to decide on\
+                      fewer."
   }
-  return $pass
+  if { $passed >= $min_stages } {
+    utl::info WMK 45 \
+      "Ownership evidence holds in $passed of $checked stage(s) checked."
+    return 1
+  }
+  utl::info WMK 46 \
+    "Ownership evidence does not hold: $passed of $checked stage(s) passed,\
+     $min_stages required."
+  return 0
 }

@@ -17,6 +17,6 @@ read_lef Nangate45/Nangate45.lef
 read_def gcd_placed.def
 
 check "an unmarked design does not carry the mark" \
-  { verify_watermark -placement_claims wm_place_marked.csv } 0
+  { verify_watermark -placement_claims wm_place_marked.csv -min_stages 1 } 0
 
 exit_summary

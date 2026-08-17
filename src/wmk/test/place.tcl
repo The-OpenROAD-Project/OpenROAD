@@ -43,7 +43,7 @@ puts "committed $committed pairs"
 # of pairs would leave a design with too few bits to prove anything, and every
 # other check here would still pass.
 check "the design yields its usual capacity" { set committed } 20
-check "every committed pair holds" { verify_watermark -placement_claims $claims } 1
+check "every committed pair holds" { verify_watermark -placement_claims $claims -min_stages 1 } 1
 
 # Some of those pairs have to be ones the embedder actually reordered.  A pair
 # that was already in the keyed order is a legitimate claim but a free one, and
@@ -72,6 +72,6 @@ check "and some of them were pairs the embedder had to reorder" \
 place_watermark -key_hex $key -claims_file [make_result_file place_again.csv] \
   -hpwl_eps_dbu 2000 -pair_dist_um 3.0 -pairs_per_tile 64
 check "re-embedding the same key leaves the first mark intact" \
-  { verify_watermark -placement_claims $claims } 1
+  { verify_watermark -placement_claims $claims -min_stages 1 } 1
 
 exit_summary
