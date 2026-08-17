@@ -6,7 +6,11 @@
 
 #include "HmacSha256.h"
 
+#include <array>
+#include <cstdint>
 #include <cstring>
+#include <string>
+#include <vector>
 
 namespace wmk {
 
@@ -55,11 +59,11 @@ void sha256_init(Sha256Ctx& c)
 void sha256_transform(Sha256Ctx& c, const std::uint8_t block[64])
 {
   std::uint32_t w[64];
-  for (int i = 0; i < 16; ++i) {
-    w[i] = (std::uint32_t(block[i * 4]) << 24)
-           | (std::uint32_t(block[i * 4 + 1]) << 16)
-           | (std::uint32_t(block[i * 4 + 2]) << 8)
-           | std::uint32_t(block[i * 4 + 3]);
+  for (std::size_t i = 0; i < 16; ++i) {
+    w[i] = (static_cast<std::uint32_t>(block[i * 4]) << 24)
+           | (static_cast<std::uint32_t>(block[i * 4 + 1]) << 16)
+           | (static_cast<std::uint32_t>(block[i * 4 + 2]) << 8)
+           | static_cast<std::uint32_t>(block[i * 4 + 3]);
   }
   for (int i = 16; i < 64; ++i) {
     std::uint32_t s0
@@ -127,7 +131,7 @@ void sha256_final(Sha256Ctx& c, std::uint8_t out[32])
     lenbuf[7 - i] = static_cast<std::uint8_t>(bitlen >> (i * 8));
   }
   sha256_update(c, lenbuf, 8);
-  for (int i = 0; i < 8; ++i) {
+  for (std::size_t i = 0; i < 8; ++i) {
     out[i * 4] = static_cast<std::uint8_t>(c.state[i] >> 24);
     out[i * 4 + 1] = static_cast<std::uint8_t>(c.state[i] >> 16);
     out[i * 4 + 2] = static_cast<std::uint8_t>(c.state[i] >> 8);
@@ -218,7 +222,7 @@ bool parse_hex_key32(const std::string& hex,
     }
     return false;
   };
-  for (int i = 0; i < 32; ++i) {
+  for (std::size_t i = 0; i < 32; ++i) {
     int hi = 0, lo = 0;
     if (!nib(hex[i * 2], hi) || !nib(hex[i * 2 + 1], lo)) {
       return false;

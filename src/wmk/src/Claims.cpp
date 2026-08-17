@@ -3,9 +3,12 @@
 
 #include "Claims.h"
 
-#include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace wmk {
 

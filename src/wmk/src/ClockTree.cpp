@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <cctype>
 #include <string>
+#include <vector>
+
+#include "odb/db.h"
 
 namespace wmk {
 
@@ -44,7 +47,7 @@ bool isSequentialClockSink(dbITerm* iterm)
     return false;
   }
   std::string name = mterm->getName();
-  std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
+  std::ranges::transform(name, name.begin(), [](unsigned char c) {
     return static_cast<char>(std::toupper(c));
   });
   return name == "CP" || name == "CLK" || name == "CK" || name == "CLOCK";
@@ -78,9 +81,8 @@ std::vector<dbInst*> findLeafClockBuffers(dbBlock* block)
     }
   }
   // Name order, so the pairing below does not depend on database order.
-  std::sort(lcbs.begin(), lcbs.end(), [](dbInst* a, dbInst* b) {
-    return a->getName() < b->getName();
-  });
+  std::ranges::sort(
+      lcbs, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
   return lcbs;
 }
 

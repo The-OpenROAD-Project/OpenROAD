@@ -13,13 +13,16 @@
 #include <cstring>
 #include <limits>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "HmacSha256.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
+#include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Scene.hh"
@@ -172,7 +175,7 @@ double binomialTail(int X, int x, double p)
     const double lt = logChoose(X, i) + (X - i) * log_p + i * log_q;
     log_terms.push_back(lt);
   }
-  const double max_lt = *std::max_element(log_terms.begin(), log_terms.end());
+  const double max_lt = *std::ranges::max_element(log_terms);
   double acc = 0.0;
   for (double lt : log_terms) {
     acc += std::exp(lt - max_lt);
@@ -269,11 +272,8 @@ bool Watermark::driverHeadroomOk(odb::dbInst* inst,
   float cap_slack = 0.0f;
   sta_->checkCapacitance(
       pin, sta_->scenes(), max, cap, cap_limit, cap_slack, rf, scene);
-  if (cap_limit > 0.0f
-      && cap > static_cast<float>(1.0 - cap_frac) * cap_limit) {
-    return false;
-  }
-  return true;
+  return cap_limit <= 0.0f
+         || cap <= static_cast<float>(1.0 - cap_frac) * cap_limit;
 }
 
 float Watermark::worstSlack(odb::dbInst* inst) const
@@ -354,9 +354,8 @@ int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,
       nets.push_back(net);
     }
   }
-  std::sort(nets.begin(), nets.end(), [](dbNet* a, dbNet* b) {
-    return a->getName() < b->getName();
-  });
+  std::ranges::sort(
+      nets, [](dbNet* a, dbNet* b) { return a->getName() < b->getName(); });
 
   for (dbNet* net : nets) {
     ++n_candidates;
@@ -431,7 +430,7 @@ double Watermark::reportWatermark(double p)
     const double ratio
         = static_cast<double>(wl_way) / static_cast<double>(wl_tot);
     const bool is_wm = (dbBoolProperty::find(net, "watermark") != nullptr);
-    rows.push_back({net, ratio, is_wm});
+    rows.push_back({.net = net, .ratio = ratio, .is_watermark = is_wm});
   }
 
   if (rows.empty()) {
@@ -442,7 +441,7 @@ double Watermark::reportWatermark(double p)
 
   // Rank all nets by ascending wrong-way ratio.  Ties broken by net
   // name for determinism.
-  std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {
+  std::ranges::sort(rows, [](const Row& a, const Row& b) {
     if (a.ratio != b.ratio) {
       return a.ratio < b.ratio;
     }
@@ -456,7 +455,7 @@ double Watermark::reportWatermark(double p)
 
   int X = 0;       // number of watermark nets
   int passed = 0;  // watermark nets below cutoff
-  for (int rank = 0; rank < static_cast<int>(rows.size()); ++rank) {
+  for (int rank = 0; std::cmp_less(rank, rows.size()); ++rank) {
     const Row& r = rows[rank];
     if (r.is_watermark) {
       ++X;

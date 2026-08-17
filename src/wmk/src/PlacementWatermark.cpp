@@ -28,7 +28,11 @@
 // at one half, which is exactly what it should be.
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <map>
 #include <string>
@@ -38,14 +42,11 @@
 #include <vector>
 
 #include "HmacSha256.h"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
-#include "sta/MinMax.hh"
-#include "sta/Scene.hh"
-#include "sta/Transition.hh"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
 
@@ -55,7 +56,6 @@ using odb::dbBlock;
 using odb::dbInst;
 using odb::dbITerm;
 using odb::dbNet;
-using odb::dbRow;
 
 namespace {
 
@@ -71,7 +71,7 @@ bool isEligibleInst(dbInst* inst, int row_height)
   if (master->isBlock() || master->isPad() || master->isCover()) {
     return false;
   }
-  if (static_cast<int>(master->getHeight()) != row_height) {
+  if (std::cmp_not_equal(master->getHeight(), row_height)) {
     return false;
   }
   for (dbITerm* iterm : inst->getITerms()) {
@@ -315,20 +315,18 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
     }
     // The keyed order.  Ties would be a 256-bit collision, so the identifier is
     // only a formality; it keeps the sort total either way.
-    std::sort(
-        out.begin(), out.end(), [](const Candidate& x, const Candidate& y) {
-          if (x.sort_key != y.sort_key) {
-            return x.sort_key < y.sort_key;
-          }
-          return std::tie(x.first, x.second) < std::tie(y.first, y.second);
-        });
+    std::ranges::sort(out, [](const Candidate& x, const Candidate& y) {
+      if (x.sort_key != y.sort_key) {
+        return x.sort_key < y.sort_key;
+      }
+      return std::tie(x.first, x.second) < std::tie(y.first, y.second);
+    });
   };
 
   for (auto& [bkey, bucket] : buckets) {
-    std::sort(
-        bucket.insts.begin(), bucket.insts.end(), [](dbInst* a, dbInst* b) {
-          return a->getBBox()->xMin() < b->getBBox()->xMin();
-        });
+    std::ranges::sort(bucket.insts, [](dbInst* a, dbInst* b) {
+      return a->getBBox()->xMin() < b->getBBox()->xMin();
+    });
   }
 
   std::map<std::pair<int, int>, int> per_tile;
@@ -345,7 +343,7 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
       if (per_tile[tile] >= opts.pairs_per_tile) {
         continue;
       }
-      if (used.count(c.a) != 0 || used.count(c.b) != 0) {
+      if (used.contains(c.a) || used.contains(c.b)) {
         continue;
       }
       selected.push_back(c);
@@ -377,9 +375,9 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   // no cell, so the order the swaps happen in cannot matter, and each pair's
   // observed order is read before anything moves.
   for (const Candidate& c : selected) {
-    const int observed = (c.a->getBBox()->xMin() < c.b->getBBox()->xMin())
-                             ? (c.a->getName() == c.first ? 0 : 1)
-                             : (c.a->getName() == c.first ? 1 : 0);
+    const bool a_is_left = c.a->getBBox()->xMin() < c.b->getBBox()->xMin();
+    const bool a_is_first = c.a->getName() == c.first;
+    const int observed = (a_is_left == a_is_first) ? 0 : 1;
     const std::array<std::uint8_t, 32> d
         = hmac_digest(key, {"bit", tileBytes(c.tx, c.ty), c.first, c.second});
     const int target = d[0] & 1;

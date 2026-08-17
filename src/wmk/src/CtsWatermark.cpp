@@ -28,21 +28,19 @@
 // evidence of anything.
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
-#include <limits>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "ClockTree.h"
 #include "HmacSha256.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Scene.hh"
-#include "sta/Transition.hh"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
 
@@ -170,14 +168,12 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       candidates.push_back(std::move(c));
     }
   }
-  std::sort(candidates.begin(),
-            candidates.end(),
-            [](const Candidate& x, const Candidate& y) {
-              if (x.sort_key != y.sort_key) {
-                return x.sort_key < y.sort_key;
-              }
-              return x.pair_key < y.pair_key;
-            });
+  std::ranges::sort(candidates, [](const Candidate& x, const Candidate& y) {
+    if (x.sort_key != y.sort_key) {
+      return x.sort_key < y.sort_key;
+    }
+    return x.pair_key < y.pair_key;
+  });
 
   std::vector<CtsClaim> claims;
   // A buffer that has been claimed is frozen: its fanout is the evidence, so it
@@ -191,7 +187,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   int moved = 0;
 
   for (const Candidate& c : candidates) {
-    if (static_cast<int>(claims.size()) >= opts.num_pairs) {
+    if (std::cmp_greater_equal(claims.size(), opts.num_pairs)) {
       break;
     }
     if (claimed[c.i] || claimed[c.j]) {

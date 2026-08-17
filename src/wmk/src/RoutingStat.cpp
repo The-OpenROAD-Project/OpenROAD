@@ -41,16 +41,22 @@
 // the closed form is an upper bound on the same tail.
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <map>
 #include <numeric>
 #include <random>
+#include <ranges>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "HmacSha256.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
@@ -73,7 +79,7 @@ std::int64_t mergedLength(std::vector<std::pair<int, int>>& intervals)
   if (intervals.empty()) {
     return 0;
   }
-  std::sort(intervals.begin(), intervals.end());
+  std::ranges::sort(intervals);
   std::int64_t total = 0;
   int lo = intervals[0].first;
   int hi = intervals[0].second;
@@ -227,8 +233,8 @@ double randomizationPvalue(const std::vector<double>& q,
       swaps.emplace_back(i, j);
       drawn_sum += q[idx[i]];
     }
-    for (auto it = swaps.rbegin(); it != swaps.rend(); ++it) {
-      std::swap(idx[it->first], idx[it->second]);
+    for (const auto& [first, second] : std::ranges::reverse_view(swaps)) {
+      std::swap(idx[first], idx[second]);
     }
     if (drawn_sum * a - offset <= t_obs + 1e-15) {
       ++at_least_as_clean;
@@ -384,7 +390,7 @@ RoutingStat Watermark::verifyRouting(const std::array<std::uint8_t, 32>& key,
   all.reserve(q_marked.size() + q_rest.size());
   all.insert(all.end(), q_marked.begin(), q_marked.end());
   all.insert(all.end(), q_rest.begin(), q_rest.end());
-  std::sort(all.begin(), all.end());
+  std::ranges::sort(all);
   const std::array<std::uint8_t, 32> seed_bytes = sha256(block->getName());
   std::uint64_t seed = 0;
   for (int i = 0; i < 8; ++i) {
