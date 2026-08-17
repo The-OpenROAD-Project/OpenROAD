@@ -30,9 +30,14 @@ The `generate_watermark_key` command draws a secret and derives the three stage
 keys from it. It returns a dictionary with the entries `key_hex`, `nonce_hex`,
 `design_id`, `placement`, `cts` and `routing`.
 
-A stage key is `HMAC-SHA256(key, design_id, nonce, "stage=" || stage)`. The
-identifier and the nonce are public and bind the keys to one design version, so
-one secret can protect many designs. All three are needed again to verify.
+A stage key is `HMAC-SHA256(key, design_id, nonce, "stage=" || stage)`.
+
+The nonce identifies one watermark instance. The same secret and design
+identifier with a different nonce mark different objects with different values,
+so one secret can mark several copies of a design distinguishably, and can mark
+it again after a revision without repeating the previous marks. The design
+identifier and the nonce are public and belong with the design's records; only
+the secret does not. All three are needed again to verify.
 
 The secret is never logged. With `-file` it is written with owner-only
 permissions. If the system random source cannot be read the command fails rather
@@ -416,12 +421,10 @@ is refused. Key generation has no Python entry point; use
 
 ## References
 
-1.  Kahng, A. B., & Liu, Y. Kerckhoffs-Compliant Watermarking for Physical Design
+1.  A. B. Kahng and Y. Liu. Kerckhoffs-Compliant Watermarking for Physical Design
     IP Protection: From Placement to Routing.
     [(arXiv)](https://arxiv.org/pdf/2608.05055)
-1.  Kahng, A. B., Mantik, S., Markov, I. L., Potkonjak, M., Tucker, P., Wang, H.,
-    & Wolfe, G. Robust IP watermarking methodologies for physical design. In
-    International Symposium on Physical Design (ISPD), 1998.
+
 
 ## License
 
