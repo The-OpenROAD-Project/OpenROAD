@@ -191,6 +191,22 @@ def vendored_files():
     return sorted(found)
 
 
+def pinned_versions(lock):
+    """What the lock says is pinned, against what the script asks for."""
+    wanted = {name: spec["version"] for name, spec in PACKAGES.items()}
+    wanted["esbuild"] = ESBUILD_VERSION
+    locked = {
+        name: lock.get("packages", {}).get(name, {}).get("version") for name in PACKAGES
+    }
+    locked["esbuild"] = lock.get("tools", {}).get("esbuild", {}).get("version")
+    return [
+        f"{name} is pinned at {locked[name]} but the script asks for {version}; "
+        "re-run with --rewrite-lock"
+        for name, version in sorted(wanted.items())
+        if locked[name] != version
+    ]
+
+
 def check(lock):
     """Verify the checked-in tree byte for byte against the lock."""
     expected = lock.get("files", {})
@@ -198,23 +214,10 @@ def check(lock):
         print("vendor.lock.json lists no files", file=sys.stderr)
         return 1
 
-    # The digests only say the tree matches the lock; these say the lock matches
+    # The digests only say the tree matches the lock; this says the lock matches
     # what the script would fetch today, which a version bumped without re-running
     # it would not.
-    problems = []
-    for name, spec in sorted(PACKAGES.items()):
-        locked = lock.get("packages", {}).get(name, {}).get("version")
-        if locked != spec["version"]:
-            problems.append(
-                f"{name} is pinned at {locked} but PACKAGES asks for "
-                f'{spec["version"]}; re-run with --rewrite-lock'
-            )
-    locked_esbuild = lock.get("tools", {}).get("esbuild", {}).get("version")
-    if locked_esbuild != ESBUILD_VERSION:
-        problems.append(
-            f"esbuild is pinned at {locked_esbuild} but the script asks for "
-            f"{ESBUILD_VERSION}; re-run with --rewrite-lock"
-        )
+    problems = pinned_versions(lock)
 
     for rel, digest in sorted(expected.items()):
         path = os.path.join(THIS_DIR, rel)
@@ -334,6 +337,15 @@ def bundle(spec, tar, lock, work_dir, rewrite_lock):
 
 
 def update(lock, rewrite_lock):
+    # Decided before the first byte moves: a version bumped without
+    # --rewrite-lock used to be caught after the earlier packages had been
+    # downloaded, extracted and written over the tree.
+    if not rewrite_lock:
+        stale = pinned_versions(lock)
+        if stale:
+            print("\n".join(stale), file=sys.stderr)
+            return 1
+
     written = []
     for name, spec in PACKAGES.items():
         version = spec["version"]
@@ -343,16 +355,7 @@ def update(lock, rewrite_lock):
         digest = sha256_bytes(data)
         entry = lock.setdefault("packages", {}).setdefault(name, {})
         pinned = entry.get("sha256") if entry.get("version") == version else None
-        if pinned is None and not rewrite_lock:
-            # A version bumped in PACKAGES has no digest in the lock yet, and
-            # writing whatever arrived would pin a download nobody verified.
-            print(
-                f"  {name}@{version} is not pinned in vendor.lock.json; re-run "
-                "with --rewrite-lock to record it",
-                file=sys.stderr,
-            )
-            return 1
-        if pinned is not None and pinned != digest and not rewrite_lock:
+        if pinned != digest and not rewrite_lock:
             print(
                 f"  tarball sha256 mismatch for {name}@{version}:\n"
                 f"    expected {pinned}\n    actual   {digest}\n"

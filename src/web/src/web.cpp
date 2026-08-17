@@ -1070,48 +1070,38 @@ static std::string resolveAssetPath(const std::string_view base_dir,
       .string();
 }
 
-// The assets the saved report inlines.  One list, used both to check that the
-// build embedded them and to write them into the head below.
-constexpr std::string_view kReportLeafletCss
-    = "/third-party/leaflet/leaflet.css";
-constexpr std::string_view kReportLeafletJs = "/third-party/leaflet/leaflet.js";
-constexpr std::string_view kReportGoldenLayoutCss
-    = "/third-party/golden-layout/css/goldenlayout-base.css";
-constexpr std::string_view kReportGoldenLayoutDark
-    = "/third-party/golden-layout/css/themes/goldenlayout-dark-theme.css";
-constexpr std::string_view kReportGoldenLayoutLight
-    = "/third-party/golden-layout/css/themes/goldenlayout-light-theme.css";
-constexpr std::string_view kReportThree
-    = "/third-party/three/three.module.min.js";
-constexpr std::string_view kReportGoldenLayoutEsm
-    = "/third-party/golden-layout/golden-layout.esm.js";
-
-constexpr std::string_view kReportAssets[] = {
-    kReportLeafletCss,
-    kReportLeafletJs,
-    kReportGoldenLayoutCss,
-    kReportGoldenLayoutDark,
-    kReportGoldenLayoutLight,
-    kReportThree,
-    kReportGoldenLayoutEsm,
-};
-
-// A miss here means the build embedded the wrong asset list, not bad input.
-static const EmbeddedAsset* reportAsset(const std::string_view path,
-                                        utl::Logger* logger)
+// The inliners look assets up through this rather than through a bare Logger:
+// a report that ships with a src="" opens to a blank page, so whoever wrote it
+// has to know something was missed -- including the icons the stylesheets reach
+// through url(), which no list of top-level assets would have covered.
+class ReportAssets
 {
-  const EmbeddedAsset* asset = findEmbeddedAsset(path);
-  if (!asset) {
-    logger->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
+ public:
+  explicit ReportAssets(utl::Logger* logger) : logger_(logger) {}
+
+  const EmbeddedAsset* find(const std::string_view path)
+  {
+    const EmbeddedAsset* asset = findEmbeddedAsset(path);
+    if (!asset) {
+      // A miss is a binary built with the wrong asset list, not bad input.
+      logger_->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
+      missing_ = true;
+    }
+    return asset;
   }
-  return asset;
-}
+
+  bool missing() const { return missing_; }
+
+ private:
+  utl::Logger* logger_;
+  bool missing_ = false;
+};
 
 // data: URI for an embedded asset, for use as a src or href in the report.
 static std::string assetDataUri(const std::string_view path,
-                                utl::Logger* logger)
+                                ReportAssets& assets)
 {
-  const EmbeddedAsset* asset = reportAsset(path, logger);
+  const EmbeddedAsset* asset = assets.find(path);
   if (!asset) {
     return "";
   }
@@ -1123,7 +1113,7 @@ static std::string assetDataUri(const std::string_view path,
 // this the icons would resolve against the directory the report was saved in.
 static std::string inlineStylesheetUrls(const std::string_view css,
                                         const std::string_view base_dir,
-                                        utl::Logger* logger)
+                                        ReportAssets& assets)
 {
   std::string result;
   size_t pos = 0;
@@ -1132,43 +1122,38 @@ static std::string inlineStylesheetUrls(const std::string_view css,
     if (open == std::string_view::npos) {
       break;
     }
-    // A quoted reference may hold a parenthesis, so the closing quote comes
-    // first and the token ends after it; an unquoted one ends at the ')'.
+    // A quoted reference may hold a parenthesis, so its closing quote bounds
+    // the token; an unquoted one ends at the ')'.  Either way the span of the
+    // reference is known here, so there is nothing left to trim or unquote.
     const size_t first = css.find_first_not_of(" \t\r\n", open + 4);
+    if (first == std::string_view::npos) {
+      break;
+    }
     size_t close = std::string_view::npos;
-    if (first != std::string_view::npos
-        && (css[first] == '"' || css[first] == '\'')) {
+    std::string_view reference;
+    if (css[first] == '"' || css[first] == '\'') {
       const size_t quote = css.find(css[first], first + 1);
-      if (quote != std::string_view::npos) {
-        close = css.find(')', quote + 1);
+      if (quote == std::string_view::npos) {
+        break;
       }
+      close = css.find(')', quote + 1);
+      reference = css.substr(first + 1, quote - first - 1);
     } else {
-      close = css.find(')', open);
+      close = css.find(')', first);
+      if (close == std::string_view::npos) {
+        break;
+      }
+      reference = css.substr(first, close - first);
+      while (!reference.empty()
+             && std::isspace(static_cast<unsigned char>(reference.back()))
+                    != 0) {
+        reference.remove_suffix(1);
+      }
     }
     if (close == std::string_view::npos) {
       break;
     }
-    std::string_view reference = css.substr(open + 4, close - (open + 4));
-    // The css syntax allows padding inside the parentheses, and quotes around
-    // the reference; both have to come off before it is a path.
-    const auto trim = [&reference]() {
-      const auto space = [](const char c) {
-        return std::isspace(static_cast<unsigned char>(c)) != 0;
-      };
-      while (!reference.empty() && space(reference.front())) {
-        reference.remove_prefix(1);
-      }
-      while (!reference.empty() && space(reference.back())) {
-        reference.remove_suffix(1);
-      }
-    };
-    trim();
-    if (reference.size() >= 2
-        && (reference.front() == '"' || reference.front() == '\'')
-        && reference.back() == reference.front()) {
-      reference = reference.substr(1, reference.size() - 2);
-      trim();
-    }
+
     // Fragment-only references (url(#default#VML)) and anything already
     // inlined are left alone.
     if (reference.empty() || reference.front() == '#'
@@ -1180,7 +1165,7 @@ static std::string inlineStylesheetUrls(const std::string_view css,
 
     result += css.substr(pos, open - pos);
     result += "url(\"";
-    result += assetDataUri(resolveAssetPath(base_dir, reference), logger);
+    result += assetDataUri(resolveAssetPath(base_dir, reference), assets);
     result += "\")";
     pos = close + 1;
   }
@@ -1192,16 +1177,16 @@ static std::string inlineStylesheetUrls(const std::string_view css,
 // references resolve against the directory the stylesheet is served from, which
 // is the path itself minus the file name.
 static std::string stylesheetDataUri(const std::string_view path,
-                                     utl::Logger* logger)
+                                     ReportAssets& assets)
 {
-  const EmbeddedAsset* asset = reportAsset(path, logger);
+  const EmbeddedAsset* asset = assets.find(path);
   if (!asset) {
     return "";
   }
   const std::string_view base_dir = path.substr(0, path.rfind('/') + 1);
   return "data:text/css;base64,"
          + base64Encode(
-             inlineStylesheetUrls(asset->content(), base_dir, logger));
+             inlineStylesheetUrls(asset->content(), base_dir, assets));
 }
 
 void WebServer::saveReport(const std::string& filename,
@@ -1220,25 +1205,12 @@ void WebServer::saveReport(const std::string& filename,
     return;
   }
 
-  // Every library the report inlines has to be there before anything is
-  // written: a missing one would leave a src="" in the head, and a report that
-  // opens to a blank page is worse than one that was never written.
-  for (const std::string_view path : kReportAssets) {
-    if (!findEmbeddedAsset(path)) {
-      logger_->error(utl::WEB,
-                     45,
-                     "Missing embedded asset {}; the binary was built with an "
-                     "incomplete asset list.",
-                     path);
-      return;
-    }
-  }
-
   std::ofstream out(filename);
   if (!out) {
     logger_->error(utl::WEB, 31, "Cannot open file: {}", filename);
     return;
   }
+  ReportAssets assets(logger_);
 
   // ── Serialize JSON cache responses ──
 
@@ -1370,19 +1342,31 @@ void WebServer::saveReport(const std::string& filename,
       << kReportContentSecurityPolicy << R"(">
 <title>OpenROAD Timing Report</title>
 <link rel="stylesheet" href=")"
-      << stylesheetDataUri(kReportLeafletCss, logger_) << R"("/>
+      << stylesheetDataUri("/third-party/leaflet/leaflet.css", assets) << R"("/>
 <script src=")"
-      << assetDataUri(kReportLeafletJs, logger_) << R"("></script>
+      << assetDataUri("/third-party/leaflet/leaflet.js", assets)
+      << R"("></script>
 <link rel="stylesheet" href=")"
       << stylesheetDataUri(
-             "/third-party/golden-layout/css/goldenlayout-base.css", logger_)
+             "/third-party/golden-layout/css/goldenlayout-base.css", assets)
       << R"("/>
 <link rel="stylesheet" id="gl-theme-dark" href=")"
-      << stylesheetDataUri(kReportGoldenLayoutDark, logger_) << R"("/>
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/themes/"
+             "goldenlayout-dark-theme.css",
+             assets)
+      << R"("/>
 <link rel="stylesheet" id="gl-theme-light" href=")"
-      << stylesheetDataUri(kReportGoldenLayoutLight, logger_) << R"(" disabled/>
+      << stylesheetDataUri(
+             "/third-party/golden-layout/css/themes/"
+             "goldenlayout-light-theme.css",
+             assets)
+      << R"(" disabled/>
 <style>
-)" << inlineStylesheetUrls(kReportCSS, "/", logger_)
+)" <<  // style.css has no url() today, so this rewrites nothing; it is here
+      // so that adding one cannot quietly ship a reference the report cannot
+      // resolve.
+      inlineStylesheetUrls(kReportCSS, "/", assets)
       << R"(
 </style>
 </head>
@@ -1468,10 +1452,9 @@ window.__STATIC_CACHE__ = {
 {
   "imports": {
     "three": ")"
-      << assetDataUri(kReportThree, logger_) << R"(",
+      << assetDataUri("/third-party/three/three.module.min.js", assets) << R"(",
     "golden-layout": ")"
-      << assetDataUri("/third-party/golden-layout/golden-layout.esm.js",
-                      logger_)
+      << assetDataUri("/third-party/golden-layout/golden-layout.esm.js", assets)
       << R"("
   }
 }
@@ -1487,6 +1470,18 @@ import * as THREE from 'three';
 )";
 
   out.close();
+
+  if (assets.missing()) {
+    // The warnings above name what was missed; what matters here is that no
+    // one is told a blank report was saved.
+    std::filesystem::remove(filename);
+    logger_->error(utl::WEB,
+                   45,
+                   "Not saving {}: the binary was built with an incomplete "
+                   "asset list.",
+                   filename);
+    return;
+  }
   logger_->info(utl::WEB, 32, "Saved timing report to {}", filename);
 }
 
