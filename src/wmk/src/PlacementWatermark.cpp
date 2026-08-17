@@ -13,20 +13,28 @@
 // otherwise.  The bit is derived from the key, so an observer cannot tell a
 // marked ordering from an arbitrary one without it.
 //
-// Which cells get paired is decided without ever consulting that bit.  This
-// matters more than it looks: an embedder that picked whichever partner
-// already happened to be in the keyed order would report a perfect extraction
-// rate on any design at all, including one it had never touched, and the rate
-// would carry no evidence.  Pairing therefore depends only on geometry,
-// timing and wirelength, and every pair chosen is claimed -- including the
-// ones whose swap did not survive legalization.  On a design this key did not
-// mark, the rate then sits at one half, which is exactly what it should be.
+// Which cells get paired is keyed too, and that is the part an observer cannot
+// reconstruct.  Candidates are enumerated and screened by rules anyone can
+// apply -- same row, same width, close enough, no timing or wirelength cost --
+// and the key then orders what survives and takes a greedy non-overlapping
+// prefix.  So the eligible set is public and the marked subset is not.
+//
+// The key orders candidates by their names, never by what they currently look
+// like.  An embedder that preferred whichever partner already sat in the keyed
+// order would report a perfect extraction rate on any design at all, including
+// one it had never touched, and the rate would carry no evidence.  For the same
+// reason every pair chosen is claimed, including the ones whose swap did not
+// survive legalization: on a design this key did not mark, the rate then sits
+// at one half, which is exactly what it should be.
 
 #include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <map>
 #include <string>
+#include <tuple>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "HmacSha256.h"
@@ -109,6 +117,37 @@ std::int64_t instHpwl(dbInst* inst)
   return total;
 }
 
+// How far along the row to look for a partner, in candidates.  The distance
+// bound already limits the search; this bounds the work when a row is dense.
+constexpr size_t kMaxNeighbours = 8;
+
+// The tile a candidate sits in, as the PRF sees it: two big-endian int32.
+std::string tileBytes(int tx, int ty)
+{
+  std::string out(8, '\0');
+  for (int k = 0; k < 4; ++k) {
+    out[k] = static_cast<char>((tx >> (24 - 8 * k)) & 0xff);
+    out[4 + k] = static_cast<char>((ty >> (24 - 8 * k)) & 0xff);
+  }
+  return out;
+}
+
+// What swapping the two cells would cost in half-perimeter wirelength.  The
+// swap is symmetric, so this does not depend on which way round the pair ends
+// up, and the key is not consulted.
+std::int64_t hpwlDeltaOfSwap(dbInst* a, dbInst* b)
+{
+  const std::int64_t before = instHpwl(a) + instHpwl(b);
+  const odb::Point a_loc = a->getLocation();
+  const odb::Point b_loc = b->getLocation();
+  a->setLocation(b_loc.x(), a_loc.y());
+  b->setLocation(a_loc.x(), b_loc.y());
+  const std::int64_t after = instHpwl(a) + instHpwl(b);
+  a->setLocation(a_loc.x(), a_loc.y());
+  b->setLocation(b_loc.x(), b_loc.y());
+  return std::llabs(after - before);
+}
+
 // Write the claim file verify_watermark reads.  The column set is the one
 // documented in the module README; a producer is free to add columns, so the
 // extra bookkeeping the Python embedder emits stays compatible.
@@ -185,11 +224,23 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
 
   sta::dbSta* sta = opts.slack_threshold_ns > 0.0 ? sta_ : nullptr;
 
-  int committed = 0;
-  int unpaired = 0;
+  // Enumerate the candidates first, apply the public guards, and only then let
+  // the key choose among what is left.  The order matters: the guards depend on
+  // the design and the choice depends on the key, so an observer who knows the
+  // algorithm still cannot say which of the eligible pairs ended up marked.
+  struct Candidate
+  {
+    dbInst* a;
+    dbInst* b;
+    int tx, ty;
+    std::string first, second;
+    std::array<std::uint8_t, 32> sort_key;
+  };
+  std::vector<Candidate> candidates;
+
+  int n_eligible_pairs = 0;
   int rejected_slack = 0;
   int rejected_hpwl = 0;
-  std::map<std::pair<int, int>, int> per_tile;
 
   for (auto& [bkey, bucket] : buckets) {
     if (bucket.insts.size() < 2) {
@@ -200,45 +251,19 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
           return a->getBBox()->xMin() < b->getBBox()->xMin();
         });
 
-    std::vector<bool> paired(bucket.insts.size(), false);
     for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
-      const std::pair<int, int> tile{bucket.tx, bucket.ty};
-      if (per_tile[tile] >= opts.pairs_per_tile) {
-        break;
-      }
-      if (paired[i]) {
-        continue;
-      }
       dbInst* a = bucket.insts[i];
-      const int ax = a->getBBox()->xMin();
-
-      // Screen on timing before touching anything: a marked pair that has to be
-      // reverted later is wasted work, and one that is not reverted is a
-      // regression the watermark caused.
       if (sta != nullptr && worstSlack(a) < opts.slack_threshold_ns * 1e-9) {
         ++rejected_slack;
         continue;
       }
+      const int ax = a->getBBox()->xMin();
 
-      // Look along the row for a partner the design can absorb a swap with.
-      // Taking the immediate neighbour and giving up would tie capacity to how
-      // the cells happen to be ordered; most of the wirelength-neutral partners
-      // are a little further along, because a pin that moves inside its net's
-      // existing bounding box costs nothing.
-      //
-      // Nothing here reads the key.  The swap is symmetric, so its cost does
-      // not depend on which way round the pair ends up, and the bit is only
-      // consulted once the partner is settled.
-      dbInst* b = nullptr;
-      size_t b_index = 0;
-      for (size_t j = i + 1; j < bucket.insts.size(); ++j) {
-        // Skip cells already spoken for before reading any coordinate: a
-        // committed swap moved two of them, so the sort order only still
-        // describes the ones left, and stopping on a moved cell would cut the
-        // search short.
-        if (paired[j]) {
-          continue;
-        }
+      // Bound the fan-out of this enumeration.  Every extra neighbour costs a
+      // trial swap and two wirelength evaluations, and partners far along the
+      // row are the ones a swap moves furthest anyway.
+      const size_t last = std::min(bucket.insts.size(), i + 1 + kMaxNeighbours);
+      for (size_t j = i + 1; j < last; ++j) {
         dbInst* cand = bucket.insts[j];
         if (cand->getBBox()->xMin() - ax > pair_dist) {
           break;
@@ -247,79 +272,97 @@ int Watermark::embedPlacement(const std::array<std::uint8_t, 32>& key,
             && worstSlack(cand) < opts.slack_threshold_ns * 1e-9) {
           continue;
         }
-        const std::int64_t hpwl_before = instHpwl(a) + instHpwl(cand);
-        const odb::Point a_loc = a->getLocation();
-        const odb::Point c_loc = cand->getLocation();
-        a->setLocation(c_loc.x(), a_loc.y());
-        cand->setLocation(a_loc.x(), c_loc.y());
-        const std::int64_t hpwl_after = instHpwl(a) + instHpwl(cand);
-        a->setLocation(a_loc.x(), a_loc.y());
-        cand->setLocation(c_loc.x(), c_loc.y());
-        if (std::llabs(hpwl_after - hpwl_before) <= opts.hpwl_eps_dbu) {
-          b = cand;
-          b_index = j;
-          break;
+        ++n_eligible_pairs;
+        if (hpwlDeltaOfSwap(a, cand) > opts.hpwl_eps_dbu) {
+          ++rejected_hpwl;
+          continue;
         }
-        ++rejected_hpwl;
+        const std::string name_a = a->getName();
+        const std::string name_b = cand->getName();
+        Candidate c;
+        c.a = a;
+        c.b = cand;
+        c.tx = bucket.tx;
+        c.ty = bucket.ty;
+        c.first = std::min(name_a, name_b);
+        c.second = std::max(name_a, name_b);
+        c.sort_key = hmac_digest(
+            key,
+            {"pair_sort", tileBytes(bucket.tx, bucket.ty), c.first, c.second});
+        candidates.push_back(std::move(c));
       }
-      if (b == nullptr) {
-        ++unpaired;
-        continue;
-      }
-
-      const std::string name_a = a->getName();
-      const std::string name_b = b->getName();
-      const std::string first = std::min(name_a, name_b);
-      const std::string second = std::max(name_a, name_b);
-
-      // The observed bit is which of the two names sits further left; the
-      // target comes from the key.  Both sides sort the names first so the bit
-      // does not depend on which cell the loop happened to see first.
-      const int observed = (a->getBBox()->xMin() < b->getBBox()->xMin())
-                               ? (name_a == first ? 0 : 1)
-                               : (name_a == first ? 1 : 0);
-
-      std::string tile_bytes(8, '\0');
-      for (int k = 0; k < 4; ++k) {
-        tile_bytes[k] = static_cast<char>((bucket.tx >> (24 - 8 * k)) & 0xff);
-        tile_bytes[4 + k]
-            = static_cast<char>((bucket.ty >> (24 - 8 * k)) & 0xff);
-      }
-      const std::array<std::uint8_t, 32> d
-          = hmac_digest(key, {"bit", tile_bytes, first, second});
-      const int target = d[0] & 1;
-
-      PlacementClaim claim;
-      claim.a_name = first;
-      claim.b_name = second;
-      claim.target_bit = target;
-      claim.already_satisfied = observed == target;
-
-      if (!claim.already_satisfied) {
-        const odb::Point a_loc = a->getLocation();
-        const odb::Point b_loc = b->getLocation();
-        a->setLocation(b_loc.x(), a_loc.y());
-        b->setLocation(a_loc.x(), b_loc.y());
-      }
-
-      claims.push_back(claim);
-      ++committed;
-      ++per_tile[tile];
-      paired[i] = true;
-      paired[b_index] = true;
     }
   }
 
-  logger_->info(utl::WMK,
-                52,
-                "Placement watermark: {} pairs committed from {} eligible "
-                "cells ({} found no partner in range, {} rejected on slack, {} "
-                "candidate swaps rejected on wirelength).",
-                committed,
-                n_eligible,
-                unpaired,
-                rejected_slack,
-                rejected_hpwl);
+  // The keyed order.  Ties would be a 256-bit collision, so the identifier is
+  // only a formality; it keeps the sort total either way.
+  std::sort(candidates.begin(),
+            candidates.end(),
+            [](const Candidate& x, const Candidate& y) {
+              if (x.sort_key != y.sort_key) {
+                return x.sort_key < y.sort_key;
+              }
+              return std::tie(x.first, x.second) < std::tie(y.first, y.second);
+            });
+
+  int committed = 0;
+  std::map<std::pair<int, int>, int> per_tile;
+  // Membership only, never iterated, so hashing on the pointer cannot make the
+  // result depend on where the objects happen to live.
+  std::unordered_set<dbInst*> used;
+
+  // Walk the keyed order and take every candidate that does not overlap one
+  // already taken.
+  for (const Candidate& c : candidates) {
+    const std::pair<int, int> tile{c.tx, c.ty};
+    if (per_tile[tile] >= opts.pairs_per_tile) {
+      continue;
+    }
+    if (used.count(c.a) != 0 || used.count(c.b) != 0) {
+      continue;
+    }
+
+    // The observed bit is which of the two names sits further left; the target
+    // comes from the key.  Both sides sort the names first so the bit does not
+    // depend on which cell the loop happened to see first.
+    const int observed = (c.a->getBBox()->xMin() < c.b->getBBox()->xMin())
+                             ? (c.a->getName() == c.first ? 0 : 1)
+                             : (c.a->getName() == c.first ? 1 : 0);
+    const std::array<std::uint8_t, 32> d
+        = hmac_digest(key, {"bit", tileBytes(c.tx, c.ty), c.first, c.second});
+    const int target = d[0] & 1;
+
+    PlacementClaim claim;
+    claim.a_name = c.first;
+    claim.b_name = c.second;
+    claim.target_bit = target;
+    claim.already_satisfied = observed == target;
+
+    if (!claim.already_satisfied) {
+      const odb::Point a_loc = c.a->getLocation();
+      const odb::Point b_loc = c.b->getLocation();
+      c.a->setLocation(b_loc.x(), a_loc.y());
+      c.b->setLocation(a_loc.x(), b_loc.y());
+    }
+
+    claims.push_back(claim);
+    ++committed;
+    ++per_tile[tile];
+    used.insert(c.a);
+    used.insert(c.b);
+  }
+
+  logger_->info(
+      utl::WMK,
+      52,
+      "Placement watermark: {} pairs committed from {} eligible "
+      "cells; {} candidate pairs, {} rejected on wirelength, {} cells "
+      "rejected on slack.",
+      committed,
+      n_eligible,
+      n_eligible_pairs,
+      rejected_hpwl,
+      rejected_slack);
   return committed;
 }
 

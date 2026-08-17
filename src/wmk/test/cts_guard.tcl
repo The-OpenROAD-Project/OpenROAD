@@ -4,8 +4,8 @@
 # extraction rate means anything.
 #
 # The skew guard has to be live.  Moving a sink changes the load on two
-# buffers, and one of this key's two pairs cannot absorb it, so that pair has
-# to be turned away.  If the guard were dead -- if skew came back as a
+# buffers, and two of this key's three pairs cannot absorb it, so those pairs
+# have to be turned away.  If the guard were dead -- if skew came back as a
 # constant, say -- nothing would ever be rejected and the watermark would be
 # free to damage the clock it is marking.
 #
@@ -25,12 +25,12 @@ clock_tree_synthesis -buf_list CLKBUF_X3 -root_buf CLKBUF_X3 -sink_clustering_en
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
 
-set key 1111111111111111111111111111111111111111111111111111111111111111
+set key 0000000000000000000000000000000000000000000000000000000000000003
 set claims [make_result_file cts_guard.csv]
 
 set committed [cts_watermark -key_hex $key -claims_file $claims]
 puts "committed $committed pairs"
-check "the pair the guard turned away is still claimed" { set committed } 2
+check "the pairs the guard turned away are still claimed" { set committed } 3
 check "and the claim does not hold" { verify_watermark -cts_claims $claims } 0
 
 exit_summary

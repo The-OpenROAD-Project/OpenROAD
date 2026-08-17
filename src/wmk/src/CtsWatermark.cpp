@@ -15,9 +15,14 @@
 // The cost is skew.  Moving a sink changes the load on both buffers, so the
 // move is undone if the clock's worst skew gets worse.
 //
-// Which buffers get paired is decided before the key is consulted, and a pair
-// whose parity could not be set is claimed all the same.  Pairing with
-// whichever buffer already showed the parity the key wanted, or quietly
+// Which buffers get paired is keyed as well.  Eligibility is public -- same
+// clock, close enough that a moved sink stays local -- and the key then orders
+// the eligible pairs and takes a greedy prefix, so an observer can list the
+// candidates but not say which of them carry marks.
+//
+// The key orders pairs by their names, never by the parity they currently show,
+// and a pair whose parity could not be set is claimed all the same.  Pairing
+// with whichever buffer already showed the parity the key wanted, or quietly
 // dropping the pairs that did not work out, would report a perfect extraction
 // rate on a design this key had never marked -- and a rate like that is no
 // evidence of anything.
@@ -127,56 +132,67 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       = static_cast<std::int64_t>(opts.sibling_dist_um) * dbu;
   const float skew_before = worstClockSkew();
 
+  // Enumerate the eligible pairs, then let the key order them.  Eligibility is
+  // public -- two leaf buffers close enough together that moving a sink between
+  // them stays local -- but which of those pairs carries a mark is not.
+  struct Candidate
+  {
+    size_t i, j;
+    std::string pair_key;
+    std::array<std::uint8_t, 32> sort_key;
+  };
+  std::vector<Candidate> candidates;
+  for (size_t i = 0; i < lcbs.size(); ++i) {
+    for (size_t j = i + 1; j < lcbs.size(); ++j) {
+      if (manhattan(lcbs[i], lcbs[j]) > max_dist) {
+        continue;
+      }
+      Candidate c;
+      c.i = i;
+      c.j = j;
+      // findLeafClockBuffers returns them in name order, so i < j already means
+      // the identifier is built from the sorted names.
+      c.pair_key = lcbs[i]->getName() + "+" + lcbs[j]->getName();
+      c.sort_key = hmac_digest(key, {"pair_sort", c.pair_key});
+      candidates.push_back(std::move(c));
+    }
+  }
+  std::sort(candidates.begin(),
+            candidates.end(),
+            [](const Candidate& x, const Candidate& y) {
+              if (x.sort_key != y.sort_key) {
+                return x.sort_key < y.sort_key;
+              }
+              return x.pair_key < y.pair_key;
+            });
+
   std::vector<CtsClaim> claims;
-  std::vector<bool> used(lcbs.size(), false);
+  // A buffer that has been claimed is frozen: its fanout is the evidence, so it
+  // can be neither the target nor the source of a later move.  A buffer that
+  // only lent a sink is still free, which is what the paper's rule amounts to.
+  std::vector<bool> claimed(lcbs.size(), false);
   int rejected_skew = 0;
   int rejected_no_sink = 0;
   int held = 0;
   int moved = 0;
 
-  for (size_t i = 0;
-       i < lcbs.size() && static_cast<int>(claims.size()) < opts.num_pairs;
-       ++i) {
-    if (used[i]) {
+  for (const Candidate& c : candidates) {
+    if (static_cast<int>(claims.size()) >= opts.num_pairs) {
+      break;
+    }
+    if (claimed[c.i] || claimed[c.j]) {
       continue;
     }
 
-    // Pair with the nearest free buffer in range.  The choice is geometric and
-    // never looks at the key: pairing with whichever buffer already showed the
-    // parity the key asked for would report a perfect extraction rate on a
-    // design this key had never marked, so the rate would prove nothing.  Once
-    // the pair is fixed it is claimed either way, and a parity the embedder
-    // could not set simply shows up as a claim that does not hold.
-    size_t best = lcbs.size();
-    std::int64_t best_dist = 0;
-    for (size_t j = i + 1; j < lcbs.size(); ++j) {
-      if (used[j]) {
-        continue;
-      }
-      const std::int64_t dist = manhattan(lcbs[i], lcbs[j]);
-      if (dist > max_dist) {
-        continue;
-      }
-      if (best == lcbs.size() || dist < best_dist) {
-        best = j;
-        best_dist = dist;
-      }
-    }
-    if (best == lcbs.size()) {
-      continue;
-    }
-
-    dbInst* a = lcbs[i];
-    dbInst* b = lcbs[best];
-    used[i] = used[best] = true;
+    dbInst* a = lcbs[c.i];
+    dbInst* b = lcbs[c.j];
     const std::string na = a->getName();
     const std::string nb = b->getName();
-    const std::string pair_key = na + "+" + nb;
 
     // The key picks both which buffer carries the mark and what parity it
     // must show, so neither is guessable from the netlist.
     const std::array<std::uint8_t, 32> d
-        = hmac_digest(key, {"pair", pair_key, na, nb});
+        = hmac_digest(key, {"pair", c.pair_key, na, nb});
     const int target_bit = d[0] & 1;
     const bool target_is_a = ((d[0] >> 1) & 1) != 0;
 
@@ -184,7 +200,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     dbInst* other = target_is_a ? b : a;
 
     CtsClaim claim;
-    claim.pair_key = pair_key;
+    claim.pair_key = c.pair_key;
     claim.target_lcb = target->getName();
     claim.other_lcb = other->getName();
     claim.target_bit = target_bit;
@@ -200,11 +216,11 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       dbITerm* sink = nullptr;
       dbNet* dest = nullptr;
       if (target_net != nullptr && other_net != nullptr) {
-        sink = movableSink(target);
-        dest = other_net;
+        sink = movableSink(other);
+        dest = target_net;
         if (sink == nullptr) {
-          sink = movableSink(other);
-          dest = target_net;
+          sink = movableSink(target);
+          dest = other_net;
         }
       }
       if (sink == nullptr) {
@@ -229,6 +245,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
       ++held;
     }
     claims.push_back(claim);
+    claimed[target_is_a ? c.i : c.j] = true;
   }
 
   if (!writeCtsClaims(claims_file, claims)) {

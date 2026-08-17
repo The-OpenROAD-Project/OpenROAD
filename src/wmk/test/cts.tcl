@@ -7,9 +7,9 @@
 # round trip is the thing worth pinning: a definition that drifted between
 # embed and verify would turn a valid watermark into a failed one.
 #
-# gcd has 34 sinks and TritonCTS gives it four leaf buffers, so there are two
-# pairs to mark.  That is small, but the outcome is fully determined by the
-# key -- nothing here is sampled.
+# gcd has 34 sinks and TritonCTS gives it four leaf buffers, so there are only
+# a handful of pairs to mark.  That is small, but the outcome is fully
+# determined by the key -- nothing here is sampled.
 #
 # cts_strict.tcl is the other half: it runs the same embed with a skew budget
 # nothing can meet, where the claims must be written and must not hold.
@@ -26,12 +26,14 @@ clock_tree_synthesis -buf_list CLKBUF_X3 -root_buf CLKBUF_X3 -sink_clustering_en
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement
 
-set key 0011223344556677889900aabbccddeeff00112233445566778899aabbccddee
+# This key's pairs need two sinks moved, so the embedder is doing real work
+# here and not just reporting parities the tree already had.
+set key 0000000000000000000000000000000000000000000000000000000000000004
 set claims [make_result_file cts.csv]
 
 set committed [cts_watermark -key_hex $key -claims_file $claims]
 puts "committed $committed pairs"
-check "the clock tree yields its two pairs" { set committed } 2
+check "the clock tree yields its three pairs" { set committed } 3
 check "every claimed parity holds" { verify_watermark -cts_claims $claims } 1
 
 exit_summary

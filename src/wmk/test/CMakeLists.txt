@@ -18,6 +18,7 @@ or_integration_tests(
     cts
     cts_guard
     place
+    place_keyed
     route_verify
 )
 
