@@ -16,4 +16,5 @@
 [INFO RCX-0045] Extract 2 nets, 8 rsegs, 8 caps, 1 ccs
 No differences found.
 [INFO RCX-0443] 4 nets finished
+[WARNING RCX-0539] Found 1 nets without capacitive nodes. They were not written to the SPEF!
 No differences found.

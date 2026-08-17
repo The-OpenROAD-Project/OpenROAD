@@ -1243,6 +1243,8 @@ void extSpef::writeNet(dbNet* net, const double resBound, const uint32_t debug)
       writeRes(netId, rcSet);
     }
     writeKeyword("*END");
+  } else {
+    no_cap_node_nets_count_++;
   }
   for (dbCapNode* node : net->getCapNodes()) {
     node->setSortIndex(0);
@@ -1600,6 +1602,7 @@ void extSpef::writeBlock(const char* nodeCoord,
   _cornerBlock = _block;
 
   uint32_t cnt = 0;
+  no_cap_node_nets_count_ = 0;
 
   for (dbNet* net : getSortedNets(_block)) {
     if (!tnets.empty() && !net->isMarked()) {
@@ -1627,6 +1630,14 @@ void extSpef::writeBlock(const char* nodeCoord,
   }
   logger_->info(RCX, 443, "{} nets finished", cnt);
 
+  if (no_cap_node_nets_count_ > 0) {
+    logger_->warn(RCX,
+                  539,
+                  "Found {} nets without capacitive nodes. They were not "
+                  "written to the SPEF!",
+                  no_cap_node_nets_count_);
+  }
+
   closeOutFile();
 }
 
@@ -1638,6 +1649,7 @@ void extSpef::write_spef_nets(const bool flatten, const bool parallel)
   _cornersPerBlock = _cornerCnt;
 
   uint32_t cnt = 0;
+  no_cap_node_nets_count_ = 0;
 
   for (dbNet* net : getSortedNets(_block)) {
     const dbSigType type = net->getSigType();
@@ -1659,6 +1671,14 @@ void extSpef::write_spef_nets(const bool flatten, const bool parallel)
     }
   }
   logger_->info(RCX, 47, "{} nets finished", cnt);
+
+  if (no_cap_node_nets_count_ > 0) {
+    logger_->warn(RCX,
+                  540,
+                  "Found {} nets without capacitive nodes. They were not "
+                  "written to the SPEF!",
+                  no_cap_node_nets_count_);
+  }
 }
 
 uint32_t extSpef::getMappedBTermId(const uint32_t spefId)

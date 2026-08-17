@@ -372,6 +372,8 @@ class extSpef
   uint32_t _cCnt;
   uint32_t _rCnt;
 
+  int no_cap_node_nets_count_{0};
+
   bool _partial = false;
   bool _btermFound;
 
