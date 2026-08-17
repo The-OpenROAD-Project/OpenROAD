@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -152,7 +153,8 @@ class GRNet
   {
     return pin_index_to_iterm_;
   }
-  int getDriverPinIndex() const;
+  // Grid point of the driver pin's selected access point, if any.
+  std::optional<PointT> getDriverAccessPoint() const;
   bool isLocal() const;
   // Set when the routing tree was adopted from detailed routes, which may
   // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
@@ -162,6 +164,7 @@ class GRNet
  private:
   int index_;
   odb::dbNet* db_net_;
+  int driver_pin_index_ = -1;
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;

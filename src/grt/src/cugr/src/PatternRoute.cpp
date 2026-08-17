@@ -109,16 +109,12 @@ void PatternRoute::constructSteinerTree()
   }
 
   int driver_index = 0;
-  const auto& preferred_aps = net_->getPreferredAccessPoints();
-  if (const auto it = preferred_aps.find(net_->getDriverPinIndex());
-      it != preferred_aps.end()) {
-    const PointT& driver_point = it->second.point;
-    for (int i = 0; i < static_cast<int>(sorted_points.size()); i++) {
-      if (sorted_points[i].first == driver_point.x()
-          && sorted_points[i].second == driver_point.y()) {
-        driver_index = i;
-        break;
-      }
+  if (const auto driver_point = net_->getDriverAccessPoint()) {
+    const auto match = std::ranges::find(
+        sorted_points,
+        std::pair<int, int>{driver_point->x(), driver_point->y()});
+    if (match != sorted_points.end()) {
+      driver_index = std::distance(sorted_points.begin(), match);
     }
   }
 

@@ -1,6 +1,7 @@
 #include "GRNet.h"
 
 #include <cstdint>
+#include <optional>
 #include <unordered_set>
 #include <vector>
 
@@ -23,6 +24,7 @@ GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
   slack_ = 0;
   is_critical_ = false;
 
+  odb::dbObject* driver_term = db_net_->getFirstDriverTerm();
   for (CUGRPin& pin : base_net.getPins()) {
     const std::vector<BoxOnLayer> pin_shapes = pin.getPinShapes();
     std::unordered_set<uint64_t> included;
@@ -46,8 +48,14 @@ GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
 
     if (pin.isPort()) {
       pin_index_to_bterm_[pin.getIndex()] = pin.getBTerm();
+      if (pin.getBTerm() == driver_term) {
+        driver_pin_index_ = pin.getIndex();
+      }
     } else {
       pin_index_to_iterm_[pin.getIndex()] = pin.getITerm();
+      if (pin.getITerm() == driver_term) {
+        driver_pin_index_ = pin.getIndex();
+      }
     }
   }
 
@@ -58,20 +66,13 @@ GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
   }
 }
 
-int GRNet::getDriverPinIndex() const
+std::optional<PointT> GRNet::getDriverAccessPoint() const
 {
-  for (const auto& [pin_index, iterm] : pin_index_to_iterm_) {
-    const odb::dbIoType type = iterm->getIoType();
-    if (type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT) {
-      return pin_index;
-    }
+  if (const auto it = preferred_aps_.find(driver_pin_index_);
+      it != preferred_aps_.end()) {
+    return it->second.point;
   }
-  for (const auto& [pin_index, bterm] : pin_index_to_bterm_) {
-    if (bterm->getIoType() == odb::dbIoType::INPUT) {
-      return pin_index;
-    }
-  }
-  return -1;
+  return std::nullopt;
 }
 
 bool GRNet::isInsideLayerRange(int layer_index) const
