@@ -95,7 +95,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
   }
 
   // Add all output pin vertices to the cut
-  for (sta::Vertex* v : cut_vertices) {
+  for (sta::Vertex* v : std::vector{cut_vertices}) {
     sta::Pin* pin = v->pin();
     if (!pin) {
       continue;
