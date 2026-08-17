@@ -3,8 +3,9 @@
 
 #include "Keys.h"
 
-#include <algorithm>
+#include <array>
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -27,7 +28,7 @@ bool randomBytes(std::size_t n, std::vector<std::uint8_t>& out)
   }
   // Read the operating system's entropy source directly.  The C++ standard
   // library's random_device is not required to be non-deterministic, and on
-  // some toolchains it is not, so it must not be used to draw a secret.
+  // some toolchains it is not, so it must not be used to draw a secret key.
   std::FILE* f = std::fopen("/dev/urandom", "rb");
   if (f == nullptr) {
     out.clear();

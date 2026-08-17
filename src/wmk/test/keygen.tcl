@@ -1,21 +1,21 @@
 # Key generation, and the round trip that makes it usable.
 #
-# A watermark is only as good as the secret behind it, and the two properties
-# that matter are not visible from a single run: that a fresh draw is
-# unpredictable, and that the stage keys can be recovered later from the secret
-# and the public parts alone.  Without the second, an owner who kept the secret
-# would still be unable to verify, because the keys embedding used would be
-# gone.
+# A watermark is only as good as the secret key behind it, and the two
+# properties that matter are not visible from a single run: that a fresh draw
+# is unpredictable, and that the stage keys can be recovered later from the
+# secret key and the public parts alone.  Without the second, an owner who kept
+# the secret key would still be unable to verify, because the keys embedding
+# used would be gone.
 #
 # The draw itself cannot be tested for randomness here, and pretending
 # otherwise would be worse than not trying.  What is checked is that two draws
-# differ, that a secret is never invented when the system's random source
+# differ, that a secret key is never invented when the system's random source
 # cannot be read, and that derivation is a function of exactly the inputs the
 # scheme says it is.
 source "helpers.tcl"
 
 set bundle [generate_watermark_key -design_id jpeg_encoder]
-check "the secret is 32 bytes" \
+check "the secret key is 32 bytes" \
   { string length [dict get $bundle key_hex] } 64
 check "the nonce is 16 bytes" \
   { string length [dict get $bundle nonce_hex] } 32
@@ -38,13 +38,13 @@ check "the three stage keys differ" {
 # Two draws from the system random source must not collide.  Equality here
 # would mean the source is not being read at all.
 set other [generate_watermark_key -design_id jpeg_encoder]
-check "a second draw is a different secret" \
+check "a second draw is a different secret key" \
   { expr { [dict get $other key_hex] ne [dict get $bundle key_hex] } } 1
 check "and a different nonce" \
   { expr { [dict get $other nonce_hex] ne [dict get $bundle nonce_hex] } } 1
 
 # Verification happens in a later process, so the stage keys have to come back
-# from the secret and the public parts alone.
+# from the secret key and the public parts alone.
 set key [dict get $bundle key_hex]
 set nonce [dict get $bundle nonce_hex]
 foreach stage { placement cts routing } {
@@ -66,7 +66,7 @@ check "a different nonce gets a different key" {
           ne [dict get $bundle routing] }
 } 1
 
-# Supplying the secret and nonce reproduces the whole bundle, which is what
+# Supplying the secret key and nonce reproduces the whole bundle, which is what
 # lets a flow re-derive the same watermark without storing the stage keys.
 set again [generate_watermark_key -design_id jpeg_encoder -key_hex $key \
              -nonce_hex $nonce]

@@ -21,8 +21,9 @@
 
 %inline %{
 
-// Draw a fresh secret.  Returned as hex rather than logged: the module never
-// writes a secret to the log, and never keeps one after the command returns.
+// Draw a fresh secret key.  Returned as hex rather than logged: the module
+// never writes a secret key to the log, and never keeps one after the command
+// returns.
 const char*
 random_hex_cmd(int n_bytes)
 {

@@ -6,15 +6,15 @@ sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
                                                [-key_hex key_hex] \
                                                [-nonce_hex nonce_hex]}
 
-# Draw a watermark secret and derive the three stage keys from it, returning
-# them as a dictionary with keys key_hex, nonce_hex, placement, cts and
-# routing.
+# Draw a watermark secret key and derive the three stage keys from it,
+# returning them as a dictionary with keys key_hex, nonce_hex, placement, cts
+# and routing.
 #
-# The secret and the nonce are drawn from the system's random source unless
-# given, so the same secret can be reused across designs and revisions: the
+# The secret key and the nonce are drawn from the system's random source unless
+# given, so the same secret key can be reused across designs and revisions: the
 # design identifier and the nonce are what make the derived keys differ.  Both
 # are needed again at verification time, so record them -- the nonce and the
-# identifier are public, the secret is not.
+# identifier are public, the secret key is not.
 #
 # Nothing is written to the log.  With -file the values are written to that
 # path with owner-only permissions instead.
@@ -69,8 +69,8 @@ proc generate_watermark_key { args } {
   if { [info exists keys(-file)] } {
     set path $keys(-file)
     set fh [open $path w]
-    # The file holds the secret, so no one but its owner should be able to read
-    # it.  Set the mode before anything is written to it.
+    # The file holds the secret key, so no one but its owner should be able to
+    # read it.  Set the mode before anything is written to it.
     catch { file attributes $path -permissions 0600 }
     foreach name { design_id nonce_hex key_hex placement cts routing } {
       puts $fh "$name [dict get $result $name]"
@@ -86,9 +86,10 @@ sta::define_cmd_args "derive_watermark_key" {-design_id design_id \
                                              -nonce_hex nonce_hex \
                                              -stage stage}
 
-# Re-derive one stage key from the secret, the design identifier and the nonce,
-# returning it as a 64-character hex string.  Verification needs the same stage
-# keys embedding used, and this is how to get them back without storing them.
+# Re-derive one stage key from the secret key, the design identifier and the
+# nonce, returning it as a 64-character hex string.  Verification needs the
+# same stage keys embedding used, and this is how to get them back without
+# storing them.
 proc derive_watermark_key { args } {
   sta::parse_key_args "derive_watermark_key" args \
     keys {-key_hex -design_id -nonce_hex -stage} flags {}

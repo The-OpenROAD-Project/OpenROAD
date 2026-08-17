@@ -422,7 +422,7 @@ is refused. Key generation has no Python entry point; use
 ## References
 
 1.  A. B. Kahng and Y. Liu. Kerckhoffs-Compliant Watermarking for Physical Design
-    IP Protection: From Placement to Routing.
+    IP Protection: From Placement to Routing. arXiv preprint arXiv:2608.05055.
     [(arXiv)](https://arxiv.org/pdf/2608.05055)
 
 
