@@ -1070,6 +1070,32 @@ static std::string resolveAssetPath(const std::string_view base_dir,
       .string();
 }
 
+// The assets the saved report inlines.  One list, used both to check that the
+// build embedded them and to write them into the head below.
+constexpr std::string_view kReportLeafletCss
+    = "/third-party/leaflet/leaflet.css";
+constexpr std::string_view kReportLeafletJs = "/third-party/leaflet/leaflet.js";
+constexpr std::string_view kReportGoldenLayoutCss
+    = "/third-party/golden-layout/css/goldenlayout-base.css";
+constexpr std::string_view kReportGoldenLayoutDark
+    = "/third-party/golden-layout/css/themes/goldenlayout-dark-theme.css";
+constexpr std::string_view kReportGoldenLayoutLight
+    = "/third-party/golden-layout/css/themes/goldenlayout-light-theme.css";
+constexpr std::string_view kReportThree
+    = "/third-party/three/three.module.min.js";
+constexpr std::string_view kReportGoldenLayoutEsm
+    = "/third-party/golden-layout/golden-layout.esm.js";
+
+constexpr std::string_view kReportAssets[] = {
+    kReportLeafletCss,
+    kReportLeafletJs,
+    kReportGoldenLayoutCss,
+    kReportGoldenLayoutDark,
+    kReportGoldenLayoutLight,
+    kReportThree,
+    kReportGoldenLayoutEsm,
+};
+
 // A miss here means the build embedded the wrong asset list, not bad input.
 static const EmbeddedAsset* reportAsset(const std::string_view path,
                                         utl::Logger* logger)
@@ -1106,7 +1132,19 @@ static std::string inlineStylesheetUrls(const std::string_view css,
     if (open == std::string_view::npos) {
       break;
     }
-    const size_t close = css.find(')', open);
+    // A quoted reference may hold a parenthesis, so the closing quote comes
+    // first and the token ends after it; an unquoted one ends at the ')'.
+    const size_t first = css.find_first_not_of(" \t\r\n", open + 4);
+    size_t close = std::string_view::npos;
+    if (first != std::string_view::npos
+        && (css[first] == '"' || css[first] == '\'')) {
+      const size_t quote = css.find(css[first], first + 1);
+      if (quote != std::string_view::npos) {
+        close = css.find(')', quote + 1);
+      }
+    } else {
+      close = css.find(')', open);
+    }
     if (close == std::string_view::npos) {
       break;
     }
@@ -1180,6 +1218,20 @@ void WebServer::saveReport(const std::string& filename,
   if (!block) {
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
+  }
+
+  // Every library the report inlines has to be there before anything is
+  // written: a missing one would leave a src="" in the head, and a report that
+  // opens to a blank page is worse than one that was never written.
+  for (const std::string_view path : kReportAssets) {
+    if (!findEmbeddedAsset(path)) {
+      logger_->error(utl::WEB,
+                     45,
+                     "Missing embedded asset {}; the binary was built with an "
+                     "incomplete asset list.",
+                     path);
+      return;
+    }
   }
 
   std::ofstream out(filename);
@@ -1303,10 +1355,12 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — the same libraries index.html loads, inlined as data: URIs so
-  // the file opens with no server and no network.  The stylesheets stay <link>
-  // elements rather than <style> blocks because theme.js switches themes
-  // through their `disabled` property, by id.
+  // HTML head — leaflet, golden-layout and three, inlined as data: URIs so the
+  // file opens with no server and no network.  elk and netlistsvg are left out:
+  // they are 2.8 MB for a schematic panel that needs the server anyway, and the
+  // widget already stands down when it does not find them.  The stylesheets
+  // stay <link> elements rather than <style> blocks because theme.js switches
+  // themes through their `disabled` property, by id.
   out << R"(<!DOCTYPE html>
 <html>
 <head>
@@ -1316,27 +1370,17 @@ void WebServer::saveReport(const std::string& filename,
       << kReportContentSecurityPolicy << R"(">
 <title>OpenROAD Timing Report</title>
 <link rel="stylesheet" href=")"
-      << stylesheetDataUri("/third-party/leaflet/leaflet.css", logger_)
-      << R"("/>
+      << stylesheetDataUri(kReportLeafletCss, logger_) << R"("/>
 <script src=")"
-      << assetDataUri("/third-party/leaflet/leaflet.js", logger_)
-      << R"("></script>
+      << assetDataUri(kReportLeafletJs, logger_) << R"("></script>
 <link rel="stylesheet" href=")"
       << stylesheetDataUri(
              "/third-party/golden-layout/css/goldenlayout-base.css", logger_)
       << R"("/>
 <link rel="stylesheet" id="gl-theme-dark" href=")"
-      << stylesheetDataUri(
-             "/third-party/golden-layout/css/themes/"
-             "goldenlayout-dark-theme.css",
-             logger_)
-      << R"("/>
+      << stylesheetDataUri(kReportGoldenLayoutDark, logger_) << R"("/>
 <link rel="stylesheet" id="gl-theme-light" href=")"
-      << stylesheetDataUri(
-             "/third-party/golden-layout/css/themes/"
-             "goldenlayout-light-theme.css",
-             logger_)
-      << R"(" disabled/>
+      << stylesheetDataUri(kReportGoldenLayoutLight, logger_) << R"(" disabled/>
 <style>
 )" << inlineStylesheetUrls(kReportCSS, "/", logger_)
       << R"(
@@ -1424,8 +1468,7 @@ window.__STATIC_CACHE__ = {
 {
   "imports": {
     "three": ")"
-      << assetDataUri("/third-party/three/three.module.min.js", logger_)
-      << R"(",
+      << assetDataUri(kReportThree, logger_) << R"(",
     "golden-layout": ")"
       << assetDataUri("/third-party/golden-layout/golden-layout.esm.js",
                       logger_)
