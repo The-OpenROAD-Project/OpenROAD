@@ -1881,7 +1881,7 @@ std::vector<TritonCTS::ClockTreeLevels> TritonCTS::computeClockTreeLevels()
       netLevels.emplace_back(net, level);
 
       // Collect the nets one step below this one, still inside the clock tree.
-      std::vector<odb::dbNet*> childNets;
+      std::unordered_set<odb::dbNet*> childNets;
       for (odb::dbITerm* iterm : net->getITerms()) {
         if (!iterm->isInputSignal()) {
           continue;
@@ -1899,7 +1899,7 @@ std::vector<TritonCTS::ClockTreeLevels> TritonCTS::computeClockTreeLevels()
           if (subTreeRoots.contains(outNet)) {
             feedsSubTree.insert(net);
           }
-          childNets.push_back(outNet);
+          childNets.insert(outNet);
         }
       }
 
