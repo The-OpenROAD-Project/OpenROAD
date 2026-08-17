@@ -73,4 +73,30 @@ set again [generate_watermark_key -design_id jpeg_encoder -key_hex $key \
 check "the bundle is reproducible from its inputs" \
   { expr { $again eq $bundle } } 1
 
+# The design identifier and the nonce are public, and are needed again to
+# derive the stage keys.  They can be written on their own so that an owner can
+# hand them over without handing over the file that also holds the secret key.
+set public_path [make_result_file "keygen_public.txt"]
+generate_watermark_key -design_id jpeg_encoder -key_hex $key \
+  -nonce_hex $nonce -public_file $public_path
+set fh [open $public_path r]
+set public_text [read $fh]
+close $fh
+check "the public file names the design and the nonce" {
+  expr {
+    [string match "*design_id jpeg_encoder*" $public_text]
+    && [string match "*nonce_hex $nonce*" $public_text]
+  }
+} 1
+# The point of a second file is that it carries nothing secret.  A key or a
+# stage key appearing here would make it as dangerous to pass on as the first.
+check "and carries no key material" {
+  expr {
+    ![string match "*$key*" $public_text]
+    && ![string match "*[dict get $bundle placement]*" $public_text]
+    && ![string match "*[dict get $bundle cts]*" $public_text]
+    && ![string match "*[dict get $bundle routing]*" $public_text]
+  }
+} 1
+
 exit_summary

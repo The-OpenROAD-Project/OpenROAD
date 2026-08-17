@@ -4,7 +4,8 @@
 sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
                                                [-file file] \
                                                [-key_hex key_hex] \
-                                               [-nonce_hex nonce_hex]}
+                                               [-nonce_hex nonce_hex] \
+                                               [-public_file public_file]}
 
 # Draw a watermark secret key and derive the three stage keys from it,
 # returning them as a dictionary with keys key_hex, nonce_hex, placement, cts
@@ -18,9 +19,14 @@ sta::define_cmd_args "generate_watermark_key" {-design_id design_id \
 #
 # Nothing is written to the log.  With -file the values are written to that
 # path with owner-only permissions instead.
+#
+# -public_file writes only the design identifier and the nonce, at ordinary
+# permissions.  Both are needed again to derive the stage keys, and neither is
+# secret; without a file of their own the only record of them is the one that
+# also holds the secret key, which an owner cannot pass on.
 proc generate_watermark_key { args } {
   sta::parse_key_args "generate_watermark_key" args \
-    keys {-design_id -nonce_hex -key_hex -file} flags {}
+    keys {-design_id -nonce_hex -key_hex -file -public_file} flags {}
 
   if { ![info exists keys(-design_id)] } {
     utl::error WMK 90 "The -design_id argument is required."
@@ -77,6 +83,16 @@ proc generate_watermark_key { args } {
     }
     close $fh
     utl::info WMK 95 "Wrote the watermark key material to $path."
+  }
+
+  if { [info exists keys(-public_file)] } {
+    set path $keys(-public_file)
+    set fh [open $path w]
+    foreach name { design_id nonce_hex } {
+      puts $fh "$name [dict get $result $name]"
+    }
+    close $fh
+    utl::info WMK 102 "Wrote the public watermark parameters to $path."
   }
   return $result
 }

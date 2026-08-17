@@ -1,13 +1,13 @@
 # Watermark
 
-The watermark module in OpenROAD (`wmk`) embeds keyed ownership evidence in a
-physical design and checks it back. It implements PDMarks, a Kerckhoffs-compliant
+The watermark module (`wmk`) embeds keyed ownership evidence in a
+physical design and checks it back. It implements PDMarks, a Kerckhoffs-compliant watermarking
 scheme whose security rests on a secret key rather than on hidden construction:
 the algorithms are public and only the key is not. Three stages carry marks:
 
 -   Placement: a keyed subset of same-row, same-width cell pairs is put into a
     keyed left-to-right order
--   Clock tree: a keyed subset of leaf clock buffers is driven to a keyed
+-   Clock tree: a keyed subset of leaf clock buffers (LCB) is driven to a keyed
     sequential-fanout parity
 -   Routing: a keyed subset of signal nets is routed under an inflated cost for
     wrong-way wiring, and detected as a population effect
@@ -32,16 +32,17 @@ keys from it. It returns a dictionary with the entries `key_hex`, `nonce_hex`,
 
 A stage key is `HMAC-SHA256(key, design_id, nonce, "stage=" || stage)`.
 
-The nonce identifies one watermark instance. The same secret key and design
-identifier with a different nonce mark different objects with different values,
+The nonce identifies one watermark instance/run. The same secret key (`key`) and design
+identifier (`design_id`) with a different nonce mark different objects with different values,
 so one secret key can mark several copies of a design distinguishably, and can
 mark it again after a revision without repeating the previous marks. The design
 identifier and the nonce are public and belong with the design's records; only
-the secret key does not. All three are needed again to verify.
+the secret key does not. All three are needed again to verify, so `-public_file`
+writes the two public ones on their own, leaving `-file` as the only thing that
+has to be kept secret.
 
-The secret key is never logged. With `-file` it is written with owner-only
-permissions. If the system random source cannot be read the command fails rather
-than substituting a predictable one.
+The secret key is never logged.
+When using `-file`, the key is written with owner-only permissions. If the system random source cannot be accessed, the command fails rather than falling back to a predictable source.
 
 ```tcl
 generate_watermark_key
@@ -49,16 +50,18 @@ generate_watermark_key
     [-file file]
     [-key_hex key_hex]
     [-nonce_hex nonce_hex]
+    [-public_file public_file]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-design_id` | Identifier of the design version being marked. |
-| `-file` | Write the secret key, nonce and stage keys to this path. |
+| `-design_id` | Identifier of the design version being marked (e.g., `jpeg_NG45_v1`). |
+| `-file` | Write the secret key, nonce and stage keys to this path, readable only by its owner. |
 | `-key_hex` | Use this 64-character hex secret key instead of drawing one. |
-| `-nonce_hex` | Use this even-length hex nonce instead of drawing one. Drawn nonces are 16 bytes. |
+| `-nonce_hex` | Use the specified nonce instead of generating a random nonce. The nonce must be provided as an even-length hexadecimal string. Automatically generated nonces are 16 bytes (128 bits). |
+| `-public_file` | Write the design identifier and the nonce to this path. These are the public inputs to key derivation and carry no key material, so this file can be kept with the design's records and passed on. |
 
 ### Derive Watermark Key
 
@@ -95,8 +98,7 @@ wirelength a swap would cost; the key then orders what survives and takes a
 greedy non-overlapping prefix. The design is re-legalized afterwards, and a pair
 whose cells then lost more than `-guard_degrade_ns` of slack is put back.
 
-Every pair chosen is claimed, including any whose mark did not survive. Dropping
-them would let the extraction rate be chosen after seeing the design, in which
+Every pair chosen is claimed, including any whose mark did not survive. Removing failed pairs after observing the design would artificially inflate the extraction rate, in which
 case it would be 1.0 on every design.
 
 ```tcl
@@ -131,15 +133,14 @@ place_watermark
 
 ### CTS Watermark
 
-The `cts_watermark` command drives a keyed subset of leaf clock buffers to a
+The `cts_watermark` command drives a keyed subset of leaf clock buffers (LCBs) to a
 keyed sequential-fanout parity and writes the claimed pairs to `-claims_file`.
 It returns the number of pairs claimed. Run it after clock tree synthesis.
 
-Buffers are marked in pairs. Parity is changed by moving one flip-flop's clock
-pin from one buffer of the pair to the other, which leaves the flop clocked and
-the tree connected and survives routing and filling. A move is undone if it
+LCBs are marked in pairs. Parity is changed by moving one flip-flop's clock
+pin from one LCB of the pair to the other. A move is undone if it
 worsens the clock's worst skew by more than `-skew_margin_ns`, or if it leaves
-the buffer with less slew or capacitance headroom than the liberty cell allows.
+the LCB with less slew or capacitance headroom than the liberty cell allows.
 
 Timing must be set up first. Without liberty and constraints these checks cannot
 be evaluated and the command says so.

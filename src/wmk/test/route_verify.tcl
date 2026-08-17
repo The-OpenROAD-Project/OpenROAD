@@ -28,4 +28,13 @@ detailed_route -verbose 0
 check "the marked nets prove ownership" \
   { verify_watermark -routing_key_hex $key -routing_fraction 0.5 -min_stages 1 } 1
 
+# The tags name the marked nets in plaintext, so a design is shipped with them
+# dropped.  Verification has to keep working without them: it re-derives the
+# marked set from the key, and must not be reading the answer back out of the
+# design.  A flow that clears the tags before handing the design over relies on
+# this.
+check "the tags can be dropped" { clear_routing_watermark } 197
+check "and ownership still proves without them" \
+  { verify_watermark -routing_key_hex $key -routing_fraction 0.5 -min_stages 1 } 1
+
 exit_summary
