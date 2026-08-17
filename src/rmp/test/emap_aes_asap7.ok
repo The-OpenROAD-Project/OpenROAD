@@ -173,18 +173,18 @@ Corner: slow
    0.00    0.00   clock network delay (ideal)
  200.00  200.00 v input external delay
    0.00  200.00 v ld (in)
-1037.32 1237.32 ^ n_841/Y (INVx1_ASAP7_75t_R)
-1161.66 2398.98 v n_2225/Y (OAI21xp33_ASAP7_75t_R)
- 513.95 2912.93 ^ n_2251/Y (INVx1_ASAP7_75t_R)
- 208.43 3121.36 v n_2252/Y (NOR2xp33_ASAP7_75t_R)
- 112.12 3233.48 ^ n_2253/Y (NAND2xp33_ASAP7_75t_R)
-  31.61 3265.09 v n_2554/Y (INVx1_ASAP7_75t_R)
-  37.64 3302.73 ^ n_2555/Y (AOI21xp33_ASAP7_75t_R)
-  33.17 3335.89 v n_2685/Y (OAI211xp5_ASAP7_75t_R)
-  35.18 3371.07 ^ n_2686/Y (OAI21xp33_ASAP7_75t_R)
-  34.25 3405.32 v n_2687/Y (NAND3xp33_ASAP7_75t_R)
-  39.01 3444.33 ^ n_2688/Y (OAI311xp33_ASAP7_75t_R)
-  37.41 3481.74 v n_2689/Y (OAI21xp33_ASAP7_75t_R)
+1037.32 1237.32 ^ n_840/Y (INVx1_ASAP7_75t_R)
+1161.66 2398.98 v n_2224/Y (OAI21xp33_ASAP7_75t_R)
+ 513.95 2912.93 ^ n_2250/Y (INVx1_ASAP7_75t_R)
+ 208.43 3121.36 v n_2251/Y (NOR2xp33_ASAP7_75t_R)
+ 112.12 3233.48 ^ n_2252/Y (NAND2xp33_ASAP7_75t_R)
+  31.61 3265.09 v n_2553/Y (INVx1_ASAP7_75t_R)
+  37.64 3302.73 ^ n_2554/Y (AOI21xp33_ASAP7_75t_R)
+  33.17 3335.89 v n_2684/Y (OAI211xp5_ASAP7_75t_R)
+  35.18 3371.07 ^ n_2685/Y (OAI21xp33_ASAP7_75t_R)
+  34.25 3405.32 v n_2686/Y (NAND3xp33_ASAP7_75t_R)
+  39.01 3444.33 ^ n_2687/Y (OAI311xp33_ASAP7_75t_R)
+  37.41 3481.74 v n_2688/Y (OAI21xp33_ASAP7_75t_R)
    0.00 3481.74 v u0/subword[7]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
         3481.74   data arrival time
 
@@ -215,12 +215,12 @@ tns max -376243.69
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2499.784 |  -114786.9 |  -376243.7 |    395 | u0\/subword\[7\]$_DFF_P_/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver clone56/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver clone54/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_2250/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_2249/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver clone73/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_3741/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_9365/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_3236/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_6597/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_3740/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_9364/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_3235/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_6596/Y
      739* |       0 |     254 |        3 |     77 |    10 |    +0.9% |    0.478 |        0.0 |        0.0 |    395 | sa20_sub\[7\]$_DFF_P_/D
     final |       0 |     254 |        3 |     77 |    10 |    +0.9% |    0.478 |        0.0 |        0.0 |      0 | sa20_sub\[7\]$_DFF_P_/D
 ------------------------------------------------------------------------------------------------------------------------------
@@ -260,19 +260,19 @@ Corner: slow
    0.00    0.00 ^ ld_r$_DFF_P_/CLK (DFFHQNx3_ASAP7_75t_R)
  144.18  144.18 v ld_r$_DFF_P_/QN (DFFHQNx3_ASAP7_75t_R)
   79.86  224.04 v split53/Y (BUFx4f_ASAP7_75t_R)
-  34.96  259.00 ^ n_6582/Y (NOR2xp33_ASAP7_75t_R)
-  26.09  285.08 v n_6583/Y (A2O1A1O1Ixp25_ASAP7_75t_R)
- 158.12  443.21 ^ n_6584/Y (XNOR2x1_ASAP7_75t_R)
- 132.47  575.68 v n_6585/Y (INVx2_ASAP7_75t_R)
- 114.28  689.95 ^ n_6683/Y (NAND2xp33_ASAP7_75t_R)
-  52.79  742.75 v n_6718/Y (INVx1_ASAP7_75t_R)
-  36.66  779.41 ^ n_6962/Y (NOR2xp33_ASAP7_75t_R)
-  27.71  807.12 v n_6983/Y (AOI32xp33_ASAP7_75t_R)
-  35.86  842.98 ^ n_6984/Y (OAI21xp33_ASAP7_75t_R)
-  35.64  878.62 ^ n_6985/Y (AO21x1_ASAP7_75t_R)
-  18.59  897.20 v n_6986/Y (O2A1O1Ixp33_ASAP7_75t_R)
-  38.81  936.01 ^ n_6987/Y (AOI31xp33_ASAP7_75t_R)
-  33.50  969.52 ^ n_7006/Y (AO21x1_ASAP7_75t_R)
+  34.96  259.00 ^ n_6581/Y (NOR2xp33_ASAP7_75t_R)
+  26.09  285.08 v n_6582/Y (A2O1A1O1Ixp25_ASAP7_75t_R)
+ 158.12  443.21 ^ n_6583/Y (XNOR2x1_ASAP7_75t_R)
+ 132.47  575.68 v n_6584/Y (INVx2_ASAP7_75t_R)
+ 114.28  689.95 ^ n_6682/Y (NAND2xp33_ASAP7_75t_R)
+  52.79  742.75 v n_6717/Y (INVx1_ASAP7_75t_R)
+  36.66  779.41 ^ n_6961/Y (NOR2xp33_ASAP7_75t_R)
+  27.71  807.12 v n_6982/Y (AOI32xp33_ASAP7_75t_R)
+  35.86  842.98 ^ n_6983/Y (OAI21xp33_ASAP7_75t_R)
+  35.64  878.62 ^ n_6984/Y (AO21x1_ASAP7_75t_R)
+  18.59  897.20 v n_6985/Y (O2A1O1Ixp33_ASAP7_75t_R)
+  38.81  936.01 ^ n_6986/Y (AOI31xp33_ASAP7_75t_R)
+  33.50  969.52 ^ n_7005/Y (AO21x1_ASAP7_75t_R)
    0.00  969.52 ^ sa20_sub[7]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
          969.52   data arrival time
 

@@ -3,12 +3,12 @@
 [WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
 -- Before --
 
-Cell type report:                       Count       Area
-  Buffer                                 1561    5880.64
-  Inverter                               9945   37329.55
-  Sequential cell                        4380   88011.91
-  Multi-Input combinational cell        29747  315847.92
-  Total                                 45633  447070.03
+Cell type report:                       Count        Area
+  Buffer                                 1561     5880.64
+  Inverter                               9945    37329.55
+  Sequential cell                        4380    88011.91
+  Multi-Input combinational cell        29747   315847.92
+  Total                                 45633   447070.03
 Startpoint: rst (input port clocked by core_clock)
 Endpoint: _99163_ (recovery check against rising-edge clock core_clock)
 Path Group: asynchronous
@@ -186,12 +186,12 @@ Extended technology mapping stats:
 [i] sky130_fd_sc_hd__xor2_1  	 Instance =        429	 Area =      3758.04     1.19 %
 [i] TOTAL                    	 Instance =      39769	 Area =    314862.56   100.00 %
 [i] Report stats: area = 314862.56; delay = 2558.51;
-Cell type report:                       Count       Area
-  Buffer                                    2      11.26
-  Inverter                               3812   14308.72
-  Sequential cell                        4380   88011.91
-  Multi-Input combinational cell        35958  300637.08
-  Total                                 44152  402968.98
+Cell type report:                       Count        Area
+  Buffer                                    2       11.26
+  Inverter                               3812    14308.72
+  Sequential cell                        4380    88011.91
+  Multi-Input combinational cell        35958   300637.08
+  Total                                 44152   402968.98
 [-113.607,  -94.420): ************************************************** (2744)
 [ -94.420,  -75.234): ** (132)
 [ -75.234,  -56.047):  (0)
@@ -242,9 +242,9 @@ Corner: slow
    0.00    0.00   clock network delay (ideal)
   16.00   16.00 v input external delay
    0.00   16.00 v ena (in)
- 115.32  131.32 ^ n_4439/Y (sky130_fd_sc_hd__clkinv_1)
-  48.14  179.46 v n_14294/Y (sky130_fd_sc_hd__nor4_1)
-   9.37  188.83 ^ n_14295/Y (sky130_fd_sc_hd__a32oi_1)
+ 115.32  131.32 ^ n_4437/Y (sky130_fd_sc_hd__clkinv_1)
+  48.14  179.46 v n_14292/Y (sky130_fd_sc_hd__nor4_1)
+   9.37  188.83 ^ n_14293/Y (sky130_fd_sc_hd__a32oi_1)
    0.00  188.83 ^ _96203_/D (sky130_fd_sc_hd__dfxtp_1)
          188.83   data arrival time
 
@@ -279,13 +279,13 @@ tns max -293313.00
 [INFO RSZ-0051] Resized 8 instances: 8 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0049] Cloned 2 instances.
 [INFO RSZ-0033] No hold violations found.
-Cell type report:                       Count       Area
-  Buffer                                    2      11.26
-  Inverter                               3812   14322.49
-  Timing Repair inverter                    2       7.51
-  Sequential cell                        4380   88011.91
-  Multi-Input combinational cell        35958  300644.59
-  Total                                 44154  402997.76
+Cell type report:                       Count        Area
+  Buffer                                    2       11.26
+  Inverter                               3812    14322.49
+  Timing Repair inverter                    2        7.51
+  Sequential cell                        4380    88011.91
+  Multi-Input combinational cell        35958   300644.59
+  Total                                 44154   402997.76
 [ 1.211,  8.916): ***************** (958)
 [ 8.916, 16.621): ************************************************** (2792)
 [16.621, 24.326):  (0)
@@ -336,8 +336,8 @@ Corner: slow
    0.00    0.00   clock network delay (ideal)
   16.00   16.00 v input external delay
    0.00   16.00 v ena (in)
-  42.27   58.27 ^ n_4901/Y (sky130_fd_sc_hd__nand2b_1)
-  17.45   75.72 v n_43948/Y (sky130_fd_sc_hd__o21ai_0)
+  42.27   58.27 ^ n_4899/Y (sky130_fd_sc_hd__nand2b_1)
+  17.45   75.72 v n_43946/Y (sky130_fd_sc_hd__o21ai_0)
    0.00   75.72 v _99178_/D (sky130_fd_sc_hd__dfrtp_1)
           75.72   data arrival time
 
