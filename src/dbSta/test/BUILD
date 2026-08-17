@@ -5,14 +5,22 @@
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
+load(
+    ":hier_case_test.bzl",
+    "hier_case_test",
+    "hier_case_tests",
+    "render_top_overrides",
+)
 load(
     ":hier_expected_fail.bzl",
     "CONFORMANCE_EXPECTED_FAIL",
     "STRUCTURAL_EXPECTED_FAIL",
-    "conformance_manifest",
-    "structural_manifest",
+    "conformance_manifest_by_netlist",
+    "manifest_lines",
+    "structural_manifest_by_netlist",
 )
 
 package(features = ["layering_check"])
@@ -379,59 +387,103 @@ HIER_TOP_OVERRIDES = {
     "wb_writer_digit_topmodule.v": "1top",
 }
 
-HIER_TOP_OVERRIDES_ENV = {"HIER_TOP_OVERRIDES": ",".join([
-    "%s=%s" % (netlist, top)
-    for netlist, top in HIER_TOP_OVERRIDES.items()
-])}
+# The corpus, as three groups of netlists. Both suites below turn these into one
+# test target per netlist: bazel caches per target, so a case that shares a
+# target with 1200 others cannot be cached, rerun or read in isolation.
+HIER_NETLISTS = glob(
+    ["cpp/hier_cases/*.v"],
+    allow_empty = True,
+)
 
-# Each suite reads its known-failure list as a colon-separated manifest, which
-# these rules render from hier_expected_fail.bzl. Generating it rather than
-# checking one in keeps every piece of a case's metadata -- its top module, and
-# which defects it is known to hit -- in the build rules, and lets Starlark
-# reject a malformed entry when the package loads instead of the C++ parser
-# dropping it silently at run time.
+# Symlinks to fixtures owned by other suites. The symlink is what the corpus
+# scan sees; the filegroups below are where the bytes come from, so a case here
+# depends on both.
+HIER_INHERITED_NETLISTS = glob(
+    ["cpp/hier_cases/inherited/*.v"],
+    allow_empty = True,
+)
+
+HIER_INHERITED_FIXTURES = [
+    "//src/odb/test:hier_corpus_netlists",
+    "//src/rsz/test:hier_corpus_netlists",
+]
+
+# Cases only the structural suite runs: a LEC cannot adjudicate them (several
+# are refused by the reader outright), while a structural diff can.
+HIER_STRUCTURAL_NETLISTS = glob(
+    ["cpp/hier_cases/structural/*.v"],
+    allow_empty = True,
+)
+
+# cpp/hier_cases/crash/*.v is a data dependency of no target here -- those
+# netlists kill the process.
+
+# The corpus by name, keyed the way each suite's manifest keys it: the structural
+# manifest keeps a subdirectory case's prefix (its gtest name and manifest key
+# stay unambiguous that way), the conformance manifest keys every case by its
+# bare file name.
+CONFORMANCE_CORPUS = [f.rpartition("/")[2] for f in HIER_NETLISTS] + [
+    f.rpartition("/")[2]
+    for f in HIER_INHERITED_NETLISTS
+]
+
+STRUCTURAL_CORPUS = [f.rpartition("/")[2] for f in HIER_NETLISTS] + [
+    "inherited/" + f.rpartition("/")[2]
+    for f in HIER_INHERITED_NETLISTS
+] + [
+    "structural/" + f.rpartition("/")[2]
+    for f in HIER_STRUCTURAL_NETLISTS
+]
+
+# Each suite's known failures, grouped by the case they name. A per-case target
+# carries its own rows in its environment, so editing one defect's entry
+# invalidates the cases it names and nothing else; rendering the same rows into a
+# manifest file gives the corpus-wide target the whole list, which is what its
+# staleness check needs. Generating both from hier_expected_fail.bzl rather than
+# checking a manifest in keeps every piece of a case's metadata -- its top
+# module, and which defects it is known to hit -- in the build rules, and lets
+# Starlark reject a malformed entry, an unknown check, or an entry naming no
+# corpus case when the package loads, instead of the C++ parser dropping it
+# silently at run time.
+CONFORMANCE_XFAIL_ROWS = conformance_manifest_by_netlist(
+    CONFORMANCE_EXPECTED_FAIL,
+)
+
+STRUCTURAL_XFAIL_ROWS = structural_manifest_by_netlist(
+    STRUCTURAL_EXPECTED_FAIL,
+    STRUCTURAL_CORPUS,
+)
+
 write_file(
     name = "hier_expected_fail_manifest",
     out = "cpp/hier_cases/expected_fail.txt",
-    content = conformance_manifest(CONFORMANCE_EXPECTED_FAIL),
+    content = manifest_lines(CONFORMANCE_XFAIL_ROWS, CONFORMANCE_CORPUS),
 )
 
 write_file(
     name = "hier_structural_expected_fail_manifest",
     out = "cpp/hier_cases/structural_expected_fail.txt",
-    content = structural_manifest(STRUCTURAL_EXPECTED_FAIL),
+    content = manifest_lines(STRUCTURAL_XFAIL_ROWS, STRUCTURAL_CORPUS),
 )
 
 # Hierarchy conformance: both link modes LEC'd against the input netlist.
 #
 # Needs the external kepler-formal binary at run time (resolved from
 # $KEPLER_FORMAL or the test's runfiles -- see src/tst/include/tst/lec.h);
-# without it the tests fail with an actionable message rather than skipping.
+# without it the tests fail with an actionable message rather than skipping. The
+# binary rides along in the runner's runfiles, so every case target gets it.
 #
 # Test Parity Note: this suite and dbsta_hier_structural below are registered in
 # bazel ONLY, deliberately. Both read a generated manifest and take their
-# per-case metadata from HIER_TOP_OVERRIDES, and this one needs the
-# kepler-formal binary, all three of which are produced by rules here. A CMake
-# registration would build and then fail on every case for want of them, so
-# there is nothing to gain by adding one until the metadata has a
-# build-system-independent home.
-cc_test(
-    name = "dbsta_hier_conformance",
+# per-case metadata from HIER_TOP_OVERRIDES, this one needs the kepler-formal
+# binary, and the per-case targets are generated by a Starlark macro -- none of
+# which a CMake registration can reproduce today. A CMake registration would
+# build and then fail on every case for want of them, so there is nothing to
+# gain by adding one until the metadata has a build-system-independent home.
+cc_binary(
+    name = "hier_conformance_runner",
+    testonly = 1,
     srcs = ["cpp/TestHierConformance.cpp"],
-    data = [
-        ":hier_expected_fail_manifest",
-        "//src/odb/test:hier_corpus_netlists",
-        "//src/rsz/test:hier_corpus_netlists",
-    ] + glob(["*.v"]) + glob(["cpp/*.v"]) + glob(
-        ["cpp/hier_cases/*.v"],
-        allow_empty = True,
-    ) + glob(
-        ["cpp/hier_cases/inherited/*.v"],
-        allow_empty = True,
-    ),
-    env = HIER_TOP_OVERRIDES_ENV,
-    # ~2200 LEC round trips; sharded to stay inside the default test timeout.
-    shard_count = 10,
     deps = [
         "//src/tst:db_fixture",
         "//src/tst:lec",
@@ -441,40 +493,93 @@ cc_test(
     ],
 )
 
+# The corpus-wide checks: is the corpus loaded, are its TARGETS tags unique, is
+# the manifest well formed. They need the whole corpus, which is why they are one
+# target and not 1200; the inverted filter is what keeps them from also running
+# the per-case tests below.
+hier_case_test(
+    name = "dbsta_hier_conformance_corpus",
+    size = "small",
+    data = [
+        ":hier_expected_fail_manifest",
+    ] + HIER_NETLISTS + HIER_INHERITED_NETLISTS + HIER_INHERITED_FIXTURES,
+    gtest_filter = "-*MatchesInput*",
+    runner = ":hier_conformance_runner",
+    top_overrides = render_top_overrides(HIER_TOP_OVERRIDES),
+)
+
+test_suite(
+    name = "dbsta_hier_conformance",
+    tests = [":dbsta_hier_conformance_corpus"] + hier_case_tests(
+        name = "dbsta_hier_conformance_case",
+        expected_fail = CONFORMANCE_XFAIL_ROWS,
+        netlists = HIER_NETLISTS,
+        runner = ":hier_conformance_runner",
+        top_overrides = HIER_TOP_OVERRIDES,
+    ) + hier_case_tests(
+        name = "dbsta_hier_conformance_case",
+        data = HIER_INHERITED_FIXTURES,
+        expected_fail = CONFORMANCE_XFAIL_ROWS,
+        netlists = HIER_INHERITED_NETLISTS,
+        runner = ":hier_conformance_runner",
+        subdir = "inherited/",
+        top_overrides = HIER_TOP_OVERRIDES,
+    ),
+)
+
 # Structural conformance: both link modes' emitted netlists diffed against the
 # input netlist for names, port order, module set, declared objects and instance
 # bindings -- the fidelity aspects a LEC is blind to. Needs no external tool.
-#
-# The corpus is dbsta_hier_conformance's plus cpp/hier_cases/structural/*.v,
-# which only this suite runs: a LEC cannot adjudicate those cases (several are
-# refused by the reader outright), while a structural diff can. Note that
-# cpp/hier_cases/crash/*.v is a data dependency of neither suite -- those
-# netlists kill the process.
-cc_test(
-    name = "dbsta_hier_structural",
+cc_binary(
+    name = "hier_structural_runner",
+    testonly = 1,
     srcs = ["cpp/TestHierStructural.cpp"],
-    data = [
-        ":hier_structural_expected_fail_manifest",
-        "//src/odb/test:hier_corpus_netlists",
-        "//src/rsz/test:hier_corpus_netlists",
-    ] + glob(["*.v"]) + glob(["cpp/*.v"]) + glob(
-        ["cpp/hier_cases/*.v"],
-        allow_empty = True,
-    ) + glob(
-        ["cpp/hier_cases/inherited/*.v"],
-        allow_empty = True,
-    ) + glob(
-        ["cpp/hier_cases/structural/*.v"],
-        allow_empty = True,
-    ),
-    env = HIER_TOP_OVERRIDES_ENV,
-    shard_count = 10,
     deps = [
         "//src/tst:db_fixture",
         "//src/tst:loaded_design",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+# The corpus-wide checks, plus this suite's scanner and detector unit tests: they
+# own no netlist, so they belong with the corpus rather than with a case.
+hier_case_test(
+    name = "dbsta_hier_structural_corpus",
+    size = "small",
+    data = [
+               ":hier_structural_expected_fail_manifest",
+           ] + HIER_NETLISTS + HIER_INHERITED_NETLISTS + HIER_INHERITED_FIXTURES +
+           HIER_STRUCTURAL_NETLISTS,
+    gtest_filter = "-*MatchesInput*",
+    runner = ":hier_structural_runner",
+    top_overrides = render_top_overrides(HIER_TOP_OVERRIDES),
+)
+
+test_suite(
+    name = "dbsta_hier_structural",
+    tests = [":dbsta_hier_structural_corpus"] + hier_case_tests(
+        name = "dbsta_hier_structural_case",
+        expected_fail = STRUCTURAL_XFAIL_ROWS,
+        netlists = HIER_NETLISTS,
+        runner = ":hier_structural_runner",
+        top_overrides = HIER_TOP_OVERRIDES,
+    ) + hier_case_tests(
+        name = "dbsta_hier_structural_case",
+        data = HIER_INHERITED_FIXTURES,
+        expected_fail = STRUCTURAL_XFAIL_ROWS,
+        netlists = HIER_INHERITED_NETLISTS,
+        runner = ":hier_structural_runner",
+        subdir = "inherited/",
+        top_overrides = HIER_TOP_OVERRIDES,
+    ) + hier_case_tests(
+        name = "dbsta_hier_structural_case",
+        expected_fail = STRUCTURAL_XFAIL_ROWS,
+        netlists = HIER_STRUCTURAL_NETLISTS,
+        runner = ":hier_structural_runner",
+        subdir = "structural/",
+        top_overrides = HIER_TOP_OVERRIDES,
+    ),
 )
 
 cc_test(

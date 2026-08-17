@@ -94,6 +94,51 @@ def _validate(path, issue, symptom, netlists, check = None, mode = None):
             fail("':' is the manifest field separator, so it cannot appear " +
                  "in '%s'" % field)
 
+# '*' matches any run of characters; nothing else is special. Matching lives here
+# rather than in the suite because the rows a case needs are selected when the
+# package loads: a per-case test target carries its own rows and never reads the
+# whole manifest, so nothing downstream has a pattern left to match.
+#
+# Split on '*' rather than walking the string: Starlark has no while loop, and
+# "a*b*c" matches exactly when the text starts with "a", ends with "c", and the
+# middle pieces occur in order.
+def _glob_match(pattern, text):
+    pieces = pattern.split("*")
+    if len(pieces) == 1:
+        return pattern == text
+    if not text.startswith(pieces[0]):
+        return False
+    pos = len(pieces[0])
+    for piece in pieces[1:-1]:
+        if not piece:
+            continue
+        found = text.find(piece, pos)
+        if found == -1:
+            return False
+        pos = found + len(piece)
+    last = pieces[-1]
+    if not last:
+        return True
+    return text.endswith(last) and len(text) - len(last) >= pos
+
+# The corpus netlists a pattern names. A pattern that names none is an error: it
+# is dead text that still reads as coverage of a known defect, which is how an
+# entry outlives the case it was written for. The conformance suite reports the
+# same thing at run time (ManifestIsWellFormed); the structural suite cannot,
+# because a pattern makes "is this row used?" unanswerable there.
+def _expand(pattern, corpus, symptom):
+    if "*" not in pattern:
+        if pattern not in corpus:
+            fail(("'%s' is listed for '%s', but no such netlist is in the " +
+                  "corpus. Remove the entry, or restore the case it names.") %
+                 (pattern, symptom))
+        return [pattern]
+    matched = [netlist for netlist in corpus if _glob_match(pattern, netlist)]
+    if not matched:
+        fail(("'%s' is listed for '%s', but it matches no netlist in the " +
+              "corpus. Remove the entry, or widen it.") % (pattern, symptom))
+    return matched
+
 # A netlist can only have one recorded symptom per key: the test reads the first
 # matching row, so a second one would be dead text that still reads as coverage.
 def _reject_duplicate(seen, key, symptom):
@@ -155,16 +200,17 @@ def structural_xfail(path, check, symptom, netlists, issue = None):
         netlists = netlists,
     )
 
-def conformance_manifest(entries):
-    """Renders entries as `netlist : path : mode : issue : symptom` lines.
+def conformance_manifest_by_netlist(entries):
+    """Groups entries as netlist -> `netlist : path : mode : issue : symptom`.
 
     Args:
       entries: xfail() structs.
 
     Returns:
-      One line per (netlist, path), for write_file.
+      A dict of netlist name to its rows, so a per-case target can carry the
+      rows that name it and nothing else.
     """
-    lines = []
+    rows = {}
     seen = {}
     for e in entries:
         for netlist in e.netlists:
@@ -173,31 +219,64 @@ def conformance_manifest(entries):
 
             # Every field is emitted even when empty, so the row keeps a fixed
             # arity and the reader never has to guess which field is missing.
-            lines.append(
+            rows.setdefault(netlist, []).append(
                 " : ".join([netlist, e.path, e.mode, e.issue or "", e.symptom]),
             )
-    return lines
+    return rows
 
-def structural_manifest(entries):
-    """Renders entries as `netlist : path : check : issue : symptom` lines.
+def structural_manifest_by_netlist(entries, corpus):
+    """Groups entries as netlist -> `... : issue : symptom : as_authored`.
+
+    Patterns are expanded against `corpus` here, so every row names one netlist
+    exactly and the suite compares names rather than matching. The pattern as
+    authored is kept as the last field: it is what a failure message must tell
+    the reader to go and delete.
 
     Args:
       entries: structural_xfail() structs.
+      corpus: every corpus-relative netlist name, e.g. "structural/case.v".
 
     Returns:
-      One line per (netlist, path, check), for write_file.
+      A dict of netlist name to its rows.
     """
-    lines = []
+    rows = {}
     seen = {}
     for e in entries:
-        for netlist in e.netlists:
-            key = " : ".join([netlist, e.path, e.check])
-            _reject_duplicate(seen, key, e.symptom)
-            lines.append(
-                " : ".join(
-                    [netlist, e.path, e.check, e.issue or "", e.symptom],
-                ),
-            )
+        for pattern in e.netlists:
+            for netlist in _expand(pattern, corpus, e.symptom):
+                key = " : ".join([netlist, e.path, e.check])
+                _reject_duplicate(seen, key, e.symptom)
+                rows.setdefault(netlist, []).append(" : ".join([
+                    netlist,
+                    e.path,
+                    e.check,
+                    e.issue or "",
+                    e.symptom,
+                    pattern,
+                ]))
+    return rows
+
+def manifest_lines(rows_by_netlist, corpus):
+    """Flattens grouped rows into a manifest, in corpus order.
+
+    Args:
+      rows_by_netlist: the dict from one of the by_netlist functions above.
+      corpus: every corpus-relative netlist name, for a stable row order.
+
+    Returns:
+      One line per row, for write_file.
+    """
+    lines = []
+    for netlist in corpus:
+        lines.extend(rows_by_netlist.get(netlist, []))
+
+    # A row naming no corpus netlist is emitted too, at the end: dropping it
+    # here would hide it from the corpus-wide check that exists to report it
+    # (ManifestIsWellFormed). The structural manifest cannot contain one, since
+    # _expand rejects it when the package loads.
+    for netlist, rows in rows_by_netlist.items():
+        if netlist not in corpus:
+            lines.extend(rows)
     return lines
 
 # Failures of the LEC round trip: read_verilog -> link_design [-hier] ->

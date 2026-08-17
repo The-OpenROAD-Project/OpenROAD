@@ -1063,10 +1063,50 @@ std::size_t scanCaseDirectory(const std::filesystem::path& dir,
   return found;
 }
 
+// The corpus named explicitly, as corpus-relative names ("case.v",
+// "inherited/case.v", "structural/case.v"). A per-case test target names its
+// one case here and carries only that netlist in its runfiles, so bazel caches
+// and invalidates the corpus one case at a time; the whole-corpus target sets
+// nothing and gets the directory scan below.
+std::vector<CorpusEntry> corpusFromNames(
+    const std::string& names,
+    const std::map<std::string, std::string>& tops)
+{
+  std::vector<CorpusEntry> corpus;
+  std::istringstream fields(names);
+  std::string name;
+  while (std::getline(fields, name, ',')) {
+    if (name.empty()) {
+      continue;
+    }
+    CorpusEntry entry;
+    entry.name = name;
+    entry.path = getRunfilePath(std::string(kCasesDir) + name);
+    entry.top = "top";
+    entry.tech = Technology::kNangate45;
+    // Keyed on the file name, as the directory scan is: an override names a
+    // netlist, not the subdirectory it happens to sit in.
+    const std::string file_name
+        = std::filesystem::path(name).filename().string();
+    if (const auto it = tops.find(file_name); it != tops.end()) {
+      entry.top = it->second;
+    }
+    corpus.push_back(entry);
+  }
+  return corpus;
+}
+
 std::vector<CorpusEntry> loadCorpus()
 {
   std::vector<CorpusEntry> corpus;
   try {
+    if (const char* names = std::getenv("HIER_CASES"); names != nullptr) {
+      corpus = corpusFromNames(names, topOverrides());
+      if (corpus.empty()) {
+        return corpusLoadError("HIER_CASES is set but names no cases");
+      }
+      return corpus;
+    }
     // Located through the XFAIL manifest, the one file in hier_cases/ this
     // suite is guaranteed to have a runfile for. It is generated rather than
     // checked in, but runfiles merge a rule's outputs with the package's source
@@ -1132,7 +1172,7 @@ const std::vector<CorpusEntry>& corpus()
 
 struct ExpectedFailure
 {
-  std::string pattern;
+  std::string netlist;
   Path path;
   std::string check;
   // The OpenROAD issue, when one has been filed. Empty otherwise -- see
@@ -1140,6 +1180,10 @@ struct ExpectedFailure
   // carrying a placeholder.
   std::optional<std::string> issue;
   std::string symptom;
+  // The entry as authored, which is what a message must name for the reader to
+  // find it: one entry can name a run of netlists with a '*', and the row above
+  // holds the netlist it expanded to, not the text in the .bzl file.
+  std::string as_authored;
 };
 
 // "issue 1234, " when one is recorded, "" otherwise, so a message about an
@@ -1147,33 +1191,6 @@ struct ExpectedFailure
 std::string issuePrefix(const std::optional<std::string>& issue)
 {
   return !issue.has_value() ? std::string() : "issue " + *issue + ", ";
-}
-
-// '*' matches any run of characters; nothing else is special.
-bool globMatch(const std::string& pattern, const std::string& text)
-{
-  std::size_t p = 0;
-  std::size_t t = 0;
-  std::size_t star = std::string::npos;
-  std::size_t star_t = 0;
-  while (t < text.size()) {
-    if (p < pattern.size() && pattern[p] == '*') {
-      star = p++;
-      star_t = t;
-    } else if (p < pattern.size() && pattern[p] == text[t]) {
-      ++p;
-      ++t;
-    } else if (star != std::string::npos) {
-      p = star + 1;
-      t = ++star_t;
-    } else {
-      return false;
-    }
-  }
-  while (p < pattern.size() && pattern[p] == '*') {
-    ++p;
-  }
-  return p == pattern.size();
 }
 
 // Parses the XFAIL manifest, which the build rule generates from
@@ -1186,8 +1203,21 @@ const std::vector<ExpectedFailure>& expectedFailures()
 {
   static const std::vector<ExpectedFailure> all = []() {
     std::vector<ExpectedFailure> parsed;
-    std::ifstream in(getRunfilePath(std::string(kCasesDir)
-                                    + "structural_expected_fail.txt"));
+    // A per-case target is handed its own rows in HIER_EXPECTED_FAIL, so it
+    // depends on the netlist it runs and not on every other case's XFAIL
+    // entries. The corpus-wide target leaves it unset and reads the manifest,
+    // which is the whole list -- including any row naming no case at all.
+    const char* inline_rows = std::getenv("HIER_EXPECTED_FAIL");
+    std::ifstream file;
+    std::istringstream rows;
+    if (inline_rows != nullptr) {
+      rows.str(inline_rows);
+    } else {
+      file.open(getRunfilePath(std::string(kCasesDir)
+                               + "structural_expected_fail.txt"));
+    }
+    std::istream& in
+        = inline_rows != nullptr ? static_cast<std::istream&>(rows) : file;
     std::string line;
     while (std::getline(in, line)) {
       if (isComment(line)) {
@@ -1202,20 +1232,23 @@ const std::vector<ExpectedFailure>& expectedFailures()
                           f[1] == "hier" ? Path::kHier : Path::kFlat,
                           f[2],
                           f[3],
-                          f.size() > 4 ? f[4] : ""});
+                          f.size() > 4 ? f[4] : "",
+                          f.size() > 5 ? f[5] : f[0]});
     }
     return parsed;
   }();
   return all;
 }
 
+// Rows name one netlist exactly: hier_expected_fail.bzl expands a '*' entry
+// against the corpus when the package loads, so there is no pattern left here.
 const ExpectedFailure* expectedFailure(const std::string& netlist,
                                        Path path,
                                        Check check)
 {
   for (const ExpectedFailure& failure : expectedFailures()) {
     if (failure.path == path && failure.check == toString(check)
-        && globMatch(failure.pattern, netlist)) {
+        && failure.netlist == netlist) {
       return &failure;
     }
   }
@@ -1235,7 +1268,7 @@ void expectOrXfail(const CorpusEntry& entry,
         << entry.name << " [" << toString(path) << "/" << toString(check)
         << "] is a known failure (" << issuePrefix(failure->issue)
         << failure->symptom << "). It now PASSES -- delete '"
-        << failure->pattern
+        << failure->as_authored
         << "' from STRUCTURAL_EXPECTED_FAIL in "
            "src/dbSta/test/hier_expected_fail.bzl.";
     return;

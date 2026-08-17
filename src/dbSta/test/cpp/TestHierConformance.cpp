@@ -256,8 +256,21 @@ const ParsedManifest& expectedFailures()
 {
   static const ParsedManifest all = []() {
     ParsedManifest parsed;
-    std::ifstream in(
-        getRunfilePath(std::string(kCasesDir) + "expected_fail.txt"));
+    // A per-case target is handed its own rows in HIER_EXPECTED_FAIL, so it
+    // depends on the netlist it runs and not on every other case's XFAIL
+    // entries. The corpus-wide target leaves it unset and reads the manifest,
+    // which is the whole list -- including any row naming no case at all, which
+    // is what ManifestIsWellFormed exists to report.
+    const char* inline_rows = std::getenv("HIER_EXPECTED_FAIL");
+    std::ifstream file;
+    std::istringstream rows;
+    if (inline_rows != nullptr) {
+      rows.str(inline_rows);
+    } else {
+      file.open(getRunfilePath(std::string(kCasesDir) + "expected_fail.txt"));
+    }
+    std::istream& in
+        = inline_rows != nullptr ? static_cast<std::istream&>(rows) : file;
     std::string line;
     while (std::getline(in, line)) {
       if (isComment(line)) {
@@ -310,9 +323,52 @@ std::map<std::string, std::string> topOverrides()
   return overrides;
 }
 
-// Adds every .v in `dir` to `corpus`. `authored` is false for the inherited/
+// One corpus entry for `file`. `authored` is false for the inherited/
 // subdirectory, whose netlists are symlinks to other suites' fixtures: they
 // carry no header of ours, so the TARGETS lint below must not demand one.
+CorpusEntry makeCorpusEntry(const std::filesystem::path& file,
+                            bool authored,
+                            const std::map<std::string, std::string>& tops)
+{
+  CorpusEntry entry;
+  entry.path = file.string();
+  entry.name = file.filename().string();
+  // Defaults cover all but a handful of cases; the build rule names the
+  // exceptions. Nangate45 is the only technology the corpus uses.
+  entry.top = "top";
+  entry.tech = Technology::kNangate45;
+  if (const auto it = tops.find(entry.name); it != tops.end()) {
+    entry.top = it->second;
+  }
+  if (authored) {
+    std::ifstream case_file(file);
+    std::string case_line;
+    while (std::getline(case_file, case_line)) {
+      if (case_line.rfind("// TARGETS:", 0) == 0) {
+        // Comma-separated construct tags, normalized to a sorted set so
+        // TargetsAreUnique below compares them order-independently.
+        std::istringstream tags(splitFields(case_line).back());
+        std::string tag;
+        while (std::getline(tags, tag, ',')) {
+          const std::string::size_type b = tag.find_first_not_of(" \t");
+          const std::string::size_type e = tag.find_last_not_of(" \t");
+          if (b != std::string::npos) {
+            entry.targets.push_back(tag.substr(b, e - b + 1));
+          }
+        }
+        std::sort(entry.targets.begin(), entry.targets.end());
+      } else if (case_line.rfind("// ORIGIN:", 0) == 0) {
+        entry.origin = splitFields(case_line).back();
+      } else if (case_line.rfind("//", 0) != 0) {
+        break;  // header comments only
+      }
+    }
+  }
+  entry.authored = authored;
+  return entry;
+}
+
+// Adds every .v in `dir` to `corpus`.
 void scanCaseDirectory(const std::filesystem::path& dir,
                        bool authored,
                        const std::map<std::string, std::string>& tops,
@@ -325,43 +381,32 @@ void scanCaseDirectory(const std::filesystem::path& dir,
     if (item.path().extension() != ".v") {
       continue;
     }
-    CorpusEntry entry;
-    entry.path = item.path().string();
-    entry.name = item.path().filename().string();
-    // Defaults cover all but a handful of cases; the build rule names the
-    // exceptions. Nangate45 is the only technology the corpus uses.
-    entry.top = "top";
-    entry.tech = Technology::kNangate45;
-    if (const auto it = tops.find(entry.name); it != tops.end()) {
-      entry.top = it->second;
-    }
-    if (authored) {
-      std::ifstream case_file(item.path());
-      std::string case_line;
-      while (std::getline(case_file, case_line)) {
-        if (case_line.rfind("// TARGETS:", 0) == 0) {
-          // Comma-separated construct tags, normalized to a sorted set so
-          // TargetsAreUnique below compares them order-independently.
-          std::istringstream tags(splitFields(case_line).back());
-          std::string tag;
-          while (std::getline(tags, tag, ',')) {
-            const std::string::size_type b = tag.find_first_not_of(" \t");
-            const std::string::size_type e = tag.find_last_not_of(" \t");
-            if (b != std::string::npos) {
-              entry.targets.push_back(tag.substr(b, e - b + 1));
-            }
-          }
-          std::sort(entry.targets.begin(), entry.targets.end());
-        } else if (case_line.rfind("// ORIGIN:", 0) == 0) {
-          entry.origin = splitFields(case_line).back();
-        } else if (case_line.rfind("//", 0) != 0) {
-          break;  // header comments only
-        }
-      }
-    }
-    entry.authored = authored;
-    corpus.push_back(entry);
+    corpus.push_back(makeCorpusEntry(item.path(), authored, tops));
   }
+}
+
+// The corpus named explicitly, as corpus-relative paths ("case.v",
+// "inherited/case.v"). A per-case test target names its one case here and
+// carries only that netlist in its runfiles, so bazel caches and invalidates
+// the corpus one case at a time; the corpus-wide target names nothing and gets
+// the directory scan. A case under inherited/ is unauthored, exactly as the
+// scan records it -- the name it is keyed by stays the bare file name.
+std::vector<CorpusEntry> corpusFromNames(
+    const std::string& names,
+    const std::map<std::string, std::string>& tops)
+{
+  std::vector<CorpusEntry> corpus;
+  std::istringstream fields(names);
+  std::string name;
+  while (std::getline(fields, name, ',')) {
+    if (name.empty()) {
+      continue;
+    }
+    const bool authored = name.find('/') == std::string::npos;
+    corpus.push_back(makeCorpusEntry(
+        getRunfilePath(std::string(kCasesDir) + name), authored, tops));
+  }
+  return corpus;
 }
 
 // The corpus is every .v file under hier_cases/, plus the symlinks in
@@ -377,6 +422,13 @@ std::vector<CorpusEntry> loadCorpus()
 {
   std::vector<CorpusEntry> corpus;
   try {
+    if (const char* names = std::getenv("HIER_CASES"); names != nullptr) {
+      corpus = corpusFromNames(names, topOverrides());
+      if (corpus.empty()) {
+        return corpusLoadError("HIER_CASES is set but names no cases");
+      }
+      return corpus;
+    }
     // Located through the XFAIL manifest, the one file in hier_cases/ this
     // suite is guaranteed to have a runfile for. It is generated rather than
     // checked in, but runfiles merge a rule's outputs with the package's source
