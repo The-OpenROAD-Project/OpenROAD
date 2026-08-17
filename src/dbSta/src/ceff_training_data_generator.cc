@@ -80,7 +80,7 @@ int main(int argc, char** argv)
   // 5. Sweep loops (dimensionless parameters)
   // High density for <0.001% Trilinear LUT
   std::vector<double> xs;
-  for (double val = 0.001; val <= 1000.0; val *= std::sqrt2) {
+  for (double val = 0.001; val <= 1000.0; val *= std::numbers::sqrt2) {
     xs.push_back(val);
   }
 
