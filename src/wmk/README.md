@@ -1,27 +1,21 @@
 # Watermark
 
-The Watermark module embeds keyed ownership evidence in a physical design and
-checks it back, implementing the routing watermark of Kahng et al., "Robust IP
-Watermarking Methodologies for Physical Design" (ISPD'98) together with a
-placement and a clock tree carrier in the same style.
+The watermark module in OpenROAD (`wmk`) embeds keyed ownership evidence in a
+physical design and checks it back. It implements PDMarks, a Kerckhoffs-compliant
+scheme whose security rests on a secret key rather than on hidden construction:
+the algorithms are public and only the key is not. Three stages carry marks:
 
-A keyed subset of signal nets is selected with HMAC-SHA256 and tagged with a
-`watermark` property. During detailed routing those nets pay an inflated cost
-for wiring against a layer's preferred direction, so they end up using
-measurably less wrong-way wire than the rest of the design. Because the
-selection is keyed, the tagged set cannot be predicted without the key, and the
-algorithm can be public.
+-   Placement: a keyed subset of same-row, same-width cell pairs is put into a
+    keyed left-to-right order
+-   Clock tree: a keyed subset of leaf clock buffers is driven to a keyed
+    sequential-fanout parity
+-   Routing: a keyed subset of signal nets is routed under an inflated cost for
+    wrong-way wiring, and detected as a population effect
 
-Two further stages are marked the same way. After detailed placement, a keyed
-subset of same-row same-width cell pairs is put into a keyed left-to-right
-order; after clock tree synthesis, a keyed subset of leaf clock buffers is
-driven to a keyed sequential-fanout parity. All three stages are embedded and
-verified by this module, with no other tooling.
-
-Which objects each stage marks is decided before the key is consulted. An
-embedder that chose whichever pair already happened to match would report a
-perfect extraction rate on a design it had never touched, and the rate would be
-no evidence of anything; see [Verify Watermark](#verify-watermark).
+The key selects both which objects are marked and what value each carries, so an
+observer who knows the algorithm still cannot locate the marks. Verification
+needs no flow and no re-run: it reads a claim file, or for routing the key alone,
+against any loaded database.
 
 ## Commands
 
@@ -32,31 +26,17 @@ no evidence of anything; see [Verify Watermark](#verify-watermark).
 
 ### Generate Watermark Key
 
-The `generate_watermark_key` command draws a watermark secret and derives the
-three per-stage keys from it, returning a dictionary with the entries
-`key_hex`, `nonce_hex`, `design_id`, `placement`, `cts` and `routing`.
+The `generate_watermark_key` command draws a secret and derives the three stage
+keys from it. It returns a dictionary with the entries `key_hex`, `nonce_hex`,
+`design_id`, `placement`, `cts` and `routing`.
 
-The secret and the nonce come from the system's random source unless supplied.
-A stage key is
+A stage key is `HMAC-SHA256(key, design_id, nonce, "stage=" || stage)`. The
+identifier and the nonce are public and bind the keys to one design version, so
+one secret can protect many designs. All three are needed again to verify.
 
-```text
-K_s = HMAC-SHA256(K, design_id, nonce, "stage=" || s)
-```
-
-so one secret can protect many designs and many revisions: the identifier and
-the nonce are what make the derived keys differ, and marks placed under one
-pair say nothing about marks placed under another.
-
-Verification needs the same stage keys, so the secret, the identifier and the
-nonce must all survive until then. The identifier and the nonce are public and
-belong with the design's records. The secret does not: this module never writes
-it to the log, and keeps no copy of it after the command returns. With `-file`
-the values are written to that path with owner-only permissions.
-
-If the system's random source cannot be read the command fails rather than
-falling back to an ordinary generator, because a key drawn from a predictable
-source is not a secret and the watermarks under it would be reproducible by
-anyone.
+The secret is never logged. With `-file` it is written with owner-only
+permissions. If the system random source cannot be read the command fails rather
+than substituting a predictable one.
 
 ```tcl
 generate_watermark_key
@@ -70,17 +50,16 @@ generate_watermark_key
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-design_id` | Identifier of the design version being marked. Public, and needed again to verify. |
-| `-file` | Write the secret, the nonce and the three stage keys here, readable only by the owner. |
-| `-key_hex` | Use this 64-character hex string as the secret instead of drawing one. |
-| `-nonce_hex` | Use this even-length hex string as the nonce instead of drawing one. 16 bytes when drawn. |
+| `-design_id` | Identifier of the design version being marked. |
+| `-file` | Write the secret, nonce and stage keys to this path. |
+| `-key_hex` | Use this 64-character hex secret instead of drawing one. |
+| `-nonce_hex` | Use this even-length hex nonce instead of drawing one. Drawn nonces are 16 bytes. |
 
 ### Derive Watermark Key
 
-The `derive_watermark_key` command re-derives one stage key from the secret,
-the design identifier and the nonce, returning it as a 64-character hex string.
-Verification runs in a later process than embedding, so this is how the keys
-that were used come back without any of them having been stored.
+The `derive_watermark_key` command re-derives one stage key and returns it as a
+64-character hex string. Verification runs in a later process than embedding, so
+this recovers the keys that were used without any of them having been stored.
 
 ```tcl
 derive_watermark_key
@@ -102,17 +81,18 @@ derive_watermark_key
 ### Place Watermark
 
 The `place_watermark` command puts a keyed subset of cell pairs into a keyed
-left-to-right order, writing the pairs it claimed to `-claims_file` and
-returning how many there were. Run it after detailed placement.
+left-to-right order and writes the claimed pairs to `-claims_file`. It returns
+the number of pairs claimed. Run it after detailed placement.
 
-Only cells that sit in the same row and have the same width are paired, so a
-swap leaves the row legal and the area unchanged. Candidates are screened on
-slack and on the wirelength the swap would cost, and the design is re-legalized
-afterwards.
+Only cells in the same row with the same width are paired, so a swap leaves the
+row legal and the area unchanged. Candidates are screened on slack and on the
+wirelength a swap would cost; the key then orders what survives and takes a
+greedy non-overlapping prefix. The design is re-legalized afterwards, and a pair
+whose cells then lost more than `-guard_degrade_ns` of slack is put back.
 
-Every pair chosen is claimed, including any whose swap legalization then undid.
-The message reports how many no longer hold, which is the number to watch: a
-mark that did not survive its own embedding will not survive routing either.
+Every pair chosen is claimed, including any whose mark did not survive. Dropping
+them would let the extraction rate be chosen after seeing the design, in which
+case it would be 1.0 on every design.
 
 ```tcl
 place_watermark
@@ -120,8 +100,8 @@ place_watermark
     -key_hex key_hex
     [-grid_nx n]
     [-grid_ny n]
-    [-hpwl_eps_dbu eps]
     [-guard_degrade_ns ns]
+    [-hpwl_eps_dbu eps]
     [-max_disp_um disp]
     [-min_pairs_total n]
     [-pair_dist_um dist]
@@ -133,43 +113,31 @@ place_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-claims_file` | Where to write the claims, in the format below. |
-| `-key_hex` | A 64-character hex string, the 32-byte placement key. It fixes each pair's target order and nothing else; which cells are paired does not depend on it. |
-| `-grid_nx`, `-grid_ny` | Tiles across and down the core. Marks are spread over the tiling rather than clustering wherever candidates are densest. Both default to 8. |
-| `-guard_degrade_ns` | After legalization, a pair whose cells lost more slack than this is put back and not claimed. Defaults to 0.02, that is 20 ps. Zero disables the check. |
-| `-hpwl_eps_dbu` | Largest half-perimeter wirelength change, in database units, a swap may cost. Defaults to 100. Database units are not the same size on every platform -- 100 of them is 0.05 um on NanGate45 and 1.0 um on ASAP7 -- so this is worth setting deliberately on a platform it has not been characterised for. |
-| `-max_disp_um` | How far re-legalization may move a cell, in microns. Defaults to 5. |
-| `-min_pairs_total` | Below this many pairs the design is searched again with the neighbourhood widened and the wirelength budget doubled. Defaults to 64. |
-| `-pair_dist_um` | How far along the row to look for a partner, in microns. Defaults to 1.0. |
-| `-pairs_per_tile` | Most pairs to claim per tile. Defaults to 4. |
-| `-slack_threshold_ns` | Cells with less slack than this are left alone, so the mark stays off the paths that set the clock period. Defaults to 0.20. Set to 0 to disable the screen. |
-
-Capacity depends on how densely the design is packed and on how much timing
-slack it has. A design with few same-row same-width neighbours, or one whose
-swaps all cost wirelength, may yield no pairs at all; that is a property of the
-design, not a failure. Falling short of `-min_pairs_total` triggers a second
-pass with the neighbourhood widened and the wirelength budget doubled, but that
-only helps where wirelength or neighbourhood was the binding constraint. Where
-slack is what binds -- on a routed NanGate45 `aes`, 9801 of 14820 cells are
-screened out by the default 0.20 ns threshold -- the second pass adds nothing
-and `-slack_threshold_ns` is the lever that matters.
+| `-claims_file` | Where to write the claims. |
+| `-key_hex` | 64-character hex placement key. |
+| `-grid_nx`, `-grid_ny` | Tiles across and down the core, so marks are spread rather than clustered. Both default to `8`. |
+| `-guard_degrade_ns` | Slack a pair may cost before it is put back. Defaults to `0.02`. `0` disables the check. |
+| `-hpwl_eps_dbu` | Largest half-perimeter wirelength change a swap may cost, in database units. Defaults to `100`. |
+| `-max_disp_um` | Displacement allowed during re-legalization, in microns. Defaults to `5`. |
+| `-min_pairs_total` | Below this many pairs, search again with a wider neighbourhood and twice the wirelength budget. Defaults to `64`. |
+| `-pair_dist_um` | How far along the row to look for a partner, in microns. Defaults to `1.0`. |
+| `-pairs_per_tile` | Most pairs to claim per tile. Defaults to `4`. |
+| `-slack_threshold_ns` | Cells with less slack are left alone. Defaults to `0.20`. `0` disables the screen. |
 
 ### CTS Watermark
 
 The `cts_watermark` command drives a keyed subset of leaf clock buffers to a
-keyed sequential-fanout parity, writing the pairs it claimed to `-claims_file`
-and returning how many there were. Run it after clock tree synthesis.
+keyed sequential-fanout parity and writes the claimed pairs to `-claims_file`.
+It returns the number of pairs claimed. Run it after clock tree synthesis.
 
-Buffers are marked in pairs, and the parity is changed by moving one
-flip-flop's clock pin from one buffer of the pair to the other. That leaves the
-flop clocked and the tree connected, and it survives anything that does not add
-or remove a sink -- routing, filling and metal fixes all preserve it.
+Buffers are marked in pairs. Parity is changed by moving one flip-flop's clock
+pin from one buffer of the pair to the other, which leaves the flop clocked and
+the tree connected and survives routing and filling. A move is undone if it
+worsens the clock's worst skew by more than `-skew_margin_ns`, or if it leaves
+the buffer with less slew or capacitance headroom than the liberty cell allows.
 
-What it can cost is skew and drive. A move is undone if it makes the clock's
-worst skew worse, or if it would leave the buffer with less headroom than the
-library allows -- the slew and capacitance limits are read from the liberty
-cell, so the check follows the technology rather than a number fixed here. The pair is still claimed; the message reports how many pairs ended at
-the parity the key asked for.
+Timing must be set up first. Without liberty and constraints these checks cannot
+be evaluated and the command says so.
 
 ```tcl
 cts_watermark
@@ -186,19 +154,21 @@ cts_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-claims_file` | Where to write the claims, in the format below. |
-| `-key_hex` | A 64-character hex string, the 32-byte clock-tree key. It fixes which buffer of each pair carries the mark and what parity it must show. |
-| `-cap_headroom_frac` | Fraction of a buffer's liberty capacitance limit that must stay unused after a sink moves onto it. Defaults to 0.20. |
-| `-num_pairs` | Most pairs to mark. Each carries one bit. Defaults to 32. |
-| `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns, so a moved sink stays local. Defaults to 20.0. |
-| `-slew_headroom_frac` | The same for the buffer's slew limit. Defaults to 0.20. |
-| `-skew_margin_ns` | How much worse the clock's worst skew may get, in nanoseconds. Defaults to 0.020, that is 20 ps. Zero turns the stage off wherever the clock is tight: on a routed ASAP7 `aes` it rejects 14 of 26 pairs. |
+| `-claims_file` | Where to write the claims. |
+| `-key_hex` | 64-character hex clock-tree key. |
+| `-cap_headroom_frac` | Fraction of the liberty capacitance limit left unused. Defaults to `0.20`. |
+| `-num_pairs` | Most pairs to mark, one bit each. Defaults to `32`. |
+| `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns. Defaults to `20.0`. |
+| `-skew_margin_ns` | Skew a move may cost. Defaults to `0.020`. `0` turns the stage off wherever the clock is tight. |
+| `-slew_headroom_frac` | Fraction of the liberty slew limit left unused. Defaults to `0.20`. |
 
 ### Set Routing Watermark
 
-The `set_routing_watermark` command selects a keyed subset of signal nets and
-tags each one, returning the number tagged. Any previous tags are cleared
-first, so repeated calls are idempotent. Call it before `detailed_route`.
+The `set_routing_watermark` command selects a keyed subset of signal nets, tags
+each one, and returns the number tagged. A net is selected when the first four
+bytes of `HMAC-SHA256(key, "net\0" || name)`, read as a little-endian integer
+over 2^32, fall below the fraction. Previous tags are cleared first, so repeated
+calls are idempotent. Call it before `detailed_route`.
 
 ```tcl
 set_routing_watermark
@@ -210,18 +180,17 @@ set_routing_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-key_hex` | A 64-character hex string, the 32-byte routing key. Each net is selected when the first four bytes of `HMAC-SHA256(key, "net\0" + name)`, read as a little-endian integer over 2^32, fall below `-fraction`. |
-| `-fraction` | Expected fraction of eligible signal nets to tag. Each net is an independent draw, so the realized count varies. Defaults to 0.05. |
+| `-key_hex` | 64-character hex routing key. |
+| `-fraction` | Expected fraction of eligible signal nets to tag. Defaults to `0.05`. |
 
 ### Set Routing Watermark Strength
 
 The `set_routing_watermark_strength` command sets the multiplier applied to the
 non-preferred-direction grid cost when the detailed router routes a tagged net.
-A value of 1 tags nets without biasing them, which is the control case for
-measuring the watermark's effect.
+A value of `1` tags nets without biasing them, which is the control case.
 
-This is router configuration, not design data: it does not persist in the
-database, so it must be set in the same process that runs `detailed_route`.
+This is router configuration and does not persist in the database, so it must be
+set in the same process that runs `detailed_route`.
 
 ```tcl
 set_routing_watermark_strength
@@ -246,7 +215,7 @@ get_routing_watermark_strength
 
 The `report_routing_watermark` command ranks every routed signal net by its
 wrong-way wirelength fraction and reports how many tagged nets fall below the
-cutoff, together with the coincidence probability. Run it after
+cutoff, with the resulting coincidence probability. Run it after
 `detailed_route`.
 
 ```tcl
@@ -258,11 +227,11 @@ report_routing_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-p` | Quantile cutoff below which a net counts as carrying the watermark. Defaults to 0.4. |
+| `-p` | Quantile cutoff below which a net counts as carrying the watermark. Defaults to `0.4`. |
 
 ### Clear Routing Watermark
 
-The `clear_routing_watermark` command removes every `watermark` tag from the
+The `clear_routing_watermark` command removes every watermark tag from the
 current block and returns the number cleared.
 
 ```tcl
@@ -271,30 +240,19 @@ clear_routing_watermark
 
 ### Verify Watermark
 
-The `verify_watermark` command checks the loaded design against whichever
-stages it is given, and returns 1 when every stage it checked passed.
+The `verify_watermark` command checks the loaded design and returns `1` when it
+carries the watermark. Ownership is granted when at least `-min_stages` of the
+checked stages pass.
 
-Ownership is granted when at least `-min_stages` of the checked stages pass,
-two by default. Requiring all of them would let one stage with no capacity sink
-a claim the other two prove -- a design whose clock tree cannot absorb a single
-moved sink is not thereby unowned -- and requiring one would accept on a single
-stage's evidence. Checking only one stage is still allowed, with
-`-min_stages 1`, but it is a weaker claim than the scheme intends.
+Placement and clock-tree marks are read from their claim files and judged by the
+extraction rate, the fraction of claims that still hold, against `-tau`. An exact
+match is not expected: routing and filling disturb a few marked objects.
 
-Placement and clock-tree marks are checked from their claim files. No key is
-needed: it was consumed at embed time to derive the target values, which the
-claim files record. Verification re-observes each claimed object and compares
-it to the claimed value. Ownership is decided by the extraction rate, the
-fraction of claims that still hold, rather than by an exact match, because
-routing and filling legitimately disturb a few marked objects.
-
-The routing mark has no claim file. It is a population effect rather than a set
-of per-object values, and the marked set is recovered from the key alone, so
-that stage needs `-routing_key_hex` and nothing from embed time. The statistic
-is the difference in mean wrong-way wirelength fraction between the marked nets
-and the rest. Its sign is not evidence -- on a design carrying no watermark it
-is a coin flip -- so the stage is decided on how improbable the value is under
-a random choice of marked set, against `-routing_alpha`.
+Routing has no claim file. Its marked set is recovered from `-routing_key_hex`
+alone and judged by how improbable the marked nets' wrong-way wirelength is under
+a random choice of marked set, against `-routing_alpha`. The sign of the
+difference is not evidence on its own, since it is a coin flip on an unmarked
+design.
 
 ```tcl
 verify_watermark
@@ -312,58 +270,48 @@ verify_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-cts_claims` | Claim file from the clock-tree watermark. Each claim names a leaf clock buffer and the parity its sequential fanout was driven to. |
-| `-min_stages` | How many of the checked stages must pass for the design to be called watermarked. Defaults to 2. |
-| `-placement_claims` | Claim file from the placement watermark. Each claim names a pair of cells and which of the two was driven to sit further left. |
-| `-routing_alpha` | Largest p-value the routing stage may show and still pass. Defaults to 1e-4. |
-| `-routing_fraction` | The fraction the routing mark was embedded with. It must match, or the recovered set will not be the marked one. Defaults to 0.02. |
-| `-routing_key_hex` | A 64-character hex string, the 32-byte routing key. Checks the routing stage. |
-| `-routing_permutations` | Draws behind the routing p-value, which is floored at 1/(n+1). Defaults to 100000. |
-| `-tau` | Extraction rate a placement or clock-tree stage must reach to pass. Defaults to 0.75. |
+| `-cts_claims` | Claim file from the clock-tree watermark. |
+| `-min_stages` | Stages that must pass. Defaults to `2`. |
+| `-placement_claims` | Claim file from the placement watermark. |
+| `-routing_alpha` | Largest p-value the routing stage may show and still pass. Defaults to `1e-4`. |
+| `-routing_fraction` | The fraction the routing mark was embedded with. Defaults to `0.02`. |
+| `-routing_key_hex` | 64-character hex routing key. Checks the routing stage. |
+| `-routing_permutations` | Draws behind the routing p-value, which floors it at 1/(n+1). Defaults to `100000`. |
+| `-tau` | Extraction rate a placement or clock-tree stage must reach. Defaults to `0.75`. |
 
 At least one of `-placement_claims`, `-cts_claims` or `-routing_key_hex` is
 required.
 
-The routing stage also reports a closed-form bound on the same tail, which is
-exact when the marked nets carry no wrong-way metal at all. That is the case a
-working watermark produces, and it reaches probabilities far below anything
-sampling can express: on a routed jpeg the sampled p-value bottoms out at its
-floor of 1e-5 while the closed form gives 1e-515.9. The decision uses whichever
-is smaller.
+The routing stage also reports a closed-form bound on the same tail, exact when
+the marked nets carry no wrong-way metal. That is the case a working watermark
+produces, and it reaches probabilities sampling cannot express: on a routed jpeg
+the sampled p-value floors at 1e-5 while the closed form gives 1e-515. The
+decision uses whichever is smaller.
 
 #### Claim file format
 
-A claim file records what an embedder committed to: which objects it marked and
-what value it drove each one to. It is the evidence a verifier checks, so its
-format is defined here rather than by whichever tool produced it.
+A claim file records what an embedder committed to. It is comma-separated with a
+header row, and columns are matched by name, so a producer may emit them in any
+order and add columns of its own. Values are not quoted, so instance names must
+not contain commas.
 
-The file is comma-separated with a header row naming the columns. Columns are
-matched by name, so a producer may emit them in any order and may add columns of
-its own; the ones below are the only ones read. Values are not quoted, and
-instance names must therefore not contain commas.
+A row is checked unless `skipped_reason` is non-empty. The value
+`already_satisfied` is the exception: the object already carried the target value
+and needed no edit, which is still a claim.
 
-A row is checked unless `skipped_reason` is non-empty, with one exception:
-`already_satisfied` means the object already carried the target value and needed
-no edit, which is still a claim the owner can verify.
-
-`skipped_reason` marks a candidate the embedder never claimed, and nothing else.
-A pair it selected, tried to mark and failed to mark is a claim like any other,
-and must be written as one: it will not hold, and the extraction rate will say
-so. Excusing it instead would let a claim file choose its own denominator, and
-a rate computed that way is 1 on every design, marked or not, which is no
-evidence at all. For the same reason the verifier does not consult a row's
-record of how its own embedding turned out.
+`skipped_reason` marks a candidate that was never claimed. A pair the embedder
+selected, tried to mark and failed to mark is a claim like any other and must be
+written as one; it will not hold, and the extraction rate will say so.
 
 **Placement claims** describe pairs of cells in the same row. The bit is which of
-the two sits further left, comparing the x coordinate of each instance bounding
-box.
+the two sits further left, comparing instance bounding boxes.
 
 | Column | Meaning |
 | ----- | ----- |
-| `kind` | `pair`; rows of any other kind are ignored. |
+| `kind` | `pair`; other kinds are ignored. |
 | `A_name`, `B_name` | Instance names of the marked pair. |
-| `target_bit` | `0` if A was driven to sit left of B, `1` otherwise. |
-| `skipped_reason` | Empty or `already_satisfied` to be checked; any other value skips the row. |
+| `target_bit` | `0` if A was driven left of B, `1` otherwise. |
+| `skipped_reason` | Empty or `already_satisfied` to be checked. |
 
 ```text
 kind,id,A_name,B_name,target_bit,skipped_reason
@@ -372,14 +320,13 @@ pair,_070839_|_070816_,_070839_,_070816_,1,
 ```
 
 **CTS claims** describe leaf clock buffers. The bit is the parity of the buffer's
-sequential fanout: the number of sequential clock sinks on the net its single
-output drives.
+sequential fanout.
 
 | Column | Meaning |
 | ----- | ----- |
 | `target_lcb` | Instance name of the marked leaf clock buffer. |
-| `target_bit` | Parity the key called for, `0` or `1`. This is what is checked. |
-| `final_bit` | Parity the embedder managed to leave behind. Recorded for the owner's benefit and not read by the verifier, for the reason given above. |
+| `target_bit` | Parity the key called for, `0` or `1`. |
+| `final_bit` | Parity the embedder achieved. Recorded for the owner; not read by the verifier. |
 | `skipped_reason` | As above. |
 
 ```text
@@ -388,41 +335,19 @@ pair_idx,target_lcb,other_lcb,target_bit,final_bit,skipped_reason
 ```
 
 A claim naming an instance that is not in the design counts against the
-extraction rate rather than aborting the check, so a partially disturbed layout
-still produces a verdict.
-
-## Python
-
-The same work can be done from `openroad -python`. The commands above are Tcl
-procedures, but what they wrap is a `Watermark` object reachable from the
-design:
-
-```python
-from openroad import Tech, Design
-import wmk
-
-watermark = design.getWatermark()
-options = wmk.PlacementOptions()
-watermark.placementWatermark(key_hex, options, "wm_place.csv")
-watermark.selectNetsKeyed(key_hex, 0.02)
-result = watermark.verifyPlacement("wm_place.csv")
-```
-
-A key is passed either as the 64-character hex string the Tcl commands take or
-as 32 raw bytes; anything else is refused rather than padded or truncated into
-a key. Key generation has no Python entry point of its own -- use
-`design.evalTclString("generate_watermark_key -design_id ...")`.
+extraction rate rather than aborting the check.
 
 ## Example scripts
 
-Mark all three stages, each at the point in the flow that produces what it
-marks:
+Mark all three stages:
 
 ```tcl
 detailed_placement
 place_watermark -key_hex $place_key -claims_file wm_place.csv
 
 clock_tree_synthesis -buf_list $buffers -root_buf $root_buf
+set_propagated_clock [all_clocks]
+estimate_parasitics -placement
 cts_watermark -key_hex $cts_key -claims_file wm_cts.csv
 
 set_routing_watermark -key_hex $route_key -fraction 0.02
@@ -431,8 +356,7 @@ global_route
 detailed_route
 ```
 
-Check a suspect layout. Nothing but the claim files and the routing key is
-needed, and the design need not be one this process built:
+Check a suspect layout, which need not be one this process built:
 
 ```tcl
 read_db suspect.odb
@@ -455,62 +379,49 @@ Simply run the following script:
 
 ## Limitations
 
-A technology whose router never wires against the preferred direction produces
-no wrong-way wirelength, so the routing carrier does not exist there. The stage
-reports this and is skipped rather than counted as a failure, and ownership has
-to rest on placement and the clock tree. ASAP7 is such a technology: across a
-routed `aes`, all 12613 signal nets carry zero wrong-way metal, where the same
-design on NanGate45 has 8943 of 15649 nets using some.
+-   A technology whose router never wires against the preferred direction has no
+    routing carrier. The stage reports this and is skipped, and ownership rests
+    on placement and the clock tree. ASAP7 is such a technology.
+-   Watermark tags are not serialized to distributed workers, so the routing bias
+    is not applied in distributed detailed routing.
+-   Capacity is a property of the design. A sparse or timing-tight design may
+    yield few placement pairs or none, and a shallow clock tree too few leaf
+    buffers to pair.
+-   Database units differ between platforms, so `-hpwl_eps_dbu` is not the same
+    physical size everywhere: 100 units is 0.05 um on NanGate45 and 1.0 um on
+    ASAP7.
+-   Certificate sealing and the timestamped key commitment are not part of this
+    module. Their guarantee comes from an independent timestamping authority
+    rather than from anything the tool can check.
 
-The tag is mirrored onto the router's own net objects when the design is read,
-and those objects are not serialized to distributed workers, so the bias is not
-applied in distributed detailed routing.
+## Using the Python interface to wmk
 
-The placement mark's timing check needs timing to be set up too, for a reason
-worth stating: moving a cell changes only its parasitics, and nothing
-recomputes those until asked. Without liberty and constraints the check would
-compare each slack against itself and never find anything, so the command says
-so rather than reporting that the marks were free.
+The same work can be done from `openroad -python` through the `Watermark` object
+on the design:
 
-The clock-tree mark needs timing to be set up. Skew is what decides whether a
-sink may be moved, and a design read straight from a database has no liberty
-and no constraints attached, so skew cannot be evaluated and the guard has
-nothing to enforce. The command says so and proceeds, but the marks it commits
-that way have not been checked against the clock. Read liberty and constraints
-first.
+```python
+from openroad import Tech, Design
+import wmk
 
-The skew guard also bounds capacity, and on a tight clock it bounds it hard. On
-a routed ASAP7 `aes` -- 380 ps period, 7.8 ps skew -- 14 of 26 pairs were turned
-away because moving a sink would have cost skew, leaving the extraction rate at
-0.46 and the stage below threshold. The same command on NanGate45 marks every
-pair it claims. `-skew_margin_ns` trades one against the other.
+watermark = design.getWatermark()
+options = wmk.PlacementOptions()
+watermark.placementWatermark(key_hex, options, "wm_place.csv")
+watermark.selectNetsKeyed(key_hex, 0.02)
+result = watermark.verifyPlacement("wm_place.csv")
+```
 
-How many bits a design can carry is a property of the design. A sparse or
-timing-tight design may yield few placement pairs or none, and a shallow clock
-tree may have too few leaf buffers to pair. The commands report what they
-committed; a design that commits nothing has no placement or clock-tree
-evidence to offer, and the routing stage has to stand on its own.
-
-This module generates keys, marks a design with them and reads the marks back.
-It does not seal, notarize or store anything. Sealing the claims into an
-encrypted certificate, and registering a timestamped commitment to the key
-before the layout is released, is what makes a mark evidence of *who* owns the
-design rather than only that *someone* marked it -- and that step belongs
-outside a place-and-route tool. It needs an independent timestamping authority
-over the network, it needs key custody, and its guarantee comes from the
-timestamp rather than from anything the tool can check. The claim files and the
-stage keys are the interface to it.
+A key is passed as the 64-character hex string or as 32 raw bytes. Anything else
+is refused. Key generation has no Python entry point; use
+`design.evalTclString("generate_watermark_key -design_id ...")`.
 
 ## References
 
-1. Kahng, A. B., Mantik, S., Markov, I. L., Potkonjak, M., Tucker, P., Wang, H.,
-   & Wolfe, G. Robust IP watermarking methodologies for physical design. In
-   International Symposium on Physical Design (ISPD), 1998. The routing
-   watermark implemented here.
-1. Kahng, A. B., Lach, J., Mangione-Smith, W. H., Mantik, S., Markov, I. L.,
-   Potkonjak, M., Tucker, P., Wang, H., & Wolfe, G. Watermarking techniques for
-   intellectual property protection. In Design Automation Conference (DAC),
-   1998.
+1.  Kahng, A. B., & Liu, Y. Kerckhoffs-Compliant Watermarking for Physical Design
+    IP Protection: From Placement to Routing.
+    [(arXiv)](https://arxiv.org/pdf/2608.05055)
+1.  Kahng, A. B., Mantik, S., Markov, I. L., Potkonjak, M., Tucker, P., Wang, H.,
+    & Wolfe, G. Robust IP watermarking methodologies for physical design. In
+    International Symposium on Physical Design (ISPD), 1998.
 
 ## License
 
