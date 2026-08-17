@@ -35,18 +35,18 @@ ArcDelayCalc* DmpCeffLambertWDelayCalc::copy()
 static double gateModelRd(const LibertyCell* cell,
                           const GateTableModel* gate_model,
                           const RiseFall* rf,
-                          double in_slew,
-                          double c2,
-                          double c1,
+                          const double in_slew,
+                          const double c2,
+                          const double c1,
                           const Pvt* pvt)
 {
-  float cap1 = c1 + c2;
-  float cap2 = cap1 + 1e-15;
+  const float cap1 = c1 + c2;
+  const float cap2 = cap1 + 1e-15;
   float d1, d2, s1, s2;
   gate_model->gateDelay(pvt, in_slew, cap1, d1, s1);
   gate_model->gateDelay(pvt, in_slew, cap2, d2, s2);
-  double vth = cell->libertyLibrary()->outputThreshold(rf);
-  float rd = -std::log(vth) * std::abs(d1 - d2) / (cap2 - cap1);
+  const double vth = cell->libertyLibrary()->outputThreshold(rf);
+  const float rd = -std::log(vth) * std::abs(d1 - d2) / (cap2 - cap1);
   return rd;
 }
 
@@ -54,7 +54,7 @@ ArcDcalcResult DmpCeffLambertWDelayCalc::gateDelay(
     const Pin* drvr_pin,
     const TimingArc* arc,
     const Slew& in_slew,
-    float load_cap,
+    const float load_cap,
     const Parasitic* parasitic,
     const LoadPinIndexMap& load_pin_index_map,
     const Scene* scene,
@@ -95,16 +95,16 @@ ArcDcalcResult DmpCeffLambertWDelayCalc::gateDelay(
     report_->error(1040, "parasitic Pi model has NaNs.");
   }
 
-  float in_slew1 = delayAsFloat(in_slew);
+  const float in_slew1 = delayAsFloat(in_slew);
 
   const Pvt* pvt = pinPvt(drvr_pin, scene, min_max);
-  double rd = gateModelRd(drvr_cell, table_model, rf, in_slew1, c2, c1, pvt);
-  CeffResult ceff_res = calculateCeff(
+  const double rd = gateModelRd(drvr_cell, table_model, rf, in_slew1, c2, c1, pvt);
+  const CeffResult ceff_res = calculateCeff(
       drvr_library, drvr_cell, pvt, table_model, rf, rd, in_slew1, c2, rpi, c1);
 
-  double ceff = ceff_res.ceff;
-  double gate_delay = ceff_res.gate_delay;
-  double drvr_slew = ceff_res.drvr_slew;
+  const double ceff = ceff_res.ceff;
+  const double gate_delay = ceff_res.gate_delay;
+  const double drvr_slew = ceff_res.drvr_slew;
 
   // Copy the drive and delay slew and modify them if pocv is enabled!
   ArcDelay gate_delay2(gate_delay);
@@ -146,7 +146,7 @@ ArcDcalcResult DmpCeffLambertWDelayCalc::gateDelay(
 }
 
 void DmpCeffLambertWDelayCalc::loadDelaySlew(const Pin* load_pin,
-                                             double drvr_slew,
+                                             const double drvr_slew,
                                              const RiseFall* rf,
                                              const LibertyLibrary* drvr_library,
                                              const Parasitic* parasitic,
@@ -206,35 +206,35 @@ void DmpCeffLambertWDelayCalc::loadDelaySlew(const Pin* load_pin,
 
   // OpenSTA's parasitic reduction engine (reduceToPiPoleResidue2) returns
   // positive decay constants (p1 > 0, p2 > 0) representing pole magnitudes.
-  double p1 = pole1.real();
-  double k1 = residue1.real();
-  double p2 = pole2.real();
-  double k2 = residue2.real();
+  const double p1 = pole1.real();
+  const double k1 = residue1.real();
+  const double p2 = pole2.real();
+  const double k2 = residue2.real();
 
   // k1_p1_2 = k1 / (p1^2) and k2_p2_2 = k2 / (p2^2) are the
   // coefficients of the exponential decay terms in the second-order
   // ramp response. They represent the contribution of each pole to
   // the overall system delay.
-  double k1_p1_2 = k1 / (p1 * p1);
-  double k2_p2_2 = k2 / (p2 * p2);
+  const double k1_p1_2 = k1 / (p1 * p1);
+  const double k2_p2_2 = k2 / (p2 * p2);
   // B is the sum of these coefficients, representing the Elmore
   // delay (first moment) of the two-pole transfer function.
-  double B = k1_p1_2 + k2_p2_2;
+  const double B = k1_p1_2 + k2_p2_2;
 
-  float tt = delayAsFloat(drvr_slew) * slew_derate_lambert_
-             / (vh_lambert_ - vl_lambert_);
-  double y_tt
+  const float tt = delayAsFloat(drvr_slew) * slew_derate_lambert_
+                   / (vh_lambert_ - vl_lambert_);
+  const double y_tt
       = (tt - B + k1_p1_2 * std::exp(-p1 * tt) + k2_p2_2 * std::exp(-p2 * tt))
         / tt;
 
-  double C = k1_p1_2;
-  double D_vth = vth_lambert_ * tt + B;
-  double arg_vth = -p1 * C * std::exp(-p1 * D_vth);
+  const double C = k1_p1_2;
+  const double D_vth = vth_lambert_ * tt + B;
+  const double arg_vth = -p1 * C * std::exp(-p1 * D_vth);
 
-  double D_vl = vl_lambert_ * tt + B;
-  double arg_vl = -p1 * C * std::exp(-p1 * D_vl);
-  double D_vh = vh_lambert_ * tt + B;
-  double arg_vh = -p1 * C * std::exp(-p1 * D_vh);
+  const double D_vl = vl_lambert_ * tt + B;
+  const double arg_vl = -p1 * C * std::exp(-p1 * D_vl);
+  const double D_vh = vh_lambert_ * tt + B;
+  const double arg_vh = -p1 * C * std::exp(-p1 * D_vh);
 
   static constexpr double inv_e = -1.0 / std::numbers::e;
 
@@ -259,33 +259,33 @@ void DmpCeffLambertWDelayCalc::loadDelaySlew(const Pin* load_pin,
   wire_delay = loadDelay(vth_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vth)
                - tt * vth_lambert_;
 
-  float tl = loadDelay(vl_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vl);
-  float th = loadDelay(vh_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vh);
+  const float tl = loadDelay(vl_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vl);
+  const float th = loadDelay(vh_lambert_, p1, k1, k1_p1_2, B, tt, y_tt, arg_vh);
   load_slew = (th - tl) / slew_derate_lambert_;
 
   thresholdAdjust(load_pin, drvr_library, rf, wire_delay, load_slew);
 }
 
-float DmpCeffLambertWDelayCalc::loadDelay(double vth,
-                                          double p1,
-                                          double k1,
-                                          double k1_p1_2,
-                                          double B,
-                                          double tt,
-                                          double y_tt,
-                                          double arg)
+float DmpCeffLambertWDelayCalc::loadDelay(const double vth,
+                                          const double p1,
+                                          const double k1,
+                                          const double k1_p1_2,
+                                          const double B,
+                                          const double tt,
+                                          const double y_tt,
+                                          const double arg)
 {
   if (y_tt < vth) {
-    double exp_arg
+    const double exp_arg
         = k1 * (std::exp(p1 * tt) - 1.0) / ((1.0 - vth) * p1 * p1 * tt);
     if (exp_arg <= 0.0) {
       return 0.0;
     }
     return std::log(exp_arg) / p1;
   } else {
-    double D = vth * tt + B;
-    double w = boost::math::lambert_w0(arg);
-    double delay = D + w / p1;
+    const double D = vth * tt + B;
+    const double w = boost::math::lambert_w0(arg);
+    const double delay = D + w / p1;
     return static_cast<float>(delay);
   }
 }
@@ -296,11 +296,11 @@ CeffResult DmpCeffLambertWDelayCalc::calculateCeff(
     const Pvt* pvt,
     const GateTableModel* gate_model,
     const RiseFall*,
-    double rd,
-    double in_slew,
-    double c2,
-    double rpi,
-    double c1)
+    const double rd,
+    const double in_slew,
+    const double c2,
+    const double rpi,
+    const double c1)
 {
   double ceff;
   if (rd < 1e-2 || rpi < rd * 1e-3 || c1 == 0.0 || c1 < c2 * 1e-3
@@ -308,15 +308,15 @@ CeffResult DmpCeffLambertWDelayCalc::calculateCeff(
     ceff = c2 + c1;
   } else {
     // Normalized coordinates with reciprocals to avoid divisions
-    double inv_tot = 1.0 / (c1 + c2);
-    double inv_rd = 1.0 / rd;
-    double x = rpi * inv_rd;
-    double y = c2 * inv_tot;
-    double z = in_slew * inv_rd * inv_tot;
+    const double inv_tot = 1.0 / (c1 + c2);
+    const double inv_rd = 1.0 / rd;
+    const double x = rpi * inv_rd;
+    const double y = c2 * inv_tot;
+    const double z = in_slew * inv_rd * inv_tot;
 
-    double y_sqrt = std::sqrt(std::max(y, 0.0));
-    double z2 = z * z;
-    double yz = y_sqrt * z;
+    const double y_sqrt = std::sqrt(std::max(y, 0.0));
+    const double z2 = z * z;
+    const double yz = y_sqrt * z;
 
     // 18-coeff Padé coefficients.
     // To regenerate these coefficients:
@@ -344,12 +344,12 @@ CeffResult DmpCeffLambertWDelayCalc::calculateCeff(
       return c[0] + c[1] * y_sqrt + c[2] * z + c[3] * y + c[4] * yz + c[5] * z2;
     };
 
-    double a1 = eval_poly(a1_coef);
-    double b1 = eval_poly(b1_coef);
-    double b2 = eval_poly(b2_coef);
+    const double a1 = eval_poly(a1_coef);
+    const double b1 = eval_poly(b1_coef);
+    const double b2 = eval_poly(b2_coef);
 
-    double num = 1.0 + a1 * x;
-    double den = 1.0 + b1 * x + b2 * x * x;
+    const double num = 1.0 + a1 * x;
+    const double den = 1.0 + b1 * x + b2 * x * x;
 
     double k = num / std::max(den, 1e-9);
     k = std::clamp(k, 0.0, 1.0);
