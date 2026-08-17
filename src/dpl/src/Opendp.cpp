@@ -366,7 +366,15 @@ void Opendp::findDisplacementStats()
 
 void Opendp::optimizeMirroring()
 {
-  OptimizeMirroring opt(logger_, db_);
+  // Mirroring swaps the left/right cell edges, so the cell edge spacing rules
+  // have to be rechecked for every candidate, which needs the grid and the
+  // DRC engine.
+  importDb();
+  adjustNodesOrient();
+  initGrid();
+  setGridCells();
+  OptimizeMirroring opt(
+      logger_, db_, network_.get(), grid_.get(), drc_engine_.get());
   opt.run();
 }
 
