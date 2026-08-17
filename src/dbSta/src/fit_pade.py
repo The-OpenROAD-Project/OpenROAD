@@ -19,7 +19,7 @@ def main():
     )
     parser.add_argument(
         "--csv_path",
-        default="third_party/open_road/src/dbSta/src/ceff_training_data.csv",
+        default="src/dbSta/src/ceff_training_data.csv",
         help="Path to the training CSV file.",
     )
     parser.add_argument(
