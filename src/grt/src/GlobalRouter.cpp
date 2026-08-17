@@ -621,16 +621,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  bool diode_only,
                                  const int num_threads)
 {
-  if (use_cugr_ && jumper_only) {
-    // Jumper insertion queries FastRoute-only edge resources; with CUGR
-    // antennas are repaired with diodes only.
-    logger_->warn(GRT,
-                  310,
-                  "Jumper insertion is not supported with CUGR yet; "
-                  "skipping antenna repair.");
-    logger_->metric("antenna_diodes_count", total_diodes_count_);
-    return 0;
-  }
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
@@ -759,9 +749,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           num_threads);
     // if run in GRT and it need run jumper insertion
     std::vector<odb::dbNet*> nets_with_jumpers;
-    // Jumper insertion depends on FastRoute edge resources
-    // (hasAvailableResources); with CUGR go straight to diodes.
-    if (!use_cugr_ && !diode_only && repair_antennas_->hasNewViolations()
+    if (!diode_only && repair_antennas_->hasNewViolations()
         && !haveDetailedRoutes(nets_to_repair)) {
       // Run jumper insertion and clean
       repair_antennas_->jumperInsertion(routes_,
