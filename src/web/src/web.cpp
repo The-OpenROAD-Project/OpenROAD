@@ -1109,6 +1109,34 @@ static std::string assetDataUri(const std::string_view path,
          + base64Encode(asset->content());
 }
 
+// Offset of the next url( token at or after `from`, or npos.
+//
+// css is case-insensitive for the token, so URL( and Url( are the same thing.
+// What comes before it matters too: a miss refuses to save the report (see
+// ReportAssets), so matching the tail of an identifier -- "myurl(" -- would
+// turn a stylesheet the browser reads fine into a refusal.
+static size_t findUrlToken(const std::string_view css, const size_t from)
+{
+  const auto lower = [](const char c) {
+    return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  };
+  const auto in_identifier = [&lower](const char c) {
+    return (lower(c) >= 'a' && lower(c) <= 'z') || (c >= '0' && c <= '9')
+           || c == '_' || c == '-';
+  };
+  for (size_t at = from; at + 4 <= css.size(); ++at) {
+    if (css[at + 3] != '(' || lower(css[at]) != 'u' || lower(css[at + 1]) != 'r'
+        || lower(css[at + 2]) != 'l') {
+      continue;
+    }
+    if (at > 0 && in_identifier(css[at - 1])) {
+      continue;
+    }
+    return at;
+  }
+  return std::string_view::npos;
+}
+
 // Rewrite the url() references inside a stylesheet to data: URIs.  Without
 // this the icons would resolve against the directory the report was saved in.
 static std::string inlineStylesheetUrls(const std::string_view css,
@@ -1118,7 +1146,7 @@ static std::string inlineStylesheetUrls(const std::string_view css,
   std::string result;
   size_t pos = 0;
   while (true) {
-    const size_t open = css.find("url(", pos);
+    const size_t open = findUrlToken(css, pos);
     if (open == std::string_view::npos) {
       break;
     }

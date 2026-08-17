@@ -247,10 +247,23 @@ def check(lock):
     return 0
 
 
-def extract_member(tar, name, dest):
+def extract_member(tar, name, root, rel):
+    """Extract one file of the tarball to root/rel.
+
+    A member name reaches this from the tarball itself when a bundled tree is
+    extracted, so where it lands has to be shown to stay under root rather than
+    assumed to -- and the digest is no help on a --rewrite-lock run, which is
+    precisely the run where the tarball is one nobody has seen before.
+    """
     member = tar.getmember(name)
     if not member.isfile():
         raise RuntimeError(f"{name} is not a regular file")
+
+    root = os.path.realpath(root)
+    dest = os.path.realpath(os.path.join(root, rel))
+    if dest != root and not dest.startswith(root + os.sep):
+        raise RuntimeError(f"{name} would write outside {root}")
+
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     with tar.extractfile(member) as src, open(dest, "wb") as out:
         shutil.copyfileobj(src, out)
@@ -298,7 +311,7 @@ def esbuild_binary(lock, work_dir, rewrite_lock):
         f.write(data)
     binary = os.path.join(work_dir, "esbuild")
     with tarfile.open(archive) as tar:
-        extract_member(tar, "package/bin/esbuild", binary)
+        extract_member(tar, "package/bin/esbuild", work_dir, "esbuild")
     os.chmod(binary, os.stat(binary).st_mode | stat.S_IXUSR)
     return binary
 
@@ -309,8 +322,7 @@ def bundle(spec, tar, lock, work_dir, rewrite_lock):
     prefix = "package/" + spec["tree"]
     for member in tar.getmembers():
         if member.isfile() and member.name.startswith(prefix):
-            rel = member.name[len("package/") :]
-            extract_member(tar, member.name, os.path.join(tree_dir, rel))
+            extract_member(tar, member.name, tree_dir, member.name[len("package/") :])
 
     if not os.path.exists(os.path.join(tree_dir, spec["entry"])):
         raise RuntimeError(f"bundle entry point not found: {spec['entry']}")
@@ -374,9 +386,7 @@ def update(lock, rewrite_lock):
                 f.write(data)
             with tarfile.open(archive) as tar:
                 for source, dest in spec["files"].items():
-                    extract_member(
-                        tar, "package/" + source, os.path.join(THIS_DIR, dest)
-                    )
+                    extract_member(tar, "package/" + source, THIS_DIR, dest)
                     written.append(dest)
                 if "bundle" in spec:
                     written.append(

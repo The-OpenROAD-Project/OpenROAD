@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cctype>
 #include <cstddef>
 #include <filesystem>
@@ -282,8 +283,18 @@ TEST_F(SaveReportTest, StylesheetIconsAreInlined)
 
   const auto expectNoRelativeUrl = [](const std::string& css,
                                       const std::string& what) {
+    // css is case-insensitive for the token, so look for it in a lowered
+    // copy -- same length, so the offsets index the original -- or a
+    // URL( left behind by an upgrade would pass unnoticed.
+    std::string lowered = css;
+    std::transform(lowered.begin(),
+                   lowered.end(),
+                   lowered.begin(),
+                   [](const unsigned char c) {
+                     return static_cast<char>(std::tolower(c));
+                   });
     for (size_t open = 0;
-         (open = css.find("url(", open)) != std::string::npos;) {
+         (open = lowered.find("url(", open)) != std::string::npos;) {
       const size_t close = css.find(')', open);
       ASSERT_NE(close, std::string::npos) << what;
       const std::string reference = css.substr(open + 4, close - (open + 4));
