@@ -119,17 +119,28 @@ def _normalize_bits(field: Field, klass: Class, flags_struct: Struct) -> int:
 
 def _add_type_includes(field: Field, klass: Class) -> None:
     """Add system headers required by the field's std/cstdint type."""
+    # The header is always needed in the .h (the field is declared there). The
+    # .cpp only references the type by name when a body is emitted for it (cmp,
+    # serial, or get); a fully-suppressed field (e.g. an alignment pad) does
+    # not, so adding the include to the .cpp would trip include-cleaner.
+    cpp_emits_type = not (
+        "no-cmp" in field.flags
+        and "no-serial" in field.flags
+        and "no-get" in field.flags
+    )
     # Handle types from <cstdint> that are also in the global namespace (eg uint32_t)
     hdr = STD_TYPE_HDR.get(field.type)
     if hdr:
         klass.h_sys_includes.append(hdr)
-        klass.cpp_sys_includes.append(hdr)
+        if cpp_emits_type:
+            klass.cpp_sys_includes.append(hdr)
 
     if field.type.startswith("std::"):
         for t in re.findall(r"std::(\w+)", field.type):
             hdr = STD_TYPE_HDR.get(t, t)
             klass.h_sys_includes.append(hdr)
-            klass.cpp_sys_includes.append(hdr)
+            if cpp_emits_type:
+                klass.cpp_sys_includes.append(hdr)
 
 
 def _apply_argument_and_visibility(field: Field) -> None:

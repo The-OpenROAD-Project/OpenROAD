@@ -26,6 +26,7 @@ exports_files([
     "BUILD.bazel",
     "LICENSE",
     "MODULE.bazel",
+    "README.md",
     "src/Design.i",
     "src/Exception.i",
     "src/options.i",
@@ -532,8 +533,9 @@ build_test(
 # ---------------------------------------------------------------------------
 # Lint & tidy targets
 #
-# bazelisk test //:lint_test   — run all lint checks
-# bazelisk run  //:fix_lint    — auto-fix then lint
+# bazelisk test //:lint_test               — run all lint checks
+# bazelisk run  //:fix_lint                — auto-fix then lint in OpenROAD
+# bazelisk run  //tools/OpenROAD:fix_lint  — auto-fix then lint in ORFS / downstream repos
 # ---------------------------------------------------------------------------
 
 # --- TCL linting (tclint) -------------------------------------------------
@@ -548,10 +550,12 @@ sh_test(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclint",
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- TCL formatting check (tclfmt --check) --------------------------------
@@ -566,10 +570,12 @@ sh_test(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclfmt",
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- TCL auto-format only (tclfmt --in-place) -----------------------------
@@ -584,9 +590,11 @@ sh_binary(
     ],
     data = [
         "tclint.toml",
+        "//bazel:git_ls_files.sh",
         "//bazel:tclfmt",
         "@git",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel linting (buildifier -lint=warn) --------------------------------
@@ -601,10 +609,12 @@ sh_test(
     ],
     data = [
         "MODULE.bazel",
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel formatting check (buildifier -mode=check -lint=off) ------------
@@ -619,10 +629,12 @@ sh_test(
     ],
     data = [
         "MODULE.bazel",
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
     tags = ["local"],
+    visibility = ["//visibility:public"],
 )
 
 # --- Bazel auto-format only (buildifier -mode=fix) ------------------------
@@ -636,9 +648,51 @@ sh_binary(
         "$(rootpath @git)",
     ],
     data = [
+        "//bazel:git_ls_files.sh",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
+    visibility = ["//visibility:public"],
+)
+
+# --- YAML formatting check (yamlfix) ---------------------------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_yaml_test",
+    srcs = ["//bazel:yaml_fmt_test.sh"],
+    args = [
+        "$(rootpath //bazel:yamlfix)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "MODULE.bazel",
+        "yamlfix.ignore",
+        "yamlfix.toml",
+        "//bazel:yamlfix",
+        "@git",
+    ],
+    tags = ["local"],
+    visibility = ["//visibility:public"],
+)
+
+# --- YAML auto-format only (yamlfix) ---------------------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_yaml",
+    srcs = ["//bazel:yaml_tidy.sh"],
+    args = [
+        "$(rootpath //bazel:yamlfix)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "yamlfix.ignore",
+        "yamlfix.toml",
+        "//bazel:yamlfix",
+        "@git",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 # --- Umbrella targets ------------------------------------------------------
@@ -648,13 +702,17 @@ test_suite(
     tests = [
         ":fmt_bzl_test",
         ":fmt_tcl_test",
+        ":fmt_yaml_test",
         ":lint_bzl_test",
         ":lint_tcl_test",
     ],
+    visibility = ["//visibility:public"],
 )
 
 # Linting is done here (not just formatting) because not all lint violations
 # are auto-fixable — fix_lint fixes what it can, then reports the rest.
+# Downstream workspaces (such as OpenROAD-flow-scripts) can run this directly
+# from their repo root via `bazelisk run //tools/OpenROAD:fix_lint`.
 # buildifier: disable=native-sh-binary
 sh_binary(
     name = "fix_lint",
@@ -669,17 +727,25 @@ sh_binary(
         "$(rootpath //bazel:bzl_lint_test.sh)",
         "$(rootpath @buildifier_prebuilt//:buildifier)",
         "$(rootpath @git)",
+        "$(rootpath //bazel:yaml_tidy.sh)",
+        "$(rootpath //bazel:yamlfix)",
     ],
     data = [
         "MODULE.bazel",
         "tclint.toml",
+        "yamlfix.ignore",
+        "yamlfix.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
+        "//bazel:git_ls_files.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",
         "//bazel:tclint",
+        "//bazel:yaml_tidy.sh",
+        "//bazel:yamlfix",
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
+    visibility = ["//visibility:public"],
 )

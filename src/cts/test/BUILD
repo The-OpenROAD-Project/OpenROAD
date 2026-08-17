@@ -43,6 +43,7 @@ COMPULSORY_TESTS = [
     "inverters",
     "lvt_lib",
     "max_cap",
+    "max_wl_two_sinks",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",

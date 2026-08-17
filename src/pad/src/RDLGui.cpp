@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <map>
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -13,10 +14,11 @@
 #include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace pad {
 
-RDLGui::RDLGui()
+RDLGui::RDLGui(utl::Logger* logger) : logger_(logger)
 {
   addDisplayControl(kDrawVertex, true);
   addDisplayControl(kDrawEdge, true);
@@ -268,8 +270,10 @@ void RDLGui::setRouter(RDLRouter* router)
   }
 }
 
-void RDLGui::pause(bool timeout) const
+void RDLGui::pause(const std::string& reason, bool timeout) const
 {
+  logger_->report("Pausing RDL router: {}", reason);
+
   gui::Gui::get()->redraw();
 
   if (timeout) {

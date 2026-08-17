@@ -11,6 +11,9 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
+    "3dic_cross",
+    "3dic_get_cells",
+    "3dic_read_db",
     "block_sta1",
     "check_axioms",
     "clock_pin",
@@ -56,6 +59,7 @@ ALL_TESTS = [
     "report_cell_usage_modinsts",
     "report_cell_usage_modinsts_metrics",
     "report_cell_usage_physical_only",
+    "report_cell_usage_wide_columns",
     "report_json1",
     "report_timing_histogram",
     "report_logic_depth_histogram",
@@ -111,6 +115,28 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "3dic_cross": [
+                "//src/odb/test:regression_resources",
+                "3dic_cross_flop.3dbv",
+                "3dic_cross_flop_a.bmap",
+                "3dic_cross_flop_a.def",
+                "3dic_cross_flop_b.bmap",
+                "3dic_cross_flop_b.def",
+                "3dic_cross_top.v",
+            ],
+            "3dic_get_cells": [
+                "//src/odb/test:regression_resources",
+            ],
+            "3dic_read_db": [
+                "//src/odb/test:regression_resources",
+                "3dic_cross.3dbx",
+                "3dic_cross_flop.3dbv",
+                "3dic_cross_flop_a.bmap",
+                "3dic_cross_flop_a.def",
+                "3dic_cross_flop_b.bmap",
+                "3dic_cross_flop_b.def",
+                "3dic_cross_top.v",
+            ],
             "block_sta1": [
                 "example1_typ.lib",
                 "example1.def",
@@ -204,6 +230,10 @@ filegroup(
             ],
             "report_cell_usage_physical_only": [
                 "report_cell_usage_no_taps.def",
+            ],
+            "report_cell_usage_wide_columns": [
+                "Nangate45/fakeram45_1024x32.lef",
+                "report_cell_usage.def",
             ],
             "report_json1": [
                 "reg6.def",

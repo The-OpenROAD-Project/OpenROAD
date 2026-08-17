@@ -31,6 +31,7 @@
 #include "odb/geom.h"
 #include "omp.h"
 #include "utl/Logger.h"
+#include "utl/unionFind.h"
 
 namespace ant {
 
@@ -491,55 +492,101 @@ void AntennaChecker::Impl::calculateAreas(
     const LayerToGraphNodes& node_by_layer_map,
     GateToLayerToNodeInfo& gate_info)
 {
+  struct GateData
+  {
+    bool is_valid = false;
+    double gate_area = 0.0;
+    double diff_area = 0.0;
+  };
+  odb::PtrMap<odb::dbMTerm, GateData> gate_data;
+  auto getGateData = [&](odb::dbMTerm* mterm) -> const GateData& {
+    auto [iter, inserted] = gate_data.try_emplace(mterm);
+    if (inserted) {
+      iter->second = {.is_valid = isValidGate(mterm),
+                      .gate_area = gateArea(mterm),
+                      .diff_area = diffArea(mterm)};
+    }
+    return iter->second;
+  };
+
   for (const auto& it : node_by_layer_map) {
-    for (const auto& node_it : it.second) {
-      NodeInfo info;
-      double area = gtl::area(node_it->pol);
-      // convert from dbu^2 to microns^2
-      area = block_->dbuToMicrons(area);
-      area = block_->dbuToMicrons(area);
-      info.area = area;
-      int gates_count = 0;
-      std::vector<odb::dbITerm*> iterms;
-      for (const auto& gate : node_it->gates) {
+    double wire_thickness = 0.0;
+    if (it.first->getRoutingLevel() != 0) {
+      uint32_t wire_thickness_dbu = 0;
+      it.first->getThickness(wire_thickness_dbu);
+      wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
+    }
+    // group the layer nodes by the iterms they reach
+    const int node_count = it.second.size();
+    std::vector<bool> has_gate(node_count, false);
+    odb::PtrMap<odb::dbITerm, std::vector<int>> nodes_by_iterm;
+    for (int i = 0; i < node_count; i++) {
+      for (const auto& gate : it.second[i]->gates) {
         if (!gate.is_iterm) {
           continue;
         }
-
-        if (isValidGate(gate.iterm->getMTerm())) {
-          info.iterms.push_back(gate.iterm);
+        nodes_by_iterm[gate.iterm].push_back(i);
+        if (getGateData(gate.iterm->getMTerm()).is_valid) {
+          has_gate[i] = true;
         }
-        info.iterm_gate_area += gateArea(gate.iterm->getMTerm());
-        info.iterm_diff_area += diffArea(gate.iterm->getMTerm());
-        gates_count++;
       }
-      if (gates_count == 0) {
+    }
+    // nodes sharing an iterm are one physical piece of metal (the pin
+    // geometry bridges them, whatever the pin's direction), so merge them
+    // transitively
+    utl::UnionFind groups(node_count);
+    for (const auto& [iterm, node_ids] : nodes_by_iterm) {
+      for (const int node_id : node_ids) {
+        groups.unite(node_ids.front(), node_id);
+      }
+    }
+    // a group is checked when any of its nodes reaches a valid gate
+    std::vector<bool> group_has_gate(node_count, false);
+    for (int i = 0; i < node_count; i++) {
+      if (has_gate[i]) {
+        group_has_gate[groups.find(i)] = true;
+      }
+    }
+    // sum the geometry of each checked group's nodes
+    std::vector<NodeInfo> info_by_group(node_count);
+    for (int i = 0; i < node_count; i++) {
+      const size_t group = groups.find(i);
+      if (!group_has_gate[group]) {
         continue;
       }
-
+      NodeInfo& info = info_by_group[group];
+      const auto area = static_cast<int64_t>(gtl::area(it.second[i]->pol));
+      info.area += block_->dbuAreaToMicrons(area);
       if (it.first->getRoutingLevel() != 0) {
         // Calculate side area of wire
-        uint32_t wire_thickness_dbu = 0;
-        it.first->getThickness(wire_thickness_dbu);
-        double wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
-        info.side_area = block_->dbuToMicrons(gtl::perimeter(node_it->pol)
-                                              * wire_thickness);
+        info.side_area += block_->dbuToMicrons(gtl::perimeter(it.second[i]->pol)
+                                               * wire_thickness);
       }
-      // put values on struct
-      for (const auto& gate : node_it->gates) {
-        if (!gate.is_iterm) {
-          continue;
+    }
+    // each iterm contributes once to every group it touches
+    for (const auto& [iterm, node_ids] : nodes_by_iterm) {
+      std::set<size_t> iterm_groups;
+      for (const int node_id : node_ids) {
+        const size_t group = groups.find(node_id);
+        if (group_has_gate[group]) {
+          iterm_groups.insert(group);
         }
-        if (!isValidGate(gate.iterm->getMTerm())) {
-          continue;
+      }
+      const GateData& data = getGateData(iterm->getMTerm());
+      for (const size_t group : iterm_groups) {
+        NodeInfo& info = info_by_group[group];
+        if (data.is_valid) {
+          info.iterms.push_back(iterm);
         }
-        // check if has another node with gate in the layer, then merge area
-        if (gate_info[gate.iterm].find(it.first)
-            != gate_info[gate.iterm].end()) {
-          gate_info[gate.iterm][it.first] += info;
-        } else {
-          gate_info[gate.iterm][it.first] = info;
-        }
+        info.iterm_gate_area += data.gate_area;
+        info.iterm_diff_area += data.diff_area;
+      }
+    }
+    // every gate of a group shares the same record
+    for (const auto& [iterm, node_ids] : nodes_by_iterm) {
+      if (getGateData(iterm->getMTerm()).is_valid) {
+        gate_info[iterm][it.first]
+            = info_by_group[groups.find(node_ids.front())];
       }
     }
   }
@@ -552,7 +599,6 @@ void AntennaChecker::Impl::calculatePAR(GateToLayerToNodeInfo& gate_info)
     for (auto& layer_it : gate_it.second) {
       NodeInfo& gate_info = layer_it.second;
       odb::dbTechLayer* tech_layer = layer_it.first;
-      NodeInfo info;
       if (tech_layer->getRoutingLevel() == 0) {
         calculateViaPar(tech_layer, gate_info);
       } else {

@@ -1305,12 +1305,15 @@ class dbBlock : public dbObject
   /// If corresponding_flat_net is nullptr, any findNet() hit is a collision.
   /// If corresponding_flat_net is non-null, only internal flat nets excluding
   /// the corresponding one are collisions (lenient mode for ModNet creation).
+  /// If associated_bterm is non-null, that exact top-level port may reuse the
+  /// candidate name while its net association is being updated.
   ///
   std::string makeNewNetName(const dbModule* parent = nullptr,
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
                              = dbNameUniquifyType::ALWAYS,
-                             dbNet* corresponding_flat_net = nullptr);
+                             dbNet* corresponding_flat_net = nullptr,
+                             const dbBTerm* associated_bterm = nullptr);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
@@ -5910,10 +5913,6 @@ class dbTech : public dbObject
   ///
   std::string getName();
 
-  void setExtractionRulesFile(const std::string& path);
-
-  std::string getExtractionRulesFile();
-
   ///
   /// Get the Database units per micron.
   ///
@@ -7702,8 +7701,6 @@ class dbDatabase : public dbObject
 
   void setHierarchy(bool value);
   bool hasHierarchy() const;
-
-  bool hasHierarchicalChip() const;
 
   void setTopChip(dbChip* chip);
   ///

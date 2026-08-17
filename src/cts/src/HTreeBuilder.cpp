@@ -1244,6 +1244,7 @@ void HTreeBuilder::run()
 
   initSinkRegion();
 
+  double prevMaxHPWL = std::numeric_limits<double>::max();
   for (int level = 1; level <= clockTreeMaxDepth_; ++level) {
     const unsigned numSinksPerSubRegion
         = computeNumberOfSinksPerSubRegion(level);
@@ -1283,6 +1284,18 @@ void HTreeBuilder::run()
                                                  : numMaxLeafSinks_);
           break;
         }
+        if (maxHPWL >= prevMaxHPWL) {
+          logger_->info(CTS,
+                        54,
+                        " Stop criterion found. Sink region hpwl "
+                        "({:.3f} um) did not improve and max "
+                        "number of sinks is {}.",
+                        maxHPWL / options_->getDbUnits(),
+                        options_->getMaxFanout() ? options_->getMaxFanout()
+                                                 : numMaxLeafSinks_);
+          break;
+        }
+        prevMaxHPWL = maxHPWL;
       } else {
         logger_->info(CTS,
                       32,
