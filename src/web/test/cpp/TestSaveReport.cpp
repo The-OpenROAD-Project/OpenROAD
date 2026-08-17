@@ -185,10 +185,8 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   EXPECT_TRUE(contains(html, "ChartsWidget"));
 }
 
-// The widget sources are concatenated into one <script type="module">, with
-// their own import/export statements stripped by embed_report_assets.py.  One
-// that survives is a syntax error, and a syntax error there costs every widget
-// in the report at once -- with nothing but a console message to say so.
+// The widget sources share one <script type="module">, with their import/export
+// statements stripped: one that survives costs every widget in the report.
 TEST_F(SaveReportTest, InlinedScriptHasNoModuleSyntaxLeft)
 {
   const std::string path = tempHtml("module_syntax");
@@ -203,9 +201,8 @@ TEST_F(SaveReportTest, InlinedScriptHasNoModuleSyntaxLeft)
   const std::string module
       = html.substr(begin + opening.size(), end - begin - opening.size());
 
-  // The generator marks every source it concatenates, so the first marker is
-  // the boundary: before it, the imports web.cpp writes for the libraries the
-  // report inlines; after it, code that must carry no module syntax at all.
+  // The generator marks every source, so the first marker is the boundary:
+  // before it the header's imports, after it code with no module syntax.
   const size_t body = module.find("// ── ");
   ASSERT_NE(body, std::string::npos);
 
@@ -234,18 +231,16 @@ TEST_F(SaveReportTest, InlinedScriptHasNoModuleSyntaxLeft)
   EXPECT_EQ(header_imports, 2);
 }
 
-// The report opens from file:// with no server and no network, so everything
-// it needs is inlined: nothing may be left pointing at a remote host
-// (issue #11065).
+// The report opens from file:// with nothing behind it, so nothing in it may
+// point at a remote host (issue #11065).
 TEST_F(SaveReportTest, IsSelfContained)
 {
   const std::string path = tempHtml("self_contained");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // Nothing may be fetched: no attribute, url() or module specifier naming a
-  // remote origin.  Bare occurrences of "http://" are left alone because the
-  // widgets carry XML namespace strings, which are identifiers, not fetches.
+  // No attribute, url() or specifier may name a remote origin.  Bare "http://"
+  // is left alone: the widgets carry XML namespaces, which are identifiers.
   for (const char* fetch : {"src=\"http",
                             "src='http",
                             "href=\"http",
@@ -271,10 +266,9 @@ TEST_F(SaveReportTest, IsSelfContained)
   EXPECT_TRUE(contains(html, "from 'three'"));
 }
 
-// The icons the stylesheets ask for are reached through relative urls, which
-// resolve against the saved file's directory unless they too are inlined.  The
-// rule holds for every stylesheet in the report -- the inlined <style> block as
-// much as the vendored ones -- so it survives one being added or upgraded.
+// A relative icon url resolves against the saved file's directory, so every
+// stylesheet in the report -- the <style> block included -- has to be
+// rewritten.
 TEST_F(SaveReportTest, StylesheetIconsAreInlined)
 {
   const std::string path = tempHtml("css_icons");

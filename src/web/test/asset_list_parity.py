@@ -2,12 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# The web assets are listed once for Bazel (src/web/BUILD) and once for CMake
-# (src/web/CMakeLists.txt), and nothing else ties the two together.  A file
-# added to one and forgotten in the other gives a viewer that 404s it under the
-# other build system, and for the report the lists are ordered -- the files are
-# concatenated into one scope, so a different order means different code runs.
-# Both have already drifted once (issue #11065).  This test is the tie.
+# The web assets are listed once for Bazel and once for CMake, and nothing else
+# ties the two together: a file forgotten in one 404s under that build system,
+# and the report's list is ordered, since its files share one scope.  Both have
+# drifted once already.  This test is the tie.
 
 import os
 import re

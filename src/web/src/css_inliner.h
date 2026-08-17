@@ -12,9 +12,8 @@
 
 namespace web {
 
-// Looking assets up through this rather than through a bare Logger is what lets
-// the saved report be refused: one that ships with a src="" opens to a blank
-// page, and the icons a stylesheet reaches through url() are part of that.
+// Remembers a miss, which is what lets the saved report be refused: one that
+// ships with a src="" opens to a blank page.
 class ReportAssets
 {
  public:
@@ -29,20 +28,17 @@ class ReportAssets
   bool missing_ = false;
 };
 
-// Offset of the next url( token at or after `from`, or npos.  The token is
-// case-insensitive, and it has to be a token: matching the tail of an
-// identifier -- "myurl(" -- would refuse a report the browser reads fine.
+// Offset of the next url( token at or after `from`, or npos.  Case-insensitive,
+// and it has to be a token: "myurl(" is not one.
 size_t findUrlToken(std::string_view css, size_t from);
 
-// Resolve a reference found inside a stylesheet ("images/x.png",
-// "../../img/y.png") against the directory the stylesheet is served from.  A
-// reference that starts at the root replaces the directory.  The result is a
-// lookup key, not a file name.
+// Resolve a stylesheet reference ("images/x.png", "../../img/y.png") against
+// the directory the stylesheet is served from, into a lookup key.
 std::string resolveAssetPath(std::string_view base_dir,
                              std::string_view reference);
 
-// Rewrite the url() references inside a stylesheet to data: URIs.  Without this
-// the icons would resolve against the directory the report was saved in.
+// Rewrite the url() references to data: URIs; a relative one would resolve
+// against wherever the report was saved.
 std::string inlineStylesheetUrls(std::string_view css,
                                  std::string_view base_dir,
                                  ReportAssets& assets);

@@ -28,27 +28,19 @@ struct EmbeddedAssetEntry
 // or nullptr if not found.
 const EmbeddedAsset* findEmbeddedAsset(std::string_view path);
 
-// Iteration over the whole asset table, so a test can hold every asset to the
-// rule that none of them loads anything remote.
+// Iteration over the whole asset table, for the test that holds every asset to
+// the rule that none of them loads anything remote.
 size_t embeddedAssetCount();
 const EmbeddedAssetEntry& embeddedAssetAt(size_t index);
 
-// CSP source expressions for the inline <script> blocks in the embedded HTML,
-// computed at build time by embed_web_assets.py -- today just the import map
-// in index.html.  Generated rather than written down so the policy cannot
-// drift from the markup it allows.
+// CSP source expressions for the inline <script> blocks, computed from the
+// markup at build time so the policy cannot drift from what it allows.
 std::string_view inlineScriptHashes();
 
-// Content-Security-Policy served with every response.  Every asset comes from
-// this process, so the policy names no remote origin at all: a reintroduced CDN
-// reference then fails loudly in the browser instead of quietly fetching remote
-// code (issue #11065).  base-uri matters for the same reason -- the assets are
-// loaded through relative paths, which an injected <base href> would redirect.
-//
-// Each relaxation is one the viewer is measurably broken without, and none of
-// them lets a remote origin back in.  Nothing is listed for a use the viewer
-// does not have yet: default-src 'none' then denies it, and a denial names the
-// missing directive in the console.
+// Content-Security-Policy served with every response.  It names no remote
+// origin, so a reintroduced CDN reference fails visibly instead of fetching
+// (issue #11065); base-uri because the assets load through relative paths.
+// Every relaxation below is one the viewer does not work without:
 //   script-src <hashes>       the import map in index.html
 //   script-src 'unsafe-eval'  netlistsvg validates its input with ajv, which
 //                             compiles JSON schemas through new Function()
@@ -71,10 +63,9 @@ inline const std::string& contentSecurityPolicy()
   return policy;
 }
 
-// The same policy for the saved report, which carries it in a <meta> element
-// because a file:// document has no headers.  Everything there is inlined into
-// the one file, so 'self' means nothing and data: has to be a script source;
-// what the policy still buys is that the report cannot reach the network.
+// The same policy for the saved report, in a <meta> because a file:// document
+// has no headers.  Everything there is inlined, so 'self' means nothing and
+// data: has to be a script source; what it still buys is connect-src 'none'.
 inline constexpr std::string_view kReportContentSecurityPolicy
     = "default-src 'none'; "
       "script-src 'unsafe-inline' 'unsafe-eval' data:; "

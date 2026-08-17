@@ -2,9 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 //
 // The viewer used to load JavaScript from CDNs, one of them over plain http
-// (issue #11065).  Everything is vendored and served from the binary now, and
-// these tests are what keeps it that way: a reintroduced CDN reference fails
-// here rather than in a browser on someone else's network.
+// (issue #11065).  These tests are what keeps a reintroduced reference failing
+// here rather than in someone else's browser.
 
 #include <cstddef>
 #include <string>
@@ -109,10 +108,8 @@ int countInlineScripts(const std::string_view markup)
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
-// The policy is what turns a reintroduced CDN reference into a visible browser
-// error rather than a quiet fetch, so it must not name a remote origin -- nor a
-// wildcard, which would admit one.  Checking the properties, not the exact
-// text: the relaxations the libraries need are free to change.
+// The policy must name no remote origin, nor a wildcard, which would admit one.
+// Properties, not exact text: the relaxations are free to change.
 TEST(WebAssets, ContentSecurityPolicyIsSameOriginOnly)
 {
   const std::string& csp = contentSecurityPolicy();
@@ -139,10 +136,8 @@ TEST(WebAssets, ReportContentSecurityPolicyForbidsTheNetwork)
   EXPECT_FALSE(contains(csp, "*"));
 }
 
-// Inline scripts run only if the policy carries their hash, and the hashes are
-// generated from the markup at build time.  If a new inline block is added and
-// the generator misses it, the block silently stops running -- so hold the two
-// to the same count, and keep 'unsafe-inline' out, which would mask all of it.
+// An inline block the generator missed silently stops running, so hold the two
+// to the same count -- and keep 'unsafe-inline' out, which would mask it.
 TEST(WebAssets, EveryInlineScriptIsCoveredByAHash)
 {
   const EmbeddedAsset* index = findEmbeddedAsset("/index.html");
@@ -185,9 +180,8 @@ TEST(WebAssets, NoAssetReferencesAnExternalHost)
 {
   for (size_t i = 0; i < embeddedAssetCount(); ++i) {
     const EmbeddedAssetEntry& entry = embeddedAssetAt(i);
-    // The vendored libraries are third-party code carrying URLs in comments
-    // and string tables; what matters is that they are served from here rather
-    // than fetched, which the asset table itself proves.
+    // Vendored code carries URLs in comments and string tables; what matters is
+    // that it is served from here, which the asset table proves.
     if (isVendored(entry.path)) {
       continue;
     }
@@ -252,9 +246,8 @@ TEST(WebAssets, BinaryAssetsAreEmbeddedVerbatim)
             std::string_view("\x89PNG\r\n\x1a\n", 8));
 }
 
-// The vendored libraries are the first assets served from a subdirectory.
-// Flatten the request target to a file name and every one of them 404s, with
-// the asset table still looking perfectly correct.
+// Flatten the request target to a file name and every vendored asset 404s, with
+// the table still looking correct.
 TEST(WebAssets, VendoredPathsSurviveTargetParsing)
 {
   for (const char* target :

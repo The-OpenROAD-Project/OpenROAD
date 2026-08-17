@@ -18,12 +18,9 @@ JS_DELIMITER = "__JS__"
 
 def process_js_file(content):
     """Process a single JS file for concatenation into a shared scope."""
-    # Remove the import statements: the files end up concatenated into one
-    # scope, so the bindings are already there.  The match is anchored on the
-    # quoted specifier that ends every import, not on the semicolon, which may
-    # be absent: [^'";]* spans the newlines a multi-line import needs but cannot
-    # cross a ; (it would swallow the next statement) nor a quote (it would
-    # swallow a string).  What this misses is caught by check_no_module_syntax.
+    # Remove the imports: concatenated into one scope, the bindings are already
+    # there.  Anchored on the quoted specifier, not on the semicolon, which may
+    # be absent -- and [^'";]* then cannot swallow the next statement.
     content = re.sub(
         r"^import\b[^'\";]*(['\"])[^'\"\n]*\1[ \t]*;?[ \t]*$",
         "",
@@ -37,10 +34,8 @@ def process_js_file(content):
     #   2. export { InternalA as ExportedA, InternalB, ... }
     exported_names = []
 
-    # Pattern 1: export [async] function/class/const Name.  An export form that
-    # is not matched here survives into the concatenated script, where it is a
-    # syntax error that kills every widget in the saved report -- so anything
-    # added to the JS has to be covered.
+    # Pattern 1: export [async] function/class/const Name.  A form not matched
+    # here survives as a syntax error; check_no_module_syntax catches it.
     def capture_export_decl(m):
         keyword = m.group(1)  # [async] function, class, or const
         name = m.group(2)
@@ -110,12 +105,7 @@ def process_js_file(content):
 
 
 def check_embeddable(text, delimiter, what):
-    """Refuse content a raw string literal cannot carry verbatim.
-
-    The delimiter would end the literal early, and a carriage return or NUL does
-    not survive into the string -- each of them silently corrupts the generated
-    source instead of failing the build.
-    """
+    """Refuse content a raw string literal cannot carry verbatim."""
     if f'){delimiter}"' in text:
         raise SystemExit(f'{what} contains the raw string delimiter ){delimiter}"')
     for name, character in (("a carriage return", "\r"), ("a NUL", "\0")):
@@ -126,9 +116,7 @@ def check_embeddable(text, delimiter, what):
 def check_no_module_syntax(js):
     """Fail on an import/export the patterns above did not strip.
 
-    Left in place it is a syntax error in the concatenated <script type="module">
-    of the saved report, which costs every widget in it at once -- so it fails
-    the build here instead, where the cause is visible.
+    Left in place it is a syntax error that costs every widget in the report.
     """
     leftover = re.search(r"^[ \t]*(import|export)\b.*$", js, flags=re.MULTILINE)
     if leftover:

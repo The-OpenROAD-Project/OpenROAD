@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 //
-// The saved report rewrites the url() references inside the stylesheets it
-// inlines, because a relative one would resolve against wherever the file was
-// saved (issue #11065).  A reference the scanner misses ships a broken report;
-// one it invents refuses to save a report the browser reads fine.  Both edges
-// are pinned here, against the vendored icons the viewer really serves.
+// The saved report rewrites the url() references in the stylesheets it inlines
+// (issue #11065).  One the scanner misses ships a broken report; one it invents
+// refuses a good one.  Both edges are pinned here, against the real icons.
 
 #include <cstddef>
 #include <string>
@@ -30,8 +28,7 @@ bool contains(const std::string& haystack, const std::string_view needle)
 
 TEST(CssInliner, UrlTokenIsCaseInsensitive)
 {
-  // css does not care about the case of the token, so neither may we: a
-  // dependency bump that emits URL( must not slip a relative reference through.
+  // A dependency bump that emits URL( must not slip a reference through.
   for (const char* css : {"a{background:url(x.png)}",
                           "a{background:URL(x.png)}",
                           "a{background:Url(x.png)}",
@@ -42,15 +39,13 @@ TEST(CssInliner, UrlTokenIsCaseInsensitive)
 
 TEST(CssInliner, UrlTokenHasToBeAToken)
 {
-  // Matching the tail of an identifier would refuse a report over a reference
-  // that is not one.
+  // The tail of an identifier is not a reference.
   EXPECT_EQ(findUrlToken("a{content:myurl(x.png)}", 0), std::string_view::npos);
   EXPECT_EQ(findUrlToken("a{content:foo-url(x.png)}", 0),
             std::string_view::npos);
   EXPECT_EQ(findUrlToken("a{content:x_url(x.png)}", 0), std::string_view::npos);
 
-  // A token boundary, on the other hand, is anything that cannot continue an
-  // identifier -- including the start of the stylesheet.
+  // A boundary is anything that cannot continue an identifier.
   EXPECT_EQ(findUrlToken("url(x.png)", 0), 0u);
   EXPECT_EQ(findUrlToken("a{background:url(x.png)}", 0), 13u);
   EXPECT_EQ(findUrlToken("@import url(x.css);", 0), 8u);
@@ -120,9 +115,8 @@ TEST(CssInliner, AQuotedReferenceMayHoldAParenthesis)
   utl::Logger logger;
   ReportAssets assets(&logger);
 
-  // The token ends at the quote, not at the first ')': ending it early would
-  // cut the stylesheet in half.  No such icon is vendored, so the reference
-  // resolves to nothing -- which is the miss the report is refused over.
+  // The token ends at the quote, not the first ')', which would cut the
+  // stylesheet in half.  No such icon exists, so it resolves to a miss.
   const std::string out = inlineStylesheetUrls(
       "a{background:url(\"a(b).png\")}!", kLeafletDir, assets);
   EXPECT_EQ(out, "a{background:url(\"\")}!");

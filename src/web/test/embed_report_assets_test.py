@@ -2,11 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# embed_report_assets.py strips ES module syntax with regexes and concatenates
-# the widget sources into one <script type="module"> for the saved report.  A
-# statement it fails to strip is a syntax error that kills every widget in the
-# report at once; a statement it strips too much of deletes code silently.  Both
-# have happened (issue #11065), so the shapes are pinned here.
+# embed_report_assets.py strips ES module syntax with regexes to concatenate the
+# widget sources into one <script type="module">.  A statement it misses is a
+# syntax error that costs every widget; one it over-strips deletes code in
+# silence.  Both have happened, so the shapes are pinned here.
 
 import importlib.util
 import os
@@ -45,7 +44,7 @@ def stripped_imports():
         "double quotes": 'import { X } from "./x.js";\nconst kept = 1;\n',
         # websocket-tile-layer.js imports over several lines.
         "multi-line": "import {\n  a,\n  b,\n} from './x.js';\nconst kept = 1;\n",
-        # No semicolon: the regex used to eat everything up to the next one.
+        # No semicolon: the regex used to eat up to the next one.
         "no semicolon": "import X from './x.js'\nconst kept = 1;\nlet also = 2;\n",
     }
     for name, source in cases.items():
@@ -89,12 +88,11 @@ def exported_names_forwarded():
 
 
 def unhandled_forms_fail_the_build():
-    """What the patterns do not cover has to stop the build, not the browser."""
+    """What the patterns miss has to stop the build, not the browser."""
     for name, source in {
         "export default": "export default 1;\n",
         "export let": "export let counter = 0;\n",
-        # Dynamic import is left in place on purpose: it cannot be resolved in
-        # the concatenated scope, so it has to be seen rather than deleted.
+        # Left in place on purpose: it cannot be resolved in one scope.
         "dynamic import": "import('./x.js')\n",
     }.items():
         processed = embed.process_js_file(source)

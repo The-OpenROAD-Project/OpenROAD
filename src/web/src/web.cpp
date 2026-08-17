@@ -1055,10 +1055,8 @@ static std::string base64Encode(const std::vector<unsigned char>& data)
 }
 
 // ── Inlining the vendored libraries into the saved report ──
-//
-// The report is one file, opened with no server and no network behind it, so
-// every asset index.html loads over http is inlined here as a data: URI
-// instead (issue #11065).
+// The report is one file, opened with no server behind it, so every asset the
+// viewer loads is inlined here as a data: URI (issue #11065).
 
 std::string resolveAssetPath(const std::string_view base_dir,
                              const std::string_view reference)
@@ -1093,8 +1091,7 @@ static std::string assetDataUri(const std::string_view path,
 
 size_t findUrlToken(const std::string_view css, const size_t from)
 {
-  // Driven off the '(' because it is the rarer character, so the scan is a
-  // memchr rather than a byte loop.
+  // Driven off the '(' so the scan is a memchr and not a byte loop.
   for (size_t paren = from;
        (paren = css.find('(', paren)) != std::string_view::npos;
        ++paren) {
@@ -1126,8 +1123,7 @@ std::string inlineStylesheetUrls(const std::string_view css,
       break;
     }
     // A quoted reference may hold a parenthesis, so its closing quote bounds
-    // the token; an unquoted one ends at the ')'.  Either way the span of the
-    // reference is known here, so there is nothing left to trim or unquote.
+    // the token; an unquoted one ends at the ')'.
     const size_t first = css.find_first_not_of(" \t\r\n", open + 4);
     if (first == std::string_view::npos) {
       break;
@@ -1176,9 +1172,8 @@ std::string inlineStylesheetUrls(const std::string_view css,
   return result;
 }
 
-// data: URI for an embedded stylesheet, with its own references inlined.  The
-// references resolve against the directory the stylesheet is served from, which
-// is the path itself minus the file name.
+// data: URI for an embedded stylesheet, with its own references inlined
+// against the directory it is served from.
 static std::string stylesheetDataUri(const std::string_view path,
                                      ReportAssets& assets)
 {
@@ -1475,8 +1470,7 @@ import * as THREE from 'three';
   out.close();
 
   if (assets.missing()) {
-    // The warnings above name what was missed; what matters here is that no
-    // one is told a blank report was saved.
+    // The warnings above name what was missed; no one is told this was saved.
     std::filesystem::remove(filename);
     logger_->error(utl::WEB,
                    45,

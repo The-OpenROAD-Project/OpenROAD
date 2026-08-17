@@ -4,17 +4,12 @@
 #
 # Refresh the vendored browser assets under src/web/third-party.
 #
-# The web viewer serves every JavaScript and CSS file from the OpenROAD binary
-# itself; it must never fetch code from a CDN (issue #11065) and has to work on
-# a machine with no network.  The files under this directory are therefore
-# checked in, and this script is what produces them -- it is run by hand when a
-# dependency is upgraded, never by the CMake or Bazel build.
-#
-# Everything comes from the npm registry, which is immutable once a version is
-# published, and every byte is verified against vendor.lock.json.  Only python3
-# and network access are needed: golden-layout is the one package that ships no
-# browser-ready bundle, and the esbuild binary used to produce one is itself
-# downloaded from npm and pinned in the lock.
+# The viewer serves them from the OpenROAD binary and must never fetch code from
+# a CDN (issue #11065), so they are checked in and this script is what produces
+# them: run by hand on an upgrade, never by the build.  Everything comes from the
+# npm registry and every byte is verified against vendor.lock.json.  golden-layout
+# is the one package with no browser bundle, so esbuild -- itself downloaded and
+# pinned -- makes one.
 #
 # Usage:
 #   ./update_vendor.py                # re-download and rewrite the tree
@@ -57,11 +52,8 @@ _GOLDEN_LAYOUT_IMAGES = [
 ]
 
 # name -> version, plus the members to copy out of the tarball as
-# <path in tarball, without the leading "package/"> -> <path under this dir>.
-#
-# The directory layout each package ships is preserved, because the stylesheets
-# reach their icons through relative urls: leaflet.css asks for "images/*.png"
-# and the golden-layout themes for "../../img/*.png".
+# <path in tarball, without "package/"> -> <path under this dir>.  Each package's
+# layout is preserved: the stylesheets reach their icons through relative urls.
 PACKAGES = {
     "leaflet": {
         "version": "1.9.4",
@@ -97,10 +89,8 @@ PACKAGES = {
                 for name in _GOLDEN_LAYOUT_IMAGES
             },
         },
-        # No browser build is published: the ES module tree under dist/esm has
-        # to be bundled into a single file, both so index.html can load it with
-        # one request and so the saved report can inline it as a data: URI
-        # (relative imports do not resolve from a data: URL).
+        # No browser build is published, and the saved report needs one file: a
+        # relative import does not resolve from a data: URL.
         "bundle": {
             "tree": "dist/esm/",
             "entry": "dist/esm/index.js",
@@ -214,9 +204,8 @@ def check(lock):
         print("vendor.lock.json lists no files", file=sys.stderr)
         return 1
 
-    # The digests only say the tree matches the lock; this says the lock matches
-    # what the script would fetch today, which a version bumped without re-running
-    # it would not.
+    # The digests say the tree matches the lock; this says the lock matches what
+    # the script would fetch today.
     problems = pinned_versions(lock)
 
     for rel, digest in sorted(expected.items()):
@@ -250,9 +239,8 @@ def check(lock):
 def extract_member(tar, name, root, rel):
     """Extract one file of the tarball to root/rel, and return where it landed.
 
-    A bundled tree gives rel from the tarball itself, so where it lands has to be
-    shown to stay under root -- and on a --rewrite-lock run there is no digest to
-    have caught it earlier.
+    A bundled tree takes rel from the tarball, so it has to be shown to stay
+    under root -- on a --rewrite-lock run no digest would have caught it.
     """
     member = tar.getmember(name)
     if not member.isfile():
@@ -285,9 +273,8 @@ def esbuild_binary(lock, work_dir, rewrite_lock):
     )
     downloaded = {}
     if rewrite_lock:
-        # Record every platform, not only this host's: with one machine's digest
-        # in the lock, the first run anywhere else would have nothing to verify
-        # the binary it is about to execute against.
+        # Every platform, not only this host's: otherwise the first run
+        # elsewhere has nothing to verify the binary against.
         for name in sorted(set(ESBUILD_PLATFORMS.values())):
             downloaded[name] = download(f"@esbuild/{name}", ESBUILD_VERSION)
         pinned = {name: sha256_bytes(data) for name, data in downloaded.items()}
@@ -329,10 +316,8 @@ def bundle(spec, tar, lock, work_dir, rewrite_lock):
 
     output = os.path.join(THIS_DIR, spec["output"])
     os.makedirs(os.path.dirname(output), exist_ok=True)
-    # Run from the extracted tree with a relative entry point: esbuild writes
-    # the path of every module into a comment, so an absolute one would put this
-    # run's temporary directory in the output and the bundle would differ from
-    # one run to the next.
+    # Relative entry point, run from the tree: esbuild writes module paths into
+    # comments, so an absolute one would differ from run to run.
     subprocess.run(
         [
             esbuild_binary(lock, work_dir, rewrite_lock),
@@ -349,9 +334,8 @@ def bundle(spec, tar, lock, work_dir, rewrite_lock):
 
 
 def update(lock, rewrite_lock):
-    # Decided before the first byte moves: a version bumped without
-    # --rewrite-lock used to be caught after the earlier packages had been
-    # downloaded, extracted and written over the tree.
+    # Decided before the first byte moves, so a bump without --rewrite-lock does
+    # not leave the tree half-rewritten.
     if not rewrite_lock:
         stale = pinned_versions(lock)
         if stale:
