@@ -16,6 +16,7 @@ or_integration_tests(
   # their own numbers instead.
   PASSFAIL_TESTS
     cts
+    cts_drive
     cts_guard
     keygen
     place

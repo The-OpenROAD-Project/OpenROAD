@@ -94,7 +94,9 @@ place_watermark_cmd(const char* key_hex,
                     int pairs_per_tile,
                     double slack_threshold_ns,
                     int hpwl_eps_dbu,
-                    int max_disp_um)
+                    int max_disp_um,
+                    int min_pairs_total,
+                    double guard_degrade_ns)
 {
   std::array<std::uint8_t, 32> key;
   if (!wmk::parse_hex_key32(std::string(key_hex), key)) {
@@ -108,6 +110,9 @@ place_watermark_cmd(const char* key_hex,
   opts.slack_threshold_ns = slack_threshold_ns;
   opts.hpwl_eps_dbu = hpwl_eps_dbu;
   opts.max_disp_um = max_disp_um;
+  opts.min_pairs_total = min_pairs_total;
+  opts.guard_degrade_ns = guard_degrade_ns;
+  opts.post_guard = guard_degrade_ns > 0.0;
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
   return w->placementWatermark(key, opts, std::string(claims_file));
 }
@@ -117,7 +122,9 @@ cts_watermark_cmd(const char* key_hex,
                   const char* claims_file,
                   int num_pairs,
                   double sibling_dist_um,
-                  double skew_margin_ns)
+                  double skew_margin_ns,
+                  double slew_headroom_frac,
+                  double cap_headroom_frac)
 {
   std::array<std::uint8_t, 32> key;
   if (!wmk::parse_hex_key32(std::string(key_hex), key)) {
@@ -127,6 +134,8 @@ cts_watermark_cmd(const char* key_hex,
   opts.num_pairs = num_pairs;
   opts.sibling_dist_um = sibling_dist_um;
   opts.skew_margin_ns = skew_margin_ns;
+  opts.slew_headroom_frac = slew_headroom_frac;
+  opts.cap_headroom_frac = cap_headroom_frac;
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
   return w->ctsWatermark(key, opts, std::string(claims_file));
 }

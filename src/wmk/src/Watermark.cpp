@@ -213,6 +213,64 @@ float Watermark::worstClockSkew() const
   return std::isfinite(skew) ? skew : 0.0f;
 }
 
+bool Watermark::driverHeadroomOk(odb::dbInst* inst,
+                                 double slew_frac,
+                                 double cap_frac) const
+{
+  if (!clockSkewAvailable() || inst == nullptr) {
+    return true;
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+
+  odb::dbITerm* out = nullptr;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if (out != nullptr) {
+        return true;  // more than one output: not a buffer we understand
+      }
+      out = iterm;
+    }
+  }
+  if (out == nullptr || out->getNet() == nullptr) {
+    return true;
+  }
+  sta::Pin* pin = network->dbToSta(out);
+  if (pin == nullptr) {
+    return true;
+  }
+
+  // The limits come from the library (and any constraint overriding it), so
+  // what counts as too slow or too loaded is the technology's answer, not a
+  // number chosen here.  A limit the library does not state cannot be
+  // violated, so an absent one is not an objection.
+  const sta::MinMax* max = sta::MinMax::max();
+  const sta::RiseFall* rf = nullptr;
+  const sta::Scene* scene = nullptr;
+
+  sta_->checkSlewsPreamble();
+  sta::Slew slew = 0.0f;
+  float slew_limit = 0.0f;
+  float slew_slack = 0.0f;
+  sta_->checkSlew(
+      pin, sta_->scenes(), max, true, slew, slew_limit, slew_slack, rf, scene);
+  if (slew_limit > 0.0f
+      && (slew_limit - slew) / slew_limit < static_cast<float>(slew_frac)) {
+    return false;
+  }
+
+  sta_->checkCapacitancesPreamble(sta_->scenes());
+  float cap = 0.0f;
+  float cap_limit = 0.0f;
+  float cap_slack = 0.0f;
+  sta_->checkCapacitance(
+      pin, sta_->scenes(), max, cap, cap_limit, cap_slack, rf, scene);
+  if (cap_limit > 0.0f
+      && cap > static_cast<float>(1.0 - cap_frac) * cap_limit) {
+    return false;
+  }
+  return true;
+}
+
 float Watermark::worstSlack(odb::dbInst* inst) const
 {
   if (sta_ == nullptr) {

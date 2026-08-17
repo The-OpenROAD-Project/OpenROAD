@@ -58,6 +58,13 @@ struct PlacementOptions
   int hpwl_eps_dbu = 100;
   // How far legalization may move a cell afterwards, in microns.
   int max_disp_um = 5;
+  // Below this many pairs the design is searched again with the gates widened,
+  // because a design that yields only a handful of bits cannot prove much.
+  int min_pairs_total = 64;
+  // After legalization, a pair whose cells lost more slack than this is put
+  // back.  A watermark that costs timing is not worth the evidence.
+  double guard_degrade_ns = 0.02;
+  bool post_guard = true;
 };
 
 // One committed placement mark: the pair, and which order the key called for.
@@ -84,6 +91,12 @@ struct CtsOptions
   // rejects 14 of 26 pairs and leaves the extraction rate at 0.46; 20 ps
   // accepts all 26 and costs about 1 ps of skew.
   double skew_margin_ns = 0.020;
+  // Fraction of a leaf buffer's liberty slew and capacitance limits that must
+  // remain unused after a sink has moved onto it.  The limits come from the
+  // library rather than from a number fixed here, so the check follows
+  // whatever technology the design is built in.
+  double slew_headroom_frac = 0.20;
+  double cap_headroom_frac = 0.20;
 };
 
 // One committed clock tree mark.
@@ -212,6 +225,31 @@ class Watermark
                             int permutations = 100000);
 
  private:
+  // What one committed pair moved, so it can be put back if the design turns
+  // out to have paid for it in timing.
+  struct PlacementEdit
+  {
+    odb::dbInst* a = nullptr;
+    odb::dbInst* b = nullptr;
+    odb::Point a_loc;
+    odb::Point b_loc;
+    float a_slack = 0.0f;
+    float b_slack = 0.0f;
+  };
+
+  // embedPlacement, also reporting what it moved.
+  int embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
+                          const PlacementOptions& opts,
+                          std::vector<PlacementClaim>& claims,
+                          std::vector<PlacementEdit>& edits);
+
+  // Does this driver still have the headroom the library asks for, once
+  // whatever was going to be connected to it has been?  True when there is no
+  // timing to consult, so an unscreened design is not blocked outright.
+  bool driverHeadroomOk(odb::dbInst* inst,
+                        double slew_frac,
+                        double cap_frac) const;
+
   // Worst slack over an instance's pins, in seconds.  Returns the maximum
   // representable value when no timing has been set up, so that an unscreened
   // design does not silently reject every candidate.

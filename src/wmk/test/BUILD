@@ -9,6 +9,7 @@ package(features = ["layering_check"])
 # they change their output, so they assert their own numbers instead.
 PASSFAIL_TESTS = [
     "cts",
+    "cts_drive",
     "cts_guard",
     "keygen",
     "place",
@@ -20,6 +21,7 @@ TESTS = [
     "bias",
     "bias_neutral",
     "cts",
+    "cts_drive",
     "cts_guard",
     "keygen",
     "place",

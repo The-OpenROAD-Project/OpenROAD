@@ -186,6 +186,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   std::vector<bool> claimed(lcbs.size(), false);
   int rejected_skew = 0;
   int rejected_no_sink = 0;
+  int rejected_drive = 0;
   int held = 0;
   int moved = 0;
 
@@ -242,12 +243,27 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
         dbNet* origin = sink->getNet();
         sink->disconnect();
         sink->connect(dest);
-        if (skew_known
-            && worstClockSkew() > skew_before + opts.skew_margin_ns * 1e-9f) {
-          // The mark would cost clock skew, so put the sink back.
+        const bool skew_ok
+            = !skew_known
+              || worstClockSkew() <= skew_before + opts.skew_margin_ns * 1e-9f;
+        // The buffer that gained a sink now drives more load, so whether it
+        // still can is the library's question, not one this code should answer
+        // with a number of its own.
+        const bool drive_ok
+            = driverHeadroomOk(
+                  target, opts.slew_headroom_frac, opts.cap_headroom_frac)
+              && driverHeadroomOk(
+                  other, opts.slew_headroom_frac, opts.cap_headroom_frac);
+        if (!skew_ok || !drive_ok) {
+          // The mark would cost more than the clock can spare, so put the sink
+          // back.
           sink->disconnect();
           sink->connect(origin);
-          ++rejected_skew;
+          if (!skew_ok) {
+            ++rejected_skew;
+          } else {
+            ++rejected_drive;
+          }
         } else {
           ++moved;
           claim.final_bit = seqFanout(target) % 2;
@@ -272,13 +288,14 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                 73,
                 "CTS watermark: {} pairs claimed from {} leaf clock buffers, "
                 "{} at the keyed parity ({} sinks moved, {} rejected on skew, "
-                "{} with no movable sink).",
+                "{} with no movable sink, {} on drive strength).",
                 static_cast<int>(claims.size()),
                 static_cast<int>(lcbs.size()),
                 held,
                 moved,
                 rejected_skew,
-                rejected_no_sink);
+                rejected_no_sink,
+                rejected_drive);
   return static_cast<int>(claims.size());
 }
 

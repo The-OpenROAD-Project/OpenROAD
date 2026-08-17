@@ -153,7 +153,9 @@ sta::define_cmd_args "place_watermark" {-claims_file file \
                                        [-pairs_per_tile n] \
                                        [-slack_threshold_ns slack] \
                                        [-hpwl_eps_dbu eps] \
-                                       [-max_disp_um disp]}
+                                       [-max_disp_um disp] \
+                                       [-min_pairs_total n] \
+                                       [-guard_degrade_ns ns]}
 
 # Put a keyed subset of same-row, same-width cell pairs into a keyed
 # left-to-right order, writing the committed pairs to -claims_file.  Run after
@@ -162,7 +164,8 @@ sta::define_cmd_args "place_watermark" {-claims_file file \
 proc place_watermark { args } {
   sta::parse_key_args "place_watermark" args \
     keys {-key_hex -claims_file -grid_nx -grid_ny -pair_dist_um \
-          -pairs_per_tile -slack_threshold_ns -hpwl_eps_dbu -max_disp_um} \
+          -pairs_per_tile -slack_threshold_ns -hpwl_eps_dbu -max_disp_um \
+          -min_pairs_total -guard_degrade_ns} \
     flags {}
 
   if { ![info exists keys(-key_hex)] } {
@@ -183,6 +186,8 @@ proc place_watermark { args } {
   set slack 0.20
   set hpwl_eps 100
   set max_disp 5
+  set min_pairs 64
+  set guard_degrade 0.02
   if { [info exists keys(-grid_nx)] } { set grid_nx $keys(-grid_nx) }
   if { [info exists keys(-grid_ny)] } { set grid_ny $keys(-grid_ny) }
   if { [info exists keys(-pair_dist_um)] } { set pair_dist $keys(-pair_dist_um) }
@@ -190,9 +195,12 @@ proc place_watermark { args } {
   if { [info exists keys(-slack_threshold_ns)] } { set slack $keys(-slack_threshold_ns) }
   if { [info exists keys(-hpwl_eps_dbu)] } { set hpwl_eps $keys(-hpwl_eps_dbu) }
   if { [info exists keys(-max_disp_um)] } { set max_disp $keys(-max_disp_um) }
+  if { [info exists keys(-min_pairs_total)] } { set min_pairs $keys(-min_pairs_total) }
+  if { [info exists keys(-guard_degrade_ns)] } { set guard_degrade $keys(-guard_degrade_ns) }
 
   set rc [wmk::place_watermark_cmd $keys(-key_hex) $keys(-claims_file) \
-            $grid_nx $grid_ny $pair_dist $per_tile $slack $hpwl_eps $max_disp]
+            $grid_nx $grid_ny $pair_dist $per_tile $slack $hpwl_eps $max_disp \
+            $min_pairs $guard_degrade]
   if { $rc < 0 } {
     utl::error WMK 63 "Failed to parse -key_hex: must be 64 hex chars."
   }
@@ -203,7 +211,9 @@ sta::define_cmd_args "cts_watermark" {-claims_file file \
                                      -key_hex key_hex \
                                      [-num_pairs n] \
                                      [-sibling_dist_um dist] \
-                                     [-skew_margin_ns margin]}
+                                     [-skew_margin_ns margin] \
+                                     [-slew_headroom_frac frac] \
+                                     [-cap_headroom_frac frac]}
 
 # Set the sequential fanout parity of a keyed subset of leaf clock buffers,
 # writing the committed pairs to -claims_file.  Run after clock tree synthesis.
@@ -211,7 +221,8 @@ sta::define_cmd_args "cts_watermark" {-claims_file file \
 # clock's worst skew.
 proc cts_watermark { args } {
   sta::parse_key_args "cts_watermark" args \
-    keys {-key_hex -claims_file -num_pairs -sibling_dist_um -skew_margin_ns} \
+    keys {-key_hex -claims_file -num_pairs -sibling_dist_um -skew_margin_ns \
+          -slew_headroom_frac -cap_headroom_frac} \
     flags {}
 
   if { ![info exists keys(-key_hex)] } {
@@ -228,12 +239,16 @@ proc cts_watermark { args } {
   set num_pairs 32
   set dist 20.0
   set margin 0.020
+  set slew_frac 0.20
+  set cap_frac 0.20
   if { [info exists keys(-num_pairs)] } { set num_pairs $keys(-num_pairs) }
   if { [info exists keys(-sibling_dist_um)] } { set dist $keys(-sibling_dist_um) }
   if { [info exists keys(-skew_margin_ns)] } { set margin $keys(-skew_margin_ns) }
+  if { [info exists keys(-slew_headroom_frac)] } { set slew_frac $keys(-slew_headroom_frac) }
+  if { [info exists keys(-cap_headroom_frac)] } { set cap_frac $keys(-cap_headroom_frac) }
 
   set rc [wmk::cts_watermark_cmd $keys(-key_hex) $keys(-claims_file) \
-            $num_pairs $dist $margin]
+            $num_pairs $dist $margin $slew_frac $cap_frac]
   if { $rc < 0 } {
     utl::error WMK 67 "Failed to parse -key_hex: must be 64 hex chars."
   }

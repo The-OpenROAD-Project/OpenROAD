@@ -121,7 +121,9 @@ place_watermark
     [-grid_nx n]
     [-grid_ny n]
     [-hpwl_eps_dbu eps]
+    [-guard_degrade_ns ns]
     [-max_disp_um disp]
+    [-min_pairs_total n]
     [-pair_dist_um dist]
     [-pairs_per_tile n]
     [-slack_threshold_ns slack]
@@ -134,15 +136,23 @@ place_watermark
 | `-claims_file` | Where to write the claims, in the format below. |
 | `-key_hex` | A 64-character hex string, the 32-byte placement key. It fixes each pair's target order and nothing else; which cells are paired does not depend on it. |
 | `-grid_nx`, `-grid_ny` | Tiles across and down the core. Marks are spread over the tiling rather than clustering wherever candidates are densest. Both default to 8. |
+| `-guard_degrade_ns` | After legalization, a pair whose cells lost more slack than this is put back and not claimed. Defaults to 0.02, that is 20 ps. Zero disables the check. |
 | `-hpwl_eps_dbu` | Largest half-perimeter wirelength change, in database units, a swap may cost. Defaults to 100. Database units are not the same size on every platform -- 100 of them is 0.05 um on NanGate45 and 1.0 um on ASAP7 -- so this is worth setting deliberately on a platform it has not been characterised for. |
 | `-max_disp_um` | How far re-legalization may move a cell, in microns. Defaults to 5. |
+| `-min_pairs_total` | Below this many pairs the design is searched again with the neighbourhood widened and the wirelength budget doubled. Defaults to 64. |
 | `-pair_dist_um` | How far along the row to look for a partner, in microns. Defaults to 1.0. |
 | `-pairs_per_tile` | Most pairs to claim per tile. Defaults to 4. |
 | `-slack_threshold_ns` | Cells with less slack than this are left alone, so the mark stays off the paths that set the clock period. Defaults to 0.20. Set to 0 to disable the screen. |
 
-Capacity depends on how densely the design is packed. A design with few
-same-row same-width neighbours, or one whose swaps all cost wirelength, may
-yield no pairs at all; that is a property of the design, not a failure.
+Capacity depends on how densely the design is packed and on how much timing
+slack it has. A design with few same-row same-width neighbours, or one whose
+swaps all cost wirelength, may yield no pairs at all; that is a property of the
+design, not a failure. Falling short of `-min_pairs_total` triggers a second
+pass with the neighbourhood widened and the wirelength budget doubled, but that
+only helps where wirelength or neighbourhood was the binding constraint. Where
+slack is what binds -- on a routed NanGate45 `aes`, 9801 of 14820 cells are
+screened out by the default 0.20 ns threshold -- the second pass adds nothing
+and `-slack_threshold_ns` is the lever that matters.
 
 ### CTS Watermark
 
@@ -155,17 +165,21 @@ flip-flop's clock pin from one buffer of the pair to the other. That leaves the
 flop clocked and the tree connected, and it survives anything that does not add
 or remove a sink -- routing, filling and metal fixes all preserve it.
 
-What it can cost is skew, so a move is undone if it makes the clock's worst skew
-worse. The pair is still claimed; the message reports how many pairs ended at
+What it can cost is skew and drive. A move is undone if it makes the clock's
+worst skew worse, or if it would leave the buffer with less headroom than the
+library allows -- the slew and capacitance limits are read from the liberty
+cell, so the check follows the technology rather than a number fixed here. The pair is still claimed; the message reports how many pairs ended at
 the parity the key asked for.
 
 ```tcl
 cts_watermark
     -claims_file file
     -key_hex key_hex
+    [-cap_headroom_frac frac]
     [-num_pairs n]
     [-sibling_dist_um dist]
     [-skew_margin_ns margin]
+    [-slew_headroom_frac frac]
 ```
 
 #### Options
@@ -174,8 +188,10 @@ cts_watermark
 | ----- | ----- |
 | `-claims_file` | Where to write the claims, in the format below. |
 | `-key_hex` | A 64-character hex string, the 32-byte clock-tree key. It fixes which buffer of each pair carries the mark and what parity it must show. |
+| `-cap_headroom_frac` | Fraction of a buffer's liberty capacitance limit that must stay unused after a sink moves onto it. Defaults to 0.20. |
 | `-num_pairs` | Most pairs to mark. Each carries one bit. Defaults to 32. |
 | `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns, so a moved sink stays local. Defaults to 20.0. |
+| `-slew_headroom_frac` | The same for the buffer's slew limit. Defaults to 0.20. |
 | `-skew_margin_ns` | How much worse the clock's worst skew may get, in nanoseconds. Defaults to 0.020, that is 20 ps. Zero turns the stage off wherever the clock is tight: on a routed ASAP7 `aes` it rejects 14 of 26 pairs. |
 
 ### Set Routing Watermark

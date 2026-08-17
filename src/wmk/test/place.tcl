@@ -11,6 +11,10 @@
 # need that (jpeg commits its per-tile quota at the defaults).  What is being
 # tested is the mark, not the gate values.
 #
+# Twenty-four pairs is the strict pass finding twenty and the capacity fallback
+# adding four more, which is the fallback doing its job on a design that cannot
+# reach the sixty-four it would like.
+#
 # place_unmarked.tcl is the other half: it checks these same claims against
 # the design as it was before embedding, where they must not hold.
 source "helpers.tcl"
@@ -42,7 +46,7 @@ puts "committed $committed pairs"
 # Pinned rather than merely non-zero: capacity quietly collapsing to a handful
 # of pairs would leave a design with too few bits to prove anything, and every
 # other check here would still pass.
-check "the design yields its usual capacity" { set committed } 20
+check "the design yields its usual capacity" { set committed } 24
 check "every committed pair holds" { verify_watermark -placement_claims $claims -min_stages 1 } 1
 
 # Some of those pairs have to be ones the embedder actually reordered.  A pair
@@ -63,7 +67,7 @@ proc count_swapped { path } {
 }
 puts "swapped [count_swapped $claims] of $committed pairs"
 check "and some of them were pairs the embedder had to reorder" \
-  { count_swapped $claims } 13
+  { count_swapped $claims } 14
 
 # Embedding the same key twice must not damage the first mark.  The pairs the
 # second run picks need not be the same ones -- pairing follows the cells along
