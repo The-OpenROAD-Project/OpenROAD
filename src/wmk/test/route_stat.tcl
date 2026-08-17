@@ -15,10 +15,10 @@
 # records instead of length would move when the route did not.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_def 45_gcd.def
+read_def gcd_nangate45.def
 
-set tempting 0011223344556677889900aabbccddeeff00112233445566778899aabbccddee
-set ordinary 5555555555555555555555555555555555555555555555555555555555555555
+set tempting 5555555555555555555555555555555555555555555555555555555555555555
+set ordinary 3333333333333333333333333333333333333333333333333333333333333333
 
 check "a lucky key is not ownership" \
   { verify_watermark -routing_key_hex $tempting -routing_fraction 0.30 } 0

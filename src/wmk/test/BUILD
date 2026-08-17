@@ -4,6 +4,16 @@ load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
+# These run a placer, a clock tree synthesizer or a router.  Pinning those
+# tools' logs inside a watermarking golden would break this module whenever
+# they change their output, so they assert their own numbers instead.
+PASSFAIL_TESTS = [
+    "cts",
+    "cts_guard",
+    "place",
+    "route_verify",
+]
+
 TESTS = [
     "bias",
     "bias_neutral",
@@ -35,5 +45,7 @@ filegroup(
 
 [regression_test(
     name = test_name,
+    check_log = False if test_name in PASSFAIL_TESTS else True,
+    check_passfail = True if test_name in PASSFAIL_TESTS else False,
     data = [":test_resources"],
 ) for test_name in TESTS]
