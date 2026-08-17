@@ -2293,14 +2293,17 @@ bool CUGR::hasAvailableResources(odb::dbNet* db_net,
   // layer_index is 1-based (matching GSegment convention); GridGraph uses
   // 0-based layer indices.
   const int layer_0 = layer_index - 1;
-  if (layer_0 < 0 || layer_0 >= grid_graph_->getNumLayers()) {
+  if (layer_0 < 0) {
     logger_->error(GRT,
                    705,
                    "Invalid layer index {} in hasAvailableResources.",
                    layer_index);
   }
-  // Off-grid tiles have no edge (getEdge indexes raw vectors).
-  if (tile_x < 0 || tile_x >= grid_graph_->getSize(0) || tile_y < 0
+  // Layers above the grid universe (e.g. a span reaching a pin over the
+  // routing ceiling) and off-grid tiles have no edge; getEdge indexes raw
+  // vectors, so answer "no resources" instead of erroring in a query.
+  if (layer_0 >= grid_graph_->getNumLayers() || tile_x < 0
+      || tile_x >= grid_graph_->getSize(0) || tile_y < 0
       || tile_y >= grid_graph_->getSize(1)) {
     return false;
   }

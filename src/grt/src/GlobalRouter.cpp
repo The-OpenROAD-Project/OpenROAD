@@ -2339,20 +2339,10 @@ void GlobalRouter::updateResources(const int& init_x,
                                    int used,
                                    odb::dbNet* db_net)
 {
-  // transform from real position to grid pos of fastrouter
-  int x0
-      = ((std::min(init_x, final_x) - grid_->getXMin()) / grid_->getTileSize());
-  int y0
-      = ((std::min(init_y, final_y) - grid_->getYMin()) / grid_->getTileSize());
-  int x1
-      = ((std::max(final_x, init_x) - grid_->getXMin()) / grid_->getTileSize());
-  int y1
-      = ((std::max(final_y, init_y) - grid_->getYMin()) / grid_->getTileSize());
-
-  // The last gcell is oversized and includes space that the above
-  // calculation doesn't represent so correct it:
-  x1 = std::min(x1, grid_->getXGrids() - 1);
-  y1 = std::min(y1, grid_->getYGrids() - 1);
+  const int x0 = dbuToTile(std::min(init_x, final_x), /*is_x=*/true);
+  const int y0 = dbuToTile(std::min(init_y, final_y), /*is_x=*/false);
+  const int x1 = dbuToTile(std::max(final_x, init_x), /*is_x=*/true);
+  const int y1 = dbuToTile(std::max(final_y, init_y), /*is_x=*/false);
   fastroute_->updateEdge2DAnd3DUsage(x0, y0, x1, y1, layer_level, used, db_net);
 }
 
@@ -2366,25 +2356,25 @@ void GlobalRouter::updateJumperedRoute(const int& init_x,
 {
   if (use_cugr_) {
     // routes_[db_net] holds the finished jumpered route; re-adopt it so
-    // CUGR swaps the old tree demand for the new one.
+    // CUGR swaps the old tree demand for the new one. A failed adoption has
+    // already released the old demand, so schedule a reroute to rebuild it.
     if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
-      debugPrint(logger_,
-                 GRT,
-                 "repair_antennas",
-                 1,
-                 "net {} jumpered route adoption failed",
-                 db_net->getConstName());
+      logger_->warn(GRT,
+                    311,
+                    "Net {} jumpered route could not be adopted; "
+                    "scheduling a reroute.",
+                    db_net->getConstName());
+      addDirtyNet(db_net);
     }
     return;
   }
   // Move the span's edge usage from the original layer to the jumper's.
   updateResources(init_x, init_y, final_x, final_y, layer_level, -1, db_net);
   updateResources(init_x, init_y, final_x, final_y, new_layer_level, 1, db_net);
-  // transform from real position to grid pos of fastrouter
-  int grid_init_x = ((init_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_init_y = ((init_y - grid_->getYMin()) / grid_->getTileSize());
-  int grid_final_x = ((final_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_final_y = ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  const int grid_init_x = dbuToTile(init_x, /*is_x=*/true);
+  const int grid_init_y = dbuToTile(init_y, /*is_x=*/false);
+  const int grid_final_x = dbuToTile(final_x, /*is_x=*/true);
+  const int grid_final_y = dbuToTile(final_y, /*is_x=*/false);
   // update treeedges
   fastroute_->updateRouteGridsLayer(grid_init_x,
                                     grid_init_y,

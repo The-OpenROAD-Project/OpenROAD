@@ -134,8 +134,7 @@ class RepairAntennas
                         const int& init_y,
                         const int& final_x,
                         const int& final_y,
-                        const int& layer_level,
-                        odb::dbNet* db_net);
+                        const int& layer_level);
   void addJumperToRoute(GRoute& route,
                         const int& seg_id,
                         const int& jumper_init_pos,

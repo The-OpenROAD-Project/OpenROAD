@@ -586,8 +586,7 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
                                       const int& init_y,
                                       const int& final_x,
                                       const int& final_y,
-                                      const int& layer_level,
-                                      odb::dbNet* db_net)
+                                      const int& layer_level)
 {
   // Create vias (at the start and end of the jumper)
   for (int layer = layer_level; layer < layer_level + 2; layer++) {
@@ -632,8 +631,7 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
                    jumper_init_y,
                    jumper_final_x,
                    jumper_final_y,
-                   layer_level,
-                   db_net);
+                   layer_level);
   // Divide segment (new segment is added before jumper insertion)
   route.push_back(GSegment(seg_init_x,
                            seg_init_y,
