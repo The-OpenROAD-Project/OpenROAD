@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <numbers>
 #include <vector>
 
 #include "dcalc/DmpCeff.hh"
@@ -76,7 +80,7 @@ int main(int argc, char** argv)
   // 5. Sweep loops (dimensionless parameters)
   // High density for <0.001% Trilinear LUT
   std::vector<double> xs;
-  for (double val = 0.001; val <= 1000.0; val *= 1.41421356) {
+  for (double val = 0.001; val <= 1000.0; val *= std::sqrt2) {
     xs.push_back(val);
   }
 
