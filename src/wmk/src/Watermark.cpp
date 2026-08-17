@@ -190,6 +190,15 @@ Watermark::Watermark(odb::dbDatabase* db,
 {
 }
 
+bool Watermark::clockSkewAvailable() const
+{
+  if (sta_ == nullptr) {
+    return false;
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  return network != nullptr && network->defaultLibertyLibrary() != nullptr;
+}
+
 float Watermark::worstClockSkew() const
 {
   if (sta_ == nullptr) {
@@ -225,10 +234,8 @@ float Watermark::worstSlack(odb::dbInst* inst) const
     if (pin == nullptr) {
       continue;
     }
-    const float slack = sta_->slack(pin,
-                                    sta::RiseFallBoth::riseFall(),
-                                    sta_->scenes(),
-                                    sta::MinMax::max());
+    const float slack = sta_->slack(
+        pin, sta::RiseFallBoth::riseFall(), sta_->scenes(), sta::MinMax::max());
     worst = std::min(worst, slack);
   }
   return worst;

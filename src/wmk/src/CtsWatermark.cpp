@@ -130,6 +130,19 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   const int dbu = block->getDbUnitsPerMicron();
   const std::int64_t max_dist
       = static_cast<std::int64_t>(opts.sibling_dist_um) * dbu;
+  // Whether skew can be evaluated at all decides whether the guard below has
+  // any force.  Reading a design from a database restores no liberty and no
+  // constraints, so a caller who has not set timing up would otherwise get the
+  // marks committed with the guard silently inert -- and a clock tree damaged
+  // without anything having said so.
+  const bool skew_known = clockSkewAvailable();
+  if (!skew_known) {
+    logger_->warn(utl::WMK,
+                  74,
+                  "No timing is set up, so clock skew cannot be evaluated and "
+                  "marks will be committed without the skew guard.  Read "
+                  "liberty and constraints first to keep it in force.");
+  }
   const float skew_before = worstClockSkew();
 
   // Enumerate the eligible pairs, then let the key order them.  Eligibility is
@@ -229,7 +242,8 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
         dbNet* origin = sink->getNet();
         sink->disconnect();
         sink->connect(dest);
-        if (worstClockSkew() > skew_before + opts.skew_margin_ns * 1e-9f) {
+        if (skew_known
+            && worstClockSkew() > skew_before + opts.skew_margin_ns * 1e-9f) {
           // The mark would cost clock skew, so put the sink back.
           sink->disconnect();
           sink->connect(origin);

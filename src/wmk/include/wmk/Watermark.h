@@ -214,6 +214,10 @@ class Watermark
   // consult, so a design without liberty is simply unscreened.
   float worstClockSkew() const;
 
+  // Is there enough timing set up for worstClockSkew to mean anything?  A zero
+  // from it is otherwise indistinguishable from a design with no skew.
+  bool clockSkewAvailable() const;
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   dpl::Opendp* opendp_ = nullptr;

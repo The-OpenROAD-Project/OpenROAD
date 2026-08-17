@@ -428,6 +428,19 @@ The tag is mirrored onto the router's own net objects when the design is read,
 and those objects are not serialized to distributed workers, so the bias is not
 applied in distributed detailed routing.
 
+The clock-tree mark needs timing to be set up. Skew is what decides whether a
+sink may be moved, and a design read straight from a database has no liberty
+and no constraints attached, so skew cannot be evaluated and the guard has
+nothing to enforce. The command says so and proceeds, but the marks it commits
+that way have not been checked against the clock. Read liberty and constraints
+first.
+
+The skew guard also bounds capacity, and on a tight clock it bounds it hard. On
+a routed ASAP7 `aes` -- 380 ps period, 7.8 ps skew -- 14 of 26 pairs were turned
+away because moving a sink would have cost skew, leaving the extraction rate at
+0.46 and the stage below threshold. The same command on NanGate45 marks every
+pair it claims. `-skew_margin_ns` trades one against the other.
+
 How many bits a design can carry is a property of the design. A sparse or
 timing-tight design may yield few placement pairs or none, and a shallow clock
 tree may have too few leaf buffers to pair. The commands report what they
