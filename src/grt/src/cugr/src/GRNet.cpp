@@ -58,6 +58,22 @@ GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
   }
 }
 
+int GRNet::getDriverPinIndex() const
+{
+  for (const auto& [pin_index, iterm] : pin_index_to_iterm_) {
+    const odb::dbIoType type = iterm->getIoType();
+    if (type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT) {
+      return pin_index;
+    }
+  }
+  for (const auto& [pin_index, bterm] : pin_index_to_bterm_) {
+    if (bterm->getIoType() == odb::dbIoType::INPUT) {
+      return pin_index;
+    }
+  }
+  return -1;
+}
+
 bool GRNet::isInsideLayerRange(int layer_index) const
 {
   return layer_index >= layer_range_.min_layer

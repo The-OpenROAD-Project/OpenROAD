@@ -152,6 +152,7 @@ class GRNet
   {
     return pin_index_to_iterm_;
   }
+  int getDriverPinIndex() const;
   bool isLocal() const;
   // Set when the routing tree was adopted from detailed routes, which may
   // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
