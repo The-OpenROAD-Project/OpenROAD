@@ -739,8 +739,6 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   auto block = db_->getChip()->getBlock();
   const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
 
-  const char* header_format = "{:37} {:>7} {:>10}";
-  const char* format = "  {:35} {:>7} {:>10.2f}";
   if (block->getTopModule() != module) {
     logger_->report("Cell type report for {} ({})",
                     module->getModInst()->getHierarchicalName(),
@@ -748,7 +746,6 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   } else {
     countPhysicalOnlyInstancesByType(instances_types, insts);
   }
-  logger_->report(header_format, "Cell type report:", "Count", "Area");
 
   const std::regex regexp(" |/|-");
   std::string metrics_suffix;
@@ -756,17 +753,50 @@ void dbSta::reportCellUsage(odb::dbModule* module,
     metrics_suffix = fmt::format("__in_module:{}", module->getName());
   }
 
+  int max_type_name_length = 0;
+  int max_master_name_length = 0;
   int total_usage = 0;
   int64_t total_area = 0;
   for (auto [type, stats] : instances_types) {
     total_usage += stats.count;
+    total_area += stats.area;
+    max_type_name_length
+        = std::max(max_type_name_length,
+                   static_cast<int>(getInstanceTypeText(type).size()));
+  }
+  if (verbose) {
+    for (auto inst : insts) {
+      auto master = inst->getMaster();
+      max_master_name_length = std::max(
+          max_master_name_length, static_cast<int>(master->getName().size()));
+    }
   }
 
+  const int column_padding = 2;
+
+  const int count_width = std::max(
+      7, static_cast<int>(std::to_string(total_usage).size()) + column_padding);
+  const int area_width
+      = std::max(10,
+                 static_cast<int>(
+                     fmt::format("{:.2f}", total_area / area_to_microns).size())
+                     + column_padding);
+  const int type_width = std::max({37,
+                                   max_master_name_length + column_padding,
+                                   max_type_name_length + column_padding});
+
+  const std::string header_format = fmt::format(
+      "{{:{}}} {{:>{}}} {{:>{}}}", type_width, count_width, area_width);
+  const std::string format = fmt::format("  {{:{}}} {{:>{}}} {{:>{}.2f}}",
+                                         type_width - 2,
+                                         count_width,
+                                         area_width);
+
+  logger_->report(header_format, "Cell type report:", "Count", "Area");
   for (auto [type, stats] : instances_types) {
     const std::string type_name = getInstanceTypeText(type);
     logger_->report(
         format, type_name, stats.count, stats.area / area_to_microns);
-    total_area += stats.area;
 
     const std::string type_class
         = toLowerCase(regex_replace(type_name, regexp, "_"));
