@@ -14,11 +14,11 @@
 // still hold, against a threshold.  Routing and filling legitimately disturb a
 // few marked objects, so an exact match is not required and not expected.
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
 #include "Claims.h"
+#include "ClockTree.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include "wmk/Watermark.h"
@@ -27,18 +27,8 @@ namespace wmk {
 
 using odb::dbBlock;
 using odb::dbInst;
-using odb::dbITerm;
-using odb::dbNet;
 
 namespace {
-
-std::string toUpper(std::string s)
-{
-  std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
-    return static_cast<char>(std::toupper(c));
-  });
-  return s;
-}
 
 // The x coordinate a placement claim is expressed in terms of.  The embedder
 // uses the instance bounding box, not the origin, so the two must agree.
@@ -47,63 +37,21 @@ int instLeftEdge(dbInst* inst)
   return inst->getBBox()->xMin();
 }
 
-// The net driven by an instance's single output, or null when the instance
-// does not have exactly one output.
-dbNet* singleOutputNet(dbInst* inst)
-{
-  dbNet* out = nullptr;
-  int count = 0;
-  for (dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-      ++count;
-      out = iterm->getNet();
-    }
-  }
-  return count == 1 ? out : nullptr;
-}
+// What counts as a leaf clock buffer's sequential fanout -- and so what the
+// parity the watermark carries means -- comes from ClockTree.h, which the
+// embedder calls too.  A second definition here that drifted from that one
+// would turn a valid watermark into a failed verification.
 
-// Is this the clock pin of a sequential instance?
-//
-// A CLOCK-typed pin counts directly.  Some libraries do not type the pin, so
-// fall back to a sequential master with a conventionally named clock pin.
-// This mirrors the embedder, and only sequential sinks are counted: the repair
-// and other categories it also tracks matter when choosing which buffers to
-// mark, not when re-observing a marked one.
-bool isSequentialClockSink(dbITerm* iterm)
+// A claimed bit must be exactly "0" or "1".  Anything else means the claim
+// file is damaged, and a verifier that read it as zero would quietly measure
+// an extraction rate against a target nobody committed to.
+bool parseClaimBit(const std::string& text, int& bit)
 {
-  if (iterm->getIoType() != odb::dbIoType::INPUT) {
-    return false;
-  }
-  odb::dbMTerm* mterm = iterm->getMTerm();
-  if (mterm == nullptr) {
-    return false;
-  }
-  if (mterm->getSigType() == odb::dbSigType::CLOCK) {
+  if (text == "0" || text == "1") {
+    bit = text[0] - '0';
     return true;
   }
-  dbInst* inst = iterm->getInst();
-  if (inst == nullptr || !inst->getMaster()->isSequential()) {
-    return false;
-  }
-  const std::string name = toUpper(mterm->getName());
-  return name == "CP" || name == "CLK" || name == "CK" || name == "CLOCK";
-}
-
-// Number of sequential sinks on a leaf clock buffer's output net.  Its parity
-// is the carrier of the CTS watermark.
-int seqFanout(dbInst* lcb)
-{
-  dbNet* net = singleOutputNet(lcb);
-  if (net == nullptr) {
-    return 0;
-  }
-  int count = 0;
-  for (dbITerm* iterm : net->getITerms()) {
-    if (isSequentialClockSink(iterm)) {
-      ++count;
-    }
-  }
-  return count;
+  return false;
 }
 
 }  // namespace
@@ -133,6 +81,16 @@ VerifyResult Watermark::verifyPlacement(const std::string& claims_file)
     if (a_name.empty() || b_name.empty()) {
       continue;
     }
+    const std::string target_bit = claimField(row, "target_bit");
+    int target = 0;
+    if (!parseClaimBit(target_bit, target)) {
+      logger_->error(utl::WMK,
+                     100,
+                     "Placement claim {}|{}: target_bit is \"{}\", not 0 or 1.",
+                     a_name,
+                     b_name,
+                     target_bit);
+    }
     ++result.checked;
 
     dbInst* a = block->findInst(a_name.c_str());
@@ -148,7 +106,6 @@ VerifyResult Watermark::verifyPlacement(const std::string& claims_file)
 
     // The bit is which of the pair sits to the left.
     const int observed = instLeftEdge(a) < instLeftEdge(b) ? 0 : 1;
-    const int target = std::atoi(claimField(row, "target_bit").c_str());
     if (observed == target) {
       ++result.held;
     } else {
@@ -202,6 +159,14 @@ VerifyResult Watermark::verifyCts(const std::string& claims_file)
     // marked or not.  What the design shows is measured against what the key
     // asked for, and nothing else.
     const std::string target_bit = claimField(row, "target_bit");
+    int target = 0;
+    if (!parseClaimBit(target_bit, target)) {
+      logger_->error(utl::WMK,
+                     101,
+                     "CTS claim {}: target_bit is \"{}\", not 0 or 1.",
+                     lcb_name,
+                     target_bit);
+    }
     ++result.checked;
 
     dbInst* lcb = block->findInst(lcb_name.c_str());
@@ -211,7 +176,6 @@ VerifyResult Watermark::verifyCts(const std::string& claims_file)
     }
 
     const int observed = seqFanout(lcb) % 2;
-    const int target = std::atoi(target_bit.c_str());
     if (observed == target) {
       ++result.held;
     } else {
