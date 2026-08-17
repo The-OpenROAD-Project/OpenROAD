@@ -2313,6 +2313,15 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   // transform from real position to grid pos of fastroute
   int grid_x = ((pos_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_y = ((pos_y - grid_->getYMin()) / grid_->getTileSize());
+  if (use_cugr_) {
+    // CUGR edges run along the layer's preferred direction, so the
+    // orientation is implied by the layer; demand carries the NDR factor.
+    const std::vector<double> ndr_costs = cugr_->getNdrCosts(db_net);
+    const double demand = layer_level - 1 < (int) ndr_costs.size()
+                              ? ndr_costs[layer_level - 1]
+                              : 1.0;
+    return cugr_->hasAvailableResources(layer_level, grid_x, grid_y, demand);
+  }
   int cap = 0;
   if (is_horizontal) {
     cap = fastroute_->getAvailableResources(
@@ -2338,6 +2347,11 @@ void GlobalRouter::updateResources(const int& init_x,
                                    int used,
                                    odb::dbNet* db_net)
 {
+  if (use_cugr_) {
+    // Demand moves wholesale when the jumpered route is re-adopted in
+    // updateRouteGridsLayer; per-edge deltas are FastRoute bookkeeping.
+    return;
+  }
   // transform from real position to grid pos of fastrouter
   int x0
       = ((std::min(init_x, final_x) - grid_->getXMin()) / grid_->getTileSize());
@@ -2355,14 +2369,27 @@ void GlobalRouter::updateResources(const int& init_x,
   fastroute_->updateEdge2DAnd3DUsage(x0, y0, x1, y1, layer_level, used, db_net);
 }
 
-void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
-                                             const int& init_y,
-                                             const int& final_x,
-                                             const int& final_y,
-                                             const int& layer_level,
-                                             const int& new_layer_level,
-                                             odb::dbNet* db_net)
+void GlobalRouter::updateRouteGridsLayer(const int& init_x,
+                                         const int& init_y,
+                                         const int& final_x,
+                                         const int& final_y,
+                                         const int& layer_level,
+                                         const int& new_layer_level,
+                                         odb::dbNet* db_net)
 {
+  if (use_cugr_) {
+    // The caller already rewrote routes_[db_net] with the jumper; re-adopt
+    // it so CUGR swaps the old tree demand for the jumpered route's.
+    if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
+      debugPrint(logger_,
+                 GRT,
+                 "repair_antennas",
+                 1,
+                 "net {} jumpered route adoption failed",
+                 db_net->getConstName());
+    }
+    return;
+  }
   // transform from real position to grid pos of fastrouter
   int grid_init_x = ((init_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_init_y = ((init_y - grid_->getYMin()) / grid_->getTileSize());

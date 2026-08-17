@@ -230,13 +230,13 @@ class GlobalRouter
                        const int& layer_level,
                        int used,
                        odb::dbNet* db_net);
-  void updateFastRouteGridsLayer(const int& init_x,
-                                 const int& init_y,
-                                 const int& final_x,
-                                 const int& final_y,
-                                 const int& layer_level,
-                                 const int& new_layer_level,
-                                 odb::dbNet* db_net);
+  void updateRouteGridsLayer(const int& init_x,
+                             const int& init_y,
+                             const int& final_x,
+                             const int& final_y,
+                             const int& layer_level,
+                             const int& new_layer_level,
+                             odb::dbNet* db_net);
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);

@@ -604,7 +604,7 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
   grouter_->updateResources(
       init_x, init_y, final_x, final_y, layer_level + 2, 1, db_net);
   // Update FastRoute Tree Edges
-  grouter_->updateFastRouteGridsLayer(
+  grouter_->updateRouteGridsLayer(
       init_x, init_y, final_x, final_y, layer_level, layer_level + 2, db_net);
 }
 
