@@ -1,9 +1,9 @@
 # Watermark
 
-The Watermark module embeds and checks keyed ownership evidence in a physical
-design, implementing the routing watermark of Kahng et al., "Robust IP
-Watermarking Methodologies for Physical Design" (ISPD'98) and the verification
-side of the PDMarks scheme.
+The Watermark module embeds keyed ownership evidence in a physical design and
+checks it back, implementing the routing watermark of Kahng et al., "Robust IP
+Watermarking Methodologies for Physical Design" (ISPD'98) together with a
+placement and a clock tree carrier in the same style.
 
 A keyed subset of signal nets is selected with HMAC-SHA256 and tagged with a
 `watermark` property. During detailed routing those nets pay an inflated cost
@@ -47,8 +47,8 @@ mark that did not survive its own embedding will not survive routing either.
 
 ```tcl
 place_watermark
-    -key_hex key_hex
     -claims_file file
+    -key_hex key_hex
     [-grid_nx n]
     [-grid_ny n]
     [-hpwl_eps_dbu eps]
@@ -62,8 +62,8 @@ place_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-key_hex` | A 64-character hex string, the 32-byte placement key. It fixes each pair's target order and nothing else; which cells are paired does not depend on it. |
 | `-claims_file` | Where to write the claims, in the format below. |
+| `-key_hex` | A 64-character hex string, the 32-byte placement key. It fixes each pair's target order and nothing else; which cells are paired does not depend on it. |
 | `-grid_nx`, `-grid_ny` | Tiles across and down the core. Marks are spread over the tiling rather than clustering wherever candidates are densest. Both default to 8. |
 | `-hpwl_eps_dbu` | Largest half-perimeter wirelength change, in database units, a swap may cost. Defaults to 100. |
 | `-max_disp_um` | How far re-legalization may move a cell, in microns. Defaults to 5. |
@@ -92,8 +92,8 @@ the parity the key asked for.
 
 ```tcl
 cts_watermark
-    -key_hex key_hex
     -claims_file file
+    -key_hex key_hex
     [-num_pairs n]
     [-sibling_dist_um dist]
     [-skew_margin_ns margin]
@@ -103,8 +103,8 @@ cts_watermark
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-key_hex` | A 64-character hex string, the 32-byte clock-tree key. It fixes which buffer of each pair carries the mark and what parity it must show. |
 | `-claims_file` | Where to write the claims, in the format below. |
+| `-key_hex` | A 64-character hex string, the 32-byte clock-tree key. It fixes which buffer of each pair carries the mark and what parity it must show. |
 | `-num_pairs` | Most pairs to mark. Each carries one bit. Defaults to 32. |
 | `-sibling_dist_um` | Largest distance between the two buffers of a pair, in microns, so a moved sink stays local. Defaults to 20.0. |
 | `-skew_margin_ns` | How much worse the clock's worst skew may get, in nanoseconds. Defaults to 0, meaning no worse than before. |
@@ -299,24 +299,39 @@ still produces a verdict.
 
 ## Example scripts
 
-Tag a keyed subset, route with the bias applied, then report:
+Mark all three stages, each at the point in the flow that produces what it
+marks:
 
 ```tcl
-set_routing_watermark -key_hex $key -fraction 0.02
+detailed_placement
+place_watermark -key_hex $place_key -claims_file wm_place.csv
+
+clock_tree_synthesis -buf_list $buffers -root_buf $root_buf
+cts_watermark -key_hex $cts_key -claims_file wm_cts.csv
+
+set_routing_watermark -key_hex $route_key -fraction 0.02
 set_routing_watermark_strength 100
+global_route
 detailed_route
-report_routing_watermark
 ```
 
-Check a suspect layout:
+Check a suspect layout. Nothing but the claim files and the routing key is
+needed, and the design need not be one this process built:
 
 ```tcl
 read_db suspect.odb
-verify_watermark -placement_claims wm_place_embed.csv \
-                 -cts_claims wm_cts_embed.csv
+verify_watermark -placement_claims wm_place.csv \
+                 -cts_claims wm_cts.csv \
+                 -routing_key_hex $route_key \
+                 -routing_fraction 0.02
 ```
 
 ## Regression tests
+
+There are a set of regression tests in `./test`. For more information, refer to
+this [section](../../README.md#regression-tests).
+
+Simply run the following script:
 
 ```shell
 ./test/regression
@@ -338,9 +353,21 @@ tree may have too few leaf buffers to pair. The commands report what they
 committed; a design that commits nothing has no placement or clock-tree
 evidence to offer, and the routing stage has to stand on its own.
 
-## FAQ
+Keys are the caller's to produce and to keep. This module reads a key, uses it
+and forgets it; it does not generate, store or seal one, and it has no notion of
+who an owner is. Binding a key to an identity, and timestamping that binding so
+a mark can be dated, is the job of whatever certificate scheme sits above it.
 
-Please refer to the [GitHub issues](https://github.com/The-OpenROAD-Project/OpenROAD/issues).
+## References
+
+1. Kahng, A. B., Mantik, S., Markov, I. L., Potkonjak, M., Tucker, P., Wang, H.,
+   & Wolfe, G. Robust IP watermarking methodologies for physical design. In
+   International Symposium on Physical Design (ISPD), 1998. The routing
+   watermark implemented here.
+1. Kahng, A. B., Lach, J., Mangione-Smith, W. H., Mantik, S., Markov, I. L.,
+   Potkonjak, M., Tucker, P., Wang, H., & Wolfe, G. Watermarking techniques for
+   intellectual property protection. In Design Automation Conference (DAC),
+   1998.
 
 ## License
 

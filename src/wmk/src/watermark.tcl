@@ -36,8 +36,8 @@ proc set_routing_watermark { args } {
   return $rc
 }
 
-sta::define_cmd_args "place_watermark" {-key_hex key_hex \
-                                       -claims_file file \
+sta::define_cmd_args "place_watermark" {-claims_file file \
+                                       -key_hex key_hex \
                                        [-grid_nx n] \
                                        [-grid_ny n] \
                                        [-pair_dist_um dist] \
@@ -90,8 +90,8 @@ proc place_watermark { args } {
   return $rc
 }
 
-sta::define_cmd_args "cts_watermark" {-key_hex key_hex \
-                                     -claims_file file \
+sta::define_cmd_args "cts_watermark" {-claims_file file \
+                                     -key_hex key_hex \
                                      [-num_pairs n] \
                                      [-sibling_dist_um dist] \
                                      [-skew_margin_ns margin]}
