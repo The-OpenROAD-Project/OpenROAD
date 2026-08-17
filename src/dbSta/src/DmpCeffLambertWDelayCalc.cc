@@ -320,7 +320,7 @@ CeffResult DmpCeffLambertWDelayCalc::calculateCeff(
 
     // 18-coeff Padé coefficients.
     // To regenerate these coefficients:
-    // bazel build //third_party/open_road/src/dbSta:generate_pade_coefficients
+    // bazelisk build //src/dbSta:generate_pade_coefficients
     static constexpr double a1_coef[6] = {-4.60512811e-01,
                                           6.91701256e-01,
                                           7.09008866e+00,
