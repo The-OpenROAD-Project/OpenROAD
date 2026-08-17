@@ -67,9 +67,22 @@ DOM_TEST_DATA = [
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":css_inliner_test",
         ":request_handler_test",
         ":tile_generator_test",
         ":web_assets_test",
+    ],
+)
+
+cc_test(
+    name = "css_inliner_test",
+    srcs = ["cpp/TestCssInliner.cpp"],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/utl",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 

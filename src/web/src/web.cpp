@@ -36,6 +36,7 @@
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
+#include "css_inliner.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -43,6 +44,7 @@
 #include "odb/dbChipCallBackObj.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
+#include "sta/StringUtil.hh"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -1058,44 +1060,24 @@ static std::string base64Encode(const std::vector<unsigned char>& data)
 // every asset index.html loads over http is inlined here as a data: URI
 // instead (issue #11065).
 
-// Resolve a reference found inside a stylesheet ("images/x.png",
-// "../../img/y.png") against the directory the stylesheet is served from.  A
-// reference that starts at the root replaces the directory, which operator/
-// already does.  The result is a lookup key, not a file name.
-static std::string resolveAssetPath(const std::string_view base_dir,
-                                    const std::string_view reference)
+std::string resolveAssetPath(const std::string_view base_dir,
+                             const std::string_view reference)
 {
   return (std::filesystem::path(base_dir) / std::filesystem::path(reference))
       .lexically_normal()
       .string();
 }
 
-// The inliners look assets up through this rather than through a bare Logger:
-// a report that ships with a src="" opens to a blank page, so whoever wrote it
-// has to know something was missed -- including the icons the stylesheets reach
-// through url(), which no list of top-level assets would have covered.
-class ReportAssets
+const EmbeddedAsset* ReportAssets::find(const std::string_view path)
 {
- public:
-  explicit ReportAssets(utl::Logger* logger) : logger_(logger) {}
-
-  const EmbeddedAsset* find(const std::string_view path)
-  {
-    const EmbeddedAsset* asset = findEmbeddedAsset(path);
-    if (!asset) {
-      // A miss is a binary built with the wrong asset list, not bad input.
-      logger_->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
-      missing_ = true;
-    }
-    return asset;
+  const EmbeddedAsset* asset = findEmbeddedAsset(path);
+  if (!asset) {
+    // A miss is a binary built with the wrong asset list, not bad input.
+    logger_->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
+    missing_ = true;
   }
-
-  bool missing() const { return missing_; }
-
- private:
-  utl::Logger* logger_;
-  bool missing_ = false;
-};
+  return asset;
+}
 
 // data: URI for an embedded asset, for use as a src or href in the report.
 static std::string assetDataUri(const std::string_view path,
@@ -1109,39 +1091,32 @@ static std::string assetDataUri(const std::string_view path,
          + base64Encode(asset->content());
 }
 
-// Offset of the next url( token at or after `from`, or npos.
-//
-// css is case-insensitive for the token, so URL( and Url( are the same thing.
-// What comes before it matters too: a miss refuses to save the report (see
-// ReportAssets), so matching the tail of an identifier -- "myurl(" -- would
-// turn a stylesheet the browser reads fine into a refusal.
-static size_t findUrlToken(const std::string_view css, const size_t from)
+size_t findUrlToken(const std::string_view css, const size_t from)
 {
-  const auto lower = [](const char c) {
-    return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  };
-  const auto in_identifier = [&lower](const char c) {
-    return (lower(c) >= 'a' && lower(c) <= 'z') || (c >= '0' && c <= '9')
-           || c == '_' || c == '-';
-  };
-  for (size_t at = from; at + 4 <= css.size(); ++at) {
-    if (css[at + 3] != '(' || lower(css[at]) != 'u' || lower(css[at + 1]) != 'r'
-        || lower(css[at + 2]) != 'l') {
+  // Driven off the '(' because it is the rarer character, so the scan is a
+  // memchr rather than a byte loop.
+  for (size_t paren = from;
+       (paren = css.find('(', paren)) != std::string_view::npos;
+       ++paren) {
+    if (paren < 3) {
       continue;
     }
-    if (at > 0 && in_identifier(css[at - 1])) {
+    const size_t at = paren - 3;
+    if (at < from || !sta::stringBeginEqual(css.substr(at), "url")) {
       continue;
     }
-    return at;
+    const char before = at > 0 ? css[at - 1] : ' ';
+    if (std::isalnum(static_cast<unsigned char>(before)) == 0 && before != '_'
+        && before != '-') {
+      return at;
+    }
   }
   return std::string_view::npos;
 }
 
-// Rewrite the url() references inside a stylesheet to data: URIs.  Without
-// this the icons would resolve against the directory the report was saved in.
-static std::string inlineStylesheetUrls(const std::string_view css,
-                                        const std::string_view base_dir,
-                                        ReportAssets& assets)
+std::string inlineStylesheetUrls(const std::string_view css,
+                                 const std::string_view base_dir,
+                                 ReportAssets& assets)
 {
   std::string result;
   size_t pos = 0;

@@ -215,6 +215,7 @@ cc_library(
         "src/web_viewer_hook.h",
         "src/request_handler.h",
         "src/clock_tree_report.h",
+        "src/css_inliner.h",
         "src/web_assets.h",
     ],
     copts = [

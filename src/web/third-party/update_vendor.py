@@ -248,12 +248,11 @@ def check(lock):
 
 
 def extract_member(tar, name, root, rel):
-    """Extract one file of the tarball to root/rel.
+    """Extract one file of the tarball to root/rel, and return where it landed.
 
-    A member name reaches this from the tarball itself when a bundled tree is
-    extracted, so where it lands has to be shown to stay under root rather than
-    assumed to -- and the digest is no help on a --rewrite-lock run, which is
-    precisely the run where the tarball is one nobody has seen before.
+    A bundled tree gives rel from the tarball itself, so where it lands has to be
+    shown to stay under root -- and on a --rewrite-lock run there is no digest to
+    have caught it earlier.
     """
     member = tar.getmember(name)
     if not member.isfile():
@@ -261,12 +260,13 @@ def extract_member(tar, name, root, rel):
 
     root = os.path.realpath(root)
     dest = os.path.realpath(os.path.join(root, rel))
-    if dest != root and not dest.startswith(root + os.sep):
+    if not dest.startswith(root + os.sep):
         raise RuntimeError(f"{name} would write outside {root}")
 
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     with tar.extractfile(member) as src, open(dest, "wb") as out:
         shutil.copyfileobj(src, out)
+    return dest
 
 
 def esbuild_binary(lock, work_dir, rewrite_lock):
@@ -309,9 +309,8 @@ def esbuild_binary(lock, work_dir, rewrite_lock):
     archive = os.path.join(work_dir, "esbuild.tgz")
     with open(archive, "wb") as f:
         f.write(data)
-    binary = os.path.join(work_dir, "esbuild")
     with tarfile.open(archive) as tar:
-        extract_member(tar, "package/bin/esbuild", work_dir, "esbuild")
+        binary = extract_member(tar, "package/bin/esbuild", work_dir, "esbuild")
     os.chmod(binary, os.stat(binary).st_mode | stat.S_IXUSR)
     return binary
 
@@ -322,7 +321,8 @@ def bundle(spec, tar, lock, work_dir, rewrite_lock):
     prefix = "package/" + spec["tree"]
     for member in tar.getmembers():
         if member.isfile() and member.name.startswith(prefix):
-            extract_member(tar, member.name, tree_dir, member.name[len("package/") :])
+            rel = member.name[len("package/") :]
+            extract_member(tar, member.name, tree_dir, rel)
 
     if not os.path.exists(os.path.join(tree_dir, spec["entry"])):
         raise RuntimeError(f"bundle entry point not found: {spec['entry']}")
