@@ -26,20 +26,20 @@ against any loaded database.
 
 ### Generate Watermark Key
 
-The `generate_watermark_key` command draws a secret and derives the three stage
+The `generate_watermark_key` command draws a secret key and derives the three stage
 keys from it. It returns a dictionary with the entries `key_hex`, `nonce_hex`,
 `design_id`, `placement`, `cts` and `routing`.
 
 A stage key is `HMAC-SHA256(key, design_id, nonce, "stage=" || stage)`.
 
-The nonce identifies one watermark instance. The same secret and design
+The nonce identifies one watermark instance. The same secret key and design
 identifier with a different nonce mark different objects with different values,
-so one secret can mark several copies of a design distinguishably, and can mark
-it again after a revision without repeating the previous marks. The design
+so one secret key can mark several copies of a design distinguishably, and can
+mark it again after a revision without repeating the previous marks. The design
 identifier and the nonce are public and belong with the design's records; only
-the secret does not. All three are needed again to verify.
+the secret key does not. All three are needed again to verify.
 
-The secret is never logged. With `-file` it is written with owner-only
+The secret key is never logged. With `-file` it is written with owner-only
 permissions. If the system random source cannot be read the command fails rather
 than substituting a predictable one.
 
@@ -56,8 +56,8 @@ generate_watermark_key
 | Switch Name | Description |
 | ----- | ----- |
 | `-design_id` | Identifier of the design version being marked. |
-| `-file` | Write the secret, nonce and stage keys to this path. |
-| `-key_hex` | Use this 64-character hex secret instead of drawing one. |
+| `-file` | Write the secret key, nonce and stage keys to this path. |
+| `-key_hex` | Use this 64-character hex secret key instead of drawing one. |
 | `-nonce_hex` | Use this even-length hex nonce instead of drawing one. Drawn nonces are 16 bytes. |
 
 ### Derive Watermark Key
@@ -79,7 +79,7 @@ derive_watermark_key
 | Switch Name | Description |
 | ----- | ----- |
 | `-design_id` | The identifier the keys were generated with. |
-| `-key_hex` | The 64-character hex secret. |
+| `-key_hex` | The 64-character hex secret key. |
 | `-nonce_hex` | The nonce the keys were generated with. |
 | `-stage` | `placement`, `cts` or `routing`. |
 
