@@ -1479,7 +1479,7 @@ void ICeWall::routeRDLDebugGUI(bool enable)
 {
   if (enable) {
     if (router_gui_ == nullptr) {
-      router_gui_ = std::make_unique<RDLGui>();
+      router_gui_ = std::make_unique<RDLGui>(logger_);
       if (router_ != nullptr) {
         router_gui_->setRouter(router_.get());
       }
