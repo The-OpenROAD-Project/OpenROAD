@@ -201,3 +201,32 @@ gtest_discover_tests(TestResizerMt
 
 add_dependencies(build_and_test TestResizerMt
 )
+
+add_executable(TestRepairHoldRollback TestRepairHoldRollback.cc)
+target_link_libraries(TestRepairHoldRollback
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst_integrated_fixture
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestRepairHoldRollback
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+)
+
+gtest_discover_tests(TestRepairHoldRollback
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestRepairHoldRollback
+)

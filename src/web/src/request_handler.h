@@ -119,10 +119,12 @@ struct WebSocketRequest
     kDrcHighlight,
     kSelectNext,
     kSelectPrev,
+    kSelectLayer,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
     kOverlayTile,
+    kCancel,
     kUnknown
   };
 
@@ -164,9 +166,32 @@ struct SessionState
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;
+  std::vector<FlightLine> highlight_lines;  // selection flywires
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;
+  // Misc > Flywires only: highlight selected nets with straight
+  // driver->sink lines instead of their routed wire/guides (GUI
+  // isFlywireHighlightOnly() parity).
+  bool flywires_only = false;
+  // Which selection the highlight_* vectors were derived from, or kNone while
+  // they hold nothing.  A flywires_only flip has to re-derive them from the
+  // SAME source: the multi-selection normally, but a single object when the
+  // user followed an inspector link out of the selection set (handleInspect
+  // deliberately narrows the highlight to the link target).  kNone doubles as
+  // the "dismissed" state, so a flip cannot resurrect highlights the user
+  // cleared.
+  //
+  // Tracking the source is a shim over the fact that selection_set and
+  // current_inspected are two overlapping answers to "what is selected"; the
+  // Qt GUI keeps only the set and narrows it on a link follow.
+  enum class HighlightSource : uint8_t
+  {
+    kNone,
+    kInspected,
+    kSelectionSet
+  };
+  HighlightSource highlight_source = HighlightSource::kNone;
 
   std::mutex selectables_mutex;
   std::vector<gui::Selected> selectables;
@@ -195,7 +220,22 @@ struct SessionState
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
+
+  // Tile-request ids the client has abandoned (pan/zoom away).  Populated by
+  // the inline `cancel` handler and consumed at the top of handleTile so a
+  // still-queued render is skipped.  Best-effort (a render already running on
+  // a worker thread is not interrupted).
+  std::mutex cancelled_mutex;
+  std::set<uint32_t> cancelled_ids;
 };
+
+// Map an HTTP request target onto an embedded asset path.
+//
+// Strips the query string and fragment, which the asset lookup must not see:
+// the viewer's options are passed as query parameters (?mergetiles=0 and
+// friends), and matching "/?mergetiles=0" against the asset table simply fails,
+// so the whole page 404s.  Also maps "/" onto the index document.
+std::string assetPathFromTarget(std::string_view target);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
@@ -241,6 +281,8 @@ class SelectHandler
                                      SessionState& state);
   WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
                                      SessionState& state);
+  WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
@@ -331,6 +373,11 @@ class TileHandler
                                      SessionState& state);
   WebSocketResponse handleHeatMapTile(const WebSocketRequest& req,
                                       SessionState& state);
+  // Marks a tile-request id as cancelled so a still-queued render is skipped.
+  // Registered run_inline so it executes on the read thread, ahead of the
+  // posted render it cancels.
+  WebSocketResponse handleCancel(const WebSocketRequest& req,
+                                 SessionState& state);
 
  private:
   static WebSocketResponse serializeBounds(uint32_t id,
@@ -350,7 +397,9 @@ class TileHandler
       const std::vector<FlightLine>& flight_lines,
       const std::map<uint32_t, Color>* module_colors,
       const std::set<uint32_t>* focus_net_ids,
-      const std::set<uint32_t>* route_guide_net_ids);
+      const std::set<uint32_t>* route_guide_net_ids,
+      double dpr = 1.0,
+      int tile_px = 0);
 
   std::shared_ptr<TileGenerator> gen_;
 };

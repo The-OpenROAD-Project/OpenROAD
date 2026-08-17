@@ -190,6 +190,7 @@ class GlobalRouter
   bool segmentCoversPin(const GSegment& segment, const Pin& pin);
   AdjacencyList buildNetGraph(odb::dbNet* net);
   bool isConnected(odb::dbNet* net);
+  void reportDisconnectedComponents(odb::dbNet* db_net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer,
@@ -256,6 +257,8 @@ class GlobalRouter
                              odb::Point& pin_pos1,
                              odb::Point& pin_pos2);
   int findTopLayerOverPosition(const odb::Point& pin_pos, const GRoute& route);
+  std::pair<int, int> findLayerRangeOverPosition(const odb::Point& pos,
+                                                 const GRoute& route);
   std::vector<GSegment> createConnectionForPositions(const odb::Point& pin_pos1,
                                                      const odb::Point& pin_pos2,
                                                      int layer1,
@@ -431,6 +434,7 @@ class GlobalRouter
                                 bool has_access_points);
   void updatePinAccessPoints();
   void updatePinAccessPoints(Net* net, odb::dbNet* db_net);
+  void findRoutingCugr(std::vector<Net*>& nets, bool incremental);
   void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
@@ -480,13 +484,17 @@ class GlobalRouter
   void addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
                                 const RoutePt& route_pt,
                                 odb::dbGuide* guide);
+  void addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                                const GSegment& segment,
+                                odb::dbGuide* init_guide,
+                                odb::dbGuide* final_guide);
 
   // check functions
   void checkPinPlacement();
 
   // incremental funcions
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
-  std::vector<Net*> updateDirtyRoutesCugr();
+  std::vector<Net*> updateDirtyRoutesCugr(bool save_guides);
   std::vector<Net*> updateDirtyRoutesFastRoute(bool save_guides);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
@@ -495,6 +503,7 @@ class GlobalRouter
   void deleteSegment(Net* net, GRoute& segments, int seg_id);
   void destroyNetWire(Net* net);
   void removeWireUsage(odb::dbWire* wire);
+  GRoute makeRouteFromWires(odb::dbNet* db_net, int max_layer);
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
   bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();

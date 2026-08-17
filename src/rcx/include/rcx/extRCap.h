@@ -1831,6 +1831,15 @@ class extMain
                                bool v = false);
   bool modelExists();
 
+  void setExtractionRulesFile(const std::string& extraction_rules_file)
+  {
+    extraction_rules_file_ = extraction_rules_file;
+  }
+  const std::string& getExtractionRulesFile() const
+  {
+    return extraction_rules_file_;
+  }
+
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
                           uint32_t dir);
@@ -2661,6 +2670,8 @@ class extMain
  private:
   utl::Logger* logger_;
 
+  std::string extraction_rules_file_;
+
   bool _batchScaleExt = true;
   Array1D<extCorner*>* _processCornerTable = nullptr;
   Array1D<extCorner*>* _scaledCornerTable = nullptr;
@@ -2825,6 +2836,7 @@ class extMain
 
 std::unique_ptr<extRCModel> parseRules(
     odb::dbTech* tech,
+    const std::string& rules_file,
     const Array1D<extCorner*>* extractor_corner_table,
     bool is_v2,
     utl::Logger* logger);

@@ -187,6 +187,7 @@ COMPULSORY_TESTS = [
     "read_def_virtual",
     "read_def58",
     "read_lef",
+    "read_lef_minwidth_wrongdirection",
     "read_zipped",
     "replace_hier_mod1",
     "replace_hier_mod2",
@@ -298,6 +299,8 @@ filegroup(
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
         "data/lef58_celledgespacing_numeric.lef",
+        "data/lef58_macro_edgetype_numeric.lef",
+        "data/lef58_minwidth_wrongdirection.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",
@@ -338,7 +341,7 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
-    visibility = ["//src/odb/test/cpp:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(

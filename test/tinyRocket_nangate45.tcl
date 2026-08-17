@@ -14,8 +14,8 @@ foreach ram $rams {
   lappend extra_lef "Nangate45/$ram.lef"
   lappend extra_liberty "Nangate45/$ram.lib"
 }
-set die_area {0 0 500 500}
-set core_area {10 10 490 490}
+set die_area {0 0 540 540}
+set core_area {10 10 530 530}
 
 set cap_margin 35
 

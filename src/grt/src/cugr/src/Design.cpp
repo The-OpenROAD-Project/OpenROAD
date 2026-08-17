@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <set>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -401,6 +402,21 @@ void Design::computeViaDemandLengths()
   // Fallback proxy (min-area stub x via_multiplier) for pairs with no via.
   via_demand_length_lower_.assign(num_layers, 0.0);
   via_demand_length_upper_.assign(num_layers, 0.0);
+
+  // A wrong-way wire crosses a layer's tracks like a via pad: its width
+  // runs along the tracks and it spans one gcell across them. Demand per
+  // gcell boundary crossed (commitWire's edge convention), consumed by
+  // GridGraph::commitWrongWayWire.
+  wrong_way_demand_length_.assign(num_layers, 0.0);
+  for (int i = 0; i < num_layers; i++) {
+    const MetalLayer& layer = layers_[i];
+    wrong_way_demand_length_[i]
+        = layer.getDirection() == MetalLayer::H
+              ? viaDemandLength(
+                    layer, layer.getWidth(), default_gridline_spacing_)
+              : viaDemandLength(
+                    layer, default_gridline_spacing_, layer.getWidth());
+  }
 
   const bool debug = logger_->debugCheck(utl::GRT, "via_geom", 1);
   int fallback_pairs = 0;

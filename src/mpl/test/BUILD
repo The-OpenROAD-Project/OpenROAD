@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "halos2",
     "halos3",
     "halos4",
+    "halos5",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -127,6 +128,10 @@ filegroup(
                 ],
                 "halos4": [
                     "testcases/halo3.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos5": [
+                    "testcases/halos1.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
