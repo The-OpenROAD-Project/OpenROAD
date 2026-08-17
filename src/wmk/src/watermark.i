@@ -145,6 +145,9 @@ verify_routing_watermark_cmd(const char* key_hex,
   }
   auto* w = ord::OpenRoad::openRoad()->getWatermark();
   const wmk::RoutingStat s = w->verifyRouting(key, fraction, permutations);
+  if (s.carrier_absent) {
+    return -2.0;
+  }
   return std::min(s.p_r, std::pow(10.0, s.log10_tail));
 }
 

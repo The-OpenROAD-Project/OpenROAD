@@ -112,6 +112,10 @@ struct RoutingStat
   // means the bound is vacuous.
   double log10_tail = 0.0;
   int zero_wrongway_nets = 0;
+  // True when no eligible net anywhere carries wrong-way metal.  The carrier
+  // does not exist on such a technology, so the stage cannot be tested at all
+  // -- which is a different answer from testing it and finding nothing.
+  bool carrier_absent = false;
 };
 
 // Outcome of checking one stage's claims against a design.  Ownership is

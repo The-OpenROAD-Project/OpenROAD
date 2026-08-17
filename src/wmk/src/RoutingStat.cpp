@@ -360,6 +360,21 @@ RoutingStat Watermark::verifyRouting(const std::array<std::uint8_t, 32>& key,
   }
   stat.zero_wrongway_nets = zero_ww;
 
+  // A technology whose router never wires against the preferred direction
+  // offers nothing for this statistic to measure.  Saying so is not the same
+  // as saying the watermark is missing, and a user on such a platform should
+  // not be left reading a failure into it.
+  if (zero_ww == stat.eligible) {
+    stat.carrier_absent = true;
+    logger_->warn(
+        utl::WMK,
+        86,
+        "No routed signal net uses wrong-way metal, so the routing "
+        "carrier does not exist in this technology and the stage "
+        "cannot be tested.  Ownership must rest on the other stages.");
+    return stat;
+  }
+
   // The null is over which nets are marked, so the same q_R values are simply
   // relabelled and only the multiset matters.  Sorting it fixes the draws to
   // depend on the design alone: two keys that select the same number of nets

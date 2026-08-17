@@ -350,19 +350,25 @@ proc verify_watermark { args } {
     }
     set p_r [wmk::verify_routing_watermark_cmd $keys(-routing_key_hex) $frac \
                $draws]
-    if { $p_r < 0.0 } {
+    if { $p_r == -2.0 } {
+      # The technology has no wrong-way routing to measure, so the stage is not
+      # applicable rather than failed, and it does not count against the tally.
+      utl::warn WMK 87 "No routing carrier in this technology; stage skipped."
+    } elseif { $p_r < 0.0 } {
       utl::error WMK 23 "Failed to parse -routing_key_hex: must be 64 hex\
                          chars."
-    }
-    incr checked
-    if { $p_r > $alpha } {
-      utl::warn WMK 47 \
-        "Routing shows no watermark: p = [format %.2e $p_r] >\
-         [format %.2e $alpha]."
     } else {
-      incr passed
+      incr checked
+      if { $p_r > $alpha } {
+        utl::warn WMK 47 \
+          "Routing shows no watermark: p = [format %.2e $p_r] >\
+           [format %.2e $alpha]."
+      } else {
+        incr passed
+      }
     }
   }
+
   foreach { key stage cmd } {
     -placement_claims placement wmk::verify_placement_watermark_cmd
     -cts_claims       cts       wmk::verify_cts_watermark_cmd

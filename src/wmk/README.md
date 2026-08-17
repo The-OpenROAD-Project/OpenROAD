@@ -417,9 +417,12 @@ Simply run the following script:
 
 ## Limitations
 
-A layer that is routed strictly in one direction produces no wrong-way
-wirelength, so the routing statistic is undefined on such a technology and the
-watermark carries no signal there.
+A technology whose router never wires against the preferred direction produces
+no wrong-way wirelength, so the routing carrier does not exist there. The stage
+reports this and is skipped rather than counted as a failure, and ownership has
+to rest on placement and the clock tree. ASAP7 is such a technology: across a
+routed `aes`, all 12613 signal nets carry zero wrong-way metal, where the same
+design on NanGate45 has 8943 of 15649 nets using some.
 
 The tag is mirrored onto the router's own net objects when the design is read,
 and those objects are not serialized to distributed workers, so the bias is not
