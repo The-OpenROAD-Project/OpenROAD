@@ -98,7 +98,8 @@ ArcDcalcResult DmpCeffLambertWDelayCalc::gateDelay(
   const float in_slew1 = delayAsFloat(in_slew);
 
   const Pvt* pvt = pinPvt(drvr_pin, scene, min_max);
-  const double rd = gateModelRd(drvr_cell, table_model, rf, in_slew1, c2, c1, pvt);
+  const double rd
+      = gateModelRd(drvr_cell, table_model, rf, in_slew1, c2, c1, pvt);
   const CeffResult ceff_res = calculateCeff(
       drvr_library, drvr_cell, pvt, table_model, rf, rd, in_slew1, c2, rpi, c1);
 
