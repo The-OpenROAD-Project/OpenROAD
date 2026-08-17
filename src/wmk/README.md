@@ -301,13 +301,19 @@ header row, and columns are matched by name, so a producer may emit them in any
 order and add columns of its own. Values are not quoted, so instance names must
 not contain commas.
 
-A row is checked unless `skipped_reason` is non-empty. The value
-`already_satisfied` is the exception: the object already carried the target value
-and needed no edit, which is still a claim.
+Each row represents either a watermark claim or a candidate that was skipped.
+A row is verified when `skipped_reason` is empty. The special value
+`already_satisfied` is also treated as a valid claim: the object already matched
+the target value and therefore required no modification.
 
-`skipped_reason` marks a candidate that was never claimed. A pair the embedder
-selected, tried to mark and failed to mark is a claim like any other and must be
-written as one; it will not hold, and the extraction rate will say so.
+Any other non-empty `skipped_reason` indicates that the candidate was not
+included in the final claim set and is ignored during verification.
+Once an object has been selected as a watermark claim, it remains a claim even
+if embedding fails to achieve or preserve its target value. Such a failed claim
+must still be recorded and will count against the extraction rate. This prevents
+failed claims from being removed after observing the final design, which would
+artificially inflate the extraction rate.
+
 
 **Placement claims** describe pairs of cells in the same row. The bit is which of
 the two sits further left, comparing instance bounding boxes.
@@ -386,7 +392,7 @@ Simply run the following script:
 ## Limitations
 
 -   A technology whose router never wires against the preferred direction has no
-    routing carrier. The stage reports this and is skipped, and ownership rests
+    routing watermarking. The stage reports this and is skipped, and ownership rests
     on placement and the clock tree. ASAP7 is such a technology.
 -   Watermark tags are not serialized to distributed workers, so the routing bias
     is not applied in distributed detailed routing.

@@ -69,7 +69,7 @@ check "a different nonce gets a different key" {
 # Supplying the secret key and nonce reproduces the whole bundle, which is what
 # lets a flow re-derive the same watermark without storing the stage keys.
 set again [generate_watermark_key -design_id jpeg_encoder -key_hex $key \
-             -nonce_hex $nonce]
+  -nonce_hex $nonce]
 check "the bundle is reproducible from its inputs" \
   { expr { $again eq $bundle } } 1
 

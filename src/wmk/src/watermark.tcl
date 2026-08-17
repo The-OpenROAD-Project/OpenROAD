@@ -62,7 +62,7 @@ proc generate_watermark_key { args } {
   }
 
   set result [dict create key_hex $key_hex nonce_hex $nonce_hex \
-                design_id $design_id]
+    design_id $design_id]
   foreach stage { placement cts routing } {
     set derived [wmk::derive_stage_key_cmd $key_hex $design_id $nonce_hex $stage]
     if { $derived eq "" } {
@@ -119,7 +119,7 @@ proc derive_watermark_key { args } {
     utl::error WMK 97 "The -stage argument must be placement, cts or routing."
   }
   set derived [wmk::derive_stage_key_cmd $keys(-key_hex) $keys(-design_id) \
-                 $keys(-nonce_hex) $keys(-stage)]
+    $keys(-nonce_hex) $keys(-stage)]
   if { $derived eq "" } {
     utl::error WMK 98 "Could not derive the key; -key_hex must be 64 hex chars\
                        and -nonce_hex an even-length hex string."
@@ -216,8 +216,8 @@ proc place_watermark { args } {
   if { [info exists keys(-guard_degrade_ns)] } { set guard_degrade $keys(-guard_degrade_ns) }
 
   set rc [wmk::place_watermark_cmd $keys(-key_hex) $keys(-claims_file) \
-            $grid_nx $grid_ny $pair_dist $per_tile $slack $hpwl_eps $max_disp \
-            $min_pairs $guard_degrade]
+    $grid_nx $grid_ny $pair_dist $per_tile $slack $hpwl_eps $max_disp \
+    $min_pairs $guard_degrade]
   if { $rc < 0 } {
     utl::error WMK 63 "Failed to parse -key_hex: must be 64 hex chars."
   }
@@ -265,7 +265,7 @@ proc cts_watermark { args } {
   if { [info exists keys(-cap_headroom_frac)] } { set cap_frac $keys(-cap_headroom_frac) }
 
   set rc [wmk::cts_watermark_cmd $keys(-key_hex) $keys(-claims_file) \
-            $num_pairs $dist $margin $slew_frac $cap_frac]
+    $num_pairs $dist $margin $slew_frac $cap_frac]
   if { $rc < 0 } {
     utl::error WMK 67 "Failed to parse -key_hex: must be 64 hex chars."
   }
@@ -342,8 +342,10 @@ proc verify_watermark { args } {
   if { $tau < 0.0 || $tau > 1.0 } {
     utl::error WMK 40 "The -tau argument must be in \[0, 1\]."
   }
-  if { ![info exists keys(-placement_claims)] && ![info exists keys(-cts_claims)]
-       && ![info exists keys(-routing_key_hex)] } {
+  if {
+    ![info exists keys(-placement_claims)] && ![info exists keys(-cts_claims)]
+    && ![info exists keys(-routing_key_hex)]
+  } {
     utl::error WMK 41 "At least one of -placement_claims, -cts_claims or\
                        -routing_key_hex is required."
   }
@@ -381,7 +383,7 @@ proc verify_watermark { args } {
       utl::error WMK 49 "The -routing_permutations argument must be positive."
     }
     set p_r [wmk::verify_routing_watermark_cmd $keys(-routing_key_hex) $frac \
-               $draws]
+      $draws]
     if { $p_r == -2.0 } {
       # The technology has no wrong-way routing to measure, so the stage is not
       # applicable rather than failed, and it does not count against the tally.

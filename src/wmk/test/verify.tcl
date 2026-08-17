@@ -9,7 +9,9 @@ read_def gcd.def
 puts "verdict [verify_watermark -placement_claims wm_place_claims.csv -min_stages 1]"
 
 # The same evidence is not enough once the bar is raised past it.
-puts "strict verdict [verify_watermark -placement_claims wm_place_claims.csv -tau 0.9 -min_stages 1]"
+set strict [verify_watermark -placement_claims wm_place_claims.csv -tau 0.9 \
+  -min_stages 1]
+puts "strict verdict $strict"
 
 # A claim file that does not say which bit it committed to is refused rather
 # than scored.  Reading a missing bit as zero would measure the design against

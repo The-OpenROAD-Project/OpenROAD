@@ -10,7 +10,8 @@
 # The budget is set to zero here, which demands that a move cost no skew at
 # all.  The default is 20 ps, deliberately: a sink move almost always costs a
 # little, and a zero budget turns the stage off wherever the clock is tight.
-# Zero is what makes the guard observable on a tree this small.  If the guard were dead -- if skew came back as a
+# Zero is what makes the guard observable on a tree this small.  If the guard
+# were dead -- if skew came back as a
 # constant, say -- nothing would ever be rejected and the watermark would be
 # free to damage the clock it is marking.
 #
@@ -34,7 +35,7 @@ set key 0000000000000000000000000000000000000000000000000000000000000003
 set claims [make_result_file cts_guard.csv]
 
 set committed [cts_watermark -key_hex $key -claims_file $claims \
-                 -skew_margin_ns 0]
+  -skew_margin_ns 0]
 puts "committed $committed pairs"
 check "the pairs the guard turned away are still claimed" { set committed } 3
 check "and the claim does not hold" { verify_watermark -cts_claims $claims -min_stages 1 } 0
