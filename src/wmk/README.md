@@ -444,6 +444,12 @@ The tag is mirrored onto the router's own net objects when the design is read,
 and those objects are not serialized to distributed workers, so the bias is not
 applied in distributed detailed routing.
 
+The placement mark's timing check needs timing to be set up too, for a reason
+worth stating: moving a cell changes only its parasitics, and nothing
+recomputes those until asked. Without liberty and constraints the check would
+compare each slack against itself and never find anything, so the command says
+so rather than reporting that the marks were free.
+
 The clock-tree mark needs timing to be set up. Skew is what decides whether a
 sink may be moved, and a design read straight from a database has no liberty
 and no constraints attached, so skew cannot be evaluated and the guard has

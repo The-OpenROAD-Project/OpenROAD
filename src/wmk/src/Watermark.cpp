@@ -185,8 +185,13 @@ double binomialTail(int X, int x, double p)
 Watermark::Watermark(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      dpl::Opendp* opendp,
+                     est::EstimateParasitics* estimate_parasitics,
                      utl::Logger* logger)
-    : db_(db), sta_(sta), opendp_(opendp), logger_(logger)
+    : db_(db),
+      sta_(sta),
+      opendp_(opendp),
+      estimate_parasitics_(estimate_parasitics),
+      logger_(logger)
 {
 }
 

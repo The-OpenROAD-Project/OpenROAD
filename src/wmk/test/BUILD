@@ -13,6 +13,7 @@ PASSFAIL_TESTS = [
     "cts_guard",
     "keygen",
     "place",
+    "place_guard",
     "place_keyed",
     "route_verify",
 ]
@@ -25,6 +26,7 @@ TESTS = [
     "cts_guard",
     "keygen",
     "place",
+    "place_guard",
     "place_keyed",
     "place_unmarked",
     "route_stat",

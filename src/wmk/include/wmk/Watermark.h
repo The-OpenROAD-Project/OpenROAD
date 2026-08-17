@@ -36,6 +36,10 @@ namespace dpl {
 class Opendp;
 }
 
+namespace est {
+class EstimateParasitics;
+}
+
 namespace wmk {
 
 // Knobs for the placement watermark.  The defaults are the values the scheme
@@ -158,6 +162,7 @@ class Watermark
   Watermark(odb::dbDatabase* db,
             sta::dbSta* sta,
             dpl::Opendp* opendp,
+            est::EstimateParasitics* estimate_parasitics,
             utl::Logger* logger);
 
   // Select the watermark nets (PDMarks paper, Eq. eq:routing_selection):
@@ -266,6 +271,10 @@ class Watermark
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   dpl::Opendp* opendp_ = nullptr;
+  // Moving a cell changes only its parasitics, and those are not recomputed
+  // until something asks.  Without this the post-embed timing check would
+  // compare a slack against itself and never find anything.
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
 

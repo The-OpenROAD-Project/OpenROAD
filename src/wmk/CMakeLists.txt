@@ -40,6 +40,7 @@ target_link_libraries(wmk
     OpenSTA
     dbSta_lib
     dpl_lib
+    est_lib
 )
 
 messages(

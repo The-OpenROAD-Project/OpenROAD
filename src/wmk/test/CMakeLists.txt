@@ -20,6 +20,7 @@ or_integration_tests(
     cts_guard
     keygen
     place
+    place_guard
     place_keyed
     route_verify
 )

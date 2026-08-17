@@ -41,6 +41,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "sta/MinMax.hh"
 #include "sta/Scene.hh"
@@ -480,7 +481,21 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
   // so the claims that remain are still a set chosen without reference to what
   // the design shows -- the property the extraction rate rests on.
   int reverted = 0;
-  if (opts.post_guard && sta_ != nullptr && opts.guard_degrade_ns > 0.0) {
+  const bool can_measure = opts.post_guard && opts.guard_degrade_ns > 0.0
+                           && clockSkewAvailable()
+                           && estimate_parasitics_ != nullptr;
+  if (opts.post_guard && opts.guard_degrade_ns > 0.0 && !can_measure) {
+    logger_->warn(utl::WMK,
+                  59,
+                  "Timing cannot be re-evaluated after the swaps, so the marks "
+                  "were committed without checking what they cost.  Read "
+                  "liberty and constraints first to keep the check in force.");
+  }
+  if (can_measure) {
+    // A cell that moved has different parasitics, and nothing recomputes them
+    // until asked.  Without this the slacks below would be the ones cached
+    // before the swaps, and every pair would look free.
+    estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
     const float degrade = static_cast<float>(opts.guard_degrade_ns * 1e-9);
     const float floor
         = static_cast<float>(opts.slack_threshold_ns * 1e-9) - degrade;
@@ -505,7 +520,7 @@ int Watermark::placementWatermark(const std::array<std::uint8_t, 32>& key,
       logger_->info(utl::WMK,
                     58,
                     "Placement watermark: {} pairs put back because their "
-                    "cells lost more than {:.0f} ps of slack.",
+                    "cells lost more than {:.4g} ps of slack.",
                     reverted,
                     opts.guard_degrade_ns * 1000.0);
       if (opendp != nullptr) {
