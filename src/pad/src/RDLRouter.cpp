@@ -406,7 +406,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   remove_edges.clear();
 
   if (gui_ != nullptr) {
-    gui_->pause(false);
+    gui_->pause("routing graph and terminal access points are built", false);
   }
 
   // Build list of routes
@@ -611,7 +611,12 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     if (gui_ != nullptr
         && (logger_->debugCheck(utl::PAD, "Router", 3) || isDebugNet(net))) {
       const bool use_timeout = route->isRouted() && !isDebugNet(net);
-      gui_->pause(use_timeout);
+      gui_->pause(fmt::format("{} {} on {} ({} route(s) left in the queue)",
+                              route->isRouted() ? "routed" : "failed to route",
+                              src->getName(),
+                              net->getName(),
+                              route_queue.size()),
+                  use_timeout);
     }
 
     if (route_queue.empty() && iteration_count < max_router_iterations_) {
@@ -639,7 +644,11 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
       if (gui_ != nullptr
           && (logger_->debugCheck(utl::PAD, "Router", 2) || isDebugNet(net))) {
-        gui_->pause(false);
+        gui_->pause(fmt::format("{} route(s) failed at the end of routing "
+                                "iteration {}, before ripup",
+                                failed.size(),
+                                iteration_count),
+                    false);
       }
 
       debugPrint(logger_,
@@ -711,7 +720,13 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       }
 
       if (gui_ != nullptr && logger_->debugCheck(utl::PAD, "Router", 2)) {
-        gui_->pause(false);
+        gui_->pause(
+            fmt::format("ripped up {} route(s) and requeued {} failed route(s) "
+                        "in routing iteration {}",
+                        ripup.size(),
+                        failed.size(),
+                        iteration_count),
+            false);
       }
     }
   }
@@ -867,7 +882,11 @@ void RDLRouter::populateTerminalAccessPoints(
       gui_->addSnap(target.center, snap);
     }
     gui_->zoomToSnap(true);
-    gui_->pause(false);
+    gui_->pause(fmt::format("{} candidate access point(s) for {} before "
+                            "violations are removed",
+                            snap_pts.size(),
+                            target.terminal->getName()),
+                false);
     gui_->clearSnap();
   }
 
@@ -973,8 +992,12 @@ void RDLRouter::populateTerminalAccessPoints(
       gui_->addSnap(target.center, snap);
     }
     gui_->zoomToSnap(true);
-    gui_->pause(!isDebugNet(target.terminal->getNet())
-                && !isDebugPin(target.terminal));
+    gui_->pause(
+        fmt::format("{} access point(s) remain for {} after violations "
+                    "are removed",
+                    snap_pts.size(),
+                    target.terminal->getName()),
+        !isDebugNet(target.terminal->getNet()) && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -1060,8 +1083,12 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
       gui_->addSnap(target.center, snap);
     }
     gui_->zoomToSnap(true);
-    gui_->pause(!isDebugNet(target.terminal->getNet())
-                && !isDebugPin(target.terminal));
+    gui_->pause(
+        fmt::format("{} access point(s) usable for {} after points "
+                    "conflicting with committed routes are removed",
+                    snap_pts.size(),
+                    target.terminal->getName()),
+        !isDebugNet(target.terminal->getNet()) && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -1158,8 +1185,12 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 
   if (logger_->debugCheck(utl::PAD, "Terminal", 1) && gui_ != nullptr) {
     gui_->zoomToSnap(false);
-    gui_->pause(!isDebugNet(target.terminal->getNet())
-                && !isDebugPin(target.terminal));
+    gui_->pause(
+        fmt::format("terminal access for {} is inserted into the "
+                    "routing graph, {} edge(s) removed",
+                    target.terminal->getName(),
+                    access.removed_edges.size()),
+        !isDebugNet(target.terminal->getNet()) && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
