@@ -153,5 +153,59 @@ TEST(ParseHexKey32, RejectsWrongLengthAndNonHex)
   EXPECT_FALSE(parse_hex_key32(std::string(63, 'a') + "z", key));
 }
 
+// The routing statistic seeds its randomization null from SHA-256 of the
+// design name, so the bare hash is used on its own and is checked here against
+// the two vectors published with the algorithm.
+
+TEST(Sha256, EmptyInput)
+{
+  const std::array<std::uint8_t, 32> d = sha256("");
+  EXPECT_EQ(toHex(d.data(), d.size()),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+}
+
+TEST(Sha256, Abc)
+{
+  const std::array<std::uint8_t, 32> d = sha256("abc");
+  EXPECT_EQ(toHex(d.data(), d.size()),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+}
+
+// hmac_digest length-prefixes each part before hashing.  Without that, the
+// parts would simply be concatenated and two different tuples could hash the
+// same -- so a cell pair could be made to collide with a differently split one
+// and take its keyed bit.  This is the property that stops it.
+
+TEST(HmacDigest, PartBoundariesChangeTheDigest)
+{
+  const std::array<std::uint8_t, 32> key = {};
+  EXPECT_NE(hmac_digest(key, {"ab", "c"}), hmac_digest(key, {"a", "bc"}));
+  EXPECT_NE(hmac_digest(key, {"a", "b", "c"}), hmac_digest(key, {"abc"}));
+  EXPECT_NE(hmac_digest(key, {"", "abc"}), hmac_digest(key, {"abc", ""}));
+}
+
+TEST(HmacDigest, IsDeterministicAndKeyed)
+{
+  std::array<std::uint8_t, 32> key_a = {};
+  std::array<std::uint8_t, 32> key_b = {};
+  key_b[31] = 1;
+  const std::vector<std::string> parts = {"bit", "tile", "_101_", "_102_"};
+  EXPECT_EQ(hmac_digest(key_a, parts), hmac_digest(key_a, parts));
+  EXPECT_NE(hmac_digest(key_a, parts), hmac_digest(key_b, parts));
+}
+
+// Embedded NUL bytes must survive: the placement watermark feeds the tile
+// coordinates in as raw bytes, which are mostly zero for the first tile.
+
+TEST(HmacDigest, HandlesEmbeddedNuls)
+{
+  const std::array<std::uint8_t, 32> key = {};
+  const std::string zeros(8, '\0');
+  std::string one_set(8, '\0');
+  one_set[7] = 1;
+  EXPECT_NE(hmac_digest(key, {"bit", zeros}),
+            hmac_digest(key, {"bit", one_set}));
+}
+
 }  // namespace
 }  // namespace wmk
