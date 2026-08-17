@@ -6,7 +6,11 @@
 // the commands the Tcl side wraps them in, so a flow written in Python can
 // embed a mark and check its own work in the same process.
 
+#ifdef BAZEL
+%module(package="src.wmk") wmk
+#else
 %module wmk_py
+#endif
 
 %{
 #include <array>
@@ -38,9 +42,16 @@
     }
     std::memcpy(key_bytes.data(), PyBytes_AsString($input), 32);
   } else if (PyUnicode_Check($input)) {
-    const char* hex = PyUnicode_AsUTF8($input);
-    if (hex == nullptr
-        || !wmk::parse_hex_key32(std::string(hex), key_bytes)) {
+    // PyUnicode_AsUTF8 is outside the limited API that the Bazel build
+    // compiles against, so go through a bytes object, which is inside it.
+    PyObject* utf8 = PyUnicode_AsUTF8String($input);
+    bool parsed = false;
+    if (utf8 != nullptr) {
+      parsed = wmk::parse_hex_key32(
+          std::string(PyBytes_AsString(utf8), PyBytes_Size(utf8)), key_bytes);
+      Py_DECREF(utf8);
+    }
+    if (!parsed) {
       SWIG_exception_fail(
           SWIG_ValueError,
           "a watermark key given as text must be 64 hex characters");

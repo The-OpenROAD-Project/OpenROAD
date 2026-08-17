@@ -118,6 +118,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl:ui",
     "//src/web",
     "//src/web:ui",
+    "//src/wmk",
+    "//src/wmk:ui",
     ":ord",
 ]
 
@@ -386,6 +388,7 @@ cc_binary(
         "//src/dpl",
         "//src/drt",
         "//src/exa",
+        "//src/wmk",
         "//src/fin",
         "//src/gpl",
         "//src/grt",
@@ -417,6 +420,7 @@ py_library(
         "//src/gpl:gpl_py",
         "//src/odb:odb_py",
         "//src/utl:utl_py",
+        "//src/wmk:wmk_py",
     ],
 )
 
@@ -442,6 +446,7 @@ python_wrap_cc(
         "//src/dpl:swig-py",
         "//src/drt:swig-py",
         "//src/exa:swig-py",
+        "//src/wmk:swig-py",
         "//src/fin:swig-py",
         "//src/gpl:swig-py",
         "//src/grt:swig-py",

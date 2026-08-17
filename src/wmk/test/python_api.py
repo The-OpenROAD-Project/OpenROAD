@@ -12,6 +12,7 @@
 # not a key is refused rather than quietly padded or truncated into one.
 
 from openroad import Tech, Design
+import helpers
 import wmk
 
 KEY_HEX = "0011223344556677889900aabbccddeeff00112233445566778899aabbccddee"
@@ -21,25 +22,33 @@ tech.readLef("Nangate45/Nangate45.lef")
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 design = Design(tech)
 design.readDef("gcd_placed.def")
-design.evalTclString("create_clock -name core_clock -period 2.0 [get_ports clk]")
 watermark = design.getWatermark()
 
 options = wmk.PlacementOptions()
 options.hpwl_eps_dbu = 2000
 options.pair_dist_um = 3.0
 options.pairs_per_tile = 64
+# The slack screen is switched off deliberately.  What is being tested is that
+# the bindings carry a key across into C++ and bring an answer back, and how
+# many pairs a design yields under timing pressure is place.tcl's business.
+# Leaving it on would make these counts depend on how the timing happened to be
+# set up, which differs between the two build systems and is not what this test
+# is for.
+options.slack_threshold_ns = 0.0
+options.post_guard = False
 
-committed = watermark.placementWatermark(KEY_HEX, options, "python_api.csv")
+claims = helpers.make_result_file("python_api.csv")
+committed = watermark.placementWatermark(KEY_HEX, options, claims)
 print("committed from a hex key:", committed)
 
 # The same key as raw bytes has to reach the same 24 pairs.  They are already
 # in this key's order by now, so the second run simply finds them there.
 again = watermark.placementWatermark(
-    bytes.fromhex(KEY_HEX), options, "python_api_bytes.csv"
+    bytes.fromhex(KEY_HEX), options, helpers.make_result_file("python_api_bytes.csv")
 )
 print("committed from a bytes key:", again)
 
-result = watermark.verifyPlacement("python_api.csv")
+result = watermark.verifyPlacement(claims)
 print("verification:", result.held, "of", result.checked)
 
 tagged = watermark.selectNetsKeyed(KEY_HEX, 0.10)
