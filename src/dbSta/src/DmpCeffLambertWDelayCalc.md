@@ -17,7 +17,7 @@ In deep-submicron and nanometer nodes, interconnect wire resistance shields down
 +-----------------------------------------------------------------------------------------------+
 |                                  TRADITIONAL DMP 2-POLE                                       |
 |                                                                                               |
-|  [Pi-Model] ---> [Newton-Raphson Ceff Loop] ---> [Liberty NLDM] ---> [Newton-Raphson Slew]   |
+|  [Pi-Model] ---> [Newton-Raphson Ceff Loop] ---> [Liberty NLDM] ---> [Newton-Raphson Slew]    |
 |                  (Iterative Jacobian / LuDecomp)                     (Root-Finding per Load)  |
 +-----------------------------------------------------------------------------------------------+
                                                 VS
