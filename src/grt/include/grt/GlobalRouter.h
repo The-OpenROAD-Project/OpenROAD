@@ -230,13 +230,16 @@ class GlobalRouter
                        const int& layer_level,
                        int used,
                        odb::dbNet* db_net);
-  void updateRouteGridsLayer(const int& init_x,
-                             const int& init_y,
-                             const int& final_x,
-                             const int& final_y,
-                             const int& layer_level,
-                             const int& new_layer_level,
-                             odb::dbNet* db_net);
+  // Moves a route span's router bookkeeping from layer_level to
+  // new_layer_level after a jumper insertion; expects routes_[db_net] to
+  // already hold the finished jumpered route.
+  void updateJumperedRoute(const int& init_x,
+                           const int& init_y,
+                           const int& final_x,
+                           const int& final_y,
+                           const int& layer_level,
+                           const int& new_layer_level,
+                           odb::dbNet* db_net);
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
@@ -356,6 +359,8 @@ class GlobalRouter
 
  private:
   void finishGlobalRouting(bool save_guides = false);
+  // DBU coordinate to gcell index, clamped into the (oversized) last gcell.
+  int dbuToTile(int dbu_coord, bool is_x) const;
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);

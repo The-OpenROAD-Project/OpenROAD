@@ -2282,21 +2282,10 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   merged_nets_.insert(removed_net);
 }
 
-std::vector<double> CUGR::getNdrCosts(odb::dbNet* db_net) const
-{
-  auto it = db_net_map_.find(db_net);
-  if (it == db_net_map_.end()) {
-    // Net not found; return a unit-demand vector so the caller uses 1.0.
-    const int num_layers = grid_graph_ ? grid_graph_->getNumLayers() : 0;
-    return std::vector<double>(num_layers, 1.0);
-  }
-  return it->second->getNdrCosts();
-}
-
-bool CUGR::hasAvailableResources(int layer_index,
-                                 int tile_x,
-                                 int tile_y,
-                                 double demand) const
+bool CUGR::hasAvailableResources(odb::dbNet* db_net,
+                                 const int layer_index,
+                                 const int tile_x,
+                                 const int tile_y) const
 {
   if (!grid_graph_) {
     return false;
@@ -2304,19 +2293,20 @@ bool CUGR::hasAvailableResources(int layer_index,
   // layer_index is 1-based (matching GSegment convention); GridGraph uses
   // 0-based layer indices.
   const int layer_0 = layer_index - 1;
-  if (layer_0 < 0) {
+  if (layer_0 < 0 || layer_0 >= grid_graph_->getNumLayers()) {
     logger_->error(GRT,
                    705,
                    "Invalid layer index {} in hasAvailableResources.",
                    layer_index);
   }
-  // Queries above the layer stack or off-grid (e.g. inside the oversized
-  // last gcell, whose positions divide past the grid) have no resources.
-  if (layer_0 >= grid_graph_->getNumLayers()
-      || tile_x >= grid_graph_->getSize(0)
+  // Off-grid tiles have no edge (getEdge indexes raw vectors).
+  if (tile_x < 0 || tile_x >= grid_graph_->getSize(0) || tile_y < 0
       || tile_y >= grid_graph_->getSize(1)) {
     return false;
   }
+  auto it = db_net_map_.find(db_net);
+  const double demand
+      = it == db_net_map_.end() ? 1.0 : it->second->getNdrCost(layer_0);
   return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= demand;
 }
 

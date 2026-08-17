@@ -597,15 +597,6 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
   // Create segment in upper layer (jumper)
   route.emplace_back(
       init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2, true);
-  // Reducing usage in the layer level
-  grouter_->updateResources(
-      init_x, init_y, final_x, final_y, layer_level, -1, db_net);
-  // Increasing usage in the layer level + 2
-  grouter_->updateResources(
-      init_x, init_y, final_x, final_y, layer_level + 2, 1, db_net);
-  // Update FastRoute Tree Edges
-  grouter_->updateRouteGridsLayer(
-      init_x, init_y, final_x, final_y, layer_level, layer_level + 2, db_net);
 }
 
 void RepairAntennas::addJumperToRoute(GRoute& route,
@@ -653,6 +644,15 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
   // old segment is reduced (after jumper)
   route[seg_id].init_x = jumper_final_x;
   route[seg_id].init_y = jumper_final_y;
+  // Notify the router only now, after the split, so it sees a route whose
+  // lower-layer segments no longer span the jumper window.
+  grouter_->updateJumperedRoute(jumper_init_x,
+                                jumper_init_y,
+                                jumper_final_x,
+                                jumper_final_y,
+                                layer_level,
+                                layer_level + 2,
+                                db_net);
 }
 
 void RepairAntennas::addJumper(GRoute& route,

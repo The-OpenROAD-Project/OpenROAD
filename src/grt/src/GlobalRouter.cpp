@@ -2292,23 +2292,27 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 }
 
+int GlobalRouter::dbuToTile(const int dbu_coord, const bool is_x) const
+{
+  const int origin = is_x ? grid_->getXMin() : grid_->getYMin();
+  const int grids = is_x ? grid_->getXGrids() : grid_->getYGrids();
+  // The last gcell is oversized: positions inside it divide past the grid.
+  return std::min((dbu_coord - origin) / grid_->getTileSize(), grids - 1);
+}
+
 bool GlobalRouter::hasAvailableResources(bool is_horizontal,
                                          const int& pos_x,
                                          const int& pos_y,
                                          const int& layer_level,
                                          odb::dbNet* db_net)
 {
-  // transform from real position to grid pos of fastroute
-  int grid_x = ((pos_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_y = ((pos_y - grid_->getYMin()) / grid_->getTileSize());
+  const int grid_x = dbuToTile(pos_x, /*is_x=*/true);
+  const int grid_y = dbuToTile(pos_y, /*is_x=*/false);
   if (use_cugr_) {
     // CUGR edges run along the layer's preferred direction, so the
-    // orientation is implied by the layer; demand carries the NDR factor.
-    const std::vector<double> ndr_costs = cugr_->getNdrCosts(db_net);
-    const double demand = layer_level - 1 < (int) ndr_costs.size()
-                              ? ndr_costs[layer_level - 1]
-                              : 1.0;
-    return cugr_->hasAvailableResources(layer_level, grid_x, grid_y, demand);
+    // orientation is implied by the layer; the net's NDR demand is
+    // resolved inside CUGR.
+    return cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y);
   }
   int cap = 0;
   if (is_horizontal) {
@@ -2335,11 +2339,6 @@ void GlobalRouter::updateResources(const int& init_x,
                                    int used,
                                    odb::dbNet* db_net)
 {
-  if (use_cugr_) {
-    // Demand moves wholesale when the jumpered route is re-adopted in
-    // updateRouteGridsLayer; per-edge deltas are FastRoute bookkeeping.
-    return;
-  }
   // transform from real position to grid pos of fastrouter
   int x0
       = ((std::min(init_x, final_x) - grid_->getXMin()) / grid_->getTileSize());
@@ -2357,17 +2356,17 @@ void GlobalRouter::updateResources(const int& init_x,
   fastroute_->updateEdge2DAnd3DUsage(x0, y0, x1, y1, layer_level, used, db_net);
 }
 
-void GlobalRouter::updateRouteGridsLayer(const int& init_x,
-                                         const int& init_y,
-                                         const int& final_x,
-                                         const int& final_y,
-                                         const int& layer_level,
-                                         const int& new_layer_level,
-                                         odb::dbNet* db_net)
+void GlobalRouter::updateJumperedRoute(const int& init_x,
+                                       const int& init_y,
+                                       const int& final_x,
+                                       const int& final_y,
+                                       const int& layer_level,
+                                       const int& new_layer_level,
+                                       odb::dbNet* db_net)
 {
   if (use_cugr_) {
-    // The caller already rewrote routes_[db_net] with the jumper; re-adopt
-    // it so CUGR swaps the old tree demand for the jumpered route's.
+    // routes_[db_net] holds the finished jumpered route; re-adopt it so
+    // CUGR swaps the old tree demand for the new one.
     if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
       debugPrint(logger_,
                  GRT,
@@ -2378,6 +2377,9 @@ void GlobalRouter::updateRouteGridsLayer(const int& init_x,
     }
     return;
   }
+  // Move the span's edge usage from the original layer to the jumper's.
+  updateResources(init_x, init_y, final_x, final_y, layer_level, -1, db_net);
+  updateResources(init_x, init_y, final_x, final_y, new_layer_level, 1, db_net);
   // transform from real position to grid pos of fastrouter
   int grid_init_x = ((init_x - grid_->getXMin()) / grid_->getTileSize());
   int grid_init_y = ((init_y - grid_->getYMin()) / grid_->getTileSize());
@@ -5841,42 +5843,26 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     std::vector<GSegment> connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
-    auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
-      return (dbu_coord - (is_x ? grid_->getXMin() : grid_->getYMin()))
-             / grid_->getTileSize();
-    };
-
-    std::vector<double> ndr_costs;
-    if (use_cugr_) {
-      ndr_costs = cugr_->getNdrCosts(db_net1);
-    }
-
     for (const GSegment& seg : connection) {
       if (!seg.isVia()) {
-        const int x1 = dbu_to_tile(std::min(seg.init_x, seg.final_x), true);
-        const int y1 = dbu_to_tile(std::min(seg.init_y, seg.final_y), false);
-        const int x2 = dbu_to_tile(std::max(seg.init_x, seg.final_x), true);
-        const int y2 = dbu_to_tile(std::max(seg.init_y, seg.final_y), false);
+        const int x1 = dbuToTile(std::min(seg.init_x, seg.final_x), true);
+        const int y1 = dbuToTile(std::min(seg.init_y, seg.final_y), false);
+        const int x2 = dbuToTile(std::max(seg.init_x, seg.final_x), true);
+        const int y2 = dbuToTile(std::max(seg.init_y, seg.final_y), false);
         const int layer = seg.init_layer;
 
         if (use_cugr_) {
-          // Capacity check using the CUGR GridGraph instead of FastRoute.
-          // Use the survivor net's per-layer NDR demand so that NDR nets with
-          // a demand factor > 1 are not incorrectly accepted on tight edges.
-          const int layer_0 = layer - 1;
-          const double demand
-              = (layer_0 >= 0 && layer_0 < static_cast<int>(ndr_costs.size()))
-                    ? ndr_costs[layer_0]
-                    : 1.0;
+          // Capacity check using the CUGR GridGraph instead of FastRoute;
+          // the survivor net's NDR demand is resolved inside CUGR.
           if (y1 == y2) {  // horizontal
             for (int x = x1; x < x2; x++) {
-              if (!cugr_->hasAvailableResources(layer, x, y1, demand)) {
+              if (!cugr_->hasAvailableResources(db_net1, layer, x, y1)) {
                 return false;
               }
             }
           } else {  // vertical
             for (int y = y1; y < y2; y++) {
-              if (!cugr_->hasAvailableResources(layer, x1, y, demand)) {
+              if (!cugr_->hasAvailableResources(db_net1, layer, x1, y)) {
                 return false;
               }
             }
