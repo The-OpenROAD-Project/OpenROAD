@@ -78,8 +78,15 @@ CAT3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(CAT3_DIR)/%.3,$(MAN3_FILES))
 # Default target
 all: doc web cat
 
-# Target to do symlinks and pandoc-compatible conversion
+# Target to do symlinks and pandoc-compatible conversion.
+# md/man2 and md/man3 hold nothing but generated files, so clear them before
+# regenerating: rename or delete a command and its stale .md would otherwise
+# linger for the cat/web $(wildcard md/man*/*.md) to pick up, keeping an
+# obsolete page alive. //docs:man_pages runs unsandboxed in a persistent
+# execroot and does not declare these as inputs, so nothing else removes them.
+# md/man1 is checked in and must survive.
 preprocess:
+	rm -rf $(SRC_DIR)/$(MAN2) $(SRC_DIR)/$(MAN3)
 	./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
 
 # Target to generate all man pages

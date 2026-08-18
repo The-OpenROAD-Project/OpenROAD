@@ -127,6 +127,25 @@ python_wrap_cc(
 
 exports_files(["README.md"])
 
+# Synthesis keeps most of its logger calls below src/: flow/ in this package,
+# elab/ and ir/ in their own. The macro's default non-recursive src/*.{cc,h,tcl}
+# glob would find only 29 of the 73 messages.
 messages_txt(
+    extra_srcs = [
+        "//src/syn/src/elab:message_srcs",
+        "//src/syn/src/ir:message_srcs",
+    ],
+    src_patterns = [
+        "src/*.cc",
+        "src/*.cpp",
+        "src/*.h",
+        "src/*.hh",
+        "src/*.tcl",
+        "src/flow/*.cc",
+        "src/flow/*.cpp",
+        "src/flow/*.h",
+        "src/flow/*.hh",
+        "src/flow/*.tcl",
+    ],
     visibility = ["//docs:__pkg__"],
 )
