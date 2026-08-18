@@ -36,6 +36,7 @@ command_abc
     -key1 key1   
     [-flag1]
     [-flagDev]
+    [-key2 key2]
     arg1
 ```
 
@@ -47,11 +48,18 @@ Arguments must follow this order and be sorted alphabetically within each catego
 
 #### Options
 
+Every row must have a non-empty description. Where the switch takes a value,
+state its **type**, the accepted **range** when one applies, and — for optional
+switches — the **default** used when the switch is omitted. Readers cannot
+infer any of this from the synopsis, and a missing default is the most common
+gap in the existing tool READMEs.
+
 | Switch Name | Description |
 | ----- | ----- |
-| `arg1` | Description for `arg1`. |
-| `-key1` | Description for `key1`. |
-| `-flag1` | Description for `flag1`. |
+| `arg1` | Description for `arg1`. The type is `string`. |
+| `-key1` | Description for `key1`. The type is `int`. Required. |
+| `-flag1` | Description for `flag1`. Flags take no value, so they state no type or default. |
+| `-key2` | Description for `key2`. The type is `int` in the range `[25-50]`. The default is `42`. |
 
 #### Developer Arguments
 
@@ -65,7 +73,17 @@ not to worry about - you can park them in the same level below the main
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file]() or the [swig file]().
+If you are a developer, you might find these useful. Link to the module's
+source file and swig file using paths relative to this README, substituting
+the real file names for `ToolName`:
+
+```markdown
+More details can be found in the [source file](./src/ToolName.cpp) or the
+[swig file](./src/ToolName.i).
+```
+
+Do not leave the link targets empty — verify each path exists before you
+commit.
 
 | Command Name | Description |
 | ----- | ----- |
@@ -93,7 +111,7 @@ Simply run the following script:
 
 ## FAQs
 
-Check out [GitHub discussion]()
+Check out the [GitHub Q&A discussions](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a)
 about this tool.
 
 ## Authors
