@@ -2966,14 +2966,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           if (inst->getMaster()->isFiller()) {
             continue;
           }
-          // A hidden cell type takes its color with it: the overlay is a fill
-          // of the instance, and Qt's drawModuleView only ever sees the
-          // instances that passed isInstanceVisible.
-          if (!vis.isInstVisible(inst, sta_)) {
-            continue;
-          }
           const Color* c = owner_color(inst);
           if (c == nullptr) {
+            continue;
+          }
+          // A hidden cell type takes its color with it, like Qt's
+          // drawModuleView.  After the color lookup: classifyInstance inside
+          // isInstVisible costs more than a map find.
+          if (!vis.isInstVisible(inst, sta_)) {
             continue;
           }
           const int pxl

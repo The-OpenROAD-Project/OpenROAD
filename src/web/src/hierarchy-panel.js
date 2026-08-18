@@ -36,9 +36,8 @@ export class HierarchyPanel {
         this._select.addEventListener('change',
                                       () => this.selectView(this._select.value));
 
-        // Label and dropdown as one node, the way the Charts widget labels its
-        // filters: selectView moves the picker between toolbars, and the label
-        // has to travel with it.
+        // Label and select as one node: selectView moves the picker between
+        // toolbars and the label has to travel with it.
         const label = document.createElement('span');
         label.className = 'hierarchy-view-label';
         label.textContent = 'Source:';
