@@ -83,10 +83,22 @@ CUGR::CUGR(odb::dbDatabase* db,
 
 CUGR::~CUGR() = default;
 
+void CUGR::clear()
+{
+  gr_nets_.clear();
+  net_indices_.clear();
+  db_net_map_.clear();
+  merged_nets_.clear();
+  nets_to_route_.clear();
+  incremental_candidates_.clear();
+  incremental_routing_ = false;
+}
+
 void CUGR::init(const int min_routing_layer,
                 const int max_routing_layer,
                 const odb::PtrSet<odb::dbNet>& clock_nets)
 {
+  clear();
   constants_.min_routing_layer = min_routing_layer - 1;
   design_ = std::make_unique<Design>(db_,
                                      logger_,
@@ -1555,8 +1567,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                   gr_net->getNdrCosts());
+      grid_graph_->removeTreeUsage(*gr_net);
     }
     design_->updateNet(db_net);
     const int idx = gr_net->getIndex();
@@ -1627,24 +1638,21 @@ std::shared_ptr<GRTreeNode> CUGR::buildTreeFromRoute(const GRoute& route) const
       }
       const BoxT cells = grid_graph_->rangeSearchCells(BoxT(
           segment.init_x, segment.init_y, segment.final_x, segment.final_y));
-      const int direction = grid_graph_->getLayerDirection(init_layer);
       if (cells[0].low() != cells[0].high()
           && cells[1].low() != cells[1].high()) {
         return nullptr;
       }
-      if (direction == MetalLayer::H) {
-        if (cells[1].low() != cells[1].high()) {
-          return nullptr;
-        }
+      // Detailed routes may contain wrong-way spans; adopt them as tree
+      // edges along the crossed axis (commitTree deposits their demand on
+      // the flanking edges) instead of rejecting the whole tree.
+      const int axis = cells[0].low() != cells[0].high() ? 0 : 1;
+      if (axis == 0) {
         const int y = cells[1].low();
         addNode(GRPoint(init_layer, cells[0].low(), y));
         for (int x = cells[0].low(); x < cells[0].high(); x++) {
           addEdge(GRPoint(init_layer, x, y), GRPoint(init_layer, x + 1, y));
         }
       } else {
-        if (cells[0].low() != cells[0].high()) {
-          return nullptr;
-        }
         const int x = cells[0].low();
         addNode(GRPoint(init_layer, x, cells[1].low()));
         for (int y = cells[1].low(); y < cells[1].high(); y++) {
@@ -1708,8 +1716,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                   gr_net->getNdrCosts());
+      grid_graph_->removeTreeUsage(*gr_net);
     }
     design_->updateNet(db_net);
     const int idx = gr_net->getIndex();
@@ -1758,7 +1765,10 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   }
 
   new_net->setRoutingTree(tree);
-  grid_graph_->addTreeUsage(tree, new_net->getNdrCosts());
+  // The flag records provenance, not geometry: adopted routes come from
+  // detailed wires, where wrong-way and below-min pin-access spans are legal.
+  new_net->setAdopted(true);
+  grid_graph_->addTreeUsage(*new_net);
   return true;
 }
 
@@ -1779,8 +1789,7 @@ void CUGR::removeNet(odb::dbNet* db_net)
   // usage was transferred to the preserved net -- do NOT remove it again.
   if (merged_nets_.erase(db_net) == 0) {
     if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
-                                   gr_net->getNdrCosts());
+      grid_graph_->removeTreeUsage(*gr_net);
     }
   }
 
@@ -2022,13 +2031,13 @@ void CUGR::verifyDemandConsistency(const char* tag)
   const auto live = grid_graph_->snapshotDemand();
   for (const auto& net : gr_nets_) {
     if (net && net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+      grid_graph_->removeTreeUsage(*net);
     }
   }
   const auto base = grid_graph_->snapshotDemand();
   for (const auto& net : gr_nets_) {
     if (net && net->getRoutingTree()) {
-      grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+      grid_graph_->addTreeUsage(*net);
     }
   }
   const auto recomputed = grid_graph_->snapshotDemand();
@@ -2264,6 +2273,11 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
       build_tree(start_coord, node_a);
     }
   }
+
+  // Grafting an adopted tree into a native survivor must carry the
+  // adopted mark, or the combined tree's release trips GRT-1252.
+  preserved_gr->setAdopted(preserved_gr->isAdopted()
+                           || removed_gr->isAdopted());
 
   merged_nets_.insert(removed_net);
 }
