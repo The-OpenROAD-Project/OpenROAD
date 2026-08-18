@@ -179,7 +179,8 @@ class RepairAntennas
                                     const int& final_y,
                                     const odb::Point& parent_pos,
                                     const bool& is_horizontal,
-                                    std::vector<int>& candidate_positions);
+                                    std::vector<int>& candidate_positions,
+                                    std::vector<int>& fallback_positions);
   int getBestPosition(const std::vector<int>& candidate_positions,
                       const bool& is_horizontal,
                       const odb::Point& parent_pos);

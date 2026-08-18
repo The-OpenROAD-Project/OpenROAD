@@ -142,13 +142,6 @@ class CUGR
                              int layer_index,
                              int tile_x,
                              int tile_y) const;
-  // True if a via crossing from layer_index to layer_index + 1 at
-  // (tile_x, tile_y) has capacity left on every flank edge it would charge
-  // (see GridGraph::commitVia), at db_net's NDR demand.
-  bool hasViaResources(odb::dbNet* db_net,
-                       int layer_index,
-                       int tile_x,
-                       int tile_y) const;
   // True if a complete jumper -- the wire on layer_index between the tiles
   // plus a two-layer via stack at each endpoint -- fits the headroom of
   // every edge it would charge, accumulating demands that share an edge.

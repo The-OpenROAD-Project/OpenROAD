@@ -634,6 +634,16 @@ bool RepairAntennas::addJumperToRoute(GRoute& route,
                                     jumper_final_y,
                                     layer_level + 2,
                                     db_net)) {
+    debugPrint(logger_,
+               GRT,
+               "repair_antennas",
+               1,
+               "net {} jumper at ({}, {})-({}, {}) rejected for capacity",
+               db_net->getConstName(),
+               jumper_init_x,
+               jumper_init_y,
+               jumper_final_x,
+               jumper_final_y);
     return false;
   }
   // Add vias and jumper in the position
@@ -862,7 +872,8 @@ void RepairAntennas::findJumperCandidatePositions(
     const int& final_y,
     const odb::Point& parent_pos,
     const bool& is_horizontal,
-    std::vector<int>& candidate_positions)
+    std::vector<int>& candidate_positions,
+    std::vector<int>& fallback_positions)
 {
   // One tile size of distance from init or segment end
   const int jumper_dist = 1;
@@ -879,6 +890,14 @@ void RepairAntennas::findJumperCandidatePositions(
     } else {
       candidate_positions.push_back(
           getJumperPosition(init_y, final_y, parent_pos.y()));
+    }
+    // Tile-aligned fallbacks across the window give the capacity gate
+    // alternatives when every parent-nearest position is rejected.
+    const int lo = (is_horizontal ? init_x : init_y) + jumper_dist * tile_size_;
+    const int hi = (is_horizontal ? final_x : final_y) - jumper_size_
+                   - jumper_dist * tile_size_;
+    for (int pos = lo; pos <= hi; pos += tile_size_) {
+      fallback_positions.push_back(pos);
     }
   }
 }
@@ -962,6 +981,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
 
   // Save best positions to add jumper
   std::vector<int> candidate_positions;
+  std::vector<int> fallback_positions;
   // Iterate all position of segment
   while (pos_x <= seg_final_x && pos_y <= seg_final_y) {
     // Check if the position has resources available
@@ -977,7 +997,8 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                    pos_y,
                                    parent_pos,
                                    is_horizontal,
-                                   candidate_positions);
+                                   candidate_positions,
+                                   fallback_positions);
       last_block_x = pos_x;
       last_block_y = pos_y;
     }
@@ -995,11 +1016,49 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                  seg_final_y,
                                  parent_pos,
                                  is_horizontal,
-                                 candidate_positions);
+                                 candidate_positions,
+                                 fallback_positions);
   }
-  jumper_position
-      = getBestPosition(candidate_positions, is_horizontal, parent_pos);
-  return (jumper_position != -1);
+  // Pick the best position whose whole jumper fits the per-edge headroom;
+  // a rejected position is dropped and the next best is tried.
+  std::unordered_set<int> rejected_positions;
+  const auto select_position = [&](std::vector<int>& positions) {
+    while (!positions.empty()) {
+      const int pos = getBestPosition(positions, is_horizontal, parent_pos);
+      if (pos == -1) {
+        return -1;
+      }
+      const int final_pos = pos + jumper_size_;
+      if (grouter_->hasJumperResources(is_horizontal ? pos : seg_init_x,
+                                       is_horizontal ? seg_init_y : pos,
+                                       is_horizontal ? final_pos : seg_init_x,
+                                       is_horizontal ? seg_init_y : final_pos,
+                                       layer_level + 2,
+                                       db_net)) {
+        return pos;
+      }
+      debugPrint(logger_,
+                 GRT,
+                 "repair_antennas",
+                 1,
+                 "net {} jumper candidate at {} rejected for capacity",
+                 db_net->getConstName(),
+                 pos);
+      rejected_positions.insert(pos);
+      std::erase(positions, pos);
+    }
+    return -1;
+  };
+  jumper_position = select_position(candidate_positions);
+  if (jumper_position == -1) {
+    // All parent-nearest candidates were rejected; retry with the
+    // tile-aligned fallbacks that were not already rejected.
+    std::erase_if(fallback_positions, [&](const int pos) {
+      return rejected_positions.contains(pos);
+    });
+    jumper_position = select_position(fallback_positions);
+  }
+  return jumper_position != -1;
 }
 
 static odb::Point findSegmentPos(const GSegment& seg)

@@ -2346,27 +2346,37 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
     }
   }
   auto it = db_net_map_.find(db_net);
+  GRNet* gr_net = it == db_net_map_.end() ? nullptr : it->second;
   const std::vector<double> unit_costs;
   const std::vector<double>& costs
-      = it == db_net_map_.end() ? unit_costs : it->second->getNdrCosts();
-  const double wire_factor
-      = std::cmp_less(layer_0, costs.size()) ? costs[layer_0] : 1.0;
+      = gr_net == nullptr ? unit_costs : gr_net->getNdrCosts();
 
   // Accumulate the whole jumper's prospective demand per edge before
   // comparing: the wire and the via flank charges can land on the same
   // upper-layer edge, and both vias of a stack charge the same middle-layer
   // flank edges, so per-piece checks can each pass while the sum overflows.
   std::map<std::tuple<int, int, int>, double> edge_demands;
-  if (grid_graph_->getLayerDirection(layer_0) == MetalLayer::H) {
-    const auto [lo, hi] = std::minmax(init_tile_x, final_tile_x);
-    for (int x = lo; x < hi; x++) {
-      edge_demands[{layer_0, x, init_tile_y}] += wire_factor;
+  const auto accumulate_wire = [&](const int layer, const double sign) {
+    const double factor
+        = sign * (std::cmp_less(layer, costs.size()) ? costs[layer] : 1.0);
+    if (grid_graph_->getLayerDirection(layer) == MetalLayer::H) {
+      const auto [lo, hi] = std::minmax(init_tile_x, final_tile_x);
+      for (int x = lo; x < hi; x++) {
+        edge_demands[{layer, x, init_tile_y}] += factor;
+      }
+    } else {
+      const auto [lo, hi] = std::minmax(init_tile_y, final_tile_y);
+      for (int y = lo; y < hi; y++) {
+        edge_demands[{layer, init_tile_x, y}] += factor;
+      }
     }
-  } else {
-    const auto [lo, hi] = std::minmax(init_tile_y, final_tile_y);
-    for (int y = lo; y < hi; y++) {
-      edge_demands[{layer_0, init_tile_x, y}] += wire_factor;
-    }
+  };
+  accumulate_wire(layer_0, 1.0);
+  // The jumper removes the original wire between its endpoints; credit that
+  // released demand (committed only when the net holds a routing tree) so a
+  // full edge is not rejected when the replacement still fits.
+  if (gr_net != nullptr && gr_net->getRoutingTree() != nullptr) {
+    accumulate_wire(layer_0 - 2, -1.0);
   }
   for (const PointT& endpoint : endpoints) {
     for (int layer = layer_0 - 2; layer < layer_0; layer++) {
@@ -2381,46 +2391,12 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   }
   for (const auto& [edge, demand] : edge_demands) {
     const auto& [layer, x, y] = edge;
-    if (grid_graph_->getEdge(layer, x, y).getResource() < demand) {
+    if (demand > 0
+        && grid_graph_->getEdge(layer, x, y).getResource() < demand) {
       return false;
     }
   }
   return true;
-}
-
-bool CUGR::hasViaResources(odb::dbNet* db_net,
-                           const int layer_index,
-                           const int tile_x,
-                           const int tile_y) const
-{
-  if (!grid_graph_) {
-    return false;
-  }
-  // layer_index is the 1-based lower layer of the via; GridGraph is 0-based.
-  const int layer_0 = layer_index - 1;
-  if (layer_0 < 0 || layer_0 + 1 >= grid_graph_->getNumLayers() || tile_x < 0
-      || tile_x >= grid_graph_->getSize(0) || tile_y < 0
-      || tile_y >= grid_graph_->getSize(1)) {
-    return false;
-  }
-  auto it = db_net_map_.find(db_net);
-  const std::vector<double> unit_costs;
-  const std::vector<double>& costs
-      = it == db_net_map_.end() ? unit_costs : it->second->getNdrCosts();
-  // Mirror commitVia's deposits: the via is admissible only if every flank
-  // edge it would charge has headroom for that charge.
-  bool available = true;
-  grid_graph_->forEachViaFlankEdge(
-      layer_0,
-      {tile_x, tile_y},
-      costs,
-      [&](int layer, PointT loc, CapacityT demand, double factor) {
-        if (grid_graph_->getEdge(layer, loc.x(), loc.y()).getResource()
-            < demand * factor) {
-          available = false;
-        }
-      });
-  return available;
 }
 
 }  // namespace grt

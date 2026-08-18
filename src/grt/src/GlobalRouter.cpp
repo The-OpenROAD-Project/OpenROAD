@@ -2315,18 +2315,10 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   const int grid_y = dbuToTile(pos_y, /*is_x=*/false);
   if (use_cugr_) {
     // CUGR edges run along the layer's preferred direction, so the
-    // orientation is implied by the layer.
-    if (!cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y)) {
-      return false;
-    }
-    // A jumper also drops a two-layer via stack at each endpoint; reject the
-    // tile if committing those vias would overflow a flank edge.
-    for (int layer = layer_level - 2; layer < layer_level; layer++) {
-      if (!cugr_->hasViaResources(db_net, layer, grid_x, grid_y)) {
-        return false;
-      }
-    }
-    return true;
+    // orientation is implied by the layer. Via headroom is not checked here:
+    // vias land only at the endpoints hasJumperResources validates, and
+    // charging them at every scanned tile would split valid windows.
+    return cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y);
   }
   int cap = 0;
   if (is_horizontal) {
