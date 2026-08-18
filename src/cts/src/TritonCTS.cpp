@@ -856,6 +856,12 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     }
   }
 
+  if (nextBestBuf.empty()) {
+    logger_->error(CTS,
+                   2,
+                   "Characterization could not select a buffer: candidate "
+                   "buffers lack max capacitance information.");
+  }
   if (bestBuf.empty()) {
     bestBuf = std::move(nextBestBuf);
   }
