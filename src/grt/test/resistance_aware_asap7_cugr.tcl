@@ -11,10 +11,9 @@
 # -resistance_aware (global_route -use_cugr -critical_nets_percentage 30):
 #   WNS = -121.9 ps, TNS = -2892.8 ps
 # Resistance-aware gives ~ WNS -121.7 ps, TNS -2852.3 ps (both better).
-# The baseline is captured here as a constant rather than routed twice to
-# keep the test's runtime down. The WNS baseline carries a small margin
-# (the WNS gain is only ~0.15 ps) so the "not worse" check is not brittle
-# to sub-ps STA drift.
+# The baseline is captured as a constant rather than routed twice to keep
+# the runtime down. The WNS baseline carries a small margin (the gain is
+# only ~0.15 ps) so the check is not brittle to sub-ps STA drift.
 source "helpers.tcl"
 
 read_liberty asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz

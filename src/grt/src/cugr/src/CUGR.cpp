@@ -2299,9 +2299,8 @@ bool CUGR::hasAvailableResources(odb::dbNet* db_net,
                    "Invalid layer index {} in hasAvailableResources.",
                    layer_index);
   }
-  // Layers above the grid universe (e.g. a span reaching a pin over the
-  // routing ceiling) and off-grid tiles have no edge; getEdge indexes raw
-  // vectors, so answer "no resources" instead of erroring in a query.
+  // Above-universe layers and off-grid tiles have no edge; getEdge indexes
+  // raw vectors, so answer "no resources" instead of erroring in a query.
   if (layer_0 >= grid_graph_->getNumLayers() || tile_x < 0
       || tile_x >= grid_graph_->getSize(0) || tile_y < 0
       || tile_y >= grid_graph_->getSize(1)) {

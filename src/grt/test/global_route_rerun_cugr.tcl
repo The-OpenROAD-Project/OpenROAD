@@ -1,7 +1,6 @@
 # Rerunning global_route -use_cugr in the same session: init() must rebuild
-# the CUGR netlist from scratch (stale appended state used to leave the
-# second route guide-less, failing with GRT-0076). The rerun must reproduce
-# the single-route result, so it shares gcd_cugr's golden guides.
+# the CUGR netlist from scratch (stale state used to fail with GRT-0076).
+# The rerun must reproduce gcd_cugr's golden guides.
 source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
 read_def "gcd.def"

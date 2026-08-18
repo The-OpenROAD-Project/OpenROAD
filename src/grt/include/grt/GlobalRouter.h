@@ -230,9 +230,8 @@ class GlobalRouter
                        const int& layer_level,
                        int used,
                        odb::dbNet* db_net);
-  // Moves a route span's router bookkeeping from layer_level to
-  // new_layer_level after a jumper insertion; expects routes_[db_net] to
-  // already hold the finished jumpered route.
+  // Moves a jumpered span's bookkeeping from layer_level to new_layer_level;
+  // expects routes_[db_net] to already hold the finished jumpered route.
   void updateJumperedRoute(const int& init_x,
                            const int& init_y,
                            const int& final_x,

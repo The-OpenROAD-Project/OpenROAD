@@ -2296,7 +2296,6 @@ int GlobalRouter::dbuToTile(const int dbu_coord, const bool is_x) const
 {
   const int origin = is_x ? grid_->getXMin() : grid_->getYMin();
   const int grids = is_x ? grid_->getXGrids() : grid_->getYGrids();
-  // The last gcell is oversized: positions inside it divide past the grid.
   return std::min((dbu_coord - origin) / grid_->getTileSize(), grids - 1);
 }
 
@@ -2310,8 +2309,7 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   const int grid_y = dbuToTile(pos_y, /*is_x=*/false);
   if (use_cugr_) {
     // CUGR edges run along the layer's preferred direction, so the
-    // orientation is implied by the layer; the net's NDR demand is
-    // resolved inside CUGR.
+    // orientation is implied by the layer.
     return cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y);
   }
   int cap = 0;
@@ -2355,9 +2353,8 @@ void GlobalRouter::updateJumperedRoute(const int& init_x,
                                        odb::dbNet* db_net)
 {
   if (use_cugr_) {
-    // routes_[db_net] holds the finished jumpered route; re-adopt it so
-    // CUGR swaps the old tree demand for the new one. A failed adoption has
-    // already released the old demand, so schedule a reroute to rebuild it.
+    // A failed adoption has already released the net's old demand, so
+    // schedule a reroute to rebuild it.
     if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
       logger_->warn(GRT,
                     311,
@@ -5842,8 +5839,6 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
         const int layer = seg.init_layer;
 
         if (use_cugr_) {
-          // Capacity check using the CUGR GridGraph instead of FastRoute;
-          // the survivor net's NDR demand is resolved inside CUGR.
           if (y1 == y2) {  // horizontal
             for (int x = x1; x < x2; x++) {
               if (!cugr_->hasAvailableResources(db_net1, layer, x, y1)) {

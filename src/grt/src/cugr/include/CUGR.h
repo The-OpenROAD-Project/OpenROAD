@@ -135,10 +135,9 @@ class CUGR
   void mergeNet(odb::dbNet* preserved_net,
                 odb::dbNet* removed_net,
                 const std::vector<GSegment>& connection);
-  // Returns true if the edge on (layer_index, tile_x, tile_y) has enough
-  // remaining capacity for db_net's NDR demand on that layer (1.0 for
-  // non-NDR nets) -- the CUGR analog of
-  // FastRouteCore::hasAvailableResources.
+  // True if the edge on (layer_index, tile_x, tile_y) has capacity left for
+  // db_net's NDR demand on that layer (1.0 for non-NDR nets); the CUGR
+  // analog of FastRouteCore::hasAvailableResources.
   bool hasAvailableResources(odb::dbNet* db_net,
                              int layer_index,
                              int tile_x,
