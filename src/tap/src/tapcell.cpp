@@ -1270,18 +1270,20 @@ void Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
     return;
   }
 
-  for (auto* other : displaced) {
-    debugPrint(logger_,
-               utl::TAP,
-               "Endcap",
-               2,
-               "Corner cell at ({}, {}) displaces {}",
-               ll.getX(),
-               ll.getY(),
-               other->getName());
-    placed->second.erase(other);
-    area_corners.erase(other);
-    odb::dbInst::destroy(other);
+  if (placed != placed_corners_.end()) {
+    for (auto* other : displaced) {
+      debugPrint(logger_,
+                 utl::TAP,
+                 "Endcap",
+                 2,
+                 "Corner cell at ({}, {}) displaces {}",
+                 ll.getX(),
+                 ll.getY(),
+                 other->getName());
+      placed->second.erase(other);
+      area_corners.erase(other);
+      odb::dbInst::destroy(other);
+    }
   }
 
   auto inst = makeInstance(db_->getChip()->getBlock(),
