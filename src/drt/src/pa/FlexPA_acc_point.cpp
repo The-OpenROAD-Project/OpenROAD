@@ -46,15 +46,16 @@ std::vector<const frViaDef*> FlexPA::getPriorityViaDefs(
     const frLayerNum layer_num,
     frInstTerm* inst_term,
     const bool get_all,
-    const int already_collected)
+    const int already_collected) const
 {
   std::vector<const frViaDef*> priority_via_defs;
-  if (!layer_num_to_via_defs_.contains(layer_num)) {
+  if (!layer_num_to_via_defs_.contains(layer_num)
+      || !layer_num_to_via_defs_.at(layer_num).contains(1)) {
     return priority_via_defs;
   }
   const int max_num_via_trial = 2;
   int cnt = already_collected;
-  for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num][1]) {
+  for (auto& [tup, via_def] : layer_num_to_via_defs_.at(layer_num).at(1)) {
     if (inst_term && inst_term->isStubborn()
         && avoid_via_defs_.contains(via_def)) {
       continue;
@@ -877,7 +878,7 @@ void FlexPA::filterViaAccess(
     bool try_all_vias)
 {
   const odb::Point begin_point = ap->getPoint();
-  const auto layer_num = ap->getLayerNum();
+  const frLayerNum layer_num = ap->getLayerNum();
 
   // skip planar only access
   if (!ap->isViaAllowed()) {
@@ -912,6 +913,7 @@ void FlexPA::filterViaAccess(
 
     // DOWN Vias
     if (isIOTerm(inst_term)
+        && layer_num > getDesign()->getTech()->getBottomLayerNum()
         && layer_num - 1 <= router_cfg_->TOP_ROUTING_LAYER) {
       std::vector<const frViaDef*> down_vias = getPriorityViaDefs(
           layer_num - 1, inst_term, try_all_vias, (int) via_defs.size());
@@ -935,9 +937,9 @@ void FlexPA::filterViaAccess(
       }
     }
 
-    const bool via_not_int_pin = viaMaxExt(inst_term, ap, polyset, via_def) > 0;
+    const bool via_not_in_pin = viaMaxExt(inst_term, ap, polyset, via_def) > 0;
 
-    if (via_must_be_in_pin && via_not_int_pin) {
+    if (via_must_be_in_pin && via_not_in_pin) {
       continue;
     }
     if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {

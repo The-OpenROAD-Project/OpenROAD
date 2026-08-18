@@ -169,7 +169,7 @@ class FlexPA
     unique_insts_.setDesign(in);
   }
   void applyPatternsFile(const char* file_path);
-  ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def);
+  ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def) const;
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isSkipInst(frInst* inst);
@@ -424,7 +424,8 @@ class FlexPA
                                                   frInstTerm* inst_term
                                                   = nullptr,
                                                   bool get_all = false,
-                                                  int already_collected = 0);
+                                                  int already_collected
+                                                  = 0) const;
 
   void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                             const gtl::rectangle_data<frCoord>& rect,
