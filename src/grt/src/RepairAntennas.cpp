@@ -1128,17 +1128,14 @@ int RepairAntennas::addJumperOnSegments(
       if (seg_len < smaller_seg_size_) {
         break;
       }
-      if (last_pos_aux != -1) {
-        // Avoid overlap with last jumper position
-        const int dist = abs(last_pos_aux - pos_it);
-        if (dist > jumper_size_
-            && addJumper(route, seg_it.first, pos_it, db_net)) {
-          jumper_by_net++;
-        }
-      } else if (addJumper(route, seg_it.first, pos_it, db_net)) {
-        jumper_by_net++;
+      // Skip candidates overlapping the last inserted jumper
+      if (last_pos_aux != -1 && abs(last_pos_aux - pos_it) <= jumper_size_) {
+        continue;
       }
-      last_pos_aux = pos_it;
+      if (addJumper(route, seg_it.first, pos_it, db_net)) {
+        jumper_by_net++;
+        last_pos_aux = pos_it;
+      }
     }
   }
   return jumper_by_net;
