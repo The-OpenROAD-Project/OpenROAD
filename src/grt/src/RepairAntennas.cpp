@@ -598,11 +598,13 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
       init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2, true);
 }
 
+// Scalar params are by value: references would dangle once the route
+// vector reallocates during the jumper appends below.
 bool RepairAntennas::addJumperToRoute(GRoute& route,
-                                      const int& seg_id,
-                                      const int& jumper_init_pos,
-                                      const int& jumper_final_pos,
-                                      const int& layer_level,
+                                      const int seg_id,
+                                      const int jumper_init_pos,
+                                      const int jumper_final_pos,
+                                      const int layer_level,
                                       odb::dbNet* db_net)
 {
   const int route_size_before = route.size();

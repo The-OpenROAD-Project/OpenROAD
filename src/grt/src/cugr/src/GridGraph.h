@@ -407,6 +407,8 @@ class GridGraph
                                PointT loc,
                                const std::vector<double>& net_costs,
                                F&& fn) const;
+  template <typename F>
+  void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;

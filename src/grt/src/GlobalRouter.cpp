@@ -758,15 +758,14 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                         nets_with_jumpers);
       repair_antennas_->clearViolations();
 
-      // A rejected jumper whose route re-adoption also failed queued a
-      // reroute; flush it now so CUGR demand matches the saved routes even
-      // when the diode pass below does not run. No IncrementalGRoute scope
-      // exists here, so emit the pending congestion report directly.
+      // Save guides first so the flush below cannot revert accepted jumpers.
+      saveGuides(nets_with_jumpers);
+      // Flush reroutes queued by failed re-adoptions; no IncrementalGRoute
+      // scope exists here, so report congestion directly.
       if (use_cugr_ && !dirty_nets_.empty()) {
         updateDirtyRoutes(/*save_guides=*/true);
         reportIncrementalCongestion();
       }
-      saveGuides(nets_with_jumpers);
       // run again antenna checker
       violations
           = repair_antennas_->checkAntennaViolations(routes_,
@@ -2316,10 +2315,8 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   const int grid_x = dbuToTile(pos_x, /*is_x=*/true);
   const int grid_y = dbuToTile(pos_y, /*is_x=*/false);
   if (use_cugr_) {
-    // CUGR edges run along the layer's preferred direction, so the
-    // orientation is implied by the layer. Via headroom is not checked here:
-    // vias land only at the endpoints hasJumperResources validates, and
-    // charging them at every scanned tile would split valid windows.
+    // Orientation is implied by the layer; via headroom is checked only at
+    // the endpoints, by hasJumperResources.
     return cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y);
   }
   int cap = 0;
@@ -2384,7 +2381,14 @@ bool GlobalRouter::updateJumperedRoute(const int& init_x,
   if (use_cugr_) {
     // A failed adoption releases the net's old demand; the caller must roll
     // the jumper back and call restoreNetDemand to recommit the route.
-    return cugr_->restoreNetRoute(db_net, routes_[db_net]);
+    if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
+      return false;
+    }
+    // The adopted route supersedes any guide restore a prior failure queued.
+    if (Net* net = getNet(db_net)) {
+      net->setRestoreRouteFromGuides(false);
+    }
+    return true;
   }
   // Move the span's edge usage from the original layer to the jumper's.
   updateResources(init_x, init_y, final_x, final_y, layer_level, -1, db_net);

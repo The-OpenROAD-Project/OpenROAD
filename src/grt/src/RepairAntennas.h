@@ -137,10 +137,10 @@ class RepairAntennas
                         const int& layer_level);
   // Returns false if the router rejected the jumper; the route is restored.
   bool addJumperToRoute(GRoute& route,
-                        const int& seg_id,
-                        const int& jumper_init_pos,
-                        const int& jumper_final_pos,
-                        const int& layer_level,
+                        int seg_id,
+                        int jumper_init_pos,
+                        int jumper_final_pos,
+                        int layer_level,
                         odb::dbNet* db_net);
   void findSegments(const GRoute& route,
                     odb::dbITerm* iterm,

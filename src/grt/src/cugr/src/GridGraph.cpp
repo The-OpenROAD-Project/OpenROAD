@@ -893,10 +893,11 @@ void GridGraph::forEachViaFlankEdge(
   forEachViaFlankEdgeImpl(layer_index, loc, net_costs, fn);
 }
 
-void GridGraph::forEachWireEdge(const int layer_index,
-                                const PointT u,
-                                const PointT v,
-                                const std::function<void(PointT)>& fn) const
+template <typename F>
+void GridGraph::forEachWireEdgeImpl(const int layer_index,
+                                    const PointT u,
+                                    const PointT v,
+                                    F&& fn) const
 {
   const int direction = layer_directions_[layer_index];
   const auto [lo, hi] = std::minmax(u[direction], v[direction]);
@@ -906,6 +907,14 @@ void GridGraph::forEachWireEdge(const int layer_index,
     lower[1 - direction] = u[1 - direction];
     fn(lower);
   }
+}
+
+void GridGraph::forEachWireEdge(const int layer_index,
+                                const PointT u,
+                                const PointT v,
+                                const std::function<void(PointT)>& fn) const
+{
+  forEachWireEdgeImpl(layer_index, u, v, fn);
 }
 
 void GridGraph::commitVia(const int layer_index,
@@ -1033,7 +1042,7 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
             commitWrongWayWire(layer, cell, rip_up, wire_factor);
           }
         } else {
-          forEachWireEdge(layer, *node, *child, [&](PointT lower) {
+          forEachWireEdgeImpl(layer, *node, *child, [&](PointT lower) {
             commitWire(layer, lower, rip_up, wire_factor);
           });
         }

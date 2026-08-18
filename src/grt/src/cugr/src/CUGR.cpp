@@ -1567,6 +1567,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
+    const bool was_soft_ndr = gr_net->isSoftNdr();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -1578,6 +1579,10 @@ void CUGR::updateNet(odb::dbNet* db_net)
     // honors the net's rule (matches CUGR::init).
     gr_nets_[idx]->setNdrCosts(computeNdrCosts(db_net));
     gr_nets_[idx]->setNdrWidths(computeNdrWidths(db_net));
+    // A soft-demoted net stays demoted, like restoreNetRoute.
+    if (was_soft_ndr) {
+      gr_nets_[idx]->setSoftNdr();
+    }
     db_net_map_[db_net] = gr_nets_[idx].get();
     nets_to_route_.push_back(idx);
   } else {
@@ -2357,10 +2362,8 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   const std::vector<double>& costs
       = gr_net == nullptr ? unit_costs : gr_net->getNdrCosts();
 
-  // Accumulate the whole jumper's prospective demand per edge before
-  // comparing: the wire and the via flank charges can land on the same
-  // upper-layer edge, and both vias of a stack charge the same middle-layer
-  // flank edges, so per-piece checks can each pass while the sum overflows.
+  // Accumulate the jumper's demand per edge: separate wire and via checks
+  // can each pass while their sum on a shared edge overflows.
   std::unordered_map<EdgeKey, double, EdgeKeyHash> edge_demands;
   const auto accumulate_wire = [&](const int layer, const double sign) {
     const double factor = sign * (gr_net ? gr_net->getNdrCost(layer) : 1.0);
