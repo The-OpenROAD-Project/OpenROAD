@@ -1712,9 +1712,11 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   // removed during repair churn is re-added (like updateNet's new-net branch)
   // so its guide route can still be restored, matching FastRoute parity.
   GRNet* new_net = nullptr;
+  bool was_soft_ndr = false;
   auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
+    was_soft_ndr = gr_net->isSoftNdr();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -1738,6 +1740,12 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   // both the still-present and the re-admitted (removed-then-restored) net.
   new_net->setNdrCosts(computeNdrCosts(db_net));
   new_net->setNdrWidths(computeNdrWidths(db_net));
+  // A soft-demoted net must stay demoted: its demand was released at unit
+  // cost, so recommitting at full NDR cost would recreate the congestion
+  // the demotion resolved.
+  if (was_soft_ndr) {
+    new_net->setSoftNdr();
+  }
   db_net_map_[db_net] = new_net;
 
   // Each pin must land on the restored tree; record the access point it uses so
@@ -2310,6 +2318,41 @@ bool CUGR::hasAvailableResources(odb::dbNet* db_net,
   const double demand
       = it == db_net_map_.end() ? 1.0 : it->second->getNdrCost(layer_0);
   return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= demand;
+}
+
+bool CUGR::hasViaResources(odb::dbNet* db_net,
+                           const int layer_index,
+                           const int tile_x,
+                           const int tile_y) const
+{
+  if (!grid_graph_) {
+    return false;
+  }
+  // layer_index is the 1-based lower layer of the via; GridGraph is 0-based.
+  const int layer_0 = layer_index - 1;
+  if (layer_0 < 0 || layer_0 + 1 >= grid_graph_->getNumLayers() || tile_x < 0
+      || tile_x >= grid_graph_->getSize(0) || tile_y < 0
+      || tile_y >= grid_graph_->getSize(1)) {
+    return false;
+  }
+  auto it = db_net_map_.find(db_net);
+  const std::vector<double> unit_costs;
+  const std::vector<double>& costs
+      = it == db_net_map_.end() ? unit_costs : it->second->getNdrCosts();
+  // Mirror commitVia's deposits: the via is admissible only if every flank
+  // edge it would charge has headroom for that charge.
+  bool available = true;
+  grid_graph_->forEachViaFlankEdge(
+      layer_0,
+      {tile_x, tile_y},
+      costs,
+      [&](int layer, PointT loc, CapacityT demand, double factor) {
+        if (grid_graph_->getEdge(layer, loc.x(), loc.y()).getResource()
+            < demand * factor) {
+          available = false;
+        }
+      });
+  return available;
 }
 
 }  // namespace grt

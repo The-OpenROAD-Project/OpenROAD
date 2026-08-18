@@ -598,13 +598,14 @@ void RepairAntennas::addJumperAndVias(GRoute& route,
       init_x, init_y, layer_level + 2, final_x, final_y, layer_level + 2, true);
 }
 
-void RepairAntennas::addJumperToRoute(GRoute& route,
+bool RepairAntennas::addJumperToRoute(GRoute& route,
                                       const int& seg_id,
                                       const int& jumper_init_pos,
                                       const int& jumper_final_pos,
                                       const int& layer_level,
                                       odb::dbNet* db_net)
 {
+  const int route_size_before = route.size();
   const int seg_init_x = route[seg_id].init_x;
   const int seg_init_y = route[seg_id].init_y;
   const bool is_horizontal = (seg_init_x != route[seg_id].final_x);
@@ -644,16 +645,25 @@ void RepairAntennas::addJumperToRoute(GRoute& route,
   route[seg_id].init_y = jumper_final_y;
   // Notify the router only now, after the split, so it sees a route whose
   // lower-layer segments no longer span the jumper window.
-  grouter_->updateJumperedRoute(jumper_init_x,
-                                jumper_init_y,
-                                jumper_final_x,
-                                jumper_final_y,
-                                layer_level,
-                                layer_level + 2,
-                                db_net);
+  if (!grouter_->updateJumperedRoute(jumper_init_x,
+                                     jumper_init_y,
+                                     jumper_final_x,
+                                     jumper_final_y,
+                                     layer_level,
+                                     layer_level + 2,
+                                     db_net)) {
+    // The router rejected the jumpered route; undo the split and recommit
+    // the original route's demand.
+    route.resize(route_size_before);
+    route[seg_id].init_x = seg_init_x;
+    route[seg_id].init_y = seg_init_y;
+    grouter_->restoreNetDemand(db_net);
+    return false;
+  }
+  return true;
 }
 
-void RepairAntennas::addJumper(GRoute& route,
+bool RepairAntennas::addJumper(GRoute& route,
                                const int& segment_id,
                                const int& jumper_pos,
                                odb::dbNet* db_net)
@@ -668,23 +678,22 @@ void RepairAntennas::addJumper(GRoute& route,
     // Get start and final X position of jumper
     const int jumper_start_x = jumper_pos;
     const int jumper_final_x = jumper_start_x + jumper_size_;
-    addJumperToRoute(route,
-                     segment_id,
-                     jumper_start_x,
-                     jumper_final_x,
-                     segment_layer_level,
-                     db_net);
-  } else {
-    // Get start and final Y position jumper
-    const int jumper_start_y = jumper_pos;
-    const int jumper_final_y = jumper_start_y + jumper_size_;
-    addJumperToRoute(route,
-                     segment_id,
-                     jumper_start_y,
-                     jumper_final_y,
-                     segment_layer_level,
-                     db_net);
+    return addJumperToRoute(route,
+                            segment_id,
+                            jumper_start_x,
+                            jumper_final_x,
+                            segment_layer_level,
+                            db_net);
   }
+  // Get start and final Y position jumper
+  const int jumper_start_y = jumper_pos;
+  const int jumper_final_y = jumper_start_y + jumper_size_;
+  return addJumperToRoute(route,
+                          segment_id,
+                          jumper_start_y,
+                          jumper_final_y,
+                          segment_layer_level,
+                          db_net);
 }
 
 int RepairAntennas::getSegmentsPerLayer(
@@ -1112,12 +1121,11 @@ int RepairAntennas::addJumperOnSegments(
       if (last_pos_aux != -1) {
         // Avoid overlap with last jumper position
         const int dist = abs(last_pos_aux - pos_it);
-        if (dist > jumper_size_) {
-          addJumper(route, seg_it.first, pos_it, db_net);
+        if (dist > jumper_size_
+            && addJumper(route, seg_it.first, pos_it, db_net)) {
           jumper_by_net++;
         }
-      } else {
-        addJumper(route, seg_it.first, pos_it, db_net);
+      } else if (addJumper(route, seg_it.first, pos_it, db_net)) {
         jumper_by_net++;
       }
       last_pos_aux = pos_it;

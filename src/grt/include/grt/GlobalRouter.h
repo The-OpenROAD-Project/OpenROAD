@@ -232,13 +232,19 @@ class GlobalRouter
                        odb::dbNet* db_net);
   // Moves a jumpered span's bookkeeping from layer_level to new_layer_level;
   // expects routes_[db_net] to already hold the finished jumpered route.
-  void updateJumperedRoute(const int& init_x,
+  // Returns false if the router rejected the jumpered route (CUGR adoption
+  // failure); the caller must undo the jumper and call restoreNetDemand.
+  bool updateJumperedRoute(const int& init_x,
                            const int& init_y,
                            const int& final_x,
                            const int& final_y,
                            const int& layer_level,
                            const int& new_layer_level,
                            odb::dbNet* db_net);
+  // Recommits routes_[db_net]'s demand after a rejected jumper was rolled
+  // back; on failure schedules a dirty-net reroute. No-op under FastRoute,
+  // whose bookkeeping is untouched by a rejected jumper.
+  void restoreNetDemand(odb::dbNet* db_net);
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);

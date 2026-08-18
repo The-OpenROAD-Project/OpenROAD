@@ -142,6 +142,13 @@ class CUGR
                              int layer_index,
                              int tile_x,
                              int tile_y) const;
+  // True if a via crossing from layer_index to layer_index + 1 at
+  // (tile_x, tile_y) has capacity left on every flank edge it would charge
+  // (see GridGraph::commitVia), at db_net's NDR demand.
+  bool hasViaResources(odb::dbNet* db_net,
+                       int layer_index,
+                       int tile_x,
+                       int tile_y) const;
   // Adopts an externally restored routing (journal restore): rebuilds the
   // net's routing tree from the segments and swaps the grid-graph demand
   // without scheduling a reroute. Returns false if the net must be rerouted.

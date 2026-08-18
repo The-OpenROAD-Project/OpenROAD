@@ -758,6 +758,12 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                         nets_with_jumpers);
       repair_antennas_->clearViolations();
 
+      // A rejected jumper whose route re-adoption also failed queued a
+      // reroute; flush it now so CUGR demand matches the saved routes even
+      // when the diode pass below does not run.
+      if (use_cugr_ && !dirty_nets_.empty()) {
+        updateDirtyRoutes(/*save_guides=*/true);
+      }
       saveGuides(nets_with_jumpers);
       // run again antenna checker
       violations
@@ -2310,7 +2316,17 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   if (use_cugr_) {
     // CUGR edges run along the layer's preferred direction, so the
     // orientation is implied by the layer.
-    return cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y);
+    if (!cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y)) {
+      return false;
+    }
+    // A jumper also drops a two-layer via stack at each endpoint; reject the
+    // tile if committing those vias would overflow a flank edge.
+    for (int layer = layer_level - 2; layer < layer_level; layer++) {
+      if (!cugr_->hasViaResources(db_net, layer, grid_x, grid_y)) {
+        return false;
+      }
+    }
+    return true;
   }
   int cap = 0;
   if (is_horizontal) {
@@ -2344,7 +2360,7 @@ void GlobalRouter::updateResources(const int& init_x,
   fastroute_->updateEdge2DAnd3DUsage(x0, y0, x1, y1, layer_level, used, db_net);
 }
 
-void GlobalRouter::updateJumperedRoute(const int& init_x,
+bool GlobalRouter::updateJumperedRoute(const int& init_x,
                                        const int& init_y,
                                        const int& final_x,
                                        const int& final_y,
@@ -2353,17 +2369,9 @@ void GlobalRouter::updateJumperedRoute(const int& init_x,
                                        odb::dbNet* db_net)
 {
   if (use_cugr_) {
-    // A failed adoption has already released the net's old demand, so
-    // schedule a reroute to rebuild it.
-    if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
-      logger_->warn(GRT,
-                    311,
-                    "Net {} jumpered route could not be adopted; "
-                    "scheduling a reroute.",
-                    db_net->getConstName());
-      addDirtyNet(db_net);
-    }
-    return;
+    // A failed adoption releases the net's old demand; the caller must roll
+    // the jumper back and call restoreNetDemand to recommit the route.
+    return cugr_->restoreNetRoute(db_net, routes_[db_net]);
   }
   // Move the span's edge usage from the original layer to the jumper's.
   updateResources(init_x, init_y, final_x, final_y, layer_level, -1, db_net);
@@ -2380,6 +2388,25 @@ void GlobalRouter::updateJumperedRoute(const int& init_x,
                                     layer_level - 1,
                                     new_layer_level - 1,
                                     db_net);
+  return true;
+}
+
+void GlobalRouter::restoreNetDemand(odb::dbNet* db_net)
+{
+  if (!use_cugr_) {
+    return;
+  }
+  if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
+    logger_->warn(GRT,
+                  311,
+                  "Net {} route could not be re-adopted after a rejected "
+                  "jumper; scheduling a reroute.",
+                  db_net->getConstName());
+    // The demand was released; force a guide restore (or a true reroute on
+    // failure) when the dirty queue is flushed.
+    getNet(db_net)->setRestoreRouteFromGuides(true);
+    addDirtyNet(db_net);
+  }
 }
 
 // Use release flag to increase rather than reduce resources on obstruction
