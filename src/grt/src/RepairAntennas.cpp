@@ -627,13 +627,14 @@ bool RepairAntennas::addJumperToRoute(GRoute& route,
     jumper_final_x = seg_init_x;
   }
   // Accept the jumper only if its full geometry fits the per-edge headroom;
-  // the scan's per-tile checks cannot see demands that sum on a shared edge.
-  if (!grouter_->hasJumperResources(jumper_init_x,
-                                    jumper_init_y,
-                                    jumper_final_x,
-                                    jumper_final_y,
-                                    layer_level + 2,
-                                    db_net)) {
+  // demand committed since the position was selected may have consumed it.
+  if (!jumperFits(jumper_init_pos,
+                  jumper_final_pos,
+                  seg_init_x,
+                  seg_init_y,
+                  is_horizontal,
+                  layer_level,
+                  db_net)) {
     debugPrint(logger_,
                GRT,
                "repair_antennas",
@@ -683,37 +684,23 @@ bool RepairAntennas::addJumperToRoute(GRoute& route,
   return true;
 }
 
-bool RepairAntennas::addJumper(GRoute& route,
-                               const int& segment_id,
-                               const int& jumper_pos,
-                               odb::dbNet* db_net)
+// The jumper wire lives two layers above the segment; map the span
+// position to endpoints and query the router's headroom for the whole
+// geometry (wire plus both via stacks).
+bool RepairAntennas::jumperFits(const int init_pos,
+                                const int final_pos,
+                                const int seg_init_x,
+                                const int seg_init_y,
+                                const bool is_horizontal,
+                                const int layer_level,
+                                odb::dbNet* db_net)
 {
-  odb::dbTech* tech = db_->getTech();
-  const int segment_layer_level = route[segment_id].init_layer;
-  odb::dbTechLayer* segment_layer = tech->findRoutingLayer(segment_layer_level);
-  const bool is_horizontal
-      = segment_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
-
-  if (is_horizontal) {
-    // Get start and final X position of jumper
-    const int jumper_start_x = jumper_pos;
-    const int jumper_final_x = jumper_start_x + jumper_size_;
-    return addJumperToRoute(route,
-                            segment_id,
-                            jumper_start_x,
-                            jumper_final_x,
-                            segment_layer_level,
-                            db_net);
-  }
-  // Get start and final Y position jumper
-  const int jumper_start_y = jumper_pos;
-  const int jumper_final_y = jumper_start_y + jumper_size_;
-  return addJumperToRoute(route,
-                          segment_id,
-                          jumper_start_y,
-                          jumper_final_y,
-                          segment_layer_level,
-                          db_net);
+  return grouter_->hasJumperResources(is_horizontal ? init_pos : seg_init_x,
+                                      is_horizontal ? seg_init_y : init_pos,
+                                      is_horizontal ? final_pos : seg_init_x,
+                                      is_horizontal ? seg_init_y : final_pos,
+                                      layer_level + 2,
+                                      db_net);
 }
 
 int RepairAntennas::getSegmentsPerLayer(
@@ -873,7 +860,7 @@ void RepairAntennas::findJumperCandidatePositions(
     const odb::Point& parent_pos,
     const bool& is_horizontal,
     std::vector<int>& candidate_positions,
-    std::vector<int>& fallback_positions)
+    std::vector<std::pair<int, int>>& free_windows)
 {
   // One tile size of distance from init or segment end
   const int jumper_dist = 1;
@@ -891,14 +878,12 @@ void RepairAntennas::findJumperCandidatePositions(
       candidate_positions.push_back(
           getJumperPosition(init_y, final_y, parent_pos.y()));
     }
-    // Tile-aligned fallbacks across the window give the capacity gate
-    // alternatives when every parent-nearest position is rejected.
+    // Keep the window bounds so selectJumperPosition can derive tile-aligned
+    // fallbacks if every parent-nearest candidate is rejected.
     const int lo = (is_horizontal ? init_x : init_y) + jumper_dist * tile_size_;
     const int hi = (is_horizontal ? final_x : final_y) - jumper_size_
                    - jumper_dist * tile_size_;
-    for (int pos = lo; pos <= hi; pos += tile_size_) {
-      fallback_positions.push_back(pos);
-    }
+    free_windows.emplace_back(lo, hi);
   }
 }
 
@@ -922,28 +907,6 @@ static void getViaPosition(LayerToSegmentNodeVector& segment_graph,
       }
     }
   }
-}
-
-int RepairAntennas::getBestPosition(const std::vector<int>& candidate_positions,
-                                    const bool& is_horizontal,
-                                    const odb::Point& parent_pos)
-{
-  int jumper_position = -1;
-  // Find best position of the position candidates
-  int min_dist = -1, dist;
-  for (const int& pos : candidate_positions) {
-    // Get distance
-    if (is_horizontal) {
-      dist = std::abs((pos + tile_size_) - parent_pos.x());
-    } else {
-      dist = std::abs((pos + tile_size_) - parent_pos.y());
-    }
-    if (min_dist == -1 || dist < min_dist) {
-      min_dist = dist;
-      jumper_position = pos;
-    }
-  }
-  return jumper_position;
 }
 
 bool RepairAntennas::findPosToJumper(const GRoute& route,
@@ -981,7 +944,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
 
   // Save best positions to add jumper
   std::vector<int> candidate_positions;
-  std::vector<int> fallback_positions;
+  std::vector<std::pair<int, int>> free_windows;
   // Iterate all position of segment
   while (pos_x <= seg_final_x && pos_y <= seg_final_y) {
     // Check if the position has resources available
@@ -998,7 +961,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                    parent_pos,
                                    is_horizontal,
                                    candidate_positions,
-                                   fallback_positions);
+                                   free_windows);
       last_block_x = pos_x;
       last_block_y = pos_y;
     }
@@ -1017,10 +980,10 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                  parent_pos,
                                  is_horizontal,
                                  candidate_positions,
-                                 fallback_positions);
+                                 free_windows);
   }
   jumper_position = selectJumperPosition(candidate_positions,
-                                         fallback_positions,
+                                         free_windows,
                                          is_horizontal,
                                          parent_pos,
                                          seg_init_x,
@@ -1030,32 +993,34 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   return jumper_position != -1;
 }
 
-// Pick the best position whose whole jumper fits the per-edge headroom;
-// a rejected position is dropped and the next best is tried, falling back
-// to the tile-aligned positions once every parent-nearest candidate fails.
-int RepairAntennas::selectJumperPosition(std::vector<int>& candidate_positions,
-                                         std::vector<int>& fallback_positions,
-                                         const bool is_horizontal,
-                                         const odb::Point& parent_pos,
-                                         const int seg_init_x,
-                                         const int seg_init_y,
-                                         const int layer_level,
-                                         odb::dbNet* db_net)
+// Probe positions closest to the parent first and return the first whose
+// whole jumper fits the per-edge headroom; once every parent-nearest
+// candidate fails, retry with the windows' tile-aligned fallbacks.
+int RepairAntennas::selectJumperPosition(
+    std::vector<int>& candidate_positions,
+    const std::vector<std::pair<int, int>>& free_windows,
+    const bool is_horizontal,
+    const odb::Point& parent_pos,
+    const int seg_init_x,
+    const int seg_init_y,
+    const int layer_level,
+    odb::dbNet* db_net)
 {
-  std::unordered_set<int> rejected_positions;
+  const int target = is_horizontal ? parent_pos.x() : parent_pos.y();
   const auto select_position = [&](std::vector<int>& positions) {
-    while (!positions.empty()) {
-      const int pos = getBestPosition(positions, is_horizontal, parent_pos);
-      if (pos == -1) {
-        return -1;
-      }
-      const int final_pos = pos + jumper_size_;
-      if (grouter_->hasJumperResources(is_horizontal ? pos : seg_init_x,
-                                       is_horizontal ? seg_init_y : pos,
-                                       is_horizontal ? final_pos : seg_init_x,
-                                       is_horizontal ? seg_init_y : final_pos,
-                                       layer_level + 2,
-                                       db_net)) {
+    std::stable_sort(
+        positions.begin(), positions.end(), [&](const int lhs, const int rhs) {
+          return std::abs(lhs + tile_size_ - target)
+                 < std::abs(rhs + tile_size_ - target);
+        });
+    for (const int pos : positions) {
+      if (jumperFits(pos,
+                     pos + jumper_size_,
+                     seg_init_x,
+                     seg_init_y,
+                     is_horizontal,
+                     layer_level,
+                     db_net)) {
         return pos;
       }
       debugPrint(logger_,
@@ -1065,17 +1030,23 @@ int RepairAntennas::selectJumperPosition(std::vector<int>& candidate_positions,
                  "net {} jumper candidate at {} rejected for capacity",
                  db_net->getConstName(),
                  pos);
-      rejected_positions.insert(pos);
-      std::erase(positions, pos);
     }
     return -1;
   };
   int jumper_position = select_position(candidate_positions);
   if (jumper_position == -1) {
-    // Skip fallbacks the candidate pass already rejected.
-    std::erase_if(fallback_positions, [&](const int pos) {
-      return rejected_positions.contains(pos);
-    });
+    // Expand the windows into tile-aligned fallbacks, skipping the
+    // candidates already rejected above.
+    std::vector<int> fallback_positions;
+    for (const auto& [lo, hi] : free_windows) {
+      for (int pos = lo; pos <= hi; pos += tile_size_) {
+        if (std::find(
+                candidate_positions.begin(), candidate_positions.end(), pos)
+            == candidate_positions.end()) {
+          fallback_positions.push_back(pos);
+        }
+      }
+    }
     jumper_position = select_position(fallback_positions);
   }
   return jumper_position;
@@ -1211,7 +1182,12 @@ int RepairAntennas::addJumperOnSegments(
       if (last_pos_aux != -1 && abs(last_pos_aux - pos_it) <= jumper_size_) {
         continue;
       }
-      if (addJumper(route, seg_it.first, pos_it, db_net)) {
+      if (addJumperToRoute(route,
+                           seg_it.first,
+                           pos_it,
+                           pos_it + jumper_size_,
+                           route[seg_it.first].init_layer,
+                           db_net)) {
         jumper_by_net++;
         last_pos_aux = pos_it;
       }

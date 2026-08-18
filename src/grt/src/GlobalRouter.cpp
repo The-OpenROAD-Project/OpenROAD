@@ -760,9 +760,11 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 
       // A rejected jumper whose route re-adoption also failed queued a
       // reroute; flush it now so CUGR demand matches the saved routes even
-      // when the diode pass below does not run.
+      // when the diode pass below does not run. No IncrementalGRoute scope
+      // exists here, so emit the pending congestion report directly.
       if (use_cugr_ && !dirty_nets_.empty()) {
         updateDirtyRoutes(/*save_guides=*/true);
+        reportIncrementalCongestion();
       }
       saveGuides(nets_with_jumpers);
       // run again antenna checker
@@ -2415,7 +2417,9 @@ void GlobalRouter::restoreNetDemand(odb::dbNet* db_net)
                   db_net->getConstName());
     // The demand was released; force a guide restore (or a true reroute on
     // failure) when the dirty queue is flushed.
-    getNet(db_net)->setRestoreRouteFromGuides(true);
+    if (Net* net = getNet(db_net)) {
+      net->setRestoreRouteFromGuides(true);
+    }
     addDirtyNet(db_net);
   }
 }

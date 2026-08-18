@@ -2291,6 +2291,17 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   merged_nets_.insert(removed_net);
 }
 
+// Above-universe layers and off-grid tiles have no edge; getEdge indexes
+// raw vectors, so capacity queries answer "no resources" instead of erroring.
+bool CUGR::isEdgeInGrid(const int layer_0,
+                        const int tile_x,
+                        const int tile_y) const
+{
+  return layer_0 < grid_graph_->getNumLayers() && tile_x >= 0
+         && tile_x < grid_graph_->getSize(0) && tile_y >= 0
+         && tile_y < grid_graph_->getSize(1);
+}
+
 bool CUGR::hasAvailableResources(odb::dbNet* db_net,
                                  const int layer_index,
                                  const int tile_x,
@@ -2308,11 +2319,7 @@ bool CUGR::hasAvailableResources(odb::dbNet* db_net,
                    "Invalid layer index {} in hasAvailableResources.",
                    layer_index);
   }
-  // Above-universe layers and off-grid tiles have no edge; getEdge indexes
-  // raw vectors, so answer "no resources" instead of erroring in a query.
-  if (layer_0 >= grid_graph_->getNumLayers() || tile_x < 0
-      || tile_x >= grid_graph_->getSize(0) || tile_y < 0
-      || tile_y >= grid_graph_->getSize(1)) {
+  if (!isEdgeInGrid(layer_0, tile_x, tile_y)) {
     return false;
   }
   auto it = db_net_map_.find(db_net);
@@ -2340,8 +2347,7 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   const std::array<PointT, 2> endpoints
       = {PointT(init_tile_x, init_tile_y), PointT(final_tile_x, final_tile_y)};
   for (const PointT& endpoint : endpoints) {
-    if (endpoint.x() < 0 || endpoint.x() >= grid_graph_->getSize(0)
-        || endpoint.y() < 0 || endpoint.y() >= grid_graph_->getSize(1)) {
+    if (!isEdgeInGrid(layer_0, endpoint.x(), endpoint.y())) {
       return false;
     }
   }
@@ -2355,21 +2361,13 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   // comparing: the wire and the via flank charges can land on the same
   // upper-layer edge, and both vias of a stack charge the same middle-layer
   // flank edges, so per-piece checks can each pass while the sum overflows.
-  std::map<std::tuple<int, int, int>, double> edge_demands;
+  std::unordered_map<EdgeKey, double, EdgeKeyHash> edge_demands;
   const auto accumulate_wire = [&](const int layer, const double sign) {
-    const double factor
-        = sign * (std::cmp_less(layer, costs.size()) ? costs[layer] : 1.0);
-    if (grid_graph_->getLayerDirection(layer) == MetalLayer::H) {
-      const auto [lo, hi] = std::minmax(init_tile_x, final_tile_x);
-      for (int x = lo; x < hi; x++) {
-        edge_demands[{layer, x, init_tile_y}] += factor;
-      }
-    } else {
-      const auto [lo, hi] = std::minmax(init_tile_y, final_tile_y);
-      for (int y = lo; y < hi; y++) {
-        edge_demands[{layer, init_tile_x, y}] += factor;
-      }
-    }
+    const double factor = sign * (gr_net ? gr_net->getNdrCost(layer) : 1.0);
+    grid_graph_->forEachWireEdge(
+        layer, endpoints[0], endpoints[1], [&](PointT lower) {
+          edge_demands[{layer, lower.x(), lower.y()}] += factor;
+        });
   };
   accumulate_wire(layer_0, 1.0);
   // The jumper removes the original wire between its endpoints; credit that

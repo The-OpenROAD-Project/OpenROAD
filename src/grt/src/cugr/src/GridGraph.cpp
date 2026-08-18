@@ -893,6 +893,21 @@ void GridGraph::forEachViaFlankEdge(
   forEachViaFlankEdgeImpl(layer_index, loc, net_costs, fn);
 }
 
+void GridGraph::forEachWireEdge(const int layer_index,
+                                const PointT u,
+                                const PointT v,
+                                const std::function<void(PointT)>& fn) const
+{
+  const int direction = layer_directions_[layer_index];
+  const auto [lo, hi] = std::minmax(u[direction], v[direction]);
+  for (int c = lo; c < hi; c++) {
+    PointT lower;
+    lower[direction] = c;
+    lower[1 - direction] = u[1 - direction];
+    fn(lower);
+  }
+}
+
 void GridGraph::commitVia(const int layer_index,
                           const PointT loc,
                           const bool rip_up,
@@ -1017,16 +1032,10 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
             cell[perp] = c;
             commitWrongWayWire(layer, cell, rip_up, wire_factor);
           }
-        } else if (direction == MetalLayer::H) {
-          const auto [l, h] = std::minmax({node->x(), child->x()});
-          for (int x = l; x < h; x++) {
-            commitWire(layer, {x, node->y()}, rip_up, wire_factor);
-          }
         } else {
-          const auto [l, h] = std::minmax({node->y(), child->y()});
-          for (int y = l; y < h; y++) {
-            commitWire(layer, {node->x(), y}, rip_up, wire_factor);
-          }
+          forEachWireEdge(layer, *node, *child, [&](PointT lower) {
+            commitWire(layer, lower, rip_up, wire_factor);
+          });
         }
       } else {
         const int max_layer_index

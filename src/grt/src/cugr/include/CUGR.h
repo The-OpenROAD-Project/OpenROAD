@@ -168,6 +168,8 @@ class CUGR
   void saveCongestion();
 
  private:
+  // True if (layer_0, tile_x, tile_y) indexes an existing grid edge.
+  bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
   void updateCriticalNets(const std::vector<int>& net_indices);

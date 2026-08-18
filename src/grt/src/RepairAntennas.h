@@ -157,13 +157,20 @@ class RepairAntennas
                        int& jumper_position,
                        odb::dbNet* db_net);
   int selectJumperPosition(std::vector<int>& candidate_positions,
-                           std::vector<int>& fallback_positions,
+                           const std::vector<std::pair<int, int>>& free_windows,
                            bool is_horizontal,
                            const odb::Point& parent_pos,
                            int seg_init_x,
                            int seg_init_y,
                            int layer_level,
                            odb::dbNet* db_net);
+  bool jumperFits(int init_pos,
+                  int final_pos,
+                  int seg_init_x,
+                  int seg_init_y,
+                  bool is_horizontal,
+                  int layer_level,
+                  odb::dbNet* db_net);
   int getJumperPosition(const int& init_pos,
                         const int& final_pos,
                         const int& target_pos);
@@ -177,21 +184,15 @@ class RepairAntennas
   int getSegmentsPerLayer(const GRoute& route,
                           const int& max_layer,
                           LayerToSegmentNodeVector& segment_by_layer);
-  bool addJumper(GRoute& route,
-                 const int& segment_id,
-                 const int& jumper_pos,
-                 odb::dbNet* db_net);
-  void findJumperCandidatePositions(const int& init_x,
-                                    const int& init_y,
-                                    const int& final_x,
-                                    const int& final_y,
-                                    const odb::Point& parent_pos,
-                                    const bool& is_horizontal,
-                                    std::vector<int>& candidate_positions,
-                                    std::vector<int>& fallback_positions);
-  int getBestPosition(const std::vector<int>& candidate_positions,
-                      const bool& is_horizontal,
-                      const odb::Point& parent_pos);
+  void findJumperCandidatePositions(
+      const int& init_x,
+      const int& init_y,
+      const int& final_x,
+      const int& final_y,
+      const odb::Point& parent_pos,
+      const bool& is_horizontal,
+      std::vector<int>& candidate_positions,
+      std::vector<std::pair<int, int>>& free_windows);
   void getViolations(const std::vector<ant::Violation>& violations,
                      const int& max_routing_layer,
                      std::vector<int>& violation_id_to_repair,
