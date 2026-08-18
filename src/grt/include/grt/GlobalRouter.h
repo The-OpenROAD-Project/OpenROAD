@@ -239,10 +239,9 @@ class GlobalRouter
                        const int& layer_level,
                        int used,
                        odb::dbNet* db_net);
-  // Moves a jumpered span's bookkeeping from layer_level to new_layer_level;
-  // expects routes_[db_net] to already hold the finished jumpered route.
-  // Returns false if the router rejected the jumpered route (CUGR adoption
-  // failure); the caller must undo the jumper and call restoreNetDemand.
+  // Moves a jumpered span's bookkeeping between the layers; routes_[db_net]
+  // must already hold the finished jumpered route. Returns false when CUGR
+  // rejects it: the caller must undo the jumper and call restoreNetDemand.
   bool updateJumperedRoute(const int& init_x,
                            const int& init_y,
                            const int& final_x,

@@ -192,40 +192,15 @@ class CUGR
   // from every committed tree and report drift from the tracked demand.
   void verifyDemandConsistency(const char* tag);
 
-  /**
-   * @brief Computes per-layer NDR demand / cost multipliers for a net.
-   *
-   * Per-layer formula matches FastRoute's
-   * `GlobalRouter::computeUserLayerNdr` shape:
-   *   `ndr_pitch  = ndr_width / 2 + ndr_spacing + default_width / 2`
-   *   `factor[l]  = max(1.0, ndr_pitch / default_pitch)`
-   *
-   * @param db_net The net whose NDR (if any) we are reading.
-   *
-   * @returns Vector of length `grid_graph_->getNumLayers()`; entry
-   *          `l` is the factor on layer `l`, or 1.0 on layers
-   *          without an NDR rule (and for nets that carry no NDR
-   *          at all).
-   */
+  // Per-layer NDR demand factors, sized getNumLayers(); 1.0 without a rule.
+  // Matches FastRoute's computeUserLayerNdr shape: factor = max(1.0,
+  // (ndr_width / 2 + ndr_spacing + default_width / 2) / default_pitch).
   std::vector<double> computeNdrCosts(odb::dbNet* db_net) const;
 
   std::vector<int> computeNdrWidths(odb::dbNet* db_net) const;
-  /**
-   * @brief Builds the rip-up set of nets touching a congested edge.
-   *
-   * Populates `net_indices` with the indices of every net whose
-   * routing tree contains at least one edge whose
-   * `demand > capacity * threshold`. At threshold == 1.0 the result is
-   * the strict-overflow set (the default used by the pattern/maze
-   * stages); at threshold < 1.0 it widens to include near-overflow
-   * edges, which is how the iterative RRR loop catches the "many nets
-   * piled onto one layer, only a few overflow" failure mode.
-   *
-   * @param net_indices Output: cleared and refilled with the selected
-   *                    net indices.
-   * @param threshold   Per-edge utilization cutoff in [0.0, 1.0]
-   *                    (default 1.0 = strict overflow).
-   */
+  // Refills net_indices with nets whose tree touches an edge where
+  // demand > capacity * threshold; thresholds < 1.0 widen the rip-up
+  // set to near-overflow edges for the iterative RRR loop.
   void updateCongestedNets(std::vector<int>& net_indices,
                            double threshold = 1.0);
 
@@ -236,26 +211,9 @@ class CUGR
   void patternRouteWithDetours(std::vector<int>& net_indices);
   void mazeRoute(std::vector<int>& net_indices);
 
-  /**
-   * @brief Stage 5 — iterative rip-up and re-route.
-   *
-   * Wraps the maze stage in a loop that sharpens the logistic cost
-   * slope each pass (so `PatternRoute` and the maze cost surface
-   * penalise full edges more aggressively) and widens the rip-up set
-   * to nets sitting on near-full edges (not just strictly-overflowed
-   * ones). Designed for the per-layer over-concentration failure mode
-   * where many nets pile onto a single low layer while upper layers
-   * stay idle.
-   *
-   * Early-exits when the integer overflow metric (`totalOverflow()`)
-   * is already zero, so designs that finished stage 4 clean pay no
-   * cost. Emits `GRT-0117` per iteration and, in full route only,
-   * `GRT-0118` if overflow remains when the loop ends (incremental
-   * defers to the session-end `GRT-0128`).
-   *
-   * @param net_indices Reused scratch buffer (cleared on entry by
-   *                    `updateCongestedNets`).
-   */
+  // Stage 5: rip-up-and-re-route loop that sharpens the logistic cost slope
+  // each pass and widens the rip-up set to near-full edges, targeting
+  // per-layer over-concentration; early-exits when overflow is already zero.
   void iterativeRRR(std::vector<int>& net_indices);
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.
@@ -277,25 +235,9 @@ class CUGR
   };
   Congestion2D computeCongestion2D() const;
 
-  /**
-   * @brief Diagnoses whether residual overflow is spreadable.
-   *
-   * For each `(direction, x, y)` tile, sums capacity and demand across
-   * all same-direction routing layers and classifies the tile:
-   *
-   *   - **2D-aggregate overflow** (`sum_demand > sum_capacity`): true
-   *     planar congestion — no layer-assignment policy can avoid it.
-   *   - **3D-only overflow** (per-layer overflow but the aggregate has
-   *     slack): some same-direction layer at the same tile still has
-   *     unused capacity. The router could in principle redistribute
-   *     the demand there.
-   *
-   * Reports `3D overflow / 2D-aggregate / spreadable = 3D − 2D` (the
-   * gap is the upper bound on how much overflow a perfect layer
-   * assignment could clear). Gated on `debugPrint(GRT, "rrr_2d", 1)`,
-   * so default builds pay only the gate check. Enable via Tcl with
-   * `set_debug_level GRT rrr_2d 1`.
-   */
+  // Debug (set_debug_level GRT rrr_2d 1): splits residual overflow into
+  // 2D-aggregate (true planar congestion) vs spreadable (a same-direction
+  // layer at the tile still has slack a better assignment could use).
   void debugCongestion2D() const;
 
   std::unique_ptr<Design> design_;
