@@ -96,7 +96,7 @@ describe('ClustersWidget', () => {
         const widget = new ClustersWidget(makeContainer(), app, () => {});
         const body = widget._table.querySelector('tbody').textContent;
         assert.match(body, /Click "Update"/);
-        assert.doesNotMatch(body, /has no clusters/);
+        assert.doesNotMatch(body, /has no instance groups/);
         assert.ok(widget._table.querySelector('thead th'),
                   'column headers are drawn before the first load');
     });
@@ -104,7 +104,7 @@ describe('ClustersWidget', () => {
     // The common case for an ODB from a normal flow run: the load worked and
     // the design simply has no dbGroups.  Repeating "click Update" there told
     // the user to do what they had just done.
-    it('says the design has no clusters once an empty load returns',
+    it('says the design has no instance groups once an empty load returns',
        async () => {
            const app = createMockApp();
            app.websocketManager.request = (msg) => {
@@ -117,9 +117,9 @@ describe('ClustersWidget', () => {
            const widget = new ClustersWidget(makeContainer(), app, () => {});
            await widget.update();
 
-           assert.equal(widget._statusLabel.textContent, '0 clusters');
+           assert.equal(widget._statusLabel.textContent, '0 groups');
            const body = widget._table.querySelector('tbody').textContent;
-           assert.match(body, /has no clusters/);
+           assert.match(body, /has no instance groups/);
            assert.match(body, /keep_clustering_data/);
            assert.doesNotMatch(body, /Click "Update"/);
        });
@@ -129,7 +129,7 @@ describe('ClustersWidget', () => {
         const widget = new ClustersWidget(makeContainer(), app, () => {});
         await widget.update();
 
-        assert.equal(widget._statusLabel.textContent, '4 clusters');
+        assert.equal(widget._statusLabel.textContent, '4 groups');
         // root expanded, its children visible; the grandchild stays hidden
         // because '(root)_glue_logic' has children and is not the root.
         const names = rowNames(widget);
@@ -321,7 +321,7 @@ describe('ClustersWidget', () => {
         const parts = app.sent.filter(m => m.type === 'set_group_colors')
                           .at(-1).colors.split(';');
         assert.equal(parts.length, 4);
-        assert.equal(widget._statusLabel.textContent, '4 clusters');
+        assert.equal(widget._statusLabel.textContent, '4 groups');
     });
 
     // A double click delivers click(detail 1), click(detail 2) and then dblclick;
@@ -409,7 +409,7 @@ describe('ClustersWidget', () => {
         widget._table.querySelectorAll('tbody tr')[1]
             .dispatchEvent(new window.Event('click', { bubbles: true }));
         await waitForMicrotasks();
-        assert.equal(widget._statusLabel.textContent, '4 clusters');
+        assert.equal(widget._statusLabel.textContent, '4 groups');
     });
 
     // The checkbox stays the authority on what may appear: an unticked cluster

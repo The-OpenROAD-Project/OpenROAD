@@ -16,7 +16,7 @@ import {
 } from './ui-utils.js';
 
 const COLS = [
-    'Cluster', 'Type', 'Instances', 'Macros', 'Groups',
+    'Group', 'Type', 'Instances', 'Macros', 'Subgroups',
     'Area', 'Local Inst', 'Local Macros',
 ];
 
@@ -186,7 +186,7 @@ export class ClustersWidget {
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
-            this._statusLabel.textContent = this._nodes.length + ' clusters';
+            this._statusLabel.textContent = this._nodes.length + ' groups';
             await this._sendGroupColors();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
@@ -312,11 +312,11 @@ export class ClustersWidget {
             ? this._groupState.get(node.odb_id) : null;
         if (st && !st.visible) {
             this._statusLabel.textContent
-                = 'Cluster is hidden — tick its checkbox to color it';
+                = 'Group is hidden — tick its checkbox to color it';
             return;
         }
         if (this._hintIfClusterViewOff()) return;
-        this._statusLabel.textContent = this._nodes.length + ' clusters';
+        this._statusLabel.textContent = this._nodes.length + ' groups';
     }
 
     async _sendGroupColors() {
@@ -360,7 +360,7 @@ export class ClustersWidget {
         this._clearSelectedRow();
         // Back to the full map: every checked cluster paints again.
         this._sendGroupColors();
-        this._statusLabel.textContent = this._nodes.length + ' clusters';
+        this._statusLabel.textContent = this._nodes.length + ' groups';
         if (isStaticMode(this._app)) return;
         // Same ownership discipline as _selectRow: a deselect that lands after
         // another panel has taken the selection must not clear the Inspector
@@ -537,16 +537,16 @@ export class ClustersWidget {
             td.style.textAlign = 'center';
             td.style.color = 'var(--fg-secondary)';
             if (isStaticMode(this._app)) {
-                td.textContent = 'No cluster data available';
+                td.textContent = 'No instance group data available';
             } else if (this._loaded) {
                 // The design was read and simply has no dbGroups: say so, and
                 // say what produces them.  This is the common case for an ODB
                 // written by a normal flow run.
-                td.textContent = 'This design has no clusters. Run '
+                td.textContent = 'This design has no instance groups. Run '
                     + 'rtl_macro_placer -keep_clustering_data (before tapcells) '
                     + 'to store MPL\'s clustering in the ODB.';
             } else {
-                td.textContent = 'Click "Update" to load clusters';
+                td.textContent = 'Click "Update" to load instance groups';
             }
             tr.appendChild(td);
             tbody.appendChild(tr);

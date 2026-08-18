@@ -562,7 +562,7 @@ layer).
 
 ### `group_hierarchy`
 
-Return the `dbGroup` tree (Clusters panel).  MPL writes its clustering
+Return the `dbGroup` tree (Instance Groups view of the Hierarchy panel).  MPL writes its clustering
 hierarchy here as nested groups of type `VISUAL_DEBUG` when run as
 `rtl_macro_placer -keep_clustering_data`; power/voltage-domain groups appear
 too, distinguished by `type`.  Nodes are in DFS order, so a parent always
@@ -610,7 +610,7 @@ Select a cluster by `dbGroup` id, highlighting every member instance
 | `odb_id`           | `int`  |    ✓     | `dbGroup::getId()`, as returned by `group_hierarchy`. |
 | `add_to_selection` | `bool` |    —     | Default `false` (replace the selection).            |
 | `deselect`         | `bool` |    —     | Default `false`. When true, removes this group from the selection instead of selecting it; whatever else is selected keeps its highlight. Deselecting a group that is not selected is a no-op, so a client can fire it whenever a cluster is hidden. The response then carries no `name`/`properties` (nothing is being described — this is not an error). |
-| `no_highlight`     | `bool` |    —     | Default `false`. When true the group is selected (so it can be inspected) without pushing any highlight shapes onto the overlay, and `highlight_truncated` comes back `false`. What the viewer's Clusters panel uses: it shows the selected cluster by narrowing `set_group_colors` to that cluster's subtree, so the `_clusters` layer paints it in its own color, and the yellow selection veil would only cover that color. |
+| `no_highlight`     | `bool` |    —     | Default `false`. When true the group is selected (so it can be inspected) without pushing any highlight shapes onto the overlay, and `highlight_truncated` comes back `false`. What the viewer's Instance Groups view uses: it shows the selected cluster by narrowing `set_group_colors` to that cluster's subtree, so the `_clusters` layer paints it in its own color, and the yellow selection veil would only cover that color. |
 | `use_dbu`          | `bool` |    —     | Same as `inspect`.                                  |
 
 **Response (JSON):** the inspect payload plus `selection_count`,

@@ -8,11 +8,13 @@
 import { ClustersWidget } from './clusters-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 
-// Add a view here and it shows up in the dropdown.
+// Add a view here and it shows up in the dropdown.  The labels name where the
+// tree comes from, not what it is called internally: one is the Verilog module
+// tree, the other the design's dbGroups.
 const VIEWS = [
-    { name: 'instances', label: 'Instances', build: (c, app, redraw) =>
+    { name: 'instances', label: 'Verilog Modules', build: (c, app, redraw) =>
         new HierarchyBrowser(c, app, redraw) },
-    { name: 'clusters', label: 'Clusters', build: (c, app, redraw) =>
+    { name: 'clusters', label: 'Instance Groups', build: (c, app, redraw) =>
         new ClustersWidget(c, app, redraw) },
 ];
 
@@ -24,7 +26,7 @@ export class HierarchyPanel {
 
         this._select = document.createElement('select');
         this._select.className = 'hierarchy-view-select';
-        this._select.setAttribute('aria-label', 'Tree view');
+        this._select.setAttribute('aria-label', 'Source');
         for (const view of VIEWS) {
             const option = document.createElement('option');
             option.value = view.name;
@@ -33,6 +35,17 @@ export class HierarchyPanel {
         }
         this._select.addEventListener('change',
                                       () => this.selectView(this._select.value));
+
+        // Label and dropdown as one node, the way the Charts widget labels its
+        // filters: selectView moves the picker between toolbars, and the label
+        // has to travel with it.
+        const label = document.createElement('span');
+        label.className = 'hierarchy-view-label';
+        label.textContent = 'Source:';
+        this._picker = document.createElement('span');
+        this._picker.className = 'hierarchy-view-picker';
+        this._picker.appendChild(label);
+        this._picker.appendChild(this._select);
 
         // All views share this container so their roots are siblings: hiding a
         // root then takes it out of the flow.  Wrapping each view in its own
@@ -53,9 +66,9 @@ export class HierarchyPanel {
             const active = view_name === name;
             widget.element.style.display = active ? '' : 'none';
             if (active) {
-                // Moves the node: an element has one parent, so the selector
+                // Moves the node: an element has one parent, so the picker
                 // cannot be left behind in the hidden view.
-                widget.toolbar.insertBefore(this._select,
+                widget.toolbar.insertBefore(this._picker,
                                             widget.toolbar.firstChild);
                 if (this._stale.delete(view_name)) widget._render();
             }

@@ -69,8 +69,10 @@ export function createMenuBar(app) {
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
             // Both live in the Hierarchy panel now, as two views of one tab.
-            { label: 'Hierarchy Browser', action: () => showHierarchyView(app, 'instances') },
-            { label: 'Clusters', action: () => showHierarchyView(app, 'clusters') },
+            { label: 'Hierarchy: Verilog Modules',
+              action: () => showHierarchyView(app, 'instances') },
+            { label: 'Hierarchy: Instance Groups',
+              action: () => showHierarchyView(app, 'clusters') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
             { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },

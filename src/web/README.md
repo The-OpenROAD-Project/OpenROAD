@@ -88,12 +88,12 @@ Cluster coloring reads the `dbGroup`s that
 database, so it is only useful after MPL has run with that option. Each
 cluster gets its own palette color, and a cluster whose subtree is not
 expanded lends its color to all of its descendants — the same default the
-viewer's Clusters view shows. When the design has no groups the option warns
-and the image is rendered as if it were off.
+viewer's Instance Groups view shows. When the design has no groups the option
+warns and the image is rendered as if it were off.
 
-In the viewer, clicking a row in the Hierarchy panel's Clusters view isolates
-that cluster: only its instances (and those of its nested clusters) stay
-colored, in the color of its swatch, until the row is clicked again. Since
+In the viewer, clicking a row in the Hierarchy panel's Instance Groups view
+isolates that cluster: only its instances (and those of its nested clusters)
+stay colored, in the color of its swatch, until the row is clicked again. Since
 this is what the `cluster_view` overlay draws, the colors are only visible
 while it is on — the view says so when it is off.
 
@@ -186,8 +186,8 @@ web_save_report -setup_paths 200 -hold_paths 200 timing.html
   paths, and view per-level statistics.
 - **Hierarchy browser** — Navigate the module tree with instance counts and area
   statistics. Toggle visibility and assign colors per module using a 31-color
-  palette. The same panel's Clusters view does this for the `dbGroup`s MPL
-  writes with `-keep_clustering_data`.
+  palette. The same panel's Instance Groups view does this for the `dbGroup`s
+  MPL writes with `-keep_clustering_data`.
 - **Display controls** — Toggle visibility of cell types (stdcells, macros,
   pads), net types (signal, power, clock), and shapes (routing, pins, blockages,
   rows, tracks).

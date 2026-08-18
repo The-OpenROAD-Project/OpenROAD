@@ -1394,6 +1394,19 @@ html, body {
     font-size: 12px;
 }
 
+/* Tighter than the toolbar's own 8px gap, so "Source:" reads as the select's
+   label and not as another toolbar item. */
+.hierarchy-view-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hierarchy-view-label {
+    color: var(--fg-muted);
+    font-size: 12px;
+}
+
 .hierarchy-widget {
     display: flex;
     flex-direction: column;

@@ -99,7 +99,18 @@ describe('HierarchyPanel', () => {
         assert.deepEqual(options, ['instances', 'clusters']);
         // In the toolbar of the visible view, ahead of its Update button.
         const toolbar = panel.activeWidget().toolbar;
-        assert.equal(toolbar.firstChild, panel._select);
+        assert.equal(toolbar.firstChild, panel._picker);
+    });
+
+    // The dropdown names where each tree comes from, and the label says what
+    // the dropdown picks (review of #11122): "Instances" and "Clusters" said
+    // neither.
+    it('names the sources and labels the dropdown', () => {
+        const panel = new HierarchyPanel(makeContainer(), createMockApp(),
+                                         () => {});
+        const labels = [...panel._select.options].map(o => o.textContent);
+        assert.deepEqual(labels, ['Verilog Modules', 'Instance Groups']);
+        assert.equal(panel._picker.firstChild.textContent, 'Source:');
     });
 
     it('switches the visible view and moves the selector with it', () => {
@@ -114,8 +125,8 @@ describe('HierarchyPanel', () => {
         assert.equal(panel._select.value, 'clusters');
         // A DOM node has one parent: the selector cannot stay behind in the
         // hidden view's toolbar.
-        assert.equal(panel.activeWidget().toolbar.firstChild, panel._select);
-        assert.equal(instancesToolbar.contains(panel._select), false);
+        assert.equal(panel.activeWidget().toolbar.firstChild, panel._picker);
+        assert.equal(instancesToolbar.contains(panel._picker), false);
     });
 
     it('switches on the dropdown\'s change event', () => {
