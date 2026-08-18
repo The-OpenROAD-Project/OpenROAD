@@ -194,9 +194,9 @@ void InitialPlace::setPlaceInstExtId()
 
 // Only movable IO port pins are excluded from the initial B2B solve;
 // fixed ports (LOCKED/FIRM/COVER) keep anchoring cells here.
-static bool isMovableIoPin(const Pin* pin, bool placeIosMode)
+static bool isMovableIoPin(const Pin* pin, bool place_ios_mode)
 {
-  return placeIosMode && pin->isBTerm()
+  return place_ios_mode && pin->isBTerm()
          && !pin->getDbBTerm()->getFirstPinPlacementStatus().isFixed();
 }
 
@@ -304,7 +304,7 @@ void InitialPlace::createSparseMatrix()
     }
   }
 
-  std::vector<Pin*> solvePins;
+  std::vector<Pin*> solve_pins;
   // for each net
   for (auto& net : pbc_->getNets()) {
     // skip for small nets.
@@ -319,17 +319,17 @@ void InitialPlace::createSparseMatrix()
     }
 
     float netWeight = ipVars_.netWeightScale / (net->getPins().size() - 1);
-    solvePins.clear();
+    solve_pins.clear();
     for (Pin* pin : net->getPins()) {
       if (!isMovableIoPin(pin, ipVars_.placeIosMode)) {
-        solvePins.push_back(pin);
+        solve_pins.push_back(pin);
       }
     }
     // foreach two pins in single nets.
-    for (int pinIdx1 = 1; pinIdx1 < solvePins.size(); ++pinIdx1) {
-      Pin* pin1 = solvePins[pinIdx1];
+    for (int pinIdx1 = 1; pinIdx1 < solve_pins.size(); ++pinIdx1) {
+      Pin* pin1 = solve_pins[pinIdx1];
       for (int pinIdx2 = 0; pinIdx2 < pinIdx1; ++pinIdx2) {
-        Pin* pin2 = solvePins[pinIdx2];
+        Pin* pin2 = solve_pins[pinIdx2];
         // no need to fill in when instance is same
         if (pin1->getInstance() == pin2->getInstance()) {
           continue;

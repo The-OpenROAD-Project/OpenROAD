@@ -1050,6 +1050,7 @@ class NesterovBase
   ~NesterovBase();
 
   GCell& getFillerGCell(size_t index);
+  GCell& getIoPinGCell(size_t index);
 
   NesterovBaseCommon* getNbc() { return nbc_.get(); }
 
@@ -1417,6 +1418,8 @@ class NesterovBase
                   size_t last_index);
   void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
   void appendParallelVectors();
+  // Point whichever storage owns nb_gcells_[nb_index] back at nb_index.
+  void rebindHandleIndex(size_t nb_index);
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1458,8 +1461,13 @@ class NesterovBase
   int io_top_pin_width_ = 0;
   int io_top_pin_height_ = 0;
 
-  // defined after GCellHandle, which nb_gcells_ needs complete
-  size_t ioNbPos(size_t io_index) const;
+  // ioPinStor_ index -> nb_gcells_ index, kept up to date by
+  // rebindHandleIndex so callbacks may reorder nb_gcells_ freely.
+  std::vector<size_t> io_stor_index_to_nb_index_;
+  size_t ioNbPos(size_t io_index) const
+  {
+    return io_stor_index_to_nb_index_[io_index];
+  }
 
   static constexpr size_t kNoMirrorPartner = std::numeric_limits<size_t>::max();
   std::vector<std::pair<uint32_t, uint32_t>> io_mirror_pairs_;
@@ -1548,12 +1556,22 @@ class biNormalParameters
 class GCellHandle
 {
  public:
+  // Tags the ioPinStor_ index space, which is independent of fillerStor_.
+  struct IoPinStorage
+  {
+    NesterovBase* nb;
+  };
+
   GCellHandle(NesterovBaseCommon* nbc, size_t idx)
       : storage_(nbc), storage_index_(idx)
   {
   }
 
   GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx)
+  {
+  }
+
+  GCellHandle(IoPinStorage io, size_t idx) : storage_(io), storage_index_(idx)
   {
   }
 
@@ -1572,6 +1590,11 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
+  bool isIoPinStorage() const
+  {
+    return std::holds_alternative<IoPinStorage>(storage_);
+  }
+
   void updateHandle(NesterovBaseCommon* nbc, size_t new_index)
   {
     storage_ = nbc;
@@ -1587,12 +1610,16 @@ class GCellHandle
   size_t getStorageIndex() const { return storage_index_; }
 
  private:
-  using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
+  using StorageVariant
+      = std::variant<NesterovBaseCommon*, NesterovBase*, IoPinStorage>;
 
   GCell& getGCell() const
   {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
       return std::get<NesterovBaseCommon*>(storage_)->getGCell(storage_index_);
+    }
+    if (std::holds_alternative<IoPinStorage>(storage_)) {
+      return std::get<IoPinStorage>(storage_).nb->getIoPinGCell(storage_index_);
     }
     return std::get<NesterovBase*>(storage_)->getFillerGCell(storage_index_);
   }
@@ -1600,11 +1627,6 @@ class GCellHandle
   StorageVariant storage_;
   size_t storage_index_;
 };
-
-inline size_t NesterovBase::ioNbPos(size_t io_index) const
-{
-  return nb_gcells_.size() - ioPinStor_.size() + io_index;
-}
 
 inline bool isValidSigType(const odb::dbSigType& db_type)
 {

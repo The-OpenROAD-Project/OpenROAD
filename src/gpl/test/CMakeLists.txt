@@ -47,6 +47,8 @@ or_integration_tests(
     region01
   PASSFAIL_TESTS
     incremental02
+    place_ios01
+    place_ios_top_layer
 )
 
 # On an ENABLE_GPU=ON build the gpl FFT defaults to the GPU PoissonSolver,

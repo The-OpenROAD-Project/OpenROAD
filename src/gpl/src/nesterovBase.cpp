@@ -67,7 +67,7 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
-                         size_t n);
+                         const std::vector<size_t>& skip_indices);
 
 static float getSecondNorm(const std::vector<FloatPoint>& a);
 
@@ -1882,8 +1882,12 @@ void NesterovBaseCommon::fixPointers()
           // slots, so the pin's old pointer may now reference a different
           // net (or a popped slot).
           gPinStor_[gpin_index].setGNet(&gNet);
-          if (gPinStor_[gpin_index].getGCell()) {
-            gPinStor_[gpin_index].getGCell()->addGPin(&gPinStor_[gpin_index]);
+          // An IO pin GCell (-place_ios) carries exactly this one GPin, whose
+          // address moved with gPinStor_; rebuild instead of appending, or the
+          // GCell keeps dereferencing the pre-reallocation pointer.
+          if (GCell* io_gcell = gPinStor_[gpin_index].getGCell()) {
+            io_gcell->clearGPins();
+            io_gcell->addGPin(&gPinStor_[gpin_index]);
           }
         } else {
           debugPrint(log_,
@@ -2599,6 +2603,7 @@ void NesterovBase::initIoPinGCells()
 
   // Keep fixed ports as anchors, as in the sequential flow.
   std::vector<odb::dbBTerm*> movable_bterms;
+  int already_placed = 0;
   for (odb::dbBTerm* bterm : block->getBTerms()) {
     // Exclude ports without a GPin; they have no wirelength gradient.
     if (nbc_->dbToNb(bterm) == nullptr) {
@@ -2607,7 +2612,17 @@ void NesterovBase::initIoPinGCells()
     if (bterm->getFirstPinPlacementStatus().isFixed()) {
       continue;
     }
+    if (bterm->getFirstPinPlacementStatus().isPlaced()) {
+      ++already_placed;
+    }
     movable_bterms.push_back(bterm);
+  }
+  if (already_placed > 0) {
+    log_->warn(GPL,
+               184,
+               "Concurrent IO placement moves {} already placed IO pins. Set "
+               "them FIXED to keep their positions.",
+               already_placed);
   }
 
   ioPinStor_.reserve(movable_bterms.size());
@@ -2644,12 +2659,14 @@ void NesterovBase::initIoPinGCells()
   bterm_to_io_index.reserve(ioPinStor_.size());
 
   // Create virtual GCells
+  io_stor_index_to_nb_index_.resize(ioPinStor_.size());
   for (size_t i = 0; i < ioPinStor_.size(); ++i) {
     GCell* io_gcell = &ioPinStor_[i];
     GPin* gpin = nbc_->dbToNb(io_gcell->getBTerm());
     gpin->setGCell(io_gcell);
     io_gcell->addGPin(gpin);
-    nb_gcells_.emplace_back(this, fillerStor_.size() + i);
+    nb_gcells_.emplace_back(GCellHandle::IoPinStorage{this}, i);
+    io_stor_index_to_nb_index_[i] = nb_gcells_.size() - 1;
     bterm_to_io_index[io_gcell->getBTerm()] = i;
   }
 
@@ -2709,6 +2726,16 @@ void NesterovBase::initIoPinGCells()
 void NesterovBase::seedIoPinGCell(size_t io_index)
 {
   GCell* io_gcell = &ioPinStor_[io_index];
+
+  // A position already in the db is a better seed than the net centroid.
+  const odb::Rect bbox = io_gcell->getBTerm()->getBBox();
+  if (!bbox.isInverted()) {
+    const FloatPoint p = projectIoPin(io_index, bbox.xCenter(), bbox.yCenter());
+    io_gcell->setCenterLocation(p.x, p.y);
+    io_gcell->setDensityCenterLocation(p.x, p.y);
+    return;
+  }
+
   const GNet* gnet = nbc_->dbToNb(io_gcell->getBTerm())->getGNet();
 
   int64_t sum_x = 0, sum_y = 0;
@@ -2944,7 +2971,7 @@ FloatPoint NesterovBase::projectOntoSegment(const PerimSegment& seg,
 
 size_t NesterovBase::ioIndexOf(const GCellHandle& handle) const
 {
-  return handle.getStorageIndex() - fillerStor_.size();
+  return handle.getStorageIndex();
 }
 
 const NesterovBase::PerimSegment* NesterovBase::nearestSegment(
@@ -3258,11 +3285,6 @@ int64_t NesterovBase::getFillerCellArea() const
 
 GCell& NesterovBase::getFillerGCell(size_t index)
 {
-  // IO pin GCells follow the filler GCells in this index space.
-  if (index >= fillerStor_.size()
-      && index - fillerStor_.size() < ioPinStor_.size()) {
-    return ioPinStor_[index - fillerStor_.size()];
-  }
   if (index >= fillerStor_.size()) {
     log_->error(
         utl::GPL,
@@ -3272,6 +3294,19 @@ GCell& NesterovBase::getFillerGCell(size_t index)
         fillerStor_.size());
   }
   return fillerStor_[index];
+}
+
+GCell& NesterovBase::getIoPinGCell(size_t index)
+{
+  if (index >= ioPinStor_.size()) {
+    log_->error(
+        utl::GPL,
+        185,
+        "getIoPinGCell: index {} out of bounds (ioPinStor_.size() = {}).",
+        index,
+        ioPinStor_.size());
+  }
+  return ioPinStor_[index];
 }
 
 int64_t NesterovBase::getWhiteSpaceArea() const
@@ -3723,11 +3758,12 @@ float NesterovBase::getStepLength(
   }
 #endif
 
-  // IO pin GCells are the tail of nb_gcells_ and only slide along the
-  // perimeter; letting them into the norm would distort the step length.
-  const size_t n = nb_gcells_.size() - ioPinStor_.size();
-  coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_, n);
-  gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_, n);
+  // IO pin GCells only slide along the perimeter, so letting them into the
+  // norm would distort the step length.
+  coordiDistance_
+      = getDistance(prevSLPCoordi_, curSLPCoordi_, io_stor_index_to_nb_index_);
+  gradDistance_ = getDistance(
+      prevSLPSumGrads_, curSLPSumGrads_, io_stor_index_to_nb_index_);
   debugPrint(log_,
              GPL,
              "getStepLength",
@@ -4860,14 +4896,7 @@ std::optional<std::pair<odb::dbInst*, size_t>> NesterovBase::destroyCbkGCell(
   // element)
   size_t replacer_index = gcell_index;
   if (replacer_index != last_index) {
-    if (!nb_gcells_[replacer_index]->isFiller()) {
-      odb::dbInst* replacer_inst
-          = nb_gcells_[replacer_index]->insts()[0]->dbInst();
-      db_inst_to_nb_index_[replacer_inst] = replacer_index;
-    } else {
-      size_t filler_stor_index = nb_gcells_[replacer_index].getStorageIndex();
-      filler_stor_index_to_nb_index_[filler_stor_index] = replacer_index;
-    }
+    rebindHandleIndex(replacer_index);
   }
 
   return nbc_->destroyCbkGCell(db_inst);
@@ -5092,27 +5121,14 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 
   size_t nb_last_index = nb_gcells_.size() - 1;
   if (nb_index_remove != nb_last_index) {
-    GCellHandle& gcell_replace = nb_gcells_[nb_last_index];
-    if (!gcell_replace->isFiller()) {
-      odb::dbInst* db_inst = gcell_replace->insts()[0]->dbInst();
-      auto it = db_inst_to_nb_index_.find(db_inst);
-      if (it != db_inst_to_nb_index_.end()) {
-        it->second = nb_index_remove;
-      } else {
-        debugPrint(log_,
-                   GPL,
-                   "callbacks",
-                   1,
-                   "Warning: gcell_replace dbInst {} not found in "
-                   "db_inst_to_nb_index_ map",
-                   db_inst->getName());
-      }
-    }
     std::swap(nb_gcells_[nb_index_remove], nb_gcells_[nb_last_index]);
   }
   swapAndPopParallelVectors(nb_index_remove, nb_last_index);
   nb_gcells_.pop_back();
   filler_stor_index_to_nb_index_.erase(stor_index_remove);
+  if (nb_index_remove != nb_last_index) {
+    rebindHandleIndex(nb_index_remove);
+  }
 
   if (stor_index_remove != stor_last_index) {
     size_t replacer_index
@@ -5348,6 +5364,52 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
   swapAndPop(curCoordi_, remove_index, last_index);
   swapAndPop(nextCoordi_, remove_index, last_index);
   swapAndPop(initCoordi_, remove_index, last_index);
+}
+
+void NesterovBase::rebindHandleIndex(size_t nb_index)
+{
+  // Which map to touch follows from the storage the handle names, not from what
+  // the GCell happens to hold. The handle is already registered, so a missing
+  // key is a bug: report it instead of inserting a second entry, which would
+  // later resolve to a popped nb_gcells_ slot.
+  GCellHandle& handle = nb_gcells_[nb_index];
+  const size_t stor_index = handle.getStorageIndex();
+
+  if (handle.isIoPinStorage()) {
+    // Dense and never resized after init, so every IO pin has a slot.
+    io_stor_index_to_nb_index_[stor_index] = nb_index;
+    return;
+  }
+
+  if (handle.isNesterovBaseCommon()) {
+    odb::dbInst* db_inst = handle->insts()[0]->dbInst();
+    auto it = db_inst_to_nb_index_.find(db_inst);
+    if (it == db_inst_to_nb_index_.end()) {
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "rebindHandleIndex: dbInst {} missing from "
+                 "db_inst_to_nb_index_",
+                 db_inst->getName());
+      return;
+    }
+    it->second = nb_index;
+    return;
+  }
+
+  auto it = filler_stor_index_to_nb_index_.find(stor_index);
+  if (it == filler_stor_index_to_nb_index_.end()) {
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "rebindHandleIndex: filler storage index {} missing from "
+               "filler_stor_index_to_nb_index_",
+               stor_index);
+    return;
+  }
+  it->second = nb_index;
 }
 
 void NesterovBase::appendParallelVectors()
@@ -5615,17 +5677,25 @@ static float fastExp(float exp)
   return exp;
 }
 
+// skip_indices holds the nb_gcells_ positions to leave out of the norm, in any
+// order. Subtracting them keeps the no-IO-pin path a plain loop over floats.
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b,
-                         const size_t n)
+                         const std::vector<size_t>& skip_indices)
 {
-  if (n == 0) {
-    return 0.0f;
-  }
   float sumDistance = 0.0f;
-  for (size_t i = 0; i < n; i++) {
+  for (size_t i = 0; i < a.size(); i++) {
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
+  }
+  for (const size_t i : skip_indices) {
+    sumDistance -= (a[i].x - b[i].x) * (a[i].x - b[i].x);
+    sumDistance -= (a[i].y - b[i].y) * (a[i].y - b[i].y);
+  }
+
+  const size_t n = a.size() - skip_indices.size();
+  if (n == 0) {
+    return 0.0f;
   }
 
   return std::sqrt(sumDistance / (2.0 * n));
