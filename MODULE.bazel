@@ -364,6 +364,25 @@ npm.npm_translate_lock(
 )
 use_repo(npm, "npm")
 
+# The browser libraries the web viewer serves from the binary. Not a
+# dev_dependency: without them the viewer would fall back to a CDN, which is the
+# bug (issue #11065). Versions and digests live in the manifest the extension
+# reads, //src/web/third-party:packages.json.
+web_third_party = use_extension("//bazel:web_third_party.bzl", "web_third_party")
+use_repo(
+    web_third_party,
+    "esbuild_darwin_arm64",
+    "esbuild_darwin_x64",
+    "esbuild_linux_arm64",
+    "esbuild_linux_x64",
+    "web_elkjs",
+    "web_golden_layout",
+    "web_leaflet",
+    "web_netlistsvg",
+    "web_third_party",
+    "web_three",
+)
+
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
 orfs.default(
     # Use OpenROAD of this repo instead of the one bundled with @orfs

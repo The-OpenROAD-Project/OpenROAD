@@ -1,0 +1,91 @@
+{
+  "_comment": [
+    "The browser libraries the web viewer serves from the OpenROAD binary.",
+    "This file is the single source of truth for both build systems: Bazel reads",
+    "it in //bazel:web_third_party.bzl, CMake through fetch_packages.py.",
+    "",
+    "'files' maps a path inside the npm tarball to the path the viewer serves it",
+    "under, below /third-party/.  Each package keeps the layout it ships: the",
+    "stylesheets reach their icons through relative urls.",
+    "",
+    "To upgrade, change 'version' and 'sha256' together; the registry is",
+    "immutable, so a wrong digest means a wrong download, never a stale one.",
+    "fetch_packages.py --print-sha256 <pkg>@<version> prints the new digest."
+  ],
+  "registry": "https://registry.npmjs.org",
+  "packages": {
+    "leaflet": {
+      "version": "1.9.4",
+      "sha256": "84c65a256e50657896f54c33bd857b6849ebe94c817803be818bf32a3dde0b77",
+      "files": {
+        "LICENSE": "leaflet/LICENSE",
+        "dist/leaflet.js": "leaflet/leaflet.js",
+        "dist/leaflet.css": "leaflet/leaflet.css",
+        "dist/images/layers.png": "leaflet/images/layers.png",
+        "dist/images/layers-2x.png": "leaflet/images/layers-2x.png",
+        "dist/images/marker-icon.png": "leaflet/images/marker-icon.png",
+        "dist/images/marker-icon-2x.png": "leaflet/images/marker-icon-2x.png",
+        "dist/images/marker-shadow.png": "leaflet/images/marker-shadow.png"
+      }
+    },
+    "golden-layout": {
+      "version": "2.6.0",
+      "sha256": "2097b74f3d45a4770bc00360276e3251a6a74a88385f8cf7aa37ca6e6395a4bc",
+      "files": {
+        "LICENSE": "golden-layout/LICENSE",
+        "dist/css/goldenlayout-base.css": "golden-layout/css/goldenlayout-base.css",
+        "dist/css/themes/goldenlayout-dark-theme.css": "golden-layout/css/themes/goldenlayout-dark-theme.css",
+        "dist/css/themes/goldenlayout-light-theme.css": "golden-layout/css/themes/goldenlayout-light-theme.css",
+        "dist/img/lm_close_black.png": "golden-layout/img/lm_close_black.png",
+        "dist/img/lm_close_tab_white.png": "golden-layout/img/lm_close_tab_white.png",
+        "dist/img/lm_close_white.png": "golden-layout/img/lm_close_white.png",
+        "dist/img/lm_maximise_black.png": "golden-layout/img/lm_maximise_black.png",
+        "dist/img/lm_maximise_white.png": "golden-layout/img/lm_maximise_white.png",
+        "dist/img/lm_minimize_black.png": "golden-layout/img/lm_minimize_black.png",
+        "dist/img/lm_minimize_white.png": "golden-layout/img/lm_minimize_white.png",
+        "dist/img/lm_popin_black.png": "golden-layout/img/lm_popin_black.png",
+        "dist/img/lm_popin_white.png": "golden-layout/img/lm_popin_white.png",
+        "dist/img/lm_popout_black.png": "golden-layout/img/lm_popout_black.png",
+        "dist/img/lm_popout_white.png": "golden-layout/img/lm_popout_white.png"
+      },
+      "bundle": {
+        "tree": "dist/esm",
+        "entry": "dist/esm/index.js",
+        "output": "golden-layout/golden-layout.esm.js"
+      }
+    },
+    "three": {
+      "version": "0.160.0",
+      "sha256": "1ee2f935c4f555814b388e87b5ef78a44856bd2e9d0feb88643a6e193fb42856",
+      "files": {
+        "LICENSE": "three/LICENSE",
+        "build/three.module.min.js": "three/three.module.min.js"
+      }
+    },
+    "elkjs": {
+      "version": "0.9.3",
+      "sha256": "b95b224bd1ab71fd40f6d9a6365c28d989745dff6b0d514407bc1eb68f2f561e",
+      "files": {
+        "LICENSE.md": "elkjs/LICENSE.md",
+        "lib/elk.bundled.js": "elkjs/elk.bundled.js"
+      }
+    },
+    "netlistsvg": {
+      "version": "1.0.2",
+      "sha256": "f261a9840e8c244ab6721917081bda04138e500b6d5727e672ba1b635ee9ceec",
+      "files": {
+        "LICENSE": "netlistsvg/LICENSE",
+        "built/netlistsvg.bundle.js": "netlistsvg/netlistsvg.bundle.js"
+      }
+    }
+  },
+  "esbuild": {
+    "version": "0.28.2",
+    "platforms": {
+      "darwin-arm64": "1980cde09749094452b20d36ff267585ccb3f72749c7bc97291cd9996ccf5a2a",
+      "darwin-x64": "abb6a7a895aaf2cc0df36fecc3bf0042479ffec51a643a056d54e9109f27db55",
+      "linux-arm64": "a96dbfa41d3ef5dbd1ef22b1c10d5187be9267e86093a870f06402a7ec931596",
+      "linux-x64": "9573bb2233aab0f9ea7647d5cca9726113cc1768de61d66b17267f4db84488f6"
+    }
+  }
+}

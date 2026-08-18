@@ -52,6 +52,8 @@ py_test(
     data = [
         "//src/web:BUILD",
         "//src/web:CMakeLists.txt",
+        "//src/web:third-party/fetch_packages.py",
+        "//src/web:third-party/packages.json",
     ],
     legacy_create_init = 0,
     main = "asset_list_parity.py",
@@ -95,6 +97,14 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+# The bundle is a build output, not a source file, so it is not in JS_FILES and
+# needs no no_copy_to_bin.
+js_test(
+    name = "golden_layout_bundle_test",
+    data = ["//src/web:third-party/golden-layout/golden-layout.esm.js"],
+    entry_point = "js/test-golden-layout-bundle.js",
 )
 
 js_test(

@@ -2,7 +2,8 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@web_third_party//:assets.bzl", "WEB_THIRD_PARTY_ASSETS", "WEB_THIRD_PARTY_BUNDLES")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -17,6 +18,8 @@ exports_files([
     "BUILD",
     "CMakeLists.txt",
     "src/embed_report_assets.py",
+    "third-party/fetch_packages.py",
+    "third-party/packages.json",
 ])
 
 py_binary(
@@ -31,19 +34,79 @@ py_binary(
     main = "src/embed_web_assets.py",
 )
 
-# The vendored libraries are generated files (see third-party/README.md); this
-# is what catches one being edited in place instead of through the script.
-py_test(
-    name = "vendor_lock_test",
-    srcs = ["third-party/update_vendor.py"],
-    args = ["--check"],
-    data = glob(
-        ["third-party/**"],
-        exclude = ["third-party/update_vendor.py"],
-    ),
-    legacy_create_init = 0,
-    main = "third-party/update_vendor.py",
+# The CMake build fetches with this; here it is only the esbuild invocation, so
+# that both build systems bundle golden-layout the same way down to the bytes.
+py_binary(
+    name = "fetch_packages",
+    srcs = ["third-party/fetch_packages.py"],
+    data = ["third-party/packages.json"],
+    main = "third-party/fetch_packages.py",
 )
+
+# Which prebuilt esbuild the bundle genrule runs.  A host outside this list has
+# no pinned binary, and adding one means an entry here, in packages.json and in
+# fetch_packages.py's ESBUILD_PLATFORMS.
+config_setting(
+    name = "linux_x64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)
+
+config_setting(
+    name = "linux_arm64",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
+)
+
+config_setting(
+    name = "darwin_x64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:macos",
+    ],
+)
+
+config_setting(
+    name = "darwin_arm64",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:macos",
+    ],
+)
+
+alias(
+    name = "esbuild",
+    actual = select({
+        ":darwin_arm64": "@esbuild_darwin_arm64//:bin/esbuild",
+        ":darwin_x64": "@esbuild_darwin_x64//:bin/esbuild",
+        ":linux_arm64": "@esbuild_linux_arm64//:bin/esbuild",
+        ":linux_x64": "@esbuild_linux_x64//:bin/esbuild",
+    }),
+)
+
+# golden-layout publishes no browser build, and the saved report needs one file:
+# a relative import does not resolve from a data: URI.
+[genrule(
+    name = "bundle_" + bundle.package.replace("-", "_"),
+    srcs = [
+        bundle.tree,
+        bundle.entry,
+    ],
+    outs = [bundle.out],
+    cmd = "$(execpath :fetch_packages)" +
+          " --bundle " + bundle.package +
+          " --esbuild $(execpath :esbuild)" +
+          " --entry $(execpath " + bundle.entry + ")" +
+          " --output $@",
+    tools = [
+        ":esbuild",
+        ":fetch_packages",
+    ],
+) for bundle in WEB_THIRD_PARTY_BUNDLES]
 
 # The report inlines these into one <script type="module">, so the order is
 # what runs.  Listed once and used for both srcs and the command line.
@@ -116,53 +179,35 @@ _WEB_ASSET_FILES = [
     "src/timing-widget.js",
     "src/drc-widget.js",
     "src/main.js",
-    # The vendored browser libraries.  They are served from the binary like any
-    # other asset so the viewer never loads code from a CDN (issue #11065); see
-    # third-party/README.md.  Their directory layout is part of the contract:
-    # the stylesheets reach their icons through relative urls.
-    "third-party/leaflet/leaflet.js",
-    "third-party/leaflet/leaflet.css",
-    "third-party/leaflet/images/layers.png",
-    "third-party/leaflet/images/layers-2x.png",
-    "third-party/leaflet/images/marker-icon.png",
-    "third-party/leaflet/images/marker-icon-2x.png",
-    "third-party/leaflet/images/marker-shadow.png",
-    "third-party/golden-layout/golden-layout.esm.js",
-    "third-party/golden-layout/css/goldenlayout-base.css",
-    "third-party/golden-layout/css/themes/goldenlayout-dark-theme.css",
-    "third-party/golden-layout/css/themes/goldenlayout-light-theme.css",
-    "third-party/golden-layout/img/lm_close_black.png",
-    "third-party/golden-layout/img/lm_close_tab_white.png",
-    "third-party/golden-layout/img/lm_close_white.png",
-    "third-party/golden-layout/img/lm_maximise_black.png",
-    "third-party/golden-layout/img/lm_maximise_white.png",
-    "third-party/golden-layout/img/lm_minimize_black.png",
-    "third-party/golden-layout/img/lm_minimize_white.png",
-    "third-party/golden-layout/img/lm_popin_black.png",
-    "third-party/golden-layout/img/lm_popin_white.png",
-    "third-party/golden-layout/img/lm_popout_black.png",
-    "third-party/golden-layout/img/lm_popout_white.png",
-    "third-party/three/three.module.min.js",
-    "third-party/elkjs/elk.bundled.js",
-    "third-party/netlistsvg/netlistsvg.bundle.js",
 ]
 
-# Assets under src/ are served flat ("/main.js"); everything else keeps its
-# path ("/third-party/leaflet/images/layers.png").
-_WEB_ASSET_ARGS = [
-    "/%s=$(location %s)" % (
-        f[len("src/"):] if f.startswith("src/") else f,
+# (served path, the file to serve there).  The viewer's own assets are served
+# flat ("/main.js").  The browser libraries come from the manifest, keeping the
+# layout their packages ship, because the stylesheets reach their icons through
+# relative urls; the bundled ones are outputs of the genrules above.
+_ASSETS = [
+    (
+        "/" + f[len("src/"):],
         f,
     )
     for f in _WEB_ASSET_FILES
+] + WEB_THIRD_PARTY_ASSETS + [
+    (
+        bundle.served,
+        bundle.out,
+    )
+    for bundle in WEB_THIRD_PARTY_BUNDLES
 ]
 
 genrule(
     name = "web_assets",
-    srcs = _WEB_ASSET_FILES,
+    srcs = [target for _, target in _ASSETS],
     outs = ["src/web_assets.cpp"],
     cmd = "$(execpath :embed_web_assets) --output $@ " +
-          " ".join(_WEB_ASSET_ARGS),
+          " ".join([
+              "%s=$(location %s)" % (served, target)
+              for served, target in _ASSETS
+          ]),
     tools = [":embed_web_assets"],
 )
 

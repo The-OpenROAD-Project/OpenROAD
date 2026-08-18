@@ -13,19 +13,27 @@
 //   node preview.mjs [outDir]
 //
 // Requires google-chrome (or set CHROME=/path/to/chrome).  elk and netlistsvg
-// come from src/web/third-party, the same copies the real viewer serves, so no
-// network access is needed.
+// are the same builds the real viewer serves: the build does not keep them
+// anywhere this can reach, so they are fetched into ./third-party on first run.
+// Set WEB_THIRD_PARTY to a directory a build already populated to skip that.
 
 import puppeteer from 'puppeteer-core';
-import { writeFileSync, readFileSync, mkdtempSync, mkdirSync } from 'node:fs';
+import { writeFileSync, readFileSync, mkdtempSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 import http from 'node:http';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const srcDir = join(here, '..', '..', 'src');
 const chrome = process.env.CHROME || '/usr/bin/google-chrome';
+
+const thirdPartyDir = process.env.WEB_THIRD_PARTY || join(here, 'third-party');
+if (!existsSync(join(thirdPartyDir, 'elkjs', 'elk.bundled.js'))) {
+  execFileSync(join(here, '..', '..', 'third-party', 'fetch_packages.py'),
+               ['--dest', thirdPartyDir], { stdio: 'inherit' });
+}
 
 // Args: any *.json is a real captured netlist to render; the first other arg is
 // the output directory.  Capture a real netlist from the running viewer via
@@ -101,9 +109,10 @@ const server = http.createServer((req, res) => {
   try {
     const ext = url.slice(url.lastIndexOf('.'));
     res.setHeader('Content-Type', MIME[ext] || 'text/plain');
-    // The vendored libraries live next to src/, not inside it.
-    const root = url.startsWith('/third-party/') ? join(srcDir, '..') : srcDir;
-    res.end(readFileSync(join(root, url)));
+    const path = url.startsWith('/third-party/')
+      ? join(thirdPartyDir, url.slice('/third-party/'.length))
+      : join(srcDir, url);
+    res.end(readFileSync(path));
   } catch (e) { res.statusCode = 404; res.end('not found'); }
 });
 await new Promise((r) => server.listen(0, r));

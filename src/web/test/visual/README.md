@@ -12,8 +12,9 @@ skin draws, and netlistsvg lays them out. This tool serves `src/` directly, so
 it picks up edits to `openroad_skin.svg` and `schematic-widget.js` immediately.
 
 This is a developer tool, not part of CI: it needs a local Chrome. elk and
-netlistsvg come from `src/web/third-party`, the same copies the viewer serves,
-so no network access is needed.
+netlistsvg are the builds the viewer serves; the first run fetches them into
+`./third-party`, or set `WEB_THIRD_PARTY` to a directory a build already
+populated (`<build>/src/web/third-party` under CMake).
 
 ## Setup (one-time)
 

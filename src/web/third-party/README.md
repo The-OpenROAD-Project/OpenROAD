@@ -1,50 +1,66 @@
-# Vendored browser libraries
+# Browser libraries
 
 The web viewer used to pull these libraries from CDNs, one of them over plain
-http (issue #11065). They are now checked in here, embedded in the OpenROAD
-binary and served by `web_server` itself, so the browser only ever talks to the
-OpenROAD process and the viewer works on a machine with no network.
+http (issue #11065). The build now fetches them from the npm registry, embeds
+them in the OpenROAD binary and `web_server` serves them itself, so the browser
+only ever talks to the OpenROAD process and the viewer works on a machine with
+no network.
 
-| Directory | Package | Version | Used for |
-| --- | --- | --- | --- |
-| `leaflet/` | leaflet | 1.9.4 | the tiled layout view |
-| `golden-layout/` | golden-layout | 2.6.0 | the dockable panel layout |
-| `three/` | three | 0.160.0 | the 3D viewer |
-| `elkjs/` | elkjs | 0.9.3 | schematic placement and routing |
-| `netlistsvg/` | netlistsvg | 1.0.2 | schematic rendering |
+Nothing here is checked in. `packages.json` is the manifest — version and
+tarball sha256 per package — and it is the only place those live:
 
-Each directory keeps the layout its package ships, because the stylesheets
-reach their icons through relative urls (`leaflet.css` asks for
-`images/*.png`, the golden-layout themes for `../../img/*.png`). The served
-paths mirror this directory, so `leaflet/leaflet.css` is served as
-`/third-party/leaflet/leaflet.css`.
+- Bazel reads it in [`//bazel:web_third_party.bzl`](../../../bazel/web_third_party.bzl),
+  which turns each entry into an `http_archive`.
+- CMake reads it through `fetch_packages.py`, at configure time.
+
+| Package | Used for |
+| --- | --- |
+| leaflet | the tiled layout view |
+| golden-layout | the dockable panel layout |
+| three | the 3D viewer |
+| elkjs | schematic placement and routing |
+| netlistsvg | schematic rendering |
+
+Each package keeps the layout it ships, because the stylesheets reach their
+icons through relative urls (`leaflet.css` asks for `images/*.png`, the
+golden-layout themes for `../../img/*.png`). The served paths mirror that, so
+leaflet's stylesheet is served as `/third-party/leaflet/leaflet.css`. Every
+package's license is served alongside its code, at
+`/third-party/<package>/LICENSE` (MIT for leaflet, golden-layout, three and
+netlistsvg; EPL-2.0 for elkjs).
 
 Two ordering constraints are easy to break:
 
 - `netlistsvg.bundle.js` does not bundle ELK; it reads `window.ELK`, so
-  `elkjs/elk.bundled.js` must load first in `index.html`.
+  `elk.bundled.js` must load first in `index.html`.
 - `three` and `golden-layout` are ES modules, resolved from bare specifiers
   through the import map in `index.html`. `golden-layout` publishes no browser
-  build, so `golden-layout.esm.js` is bundled from its `dist/esm` tree — a
-  single file both because it saves requests and because the saved report
-  inlines it as a `data:` URI, where relative imports would not resolve.
+  build, so the build bundles its `dist/esm` tree with esbuild — a single file
+  both because it saves requests and because the saved report inlines it as a
+  `data:` URI, where relative imports would not resolve. esbuild is a static
+  binary, pinned per platform in the manifest like everything else.
 
 ## Upgrading
 
-Every file here is generated. Do not edit them by hand: `update_vendor.py
---check` compares them against `vendor.lock.json` and CI runs it.
+Change `version` and `sha256` together — the registry is immutable, so a wrong
+digest means a wrong download, never a stale one:
 
 ```sh
-# edit the version in PACKAGES, then
-./update_vendor.py --rewrite-lock    # downloads, rebuilds, records new digests
-./update_vendor.py --check           # what CI runs
+./fetch_packages.py --print-sha256 leaflet@1.9.5   # the new digest
 ```
 
-Without `--rewrite-lock` the script refuses a tarball whose digest differs from
-the lock: the npm registry is immutable, so a mismatch means either a stale lock
-or a tampered download. Adding or removing a file also means updating the asset
-lists in `src/web/BUILD` and `src/web/CMakeLists.txt`, which is what gets them
-embedded and served.
+Adding or removing a served file means editing the `files` map, and nothing
+else: both build systems derive their asset lists from it.
 
-The licenses of all five packages are vendored alongside the code (MIT for
-leaflet, golden-layout, three and netlistsvg; EPL-2.0 for elkjs).
+## Building without network access
+
+Both build systems verify every byte against the manifest, so priming a cache
+is enough:
+
+```sh
+./fetch_packages.py --download-only --tarball-dir ~/openroad-web-tarballs
+cmake -B build -DWEB_THIRD_PARTY_TARBALL_DIR=~/openroad-web-tarballs
+```
+
+For Bazel the equivalent is its own `--distdir`, which needs the tarballs named
+as their urls end.

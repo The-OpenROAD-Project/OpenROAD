@@ -41,45 +41,52 @@ set(WEB_ASSET_FILES
     src/drc-widget.js
     src/3d-viewer-widget.js
     src/main.js
-    # The vendored browser libraries.  They are served from the binary like any
-    # other asset so the viewer never loads code from a CDN (issue #11065); see
-    # third-party/README.md.  Their directory layout is part of the contract:
-    # the stylesheets reach their icons through relative urls.
-    third-party/leaflet/leaflet.js
-    third-party/leaflet/leaflet.css
-    third-party/leaflet/images/layers.png
-    third-party/leaflet/images/layers-2x.png
-    third-party/leaflet/images/marker-icon.png
-    third-party/leaflet/images/marker-icon-2x.png
-    third-party/leaflet/images/marker-shadow.png
-    third-party/golden-layout/golden-layout.esm.js
-    third-party/golden-layout/css/goldenlayout-base.css
-    third-party/golden-layout/css/themes/goldenlayout-dark-theme.css
-    third-party/golden-layout/css/themes/goldenlayout-light-theme.css
-    third-party/golden-layout/img/lm_close_black.png
-    third-party/golden-layout/img/lm_close_tab_white.png
-    third-party/golden-layout/img/lm_close_white.png
-    third-party/golden-layout/img/lm_maximise_black.png
-    third-party/golden-layout/img/lm_maximise_white.png
-    third-party/golden-layout/img/lm_minimize_black.png
-    third-party/golden-layout/img/lm_minimize_white.png
-    third-party/golden-layout/img/lm_popin_black.png
-    third-party/golden-layout/img/lm_popin_white.png
-    third-party/golden-layout/img/lm_popout_black.png
-    third-party/golden-layout/img/lm_popout_white.png
-    third-party/three/three.module.min.js
-    third-party/elkjs/elk.bundled.js
-    third-party/netlistsvg/netlistsvg.bundle.js
 )
 
-# Each asset is passed as <served path>=<file path>.  Assets under src/ are
-# served flat ("/main.js"); everything else keeps its path
-# ("/third-party/leaflet/images/layers.png").
+# The browser libraries are not checked in: the build fetches them from the npm
+# registry, verified against the digests in third-party/packages.json, and
+# bundles golden-layout, which publishes no browser build (issue #11065).  Bazel
+# does the same through //bazel:web_third_party.bzl.  This runs at configure
+# time and only does work when the manifest changed.
+#
+# Point WEB_THIRD_PARTY_TARBALL_DIR at a directory primed with
+#   third-party/fetch_packages.py --download-only --tarball-dir <dir>
+# to configure with no network.
+set(WEB_THIRD_PARTY_TARBALL_DIR "" CACHE PATH
+    "Pre-downloaded npm tarballs for the web viewer's browser libraries")
+set(WEB_THIRD_PARTY_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party)
+set(WEB_THIRD_PARTY_CMAKE ${CMAKE_CURRENT_BINARY_DIR}/web_third_party.cmake)
+
+set(WEB_FETCH_ARGS --dest ${WEB_THIRD_PARTY_DIR} --emit-cmake ${WEB_THIRD_PARTY_CMAKE})
+if(WEB_THIRD_PARTY_TARBALL_DIR)
+  list(APPEND WEB_FETCH_ARGS --tarball-dir ${WEB_THIRD_PARTY_TARBALL_DIR})
+endif()
+
+execute_process(
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/third-party/fetch_packages.py ${WEB_FETCH_ARGS}
+  RESULT_VARIABLE WEB_FETCH_RESULT
+)
+if(NOT WEB_FETCH_RESULT EQUAL 0)
+  message(FATAL_ERROR
+    "failed to fetch the web viewer's browser libraries. Without network "
+    "access, prime a directory with third-party/fetch_packages.py "
+    "--download-only --tarball-dir <dir> and configure with "
+    "-DWEB_THIRD_PARTY_TARBALL_DIR=<dir>.")
+endif()
+
+# Defines WEB_THIRD_PARTY_ASSET_ARGS and WEB_THIRD_PARTY_FILES.
+include(${WEB_THIRD_PARTY_CMAKE})
+
+# Each asset is passed as <served path>=<file path>.  The viewer's own assets
+# are served flat ("/main.js"); the libraries keep the layout their packages
+# ship ("/third-party/leaflet/images/layers.png"), because the stylesheets reach
+# their icons through relative urls.
 set(WEB_ASSET_ARGS "")
 foreach(f ${WEB_ASSET_FILES})
   string(REGEX REPLACE "^src/" "" served ${f})
   list(APPEND WEB_ASSET_ARGS /${served}=${CMAKE_CURRENT_SOURCE_DIR}/${f})
 endforeach()
+list(APPEND WEB_ASSET_ARGS ${WEB_THIRD_PARTY_ASSET_ARGS})
 
 set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
 add_custom_command(
@@ -129,6 +136,7 @@ add_custom_command(
   DEPENDS
     src/embed_web_assets.py
     ${WEB_ASSET_FILES}
+    ${WEB_THIRD_PARTY_FILES}
   COMMENT "Generating web_assets.cpp"
 )
 

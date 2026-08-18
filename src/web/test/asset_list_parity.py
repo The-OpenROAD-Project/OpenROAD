@@ -6,7 +6,12 @@
 # ties the two together: a file forgotten in one 404s under that build system,
 # and the report's list is ordered, since its files share one scope.  Both have
 # drifted once already.  This test is the tie.
+#
+# The browser libraries are not in those lists -- both build systems derive them
+# from third-party/packages.json -- but which host platforms have a pinned
+# esbuild is stated three times, so that is checked here too.
 
+import json
 import os
 import re
 import sys
@@ -33,6 +38,12 @@ def cmake_list(cmakelists, name):
         for line in body.splitlines()
         if line.strip() and not line.strip().startswith("#")
     ]
+
+
+def block(text, opening, closing):
+    """The lines between an opening line and the first line that closes it."""
+    body = text[text.index(opening) + len(opening) :]
+    return body[: body.index("\n" + closing)]
 
 
 def cmake_command_args(cmakelists, after):
@@ -69,6 +80,28 @@ def main():
             "the report JS lists differ (order matters -- the files share one "
             f"scope):\n  BUILD: {bazel_js}\n  CMake: {cmake_js}"
         )
+
+    # A platform pinned in the manifest but missing from either build system is
+    # an esbuild that is downloaded and never runnable, or a select() with no
+    # matching digest.
+    manifest = json.loads(read("third-party/packages.json"))
+    pinned = set(manifest["esbuild"]["platforms"])
+    fetch = set(
+        re.findall(
+            r'^\s+\([^)]*\): "([^"]+)",',
+            block(read("third-party/fetch_packages.py"), "ESBUILD_PLATFORMS = {", "}"),
+            re.M,
+        )
+    )
+    selected = set(
+        name.replace("_", "-", 1)
+        for name in re.findall(r'"@esbuild_(\w+)//:bin/esbuild"', build)
+    )
+    for label, found in (("fetch_packages.py", fetch), ("BUILD", selected)):
+        for missing in sorted(pinned - found):
+            problems.append(f"esbuild {missing} is pinned but not handled in {label}")
+        for extra in sorted(found - pinned):
+            problems.append(f"{label} handles esbuild {extra}, which is not pinned")
 
     if problems:
         print("\n".join(problems), file=sys.stderr)
