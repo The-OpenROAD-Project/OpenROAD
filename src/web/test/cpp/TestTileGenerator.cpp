@@ -3820,6 +3820,58 @@ TEST_F(TileGeneratorTest, ColorOverlaysAreGatedOnTheirVisibilityFlag)
   EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", modules_on)));
 }
 
+// Hiding a cell type in Display Controls hides its color as well: the overlay
+// fills the instance itself, so a colored cell the user switched off would
+// otherwise stay on screen with nothing under it.  Qt has the same behavior —
+// drawModuleView() iterates the list already filtered by isInstanceVisible().
+TEST_F(TileGeneratorTest, ColorOverlaysSkipHiddenInstances)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  std::map<uint32_t, Color> module_colors;
+  odb::dbModule* module = inst->getModule();
+  ASSERT_NE(module, nullptr);
+  module_colors[module->getId()] = Color{.r = 0, .g = 0, .b = 255, .a = 255};
+  InstColorOverlay inst_colors;
+  inst_colors.colors[findColorOverlay("_clusters")->index] = &group_colors;
+  inst_colors.colors[findColorOverlay("_modules")->index] = &module_colors;
+
+  const auto render = [&](const char* layer, const TileVisibility& vis) {
+    auto png = tile_gen_->generateTile(layer,
+                                       0,
+                                       0,
+                                       0,
+                                       vis,
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       &inst_colors);
+    unsigned w = 0;
+    unsigned h = 0;
+    return decodePng(png, w, h);
+  };
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  vis.module_view = true;
+  ASSERT_TRUE(hasNonTransparentPixel(render("_clusters", vis)));
+  ASSERT_TRUE(hasNonTransparentPixel(render("_modules", vis)));
+
+  // buf1 is a stdcell: unticking Std Cells must empty both overlays.
+  vis.stdcells = false;
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", vis)))
+      << "a hidden instance was still painted in its group color";
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", vis)))
+      << "a hidden instance was still painted in its module color";
+}
+
 // Enabling the overlay before the Clusters/Hierarchy panel has pushed a color
 // map must leave the tile empty.  Falling through to the generic instance
 // drawing would stack a second copy of the instances layer over the design.

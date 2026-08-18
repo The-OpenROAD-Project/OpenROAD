@@ -2947,7 +2947,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                              super);
             };
 
-      // Fill every instance with the color of its owner.  `owner_color`
+      // Fill every visible instance with the color of its owner.  `owner_color`
       // returns nullptr to skip one.  Generic, not std::function, so the lookup
       // inlines into the per-instance loop.
       auto draw_inst_color_overlay = [&](auto&& owner_color) {
@@ -2964,6 +2964,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             continue;
           }
           if (inst->getMaster()->isFiller()) {
+            continue;
+          }
+          // A hidden cell type takes its color with it: the overlay is a fill
+          // of the instance, and Qt's drawModuleView only ever sees the
+          // instances that passed isInstanceVisible.
+          if (!vis.isInstVisible(inst, sta_)) {
             continue;
           }
           const Color* c = owner_color(inst);
