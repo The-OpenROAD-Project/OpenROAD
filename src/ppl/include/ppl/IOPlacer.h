@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -218,6 +219,32 @@ class IOPlacer
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
+  struct PinSize
+  {
+    int half_width = 0;
+    int height = 0;
+  };
+  // a shape blocking pins, with the spacing rules it carries
+  struct BlockingShape
+  {
+    odb::Rect rect;
+    int min_spacing = 0;
+    int effective_width = 0;
+  };
+  PinSize computePinSize(int layer, bool vertical_pin);
+  int computeLayerSpacing(int layer, int shape_width, int parallel_length);
+  odb::Rect padShapeForPin(const odb::Rect& box,
+                           int layer,
+                           bool vertical_pin,
+                           int min_spacing = 0,
+                           int effective_width = 0);
+  void excludeBoundaryShape(const odb::Rect& box,
+                            odb::dbTechLayer* tech_layer,
+                            const odb::Rect& die_area,
+                            int min_spacing = 0,
+                            int effective_width = 0);
+  void getBlockedRegions();
+  void getBlockedRegionsFromPDN();
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   Edge getMirroredEdge(const Edge& edge);
@@ -261,7 +288,14 @@ class IOPlacer
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   FallbackPins fallback_pins_;
+  // fixed pin shapes padded by the pin size and spacing, per layer
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
+  // padded boundary shapes blocking polygon die slots, per layer
+  std::map<int, std::vector<odb::Rect>> layer_blocked_shapes_;
+  std::map<std::pair<int, bool>, PinSize> pin_size_cache_;
+  std::map<std::tuple<int, int, int>, int> spacing_cache_;
+  // width of the pin being placed by place_pin, for the spacing rules
+  int manual_pin_width_ = 0;
 
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<utl::Validator> validator_;
