@@ -204,10 +204,10 @@ void AntennaChecker::Impl::initAntennaRules()
                                   diff_side_metal_factor,
                                   minus_diff_factor,
                                   plus_diff_factor,
-                                  gate_plus_diff_idx,
-                                  gate_plus_diff_ratios,
+                                  std::move(gate_plus_diff_idx),
+                                  std::move(gate_plus_diff_ratios),
                                   diff_metal_reduce_factor};
-    layer_info_[tech_layer] = layer_antenna;
+    layer_info_[tech_layer] = std::move(layer_antenna);
   }
 }
 
