@@ -571,13 +571,14 @@ double GridGraph::getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
       if (node->getLayerIdx() == child->getLayerIdx()) {
         // Wire segment on a single layer.
         const int layer = node->getLayerIdx();
+        if (layer < 0) {
+          continue;
+        }
         const MetalLayer& metal_layer = design_->getLayer(layer);
         // NDR width if set on this layer, else the layer default; matches the
         // width getWireResistanceCost uses.
         const int ndr_width
-            = (layer >= 0 && std::cmp_less(layer, ndr_widths.size()))
-                  ? ndr_widths[layer]
-                  : 0;
+            = std::cmp_less(layer, ndr_widths.size()) ? ndr_widths[layer] : 0;
         const double width = ndr_width > 0 ? ndr_width : metal_layer.getWidth();
         if (width <= 0.0) {
           continue;

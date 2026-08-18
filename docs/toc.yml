@@ -36,10 +36,17 @@ entries:
         title: DEF Grammar Railroad Diagrams
   - file: main/src/gui/README
     title: GUI
+  - file: main/src/web/README
+    title: Web Viewer
+  - file: main/src/syn/README
+    title: Synthesis
   - file: main/src/par/README
     title: Partition Management
   - file: main/src/rmp/README
     title: Restructure
+    entries:
+    - file: main/src/cut/README
+      title: Logic Cut
   - file: main/src/ifp/README
     title: Floorplan Initialization
   - file: main/src/ppl/README
@@ -66,6 +73,8 @@ entries:
     title: Global Placement
   - file: main/src/sta/README
     title: Static Timing Analyzer (external)
+  - file: main/src/est/README
+    title: Parasitics Estimation
   - file: main/src/rsz/README
     title: Gate Resizing
   - file: main/src/cgt/README
@@ -77,8 +86,11 @@ entries:
   - file: main/src/grt/README
     title: Global Routing
     entries:
-    - file: main/src/stt/src/flt/README
-      title: Flute
+    - file: main/src/stt/README
+      title: Rectilinear Steiner Tree
+      entries:
+      - file: main/src/stt/src/flt/README
+        title: Flute
   - file: main/src/ant/README
     title: Antenna Checker
   - file: main/src/drt/README
@@ -100,6 +112,10 @@ entries:
   entries:
   - file: contrib/DeveloperGuide
     title: Developer's Guide
+  - file: main/src/exa/README
+    title: Example Tool
+  - file: main/src/tst/README
+    title: Unit Test Infrastructure
   - file: contrib/CodingPractices
     title: Coding Practices
   - file: contrib/Logger

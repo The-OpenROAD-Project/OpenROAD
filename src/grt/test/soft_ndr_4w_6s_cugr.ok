@@ -45,8 +45,8 @@ Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 2/5
 [INFO GRT-0306] Iterative RRR soft-demoted 2 NDR net(s) total.
 Routing statistics
-Wire length:           2918
-Total via count:       137
+Wire length:           2977
+Total via count:       139
 Total congestion:      0.00
 Min resource:          0.90
 Bottleneck:            (3, 15, 21)
@@ -54,13 +54,13 @@ Bottleneck:            (3, 15, 21)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00
-met1      H     13777.40       162.16        24.82       186.98       1.36
-met2      V     10785.50       117.65        10.81       128.46       1.19
+met1      H     13777.40       178.24        25.39       203.64       1.48
+met2      V     10785.50       112.69        11.26       123.94       1.15
 met3      H      4206.90        23.00         1.18        24.18       0.57
 met4      V      3241.20        12.00         0.27        12.28       0.38
 met5      H      1413.40         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           33424.40       314.81        37.09       351.90       1.05
-[INFO GRT-0018] Total wirelength: 1641 um
+Total           33424.40       325.93        38.11       364.04       1.09
+[INFO GRT-0018] Total wirelength: 1663 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include "DmpCeffLambertWDelayCalc.hh"
 #include "boost/json.hpp"
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
@@ -41,6 +42,7 @@
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/DelayCalc.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphCmp.hh"
@@ -225,6 +227,8 @@ std::once_flag init_sta_flag;
 dbSta::dbSta(Tcl_Interp* tcl_interp, odb::dbDatabase* db, utl::Logger* logger)
 {
   std::call_once(init_sta_flag, []() { sta::initSta(); });
+  sta::registerDelayCalc("dmp_ceff_lambert_w",
+                         sta::makeDmpCeffLambertWDelayCalc);
   initVars(tcl_interp, db, logger);
   if (!sta::Sta::sta()) {
     sta::Sta::setSta(this);

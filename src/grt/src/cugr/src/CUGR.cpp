@@ -1778,7 +1778,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
     }
   }
 
-  new_net->setRoutingTree(tree);
+  new_net->setRoutingTree(std::move(tree));
   // The flag records provenance, not geometry: adopted routes come from
   // detailed wires, where wrong-way and below-min pin-access spans are legal.
   new_net->setAdopted(true);
@@ -2165,7 +2165,7 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
             path[i + 1]->addChild(path[i]);
           }
         }
-        node_a->addChild(node_b);
+        node_a->addChild(std::move(node_b));
       } else {
         preserved_tree->addChild(removed_tree);
       }
@@ -2278,13 +2278,13 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
               grid_graph_->addTreeUsage(temp, ndr);
             }
 
-            build_tree(next, child_node);
+            build_tree(next, std::move(child_node));
           }
         }
       };
 
       Coord start_coord(node_a->getLayerIdx(), node_a->x(), node_a->y());
-      build_tree(start_coord, node_a);
+      build_tree(start_coord, std::move(node_a));
     }
   }
 
