@@ -37,7 +37,7 @@ proc pin_center { bterm } {
   }
   set box [lindex [$bpin getBoxes] 0]
   return [list [expr { ([$box xMin] + [$box xMax]) / 2 }] \
-               [expr { ([$box yMin] + [$box yMax]) / 2 }]]
+    [expr { ([$box yMin] + [$box yMax]) / 2 }]]
 }
 
 set die [$block getDieArea]
@@ -45,8 +45,10 @@ foreach bterm [$block getBTerms] {
   set name [$bterm getName]
   lassign [pin_center $bterm] cx cy
 
-  if { $cx != [$die xMin] && $cx != [$die xMax]
-       && $cy != [$die yMin] && $cy != [$die yMax] } {
+  if {
+    $cx != [$die xMin] && $cx != [$die xMax]
+    && $cy != [$die yMin] && $cy != [$die yMax]
+  } {
     error "$name is at ($cx $cy), off the die perimeter"
   }
   # The whole top edge was excluded before the solve.

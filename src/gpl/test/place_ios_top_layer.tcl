@@ -38,13 +38,17 @@ foreach bterm [$block getBTerms] {
     if { $layer ne "metal10" } {
       error "$name is on $layer, expected the metal10 pin shape pattern layer"
     }
-    if { $cx < $region_lo || $cx > $region_hi
-         || $cy < $region_lo || $cy > $region_hi } {
+    if {
+      $cx < $region_lo || $cx > $region_hi
+      || $cy < $region_lo || $cy > $region_hi
+    } {
       error "$name is at ($cx $cy), outside its up: region"
     }
   } else {
-    if { $cx != [$die xMin] && $cx != [$die xMax]
-         && $cy != [$die yMin] && $cy != [$die yMax] } {
+    if {
+      $cx != [$die xMin] && $cx != [$die xMax]
+      && $cy != [$die yMin] && $cy != [$die yMax]
+    } {
       error "$name is at ($cx $cy), off the die perimeter"
     }
   }
