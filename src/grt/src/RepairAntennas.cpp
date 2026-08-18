@@ -626,6 +626,16 @@ bool RepairAntennas::addJumperToRoute(GRoute& route,
     jumper_init_x = seg_init_x;
     jumper_final_x = seg_init_x;
   }
+  // Accept the jumper only if its full geometry fits the per-edge headroom;
+  // the scan's per-tile checks cannot see demands that sum on a shared edge.
+  if (!grouter_->hasJumperResources(jumper_init_x,
+                                    jumper_init_y,
+                                    jumper_final_x,
+                                    jumper_final_y,
+                                    layer_level + 2,
+                                    db_net)) {
+    return false;
+  }
   // Add vias and jumper in the position
   addJumperAndVias(route,
                    jumper_init_x,

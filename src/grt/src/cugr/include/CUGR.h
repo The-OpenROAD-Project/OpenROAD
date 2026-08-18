@@ -149,6 +149,15 @@ class CUGR
                        int layer_index,
                        int tile_x,
                        int tile_y) const;
+  // True if a complete jumper -- the wire on layer_index between the tiles
+  // plus a two-layer via stack at each endpoint -- fits the headroom of
+  // every edge it would charge, accumulating demands that share an edge.
+  bool hasJumperResources(odb::dbNet* db_net,
+                          int layer_index,
+                          int init_tile_x,
+                          int init_tile_y,
+                          int final_tile_x,
+                          int final_tile_y) const;
   // Adopts an externally restored routing (journal restore): rebuilds the
   // net's routing tree from the segments and swaps the grid-graph demand
   // without scheduling a reroute. Returns false if the net must be rerouted.

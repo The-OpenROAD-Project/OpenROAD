@@ -2339,6 +2339,25 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   return cap >= fastroute_->getDbNetLayerEdgeCost(db_net, layer_level);
 }
 
+bool GlobalRouter::hasJumperResources(const int init_x,
+                                      const int init_y,
+                                      const int final_x,
+                                      const int final_y,
+                                      const int layer_level,
+                                      odb::dbNet* db_net) const
+{
+  if (!use_cugr_) {
+    // FastRoute charges only the wire edge, already checked during the scan.
+    return true;
+  }
+  return cugr_->hasJumperResources(db_net,
+                                   layer_level,
+                                   dbuToTile(init_x, /*is_x=*/true),
+                                   dbuToTile(init_y, /*is_x=*/false),
+                                   dbuToTile(final_x, /*is_x=*/true),
+                                   dbuToTile(final_y, /*is_x=*/false));
+}
+
 // Find the position of the middle of a GCell closest to the position
 odb::Point GlobalRouter::getPositionOnGrid(const odb::Point& real_position)
 {

@@ -1,6 +1,7 @@
 #include "CUGR.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -2318,6 +2319,73 @@ bool CUGR::hasAvailableResources(odb::dbNet* db_net,
   const double demand
       = it == db_net_map_.end() ? 1.0 : it->second->getNdrCost(layer_0);
   return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= demand;
+}
+
+bool CUGR::hasJumperResources(odb::dbNet* db_net,
+                              const int layer_index,
+                              const int init_tile_x,
+                              const int init_tile_y,
+                              const int final_tile_x,
+                              const int final_tile_y) const
+{
+  if (!grid_graph_) {
+    return false;
+  }
+  // layer_index is the 1-based jumper wire layer; the via stacks climb from
+  // two layers below it (see RepairAntennas::addJumperAndVias).
+  const int layer_0 = layer_index - 1;
+  if (layer_0 - 2 < 0 || layer_0 >= grid_graph_->getNumLayers()) {
+    return false;
+  }
+  const std::array<PointT, 2> endpoints
+      = {PointT(init_tile_x, init_tile_y), PointT(final_tile_x, final_tile_y)};
+  for (const PointT& endpoint : endpoints) {
+    if (endpoint.x() < 0 || endpoint.x() >= grid_graph_->getSize(0)
+        || endpoint.y() < 0 || endpoint.y() >= grid_graph_->getSize(1)) {
+      return false;
+    }
+  }
+  auto it = db_net_map_.find(db_net);
+  const std::vector<double> unit_costs;
+  const std::vector<double>& costs
+      = it == db_net_map_.end() ? unit_costs : it->second->getNdrCosts();
+  const double wire_factor
+      = std::cmp_less(layer_0, costs.size()) ? costs[layer_0] : 1.0;
+
+  // Accumulate the whole jumper's prospective demand per edge before
+  // comparing: the wire and the via flank charges can land on the same
+  // upper-layer edge, and both vias of a stack charge the same middle-layer
+  // flank edges, so per-piece checks can each pass while the sum overflows.
+  std::map<std::tuple<int, int, int>, double> edge_demands;
+  if (grid_graph_->getLayerDirection(layer_0) == MetalLayer::H) {
+    const auto [lo, hi] = std::minmax(init_tile_x, final_tile_x);
+    for (int x = lo; x < hi; x++) {
+      edge_demands[{layer_0, x, init_tile_y}] += wire_factor;
+    }
+  } else {
+    const auto [lo, hi] = std::minmax(init_tile_y, final_tile_y);
+    for (int y = lo; y < hi; y++) {
+      edge_demands[{layer_0, init_tile_x, y}] += wire_factor;
+    }
+  }
+  for (const PointT& endpoint : endpoints) {
+    for (int layer = layer_0 - 2; layer < layer_0; layer++) {
+      grid_graph_->forEachViaFlankEdge(
+          layer,
+          endpoint,
+          costs,
+          [&](int l, PointT loc, CapacityT demand, double factor) {
+            edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
+          });
+    }
+  }
+  for (const auto& [edge, demand] : edge_demands) {
+    const auto& [layer, x, y] = edge;
+    if (grid_graph_->getEdge(layer, x, y).getResource() < demand) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool CUGR::hasViaResources(odb::dbNet* db_net,

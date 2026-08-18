@@ -216,6 +216,15 @@ class GlobalRouter
                              const int& pos_y,
                              const int& layer_level,
                              odb::dbNet* db_net);
+  // True if a whole jumper (wire on layer_level between the positions plus
+  // a via stack at each end) fits the per-edge headroom, accumulating
+  // demands that share an edge. Always true under FastRoute.
+  bool hasJumperResources(int init_x,
+                          int init_y,
+                          int final_x,
+                          int final_y,
+                          int layer_level,
+                          odb::dbNet* db_net) const;
   odb::Point getPositionOnGrid(const odb::Point& real_position);
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
