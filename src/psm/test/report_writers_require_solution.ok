@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
 [ERROR PSM-0092] No solution available for VDD on corner default. Run analyze_power_grid first.
 PSM-0092
-spice file written before analysis: 1
+spice file written before analysis: 0
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
 ########## IR report #################
