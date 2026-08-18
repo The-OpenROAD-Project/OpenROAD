@@ -27,4 +27,4 @@ read_sdc gt2n_gcd_data/gcd.sdc
 
 source gt2n_data/setRC.tcl
 
-analyze_power_grid -net vdd -source_type BUMPS 
+analyze_power_grid -net vdd -source_type BUMPS
