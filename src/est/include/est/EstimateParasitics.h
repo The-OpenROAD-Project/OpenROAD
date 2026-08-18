@@ -127,6 +127,10 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                      const sta::Scene* scene,
                      double res,
                      double cap);  // farads/meter
+  // Set the lumped resistance and capacitance used for chip bumps.
+  void setBumpRC(const sta::Scene* scene,
+                 double res,   // ohms
+                 double cap);  // farads
   // ohms/meter, farads/meter
   void wireSignalRC(const sta::Scene* scene,
                     // Return values.
@@ -227,6 +231,12 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
     std::vector<ParasiticsResistance> clk_res;      // ohms/meter
     std::vector<ParasiticsCapacitance> clk_cap;     // Farads/meter
   };
+  // Lumped bump RC; zeros until set_bump_rc
+  struct BumpRC
+  {
+    double res = 0.0;  // ohms
+    double cap = 0.0;  // farads
+  };
 
   odb::dbTech* currentTech() const;
   WireRC& wireRC(odb::dbTech* tech) { return wire_rc_[tech]; }
@@ -240,10 +250,13 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
                                     sta::SpefWriter* spef_writer);
+  // Zeros when no bump RC values have been set for the corner.
+  BumpRC bumpRC(const sta::Scene* scene) const;
   void makePadParasitic(const sta::Net* net, sta::SpefWriter* spef_writer);
   bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;
+  bool isChipBumpPin(const sta::Pin* pin) const;
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
   double computeAverageCutResistance(sta::Scene* scene);
   void parasiticNodeConnectPins(sta::Parasitics* parasitics,
@@ -267,9 +280,10 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                             sta::Scene* corner,
                             const sta::Net* net,
                             int& max_node_index);
-  void net2Pins(const sta::Net* net,
-                const sta::Pin*& pin1,
-                const sta::Pin*& pin2) const;
+  // Returns true when the net connects exactly two pins.
+  bool isTwoPinNet(const sta::Net* net,
+                   const sta::Pin*& pin1,
+                   const sta::Pin*& pin2) const;
   double dbuToMeters(int dist) const;
 
   utl::Logger* logger_ = nullptr;
@@ -288,6 +302,8 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // Wire RC per technology; the nullptr entry holds the defaults used by
   // chips whose technology has no specific values
   std::unordered_map<odb::dbTech*, WireRC> wire_rc_;
+  // Lumped bump RC indexed by corner->index(); empty until set_bump_rc
+  std::vector<BumpRC> bump_rc_;
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::kNone;
 

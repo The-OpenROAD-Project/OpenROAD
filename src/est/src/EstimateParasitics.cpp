@@ -384,6 +384,25 @@ double EstimateParasitics::wireClkVCapacitance(const sta::Scene* scene) const
   return clk_cap[scene->index()].v_cap;
 }
 
+void EstimateParasitics::setBumpRC(const sta::Scene* scene,
+                                   double res,
+                                   double cap)
+{
+  bump_rc_.resize(sta_->scenes().size());
+  bump_rc_[scene->index()].res = res;
+  bump_rc_[scene->index()].cap = cap;
+}
+
+EstimateParasitics::BumpRC EstimateParasitics::bumpRC(
+    const sta::Scene* scene) const
+{
+  const size_t corner_idx = scene->index();
+  if (corner_idx < bump_rc_.size()) {
+    return bump_rc_[corner_idx];
+  }
+  return {};
+}
+
 ////////////////////////////////////////////////////////////////
 
 void EstimateParasitics::setDbCbkOwner(odb::dbBlock* block)
@@ -768,18 +787,26 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
 
 bool EstimateParasitics::isPadNet(const sta::Net* net) const
 {
+  // The pad model is a two-node network; nets with more pins are estimated
+  // as ordinary wires.
   const sta::Pin *pin1, *pin2;
-  net2Pins(net, pin1, pin2);
-  return pin1 && pin2
-         && ((network_->isTopLevelPort(pin1) && isPadPin(pin2))
-             || (network_->isTopLevelPort(pin2) && isPadPin(pin1)));
+  return isTwoPinNet(net, pin1, pin2)
+         && ((network_->isTopLevelPort(pin1)
+              && (isPadPin(pin2) || isChipBumpPin(pin2)))
+             || (network_->isTopLevelPort(pin2)
+                 && (isPadPin(pin1) || isChipBumpPin(pin1))));
 }
 
 void EstimateParasitics::makePadParasitic(const sta::Net* net,
                                           sta::SpefWriter* spef_writer)
 {
+  // The two-node model cannot represent additional loads.
   const sta::Pin *pin1, *pin2;
-  net2Pins(net, pin1, pin2);
+  if (!isTwoPinNet(net, pin1, pin2)) {
+    return;
+  }
+  const bool is_bump
+      = !bump_rc_.empty() && (isChipBumpPin(pin1) || isChipBumpPin(pin2));
   for (sta::Scene* corner : sta_->scenes()) {
     sta::Parasitics* parasitics = corner->parasitics(max_);
     sta::Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
@@ -789,7 +816,22 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
         = parasitics->ensureParasiticNode(parasitic, pin2, network_);
 
     // Use a small resistor to keep the connectivity intact.
-    parasitics->makeResistor(parasitic, 1, .001, n1, n2);
+    double res = 0.001;
+    double cap = 0.0;
+    if (is_bump) {
+      const BumpRC bump = bumpRC(corner);
+      if (bump.res > 0.0) {
+        res = bump.res;
+      }
+      cap = bump.cap;
+    }
+    if (cap > 0.0) {
+      parasitics->incrCap(n1, cap / 2.0);
+    }
+    parasitics->makeResistor(parasitic, 1, res, n1, n2);
+    if (cap > 0.0) {
+      parasitics->incrCap(n2, cap / 2.0);
+    }
     if (spef_writer) {
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
@@ -1150,9 +1192,9 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
   }
 }
 
-void EstimateParasitics::net2Pins(const sta::Net* net,
-                                  const sta::Pin*& pin1,
-                                  const sta::Pin*& pin2) const
+bool EstimateParasitics::isTwoPinNet(const sta::Net* net,
+                                     const sta::Pin*& pin1,
+                                     const sta::Pin*& pin2) const
 {
   pin1 = nullptr;
   pin2 = nullptr;
@@ -1164,13 +1206,46 @@ void EstimateParasitics::net2Pins(const sta::Net* net,
   if (pin_iter->hasNext()) {
     pin2 = pin_iter->next();
   }
+  const bool exactly_two = pin2 != nullptr && !pin_iter->hasNext();
   delete pin_iter;
+  return exactly_two;
 }
 
 bool EstimateParasitics::isPadPin(const sta::Pin* pin) const
 {
   sta::Instance* inst = network_->instance(pin);
   return inst && !network_->isTopInstance(inst) && isPad(inst);
+}
+
+bool EstimateParasitics::isChipBumpPin(const sta::Pin* pin) const
+{
+  sta::Instance* inst = network_->instance(pin);
+  if (inst == nullptr || network_->isTopInstance(inst)) {
+    return false;
+  }
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  odb::dbChipBump* bump = db_inst ? db_inst->getChipBump() : nullptr;
+  if (bump == nullptr) {
+    return false;
+  }
+  odb::dbITerm* iterm = db_network_->flatPin(pin);
+  if (iterm == nullptr) {
+    return false;
+  }
+  // A multi-pin bump cell is a bump terminal only on its recorded bump net.
+  odb::dbNet* bump_net = bump->getNet();
+  if (bump_net != nullptr) {
+    return iterm->getNet() == bump_net;
+  }
+  // Without a recorded net, only a single-signal-pin bump is unambiguous.
+  for (odb::dbITerm* other : db_inst->getITerms()) {
+    if (other != iterm && other->getSigType() == odb::dbSigType::SIGNAL) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool EstimateParasitics::isPad(const sta::Instance* inst) const
