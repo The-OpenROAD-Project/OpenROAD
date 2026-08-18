@@ -156,6 +156,14 @@ class RepairAntennas
                        const odb::Point& parent_pos,
                        int& jumper_position,
                        odb::dbNet* db_net);
+  int selectJumperPosition(std::vector<int>& candidate_positions,
+                           std::vector<int>& fallback_positions,
+                           bool is_horizontal,
+                           const odb::Point& parent_pos,
+                           int seg_init_x,
+                           int seg_init_y,
+                           int layer_level,
+                           odb::dbNet* db_net);
   int getJumperPosition(const int& init_pos,
                         const int& final_pos,
                         const int& target_pos);

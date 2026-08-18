@@ -1019,8 +1019,29 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
                                  candidate_positions,
                                  fallback_positions);
   }
-  // Pick the best position whose whole jumper fits the per-edge headroom;
-  // a rejected position is dropped and the next best is tried.
+  jumper_position = selectJumperPosition(candidate_positions,
+                                         fallback_positions,
+                                         is_horizontal,
+                                         parent_pos,
+                                         seg_init_x,
+                                         seg_init_y,
+                                         layer_level,
+                                         db_net);
+  return jumper_position != -1;
+}
+
+// Pick the best position whose whole jumper fits the per-edge headroom;
+// a rejected position is dropped and the next best is tried, falling back
+// to the tile-aligned positions once every parent-nearest candidate fails.
+int RepairAntennas::selectJumperPosition(std::vector<int>& candidate_positions,
+                                         std::vector<int>& fallback_positions,
+                                         const bool is_horizontal,
+                                         const odb::Point& parent_pos,
+                                         const int seg_init_x,
+                                         const int seg_init_y,
+                                         const int layer_level,
+                                         odb::dbNet* db_net)
+{
   std::unordered_set<int> rejected_positions;
   const auto select_position = [&](std::vector<int>& positions) {
     while (!positions.empty()) {
@@ -1049,16 +1070,15 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
     }
     return -1;
   };
-  jumper_position = select_position(candidate_positions);
+  int jumper_position = select_position(candidate_positions);
   if (jumper_position == -1) {
-    // All parent-nearest candidates were rejected; retry with the
-    // tile-aligned fallbacks that were not already rejected.
+    // Skip fallbacks the candidate pass already rejected.
     std::erase_if(fallback_positions, [&](const int pos) {
       return rejected_positions.contains(pos);
     });
     jumper_position = select_position(fallback_positions);
   }
-  return jumper_position != -1;
+  return jumper_position;
 }
 
 static odb::Point findSegmentPos(const GSegment& seg)
