@@ -3870,6 +3870,13 @@ TEST_F(TileGeneratorTest, ColorOverlaysSkipHiddenInstances)
       << "a hidden instance was still painted in its group color";
   EXPECT_FALSE(hasNonTransparentPixel(render("_modules", vis)))
       << "a hidden instance was still painted in its module color";
+
+  // Per category, not "any flag off blanks the tile": another cell type's flag
+  // leaves the stdcell painted.
+  TileVisibility macros_off;
+  macros_off.cluster_view = true;
+  macros_off.macros = false;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_clusters", macros_off)));
 }
 
 // Enabling the overlay before the Clusters/Hierarchy panel has pushed a color
