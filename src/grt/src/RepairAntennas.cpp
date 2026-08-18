@@ -1181,7 +1181,8 @@ int RepairAntennas::addJumperOnSegments(
         break;
       }
       // Skip candidates overlapping the last inserted jumper
-      if (last_pos_aux != -1 && abs(last_pos_aux - pos_it) <= jumper_size_) {
+      if (last_pos_aux != -1
+          && std::abs(last_pos_aux - pos_it) <= jumper_size_) {
         continue;
       }
       if (addJumperToRoute(route,

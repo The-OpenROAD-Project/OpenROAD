@@ -2303,7 +2303,8 @@ int GlobalRouter::dbuToTile(const int dbu_coord, const bool is_x) const
 {
   const int origin = is_x ? grid_->getXMin() : grid_->getYMin();
   const int grids = is_x ? grid_->getXGrids() : grid_->getYGrids();
-  return std::min((dbu_coord - origin) / grid_->getTileSize(), grids - 1);
+  const int tile = (dbu_coord - origin) / grid_->getTileSize();
+  return std::clamp(tile, 0, grids - 1);
 }
 
 bool GlobalRouter::hasAvailableResources(bool is_horizontal,
