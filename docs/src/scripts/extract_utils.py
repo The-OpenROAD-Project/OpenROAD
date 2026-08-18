@@ -107,8 +107,14 @@ def extract_arguments(text):
     # form these 2 regex styles.
     # ### Header 1 {text} ### Header2; ### Header n-2 {text} ### Header n-1
     # ### Header n {text} ## closest_level2_header
+    # Headers are literal text, so escape them the way extract_description
+    # does. `## C++` (odb) would otherwise read as a possessive quantifier and
+    # capture the wrong span, and `## ... (min-cut partitioning)` (par) as a
+    # group, so the section would not match at all and match[0] below would
+    # raise IndexError.
     first = [
-        rf"### ({level3[i]})(.*?)### ({level3[i+1]})" for i in range(len(level3) - 1)
+        rf"### ({re.escape(level3[i])})(.*?)### ({re.escape(level3[i + 1])})"
+        for i in range(len(level3) - 1)
     ]
 
     # find the next closest level2 header to the last level3 header.
@@ -119,13 +125,14 @@ def extract_arguments(text):
 
     # This will disambiguate cases where different level headers share the same name.
     if trailing_level2:
-        second = [rf"### ({level3[-1]})(.*?)## ({level2[trailing_level2[0]]})"]
+        last3, next2 = level3[-1], level2[trailing_level2[0]]
+        second = [rf"### ({re.escape(last3)})(.*?)## ({re.escape(next2)})"]
     else:
         # No level2 header follows, so the last command section runs to the end
         # of the file. Most READMEs close with `## Authors`/`## License`, which
         # is what bounded this section; without that the lookup used to raise
         # IndexError and drop the module's man pages entirely.
-        second = [rf"### ({level3[-1]})(.*?)$"]
+        second = [rf"### ({re.escape(level3[-1])})(.*?)$"]
     final_options, final_args = [], []
     for idx, regex in enumerate(first + second):
         match = re.findall(regex, text, flags=re.DOTALL)

@@ -24,15 +24,24 @@ def page_date(source=None):
     what the footer date is meant to convey. `now` remains the fallback for
     callers that construct a page from no file at all.
     """
-    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    epoch = os.environ.get("SOURCE_DATE_EPOCH", "").strip()
     if epoch:
+        # Reject a malformed pin rather than falling through to a date that
+        # varies per machine: the caller asked for reproducible output, and
+        # silently not delivering it is worse than stopping.
+        if not epoch.isdigit():
+            raise ValueError(
+                f"SOURCE_DATE_EPOCH must be a Unix timestamp, got {epoch!r}"
+            )
         stamp = datetime.datetime.fromtimestamp(int(epoch), datetime.timezone.utc)
     elif source and os.path.exists(source):
         stamp = datetime.datetime.fromtimestamp(
             os.path.getmtime(source), datetime.timezone.utc
         )
     else:
-        stamp = datetime.datetime.now()
+        # UTC like the two branches above, so the stamp does not depend on the
+        # builder's timezone.
+        stamp = datetime.datetime.now(datetime.timezone.utc)
     return stamp.strftime("%y/%m/%d")
 
 
