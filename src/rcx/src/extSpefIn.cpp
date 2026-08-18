@@ -2909,9 +2909,6 @@ bool extSpef::readHeaderInfo(const uint32_t debug, const bool skipFlag)
       spef_header_.resistance_unit_word = required_word(2, "*R_UNIT");
 
       scale_factors_.resistance = 1.0;
-      if (spef_header_.resistance_unit_word == "MOHM") {
-        scale_factors_.resistance = 0.001 * _parser->getInt(1);
-      }
       if (spef_header_.resistance_unit_word == "KOHM") {
         scale_factors_.resistance = 1000.0 * _parser->getInt(1);
       }

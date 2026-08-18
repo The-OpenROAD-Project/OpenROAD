@@ -1726,9 +1726,7 @@ ScaleFactors extSpef::computeScaleFactors(const std::string& capacitance_unit,
     scale_factors.capacitance = 0.001;
   }
 
-  if (resistance_unit == "MOHM") {
-    scale_factors.resistance = 1000.0;
-  } else if (resistance_unit == "KOHM") {
+  if (resistance_unit == "KOHM") {
     scale_factors.resistance = 0.001;
   }
 
