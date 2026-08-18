@@ -236,7 +236,6 @@ int FlexPA::genPatternsHelper(
                        used_access_points,
                        viol_access_points,
                        max_access_point_size);
-    // Print entire node graph after DP pass
     bool is_valid = false;
     if (genPatternsCommit(unique_inst,
                           nodes,
