@@ -92,6 +92,9 @@ class CUGR
   void init(int min_routing_layer,
             int max_routing_layer,
             const odb::PtrSet<odb::dbNet>& clock_nets);
+  // Reset per-session netlist state (like FastRouteCore::clear); Tcl-applied
+  // configuration survives, and init() rebuilds design_/grid_graph_.
+  void clear();
   void route(bool incremental);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();

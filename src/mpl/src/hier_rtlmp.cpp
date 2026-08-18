@@ -1500,12 +1500,21 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   if (!best_sa) {
-    logger_->error(MPL,
-                   40,
-                   "Annealing engine failed to find a valid solution.\nCluster "
-                   "Id: {}\n Cluster Name: {}",
-                   parent->getId(),
-                   parent->getName());
+    if (parent == tree_->root.get()) {
+      logger_->error(
+          MPL,
+          40,
+          "Annealing engine failed to find a valid solution. Core utilization "
+          "is probably too high. Please, reduce it and try again.");
+    } else {
+      logger_->error(MPL,
+                     8,
+                     "Annealing engine failed to find a valid solution. "
+                     "Please, report this internal error.\nFailed at cluster "
+                     "({}): {}",
+                     parent->getId(),
+                     parent->getName());
+    }
   }
 
   best_sa->fillDeadSpace();

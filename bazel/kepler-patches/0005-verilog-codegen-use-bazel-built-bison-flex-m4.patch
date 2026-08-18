@@ -1,0 +1,217 @@
+diff -urN base5/bazel/deps.bzl mod5/bazel/deps.bzl
+--- a/bazel/deps.bzl	2026-08-14 14:18:24.423286350 -0400
++++ b/bazel/deps.bzl	2026-08-14 14:18:37.186569324 -0400
+@@ -15,7 +15,6 @@
+     "host_prefixes_repository",
+     "naja_version_repository",
+     "python_repository",
+-    "system_tool_repository",
+ )
+ 
+ # Pinned dependency versions.
+@@ -106,9 +105,6 @@
+         aliases = {"headers": "@flex_src//:flexlexer"},
+     )
+ 
+-    system_tool_repository(name = "bison_tool", tool = "bison")
+-    system_tool_repository(name = "flex_tool", tool = "flex")
+-    system_tool_repository(name = "m4_tool", tool = "m4")
+     python_repository(name = "python")
+     host_prefixes_repository(name = "slang_host_prefixes")
+     naja_version_repository(name = "naja_git_version", git_hash = _NAJA_COMMIT[:8])
+@@ -126,7 +122,10 @@
+         sha256 = "8a0513378c419afc462ffd59c35c7d0362fee7787ab40ef23b2f0a360df0a9df",
+         strip_prefix = "naja-verilog-{}".format(_NAJA_VERILOG_COMMIT),
+         patch_args = ["-p0", "-f"],
+-        patches = [Label("//bazel:naja_verilog_bazel9.patch")],
++        patches = [
++            Label("//bazel:naja_verilog_bazel9.patch"),
++            Label("//bazel:naja_verilog_hermetic_codegen.patch"),
++        ],
+     )
+ 
+     http_archive(
+diff -urN base5/bazel/naja_verilog_hermetic_codegen.patch mod5/bazel/naja_verilog_hermetic_codegen.patch
+--- a/bazel/naja_verilog_hermetic_codegen.patch	1969-12-31 19:00:00.000000000 -0500
++++ b/bazel/naja_verilog_hermetic_codegen.patch	2026-08-14 14:18:24.467280178 -0400
+@@ -0,0 +1,145 @@
++--- bazel/verilog_codegen.bzl	2026-08-14 14:17:28.322280508 -0400
+++++ bazel/verilog_codegen.bzl	2026-08-14 14:17:55.838040248 -0400
++@@ -4,21 +4,52 @@
++ 
++ """Custom Bison/Flex codegen rules for the naja-verilog parser.
++ 
++-Community rules (`rules_bison`/`rules_flex`) were tried first, but their
++-`bison_action()` helper only declares the primary `{name}.cc`/`{name}.h`
++-outputs -- it doesn't know about `location.hh`, the auxiliary header the
++-`%skeleton "lalr1.cc"` + `%define api.namespace` combination in
++-VerilogParser.yy also emits (confirmed empirically: a direct `bison -d -v
++---output=... --defines=...` run also produces `location.hh`,
++-`position.hh`, `stack.hh`, and a `.output` report alongside the two
++-declared files; `naja/src/VerilogScanner.h` directly `#include
++-"location.hh"`, so it has to be a real, captured Bazel output, not just
++-tolerated stray sandbox garbage). `position.hh`/`stack.hh`/the report
++-are unused by any naja-verilog source (grepped) and are left undeclared.
++-
++-Runs the system-installed `bison` and `flex` via `system_tool.bzl`.
+++These rules exist because `rules_bison`'s `bison_action()` helper only declares
+++the primary `{name}.cc`/`{name}.h` outputs -- it doesn't know about
+++`location.hh`, the auxiliary header the `%skeleton "lalr1.cc"` + `%define
+++api.namespace` combination in VerilogParser.yy also emits (confirmed
+++empirically: a direct `bison -d -v --output=... --defines=...` run also
+++produces `location.hh`, `position.hh`, `stack.hh`, and a `.output` report
+++alongside the two declared files; `naja/src/VerilogScanner.h` directly
+++`#include "location.hh"`, so it has to be a real, captured Bazel output, not
+++just tolerated stray sandbox garbage). `position.hh`/`stack.hh`/the report are
+++unused by any naja-verilog source (grepped) and are left undeclared.
+++
+++The tools themselves are the Bazel-built `@bison`, `@flex` and `@m4` modules,
+++not the host's. Both binaries need help to run outside their own rules: bison
+++locates its m4sugar and skeleton files through BISON_PKGDATADIR, and both
+++bison and flex shell out to m4 through $M4. The host builds of these tools have
+++those paths compiled in, which is what let the original version of this file
+++run them bare; a Bazel-built bison has nothing compiled in and finds neither
+++unless told. See @bison//:bison.bzl, whose resolution this mirrors.
++ """
++ 
+++def _pkgdatadir(files):
+++    """Derives BISON_PKGDATADIR from @bison//:bison_pkgdatadir.
+++
+++    Mirrors _resolve_pkgdatadir in @bison//:bison.bzl: the label may resolve to
+++    a single tree artifact, in which case its path is the directory, or to the
+++    individual data files, in which case the path is truncated at the `data`
+++    component they all share.
+++    """
+++    if len(files) == 1 and files[0].is_directory:
+++        return files[0].path
+++    for f in files:
+++        index = f.path.find("/data/")
+++        if index >= 0:
+++            return f.path[:index + 5]
+++        if f.path.startswith("data/"):
+++            return "data"
+++    fail("Could not determine BISON_PKGDATADIR: no 'data' directory in %s" % files)
+++
+++def _tool_files(target):
+++    """A target's own files plus its default runfiles, for `tools`."""
+++    info = target[DefaultInfo]
+++    transitive = [info.files]
+++    if info.default_runfiles:
+++        transitive.append(info.default_runfiles.files)
+++    return depset(transitive = transitive)
+++
++ def _verilog_bison_parser_impl(ctx):
++     # Declared under src/ so the consuming cc_library only ever needs
++     # `includes = ["src"]` -- Bazel
++@@ -38,9 +69,18 @@
++         executable = ctx.executable._bison,
++         arguments = [args],
++         inputs = [ctx.file.src],
++-        tools = [ctx.executable._m4],
+++        tools = depset(
+++            [ctx.executable._m4],
+++            transitive = [
+++                _tool_files(ctx.attr._m4),
+++                _tool_files(ctx.attr._bison_pkgdatadir),
+++            ],
+++        ),
++         outputs = [out_cpp, out_hpp, out_location],
++-        env = {"M4": ctx.executable._m4.path},
+++        env = {
+++            "BISON_PKGDATADIR": _pkgdatadir(ctx.files._bison_pkgdatadir),
+++            "M4": ctx.executable._m4.path,
+++        },
++         mnemonic = "BisonVerilogParser",
++         progress_message = "Generating Verilog parser from %s" % ctx.file.src.short_path,
++     )
++@@ -57,19 +97,21 @@
++     attrs = {
++         "src": attr.label(mandatory = True, allow_single_file = [".yy"]),
++         "_bison": attr.label(
++-            default = "@bison_tool//:bison",
++-            allow_single_file = True,
+++            default = "@bison//:bison",
++             executable = True,
++             cfg = "exec",
++         ),
+++        "_bison_pkgdatadir": attr.label(
+++            default = "@bison//:bison_pkgdatadir",
+++            allow_files = True,
+++        ),
++         "_m4": attr.label(
++-            default = "@m4_tool//:m4",
++-            allow_single_file = True,
+++            default = "@m4//:m4",
++             executable = True,
++             cfg = "exec",
++         ),
++     },
++-    doc = "Generates VerilogParser.{cpp,hpp} + location.hh via system bison.",
+++    doc = "Generates VerilogParser.{cpp,hpp} + location.hh via @bison.",
++ )
++ 
++ def _verilog_flex_scanner_impl(ctx):
++@@ -84,7 +126,9 @@
++         executable = ctx.executable._flex,
++         arguments = [args],
++         inputs = [ctx.file.src],
+++        tools = depset([ctx.executable._m4], transitive = [_tool_files(ctx.attr._m4)]),
++         outputs = [out_cpp],
+++        env = {"M4": ctx.executable._m4.path},
++         mnemonic = "FlexVerilogScanner",
++         progress_message = "Generating Verilog scanner from %s" % ctx.file.src.short_path,
++     )
++@@ -98,11 +142,15 @@
++     attrs = {
++         "src": attr.label(mandatory = True, allow_single_file = [".ll"]),
++         "_flex": attr.label(
++-            default = "@flex_tool//:flex",
++-            allow_single_file = True,
+++            default = "@flex//:flex",
+++            executable = True,
+++            cfg = "exec",
+++        ),
+++        "_m4": attr.label(
+++            default = "@m4//:m4",
++             executable = True,
++             cfg = "exec",
++         ),
++     },
++-    doc = "Generates VerilogScanner.cpp via system flex.",
+++    doc = "Generates VerilogScanner.cpp via @flex.",
++ )
+diff -urN base5/MODULE.bazel mod5/MODULE.bazel
+--- a/MODULE.bazel	2026-08-14 14:18:24.439030920 -0400
++++ b/MODULE.bazel	2026-08-14 14:18:24.478071603 -0400
+@@ -16,6 +16,13 @@
+ bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
+ bazel_dep(name = "fmt", version = "12.1.0")
+ bazel_dep(name = "spdlog", version = "1.17.0")
++
++# bison/flex/m4 for naja-verilog's parser and scanner codegen, replacing the
++# repository rules that probed $PATH for host installs. These are the versions
++# OpenROAD already resolves, so declaring them moves nothing in the graph.
++bazel_dep(name = "bison", version = "3.8.2.bcr.7")
++bazel_dep(name = "flex", version = "2.6.4.bcr.5")
++bazel_dep(name = "m4", version = "1.4.21.bcr.4")
+ # TBB from the BCR module rather than the cmake-built @onetbb overlay. Both
+ # build the same upstream tarball (uxlfoundation/oneTBB v2022.3.0); the BCR one
+ # is a plain cc_library, so it needs no rules_foreign_cc and therefore no cmake
+@@ -67,17 +74,14 @@
+ deps = use_extension("//bazel:deps.bzl", "deps")
+ use_repo(
+     deps,
+-    "bison_tool",
+     "boost",
+     "boost_headers",
+     "cadical",
+     "capnproto",
+     "flex_headers",
+     "flex_src",
+-    "flex_tool",
+     "glucose",
+     "kissat",
+-    "m4_tool",
+     "naja",
+     "naja-if",
+     "naja-verilog",
