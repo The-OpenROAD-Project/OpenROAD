@@ -4,6 +4,7 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -2499,14 +2500,10 @@ void HierRTLMP::commitClusteringDataToDb() const
 {
   createGroupForCluster(tree_->root.get(), nullptr);
 
-  // Also count the instances in somebody else's group, left out on purpose (see
-  // createGroupForCluster).  Counted over the instances, not per skip: a
-  // cluster reaches the same one through both its leaf list and its modules.
+  // Check that all instances are in a group
   int ungrouped_instances = 0;
-  int instances_kept_by_others = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbGroup* group = inst->getGroup();
-    if (group == nullptr) {
+    if (inst->getGroup() == nullptr) {
       debugPrint(logger_,
                  MPL,
                  "commit_clustering_data",
@@ -2514,19 +2511,7 @@ void HierRTLMP::commitClusteringDataToDb() const
                  "Instance {} is not in any group.",
                  inst->getName());
       ungrouped_instances++;
-    } else if (group->getType() != odb::dbGroupType::VISUAL_DEBUG) {
-      instances_kept_by_others++;
     }
-  }
-  if (instances_kept_by_others > 0) {
-    logger_->warn(
-        MPL,
-        78,
-        "{} instances are missing from the clustering data because "
-        "they already belong to another group (a power domain, a "
-        "region). They keep it: an instance can only be in one group, "
-        "and taking it would change what the placer sees.",
-        instances_kept_by_others);
   }
   if (ungrouped_instances > 0) {
     logger_->error(MPL,
@@ -2551,24 +2536,14 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
 
   cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
 
-  // An instance belongs to exactly ONE dbGroup and dbGroup::addInst silently
-  // moves it, so one already owned — by a power domain, by a region — is left
-  // alone: this is debug output and must not rewrite what dpl/gpl read from
-  // those groups.  "Already grouped" also covers a child cluster that took it
-  // first, which is ordinary.
-  auto add_or_skip = [&](odb::dbInst* inst) {
-    if (inst->getGroup() != nullptr) {
-      return;
-    }
-    cluster_group->addInst(inst);
-  };
-
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
-    add_or_skip(inst);
+    assert(inst->getGroup() == nullptr);
+    cluster_group->addInst(inst);
   }
 
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
-    add_or_skip(macro);
+    assert(macro->getGroup() == nullptr);
+    cluster_group->addInst(macro);
   }
 
   for (const auto& child : cluster->getChildren()) {
@@ -2577,7 +2552,11 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
 
   for (odb::dbModule* module : cluster->getDbModules()) {
     for (odb::dbInst* inst : module->getLeafInsts()) {
-      add_or_skip(inst);
+      if (inst->getGroup() != nullptr) {
+        // Skip if it is part of a child cluster
+        continue;
+      }
+      cluster_group->addInst(inst);
     }
   }
 }

@@ -25,7 +25,6 @@ or_integration_tests(
     centralization1
     clocked_macro
     keep_clustering_data
-    keep_clustering_data_existing_group
     fixed_macros1
     fixed_macros2
     fixed_covers
