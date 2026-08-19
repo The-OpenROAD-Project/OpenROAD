@@ -21,6 +21,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -1060,9 +1061,11 @@ static std::string base64Encode(const std::vector<unsigned char>& data)
 std::string resolveAssetPath(const std::string_view base_dir,
                              const std::string_view reference)
 {
+  // generic_string(), not string(): the result is a key into the asset table,
+  // whose paths are always '/'-separated whatever the host uses.
   return (std::filesystem::path(base_dir) / std::filesystem::path(reference))
       .lexically_normal()
-      .string();
+      .generic_string();
 }
 
 const EmbeddedAsset* ReportAssets::find(const std::string_view path)
@@ -1468,7 +1471,10 @@ import * as THREE from 'three';
 
   if (assets.missing()) {
     // The warnings above name what was missed; no one is told this was saved.
-    std::filesystem::remove(filename);
+    // The error below is the one that has to come out, so a removal that fails
+    // must not throw over it.
+    std::error_code remove_error;
+    std::filesystem::remove(filename, remove_error);
     logger_->error(utl::WEB,
                    45,
                    "Not saving {}: the binary was built with an incomplete "
