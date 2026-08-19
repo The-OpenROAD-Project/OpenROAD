@@ -18,23 +18,23 @@
 [INFO PAD-0037] End of routing iteration 10: 86.9% complete
 [WARNING PAD-0006] Failed to route the following 15 nets:
   DVDD
-    BUMP_11_3/PAD -> u_v18_6/DVDD, u_v18_7/DVDD, u_v18_5/DVDD, u_v18_4/DVDD, u_v18_8/DVDD, ... (37 possible terminals)
-    BUMP_13_14/PAD -> u_v18_18/DVDD, u_v18_19/DVDD, u_v18_17/DVDD, u_v18_20/DVDD, u_v18_16/DVDD, ... (37 possible terminals)
-    BUMP_7_3/PAD -> u_v18_3/DVDD, u_v18_4/DVDD, u_v18_2/DVDD, u_v18_5/DVDD, u_v18_1/DVDD, ... (37 possible terminals)
+    BUMP_11_3/PAD -> u_v18_6/DVDD, u_v18_7/DVDD, u_v18_5/DVDD, u_v18_4/DVDD, u_v18_8/DVDD, ... (67 possible terminals)
+    BUMP_13_14/PAD -> u_v18_18/DVDD, u_v18_19/DVDD, u_v18_17/DVDD, u_v18_20/DVDD, u_v18_16/DVDD, ... (67 possible terminals)
+    BUMP_7_3/PAD -> u_v18_3/DVDD, u_v18_4/DVDD, u_v18_2/DVDD, u_v18_5/DVDD, u_v18_1/DVDD, ... (67 possible terminals)
   DVSS
-    BUMP_0_8/PAD -> u_vzz_30/DVSS, u_vzz_29/DVSS, u_vzz_31/DVSS, u_vzz_32/DVSS, u_vzz_28/DVSS, ... (40 possible terminals)
-    BUMP_15_7/PAD -> u_vzz_12/DVSS, u_vzz_13/DVSS, u_vzz_11/DVSS, u_vzz_14/DVSS, u_vzz_10/DVSS, ... (40 possible terminals)
-    BUMP_16_8/PAD -> u_vzz_13/DVSS, u_vzz_12/DVSS, u_vzz_14/DVSS, u_vzz_15/DVSS, u_vzz_11/DVSS, ... (40 possible terminals)
-    BUMP_1_9/PAD -> u_vzz_29/DVSS, u_vzz_30/DVSS, u_vzz_28/DVSS, u_vzz_31/DVSS, u_vzz_27/DVSS, ... (40 possible terminals)
-    BUMP_4_3/PAD -> u_vzz_1/DVSS, u_vzz_2/DVSS, u_vzz_3/DVSS, u_vzz_33/DVSS, u_vzz_0/DVSS, ... (40 possible terminals)
-    BUMP_7_14/PAD -> u_vzz_22/DVSS, u_vzz_23/DVSS, u_vzz_21/DVSS, u_vzz_24/DVSS, u_vzz_20/DVSS, ... (40 possible terminals)
+    BUMP_0_8/PAD -> u_vzz_30/DVSS, u_vzz_29/DVSS, u_vzz_31/DVSS, u_vzz_32/DVSS, u_vzz_28/DVSS, ... (67 possible terminals)
+    BUMP_15_7/PAD -> u_vzz_12/DVSS, u_vzz_13/DVSS, u_vzz_11/DVSS, u_vzz_14/DVSS, u_vzz_10/DVSS, ... (67 possible terminals)
+    BUMP_16_8/PAD -> u_vzz_13/DVSS, u_vzz_12/DVSS, u_vzz_14/DVSS, u_vzz_15/DVSS, u_vzz_11/DVSS, ... (67 possible terminals)
+    BUMP_1_9/PAD -> u_vzz_29/DVSS, u_vzz_30/DVSS, u_vzz_28/DVSS, u_vzz_31/DVSS, u_vzz_27/DVSS, ... (67 possible terminals)
+    BUMP_4_3/PAD -> u_vzz_1/DVSS, u_vzz_2/DVSS, u_vzz_3/DVSS, u_vzz_33/DVSS, u_vzz_0/DVSS, ... (67 possible terminals)
+    BUMP_7_14/PAD -> u_vzz_22/DVSS, u_vzz_23/DVSS, u_vzz_21/DVSS, u_vzz_24/DVSS, u_vzz_20/DVSS, ... (67 possible terminals)
   VDD
-    BUMP_1_7/PAD -> u_vdd_14/VDD, u_vdd_15/VDD, u_vdd_13/VDD, u_vdd_12/VDD, u_vdd_0/VDD, ... (19 possible terminals)
-    BUMP_2_4/PAD -> u_vdd_15/VDD, u_vdd_14/VDD, u_vdd_0/VDD, u_vdd_1/VDD, u_vdd_13/VDD, ... (19 possible terminals)
+    BUMP_1_7/PAD -> u_vdd_14/VDD, u_vdd_15/VDD, u_vdd_13/VDD, u_vdd_12/VDD, u_vdd_0/VDD, ... (33 possible terminals)
+    BUMP_2_4/PAD -> u_vdd_15/VDD, u_vdd_14/VDD, u_vdd_0/VDD, u_vdd_1/VDD, u_vdd_13/VDD, ... (33 possible terminals)
   VSS
-    BUMP_0_7/PAD -> u_vss_14/VSS, u_vss_13/VSS, u_vss_15/VSS, u_vss_12/VSS, u_vss_0/VSS, ... (19 possible terminals)
-    BUMP_10_13/PAD -> u_vss_9/VSS, u_vss_pll/VSS, u_vss_10/VSS, u_vss_8/VSS, u_vss_7/VSS, ... (19 possible terminals)
-    BUMP_16_6/PAD -> u_vss_5/VSS, u_vss_6/VSS, u_vss_4/VSS, u_vss_7/VSS, u_vss_3/VSS, ... (19 possible terminals)
+    BUMP_0_7/PAD -> u_vss_14/VSS, u_vss_13/VSS, u_vss_15/VSS, u_vss_12/VSS, u_vss_0/VSS, ... (33 possible terminals)
+    BUMP_10_13/PAD -> u_vss_9/VSS, u_vss_pll/VSS, u_vss_10/VSS, u_vss_8/VSS, u_vss_7/VSS, ... (33 possible terminals)
+    BUMP_16_6/PAD -> u_vss_5/VSS, u_vss_6/VSS, u_vss_4/VSS, u_vss_7/VSS, u_vss_3/VSS, ... (33 possible terminals)
   p_bsg_tag_clk_i
     BUMP_15_8/PAD -> u_bsg_tag_clk_i/PAD
   p_bsg_tag_en_i

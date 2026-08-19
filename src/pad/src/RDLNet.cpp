@@ -72,7 +72,7 @@ void RDLNet::finalizeSegments()
     }
   }
 
-  if (!has_non_cover) {
+  if (!has_non_cover && !segments_.empty()) {
     // Remove one cover segment only route N-1 segments
     // Overwise we route the same cover more than once.
     segments_.pop_back();
@@ -110,6 +110,10 @@ void RDLNet::updateRoute(RDLSegment* segment)
 
 bool RDLNet::isRouted(odb::dbITerm* source, odb::dbITerm* dest) const
 {
+  if (source == dest) {
+    return true;
+  }
+
   odb::PtrSet<odb::dbITerm> visited;
   return isRouted(source, dest, visited);
 }
