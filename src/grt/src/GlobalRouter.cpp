@@ -4721,23 +4721,24 @@ static void getViaDims(
   prl_up = -1;
   width_down = -1;
   prl_down = -1;
+  // Both vias are measured by their enclosure on tech_layer: the up via's
+  // bottom enclosure and the down via's top enclosure, since the spacing
+  // rules are evaluated on tech_layer.
+  auto find_enclosure_dims
+      = [tech_layer](odb::dbTechVia* via, int& width, int& prl) {
+          for (auto box : via->getBoxes()) {
+            if (box->getTechLayer() == tech_layer) {
+              width = std::min(box->getDX(), box->getDY());
+              prl = std::max(box->getDX(), box->getDY());
+              break;
+            }
+          }
+        };
   if (default_vias.contains(tech_layer)) {
-    for (auto box : default_vias[tech_layer]->getBoxes()) {
-      if (box->getTechLayer() == tech_layer) {
-        width_up = std::min(box->getDX(), box->getDY());
-        prl_up = std::max(box->getDX(), box->getDY());
-        break;
-      }
-    }
+    find_enclosure_dims(default_vias[tech_layer], width_up, prl_up);
   }
   if (default_vias.contains(bottom_layer)) {
-    for (auto box : default_vias[bottom_layer]->getBoxes()) {
-      if (box->getTechLayer() == tech_layer) {
-        width_down = std::min(box->getDX(), box->getDY());
-        prl_down = std::max(box->getDX(), box->getDY());
-        break;
-      }
-    }
+    find_enclosure_dims(default_vias[bottom_layer], width_down, prl_down);
   }
 }
 
