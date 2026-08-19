@@ -78,15 +78,38 @@ def a_matching_stamp_is_reused():
             f.write("// the tree a previous run left\n")
         emitted = os.path.join(work, "web_third_party.cmake")
         with open(emitted, "w", encoding="utf-8") as f:
-            f.write("# from that same run\n")
+            # Naming this tree is what makes it reusable: one describing another
+            # --dest would be reused into paths to nothing.
+            f.write(f'set(WEB_THIRD_PARTY_FILES\n  "{marker}"\n)\n')
 
         result = run(dest, "--emit-cmake", emitted)
+        check("the tree was not refetched", os.path.exists(marker))
         check(
             "a current stamp short-circuits the fetch",
             result.returncode == 0,
             result.stderr.strip(),
         )
-        check("the tree was not refetched", os.path.exists(marker))
+
+
+def an_emitted_file_for_another_tree_is_not_reused():
+    """A stamp is not enough: the emitted paths have to point into this --dest."""
+    with tempfile.TemporaryDirectory() as work:
+        dest = os.path.join(work, "third-party")
+        os.makedirs(dest)
+        with open(os.path.join(dest, ".stamp"), "w", encoding="utf-8") as f:
+            f.write(load(SOURCE_DIR, "fetch_current_other").stamp_value() + "\n")
+        emitted = os.path.join(work, "web_third_party.cmake")
+        with open(emitted, "w", encoding="utf-8") as f:
+            f.write('set(WEB_THIRD_PARTY_FILES\n  "/somewhere/else/leaflet.js"\n)\n')
+
+        # Offline in CI, so it fails at the download; what is pinned is that it
+        # got past the short-circuit instead of reusing the wrong file.
+        result = run(dest, "--emit-cmake", emitted)
+        check(
+            "an emitted file naming another tree is not reused",
+            result.returncode != 0 or "fetching" in result.stderr,
+            result.stderr.strip()[:200],
+        )
 
 
 def the_source_tree_is_refused():
@@ -145,6 +168,7 @@ def the_stamp_covers_its_inputs():
 def main():
     a_directory_we_did_not_write_is_refused()
     a_matching_stamp_is_reused()
+    an_emitted_file_for_another_tree_is_not_reused()
     the_source_tree_is_refused()
     the_stamp_covers_its_inputs()
 

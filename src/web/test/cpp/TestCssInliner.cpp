@@ -92,7 +92,7 @@ TEST(CssInliner, InlinesEveryReferenceForm)
     ReportAssets assets(&logger);
     const std::string out = inlineStylesheetUrls(css, kLeafletDir, assets);
     EXPECT_TRUE(contains(out, inlined)) << css << " -> " << out;
-    EXPECT_FALSE(assets.missing()) << css;
+    EXPECT_FALSE(assets.failed()) << css;
   }
 }
 
@@ -107,7 +107,7 @@ TEST(CssInliner, LeavesAloneWhatIsNotAReference)
                           "a{content:myurl(images/layers.png)}"}) {
     EXPECT_EQ(inlineStylesheetUrls(css, kLeafletDir, assets), css) << css;
   }
-  EXPECT_FALSE(assets.missing());
+  EXPECT_FALSE(assets.failed());
 }
 
 TEST(CssInliner, AQuotedReferenceMayHoldAParenthesis)
@@ -120,7 +120,7 @@ TEST(CssInliner, AQuotedReferenceMayHoldAParenthesis)
   const std::string out = inlineStylesheetUrls(
       "a{background:url(\"a(b).png\")}!", kLeafletDir, assets);
   EXPECT_EQ(out, "a{background:url(\"\")}!");
-  EXPECT_TRUE(assets.missing());
+  EXPECT_TRUE(assets.failed());
 }
 
 TEST(CssInliner, MissingReferenceIsReported)
@@ -129,7 +129,41 @@ TEST(CssInliner, MissingReferenceIsReported)
   ReportAssets assets(&logger);
 
   inlineStylesheetUrls("a{background:url(nope.png)}", kLeafletDir, assets);
-  EXPECT_TRUE(assets.missing());
+  EXPECT_TRUE(assets.failed());
+}
+
+// A scan that gives up copies the rest of the stylesheet verbatim, references
+// and all.  Saying so is what stops the report shipping with live relative
+// urls, which would reach for files next to wherever it was opened.
+TEST(CssInliner, AbandonedScanIsReported)
+{
+  for (const char* css : {
+           "a{background:url(\"unterminated.png}",
+           "a{background:url(unclosed.png",
+           "a{background:url(\"quoted.png\"",
+           "a{background:url(   ",
+       }) {
+    utl::Logger logger;
+    ReportAssets assets(&logger);
+
+    const std::string out = inlineStylesheetUrls(css, kLeafletDir, assets);
+    EXPECT_TRUE(assets.failed()) << css;
+    // The point is the report is refused, not that the output is usable.
+    EXPECT_FALSE(out.empty()) << css;
+  }
+}
+
+// The same scan on well-formed input must not cry wolf: the loop ends by
+// running out of url( tokens, which is not a failure.
+TEST(CssInliner, RunningOutOfTokensIsNotAFailure)
+{
+  utl::Logger logger;
+  ReportAssets assets(&logger);
+
+  const std::string out
+      = inlineStylesheetUrls("a{color:red}b{margin:0}", kLeafletDir, assets);
+  EXPECT_EQ(out, "a{color:red}b{margin:0}");
+  EXPECT_FALSE(assets.failed());
 }
 
 }  // namespace

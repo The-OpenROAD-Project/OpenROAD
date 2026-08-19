@@ -45,6 +45,15 @@ py_test(
     legacy_create_init = 0,
 )
 
+# The CSP names the inline scripts by hash; a hash over anything but the served
+# bytes blocks them with no build-time failure.
+py_test(
+    name = "embed_web_assets_test",
+    srcs = ["embed_web_assets_test.py"],
+    data = ["//src/web:src/embed_web_assets.py"],
+    legacy_create_init = 0,
+)
+
 # The fetch empties --dest and short-circuits on a stamp; both are quiet when
 # wrong.  Needs no network.
 py_test(

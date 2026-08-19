@@ -1072,9 +1072,15 @@ const EmbeddedAsset* ReportAssets::find(const std::string_view path)
   if (!asset) {
     // A miss is a binary built with the wrong asset list, not bad input.
     logger_->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
-    missing_ = true;
+    failed_ = true;
   }
   return asset;
+}
+
+void ReportAssets::fail(const std::string_view reason)
+{
+  logger_->warn(utl::WEB, 46, "Cannot inline the report assets: {}.", reason);
+  failed_ = true;
 }
 
 // data: URI for an embedded asset, for use as a src or href in the report.
@@ -1122,10 +1128,15 @@ std::string inlineStylesheetUrls(const std::string_view css,
     if (open == std::string_view::npos) {
       break;
     }
+    // Every exit below leaves the rest of the stylesheet copied verbatim, with
+    // its url() references still relative -- in a report opened from disk they
+    // would reach for files next to it.  Refusing to save beats that.
+    //
     // A quoted reference may hold a parenthesis, so its closing quote bounds
     // the token; an unquoted one ends at the ')'.
     const size_t first = css.find_first_not_of(" \t\r\n", open + 4);
     if (first == std::string_view::npos) {
+      assets.fail("a url( token runs to the end of the stylesheet");
       break;
     }
     size_t close = std::string_view::npos;
@@ -1133,6 +1144,7 @@ std::string inlineStylesheetUrls(const std::string_view css,
     if (css[first] == '"' || css[first] == '\'') {
       const size_t quote = css.find(css[first], first + 1);
       if (quote == std::string_view::npos) {
+        assets.fail("a quoted url() reference is never closed");
         break;
       }
       close = css.find(')', quote + 1);
@@ -1140,6 +1152,7 @@ std::string inlineStylesheetUrls(const std::string_view css,
     } else {
       close = css.find(')', first);
       if (close == std::string_view::npos) {
+        assets.fail("a url() token is never closed");
         break;
       }
       reference = css.substr(first, close - first);
@@ -1150,6 +1163,7 @@ std::string inlineStylesheetUrls(const std::string_view css,
       }
     }
     if (close == std::string_view::npos) {
+      assets.fail("a url() token is never closed");
       break;
     }
 
@@ -1469,13 +1483,12 @@ import * as THREE from 'three';
 
   out.close();
 
-  if (assets.missing()) {
-    // The warnings above name what was missed; no one is told this was saved.
+  if (assets.failed()) {
+    // The warnings above name what went wrong; no one is told this was saved.
     std::filesystem::remove(filename);
     logger_->error(utl::WEB,
                    45,
-                   "Not saving {}: the binary was built with an incomplete "
-                   "asset list.",
+                   "Not saving {}: its assets could not all be inlined.",
                    filename);
     return;
   }

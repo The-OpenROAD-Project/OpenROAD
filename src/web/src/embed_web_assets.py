@@ -82,14 +82,20 @@ def inline_script_hashes(assets):
                 f"{served} is a second HTML asset; the policy is shared, so the "
                 "hashes have to become a property of each page first"
             )
-        # Comments first: a tag matched inside one would swallow the real
-        # block after it and hash the wrong bytes.
-        html = re.sub(r"<!--.*?-->", "", data.decode("utf-8"), flags=re.DOTALL)
-        for match in re.finditer(r"<script([^>]*)>(.*?)</script>", html, re.DOTALL):
-            attributes, body = match.group(1), match.group(2)
-            if "src=" in attributes:
+        html = data.decode("utf-8")
+        # Blank the comments rather than drop them: a tag matched inside one
+        # would swallow the real block after it, but the offsets have to keep
+        # pointing into the served bytes, which is what the browser hashes.
+        # A comment inside a script block would otherwise yield a hash that
+        # never matches, and the block is simply not executed.
+        masked = re.sub(
+            r"<!--.*?-->", lambda m: " " * len(m.group(0)), html, flags=re.DOTALL
+        )
+        for match in re.finditer(r"<script([^>]*)>(.*?)</script>", masked, re.DOTALL):
+            if "src=" in match.group(1):
                 continue
-            # The browser hashes the bytes between the tags, verbatim.
+            start, end = match.span(2)
+            body = html[start:end]
             digest = hashlib.sha256(body.encode("utf-8")).digest()
             hashes.append(f"'sha256-{base64.b64encode(digest).decode('ascii')}'")
     return hashes

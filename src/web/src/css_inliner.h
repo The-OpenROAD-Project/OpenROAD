@@ -12,8 +12,9 @@
 
 namespace web {
 
-// Remembers a miss, which is what lets the saved report be refused: one that
-// ships with a src="" opens to a blank page.
+// Remembers anything that would make the report wrong, which is what lets it be
+// refused: one that ships with a src="" opens to a blank page, and one that
+// ships an unresolved url() reaches for a file next to wherever it was saved.
 class ReportAssets
 {
  public:
@@ -21,11 +22,14 @@ class ReportAssets
 
   const EmbeddedAsset* find(std::string_view path);
 
-  bool missing() const { return missing_; }
+  // Record a failure that is not a missing asset.
+  void fail(std::string_view reason);
+
+  bool failed() const { return failed_; }
 
  private:
   utl::Logger* logger_;
-  bool missing_ = false;
+  bool failed_ = false;
 };
 
 // Offset of the next url( token at or after `from`, or npos.  Case-insensitive,
