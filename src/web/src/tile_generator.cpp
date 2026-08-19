@@ -235,6 +235,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"regions",            &TileVisibility::regions,            true},
     {"mfg_grid",           &TileVisibility::mfg_grid,           false},
     {"gcell_grid",         &TileVisibility::gcell_grid,         false},
+    {"rudy",               &TileVisibility::rudy,               false},
     {"inst_names",         &TileVisibility::inst_names,         true},
     {"inst_pins",          &TileVisibility::inst_pins,          true},
     {"inst_pin_names",     &TileVisibility::inst_pin_names,     true},
@@ -1419,6 +1420,10 @@ static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
 
 void TileGenerator::clearOverlayCaches() const
 {
+  {
+    std::lock_guard lock(heatmap_mutex_);
+    heatmaps_.clear();
+  }
   std::lock_guard lock(overlay_cache_mutex_);
   dropOverlayCaches();
 }
@@ -2553,6 +2558,17 @@ void TileGenerator::drawGcellGridLayer(std::vector<unsigned char>& image,
   draw_h(die_area.yMax());
 }
 
+void TileGenerator::drawRudyLayer(std::vector<unsigned char>& image,
+                                  odb::dbBlock* /*block*/,
+                                  const TileFrame& frame,
+                                  const TileVisibility& /*vis*/) const
+{
+  auto rudy = getHeatMapSource("RUDY");
+  if (rudy) {
+    drawHeatMap(image, *rudy, frame);
+  }
+}
+
 /* static */
 std::vector<std::string> TileGenerator::saveImageLayerOrder(
     const TileVisibility& vis,
@@ -2601,14 +2617,14 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
   return names;
 }
 
-const std::array<TileGenerator::PseudoLayerDef, 4>&
+const std::array<TileGenerator::PseudoLayerDef, 5>&
 TileGenerator::pseudoLayerDefs()
 {
   // z_index mirrors addPseudoLayer() in display-controls.js (see
   // saveImageLayerOrder); those values in turn follow the GUI's paint order
   // (renderThread.cpp:1201-1298), where the manufacturing grid goes down before
   // the routing layers and access points, regions and the gcell grid on top.
-  static const std::array<PseudoLayerDef, 4> defs = {{
+  static const std::array<PseudoLayerDef, 5> defs = {{
       {.name = "_access_points",
        .flag = &TileVisibility::access_points,
        .painter = &TileGenerator::drawAccessPointsLayer,
@@ -2625,6 +2641,10 @@ TileGenerator::pseudoLayerDefs()
        .flag = &TileVisibility::gcell_grid,
        .painter = &TileGenerator::drawGcellGridLayer,
        .z_index = 1002},
+      {.name = "_rudy",
+       .flag = &TileVisibility::rudy,
+       .painter = &TileGenerator::drawRudyLayer,
+       .z_index = 1003},
   }};
   return defs;
 }
@@ -4224,39 +4244,33 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
   return world_image_buffer;
 }
 
-std::vector<unsigned char> TileGenerator::generateHeatMapTile(
-    gui::HeatMapDataSource& source,
-    const int z,
-    const int x,
-    int y,
-    const double dpr,
-    const int requested_tile_px) const
+std::shared_ptr<gui::HeatMapDataSource> TileGenerator::getHeatMapSource(
+    const std::string& name) const
 {
-  // Same contract as the layer and overlay tiles: the client states the
-  // device-pixel square, so the heat map is as crisp as the layers under it
-  // instead of being a 256 px image stretched over them.  0 falls back to the
-  // historical 256*dpr.
-  const double effective_dpr = dpr > 0.0 ? dpr : 1.0;
-  const int dim
-      = requested_tile_px > 0
-            ? requested_tile_px
-            : static_cast<int>(std::lround(kTileSizeInPixel * effective_dpr));
-  std::vector<unsigned char> image_buffer(static_cast<size_t>(dim) * dim * 4,
-                                          0);
-
-  const double num_tiles_at_zoom = pow(2, z);
-  if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
-    return {};
+  const std::lock_guard<std::mutex> lock(heatmap_mutex_);
+  const auto it = heatmaps_.find(name);
+  if (it != heatmaps_.end()) {
+    return it->second;
   }
+  const auto reg = gui::findRegisteredHeatMapSource(name);
+  if (!reg) {
+    return nullptr;
+  }
+  auto ptr = reg->createInstance();
+  if (ptr) {
+    ptr->setChip(db_->getChip());
+  }
+  heatmaps_[name] = ptr;
+  return ptr;
+}
 
-  y = num_tiles_at_zoom - 1 - y;
-  const odb::Rect hm_bounds = getBounds();
-  const double tile_dbu_size = hm_bounds.maxDXDY() / num_tiles_at_zoom;
-  const double scale = dim / tile_dbu_size;
-  // Same exact grid as the layer tiles this heat map is drawn over.
-  const TileFrame frame
-      = tileFrame(hm_bounds, x, y, tile_dbu_size, scale, effective_dpr);
+void TileGenerator::drawHeatMap(std::vector<unsigned char>& image_buffer,
+                                gui::HeatMapDataSource& source,
+                                const TileFrame& frame) const
+{
   const odb::Rect& dbu_tile = frame.cull;
+  const int dim = bufferDim(image_buffer);
+  const double scale = frame.scale;
   constexpr double kTextRectMargin = 0.8;
   // Authored in CSS px, so it scales with the display like every other
   // pixel-specified size; a fixed 14 would shrink as the ratio rises.
@@ -4326,9 +4340,45 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     drawText(
         image_buffer, text_px_min, text_py_min, text, heatmap_font, text_color);
   }
+}
+
+std::vector<unsigned char> TileGenerator::generateHeatMapTile(
+    gui::HeatMapDataSource& source,
+    const int z,
+    const int x,
+    int y,
+    const double dpr,
+    const int requested_tile_px) const
+{
+  // Same contract as the layer and overlay tiles: the client states the
+  // device-pixel square, so the heat map is as crisp as the layers under it
+  // instead of being a 256 px image stretched over them.  0 falls back to the
+  // historical 256*dpr.
+  const double effective_dpr = dpr > 0.0 ? dpr : 1.0;
+  const int dim
+      = requested_tile_px > 0
+            ? requested_tile_px
+            : static_cast<int>(std::lround(kTileSizeInPixel * effective_dpr));
+  std::vector<unsigned char> image_buffer(static_cast<size_t>(dim) * dim * 4,
+                                          0);
+
+  const double num_tiles_at_zoom = pow(2, z);
+  if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
+    return {};
+  }
+
+  y = num_tiles_at_zoom - 1 - y;
+  const odb::Rect hm_bounds = getBounds();
+  const double tile_dbu_size = hm_bounds.maxDXDY() / num_tiles_at_zoom;
+  const double scale = dim / tile_dbu_size;
+  // Same exact grid as the layer tiles this heat map is drawn over.
+  const TileFrame frame
+      = tileFrame(hm_bounds, x, y, tile_dbu_size, scale, effective_dpr);
+
+  drawHeatMap(image_buffer, source, frame);
 
   std::vector<unsigned char> png_data;
-  unsigned error = lodepng::encode(png_data, image_buffer, dim, dim);
+  const unsigned error = lodepng::encode(png_data, image_buffer, dim, dim);
   if (error) {
     logger_->report("PNG encoder error: {}", lodepng_error_text(error));
   }

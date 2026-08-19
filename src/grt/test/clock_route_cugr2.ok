@@ -38,8 +38,8 @@ met5       Horizontal       3108          1554          50.00%
 
 Stage 1: Pattern routing.
 Routing statistics
-Wire length:           2918
-Total via count:       197
+Wire length:           2977
+Total via count:       198
 Total congestion:      0.00
 Min resource:          1.00
 Bottleneck:            (5, 0, 0)
@@ -48,12 +48,12 @@ Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00
 met1      H      5510.96        10.00        11.46        21.46       0.39
-met2      V      6471.30        54.00        11.77        65.77       1.02
-met3      H      7011.50        71.00         5.79        76.79       1.10
+met2      V      6471.30        52.00        11.87        63.87       0.99
+met3      H      7011.50        76.00         5.89        81.89       1.17
 met4      V      5402.00        15.00         0.37        15.37       0.28
 met5      H      1554.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           25949.76       150.00        29.39       179.39       0.69
-[INFO GRT-0018] Total wirelength: 1641 um
+Total           25949.76       153.00        29.59       182.59       0.70
+[INFO GRT-0018] Total wirelength: 1663 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

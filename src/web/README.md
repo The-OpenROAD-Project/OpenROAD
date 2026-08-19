@@ -82,20 +82,7 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `cluster_view` | false | Color each instance by the `dbGroup` (cluster) it belongs to |
-
-Cluster coloring reads the `dbGroup`s that
-[`rtl_macro_placer -keep_clustering_data`](../mpl/README.md) writes into the
-database, so it is only useful after MPL has run with that option. Each
-cluster gets its own palette color, and a cluster whose subtree is not
-expanded lends its color to all of its descendants — the same default the
-viewer's Instance Groups view shows. When the design has no groups the option
-warns and the image is rendered as if it were off.
-
-In the viewer, clicking a row in the Hierarchy panel's Instance Groups view
-isolates that cluster: only its instances (and those of its nested clusters)
-stay colored, in the color of its swatch, until the row is clicked again. Since
-this is what the `cluster_view` overlay draws, the colors are only visible
-while it is on — the view says so when it is off.
+| `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
 
 #### Examples
 
@@ -125,6 +112,9 @@ rtl_macro_placer -keep_clustering_data
 save_image -web -width 1200 \
                 -display_option {cluster_view true} \
                 clusters.png
+
+# Save with RUDY congestion heatmap overlay
+save_image -web -display_option {rudy true} layout_rudy.png
 ```
 
 ### Save Report

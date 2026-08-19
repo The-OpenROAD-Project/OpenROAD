@@ -253,6 +253,7 @@ struct TileVisibility
       = true;  // dbRegion boundaries overlay, on by default (Qt parity)
   bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
   bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
+  bool rudy = false;        // RUDY congestion heatmap, off by default
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -881,6 +882,15 @@ class TileGenerator
                           odb::dbBlock* block,
                           const TileFrame& frame,
                           const TileVisibility& vis) const;
+  void drawRudyLayer(std::vector<unsigned char>& image,
+                     odb::dbBlock* block,
+                     const TileFrame& frame,
+                     const TileVisibility& vis) const;
+  void drawHeatMap(std::vector<unsigned char>& image,
+                   gui::HeatMapDataSource& source,
+                   const TileFrame& frame) const;
+  std::shared_ptr<gui::HeatMapDataSource> getHeatMapSource(
+      const std::string& name) const;
 
   // Registry of the self-painting pseudo layers: layer name -> visibility
   // flag -> painter -> paint order.  Single source of truth for the
@@ -900,12 +910,15 @@ class TileGenerator
                                    const TileVisibility&) const;
     int z_index;
   };
-  static const std::array<PseudoLayerDef, 4>& pseudoLayerDefs();
+  static const std::array<PseudoLayerDef, 5>& pseudoLayerDefs();
   // Draw a rect's edges clamped to the tile (die/core/region outlines).
   void outlineRectInTile(std::vector<unsigned char>& image,
                          const odb::Rect& r,
                          const Color& c,
                          const TileFrame& frame) const;
+  mutable std::mutex heatmap_mutex_;
+  mutable std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>>
+      heatmaps_;
   mutable std::mutex overlay_cache_mutex_;
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
