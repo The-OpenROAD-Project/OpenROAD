@@ -20,6 +20,7 @@ COMPULSORY_TESTS = [
     "ndr_vias3",
     "ndr_no_auto_taper",
     "obstruction",
+    "pa_single_pin",
     "single_step",
     "ta_ap_aligned",
     "ta_pin_aligned",
@@ -111,7 +112,9 @@ filegroup(
         ] if test_name in [
             "ispd18_sample_incr",
             "single_step",
-        ] else []),
+        ] else []) + ([
+            "gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef",
+        ] if test_name == "pa_single_pin" else []),
     )
     for test_name in ALL_TESTS
 ]

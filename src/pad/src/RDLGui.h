@@ -4,10 +4,15 @@
 #pragma once
 
 #include <set>
+#include <string>
 #include <utility>
 
 #include "gui/gui.h"
 #include "odb/geom.h"
+
+namespace utl {
+class Logger;
+}  // namespace utl
 
 namespace pad {
 
@@ -16,7 +21,7 @@ class RDLRouter;
 class RDLGui : public gui::Renderer
 {
  public:
-  RDLGui();
+  explicit RDLGui(utl::Logger* logger);
   ~RDLGui() override;
 
   void setRouter(RDLRouter* router);
@@ -29,9 +34,12 @@ class RDLGui : public gui::Renderer
   void addSnap(const odb::Point& pt0, const odb::Point& pt1);
   void zoomToSnap(bool preview);
 
-  void pause(bool timeout) const;
+  // Halt the router so the current state can be inspected in the GUI.  The
+  // reason is reported so the pause is actionable.
+  void pause(const std::string& reason, bool timeout) const;
 
  private:
+  utl::Logger* logger_;
   RDLRouter* router_ = nullptr;
 
   std::set<std::pair<odb::Point, odb::Point>> snap_;

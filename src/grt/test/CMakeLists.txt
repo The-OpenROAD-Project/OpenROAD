@@ -97,6 +97,8 @@ or_integration_tests(
     repair_antennas_only_diodes
     repair_antennas_only_diodes_cugr
     repair_antennas_only_jumpers
+    repair_antennas_post_drt_below_min_cugr
+    repair_antennas_post_drt_cugr
     report_wire_length1
     report_wire_length2
     report_wire_length3
@@ -140,3 +142,7 @@ or_integration_tests(
     snapshot_batched_smoke
     thread_count_reports
 )
+
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()

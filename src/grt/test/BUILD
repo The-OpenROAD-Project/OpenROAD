@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -97,6 +98,8 @@ TESTS = [
     "repair_antennas_only_diodes",
     "repair_antennas_only_diodes_cugr",
     "repair_antennas_only_jumpers",
+    "repair_antennas_post_drt_below_min_cugr",
+    "repair_antennas_post_drt_cugr",
     "repair_antennas_allow_congestion",
     "repair_antennas_cugr",
     "repair_antennas_from_odb",
@@ -209,6 +212,22 @@ regression_test(
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
+)
+
+cc_test(
+    name = "TestCongestionNets",
+    size = "small",
+    srcs = ["cpp/TestCongestionNets.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
 
 py_test(
