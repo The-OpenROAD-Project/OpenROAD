@@ -24,7 +24,7 @@ bool contains(const std::string_view haystack, const std::string_view needle)
   return haystack.find(needle) != std::string_view::npos;
 }
 
-bool isVendored(const std::string_view path)
+bool isThirdParty(const std::string_view path)
 {
   return path.rfind("/third-party/", 0) == 0;
 }
@@ -180,9 +180,9 @@ TEST(WebAssets, NoAssetReferencesAnExternalHost)
 {
   for (size_t i = 0; i < embeddedAssetCount(); ++i) {
     const EmbeddedAssetEntry& entry = embeddedAssetAt(i);
-    // Vendored code carries URLs in comments and string tables; what matters is
+    // Library code carries URLs in comments and string tables; what matters is
     // that it is served from here, which the asset table proves.
-    if (isVendored(entry.path)) {
+    if (isThirdParty(entry.path)) {
       continue;
     }
     for (const std::string& url : externalUrls(entry.asset.content())) {
@@ -191,7 +191,7 @@ TEST(WebAssets, NoAssetReferencesAnExternalHost)
   }
 }
 
-TEST(WebAssets, VendoredLibrariesAreEmbedded)
+TEST(WebAssets, BrowserLibrariesAreEmbedded)
 {
   for (const char* path :
        {"/third-party/leaflet/leaflet.js",
@@ -209,7 +209,7 @@ TEST(WebAssets, VendoredLibrariesAreEmbedded)
   }
 }
 
-TEST(WebAssets, IndexHtmlLoadsTheVendoredLibraries)
+TEST(WebAssets, IndexHtmlLoadsTheBrowserLibraries)
 {
   const EmbeddedAsset* index = findEmbeddedAsset("/index.html");
   ASSERT_NE(index, nullptr);
@@ -246,9 +246,9 @@ TEST(WebAssets, BinaryAssetsAreEmbeddedVerbatim)
             std::string_view("\x89PNG\r\n\x1a\n", 8));
 }
 
-// Flatten the request target to a file name and every vendored asset 404s, with
+// Flatten the request target to a file name and every library asset 404s, with
 // the table still looking correct.
-TEST(WebAssets, VendoredPathsSurviveTargetParsing)
+TEST(WebAssets, ThirdPartyPathsSurviveTargetParsing)
 {
   for (const char* target :
        {"/third-party/leaflet/leaflet.js",

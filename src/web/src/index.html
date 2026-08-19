@@ -5,9 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Every library below is vendored under src/web/third-party and served by
-         the OpenROAD binary itself: the viewer must not load code from a CDN
-         (issue #11065) and has to work on a machine with no network. -->
+    <!-- Every library below is fetched at build time and served by the OpenROAD
+         binary itself: the viewer must not load code from a CDN (issue #11065)
+         and has to work on a machine with no network.  See
+         third-party/README.md. -->
     <link rel="stylesheet" href="third-party/leaflet/leaflet.css"/>
     <script src="third-party/leaflet/leaflet.js"></script>
 

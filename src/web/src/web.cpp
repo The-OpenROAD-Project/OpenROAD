@@ -1054,7 +1054,7 @@ static std::string base64Encode(const std::vector<unsigned char>& data)
       reinterpret_cast<const char*>(data.data()), data.size()));
 }
 
-// ── Inlining the vendored libraries into the saved report ──
+// ── Inlining the browser libraries into the saved report ──
 // The report is one file, opened with no server behind it, so every asset the
 // viewer loads is inlined here as a data: URI (issue #11065).
 

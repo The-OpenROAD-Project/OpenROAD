@@ -291,7 +291,7 @@ TEST_F(SaveReportTest, StylesheetIconsAreInlined)
     }
   };
 
-  // The vendored stylesheets travel as data: URIs.
+  // The library stylesheets travel as data: URIs.
   const std::string marker = "href=\"data:text/css;base64,";
   int stylesheets = 0;
   for (size_t at = 0; (at = html.find(marker, at)) != std::string::npos;) {
@@ -299,7 +299,7 @@ TEST_F(SaveReportTest, StylesheetIconsAreInlined)
     const size_t end = html.find('"', start);
     ASSERT_NE(end, std::string::npos);
     expectNoRelativeUrl(utl::base64_decode(html.substr(start, end - start)),
-                        "a vendored stylesheet");
+                        "a library stylesheet");
     ++stylesheets;
     at = end;
   }
