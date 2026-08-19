@@ -167,7 +167,7 @@ void IntegratedFixture::dumpVerilogAndOdb(const std::string& name) const
 void IntegratedFixture::removeFile(const std::string& path)
 {
   if (std::remove(path.c_str()) != 0) {
-    logger_.warn(utl::RSZ, 0, "Could not remove '{}'.", path);
+    logger_.warn(utl::TST, 1, "Could not remove '{}'.", path);
   }
 }
 

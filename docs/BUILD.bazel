@@ -17,9 +17,12 @@ man_pages(
         # --guard_against_concurrent_changes ("modified during execution").
     ] + glob(["md/man1/**/*.md"]),
     messages = [
+        # The ORD messages, from src/ itself.
+        "//:messages_txt",
         "//src/ant:messages_txt",
         "//src/cgt:messages_txt",
         "//src/cts:messages_txt",
+        "//src/cut:messages_txt",
         "//src/dbSta:messages_txt",
         "//src/dft:messages_txt",
         "//src/dpl:messages_txt",
@@ -30,6 +33,7 @@ man_pages(
         "//src/fin:messages_txt",
         "//src/gpl:messages_txt",
         "//src/grt:messages_txt",
+        "//src/gui:messages_txt",
         "//src/ifp:messages_txt",
         "//src/mpl:messages_txt",
         "//src/odb:messages_txt",
@@ -45,6 +49,7 @@ man_pages(
         "//src/stt:messages_txt",
         "//src/syn:messages_txt",
         "//src/tap:messages_txt",
+        "//src/tst:messages_txt",
         "//src/upf:messages_txt",
         "//src/utl:messages_txt",
         "//src/web:messages_txt",
