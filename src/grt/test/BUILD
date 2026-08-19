@@ -103,6 +103,7 @@ TESTS = [
     "repair_antennas_allow_congestion",
     "repair_antennas_cugr",
     "repair_antennas_from_odb",
+    "repair_antennas_from_odb_cugr",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",
