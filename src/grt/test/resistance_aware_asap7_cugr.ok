@@ -73,25 +73,25 @@ M6         Horizontal     271962        203972          25.00%
 Stage 1: Pattern routing.
 Stage 2: Resistance-aware re-route of critical nets.
 Routing statistics
-Wire length:           34022
-Total via count:       2242
+Wire length:           34197
+Total via count:       2216
 Total congestion:      0.00
-Min resource:          3.43
-Bottleneck:            (5, 89, 154)
+Min resource:          3.41
+Bottleneck:            (4, 88, 153)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 M1        V         0.00         0.00         0.00         0.00       0.00
-M2        H    334399.84       510.00       170.26       680.26       0.20
-M3        V    362529.00      1052.00        98.09      1150.09       0.32
-M4        H    271831.50        73.00        58.18       131.18       0.05
-M5        V    271831.50       532.00        49.96       581.96       0.21
-M6        H    203971.50       149.00        19.53       168.53       0.08
+M2        H    334399.84       512.00       170.16       682.16       0.20
+M3        V    362529.00      1083.00        96.60      1179.60       0.33
+M4        H    271831.50        67.00        55.53       122.53       0.05
+M5        V    271831.50       513.00        47.74       560.74       0.21
+M6        H    203971.50       153.00        18.40       171.40       0.08
 --------------------------------------------------------------------------
-Total         1444563.34      2316.00       396.03      2712.03       0.19
-[INFO GRT-0018] Total wirelength: 1825 um
+Total         1444563.34      2328.00       388.42      2716.42       0.19
+[INFO GRT-0018] Total wirelength: 1821 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no resistance-aware) WNS: -121.9 ps  TNS: -2892.8 ps
-resistance-aware               WNS: -121.6 ps  TNS: -2846.5 ps
+resistance-aware               WNS: -121.6 ps  TNS: -2847.6 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.
