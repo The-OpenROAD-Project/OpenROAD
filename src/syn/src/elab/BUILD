@@ -2,6 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//test:regression.bzl", "message_srcs")
 
 package(features = ["layering_check"])
 
@@ -63,17 +64,6 @@ cc_library(
     alwayslink = True,
 )
 
-filegroup(
-    name = "message_srcs",
-    srcs = glob(
-        [
-            "*.cc",
-            "*.cpp",
-            "*.h",
-            "*.hh",
-            "*.tcl",
-        ],
-        allow_empty = True,
-    ),
+message_srcs(
     visibility = ["//src/syn:__pkg__"],
 )

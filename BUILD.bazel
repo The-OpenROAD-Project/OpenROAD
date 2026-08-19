@@ -11,6 +11,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     features = [
@@ -509,6 +510,13 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+# The ORD messages, which live in src/ itself rather than in a module
+# subdirectory.
+messages_txt(
+    recursive = False,
+    visibility = ["//visibility:public"],
+)
+
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
@@ -518,8 +526,18 @@ alias(
 sh_test(
     name = "dup_id_test",
     srcs = ["//etc:find_dup_ids.sh"],
-    data = ["//etc:find_messages.py"],
-    tags = ["local"],
+    data = [
+        # The handle the script uses to find the source tree it scans.
+        "MODULE.bazel",
+        "//etc:find_messages.py",
+    ],
+    # external: the sources being scanned are not declared inputs, so nothing
+    # invalidates a cached result when one of them gains a duplicate ID. Without
+    # this the check reports "(cached) PASSED" over a tree it never looked at.
+    tags = [
+        "external",
+        "local",
+    ],
 )
 
 # Make sure the Qt GUI variant keeps building. :openroad is exercised by
@@ -536,6 +554,13 @@ build_test(
 # bazelisk test //:lint_test               — run all lint checks
 # bazelisk run  //:fix_lint                — auto-fix then lint in OpenROAD
 # bazelisk run  //tools/OpenROAD:fix_lint  — auto-fix then lint in ORFS / downstream repos
+#
+# Every check below enumerates the git worktree (git_ls_files.sh) rather than
+# taking the files it inspects as declared inputs -- that is what lets one
+# target cover the whole repo, including files no Bazel target references. The
+# cost is that editing a file cannot invalidate a cached result, so each test is
+# tagged "external" to force it to re-run. Without that they report
+# "(cached) PASSED" over a worktree they never read.
 # ---------------------------------------------------------------------------
 
 # --- TCL linting (tclint) -------------------------------------------------
@@ -554,7 +579,10 @@ sh_test(
         "//bazel:tclint",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -574,7 +602,10 @@ sh_test(
         "//bazel:tclfmt",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -613,7 +644,10 @@ sh_test(
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -633,7 +667,10 @@ sh_test(
         "@buildifier_prebuilt//:buildifier",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -672,7 +709,10 @@ sh_test(
         "//bazel:yamlfix",
         "@git",
     ],
-    tags = ["local"],
+    tags = [
+        "external",
+        "local",
+    ],
     visibility = ["//visibility:public"],
 )
 

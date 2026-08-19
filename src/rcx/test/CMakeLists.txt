@@ -2,6 +2,7 @@ or_integration_tests(
   "rcx"
   TESTS
     45_gcd
+    dup_pattern_names
     ext_pattern
     gcd
     generate_pattern
