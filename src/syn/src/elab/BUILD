@@ -62,3 +62,18 @@ cc_library(
     ],
     alwayslink = True,
 )
+
+filegroup(
+    name = "message_srcs",
+    srcs = glob(
+        [
+            "*.cc",
+            "*.cpp",
+            "*.h",
+            "*.hh",
+            "*.tcl",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//src/syn:__pkg__"],
+)
