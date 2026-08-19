@@ -162,7 +162,12 @@ class GlobalRouter
   void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
   bool isNetResAware(odb::dbNet* db_net);
   void setMacroExtension(int macro_extension);
-  void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
+  void setUseCUGR(bool use_cugr)
+  {
+    use_cugr_ = use_cugr;
+    engine_selected_ = true;
+  };
+  bool isUseCUGR() const { return use_cugr_; };
   void setSkipLargeFanoutNets(int skip_large_fanout)
   {
     skip_large_fanout_ = skip_large_fanout;
@@ -356,6 +361,7 @@ class GlobalRouter
 
  private:
   void finishGlobalRouting(bool save_guides = false);
+  void ensureEngineSelected();
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
@@ -576,7 +582,10 @@ class GlobalRouter
   int total_diodes_count_;
   bool is_congested_{false};
   bool incremental_congestion_report_pending_{false};
+  // Block property recording which engine produced the persisted guides.
+  static constexpr char kUseCugrProperty[] = "grt_use_cugr";
   bool use_cugr_{false};
+  bool engine_selected_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
   bool has_macros_or_pads_{false};
   bool check_pin_placement_{true};
