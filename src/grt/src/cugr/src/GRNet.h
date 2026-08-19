@@ -60,8 +60,15 @@ class GRNet
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
 
-  // Per-net 0-based routing layer range: the signal range, or the
-  // set_routing_layers -clock range for clock nets when set.
+  /**
+   * @brief Returns the per-net 0-based routing layer range.
+   *
+   * Signal nets get `[signal_min, signal_max]`; clock nets get
+   * `[clk_min, clk_max]` when the user set them via
+   * `set_routing_layers -clock`.
+   *
+   * @returns Reference to the net's layer range.
+   */
   const LayerRange& getLayerRange() const { return layer_range_; }
 
   double getNdrCost(int layer_index) const
@@ -95,8 +102,17 @@ class GRNet
 
   const std::vector<int>& getNdrWidths() const { return ndr_widths_; }
 
-  // True iff any per-layer NDR factor is strictly > 1.0; layer-only rules
-  // (all-1.0 costs) and soft-demoted nets (setSoftNdr) report false.
+  /**
+   * @brief Checks whether the net has an active demand-scaling NDR.
+   *
+   * A null `dbTechNonDefaultRule` or a rule that only restricts
+   * layers (no width/spacing change) yields an all-1.0 cost vector,
+   * which this method reports as `false`. Used by the maze stage to
+   * decide whether to rebuild a per-net wire-cost view. Returns
+   * `false` once the net has been soft-demoted (see `setSoftNdr`).
+   *
+   * @returns `true` iff any per-layer factor is strictly > 1.
+   */
   bool hasNdr() const
   {
     for (double c : ndr_costs_) {

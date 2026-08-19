@@ -128,17 +128,43 @@ class GridGraph
 
   int getEdgeLength(int direction, int edge_index) const;
 
-  // Cost of a wire from u to v; net_factor is the caller-resolved per-layer
-  // NDR factor (GRNet::getNdrCost), scaling the demand the logistic
-  // penalty sees. Default 1.0 = no NDR.
+  /**
+   * @brief Returns the cost of placing a wire segment from u to v.
+   *
+   * `net_factor` scales the per-net demand seen by the logistic
+   * penalty so NDR nets pay proportionally to their wider footprint.
+   * The caller is responsible for looking up the layer-specific
+   * factor (`GRNet::getNdrCost(layer_index)`).
+   *
+   * @param layer_index 0-based routing layer.
+   * @param u           Segment start in gcell coordinates.
+   * @param v           Segment end in gcell coordinates.
+   * @param net_factor  Per-net, per-layer demand multiplier.
+   *                    Default 1.0 = no NDR.
+   *
+   * @returns Wire cost in the same units as the maze's cost view.
+   */
   CostT getWireCost(int layer_index,
                     PointT u,
                     PointT v,
                     double net_factor = 1.0) const;
 
-  // Cost of a via between layer_index and layer_index + 1 at loc. The unit
-  // via cost is constant; only the wire-patch demand scales, with each
-  // layer's own NDR factor from net_costs (empty = no NDR).
+  /**
+   * @brief Returns the cost of a via between `layer_index` and
+   *        `layer_index + 1` at `loc`.
+   *
+   * The unit via cost is constant; only the wire-patch demand each
+   * via implies is scaled by the per-layer NDR factor. A via that
+   * lands on M3-M5 may therefore use a different factor on its M3
+   * patches than on its M4 patches.
+   *
+   * @param layer_index Lower-layer index of the via (0-based).
+   * @param loc         Via location in gcell coordinates.
+   * @param net_costs   Per-layer NDR cost vector. Empty (default) =
+   *                    no NDR; out-of-range layers fall back to 1.0.
+   *
+   * @returns Total via cost (unit + wire patches).
+   */
   CostT getViaCost(int layer_index,
                    PointT loc,
                    const std::vector<double>& net_costs = {}) const;
@@ -164,15 +190,38 @@ class GridGraph
 
   int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
 
-  // Multiplier (> 0) on the logistic-cost slopes read by getWireCost and
-  // the wire-cost views; the RRR loop raises it to sharpen the per-edge
-  // gradient between passes. 1.0 leaves the cost surface unchanged.
+  /**
+   * @brief Sets the multiplier applied to the logistic-cost slopes.
+   *
+   * Scales `constants_.cost_logistic_slope` and
+   * `constants_.maze_logistic_slope` wherever they are read by
+   * `getWireCost`, `extractWireCostView` and `updateWireCostView`. Used
+   * by CUGR's iterative RRR loop to sharpen the per-edge cost gradient
+   * between iterations. The default value 1.0 leaves the cost surface
+   * unchanged.
+   *
+   * @param m New multiplier value. Must be > 0.
+   */
   void setCostMultiplier(double m) { cost_multiplier_ = m; }
   double getCostMultiplier() const { return cost_multiplier_; }
 
-  // Counts the tree's wire edges where demand > capacity * threshold
-  // (< 1.0 widens to near-overflow for the RRR rip-up set). Edges exactly
-  // at capacity are deliberately not flagged: full is not congested.
+  /**
+   * @brief Counts congested edges traversed by a routing tree.
+   *
+   * Walks the tree's wire segments and returns how many edges satisfy
+   * `demand > capacity * threshold`. At threshold == 1.0 this collapses
+   * to strict overflow (`demand > capacity`); at threshold < 1.0 it
+   * widens to include near-overflow ("congested but not yet
+   * overflowing") edges. Edges sitting exactly at capacity are
+   * intentionally *not* flagged — being full is not the same as being
+   * congested. Used by the RRR loop to extend the rip-up set beyond
+   * strictly-overflowed nets.
+   *
+   * @param tree      Routing tree to walk.
+   * @param threshold Per-edge utilization cutoff in [0.0, 1.0].
+   *
+   * @returns Number of tree edges meeting the predicate (>= 0).
+   */
   int checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
                       double threshold) const;
 
@@ -181,8 +230,17 @@ class GridGraph
 
   // Methods for updating demands - Public API.
 
-  // Adds the tree's demand to every edge and via it covers, scaled by the
-  // per-layer NDR costs from net_costs (empty = no NDR).
+  /**
+   * @brief Adds the demand of a routing tree to every edge and via
+   *        it covers.
+   *
+   * Each segment's demand is scaled by the layer's NDR cost from
+   * `net_costs` (1.0 on layers without a rule, or when the vector
+   * is empty).
+   *
+   * @param tree      Routing tree to commit.
+   * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
+   */
   void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                     const std::vector<double>& net_costs = {},
                     bool adopted = false);
@@ -191,8 +249,15 @@ class GridGraph
   void addTreeUsage(const GRNet& net);
   void removeTreeUsage(const GRNet& net);
 
-  // Removes the demand previously added for the tree; must receive the same
-  // net_costs used by addTreeUsage so the subtraction is exact.
+  /**
+   * @brief Removes the demand previously added for a routing tree.
+   *
+   * The caller must supply the same `net_costs` that were used when
+   * the tree's demand was added so it is now subtracted exactly.
+   *
+   * @param tree      Routing tree to rip up.
+   * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
+   */
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                        const std::vector<double>& net_costs = {},
                        bool adopted = false);
@@ -242,9 +307,21 @@ class GridGraph
       GridGraphView<bool>& view) const;  // 2D overflow look-up table
   void extractWireCostView(GridGraphView<CostT>& view) const;
 
-  // 2D wire-cost view for one NDR net: rates each edge on its best
-  // single-layer headroom minus (net_factor - 1), since an NDR wire cannot
-  // span layers; empty / all-1.0 net_costs reproduce the summed view.
+  /**
+   * @brief Builds a 2D wire-cost view tailored to one NDR net.
+   *
+   * For NDR nets, restricts each edge on the best single-layer headroom
+   * `max_l (capacity_l - demand_l)` and subtracts `(net_factor - 1)`.
+   * This prevents a 2D-vs-3D mismatch in which summed capacity hides
+   * per-layer granularity: an NDR wire with `net_factor` tracks
+   * worth of footprint can't span 3D layers, so an edge with
+   * `net_factor` free tracks spread across `net_factor` layers must
+   * not be reported as routable.`net_factor == 1` (empty `net_costs`)
+   * reproduces the default summed view exactly.
+   *
+   * @param view       Output cost map (2 * x_size * y_size).
+   * @param net_costs  Per-layer NDR factor; empty / all-1.0 = no NDR.
+   */
   void extractWireCostView(GridGraphView<CostT>& view,
                            const std::vector<double>& net_costs) const;
   void updateWireCostView(
@@ -290,9 +367,11 @@ class GridGraph
                     CapacityT demand = 1.0,
                     double net_factor = 1.0) const;
 
-  // Demand-update internals: single-layer commits take a scalar per-layer
-  // net_factor; multi-layer commits take the per-layer NDR cost vector
-  // (empty = 1.0 everywhere) to look up each layer's factor as they walk.
+  // Methods for updating demands - Internal Implementation.
+  // Single-layer commits take a per-layer `net_factor` (a scalar);
+  // multi-layer commits take a per-layer NDR cost vector so they
+  // can look up each layer's factor as they walk the tree / via
+  // stack. Empty vectors mean "no NDR" (1.0 everywhere).
   void commit(int layer_index,
               PointT lower,
               CapacityT demand,
@@ -319,7 +398,8 @@ class GridGraph
   CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
   // Enumerates the flanking edges a via at `loc` (between `layer_index` and
   // `layer_index + 1`) deposits demand on, with the layer's NDR factor:
-  // fn(l, edge_lower_point, demand, layer_factor). Defined in GridGraph.cpp.
+  // fn(l, edge_lower_point, demand, layer_factor).
+  // Defined in GridGraph.cpp; all instantiations live there.
   template <typename F>
   void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
   template <typename F>
@@ -359,11 +439,15 @@ class GridGraph
   // (row for H layers, column for V layers). Used to recover the
   // pre-blockage / pre-adjustment capacity of each edge.
   std::vector<std::vector<int>> grid_tracks_;
-  // Per-layer capacity sums before user adjustments (blockage reductions
-  // only), so resource reports can show the user-adjustment delta.
+  // Per-layer capacity sums captured before user-defined adjustments are
+  // applied (i.e. only blockage reductions are accounted for). Used by
+  // resource reporting so that the report can show the reduction from
+  // user adjustments analogous to FastRoute's real_cap vs cap.
   std::vector<int> original_resources_per_layer_;
-  // Caches for computeCongestionInformation(); any demand-mutating commit()
-  // sets congestion_info_dirty_ so the next call refreshes them.
+  // Per-layer caches populated by computeCongestionInformation(). Kept
+  // valid by congestion_info_dirty_: any commit() that mutates demand
+  // marks the caches stale, so the next computeCongestionInformation()
+  // refreshes them; otherwise it returns immediately.
   std::vector<int> cap_per_layer_;
   std::vector<int> usage_per_layer_;
   std::vector<int> overflow_per_layer_;
