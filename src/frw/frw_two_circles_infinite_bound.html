@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive 2D FRW Extractor (True Infinite Space)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            cursor: default; 
+            overflow: hidden;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 600px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-label { font-size: 0.85em; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.2em; font-weight: bold; }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        #startBtn { background-color: #0066cc; color: white; }
+        #startBtn:hover { background-color: #0052a3; }
+        #startBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #stopBtn { background-color: #dc3545; color: white; }
+        #stopBtn:hover { background-color: #bb2d3b; }
+        #stopBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-running { background-color: #ffeeba; color: #856404; }
+        .status-converged { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+
+    <h2>True Infinite Space 2D FRW <span id="statusBadge" class="status-badge" style="display:none;"></span></h2>
+    <canvas id="simCanvas" width="600" height="400"></canvas>
+
+    <div class="controls">
+        <div class="btn-group">
+            <button id="startBtn">Start Adaptive Extraction (1% Error Limit)</button>
+            <button id="stopBtn" disabled>Halt</button>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span class="stat-label">Total Walks (N)</span>
+                <span class="stat-value" id="valWalks">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Relative Error (1-Sigma)</span>
+                <span class="stat-value" id="valError" style="color: #dc3545;">--</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #cc0000;">Coupling Hits</span>
+                <span class="stat-value" id="valNeighbor">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #cc0000;">Est. Coupling Prob</span>
+                <span class="stat-value" id="valProb">0.00%</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #0066cc;">Coupling Cap (aF/µm)</span>
+                <span class="stat-value" id="valCapacitance">0.00</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #666666;">Ground Walls</span>
+                <span class="stat-value" style="color: #999;">Removed</span>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // --- TRUE INFINITE UNIVERSE ---
+    // Target is placed arbitrarily at 0,0. The canvas camera will just look at 0,0.
+    const TARGET = { x: 0, y: 0, r: 40, color: 'rgba(0, 102, 204, 0.8)' };
+    let NEIGHBOR = { x: 150, y: 0, r: 40, color: 'rgba(204, 0, 0, 0.8)' };
+    
+    // Viewport Camera offset to center 0,0 on the screen
+    const CAM_X = TARGET.x - (canvas.width / 2);
+    const CAM_Y = TARGET.y - (canvas.height / 2);
+
+    const EPSILON = 0.5; 
+    const STOP_TOL = EPSILON / 1000; 
+
+    // Global State
+    let isRunning = false;
+    let totalWalks = 0;
+    let hitsTarget = 0;
+    let hitsNeighbor = 0;
+    const BATCH_SIZE = 1000; 
+    const TARGET_ERROR = 0.01; 
+    
+    // Physics Constants
+    const EPSILON_0 = 8.854e-12; 
+    const EPSILON_R = 3.9;       
+    const SCALE_NM = 1e-9;       
+
+    // Drag & Drop Variables
+    let isDraggingNeighbor = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    // --- Mouse Event Listeners (Mapped through Camera) ---
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left + CAM_X;
+        const mouseY = e.clientY - rect.top + CAM_Y;
+
+        const dx = mouseX - NEIGHBOR.x;
+        const dy = mouseY - NEIGHBOR.y;
+        if (Math.sqrt(dx*dx + dy*dy) <= NEIGHBOR.r) {
+            isDraggingNeighbor = true;
+            dragOffsetX = dx;
+            dragOffsetY = dy;
+            canvas.style.cursor = 'grabbing';
+
+            if (isRunning) finishSimulation(false);
+            resetState();
+            drawEnvironment();
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left + CAM_X;
+        const mouseY = e.clientY - rect.top + CAM_Y;
+
+        if (!isDraggingNeighbor) {
+            const dx = mouseX - NEIGHBOR.x;
+            const dy = mouseY - NEIGHBOR.y;
+            if (Math.sqrt(dx*dx + dy*dy) <= NEIGHBOR.r) {
+                canvas.style.cursor = 'grab';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+            return;
+        }
+
+        NEIGHBOR.x = mouseX - dragOffsetX;
+        NEIGHBOR.y = mouseY - dragOffsetY;
+
+        // Ensure wires don't overlap
+        let distBetweenCenters = Math.sqrt(Math.pow(NEIGHBOR.x - TARGET.x, 2) + Math.pow(NEIGHBOR.y - TARGET.y, 2));
+        if (distBetweenCenters < (TARGET.r + NEIGHBOR.r + 5)) {
+            let angle = Math.atan2(NEIGHBOR.y - TARGET.y, NEIGHBOR.x - TARGET.x);
+            NEIGHBOR.x = TARGET.x + Math.cos(angle) * (TARGET.r + NEIGHBOR.r + 5);
+            NEIGHBOR.y = TARGET.y + Math.sin(angle) * (TARGET.r + NEIGHBOR.r + 5);
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawEnvironment();
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isDraggingNeighbor) {
+            isDraggingNeighbor = false;
+            canvas.style.cursor = 'grab';
+        }
+    });
+
+    // --- Core Simulation Logic ---
+    function distToCircle(px, py, circle) {
+        let dx = px - circle.x;
+        let dy = py - circle.y;
+        return Math.sqrt(dx*dx + dy*dy) - circle.r;
+    }
+
+    function spawnWalker() {
+        let angle = Math.random() * 2 * Math.PI;
+        return { 
+            x: TARGET.x + Math.cos(angle) * (TARGET.r + EPSILON), 
+            y: TARGET.y + Math.sin(angle) * (TARGET.r + EPSILON) 
+        };
+    }
+
+    function drawEnvironment() {
+        ctx.save();
+        ctx.translate(-CAM_X, -CAM_Y);
+
+        ctx.fillStyle = TARGET.color;
+        ctx.beginPath();
+        ctx.arc(TARGET.x, TARGET.y, TARGET.r, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = NEIGHBOR.color;
+        ctx.beginPath();
+        ctx.arc(NEIGHBOR.x, NEIGHBOR.y, NEIGHBOR.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    function performWalk() {
+        let path = [];
+        let walker = spawnWalker();
+        path.push({ x: walker.x, y: walker.y });
+        
+        let isWalking = true;
+        let safetyBrake = 0;
+
+        // Massive safety brake for walks that go into deep space
+        while (isWalking && safetyBrake < 500000) {
+            safetyBrake++;
+
+            let dTarget = distToCircle(walker.x, walker.y, TARGET);
+            let dNeighbor = distToCircle(walker.x, walker.y, NEIGHBOR);
+            
+            // NO BOUNDARIES. Only calculate distance to the two wires.
+            let D = Math.min(dTarget, dNeighbor);
+
+            if (D <= STOP_TOL) {
+                if (D === dNeighbor) hitsNeighbor++;
+                else hitsTarget++; // Target Self-Hit
+                isWalking = false;
+                break;
+            }
+
+            let angle = Math.random() * 2 * Math.PI;
+            walker.x += D * Math.cos(angle);
+            walker.y += D * Math.sin(angle);
+            path.push({ x: walker.x, y: walker.y });
+        }
+        
+        // If it somehow hits the brake, we discard it to preserve physics
+        return path;
+    }
+
+    function drawPaths(paths) {
+        ctx.save();
+        ctx.translate(-CAM_X, -CAM_Y);
+
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.02)'; 
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        
+        for (let path of paths) {
+            ctx.moveTo(path[0].x, path[0].y);
+            // Only draw the first few steps so we don't lag rendering galactic-sized path jumps
+            let drawLen = Math.min(path.length, 100); 
+            for (let i = 1; i < drawLen; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255, 165, 0, 0.1)';
+        ctx.beginPath();
+        for (let path of paths) {
+            let last = path[path.length - 1];
+            ctx.moveTo(last.x, last.y);
+            ctx.arc(last.x, last.y, 1.5, 0, Math.PI * 2);
+        }
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    function runBatch() {
+        if (!isRunning) return;
+
+        let batchPaths = [];
+        for (let i = 0; i < BATCH_SIZE; i++) {
+            batchPaths.push(performWalk());
+        }
+        totalWalks += BATCH_SIZE;
+
+        drawPaths(batchPaths);
+        drawEnvironment();
+
+        // Probability calculation is now purely hits vs total valid walks
+        let p = hitsNeighbor / (hitsNeighbor + hitsTarget);
+        let relativeError = Infinity;
+
+        if (hitsNeighbor > 50) {
+            relativeError = Math.sqrt((1 - p) / (totalWalks * p));
+        }
+
+        document.getElementById('valWalks').innerText = totalWalks.toLocaleString();
+        document.getElementById('valNeighbor').innerText = hitsNeighbor.toLocaleString();
+        document.getElementById('valProb').innerText = (p * 100).toFixed(4) + "%";
+        
+        let errStr = relativeError === Infinity ? "Calculating..." : (relativeError * 100).toFixed(2) + "%";
+        document.getElementById('valError').innerText = errStr;
+
+        let perimeter_pixels = 2 * Math.PI * TARGET.r;
+        let perimeter_m = perimeter_pixels * SCALE_NM;
+        let push_off_m = EPSILON * SCALE_NM;
+        let weight_F_per_m = EPSILON_0 * EPSILON_R * (perimeter_m / push_off_m);
+
+        let coupling_F_per_m = weight_F_per_m * p;
+        let coupling_aF_per_um = coupling_F_per_m * 1e12;
+
+        document.getElementById('valCapacitance').innerText = coupling_aF_per_um.toFixed(2);
+        
+        if (relativeError <= TARGET_ERROR) {
+            finishSimulation(true);
+        } else {
+            requestAnimationFrame(runBatch);
+        }
+    }
+
+    function resetState() {
+        totalWalks = 0; hitsTarget = 0; hitsNeighbor = 0;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        document.getElementById('valWalks').innerText = "0";
+        document.getElementById('valNeighbor').innerText = "0";
+        document.getElementById('valProb').innerText = "0.00%";
+        document.getElementById('valError').innerText = "--";
+        document.getElementById('valCapacitance').innerText = "0.00";
+        
+        let badge = document.getElementById('statusBadge');
+        badge.style.display = 'none';
+        document.getElementById('valError').style.color = '#dc3545';
+    }
+
+    function startSimulation() {
+        resetState();
+        drawEnvironment();
+        
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        
+        let badge = document.getElementById('statusBadge');
+        badge.style.display = 'inline-block';
+        badge.className = 'status-badge status-running';
+        badge.innerText = 'Processing...';
+
+        isRunning = true;
+        requestAnimationFrame(runBatch);
+    }
+
+    function finishSimulation(converged) {
+        isRunning = false;
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        
+        let badge = document.getElementById('statusBadge');
+        if (converged) {
+            badge.className = 'status-badge status-converged';
+            badge.innerText = 'Converged (<1% Error)';
+            document.getElementById('valError').style.color = '#28a745'; 
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startSimulation);
+    document.getElementById('stopBtn').addEventListener('click', () => finishSimulation(false));
+
+    // Initial draw
+    drawEnvironment();
+</script>
+</body>
+</html>

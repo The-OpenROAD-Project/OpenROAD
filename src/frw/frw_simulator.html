@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive 2D FRW Extractor</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            /* Added default cursor */
+            cursor: default; 
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 600px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-label { font-size: 0.85em; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.2em; font-weight: bold; }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        #startBtn { background-color: #0066cc; color: white; }
+        #startBtn:hover { background-color: #0052a3; }
+        #startBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #stopBtn { background-color: #dc3545; color: white; }
+        #stopBtn:hover { background-color: #bb2d3b; }
+        #stopBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-running { background-color: #ffeeba; color: #856404; }
+        .status-converged { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+
+    <h2>Adaptive 2D FRW Extractor <span id="statusBadge" class="status-badge" style="display:none;"></span></h2>
+    <canvas id="simCanvas" width="600" height="400"></canvas>
+
+    <div class="controls">
+        <div class="btn-group">
+            <button id="startBtn">Start Adaptive Extraction (1% Error Limit)</button>
+            <button id="stopBtn" disabled>Halt</button>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span class="stat-label">Total Walks (N)</span>
+                <span class="stat-value" id="valWalks">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Relative Error (1-Sigma)</span>
+                <span class="stat-value" id="valError" style="color: #dc3545;">--</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #cc0000;">Coupling Hits</span>
+                <span class="stat-value" id="valNeighbor">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #cc0000;">Est. Coupling Prob</span>
+                <span class="stat-value" id="valProb">0.00%</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #0066cc;">Coupling Cap (aF/µm)</span>
+                <span class="stat-value" id="valCapacitance">0.00</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label" style="color: #0066cc;">Ground Cap (aF/µm)</span>
+                <span class="stat-value" id="groundCapacitance">0.00</span>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Environment
+    const TARGET = { x: 200, y: 150, w: 40, h: 100, color: 'rgba(0, 102, 204, 0.8)' };
+    // CHANGED: Made NEIGHBOR a 'let' so it can be moved
+    let NEIGHBOR = { x: 280, y: 100, w: 40, h: 200, color: 'rgba(204, 0, 0, 0.8)' };
+    const GROUND_BOUNDS = { w: canvas.width, h: canvas.height };
+    
+    // The corrected Epsilon parameters
+    const EPSILON = 0.5; 
+    const STOP_TOL = EPSILON/4096; 
+
+    // Global State for Adaptive Run
+    let isRunning = false;
+    let totalWalks = 0;
+    let hitsTarget = 0;
+    let hitsNeighbor = 0;
+    let hitsGround = 0;
+    const BATCH_SIZE = 1000; 
+    const TARGET_ERROR = 0.01; 
+    
+    // Physics Constants
+    const EPSILON_0 = 8.854e-12; 
+    const EPSILON_R = 3.9;       
+    const SCALE_NM = 1e-9;       
+
+    // --- Drag & Drop Variables ---
+    let isDraggingNeighbor = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    // --- Mouse Event Listeners for Dragging ---
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Check if the user clicked inside the NEIGHBOR box
+        if (mouseX >= NEIGHBOR.x && mouseX <= NEIGHBOR.x + NEIGHBOR.w &&
+            mouseY >= NEIGHBOR.y && mouseY <= NEIGHBOR.y + NEIGHBOR.h) {
+            
+            isDraggingNeighbor = true;
+            dragOffsetX = mouseX - NEIGHBOR.x;
+            dragOffsetY = mouseY - NEIGHBOR.y;
+            canvas.style.cursor = 'grabbing';
+
+            // Halt simulation and reset state if dragging starts
+            if (isRunning) finishSimulation(false);
+            resetState();
+            drawEnvironment();
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Change cursor to indicate it's grabbable
+        if (!isDraggingNeighbor) {
+            if (mouseX >= NEIGHBOR.x && mouseX <= NEIGHBOR.x + NEIGHBOR.w &&
+                mouseY >= NEIGHBOR.y && mouseY <= NEIGHBOR.y + NEIGHBOR.h) {
+                canvas.style.cursor = 'grab';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+            return;
+        }
+
+        // Update coordinates based on mouse position
+        NEIGHBOR.x = mouseX - dragOffsetX;
+        NEIGHBOR.y = mouseY - dragOffsetY;
+
+        // Optional: Keep the box inside the canvas
+        NEIGHBOR.x = Math.max(0, Math.min(canvas.width - NEIGHBOR.w, NEIGHBOR.x));
+        NEIGHBOR.y = Math.max(0, Math.min(canvas.height - NEIGHBOR.h, NEIGHBOR.y));
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawEnvironment();
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isDraggingNeighbor) {
+            isDraggingNeighbor = false;
+            canvas.style.cursor = 'grab';
+        }
+    });
+
+    // --- Core Simulation Logic ---
+    function distToBox(px, py, box) {
+        let cx = Math.max(box.x, Math.min(px, box.x + box.w));
+        let cy = Math.max(box.y, Math.min(py, box.y + box.h));
+        let dx = px - cx;
+        let dy = py - cy;
+        return Math.sqrt(dx*dx + dy*dy);
+    }
+
+    function spawnWalker() {
+        let perimeter = 2 * (TARGET.w + TARGET.h);
+        let r = Math.random() * perimeter;
+        let px, py, nx, ny;
+
+        if (r < TARGET.w) { 
+            px = TARGET.x + r; py = TARGET.y; nx = 0; ny = -1;
+        } else if (r < TARGET.w + TARGET.h) { 
+            px = TARGET.x + TARGET.w; py = TARGET.y + (r - TARGET.w); nx = 1; ny = 0;
+        } else if (r < 2 * TARGET.w + TARGET.h) { 
+            px = TARGET.x + TARGET.w - (r - (TARGET.w + TARGET.h)); py = TARGET.y + TARGET.h; nx = 0; ny = 1;
+        } else { 
+            px = TARGET.x; py = TARGET.y + TARGET.h - (r - (2 * TARGET.w + TARGET.h)); nx = -1; ny = 0;
+        }
+
+        return { x: px + nx * EPSILON, y: py + ny * EPSILON };
+    }
+
+    function drawEnvironment() {
+        ctx.fillStyle = TARGET.color;
+        ctx.fillRect(TARGET.x, TARGET.y, TARGET.w, TARGET.h);
+        
+        ctx.fillStyle = NEIGHBOR.color;
+        ctx.fillRect(NEIGHBOR.x, NEIGHBOR.y, NEIGHBOR.w, NEIGHBOR.h);
+    }
+
+    function performWalk() {
+        let path = [];
+        let walker = spawnWalker();
+        path.push({ x: walker.x, y: walker.y });
+        
+        let isWalking = true;
+        let safetyBrake = 0;
+
+        while (isWalking && safetyBrake < 1000) {
+            safetyBrake++;
+
+            let dTarget = distToBox(walker.x, walker.y, TARGET);
+            let dNeighbor = distToBox(walker.x, walker.y, NEIGHBOR);
+            let dGround = Math.min(
+                walker.x, walker.y, 
+                GROUND_BOUNDS.w - walker.x, GROUND_BOUNDS.h - walker.y
+            );
+
+            let D = Math.min(dTarget, dNeighbor, dGround);
+
+            if (D <= STOP_TOL) {
+                if (D === dNeighbor) hitsNeighbor++;
+                else if (D === dTarget) hitsTarget++;
+                else hitsGround++;
+                isWalking = false;
+                break;
+            }
+
+            let angle = Math.random() * 2 * Math.PI;
+            walker.x += D * Math.cos(angle);
+            walker.y += D * Math.sin(angle);
+            path.push({ x: walker.x, y: walker.y });
+        }
+        return path;
+    }
+
+    function drawPaths(paths) {
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.02)'; 
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        
+        for (let path of paths) {
+            ctx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255, 165, 0, 0.1)';
+        ctx.beginPath();
+        for (let path of paths) {
+            let last = path[path.length - 1];
+            ctx.moveTo(last.x, last.y);
+            ctx.arc(last.x, last.y, 1.5, 0, Math.PI * 2);
+        }
+        ctx.fill();
+    }
+
+    function runBatch() {
+        if (!isRunning) return;
+
+        let batchPaths = [];
+        for (let i = 0; i < BATCH_SIZE; i++) {
+            batchPaths.push(performWalk());
+        }
+        totalWalks += BATCH_SIZE;
+
+        drawPaths(batchPaths);
+        drawEnvironment();
+
+        let p = hitsNeighbor / totalWalks;
+        let p_ground = hitsGround / totalWalks
+        let relativeError = Infinity;
+
+        if (hitsNeighbor > 50) {
+            relativeError = Math.sqrt((1 - p) / (totalWalks * p));
+        }
+
+        document.getElementById('valWalks').innerText = totalWalks.toLocaleString();
+        document.getElementById('valNeighbor').innerText = hitsNeighbor.toLocaleString();
+        document.getElementById('valProb').innerText = (p * 100).toFixed(4) + "%";
+        
+        let errStr = relativeError === Infinity ? "Calculating..." : (relativeError * 100).toFixed(2) + "%";
+        document.getElementById('valError').innerText = errStr;
+
+        let perimeter_pixels = 2 * (TARGET.w + TARGET.h);
+        let perimeter_m = perimeter_pixels * SCALE_NM;
+        let push_off_m = EPSILON * SCALE_NM;
+        let weight_F_per_m = EPSILON_0 * EPSILON_R * (perimeter_m / push_off_m);
+
+        let coupling_F_per_m = weight_F_per_m * p;
+        let coupling_F_per_m_ground = weight_F_per_m * p_ground;
+
+        let coupling_aF_per_um = coupling_F_per_m * 1e12;
+        let coupling_aF_per_um_ground = coupling_F_per_m_ground * 1e12;
+
+        document.getElementById('valCapacitance').innerText = coupling_aF_per_um.toFixed(2);
+        document.getElementById('groundCapacitance').innerText = coupling_aF_per_um_ground.toFixed(2);
+        
+        if (relativeError <= TARGET_ERROR) {
+            finishSimulation(true);
+        } else {
+            requestAnimationFrame(runBatch);
+        }
+    }
+
+    function resetState() {
+        totalWalks = 0; hitsTarget = 0; hitsNeighbor = 0; hitsGround = 0;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        document.getElementById('valWalks').innerText = "0";
+        document.getElementById('valNeighbor').innerText = "0";
+        document.getElementById('valProb').innerText = "0.00%";
+        document.getElementById('valError').innerText = "--";
+        document.getElementById('valCapacitance').innerText = "0.00";
+        document.getElementById('groundCapacitance').innerText = "0.00";
+        
+        let badge = document.getElementById('statusBadge');
+        badge.style.display = 'none';
+        document.getElementById('valError').style.color = '#dc3545';
+    }
+
+    function startSimulation() {
+        resetState();
+        drawEnvironment();
+        
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        
+        let badge = document.getElementById('statusBadge');
+        badge.style.display = 'inline-block';
+        badge.className = 'status-badge status-running';
+        badge.innerText = 'Processing...';
+
+        isRunning = true;
+        requestAnimationFrame(runBatch);
+    }
+
+    function finishSimulation(converged) {
+        isRunning = false;
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        
+        let badge = document.getElementById('statusBadge');
+        if (converged) {
+            badge.className = 'status-badge status-converged';
+            badge.innerText = 'Converged (<1% Error)';
+            document.getElementById('valError').style.color = '#28a745'; 
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startSimulation);
+    document.getElementById('stopBtn').addEventListener('click', () => finishSimulation(false));
+
+    // Initial draw
+    drawEnvironment();
+</script>
+</body>
+</html>
