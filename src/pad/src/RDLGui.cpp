@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "RDLNet.h"
-#include "RDLSegment.h"
 #include "RDLRouter.h"
+#include "RDLSegment.h"
 #include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/geom.h"

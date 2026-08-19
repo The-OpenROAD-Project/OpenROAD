@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "RDLNet.h"
 #include "RDLRouter.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon_90_set_data.hpp"
@@ -23,11 +24,11 @@
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 
-#include "RDLNet.h"
-
 namespace pad {
 
-RDLSegment::RDLSegment(RDLNet* net, odb::dbITerm* source, const std::vector<odb::dbITerm*>& dests)
+RDLSegment::RDLSegment(RDLNet* net,
+                       odb::dbITerm* source,
+                       const std::vector<odb::dbITerm*>& dests)
     : net_(net),
       iterm_(source),
       priority_(0),
@@ -226,15 +227,16 @@ bool RDLSegment::isIntersecting(const odb::Line& line, int extent) const
 }
 
 bool RDLSegment::isIntersecting(const odb::Point& point,
-                              int width,
-                              int spacing) const
+                                int width,
+                                int spacing) const
 {
   if (!isRouted()) {
     return false;
   }
 
   const int sq_extect = (width + spacing) / 2;
-  const odb::Rect point_rect = RDLSegment::getPointObstruction(point, sq_extect);
+  const odb::Rect point_rect
+      = RDLSegment::getPointObstruction(point, sq_extect);
 
   if (!getBBox(sq_extect).intersects(point_rect)) {
     return false;
@@ -276,8 +278,8 @@ odb::Rect RDLSegment::getPointObstruction(const odb::Point& pt, int dist)
 }
 
 odb::Polygon RDLSegment::getEdgeObstruction(const odb::Point& pt0,
-                                          const odb::Point& pt1,
-                                          int dist)
+                                            const odb::Point& pt1,
+                                            int dist)
 {
   const odb::Oct check_oct(pt0, pt1, 2 * dist);
 

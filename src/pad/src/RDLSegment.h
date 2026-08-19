@@ -24,7 +24,9 @@ class RDLNet;
 class RDLSegment
 {
  public:
-  RDLSegment(RDLNet* net, odb::dbITerm* source, const std::vector<odb::dbITerm*>& dests);
+  RDLSegment(RDLNet* net,
+             odb::dbITerm* source,
+             const std::vector<odb::dbITerm*>& dests);
 
   RDLNet* getRDLNet() const { return net_; }
   odb::dbNet* getNet() const;
@@ -134,4 +136,4 @@ class RDLSegment
   void setRouted();
 };
 
-}
+}  // namespace pad

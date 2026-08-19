@@ -24,12 +24,17 @@ class RDLNet
 
   odb::dbNet* getNet() const { return net_; }
 
-  void addSegment(odb::dbITerm* iterm, const std::vector<odb::dbITerm*>& terminals);
-  const std::vector<std::unique_ptr<RDLSegment>>& getSegments() const { return segments_; }
+  void addSegment(odb::dbITerm* iterm,
+                  const std::vector<odb::dbITerm*>& terminals);
+  const std::vector<std::unique_ptr<RDLSegment>>& getSegments() const
+  {
+    return segments_;
+  }
   void finalizeSegments();
 
   void updateRoute(RDLSegment* segment);
-  const odb::PtrMap<odb::dbITerm, odb::PtrSet<odb::dbITerm>>& getRoutedPairs() const
+  const odb::PtrMap<odb::dbITerm, odb::PtrSet<odb::dbITerm>>& getRoutedPairs()
+      const
   {
     return routed_pairs_;
   }
@@ -47,7 +52,9 @@ class RDLNet
   odb::PtrMap<odb::dbITerm, odb::PtrSet<odb::dbITerm>> routed_pairs_;
   odb::PtrSet<odb::dbITerm> routed_noncover_terminals_;
 
-  bool isRouted(odb::dbITerm* source, odb::dbITerm* dest, odb::PtrSet<odb::dbITerm>& visited) const;
+  bool isRouted(odb::dbITerm* source,
+                odb::dbITerm* dest,
+                odb::PtrSet<odb::dbITerm>& visited) const;
 };
 
 }  // namespace pad

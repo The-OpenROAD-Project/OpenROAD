@@ -20,6 +20,8 @@
 #include <vector>
 
 #include "RDLGui.h"
+#include "RDLNet.h"
+#include "RDLSegment.h"
 #include "Utilities.h"
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
@@ -36,9 +38,6 @@
 #include "pad/ICeWall.h"
 #include "utl/Logger.h"
 
-#include "RDLNet.h"
-#include "RDLSegment.h"
-
 namespace pad {
 
 namespace {
@@ -47,8 +46,7 @@ namespace {
 // re-add order it drives) is deterministic, not heap-address dependent.
 struct RDLSegmentPtrLess
 {
-  bool operator()(const RDLSegment* lhs,
-                  const RDLSegment* rhs) const
+  bool operator()(const RDLSegment* lhs, const RDLSegment* rhs) const
   {
     return lhs->getTerminal()->getId() < rhs->getTerminal()->getId();
   }
@@ -433,8 +431,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
   // create priority queue
   auto route_compare
-      = [](RDLSegment* lhs,
-           RDLSegment* rhs) { return lhs->compare(rhs); };
+      = [](RDLSegment* lhs, RDLSegment* rhs) { return lhs->compare(rhs); };
   std::priority_queue<RDLSegment*,
                       std::vector<RDLSegment*>,
                       decltype(route_compare)>
@@ -510,43 +507,41 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
           segment->getPriority());
 
       for (auto& points : targets) {
-        debugPrint(
-            logger_,
-            utl::PAD,
-            "Router",
-            3,
-            "Routing {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um) : "
-            "({:.3f}um)",
-            net->getName(),
-            points.target0->center.x() / dbus,
-            points.target0->center.y() / dbus,
-            points.target1->center.x() / dbus,
-            points.target1->center.y() / dbus,
-            distance(points) / dbus);
+        debugPrint(logger_,
+                   utl::PAD,
+                   "Router",
+                   3,
+                   "Routing {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um) : "
+                   "({:.3f}um)",
+                   net->getName(),
+                   points.target0->center.x() / dbus,
+                   points.target0->center.y() / dbus,
+                   points.target1->center.x() / dbus,
+                   points.target1->center.y() / dbus,
+                   distance(points) / dbus);
 
         const TerminalAccess access0
             = insertTerminalAccess(*points.target0, *points.target1);
         const TerminalAccess access1
             = insertTerminalAccess(*points.target1, *points.target0);
 
-        auto route_vextex
-            = run(points.target0->center, points.target1->center);
+        auto route_vextex = run(points.target0->center, points.target1->center);
 
         if (!route_vextex.empty()) {
           debugPrint(logger_,
-                      utl::PAD,
-                      "Router",
-                      3,
-                      "Route segments {}",
-                      route_vextex.size());
+                     utl::PAD,
+                     "Router",
+                     3,
+                     "Route segments {}",
+                     route_vextex.size());
           const auto route_edges = commitRoute(route_vextex);
           segment->setRoute(vertex_point_map_,
-                          route_vextex,
-                          route_edges,
-                          points.target0,
-                          points.target1,
-                          access0,
-                          access1);
+                            route_vextex,
+                            route_edges,
+                            points.target0,
+                            points.target1,
+                            access0,
+                            access1);
         }
 
         removeTerminalAccess(access0);
@@ -567,12 +562,13 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     if (gui_ != nullptr
         && (logger_->debugCheck(utl::PAD, "Router", 3) || isDebugNet(net))) {
       const bool use_timeout = segment->isRouted() && !isDebugNet(net);
-      gui_->pause(fmt::format("{} {} on {} ({} route(s) left in the queue)",
-                              segment->isRouted() ? "routed" : "failed to route",
-                              src->getName(),
-                              net->getName(),
-                              route_queue.size()),
-                  use_timeout);
+      gui_->pause(
+          fmt::format("{} {} on {} ({} route(s) left in the queue)",
+                      segment->isRouted() ? "routed" : "failed to route",
+                      src->getName(),
+                      net->getName(),
+                      route_queue.size()),
+          use_timeout);
     }
 
     if (route_queue.empty() && iteration_count < max_router_iterations_) {
@@ -635,7 +631,8 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
             if (!segment->allowRipup(failed_route->getPriority())) {
               continue;
             }
-            if (failed_route->isIntersecting(segment.get(), spacing_ + width_)) {
+            if (failed_route->isIntersecting(segment.get(),
+                                             spacing_ + width_)) {
               ripup.insert(segment.get());
             }
           }

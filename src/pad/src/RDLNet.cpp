@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "RDLRouter.h"
+#include "RDLSegment.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon_90_set_data.hpp"
 #include "boost/polygon/polygon_90_with_holes_data.hpp"
@@ -23,12 +24,9 @@
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 
-#include "RDLSegment.h"
-
 namespace pad {
 
-RDLNet::RDLNet(odb::dbNet* net)
-    : net_(net)
+RDLNet::RDLNet(odb::dbNet* net) : net_(net)
 {
 }
 
@@ -52,7 +50,8 @@ bool RDLNet::isFailed() const
   return false;
 }
 
-void RDLNet::addSegment(odb::dbITerm* iterm, const std::vector<odb::dbITerm*>& terminals)
+void RDLNet::addSegment(odb::dbITerm* iterm,
+                        const std::vector<odb::dbITerm*>& terminals)
 {
   segments_.emplace_back(std::make_unique<RDLSegment>(this, iterm, terminals));
 }
@@ -118,7 +117,9 @@ bool RDLNet::isRouted(odb::dbITerm* source, odb::dbITerm* dest) const
   return isRouted(source, dest, visited);
 }
 
-bool RDLNet::isRouted(odb::dbITerm* source, odb::dbITerm* dest, odb::PtrSet<odb::dbITerm>& visited) const
+bool RDLNet::isRouted(odb::dbITerm* source,
+                      odb::dbITerm* dest,
+                      odb::PtrSet<odb::dbITerm>& visited) const
 {
   auto find_source = routed_pairs_.find(source);
   if (find_source == routed_pairs_.end()) {
@@ -145,7 +146,8 @@ bool RDLNet::isRouted(odb::dbITerm* source, odb::dbITerm* dest, odb::PtrSet<odb:
 
 bool RDLNet::isNonCoverRouted(odb::dbITerm* iterm) const
 {
-  return routed_noncover_terminals_.find(iterm) != routed_noncover_terminals_.end();
+  return routed_noncover_terminals_.find(iterm)
+         != routed_noncover_terminals_.end();
 }
 
 }  // namespace pad
