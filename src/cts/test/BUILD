@@ -41,6 +41,7 @@ COMPULSORY_TESTS = [
     "inverters",
     "lvt_lib",
     "max_cap",
+    "max_wl_two_sinks",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",
@@ -239,9 +240,9 @@ filegroup(
 cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
-    features = ["-layering_check"],  # TODO: accesses private headers
     deps = [
         "//src/cts",
+        "//src/cts:private_hdrs",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

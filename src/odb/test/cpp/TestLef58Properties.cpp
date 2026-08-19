@@ -710,4 +710,25 @@ TEST_F(Fixture, TestLef58MacroNumericEdgeType)
   EXPECT_EQ((*it)->getEdgeType(), "TYPE1");
 }
 
+// Regression test for issue #4252: LEF58_MINWIDTH with WRONGDIRECTION and
+// trailing whitespace after the terminating semicolon must parse without
+// warnings.
+TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
+{
+  const char* libname = "lef58_minwidth_wrongdirection.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_minwidth_wrongdirection.lef");
+
+  dbTech* tech = db_->getTech();
+  auto layer = tech->findLayer("M4");
+  ASSERT_NE(layer, nullptr);
+
+  auto* str_prop = dbStringProperty::find(layer, "LEF58_MINWIDTH");
+  ASSERT_NE(str_prop, nullptr);
+  EXPECT_EQ(str_prop->getValue(), "\n    MINWIDTH 1.0 WRONGDIRECTION ; ");
+
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 1000);
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+}
+
 }  // namespace odb

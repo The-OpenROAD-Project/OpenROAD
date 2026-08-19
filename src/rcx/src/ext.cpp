@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <list>
+#include <memory>
 #include <string>
 
 #include "odb/db.h"
@@ -17,6 +18,8 @@
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
 #include "rcx/ext_options.h"
+#include "rcx/multiChipExtractor.h"
+#include "rcx/multiChipSpefWriter.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -25,7 +28,12 @@ using utl::Logger;
 using utl::RCX;
 
 Ext::Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version)
-    : _db(db), _ext(new extMain()), logger_(logger), spef_version_(spef_version)
+    : _db(db),
+      _ext(new extMain()),
+      logger_(logger),
+      spef_version_(spef_version),
+      multi_chip_extractor_(std::make_unique<MultiChipExtractor>(db, logger)),
+      multi_chip_spef_writer_(std::make_unique<MultiChipSpefWriter>(db, logger))
 {
   _ext->init(db, logger);
 }
@@ -209,6 +217,37 @@ void Ext::get_ext_db_corner(int& index, const std::string& name)
   }
 }
 
+void Ext::extractMultiChip(const ExtractOptions& options)
+{
+  multi_chip_extractor_->run(options);
+}
+
+void Ext::setExtractionRulesFile(const std::string& rules_file)
+{
+  _ext->setExtractionRulesFile(rules_file);
+}
+
+void Ext::setExtractionRulesFile(const std::string& rules_file,
+                                 const std::string& tech_name)
+{
+  odb::dbTech* tech = _db->findTech(tech_name.c_str());
+  if (!tech) {
+    logger_->error(RCX,
+                   522,
+                   "Could not set extraction rules file. Tech {} not found.",
+                   tech_name);
+  }
+
+  multi_chip_extractor_->setExtractionRulesFile(tech, rules_file);
+}
+
+void Ext::setAssemblyExtractionRulesFile(
+    const std::string& assembly_extraction_rules_file)
+{
+  multi_chip_extractor_->setAssemblyExtractionRulesFile(
+      assembly_extraction_rules_file);
+}
+
 void Ext::extract(ExtractOptions options)
 {
   _ext->setBlockFromChip(_db->getChip());
@@ -216,17 +255,16 @@ void Ext::extract(ExtractOptions options)
 
   odb::orderWires(logger_, block);
 
-  odb::dbTech* tech = block->getTech();
   if (options.ext_model_file != nullptr && options.ext_model_file[0] != '\0') {
     logger_->warn(RCX,
                   514,
                   "The ext_model_file option is deprecated. Use "
                   "set_extraction_rules_file command instead.");
 
-    tech->setExtractionRulesFile(options.ext_model_file);
+    _ext->setExtractionRulesFile(options.ext_model_file);
   }
 
-  std::string rules_file = tech->getExtractionRulesFile();
+  const std::string& rules_file = _ext->getExtractionRulesFile();
   if (!rules_file.empty()) {
     options.ext_model_file = rules_file.c_str();
   }
@@ -248,8 +286,9 @@ void Ext::extract(ExtractOptions options)
     _ext->setExtractionOptions(options);
 
     if (_ext->modelExists()) {
-      std::unique_ptr<extRCModel> rules_model
-          = parseRules(tech, _ext->getProcessCornerTable(), _ext->_v2, logger_);
+      odb::dbTech* tech = block->getTech();
+      std::unique_ptr<extRCModel> rules_model = parseRules(
+          tech, rules_file, _ext->getProcessCornerTable(), _ext->_v2, logger_);
 
       _ext->registerRulesModel(rules_model.release());
       _ext->setCornerCount();
@@ -313,6 +352,11 @@ void Ext::write_spef(const SpefOptions& options)
                   name,
                   spef_version_,
                   options.parallel);
+}
+
+void Ext::writeMultiChipSpef(const SpefOptions& options)
+{
+  multi_chip_spef_writer_->run(options);
 }
 
 void Ext::read_spef(ReadSpefOpts& opt)

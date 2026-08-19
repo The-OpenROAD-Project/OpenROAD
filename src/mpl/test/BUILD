@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "halos2",
     "halos3",
     "halos4",
+    "halos5",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -36,7 +37,8 @@ COMPULSORY_TESTS = [
     "io_constraints8",
     "io_constraints9",
     "io_pads1",
-    "keep_clustering_data",
+    "keep_clustering_data1",
+    "keep_clustering_data2",
     "macro_only",
     "macros_without_pins1",
     "mixed_ios1",
@@ -129,6 +131,10 @@ filegroup(
                     "testcases/halo3.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "halos5": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "io_constraints1": [
                     "testcases/io_constraints1.def",
                     "testcases/macro_only.lef",
@@ -184,9 +190,13 @@ filegroup(
                     "testcases/io_pads1.def",
                     "testcases/macro_only.lef",
                 ],
-                "keep_clustering_data": [
+                "keep_clustering_data1": [
                     "Nangate45/Nangate45_fast.lib",
                     "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "keep_clustering_data2": [
+                    "testcases/keep_clustering_data2.v",
                     "testcases/macro_only.lef",
                 ],
                 "macro_only": [

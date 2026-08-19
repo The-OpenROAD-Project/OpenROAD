@@ -120,8 +120,6 @@ void NegotiationLegalizer::legalize()
 
   initFenceRegions();
 
-  debugPause("Pause after initialization.");
-
   debugPrint(logger_,
              utl::DPL,
              "negotiation",
@@ -312,6 +310,7 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
   pushNegotiationPixels();
   logger_->report("{}", msg);
   debug_observer_->redrawAndPause();
+  debug_observer_->clearAllDiamondSearches();
 }
 
 // ===========================================================================
@@ -374,6 +373,11 @@ bool NegotiationLegalizer::initFromDb()
   // Grid dimensions from the DPL grid (accounts for actual DB rows).
   grid_w_ = dpl_grid->getRowSiteCount().v;
   grid_h_ = dpl_grid->getRowCount().v;
+
+  // legalize() can run again on this same object, and grid_w_/grid_h_ may be
+  // different next time.
+  hist_seen_stamp_.assign(static_cast<size_t>(grid_w_) * grid_h_, 0);
+  hist_gen_ = 0;
 
   // Build NegCell records from all placed instances.
   cells_.clear();

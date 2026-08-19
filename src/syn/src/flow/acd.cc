@@ -16,6 +16,7 @@
 #include <array>
 #include <bit>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <limits>
@@ -23,6 +24,7 @@
 #include <memory>
 #include <numeric>
 #include <optional>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -727,7 +729,7 @@ Search::Search(utl::Logger* logger,
   // is assumed by the symmetry class processing below and by initilization
   // of `next_var_`.
   for (int i = 0; i < problem_.numInputs(); i++) {
-    assert(problem_.function.variable(i) == i);
+    assert(problem_.getFunction().variable(i) == i);
   }
 
   if (timing_) {

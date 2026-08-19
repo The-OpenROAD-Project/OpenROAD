@@ -27,7 +27,7 @@ cc_library(
     includes = [
         "src",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/cts/test:__pkg__"],
     deps = [
         # TODO: we use headers provided by :cts, but that reveals cyclic dep
         #":cts",
