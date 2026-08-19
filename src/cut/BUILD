@@ -2,6 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -45,4 +46,8 @@ cc_library(
         "@boost.phoenix",
         "@boost.spirit",
     ],
+)
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

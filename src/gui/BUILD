@@ -209,7 +209,10 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/gui/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/gui/test:__pkg__",
+    ],
 )
 
 # Desktop entry for GUI builds. Generated from the same template that the
