@@ -43,15 +43,10 @@ set(WEB_ASSET_FILES
     src/main.js
 )
 
-# The browser libraries are not checked in: the build fetches them from the npm
-# registry, verified against the digests in third-party/packages.json, and
-# bundles golden-layout, which publishes no browser build (issue #11065).  Bazel
-# does the same through //bazel:web_third_party.bzl.  This runs at configure
-# time and only does work when the manifest changed.
-#
-# Point WEB_THIRD_PARTY_TARBALL_DIR at a directory primed with
-#   third-party/fetch_packages.py --download-only --tarball-dir <dir>
-# to configure with no network.
+# The browser libraries are not checked in; the build fetches them, verified
+# against the digests in third-party/packages.json (issue #11065).  Runs at
+# configure time, and only does work when the manifest or the script changed.
+# See third-party/README.md, including how to configure with no network.
 set(WEB_THIRD_PARTY_TARBALL_DIR "" CACHE PATH
     "Pre-downloaded npm tarballs for the web viewer's browser libraries")
 set(WEB_THIRD_PARTY_DIR ${CMAKE_CURRENT_BINARY_DIR}/third-party)

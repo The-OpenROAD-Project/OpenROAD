@@ -43,68 +43,25 @@ py_binary(
     main = "third-party/fetch_packages.py",
 )
 
-# Which prebuilt esbuild the bundle genrule runs.  A host outside this list has
-# no pinned binary, and adding one means an entry here, in packages.json and in
-# fetch_packages.py's ESBUILD_PLATFORMS.
-config_setting(
-    name = "linux_x64",
-    constraint_values = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
-)
-
-config_setting(
-    name = "linux_arm64",
-    constraint_values = [
-        "@platforms//cpu:aarch64",
-        "@platforms//os:linux",
-    ],
-)
-
-config_setting(
-    name = "darwin_x64",
-    constraint_values = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:macos",
-    ],
-)
-
-config_setting(
-    name = "darwin_arm64",
-    constraint_values = [
-        "@platforms//cpu:arm64",
-        "@platforms//os:macos",
-    ],
-)
-
-alias(
-    name = "esbuild",
-    actual = select({
-        ":darwin_arm64": "@esbuild_darwin_arm64//:bin/esbuild",
-        ":darwin_x64": "@esbuild_darwin_x64//:bin/esbuild",
-        ":linux_arm64": "@esbuild_linux_arm64//:bin/esbuild",
-        ":linux_x64": "@esbuild_linux_x64//:bin/esbuild",
-    }),
-)
-
 # golden-layout publishes no browser build, and the saved report needs one file:
-# a relative import does not resolve from a data: URI.
+# a relative import does not resolve from a data: URI.  The paths come from the
+# manifest, so the script needs nothing but what is on the command line.
 [genrule(
     name = "bundle_" + bundle.package.replace("-", "_"),
     srcs = [
-        bundle.tree,
-        bundle.entry,
+        bundle.tree_target,
+        bundle.entry_target,
     ],
     outs = [bundle.out],
-    cmd = "$(execpath :fetch_packages)" +
-          " --bundle " + bundle.package +
-          " --esbuild $(execpath :esbuild)" +
-          " --entry $(execpath " + bundle.entry + ")" +
+    cmd = "$(execpath :fetch_packages) --bundle" +
+          " --esbuild $(execpath @esbuild//:bin/esbuild)" +
+          " --tree " + bundle.tree +
+          " --entry " + bundle.entry +
+          " --entry-path $(execpath " + bundle.entry_target + ")" +
           " --output $@",
     tools = [
-        ":esbuild",
         ":fetch_packages",
+        "@esbuild//:bin/esbuild",
     ],
 ) for bundle in WEB_THIRD_PARTY_BUNDLES]
 
@@ -193,7 +150,7 @@ _ASSETS = [
     for f in _WEB_ASSET_FILES
 ] + WEB_THIRD_PARTY_ASSETS + [
     (
-        bundle.served,
+        "/" + bundle.out,
         bundle.out,
     )
     for bundle in WEB_THIRD_PARTY_BUNDLES

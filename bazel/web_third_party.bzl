@@ -14,16 +14,34 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 _MANIFEST = Label("//src/web:third-party/packages.json")
 
+# What Bazel calls this host -> what npm calls it.  The manifest owns which
+# platforms are pinned; this only names the one we are running on.
+_OS = {
+    "linux": "linux",
+    "mac os x": "darwin",
+}
+
+_ARCH = {
+    "aarch64": "arm64",
+    "amd64": "x64",
+    "arm64": "arm64",
+    "x86_64": "x64",
+}
+
 def _tarball_url(registry, name, version):
     # Scoped names live at @scope/name/-/name-version.tgz.
     basename = name.split("/")[-1]
     return "{}/{}/-/{}-{}.tgz".format(registry, name, basename, version)
 
-def _package_repo(name):
-    return "web_" + name.replace("-", "_").replace("/", "_")
-
-def _esbuild_repo(platform):
-    return "esbuild_" + platform.replace("-", "_")
+def _host_platform(module_ctx):
+    os_name = _OS.get(module_ctx.os.name)
+    arch = _ARCH.get(module_ctx.os.arch)
+    if not os_name or not arch:
+        fail("no esbuild binary is pinned for {}/{}; add the platform to ".format(
+            module_ctx.os.name,
+            module_ctx.os.arch,
+        ) + "esbuild.platforms in packages.json and to the maps in this file")
+    return os_name + "-" + arch
 
 def _build_file(exported, bundle):
     lines = [
@@ -34,11 +52,13 @@ def _build_file(exported, bundle):
     lines += ['    "{}",'.format(path) for path in exported]
     lines.append("])")
     if bundle:
+        # The source maps are a third of the tree and esbuild is not asked for
+        # one, so they would only be staged into the action for nothing.
         lines += [
             "",
             "filegroup(",
             '    name = "bundle_tree",',
-            '    srcs = glob(["{}/**"]),'.format(bundle["tree"]),
+            '    srcs = glob(["{}/**"], exclude = ["**/*.map"]),'.format(bundle["tree"]),
             ")",
         ]
     return "\n".join(lines) + "\n"
@@ -62,10 +82,11 @@ def _assets_bzl(assets, bundles):
         lines += [
             "    struct(",
             '        package = "{}",'.format(bundle["package"]),
+            '        tree_target = "{}",'.format(bundle["tree_target"]),
+            '        entry_target = "{}",'.format(bundle["entry_target"]),
             '        tree = "{}",'.format(bundle["tree"]),
             '        entry = "{}",'.format(bundle["entry"]),
             '        out = "{}",'.format(bundle["out"]),
-            '        served = "{}",'.format(bundle["served"]),
             "    ),",
         ]
     lines.append("]")
@@ -87,7 +108,7 @@ def _web_third_party_impl(module_ctx):
     assets = []
     bundles = []
     for name, spec in manifest["packages"].items():
-        repo = _package_repo(name)
+        repo = "web_" + name.replace("-", "_")
         bundle = spec.get("bundle")
         exported = sorted(spec["files"].keys())
         if bundle:
@@ -107,31 +128,33 @@ def _web_third_party_impl(module_ctx):
             )
         if bundle:
             bundles.append({
-                "entry": "@{}//:{}".format(repo, bundle["entry"]),
+                "entry": bundle["entry"],
+                "entry_target": "@{}//:{}".format(repo, bundle["entry"]),
                 # A genrule output, so it is a path in //src/web, not a label.
                 "out": "third-party/" + bundle["output"],
                 "package": name,
-                "served": "/third-party/" + bundle["output"],
-                "tree": "@{}//:bundle_tree".format(repo),
+                "tree": bundle["tree"],
+                "tree_target": "@{}//:bundle_tree".format(repo),
             })
 
+    # esbuild runs on whoever is building, so the binary is picked here rather
+    # than through a select() on the target platform.
     esbuild = manifest["esbuild"]
-    for platform, sha256 in esbuild["platforms"].items():
-        http_archive(
-            name = _esbuild_repo(platform),
-            build_file_content = (
-                'exports_files(["bin/esbuild"], visibility = ["//visibility:public"])\n'
-            ),
-            sha256 = sha256,
-            strip_prefix = "package",
-            urls = [
-                _tarball_url(
-                    registry,
-                    "@esbuild/" + platform,
-                    esbuild["version"],
-                ),
-            ],
-        )
+    platform = _host_platform(module_ctx)
+    if platform not in esbuild["platforms"]:
+        fail("esbuild {} for {} is not pinned in packages.json".format(
+            esbuild["version"],
+            platform,
+        ))
+    http_archive(
+        name = "esbuild",
+        build_file_content = (
+            'exports_files(["bin/esbuild"], visibility = ["//visibility:public"])\n'
+        ),
+        sha256 = esbuild["platforms"][platform],
+        strip_prefix = "package",
+        urls = [_tarball_url(registry, "@esbuild/" + platform, esbuild["version"])],
+    )
 
     _assets_repo(
         name = "web_third_party",

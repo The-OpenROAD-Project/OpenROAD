@@ -1,17 +1,5 @@
 {
-  "_comment": [
-    "The browser libraries the web viewer serves from the OpenROAD binary.",
-    "This file is the single source of truth for both build systems: Bazel reads",
-    "it in //bazel:web_third_party.bzl, CMake through fetch_packages.py.",
-    "",
-    "'files' maps a path inside the npm tarball to the path the viewer serves it",
-    "under, below /third-party/.  Each package keeps the layout it ships: the",
-    "stylesheets reach their icons through relative urls.",
-    "",
-    "To upgrade, change 'version' and 'sha256' together; the registry is",
-    "immutable, so a wrong digest means a wrong download, never a stale one.",
-    "fetch_packages.py --print-sha256 <pkg>@<version> prints the new digest."
-  ],
+  "_comment": "See third-party/README.md.  Change version and sha256 together; fetch_packages.py --print-sha256 <pkg>@<version> prints the new digest.",
   "registry": "https://registry.npmjs.org",
   "packages": {
     "leaflet": {

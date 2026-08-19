@@ -8,23 +8,15 @@
 
 import base64
 import hashlib
-import importlib.util
 import os
 import sys
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-SCRIPT = os.path.join(THIS_DIR, "..", "src", "embed_web_assets.py")
+# Set before the sibling import, so no __pycache__ lands in the source tree.
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from script_test import check, check_raises, load_script, report  # noqa: E402
 
-spec = importlib.util.spec_from_file_location("embed_web_assets", SCRIPT)
-embed = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(embed)
-
-failures = []
-
-
-def check(name, condition, detail=""):
-    if not condition:
-        failures.append(f"{name}: {detail}" if detail else name)
+embed = load_script("src/embed_web_assets.py")
 
 
 def page(html):
@@ -37,23 +29,25 @@ def expected(body):
     return f"'sha256-{base64.b64encode(digest).decode('ascii')}'"
 
 
-def hashes_the_bytes_that_are_served():
-    body = '\n{"imports": {"three": "/third-party/three/three.module.min.js"}}\n'
-    html = f"<html><head><script type=importmap>{body}</script></head></html>"
-    check(
-        "a plain inline block hashes verbatim",
-        embed.inline_script_hashes(page(html)) == [expected(body)],
-    )
-
-
-def a_comment_inside_a_block_is_part_of_the_bytes():
-    """The case that used to produce a hash the browser never matches."""
-    body = "\n// <!-- not a comment to the parser -->\nwindow.x = 1;\n"
-    html = f"<html><body><script>{body}</script></body></html>"
-    check(
-        "a block containing <!-- hashes verbatim",
-        embed.inline_script_hashes(page(html)) == [expected(body)],
-    )
+def each_block_hashes_the_bytes_that_are_served():
+    """Including a block that contains what looks like an HTML comment."""
+    cases = {
+        "a plain block": (
+            '\n{"imports": {"three": "/third-party/three/three.module.min.js"}}\n',
+            "<html><head><script type=importmap>{body}</script></head></html>",
+        ),
+        # This one used to hash the comment away, so the browser refused it.
+        "a block containing <!--": (
+            "\n// <!-- not a comment to the parser -->\nwindow.x = 1;\n",
+            "<html><body><script>{body}</script></body></html>",
+        ),
+    }
+    for name, (body, template) in cases.items():
+        html = template.format(body=body)
+        check(
+            f"{name} hashes verbatim",
+            embed.inline_script_hashes(page(html)) == [expected(body)],
+        )
 
 
 def a_block_inside_a_comment_is_still_ignored():
@@ -82,25 +76,15 @@ def a_second_page_fails_the_build():
     assets = page(html) + [
         ("/other.html", "k_other_html", "text/html", html.encode("utf-8"))
     ]
-    try:
-        embed.inline_script_hashes(assets)
-    except SystemExit:
-        return
-    failures.append("a second HTML asset: expected SystemExit, none raised")
+    check_raises("a second HTML asset", lambda: embed.inline_script_hashes(assets))
 
 
 def main():
-    hashes_the_bytes_that_are_served()
-    a_comment_inside_a_block_is_part_of_the_bytes()
+    each_block_hashes_the_bytes_that_are_served()
     a_block_inside_a_comment_is_still_ignored()
     a_sourced_block_has_no_hash()
     a_second_page_fails_the_build()
-
-    if failures:
-        print("\n".join(failures), file=sys.stderr)
-        return 1
-    print("embed_web_assets.py hashes the bytes it embeds")
-    return 0
+    return report("embed_web_assets.py hashes the bytes it embeds")
 
 
 if __name__ == "__main__":

@@ -86,8 +86,6 @@ def inline_script_hashes(assets):
         # Blank the comments rather than drop them: a tag matched inside one
         # would swallow the real block after it, but the offsets have to keep
         # pointing into the served bytes, which is what the browser hashes.
-        # A comment inside a script block would otherwise yield a hash that
-        # never matches, and the block is simply not executed.
         masked = re.sub(
             r"<!--.*?-->", lambda m: " " * len(m.group(0)), html, flags=re.DOTALL
         )

@@ -825,11 +825,11 @@
   "moduleExtensions": {
     "//bazel:web_third_party.bzl%web_third_party": {
       "general": {
-        "bzlTransitiveDigest": "iToH5vIeXxD/jvWyToNTL6rK2JoHohcNv3uv114dCfU=",
+        "bzlTransitiveDigest": "U0bamjCpbCfFRSI2m5Bmxk1Kwv01EemrMYkIvTIGci4=",
         "usagesDigest": "IqaM2iVqafSgDsoybq533abDcZhaLdyhIyV945gLD3U=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_tools bazel_tools",
-          "FILE:@@//src/web/third-party/packages.json 0544f0953f3807bb6357bb8a9cc173a4d0913e20b217ce625188b229bd64505d"
+          "FILE:@@//src/web/third-party/packages.json 1471b18e3b19892410734962f65e4ffd026bd21a5ac00dbadfea81ab2dedfefd"
         ],
         "generatedRepoSpecs": {
           "web_leaflet": {
@@ -846,7 +846,7 @@
           "web_golden_layout": {
             "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
             "attributes": {
-              "build_file_content": "package(default_visibility = [\"//visibility:public\"])\n\nexports_files([\n    \"LICENSE\",\n    \"dist/css/goldenlayout-base.css\",\n    \"dist/css/themes/goldenlayout-dark-theme.css\",\n    \"dist/css/themes/goldenlayout-light-theme.css\",\n    \"dist/esm/index.js\",\n    \"dist/img/lm_close_black.png\",\n    \"dist/img/lm_close_tab_white.png\",\n    \"dist/img/lm_close_white.png\",\n    \"dist/img/lm_maximise_black.png\",\n    \"dist/img/lm_maximise_white.png\",\n    \"dist/img/lm_minimize_black.png\",\n    \"dist/img/lm_minimize_white.png\",\n    \"dist/img/lm_popin_black.png\",\n    \"dist/img/lm_popin_white.png\",\n    \"dist/img/lm_popout_black.png\",\n    \"dist/img/lm_popout_white.png\",\n])\n\nfilegroup(\n    name = \"bundle_tree\",\n    srcs = glob([\"dist/esm/**\"]),\n)\n",
+              "build_file_content": "package(default_visibility = [\"//visibility:public\"])\n\nexports_files([\n    \"LICENSE\",\n    \"dist/css/goldenlayout-base.css\",\n    \"dist/css/themes/goldenlayout-dark-theme.css\",\n    \"dist/css/themes/goldenlayout-light-theme.css\",\n    \"dist/esm/index.js\",\n    \"dist/img/lm_close_black.png\",\n    \"dist/img/lm_close_tab_white.png\",\n    \"dist/img/lm_close_white.png\",\n    \"dist/img/lm_maximise_black.png\",\n    \"dist/img/lm_maximise_white.png\",\n    \"dist/img/lm_minimize_black.png\",\n    \"dist/img/lm_minimize_white.png\",\n    \"dist/img/lm_popin_black.png\",\n    \"dist/img/lm_popin_white.png\",\n    \"dist/img/lm_popout_black.png\",\n    \"dist/img/lm_popout_white.png\",\n])\n\nfilegroup(\n    name = \"bundle_tree\",\n    srcs = glob([\"dist/esm/**\"], exclude = [\"**/*.map\"]),\n)\n",
               "sha256": "2097b74f3d45a4770bc00360276e3251a6a74a88385f8cf7aa37ca6e6395a4bc",
               "strip_prefix": "package",
               "urls": [
@@ -887,40 +887,7 @@
               ]
             }
           },
-          "esbuild_darwin_arm64": {
-            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
-            "attributes": {
-              "build_file_content": "exports_files([\"bin/esbuild\"], visibility = [\"//visibility:public\"])\n",
-              "sha256": "1980cde09749094452b20d36ff267585ccb3f72749c7bc97291cd9996ccf5a2a",
-              "strip_prefix": "package",
-              "urls": [
-                "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.28.2.tgz"
-              ]
-            }
-          },
-          "esbuild_darwin_x64": {
-            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
-            "attributes": {
-              "build_file_content": "exports_files([\"bin/esbuild\"], visibility = [\"//visibility:public\"])\n",
-              "sha256": "abb6a7a895aaf2cc0df36fecc3bf0042479ffec51a643a056d54e9109f27db55",
-              "strip_prefix": "package",
-              "urls": [
-                "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.28.2.tgz"
-              ]
-            }
-          },
-          "esbuild_linux_arm64": {
-            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
-            "attributes": {
-              "build_file_content": "exports_files([\"bin/esbuild\"], visibility = [\"//visibility:public\"])\n",
-              "sha256": "a96dbfa41d3ef5dbd1ef22b1c10d5187be9267e86093a870f06402a7ec931596",
-              "strip_prefix": "package",
-              "urls": [
-                "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.28.2.tgz"
-              ]
-            }
-          },
-          "esbuild_linux_x64": {
+          "esbuild": {
             "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
             "attributes": {
               "build_file_content": "exports_files([\"bin/esbuild\"], visibility = [\"//visibility:public\"])\n",
@@ -934,7 +901,7 @@
           "web_third_party": {
             "repoRuleId": "@@//bazel:web_third_party.bzl%_assets_repo",
             "attributes": {
-              "content": "# Generated by //bazel:web_third_party.bzl -- do not edit.\n\n# (served path, label of the file to serve there).\nWEB_THIRD_PARTY_ASSETS = [\n    (\"/third-party/elkjs/LICENSE.md\", \"@web_elkjs//:LICENSE.md\"),\n    (\"/third-party/elkjs/elk.bundled.js\", \"@web_elkjs//:lib/elk.bundled.js\"),\n    (\"/third-party/golden-layout/LICENSE\", \"@web_golden_layout//:LICENSE\"),\n    (\"/third-party/golden-layout/css/goldenlayout-base.css\", \"@web_golden_layout//:dist/css/goldenlayout-base.css\"),\n    (\"/third-party/golden-layout/css/themes/goldenlayout-dark-theme.css\", \"@web_golden_layout//:dist/css/themes/goldenlayout-dark-theme.css\"),\n    (\"/third-party/golden-layout/css/themes/goldenlayout-light-theme.css\", \"@web_golden_layout//:dist/css/themes/goldenlayout-light-theme.css\"),\n    (\"/third-party/golden-layout/img/lm_close_black.png\", \"@web_golden_layout//:dist/img/lm_close_black.png\"),\n    (\"/third-party/golden-layout/img/lm_close_tab_white.png\", \"@web_golden_layout//:dist/img/lm_close_tab_white.png\"),\n    (\"/third-party/golden-layout/img/lm_close_white.png\", \"@web_golden_layout//:dist/img/lm_close_white.png\"),\n    (\"/third-party/golden-layout/img/lm_maximise_black.png\", \"@web_golden_layout//:dist/img/lm_maximise_black.png\"),\n    (\"/third-party/golden-layout/img/lm_maximise_white.png\", \"@web_golden_layout//:dist/img/lm_maximise_white.png\"),\n    (\"/third-party/golden-layout/img/lm_minimize_black.png\", \"@web_golden_layout//:dist/img/lm_minimize_black.png\"),\n    (\"/third-party/golden-layout/img/lm_minimize_white.png\", \"@web_golden_layout//:dist/img/lm_minimize_white.png\"),\n    (\"/third-party/golden-layout/img/lm_popin_black.png\", \"@web_golden_layout//:dist/img/lm_popin_black.png\"),\n    (\"/third-party/golden-layout/img/lm_popin_white.png\", \"@web_golden_layout//:dist/img/lm_popin_white.png\"),\n    (\"/third-party/golden-layout/img/lm_popout_black.png\", \"@web_golden_layout//:dist/img/lm_popout_black.png\"),\n    (\"/third-party/golden-layout/img/lm_popout_white.png\", \"@web_golden_layout//:dist/img/lm_popout_white.png\"),\n    (\"/third-party/leaflet/LICENSE\", \"@web_leaflet//:LICENSE\"),\n    (\"/third-party/leaflet/images/layers-2x.png\", \"@web_leaflet//:dist/images/layers-2x.png\"),\n    (\"/third-party/leaflet/images/layers.png\", \"@web_leaflet//:dist/images/layers.png\"),\n    (\"/third-party/leaflet/images/marker-icon-2x.png\", \"@web_leaflet//:dist/images/marker-icon-2x.png\"),\n    (\"/third-party/leaflet/images/marker-icon.png\", \"@web_leaflet//:dist/images/marker-icon.png\"),\n    (\"/third-party/leaflet/images/marker-shadow.png\", \"@web_leaflet//:dist/images/marker-shadow.png\"),\n    (\"/third-party/leaflet/leaflet.css\", \"@web_leaflet//:dist/leaflet.css\"),\n    (\"/third-party/leaflet/leaflet.js\", \"@web_leaflet//:dist/leaflet.js\"),\n    (\"/third-party/netlistsvg/LICENSE\", \"@web_netlistsvg//:LICENSE\"),\n    (\"/third-party/netlistsvg/netlistsvg.bundle.js\", \"@web_netlistsvg//:built/netlistsvg.bundle.js\"),\n    (\"/third-party/three/LICENSE\", \"@web_three//:LICENSE\"),\n    (\"/third-party/three/three.module.min.js\", \"@web_three//:build/three.module.min.js\"),\n]\n\n# Packages that publish no browser build and are bundled by the build.\nWEB_THIRD_PARTY_BUNDLES = [\n    struct(\n        package = \"golden-layout\",\n        tree = \"@web_golden_layout//:bundle_tree\",\n        entry = \"@web_golden_layout//:dist/esm/index.js\",\n        out = \"third-party/golden-layout/golden-layout.esm.js\",\n        served = \"/third-party/golden-layout/golden-layout.esm.js\",\n    ),\n]\n"
+              "content": "# Generated by //bazel:web_third_party.bzl -- do not edit.\n\n# (served path, label of the file to serve there).\nWEB_THIRD_PARTY_ASSETS = [\n    (\"/third-party/elkjs/LICENSE.md\", \"@web_elkjs//:LICENSE.md\"),\n    (\"/third-party/elkjs/elk.bundled.js\", \"@web_elkjs//:lib/elk.bundled.js\"),\n    (\"/third-party/golden-layout/LICENSE\", \"@web_golden_layout//:LICENSE\"),\n    (\"/third-party/golden-layout/css/goldenlayout-base.css\", \"@web_golden_layout//:dist/css/goldenlayout-base.css\"),\n    (\"/third-party/golden-layout/css/themes/goldenlayout-dark-theme.css\", \"@web_golden_layout//:dist/css/themes/goldenlayout-dark-theme.css\"),\n    (\"/third-party/golden-layout/css/themes/goldenlayout-light-theme.css\", \"@web_golden_layout//:dist/css/themes/goldenlayout-light-theme.css\"),\n    (\"/third-party/golden-layout/img/lm_close_black.png\", \"@web_golden_layout//:dist/img/lm_close_black.png\"),\n    (\"/third-party/golden-layout/img/lm_close_tab_white.png\", \"@web_golden_layout//:dist/img/lm_close_tab_white.png\"),\n    (\"/third-party/golden-layout/img/lm_close_white.png\", \"@web_golden_layout//:dist/img/lm_close_white.png\"),\n    (\"/third-party/golden-layout/img/lm_maximise_black.png\", \"@web_golden_layout//:dist/img/lm_maximise_black.png\"),\n    (\"/third-party/golden-layout/img/lm_maximise_white.png\", \"@web_golden_layout//:dist/img/lm_maximise_white.png\"),\n    (\"/third-party/golden-layout/img/lm_minimize_black.png\", \"@web_golden_layout//:dist/img/lm_minimize_black.png\"),\n    (\"/third-party/golden-layout/img/lm_minimize_white.png\", \"@web_golden_layout//:dist/img/lm_minimize_white.png\"),\n    (\"/third-party/golden-layout/img/lm_popin_black.png\", \"@web_golden_layout//:dist/img/lm_popin_black.png\"),\n    (\"/third-party/golden-layout/img/lm_popin_white.png\", \"@web_golden_layout//:dist/img/lm_popin_white.png\"),\n    (\"/third-party/golden-layout/img/lm_popout_black.png\", \"@web_golden_layout//:dist/img/lm_popout_black.png\"),\n    (\"/third-party/golden-layout/img/lm_popout_white.png\", \"@web_golden_layout//:dist/img/lm_popout_white.png\"),\n    (\"/third-party/leaflet/LICENSE\", \"@web_leaflet//:LICENSE\"),\n    (\"/third-party/leaflet/images/layers-2x.png\", \"@web_leaflet//:dist/images/layers-2x.png\"),\n    (\"/third-party/leaflet/images/layers.png\", \"@web_leaflet//:dist/images/layers.png\"),\n    (\"/third-party/leaflet/images/marker-icon-2x.png\", \"@web_leaflet//:dist/images/marker-icon-2x.png\"),\n    (\"/third-party/leaflet/images/marker-icon.png\", \"@web_leaflet//:dist/images/marker-icon.png\"),\n    (\"/third-party/leaflet/images/marker-shadow.png\", \"@web_leaflet//:dist/images/marker-shadow.png\"),\n    (\"/third-party/leaflet/leaflet.css\", \"@web_leaflet//:dist/leaflet.css\"),\n    (\"/third-party/leaflet/leaflet.js\", \"@web_leaflet//:dist/leaflet.js\"),\n    (\"/third-party/netlistsvg/LICENSE\", \"@web_netlistsvg//:LICENSE\"),\n    (\"/third-party/netlistsvg/netlistsvg.bundle.js\", \"@web_netlistsvg//:built/netlistsvg.bundle.js\"),\n    (\"/third-party/three/LICENSE\", \"@web_three//:LICENSE\"),\n    (\"/third-party/three/three.module.min.js\", \"@web_three//:build/three.module.min.js\"),\n]\n\n# Packages that publish no browser build and are bundled by the build.\nWEB_THIRD_PARTY_BUNDLES = [\n    struct(\n        package = \"golden-layout\",\n        tree_target = \"@web_golden_layout//:bundle_tree\",\n        entry_target = \"@web_golden_layout//:dist/esm/index.js\",\n        tree = \"dist/esm\",\n        entry = \"dist/esm/index.js\",\n        out = \"third-party/golden-layout/golden-layout.esm.js\",\n    ),\n]\n"
             }
           }
         }

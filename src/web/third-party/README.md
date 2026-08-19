@@ -50,7 +50,9 @@ digest means a wrong download, never a stale one:
 ```
 
 Adding or removing a served file means editing the `files` map, and nothing
-else: both build systems derive their asset lists from it.
+else: both build systems derive their asset lists from it. A new host platform
+means an `esbuild.platforms` entry plus the small uname-to-npm maps at the top
+of `fetch_packages.py` and of `//bazel:web_third_party.bzl`.
 
 ## Building without network access
 

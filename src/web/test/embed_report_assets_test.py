@@ -7,31 +7,15 @@
 # syntax error that costs every widget; one it over-strips deletes code in
 # silence.  Both have happened, so the shapes are pinned here.
 
-import importlib.util
 import os
 import sys
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-SCRIPT = os.path.join(THIS_DIR, "..", "src", "embed_report_assets.py")
+# Set before the sibling import, so no __pycache__ lands in the source tree.
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from script_test import check, check_raises, load_script, report  # noqa: E402
 
-spec = importlib.util.spec_from_file_location("embed_report_assets", SCRIPT)
-embed = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(embed)
-
-failures = []
-
-
-def check(name, condition, detail=""):
-    if not condition:
-        failures.append(f"{name}: {detail}" if detail else name)
-
-
-def check_raises(name, call):
-    try:
-        call()
-    except SystemExit:
-        return
-    failures.append(f"{name}: expected SystemExit, none raised")
+embed = load_script("src/embed_report_assets.py")
 
 
 def stripped_imports():
@@ -123,11 +107,7 @@ def main():
     unhandled_forms_fail_the_build()
     raw_literal_hazards_fail_the_build()
 
-    if failures:
-        print("\n".join(failures), file=sys.stderr)
-        return 1
-    print("embed_report_assets.py behaves as pinned")
-    return 0
+    return report("embed_report_assets.py behaves as pinned")
 
 
 if __name__ == "__main__":

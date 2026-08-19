@@ -371,10 +371,7 @@ use_repo(npm, "npm")
 web_third_party = use_extension("//bazel:web_third_party.bzl", "web_third_party")
 use_repo(
     web_third_party,
-    "esbuild_darwin_arm64",
-    "esbuild_darwin_x64",
-    "esbuild_linux_arm64",
-    "esbuild_linux_x64",
+    "esbuild",
     "web_elkjs",
     "web_golden_layout",
     "web_leaflet",

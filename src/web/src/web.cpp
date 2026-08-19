@@ -1128,9 +1128,8 @@ std::string inlineStylesheetUrls(const std::string_view css,
     if (open == std::string_view::npos) {
       break;
     }
-    // Every exit below leaves the rest of the stylesheet copied verbatim, with
-    // its url() references still relative -- in a report opened from disk they
-    // would reach for files next to it.  Refusing to save beats that.
+    // Every exit below abandons the scan, so it has to say so: the rest of the
+    // stylesheet is copied through with its references still relative.
     //
     // A quoted reference may hold a parenthesis, so its closing quote bounds
     // the token; an unquoted one ends at the ')'.

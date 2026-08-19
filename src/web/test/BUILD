@@ -40,30 +40,42 @@ filegroup(
 # The report bundler strips module syntax with regexes; this pins the shapes.
 py_test(
     name = "embed_report_assets_test",
-    srcs = ["embed_report_assets_test.py"],
+    srcs = [
+        "embed_report_assets_test.py",
+        "script_test.py",
+    ],
     data = ["//src/web:src/embed_report_assets.py"],
     legacy_create_init = 0,
+    main = "embed_report_assets_test.py",
 )
 
 # The CSP names the inline scripts by hash; a hash over anything but the served
 # bytes blocks them with no build-time failure.
 py_test(
     name = "embed_web_assets_test",
-    srcs = ["embed_web_assets_test.py"],
+    srcs = [
+        "embed_web_assets_test.py",
+        "script_test.py",
+    ],
     data = ["//src/web:src/embed_web_assets.py"],
     legacy_create_init = 0,
+    main = "embed_web_assets_test.py",
 )
 
 # The fetch empties --dest and short-circuits on a stamp; both are quiet when
 # wrong.  Needs no network.
 py_test(
     name = "fetch_packages_test",
-    srcs = ["fetch_packages_test.py"],
+    srcs = [
+        "fetch_packages_test.py",
+        "script_test.py",
+    ],
     data = [
         "//src/web:third-party/fetch_packages.py",
         "//src/web:third-party/packages.json",
     ],
     legacy_create_init = 0,
+    main = "fetch_packages_test.py",
 )
 
 # The asset lists live once per build system; this is what keeps them equal.
@@ -73,8 +85,6 @@ py_test(
     data = [
         "//src/web:BUILD",
         "//src/web:CMakeLists.txt",
-        "//src/web:third-party/fetch_packages.py",
-        "//src/web:third-party/packages.json",
     ],
     legacy_create_init = 0,
     main = "asset_list_parity.py",

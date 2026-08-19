@@ -13,12 +13,13 @@
 # Usage:
 #   fetch_packages.py --dest DIR --emit-cmake FILE   # what CMake runs
 #   fetch_packages.py --download-only --tarball-dir DIR
-#   fetch_packages.py --bundle golden-layout --esbuild BIN --entry FILE
-#                     --output FILE                  # what the Bazel genrule runs
+#   fetch_packages.py --bundle --esbuild BIN --tree DIR --entry FILE
+#                     --entry-path FILE --output FILE   # the Bazel genrule
 #   fetch_packages.py --print-sha256 leaflet@1.9.4   # when upgrading
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import platform
@@ -33,14 +34,10 @@ import urllib.request
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 MANIFEST_PATH = os.path.join(THIS_DIR, "packages.json")
 
-# uname -> the @esbuild package that carries the matching binary.
-ESBUILD_PLATFORMS = {
-    ("Linux", "x86_64"): "linux-x64",
-    ("Linux", "aarch64"): "linux-arm64",
-    ("Linux", "arm64"): "linux-arm64",
-    ("Darwin", "x86_64"): "darwin-x64",
-    ("Darwin", "arm64"): "darwin-arm64",
-}
+# What uname calls this host -> what npm calls it.  The manifest owns which
+# platforms are pinned; this only names the one we are running on.
+ESBUILD_OS = {"Darwin": "darwin", "Linux": "linux"}
+ESBUILD_ARCH = {"aarch64": "arm64", "arm64": "arm64", "x86_64": "x64"}
 
 
 def read_manifest():
@@ -65,13 +62,21 @@ def fetch(registry, name, version, expected, tarball_dir):
 
     if cached and os.path.exists(cached):
         with open(cached, "rb") as f:
-            data = f.read()
-    else:
-        url = tarball_url(registry, name, version)
-        print(f"  fetching {url}", file=sys.stderr)
-        with urllib.request.urlopen(url, timeout=120) as response:
-            data = response.read()
+            return verified(f.read(), name, version, expected)
 
+    url = tarball_url(registry, name, version)
+    print(f"  fetching {url}", file=sys.stderr)
+    with urllib.request.urlopen(url, timeout=120) as response:
+        data = verified(response.read(), name, version, expected)
+
+    if cached:
+        os.makedirs(tarball_dir, exist_ok=True)
+        with open(cached, "wb") as f:
+            f.write(data)
+    return data
+
+
+def verified(data, name, version, expected):
     digest = sha256_bytes(data)
     if digest != expected:
         raise SystemExit(
@@ -80,28 +85,43 @@ def fetch(registry, name, version, expected, tarball_dir):
             "The npm registry is immutable, so this is a wrong pin or a tampered "
             "download, never a stale one."
         )
-
-    if cached and not os.path.exists(cached):
-        os.makedirs(tarball_dir, exist_ok=True)
-        with open(cached, "wb") as f:
-            f.write(data)
     return data
 
 
-def extract_member(tar, name, root, rel):
-    """Extract one file of the tarball to root/rel, and return where it landed.
+def fetch_package(manifest, name, tarball_dir):
+    spec = manifest["packages"][name]
+    return fetch(
+        manifest["registry"], name, spec["version"], spec["sha256"], tarball_dir
+    )
+
+
+def fetch_esbuild(manifest, tarball_dir):
+    spec = manifest["esbuild"]
+    platform_name = host_esbuild_platform()
+    if platform_name not in spec["platforms"]:
+        raise SystemExit(f"esbuild {spec['version']} for {platform_name} is not pinned")
+    return fetch(
+        manifest["registry"],
+        f"@esbuild/{platform_name}",
+        spec["version"],
+        spec["platforms"][platform_name],
+        tarball_dir,
+    )
+
+
+def extract(tar, member, root, rel):
+    """Extract one member to root/rel, and return where it landed.
 
     A bundled tree takes rel from the tarball, so it has to be shown to stay
     under root.
     """
-    member = tar.getmember(name)
     if not member.isfile():
-        raise SystemExit(f"{name} is not a regular file")
+        raise SystemExit(f"{member.name} is not a regular file")
 
     root = os.path.realpath(root)
     dest = os.path.realpath(os.path.join(root, rel))
     if not dest.startswith(root + os.sep):
-        raise SystemExit(f"{name} would write outside {root}")
+        raise SystemExit(f"{member.name} would write outside {root}")
 
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     with tar.extractfile(member) as src, open(dest, "wb") as out:
@@ -109,81 +129,61 @@ def extract_member(tar, name, root, rel):
     return dest
 
 
+def open_tarball(data):
+    return tarfile.open(fileobj=io.BytesIO(data))
+
+
 def host_esbuild_platform():
-    key = (platform.system(), platform.machine())
-    if key not in ESBUILD_PLATFORMS:
+    system = ESBUILD_OS.get(platform.system())
+    arch = ESBUILD_ARCH.get(platform.machine())
+    if not system or not arch:
         raise SystemExit(
-            f"no esbuild binary is pinned for {key[0]}/{key[1]}.  Add the platform "
-            "to ESBUILD_PLATFORMS here and to esbuild.platforms in packages.json."
+            f"no esbuild binary is pinned for {platform.system()}/"
+            f"{platform.machine()}.  Add the platform to esbuild.platforms in "
+            "packages.json and to the maps at the top of this script."
         )
-    return ESBUILD_PLATFORMS[key]
+    return f"{system}-{arch}"
 
 
 def install_esbuild(manifest, dest, tarball_dir):
     """Unpack the pinned esbuild for this host and return its path."""
-    spec = manifest["esbuild"]
-    plat = host_esbuild_platform()
-    if plat not in spec["platforms"]:
-        raise SystemExit(f"esbuild {spec['version']} for {plat} is not pinned")
-
     binary = os.path.join(dest, ".esbuild", "esbuild")
-    data = fetch(
-        manifest["registry"],
-        f"@esbuild/{plat}",
-        spec["version"],
-        spec["platforms"][plat],
-        tarball_dir,
-    )
-    with tempfile.TemporaryDirectory() as work_dir:
-        archive = os.path.join(work_dir, "esbuild.tgz")
-        with open(archive, "wb") as f:
-            f.write(data)
-        with tarfile.open(archive) as tar:
-            extract_member(tar, "package/bin/esbuild", dest, ".esbuild/esbuild")
+    with open_tarball(fetch_esbuild(manifest, tarball_dir)) as tar:
+        extract(tar, tar.getmember("package/bin/esbuild"), dest, ".esbuild/esbuild")
     os.chmod(binary, os.stat(binary).st_mode | stat.S_IXUSR)
     return binary
 
 
-def bundle(esbuild, tree_root, tree, entry, output):
-    """Bundle an ES module tree into one file.
+def run_esbuild(esbuild, tree_root, entry, output):
+    """Bundle an ES module tree, from a directory laid out as the package ships.
 
     esbuild names each module in a comment, by the path it reached it through,
-    so the bundle is only reproducible if that path is.  Copying the tree to a
-    scratch directory and running from there makes it "dist/esm/..." wherever
-    the build system staged the inputs -- Bazel hands them over as symlinks into
-    its repository cache, whose name would otherwise land in the output.
+    so tree_root has to be a real directory holding the tree at its published
+    relative path -- not a symlink farm, whose name would land in the output.
     """
-    esbuild = os.path.abspath(esbuild)
     output = os.path.abspath(output)
     os.makedirs(os.path.dirname(output), exist_ok=True)
-    with tempfile.TemporaryDirectory() as work_dir:
-        shutil.copytree(
-            os.path.join(tree_root, tree),
-            os.path.join(work_dir, tree),
-            symlinks=False,
-        )
-        subprocess.run(
-            [
-                esbuild,
-                entry,
-                "--bundle",
-                "--format=esm",
-                "--legal-comments=inline",
-                f"--outfile={output}",
-            ],
-            cwd=work_dir,
-            check=True,
-        )
+    subprocess.run(
+        [
+            os.path.abspath(esbuild),
+            entry,
+            "--bundle",
+            "--format=esm",
+            "--legal-comments=inline",
+            f"--outfile={output}",
+        ],
+        cwd=tree_root,
+        check=True,
+    )
 
 
-def bundle_from_entry(manifest, name, esbuild, entry_path, output):
-    """Bundle a package whose tree is already extracted, given its entry file.
+def bundle_staged_tree(esbuild, tree, entry, entry_path, output):
+    """Bundle a tree the build system staged, wherever it put it.
 
-    The build systems know where the entry landed, not where the tree starts;
-    the manifest says how deep it sits, which is what turns one into the other.
+    Bazel hands the tree over as symlinks into its repository cache, so it is
+    copied to a scratch directory first; the entry's path is what says where
+    the staged tree starts.
     """
-    spec = manifest["packages"][name]["bundle"]
-    entry = spec["entry"]
     entry_path = os.path.abspath(entry_path)
     suffix = os.sep + entry.replace("/", os.sep)
     if not entry_path.endswith(suffix):
@@ -191,59 +191,60 @@ def bundle_from_entry(manifest, name, esbuild, entry_path, output):
             f"{entry_path} does not end in {entry}, so the tree root cannot be "
             "derived from it"
         )
-    bundle(esbuild, entry_path[: -len(suffix)], spec["tree"], entry, output)
+    staged = os.path.join(entry_path[: -len(suffix)], tree)
+    with tempfile.TemporaryDirectory() as work_dir:
+        shutil.copytree(staged, os.path.join(work_dir, tree), symlinks=False)
+        run_esbuild(esbuild, work_dir, entry, output)
+
+
+def asset_paths(manifest, dest):
+    """Served path -> file path, without fetching anything.
+
+    A pure function of the manifest, so the emitted CMake can be written on the
+    reuse path too rather than being trusted from a previous run.
+    """
+    assets = {}
+    for spec in manifest["packages"].values():
+        served = list(spec["files"].values())
+        if "bundle" in spec:
+            served.append(spec["bundle"]["output"])
+        for path in served:
+            assets["/third-party/" + path] = os.path.join(dest, path)
+    return assets
 
 
 def populate(manifest, dest, tarball_dir):
-    """Extract every package into dest and return served path -> file path."""
-    assets = {}
-    esbuild = None
+    """Extract every package into dest, and bundle the ones that need it."""
+    needs_esbuild = any("bundle" in s for s in manifest["packages"].values())
+    esbuild = install_esbuild(manifest, dest, tarball_dir) if needs_esbuild else None
 
     for name, spec in manifest["packages"].items():
         print(f"{name}@{spec['version']}", file=sys.stderr)
-        data = fetch(
-            manifest["registry"], name, spec["version"], spec["sha256"], tarball_dir
+        with open_tarball(fetch_package(manifest, name, tarball_dir)) as tar:
+            for source in spec["files"]:
+                extract(
+                    tar,
+                    tar.getmember("package/" + source),
+                    dest,
+                    spec["files"][source],
+                )
+            if "bundle" in spec:
+                bundle_from_tarball(esbuild, tar, spec["bundle"], dest)
+
+
+def bundle_from_tarball(esbuild, tar, spec, dest):
+    """Extract a module tree straight into the directory esbuild runs in."""
+    prefix = "package/" + spec["tree"] + "/"
+    with tempfile.TemporaryDirectory() as work_dir:
+        for member in tar.getmembers():
+            # esbuild is not asked for a source map, so the .map files that make
+            # up a third of the tree would only be extracted for nothing.
+            if member.isfile() and member.name.startswith(prefix):
+                if not member.name.endswith(".map"):
+                    extract(tar, member, work_dir, member.name[len("package/") :])
+        run_esbuild(
+            esbuild, work_dir, spec["entry"], os.path.join(dest, spec["output"])
         )
-        with tempfile.TemporaryDirectory() as work_dir:
-            archive = os.path.join(work_dir, "package.tgz")
-            with open(archive, "wb") as f:
-                f.write(data)
-            with tarfile.open(archive) as tar:
-                for source, served in spec["files"].items():
-                    path = extract_member(tar, "package/" + source, dest, served)
-                    assets["/third-party/" + served] = path
-
-                if "bundle" not in spec:
-                    continue
-
-                # The tree is only an input to the bundle, so it goes to a
-                # scratch directory rather than next to what is served.
-                tree_root = os.path.join(dest, ".trees", name)
-                if os.path.exists(tree_root):
-                    shutil.rmtree(tree_root)
-                prefix = "package/" + spec["bundle"]["tree"] + "/"
-                for member in tar.getmembers():
-                    if member.isfile() and member.name.startswith(prefix):
-                        extract_member(
-                            tar,
-                            member.name,
-                            tree_root,
-                            member.name[len("package/") :],
-                        )
-
-            if esbuild is None:
-                esbuild = install_esbuild(manifest, dest, tarball_dir)
-            output = os.path.join(dest, spec["bundle"]["output"])
-            bundle(
-                esbuild,
-                tree_root,
-                spec["bundle"]["tree"],
-                spec["bundle"]["entry"],
-                output,
-            )
-            assets["/third-party/" + spec["bundle"]["output"]] = output
-
-    return assets
 
 
 def stamp_value():
@@ -261,28 +262,14 @@ def stamp_value():
     return sha256_bytes(b"".join(parts))
 
 
-def emitted_matches(args):
-    """Whether an --emit-cmake left over from an earlier run describes this tree.
-
-    A run against a different --dest leaves a file that looks current but names
-    another directory; reusing it is how a build ends up with paths to nothing.
-    """
-    if not args.emit_cmake:
-        return True
-    if not os.path.exists(args.emit_cmake):
-        return False
-    with open(args.emit_cmake, encoding="utf-8") as f:
-        return args.dest in f.read()
-
-
 def emit_cmake(path, assets):
-    lines = [
-        "# Generated by fetch_packages.py -- do not edit.",
-        "set(WEB_THIRD_PARTY_ASSET_ARGS",
-    ]
-    lines += [f'  "{served}={path}"' for served, path in sorted(assets.items())]
-    lines += [")", "set(WEB_THIRD_PARTY_FILES"]
-    lines += [f'  "{path}"' for _, path in sorted(assets.items())]
+    items = sorted(assets.items())
+    lines = ["# Generated by fetch_packages.py -- do not edit."]
+    lines.append("set(WEB_THIRD_PARTY_ASSET_ARGS")
+    lines += [f'  "{served}={file}"' for served, file in items]
+    lines.append(")")
+    lines.append("set(WEB_THIRD_PARTY_FILES")
+    lines += [f'  "{file}"' for _, file in items]
     lines += [")", ""]
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
@@ -302,18 +289,21 @@ def main():
         action="store_true",
         help="fill --tarball-dir and exit, so a later build needs no network",
     )
-    parser.add_argument("--bundle", help="bundle this package's module tree")
+    parser.add_argument(
+        "--bundle", action="store_true", help="bundle a staged module tree and exit"
+    )
     parser.add_argument("--esbuild", help="esbuild binary, with --bundle")
-    parser.add_argument("--entry", help="the extracted entry point, with --bundle")
+    parser.add_argument("--tree", help="the tree's path in the package, with --bundle")
+    parser.add_argument("--entry", help="the entry's path in the package")
+    parser.add_argument("--entry-path", help="where the build staged that entry")
     parser.add_argument("--output", help="the bundle to write, with --bundle")
     parser.add_argument(
         "--print-sha256", help="print the digest of <package>@<version>"
     )
     args = parser.parse_args()
 
-    manifest = read_manifest()
-
     if args.print_sha256:
+        manifest = read_manifest()
         name, _, version = args.print_sha256.rpartition("@")
         url = tarball_url(manifest["registry"], name, version)
         with urllib.request.urlopen(url, timeout=120) as response:
@@ -321,30 +311,32 @@ def main():
         return 0
 
     if args.bundle:
-        if not (args.esbuild and args.entry and args.output):
-            raise SystemExit("--bundle needs --esbuild, --entry and --output")
-        bundle_from_entry(manifest, args.bundle, args.esbuild, args.entry, args.output)
+        missing = [
+            flag
+            for flag, value in (
+                ("--esbuild", args.esbuild),
+                ("--tree", args.tree),
+                ("--entry", args.entry),
+                ("--entry-path", args.entry_path),
+                ("--output", args.output),
+            )
+            if not value
+        ]
+        if missing:
+            raise SystemExit("--bundle needs " + ", ".join(missing))
+        bundle_staged_tree(
+            args.esbuild, args.tree, args.entry, args.entry_path, args.output
+        )
         return 0
+
+    manifest = read_manifest()
 
     if args.download_only:
         if not args.tarball_dir:
             raise SystemExit("--download-only needs --tarball-dir")
-        for name, spec in manifest["packages"].items():
-            fetch(
-                manifest["registry"],
-                name,
-                spec["version"],
-                spec["sha256"],
-                args.tarball_dir,
-            )
-        plat = host_esbuild_platform()
-        fetch(
-            manifest["registry"],
-            f"@esbuild/{plat}",
-            manifest["esbuild"]["version"],
-            manifest["esbuild"]["platforms"][plat],
-            args.tarball_dir,
-        )
+        for name in manifest["packages"]:
+            fetch_package(manifest, name, args.tarball_dir)
+        fetch_esbuild(manifest, args.tarball_dir)
         return 0
 
     if not args.dest:
@@ -352,38 +344,34 @@ def main():
 
     # The emitted paths are read from another directory, so they have to be
     # absolute however this was invoked.
-    args.dest = os.path.abspath(args.dest)
-    if args.emit_cmake:
-        args.emit_cmake = os.path.abspath(args.emit_cmake)
-
+    dest = os.path.abspath(args.dest)
     stamp = stamp_value()
-    stamp_path = os.path.join(args.dest, ".stamp")
-
-    # CMake runs this on every configure; only a changed manifest is work.
-    if os.path.exists(stamp_path):
+    stamp_path = os.path.join(dest, ".stamp")
+    current = os.path.exists(stamp_path)
+    if current:
         with open(stamp_path, encoding="utf-8") as f:
-            if f.read().strip() == stamp and emitted_matches(args):
-                return 0
+            current = f.read().strip() == stamp
 
-    if os.path.exists(args.dest):
-        # The refresh below wipes --dest, so only a directory a previous run
-        # left its stamp in may be given: an in-source build, or WEB_THIRD_PARTY
-        # pointed here, would otherwise take this script and the manifest with
-        # it.
-        if not os.path.exists(stamp_path):
-            raise SystemExit(
-                f"{args.dest} already exists and was not written by this script "
-                "(no .stamp), and --dest is emptied before it is filled. Point "
-                "it at a build directory."
-            )
-        shutil.rmtree(args.dest)
-    os.makedirs(args.dest)
-    assets = populate(manifest, args.dest, args.tarball_dir)
+    if not current:
+        if os.path.exists(dest):
+            # The refresh below wipes dest, so only a directory a previous run
+            # left its stamp in may be given: an in-source build, or
+            # WEB_THIRD_PARTY pointed here, would otherwise take this script and
+            # the manifest with it.
+            if not os.path.exists(stamp_path):
+                raise SystemExit(
+                    f"{dest} already exists and was not written by this script "
+                    "(no .stamp), and --dest is emptied before it is filled. "
+                    "Point it at a build directory."
+                )
+            shutil.rmtree(dest)
+        os.makedirs(dest)
+        populate(manifest, dest, args.tarball_dir)
+        with open(stamp_path, "w", encoding="utf-8") as f:
+            f.write(stamp + "\n")
 
     if args.emit_cmake:
-        emit_cmake(args.emit_cmake, assets)
-    with open(stamp_path, "w", encoding="utf-8") as f:
-        f.write(stamp + "\n")
+        emit_cmake(os.path.abspath(args.emit_cmake), asset_paths(manifest, dest))
     return 0
 
 
