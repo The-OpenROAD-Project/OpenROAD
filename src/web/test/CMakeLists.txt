@@ -13,6 +13,13 @@ add_test(
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/embed_report_assets_test.py
 )
 
+# The fetch empties --dest and short-circuits on a stamp; both are quiet when
+# wrong.  Needs no network.
+add_test(
+  NAME web_fetch_packages
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/fetch_packages_test.py
+)
+
 # The asset lists exist once per build system; this keeps them equal.
 add_test(
   NAME web_asset_list_parity

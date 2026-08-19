@@ -45,6 +45,18 @@ py_test(
     legacy_create_init = 0,
 )
 
+# The fetch empties --dest and short-circuits on a stamp; both are quiet when
+# wrong.  Needs no network.
+py_test(
+    name = "fetch_packages_test",
+    srcs = ["fetch_packages_test.py"],
+    data = [
+        "//src/web:third-party/fetch_packages.py",
+        "//src/web:third-party/packages.json",
+    ],
+    legacy_create_init = 0,
+)
+
 # The asset lists live once per build system; this is what keeps them equal.
 py_test(
     name = "asset_list_parity_test",

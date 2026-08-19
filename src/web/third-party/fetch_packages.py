@@ -246,9 +246,33 @@ def populate(manifest, dest, tarball_dir):
     return assets
 
 
-def stamp_value(manifest_bytes):
-    """What has to be equal for an existing dest to be reusable."""
-    return sha256_bytes(manifest_bytes + host_esbuild_platform().encode())
+def stamp_value():
+    """What has to be equal for an existing dest to be reusable.
+
+    The script is in there with the manifest: it decides what the fetch
+    produces, so changing how a package is extracted or bundled has to
+    invalidate a tree just as changing which package does.
+    """
+    parts = []
+    for path in (MANIFEST_PATH, os.path.abspath(__file__)):
+        with open(path, "rb") as f:
+            parts.append(f.read())
+    parts.append(host_esbuild_platform().encode())
+    return sha256_bytes(b"".join(parts))
+
+
+def emitted_matches(args):
+    """Whether an --emit-cmake left over from an earlier run describes this tree.
+
+    A run against a different --dest leaves a file that looks current but names
+    another directory; reusing it is how a build ends up with paths to nothing.
+    """
+    if not args.emit_cmake:
+        return True
+    if not os.path.exists(args.emit_cmake):
+        return False
+    with open(args.emit_cmake, encoding="utf-8") as f:
+        return args.dest in f.read()
 
 
 def emit_cmake(path, assets):
@@ -326,18 +350,32 @@ def main():
     if not args.dest:
         raise SystemExit("--dest is required")
 
-    with open(MANIFEST_PATH, "rb") as f:
-        stamp = stamp_value(f.read())
+    # The emitted paths are read from another directory, so they have to be
+    # absolute however this was invoked.
+    args.dest = os.path.abspath(args.dest)
+    if args.emit_cmake:
+        args.emit_cmake = os.path.abspath(args.emit_cmake)
+
+    stamp = stamp_value()
     stamp_path = os.path.join(args.dest, ".stamp")
 
     # CMake runs this on every configure; only a changed manifest is work.
     if os.path.exists(stamp_path):
         with open(stamp_path, encoding="utf-8") as f:
-            if f.read().strip() == stamp:
-                if args.emit_cmake and os.path.exists(args.emit_cmake):
-                    return 0
+            if f.read().strip() == stamp and emitted_matches(args):
+                return 0
 
     if os.path.exists(args.dest):
+        # The refresh below wipes --dest, so only a directory a previous run
+        # left its stamp in may be given: an in-source build, or WEB_THIRD_PARTY
+        # pointed here, would otherwise take this script and the manifest with
+        # it.
+        if not os.path.exists(stamp_path):
+            raise SystemExit(
+                f"{args.dest} already exists and was not written by this script "
+                "(no .stamp), and --dest is emptied before it is filled. Point "
+                "it at a build directory."
+            )
         shutil.rmtree(args.dest)
     os.makedirs(args.dest)
     assets = populate(manifest, args.dest, args.tarball_dir)

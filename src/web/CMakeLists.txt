@@ -74,6 +74,13 @@ if(NOT WEB_FETCH_RESULT EQUAL 0)
     "-DWEB_THIRD_PARTY_TARBALL_DIR=<dir>.")
 endif()
 
+# Bumping a version only edits the manifest, which no target reads: without
+# this, `make` would keep embedding the old library while Bazel picks the new
+# one up. The script counts too -- it decides what the fetch produces.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/third-party/packages.json
+  ${CMAKE_CURRENT_SOURCE_DIR}/third-party/fetch_packages.py)
+
 # Defines WEB_THIRD_PARTY_ASSET_ARGS and WEB_THIRD_PARTY_FILES.
 include(${WEB_THIRD_PARTY_CMAKE})
 
