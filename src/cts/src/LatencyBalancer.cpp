@@ -107,7 +107,9 @@ void LatencyBalancer::computeBuffersDelay(double extra_out_cap)
   }
 }
 
-int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load, double wl, double& wireCap)
+int64_t LatencyBalancer::computeWireLumpedDelay(const std::string& load,
+                                                double wl,
+                                                double& wireCap)
 {
   wireCap = wl * capPerDBU_;
   double totalCap = wireCap / 2.0;
@@ -139,7 +141,8 @@ int64_t LatencyBalancer::computeWireLumpedDelay(
     odb::dbMTerm* loadMTerm = load->getMTerm();
     sta::Port* loadPin = network_->dbToSta(loadMTerm);
     sta::LibertyPort* loadPort = network_->libertyPort(loadPin);
-    totalCap += loadPort->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    totalCap
+        += loadPort->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
   }
 
   return wireRes * totalCap * dpUnit_;
@@ -192,9 +195,16 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
     for (odb::dbITerm* sinkIterm : driverNet->getITerms()) {
       if (sinkIterm->getIoType() == odb::dbIoType::INPUT) {
         odb::dbInst* sinkInst = sinkIterm->getInst();
-        odb::dbNet* sinkOutNet = sinkInst->getFirstOutput()->getNet();
-        if ((!isSink(sinkIterm) && !propagateClock(sinkIterm)) || !sinkOutNet) {
+        const bool sink = isSink(sinkIterm);
+        if (!sink && !propagateClock(sinkIterm)) {
           continue;
+        }
+        if (!sink) {
+          // Only propagating instances are traversed through their output net
+          odb::dbITerm* outTerm = sinkInst->getFirstOutput();
+          if (!outTerm || !outTerm->getNet()) {
+            continue;
+          }
         }
         int sinkId = graph_.size();
         std::string sinkName = sinkInst->getName();
@@ -210,7 +220,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
           continue;
         }
 
-        if (isSink(sinkIterm)) {
+        if (sink) {
           sta::Pin* pin = network_->dbToSta(sinkIterm);
           if (pin) {
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
@@ -408,12 +418,11 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
   }
 }
 
-DPResult LatencyBalancer::solveDP(
-    int64_t                    target,
-    double                     wl,
-    const std::vector<odb::dbITerm*>& sinks,
-    const std::vector<std::string>&   dlyBuffers,
-    double                     loadPinsHwpl)
+DPResult LatencyBalancer::solveDP(int64_t target,
+                                  double wl,
+                                  const std::vector<odb::dbITerm*>& sinks,
+                                  const std::vector<std::string>& dlyBuffers,
+                                  double loadPinsHwpl)
 {
   const size_t nBuffers = dlyBuffers.size();
 
@@ -422,7 +431,12 @@ DPResult LatencyBalancer::solveDP(
   double sinkWireCap = 0.0;
   int64_t sinkWireDly = computeWireLumpedDelay(
       sinks, loadPinsHwpl * capPerDBU_, wl, sinkWireCap);
-  debugPrint(logger_, CTS, "insertion delay", 5, "Buffer driving sinks has {} wire dly", sinkWireDly);
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             5,
+             "Buffer driving sinks has {} wire dly",
+             sinkWireDly);
   std::vector<int64_t> sinkDelay(nBuffers);
   for (size_t j = 0; j < nBuffers; j++) {
     int64_t delay
@@ -436,13 +450,20 @@ DPResult LatencyBalancer::solveDP(
   }
 
   // Buffer delay when buffer i drives buffer j
-  std::vector<std::vector<int64_t>> pairDelay(nBuffers, std::vector<int64_t>(nBuffers));
+  std::vector<std::vector<int64_t>> pairDelay(nBuffers,
+                                              std::vector<int64_t>(nBuffers));
   for (size_t i = 0; i < nBuffers; i++) {
     for (size_t j = 0; j < nBuffers; j++) {
       double wireCap = 0.0;
-      int64_t wireDly
-          = computeWireLumpedDelay(dlyBuffers[j], wl, wireCap);
-      debugPrint(logger_, CTS, "insertion delay", 5, "Buffer {} driving {} has {} wire dly", dlyBuffers[i], dlyBuffers[j], wireDly);
+      int64_t wireDly = computeWireLumpedDelay(dlyBuffers[j], wl, wireCap);
+      debugPrint(logger_,
+                 CTS,
+                 "insertion delay",
+                 5,
+                 "Buffer {} driving {} has {} wire dly",
+                 dlyBuffers[i],
+                 dlyBuffers[j],
+                 wireDly);
       int64_t delay = std::llround(techChar_->computeBufferDelay(
                                        dlyBuffers[i], dlyBuffers[j], wireCap)
                                    * dpUnit_)
@@ -499,7 +520,7 @@ DPResult LatencyBalancer::solveDP(
 
   // Pick best solution
   int64_t bestW = 0;
-  int     bestJ = -1;
+  int bestJ = -1;
   for (int64_t w = 0; w <= maxW; w++) {
     for (size_t j = 0; j < nBuffers; j++) {
       if (dp[state(w, j)] == kUnset) {
@@ -507,7 +528,7 @@ DPResult LatencyBalancer::solveDP(
       }
       int64_t dist = std::abs(w - target);
       int64_t bestDist = (bestJ == -1) ? std::numeric_limits<int64_t>::max()
-                                     : std::abs(bestW - target);
+                                       : std::abs(bestW - target);
 
       if (dist < bestDist
           || (dist == bestDist && dp[state(w, j)] < dp[state(bestW, bestJ)])) {
@@ -611,28 +632,36 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     sinkInput->getAvgXY(&x, &y);
     loadPinsBbox.merge({x, y});
   }
-  double loadPinsHwpl = (loadPinsBbox.dx()+loadPinsBbox.dy()) / 2.0;
+  double loadPinsHwpl = (loadPinsBbox.dx() + loadPinsBbox.dy()) / 2.0;
 
   int prevNBufs = std::numeric_limits<int>::max();
   int pass = 2;
   DPResult dpResult;
   std::vector<int> adjustedBuffersDelay;
-  while(nBufs < prevNBufs) {
-    double offsetX = (double) (loadPinsBbox.xCenter() - srcX) / (double) (nBufs + 1);
-    double offsetY = (double) (loadPinsBbox.yCenter() - srcY) / (double) (nBufs + 1);
+  while (nBufs < prevNBufs) {
+    double offsetX
+        = (double) (loadPinsBbox.xCenter() - srcX) / (double) (nBufs + 1);
+    double offsetY
+        = (double) (loadPinsBbox.yCenter() - srcY) / (double) (nBufs + 1);
 
     double wl = std::abs(offsetX) + std::abs(offsetY);
 
     // Compute best buffer combination with per-case wire delays
     dpResult = solveDP(target, wl, sinks, dlyBuffers, loadPinsHwpl);
 
-    debugPrint(logger_, CTS, "insertion delay", 4,
-               "Pass {} best = {}", pass, dpResult.achievedDelay);
+    debugPrint(logger_,
+               CTS,
+               "insertion delay",
+               4,
+               "Pass {} best = {}",
+               pass,
+               dpResult.achievedDelay);
 
     prevNBufs = nBufs;
     nBufs = static_cast<int>(dpResult.buffers.size());
-    debugPrint(logger_, CTS, "insertion delay", 4, "Pass {} n bufs = {}", pass, nBufs);
-    if(!nBufs) {
+    debugPrint(
+        logger_, CTS, "insertion delay", 4, "Pass {} n bufs = {}", pass, nBufs);
+    if (!nBufs) {
       break;
     }
     pass++;
@@ -647,15 +676,14 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
 
   std::stringstream tmp;
   tmp << "[";
-  for(size_t i = 0; i < dpResult.buffers.size(); i++) {
+  for (size_t i = 0; i < dpResult.buffers.size(); i++) {
     if (i == 0) {
-      tmp <<dpResult.buffers[i];
+      tmp << dpResult.buffers[i];
     } else {
       tmp << ", " << dpResult.buffers[i];
     }
   }
   tmp << "]";
-
 
   debugPrint(
       logger_, CTS, "insertion delay", 2, "  using buffers {}", tmp.str());
