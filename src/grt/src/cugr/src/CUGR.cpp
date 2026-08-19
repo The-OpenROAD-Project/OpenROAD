@@ -1,6 +1,7 @@
 #include "CUGR.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -1566,6 +1567,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
+    const bool was_soft_ndr = gr_net->isSoftNdr();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -1577,6 +1579,10 @@ void CUGR::updateNet(odb::dbNet* db_net)
     // honors the net's rule (matches CUGR::init).
     gr_nets_[idx]->setNdrCosts(computeNdrCosts(db_net));
     gr_nets_[idx]->setNdrWidths(computeNdrWidths(db_net));
+    // A soft-demoted net stays demoted, like restoreNetRoute.
+    if (was_soft_ndr) {
+      gr_nets_[idx]->setSoftNdr();
+    }
     db_net_map_[db_net] = gr_nets_[idx].get();
     nets_to_route_.push_back(idx);
   } else {
@@ -1712,9 +1718,11 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   // removed during repair churn is re-added (like updateNet's new-net branch)
   // so its guide route can still be restored, matching FastRoute parity.
   GRNet* new_net = nullptr;
+  bool was_soft_ndr = false;
   auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
+    was_soft_ndr = gr_net->isSoftNdr();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -1738,6 +1746,12 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   // both the still-present and the re-admitted (removed-then-restored) net.
   new_net->setNdrCosts(computeNdrCosts(db_net));
   new_net->setNdrWidths(computeNdrWidths(db_net));
+  // A soft-demoted net must stay demoted: its demand was released at unit
+  // cost, so recommitting at full NDR cost would recreate the congestion
+  // the demotion resolved.
+  if (was_soft_ndr) {
+    new_net->setSoftNdr();
+  }
   db_net_map_[db_net] = new_net;
 
   // Each pin must land on the restored tree; record the access point it uses so
@@ -2282,21 +2296,21 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   merged_nets_.insert(removed_net);
 }
 
-std::vector<double> CUGR::getNdrCosts(odb::dbNet* db_net) const
+// Above-universe layers and off-grid tiles have no edge; getEdge indexes
+// raw vectors, so capacity queries answer "no resources" instead of erroring.
+bool CUGR::isEdgeInGrid(const int layer_0,
+                        const int tile_x,
+                        const int tile_y) const
 {
-  auto it = db_net_map_.find(db_net);
-  if (it == db_net_map_.end()) {
-    // Net not found; return a unit-demand vector so the caller uses 1.0.
-    const int num_layers = grid_graph_ ? grid_graph_->getNumLayers() : 0;
-    return std::vector<double>(num_layers, 1.0);
-  }
-  return it->second->getNdrCosts();
+  return layer_0 < grid_graph_->getNumLayers() && tile_x >= 0
+         && tile_x < grid_graph_->getSize(0) && tile_y >= 0
+         && tile_y < grid_graph_->getSize(1);
 }
 
-bool CUGR::hasAvailableResources(int layer_index,
-                                 int tile_x,
-                                 int tile_y,
-                                 double demand) const
+bool CUGR::hasAvailableResources(odb::dbNet* db_net,
+                                 const int layer_index,
+                                 const int tile_x,
+                                 const int tile_y) const
 {
   if (!grid_graph_) {
     return false;
@@ -2310,7 +2324,80 @@ bool CUGR::hasAvailableResources(int layer_index,
                    "Invalid layer index {} in hasAvailableResources.",
                    layer_index);
   }
+  if (!isEdgeInGrid(layer_0, tile_x, tile_y)) {
+    return false;
+  }
+  auto it = db_net_map_.find(db_net);
+  const double demand
+      = it == db_net_map_.end() ? 1.0 : it->second->getNdrCost(layer_0);
   return grid_graph_->getEdge(layer_0, tile_x, tile_y).getResource() >= demand;
+}
+
+bool CUGR::hasJumperResources(odb::dbNet* db_net,
+                              const int layer_index,
+                              const int init_tile_x,
+                              const int init_tile_y,
+                              const int final_tile_x,
+                              const int final_tile_y) const
+{
+  if (!grid_graph_) {
+    return false;
+  }
+  // layer_index is the 1-based jumper wire layer; the via stacks climb from
+  // two layers below it (see RepairAntennas::addJumperAndVias).
+  const int layer_0 = layer_index - 1;
+  if (layer_0 - 2 < 0 || layer_0 >= grid_graph_->getNumLayers()) {
+    return false;
+  }
+  const std::array<PointT, 2> endpoints
+      = {PointT(init_tile_x, init_tile_y), PointT(final_tile_x, final_tile_y)};
+  for (const PointT& endpoint : endpoints) {
+    if (!isEdgeInGrid(layer_0, endpoint.x(), endpoint.y())) {
+      return false;
+    }
+  }
+  auto it = db_net_map_.find(db_net);
+  GRNet* gr_net = it == db_net_map_.end() ? nullptr : it->second;
+  const std::vector<double> unit_costs;
+  const std::vector<double>& costs
+      = gr_net == nullptr ? unit_costs : gr_net->getNdrCosts();
+
+  // Accumulate the jumper's demand per edge: separate wire and via checks
+  // can each pass while their sum on a shared edge overflows.
+  std::unordered_map<EdgeKey, double, EdgeKeyHash> edge_demands;
+  const auto accumulate_wire = [&](const int layer, const double sign) {
+    const double factor = sign * (gr_net ? gr_net->getNdrCost(layer) : 1.0);
+    grid_graph_->forEachWireEdge(
+        layer, endpoints[0], endpoints[1], [&](PointT lower) {
+          edge_demands[{layer, lower.x(), lower.y()}] += factor;
+        });
+  };
+  accumulate_wire(layer_0, 1.0);
+  // The jumper removes the original wire between its endpoints; credit that
+  // released demand (committed only when the net holds a routing tree) so a
+  // full edge is not rejected when the replacement still fits.
+  if (gr_net != nullptr && gr_net->getRoutingTree() != nullptr) {
+    accumulate_wire(layer_0 - 2, -1.0);
+  }
+  for (const PointT& endpoint : endpoints) {
+    for (int layer = layer_0 - 2; layer < layer_0; layer++) {
+      grid_graph_->forEachViaFlankEdge(
+          layer,
+          endpoint,
+          costs,
+          [&](int l, PointT loc, CapacityT demand, double factor) {
+            edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
+          });
+    }
+  }
+  for (const auto& [edge, demand] : edge_demands) {
+    const auto& [layer, x, y] = edge;
+    if (demand > 0
+        && grid_graph_->getEdge(layer, x, y).getResource() < demand) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace grt
