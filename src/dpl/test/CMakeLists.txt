@@ -52,6 +52,7 @@ or_integration_tests(
     mirror1
     mirror2
     mirror3
+    mirror_edge_spacing
     multi_height_one_site_gap_disallow
     multi_height_power_align
     multi_height_rows

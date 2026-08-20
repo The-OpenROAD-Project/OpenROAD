@@ -26,6 +26,11 @@ def _man_pages_impl(ctx):
 set -euo pipefail
 CAT_OUT="$PWD/{cat_out}"
 HTML_OUT="$PWD/{html_out}"
+# The messages.txt files that man3 is built from are generated, so they live
+# under bazel-out rather than in the source tree the execroot symlinks in.
+# md_roff_compat.py looks for <root>/src/<module>/messages.txt and
+# <root>/messages.txt, which is exactly the bin dir's layout.
+export MESSAGES_ROOT_DIR="$PWD/{bin_dir}"
 # Two phases: 'preprocess' (serial) generates the md/man*/*.md sources, then
 # 'cat web' fan out pandoc/nroff in parallel. They cannot share one -j make
 # invocation: cat/web read the md files preprocess produces, and a parallel
@@ -34,11 +39,17 @@ HTML_OUT="$PWD/{html_out}"
 # $(wildcard md/man*/*.md) picks up the freshly generated sources.
 # nproc is GNU coreutils (absent on stock macOS); fall back to sysctl, then 4.
 JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
-make --no-print-directory -C docs -f Makefile preprocess \\
+# -s (silent) suppresses make's per-recipe echo. There are ~3400 man pages and
+# four recipes each, so echoing them emits megabytes of stdout, past Bazel's
+# --experimental_ui_max_stdouterr_bytes, which then drops the whole log --
+# including the pandoc/groff diagnostics that are worth seeing. Those tools
+# name the file they failed on, so the echoed command adds nothing.
+make -s --no-print-directory -C docs -f Makefile preprocess \\
     CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
-make --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
+make -s --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
     CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
 """.format(
+        bin_dir = ctx.bin_dir.path,
         cat_out = cat_dir.path,
         html_out = html_dir.path,
     )

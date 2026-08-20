@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,11 +14,13 @@
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-#ifdef BAZEL_BUILD
-#include "tools/cpp/runfiles/runfiles.h"
-#endif
-
 namespace tst {
+
+// Resolves a test data path. Under bazel this goes through the runfiles
+// machinery; under cmake it strips leading directories until the path exists.
+// Free function rather than a fixture method so non-fixture helpers
+// (LoadedDesign, and anything that has to locate a tool binary) can use it.
+std::string getRunfilePath(const std::string& file_path);
 
 struct InstOptions
 {
@@ -101,9 +102,6 @@ class DbFixture : public ::testing::Test
 
   utl::Logger logger_;
   utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
-#ifdef BAZEL_BUILD
-  std::unique_ptr<bazel::tools::cpp::runfiles::Runfiles> runfiles_;
-#endif
 };
 
 }  // namespace tst

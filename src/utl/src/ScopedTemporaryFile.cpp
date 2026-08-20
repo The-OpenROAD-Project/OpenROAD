@@ -25,6 +25,8 @@ namespace fs = std::filesystem;
 namespace utl {
 
 namespace {
+constexpr std::streamsize kGzipBufferSize = 65536;
+
 std::string generate_unused_filename(const std::string& prefix)
 {
   int counter = 1;
@@ -66,7 +68,9 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
   }
 }
 
-OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
+OutStreamHandler::OutStreamHandler(const char* filename,
+                                   bool binary,
+                                   std::optional<int> compression_level)
     : filename_(filename)
 {
   if (filename_.empty()) {
@@ -89,7 +93,11 @@ OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
   if (boost::ends_with(filename_, ".gz")) {
     buf_ = std::make_unique<boost::iostreams::filtering_ostreambuf>();
 
-    buf_->push(boost::iostreams::gzip_compressor());
+    boost::iostreams::gzip_params params;
+    if (compression_level.has_value()) {
+      params.level = compression_level.value();
+    }
+    buf_->push(boost::iostreams::gzip_compressor(params, kGzipBufferSize));
     buf_->push(os_);
 
     stream_ = std::make_unique<std::ostream>(buf_.get());
@@ -151,7 +159,8 @@ InStreamHandler::InStreamHandler(const char* filename, bool binary)
   if (boost::ends_with(filename_, ".gz")) {
     buf_ = std::make_unique<boost::iostreams::filtering_istreambuf>();
 
-    buf_->push(boost::iostreams::gzip_decompressor());
+    buf_->push(boost::iostreams::gzip_decompressor(
+        boost::iostreams::gzip::default_window_bits, kGzipBufferSize));
     buf_->push(is_);
 
     stream_ = std::make_unique<std::istream>(buf_.get());

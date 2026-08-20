@@ -296,7 +296,7 @@ gpl.setTimingNetWeightMax(weight)
 ```
 
 There are some useful Python functions located in the file
-[grt_aux.py](test/grt_aux.py) but these are not considered a part of the *final*
+[grt_aux.py](../grt/test/grt_aux.py) but these are not considered a part of the *final*
 API and they may change.
 
 ## References
