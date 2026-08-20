@@ -22,6 +22,8 @@ class MultiChipSpefWriter
   void run(const SpefOptions& options);
 
  private:
+  void setUnits(const SpefOptions& options);
+
   void writeChipSpef(odb::dbChip* chip, const SpefOptions& options);
   void writeInterChipSpef();
   std::string chipNetSpefString(odb::dbChipNet* chip_net);
@@ -32,6 +34,8 @@ class MultiChipSpefWriter
 
   std::string file_base_name_;
   SpefHeader spef_header_;
+
+  ScaleFactors scale_factors_;
 };
 
 }  // namespace rcx

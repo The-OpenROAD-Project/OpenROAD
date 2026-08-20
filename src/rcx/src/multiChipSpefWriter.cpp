@@ -67,6 +67,8 @@ void MultiChipSpefWriter::run(const SpefOptions& options)
 {
   file_base_name_ = stripSuffix(options.file, ".spef");
 
+  setUnits(options);
+
   for (odb::dbChip* chip : db_->getChips()) {
     if (chip->getChipType() == odb::dbChip::ChipType::DIE) {
       writeChipSpef(chip, options);
@@ -74,6 +76,15 @@ void MultiChipSpefWriter::run(const SpefOptions& options)
   }
 
   writeInterChipSpef();
+}
+
+void MultiChipSpefWriter::setUnits(const SpefOptions& options)
+{
+  spef_header_.capacitance_unit_word = options.cap_units;
+  spef_header_.resistance_unit_word = options.res_units;
+
+  scale_factors_ = extSpef::computeScaleFactors(
+      spef_header_.capacitance_unit_word, spef_header_.resistance_unit_word);
 }
 
 void MultiChipSpefWriter::writeChipSpef(odb::dbChip* chip,
@@ -194,7 +205,8 @@ std::string MultiChipSpefWriter::chipNetSpefString(odb::dbChipNet* chip_net)
 
   std::ostringstream out;
 
-  out << "\n*D_NET " << chip_net->getName() << " 0\n";
+  out << "\n*D_NET " << chip_net->getName() << " "
+      << chip_net->getTotalCapacitance() * scale_factors_.capacitance << "\n";
 
   out << "*CONN\n";
   for (odb::dbChipCapNode* cap_node : chip_net->getChipCapNodes()) {
@@ -207,7 +219,7 @@ std::string MultiChipSpefWriter::chipNetSpefString(odb::dbChipNet* chip_net)
   for (odb::dbChipRSeg* rseg : rsegs) {
     out << res_id++ << " " << bondNodeName(rseg->getSourceCapNode()) << " "
         << bondNodeName(rseg->getTargetCapNode()) << " "
-        << rseg->getResistance() << "\n";
+        << rseg->getResistance() * scale_factors_.resistance << "\n";
   }
 
   out << "*END\n";
