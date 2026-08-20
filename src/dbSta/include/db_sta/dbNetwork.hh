@@ -195,6 +195,17 @@ class dbNetwork : public ConcreteNetwork
   // A bump's timing pin is its pad inst's single dbITerm (flat model);
   // nullptr for spare (unbound) bumps.
   odb::dbITerm* bumpPadITerm(odb::dbUnfoldedChipBumpInst* bump) const;
+  // The chip-net above a chiplet boundary, reached from the boundary port, the
+  // die-side net, or the bump's pad iterm. Null if the boundary is unbonded.
+  // This is the net a cross-die parasitic network is keyed on, and the net the
+  // 3D RCX bonds SPEF is written at.
+  //
+  // Read the bonds SPEF before the per-die SPEFs. A top-scope read replaces a
+  // net's parasitic network where a -path read merges into it, so the other
+  // order discards the die contributions without warning.
+  odb::dbChipNet* chipNetAbove(odb::dbBTerm* bterm) const;
+  odb::dbChipNet* chipNetAboveNet(const Net* net) const;
+  odb::dbChipNet* chipNetOfPadITerm(odb::dbITerm* iterm) const;
   // Raw chip-inst / chip-net -> their per-unfold-path objects (built in
   // setTopChip). Used by the chip-aware iterators to enumerate unfolded bumps.
   odb::dbUnfoldedChipInst* unfoldedChipInst(odb::dbChipInst* chip_inst) const;
@@ -622,6 +633,8 @@ class dbNetwork : public ConcreteNetwork
   //   raw chip-inst -> its unfolded chip-inst (for the pin iterator)
   //   raw chip-net  -> its unfolded chip-net  (for the net-pin iterator)
   mutable odb::PtrMap<odb::dbITerm, odb::dbChipNet*> bump_to_chip_net_;
+  // Die-side net -> the chip-net it reaches through one of its bump pads.
+  mutable odb::PtrMap<odb::dbNet, odb::dbChipNet*> net_to_chip_net_;
   mutable odb::PtrMap<odb::dbChipInst, odb::dbUnfoldedChipInst*>
       chip_inst_to_unfolded_;
   mutable odb::PtrMap<odb::dbChipNet, odb::dbUnfoldedChipNet*>
