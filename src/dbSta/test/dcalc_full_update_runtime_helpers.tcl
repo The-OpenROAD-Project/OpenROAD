@@ -1,5 +1,5 @@
 # Shared full timing-update runtime comparison for delay models.
-proc dcalc_measure_full_update {} {
+proc dcalc_measure_full_update { } {
   set start_us [clock microseconds]
   sta::find_requireds
   set elapsed_us [expr { [clock microseconds] - $start_us }]
