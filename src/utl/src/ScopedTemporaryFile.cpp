@@ -24,9 +24,9 @@ namespace fs = std::filesystem;
 
 namespace utl {
 
-constexpr int kGzipBufferSize = 65536;
-
 namespace {
+constexpr std::streamsize kGzipBufferSize = 65536;
+
 std::string generate_unused_filename(const std::string& prefix)
 {
   int counter = 1;
