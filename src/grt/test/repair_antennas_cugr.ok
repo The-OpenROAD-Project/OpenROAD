@@ -7,11 +7,12 @@
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [INFO ANT-0002] Found 5 net violations.
 [INFO ANT-0001] Found 5 pin violations.
-[WARNING GRT-0310] Jumper insertion is not supported with CUGR yet; skipping antenna repair.
 [INFO GRT-0012] Found 5 antenna violations.
+[INFO GRT-0302] Inserted 4 jumpers for 4 nets.
+[INFO GRT-0012] Found 1 antenna violations.
 [INFO DPL-0006] Core area: 78411.11 um^2
-[INFO DPL-0007] Movable instances area: 3823.37 um^2
-[INFO DPL-0008] Fixed instances area within core: 2432.76 um^2
+[INFO DPL-0007] Movable instances area: 3853.74 um^2
+[INFO DPL-0008] Fixed instances area within core: 2389.61 um^2
 [INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
@@ -20,13 +21,13 @@
 	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 1365 cells
+[INFO DPL-0393]   height 1 row(s): 1361 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
         0 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 0.
-[INFO GRT-0015] Inserted 5 diodes.
+[INFO GRT-0015] Inserted 1 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.
 No differences found.

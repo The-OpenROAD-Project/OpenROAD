@@ -1,5 +1,5 @@
 # repair_antennas with CUGR routing on the repair_antennas2 design:
-# diode-only repair on a second placement/density at met1-met3.
+# a second placement/density at met1-met3, cleared by a single jumper.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"

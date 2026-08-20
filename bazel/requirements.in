@@ -2,6 +2,10 @@
 # Compiled into bazel/requirements_lock_3_13.txt via
 #   bazel run //bazel:requirements.update
 
+numpy==2.5.2
+scipy==1.18.0
+pandas==3.0.5
+
 tclint==0.7.0
 yamlfix==1.19.1
 

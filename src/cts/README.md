@@ -92,7 +92,7 @@ clock_tree_synthesis
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
 | `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
-| `-apply_ndr` | Applies 2X spacing non-default rule to clock nets except leaf-level nets following some strategy. There are four strategy options: `none, root_only, half, full`. If this is not specified, the default value is `none`. |
+| `-apply_ndr` | Applies 2X spacing non-default rule to clock nets except leaf-level nets following some strategy. There are four strategy options: `none, root_only, half, full`. `root_only` takes the root trunk of the clock tree, `half` the first half of the tree levels (rounded up) and `full` every level. Levels are counted from the root of the whole clock tree toward its leaves and cross clock gaters, so the sub tree driven by a gater keeps the level of the tree that feeds it instead of counting as a root. If this is not specified, the default value is `half`. |
 | `-dont_use_dummy_load` | Don't apply dummy buffer or inverter cells at clock tree leaves to balance loads. The default values is `False`. |
 | `-sink_buffer_max_cap_derate` | Use this option to control automatic buffer selection. To favor strong(weak) drive strength buffers use a small(large) value.  The default value is `0.01`, meaning that buffers are selected by derating max cap limit by 0.01. The value of 1.0 means no derating of max cap limit.  |
 | `-delay_buffer_derate` | This option balances latencies between macro cells and registers by inserting delay buffers.  The default value is `1.0`, meaning all needed delay buffers are inserted.  A value of 0.5 means only half of necessary delay buffers are inserted.  A value of 0.0 means no insertion of delay buffers. |
@@ -162,7 +162,7 @@ set_cts_config
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-apply_ndr` | Applies 2X spacing non-default rule to clock nets except leaf-level nets following some strategy. There are four strategy options: `none, root_only, half, full`. If this is not specified, the default value is `none`. |
+| `-apply_ndr` | Applies 2X spacing non-default rule to clock nets except leaf-level nets following some strategy. There are four strategy options: `none, root_only, half, full`. `root_only` takes the root trunk of the clock tree, `half` the first half of the tree levels (rounded up) and `full` every level. Levels are counted from the root of the whole clock tree toward its leaves and cross clock gaters, so the sub tree driven by a gater keeps the level of the tree that feeds it instead of counting as a root. If this is not specified, the default value is `half`. |
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
 | `-branching_point_buffers_distance` | Distance (in microns) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the `-distance_between_buffers` value to be set. |
 | `-clock_buffer_footprint` | sub-string that identifies clock buffers by liberty cell_footprint attribute. This option is mutually exclusive with -clock_buffer_string. |

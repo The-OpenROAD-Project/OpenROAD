@@ -1,6 +1,5 @@
-# repair_antennas with CUGR routing: repairs with diodes only — jumper
-# insertion depends on FastRoute edge resources and warns (GRT-0310).
-# met1-met3 leaves real antenna violations for the repair to fix.
+# repair_antennas with CUGR routing: jumpers first, then diodes for what
+# remains. met1-met3 leaves real antenna violations for the repair to fix.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
@@ -13,7 +12,6 @@ set_routing_layers -signal met1-met3
 global_route -use_cugr
 
 check_antennas
-repair_antennas -jumper_only
 repair_antennas
 check_antennas
 check_placement
