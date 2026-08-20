@@ -130,6 +130,8 @@ void RepairDesign::repairDesign(double max_wire_length,
 void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 {
   debugPrint(logger_, RSZ, "early_sizing", 1, "Performing early sizing round.");
+  findBufferSizes();
+
   // keep track of user annotations so we don't remove them
   std::set<std::pair<sta::Vertex*, int>> slew_user_annotated;
 
@@ -155,7 +157,6 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
       }
     }
   }
-  findBufferSizes();
 
   sta_->searchPreamble();
   search_->findAllArrivals();
