@@ -2111,38 +2111,36 @@ void ViaGenerator::determineRowsAndColumns(
                 + (full_arrays_x - 1) * array_spacing_x_
                 + getCutsWidth(last_cols, cut_width, cut_spacing_x, 0)
                 + (last_cols > 0 ? array_spacing_x_ : 0);
-          const int double_enc_x_lower = width - via_width_x;
-          const int double_enc_x_upper = width - via_width_x;
+          const int double_enc_x = width - via_width_x;
           const int via_width_y
               = full_arrays_y
                     * getCutsWidth(y_cuts, cut_height, cut_spacing_y, 0)
                 + (full_arrays_y - 1) * array_spacing_y_
                 + getCutsWidth(last_rows, cut_height, cut_spacing_y, 0)
                 + (last_rows > 0 ? array_spacing_y_ : 0);
-          const int double_enc_y_lower = height - via_width_y;
-          const int double_enc_y_upper = height - via_width_y;
+          const int double_enc_y = height - via_width_y;
 
           bottom_enclosure_->setX(
               determine_enclosure(use_bottom_min_enclosure,
                                   true,
                                   bottom_min_enclosure.getX(),
-                                  double_enc_x_lower / 2,
+                                  double_enc_x / 2,
                                   lower_constraint_));
           bottom_enclosure_->setY(
               determine_enclosure(use_bottom_min_enclosure,
                                   false,
                                   bottom_min_enclosure.getY(),
-                                  double_enc_y_lower / 2,
+                                  double_enc_y / 2,
                                   lower_constraint_));
           top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
                                                    true,
                                                    top_min_enclosure.getX(),
-                                                   double_enc_x_upper / 2,
+                                                   double_enc_x / 2,
                                                    upper_constraint_));
           top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
                                                    false,
                                                    top_min_enclosure.getY(),
-                                                   double_enc_y_upper / 2,
+                                                   double_enc_y / 2,
                                                    upper_constraint_));
 
           max_cut_area = total_cut_area;
@@ -2163,12 +2161,10 @@ void ViaGenerator::determineRowsAndColumns(
 
     const int via_width_x
         = getCutsWidth(core_col_, cut_width, getCutPitchX() - cut_width, 0);
-    const int double_enc_x_lower = width - via_width_x;
-    const int double_enc_x_upper = width - via_width_x;
+    const int double_enc_x = width - via_width_x;
     const int via_width_y
         = getCutsWidth(core_row_, cut_height, getCutPitchY() - cut_height, 0);
-    const int double_enc_y_lower = height - via_width_y;
-    const int double_enc_y_upper = height - via_width_y;
+    const int double_enc_y = height - via_width_y;
 
     if (isSplitCutArray()) {
       bottom_enclosure_->setX(bottom_min_enclosure.getX());
@@ -2179,22 +2175,22 @@ void ViaGenerator::determineRowsAndColumns(
       bottom_enclosure_->setX(determine_enclosure(use_bottom_min_enclosure,
                                                   true,
                                                   bottom_min_enclosure.getX(),
-                                                  double_enc_x_lower / 2,
+                                                  double_enc_x / 2,
                                                   lower_constraint_));
       bottom_enclosure_->setY(determine_enclosure(use_bottom_min_enclosure,
                                                   false,
                                                   bottom_min_enclosure.getY(),
-                                                  double_enc_y_lower / 2,
+                                                  double_enc_y / 2,
                                                   lower_constraint_));
       top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
                                                true,
                                                top_min_enclosure.getX(),
-                                               double_enc_x_upper / 2,
+                                               double_enc_x / 2,
                                                upper_constraint_));
       top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
                                                false,
                                                top_min_enclosure.getY(),
-                                               double_enc_y_upper / 2,
+                                               double_enc_y / 2,
                                                upper_constraint_));
     }
 
