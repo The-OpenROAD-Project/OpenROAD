@@ -135,19 +135,22 @@ class CUGR
   void mergeNet(odb::dbNet* preserved_net,
                 odb::dbNet* removed_net,
                 const std::vector<GSegment>& connection);
-  // Returns the per-layer NDR demand vector for db_net, or all-ones if the
-  // net is not found.  Used by GlobalRouter to pass the correct demand into
-  // hasAvailableResources() when checking capacity for NDR nets.
-  std::vector<double> getNdrCosts(odb::dbNet* db_net) const;
-
-  // Returns true if the edge on (layer_index, tile_x, tile_y) has at least
-  // one unit of remaining capacity -- the CUGR analog of
-  // FastRouteCore::hasAvailableResources.
-  // demand is the per-edge demand to check against (default 1.0 for non-NDR).
-  bool hasAvailableResources(int layer_index,
+  // True if the edge on (layer_index, tile_x, tile_y) has capacity left for
+  // db_net's NDR demand on that layer (1.0 for non-NDR nets); the CUGR
+  // analog of FastRouteCore::hasAvailableResources.
+  bool hasAvailableResources(odb::dbNet* db_net,
+                             int layer_index,
                              int tile_x,
-                             int tile_y,
-                             double demand = 1.0) const;
+                             int tile_y) const;
+  // True if a complete jumper -- the wire on layer_index between the tiles
+  // plus a two-layer via stack at each endpoint -- fits the headroom of
+  // every edge it would charge, accumulating demands that share an edge.
+  bool hasJumperResources(odb::dbNet* db_net,
+                          int layer_index,
+                          int init_tile_x,
+                          int init_tile_y,
+                          int final_tile_x,
+                          int final_tile_y) const;
   // Adopts an externally restored routing (journal restore): rebuilds the
   // net's routing tree from the segments and swaps the grid-graph demand
   // without scheduling a reroute. Returns false if the net must be rerouted.
@@ -165,6 +168,8 @@ class CUGR
   void saveCongestion();
 
  private:
+  // True if (layer_0, tile_x, tile_y) indexes an existing grid edge.
+  bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
   void updateCriticalNets(const std::vector<int>& net_indices);
@@ -307,7 +312,6 @@ class CUGR
   utl::ServiceRegistry* service_registry_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;
-  NetRouteMap routes_;
 
   Constants constants_;
 
