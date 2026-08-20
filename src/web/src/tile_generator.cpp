@@ -6235,11 +6235,55 @@ void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
 std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
                                                    const std::string& pin_name)
 {
+  if (!block) {
+    return {nullptr, nullptr};
+  }
   odb::dbITerm* iterm = block->findITerm(pin_name.c_str());
   if (iterm) {
     return {iterm, nullptr};
   }
   return {nullptr, block->findBTerm(pin_name.c_str())};
+}
+
+std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& pin_name)
+{
+  for (const ChipletNode& node : chiplets) {
+    if (!node.block) {
+      continue;
+    }
+
+    if (!node.name.empty()) {
+      const std::string prefix = node.name + "/";
+      if (pin_name.starts_with(prefix)) {
+        const std::string local_name = pin_name.substr(prefix.length());
+        if (odb::dbITerm* iterm = node.block->findITerm(local_name.c_str())) {
+          return {iterm, nullptr, &node};
+        }
+        if (odb::dbBTerm* bterm = node.block->findBTerm(local_name.c_str())) {
+          return {nullptr, bterm, &node};
+        }
+
+        if (odb::dbITerm* iterm = node.block->findITerm(pin_name.c_str())) {
+          return {iterm, nullptr, &node};
+        }
+        if (odb::dbBTerm* bterm = node.block->findBTerm(pin_name.c_str())) {
+          return {nullptr, bterm, &node};
+        }
+
+        return {nullptr, nullptr, nullptr};
+      }
+    }
+
+    if (odb::dbITerm* iterm = node.block->findITerm(pin_name.c_str())) {
+      return {iterm, nullptr, &node};
+    }
+    if (odb::dbBTerm* bterm = node.block->findBTerm(pin_name.c_str())) {
+      return {nullptr, bterm, &node};
+    }
+  }
+  return {nullptr, nullptr, nullptr};
 }
 
 static odb::dbNet* getNetFromPin(odb::dbITerm* iterm, odb::dbBTerm* bterm)
@@ -6280,7 +6324,8 @@ void collectNetShapes(odb::dbNet* net,
                       odb::dbBTerm* snk_bterm,
                       const Color& color,
                       std::vector<ColoredRect>& rects,
-                      std::vector<FlightLine>& lines)
+                      std::vector<FlightLine>& lines,
+                      const odb::dbTransform& xfm)
 {
   odb::dbWire* wire = net->getWire();
   if (wire) {
@@ -6292,23 +6337,44 @@ void collectNetShapes(odb::dbNet* net,
         odb::dbShape::getViaBoxes(shape, via_boxes);
         for (const auto& vbox : via_boxes) {
           odb::dbTechLayer* layer = vbox.getTechLayer();
-          rects.push_back(
-              {vbox.getBox(), color, layer ? layer->getName() : ""});
+          odb::Rect r = vbox.getBox();
+          xfm.apply(r);
+          rects.push_back({r, color, layer ? layer->getName() : ""});
         }
       } else {
         odb::dbTechLayer* layer = shape.getTechLayer();
-        rects.push_back({shape.getBox(), color, layer ? layer->getName() : ""});
+        odb::Rect r = shape.getBox();
+        xfm.apply(r);
+        rects.push_back({r, color, layer ? layer->getName() : ""});
       }
     }
   } else {
     // Unrouted: draw flight line between driver and sink
     odb::Point p1 = getPinLocation(drv_iterm, drv_bterm);
     odb::Point p2 = getPinLocation(snk_iterm, snk_bterm);
+    xfm.apply(p1);
+    xfm.apply(p2);
     lines.push_back({p1, p2, color});
   }
 }
 
 void collectTimingPathShapes(odb::dbBlock* block,
+                             const TimingPathSummary& path,
+                             std::vector<ColoredRect>& rects,
+                             std::vector<FlightLine>& lines)
+{
+  if (!block) {
+    return;
+  }
+  std::vector<ChipletNode> single_chiplet;
+  ChipletNode node;
+  node.block = block;
+  node.world_xfm = odb::dbTransform{};
+  single_chiplet.push_back(node);
+  collectTimingPathShapes(single_chiplet, path, rects, lines);
+}
+
+void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines)
@@ -6326,8 +6392,9 @@ void collectTimingPathShapes(odb::dbBlock* block,
                            const Color& clk_color,
                            const Color& data_color) {
     for (size_t i = 0; i + 1 < nodes.size(); i++) {
-      auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
-      auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
+      auto [a_iterm, a_bterm, a_node] = resolvePin(chiplets, nodes[i].pin_name);
+      auto [b_iterm, b_bterm, b_node]
+          = resolvePin(chiplets, nodes[i + 1].pin_name);
 
       odb::dbNet* net_a = getNetFromPin(a_iterm, a_bterm);
       odb::dbNet* net_b = getNetFromPin(b_iterm, b_bterm);
@@ -6335,8 +6402,21 @@ void collectTimingPathShapes(odb::dbBlock* block,
       // Only draw when consecutive pins are on the same net (wire segment)
       if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {
         const Color& c = nodes[i].is_clock ? clk_color : data_color;
+        // Apply transform of the chiplet owning the net
+        odb::dbTransform xfm = a_node ? a_node->world_xfm : odb::dbTransform{};
         collectNetShapes(
-            net_a, a_iterm, a_bterm, b_iterm, b_bterm, c, rects, lines);
+            net_a, a_iterm, a_bterm, b_iterm, b_bterm, c, rects, lines, xfm);
+      } else if (a_node && b_node && (!net_a || net_a != net_b)) {
+        // Fallback for paths crossing chiplets, missing physical nets, or
+        // unmapped pins Draw a flight line if there are valid pins
+        odb::Point p1 = getPinLocation(a_iterm, a_bterm);
+        a_node->world_xfm.apply(p1);
+        odb::Point p2 = getPinLocation(b_iterm, b_bterm);
+        b_node->world_xfm.apply(p2);
+        if (p1 != odb::Point(0, 0) || p2 != odb::Point(0, 0)) {
+          const Color& c = nodes[i].is_clock ? clk_color : data_color;
+          lines.push_back({p1, p2, c});
+        }
       }
     }
   };

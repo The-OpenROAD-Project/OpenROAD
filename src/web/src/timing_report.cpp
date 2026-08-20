@@ -110,10 +110,19 @@ void TimingReport::expandPath(sta::Path* path,
     sta_->getDbNetwork()->staToDb(pin, term, port, moditerm);
 
     std::string pin_name;
+    odb::dbBlock* block = nullptr;
     if (term) {
       pin_name = term->getName();
+      block = term->getBlock();
     } else if (port) {
       pin_name = port->getName();
+      block = port->getBlock();
+    }
+
+    while (block && block->getParentInst()) {
+      pin_name.insert(0, "/");
+      pin_name.insert(0, block->getParentInst()->getName());
+      block = block->getParent();
     }
 
     // Arrival and slew

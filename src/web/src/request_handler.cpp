@@ -4353,14 +4353,33 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(is_setup);
       if (path_index < static_cast<int>(paths.size())) {
+        const std::vector<ChipletNode>& chiplets = gen_->chiplets();
         odb::dbBlock* block = gen_->getBlock();
-        collectTimingPathShapes(block, paths[path_index], new_rects, new_lines);
+        if (block) {
+          collectTimingPathShapes(
+              block, paths[path_index], new_rects, new_lines);
+        } else {
+          collectTimingPathShapes(
+              chiplets, paths[path_index], new_rects, new_lines);
+        }
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm] = resolvePin(block, pin_name);
+          odb::dbITerm* iterm = nullptr;
+          odb::dbBTerm* bterm = nullptr;
+          const ChipletNode* node = nullptr;
+          if (block) {
+            auto pin_res = resolvePin(block, pin_name);
+            iterm = pin_res.first;
+            bterm = pin_res.second;
+          } else {
+            auto pin_res = resolvePin(chiplets, pin_name);
+            iterm = std::get<0>(pin_res);
+            bterm = std::get<1>(pin_res);
+            node = std::get<2>(pin_res);
+          }
 
           odb::dbNet* net = nullptr;
           if (iterm) {
@@ -4370,6 +4389,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
           }
 
           if (net) {
+            odb::dbTransform xfm = node ? node->world_xfm : odb::dbTransform{};
             collectNetShapes(net,
                              iterm,
                              bterm,
@@ -4377,7 +4397,8 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
                              nullptr,
                              kStageColor,
                              new_rects,
-                             new_lines);
+                             new_lines,
+                             xfm);
           }
         }
       }

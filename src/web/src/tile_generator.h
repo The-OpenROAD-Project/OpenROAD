@@ -1027,6 +1027,10 @@ struct TimingPathSummary;
 std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
                                                    const std::string& pin_name);
 
+std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& pin_name);
+
 void collectNetShapes(odb::dbNet* net,
                       odb::dbITerm* drv_iterm,
                       odb::dbBTerm* drv_bterm,
@@ -1034,9 +1038,15 @@ void collectNetShapes(odb::dbNet* net,
                       odb::dbBTerm* snk_bterm,
                       const Color& color,
                       std::vector<ColoredRect>& rects,
-                      std::vector<FlightLine>& lines);
+                      std::vector<FlightLine>& lines,
+                      const odb::dbTransform& xfm);
 
 void collectTimingPathShapes(odb::dbBlock* block,
+                             const TimingPathSummary& path,
+                             std::vector<ColoredRect>& rects,
+                             std::vector<FlightLine>& lines);
+
+void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
