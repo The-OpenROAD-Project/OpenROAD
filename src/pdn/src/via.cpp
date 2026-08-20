@@ -177,6 +177,15 @@ DbVia::DbVia() : generator_(nullptr)
 {
 }
 
+bool DbVia::canCache() const
+{
+  if (generator_ != nullptr) {
+    return generator_->canCache();
+  }
+
+  return true;
+}
+
 DbVia::ViaLayerShape DbVia::getLayerShapes(odb::dbSBox* box) const
 {
   std::vector<odb::dbShape> shapes;
@@ -1535,7 +1544,7 @@ bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
   return is_valid;
 }
 
-bool ViaGenerator::checkMinEnclosure() const
+bool ViaGenerator::checkMinEnclosure(bool check_bottom, bool check_top) const
 {
   const double dbu = getTech()->getDbUnitsPerMicron();
 
@@ -1556,18 +1565,22 @@ bool ViaGenerator::checkMinEnclosure() const
              bottom_enclosure_->getX() / dbu,
              bottom_enclosure_->getY() / dbu);
   bool bottom_passed = false;
-  for (const auto& rule : bottom_rules) {
-    const bool pass
-        = rule.check(bottom_enclosure_->getX(), bottom_enclosure_->getY());
-    debugPrint(logger_,
-               utl::PDN,
-               "ViaEnclosure",
-               2,
-               "Bottom rule enclosures {:4f} and {:4f} -> {}.",
-               rule.getX() / dbu,
-               rule.getY() / dbu,
-               pass);
-    bottom_passed |= pass;
+  if (check_bottom) {
+    for (const auto& rule : bottom_rules) {
+      const bool pass
+          = rule.check(bottom_enclosure_->getX(), bottom_enclosure_->getY());
+      debugPrint(logger_,
+                 utl::PDN,
+                 "ViaEnclosure",
+                 2,
+                 "Bottom rule enclosures {:4f} and {:4f} -> {}.",
+                 rule.getX() / dbu,
+                 rule.getY() / dbu,
+                 pass);
+      bottom_passed |= pass;
+    }
+  } else {
+    bottom_passed = true;
   }
 
   const bool top_has_rules = !top_rules.empty();
@@ -1583,18 +1596,22 @@ bool ViaGenerator::checkMinEnclosure() const
              top_enclosure_->getX() / dbu,
              top_enclosure_->getY() / dbu);
   bool top_passed = false;
-  for (const auto& rule : top_rules) {
-    const bool pass
-        = rule.check(top_enclosure_->getX(), top_enclosure_->getY());
-    debugPrint(logger_,
-               utl::PDN,
-               "ViaEnclosure",
-               2,
-               "Top rule enclosures {:4f} and {:4f} -> {}.",
-               rule.getX() / dbu,
-               rule.getY() / dbu,
-               pass);
-    top_passed |= pass;
+  if (check_top) {
+    for (const auto& rule : top_rules) {
+      const bool pass
+          = rule.check(top_enclosure_->getX(), top_enclosure_->getY());
+      debugPrint(logger_,
+                 utl::PDN,
+                 "ViaEnclosure",
+                 2,
+                 "Top rule enclosures {:4f} and {:4f} -> {}.",
+                 rule.getX() / dbu,
+                 rule.getY() / dbu,
+                 pass);
+      top_passed |= pass;
+    }
+  } else {
+    top_passed = true;
   }
 
   return (!bottom_has_rules || bottom_passed) && (!top_has_rules || top_passed);
@@ -1843,16 +1860,37 @@ void ViaGenerator::determineRowsAndColumns(
   const int width = intersection.dx();
   const int height = intersection.dy();
 
-  debugPrint(
-      logger_,
-      utl::PDN,
-      "ViaEnclosure",
-      1,
-      "Bottom layer {} with width {:.4f} minimum enclosures {:.4f} and {:.4f}.",
-      getBottomLayer()->getName(),
-      getLowerWidth(false) / dbu_to_microns,
-      bottom_min_enclosure.getX() / dbu_to_microns,
-      bottom_min_enclosure.getY() / dbu_to_microns);
+  // compute spare enclosure for each layer
+  const odb::Rect& lower_rect = getLowerRect();
+  const odb::Rect& upper_rect = getUpperRect();
+  const int bottom_spare_xmin = upper_rect.xMin() - lower_rect.xMin();
+  const int bottom_spare_xmax = lower_rect.xMax() - upper_rect.xMax();
+  const int bottom_spare_ymin = upper_rect.yMin() - lower_rect.yMin();
+  const int bottom_spare_ymax = lower_rect.yMax() - upper_rect.yMax();
+  const int top_spare_xmin = -bottom_spare_xmin;
+  const int top_spare_xmax = -bottom_spare_xmax;
+  const int top_spare_ymin = -bottom_spare_ymin;
+  const int top_spare_ymax = -bottom_spare_ymax;
+
+  const int bottom_spare_x
+      = std::max(0, std::min(bottom_spare_xmin, bottom_spare_xmax));
+  const int bottom_spare_y
+      = std::max(0, std::min(bottom_spare_ymin, bottom_spare_ymax));
+  const int top_spare_x = std::max(0, std::min(top_spare_xmin, top_spare_xmax));
+  const int top_spare_y = std::max(0, std::min(top_spare_ymin, top_spare_ymax));
+
+  debugPrint(logger_,
+             utl::PDN,
+             "ViaEnclosure",
+             1,
+             "Bottom layer {} with width {:.4f} minimum enclosures {:.4f} and "
+             "{:.4f} with spare {:.4f} and {:.4f}.",
+             getBottomLayer()->getName(),
+             getLowerWidth(false) / dbu_to_microns,
+             bottom_min_enclosure.getX() / dbu_to_microns,
+             bottom_min_enclosure.getY() / dbu_to_microns,
+             bottom_spare_x / dbu_to_microns,
+             bottom_spare_y / dbu_to_microns);
   debugPrint(
       logger_,
       utl::PDN,
@@ -1862,16 +1900,18 @@ void ViaGenerator::determineRowsAndColumns(
       use_bottom_min_enclosure,
       lower_constraint_.must_fit_x,
       lower_constraint_.must_fit_y);
-  debugPrint(
-      logger_,
-      utl::PDN,
-      "ViaEnclosure",
-      1,
-      "Top layer {} with width {:.4f} minimum enclosures {:.4f} and {:.4f}.",
-      getTopLayer()->getName(),
-      getUpperWidth(false) / dbu_to_microns,
-      top_min_enclosure.getX() / dbu_to_microns,
-      top_min_enclosure.getY() / dbu_to_microns);
+  debugPrint(logger_,
+             utl::PDN,
+             "ViaEnclosure",
+             1,
+             "Top layer {} with width {:.4f} minimum enclosures {:.4f} and "
+             "{:.4f} with spare {:.4f} and {:.4f}.",
+             getTopLayer()->getName(),
+             getUpperWidth(false) / dbu_to_microns,
+             top_min_enclosure.getX() / dbu_to_microns,
+             top_min_enclosure.getY() / dbu_to_microns,
+             top_spare_x / dbu_to_microns,
+             top_spare_y / dbu_to_microns);
   debugPrint(logger_,
              utl::PDN,
              "ViaEnclosure",
@@ -2071,36 +2111,38 @@ void ViaGenerator::determineRowsAndColumns(
                 + (full_arrays_x - 1) * array_spacing_x_
                 + getCutsWidth(last_cols, cut_width, cut_spacing_x, 0)
                 + (last_cols > 0 ? array_spacing_x_ : 0);
-          const int double_enc_x = width - via_width_x;
+          const int double_enc_x_lower = width - via_width_x;
+          const int double_enc_x_upper = width - via_width_x;
           const int via_width_y
               = full_arrays_y
                     * getCutsWidth(y_cuts, cut_height, cut_spacing_y, 0)
                 + (full_arrays_y - 1) * array_spacing_y_
                 + getCutsWidth(last_rows, cut_height, cut_spacing_y, 0)
                 + (last_rows > 0 ? array_spacing_y_ : 0);
-          const int double_enc_y = height - via_width_y;
+          const int double_enc_y_lower = height - via_width_y;
+          const int double_enc_y_upper = height - via_width_y;
 
           bottom_enclosure_->setX(
               determine_enclosure(use_bottom_min_enclosure,
                                   true,
                                   bottom_min_enclosure.getX(),
-                                  double_enc_x / 2,
+                                  double_enc_x_lower / 2,
                                   lower_constraint_));
           bottom_enclosure_->setY(
               determine_enclosure(use_bottom_min_enclosure,
                                   false,
                                   bottom_min_enclosure.getY(),
-                                  double_enc_y / 2,
+                                  double_enc_y_lower / 2,
                                   lower_constraint_));
           top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
                                                    true,
                                                    top_min_enclosure.getX(),
-                                                   double_enc_x / 2,
+                                                   double_enc_x_upper / 2,
                                                    upper_constraint_));
           top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
                                                    false,
                                                    top_min_enclosure.getY(),
-                                                   double_enc_y / 2,
+                                                   double_enc_y_upper / 2,
                                                    upper_constraint_));
 
           max_cut_area = total_cut_area;
@@ -2121,10 +2163,12 @@ void ViaGenerator::determineRowsAndColumns(
 
     const int via_width_x
         = getCutsWidth(core_col_, cut_width, getCutPitchX() - cut_width, 0);
-    const int double_enc_x = width - via_width_x;
+    const int double_enc_x_lower = width - via_width_x;
+    const int double_enc_x_upper = width - via_width_x;
     const int via_width_y
         = getCutsWidth(core_row_, cut_height, getCutPitchY() - cut_height, 0);
-    const int double_enc_y = height - via_width_y;
+    const int double_enc_y_lower = height - via_width_y;
+    const int double_enc_y_upper = height - via_width_y;
 
     if (isSplitCutArray()) {
       bottom_enclosure_->setX(bottom_min_enclosure.getX());
@@ -2135,22 +2179,22 @@ void ViaGenerator::determineRowsAndColumns(
       bottom_enclosure_->setX(determine_enclosure(use_bottom_min_enclosure,
                                                   true,
                                                   bottom_min_enclosure.getX(),
-                                                  double_enc_x / 2,
+                                                  double_enc_x_lower / 2,
                                                   lower_constraint_));
       bottom_enclosure_->setY(determine_enclosure(use_bottom_min_enclosure,
                                                   false,
                                                   bottom_min_enclosure.getY(),
-                                                  double_enc_y / 2,
+                                                  double_enc_y_lower / 2,
                                                   lower_constraint_));
       top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
                                                true,
                                                top_min_enclosure.getX(),
-                                               double_enc_x / 2,
+                                               double_enc_x_upper / 2,
                                                upper_constraint_));
       top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
                                                false,
                                                top_min_enclosure.getY(),
-                                               double_enc_y / 2,
+                                               double_enc_y_upper / 2,
                                                upper_constraint_));
     }
 
@@ -2163,6 +2207,65 @@ void ViaGenerator::determineRowsAndColumns(
       if (getMaxRows() != 0) {
         array_core_y_ = std::min(getMaxRows(), array_core_y_);
       }
+    }
+  }
+
+  if (!use_bottom_min_enclosure) {
+    if ((bottom_spare_x > 0 || bottom_spare_y > 0)
+        && !checkMinEnclosure(true, false)) {
+      // Apply spare to bottom
+      const int apply_x = std::min(bottom_min_enclosure.getX(),
+                                   bottom_enclosure_->getX() + bottom_spare_x);
+      const int apply_y = std::min(bottom_min_enclosure.getY(),
+                                   bottom_enclosure_->getY() + bottom_spare_y);
+      debugPrint(logger_,
+                 utl::PDN,
+                 "ViaEnclosure",
+                 2,
+                 "Applying spare enclosure to bottom layer {}: {:.4f} ({:.4f}) "
+                 "and {:.4f} ({:.4f})",
+                 getBottomLayer()->getName(),
+                 bottom_spare_x / dbu_to_microns,
+                 apply_x / dbu_to_microns,
+                 bottom_spare_y / dbu_to_microns,
+                 apply_y / dbu_to_microns);
+      bottom_enclosure_->setX(determine_enclosure(false,
+                                                  true,
+                                                  bottom_min_enclosure.getX(),
+                                                  apply_x,
+                                                  lower_constraint_));
+      bottom_enclosure_->setY(determine_enclosure(false,
+                                                  false,
+                                                  bottom_min_enclosure.getY(),
+                                                  apply_y,
+                                                  lower_constraint_));
+      can_cache_ = false;
+    }
+  }
+  if (!use_top_min_enclosure) {
+    if ((top_spare_x > 0 || top_spare_y > 0)
+        && !checkMinEnclosure(false, true)) {
+      // Apply spare to top
+      const int apply_x = std::min(top_min_enclosure.getX(),
+                                   top_enclosure_->getX() + top_spare_x);
+      const int apply_y = std::min(top_min_enclosure.getY(),
+                                   top_enclosure_->getY() + top_spare_y);
+      debugPrint(logger_,
+                 utl::PDN,
+                 "ViaEnclosure",
+                 2,
+                 "Applying spare enclosure to top layer {}: {:.4f} ({:.4f}) "
+                 "and {:.4f} ({:.4f})",
+                 getTopLayer()->getName(),
+                 top_spare_x / dbu_to_microns,
+                 apply_x / dbu_to_microns,
+                 top_spare_y / dbu_to_microns,
+                 apply_y / dbu_to_microns);
+      top_enclosure_->setX(determine_enclosure(
+          false, true, top_min_enclosure.getX(), apply_x, upper_constraint_));
+      top_enclosure_->setY(determine_enclosure(
+          false, false, top_min_enclosure.getY(), apply_y, upper_constraint_));
+      can_cache_ = false;
     }
   }
 

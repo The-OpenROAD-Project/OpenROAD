@@ -129,6 +129,8 @@ class DbVia
   bool hasGenerator() const { return generator_ != nullptr; }
   ViaGenerator* getGenerator() const { return generator_.get(); }
 
+  bool canCache() const;
+
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;
   void combineLayerShapes(const ViaLayerShape& other,
@@ -501,6 +503,8 @@ class ViaGenerator
 
   bool recheckConstraints(const odb::Rect& rect, bool bottom);
 
+  bool canCache() const { return can_cache_; }
+
  protected:
   int getMaxRows() const { return max_rows_; }
   int getMaxColumns() const { return max_cols_; }
@@ -585,12 +589,14 @@ class ViaGenerator
   std::unique_ptr<Enclosure> bottom_enclosure_;
   std::unique_ptr<Enclosure> top_enclosure_;
 
+  bool can_cache_ = true;
+
   void determineCutClass();
   bool checkMinCuts() const;
   bool checkMinCuts(odb::dbTechLayer* layer, int width) const;
   bool appliesToLayers(odb::dbTechLayer* lower, odb::dbTechLayer* upper) const;
 
-  bool checkMinEnclosure() const;
+  bool checkMinEnclosure(bool check_bottom = true, bool check_top = true) const;
 
   std::vector<odb::dbTechLayerCutEnclosureRule*> getCutMinimumEnclosureRules(
       int width,
