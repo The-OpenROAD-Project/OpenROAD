@@ -55,6 +55,21 @@ COMPULSORY_TESTS = [
 ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
+    name = "asap7_aes_runtime_fixture",
+    srcs = [
+        "asap7_data/aes_place.def",
+        "asap7_data/aes_place.sdc",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "asap7_riscv_runtime_fixture",
+    srcs = ["asap7_data/riscv.def"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
     # but at least it is not a glob of everything and there are
