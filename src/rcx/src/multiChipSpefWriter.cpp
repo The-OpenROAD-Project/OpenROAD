@@ -93,32 +93,35 @@ void MultiChipSpefWriter::writeChipSpef(odb::dbChip* chip,
   const std::string file_path
       = file_base_name_ + "." + chip->getName() + ".spef";
 
-  auto block_spef_writer = std::make_unique<extMain>();
-  block_spef_writer->init(db_, logger_);
-  block_spef_writer->setBlockFromChip(chip);
+  // The block spef writer was originally conceived to live within the block
+  // extractor, that's why we use the latter here. In the future, we can
+  // modify the writer so that it does not require an extractor.
+  auto block_extractor = std::make_unique<extMain>();
+  block_extractor->init(db_, logger_);
+  block_extractor->setBlockFromChip(chip);
 
-  block_spef_writer->writeSPEF((char*) file_path.c_str(),
-                               (char*) options.nets,
-                               options.no_name_map,
-                               (char*) options.N,
-                               options.term_junction_xy,
-                               options.cap_units,
-                               options.res_units,
-                               options.gz,
-                               options.stop_after_map,
-                               options.w_clock,
-                               options.w_conn,
-                               options.w_cap,
-                               options.w_cc_cap,
-                               options.w_res,
-                               options.no_c_num,
-                               false,
-                               options.single_pi,
-                               options.no_backslash,
-                               options.corner,
-                               options.ext_corner_name,
-                               spef_header_.version.c_str(),
-                               options.parallel);
+  block_extractor->writeSPEF((char*) file_path.c_str(),
+                             (char*) options.nets,
+                             options.no_name_map,
+                             (char*) options.N,
+                             options.term_junction_xy,
+                             options.cap_units,
+                             options.res_units,
+                             options.gz,
+                             options.stop_after_map,
+                             options.w_clock,
+                             options.w_conn,
+                             options.w_cap,
+                             options.w_cc_cap,
+                             options.w_res,
+                             options.no_c_num,
+                             false,
+                             options.single_pi,
+                             options.no_backslash,
+                             options.corner,
+                             options.ext_corner_name,
+                             spef_header_.version.c_str(),
+                             options.parallel);
 
   logger_->info(utl::RCX,
                 534,
@@ -152,12 +155,15 @@ std::string MultiChipSpefWriter::bondNodeName(odb::dbChipCapNode* cap_node)
   }
 
   std::string bond_node_name;
+
   for (odb::dbChipInst* chip_inst : chip_inst_path) {
     if (!bond_node_name.empty()) {
       bond_node_name += '/';
     }
+
     bond_node_name += chip_inst->getName();
   }
+
   bond_node_name += ':';
   bond_node_name += bterm->getName();
 
@@ -167,7 +173,6 @@ std::string MultiChipSpefWriter::bondNodeName(odb::dbChipCapNode* cap_node)
 void MultiChipSpefWriter::writeInterChipSpef()
 {
   const std::string file_path = file_base_name_ + ".bonds.spef";
-  odb::dbChip* top_chip = db_->getChip();
   std::ofstream out(file_path);
 
   if (!out) {
@@ -177,11 +182,12 @@ void MultiChipSpefWriter::writeInterChipSpef()
                    file_path);
   }
 
+  odb::dbChip* top_chip = db_->getChip();
   spef_header_.design_name = top_chip->getName();
+
   out << spef_header_.string(logger_);
 
   int bond_count = 0;
-
   for (odb::dbChipNet* chip_net : top_chip->getChipNets()) {
     const std::string chip_net_spef = chipNetSpefString(chip_net);
 
@@ -197,32 +203,29 @@ void MultiChipSpefWriter::writeInterChipSpef()
 
 std::string MultiChipSpefWriter::chipNetSpefString(odb::dbChipNet* chip_net)
 {
+  std::ostringstream out;
   odb::dbSet<odb::dbChipRSeg> rsegs = chip_net->getChipRSegs();
 
-  if (rsegs.empty()) {
-    return "";
+  if (!rsegs.empty()) {
+    out << "\n*D_NET " << chip_net->getName() << " "
+        << chip_net->getTotalCapacitance() * scale_factors_.capacitance << "\n";
+
+    out << "*CONN\n";
+    for (odb::dbChipCapNode* cap_node : chip_net->getChipCapNodes()) {
+      out << "*I " << bondNodeName(cap_node) << " "
+          << pinDirection(cap_node->getBTerm(), logger_) << "\n";
+    }
+
+    out << "*RES\n";
+    int res_id = 1;
+    for (odb::dbChipRSeg* rseg : rsegs) {
+      out << res_id++ << " " << bondNodeName(rseg->getSourceCapNode()) << " "
+          << bondNodeName(rseg->getTargetCapNode()) << " "
+          << rseg->getResistance() * scale_factors_.resistance << "\n";
+    }
+
+    out << "*END\n";
   }
-
-  std::ostringstream out;
-
-  out << "\n*D_NET " << chip_net->getName() << " "
-      << chip_net->getTotalCapacitance() * scale_factors_.capacitance << "\n";
-
-  out << "*CONN\n";
-  for (odb::dbChipCapNode* cap_node : chip_net->getChipCapNodes()) {
-    out << "*I " << bondNodeName(cap_node) << " "
-        << pinDirection(cap_node->getBTerm(), logger_) << "\n";
-  }
-
-  out << "*RES\n";
-  int res_id = 1;
-  for (odb::dbChipRSeg* rseg : rsegs) {
-    out << res_id++ << " " << bondNodeName(rseg->getSourceCapNode()) << " "
-        << bondNodeName(rseg->getTargetCapNode()) << " "
-        << rseg->getResistance() * scale_factors_.resistance << "\n";
-  }
-
-  out << "*END\n";
 
   return out.str();
 }

@@ -49,7 +49,7 @@ void MultiChipExtractor::loadRules()
 {
   if (assembly_extraction_rules_file_.empty()) {
     logger_->error(utl::RCX,
-                   529,
+                   20,
                    "No assembly rules file defined; set one with "
                    "set_extraction_rules_file -assembly.");
   }
@@ -65,7 +65,7 @@ void MultiChipExtractor::loadRules()
     if (type == odb::dbChip::ChipType::RDL) {
       logger_->error(
           utl::RCX,
-          530,
+          22,
           "RDL chips are not supported in this version of 3D extraction.");
     }
 
@@ -104,7 +104,7 @@ void MultiChipExtractor::extractChipParasitics(odb::dbChip* chip,
                                                const ExtractOptions& options)
 {
   logger_->info(utl::RCX,
-                531,
+                23,
                 "Running parasitics extraction for chip {}.",
                 chip->getName());
 
