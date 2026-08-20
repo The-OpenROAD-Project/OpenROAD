@@ -843,6 +843,10 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     float maxCap = 0.0;
     bool maxCapExists = false;
     out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+    if (!maxCapExists) {
+      // capacitanceLimit leaves maxCap undefined when there is no limit
+      maxCap = 0.0;
+    }
     // clang-format off
     debugPrint(logger_, CTS, "buffering", 1, "{} has cap limit:{}"
                " vs. total cap:{}, derate:{}", name,
@@ -861,6 +865,12 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     }
   }
 
+  if (nextBestBuf.empty()) {
+    logger_->error(CTS,
+                   2,
+                   "Characterization could not select a buffer: candidate "
+                   "buffers lack max capacitance information.");
+  }
   if (bestBuf.empty()) {
     bestBuf = std::move(nextBestBuf);
   }
