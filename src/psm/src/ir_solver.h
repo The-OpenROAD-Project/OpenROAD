@@ -110,6 +110,12 @@ class IRSolver
 
   std::vector<sta::Scene*> getCorners() const;
   bool hasSolution(sta::Scene* corner) const;
+  // Report that no solve has produced data for this corner, and stop, so a
+  // report derived from one fails with a usable message instead of an
+  // out-of-range map lookup. Each writer tests the map it actually reads
+  // rather than hasSolution(): a grid solved with no powered instances has
+  // voltages and an empty current map, and voltages are still reportable.
+  void reportNoSolution(sta::Scene* corner) const;
   Voltage getNetVoltage(sta::Scene* corner) const;
   std::optional<Voltage> getVoltage(sta::Scene* corner, Node* node) const;
 

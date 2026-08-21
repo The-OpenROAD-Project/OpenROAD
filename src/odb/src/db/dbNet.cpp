@@ -1458,7 +1458,7 @@ bool dbNet::isConnected(const dbModNet* other) const
 
 bool dbNet::isConnectedByAbutment()
 {
-  if (getITermCount() > 2 || getBTermCount() > 0) {
+  if (getITerms().hasMoreThan(2) || !getBTerms().empty()) {
     return false;
   }
 

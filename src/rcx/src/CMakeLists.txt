@@ -100,6 +100,7 @@ if(ENABLE_TESTS)
   enable_testing()
 
   add_executable(rcxUnitTest
+    ${PROJECT_SOURCE_DIR}/test/TestExtractor.cpp
     ${PROJECT_SOURCE_DIR}/test/ext2dBoxTest.cpp
   )
 

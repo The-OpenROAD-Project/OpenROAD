@@ -13,15 +13,14 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Update lock file to check for differences
-        run: |
-          cp MODULE.bazel MODULE.bazel.before
-          bazelisk mod deps --lockfile_mode=update
+        run: bazelisk mod deps --lockfile_mode=update
 
-      - name: Differences to be adressed
+      - name: Differences to be addressed
         run: |
-          if ! diff MODULE.bazel.before MODULE.bazel ; then
-            echo "Run"
-            echo "bazelisk mod deps --lockfile_mode=update"
-            echo "and update pull request"
+          if ! git diff --exit-code -- MODULE.bazel.lock ; then
+            msg="MODULE.bazel.lock is out of date. Regenerate with:"
+            msg="$msg  bazelisk mod deps --lockfile_mode=update"
+            msg="$msg  then commit the updated MODULE.bazel.lock."
+            echo "::error file=MODULE.bazel.lock::$msg"
             exit 1
           fi

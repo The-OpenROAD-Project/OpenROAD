@@ -1990,51 +1990,6 @@ void FastRouteCore::getCongestionGrid(
   }
 }
 
-void FastRouteCore::findNetsNearPosition(
-    odb::PtrSet<odb::dbNet>& congestion_nets,
-    const odb::Point& position,
-    bool is_horizontal,
-    int& radius)
-{
-  // get Nets with overflow
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID] == nullptr || nets_[netID]->isClock()
-        || (congestion_nets.find(nets_[netID]->getDbNet())
-            != congestion_nets.end())) {
-      continue;
-    }
-
-    const auto& treeedges = sttrees_[netID].edges;
-    const int num_edges = sttrees_[netID].num_edges();
-
-    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-      const TreeEdge* treeedge = &(treeedges[edgeID]);
-      const std::vector<GPoint3D>& grids = treeedge->route.grids;
-      const int routeLen = treeedge->route.routelen;
-
-      for (int i = 0; i < routeLen; i++) {
-        if (grids[i].layer != grids[i + 1].layer) {
-          continue;
-        }
-        if (grids[i].x == grids[i + 1].x) {  // a vertical edge
-          const int ymin = std::min(grids[i].y, grids[i + 1].y);
-          if (abs(ymin - position.getY()) <= radius
-              && abs(grids[i].x - position.getX()) <= radius
-              && !is_horizontal) {
-            congestion_nets.insert(nets_[netID]->getDbNet());
-          }
-        } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
-          const int xmin = std::min(grids[i].x, grids[i + 1].x);
-          if (abs(grids[i].y - position.getY()) <= radius
-              && abs(xmin - position.getX()) <= radius && is_horizontal) {
-            congestion_nets.insert(nets_[netID]->getDbNet());
-          }
-        }
-      }
-    }
-  }
-}
-
 // Get overflow positions
 void FastRouteCore::getOverflowPositions(
     std::vector<std::pair<odb::Point, bool>>& overflow_pos)
@@ -2136,17 +2091,99 @@ void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
   // Get overflow position -- [(x,y), is horizontal]
   std::vector<std::pair<odb::Point, bool>> overflow_positions;
   getOverflowPositions(overflow_positions);
+  if (overflow_positions.empty()) {
+    return;
+  }
 
-  int old_size = congestion_nets.size();
+  const size_t old_size = congestion_nets.size();
+  std::vector<bool> already_added(netCount(), false);
+  for (odb::dbNet* db_net : congestion_nets) {
+    auto it = db_net_id_map_.find(db_net);
+    if (it != db_net_id_map_.end()) {
+      already_added[it->second] = true;
+    }
+  }
+
+  const size_t grid_size = static_cast<size_t>(y_grid_) * x_grid_;
+  std::vector<char> congested_h(grid_size, 0);
+  std::vector<char> congested_v(grid_size, 0);
 
   // The radius around the congested zone is increased when no new nets are
   // obtained
-  for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
+  static constexpr int kMaxSearchRadius = 5;
+  for (int radius = 0;
+       radius < kMaxSearchRadius && old_size == congestion_nets.size();
        radius++) {
-    // Find nets for each congestion ggrid
+    std::fill(congested_h.begin(), congested_h.end(), 0);
+    std::fill(congested_v.begin(), congested_v.end(), 0);
+
     for (const auto& position : overflow_positions) {
-      findNetsNearPosition(
-          congestion_nets, position.first, position.second, radius);
+      const int px = position.first.getX();
+      const int py = position.first.getY();
+      const bool is_horizontal = position.second;
+
+      const int y_start = std::max(0, py - radius);
+      const int y_end = std::min(y_grid_ - 1, py + radius);
+      const int x_start = std::max(0, px - radius);
+      const int x_end = std::min(x_grid_ - 1, px + radius);
+
+      auto& congested_grid = is_horizontal ? congested_h : congested_v;
+      for (int y = y_start; y <= y_end; ++y) {
+        for (int x = x_start; x <= x_end; ++x) {
+          congested_grid[static_cast<size_t>(y) * x_grid_ + x] = 1;
+        }
+      }
+    }
+
+    // Find nets that overlap with any congested grid
+    for (int netID = 0; netID < netCount(); netID++) {
+      if (already_added[netID] || nets_[netID] == nullptr
+          || nets_[netID]->isClock()) {
+        continue;
+      }
+
+      const auto& treeedges = sttrees_[netID].edges;
+      const int num_edges = sttrees_[netID].num_edges();
+
+      bool found = false;
+      for (int edgeID = 0; edgeID < num_edges && !found; edgeID++) {
+        const TreeEdge* treeedge = &(treeedges[edgeID]);
+        const std::vector<GPoint3D>& grids = treeedge->route.grids;
+        const int routeLen = treeedge->route.routelen;
+
+        if (routeLen <= 0 || grids.size() <= static_cast<size_t>(routeLen)) {
+          continue;
+        }
+
+        for (int i = 0; i < routeLen && !found; i++) {
+          if (grids[i].layer != grids[i + 1].layer) {
+            continue;
+          }
+          if (grids[i].x == grids[i + 1].x) {  // a vertical edge
+            const int ymin = std::min(grids[i].y, grids[i + 1].y);
+            if (grids[i].x >= 0 && grids[i].x < x_grid_ && ymin >= 0
+                && ymin < y_grid_) {
+              if (congested_v[static_cast<size_t>(ymin) * x_grid_
+                              + grids[i].x]) {
+                congestion_nets.insert(nets_[netID]->getDbNet());
+                already_added[netID] = true;
+                found = true;
+              }
+            }
+          } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
+            const int xmin = std::min(grids[i].x, grids[i + 1].x);
+            if (xmin >= 0 && xmin < x_grid_ && grids[i].y >= 0
+                && grids[i].y < y_grid_) {
+              if (congested_h[static_cast<size_t>(grids[i].y) * x_grid_
+                              + xmin]) {
+                congestion_nets.insert(nets_[netID]->getDbNet());
+                already_added[netID] = true;
+                found = true;
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

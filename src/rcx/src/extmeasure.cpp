@@ -169,6 +169,9 @@ uint32_t extMeasure::createNetSingleWire(char* dirName,
     net = _create_net_util.createNetSingleWire(
         netName, ll[0], ll[1], ur[0], ur[1], _met);
   }
+  if (net == nullptr) {
+    logger_->error(RCX, 529, "Failed to create pattern wire net {}.", netName);
+  }
 
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != nullptr) {
@@ -198,6 +201,9 @@ uint32_t extMeasure::createNetSingleWire_cntx(int met,
   assert(_create_net_util.getBlock() == _block);
   dbNet* net = _create_net_util.createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], met);
+  if (net == nullptr) {
+    logger_->error(RCX, 530, "Failed to create context wire net {}.", netName);
+  }
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != nullptr) {
     in1->rename(net->getConstName());
@@ -239,6 +245,9 @@ uint32_t extMeasure::createDiagNetSingleWire(char* dirName,
   assert(_create_net_util.getBlock() == _block);
   dbNet* net = _create_net_util.createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], met);
+  if (net == nullptr) {
+    logger_->error(RCX, 531, "Failed to create diagonal wire net {}.", netName);
+  }
   addNew2dBox(net, ll, ur, met, false);
 
   _extMain->makeNetRCsegs(net);

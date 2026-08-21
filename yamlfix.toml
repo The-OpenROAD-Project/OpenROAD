@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+# OpenROAD yamlfix Configuration (Source of Truth)
+comments_min_spaces_from_content = 2
+explicit_start = false
+explicit_end = false
+indent_offset = 2
+sequence_style = "block"
+none_representation = ""
+quote_basic_values = false
+section_whitespace = 1

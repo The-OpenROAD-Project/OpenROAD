@@ -99,6 +99,15 @@ filegroup(
 )
 
 messages_txt(
+    extra_srcs = [
+        "//src/dft/src/architect:message_srcs",
+        "//src/dft/src/cells:message_srcs",
+        "//src/dft/src/clock_domain:message_srcs",
+        "//src/dft/src/config:message_srcs",
+        "//src/dft/src/replace:message_srcs",
+        "//src/dft/src/stitch:message_srcs",
+        "//src/dft/src/utils:message_srcs",
+    ],
     visibility = [
         "//docs:__pkg__",
         "//src/dft/test:__pkg__",

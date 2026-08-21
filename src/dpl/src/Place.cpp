@@ -840,6 +840,10 @@ PixelPt Opendp::diamondSearch(const Node* cell,
                               const GridX x,
                               const GridY y) const
 {
+  if (debug_observer_) {
+    debug_observer_->clearDiamondSearch(cell);
+  }
+
   // DPL displacement budget.
   GridX x_min = x - max_displacement_x_;
   GridX x_max = x + max_displacement_x_;

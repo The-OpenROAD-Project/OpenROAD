@@ -10,7 +10,9 @@
 #include <string>
 #include <vector>
 
+#include "boost/json/parse.hpp"
 #include "gtest/gtest.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -107,6 +109,18 @@ class SaveImageTest : public tst::Nangate45Fixture
       }
     }
     return false;
+  }
+
+  static size_t countNonTransparentPixels(
+      const std::vector<unsigned char>& rgba)
+  {
+    size_t count = 0;
+    for (size_t i = 3; i < rgba.size(); i += 4) {
+      if (rgba[i] > 0) {
+        ++count;
+      }
+    }
+    return count;
   }
 
   std::unique_ptr<TileGenerator> tile_gen_;
@@ -233,9 +247,15 @@ TEST_F(SaveImageTest, VisibilityPinsOff)
   auto pixels_on = decodePngFile(path_on, w1, h1);
   auto pixels_off = decodePngFile(path_off, w2, h2);
 
+  // The die and core outlines are drawn unconditionally on the _instances
+  // pass (Qt drawChip parity), so the "pins off" image is never fully
+  // transparent.  What the toggle must guarantee is that hiding pins only
+  // ever takes pixels away — every BTerm shape and marker disappears and
+  // nothing new is drawn in their place.
   EXPECT_TRUE(hasNonTransparentPixel(pixels_on))
       << "BTerm shapes should appear with vis.pins=true";
-  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+  EXPECT_LT(countNonTransparentPixels(pixels_off),
+            countNonTransparentPixels(pixels_on))
       << "BTerm shapes should be hidden with vis.pins=false";
 }
 
@@ -303,6 +323,137 @@ TEST_F(SaveImageTest, MultipleLayersComposited)
   unsigned w = 0, h = 0;
   auto pixels = decodePngFile(path, w, h);
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// ─── Composition order ───────────────────────────────────────────────────────
+
+// saveImage must composite in the same z order Leaflet stacks the layers in on
+// screen (display-controls.js addPseudoLayer), otherwise the saved PNG is not
+// the view the user was looking at.  Before the fix every pseudo layer was
+// appended after the tech layers, which put the manufacturing grid over the
+// routing and the pin markers over the tech layers (PR #10806 review).
+//
+// Asserted on the layer list rather than on pixels: every layer here is
+// semi-transparent, so a dot drawn over the routing still blends with it and no
+// pixel test can tell the two orders apart reliably.
+TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
+{
+  const std::vector<std::string> tech_layers = {"metal1", "metal2"};
+  TileVisibility vis;
+  vis.pins = true;
+  vis.mfg_grid = true;
+  vis.access_points = true;
+  vis.regions = true;
+  vis.gcell_grid = true;
+  vis.rudy = true;
+
+  // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
+  // _access_points 1000, _regions 1001, _gcell_grid 1002, _rudy 1003.
+  const std::vector<std::string> expected = {"_instances",
+                                             "_pins",
+                                             "_mfg_grid",
+                                             "metal1",
+                                             "metal2",
+                                             "_access_points",
+                                             "_regions",
+                                             "_gcell_grid",
+                                             "_rudy"};
+  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
+}
+
+TEST_F(SaveImageTest, LayerCompositionOrderHonorsVisibility)
+{
+  const std::vector<std::string> tech_layers = {"metal1"};
+  TileVisibility vis;
+  vis.pins = false;
+  // `regions` is the one overlay that defaults ON (Qt parity), so turn the
+  // whole set off explicitly rather than relying on the defaults.
+  vis.regions = false;
+  vis.mfg_grid = false;
+  vis.access_points = false;
+  vis.gcell_grid = false;
+  vis.rudy = false;
+
+  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+            (std::vector<std::string>{"_instances", "metal1"}))
+      << "hidden overlays must not be composited at all";
+}
+
+TEST_F(SaveImageTest, ParseFromJsonRudyOption)
+{
+  TileVisibility vis;
+  EXPECT_FALSE(vis.rudy);
+  auto json_obj = boost::json::parse("{\"rudy\":true}").as_object();
+  vis.parseFromJson(json_obj);
+  EXPECT_TRUE(vis.rudy);
+}
+
+class TestRUDYHeatMap : public gui::HeatMapDataSource
+{
+ public:
+  explicit TestRUDYHeatMap(utl::Logger* logger)
+      : gui::HeatMapDataSource(logger,
+                               "Estimated Congestion (RUDY)",
+                               "RUDY",
+                               "RUDY")
+  {
+  }
+
+  odb::Rect getBounds() const override
+  {
+    return getBlock() ? getBlock()->getDieArea()
+                      : odb::Rect(0, 0, 100000, 100000);
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    addToMap(odb::Rect(20000, 20000, 80000, 80000), 10.0);
+    return true;
+  }
+
+  void combineMapData(bool /*base_has_value*/,
+                      double& base,
+                      double new_data,
+                      double /*data_area*/,
+                      double /*intersection_area*/,
+                      double /*rect_area*/) override
+  {
+    base = new_data;
+  }
+};
+
+TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
+{
+  auto logger = getLogger();
+  gui::registerHeatMapSource(
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger]() {
+        return std::make_shared<TestRUDYHeatMap>(logger);
+      });
+
+  const std::string path_no_rudy = tempPng("no_rudy");
+  TileVisibility vis_off;
+  vis_off.rudy = false;
+  tile_gen_->saveImage(path_no_rudy, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
+
+  const std::string path_rudy = tempPng("with_rudy");
+  TileVisibility vis_on;
+  vis_on.rudy = true;
+  tile_gen_->saveImage(path_rudy, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
+
+  ASSERT_TRUE(std::filesystem::exists(path_no_rudy));
+  ASSERT_TRUE(std::filesystem::exists(path_rudy));
+
+  unsigned w1 = 0, h1 = 0;
+  auto pixels_no_rudy = decodePngFile(path_no_rudy, w1, h1);
+  unsigned w2 = 0, h2 = 0;
+  auto pixels_rudy = decodePngFile(path_rudy, w2, h2);
+
+  EXPECT_EQ(w1, 512u);
+  EXPECT_EQ(w2, 512u);
+  EXPECT_GT(countNonTransparentPixels(pixels_rudy),
+            countNonTransparentPixels(pixels_no_rudy))
+      << "Enabling rudy heatmap should render additional heatmap pixels";
 }
 
 }  // namespace

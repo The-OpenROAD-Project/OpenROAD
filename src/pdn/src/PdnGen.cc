@@ -738,7 +738,7 @@ void PdnGen::setDebugRenderer(bool on)
 {
   if (on && gui::Gui::enabled()) {
     if (debug_renderer_ == nullptr) {
-      debug_renderer_ = std::make_unique<PDNRenderer>(this);
+      debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();
     }
   } else {

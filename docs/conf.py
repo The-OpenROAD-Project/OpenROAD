@@ -75,11 +75,12 @@ exclude_patterns = [
     "**/LICENSE",
     "**/LICENSE.md",
     "README.md",
-    "misc/NewToolDocExample.md",
-    "docs/releases/PostAlpha2.1BranchMethodology.md",
     "main/src/odb/src/def/README.md",
     "main/src/odb/src/def/doc/README.md",
     "main/src/odb/src/lef/README.md",
+    # Load-bearing: `setup()` symlinks `docs/main` -> the repo root, so
+    # `docs/main/docs` *is* this directory. Without this entry Sphinx
+    # discovers every page twice. Do not remove.
     "main/docs",
     "md",  # manpage dir
     "man",  # manpage dir

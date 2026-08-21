@@ -1171,6 +1171,10 @@ void IRNetwork::connectLayerNodes()
 
 odb::dbTechLayer* IRNetwork::getTopLayer() const
 {
+  odb::dbTechLayer* bstop = nodes_.begin()->first;
+  if (bstop->isBackside()) {
+    return bstop;
+  }
   return nodes_.rbegin()->first;
 }
 
@@ -1190,7 +1194,7 @@ odb::PtrSet<odb::dbTechLayer> IRNetwork::getLayers() const
 
 const std::vector<std::unique_ptr<Node>>& IRNetwork::getTopLayerNodes() const
 {
-  return nodes_.rbegin()->second;
+  return nodes_.at(getTopLayer());
 }
 
 IRNetwork::NodeTree IRNetwork::getTopLayerNodeTree() const

@@ -89,8 +89,9 @@ void PatternRoute::constructSteinerTree()
     return;
   }
 
-  // Sort access points by (x, y) before passing to FLUTE for deterministic
-  // output when equal-coordinate points exist across different STL builds.
+  // Sort access points by (x, y) before passing to the tree builder for
+  // deterministic output when equal-coordinate points exist across different
+  // STL builds.
   std::vector<std::pair<int, int>> sorted_points;
   sorted_points.reserve(selected_access_points.size());
   for (const auto& [point, layers] : selected_access_points) {
@@ -107,14 +108,25 @@ void PatternRoute::constructSteinerTree()
     ys.push_back(y);
   }
 
-  stt::Tree flute_tree = stt_builder_->flute(xs, ys, flute_accuracy_);
-  const int num_branches = degree + degree - 2;
+  int driver_index = 0;
+  if (const auto driver_point = net_->getDriverAccessPoint()) {
+    const auto match = std::ranges::find(
+        sorted_points,
+        std::pair<int, int>{driver_point->x(), driver_point->y()});
+    if (match != sorted_points.end()) {
+      driver_index = std::distance(sorted_points.begin(), match);
+    }
+  }
+
+  const stt::Tree stt_tree
+      = stt_builder_->makeSteinerTree(net_->getDbNet(), xs, ys, driver_index);
+  const int num_branches = stt_tree.branchCount();
   std::vector<PointT> steiner_points;
   steiner_points.reserve(num_branches);
   std::vector<std::vector<int>> adjacent_list(num_branches);
 
   for (int branch_index = 0; branch_index < num_branches; branch_index++) {
-    const stt::Branch& branch = flute_tree.branch[branch_index];
+    const stt::Branch& branch = stt_tree.branch[branch_index];
     steiner_points.emplace_back(branch.x, branch.y);
     if (branch_index == branch.n) {
       continue;

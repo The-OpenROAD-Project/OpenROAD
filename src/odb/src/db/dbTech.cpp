@@ -86,10 +86,6 @@ bool _dbTech::operator==(const _dbTech& rhs) const
     return false;
   }
 
-  if (extraction_rules_file_ != rhs.extraction_rules_file_) {
-    return false;
-  }
-
   if (via_cnt_ != rhs.via_cnt_) {
     return false;
   }
@@ -334,7 +330,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << NamedTable("cell_edge_spacing_tbl_", tech.cell_edge_spacing_tbl_);
   stream << *tech.name_cache_;
   stream << tech.via_hash_;
-  stream << tech.extraction_rules_file_;
   return stream;
 }
 
@@ -386,8 +381,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   }
   stream >> *tech.name_cache_;
   stream >> tech.via_hash_;
-  if (db->isSchema(kSchemaTechExtractionRulesFile)) {
-    stream >> tech.extraction_rules_file_;
+  if (db->isSchema(kSchemaTechExtractionRulesFile)
+      && db->isLessThanSchema(kSchemaRemoveTechExtractionRulesFile)) {
+    std::string obsolete_extraction_rules_file;
+    stream >> obsolete_extraction_rules_file;
   }
 
   return stream;
@@ -397,18 +394,6 @@ std::string dbTech::getName()
 {
   auto tech = (_dbTech*) this;
   return tech->name_;
-}
-
-void dbTech::setExtractionRulesFile(const std::string& path)
-{
-  _dbTech* tech = (_dbTech*) this;
-  tech->extraction_rules_file_ = path;
-}
-
-std::string dbTech::getExtractionRulesFile()
-{
-  _dbTech* tech = (_dbTech*) this;
-  return tech->extraction_rules_file_;
 }
 
 double _dbTech::getLefVersion() const

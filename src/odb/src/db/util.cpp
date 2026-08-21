@@ -5,12 +5,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <map>
 #include <numeric>
 #include <ranges>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -25,6 +27,29 @@ namespace odb {
 
 using std::string;
 using std::vector;
+
+std::string replaceBracketsWithUnderscores(std::string_view name)
+{
+  std::string sanitized_name;
+  sanitized_name.reserve(name.size());
+  size_t backslash_run = 0;
+
+  for (size_t i = 0; i < name.size(); i++) {
+    const char ch = name[i];
+    // An escaped bracket ("\[" or "\]") collapses into a single underscore.
+    if (ch == '\\' && i + 1 < name.size() && backslash_run % 2 == 0
+        && (name[i + 1] == '[' || name[i + 1] == ']')) {
+      sanitized_name += '_';
+      i++;
+      backslash_run = 0;
+      continue;
+    }
+    sanitized_name += (ch == '[' || ch == ']') ? '_' : ch;
+    backslash_run = ch == '\\' ? backslash_run + 1 : 0;
+  }
+
+  return sanitized_name;
+}
 
 static void buildRow(dbBlock* block,
                      const string& name,
@@ -53,12 +78,12 @@ static void buildRow(dbBlock* block,
   }
 }
 
+// Cuts a row into segments delimited by pre-computed blockage x-intervals
+// (halo already applied). The original row is destroyed.
 static void cutRow(dbBlock* block,
                    dbRow* row,
-                   vector<dbBox*>& row_blockages,
-                   int min_row_width,
-                   int halo_x,
-                   int halo_y)
+                   vector<std::pair<int, int>>& row_blockage_xs,
+                   int min_row_width)
 {
   string row_name = row->getName();
   Rect row_bb = row->getBBox();
@@ -69,29 +94,6 @@ static void cutRow(dbBlock* block,
   dbRowDir direction = row->getDirection();
 
   const int curr_min_row_width = min_row_width + 2 * site_width;
-
-  vector<dbBox*> row_blockage_bboxs = row_blockages;
-  vector<std::pair<int, int>> row_blockage_xs;
-  row_blockage_xs.reserve(row_blockages.size());
-  for (dbBox* row_blockage_bbox : row_blockages) {
-    if (row_blockage_bbox->getOwnerType() == odb::dbBoxOwner::INST) {
-      odb::dbInst* inst
-          = static_cast<odb::dbInst*>(row_blockage_bbox->getBoxOwner());
-      odb::dbBox* halo = inst->getHalo();
-      if (halo != nullptr && !halo->isSoft()) {
-        Rect halo_rect = inst->getTransformedHalo();
-        row_blockage_xs.emplace_back(
-            row_blockage_bbox->xMin() - halo_rect.xMin(),
-            row_blockage_bbox->xMax() + halo_rect.xMax());
-      } else {
-        row_blockage_xs.emplace_back(row_blockage_bbox->xMin() - halo_x,
-                                     row_blockage_bbox->xMax() + halo_x);
-      }
-    } else {
-      row_blockage_xs.emplace_back(row_blockage_bbox->xMin() - halo_x,
-                                   row_blockage_bbox->xMax() + halo_x);
-    }
-  }
 
   std::ranges::sort(row_blockage_xs);
 
@@ -166,42 +168,6 @@ static void cutRow(dbBlock* block,
   dbRow::destroy(row);
 }
 
-static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
-{
-  const Rect rowBB = row->getBBox();
-
-  odb::dbBox* halo = nullptr;
-  odb::Rect transformed_halo;
-  if (blockage->getOwnerType() == odb::dbBoxOwner::INST) {
-    halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())->getHalo();
-    transformed_halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())
-                           ->getTransformedHalo();
-  }
-
-  const bool use_inst_halo = halo != nullptr && !halo->isSoft();
-
-  // Check if Y has overlap first since rows are long and skinny
-  const int blockage_lly
-      = blockage->yMin() - (use_inst_halo ? transformed_halo.yMin() : halo_y);
-  const int blockage_ury
-      = blockage->yMax() + (use_inst_halo ? transformed_halo.yMax() : halo_y);
-  const int row_lly = rowBB.yMin();
-  const int row_ury = rowBB.yMax();
-
-  if (blockage_lly >= row_ury || row_lly >= blockage_ury) {
-    return false;
-  }
-
-  const int blockage_llx
-      = blockage->xMin() - (use_inst_halo ? transformed_halo.xMin() : halo_x);
-  const int blockage_urx
-      = blockage->xMax() + (use_inst_halo ? transformed_halo.xMax() : halo_x);
-  const int row_llx = rowBB.xMin();
-  const int row_urx = rowBB.xMax();
-
-  return blockage_llx < row_urx && row_llx < blockage_urx;
-}
-
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
 {
   double site_x = (x - offset) / site_width;
@@ -218,6 +184,7 @@ bool hasOverflow(T a, T b)
 
 void cutRows(dbBlock* block,
              const int min_row_width,
+             const int min_row_height,
              const vector<dbBox*>& blockages,
              int halo_x,
              int halo_y,
@@ -253,26 +220,100 @@ void cutRows(dbBlock* block,
     }
   }
 
-  // Gather rows needing to be cut up front
-  for (dbRow* row : block->getRows()) {
-    std::vector<dbBox*> row_blockages;
-    for (dbBox* blockage : blockages) {
-      if (overlaps(blockage, row, halo_x, halo_y)) {
-        row_blockages.push_back(blockage);
+  vector<Rect> effective_blockages;
+  effective_blockages.reserve(blockages.size());
+  for (auto blockage : blockages) {
+    odb::dbBox* halo = nullptr;
+    odb::Rect transformed_halo;
+    if (blockage->getOwnerType() == odb::dbBoxOwner::INST) {
+      halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())->getHalo();
+      transformed_halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())
+                             ->getTransformedHalo();
+    }
+
+    Rect effective_blockage;
+    const bool use_inst_halo = halo != nullptr && !halo->isSoft();
+
+    if (use_inst_halo) {
+      effective_blockage.init(blockage->xMin() - transformed_halo.xMin(),
+                              blockage->yMin() - transformed_halo.yMin(),
+                              blockage->xMax() + transformed_halo.xMax(),
+                              blockage->yMax() + transformed_halo.yMax());
+
+    } else {
+      effective_blockage.init(blockage->xMin() - halo_x,
+                              blockage->yMin() - halo_y,
+                              blockage->xMax() + halo_x,
+                              blockage->yMax() + halo_y);
+    }
+    effective_blockages.push_back(effective_blockage);
+  }
+
+  // Regions between two vertically stacked blockages that are too narrow to
+  // fit endcaps and placed cells later.
+  vector<Rect> narrow_regions;
+  if (min_row_height > 0) {
+    // The narrow region detection is checked using the distance between
+    // blockages, and since a 2-height row stack can sit between blockages that
+    // are spaced from (2 * site_height) to (3 * site_height - 1), we add the
+    // height of a site minus 1 to the min_row_height.
+    const int min_region_height
+        = min_row_height + rows.begin()->getSite()->getHeight() - 1;
+    // Core top/bottom edges are added as
+    // sentinel obstruction bands so slivers between a blockage and the
+    // core boundary are captured by the same pair scan.
+    const Rect core = block->getCoreArea();
+    effective_blockages.emplace_back(
+        core.xMin(), core.yMax(), core.xMax(), core.yMax() + 1);
+    effective_blockages.emplace_back(
+        core.xMin(), core.yMin() - 1, core.xMax(), core.yMin());
+
+    for (const auto& below : effective_blockages) {
+      for (const auto& above : effective_blockages) {
+        if (below.yMax() >= above.yMin()) {
+          continue;
+        }
+        if (above.yMin() - below.yMax() >= min_region_height) {
+          continue;
+        }
+        const int xMin = std::max(below.xMin(), above.xMin());
+        const int xMax = std::min(below.xMax(), above.xMax());
+        if (xMax <= xMin) {
+          continue;
+        }
+        narrow_regions.emplace_back(xMin, below.yMax(), xMax, above.yMin());
       }
     }
-    // Cut row around macros
-    if (!row_blockages.empty()) {
-      if (placed_row_insts.find(row) != placed_row_insts.end()) {
-        logger->warn(utl::ODB,
-                     386,
-                     "{} contains {} placed instances and will not be cut.",
-                     row->getName(),
-                     placed_row_insts[row]);
-      } else {
-        cutRow(block, row, row_blockages, min_row_width, halo_x, halo_y);
+  }
+
+  for (dbRow* row : rows) {
+    vector<std::pair<int, int>> row_blockage_xs;
+    const Rect row_box = row->getBBox();
+
+    for (Rect blockage : effective_blockages) {
+      if (row_box.overlaps(blockage)) {
+        row_blockage_xs.emplace_back(blockage.xMin(), blockage.xMax());
       }
     }
+    for (const auto& narrow_region : narrow_regions) {
+      if (row_box.overlaps(narrow_region)) {
+        row_blockage_xs.emplace_back(narrow_region.xMin(),
+                                     narrow_region.xMax());
+      }
+    }
+    if (row_blockage_xs.empty()) {
+      continue;
+    }
+
+    if (placed_row_insts.find(row) != placed_row_insts.end()) {
+      logger->warn(utl::ODB,
+                   386,
+                   "{} contains {} placed instances and will not be cut.",
+                   row->getName(),
+                   placed_row_insts[row]);
+      continue;
+    }
+    cutRow(block, row, row_blockage_xs, min_row_width);
   }
 
   const std::int64_t final_sites_count

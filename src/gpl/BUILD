@@ -99,6 +99,7 @@ cc_library(
         "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
         "@boost.random",
+        "@boost.scope_exit",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",

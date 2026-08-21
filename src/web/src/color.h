@@ -28,4 +28,9 @@ enum class FillPattern
   kDots = 4,      // dotted
 };
 
+// Selection-highlight yellow shared by the tile highlight border
+// (TileGenerator::drawHighlight) and the selection flywires
+// (request_handler's collectNetFlightLines).
+inline constexpr Color kSelectionYellow{.r = 255, .g = 255, .b = 0, .a = 255};
+
 }  // namespace web

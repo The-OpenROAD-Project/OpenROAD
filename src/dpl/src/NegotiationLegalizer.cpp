@@ -120,8 +120,6 @@ void NegotiationLegalizer::legalize()
 
   initFenceRegions();
 
-  debugPause("Pause after initialization.");
-
   debugPrint(logger_,
              utl::DPL,
              "negotiation",
@@ -312,6 +310,7 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
   pushNegotiationPixels();
   logger_->report("{}", msg);
   debug_observer_->redrawAndPause();
+  debug_observer_->clearAllDiamondSearches();
 }
 
 // ===========================================================================

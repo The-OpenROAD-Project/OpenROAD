@@ -18,6 +18,7 @@ set(WEB_ASSET_FILES
     src/theme.js
     src/tile-merge.js
     src/tile-request.js
+    src/device-pixels.js
     src/merged-tile-layer.js
     src/coordinates.js
     src/ui-utils.js
@@ -62,6 +63,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-request.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/device-pixels.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/merged-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js

@@ -192,6 +192,14 @@ sta_to_db_mod_net(Net *net)
   return db_mod_net;
 }
 
+Net *
+db_net_to_sta(odb::dbNet *db_net)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  return db_network->dbToSta(db_net);
+}
+
 odb::dbMaster *
 sta_to_db_master(LibertyCell *cell)
 {

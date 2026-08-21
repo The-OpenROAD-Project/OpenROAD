@@ -39,11 +39,13 @@ MAN1 = man1
 MAN2 = man2
 MAN3 = man3
 
-# Exclude these set of keywords
-EXCLUDE_KEYWORDS = ant cts dft dpl drt fin gpl grt gui ifp mpl \
-				   odb pad par pdn ppl psm rcx rmp rsz sta \
-				   stt tap upf utl
-EXCLUDE_FILES := $(addsuffix .md,$(EXCLUDE_KEYWORDS))
+# link_readmes.sh symlinks every src/<module>/README.md into md/man2/ so
+# md_roff_compat.py can read it. Those are whole-module documents, not command
+# pages, so keep them out of the man2 lists. Derive the set from src/ rather
+# than hard-coding it, so a new module cannot silently start emitting a
+# module-wide man page.
+EXCLUDE_MODULES := $(notdir $(patsubst %/,%,$(dir $(wildcard ../src/*/README.md))))
+EXCLUDE_FILES := $(addprefix $(SRC_DIR)/$(MAN2)/,$(addsuffix .md,$(EXCLUDE_MODULES)))
 
 MAN1_DIR = $(MAN_ROOT_DIR)/$(MAN1)
 SRC1_DIR = $(SRC_DIR)/$(MAN1)
@@ -57,7 +59,7 @@ CAT1_PAGES = $(patsubst $(SRC1_DIR)/%.md,$(CAT1_DIR)/%.1,$(MAN1_FILES))
 MAN2_DIR = $(MAN_ROOT_DIR)/$(MAN2)
 SRC2_DIR = $(SRC_DIR)/$(MAN2)
 MAN2_FILES = $(wildcard $(SRC2_DIR)/*.md)
-MAN2_FILES := $(filter-out $(foreach keyword, $(EXCLUDE_FILES), %$(keyword)), $(MAN2_FILES))
+MAN2_FILES := $(filter-out $(EXCLUDE_FILES), $(MAN2_FILES))
 MAN2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(MAN2_DIR)/%.2,$(MAN2_FILES))
 HTML2_DIR = $(HTML_ROOT_DIR)/html2
 HTML2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(HTML2_DIR)/%.html,$(MAN2_FILES))
@@ -76,8 +78,15 @@ CAT3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(CAT3_DIR)/%.3,$(MAN3_FILES))
 # Default target
 all: doc web cat
 
-# Target to do symlinks and pandoc-compatible conversion
+# Target to do symlinks and pandoc-compatible conversion.
+# md/man2 and md/man3 hold nothing but generated files, so clear them before
+# regenerating: rename or delete a command and its stale .md would otherwise
+# linger for the cat/web $(wildcard md/man*/*.md) to pick up, keeping an
+# obsolete page alive. //docs:man_pages runs unsandboxed in a persistent
+# execroot and does not declare these as inputs, so nothing else removes them.
+# md/man1 is checked in and must survive.
 preprocess:
+	rm -rf $(SRC_DIR)/$(MAN2) $(SRC_DIR)/$(MAN3)
 	./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
 
 # Target to generate all man pages
@@ -88,7 +97,6 @@ web: $(HTML1_PAGES) $(HTML2_PAGES) $(HTML3_PAGES)
 
 # Target to generate all cat pages
 cat: $(CAT1_PAGES) $(CAT2_PAGES) $(CAT3_PAGES)
-	@echo $(CAT1_PAGES)
 
 # Rule to create the man directory
 $(MAN1_DIR): 

@@ -81,6 +81,7 @@ field and the value is `true` or `false`.
 | `net_clock` | true | Clock nets |
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
+| `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
 
 #### Examples
 
@@ -104,6 +105,9 @@ save_image -web -area {0 0 100 100} -width 2048 region.png
 save_image -web -display_option {routing false} \
                 -display_option {net_power false} \
                 layout.png
+
+# Save with RUDY congestion heatmap overlay
+save_image -web -display_option {rudy true} layout_rudy.png
 ```
 
 ### Save Report

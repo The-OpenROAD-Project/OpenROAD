@@ -46,26 +46,26 @@ metal10    Vertical         2142          1190          44.44%
 
 Stage 1: Pattern routing.
 Routing statistics
-Wire length:           36727
-Total via count:       3319
+Wire length:           36832
+Total via count:       3340
 Total congestion:      0.00
-Min resource:          1.00
-Bottleneck:            (8, 0, 0)
+Min resource:          0.89
+Bottleneck:            (1, 17, 20)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V      5375.40       483.00       179.13       662.13      12.32
-metal3    H     12240.00      1240.00       160.54      1400.54      11.44
-metal4    V      6086.00       382.00        74.23       456.23       7.50
-metal5    H      6120.00        23.00        39.88        62.88       1.03
-metal6    V      6086.00       317.00        18.39       335.39       5.51
+metal2    V      5375.40       490.00       179.03       669.03      12.45
+metal3    H     12240.00      1236.00       160.64      1396.64      11.41
+metal4    V      6086.00       382.00        75.70       457.70       7.52
+metal5    H      6120.00        33.00        41.84        74.84       1.22
+metal6    V      6086.00       311.00        19.17       330.17       5.43
 metal7    H      2142.00         0.00         0.00         0.00       0.00
 metal8    V      2142.00         0.00         0.00         0.00       0.00
 metal9    H      1190.00         0.00         0.00         0.00       0.00
 metal10   V      1190.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           42571.40      2445.00       472.16      2917.16       6.85
+Total           42571.40      2452.00       476.39      2928.39       6.88
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

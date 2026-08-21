@@ -218,8 +218,7 @@ void WebServer::serve(int port)
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
          hook = viewer_hook_.get()](std::vector<unsigned char>& image,
-                                    const odb::Rect& dbu_tile,
-                                    double scale,
+                                    const TileFrame& frame,
                                     bool debug_live) {
           if (hook == nullptr) {
             return;
@@ -232,9 +231,12 @@ void WebServer::serve(int port)
             return;
           }
           for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
-            WebPainter painter(dbu_tile, scale);
+            // A Renderer sees the tile as a whole-DBU window (Painter's API is
+            // integer DBU); only the rasterization below needs the exact
+            // origin, which it takes from the frame.
+            WebPainter painter(frame.cull, frame.scale);
             renderer->drawObjects(painter);
-            gen->rasterizeWebPainterOps(image, painter.ops(), dbu_tile, scale);
+            gen->rasterizeWebPainterOps(image, painter.ops(), frame);
           }
         });
 

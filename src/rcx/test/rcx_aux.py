@@ -8,6 +8,10 @@ def define_process_corner(design, *, ext_model_index=0, filename=""):
     design.getOpenRCX().define_process_corner(ext_model_index, filename)
 
 
+def set_extraction_rules_file(design, *, filename=""):
+    design.getOpenRCX().setExtractionRulesFile(filename)
+
+
 def extract_parasitics(
     design,
     *,

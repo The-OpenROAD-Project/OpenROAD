@@ -15,4 +15,17 @@ void MultiChipExtractor::run(const ExtractOptions& /* options */)
   logger_->error(utl::RCX, 515, "3D extraction is not yet supported.");
 }
 
+void MultiChipExtractor::setExtractionRulesFile(
+    odb::dbTech* tech,
+    const std::string& extraction_rules_file)
+{
+  extraction_rules_files_[tech] = extraction_rules_file;
+}
+
+void MultiChipExtractor::setAssemblyExtractionRulesFile(
+    const std::string& assembly_extraction_rules_file)
+{
+  assembly_extraction_rules_file_ = assembly_extraction_rules_file;
+}
+
 }  // namespace rcx

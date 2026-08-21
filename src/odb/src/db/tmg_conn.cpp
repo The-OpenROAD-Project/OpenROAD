@@ -1298,11 +1298,34 @@ int tmg_conn::getStartNode()
   for (const tmg_rcterm& x : termV_) {
     if (x.iterm == it_drv && x.bterm == bt_drv) {
       if (!x.pt) {
-        return 0;
+        break;
       }
+
       return (x.pt - ptV_.data());
     }
   }
+
+  // On a 3D-IC design, the starting point of an input bump net is the bump
+  // iterm even though such a net does have a bterm. The bterm has no geometry
+  // and only serves to represent the logical connectivity. The following code
+  // will NOT work if a die with such a net is loaded independently as a 2D
+  // design. This will need to be revisited.
+  if (bt_drv && bt_drv->getBPins().empty()) {
+    dbChipBump* chip_bump = bt_drv->getChipBump();
+
+    if (chip_bump) {
+      dbInst* bump = chip_bump->getInst();
+
+      for (const tmg_rcterm& rc_term : termV_) {
+        dbITerm* iterm = rc_term.iterm;
+
+        if (iterm && (iterm->getInst() == bump) && rc_term.pt) {
+          return (rc_term.pt - ptV_.data());
+        }
+      }
+    }
+  }
+
   return 0;
 }
 
@@ -1464,8 +1487,13 @@ void tmg_conn::treeReorder(const bool no_convert)
   }
   dfsClear();
   if (!dfsStart(jstart)) {
-    logger_->warn(ODB, 395, "cannot order {}", net_->getConstName());
-    return;
+    logger_->error(ODB,
+                   395,
+                   "Could not order wires of net {}. No wire segment is "
+                   "reachable from the start point ({} {}).",
+                   net_->getConstName(),
+                   ptV_[jstart].x,
+                   ptV_[jstart].y);
   }
   int last_term_index = 0;
   while (true) {
@@ -1546,8 +1574,13 @@ void tmg_conn::treeReorder(const bool no_convert)
     }
     jstart = pt - ptV_.data();
     if (!dfsStart(jstart)) {
-      logger_->warn(ODB, 396, "cannot order {}", net_->getConstName());
-      return;
+      logger_->error(ODB,
+                     396,
+                     "Could not order wires of net {}. No wire segment is "
+                     "reachable from the branch start point ({} {}).",
+                     net_->getConstName(),
+                     ptV_[jstart].x,
+                     ptV_[jstart].y);
     }
   }
 

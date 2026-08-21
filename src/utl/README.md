@@ -13,11 +13,11 @@ The utility module contains the `man` command.
 
 OpenROAD includes a metrics endpoint server that can track internal tool metrics over time.
 
-![page](/docs/images/grafana.png)
+![page](../../docs/images/grafana.png)
 
 To use this feature you need to do the following start the prometheus and grafana collectors
 
-[Detailed instructions](/etc/monitoring/README.md):
+[Detailed instructions](../../etc/monitoring/README.md):
 ```shell
 $ cd etc/monitoring
 $ docker compose up -d

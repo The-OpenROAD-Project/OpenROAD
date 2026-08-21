@@ -17,7 +17,7 @@ This command performs global routing with the option to use a `guide_file`.
 You may also choose to use incremental global routing using `-start_incremental`.
 
 ```tcl
-global_route 
+global_route
     [-guide_file out_file]
     [-congestion_iterations iterations]
     [-congestion_report_file file_name]
@@ -38,7 +38,7 @@ global_route
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-guide_file` | Set the output guides file name (e.g., `route.guide`). |
 | `-congestion_iterations` | Set the number of iterations made to remove the congestion of the routing. The default value is `50` for FastRoute and `5` when `-use_cugr` is set; the allowed values are integers `[0, MAX_INT]`. |
@@ -88,7 +88,7 @@ set_macro_extension extension
 
 #### Options
 
-| Argument Name | Description | 
+| Argument Name | Description |
 | ----- | ----- |
 | `extension` | Number of `GCells` added to the blockage boundaries from macros. The default `GCell` size is 15 `M3` pitches. |
 
@@ -116,7 +116,7 @@ set_global_routing_layer_adjustment layer adjustment
 
 #### Options
 
-| Argument Name | Description | 
+| Argument Name | Description |
 | ----- | ----- |
 | `layer` | String for the layer name. |
 | `adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
@@ -130,7 +130,7 @@ Example: `set_global_routing_region_adjustment {1.5 2 20 30.5} -layer Metal4 -ad
 ```tcl
 set_global_routing_region_adjustment
     {lower_left_x lower_left_y upper_right_x upper_right_y}
-    -layer layer 
+    -layer layer
     -adjustment adjustment
 ```
 
@@ -145,7 +145,7 @@ set_global_routing_region_adjustment
 ### Set Global Routing Randomness
 
 The command randomizes global routing by shuffling the order of the nets
-and randomly subtracts or adds to the capacities of a random set of edges. 
+and randomly subtracts or adds to the capacities of a random set of edges.
 
 Example:
 `set_global_routing_random -seed 42 \
@@ -153,7 +153,7 @@ Example:
   -perturbation_amount 2`
 
 ```tcl
-set_global_routing_random 
+set_global_routing_random
     [-seed seed]
     [-capacities_perturbation_percentage percent]
     [-perturbation_amount value]
@@ -161,7 +161,7 @@ set_global_routing_random
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-seed` | Sets the random seed (must be non-zero for randomization). |
 | `-capacities_perturbation_percentage` | Sets the percentage of edges whose capacities are perturbed. By default, the edge capacities are perturbed by adding or subtracting 1 (track) from the original capacity.  |
@@ -174,8 +174,8 @@ defined in this command are routed, leaving the remaining nets without any
 global route guides.
 
 ```tcl
-set_nets_to_route 
-    net_names 
+set_nets_to_route
+    net_names
 ```
 
 #### Options
@@ -191,10 +191,10 @@ violations and repairs the violations by inserting diodes near the
 gates of the violating nets.  By default the command runs only one
 iteration to repair antennas. Filler instances added by the
 `filler_placement` command should NOT be in the database when
-`repair_antennas` is called. 
+`repair_antennas` is called.
 
 See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
-Fixing Process Antenna Violations" for a [description](coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf) 
+Fixing Process Antenna Violations" for a [description](https://coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf)
 of antenna violations.
 
 If no `diode_cell` argument is specified the LEF cell with class CORE, ANTENNACELL will be used.
@@ -202,7 +202,7 @@ If any repairs are made the filler instances are remove and must be
 placed with the `filler_placement` command.
 
 If the LEF technology layer `ANTENNADIFFSIDEAREARATIO` properties are constant
-instead of PWL, inserting diodes will not improve the antenna ratios, 
+instead of PWL, inserting diodes will not improve the antenna ratios,
 and thus, no
 diodes are inserted. The following warning message will be reported:
 
@@ -211,7 +211,7 @@ diodes are inserted. The following warning message will be reported:
 ```
 
 ```tcl
-repair_antennas 
+repair_antennas
     [diode_cell]
     [-iterations iterations]
     [-ratio_margin margin]
@@ -253,7 +253,7 @@ and report the wire length accordingly.
 Example: `report_wire_length -net {clk net60} -global_route -detailed_route -verbose -file out.csv`
 
 ```tcl
-report_wire_length 
+report_wire_length
     [-net net_list]
     [-file file]
     [-global_route]
@@ -264,7 +264,7 @@ report_wire_length
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-net` | List of nets to report the wirelength. Use `*` to report the wire length for all nets of the design. |
 | `-file` | The name of the file for the wirelength report. |
@@ -277,11 +277,11 @@ report_wire_length
 
 The `global_route_debug` command allows you to start a debug mode to view the status of the Steiner Trees.
 It also allows you to dump the input positions for the Steiner tree creation of a net.
-This must be used before calling the `global_route` command. 
+This must be used before calling the `global_route` command.
 Set the name of the net and the trees that you want to visualize.
 
 ```tcl
-global_route_debug 
+global_route_debug
     [-st]
     [-rst]
     [-tree2D]
@@ -305,17 +305,17 @@ global_route_debug
 
 ### Read Global Routing Guides
 
-This command reads global routing guides. 
+This command reads global routing guides.
 
 ```tcl
-read_guides file_name 
+read_guides file_name
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `file_name` | Path to global routing guide. | 
+| `file_name` | Path to global routing guide. |
 
 ### Write Global Routing Segments
 
@@ -323,14 +323,14 @@ This command writes global routing segments, the raw routing data generated by
 the global routing tool.
 
 ```tcl
-write_global_route_segments file_name 
+write_global_route_segments file_name
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `file_name` | Path to global routing segments file. | 
+| `file_name` | Path to global routing segments file. |
 
 ### Read Global Routing Segments
 
@@ -340,18 +340,18 @@ extraction, repair antennas and incremental routing over the input segments
 file.
 
 ```tcl
-read_global_route_segments file_name 
+read_global_route_segments file_name
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `file_name` | Path to global routing segments file. | 
+| `file_name` | Path to global routing segments file. |
 
 ### Estimate Path Resistance Between Two Pins
 
-This command calculates the path resistance between two pins considering the 
+This command calculates the path resistance between two pins considering the
 vias and wires connecting them. The two pins need to be connected by the same
 wire.
 
@@ -363,7 +363,7 @@ estimate_path_resistance pin_name_1 pin_name_2 [-verbose]
 
 | Switch Name | Description |
 | ----- | ----- |
-| `pin_name_1` | Pin name 1 (e.g., `_437_/Y`). | 
+| `pin_name_1` | Pin name 1 (e.g., `_437_/Y`). |
 | `pin_name_2` | Pin name 1 (e.g., `_438_/A`). |
 | `-verbose` | Print path details. |
 
@@ -389,9 +389,9 @@ If you are a developer, you might find these useful. More details can be found i
 
 ## Regression tests
 
-There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script: 
+Simply run the following script:
 
 ```shell
 ./test/regression
@@ -418,7 +418,7 @@ tech.readLef(...)
 design = Design(tech)
 design.readDef(...)
 gr = design.getGlobalRouter()
-```    
+```
 
 Here are some options to the `global_route`
 command. (See `GlobalRouter.h` for a complete list)
@@ -440,7 +440,7 @@ and when ready to actually do the global route:
 
 ```python
 gr.globalRoute(save_guides)                # boolean, default False
-```    
+```
 
 If you have set `save_guides` to True, you can then save the guides in `file_name` with:
 
@@ -458,7 +458,7 @@ or, if you only have the `Python` design object
 
 ```python
 lindex = design.getTech().getDB().getTech().findLayer(layer_name)
-```    
+```
 
 Be aware that much of the error checking is done in `Tcl`, so that with
 the current `C++` / `Python` API, that might be an issue to deal
@@ -468,7 +468,7 @@ but these are not considered a part of the *final* API and may be subject to cha
 ## References
 
 -   Database comes from [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB)
--   [FastRoute 4.1 documentation](src/fastroute/README).  The FastRoute4.1
+-   [FastRoute 4.1 documentation](./src/fastroute/README.md).  The FastRoute4.1
     version was received from [Yue Xu](mailto:yuexu@iastate.edu) on June 15, 2019.
 -   Min Pan, Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute: An Efficient and
     High-Quality Global Router. VLSI Design, Article ID 608362, 2012."

@@ -59,14 +59,13 @@ class dbEditHierarchy
   std::string makeUniqueName(odb::dbModule* module,
                              std::string_view name,
                              const char* io_type_str = nullptr) const;
+  const char* getBaseName(const char* connection_name) const;
 
   // During the addition of new ports and new wiring we may
   // leave orphaned pins, clean them up.
   void cleanUnusedHierPins(
       const std::vector<odb::dbModule*>& source_parent_tree,
       const std::vector<odb::dbModule*>& dest_parent_tree) const;
-
-  const char* getBaseName(const char* connection_name) const;
 
   // Debug log methods
   void dlogHierConnStart(odb::dbITerm* source_pin,
