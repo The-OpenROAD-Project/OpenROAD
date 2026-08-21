@@ -4,6 +4,9 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 280 components and 1678 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 281 connections.
+[DEBUG CTS-insertion delay] Delay buffer list = [
+[DEBUG CTS-insertion delay]   CLKBUF_X3
+[DEBUG CTS-insertion delay] ]
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
@@ -136,12 +139,17 @@
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 14
 [INFO CTS-0033] Balancing latency for clock clk
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (51545 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (46878 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (42212 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (37545 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (32878 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (101013 149105)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (102026 98350)
+[DEBUG CTS-insertion delay] at node gclk1
+[DEBUG CTS-insertion delay] at node clkbuf_1_1__f_clk
+[DEBUG CTS-insertion delay] at node clkbuf_1_0__f_clk
+[DEBUG CTS-insertion delay] at node clkbuf_0_clk
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk inserted at (51545 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk inserted at (46878 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk inserted at (42212 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk inserted at (37545 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk inserted at (32878 94115)
+[DEBUG CTS-insertion delay] at node clk
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk inserted at (101013 149105)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk inserted at (102026 98350)
 [INFO CTS-0036]  inserted 7 delay buffers
 [INFO CTS-0037] Total number of delay buffers: 7
