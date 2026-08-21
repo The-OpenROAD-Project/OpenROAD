@@ -939,16 +939,24 @@ void BinGrid::updateBinsNonPlaceArea()
   // overlapping macros cannot exceed a single-macro contribution.
   const int dbu_per_micron
       = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
+  std::vector<int64_t> nonPlaceAreaRaw(bins_.size(), 0);
   for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int y = pairY.first; y < pairY.second; y++) {
       for (int x = pairX.first; x < pairX.second; x++) {
         Bin& bin = bins_[y * binCntX_ + x];
-        bin.addNonPlaceArea(getOverlapArea(&bin, inst, dbu_per_micron)
-                            * bin.getTargetDensity());
+        nonPlaceAreaRaw[y * binCntX_ + x]
+            += getOverlapArea(&bin, inst, dbu_per_micron);
       }
     }
+  }
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    if (nonPlaceAreaRaw[i] == 0) {
+      continue;
+    }
+    bins_[i].addNonPlaceArea(
+        static_cast<int64_t>(nonPlaceAreaRaw[i] * bins_[i].getTargetDensity()));
   }
   for (size_t i = 0; i < bins_.size(); ++i) {
     if (bin_insts[i].empty()) {
@@ -5634,8 +5642,8 @@ static int64_t getOverlapArea(const Bin* bin,
     // at the outer sides of the macro.
     return original;
   }
-  return static_cast<float>(rectUx - rectLx)
-         * static_cast<float>(rectUy - rectLy);
+  return static_cast<int64_t>(rectUx - rectLx)
+         * static_cast<int64_t>(rectUy - rectLy);
 }
 
 // A function that does 2D integration to the density function of a
