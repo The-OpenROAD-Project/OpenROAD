@@ -22,7 +22,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  99.52 23.995 99.66 24.48 ;
+        RECT  100.44 23.995 100.58 24.48 ;
     END
   END we[0]
   PIN addr_rw[0]
@@ -158,7 +158,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met2 ;
-        RECT  80.2 23.995 80.34 24.48 ;
+        RECT  79.28 23.995 79.42 24.48 ;
     END
   END Q[6]
   PIN D[7]

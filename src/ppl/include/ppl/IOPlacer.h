@@ -218,6 +218,12 @@ class IOPlacer
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
+  void computePinSize(int layer,
+                      bool vertical_pin,
+                      int& half_width,
+                      int& height);
+  int computeLayerSpacing(int layer, int shape_width, int parallel_length);
+  void getBlockedRegionsFromPDN();
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   Edge getMirroredEdge(const Edge& edge);

@@ -52,10 +52,10 @@ class Core
   const LayerToVector& getInitTracksY() const { return init_tracks_y_; }
   const LayerToVector& getNumTracksX() const { return num_tracks_x_; }
   const LayerToVector& getNumTracksY() const { return num_tracks_y_; }
-  std::map<int, int> getMinAreaX() const { return min_area_x_; }
-  std::map<int, int> getMinAreaY() const { return min_area_y_; }
-  std::map<int, int> getMinWidthX() const { return min_width_x_; }
-  std::map<int, int> getMinWidthY() const { return min_width_y_; }
+  const std::map<int, int>& getMinAreaX() const { return min_area_x_; }
+  const std::map<int, int>& getMinAreaY() const { return min_area_y_; }
+  const std::map<int, int>& getMinWidthX() const { return min_width_x_; }
+  const std::map<int, int>& getMinWidthY() const { return min_width_y_; }
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
   odb::Point getMirroredPosition(const odb::Point& position) const;
