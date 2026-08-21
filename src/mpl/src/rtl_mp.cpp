@@ -5,7 +5,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
@@ -102,21 +101,14 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
   const int x1 = block->micronsToDbu(x_origin);
   const int y1 = block->micronsToDbu(y_origin);
 
-  // The containment check below must use the footprint the macro will have
-  // once `orientation` is applied, not the one it has right now. The four
-  // right-angle orientations swap width and height, so validating the
-  // pre-setOrient bbox rejects legal placements of rotated macros -- and
-  // symmetrically accepts illegal ones -- whenever the requested orientation
-  // differs from the current one in right-angle-ness.
-  int width = inst->getBBox()->getDX();
-  int height = inst->getBBox()->getDY();
-  if (orientation.isRightAngleRotation()
-      != inst->getOrient().isRightAngleRotation()) {
-    std::swap(width, height);
-  }
+  // Orientation must be set before location so we don't end up flipping and
+  // misplacing the macro, and before the containment check below so that the
+  // check sees the footprint the macro will actually have -- the four
+  // right-angle orientations swap width and height.
+  inst->setOrient(orientation);
 
-  const int x2 = x1 + width;
-  const int y2 = y1 + height;
+  const int x2 = x1 + inst->getBBox()->getDX();
+  const int y2 = y1 + inst->getBBox()->getDY();
 
   odb::Rect macro_new_bbox(x1, y1, x2, y2);
   odb::Rect core_area = inst->getBlock()->getCoreArea();
@@ -137,9 +129,6 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
                    block->dbuToMicrons(core_area.yMax()));
   }
 
-  // Orientation must be set before location so we don't end up flipping
-  // and misplacing the macro.
-  inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
   if (orientation.isRightAngleRotation()) {
