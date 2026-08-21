@@ -1449,6 +1449,9 @@ void CUGR::reportCongestion() const
 
 void CUGR::updateDbCongestion()
 {
+  if (!grid_graph_ || !design_) {
+    return;
+  }
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbGCellGrid* db_gcell = block->getGCellGrid();
   if (db_gcell == nullptr) {

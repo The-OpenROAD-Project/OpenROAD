@@ -18,7 +18,6 @@
 #include "graphics/DplObserver.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
-#include "infrastructure/Padding.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
@@ -65,13 +64,11 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 NegotiationLegalizer::NegotiationLegalizer(Opendp* opendp,
                                            odb::dbDatabase* db,
                                            utl::Logger* logger,
-                                           const Padding* padding,
                                            DplObserver* debug_observer,
                                            Network* network)
     : opendp_(opendp),
       db_(db),
       logger_(logger),
-      padding_(padding),
       debug_observer_(debug_observer),
       network_(network)
 {
@@ -635,11 +632,6 @@ bool NegotiationLegalizer::initFromDb()
                db_inst->getName(),
                cell.height);
 
-    if (padding_ != nullptr) {
-      cell.pad_left = padding_->padLeft(db_inst).v;
-      cell.pad_right = padding_->padRight(db_inst).v;
-    }
-
     cells_.push_back(cell);
   }
 
@@ -690,24 +682,20 @@ void NegotiationLegalizer::buildGrid()
     }
   }
 
-  // Mark blockages and record fixed-cell usage in one pass.
-  // The padded range of fixed cells is also blocked so movable cells
-  // cannot violate padding constraints relative to fixed instances.
+  // Blockade each fixed cell and record its usage in one pass.  Footprint
+  // only: padding is left to PlacementDRC, which knows both masters and so
+  // can apply the class-pair rules that a plain capacity cannot express.
   for (const NegCell& cell : cells_) {
     if (!cell.fixed) {
       continue;
     }
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
     for (int dy = 0; dy < cell.height; ++dy) {
       const int gy = cell.y + dy;
-      for (int gx = xBegin; gx < xEnd; ++gx) {
+      for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
         if (gridExists(gx, gy)) {
-          gridAt(gx, gy).capacity = 0;
-          // Physical footprint carries usage=1; padding slots do not.
-          if (gx >= cell.x && gx < cell.x + cell.width) {
-            gridAt(gx, gy).usage = 1;
-          }
+          Pixel& pixel = gridAt(gx, gy);
+          pixel.capacity = 0;
+          pixel.usage = 1;
         }
       }
     }
@@ -774,11 +762,9 @@ void NegotiationLegalizer::initFenceRegions()
 void NegotiationLegalizer::addUsage(int cell_idx, int delta)
 {
   const NegCell& cell = cells_[cell_idx];
-  const int xBegin = effXBegin(cell);
-  const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
     const int gy = cell.y + dy;
-    for (int gx = xBegin; gx < xEnd; ++gx) {
+    for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
       if (gridExists(gx, gy)) {
         gridAt(gx, gy).usage += delta;
       }
@@ -1095,12 +1081,10 @@ bool NegotiationLegalizer::isCellLegal(int cell_idx) const
     return false;
   }
 
-  const int xBegin = effXBegin(cell);
-  const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int gx = xBegin; gx < xEnd; ++gx) {
-      if (gridAt(gx, cell.y + dy).capacity == 0
-          || gridAt(gx, cell.y + dy).overuse() > 0) {
+    for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
+      const Pixel& g = gridAt(gx, cell.y + dy);
+      if (g.capacity == 0 || g.overuse() > 0) {
         return false;
       }
     }

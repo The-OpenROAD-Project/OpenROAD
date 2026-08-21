@@ -25,8 +25,6 @@ namespace fs = std::filesystem;
 namespace utl {
 
 namespace {
-constexpr std::streamsize kGzipBufferSize = 65536;
-
 std::string generate_unused_filename(const std::string& prefix)
 {
   int counter = 1;
@@ -97,7 +95,7 @@ OutStreamHandler::OutStreamHandler(const char* filename,
     if (compression_level.has_value()) {
       params.level = compression_level.value();
     }
-    buf_->push(boost::iostreams::gzip_compressor(params, kGzipBufferSize));
+    buf_->push(boost::iostreams::gzip_compressor(params));
     buf_->push(os_);
 
     stream_ = std::make_unique<std::ostream>(buf_.get());
@@ -159,8 +157,7 @@ InStreamHandler::InStreamHandler(const char* filename, bool binary)
   if (boost::ends_with(filename_, ".gz")) {
     buf_ = std::make_unique<boost::iostreams::filtering_istreambuf>();
 
-    buf_->push(boost::iostreams::gzip_decompressor(
-        boost::iostreams::gzip::default_window_bits, kGzipBufferSize));
+    buf_->push(boost::iostreams::gzip_decompressor());
     buf_->push(is_);
 
     stream_ = std::make_unique<std::istream>(buf_.get());
