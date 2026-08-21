@@ -444,8 +444,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
-        check_log = False if test_name in PASSFAIL_TESTS else True,
-        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],
     )

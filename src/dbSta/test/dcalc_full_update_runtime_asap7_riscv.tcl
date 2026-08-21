@@ -15,7 +15,7 @@ read_lef asap7/fakeram7_256x32.lef
 read_def ../../psm/test/asap7_data/riscv.def
 
 set clk_port [get_ports clk]
-set non_clock_inputs [lsearch -inline -all -not -exact [all_inputs] $clk_port]
+set non_clock_inputs [all_inputs -no_clocks]
 create_clock -name clk -period 3000 $clk_port
 set_input_delay 0 -clock clk $non_clock_inputs
 set_output_delay 0 -clock clk [all_outputs]
