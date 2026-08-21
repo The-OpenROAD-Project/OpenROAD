@@ -95,6 +95,7 @@ or_integration_tests(
     repair_antennas_error1
     repair_antennas_error2
     repair_antennas_from_odb
+    repair_antennas_from_odb_cugr
     repair_antennas_jumper_capacity_cugr
     repair_antennas_only_diodes
     repair_antennas_only_diodes_cugr

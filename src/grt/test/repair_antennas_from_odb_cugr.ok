@@ -1,0 +1,32 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ANT-0002] Found 5 net violations.
+[INFO ANT-0001] Found 5 pin violations.
+[DEBUG GRT-repair_antennas] Demand adoption: 0 nets from wires, 411 from guides, 0 failed
+[DEBUG GRT-repair_antennas] antenna violations clk
+[DEBUG GRT-repair_antennas] antenna violations req_msg[11]
+[DEBUG GRT-repair_antennas] antenna violations req_msg[15]
+[DEBUG GRT-repair_antennas] antenna violations req_msg[25]
+[DEBUG GRT-repair_antennas] antenna violations req_msg[2]
+[INFO GRT-0012] Found 5 antenna violations.
+[INFO GRT-0302] Inserted 4 jumpers for 4 nets.
+[DEBUG GRT-repair_antennas] antenna violations clk
+[INFO GRT-0012] Found 1 antenna violations.
+[INFO DPL-0006] Core area: 78411.11 um^2
+[INFO DPL-0007] Movable instances area: 3853.74 um^2
+[INFO DPL-0008] Fixed instances area within core: 2389.61 um^2
+[INFO DPL-0009] Utilization: 8.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 1361 cells
+[INFO GRT-0015] Inserted 1 diodes.
+use_cugr: 1
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
+No differences found.
+No differences found.
