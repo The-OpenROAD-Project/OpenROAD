@@ -101,10 +101,8 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
   const int x1 = block->micronsToDbu(x_origin);
   const int y1 = block->micronsToDbu(y_origin);
 
-  // Orientation must be set before location so we don't end up flipping and
-  // misplacing the macro, and before the containment check below so that the
-  // check sees the footprint the macro will actually have -- the four
-  // right-angle orientations swap width and height.
+  // Orientation must be set before checking if the macro fits in the core and
+  // before setting its location.
   inst->setOrient(orientation);
 
   const int x2 = x1 + inst->getBBox()->getDX();
