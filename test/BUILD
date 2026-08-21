@@ -181,17 +181,11 @@ BIG_TESTS = [
     "tinyRocket_nangate45",
 ]
 
-# BIG_TESTS produce no golden log, so their QoR is what there is to check. The
-# limits file is the opt-in: every BIG_TEST has one except gcd_sky130hd_fast_slow.
-FLOW_METRIC_TESTS = [
-    test_name
-    for test_name in BIG_TESTS
-    if test_name + ".metrics_limits" in glob(
-        ["*.metrics_limits"],
-        allow_empty = True,
-    )
-]
-
+# BIG_TESTS produce no golden log, so their QoR is what there is to check, and
+# every one of them is metric checked. A new design has to save a
+# <design>.metrics_limits file; without one the check fails with "missing metrics
+# limits file" rather than quietly running the flow and asserting nothing.
+#
 # upf_aes does its own diff internally (regions-only under BAZEL_TEST) since
 # the full DEF output is not bit-stable across Bazel/CMake; the Tcl script
 # fails the test on mismatch, so the log diff against .ok is suppressed.
@@ -200,7 +194,7 @@ FLOW_METRIC_TESTS = [
         name = test_name,
         size = "enormous" if test_name in BIG_TESTS else "medium",
         check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS + ["upf_aes"] else True,
-        check_metrics = True if test_name in FLOW_METRIC_TESTS else False,
+        check_metrics = True if test_name in BIG_TESTS else False,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
         tags = ["manual"] if test_name in BIG_TESTS else [],
