@@ -66,7 +66,6 @@ int LatencyBalancer::run()
                 " inserted {} delay buffers",
                 delayBufIndex_,
                 root_->getClock().getSdcName());
-  showGraph();
   return delayBufIndex_;
 }
 
