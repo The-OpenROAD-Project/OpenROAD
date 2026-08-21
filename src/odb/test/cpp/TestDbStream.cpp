@@ -115,7 +115,7 @@ TEST_F(DbStreamTest, BufferFlushing)
     std::stringstream ss;
     dbOStream out(reinterpret_cast<_dbDatabase*>(getDb()), ss);
     std::vector<char> large_data(70000, 'a');
-    out.write_bytes(large_data);
+    out.writeBytes(large_data);
     EXPECT_EQ(ss.str().size(), 70000);
   }
 
@@ -125,9 +125,9 @@ TEST_F(DbStreamTest, BufferFlushing)
     dbOStream out(reinterpret_cast<_dbDatabase*>(getDb()), ss);
     std::vector<char> chunk1(60000, 'a');
     std::vector<char> chunk2(10000, 'b');
-    out.write_bytes(chunk1);
+    out.writeBytes(chunk1);
     EXPECT_EQ(ss.str().size(), 0);  // Still buffered
-    out.write_bytes(
+    out.writeBytes(
         chunk2);  // Triggers flush of chunk1, then copies chunk2 to buffer
     EXPECT_EQ(ss.str().size(), 60000);  // chunk1 flushed
     out.flush();                        // Flush chunk2

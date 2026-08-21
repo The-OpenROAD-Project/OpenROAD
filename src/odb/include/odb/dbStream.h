@@ -37,17 +37,24 @@ class dbOStream
   using Position = std::ostream::pos_type;
 
   dbOStream(_dbDatabase* db, std::ostream& f);
-  ~dbOStream() { flush(); }
+  ~dbOStream()
+  {
+    try {
+      flush();
+    } catch (...) {
+      // Ignore exceptions in destructor
+    }
+  }
 
   template <typename T>
     requires(std::is_trivially_copyable_v<T>)
   void writeValueAsBytes(const T& val)
   {
-    write_bytes(
+    writeBytes(
         std::span<const char>(reinterpret_cast<const char*>(&val), sizeof(T)));
   }
 
-  void flush() const
+  void flush()
   {
     if (buffer_pos_ > 0) {
       f_.write(buffer_.data(), static_cast<std::streamsize>(buffer_pos_));
@@ -57,7 +64,7 @@ class dbOStream
 
   _dbDatabase* getDatabase() { return db_; }
 
-  void write_bytes(std::span<const char> bytes)
+  void writeBytes(std::span<const char> bytes)
   {
     const char* data = bytes.data();
     const size_t len = bytes.size();
@@ -98,8 +105,8 @@ class dbOStream
   dbOStream& operator<<(std::string_view s)
   {
     *this << static_cast<uint32_t>(s.size() + 1);
-    write_bytes(s);
-    write_bytes({"\0", 1});
+    writeBytes(s);
+    writeBytes({"\0", 1});
     return *this;
   }
 
@@ -216,7 +223,7 @@ class dbOStream
   double lefarea(int value) { return ((double) value * lef_area_factor_); }
   double lefdist(int value) { return ((double) value * lef_dist_factor_); }
 
-  Position pos() const
+  Position pos()
   {
     flush();
     return f_.tellp();
@@ -239,7 +246,7 @@ class dbOStream
   std::vector<Scope> scopes_;
   static constexpr size_t kBufferSize = 65536;
   std::array<char, kBufferSize> buffer_;
-  mutable size_t buffer_pos_ = 0;
+  size_t buffer_pos_ = 0;
 };
 
 // RAII class for scoping ostream operations

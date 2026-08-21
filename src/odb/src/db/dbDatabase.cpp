@@ -1081,9 +1081,11 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   if (block->journal_) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->journal_;
+    stream.flush();
   } else if (!block->journal_stack_.empty()) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->journal_stack_.top();
+    stream.flush();
   }
 }
 
