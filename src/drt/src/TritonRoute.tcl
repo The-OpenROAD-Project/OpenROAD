@@ -463,6 +463,7 @@ sta::define_cmd_args "set_routing_watermark_strength" {strength}
 # Kahng et al. (ISPD'98). Must be called before detailed_route.
 proc set_routing_watermark_strength { args } {
   sta::check_argc_eq1 "set_routing_watermark_strength" $args
+  sta::parse_key_args "set_routing_watermark_strength" args keys {} flags {}
   set strength [lindex $args 0]
   if { ![string is double -strict $strength] || $strength < 0.0 } {
     utl::error DRT 801 \
@@ -476,6 +477,7 @@ sta::define_cmd_args "get_routing_watermark_strength" {}
 # Return the current non-preferred-direction cost multiplier.
 proc get_routing_watermark_strength { args } {
   sta::check_argc_eq0 "get_routing_watermark_strength" $args
+  sta::parse_key_args "get_routing_watermark_strength" args keys {} flags {}
   return [drt::get_routing_watermark_strength_cmd]
 }
 

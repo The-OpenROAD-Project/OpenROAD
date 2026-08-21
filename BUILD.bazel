@@ -388,7 +388,6 @@ cc_binary(
         "//src/dpl",
         "//src/drt",
         "//src/exa",
-        "//src/wmk",
         "//src/fin",
         "//src/gpl",
         "//src/grt",
@@ -405,6 +404,7 @@ cc_binary(
         "//src/stt",
         "//src/tap",
         "//src/utl",
+        "//src/wmk",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
@@ -446,7 +446,6 @@ python_wrap_cc(
         "//src/dpl:swig-py",
         "//src/drt:swig-py",
         "//src/exa:swig-py",
-        "//src/wmk:swig-py",
         "//src/fin:swig-py",
         "//src/gpl:swig-py",
         "//src/grt:swig-py",
@@ -461,6 +460,7 @@ python_wrap_cc(
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
+        "//src/wmk:swig-py",
     ],
 )
 
