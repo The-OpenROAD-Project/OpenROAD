@@ -57,9 +57,9 @@ TechChar::TechChar(CtsOptions* options,
                    utl::Logger* logger)
     : options_(options),
       db_(db),
+      resizer_(resizer),
       estimate_parasitics_(estimate_parasitics),
       openSta_(sta),
-      resizer_(resizer),
       openStaChar_(nullptr),
       db_network_(db_network),
       logger_(logger),
@@ -719,7 +719,8 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& driver,
         = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
 
     for (sta::TimingArcSet* arc_set :
-         libertyDriverCell->sceneCell(corner, sta::MinMax::max())->timingArcSets(input, output)) {
+         libertyDriverCell->sceneCell(corner, sta::MinMax::max())
+             ->timingArcSets(input, output)) {
       for (sta::TimingArc* arc : arc_set->arcs()) {
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());
@@ -773,7 +774,8 @@ sta::ArcDelay TechChar::computeBufferDelay(
         = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
 
     for (sta::TimingArcSet* arc_set :
-         libertyDriverCell->sceneCell(corner, sta::MinMax::max())->timingArcSets(input, output)) {
+         libertyDriverCell->sceneCell(corner, sta::MinMax::max())
+             ->timingArcSets(input, output)) {
       for (sta::TimingArc* arc : arc_set->arcs()) {
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());
@@ -871,16 +873,17 @@ void TechChar::createDelayBufList()
 
     if (!footprintClkDly.empty()) {
       properDlyBuffers = footprintClkDly;
-      logger_->report("Using footpring for clkdly");
+      debugPrint(
+          logger_, CTS, "insertion delay", 1, "Using footprint for clkdly");
     } else if (!nameClkDly.empty()) {
       properDlyBuffers = nameClkDly;
-      logger_->report("Using name for clkdly");
+      debugPrint(logger_, CTS, "insertion delay", 1, "Using name for clkdly");
     } else if (!footprintDly.empty()) {
       properDlyBuffers = footprintDly;
-      logger_->report("Using footpring for dly");
+      debugPrint(logger_, CTS, "insertion delay", 1, "Using footprint for dly");
     } else if (!nameDly.empty()) {
       properDlyBuffers = nameDly;
-      logger_->report("Using name for dly");
+      debugPrint(logger_, CTS, "insertion delay", 1, "Using name for dly");
     }
   }
 
@@ -921,6 +924,12 @@ void TechChar::createDelayBufList()
       delay_buffers.push_back(buf);
     }
   }
+  debugPrint(logger_, CTS, "insertion delay", 1, "Delay buffer list = [");
+  for (const std::string& buf : delay_buffers) {
+    debugPrint(logger_, CTS, "insertion delay", 1, "  {}", buf);
+  }
+  debugPrint(logger_, CTS, "insertion delay", 1, "]");
+
   options_->setDlyBufferList(delay_buffers);
 }
 
