@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_no_max_cap",
     "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
@@ -116,6 +117,10 @@ filegroup(
                 "array_tile.lef",
                 "array_tile.lib",
                 "array_max_wl.defok",
+            ],
+            "buffer_no_max_cap": [
+                "16sinks.def",
+                "Nangate45/Nangate45_typ_no_max_cap.lib",
             ],
             "check_buffer_inference1": [
                 "ModNangate45/ModNangate45_typ.lib",
