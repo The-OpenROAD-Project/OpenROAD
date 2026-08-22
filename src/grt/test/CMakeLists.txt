@@ -31,6 +31,7 @@ or_integration_tests(
     gcd
     gcd_cugr
     gcd_flute
+    global_route_above_max_layer_cugr
     global_route_rerun_cugr
     increase_capacity1
     incremental_deleted_net
@@ -101,6 +102,7 @@ or_integration_tests(
     repair_antennas_only_diodes_cugr
     repair_antennas_only_jumpers
     repair_antennas_only_jumpers_cugr
+    repair_antennas_post_drt_above_max_layer_cugr
     repair_antennas_post_drt_below_min_cugr
     repair_antennas_post_drt_cugr
     report_wire_length1
