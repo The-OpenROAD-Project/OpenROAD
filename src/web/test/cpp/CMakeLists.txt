@@ -119,9 +119,17 @@ gtest_discover_tests(TestSnap
 # web_serve.cpp.o and its gui::Gui::* references.  Compile the headless gui
 # stub into the test (the Qt gui library would drag in the whole
 # application), mirroring the Bazel target's gui_stub dependency.
+#
+# The stub's initGui() calls DescriptorRegistry::initDescriptors(), so the
+# descriptor implementations come along too.  gui_descriptors deliberately
+# holds only the registry, to keep these out of the web library; they compile
+# without Qt here, as they do in the CLI-only gui library.
 add_executable(TestSaveDisplayControls
   TestSaveDisplayControls.cpp
   ${OPENROAD_HOME}/src/gui/src/stub.cpp
+  ${OPENROAD_HOME}/src/gui/src/init_descriptors.cpp
+  ${OPENROAD_HOME}/src/gui/src/dbDescriptors.cpp
+  ${OPENROAD_HOME}/src/gui/src/staDescriptors.cpp
 )
 
 target_link_libraries(TestSaveDisplayControls ${TEST_LIBS})
