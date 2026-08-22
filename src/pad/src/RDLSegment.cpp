@@ -468,7 +468,6 @@ void RDLSegment::reportRoutePairs(utl::Logger* logger) const
 std::vector<odb::dbITerm*> RDLSegment::getUnroutedTerminals() const
 {
   std::vector<odb::dbITerm*> unrouted;
-  const auto routed_pairs = net_->getRoutedPairs();
   for (const auto& iterm : terminals_) {
     if (!net_->isRouted(iterm_, iterm)) {
       unrouted.push_back(iterm);
