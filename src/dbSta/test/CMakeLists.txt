@@ -76,6 +76,18 @@ or_integration_tests(
     write_verilog8
     write_verilog9
     write_verilog9_hier
+  PASSFAIL_TESTS
+    # Runtime measurements are nondeterministic; these tests self-check timing
+    # stability and print "pass" instead of diffing elapsed values.
+    dcalc_full_update_runtime
+    dcalc_full_update_runtime_asap7_aes
+    dcalc_full_update_runtime_asap7_gcd
+    dcalc_full_update_runtime_asap7_riscv
+    dcalc_full_update_runtime_gcd
+    dcalc_full_update_runtime_gf180_jpeg
+    dcalc_full_update_runtime_mock_array
+    dcalc_full_update_runtime_nangate45_dynamic_node
+    dcalc_full_update_runtime_nangate45_ibex
 )
 
 if(ENABLE_TESTS)

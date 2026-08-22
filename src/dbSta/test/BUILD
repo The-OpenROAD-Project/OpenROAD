@@ -28,7 +28,7 @@ package(features = ["layering_check"])
 exports_files(["synthetic_linear.lib"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
-ALL_TESTS = [
+TESTS = [
     "3dic_cross",
     "3dic_get_cells",
     "3dic_read_db",
@@ -106,6 +106,23 @@ ALL_TESTS = [
     "write_verilog9_hier",
 ]
 
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+# Runtime measurements are nondeterministic, so these tests self-check timing
+# stability and print "pass" instead of diffing elapsed values.
+PASSFAIL_TESTS = [
+    "dcalc_full_update_runtime",
+    "dcalc_full_update_runtime_asap7_aes",
+    "dcalc_full_update_runtime_asap7_gcd",
+    "dcalc_full_update_runtime_asap7_riscv",
+    "dcalc_full_update_runtime_gcd",
+    "dcalc_full_update_runtime_gf180_jpeg",
+    "dcalc_full_update_runtime_mock_array",
+    "dcalc_full_update_runtime_nangate45_dynamic_node",
+    "dcalc_full_update_runtime_nangate45_ibex",
+]
+
+ALL_TESTS = TESTS + PASSFAIL_TESTS
+
 filegroup(
     name = "regression_resources",
     srcs = [
@@ -119,6 +136,7 @@ filegroup(
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
+        "dcalc_full_update_runtime_helpers.tcl",
         "helpers.tcl",
         "liberty1.lef",
         "liberty1.lib",
@@ -159,6 +177,86 @@ filegroup(
                 "example1_typ.lib",
                 "example1.def",
                 "example1.lef",
+            ],
+            "dcalc_full_update_runtime": [
+                "example1.dspef",
+                "example1.def",
+                "example1.lef",
+                "example1_slow.lib",
+            ],
+            "dcalc_full_update_runtime_asap7_aes": [
+                "//src/psm/test:asap7_aes_runtime_fixture",
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+                "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+                "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+                "asap7/setRC.tcl",
+            ],
+            "dcalc_full_update_runtime_asap7_gcd": [
+                "//src/rsz/test:gcd_asap7_runtime_fixture",
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_L_1x_220121a.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+                "asap7/asap7sc7p5t_28_SL_1x_220121a.lef",
+                "asap7/asap7sc7p5t_AO_LVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_AO_SLVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_LVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_SLVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_OA_LVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_OA_SLVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib",
+                "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+                "asap7/asap7sc7p5t_SEQ_SLVT_FF_nldm_220123.lib",
+                "asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz",
+                "asap7/setRC.tcl",
+            ],
+            "dcalc_full_update_runtime_asap7_riscv": [
+                "//src/psm/test:asap7_riscv_runtime_fixture",
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+                "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+                "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+                "asap7/fakeram7_256x32.lef",
+                "asap7/fakeram7_256x32.lib",
+                "asap7/setRC.tcl",
+            ],
+            "dcalc_full_update_runtime_gcd": [
+                "//src/rsz/test:gcd_nangate45_runtime_fixture",
+            ],
+            "dcalc_full_update_runtime_gf180_jpeg": [
+                "//src/rsz/test:gf180_jpeg_runtime_fixture",
+                "//src/tap/test:gf180_jpeg_runtime_fixture",
+            ],
+            "dcalc_full_update_runtime_mock_array": [
+                "Element.spef",
+                "Element.v",
+                "MockArray.sdc",
+                "MockArray.spef",
+                "MockArray.v",
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+                "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+                "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+            ],
+            "dcalc_full_update_runtime_nangate45_dynamic_node": [
+                "//src/gpl/test:dynamic_node_runtime_fixture",
+            ],
+            "dcalc_full_update_runtime_nangate45_ibex": [
+                "//src/gpl/test:ibex_runtime_fixture",
             ],
             "find_clks1": [
                 "pad.lef",
@@ -346,6 +444,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],
     )
