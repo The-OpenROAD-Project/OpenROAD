@@ -27,10 +27,13 @@ RUN apt-get -y update \
       docker-ce \
       docker-ce-cli \
       groff \
+      lcov \
       openjdk-21-jre-headless \
       pandoc \
+      parallel \
       python3 \
       python3-yaml \
+      tcl \
       time
 
 # Runtime X11/xcb libraries for the Qt GUI build (--//:platform=gui).

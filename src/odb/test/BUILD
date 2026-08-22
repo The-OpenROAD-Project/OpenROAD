@@ -187,6 +187,7 @@ COMPULSORY_TESTS = [
     "read_def_virtual",
     "read_def58",
     "read_lef",
+    "read_lef_minwidth_wrongdirection",
     "read_zipped",
     "replace_hier_mod1",
     "replace_hier_mod2",
@@ -298,6 +299,8 @@ filegroup(
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
         "data/lef58_celledgespacing_numeric.lef",
+        "data/lef58_macro_edgetype_numeric.lef",
+        "data/lef58_minwidth_wrongdirection.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",
@@ -338,7 +341,15 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
-    visibility = ["//src/odb/test/cpp:__subpackages__"],
+    visibility = ["//visibility:public"],
+)
+
+# Hierarchical Verilog reused as corpus input by
+# //src/dbSta/test:dbsta_hier_conformance.
+filegroup(
+    name = "hier_corpus_netlists",
+    srcs = ["replace_hier_mod1.v"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
@@ -425,6 +436,7 @@ test_suite(
         "//src/odb/test/cpp:TestAccessPoint",
         "//src/odb/test/cpp:TestCallBacks",
         "//src/odb/test/cpp:TestChips",
+        "//src/odb/test/cpp:TestDbStream",
         "//src/odb/test/cpp:TestDbWire",
         "//src/odb/test/cpp:TestGCellGrid",
         "//src/odb/test/cpp:TestGDSIn",

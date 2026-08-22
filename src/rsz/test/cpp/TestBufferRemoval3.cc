@@ -893,4 +893,106 @@ TEST_F(BufRemTest3, FeedthroughAssign)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+// Regression test for a feedthrough buffer whose two sides sit at different
+// hierarchy depths, where remove_buffers leaves a kept sub-module output port
+// without any driver.
+//
+// Design:
+//   top
+//   +- u_wrap (wrap_mod)
+//   |    +- u_blk (blk_mod)
+//   |         +- u_drv    (drv_mod)  NOR2_X1 g_drv drives drv_o
+//   |         +- u_ft_mod (ft_mod)   ft_i -> BUF_X1 u_ft -> ft_o
+//   +- u_sink (sink_mod)             sink_i -> OR2_X1 g_sink .A1
+//
+// Unlike FeedthroughAssign, the buffer output leaves ft_mod, blk_mod and
+// wrap_mod before it re-enters sink_mod, so the two flat nets around the
+// buffer end up at very different depths:
+//   input  side  u_wrap/u_blk/drv_to_ft
+//   output side  mid                      (top level)
+//
+// removeBuffer() correctly keeps the input ModNet as the survivor for the
+// feedthrough, but because the surviving flat net is the deeper one it then
+// renames the surviving ModNet to the removed one's name, i.e. to the output
+// port name "ft_o".  VerilogWriter now sees output port "ft_o" sitting on a
+// net also called "ft_o" and emits nothing, so the "assign ft_o = ft_i;"
+// bridge is lost and ft_mod comes out with an undriven output port.
+//
+// The flat dbNet merge itself is correct, which is why placement and routing
+// never notice the problem and only LEC or gate level simulation fails.
+//
+// NOTE: this test fails on current master by design.  The golden file holds
+// the netlist that a correct remove_buffers has to produce.
+TEST_F(BufRemTest3, HierFeedthroughAcrossLevels)
+{
+  std::string test_name = "TestBufferRemoval3_hier_feedthrough";
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbModule* ft_mod = block_->findModule("ft_mod");
+  ASSERT_NE(ft_mod, nullptr);
+  ASSERT_NE(block_->findInst("u_wrap/u_blk/u_ft_mod/u_ft"), nullptr)
+      << "Feedthrough buffer u_ft not found";
+
+  // The leaf driver and the leaf load at the two ends of the whole path.
+  odb::dbInst* drv_inst = block_->findInst("u_wrap/u_blk/u_drv/g_drv");
+  odb::dbInst* sink_inst = block_->findInst("u_sink/g_sink");
+  ASSERT_NE(drv_inst, nullptr);
+  ASSERT_NE(sink_inst, nullptr);
+  odb::dbITerm* drv_iterm = drv_inst->findITerm("ZN");
+  odb::dbITerm* sink_iterm = sink_inst->findITerm("A1");
+  ASSERT_NE(drv_iterm, nullptr);
+  ASSERT_NE(sink_iterm, nullptr);
+
+  odb::dbModBTerm* bt_in = ft_mod->findModBTerm("ft_i");
+  odb::dbModBTerm* bt_out = ft_mod->findModBTerm("ft_o");
+  ASSERT_NE(bt_in, nullptr);
+  ASSERT_NE(bt_out, nullptr);
+
+  // Before removal the buffer separates the two flat nets as well as the two
+  // boundary ModNets of ft_mod.  The depth asymmetry is what triggers the
+  // survivor rename inside removeBuffer().
+  EXPECT_NE(drv_iterm->getNet(), sink_iterm->getNet());
+  EXPECT_NE(bt_in->getModNet(), bt_out->getModNet())
+      << "ModNets should be separate before remove_buffers";
+  EXPECT_EQ(drv_iterm->getNet()->getName(), "u_wrap/u_blk/drv_to_ft");
+  EXPECT_EQ(sink_iterm->getNet()->getName(), "mid");
+
+  if (debug_) {
+    std::cout << "pre  ft_i modnet: " << bt_in->getModNet()->getName() << "\n";
+    std::cout << "pre  ft_o modnet: " << bt_out->getModNet()->getName() << "\n";
+  }
+
+  resizer_.removeBuffers({});
+
+  EXPECT_EQ(block_->findInst("u_wrap/u_blk/u_ft_mod/u_ft"), nullptr)
+      << "Feedthrough buffer should be removed";
+
+  // Flat view: the merge is correct, the leaf driver and the leaf load share
+  // one dbNet.  This part already works today.
+  EXPECT_EQ(drv_iterm->getNet(), sink_iterm->getNet())
+      << "flat dbNets should be merged after buffer removal";
+
+  // Hierarchical view: both boundary terminals stay bound to one ModNet, so
+  // the database itself is consistent.  What breaks is the name that ModNet
+  // is given, because VerilogWriter can only express the feedthrough when the
+  // net name differs from the output port name.
+  odb::dbModNet* in_modnet = bt_in->getModNet();
+  odb::dbModNet* out_modnet = bt_out->getModNet();
+  ASSERT_NE(in_modnet, nullptr) << "ft_i lost its dbModNet";
+  ASSERT_NE(out_modnet, nullptr) << "ft_o lost its dbModNet";
+  EXPECT_EQ(in_modnet, out_modnet)
+      << "ft_mod boundary ModNets should be merged after buffer removal";
+  if (debug_) {
+    std::cout << "post ft_i modnet: " << in_modnet->getName() << "\n";
+    std::cout << "post ft_o modnet: " << out_modnet->getName() << "\n";
+  }
+  EXPECT_NE(in_modnet->getName(), std::string("ft_o"))
+      << "surviving ModNet must not take the output port name, otherwise "
+         "write_verilog drops the feedthrough assign";
+
+  // The emitted netlist must keep ft_mod's output port driven, which requires
+  // "assign ft_o = ft_i;" inside ft_mod.
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
 }  // namespace rsz

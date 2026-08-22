@@ -76,6 +76,7 @@ global_placement
     [-routability_driven]\
     [-incremental]\
     [-skip_io]\
+    [-place_ios]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -132,6 +133,7 @@ global_placement
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
+| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The resulting pin locations are written to the database but are not legalized to routing tracks or grid positions; `place_pins` must be run afterwards. Not supported on a rectilinear die. Cannot be combined with `-timing_driven`, `-routability_driven`, `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
@@ -180,7 +182,8 @@ cluster_flops
     [-tray_weight tray_weight]\
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
-    [-num_paths num_paths]
+    [-num_paths num_paths]\
+    [-clock_power_weight clock_power_weight]
 ```
 
 #### Options
@@ -191,6 +194,7 @@ cluster_flops
 | `-timing_weight` | Timing weight, default value is 0.1, type `float`. |
 | `-max_split_size` | Maximum split size, default value is 500 (-1 for no decomposition), type `int`.|
 | `-num_paths` | KIV, default value is 0, type `int`. |
+| `-clock_power_weight` | Credits clock-tree power saved by banking, promoting higher banking ratios. Models a per-sink clock-tree power equal to this weight times the single-bit flop power; an N-bit tray presents one clock sink instead of N. Default value is 0.0 (legacy cost model, no clock-tree credit), type `float` (must be non-negative). Any non-negative value is accepted, including fractional weights (e.g. 0.5, 1.5); sweep it continuously (typically around 1-3) to reach the desired banking on designs where reduced clock-tree routing is the goal. |
 
 
 ### Placement Clusters
@@ -294,13 +298,8 @@ gpl.setTimingNetWeightMax(weight)
 ```
 
 There are some useful Python functions located in the file
-[grt_aux.py](test/grt_aux.py) but these are not considered a part of the *final*
+[grt_aux.py](../grt/test/grt_aux.py) but these are not considered a part of the *final*
 API and they may change.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+replace+in%3Atitle)
-about this tool.
 
 ## References
 

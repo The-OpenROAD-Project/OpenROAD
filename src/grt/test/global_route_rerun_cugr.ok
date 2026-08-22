@@ -1,0 +1,135 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 0
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
+Design statistics
+Nets:                563
+Special nets:        0
+Routing layers:      10
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        17918         17918          0.00%
+metal3     Horizontal      24480         24480          0.00%
+metal4     Vertical        12172         12172          0.00%
+metal5     Horizontal      12240         12240          0.00%
+metal6     Vertical        12172         12172          0.00%
+metal7     Horizontal       4284          4284          0.00%
+metal8     Vertical         4284          4284          0.00%
+metal9     Horizontal       2142          2142          0.00%
+metal10    Vertical         2142          2142          0.00%
+---------------------------------------------------------------
+
+Stage 1: Pattern routing.
+Routing statistics
+Wire length:           36832
+Total via count:       2465
+Total congestion:      0.00
+Min resource:          1.00
+Bottleneck:            (8, 0, 4)
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
+--------------------------------------------------------------------------
+metal1    H         0.00         0.00         0.00         0.00       0.00
+metal2    V     17918.00      1170.00       177.03      1347.03       7.52
+metal3    H     24480.00      1230.00       108.59      1338.59       5.47
+metal4    V     12172.00         2.00        10.20        12.20       0.10
+metal5    H     12240.00        39.00         7.98        46.98       0.38
+metal6    V     12172.00        11.00         2.55        13.55       0.11
+metal7    H      4284.00         0.00         0.00         0.00       0.00
+metal8    V      4284.00         0.00         0.00         0.00       0.00
+metal9    H      2142.00         0.00         0.00         0.00       0.00
+metal10   V      2142.00         0.00         0.00         0.00       0.00
+--------------------------------------------------------------------------
+Total           91834.00      2452.00       306.35      2758.35       3.00
+[INFO GRT-0018] Total wirelength: 10354 um
+[INFO GRT-0014] Routed nets: 563
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 0
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+Design statistics
+Nets:                563
+Special nets:        0
+Routing layers:      10
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        17918         17918          0.00%
+metal3     Horizontal      24480         24480          0.00%
+metal4     Vertical        12172         12172          0.00%
+metal5     Horizontal      12240         12240          0.00%
+metal6     Vertical        12172         12172          0.00%
+metal7     Horizontal       4284          4284          0.00%
+metal8     Vertical         4284          4284          0.00%
+metal9     Horizontal       2142          2142          0.00%
+metal10    Vertical         2142          2142          0.00%
+---------------------------------------------------------------
+
+Stage 1: Pattern routing.
+Routing statistics
+Wire length:           36832
+Total via count:       2465
+Total congestion:      0.00
+Min resource:          1.00
+Bottleneck:            (8, 0, 4)
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
+--------------------------------------------------------------------------
+metal1    H         0.00         0.00         0.00         0.00       0.00
+metal2    V     17918.00      1170.00       177.03      1347.03       7.52
+metal3    H     24480.00      1230.00       108.59      1338.59       5.47
+metal4    V     12172.00         2.00        10.20        12.20       0.10
+metal5    H     12240.00        39.00         7.98        46.98       0.38
+metal6    V     12172.00        11.00         2.55        13.55       0.11
+metal7    H      4284.00         0.00         0.00         0.00       0.00
+metal8    V      4284.00         0.00         0.00         0.00       0.00
+metal9    H      2142.00         0.00         0.00         0.00       0.00
+metal10   V      2142.00         0.00         0.00         0.00       0.00
+--------------------------------------------------------------------------
+Total           91834.00      2452.00       306.35      2758.35       3.00
+[INFO GRT-0018] Total wirelength: 10354 um
+[INFO GRT-0014] Routed nets: 563
+No differences found.

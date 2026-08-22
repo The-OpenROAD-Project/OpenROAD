@@ -56,8 +56,11 @@
 namespace web {
 
 //------------------------------------------------------------------------------
-// ShapeCollector — a gui::Painter that collects rectangles from
-// descriptor->highlight() calls for use in tile rendering.
+// ShapeCollector — a gui::Painter that collects rectangles, polygons and
+// lines from descriptor->highlight() calls for use in tile rendering.
+// Lines matter for nets: an unrouted net's highlight (and the Qt GUI's
+// NetWithSink sink path) is drawn as flight lines, which used to be
+// silently dropped here.
 //------------------------------------------------------------------------------
 
 class ShapeCollector : public gui::Painter
@@ -67,7 +70,7 @@ class ShapeCollector : public gui::Painter
 
   std::vector<odb::Rect> rects;
   std::vector<odb::Polygon> polys;
-  std::vector<std::pair<odb::Point, odb::Point>> lines;
+  std::vector<FlightLine> lines;
 
   void drawRect(const odb::Rect& rect, int, int) override
   {
@@ -78,13 +81,11 @@ class ShapeCollector : public gui::Painter
     polys.push_back(polygon);
   }
   void drawOctagon(const odb::Oct& oct) override { polys.emplace_back(oct); }
-
-  // Capture line segments (net flywires, route paths, guide lines) so net
-  // highlights are visible in the overlay.  All Painter::drawLine overloads
-  // funnel through this virtual.
   void drawLine(const odb::Point& p1, const odb::Point& p2) override
   {
-    lines.emplace_back(p1, p2);
+    // Selection-highlight yellow (matches the rect/poly highlight color).
+    lines.push_back(
+        {.p1 = p1, .p2 = p2, .color = {.r = 255, .g = 255, .b = 0, .a = 255}});
   }
 
   // No-ops
@@ -143,23 +144,37 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 
 }  // namespace
 
-// RAII helper: temporarily sets Descriptor::Property::convert_dbu to a
-// micron-aware formatter (matching the Qt GUI's default) for the lifetime
-// of the scope.  When `use_dbu` is true the default identity formatter is
-// kept so that raw DBU integers are emitted.  Must be held while the
-// sta_lock mutex is held — the global static is not otherwise thread-safe.
+// RAII helper: temporarily sets Descriptor::Property::convert_dbu /
+// convert_string to micron-aware converters (matching the Qt GUI's
+// defaults) for the lifetime of the scope.  When `use_dbu` is true a
+// raw-DBU identity formatter and integer parser are installed instead.
+// convert_string must always be replaced: the library default returns 0
+// without setting the ok flag, so descriptor editors that parse
+// coordinates (e.g. dbInst X/Y) would silently reject every edit.
+// Must be held while the sta_lock mutex is held — the global statics are
+// not otherwise thread-safe.
+//
+// The scale comes from the database, not from a block: a multi-die design's
+// top chip is hierarchical and owns no dbBlock, so keying off one would leave
+// its properties as unlabelled raw integers.  dbDatabase::getDbuPerMicron() is
+// the design-wide value every tech and block shares, and is 0 only before any
+// LEF is read.
 class [[nodiscard]] ScopedDbuFormat
 {
  public:
-  ScopedDbuFormat(odb::dbBlock* block, bool use_dbu)
-      : saved_(gui::Descriptor::Property::convert_dbu)
+  ScopedDbuFormat(odb::dbDatabase* db, bool use_dbu)
+      : saved_to_string_(gui::Descriptor::Property::convert_dbu),
+        saved_to_dbu_(gui::Descriptor::Property::convert_string)
   {
-    if (use_dbu || !block) {
-      return;  // keep default (raw DBU)
+    if (use_dbu || db == nullptr || db->getDbuPerMicron() == 0) {
+      gui::Descriptor::Property::convert_string
+          = [](const std::string& value, bool* ok) {
+              return parseValue(value, /*dbu_per_micron=*/0.0, ok);
+            };
+      return;  // keep default formatter (raw DBU)
     }
-    const double dbu_per_micron = block->getDbUnitsPerMicron();
-    const int precision
-        = static_cast<int>(std::ceil(std::log10(dbu_per_micron)));
+    const double dbu_per_micron = db->getDbuPerMicron();
+    const int precision = dbuPrecision(dbu_per_micron);
     gui::Descriptor::Property::convert_dbu
         = [dbu_per_micron, precision](int value, bool add_units) {
             auto str = utl::to_numeric_string(
@@ -169,14 +184,200 @@ class [[nodiscard]] ScopedDbuFormat
             }
             return str;
           };
+    gui::Descriptor::Property::convert_string
+        = [dbu_per_micron](const std::string& value, bool* ok) {
+            return parseValue(value, dbu_per_micron, ok);
+          };
   }
-  ~ScopedDbuFormat() { gui::Descriptor::Property::convert_dbu = saved_; }
+  ~ScopedDbuFormat()
+  {
+    gui::Descriptor::Property::convert_dbu = saved_to_string_;
+    gui::Descriptor::Property::convert_string = saved_to_dbu_;
+  }
   ScopedDbuFormat(const ScopedDbuFormat&) = delete;
   ScopedDbuFormat& operator=(const ScopedDbuFormat&) = delete;
 
  private:
-  gui::DBUToString saved_;
+  // Mirrors MainWindow::convertStringToDBU: strip a trailing unit
+  // (anything after a space, 'u', or UTF-8 'µ'/'μ'), then parse as an
+  // integer DBU count (dbu_per_micron == 0) or a micron double.
+  static int parseValue(const std::string& value,
+                        double dbu_per_micron,
+                        bool* ok)
+  {
+    std::string text = value;
+    for (const std::string_view sep :
+         {std::string_view(" "),
+          std::string_view("u"),
+          std::string_view("\xC2\xB5"),     // µ (micro sign)
+          std::string_view("\xCE\xBC")}) {  // μ (greek mu)
+      if (const auto pos = text.find(sep); pos != std::string::npos) {
+        text = text.substr(0, pos);
+        break;
+      }
+    }
+    try {
+      std::size_t consumed = 0;
+      if (dbu_per_micron <= 0.0) {
+        const int dbu = std::stoi(text, &consumed);
+        *ok = consumed == text.size();
+        return *ok ? dbu : 0;
+      }
+      const double microns = std::stod(text, &consumed);
+      *ok = consumed == text.size();
+      return *ok ? static_cast<int>(std::lround(microns * dbu_per_micron)) : 0;
+    } catch (const std::exception&) {
+      *ok = false;
+      return 0;
+    }
+  }
+
+  gui::DBUToString saved_to_string_;
+  gui::StringToDBU saved_to_dbu_;
 };
+// Clamp + quantize the client's devicePixelRatio so the server renders tiles
+// at a stable 256*dpr and the tile cache has few buckets.  Snaps to the common
+// HiDPI ratios; anything outside [1,3] or non-finite falls back to 1.0.
+// Normalize the client-reported device pixel ratio.
+//
+// Only the browser knows the display's ratio, so this is the value the client
+// sent, not one the server picks.  It is honoured rather than snapped to a
+// ladder: the ratio decides the rendered tile's pixel size, and a client whose
+// ratio is not on the ladder gets a tile of the wrong size that the browser
+// then rescales — which is the moiré beat the whole tile pipeline is built to
+// avoid.  A 1.75 or 2.5 display (ordinary Windows scale factors) hit that.
+//
+// Rounded to two decimals only to bound the tile-cache key space, since dpr is
+// part of the key: without it a ratio like 1.3333333 would fork its own set of
+// cached tiles for every distinct trailing digit.  In practice this is one
+// bucket per connected client.
+//
+// MUST match quantizeDpr() in tile-request.js — the client sizes its merged
+// canvas from its own copy, and any disagreement resamples every tile.
+static double quantizeDpr(const double raw)
+{
+  if (!std::isfinite(raw) || raw <= 1.0) {
+    return 1.0;
+  }
+  const double clamped = std::min(raw, 3.0);
+  return std::round(clamped * 100.0) / 100.0;
+}
+
+// The exact device-pixel side length the client will display the tile in.
+//
+// Sent explicitly rather than derived from dpr here: a tile's CSS box is only a
+// whole number of device pixels when tileSize*dpr is an integer, and where it
+// is not (256 CSS px is 426.67 device px at a 1.6667 display scale) any size
+// this end picks is one the browser has to resample.  The client knows the box
+// it will use, so it names the pixel count.
+//
+// Clamped so a malformed request cannot ask for a gigantic buffer — the render
+// allocates tile_px*supersample squared.  0 (absent or unusable) means "not
+// specified"; the generator falls back to 256*dpr.
+static int quantizeTilePx(const double raw)
+{
+  if (!std::isfinite(raw) || raw <= 0.0) {
+    return 0;
+  }
+  // Clamped BEFORE rounding: std::llround of a double past the range of long
+  // long is undefined, and `raw` is whatever the client sent.
+  constexpr double kMinTilePx = 32.0;
+  constexpr double kMaxTilePx = 2048.0;
+  return static_cast<int>(std::lround(std::clamp(raw, kMinTilePx, kMaxTilePx)));
+}
+
+std::string assetPathFromTarget(const std::string_view target)
+{
+  std::string path(target);
+  // Query first, then fragment: a fragment is never sent by a browser, but a
+  // hand-built request can carry one and it must not reach the lookup either.
+  const size_t query = path.find('?');
+  if (query != std::string::npos) {
+    path.resize(query);
+  }
+  const size_t fragment = path.find('#');
+  if (fragment != std::string::npos) {
+    path.resize(fragment);
+  }
+  if (path.empty() || path == "/") {
+    return "/index.html";
+  }
+  return path;
+}
+
+WebSocketResponse errorResponse(const uint32_t id,
+                                const std::string_view message)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kError;
+  resp.payload.assign(message.begin(), message.end());
+  return resp;
+}
+
+bool parseTileCoords(const boost::json::object& json,
+                     int& z,
+                     int& x,
+                     int& y,
+                     std::string& error)
+{
+  const auto read = [&json, &error](const char* key, int& out) {
+    const auto* v = json.if_contains(key);
+    if (v == nullptr) {
+      error = std::string("missing \"") + key + "\"";
+      return false;
+    }
+    // is_int64() and not as_int64(): a null (what a non-finite client-side
+    // number serializes to) or a fractional zoom must be reported as the
+    // contract violation it is, not converted.
+    if (!v->is_int64()) {
+      error = std::string("\"") + key + "\" must be an integer";
+      return false;
+    }
+    const int64_t value = v->get_int64();
+    if (value < std::numeric_limits<int>::min()
+        || value > std::numeric_limits<int>::max()) {
+      error = std::string("\"") + key + "\" is out of range";
+      return false;
+    }
+    out = static_cast<int>(value);
+    return true;
+  };
+
+  if (!read("z", z) || !read("x", x) || !read("y", y)) {
+    return false;
+  }
+  if (z < 0 || z > kMaxTileZoom) {
+    error = "\"z\" is outside [0, " + std::to_string(kMaxTileZoom) + "]";
+    return false;
+  }
+  // x and y are deliberately NOT range-checked against the 2^z grid.  Leaflet
+  // routinely asks for tiles off the edge of the world -- whenever the design
+  // is smaller than the viewport, or while panning at the border -- and the
+  // renderers answer those with a transparent tile.  Rejecting them turns
+  // ordinary panning into a stream of errors: a first cut of this check
+  // produced 336 refusals in one session, all of them for legitimate
+  // off-grid tiles at zoom 0.
+  return true;
+}
+
+// Payload for the {"type":"refresh"} broadcast sent after a DB-mutating
+// request.  Carries the CURRENT design bounds: edits can change them
+// (moving an instance outside the block bbox, deleting an edge instance),
+// which shifts the tile georeference — clients must resync their
+// coordinate transforms or every later click/highlight lands offset.
+// Bounds use the same [[yMin,xMin],[yMax,xMax]] order as the bounds
+// response.
+static std::string refreshBroadcastPayload(const TileGenerator& gen)
+{
+  const odb::Rect bounds = gen.getBounds();
+  boost::json::object o;
+  o["type"] = "refresh";
+  o["bounds"]
+      = boost::json::array{boost::json::array{bounds.yMin(), bounds.xMin()},
+                           boost::json::array{bounds.yMax(), bounds.xMax()}};
+  return boost::json::serialize(o);
+}
 
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
@@ -206,12 +407,111 @@ static void serializeAnyValue(boost::json::object& out,
   out[field_name] = gui::Descriptor::Property::toString(value);
 }
 
+// Describe a property's editor for the client.  Mirrors the Qt
+// EditorItemDelegate rules: a non-empty options list renders as a combo
+// ("list", committed by option index); a bool value renders as a
+// True/False choice; otherwise the input kind is inferred from the
+// property's current value type (getEditorType).
+static boost::json::object serializeEditor(
+    const gui::Descriptor::Editor& editor,
+    const std::any& value)
+{
+  boost::json::object o;
+  if (!editor.options.empty()) {
+    o["type"] = "list";
+    boost::json::array options;
+    options.reserve(editor.options.size());
+    for (const auto& option : editor.options) {
+      options.emplace_back(option.name);
+    }
+    o["options"] = std::move(options);
+    return o;
+  }
+  if (std::any_cast<bool>(&value) != nullptr) {
+    o["type"] = "bool";
+  } else if (std::any_cast<int>(&value) != nullptr
+             || std::any_cast<unsigned int>(&value) != nullptr
+             || std::any_cast<double>(&value) != nullptr
+             || std::any_cast<float>(&value) != nullptr) {
+    o["type"] = "number";
+  } else {
+    o["type"] = "string";
+  }
+  return o;
+}
+
+// Serialize an ordered list of unkeyed values (Property values held as a
+// std::vector/std::set of std::any) as inspector children.  Mirrors the Qt
+// inspector's makeList(): entries have no name of their own, so they are
+// numbered 1..N and the value carries the content.
+template <typename Container>
+static boost::json::array serializeAnyList(
+    const Container& values,
+    std::vector<gui::Selected>& selectables)
+{
+  boost::json::array children;
+  children.reserve(values.size());
+  int index = 0;
+  for (const auto& value : values) {
+    boost::json::object child;
+    child["name"] = std::to_string(++index);
+    serializeAnyValue(child, "value", value, selectables);
+    children.emplace_back(std::move(child));
+  }
+  return children;
+}
+
+// Serialize a PropertyTable as a row/column grid.  The Qt inspector renders
+// these as an HTML table; the client does the same from this data rather than
+// from server-generated markup.  Headers are kept separate from the cells so
+// the client can drop the header row or column when a table has none.
+static boost::json::object serializePropertyTable(
+    const gui::PropertyTable& table)
+{
+  boost::json::object out;
+
+  boost::json::array columns;
+  columns.reserve(table.getColumnHeaders().size());
+  for (const auto& header : table.getColumnHeaders()) {
+    columns.emplace_back(header);
+  }
+  out["column_headers"] = std::move(columns);
+
+  boost::json::array rows;
+  rows.reserve(table.getRowHeaders().size());
+  for (const auto& header : table.getRowHeaders()) {
+    rows.emplace_back(header);
+  }
+  out["row_headers"] = std::move(rows);
+
+  boost::json::array data;
+  data.reserve(table.getData().size());
+  for (const auto& row : table.getData()) {
+    boost::json::array cells;
+    cells.reserve(row.size());
+    for (const auto& cell : row) {
+      cells.emplace_back(cell);
+    }
+    data.emplace_back(std::move(cells));
+  }
+  out["data"] = std::move(data);
+
+  return out;
+}
+
 static boost::json::object serializeProperty(
     const gui::Descriptor::Property& prop,
-    std::vector<gui::Selected>& selectables)
+    std::vector<gui::Selected>& selectables,
+    const gui::Descriptor::Editors* editors = nullptr)
 {
   boost::json::object o;
   o["name"] = prop.name;
+  if (editors != nullptr) {
+    if (const auto it = editors->find(prop.name); it != editors->end()) {
+      o["editable"] = true;
+      o["editor"] = serializeEditor(it->second, prop.value);
+    }
+  }
 
   if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
     boost::json::array children;
@@ -234,6 +534,12 @@ static boost::json::object serializeProperty(
       children.emplace_back(std::move(child));
     }
     o["children"] = std::move(children);
+  } else if (auto* table = std::any_cast<gui::PropertyTable>(&prop.value)) {
+    o["table"] = serializePropertyTable(*table);
+  } else if (auto* vec = std::any_cast<std::vector<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(*vec, selectables);
+  } else if (auto* set = std::any_cast<std::set<std::any>>(&prop.value)) {
+    o["children"] = serializeAnyList(*set, selectables);
   } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
@@ -246,23 +552,213 @@ static boost::json::object serializeProperty(
   return o;
 }
 
-static void collectHighlightShapes(
-    const gui::Selected& sel,
-    std::vector<odb::Rect>& rects,
-    std::vector<odb::Polygon>& polys,
-    std::vector<std::pair<odb::Point, odb::Point>>& lines)
+// The GUI draws the driver×sink product straight to the screen; here the
+// lines are materialized in SessionState and copied per overlay tile, so
+// cap the product to keep memory bounded on huge INOUT/fanout nets
+// (beyond this the fan is visual mush anyway).
+constexpr size_t kMaxFlywires = 4096;
+
+// Mirrors the flywire fallback of gui::NetDescriptor::highlight
+// (dbDescriptors.cpp:1766-1825): straight driver->sink lines between the
+// net's placed terminals.  When `term_boxes` is non-null, the terminal
+// pin boxes are collected in the same pass (used by the flywires-only
+// mode, which suppresses the descriptor's wire shapes).  Supply and routed
+// special nets get terminal boxes but no lines, matching the GUI.
+static void collectNetFlightLines(odb::dbNet* net,
+                                  std::vector<FlightLine>& lines,
+                                  std::vector<odb::Rect>* term_boxes = nullptr)
+{
+  if (!net) {
+    return;
+  }
+  // GUI parity: neither supply nets nor routed special nets get flywires;
+  // their terminal boxes are still highlighted.
+  const bool is_supply = net->getSigType().isSupply();
+  const bool lines_enabled
+      = !is_supply && (!net->isSpecial() || net->getFirstSWire() == nullptr);
+  if (!lines_enabled && term_boxes == nullptr) {
+    return;  // nothing left to collect
+  }
+
+  std::set<odb::Point> driver_locs;
+  std::set<odb::Point> sink_locs;
+  // GUI parity: the ITerms of a supply net are not highlighted at all
+  // (DbNetDescriptor::highlight guards its ITerm loop with !is_supply), while
+  // its BTerms are — hence the asymmetry with the BTerm loop below.
+  if (!is_supply) {
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (!iterm->getInst()->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+      if (term_boxes) {
+        term_boxes->push_back(iterm->getBBox());
+      }
+      if (!lines_enabled) {
+        continue;
+      }
+      odb::Point center;
+      int x = 0;
+      int y = 0;
+      if (iterm->getAvgXY(&x, &y)) {
+        center = odb::Point(x, y);
+      } else if (odb::dbBox* bbox = iterm->getInst()->getBBox()) {
+        const odb::Rect rect = bbox->getBox();
+        center = odb::Point((rect.xMax() + rect.xMin()) / 2,
+                            (rect.yMax() + rect.yMin()) / 2);
+      } else {
+        int ix = 0;
+        int iy = 0;
+        iterm->getInst()->getLocation(ix, iy);
+        center = odb::Point(ix, iy);
+      }
+      const auto iotype = iterm->getIoType();
+      if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT) {
+        sink_locs.insert(center);
+      }
+      if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
+        driver_locs.insert(center);
+      }
+    }
+  }
+  for (odb::dbBTerm* bterm : net->getBTerms()) {
+    const auto iotype = bterm->getIoType();
+    // IO direction is from the block's perspective: an INPUT bterm
+    // drives the net (GUI is_source_bterm / is_sink_bterm).
+    const bool driver_term = iotype == odb::dbIoType::INPUT
+                             || iotype == odb::dbIoType::INOUT
+                             || iotype == odb::dbIoType::FEEDTHRU;
+    const bool sink_term = iotype == odb::dbIoType::OUTPUT
+                           || iotype == odb::dbIoType::INOUT
+                           || iotype == odb::dbIoType::FEEDTHRU;
+    for (odb::dbBPin* pin : bterm->getBPins()) {
+      const odb::Rect rect = pin->getBBox();
+      if (term_boxes) {
+        term_boxes->push_back(rect);
+      }
+      if (!lines_enabled) {
+        continue;
+      }
+      const odb::Point center((rect.xMax() + rect.xMin()) / 2,
+                              (rect.yMax() + rect.yMin()) / 2);
+      if (sink_term) {
+        sink_locs.insert(center);
+      }
+      if (driver_term) {
+        driver_locs.insert(center);
+      }
+    }
+  }
+  if (!lines_enabled) {
+    return;
+  }
+
+  for (const odb::Point& driver : driver_locs) {
+    for (const odb::Point& sink : sink_locs) {
+      if (lines.size() >= kMaxFlywires) {
+        return;
+      }
+      lines.push_back(
+          FlightLine{.p1 = driver, .p2 = sink, .color = kSelectionYellow});
+    }
+  }
+}
+
+// Collect a net's special (geometric) routing shapes.  The GUI draws these
+// unconditionally at the tail of DbNetDescriptor::highlight, i.e. also in
+// flywires-only mode, so the flywire branch below has to reproduce them.
+//
+// Reproduced rather than delegated to DbNetDescriptor because the descriptor
+// cannot be made to honor the mode from here: its gate is
+// painter.getOptions()->isFlywireHighlightOnly(), and gui::Options is a private
+// Qt-dependent interface (QColor/QFont), so a non-Qt module has no way to
+// implement it — ShapeCollector's null Options resolves to DefaultOptions,
+// which answers false.  Going through Gui::getDescriptor<odb::dbSWire*>() for
+// just the tail is no better: an unregistered descriptor makes
+// DescriptorRegistry emit GUI-0053, which is fatal, and nothing registers the
+// odb descriptors in the web unit tests.
+//
+// The shapes match DbSBoxDescriptor::highlight (dbDescriptors.cpp:5707).
+static void collectSpecialWireShapes(odb::dbNet* net,
+                                     std::vector<odb::Rect>& rects,
+                                     std::vector<odb::Polygon>& polys)
+{
+  if (!net) {
+    return;
+  }
+  for (odb::dbSWire* swire : net->getSWires()) {
+    for (odb::dbSBox* box : swire->getWires()) {
+      if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
+        polys.emplace_back(box->getOct());
+      } else {
+        rects.push_back(box->getBox());
+      }
+    }
+  }
+}
+
+// Append one selection's highlight shapes.  For nets, honor the
+// "Flywires only" toggle (GUI isFlywireHighlightOnly()): replace the
+// routed wire/guide shapes with driver->sink flight lines.  With the
+// toggle off, unrouted nets still get flywires (GUI fallback — the
+// descriptor emits them via painter.drawLine, which ShapeCollector
+// drops, so they are recomputed here).
+static void appendHighlightShapes(const gui::Selected& sel,
+                                  std::vector<odb::Rect>& rects,
+                                  std::vector<odb::Polygon>& polys,
+                                  std::vector<FlightLine>& lines,
+                                  const bool flywires_only)
+{
+  if (!sel) {
+    return;
+  }
+  // Set when the flywire fan was collected here, so the descriptor's own
+  // copy of it is not appended on top.
+  bool own_flywires = false;
+  // Pointer-form any_cast: DbNetDescriptor::isNet() is true for BOTH of
+  // its payload types (dbNet* and NetWithSink) — the value-form cast
+  // would throw std::bad_any_cast on the latter.  Non-dbNet* payloads
+  // fall through to the plain descriptor highlight below.
+  odb::dbNet* const* net_ptr = std::any_cast<odb::dbNet*>(&sel.getObject());
+  if (sel.isNet() && net_ptr) {
+    odb::dbNet* net = *net_ptr;
+    if (flywires_only) {
+      // Only the routed wire/guide shapes are suppressed.  Terminal pin boxes
+      // and special (geometric) routing stay visible, because the GUI draws
+      // them regardless of the flywire mode — without the SWires a selected
+      // supply net would come back with no highlight at all.
+      collectNetFlightLines(net, lines, &rects);
+      collectSpecialWireShapes(net, rects, polys);
+      return;
+    }
+    if (net && !net->getWire() && net->getGuides().empty()) {
+      // Unrouted net: DbNetDescriptor::highlight draws the driver->sink fan
+      // itself (draw_flywires stays true with no wire and no guides), and
+      // ShapeCollector captures drawLine, so taking both would emit the fan
+      // twice.  Collect it here instead of from the descriptor: this path
+      // honours kMaxFlywires, which the descriptor does not.
+      collectNetFlightLines(net, lines);
+      own_flywires = true;
+    }
+  }
+  ShapeCollector collector;
+  sel.highlight(collector);
+  rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
+  polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
+  if (!own_flywires) {
+    lines.insert(lines.end(), collector.lines.begin(), collector.lines.end());
+  }
+}
+
+static void collectHighlightShapes(const gui::Selected& sel,
+                                   std::vector<odb::Rect>& rects,
+                                   std::vector<odb::Polygon>& polys,
+                                   std::vector<FlightLine>& lines,
+                                   const bool flywires_only)
 {
   rects.clear();
   polys.clear();
   lines.clear();
-  if (!sel) {
-    return;
-  }
-  ShapeCollector collector;
-  sel.highlight(collector);
-  rects = std::move(collector.rects);
-  polys = std::move(collector.polys);
-  lines = std::move(collector.lines);
+  appendHighlightShapes(sel, rects, polys, lines, flywires_only);
 }
 
 // Return the 0-based position of the iterator within the selection set,
@@ -278,24 +774,17 @@ static int selectionIteratorPosition(const gui::SelectionSet& set,
 }
 
 // Accumulate highlight shapes from all items in a selection set.
-static void collectMultiHighlightShapes(
-    const gui::SelectionSet& selections,
-    std::vector<odb::Rect>& rects,
-    std::vector<odb::Polygon>& polys,
-    std::vector<std::pair<odb::Point, odb::Point>>& lines)
+static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
+                                        std::vector<odb::Rect>& rects,
+                                        std::vector<odb::Polygon>& polys,
+                                        std::vector<FlightLine>& lines,
+                                        const bool flywires_only)
 {
   rects.clear();
   polys.clear();
   lines.clear();
   for (const auto& sel : selections) {
-    if (!sel) {
-      continue;
-    }
-    ShapeCollector collector;
-    sel.highlight(collector);
-    rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
-    polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
-    lines.insert(lines.end(), collector.lines.begin(), collector.lines.end());
+    appendHighlightShapes(sel, rects, polys, lines, flywires_only);
   }
 }
 
@@ -324,38 +813,376 @@ static void addSelectionTypeFlags(boost::json::object& root,
   root["sel_has_net"] = has_net;
 }
 
+// Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
+// Expands the selection with SIGNAL nets attached to the selected
+// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
+// the plain net for input pins too: NetWithSink lives in a gui-private
+// header under CMake, so the driver->sink flight line is a follow-up.
+static int addConnectedNets(gui::SelectionSet& selection_set)
+{
+  // Snapshot the instances first: nets are inserted into the same set,
+  // and odb deletes std::less on db pointers so the selection set itself
+  // (ordered by Selected) is the deduplicator.
+  std::vector<odb::dbInst*> insts;
+  for (const auto& sel : selection_set) {
+    if (!sel || !sel.isInst()) {
+      continue;
+    }
+    const auto* inst_ptr = std::any_cast<odb::dbInst*>(&sel.getObject());
+    if (inst_ptr && *inst_ptr) {
+      insts.push_back(*inst_ptr);
+    }
+  }
+  auto* registry = gui::DescriptorRegistry::instance();
+  int added = 0;
+  for (odb::dbInst* inst : insts) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (!net || net->getSigType() != odb::dbSigType::SIGNAL) {
+        continue;
+      }
+      const auto io = iterm->getIoType();
+      if (io != odb::dbIoType::OUTPUT && io != odb::dbIoType::INPUT
+          && io != odb::dbIoType::INOUT) {
+        continue;
+      }
+      gui::Selected net_sel = registry->makeSelected(net);
+      if (net_sel && selection_set.insert(net_sel).second) {
+        ++added;
+      }
+    }
+  }
+  return added;
+}
+
+// Descriptor actions that must not be surfaced in the web client:
+// - "Insert Buffer" / "Copy to layer" construct Qt dialogs (guarded by
+//   ENABLE_QT in dbDescriptors.cpp); in a Qt-enabled binary running in
+//   web mode triggering them would crash — there is no QApplication.
+// - Focus / route-guide / zoom actions call global gui::Gui methods that
+//   are stub no-ops in web builds; the web inspector already provides
+//   per-session equivalents in its toolbar.
+// - Tracks / timing-cone / timing actions have no web renderer yet
+//   (follow-ups); their gui::Gui calls are stub no-ops.
+// Any new descriptor action not listed here appears automatically.
+static const std::set<std::string, std::less<>> kSuppressedActions = {
+    "Insert Buffer",
+    "Copy to layer",
+    "Focus",
+    "De-focus",
+    "Show Route Guides",
+    "Hide Route Guides",
+    "Show Tracks",
+    "Hide Tracks",
+    "Fanin Cone",
+    "Fanout Cone",
+    "Timing",
+    "Zoom to",
+};
+
+// Run the previously inspected object's reserved "deselect" action (a
+// cleanup callback, e.g. tearing down a timing cone) when inspection
+// moves to a different object.  Mirrors Qt's Inspector::inspect().
+// Must be called under the STA lock, before current_inspected is
+// overwritten, and never with a stale (destroyed) old_sel.
+static void runDeselectAction(const gui::Selected& old_sel,
+                              const gui::Selected& new_sel)
+{
+  if (!old_sel || old_sel == new_sel) {
+    return;
+  }
+  try {
+    // getDescriptorActions(): Selected::getActions() lives in the full
+    // gui library (its "Zoom to" needs Gui::get()); the web only links
+    // gui_descriptors and blocklists "Zoom to" anyway.
+    for (const auto& action : old_sel.getDescriptorActions()) {
+      if (action.name == gui::Descriptor::kDeselectAction) {
+        action.callback();
+        return;
+      }
+    }
+  } catch (const std::exception&) {
+    // Cleanup is best-effort; never let it break the request.
+  }
+}
+
+// Returns the highlight group holding `sel`, or -1 when not highlighted.
+// Requires state.selection_mutex to be held.
+static int highlightGroupOfLocked(const SessionState& state,
+                                  const gui::Selected& sel)
+{
+  if (!sel) {
+    return -1;
+  }
+  for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+    const auto& members = state.highlight_groups[group];
+    if (members.find(sel) != members.end()) {
+      return group;
+    }
+  }
+  return -1;
+}
+
+// The three highlight vectors and the source tag form one invariant — always
+// mutate them through these helpers (callers hold selection_mutex).  The tag
+// must follow whether anything was actually collected: claiming a source for an
+// empty selection would let a later flywires_only flip re-derive (and so
+// resurrect) a highlight the user never had.
+static void clearSelectionHighlights(SessionState& state)
+{
+  state.highlight_rects.clear();
+  state.highlight_polys.clear();
+  state.highlight_lines.clear();
+  state.highlight_source = SessionState::HighlightSource::kNone;
+}
+
+static void setSelectionHighlights(SessionState& state,
+                                   const gui::Selected& sel)
+{
+  collectHighlightShapes(sel,
+                         state.highlight_rects,
+                         state.highlight_polys,
+                         state.highlight_lines,
+                         state.flywires_only);
+  state.highlight_source = sel ? SessionState::HighlightSource::kInspected
+                               : SessionState::HighlightSource::kNone;
+}
+
+static void setSelectionSetHighlights(SessionState& state)
+{
+  collectMultiHighlightShapes(state.selection_set,
+                              state.highlight_rects,
+                              state.highlight_polys,
+                              state.highlight_lines,
+                              state.flywires_only);
+  state.highlight_source = state.selection_set.empty()
+                               ? SessionState::HighlightSource::kNone
+                               : SessionState::HighlightSource::kSelectionSet;
+}
+
+// Rebuild the per-group overlay shapes from the group members.  Colors
+// come from the Qt GUI's palette (gui::Painter::kHighlightColors,
+// translucent fill); filled=true reuses the DRC/timing colored-rect
+// rendering (blend fill + solid outline).  Goes through appendHighlightShapes,
+// not sel.highlight() directly, so a group member honours "Flywires only" the
+// same way the current selection does.  Requires state.selection_mutex and
+// the STA lock (sel.highlight() calls descriptor code).
+static void rebuildHighlightGroupShapesLocked(SessionState& state)
+{
+  state.highlight_group_rects.clear();
+  state.highlight_group_polys.clear();
+  state.highlight_group_lines.clear();
+  for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+    if (state.highlight_groups[group].empty()) {
+      continue;
+    }
+    const auto& qt_color = gui::Painter::kHighlightColors[group];
+    const Color color{.r = static_cast<uint8_t>(qt_color.r),
+                      .g = static_cast<uint8_t>(qt_color.g),
+                      .b = static_cast<uint8_t>(qt_color.b),
+                      .a = static_cast<uint8_t>(qt_color.a)};
+    for (const auto& sel : state.highlight_groups[group]) {
+      if (!sel) {
+        continue;
+      }
+      std::vector<odb::Rect> rects;
+      std::vector<odb::Polygon> polys;
+      std::vector<FlightLine> lines;
+      appendHighlightShapes(sel, rects, polys, lines, state.flywires_only);
+      for (const auto& rect : rects) {
+        state.highlight_group_rects.push_back(
+            {.rect = rect, .color = color, .layer = "", .filled = true});
+      }
+      for (const auto& poly : polys) {
+        state.highlight_group_polys.push_back({.poly = poly, .color = color});
+      }
+      // Members whose highlight() draws lines (e.g. unrouted nets) would
+      // otherwise be invisible in the overlay; tint them with the group.
+      for (const auto& line : lines) {
+        state.highlight_group_lines.push_back(
+            {.p1 = line.p1, .p2 = line.p2, .color = color});
+      }
+    }
+  }
+}
+
+// Erase `sel` from every highlight group.  Returns true if it was a
+// member of any.  Requires state.selection_mutex to be held.
+static bool removeFromHighlightGroupsLocked(SessionState& state,
+                                            const gui::Selected& sel)
+{
+  bool removed = false;
+  for (auto& members : state.highlight_groups) {
+    removed |= members.erase(sel) > 0;
+  }
+  return removed;
+}
+
+bool consumeStaleSelection(SessionState& state)
+{
+  if (!state.selection_stale.exchange(false)) {
+    return false;
+  }
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    state.current_inspected = gui::Selected();
+    state.navigation_history.clear();
+    state.selection_set.clear();
+    state.selection_itr = state.selection_set.end();
+    clearSelectionHighlights(state);
+    state.hover_rects.clear();
+    for (auto& members : state.highlight_groups) {
+      members.clear();
+    }
+    state.highlight_group_rects.clear();
+    state.highlight_group_polys.clear();
+    state.highlight_group_lines.clear();
+  }
+  {
+    std::lock_guard<std::mutex> lock(state.selectables_mutex);
+    state.selectables.clear();
+  }
+  return true;
+}
+
+// `use_dbu` is only used to label the debug line: the lengths themselves go
+// through Descriptor::Property::convert_dbu, which the caller's
+// ScopedDbuFormat has already pointed at microns or at raw DBU.  Reusing that
+// converter is what keeps the log in the same unit the inspector is showing.
+//
+// highlight_group is the 0-based color group holding `sel` (-1 = not
+// highlighted), computed by the caller under selection_mutex via
+// highlightGroupOfLocked — this function runs outside that lock.
 static void writeInspectPayload(boost::json::object& o,
                                 const gui::Selected& sel,
                                 std::vector<gui::Selected>& new_selectables,
-                                bool can_navigate_back)
+                                bool can_navigate_back,
+                                bool use_dbu,
+                                utl::Logger* logger,
+                                int highlight_group = -1,
+                                const odb::dbTransform& world_xfm = {})
 {
   o["can_navigate_back"] = can_navigate_back ? 1 : 0;
   if (!sel) {
     o["error"] = "invalid select_id";
+    debugPrint(
+        logger, utl::WEB, "select", 1, "inspect outline: invalid select_id");
     return;
   }
 
   auto props = sel.getProperties();
   o["name"] = sel.getName();
   o["type"] = sel.getTypeName();
+  o["highlight_group"] = highlight_group;
+  const gui::Descriptor::Editors editors = sel.getEditors();
   boost::json::array prop_arr;
   prop_arr.reserve(props.size());
   for (const auto& prop : props) {
-    prop_arr.emplace_back(serializeProperty(prop, new_selectables));
+    prop_arr.emplace_back(serializeProperty(prop, new_selectables, &editors));
   }
   o["properties"] = std::move(prop_arr);
 
+  boost::json::array actions;
+  for (const auto& action : sel.getDescriptorActions()) {
+    if (action.name == gui::Descriptor::kDeselectAction
+        || kSuppressedActions.find(action.name) != kSuppressedActions.end()) {
+      continue;
+    }
+    actions.emplace_back(action.name);
+  }
+  if (!actions.empty()) {
+    o["actions"] = std::move(actions);
+  }
+
   odb::Rect bbox;
-  if (sel.getBBox(bbox)) {
+  const bool has_bbox = sel.getBBox(bbox);
+  if (has_bbox) {
+    // A gui::Descriptor reports the bbox in the object's OWN block
+    // coordinates, but the client draws in root/world space — the same space
+    // selectAt already puts SelectionResult::bbox in.  Lift it through the
+    // chiplet's local-to-root transform so an object inside a translated or
+    // rotated dbChipInst is outlined where it is actually drawn.  Identity for
+    // single-die designs, and for callers with no chiplet context (see the
+    // world_xfm default).
+    world_xfm.apply(bbox);
     o["bbox"] = bboxArray(bbox);
   }
 
+  // This payload is what the client draws the yellow dashed selection outline
+  // from (inspector.js highlightBBox): it needs both a bbox and a type other
+  // than "Inst" — instances get the tile-rendered yellow highlight instead.
+  // Log what the client will see so a missing or misplaced outline can be
+  // attributed to the server side.
+  if (has_bbox) {
+    const auto len = [](const int dbu) {
+      return gui::Descriptor::Property::convert_dbu(dbu, /*add_units=*/false);
+    };
+    const char* unit = use_dbu ? "dbu" : "um";
+    debugPrint(logger,
+               utl::WEB,
+               "select",
+               1,
+               "inspect outline: type={} name={} bbox_{}=({},{})-({},{}) "
+               "size_{}={}x{} props={} dashed_outline={} back={}",
+               sel.getTypeName(),
+               sel.getName(),
+               unit,
+               len(bbox.xMin()),
+               len(bbox.yMin()),
+               len(bbox.xMax()),
+               len(bbox.yMax()),
+               unit,
+               len(bbox.dx()),
+               len(bbox.dy()),
+               props.size(),
+               // Mirrors inspector.js's `data.type !== 'Inst'` literally, so
+               // the log cannot drift from what the client actually draws.
+               sel.getTypeName() != "Inst",
+               can_navigate_back);
+  } else {
+    debugPrint(logger,
+               utl::WEB,
+               "select",
+               1,
+               "inspect outline: type={} name={} no bbox, no outline drawn "
+               "(props={}, back={})",
+               sel.getTypeName(),
+               sel.getName(),
+               props.size(),
+               can_navigate_back);
+  }
+
   if (sel.isNet()) {
-    auto* net = std::any_cast<odb::dbNet*>(sel.getObject());
-    if (net && !net->getGuides().empty()) {
+    // Pointer-form cast: the payload may be NetWithSink (see
+    // appendHighlightShapes) — the value-form cast would throw.
+    if (odb::dbNet* const* net = std::any_cast<odb::dbNet*>(&sel.getObject());
+        net && *net && !(*net)->getGuides().empty()) {
       o["has_guides"] = 1;
     }
   }
+}
+
+// Shared inspection-response trailer: writes the inspected object's payload
+// plus the selection cursor fields into `root`, and installs the freshly
+// derived selectables under selectables_mutex.  Handlers add their own
+// ok/error/deleted fields around this call.
+static void writeInspectTrailer(boost::json::object& root,
+                                SessionState& state,
+                                const gui::Selected& sel,
+                                bool can_navigate_back,
+                                bool use_dbu,
+                                utl::Logger* logger,
+                                int hl_group,
+                                int sel_count,
+                                int sel_index)
+{
+  std::vector<gui::Selected> new_selectables;
+  writeInspectPayload(
+      root, sel, new_selectables, can_navigate_back, use_dbu, logger, hl_group);
+  root["selection_count"] = static_cast<int64_t>(sel_count);
+  root["selection_index"] = static_cast<int64_t>(sel_index);
+  std::lock_guard<std::mutex> lock(state.selectables_mutex);
+  state.selectables = std::move(new_selectables);
 }
 
 static boost::json::object serializeHeatMapOption(
@@ -497,7 +1324,9 @@ WebSocketResponse TileHandler::renderTile(
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
     const std::set<uint32_t>* focus_net_ids,
-    const std::set<uint32_t>* route_guide_net_ids)
+    const std::set<uint32_t>* route_guide_net_ids,
+    const double dpr,
+    const int tile_px)
 {
   WebSocketResponse resp;
   resp.id = id;
@@ -513,7 +1342,9 @@ WebSocketResponse TileHandler::renderTile(
                                   flight_lines,
                                   module_colors,
                                   focus_net_ids,
-                                  route_guide_net_ids);
+                                  route_guide_net_ids,
+                                  dpr,
+                                  tile_px);
   return resp;
 }
 
@@ -579,6 +1410,56 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectPrev(req, state);
         });
+  d.add("set_property",
+        WebSocketRequest::kSetProperty,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetProperty(req, state);
+        });
+  d.add("trigger_action",
+        WebSocketRequest::kTriggerAction,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTriggerAction(req, state);
+        });
+  d.add("highlight",
+        WebSocketRequest::kHighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleHighlight(req, state);
+        });
+  d.add("unhighlight",
+        WebSocketRequest::kUnhighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleUnhighlight(req, state);
+        });
+  d.add("clear_highlights",
+        WebSocketRequest::kClearHighlights,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleClearHighlights(req, state);
+        });
+  d.add("list_selection",
+        WebSocketRequest::kListSelection,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleListSelection(req, state);
+        });
+  d.add("inspect_selection",
+        WebSocketRequest::kInspectSelection,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleInspectSelection(req, state);
+        });
+  d.add("inspect_group",
+        WebSocketRequest::kInspectGroup,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleInspectGroup(req, state);
+        });
+  d.add("deselect",
+        WebSocketRequest::kDeselect,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDeselect(req, state);
+        });
+  d.add("select_layer",
+        WebSocketRequest::kSelectLayer,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelectLayer(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -617,6 +1498,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     TileVisibility vis;
     vis.parseFromJson(req.json);
     // Leaflet allows fractional zoom (zoomSnap: 0); accept either int or
@@ -635,12 +1517,13 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     // Right-click (context menu) select: only replace the selection when the
     // cursor is over a NOT-already-selected object; otherwise keep it.
     const bool context = jsonOr(req.json, "context", false);
+    const bool show_connectivity = jsonOr(req.json, "show_connectivity", false);
 
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
@@ -679,8 +1562,21 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         }
       }
       inspected_sel = registry->makeSelected(results[pick].object);
-      writeInspectPayload(
-          root, inspected_sel, new_selectables, /*can_navigate_back=*/false);
+      int hl_group = -1;
+      {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        hl_group = highlightGroupOfLocked(state, inspected_sel);
+      }
+      // Pass the hit's chiplet transform so the emitted bbox lands in the same
+      // world space as results[pick].bbox.
+      writeInspectPayload(root,
+                          inspected_sel,
+                          new_selectables,
+                          /*can_navigate_back=*/false,
+                          use_dbu,
+                          gen_->getLogger(),
+                          hl_group,
+                          results[pick].world_xfm);
     } else {
       root["can_navigate_back"] = 0;
     }
@@ -719,13 +1615,18 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         state.selection_itr = state.selection_set.begin();
       }
 
+      if (show_connectivity) {
+        // std::set insertion keeps selection_itr valid.
+        root["connected_added"]
+            = static_cast<int64_t>(addConnectedNets(state.selection_set));
+      }
+
       // Highlight all items in the selection set.
-      collectMultiHighlightShapes(state.selection_set,
-                                  state.highlight_rects,
-                                  state.highlight_polys,
-                                  state.highlight_lines);
-      // Keep the current inspected object on an empty context click.
+      setSelectionSetHighlights(state);
+      // Keep the current inspected object on an empty context click: the menu
+      // has to keep describing what the user last inspected.
       if (inspected_sel || !context) {
+        runDeselectAction(state.current_inspected, inspected_sel);
         state.current_inspected = inspected_sel;
       }
 
@@ -898,23 +1799,6 @@ gui::SelectionSet computeConnectedSet(const std::string& action,
   return result;
 }
 
-// Map a highlight group index to its web RGBA color.  Mirrors the Qt GUI's
-// gui::Painter::kHighlightColors (16 entries, fill alpha ~100).
-Color toWebHighlightColor(const int group)
-{
-  const auto& colors = gui::Painter::kHighlightColors;
-  const int num_colors = static_cast<int>(colors.size());
-  if (num_colors == 0) {
-    return Color{.r = 0, .g = 0, .b = 0, .a = 255};
-  }
-  // Signed modulo so a negative group still maps into [0, num_colors).
-  const auto& c = colors[((group % num_colors) + num_colors) % num_colors];
-  return Color{.r = static_cast<unsigned char>(c.r),
-               .g = static_cast<unsigned char>(c.g),
-               .b = static_cast<unsigned char>(c.b),
-               .a = static_cast<unsigned char>(c.a)};
-}
-
 }  // namespace
 
 WebSocketResponse SelectHandler::handleContextAction(
@@ -930,6 +1814,9 @@ WebSocketResponse SelectHandler::handleContextAction(
     const bool input = jsonOr(req.json, "input", false);
     const bool include_inverters = jsonOr(req.json, "include_inverters", false);
     const int group = static_cast<int>(jsonOr(req.json, "group", int64_t{0}));
+    if (group < 0 || group >= gui::kNumHighlightSet) {
+      throw std::runtime_error("invalid highlight group");
+    }
 
     // STA traversal and makeSelected() are not thread-safe; serialize with
     // other STA callers (select, timing, clock tree, tcl eval).
@@ -942,14 +1829,13 @@ WebSocketResponse SelectHandler::handleContextAction(
       state.selection_itr = state.selection_set.end();
       state.current_inspected = gui::Selected();
       state.navigation_history.clear();
-      state.highlight_rects.clear();
-      state.highlight_polys.clear();
-      state.highlight_lines.clear();
+      clearSelectionHighlights(state);
     };
     auto clearHighlightGroups = [&]() {
-      state.highlight_group_rects.clear();
-      state.highlight_group_polys.clear();
-      state.highlight_group_lines.clear();
+      for (auto& members : state.highlight_groups) {
+        members.clear();
+      }
+      rebuildHighlightGroupShapesLocked(state);
     };
     auto clearFocusNets = [&]() {
       std::lock_guard<std::mutex> flock(state.focus_nets_mutex);
@@ -978,32 +1864,18 @@ WebSocketResponse SelectHandler::handleContextAction(
           }
         }
         state.selection_itr = state.selection_set.begin();
-        collectMultiHighlightShapes(state.selection_set,
-                                    state.highlight_rects,
-                                    state.highlight_polys,
-                                    state.highlight_lines);
+        setSelectionSetHighlights(state);
       } else {
-        const Color color = toWebHighlightColor(group);
+        // An object lives in at most one group, so a re-highlight moves it.
         for (const auto& s : connected) {
           if (!s) {
             continue;
           }
           ++connected_count;
-          ShapeCollector collector;
-          s.highlight(collector);
-          for (const auto& r : collector.rects) {
-            state.highlight_group_rects.push_back(ColoredRect{
-                .rect = r, .color = color, .layer = "", .filled = true});
-          }
-          for (const auto& p : collector.polys) {
-            state.highlight_group_polys.push_back(
-                ColoredPolygon{.poly = p, .color = color});
-          }
-          for (const auto& [p1, p2] : collector.lines) {
-            state.highlight_group_lines.push_back(
-                FlightLine{.p1 = p1, .p2 = p2, .color = color});
-          }
+          removeFromHighlightGroupsLocked(state, s);
+          state.highlight_groups[group].insert(s);
         }
+        rebuildHighlightGroupShapesLocked(state);
       }
     } else if (action == "clear_highlights") {
       clearHighlightGroups();
@@ -1044,6 +1916,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     gui::Selected sel;
     {
       const int select_id
@@ -1065,24 +1938,23 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     bool can_navigate_back = false;
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(sel,
-                             state.highlight_rects,
-                             state.highlight_polys,
-                             state.highlight_lines);
+      setSelectionHighlights(state, sel);
       if (sel) {
         if (state.current_inspected && state.current_inspected != sel) {
           state.navigation_history.push_back(state.current_inspected);
         }
+        runDeselectAction(state.current_inspected, sel);
         state.current_inspected = sel;
         // Realign the cycling iterator with the linked target so that
         // selection_index reflects the object actually being rendered, and
@@ -1095,18 +1967,20 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger(),
+                        hl_group,
+                        sel_count,
+                        sel_index);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1122,14 +1996,16 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     gui::Selected sel;
     bool can_navigate_back = false;
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getBlock(), use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
@@ -1139,31 +2015,31 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
       if (!state.navigation_history.empty()) {
         sel = state.navigation_history.back();
         state.navigation_history.pop_back();
+        runDeselectAction(state.current_inspected, sel);
         state.current_inspected = sel;
       } else {
         sel = state.current_inspected;
       }
 
-      collectHighlightShapes(sel,
-                             state.highlight_rects,
-                             state.highlight_polys,
-                             state.highlight_lines);
+      setSelectionHighlights(state, sel);
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger(),
+                        hl_group,
+                        sel_count,
+                        sel_index);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1181,18 +2057,21 @@ static WebSocketResponse handleSelectionCycle(
     SessionState& state,
     const int direction,
     std::shared_ptr<TclEvaluator>& tcl_eval,
-    odb::dbBlock* block)
+    odb::dbDatabase* db,
+    utl::Logger* logger)
 {
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     gui::Selected sel;
 
     std::lock_guard<std::mutex> sta_lock(tcl_eval->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(db, use_dbu);
     int sel_count = 0;
     int sel_index = -1;
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel_count = static_cast<int>(state.selection_set.size());
@@ -1209,6 +2088,7 @@ static WebSocketResponse handleSelectionCycle(
           --state.selection_itr;
         }
         sel = *state.selection_itr;
+        runDeselectAction(state.current_inspected, sel);
         state.current_inspected = sel;
         state.hover_rects.clear();
         state.timing_rects.clear();
@@ -1216,26 +2096,24 @@ static WebSocketResponse handleSelectionCycle(
         state.navigation_history.clear();
         // Restore selection-set highlights (handleInspect may have
         // replaced them with a single linked object's shapes).
-        collectMultiHighlightShapes(state.selection_set,
-                                    state.highlight_rects,
-                                    state.highlight_polys,
-                                    state.highlight_lines);
+        setSelectionSetHighlights(state);
       }
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
     boost::json::object root;
-    std::vector<gui::Selected> new_selectables;
-    const bool can_navigate_back = false;
-    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        /*can_navigate_back=*/false,
+                        use_dbu,
+                        logger,
+                        hl_group,
+                        sel_count,
+                        sel_index);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1248,13 +2126,876 @@ static WebSocketResponse handleSelectionCycle(
 WebSocketResponse SelectHandler::handleSelectNext(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, +1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(
+      req, state, +1, tcl_eval_, gen_->getDb(), gen_->getLogger());
 }
 
 WebSocketResponse SelectHandler::handleSelectPrev(const WebSocketRequest& req,
                                                   SessionState& state)
 {
-  return handleSelectionCycle(req, state, -1, tcl_eval_, gen_->getBlock());
+  return handleSelectionCycle(
+      req, state, -1, tcl_eval_, gen_->getDb(), gen_->getLogger());
+}
+
+// Commit an edit to a property of the currently inspected object via the
+// descriptor's Editor callback (Qt GUI parity: EditorItemDelegate::
+// setModelData).  List editors commit by option index so the exact
+// std::any stored in the option reaches the callback; scalar editors
+// marshal the JSON value per the Qt delegate's rules (numbers always
+// arrive as double).  On success the full inspect payload is rebuilt —
+// the edit may have moved or renamed the object — and a {"type":"refresh"}
+// push is broadcast to every session once the STA lock is released.
+// On rejection the payload carries ok:0 plus the reason; the client
+// re-renders from it (visible revert, unlike Qt's silent one).
+WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  bool accepted = false;
+  // Built under sta_lock (getBounds reads odb); broadcast after the lock.
+  std::string broadcast_payload;
+  try {
+    const std::string name(req.json.at("name").as_string());
+
+    // STA's getProperties() and the editor callbacks (which mutate the
+    // database) are not thread-safe; serialize with other STA callers.
+    // Also blocks edits while a Tcl command runs (Qt's read-only guard).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    std::string error;
+    if (consumeStaleSelection(state)) {
+      error = "selection invalidated by a design change; reselect and retry";
+    }
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    if (!error.empty()) {
+      // fall through with the staleness error
+    } else if (!sel) {
+      error = "nothing is inspected";
+    } else {
+      const gui::Descriptor::Editors editors = sel.getEditors();
+      const auto editor_it = editors.find(name);
+      if (editor_it == editors.end()) {
+        error = "property is not editable: " + name;
+      } else {
+        std::any callback_value;
+        bool value_valid = false;
+        if (const auto* idx_v = req.json.if_contains("option_index")) {
+          const auto idx = idx_v->as_int64();
+          const auto& options = editor_it->second.options;
+          if (idx < 0 || idx >= static_cast<int64_t>(options.size())) {
+            error = "invalid option index";
+          } else if (jsonOr(req.json, "option_name", std::string())
+                     != options[idx].name) {
+            // The option list was re-fetched at commit time and no longer
+            // matches what the client rendered (e.g. the DB changed).
+            error = "options changed; reselect the object and retry";
+          } else {
+            callback_value = options[idx].value;
+            value_valid = true;
+          }
+        } else {
+          const auto& value = req.json.at("value");
+          if (value.is_bool()) {
+            callback_value = value.get_bool();
+            value_valid = true;
+          } else if (value.is_string()) {
+            callback_value = std::string(value.as_string());
+            value_valid = true;
+          } else if (value.is_int64() || value.is_uint64()
+                     || value.is_double()) {
+            callback_value = value.to_number<double>();
+            value_valid = true;
+          } else {
+            error = "unsupported value type";
+          }
+        }
+        if (value_valid) {
+          try {
+            accepted = editor_it->second.callback(callback_value);
+            if (!accepted) {
+              error = "value rejected for property: " + name;
+            }
+          } catch (const std::exception& e) {
+            // utl::Logger::error throws std::runtime_error; a bad_any_cast
+            // would be an editor-contract bug.  Either way: reject with
+            // the reason, never let it escape to the session thread.
+            accepted = false;
+            error = e.what();
+          }
+        }
+      }
+    }
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    int hl_group = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (accepted) {
+        // Geometry may have changed (e.g. X/Y edit); rebuild highlights.
+        if (state.selection_set.find(sel) != state.selection_set.end()) {
+          setSelectionSetHighlights(state);
+        } else {
+          setSelectionHighlights(state, sel);
+        }
+        // Group shapes derive from geometry too.
+        rebuildHighlightGroupShapesLocked(state);
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger(),
+                        hl_group,
+                        sel_count,
+                        sel_index);
+    // After the trailer so the handler error wins over writeInspectPayload's
+    // "invalid select_id" default when nothing is inspected.
+    root["ok"] = accepted ? 1 : 0;
+    if (!accepted) {
+      root["error"] = error;
+    }
+    if (accepted) {
+      broadcast_payload = refreshBroadcastPayload(*gen_);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  if (accepted && broadcast_fn_) {
+    broadcast_fn_(broadcast_payload);
+  }
+  return resp;
+}
+
+// Run a descriptor action (Qt GUI parity: Inspector::handleAction) on the
+// currently inspected object.  The action is re-resolved by name at
+// trigger time — never by index — and blocklisted/reserved names are
+// refused.  The callback's returned Selected becomes the new inspected
+// object (empty → cleared inspector).  When the action destroys objects
+// (e.g. Delete) the session's own odb destroy callbacks raise
+// selection_stale; the whole selection state is rebuilt from the returned
+// object alone since history/selection-set entries may now dangle.
+WebSocketResponse SelectHandler::handleTriggerAction(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  bool executed = false;
+  // Built under sta_lock (getBounds reads odb); broadcast after the lock.
+  std::string broadcast_payload;
+  try {
+    const std::string name(req.json.at("name").as_string());
+
+    // STA descriptor calls and the action callbacks (which may mutate the
+    // database) are not thread-safe; serialize with other STA callers.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    consumeStaleSelection(state);
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    std::string error;
+    gui::Selected next;
+    if (!sel) {
+      error = "nothing is inspected";
+    } else if (name == gui::Descriptor::kDeselectAction
+               || kSuppressedActions.find(name) != kSuppressedActions.end()) {
+      error = "action is not available: " + name;
+    } else {
+      const gui::Descriptor::Action* action = nullptr;
+      const auto actions = sel.getDescriptorActions();
+      for (const auto& candidate : actions) {
+        if (candidate.name == name) {
+          action = &candidate;
+          break;
+        }
+      }
+      if (action == nullptr) {
+        error = "action no longer available: " + name;
+      } else {
+        try {
+          next = action->callback();
+          executed = true;
+        } catch (const std::exception& e) {
+          error = e.what();
+        }
+      }
+    }
+
+    // A destroy performed by the action raised our own staleness flag;
+    // consume it and note that the previous object is gone.
+    const bool deleted = state.selection_stale.exchange(false);
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    int hl_group = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (deleted) {
+        // History and selection-set entries may reference destroyed
+        // objects; rebuild from the action's returned object alone.
+        state.navigation_history.clear();
+        state.selection_set.clear();
+        if (next) {
+          state.selection_set.insert(next);
+        }
+        state.selection_itr = state.selection_set.begin();
+        state.hover_rects.clear();
+        state.current_inspected = next;
+        setSelectionHighlights(state, next);
+        // Highlight-group members may also reference destroyed objects.
+        for (auto& members : state.highlight_groups) {
+          members.clear();
+        }
+        state.highlight_group_rects.clear();
+        state.highlight_group_polys.clear();
+        state.highlight_group_lines.clear();
+      } else if (executed && next != sel) {
+        runDeselectAction(sel, next);
+        if (next) {
+          state.navigation_history.push_back(sel);
+        }
+        state.current_inspected = next;
+        state.selection_itr = state.selection_set.find(next);
+        state.hover_rects.clear();
+        setSelectionHighlights(state, next);
+      } else if (executed) {
+        next = sel;  // action kept the selection (e.g. a toggle)
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group
+          = highlightGroupOfLocked(state, (deleted || executed) ? next : sel);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    // After a destroy, `sel` dangles — the payload must come from `next`.
+    const gui::Selected& payload_sel = (deleted || executed) ? next : sel;
+    writeInspectTrailer(root,
+                        state,
+                        payload_sel,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger(),
+                        hl_group,
+                        sel_count,
+                        sel_index);
+    if (executed && !next) {
+      // The action deselected (e.g. Delete): an empty payload with no
+      // "error" clears the client inspector.
+      root.erase("error");
+    }
+    root["ok"] = executed ? 1 : 0;
+    if (!executed) {
+      root["error"] = error;
+    }
+    root["deleted"] = deleted ? 1 : 0;
+    if (executed) {
+      broadcast_payload = refreshBroadcastPayload(*gen_);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  if (executed && broadcast_fn_) {
+    broadcast_fn_(broadcast_payload);
+  }
+  return resp;
+}
+
+// Put the currently inspected object into color group `group` (0-15),
+// removing it from any other group first — an object lives in at most
+// one group.  Mirrors the Qt GUI's MainWindow::updateHighlightedSet
+// semantics (the Qt add path can leave an object in two groups; the web
+// always enforces uniqueness).  Responds with the refreshed inspect
+// payload so the client updates the group badge in place.
+WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
+                                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const int64_t group = req.json.at("group").as_int64();
+
+    // sel.highlight() (shape collection) runs descriptor code; serialize
+    // with other STA callers.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    std::string error;
+    if (consumeStaleSelection(state)) {
+      error = "selection invalidated by a design change; reselect and retry";
+    }
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    bool ok = false;
+    if (!error.empty()) {
+      // fall through with the staleness error
+    } else if (group < 0 || group >= gui::kNumHighlightSet) {
+      error = "invalid highlight group";
+    } else if (!sel) {
+      error = "nothing is inspected";
+    } else {
+      ok = true;
+    }
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    int hl_group = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (ok) {
+        removeFromHighlightGroupsLocked(state, sel);
+        state.highlight_groups[group].insert(sel);
+        rebuildHighlightGroupShapesLocked(state);
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger(),
+                        hl_group,
+                        sel_count,
+                        sel_index);
+    root["ok"] = ok ? 1 : 0;
+    if (!ok) {
+      root["error"] = error;
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Remove the currently inspected object from whatever highlight group
+// holds it.  Mirrors Qt's MainWindow::removeHighlighted.
+WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    std::string error;
+    if (consumeStaleSelection(state)) {
+      error = "selection invalidated by a design change; reselect and retry";
+    }
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      sel = state.current_inspected;
+    }
+
+    bool ok = false;
+    if (error.empty()) {
+      if (!sel) {
+        error = "nothing is inspected";
+      } else {
+        ok = true;
+      }
+    }
+
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    int hl_group = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (ok && removeFromHighlightGroupsLocked(state, sel)) {
+        rebuildHighlightGroupShapesLocked(state);
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      // On success the object left every group (-1); on the error path it
+      // stays put, so report its real group instead of clearing the badge.
+      hl_group = ok ? -1 : highlightGroupOfLocked(state, sel);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        can_navigate_back,
+                        use_dbu,
+                        gen_->getLogger(),
+                        hl_group,
+                        sel_count,
+                        sel_index);
+    root["ok"] = ok ? 1 : 0;
+    if (!ok) {
+      root["error"] = error;
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Clear one highlight group (0-15) or all of them (group = -1, the
+// default — Qt's layout "Clear → Highlights" semantics).
+WebSocketResponse SelectHandler::handleClearHighlights(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const auto group = jsonOr<int64_t>(req.json, "group", -1);
+
+    // Rebuilding the remaining groups' shapes runs descriptor code.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    consumeStaleSelection(state);
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    if (group < -1 || group >= gui::kNumHighlightSet) {
+      root["ok"] = 0;
+      root["error"] = "invalid highlight group";
+      writePayload(resp, root);
+      return resp;
+    }
+
+    int64_t cleared = 0;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (group < 0) {
+        for (auto& members : state.highlight_groups) {
+          cleared += static_cast<int64_t>(members.size());
+          members.clear();
+        }
+      } else {
+        cleared = static_cast<int64_t>(state.highlight_groups[group].size());
+        state.highlight_groups[group].clear();
+      }
+      rebuildHighlightGroupShapesLocked(state);
+    }
+
+    root["ok"] = 1;
+    root["cleared"] = cleared;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// One selection-browser row: name, type, and (when available) bbox so the
+// client can zoom without a round-trip.  Runs descriptor code — STA lock.
+static boost::json::object browserRow(const gui::Selected& sel)
+{
+  boost::json::object row;
+  row["name"] = sel.getName();
+  row["type"] = sel.getTypeName();
+  odb::Rect bbox;
+  if (sel.getBBox(bbox)) {
+    row["bbox"] = bboxArray(bbox);
+  }
+  return row;
+}
+
+// List the selection set and the 16 highlight groups for the selection
+// browser (Qt GUI parity: selectHighlightWindow's two tabs).  Read-only:
+// does NOT touch state.selectables, so inspector link ids stay valid.
+// Each set is capped so a huge selection cannot hang the panel (the Qt
+// dock renders everything and freezes).
+WebSocketResponse SelectHandler::handleListSelection(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  constexpr size_t kMaxBrowserRows = 1000;
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    // getName/getTypeName run descriptor (STA-touching) code.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+    consumeStaleSelection(state);
+
+    bool truncated = false;
+    boost::json::object root;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+
+      boost::json::array selection;
+      for (const auto& sel : state.selection_set) {
+        if (!sel) {
+          continue;
+        }
+        if (selection.size() >= kMaxBrowserRows) {
+          truncated = true;
+          break;
+        }
+        selection.emplace_back(browserRow(sel));
+      }
+      root["selection"] = std::move(selection);
+
+      boost::json::array groups;
+      for (int group = 0; group < gui::kNumHighlightSet; ++group) {
+        boost::json::array members;
+        for (const auto& sel : state.highlight_groups[group]) {
+          if (!sel) {
+            continue;
+          }
+          if (members.size() >= kMaxBrowserRows) {
+            truncated = true;
+            break;
+          }
+          members.emplace_back(browserRow(sel));
+        }
+        groups.emplace_back(std::move(members));
+      }
+      root["groups"] = std::move(groups);
+    }
+
+    root["ok"] = 1;
+    root["truncated"] = truncated;
+    resp.type = WebSocketResponse::kJson;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Shared body of inspect_selection / inspect_group: make the `index`-th
+// member of `browsing_group` (-1 = the selection set, 0-15 = a highlight
+// group) the inspected object and return the full inspect payload.  Rows
+// resolve by stable index into the ordered set — never through
+// state.selectables, which belongs to the last inspect-style response.
+static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
+                                           SessionState& state,
+                                           int browsing_group,
+                                           std::shared_ptr<TclEvaluator>& tcl,
+                                           odb::dbDatabase* db,
+                                           utl::Logger* logger)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const int64_t index = req.json.at("index").as_int64();
+
+    std::lock_guard<std::mutex> sta_lock(tcl->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(db, use_dbu);
+    consumeStaleSelection(state);
+
+    gui::Selected sel;
+    bool can_navigate_back = false;
+    int sel_count = 0;
+    int sel_index = -1;
+    int hl_group = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      const gui::SelectionSet& set
+          = browsing_group < 0 ? state.selection_set
+                               : state.highlight_groups[browsing_group];
+      if (index < 0 || index >= static_cast<int64_t>(set.size())) {
+        resp.type = WebSocketResponse::kJson;
+        boost::json::object root;
+        root["ok"] = 0;
+        root["error"] = "invalid row index";
+        writePayload(resp, root);
+        return resp;
+      }
+      sel = *std::next(set.begin(), index);
+
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      if (state.current_inspected && state.current_inspected != sel) {
+        state.navigation_history.push_back(state.current_inspected);
+      }
+      runDeselectAction(state.current_inspected, sel);
+      state.current_inspected = sel;
+      state.selection_itr = state.selection_set.find(sel);
+      if (browsing_group < 0) {
+        // Selection rows behave like Next/Previous: keep every selected
+        // object highlighted.
+        setSelectionSetHighlights(state);
+      } else {
+        // Group rows behave like a link inspect: highlight the object
+        // itself (its group color is already visible in the overlay).
+        setSelectionHighlights(state, sel);
+      }
+      can_navigate_back = !state.navigation_history.empty();
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+      hl_group = highlightGroupOfLocked(state, sel);
+    }
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    root["ok"] = 1;
+    writeInspectTrailer(root,
+                        state,
+                        sel,
+                        can_navigate_back,
+                        use_dbu,
+                        logger,
+                        hl_group,
+                        sel_count,
+                        sel_index);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleInspectSelection(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  return inspectBrowserRow(req,
+                           state,
+                           /*browsing_group=*/-1,
+                           tcl_eval_,
+                           gen_->getDb(),
+                           gen_->getLogger());
+}
+
+WebSocketResponse SelectHandler::handleInspectGroup(const WebSocketRequest& req,
+                                                    SessionState& state)
+{
+  const int64_t group = req.json.at("group").as_int64();
+  if (group < 0 || group >= gui::kNumHighlightSet) {
+    WebSocketResponse resp;
+    resp.id = req.id;
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    root["ok"] = 0;
+    root["error"] = "invalid highlight group";
+    writePayload(resp, root);
+    return resp;
+  }
+  return inspectBrowserRow(req,
+                           state,
+                           static_cast<int>(group),
+                           tcl_eval_,
+                           gen_->getDb(),
+                           gen_->getLogger());
+}
+
+// Remove the `index`-th selection-set member (Qt GUI parity:
+// SelectHighlightWindow's "De-Select" → MainWindow::removeFromSelected).
+// The inspected object is kept even when it is the removed one, matching
+// Qt (the inspector keeps showing it until the next selection).
+WebSocketResponse SelectHandler::handleDeselect(const WebSocketRequest& req,
+                                                SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    const int64_t index = req.json.at("index").as_int64();
+
+    // collectMultiHighlightShapes runs descriptor code — STA lock.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    consumeStaleSelection(state);
+
+    resp.type = WebSocketResponse::kJson;
+    boost::json::object root;
+    int sel_count = 0;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (index < 0
+          || index >= static_cast<int64_t>(state.selection_set.size())) {
+        root["ok"] = 0;
+        root["error"] = "invalid row index";
+        writePayload(resp, root);
+        return resp;
+      }
+      state.selection_set.erase(std::next(state.selection_set.begin(), index));
+      // The erased element may have been the cycling position.
+      state.selection_itr = state.selection_set.begin();
+      setSelectionSetHighlights(state);
+      sel_count = static_cast<int>(state.selection_set.size());
+    }
+
+    root["ok"] = 1;
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Select a tech layer by name, as clicking a layer row in the Qt GUI's
+// Display Control does (DisplayControls::displayItemSelected emits
+// `selected(makeSelected(tech_layer))`).  The layer becomes the inspected
+// object so the Inspector panel shows its properties.
+//
+// A dbTechLayer carries no geometry, so this contributes no highlight shapes;
+// collectHighlightShapes still runs to clear whatever the previous selection
+// left behind, matching the "replace the selection" semantics of a plain
+// (non-shift) click.
+WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+
+  try {
+    const std::string layer_name
+        = std::string(req.json.at("layer").as_string());
+
+    // Multi-die designs give each chip its own dbTech, so the same layer name
+    // can exist in several of them.  The frontend sends the chiplet path its
+    // layer row belongs to; single-chip designs omit it and get the design's
+    // only tech.
+    std::string chiplet_path;
+    if (const auto* v = req.json.if_contains("chiplet"); v && v->is_string()) {
+      chiplet_path = std::string(v->as_string());
+    }
+
+    odb::dbTech* tech = nullptr;
+    if (!chiplet_path.empty()) {
+      for (const ChipletNode& node : gen_->chiplets()) {
+        if (node.path == chiplet_path && node.chip != nullptr) {
+          tech = node.chip->getTech();
+          break;
+        }
+      }
+    }
+    if (tech == nullptr) {
+      tech = gen_->getTech();
+    }
+    if (tech == nullptr) {
+      throw std::runtime_error("No tech loaded");
+    }
+
+    odb::dbTechLayer* layer = tech->findLayer(layer_name.c_str());
+    if (layer == nullptr) {
+      throw std::runtime_error("Layer not found: " + layer_name);
+    }
+
+    gui::Selected sel
+        = gui::DescriptorRegistry::instance()->makeSelected(layer);
+
+    // STA's getProperties() is not thread-safe; serialize with the other
+    // STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    int sel_count = 0;
+    int sel_index = -1;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      state.navigation_history.clear();
+      state.selection_set.clear();
+      if (sel) {
+        state.selection_set.insert(sel);
+      }
+      state.selection_itr = state.selection_set.begin();
+      // Through the helper, not collectHighlightShapes directly: the highlight
+      // vectors and the source tag are one invariant, and the tag is what lets
+      // a "Flywires only" flip re-derive from the right selection.
+      setSelectionSetHighlights(state);
+      state.current_inspected = sel;
+      sel_count = static_cast<int>(state.selection_set.size());
+      sel_index
+          = selectionIteratorPosition(state.selection_set, state.selection_itr);
+    }
+
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(root,
+                        sel,
+                        new_selectables,
+                        /*can_navigate_back=*/false,
+                        use_dbu,
+                        gen_->getLogger());
+    root["selection_count"] = static_cast<int64_t>(sel_count);
+    root["selection_index"] = static_cast<int64_t>(sel_index);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
 }
 
 WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
@@ -1263,6 +3004,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
+    consumeStaleSelection(state);
     int count = 0;
     std::vector<odb::Rect> hover_rects;
     {
@@ -1360,6 +3102,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    consumeStaleSelection(state);
     const int lower = static_cast<int>(req.json.at("lower").as_int64());
     const int upper = static_cast<int>(req.json.at("upper").as_int64());
 
@@ -1373,7 +3116,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
     // serialize the entire net walk and inspection with the shared STA lock.
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     std::vector<odb::dbNet*> matched;
     for (odb::dbNet* net : block->getNets()) {
@@ -1411,11 +3154,19 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
       }
       gui::Selected first = registry->makeSelected(matched.front());
 
+      int hl_group = -1;
+      {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        hl_group = highlightGroupOfLocked(state, first);
+      }
       std::vector<gui::Selected> new_selectables;
       writeInspectPayload(root,
                           first,
                           new_selectables,
-                          /*can_navigate_back=*/false);
+                          /*can_navigate_back=*/false,
+                          use_dbu,
+                          gen_->getLogger(),
+                          hl_group);
       {
         std::lock_guard<std::mutex> lock(state.selectables_mutex);
         state.selectables = std::move(new_selectables);
@@ -1433,10 +3184,8 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
           state.selection_itr = state.selection_set.begin();
         }
         // Highlight every selected net in the layout.
-        collectMultiHighlightShapes(state.selection_set,
-                                    state.highlight_rects,
-                                    state.highlight_polys,
-                                    state.highlight_lines);
+        setSelectionSetHighlights(state);
+        runDeselectAction(state.current_inspected, first);
         state.current_inspected = first;
 
         root["selection_count"]
@@ -1478,7 +3227,7 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
 
     // STA highlight()/getProperties() and makeSelected() are not thread-safe.
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
     const int fn_flags = match_case ? 0 : FNM_CASEFOLD;
     auto matches = [&](const char* name) {
@@ -1534,10 +3283,18 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
 
       const gui::Selected first = *found.begin();
       std::vector<gui::Selected> new_selectables;
+      int hl_group = -1;
+      {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        hl_group = highlightGroupOfLocked(state, first);
+      }
       writeInspectPayload(root,
                           first,
                           new_selectables,
-                          /*can_navigate_back=*/false);
+                          /*can_navigate_back=*/false,
+                          use_dbu,
+                          gen_->getLogger(),
+                          hl_group);
       {
         std::lock_guard<std::mutex> lock(state.selectables_mutex);
         state.selectables = std::move(new_selectables);
@@ -1550,10 +3307,8 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
         state.navigation_history.clear();
         state.selection_set = std::move(found);
         state.selection_itr = state.selection_set.begin();
-        collectMultiHighlightShapes(state.selection_set,
-                                    state.highlight_rects,
-                                    state.highlight_polys,
-                                    state.highlight_lines);
+        setSelectionSetHighlights(state);
+        runDeselectAction(state.current_inspected, first);
         state.current_inspected = first;
         root["selection_count"]
             = static_cast<int64_t>(state.selection_set.size());
@@ -1930,7 +3685,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   static constexpr int kMaxConeInsts = 150;
-  static constexpr int kMaxNetFanout = 30;
+  static constexpr uint32_t kMaxNetFanout = 30;
 
   try {
     const std::string inst_name
@@ -1966,7 +3721,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
             }
             odb::dbNet* net = iterm->getNet();
             if (!net || seen_nets.contains(net)
-                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+                || net->getITerms().hasMoreThan(kMaxNetFanout)) {
               continue;
             }
             seen_nets.insert(net);
@@ -2008,7 +3763,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
             }
             odb::dbNet* net = iterm->getNet();
             if (!net || seen_nets.contains(net)
-                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+                || net->getITerms().hasMoreThan(kMaxNetFanout)) {
               continue;
             }
             seen_nets.insert(net);
@@ -2256,6 +4011,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const std::string inst_name
         = std::string(req.json.at("inst_name").as_string());
     odb::dbBlock* block = gen_->getBlock();
@@ -2274,25 +4030,30 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
     const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(block, use_dbu);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
 
+    int hl_group = -1;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(sel,
-                             state.highlight_rects,
-                             state.highlight_polys,
-                             state.highlight_lines);
+      setSelectionHighlights(state, sel);
+      runDeselectAction(state.current_inspected, sel);
       state.current_inspected = sel;
       state.navigation_history.clear();
+      hl_group = highlightGroupOfLocked(state, sel);
     }
 
     boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(
-        root, sel, new_selectables, /*can_navigate_back=*/false);
+    writeInspectPayload(root,
+                        sel,
+                        new_selectables,
+                        /*can_navigate_back=*/false,
+                        use_dbu,
+                        gen_->getLogger(),
+                        hl_group);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
@@ -2519,9 +4280,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.timing_rects = std::move(new_rects);
       state.timing_lines = std::move(new_lines);
-      state.highlight_rects.clear();
-      state.highlight_polys.clear();
-      state.highlight_lines.clear();
+      clearSelectionHighlights(state);
     }
 
     const std::string json = "{\"ok\": true}";
@@ -2677,9 +4436,7 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
     const std::string inst_name
         = std::string(req.json.at("inst_name").as_string());
     std::lock_guard<std::mutex> lock(state.selection_mutex);
-    state.highlight_rects.clear();
-    state.highlight_polys.clear();
-    state.highlight_lines.clear();
+    clearSelectionHighlights(state);
     state.timing_rects.clear();
     state.timing_lines.clear();
 
@@ -2729,6 +4486,15 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  // run_inline so the cancel runs on the read thread, ahead of the posted
+  // tile render it is meant to abort.
+  d.add(
+      "cancel",
+      WebSocketRequest::kCancel,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleCancel(req, state);
+      },
+      /*run_inline=*/true);
   d.add("module_hierarchy",
         WebSocketRequest::kModuleHierarchy,
         [this](const WebSocketRequest& req, SessionState&) {
@@ -2797,6 +4563,40 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     }
   }
 
+  const std::string layer = std::string(req.json.at("layer").as_string());
+  // Validate before doing any work: a malformed request must not reach the
+  // cache-key build below, let alone the renderer.
+  int z = 0;
+  int x = 0;
+  int y = 0;
+  if (std::string coord_error;
+      !parseTileCoords(req.json, z, x, y, coord_error)) {
+    return errorResponse(req.id, "bad tile request: " + coord_error);
+  }
+
+  // Skip a render the client abandoned while it sat queued (best-effort).
+  {
+    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
+    if (state.cancelled_ids.erase(req.id) > 0) {
+      debugPrint(gen_->getLogger(),
+                 utl::WEB,
+                 "tile",
+                 1,
+                 "tile: id={} layer={} z/x/y={}/{}/{} cancelled before render",
+                 req.id,
+                 layer,
+                 z,
+                 x,
+                 y);
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kError;
+      const std::string msg = "cancelled";
+      resp.payload.assign(msg.begin(), msg.end());
+      return resp;
+    }
+  }
+
   TileVisibility vis;
   vis.parseFromJson(req.json);
 
@@ -2826,115 +4626,351 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   static const std::vector<ColoredRect> no_colored;
   static const std::vector<FlightLine> no_lines;
 
-  return renderTile(req.id,
-                    std::string(req.json.at("layer").as_string()),
-                    static_cast<int>(req.json.at("z").as_int64()),
-                    static_cast<int>(req.json.at("x").as_int64()),
-                    static_cast<int>(req.json.at("y").as_int64()),
-                    vis,
-                    *gen_,
-                    no_rects,
-                    no_polys,
-                    no_colored,
-                    no_lines,
-                    mod_ptr,
-                    focus_ptr,
-                    nullptr);
+  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
+
+  // A tile is cacheable only when it depends solely on the static design +
+  // visibility + dpr — i.e. no per-session overlays are active.  That keeps
+  // the cache session-independent and correct; overlay tiles render fresh.
+  const bool cacheable = mod_ptr == nullptr && focus_ptr == nullptr
+                         && !vis.debug && !vis.debug_renderers
+                         && !vis.debug_live;
+
+  std::string cache_key;
+  if (cacheable) {
+    // Key = the full render determinant: the request JSON minus the per-call
+    // id, with dpr pinned to the quantized value actually rendered.
+    // Selectability (the s_* flags and selectable_layers) does NOT affect the
+    // rendered tile, so it is excluded — toggling "selectable" must not
+    // invalidate the cache.
+    boost::json::object key_obj = req.json;
+    key_obj.erase("id");
+    key_obj.erase("selectable_layers");
+    std::vector<std::string> sel_keys;
+    for (const auto& kv : key_obj) {
+      const std::string_view k = kv.key();
+      if (k.size() >= 2 && k[0] == 's' && k[1] == '_') {
+        sel_keys.emplace_back(k);
+      }
+    }
+    for (const std::string& k : sel_keys) {
+      key_obj.erase(k);
+    }
+    key_obj["dpr"] = dpr;
+    // Pinned like dpr: two clients on different displays ask for different
+    // pixel counts of the same tile, and they are different images.
+    key_obj["tile_px"] = tile_px;
+    cache_key = boost::json::serialize(key_obj);
+    std::vector<unsigned char> cached;
+    if (gen_->tileCacheGet(cache_key, cached)) {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kPng;
+      resp.payload = std::move(cached);
+      debugPrint(gen_->getLogger(),
+                 utl::WEB,
+                 "tile",
+                 1,
+                 "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} "
+                 "cache=hit bytes={}",
+                 req.id,
+                 layer,
+                 z,
+                 x,
+                 y,
+                 dpr,
+                 tile_px,
+                 resp.payload.size());
+      return resp;
+    }
+  }
+
+  WebSocketResponse resp = renderTile(req.id,
+                                      layer,
+                                      z,
+                                      x,
+                                      y,
+                                      vis,
+                                      *gen_,
+                                      no_rects,
+                                      no_polys,
+                                      no_colored,
+                                      no_lines,
+                                      mod_ptr,
+                                      focus_ptr,
+                                      nullptr,
+                                      dpr,
+                                      tile_px);
+  if (cacheable && resp.type == WebSocketResponse::kPng) {
+    gen_->tileCachePut(std::move(cache_key), resp.payload);
+  }
+
+  debugPrint(gen_->getLogger(),
+             utl::WEB,
+             "tile",
+             1,
+             "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} cache={} "
+             "module_colors={} focus_nets={} detailed={} bytes={}",
+             req.id,
+             layer,
+             z,
+             x,
+             y,
+             dpr,
+             tile_px,
+             cacheable ? "miss" : "off",
+             mod_ptr != nullptr ? mod_colors.size() : 0,
+             focus_ptr != nullptr ? focus_nets.size() : 0,
+             vis.detailed,
+             resp.payload.size());
+
+  return resp;
 }
 
 WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                                  SessionState& state)
 {
-  // When debug renderers are active, instance positions change between
-  // frames.  Re-derive highlight shapes from the current inspected
-  // object so the selection tracks the moving instance.
-  const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
-  if (debug_renderers) {
-    std::lock_guard<std::mutex> lock(state.selection_mutex);
-    if (state.current_inspected) {
-      collectHighlightShapes(state.current_inspected,
-                             state.highlight_rects,
-                             state.highlight_polys,
-                             state.highlight_lines);
-    }
-  }
-
-  // Selection highlight color (yellow), matching drawHighlight's border.
-  constexpr Color kSelectionLine{.r = 255, .g = 255, .b = 0, .a = 255};
-
-  // Snapshot current highlight state
-  std::vector<odb::Rect> rects;
-  std::vector<odb::Polygon> polys;
-  std::vector<ColoredRect> colored;
-  std::vector<ColoredPolygon> colored_polys;
-  std::vector<FlightLine> lines;
-  {
-    std::lock_guard<std::mutex> lock(state.selection_mutex);
-    rects = state.highlight_rects;
-    rects.insert(
-        rects.end(), state.hover_rects.begin(), state.hover_rects.end());
-    polys = state.highlight_polys;
-    colored = state.timing_rects;
-    lines = state.timing_lines;
-    // Net flywires / route paths from the selection highlight, drawn yellow.
-    for (const auto& [p1, p2] : state.highlight_lines) {
-      lines.push_back(FlightLine{.p1 = p1, .p2 = p2, .color = kSelectionLine});
-    }
-    // Context-menu "Highlight →" group shapes carry their own group color.
-    colored.insert(colored.end(),
-                   state.highlight_group_rects.begin(),
-                   state.highlight_group_rects.end());
-    colored_polys = state.highlight_group_polys;
-    lines.insert(lines.end(),
-                 state.highlight_group_lines.begin(),
-                 state.highlight_group_lines.end());
-  }
-
-  // Merge DRC overlay shapes
-  {
-    std::lock_guard<std::mutex> lock(state.drc_mutex);
-    colored.insert(
-        colored.end(), state.drc_rects.begin(), state.drc_rects.end());
-    lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
-  }
-
-  // Snapshot route guide nets
-  std::set<uint32_t> route_guides;
-  {
-    std::lock_guard<std::mutex> lock(state.route_guides_mutex);
-    route_guides = state.route_guide_net_ids;
-  }
-  const std::set<uint32_t>* route_guide_ptr
-      = route_guides.empty() ? nullptr : &route_guides;
-
-  // Parse visible layers so route guides respect layer visibility.
-  // has_vis_layers=true means the field was present (even if empty,
-  // which means "all layers hidden" — matching pin-marker semantics).
-  bool has_vis_layers = false;
-  std::set<std::string> vis_layers;
-  if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
-    has_vis_layers = true;
-    const auto& arr = it->value().as_array();
-    for (const auto& elem : arr) {
-      vis_layers.emplace(elem.as_string());
-    }
-  }
-
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = WebSocketResponse::kPng;
-  resp.payload
-      = gen_->generateOverlayTile(static_cast<int>(req.json.at("z").as_int64()),
-                                  static_cast<int>(req.json.at("x").as_int64()),
-                                  static_cast<int>(req.json.at("y").as_int64()),
-                                  rects,
-                                  polys,
-                                  colored,
-                                  lines,
-                                  route_guide_ptr,
-                                  has_vis_layers,
-                                  vis_layers,
-                                  colored_polys);
+  // Overlay requests run on a bare io_context thread with no dispatcher-level
+  // try/catch, so convert malformed-request exceptions (e.g. a non-bool
+  // toggle flag) into an error response instead of terminating the server.
+  try {
+    // Validate first: below this point the handler mutates session state (the
+    // "Flywires only" latch) and takes several mutexes, and a request that is
+    // going to be refused must not do any of that.
+    int z = 0;
+    int x = 0;
+    int y = 0;
+    if (std::string coord_error;
+        !parseTileCoords(req.json, z, x, y, coord_error)) {
+      return errorResponse(req.id, "bad overlay request: " + coord_error);
+    }
+
+    // Drop stale highlight/hover shapes (and the dangling Selected objects
+    // behind them) if a destroy invalidated the selection.
+    consumeStaleSelection(state);
+
+    // Re-derive the selection highlights when any of:
+    //  - the "Flywires only" toggle flipped (so the change takes effect
+    //    without re-selecting) — but only while the highlights are live: a
+    //    flip after an explicit "clear highlights" must not resurrect them;
+    //  - an edit moved a selected object.  The mover may be another session,
+    //    whose broadcast only tells this client to redraw — the shapes it
+    //    would redraw from live here, so they have to be rebuilt on this
+    //    side or the highlight stays at the old placement;
+    //  - debug renderers are active — instance positions change between
+    //    frames, so the highlight must track the moving instance.
+    const bool flywires_only = jsonOr(req.json, "flywires_only", false);
+    const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      const bool flipped = (flywires_only != state.flywires_only);
+      state.flywires_only = flywires_only;
+      const bool live
+          = state.highlight_source != SessionState::HighlightSource::kNone;
+      // exchange() once: both the selection and the group shapes below are
+      // rebuilt from this one notification.
+      const bool geometry_stale
+          = state.highlight_geometry_stale.exchange(false);
+      if (((flipped || geometry_stale) && live)
+          || (debug_renderers && state.current_inspected)) {
+        // Re-derive from the SAME source the shapes came from.  Preferring
+        // current_inspected unconditionally would drop every other item of a
+        // shift+click multi-selection on the first flip, with no way back. With
+        // no prior highlight the source is kNone, which only the debug-renderer
+        // disjunct can reach — there the inspected object is what to track.
+        if (state.highlight_source
+            == SessionState::HighlightSource::kSelectionSet) {
+          setSelectionSetHighlights(state);
+        } else {
+          setSelectionHighlights(state, state.current_inspected);
+        }
+      }
+      // Group shapes are derived the same way and go stale for the same two
+      // reasons.  Unconditional on `live`: groups are a state of their own
+      // and are not cleared with the selection.
+      if (flipped || geometry_stale) {
+        rebuildHighlightGroupShapesLocked(state);
+      }
+    }
+
+    // Snapshot current highlight state.
+    // "Highlight selected" (Misc toggle, default on — Qt parity) gates the
+    // current selection's highlight as a whole: its rects, its polys and its
+    // flywires.  Leaving the flywires in would draw half a highlight for a
+    // toggle whose label promises none.  Hover is a separate state and the
+    // timing shapes have their own controls, so both are always drawn; the
+    // selection itself stays active server-side regardless.
+    const bool highlight_selected
+        = jsonOr(req.json, "highlight_selected", true);
+    std::vector<odb::Rect> rects;
+    std::vector<odb::Polygon> polys;
+    std::vector<ColoredRect> colored;
+    std::vector<ColoredPolygon> colored_polys;
+    std::vector<FlightLine> lines;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (highlight_selected) {
+        rects = state.highlight_rects;
+        polys = state.highlight_polys;
+        lines = state.highlight_lines;
+      }
+      rects.insert(
+          rects.end(), state.hover_rects.begin(), state.hover_rects.end());
+      colored = state.timing_rects;
+      lines.insert(
+          lines.end(), state.timing_lines.begin(), state.timing_lines.end());
+    }
+
+    // Merge DRC overlay shapes
+    {
+      std::lock_guard<std::mutex> lock(state.drc_mutex);
+      colored.insert(
+          colored.end(), state.drc_rects.begin(), state.drc_rects.end());
+      lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
+    }
+    {
+      // Highlight groups append last so they paint on top (the Qt GUI
+      // draws drawHighlighted "always last so on top").  They are a state of
+      // their own, not part of the current selection, so "Highlight selected"
+      // does not gate them — same as in the Qt GUI.
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      colored.insert(colored.end(),
+                     state.highlight_group_rects.begin(),
+                     state.highlight_group_rects.end());
+      colored_polys = state.highlight_group_polys;
+      lines.insert(lines.end(),
+                   state.highlight_group_lines.begin(),
+                   state.highlight_group_lines.end());
+    }
+
+    // Snapshot the nets whose route guides should be drawn.  Always include
+    // the per-net selections (inspector "Show route guides", a web-only
+    // finer control).  When the global "Focused nets guides" toggle is on,
+    // also include every focused net — mirroring the Qt GUI toggle, which
+    // draws the guides of all focused nets at once.
+    const bool focused_nets_guides
+        = jsonOr(req.json, "focused_nets_guides", false);
+    std::set<uint32_t> route_guides;
+    {
+      std::lock_guard<std::mutex> lock(state.route_guides_mutex);
+      route_guides = state.route_guide_net_ids;
+    }
+    if (focused_nets_guides) {
+      std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+      route_guides.insert(state.focus_net_ids.begin(),
+                          state.focus_net_ids.end());
+    }
+    const std::set<uint32_t>* route_guide_ptr
+        = route_guides.empty() ? nullptr : &route_guides;
+
+    // Parse visible layers so route guides respect layer visibility.
+    // has_vis_layers=true means the field was present (even if empty,
+    // which means "all layers hidden" — matching pin-marker semantics).
+    bool has_vis_layers = false;
+    std::set<std::string> vis_layers;
+    if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
+      has_vis_layers = true;
+      const auto& arr = it->value().as_array();
+      for (const auto& elem : arr) {
+        vis_layers.emplace(elem.as_string());
+      }
+    }
+
+    // Same sizing contract as layer tiles: an overlay rendered at a different
+    // size than the tiles beneath it is blurry and misregistered against them.
+    const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+    const int tile_px
+        = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
+
+    resp.type = WebSocketResponse::kPng;
+    resp.payload = gen_->generateOverlayTile(z,
+                                             x,
+                                             y,
+                                             rects,
+                                             polys,
+                                             colored,
+                                             lines,
+                                             route_guide_ptr,
+                                             has_vis_layers,
+                                             vis_layers,
+                                             dpr,
+                                             tile_px,
+                                             colored_polys);
+
+    // The selection highlight the client draws over the layer tiles comes from
+    // here, so the shape counts say whether a "missing" highlight was never
+    // collected server-side or just not drawn.
+    debugPrint(gen_->getLogger(),
+               utl::WEB,
+               "tile",
+               1,
+               "overlay tile: id={} z/x/y={}/{}/{} dpr={} tile_px={} rects={} "
+               "polys={} colored={} lines={} route_guide_nets={} "
+               "flywires_only={} bytes={}",
+               req.id,
+               z,
+               x,
+               y,
+               dpr,
+               tile_px,
+               rects.size(),
+               polys.size(),
+               colored.size(),
+               lines.size(),
+               route_guides.size(),
+               flywires_only,
+               resp.payload.size());
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleCancel(const WebSocketRequest& req,
+                                            SessionState& state)
+{
+  // Cap so a long browsing session whose cancels never match a queued render
+  // can't grow the set without bound; trimming the oldest (lowest) ids only
+  // costs an occasional missed cancel (the render proceeds, which is correct).
+  constexpr size_t kCancelledCap = 4096;
+  size_t requested = 0;
+  size_t pending = 0;
+  {
+    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
+    if (const auto* ids = req.json.if_contains("cancel_ids")) {
+      for (const auto& v : ids->as_array()) {
+        state.cancelled_ids.insert(static_cast<uint32_t>(v.as_int64()));
+        ++requested;
+      }
+    } else {
+      state.cancelled_ids.insert(
+          static_cast<uint32_t>(jsonOr<int64_t>(req.json, "cancel_id", 0)));
+      requested = 1;
+    }
+    while (state.cancelled_ids.size() > kCancelledCap) {
+      state.cancelled_ids.erase(state.cancelled_ids.begin());
+    }
+    pending = state.cancelled_ids.size();
+  }
+  debugPrint(gen_->getLogger(),
+             utl::WEB,
+             "tile",
+             1,
+             "cancel: id={} cancelled={} pending={}",
+             req.id,
+             requested,
+             pending);
+  // Minimal ack.  The client does not track the cancel message in `pending`,
+  // so this response is harmlessly ignored.
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  const std::string ok = "{\"cancelled\":1}";
+  resp.payload.assign(ok.begin(), ok.end());
   return resp;
 }
 
@@ -3124,9 +5160,18 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kPng;
   try {
     const std::string req_name = std::string(req.json.at("name").as_string());
-    const int z = static_cast<int>(req.json.at("z").as_int64());
-    const int x = static_cast<int>(req.json.at("x").as_int64());
-    const int y = static_cast<int>(req.json.at("y").as_int64());
+    int z = 0;
+    int x = 0;
+    int y = 0;
+    if (std::string coord_error;
+        !parseTileCoords(req.json, z, x, y, coord_error)) {
+      return errorResponse(req.id, "bad heat map request: " + coord_error);
+    }
+    // Same sizing contract as layer tiles: the client states the device-pixel
+    // square, so the heat map is as crisp as the layers beneath it.
+    const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+    const int tile_px
+        = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
     std::shared_ptr<gui::HeatMapDataSource> source;
     {
       std::lock_guard<std::mutex> lock(state.heatmap_mutex);
@@ -3138,11 +5183,32 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
       }
       source = source_itr->second;
     }
-    resp.payload = gen_->generateHeatMapTile(*source, z, x, y);
+    resp.payload = gen_->generateHeatMapTile(*source, z, x, y, dpr, tile_px);
+    debugPrint(gen_->getLogger(),
+               utl::WEB,
+               "tile",
+               1,
+               "heatmap tile: id={} name={} z/x/y={}/{}/{} dpr={} tile_px={} "
+               "bytes={}",
+               req.id,
+               source->getName(),
+               z,
+               x,
+               y,
+               dpr,
+               tile_px,
+               resp.payload.size());
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
+    debugPrint(gen_->getLogger(),
+               utl::WEB,
+               "tile",
+               1,
+               "heatmap tile: id={} failed: {}",
+               req.id,
+               e.what());
   }
   return resp;
 }
@@ -3781,16 +5847,13 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
 
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
-        state.highlight_rects.clear();
-        state.highlight_polys.clear();
+        clearSelectionHighlights(state);
         if (sel) {
           state.hover_rects.clear();
           state.timing_rects.clear();
           state.timing_lines.clear();
-          collectHighlightShapes(sel,
-                                 state.highlight_rects,
-                                 state.highlight_polys,
-                                 state.highlight_lines);
+          setSelectionHighlights(state, sel);
+          runDeselectAction(state.current_inspected, sel);
           state.current_inspected = sel;
           state.navigation_history.clear();
         } else {
@@ -3819,9 +5882,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       // Clear highlight if marker_id is -1 (deselect)
       if (marker_id == -1) {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
-        state.highlight_rects.clear();
-        state.highlight_polys.clear();
-        state.highlight_lines.clear();
+        clearSelectionHighlights(state);
       }
       root["ok"] = 0;
     }

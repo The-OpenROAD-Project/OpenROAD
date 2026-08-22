@@ -11,6 +11,7 @@ sta::define_cmd_args "global_placement" {\
     [-virtual_cts]\
     [-incremental]\
     [-skip_io]\
+    [-place_ios]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -75,12 +76,31 @@ proc global_placement { args } {
       -virtual_cts \
       -routability_use_grt \
       -skip_io \
+      -place_ios \
       -incremental \
       -disable_revert_if_diverge \
       -disable_pin_density_adjust \
       -enable_routing_congestion}
 
   sta::check_argc_eq0 "global_placement" $args
+
+  if { [info exists flags(-place_ios)] } {
+    if { [info exists flags(-skip_io)] } {
+      utl::error GPL 169 "-place_ios cannot be used with -skip_io placement."
+    }
+    if { [info exists flags(-incremental)] } {
+      utl::error GPL 170 "-place_ios cannot be used with -incremental placement."
+    }
+    if { [info exists flags(-skip_nesterov_place)] } {
+      utl::error GPL 182 "-place_ios cannot be used with -skip_nesterov_place placement."
+    }
+    if { [info exists flags(-timing_driven)] } {
+      utl::error GPL 179 "-place_ios cannot be used with -timing_driven placement."
+    }
+    if { [info exists flags(-routability_driven)] } {
+      utl::error GPL 181 "-place_ios cannot be used with -routability_driven placement."
+    }
+  }
 
   if { [info exists flags(-incremental)] } {
     gpl::replace_incremental_place_cmd [array get keys] [array get flags]
@@ -99,11 +119,13 @@ sta::define_cmd_args "cluster_flops" {\
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
     [-num_paths num_paths]\
+    [-clock_power_weight clock_power_weight]\
 }
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
-    keys { -tray_weight -timing_weight -max_split_size -num_paths } \
+    keys { -tray_weight -timing_weight -max_split_size -num_paths \
+      -clock_power_weight } \
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
@@ -114,6 +136,7 @@ proc cluster_flops { args } {
   set timing_weight 0.1
   set max_split_size 500
   set num_paths 0
+  set clock_power_weight 0.0
 
   if { [info exists keys(-tray_weight)] } {
     set tray_weight $keys(-tray_weight)
@@ -131,7 +154,14 @@ proc cluster_flops { args } {
     set num_paths $keys(-num_paths)
   }
 
-  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight $num_paths
+  if { [info exists keys(-clock_power_weight)] } {
+    # Non-negativity is enforced in MBFF::Run so that non-Tcl callers
+    # (Python, direct C++) are validated too; see src/gpl/src/mbff.cpp.
+    set clock_power_weight $keys(-clock_power_weight)
+  }
+
+  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight \
+    $num_paths $clock_power_weight
 }
 
 sta::define_cmd_args "global_placement_debug" {

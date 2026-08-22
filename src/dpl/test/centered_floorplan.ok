@@ -1,23 +1,28 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: centered_dpl
 [INFO ODB-0131]     Created 6 components and 24 component-terminals.
-[INFO DPL-0006] Core area: 42.56 um^2, Instances area: 4.26 um^2, Utilization: 10.0%
+[INFO DPL-0006] Core area: 42.56 um^2
+[INFO DPL-0007] Movable instances area: 4.26 um^2
+[INFO DPL-0008] Fixed instances area within core: 0.00 um^2
+[INFO DPL-0009] Utilization: 10.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       6
-Diamond Move Success:              6 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 6 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement          4.9 u
-average displacement        0.8 u
-max displacement            1.4 u
+total displacement         14.4 u
+average displacement        2.4 u
+max displacement            4.2 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

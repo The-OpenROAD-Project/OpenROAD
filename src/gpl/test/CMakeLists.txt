@@ -9,6 +9,8 @@ or_integration_tests(
     cluster_place01
     mbff_hier
     mbff_orig_name
+    mbff_clock_power_off
+    mbff_clock_power_on
     convergence01
     core01
     density01
@@ -45,6 +47,8 @@ or_integration_tests(
     region01
   PASSFAIL_TESTS
     incremental02
+    place_ios01
+    place_ios_top_layer
 )
 
 # On an ENABLE_GPU=ON build the gpl FFT defaults to the GPU PoissonSolver,

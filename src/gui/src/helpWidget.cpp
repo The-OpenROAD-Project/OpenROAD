@@ -10,8 +10,11 @@
 #include <QTextStream>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <algorithm>
 #include <filesystem>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace gui {
 
@@ -97,6 +100,12 @@ void HelpWidget::changeCategory()
 
   help_list_->clear();
 
+  // Order the pages before inserting them rather than calling
+  // QListWidget::sortItems(), which compares through QCollator and so has to
+  // load ICU locale data just to order a directory listing of ASCII file
+  // names. Sorting here keeps opening the GUI independent of whether that data
+  // can be found.
+  std::vector<std::pair<QString, QString>> pages;  // {display stem, full path}
   for (auto const& dir_entry : std::filesystem::directory_iterator{dir}) {
     const auto& path = dir_entry.path();
 
@@ -104,12 +113,21 @@ void HelpWidget::changeCategory()
       continue;
     }
 
-    auto* qitem = new QListWidgetItem(QString::fromStdString(path.stem()));
-    qitem->setData(Qt::UserRole, QString::fromStdString(path));
-    help_list_->addItem(qitem);
+    pages.emplace_back(QString::fromStdString(path.stem()),
+                       QString::fromStdString(path));
   }
 
-  help_list_->sortItems();
+  std::sort(pages.begin(), pages.end(), [](const auto& lhs, const auto& rhs) {
+    const int cmp = QString::compare(lhs.first, rhs.first, Qt::CaseInsensitive);
+    // Break ties case-sensitively so the ordering is total.
+    return cmp != 0 ? cmp < 0 : lhs.first < rhs.first;
+  });
+
+  for (const auto& [stem, path] : pages) {
+    auto* qitem = new QListWidgetItem(stem);
+    qitem->setData(Qt::UserRole, path);
+    help_list_->addItem(qitem);
+  }
 }
 
 void HelpWidget::showHelpInformation(QListWidgetItem* item)

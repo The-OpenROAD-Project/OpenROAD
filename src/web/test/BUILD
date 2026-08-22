@@ -47,6 +47,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":request_handler_test",
+        ":save_display_controls_test",
         ":tile_generator_test",
     ],
 )
@@ -55,6 +56,20 @@ js_test(
     name = "coordinates_test",
     data = JS_FILES,
     entry_point = "js/test-coordinates.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "ui_utils_test",
+    data = JS_FILES,
+    entry_point = "js/test-ui-utils.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "display_state_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-display-state.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -101,6 +116,13 @@ js_test(
 )
 
 js_test(
+    name = "websocket_tile_layer_test",
+    data = JS_FILES,
+    entry_point = "js/test-websocket-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "checkbox_tree_model_test",
     data = JS_FILES,
     entry_point = "js/test-checkbox-tree-model.js",
@@ -109,7 +131,7 @@ js_test(
 
 js_test(
     name = "display_controls_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -164,6 +186,13 @@ js_test(
 )
 
 js_test(
+    name = "selection_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-selection-browser.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "menu_bar_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-menu-bar.js",
@@ -174,6 +203,34 @@ js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "merged_tile_layer_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-merged-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "tile_merge_test",
+    data = JS_FILES,
+    entry_point = "js/test-tile-merge.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "dpr_test",
+    data = JS_FILES,
+    entry_point = "js/test-dpr.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "device_pixels_test",
+    data = JS_FILES,
+    entry_point = "js/test-device-pixels.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -233,6 +290,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
@@ -252,11 +310,13 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -315,6 +375,22 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "save_display_controls_test",
+    srcs = ["cpp/TestSaveDisplayControls.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

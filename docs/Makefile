@@ -9,9 +9,28 @@
 # | |  / ____ \| |\  | |__| | |__| | |____ 
 # |_| /_/    \_\_| \_|_____/ \____/ \_____|
 
+# Render the man pages in a UTF-8 locale so groff/preconv and col treat page
+# bytes as UTF-8 rather than Latin-1. Without this, non-ASCII characters in the
+# READMEs (e.g. accented author names) render as mojibake or trigger troff
+# "character with input code N not defined" warnings on the 7-bit ascii device.
+# Detect an installed UTF-8 locale instead of hard-coding one (C.UTF-8 is not
+# present on every host, e.g. stock macOS); fall back to the user's locale if
+# none is found rather than exporting an invalid LC_ALL.
+UTF8_LOCALE := $(shell locale -a 2>/dev/null | grep -iE '^(C|en_US)\.utf-?8$$' | head -1)
+ifeq ($(UTF8_LOCALE),)
+UTF8_LOCALE := $(shell locale -a 2>/dev/null | grep -iE 'utf-?8$$' | head -1)
+endif
+ifneq ($(UTF8_LOCALE),)
+export LC_ALL := $(UTF8_LOCALE)
+endif
+
 # Define variables
 PANDOC = pandoc
-NROFF = nroff
+GROFF ?= groff
+# Roff snippet injected into every man page to remap Pandoc's Courier-based
+# code/verbatim fonts on devices that lack them, silencing troff "cannot
+# select font" warnings (see the file for details).
+FONTFIX = src/man_fontfix.tmac
 SRC_DIR = md
 MAN_ROOT_DIR = man
 HTML_ROOT_DIR = html
@@ -20,11 +39,13 @@ MAN1 = man1
 MAN2 = man2
 MAN3 = man3
 
-# Exclude these set of keywords
-EXCLUDE_KEYWORDS = ant cts dft dpl drt fin gpl grt gui ifp mpl \
-				   odb pad par pdn ppl psm rcx rmp rsz sta \
-				   stt tap upf utl
-EXCLUDE_FILES := $(addsuffix .md,$(EXCLUDE_KEYWORDS))
+# link_readmes.sh symlinks every src/<module>/README.md into md/man2/ so
+# md_roff_compat.py can read it. Those are whole-module documents, not command
+# pages, so keep them out of the man2 lists. Derive the set from src/ rather
+# than hard-coding it, so a new module cannot silently start emitting a
+# module-wide man page.
+EXCLUDE_MODULES := $(notdir $(patsubst %/,%,$(dir $(wildcard ../src/*/README.md))))
+EXCLUDE_FILES := $(addprefix $(SRC_DIR)/$(MAN2)/,$(addsuffix .md,$(EXCLUDE_MODULES)))
 
 MAN1_DIR = $(MAN_ROOT_DIR)/$(MAN1)
 SRC1_DIR = $(SRC_DIR)/$(MAN1)
@@ -38,7 +59,7 @@ CAT1_PAGES = $(patsubst $(SRC1_DIR)/%.md,$(CAT1_DIR)/%.1,$(MAN1_FILES))
 MAN2_DIR = $(MAN_ROOT_DIR)/$(MAN2)
 SRC2_DIR = $(SRC_DIR)/$(MAN2)
 MAN2_FILES = $(wildcard $(SRC2_DIR)/*.md)
-MAN2_FILES := $(filter-out $(foreach keyword, $(EXCLUDE_FILES), %$(keyword)), $(MAN2_FILES))
+MAN2_FILES := $(filter-out $(EXCLUDE_FILES), $(MAN2_FILES))
 MAN2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(MAN2_DIR)/%.2,$(MAN2_FILES))
 HTML2_DIR = $(HTML_ROOT_DIR)/html2
 HTML2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(HTML2_DIR)/%.html,$(MAN2_FILES))
@@ -57,8 +78,15 @@ CAT3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(CAT3_DIR)/%.3,$(MAN3_FILES))
 # Default target
 all: doc web cat
 
-# Target to do symlinks and pandoc-compatible conversion
+# Target to do symlinks and pandoc-compatible conversion.
+# md/man2 and md/man3 hold nothing but generated files, so clear them before
+# regenerating: rename or delete a command and its stale .md would otherwise
+# linger for the cat/web $(wildcard md/man*/*.md) to pick up, keeping an
+# obsolete page alive. //docs:man_pages runs unsandboxed in a persistent
+# execroot and does not declare these as inputs, so nothing else removes them.
+# md/man1 is checked in and must survive.
 preprocess:
+	rm -rf $(SRC_DIR)/$(MAN2) $(SRC_DIR)/$(MAN3)
 	./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
 
 # Target to generate all man pages
@@ -69,7 +97,6 @@ web: $(HTML1_PAGES) $(HTML2_PAGES) $(HTML3_PAGES)
 
 # Target to generate all cat pages
 cat: $(CAT1_PAGES) $(CAT2_PAGES) $(CAT3_PAGES)
-	@echo $(CAT1_PAGES)
 
 # Rule to create the man directory
 $(MAN1_DIR): 
@@ -92,12 +119,12 @@ $(CAT3_DIR):
 	mkdir -p $(CAT3_DIR)
 
 # Rule to generate a roff file from a corresponding Markdown file
-$(MAN1_DIR)/%.1: $(SRC1_DIR)/%.md | $(MAN1_DIR)
-	$(PANDOC) -s -t man $< -o $@ --quiet
-$(MAN2_DIR)/%.2: $(SRC2_DIR)/%.md | $(MAN2_DIR)
-	$(PANDOC) -s -t man $< -o $@ --quiet
-$(MAN3_DIR)/%.3: $(SRC3_DIR)/%.md | $(MAN3_DIR)
-	$(PANDOC) -s -t man $< -o $@ --quiet
+$(MAN1_DIR)/%.1: $(SRC1_DIR)/%.md $(FONTFIX) | $(MAN1_DIR)
+	$(PANDOC) -s -t man --include-in-header=$(FONTFIX) $< -o $@ --quiet
+$(MAN2_DIR)/%.2: $(SRC2_DIR)/%.md $(FONTFIX) | $(MAN2_DIR)
+	$(PANDOC) -s -t man --include-in-header=$(FONTFIX) $< -o $@ --quiet
+$(MAN3_DIR)/%.3: $(SRC3_DIR)/%.md $(FONTFIX) | $(MAN3_DIR)
+	$(PANDOC) -s -t man --include-in-header=$(FONTFIX) $< -o $@ --quiet
 
 # Rule to generate a html file from a corresponding roff file
 $(HTML1_DIR)/%.html: $(MAN1_DIR)/%.1 | $(HTML1_DIR)
@@ -107,13 +134,19 @@ $(HTML2_DIR)/%.html: $(MAN2_DIR)/%.2 | $(HTML2_DIR)
 $(HTML3_DIR)/%.html: $(MAN3_DIR)/%.3 | $(HTML3_DIR)
 	$(PANDOC) -s -o html $< -o $@ --quiet
 
-# Rule to generate a cat file from a corresponding roff file
+# Rule to generate a cat file from a corresponding roff file.
+# -t runs the tbl preprocessor so the OPTIONS tables (the '\" t directive in
+# the Pandoc output) render instead of warning about missing TW registers.
+# -Kutf8 runs preconv to decode UTF-8 input and -Tutf8 emits UTF-8, so non-ASCII
+# characters render correctly instead of warning/mangling on the ascii device.
+# -rIN=4n narrows the body indent (default 7n) so Pandoc's full-width tables fit
+# within the line length, avoiding "table wider than line length" warnings.
 $(CAT1_DIR)/%.md: $(MAN1_DIR)/%.1 | $(CAT1_DIR)
-	nroff -man $< | col -b > $@
+	$(GROFF) -Kutf8 -t -man -Tutf8 -rIN=4n $< | col -b > $@
 $(CAT2_DIR)/%.md: $(MAN2_DIR)/%.2 | $(CAT2_DIR)
-	nroff -man $< | col -b > $@
+	$(GROFF) -Kutf8 -t -man -Tutf8 -rIN=4n $< | col -b > $@
 $(CAT3_DIR)/%.md: $(MAN3_DIR)/%.3 | $(CAT3_DIR)
-	nroff -man $< | col -b > $@
+	$(GROFF) -Kutf8 -t -man -Tutf8 -rIN=4n $< | col -b > $@
 #$(PANDOC) -s -o markdown $< -o $@
 #sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
 

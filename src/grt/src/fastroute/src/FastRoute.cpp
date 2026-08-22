@@ -841,6 +841,29 @@ void FastRouteCore::addHorizontalAdjustments(
   }
 }
 
+// Number of tracks to charge for the metal blocking one gcell edge.
+//
+// intervals holds disjoint intervals, so rounding each one up on its own would
+// charge a full track per fragment, making the total depend on how the blocked
+// region happens to be fragmented rather than on how much of it is covered.
+// That is also not monotonic: deleting metal that bridged two fragments splits
+// the span, each half is then rounded up separately, and the edge loses
+// capacity even though less of it is blocked. Summing the covered length and
+// rounding once keeps the charge a function of coverage alone.
+static int blockedTrackCount(const interval_set<int>& intervals,
+                             const int track_space)
+{
+  if (track_space <= 0) {
+    return 0;
+  }
+  int64_t blocked_length = 0;
+  for (const auto& interval_it : intervals) {
+    blocked_length += std::abs(interval_it.upper() - interval_it.lower());
+  }
+  return static_cast<int>(
+      std::ceil(static_cast<double>(blocked_length) / track_space));
+}
+
 void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
 {
   // Calculate reduce for vertical tiles
@@ -852,11 +875,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
-        for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
-        }
+        reduce = blockedTrackCount(intervals, track_space[layer - 1]);
       }
       edge_cap -= reduce;
       edge_cap = std::max(edge_cap, 0);
@@ -873,11 +892,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       if (layer > 0 && layer <= track_space.size()) {
-        for (const auto& interval_it : intervals) {
-          reduce += std::ceil(static_cast<float>(std::abs(
-                                  interval_it.upper() - interval_it.lower()))
-                              / track_space[layer - 1]);
-        }
+        reduce = blockedTrackCount(intervals, track_space[layer - 1]);
       }
       edge_cap -= reduce;
       edge_cap = std::max(edge_cap, 0);
@@ -1985,7 +2000,6 @@ NetRouteMap FastRouteCore::run()
   int max_adj;
   int long_edge_len = 40;
   int short_edge_len = 12;
-  const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
@@ -2140,17 +2154,14 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
-  // Number of times the soft-NDR disable path has restarted the overflow
-  // iterations. Each restart re-runs up to overflow_iterations_ rounds, so
-  // disabling NDR nets one at a time with a full reset per net is O(N) full
-  // loops. When many clock nets carry an (auto-applied) NDR that cannot be
-  // honored, this caused a severe runtime regression (issue #8466). Bound the
-  // number of restarts; once exceeded we disable every remaining congested
-  // NDR net in a single batch instead of one-per-restart.
-  int soft_ndr_resets = 0;
-  constexpr int max_soft_ndr_resets = 4;
+  // Soft-NDR demotion. When the overflow iterations fail to make progress --
+  // the minimum overflow stagnates for more than kSoftNdrStagnantTh iterations,
+  // or the loop runs past kSoftNdrMaxIter iterations -- demote every congested
+  // NDR net to soft-NDR and restart the overflow loop.
+  constexpr int kSoftNdrStagnantTh = 10;
+  constexpr int kSoftNdrMaxIter = 15;
   float overflow_reduction_percent = -1;
-  // Minimum overflow stagnation
+  // Iterations since the minimum overflow last improved.
   int minofl_stagnant = 0;
   {
     const DebugScopedTimer timer(timings.overflow_iterations,
@@ -2389,47 +2400,21 @@ NetRouteMap FastRouteCore::run()
             max_overflow_increases);
       }
 
-      // Try disabling NDR nets to fix congestion
+      // When the overflow iterations fail to make progress (the minimum
+      // overflow stagnates, or the loop runs past kSoftNdrMaxIter) demote every
+      // congested NDR net to soft-NDR and restart the loop.
       if (total_overflow_ > 0
-          && (i == overflow_iterations_
-              || overflow_increases == max_overflow_increases
-              || minofl_stagnant >= 10)) {
-        // Compute all the NDR nets involved in congestion
+          && (minofl_stagnant > kSoftNdrStagnantTh || i > kSoftNdrMaxIter)) {
+        // Recompute the NDR nets currently involved in congestion (nets already
+        // demoted to soft-NDR are skipped).
         computeCongestedNDRnets();
 
-        std::vector<int> net_ids;
+        std::vector<int> net_ids = graph2d_.getCongestedNDRnetsByFraction(1.0);
 
-        if (soft_ndr_resets >= max_soft_ndr_resets) {
-          // We have already restarted the overflow loop many times, disabling
-          // NDR nets one (or a few) at a time. Disabling nets individually with
-          // a full loop reset per restart is O(N) full overflow loops, which
-          // caused a severe runtime regression when many clock nets carry an
-          // (auto-applied) NDR that cannot be honored (issue #8466). Once the
-          // restart budget is exhausted, disable every remaining congested NDR
-          // net in a single batch so the loop is guaranteed to make progress
-          // and terminate.
-          const auto congested_ndrs = graph2d_.getCongestedNDRnets();
-          net_ids.reserve(congested_ndrs.size());
-          for (const auto& ndr : congested_ndrs) {
-            net_ids.push_back(ndr.net_id);
-          }
-        } else if (total_overflow_ < soft_ndr_overflow_th) {
-          // If the congestion is not that high (note that the overflow is
-          // inflated by 100x when there is no capacity available for a NDR net
-          // in a specific edge), select one NDR net to be disabled.
-          int net_id = graph2d_.getOneCongestedNDRnet();
-          if (net_id != -1) {
-            net_ids.push_back(net_id);
-          }
-        } else {  // Select multiple NDR nets
-          net_ids = graph2d_.getMultipleCongestedNDRnet();
-        }
-
-        // Only apply soft NDR if there is NDR nets involved in congestion
+        // Only apply soft NDR if there are NDR nets involved in congestion
         if (!net_ids.empty()) {
           // Apply the soft NDR to the selected list of nets
           applySoftNDR(net_ids);
-          soft_ndr_resets++;
 
           // Reset loop parameters
           overflow_increases = 0;

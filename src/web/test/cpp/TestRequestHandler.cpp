@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <any>
+#include <atomic>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -17,7 +18,9 @@
 
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
+#include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
+#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -33,6 +36,7 @@ struct FakeInspectable
   std::string name;
   std::string type;
   odb::Rect bbox;
+  gui::Descriptor::Properties properties;
 };
 
 class FakeDescriptor : public gui::Descriptor
@@ -61,7 +65,10 @@ class FakeDescriptor : public gui::Descriptor
   {
   }
 
-  Properties getProperties(const std::any&) const override { return {}; }
+  Properties getProperties(const std::any& object) const override
+  {
+    return std::any_cast<FakeInspectable*>(object)->properties;
+  }
 
   gui::Selected makeSelected(const std::any& object) const override
   {
@@ -77,6 +84,177 @@ class FakeDescriptor : public gui::Descriptor
   void highlight(const std::any& object, gui::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
+  }
+};
+
+// Highlights with a flight line instead of a rect — exercises
+// ShapeCollector::drawLine (unrouted nets / net-to-sink paths).
+class LineFakeDescriptor : public FakeDescriptor
+{
+ public:
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
+    painter.drawLine(b.ll(), b.ur());
+  }
+};
+
+// Minimal odb descriptors so DescriptorRegistry::makeSelected() works on
+// real dbInst/dbNet objects inside the unit tests — the production set
+// lives in the full gui library, which the web test does not link.
+class TestInstDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbInst*>(object)->getName();
+  }
+  std::string getTypeName() const override { return "Inst"; }
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  {
+    bbox = std::any_cast<odb::dbInst*>(object)->getBBox()->getBox();
+    return true;
+  }
+  bool isInst(const std::any&) const override { return true; }
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+  Properties getProperties(const std::any&) const override { return {}; }
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(std::any_cast<odb::dbInst*>(object), this);
+  }
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbInst*>(l)->getId()
+           < std::any_cast<odb::dbInst*>(r)->getId();
+  }
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
+  }
+};
+
+class TestNetDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbNet*>(object)->getName();
+  }
+  std::string getTypeName() const override { return "Net"; }
+  bool getBBox(const std::any&, odb::Rect&) const override { return false; }
+  bool isNet(const std::any&) const override { return true; }
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+  Properties getProperties(const std::any&) const override { return {}; }
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(std::any_cast<odb::dbNet*>(object), this);
+  }
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbNet*>(l)->getId()
+           < std::any_cast<odb::dbNet*>(r)->getId();
+  }
+  void highlight(const std::any&, gui::Painter&) const override {}
+};
+
+// Minimal dbNet descriptor so tests can build a gui::Selected whose
+// isNet() is true; highlight() stands in for the wire-shape drawing of
+// the real NetDescriptor (a big rect the flywire mode must suppress).
+class FakeNetDescriptor : public gui::Descriptor
+{
+ public:
+  static constexpr int kWireRectSize = 90000;
+
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbNet*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Net"; }
+
+  std::string getTypeName(const std::any&) const override { return "Net"; }
+
+  bool getBBox(const std::any&, odb::Rect& bbox) const override
+  {
+    bbox = odb::Rect(0, 0, kWireRectSize, kWireRectSize);
+    return true;
+  }
+
+  bool isNet(const std::any&) const override { return true; }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbNet*>(l) < std::any_cast<odb::dbNet*>(r);
+  }
+
+  void highlight(const std::any&, gui::Painter& painter) const override
+  {
+    painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
+  }
+};
+
+// Minimal dbInst descriptor reporting the instance bbox in its OWN block's
+// coordinates, which is what every real gui::Descriptor does.  Registering it
+// lets a select request reach writeInspectPayload without a dbSta (the real
+// DbInstDescriptor dereferences one in getProperties).
+class LocalBBoxInstDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbInst*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Inst"; }
+
+  std::string getTypeName(const std::any&) const override { return "Inst"; }
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  {
+    bbox = std::any_cast<odb::dbInst*>(object)->getBBox()->getBox();
+    return true;
+  }
+
+  bool isInst(const std::any&) const override { return true; }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbInst*>(l) < std::any_cast<odb::dbInst*>(r);
+  }
+
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
@@ -163,6 +341,50 @@ class TileHandlerTest : public tst::Nangate45Fixture
     handler_ = std::make_unique<TileHandler>(gen_);
   }
 
+  // Driver (buf1.Z) and sink (buf2.A) placed buffers on a new net.
+  odb::dbNet* makeConnectedNet(const char* net_name)
+  {
+    odb::dbMaster* master = lib_->findMaster("BUF_X16");
+    if (!master) {
+      return nullptr;
+    }
+    const std::string base = net_name;
+    odb::dbInst* buf1
+        = odb::dbInst::create(block_, master, (base + "_drv").c_str());
+    buf1->setLocation(10000, 10000);
+    buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbInst* buf2
+        = odb::dbInst::create(block_, master, (base + "_snk").c_str());
+    buf2->setLocation(60000, 60000);
+    buf2->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbNet* net = odb::dbNet::create(block_, net_name);
+    buf1->findITerm("Z")->connect(net);
+    buf2->findITerm("A")->connect(net);
+    return net;
+  }
+
+  // Prime the highlight state the way an inspect would, so an overlay request
+  // can exercise a "Flywires only" flip against it.
+  void primeInspected(const gui::Selected& sel)
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = sel;
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  // An overlay-tile request with the "Flywires only" toggle in a given
+  // position.
+  static WebSocketRequest overlayRequest(uint32_t id, bool flywires_only)
+  {
+    WebSocketRequest req;
+    req.id = id;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(flywires_only
+                            ? R"({"z":0,"x":0,"y":0,"flywires_only":true})"
+                            : R"({"z":0,"x":0,"y":0,"flywires_only":false})");
+    return req;
+  }
+
   std::shared_ptr<TileGenerator> gen_;
   std::unique_ptr<TileHandler> handler_;
   SessionState state_;
@@ -197,6 +419,230 @@ TEST_F(TileHandlerTest, TechReturnsJson)
   EXPECT_NE(json.find("\"metal1\""), std::string::npos);
   EXPECT_NE(json.find("\"sites\""), std::string::npos);
   EXPECT_NE(json.find("\"has_liberty\""), std::string::npos);
+}
+
+TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
+{
+  WebSocketRequest req;
+  req.id = 8;
+  req.type = WebSocketRequest::kTech;
+
+  auto resp = handler_->handleTile(req, state_);
+  auto root = parseObj(payloadStr(resp));
+  ASSERT_TRUE(root.if_contains("highlight_colors"));
+  const auto& colors = root.at("highlight_colors").as_array();
+  ASSERT_EQ(colors.size(), static_cast<size_t>(gui::kNumHighlightSet));
+  // Group 0 is kGreen with the Qt highlight alpha (100).
+  const auto& first = colors[0].as_array();
+  EXPECT_EQ(first[0].as_int64(), 0);
+  EXPECT_EQ(first[1].as_int64(), 255);
+  EXPECT_EQ(first[2].as_int64(), 0);
+  EXPECT_EQ(first[3].as_int64(), 100);
+}
+
+// PNG dimensions live in the IHDR chunk: 8-byte signature, 4-byte length,
+// 4-byte type, then width and height as big-endian uint32.  Read directly so
+// this test needs no PNG decoder dependency.
+static uint32_t pngWidth(const std::vector<unsigned char>& png)
+{
+  if (png.size() < 24) {
+    return 0;
+  }
+  return (static_cast<uint32_t>(png[16]) << 24)
+         | (static_cast<uint32_t>(png[17]) << 16)
+         | (static_cast<uint32_t>(png[18]) << 8)
+         | static_cast<uint32_t>(png[19]);
+}
+
+// The device pixel ratio comes from the client — only the browser can know the
+// display's ratio — and the server honours it rather than snapping it to a
+// fixed ladder.  A snapped ratio renders a tile of the wrong size that the
+// browser then rescales, which is the moiré beat the tile pipeline exists to
+// avoid, and 1.75 and 2.5 are ordinary Windows scale factors.
+//
+// The client mirrors this in quantizeDpr() in tile-request.js and sizes its
+// merged canvas from its own copy, so a divergence here resamples every tile.
+// The viewer's options are query parameters, so the asset lookup must never
+// see them.  Without this the whole page 404s with "Resource not found." the
+// moment any option is used -- which is how ?mergetiles=0 shipped unusable.
+TEST(AssetPathFromTarget, StripsTheQueryString)
+{
+  EXPECT_EQ(assetPathFromTarget("/?mergetiles=0"), "/index.html");
+  EXPECT_EQ(assetPathFromTarget("/?tilebudget=256&mergegroups=8"),
+            "/index.html");
+  EXPECT_EQ(assetPathFromTarget("/main.js?v=2"), "/main.js");
+}
+
+TEST(AssetPathFromTarget, StripsAFragment)
+{
+  EXPECT_EQ(assetPathFromTarget("/#anchor"), "/index.html");
+  EXPECT_EQ(assetPathFromTarget("/main.js#top"), "/main.js");
+  // Query before fragment, and a '#' inside the query is still a fragment.
+  EXPECT_EQ(assetPathFromTarget("/main.js?a=1#top"), "/main.js");
+}
+
+TEST(AssetPathFromTarget, MapsRootOntoTheIndexDocument)
+{
+  EXPECT_EQ(assetPathFromTarget("/"), "/index.html");
+  EXPECT_EQ(assetPathFromTarget(""), "/index.html");
+}
+
+TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
+{
+  EXPECT_EQ(assetPathFromTarget("/style.css"), "/style.css");
+  EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
+}
+
+TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
+{
+  struct Case
+  {
+    double requested;
+    uint32_t expected_px;
+  };
+  // 256 * dpr, rounded — matching renderTileBuffer.
+  const Case cases[] = {
+      {1.0, 256},
+      {1.25, 320},
+      {1.75, 448},  // was snapped to 1.5 (384 px) by the old ladder
+      {2.0, 512},
+      {2.5, 640},  // was snapped to 2.0 (512 px)
+  };
+  for (const Case& c : cases) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],"dpr":)"
+        + std::to_string(c.requested) + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << "dpr " << c.requested;
+    EXPECT_EQ(pngWidth(resp.payload), c.expected_px)
+        << "dpr " << c.requested << " must render at 256*dpr";
+  }
+}
+
+TEST_F(TileHandlerTest, RoundsDprToBoundTheCacheKeySpace)
+{
+  // dpr is part of the tile-cache key, so an unrounded ratio would fork its own
+  // set of cached tiles for every trailing digit.  Two decimals is the bound.
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("dpr":1.3333333})");
+  auto resp = handler_->handleTile(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kPng);
+  // 1.33, not 1.3333333: round(256 * 1.33) = 340.
+  EXPECT_EQ(pngWidth(resp.payload), 340u);
+}
+
+TEST_F(TileHandlerTest, ClampsDprIntoRange)
+{
+  for (const auto& [requested, expected] :
+       std::vector<std::pair<std::string, uint32_t>>{
+           {"0.5", 256}, {"-1", 256}, {"8", 768}}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],"dpr":)"
+        + requested + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << "dpr " << requested;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << "dpr " << requested;
+  }
+}
+
+// The client names the exact device-pixel square the tile will be displayed in,
+// because neither end can derive it: a tile's CSS box is a whole number of
+// device pixels only when tileSize*dpr is, and at a 1.6667 display scale
+// 256*dpr is 426.67 -- a size no image can have.  A tile that is not the size
+// of its box is resampled by the browser, which fades its edges into its
+// neighbours: the tile seams this replaced.
+TEST_F(TileHandlerTest, HonoursTheClientRequestedPixelCount)
+{
+  // The sizes a 240 CSS px tile works out to across real display ratios.
+  for (const uint32_t px : {240u, 300u, 320u, 360u, 400u, 420u, 480u, 720u}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1.67,"tile_px":)"
+        + std::to_string(px) + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << px;
+    EXPECT_EQ(pngWidth(resp.payload), px)
+        << "asked for " << px << " px and must not get 256*dpr";
+  }
+}
+
+TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
+{
+  // The two are independent inputs: the count sizes the tile, the ratio scales
+  // what is authored in CSS px (fonts, stroke widths, the sub-resolution cull).
+  for (const char* dpr : {"1", "1.25", "1.67", "3"}) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],"dpr":)"
+        + std::string(dpr) + R"(,"tile_px":400})");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << dpr;
+    EXPECT_EQ(pngWidth(resp.payload), 400u) << "dpr " << dpr;
+  }
+}
+
+TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
+{
+  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // hostile count must not be taken at face value.  0 and negatives mean "not
+  // specified" and fall back to 256*dpr.
+  const std::vector<std::pair<std::string, uint32_t>> cases = {
+      {"0", 256},        // unspecified -> 256 * dpr(1)
+      {"-5", 256},       // nonsense -> same
+      {"16", 32},        // below the floor
+      {"100000", 2048},  // above the ceiling
+  };
+  for (const auto& [requested, expected] : cases) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1,"tile_px":)"
+        + requested + "}");
+    auto resp = handler_->handleTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << requested;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << "tile_px " << requested;
+  }
+}
+
+TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
+{
+  // Two clients on different displays ask for different pixel counts of the
+  // same tile, and they are different images.  Without this in the key the
+  // second one is served the first one's size and the browser rescales it.
+  const auto render = [&](const std::string& px) {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(
+        R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[],)"
+        R"("dpr":1.67,"tile_px":)"
+        + px + "}");
+    auto resp = handler_->handleTile(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+    return pngWidth(resp.payload);
+  };
+  EXPECT_EQ(render("400"), 400u);
+  EXPECT_EQ(render("480"), 480u);
+  // ...and back, which must come from the cache at its own size, not the last
+  // one rendered.
+  EXPECT_EQ(render("400"), 400u);
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -271,6 +717,46 @@ TEST_F(TileHandlerTest, OverlayTileReturnsPng)
   EXPECT_EQ(resp.payload[3], 'G');
 }
 
+// The overlay is composited over the layer tiles in the browser, so it has to
+// come back at the same pixel count they do; a 256 px overlay stretched over a
+// 400 px layer tile is blurry and no longer sits on the shapes it annotates.
+TEST_F(TileHandlerTest, OverlayTileHonoursTheRequestedPixelCount)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
+  for (const uint32_t px : {240u, 320u, 400u, 480u}) {
+    WebSocketRequest req;
+    req.id = 10;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,"dpr":1.67,"tile_px":)"
+                        + std::to_string(px) + "}");
+    auto resp = handler_->handleOverlayTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << px;
+    EXPECT_EQ(pngWidth(resp.payload), px) << "asked for " << px << " px";
+  }
+}
+
+TEST_F(TileHandlerTest, OverlayTileClampsAndFallsBack)
+{
+  const std::vector<std::pair<std::string, uint32_t>> cases = {
+      {R"("dpr":1)", 256},                    // unspecified -> 256 * dpr
+      {R"("dpr":2)", 512},                    // ...which follows dpr
+      {R"("dpr":1,"tile_px":0)", 256},        // explicit "not specified"
+      {R"("dpr":1,"tile_px":100000)", 2048},  // above the ceiling
+  };
+  for (const auto& [fields, expected] : cases) {
+    WebSocketRequest req;
+    req.id = 10;
+    req.type = WebSocketRequest::kOverlayTile;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,)" + fields + "}");
+    auto resp = handler_->handleOverlayTile(req, state_);
+    ASSERT_EQ(resp.type, WebSocketResponse::kPng) << fields;
+    EXPECT_EQ(pngWidth(resp.payload), expected) << fields;
+  }
+}
+
 TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
 {
   // Put a highlight rect in the state
@@ -288,6 +774,659 @@ TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
   auto resp = handler_->handleOverlayTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);
   EXPECT_FALSE(resp.payload.empty());
+}
+
+//------------------------------------------------------------------------------
+// "Flywires only" (Misc toggle) — selection flywires on the overlay
+//------------------------------------------------------------------------------
+
+TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
+{
+  odb::dbNet* net = makeConnectedNet("sig");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Toggle ON via overlay request: highlight re-derived as flywires.
+  WebSocketRequest req = overlayRequest(20, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "flywires_only should produce driver->sink lines";
+    for (const auto& r : state_.highlight_rects) {
+      EXPECT_LT(r.dx(), FakeNetDescriptor::kWireRectSize)
+          << "wire shapes must be suppressed in flywire mode";
+    }
+  }
+
+  // Toggle back OFF: unrouted net keeps its flywires (GUI fallback) and
+  // the descriptor's wire shapes are collected again.
+  req = overlayRequest(21, /*flywires_only=*/false);
+  resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "unrouted net keeps flywires with the toggle off (GUI parity)";
+    bool has_wire_rect = false;
+    for (const auto& r : state_.highlight_rects) {
+      has_wire_rect
+          = has_wire_rect || r.dx() == FakeNetDescriptor::kWireRectSize;
+    }
+    EXPECT_TRUE(has_wire_rect)
+        << "descriptor wire shapes should return when the toggle is off";
+  }
+}
+
+// A net descriptor that draws the driver->sink fan itself, the way the real
+// DbNetDescriptor does for an unrouted net (draw_flywires stays true when
+// there is no wire and no guides).  FakeNetDescriptor draws only a wire rect,
+// so on its own it cannot catch the fan being collected twice.
+class FlywireDrawingNetDescriptor : public FakeNetDescriptor
+{
+ public:
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    FakeNetDescriptor::highlight(object, painter);
+    painter.drawLine(odb::Point(0, 0), odb::Point(1000, 1000));
+  }
+};
+
+// ShapeCollector captures drawLine, so the descriptor's own fan and the fan
+// collectNetFlightLines derives are the same lines.  Taking both drew every
+// flywire twice and let a large net exceed the kMaxFlywires budget.
+TEST_F(TileHandlerTest, UnroutedNetFlywiresAreNotCollectedTwice)
+{
+  odb::dbNet* net = makeConnectedNet("dup");
+  ASSERT_NE(net, nullptr);
+  ASSERT_EQ(net->getWire(), nullptr);
+  ASSERT_TRUE(net->getGuides().empty());
+
+  static FlywireDrawingNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Toggle off: one driver and one sink, so exactly one flywire.
+  WebSocketRequest req = overlayRequest(30, /*flywires_only=*/false);
+  // A flip is what re-derives the highlight, so start from the other state.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.flywires_only = true;
+  }
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 1u)
+      << "one driver x one sink is one flywire, not one per collector";
+}
+
+// A net parked in a persistent highlight group is derived the same way the
+// selection is, so "Flywires only" has to reach it too.
+TEST_F(TileHandlerTest, HighlightGroupsHonourFlywiresOnly)
+{
+  odb::dbNet* net = makeConnectedNet("grp");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[0].insert(
+        net_descriptor.makeSelected(std::any(net)));
+  }
+
+  WebSocketRequest req = overlayRequest(31, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.highlight_group_lines.empty())
+      << "the group member's flywires should be drawn in the group colour";
+  for (const auto& colored : state_.highlight_group_rects) {
+    EXPECT_LT(colored.rect.dx(), FakeNetDescriptor::kWireRectSize)
+        << "a group member's wire shapes must be suppressed in flywire mode";
+  }
+}
+
+// An edit that moves a group member invalidates the rectangles derived from
+// its old placement.  The editing client rebuilds its own; every OTHER
+// session learns only through the odb callback that raises this flag, since
+// the edit broadcast just asks them to redraw -- from this stale cache.
+TEST_F(TileHandlerTest, GeometryChangeRebuildsHighlightGroupShapes)
+{
+  odb::dbMaster* master = db_->findMaster("BUF_X1");
+  ASSERT_NE(master, nullptr);
+  odb::dbInst* inst = odb::dbInst::create(block_, master, "moved_inst");
+  inst->setLocation(1000, 1000);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  static LocalBBoxInstDescriptor inst_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[0].insert(
+        inst_descriptor.makeSelected(std::any(inst)));
+  }
+
+  // Build the cache at the original placement.
+  WebSocketRequest req = overlayRequest(32, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  odb::Rect before;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+    before = state_.highlight_group_rects.front().rect;
+  }
+
+  // Move it and raise the flag the session's inDbPostMoveInst would.
+  inst->setLocation(40000, 40000);
+  state_.highlight_geometry_stale = true;
+
+  // Same toggle position, so only the staleness can trigger the rebuild.
+  req = overlayRequest(33, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+  EXPECT_NE(state_.highlight_group_rects.front().rect, before)
+      << "the group rectangle must follow the instance to its new placement";
+  EXPECT_FALSE(state_.highlight_geometry_stale)
+      << "the flag is consumed so the next overlay does not rebuild again";
+}
+
+TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("sig2");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+    // Simulate an explicit "clear highlights" that kept the inspected
+    // object (e.g. DRC clear): vectors empty, highlights inactive.
+  }
+
+  WebSocketRequest req = overlayRequest(23, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "toggle flip must not resurrect cleared highlights";
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+TEST_F(TileHandlerTest, NonNetPayloadWithIsNetDoesNotThrow)
+{
+  // A descriptor may report isNet()==true while its payload is NOT a
+  // plain dbNet* (e.g. DbNetDescriptor::NetWithSink).  The collector
+  // must fall back to the generic highlight path instead of throwing
+  // std::bad_any_cast.
+  class FakeNetWithSinkDescriptor : public FakeNetDescriptor
+  {
+   public:
+    std::string getName(const std::any&) const override { return "nws"; }
+    void highlight(const std::any&, gui::Painter& painter) const override
+    {
+      painter.drawRect(odb::Rect(0, 0, 1000, 1000));
+    }
+  };
+  static FakeNetWithSinkDescriptor descriptor;
+  // Payload is an int — any_cast<odb::dbNet*> by value would throw.
+  primeInspected(descriptor.makeSelected(std::any(42)));
+
+  WebSocketRequest req = overlayRequest(24, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty());
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "non-dbNet payload should use the generic highlight path";
+}
+
+TEST_F(TileHandlerTest, FlywiresSkipSupplyNets)
+{
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  odb::dbInst* buf1 = odb::dbInst::create(block_, master, "buf1");
+  buf1->setLocation(10000, 10000);
+  buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  buf1->findITerm("A")->connect(pwr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(pwr)));
+
+  WebSocketRequest req = overlayRequest(22, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "supply nets must not get flywires (GUI parity)";
+}
+
+// A "Flywires only" flip must re-derive the highlight from the SAME selection
+// it came from.  Preferring current_inspected (which a click sets to the LAST
+// object hit) silently dropped every other member of a shift+click
+// multi-selection on the first flip, and flipping back did not restore them
+// (reported on the PR #10806 review).
+TEST_F(TileHandlerTest, FlywiresFlipPreservesMultiSelection)
+{
+  odb::dbNet* net_a = makeConnectedNet("multi_a");
+  odb::dbNet* net_b = makeConnectedNet("multi_b");
+  ASSERT_NE(net_a, nullptr);
+  ASSERT_NE(net_b, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    // As after two shift+clicks: both nets selected, the second one inspected.
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_a)));
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_b)));
+    state_.selection_itr = state_.selection_set.begin();
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net_b));
+    state_.highlight_source = SessionState::HighlightSource::kSelectionSet;
+  }
+
+  // Each net has one driver and one sink, so one flywire per net.
+  WebSocketRequest req = overlayRequest(25, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.highlight_lines.size(), 2u)
+        << "both selected nets must keep their flywires across the flip";
+  }
+
+  // ... and flipping back keeps both, too (the unrouted-net fallback).
+  req = overlayRequest(26, /*flywires_only=*/false);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 2u)
+      << "un-toggling must not narrow the selection either";
+}
+
+// The other half of the invariant: when the user followed an inspector link out
+// of the selection set, handleInspect deliberately narrowed the highlight to
+// that one object, so a flip must NOT widen it back to the whole set.
+TEST_F(TileHandlerTest, FlywiresFlipAfterLinkFollowKeepsSingleObject)
+{
+  odb::dbNet* net_a = makeConnectedNet("link_a");
+  odb::dbNet* net_b = makeConnectedNet("link_b");
+  odb::dbNet* linked = makeConnectedNet("link_target");
+  ASSERT_NE(net_a, nullptr);
+  ASSERT_NE(net_b, nullptr);
+  ASSERT_NE(linked, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_a)));
+    state_.selection_set.insert(net_descriptor.makeSelected(std::any(net_b)));
+    state_.selection_itr = state_.selection_set.end();
+    state_.current_inspected = net_descriptor.makeSelected(std::any(linked));
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  WebSocketRequest req = overlayRequest(27, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 1u)
+      << "the link target's highlight must not grow into the selection set";
+}
+
+// "Flywires only" suppresses the routed wire/guide shapes, NOT the special
+// (geometric) routing: the GUI draws SWires at the tail of
+// DbNetDescriptor::highlight regardless of the mode.
+TEST_F(TileHandlerTest, FlywiresOnlyKeepsSpecialWireShapes)
+{
+  odb::dbNet* net = makeConnectedNet("special_sig");
+  ASSERT_NE(net, nullptr);
+  net->setSpecial();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  ASSERT_NE(swire, nullptr);
+  odb::dbSBox::create(
+      swire, metal1, 20000, 20000, 30000, 21000, odb::dbWireShapeType::NONE);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  WebSocketRequest req = overlayRequest(28, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "a routed special net gets no flywires (GUI parity)";
+  const auto& rects = state_.highlight_rects;
+  EXPECT_NE(std::ranges::find(rects, odb::Rect(20000, 20000, 30000, 21000)),
+            rects.end())
+      << "the SWire shape must survive flywires-only mode";
+}
+
+// Same for supply nets, which is the worst case of the bug: their flywires AND
+// their ITerm boxes are suppressed by GUI parity, so before the fix a selected
+// power net came back with no highlight at all.
+TEST_F(TileHandlerTest, FlywiresOnlySupplyNetKeepsShapes)
+{
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD_swire");
+  pwr->setSigType(odb::dbSigType::POWER);
+  pwr->setSpecial();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbSWire* swire = odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+  ASSERT_NE(swire, nullptr);
+  odb::dbSBox::create(
+      swire, metal1, 0, 40000, 100000, 41000, odb::dbWireShapeType::NONE);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(pwr)));
+
+  WebSocketRequest req = overlayRequest(29, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "supply nets must not get flywires (GUI parity)";
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "a selected supply net must still be highlighted by its SWires";
+}
+
+// Helper: create a placed BUF_X16 to anchor getBounds(), plus a signal net
+// carrying one route guide on metal1 across most of the die.  Returns the net.
+static odb::dbNet* makeNetWithGuide(odb::dbBlock* block,
+                                    odb::dbLib* lib,
+                                    odb::dbDatabase* db)
+{
+  odb::dbMaster* master = lib->findMaster("BUF_X16");
+  odb::dbInst* ll = odb::dbInst::create(block, master, "anchor_ll");
+  ll->setLocation(0, 0);
+  ll->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbInst* ur = odb::dbInst::create(block, master, "anchor_ur");
+  ur->setLocation(90000, 90000);
+  ur->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  odb::dbNet* net = odb::dbNet::create(block, "guided");
+  odb::dbTechLayer* metal1 = db->getTech()->findLayer("metal1");
+  odb::dbGuide::create(net,
+                       metal1,
+                       metal1,
+                       odb::Rect(10000, 10000, 90000, 90000),
+                       /*is_congested=*/false);
+  return net;
+}
+
+TEST_F(TileHandlerTest, FocusedNetsGuidesTogglesGuides)
+{
+  odb::dbNet* net = makeNetWithGuide(block_, lib_, getDb());
+  {
+    std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+    state_.focus_net_ids.insert(net->getId());  // net is focused
+  }
+  gen_->eagerInit();
+
+  // Baseline: nothing drawn on the overlay.
+  WebSocketRequest empty_req;
+  empty_req.id = 30;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Toggle OFF: focused net has no per-net guide selection → no guides.
+  WebSocketRequest off_req;
+  off_req.id = 31;
+  off_req.type = WebSocketRequest::kOverlayTile;
+  off_req.json = parseObj(R"({"z":0,"x":0,"y":0,"focused_nets_guides":false})");
+  const auto off = handler_->handleOverlayTile(off_req, state_).payload;
+  EXPECT_EQ(off, blank)
+      << "guides must not draw when the toggle is off and no per-net selection";
+
+  // Toggle ON: the focused net's guides are drawn.
+  WebSocketRequest on_req;
+  on_req.id = 32;
+  on_req.type = WebSocketRequest::kOverlayTile;
+  on_req.json = parseObj(R"({"z":0,"x":0,"y":0,"focused_nets_guides":true})");
+  const auto on = handler_->handleOverlayTile(on_req, state_).payload;
+  EXPECT_NE(on, blank)
+      << "focused nets' guides should be drawn when the toggle is on";
+}
+
+TEST_F(TileHandlerTest, PerNetGuidesIgnoreGlobalToggle)
+{
+  odb::dbNet* net = makeNetWithGuide(block_, lib_, getDb());
+  {
+    std::lock_guard<std::mutex> lock(state_.route_guides_mutex);
+    state_.route_guide_net_ids.insert(net->getId());  // explicit per-net
+  }
+  gen_->eagerInit();
+
+  WebSocketRequest empty_req;
+  empty_req.id = 33;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Global toggle off, but the per-net selection still draws its guides.
+  WebSocketRequest req;
+  req.id = 34;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"focused_nets_guides":false})");
+  const auto out = handler_->handleOverlayTile(req, state_).payload;
+  EXPECT_NE(out, blank)
+      << "per-net route guides must render regardless of the global toggle";
+}
+
+TEST_F(TileHandlerTest, HighlightSelectedTogglesSelectionHighlight)
+{
+  // Anchor bounds with an instance, then put a selection highlight rect.
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  odb::dbInst* inst = odb::dbInst::create(block_, master, "anchor");
+  inst->setLocation(0, 0);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(10000, 10000, 90000, 90000);
+  }
+  gen_->eagerInit();
+
+  WebSocketRequest empty_req;
+  empty_req.id = 40;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Toggle ON (default): selection highlight is drawn.
+  WebSocketRequest on_req;
+  on_req.id = 41;
+  on_req.type = WebSocketRequest::kOverlayTile;
+  on_req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":true})");
+  const auto on = handler_->handleOverlayTile(on_req, state_).payload;
+  EXPECT_NE(on, blank) << "selection highlight should draw when toggle is on";
+
+  // Toggle OFF: selection highlight suppressed.
+  WebSocketRequest off_req;
+  off_req.id = 42;
+  off_req.type = WebSocketRequest::kOverlayTile;
+  off_req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":false})");
+  const auto off = handler_->handleOverlayTile(off_req, state_).payload;
+  EXPECT_EQ(off, blank)
+      << "selection highlight must be hidden when the toggle is off";
+}
+
+// The two Misc toggles meet here: "Flywires only" turns the selection's
+// highlight into driver->sink lines, and "Highlight selected" must hide the
+// selection's highlight as a whole.  Gating only the rects and polys would
+// leave the flywires on screen — half a highlight for a toggle that promises
+// none.
+TEST_F(TileHandlerTest, HighlightSelectedAlsoGatesSelectionFlywires)
+{
+  odb::dbNet* net = makeConnectedNet("gated_sig");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Flywires on: the selection is now carried by highlight_lines.
+  WebSocketRequest fly_req = overlayRequest(45, /*flywires_only=*/true);
+  const auto with_flywires
+      = handler_->handleOverlayTile(fly_req, state_).payload;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    ASSERT_FALSE(state_.highlight_lines.empty())
+        << "precondition: flywires_only must produce driver->sink lines";
+  }
+
+  WebSocketRequest empty_req;
+  empty_req.id = 46;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+  ASSERT_NE(with_flywires, blank)
+      << "precondition: the flywires must actually draw something";
+
+  // "Highlight selected" off: the flywires go with the rest of the highlight.
+  WebSocketRequest off_req;
+  off_req.id = 47;
+  off_req.type = WebSocketRequest::kOverlayTile;
+  off_req.json = parseObj(
+      R"({"z":0,"x":0,"y":0,"flywires_only":true,"highlight_selected":false})");
+  const auto off = handler_->handleOverlayTile(off_req, state_).payload;
+  EXPECT_EQ(off, blank)
+      << "selection flywires must be hidden when the toggle is off";
+
+  // The selection itself survives, so turning the toggle back on restores it.
+  WebSocketRequest on_req = overlayRequest(48, /*flywires_only=*/true);
+  const auto back_on = handler_->handleOverlayTile(on_req, state_).payload;
+  EXPECT_NE(back_on, blank)
+      << "the flywires must come back when the toggle is on again";
+}
+
+TEST_F(TileHandlerTest, OverlayTileMalformedFlagReturnsError)
+{
+  // Overlay requests run on a bare io_context thread, so a malformed flag
+  // type must come back as a kError response, not an exception (which
+  // would terminate the whole server).
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":1})");
+
+  WebSocketResponse resp;
+  EXPECT_NO_THROW(resp = handler_->handleOverlayTile(req, state_));
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+}
+
+// A zoom that is not an integer is the shape a non-finite client-side number
+// arrives in: JSON.stringify writes NaN and Infinity as `null`.  Reaching
+// as_int64() with one of those threw, and with no try/catch between the
+// handler and io_context::run() that killed the whole openroad process --
+// observed as the design vanishing and the session dropping after zooming in
+// to the limit and pressing F.  Each case must now be an error response.
+TEST_F(TileHandlerTest, TileRejectsNonIntegerZoomInsteadOfThrowing)
+{
+  struct Case
+  {
+    const char* what;
+    const char* json;
+  };
+  const Case cases[] = {
+      {"null zoom (a non-finite number after JSON.stringify)",
+       R"({"layer":"metal1","z":null,"x":0,"y":0})"},
+      {"fractional zoom", R"({"layer":"metal1","z":1.5,"x":0,"y":0})"},
+      {"null x", R"({"layer":"metal1","z":1,"x":null,"y":0})"},
+      {"zoom past the tile-grid ceiling",
+       R"({"layer":"metal1","z":60,"x":0,"y":0})"},
+      {"missing zoom", R"({"layer":"metal1","x":0,"y":0})"},
+  };
+
+  uint32_t id = 700;
+  for (const Case& c : cases) {
+    WebSocketRequest req;
+    req.id = id++;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(c.json);
+
+    WebSocketResponse resp;
+    EXPECT_NO_THROW(resp = handler_->handleTile(req, state_)) << c.what;
+    EXPECT_EQ(resp.type, WebSocketResponse::kError) << c.what;
+    EXPECT_EQ(resp.id, req.id) << c.what;
+  }
+}
+
+// Leaflet asks for tiles beyond the 2^z grid whenever the design is smaller
+// than the viewport or while panning at the border, and the renderers answer
+// those with a transparent tile.  A range check here would turn ordinary
+// panning into a stream of errors, so off-grid coordinates must still render.
+TEST_F(TileHandlerTest, TileStillServesOffGridCoordinates)
+{
+  gen_->eagerInit();
+
+  for (const char* json : {R"({"layer":"metal1","z":0,"x":-1,"y":0})",
+                           R"({"layer":"metal1","z":0,"x":3,"y":7})",
+                           R"({"layer":"metal1","z":2,"x":9999,"y":0})"}) {
+    WebSocketRequest req;
+    req.id = 710;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(json);
+
+    WebSocketResponse resp;
+    EXPECT_NO_THROW(resp = handler_->handleTile(req, state_)) << json;
+    EXPECT_EQ(resp.type, WebSocketResponse::kPng)
+        << "off-grid tiles are transparent, not errors: " << json;
+  }
+}
+
+TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
+{
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  odb::dbInst* inst = odb::dbInst::create(block_, master, "anchor");
+  inst->setLocation(0, 0);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.hover_rects.emplace_back(10000, 10000, 90000, 90000);
+  }
+  gen_->eagerInit();
+
+  WebSocketRequest empty_req;
+  empty_req.id = 43;
+  empty_req.type = WebSocketRequest::kOverlayTile;
+  empty_req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  SessionState empty_state;
+  const auto blank
+      = handler_->handleOverlayTile(empty_req, empty_state).payload;
+
+  // Hover must still render even with the selection highlight toggled off.
+  WebSocketRequest req;
+  req.id = 44;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"highlight_selected":false})");
+  const auto out = handler_->handleOverlayTile(req, state_).payload;
+  EXPECT_NE(out, blank)
+      << "hover highlight is independent of the Highlight selected toggle";
 }
 
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
@@ -430,15 +1569,30 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
-    fake_current_
-        = {.name = "current", .type = "FakeCurrent", .bbox = {0, 0, 100, 100}};
+    fake_current_ = {.name = "current",
+                     .type = "FakeCurrent",
+                     .bbox = {0, 0, 100, 100},
+                     .properties = {}};
     fake_previous_ = {.name = "previous",
                       .type = "FakePrevious",
-                      .bbox = {100, 100, 200, 200}};
+                      .bbox = {100, 100, 200, 200},
+                      .properties = {}};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+    // The registry owns registered descriptors (unique_ptr) — heap-only.
+    auto* registry = gui::DescriptorRegistry::instance();
+    registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
+    registry->registerDescriptor<odb::dbNet*>(new TestNetDescriptor);
+  }
+
+  void TearDown() override
+  {
+    auto* registry = gui::DescriptorRegistry::instance();
+    registry->unregisterDescriptor<odb::dbInst*>();
+    registry->unregisterDescriptor<odb::dbNet*>();
+    tst::Nangate45Fixture::TearDown();
   }
 
   gui::Selected makeFakeSelected(FakeInspectable* object)
@@ -529,6 +1683,109 @@ TEST_F(SelectHandlerTest, SelectWithMissingFieldReturnsError)
   EXPECT_NE(payloadStr(resp).find("server error"), std::string::npos);
 }
 
+// Ctrl+click parity (Qt selectHighlightConnectedNets): show_connectivity
+// expands the selection with the SIGNAL nets on the picked instance's
+// ITerms and reports how many were added.
+TEST_F(SelectHandlerTest, SelectWithConnectivityAddsSignalNets)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* in_net = odb::dbNet::create(block_, "n_in");
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_out");
+  ASSERT_NE(inst->findITerm("A"), nullptr);
+  ASSERT_NE(inst->findITerm("Z"), nullptr);
+  inst->findITerm("A")->connect(in_net);
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 20;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[],)"
+                 R"("show_connectivity":true})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  auto root = parseObj(payloadStr(resp));
+  EXPECT_EQ(root.at("connected_added").as_int64(), 2) << payloadStr(resp);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 3);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.selection_set.size(), 3u);
+  }
+}
+
+// Non-SIGNAL nets (power/ground) are never pulled into the selection.
+TEST_F(SelectHandlerTest, SelectConnectivityIgnoresNonSignalNets)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* in_net = odb::dbNet::create(block_, "n_pwr");
+  in_net->setSigType(odb::dbSigType::POWER);
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_sig");
+  inst->findITerm("A")->connect(in_net);
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 21;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[],)"
+                 R"("show_connectivity":true})");
+
+  auto root = parseObj(payloadStr(handler_->handleSelect(req, state_)));
+  EXPECT_EQ(root.at("connected_added").as_int64(), 1)
+      << boost::json::serialize(root);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+}
+
+// Without the flag a plain click never expands the selection, and the
+// response carries no connected_added field.
+TEST_F(SelectHandlerTest, SelectWithoutConnectivityFlagAddsNothing)
+{
+  odb::dbInst* inst = block_->findInst("buf1");
+  ASSERT_NE(inst, nullptr);
+  odb::dbNet* out_net = odb::dbNet::create(block_, "n_out");
+  inst->findITerm("Z")->connect(out_net);
+
+  WebSocketRequest req;
+  req.id = 22;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[]})");
+
+  auto root = parseObj(payloadStr(handler_->handleSelect(req, state_)));
+  EXPECT_FALSE(root.contains("connected_added"))
+      << boost::json::serialize(root);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+}
+
+// Flight lines emitted by a descriptor's highlight() are collected into
+// the session so the overlay can render them alongside timing lines.
+TEST_F(SelectHandlerTest, InspectCollectsHighlightLines)
+{
+  LineFakeDescriptor line_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {gui::Selected(&fake_current_, &line_descriptor)};
+  }
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    ASSERT_EQ(state_.highlight_lines.size(), 1u);
+    EXPECT_EQ(state_.highlight_lines[0].p1, fake_current_.bbox.ll());
+    EXPECT_EQ(state_.highlight_lines[0].p2, fake_current_.bbox.ur());
+    EXPECT_TRUE(state_.highlight_rects.empty());
+  }
+}
+
 TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
 {
   WebSocketRequest req;
@@ -541,6 +1798,31 @@ TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"error\""), std::string::npos);
+}
+
+// An inspect that resolves to nothing clears the highlight vectors, so it must
+// also clear the source tag.  Leaving it set let a later "Flywires only" flip
+// re-derive the highlight from the stale current_inspected — resurrecting
+// exactly what the tag exists to keep dismissed.
+TEST_F(SelectHandlerTest, InvalidInspectDoesNotPrimeHighlights)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+    state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":999})");
+  ASSERT_EQ(handler_->handleInspect(req, state_).type,
+            WebSocketResponse::kJson);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty());
+  EXPECT_EQ(state_.highlight_source, SessionState::HighlightSource::kNone)
+      << "an empty selection must not leave the highlights primed";
 }
 
 TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
@@ -723,6 +2005,104 @@ TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
   std::string json_um = payloadStr(resp_um);
   EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
       << json_um;
+}
+
+// A multi-die design's top chip is hierarchical and owns no dbBlock, so the
+// micron conversion has to come from the database rather than from a block --
+// otherwise every inspected value (including a tech layer's pitch, width and
+// spacing) would fall back to unlabelled raw DBU integers.
+TEST_F(SelectHandlerTest, InspectConvertsToMicronsWithoutABlock)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  odb::dbBlock::destroy(block_);
+  block_ = nullptr;
+  ASSERT_EQ(gen_->getBlock(), nullptr);
+  ASSERT_NE(getDb()->getDbuPerMicron(), 0u);
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":false})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json;
+}
+
+// A PropertyTable (e.g. a layer's two-widths spacing table) is serialized as a
+// grid the client draws as a table, not flattened to Property::toString()'s
+// "<unknown>".
+TEST_F(SelectHandlerTest, InspectSerializesPropertyTable)
+{
+  gui::PropertyTable table(/*rows=*/2, /*columns=*/2);
+  table.setColumnHeader(0, "0 \xC2\xB5m");
+  table.setColumnHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
+  table.setRowHeader(0, "0 \xC2\xB5m");
+  table.setRowHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
+  table.setData(0, 0, "0.065 \xC2\xB5m");
+  table.setData(0, 1, "0.1 \xC2\xB5m");
+  table.setData(1, 0, "0.1 \xC2\xB5m");
+  table.setData(1, 1, "0.2 \xC2\xB5m");
+  fake_current_.properties = {{"Two width spacing rules", table}};
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  const std::string json = payloadStr(handler_->handleInspect(req, state_));
+  EXPECT_EQ(json.find("<unknown>"), std::string::npos) << json;
+  EXPECT_NE(json.find("\"table\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"column_headers\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"row_headers\""), std::string::npos) << json;
+  // Newlines inside a header survive as real newlines for the client to
+  // render as separate lines.
+  EXPECT_NE(json.find("0.2 \xC2\xB5m\\nPRL 0.1 \xC2\xB5m"), std::string::npos)
+      << json;
+  EXPECT_NE(json.find("[[\"0.065 \xC2\xB5m\",\"0.1 \xC2\xB5m\"],"
+                      "[\"0.1 \xC2\xB5m\",\"0.2 \xC2\xB5m\"]]"),
+            std::string::npos)
+      << json;
+}
+
+// An unkeyed list value (a layer's width table) becomes numbered children,
+// mirroring the Qt inspector's indexed list rows.
+TEST_F(SelectHandlerTest, InspectSerializesValueList)
+{
+  const std::vector<std::any> widths
+      = {std::string("0.018 \xC2\xB5m"), std::string("0.09 \xC2\xB5m")};
+  fake_current_.properties = {{"Width table", widths}};
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_current_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 31;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  const std::string json = payloadStr(handler_->handleInspect(req, state_));
+  EXPECT_EQ(json.find("<unknown>"), std::string::npos) << json;
+  EXPECT_NE(json.find("\"children\":[{\"name\":\"1\","
+                      "\"value\":\"0.018 \xC2\xB5m\"},"
+                      "{\"name\":\"2\",\"value\":\"0.09 \xC2\xB5m\"}]"),
+            std::string::npos)
+      << json;
 }
 
 //------------------------------------------------------------------------------
@@ -1115,6 +2495,132 @@ TEST_F(SelectHandlerTest, SelectNextClearsNavigationHistory)
   EXPECT_TRUE(state_.navigation_history.empty());
 }
 
+//------------------------------------------------------------------------------
+// select_layer tests
+//
+// Backs the Display Control panel's click-to-select, mirroring the Qt GUI's
+// DisplayControls::displayItemSelected.  These exercise layer resolution and
+// the selection-state replacement; the inspect payload's contents come from
+// DbTechLayerDescriptor, which this binary does not register (see
+// FakeDescriptor above), so a resolved layer is asserted via the response
+// being kJson rather than the not-found kError.
+//------------------------------------------------------------------------------
+
+TEST_F(SelectHandlerTest, SelectLayerResolvesLayerByName)
+{
+  ASSERT_NE(getDb()->getTech()->findLayer("metal1"), nullptr);
+
+  WebSocketRequest req;
+  req.id = 50;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.id, 50u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\""), std::string::npos) << json;
+  EXPECT_NE(json.find("\"selection_index\""), std::string::npos) << json;
+}
+
+TEST_F(SelectHandlerTest, SelectLayerUnknownNameReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 51;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"no_such_layer"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Layer not found: no_such_layer"),
+            std::string::npos)
+      << payloadStr(resp);
+}
+
+TEST_F(SelectHandlerTest, SelectLayerMissingFieldReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 52;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"use_dbu":true})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("server error"), std::string::npos);
+}
+
+// A chiplet path that matches no ChipletNode falls back to the design's
+// default tech rather than failing, so a stale path in the frontend (e.g.
+// after the hierarchy changed) still resolves the layer.
+TEST_F(SelectHandlerTest, SelectLayerUnknownChipletFallsBackToDefaultTech)
+{
+  WebSocketRequest req;
+  req.id = 53;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1","chiplet":"top.nonexistent"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+}
+
+// Selecting a layer is a plain (non-shift) selection: it replaces whatever
+// was selected before and drops the hover/timing overlays, so the canvas
+// does not keep painting the previous object's highlight.
+TEST_F(SelectHandlerTest, SelectLayerReplacesPreviousSelection)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.hover_rects.emplace_back(0, 0, 10, 10);
+    state_.timing_rects.push_back(
+        {odb::Rect(0, 0, 10, 10), {.r = 255, .g = 0, .b = 0, .a = 255}, ""});
+    state_.highlight_rects.emplace_back(0, 0, 10, 10);
+    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+  }
+
+  WebSocketRequest req;
+  req.id = 54;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.hover_rects.empty());
+  EXPECT_TRUE(state_.timing_rects.empty());
+  EXPECT_TRUE(state_.navigation_history.empty());
+  // A tech layer has no geometry of its own, so the previous object's
+  // highlight must be gone rather than replaced.
+  EXPECT_TRUE(state_.highlight_rects.empty());
+  EXPECT_EQ(state_.selection_set.count(makeFakeSelected(&fake_current_)), 0u);
+}
+
+// An error path must not leave the session half-updated: the layer lookup
+// throws before any state is touched.
+TEST_F(SelectHandlerTest, SelectLayerErrorKeepsPreviousSelection)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+
+  WebSocketRequest req;
+  req.id = 55;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"no_such_layer"})");
+
+  auto resp = handler_->handleSelectLayer(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kError);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_set.size(), 2u);
+}
+
 TEST_F(SelectHandlerTest, InspectResponseIncludesSelectionMetadata)
 {
   populateSelectionSet(state_,
@@ -1281,6 +2787,833 @@ TEST_F(FindHandlerTest, UnknownTypeReturnsError)
 {
   runFind("bogus", "*");
   EXPECT_EQ(last_resp_.type, WebSocketResponse::kError);
+}
+
+// set_property tests (descriptor editors)
+//------------------------------------------------------------------------------
+
+// FakeDescriptor with descriptor editors, mirroring the shapes found in
+// dbDescriptors.cpp: a string editor (Name), a bool editor (Dont Touch),
+// a number editor (Weight), an option-list editor (Orientation), and a
+// string editor that exercises Property::convert_string (Location).
+class EditableFakeDescriptor : public FakeDescriptor
+{
+ public:
+  enum class EditMode
+  {
+    kAccept,
+    kReject,
+    kThrow
+  };
+  EditMode edit_mode = EditMode::kAccept;
+  mutable std::any last_value;
+  mutable int edit_calls = 0;
+  mutable int location_dbu = -1;
+  mutable bool location_ok = false;
+
+  Properties getProperties(const std::any& object) const override
+  {
+    auto* fake = std::any_cast<FakeInspectable*>(object);
+    return {{"Name", fake->name},
+            {"Dont Touch", false},
+            {"Weight", 42},
+            {"Orientation", std::string("R0")},
+            {"Location", std::string("0")}};
+  }
+
+  // Action test hooks: "Jump" selects jump_target, "Refresh" keeps the
+  // selection, "Explode" throws, "Delete" simulates an odb destroy by
+  // raising *stale_flag (what the session's inDb*Destroy callback does),
+  // "Insert Buffer" must be suppressed, and "deselect" is the reserved
+  // lifecycle callback.
+  FakeInspectable* jump_target = nullptr;
+  std::atomic<bool>* stale_flag = nullptr;
+  mutable int deselect_calls = 0;
+
+  Actions getActions(const std::any& object) const override
+  {
+    Actions actions;
+    actions.push_back({std::string(gui::Descriptor::kDeselectAction),
+                       [this]() -> gui::Selected {
+                         ++deselect_calls;
+                         return {};
+                       }});
+    actions.push_back({"Jump", [this]() -> gui::Selected {
+                         return gui::Selected(jump_target, this);
+                       }});
+    actions.push_back({"Refresh", [this, object]() -> gui::Selected {
+                         return gui::Selected(object, this);
+                       }});
+    actions.push_back({"Explode", []() -> gui::Selected {
+                         throw std::runtime_error("action exploded");
+                       }});
+    actions.push_back({"Insert Buffer", []() -> gui::Selected { return {}; }});
+    actions.push_back({"Delete", [this]() -> gui::Selected {
+                         if (stale_flag != nullptr) {
+                           *stale_flag = true;
+                         }
+                         return {};
+                       }});
+    return actions;
+  }
+
+  Editors getEditors(const std::any& object) const override
+  {
+    auto* fake = std::any_cast<FakeInspectable*>(object);
+    Editors editors;
+    editors.emplace("Name", makeEditor([this, fake](const std::any& value) {
+                      return commit(value, [&] {
+                        fake->name = std::any_cast<std::string>(value);
+                      });
+                    }));
+    editors.emplace("Dont Touch", makeEditor([this](const std::any& value) {
+                      return commit(value);
+                    }));
+    editors.emplace("Weight", makeEditor([this](const std::any& value) {
+                      return commit(value);
+                    }));
+    editors.emplace(
+        "Orientation",
+        makeEditor([this](const std::any& value) { return commit(value); },
+                   {{"R0", 0}, {"R90", 90}, {"R180", 180}}));
+    editors.emplace(
+        "Location", makeEditor([this](const std::any& value) {
+          return commit(value, [&] {
+            location_dbu = gui::Descriptor::Property::convert_string(
+                std::any_cast<std::string>(value), &location_ok);
+          });
+        }));
+    return editors;
+  }
+
+ private:
+  bool commit(const std::any& value,
+              const std::function<void()>& apply = nullptr) const
+  {
+    ++edit_calls;
+    last_value = value;
+    if (edit_mode == EditMode::kThrow) {
+      throw std::runtime_error("edit exploded");
+    }
+    if (edit_mode == EditMode::kReject) {
+      return false;
+    }
+    if (apply) {
+      apply();
+    }
+    return true;
+  }
+};
+
+class SetPropertyTest : public SelectHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SelectHandlerTest::SetUp();
+    handler_->setBroadcastFn(
+        [this](const std::string& json) { broadcasts_.push_back(json); });
+    editable_descriptor_.jump_target = &fake_previous_;
+    editable_descriptor_.stale_flag = &state_.selection_stale;
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected
+        = gui::Selected(&fake_current_, &editable_descriptor_);
+  }
+
+  boost::json::object setProperty(const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 77;
+    req.type = WebSocketRequest::kSetProperty;
+    req.json = parseObj(request_json);
+    auto resp = handler_->handleSetProperty(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+
+  EditableFakeDescriptor editable_descriptor_;
+  std::vector<std::string> broadcasts_;
+};
+
+TEST_F(SetPropertyTest, InspectPayloadCarriesEditors)
+{
+  WebSocketRequest req;
+  req.id = 70;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+
+  std::map<std::string, boost::json::object> by_name;
+  for (const auto& p : root.at("properties").as_array()) {
+    const auto& obj = p.as_object();
+    by_name[std::string(obj.at("name").as_string())] = obj;
+  }
+  ASSERT_TRUE(by_name.count("Name"));
+  EXPECT_TRUE(by_name["Name"].at("editable").as_bool());
+  EXPECT_EQ(by_name["Name"].at("editor").as_object().at("type").as_string(),
+            "string");
+  EXPECT_EQ(
+      by_name["Dont Touch"].at("editor").as_object().at("type").as_string(),
+      "bool");
+  EXPECT_EQ(by_name["Weight"].at("editor").as_object().at("type").as_string(),
+            "number");
+  const auto& orient = by_name["Orientation"].at("editor").as_object();
+  EXPECT_EQ(orient.at("type").as_string(), "list");
+  const auto& options = orient.at("options").as_array();
+  ASSERT_EQ(options.size(), 3u);
+  EXPECT_EQ(options[1].as_string(), "R90");
+}
+
+TEST_F(SetPropertyTest, StringEditAcceptedAndBroadcast)
+{
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(fake_current_.name, "renamed");
+  // Payload is rebuilt after the edit, reflecting the new value.
+  EXPECT_EQ(root.at("name").as_string(), "renamed");
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  auto push = parseObj(broadcasts_[0]);
+  EXPECT_EQ(push.at("type").as_string(), "refresh");
+  // Edits can change the design bounds (and with them the tile
+  // georeference); the push carries the current bounds so clients can
+  // resync their coordinate transforms without an extra round-trip.
+  ASSERT_TRUE(push.if_contains("bounds"));
+  const auto expected = serializeBoundsResponse(*gen_, gen_->shapesReady());
+  EXPECT_EQ(boost::json::serialize(push.at("bounds")),
+            boost::json::serialize(expected.at("bounds")));
+}
+
+// Documents the dynamic-bounds behavior the client resync exists for:
+// content added or moved outside the current block bbox changes the
+// served bounds (block bbox + pin-label margin).
+TEST_F(SetPropertyTest, BoundsFollowBlockBBoxChanges)
+{
+  const auto before = boost::json::serialize(
+      serializeBoundsResponse(*gen_, true).at("bounds"));
+  placeInst("BUF_X16", "far_away", -200000, -200000);
+  const auto after = boost::json::serialize(
+      serializeBoundsResponse(*gen_, true).at("bounds"));
+  EXPECT_NE(before, after);
+}
+
+TEST_F(SetPropertyTest, RejectedEditReportsErrorWithoutBroadcast)
+{
+  editable_descriptor_.edit_mode = EditableFakeDescriptor::EditMode::kReject;
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("rejected"),
+            std::string::npos);
+  EXPECT_EQ(fake_current_.name, "current");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(SetPropertyTest, ThrowingEditIsContained)
+{
+  editable_descriptor_.edit_mode = EditableFakeDescriptor::EditMode::kThrow;
+  auto root = setProperty(R"({"name":"Name","value":"renamed"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_EQ(root.at("error").as_string(), "edit exploded");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(SetPropertyTest, ListEditCommitsOptionValueByIndex)
+{
+  auto root = setProperty(
+      R"({"name":"Orientation","option_index":1,"option_name":"R90"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  // The callback must receive the option's exact std::any (int 90 here).
+  EXPECT_EQ(std::any_cast<int>(editable_descriptor_.last_value), 90);
+}
+
+TEST_F(SetPropertyTest, ListEditRejectsBadIndexAndStaleName)
+{
+  auto root = setProperty(
+      R"({"name":"Orientation","option_index":7,"option_name":"R270"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("option index"),
+            std::string::npos);
+
+  root = setProperty(
+      R"({"name":"Orientation","option_index":1,"option_name":"R180"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("options changed"),
+            std::string::npos);
+  EXPECT_EQ(editable_descriptor_.edit_calls, 0);
+}
+
+TEST_F(SetPropertyTest, BoolAndNumberMarshalling)
+{
+  setProperty(R"({"name":"Dont Touch","value":true})");
+  const bool* flag = std::any_cast<bool>(&editable_descriptor_.last_value);
+  ASSERT_NE(flag, nullptr) << "a bool editor must be handed a bool";
+  EXPECT_TRUE(*flag);
+
+  // JSON integers arrive at the callback as double (Qt delegate parity).
+  setProperty(R"({"name":"Weight","value":5})");
+  const double* weight
+      = std::any_cast<double>(&editable_descriptor_.last_value);
+  ASSERT_NE(weight, nullptr) << "a number editor must be handed a double";
+  EXPECT_DOUBLE_EQ(*weight, 5.0);
+}
+
+TEST_F(SetPropertyTest, UnknownPropertyOrNothingInspected)
+{
+  auto root = setProperty(R"({"name":"Nope","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("not editable"),
+            std::string::npos);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  root = setProperty(R"({"name":"Name","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("nothing"),
+            std::string::npos);
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+// The scoped unit format must install a working Property::convert_string
+// for the duration of the edit: in micron mode "1.5" is 1.5 µm (Nangate45:
+// 2000 DBU/µm → 3000); in DBU mode only integers parse.  The library
+// default (restored afterwards) returns 0 without setting the ok flag.
+TEST_F(SetPropertyTest, ConvertStringInstalledDuringEdit)
+{
+  auto root = setProperty(R"({"name":"Location","value":"1.5"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 3000);
+
+  root = setProperty(
+      R"({"name":"Location","value":"12.34 µm","use_dbu":false})");
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 24680);
+
+  root = setProperty(R"({"name":"Location","value":"1.5","use_dbu":true})");
+  EXPECT_FALSE(editable_descriptor_.location_ok);
+  root = setProperty(R"({"name":"Location","value":"150","use_dbu":true})");
+  EXPECT_TRUE(editable_descriptor_.location_ok);
+  EXPECT_EQ(editable_descriptor_.location_dbu, 150);
+
+  // Restored default after the handler: returns 0, never touches ok.
+  bool ok = false;
+  EXPECT_EQ(gui::Descriptor::Property::convert_string("5", &ok), 0);
+  EXPECT_FALSE(ok);
+}
+
+//------------------------------------------------------------------------------
+// trigger_action tests (descriptor actions)
+//------------------------------------------------------------------------------
+
+class TriggerActionTest : public SetPropertyTest
+{
+ protected:
+  boost::json::object triggerAction(const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 88;
+    req.type = WebSocketRequest::kTriggerAction;
+    req.json = parseObj(request_json);
+    auto resp = handler_->handleTriggerAction(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+};
+
+TEST_F(TriggerActionTest, PayloadFiltersSuppressedAndReservedActions)
+{
+  WebSocketRequest req;
+  req.id = 80;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+
+  ASSERT_TRUE(root.if_contains("actions"));
+  std::set<std::string> names;
+  for (const auto& a : root.at("actions").as_array()) {
+    names.emplace(a.as_string());
+  }
+  EXPECT_EQ(names,
+            (std::set<std::string>{"Jump", "Refresh", "Explode", "Delete"}));
+  // "Insert Buffer" (Qt dialog), "deselect" (reserved), and the universal
+  // "Zoom to" (client-side button exists) must not be offered.
+}
+
+TEST_F(TriggerActionTest, ActionChangingSelectionUpdatesStateAndHistory)
+{
+  auto root = triggerAction(R"({"name":"Jump"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("deleted").as_int64(), 0);
+  EXPECT_EQ(root.at("name").as_string(), "previous");
+  EXPECT_EQ(root.at("can_navigate_back").as_int64(), 1);
+  // The old object's reserved deselect callback ran.
+  EXPECT_EQ(editable_descriptor_.deselect_calls, 1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_TRUE(state_.current_inspected
+                == gui::Selected(&fake_previous_, &editable_descriptor_));
+    ASSERT_EQ(state_.navigation_history.size(), 1u);
+  }
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+}
+
+TEST_F(TriggerActionTest, ActionKeepingSelectionRefreshesPayload)
+{
+  auto root = triggerAction(R"({"name":"Refresh"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("name").as_string(), "current");
+  EXPECT_EQ(editable_descriptor_.deselect_calls, 0);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.current_inspected
+              == gui::Selected(&fake_current_, &editable_descriptor_));
+}
+
+TEST_F(TriggerActionTest, DeleteClearsSelectionStateAndReportsDeleted)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.navigation_history.emplace_back(&fake_previous_,
+                                           &editable_descriptor_);
+    state_.selection_set.insert(state_.current_inspected);
+    state_.selection_itr = state_.selection_set.begin();
+    state_.highlight_rects.push_back(fake_current_.bbox);
+  }
+
+  auto root = triggerAction(R"({"name":"Delete"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("deleted").as_int64(), 1);
+  EXPECT_EQ(root.at("can_navigate_back").as_int64(), 0);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 0);
+  EXPECT_FALSE(root.if_contains("properties"));
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.current_inspected);
+    EXPECT_TRUE(state_.navigation_history.empty());
+    EXPECT_TRUE(state_.selection_set.empty());
+    EXPECT_TRUE(state_.highlight_rects.empty());
+  }
+  EXPECT_FALSE(state_.selection_stale.load());
+  ASSERT_EQ(broadcasts_.size(), 1u);
+  EXPECT_NE(broadcasts_[0].find("refresh"), std::string::npos);
+}
+
+TEST_F(TriggerActionTest, ThrowingActionIsContained)
+{
+  auto root = triggerAction(R"({"name":"Explode"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_EQ(root.at("error").as_string(), "action exploded");
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(TriggerActionTest, UnknownSuppressedAndReservedNamesAreRefused)
+{
+  auto root = triggerAction(R"({"name":"Nope"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("no longer"),
+            std::string::npos);
+
+  root = triggerAction(R"({"name":"Insert Buffer"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("not available"),
+            std::string::npos);
+
+  root = triggerAction(R"({"name":"deselect"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_TRUE(broadcasts_.empty());
+}
+
+TEST_F(TriggerActionTest, StaleSelectionIsDroppedBeforeUse)
+{
+  // Simulate a destroy from another session / a Tcl command.
+  state_.selection_stale = true;
+
+  // set_property refuses with a specific reason.
+  auto root = setProperty(R"({"name":"Name","value":"x"})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("invalidated"),
+            std::string::npos);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.current_inspected);
+  }
+
+  // Inspect of the (now cleared) state degrades to the empty payload.
+  state_.selection_stale = true;
+  WebSocketRequest req;
+  req.id = 81;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+  EXPECT_TRUE(root.if_contains("error"));
+  EXPECT_FALSE(state_.selection_stale.load());
+}
+
+//------------------------------------------------------------------------------
+// Highlight-group tests (16 color-coded groups, Qt GUI parity)
+//------------------------------------------------------------------------------
+
+class HighlightGroupTest : public SelectHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SelectHandlerTest::SetUp();
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+  }
+
+  boost::json::object send(WebSocketRequest::Type type,
+                           const std::string& request_json)
+  {
+    WebSocketRequest req;
+    req.id = 90;
+    req.type = type;
+    req.json = parseObj(request_json);
+    WebSocketResponse resp;
+    switch (type) {
+      case WebSocketRequest::kHighlight:
+        resp = handler_->handleHighlight(req, state_);
+        break;
+      case WebSocketRequest::kUnhighlight:
+        resp = handler_->handleUnhighlight(req, state_);
+        break;
+      default:
+        resp = handler_->handleClearHighlights(req, state_);
+        break;
+    }
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+
+  size_t groupSize(int group)
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    return state_.highlight_groups[group].size();
+  }
+};
+
+TEST_F(HighlightGroupTest, HighlightAddsToGroupAndReportsIt)
+{
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 4);
+  EXPECT_EQ(groupSize(4), 1u);
+
+  // Overlay shapes carry group 4's palette color (kRed, alpha 100).
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+  const auto& cr = state_.highlight_group_rects[0];
+  EXPECT_TRUE(cr.filled);
+  EXPECT_EQ(cr.rect, fake_current_.bbox);
+  EXPECT_EQ(cr.color.r, 255);
+  EXPECT_EQ(cr.color.g, 0);
+  EXPECT_EQ(cr.color.b, 0);
+  EXPECT_EQ(cr.color.a, 100);
+}
+
+TEST_F(HighlightGroupTest, HighlightCollectsGroupFlightLines)
+{
+  // A member whose highlight() draws lines (e.g. an unrouted net) must
+  // still appear in the overlay, tinted with the group color.
+  LineFakeDescriptor line_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected(&fake_current_, &line_descriptor);
+  }
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+  ASSERT_EQ(state_.highlight_group_lines.size(), 1u);
+  const auto& line = state_.highlight_group_lines[0];
+  EXPECT_EQ(line.p1, fake_current_.bbox.ll());
+  EXPECT_EQ(line.p2, fake_current_.bbox.ur());
+  EXPECT_EQ(line.color.r, 255);
+  EXPECT_EQ(line.color.g, 0);
+  EXPECT_EQ(line.color.b, 0);
+  EXPECT_EQ(line.color.a, 100);
+}
+
+TEST_F(HighlightGroupTest, HighlightMovesBetweenGroupsUniquely)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":7})");
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 7);
+  EXPECT_EQ(groupSize(2), 0u);
+  EXPECT_EQ(groupSize(7), 1u);
+}
+
+TEST_F(HighlightGroupTest, UnhighlightRemovesFromAnyGroup)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":3})");
+  auto root = send(WebSocketRequest::kUnhighlight, R"({})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("highlight_group").as_int64(), -1);
+  EXPECT_EQ(groupSize(3), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+TEST_F(HighlightGroupTest, InvalidGroupIsRejected)
+{
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":16})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("invalid"),
+            std::string::npos);
+  root = send(WebSocketRequest::kHighlight, R"({"group":-1})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+
+  root = send(WebSocketRequest::kClearHighlights, R"({"group":16})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(HighlightGroupTest, HighlightWithNothingInspectedFails)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  auto root = send(WebSocketRequest::kHighlight, R"({"group":0})");
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("nothing"),
+            std::string::npos);
+}
+
+TEST_F(HighlightGroupTest, ClearOneGroupOrAll)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  {
+    // A second object in another group, inserted directly.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[5].insert(makeFakeSelected(&fake_previous_));
+  }
+
+  auto root = send(WebSocketRequest::kClearHighlights, R"({"group":2})");
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("cleared").as_int64(), 1);
+  EXPECT_EQ(groupSize(2), 0u);
+  EXPECT_EQ(groupSize(5), 1u);
+
+  // Default group (-1) clears everything left.
+  root = send(WebSocketRequest::kClearHighlights, R"({})");
+  EXPECT_EQ(root.at("cleared").as_int64(), 1);
+  EXPECT_EQ(groupSize(5), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+TEST_F(HighlightGroupTest, InspectPayloadCarriesHighlightGroup)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":9})");
+
+  WebSocketRequest req;
+  req.id = 91;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  auto root = parseObj(payloadStr(handler_->handleInspect(req, state_)));
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 9);
+}
+
+TEST_F(HighlightGroupTest, OverlayRendersGroupShapes)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":0})");
+
+  TileHandler tile_handler(gen_);
+  WebSocketRequest req;
+  req.id = 92;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+  auto resp = tile_handler.handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(HighlightGroupTest, StalenessClearsHighlightGroups)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":6})");
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 93;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":-1})");
+  handler_->handleInspect(req, state_);
+
+  EXPECT_EQ(groupSize(6), 0u);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+}
+
+//------------------------------------------------------------------------------
+// Selection-browser tests (list_selection / inspect_* / deselect)
+//------------------------------------------------------------------------------
+
+class SelectionBrowserTest : public HighlightGroupTest
+{
+ protected:
+  boost::json::object listSelection()
+  {
+    WebSocketRequest req;
+    req.id = 95;
+    req.type = WebSocketRequest::kListSelection;
+    req.json = parseObj(R"({})");
+    auto resp = handler_->handleListSelection(req, state_);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return parseObj(payloadStr(resp));
+  }
+};
+
+TEST_F(SelectionBrowserTest, ListEmptyState)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = gui::Selected();
+  }
+  auto root = listSelection();
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection").as_array().size(), 0u);
+  ASSERT_EQ(root.at("groups").as_array().size(),
+            static_cast<size_t>(gui::kNumHighlightSet));
+  EXPECT_FALSE(root.at("truncated").as_bool());
+}
+
+TEST_F(SelectionBrowserTest, ListSelectionAndGroups)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    // populateSelectionSet points current_inspected at whichever object
+    // sorts first (pointer order); pin it so the highlight is
+    // deterministic.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+  }
+  // fake_current_ into group 4 via the real handler.
+  send(WebSocketRequest::kHighlight, R"({"group":4})");
+
+  auto root = listSelection();
+  const auto& selection = root.at("selection").as_array();
+  ASSERT_EQ(selection.size(), 2u);
+  std::set<std::string> names;
+  std::set<std::string> types;
+  for (const auto& row : selection) {
+    names.emplace(row.as_object().at("name").as_string());
+    types.emplace(row.as_object().at("type").as_string());
+    EXPECT_TRUE(row.as_object().if_contains("bbox"));
+  }
+  EXPECT_EQ(names, (std::set<std::string>{"current", "previous"}));
+  EXPECT_EQ(types, (std::set<std::string>{"FakeCurrent", "FakePrevious"}));
+
+  const auto& groups = root.at("groups").as_array();
+  ASSERT_EQ(groups[4].as_array().size(), 1u);
+  EXPECT_EQ(groups[4].as_array()[0].as_object().at("name").as_string(),
+            "current");
+  EXPECT_EQ(groups[0].as_array().size(), 0u);
+}
+
+TEST_F(SelectionBrowserTest, InspectSelectionRowByIndex)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+
+  WebSocketRequest req;
+  req.id = 96;
+  req.type = WebSocketRequest::kInspectSelection;
+  req.json = parseObj(R"({"index":1})");
+  auto root
+      = parseObj(payloadStr(handler_->handleInspectSelection(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  // Row 1 = second element in set order; verify state followed the payload.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(std::string(root.at("name").as_string()),
+              state_.current_inspected.getName());
+    EXPECT_TRUE(state_.selection_itr != state_.selection_set.end());
+  }
+  EXPECT_EQ(root.at("selection_index").as_int64(), 1);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+
+  req.json = parseObj(R"({"index":7})");
+  root = parseObj(payloadStr(handler_->handleInspectSelection(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+  EXPECT_NE(std::string(root.at("error").as_string()).find("row index"),
+            std::string::npos);
+}
+
+TEST_F(SelectionBrowserTest, InspectGroupRowByIndex)
+{
+  send(WebSocketRequest::kHighlight, R"({"group":9})");
+  {
+    // Move inspection elsewhere so the row click has to switch it back.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_previous_);
+  }
+
+  WebSocketRequest req;
+  req.id = 97;
+  req.type = WebSocketRequest::kInspectGroup;
+  req.json = parseObj(R"({"group":9,"index":0})");
+  auto root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("name").as_string(), "current");
+  EXPECT_EQ(root.at("highlight_group").as_int64(), 9);
+
+  req.json = parseObj(R"({"group":16,"index":0})");
+  root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+
+  req.json = parseObj(R"({"group":9,"index":3})");
+  root = parseObj(payloadStr(handler_->handleInspectGroup(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(SelectionBrowserTest, DeselectRemovesRowAndRederivesHighlights)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+
+  WebSocketRequest req;
+  req.id = 98;
+  req.type = WebSocketRequest::kDeselect;
+  req.json = parseObj(R"({"index":0})");
+  auto root = parseObj(payloadStr(handler_->handleDeselect(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.selection_set.size(), 1u);
+    EXPECT_TRUE(state_.selection_itr != state_.selection_set.end());
+    // Multi-highlight shapes re-derived from the remaining member.
+    EXPECT_EQ(state_.highlight_rects.size(), 1u);
+  }
+
+  req.json = parseObj(R"({"index":5})");
+  root = parseObj(payloadStr(handler_->handleDeselect(req, state_)));
+  EXPECT_EQ(root.at("ok").as_int64(), 0);
+}
+
+TEST_F(SelectionBrowserTest, StalenessClearsBeforeListing)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  send(WebSocketRequest::kHighlight, R"({"group":2})");
+  state_.selection_stale = true;
+
+  auto root = listSelection();
+  EXPECT_EQ(root.at("ok").as_int64(), 1);
+  EXPECT_EQ(root.at("selection").as_array().size(), 0u);
+  EXPECT_EQ(root.at("groups").as_array()[2].as_array().size(), 0u);
 }
 
 //------------------------------------------------------------------------------
@@ -1928,6 +4261,124 @@ TEST_F(SchematicHandlerTest, MuxAndUnknownCellsHaveNoKindHint)
   auto& cell = cells.at("g_mux").as_object();
   EXPECT_EQ(std::string(cell.at("type").as_string()), "MUX2_X1");
   EXPECT_FALSE(cell.contains("gate_kind"));
+}
+
+// ─── Render cancellation (issue #10463 perf) ─────────────────────────────
+
+TEST_F(TileHandlerTest, CancelSkipsQueuedTileRender)
+{
+  // Client abandons request id=99 (it panned/zoomed away).
+  WebSocketRequest cancel;
+  cancel.id = 200;
+  cancel.type = WebSocketRequest::kCancel;
+  cancel.json = parseObj(R"({"cancel_id":99})");
+  auto ack = handler_->handleCancel(cancel, state_);
+  EXPECT_EQ(ack.type, WebSocketResponse::kJson);
+
+  // The matching queued tile render is skipped (best-effort).
+  WebSocketRequest tile;
+  tile.id = 99;
+  tile.type = WebSocketRequest::kTile;
+  tile.json
+      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
+  auto resp = handler_->handleTile(tile, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+
+  // The cancellation is consumed: re-issuing the same id now renders.
+  auto resp2 = handler_->handleTile(tile, state_);
+  EXPECT_EQ(resp2.type, WebSocketResponse::kPng);
+}
+
+TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
+{
+  WebSocketRequest cancel;
+  cancel.id = 201;
+  cancel.type = WebSocketRequest::kCancel;
+  cancel.json = parseObj(R"({"cancel_ids":[5,6]})");
+  handler_->handleCancel(cancel, state_);
+  std::lock_guard<std::mutex> lock(state_.cancelled_mutex);
+  EXPECT_EQ(state_.cancelled_ids.count(5), 1u);
+  EXPECT_EQ(state_.cancelled_ids.count(6), 1u);
+}
+
+// Regression: the inspect payload's `bbox` must be in ROOT/world coordinates.
+//
+// A gui::Descriptor reports a bbox in the object's own block coordinates, while
+// selectAt already transforms SelectionResult::bbox into world space.  The
+// client draws its selection outline from the payload's `bbox`, so if that one
+// stays block-local, every object inside a translated dbChipInst is outlined at
+// the untransformed location — off by exactly the chiplet offset.
+TEST_F(SelectHandlerTest, InspectBboxIsInWorldCoordinatesForAChiplet)
+{
+  // handleSelect resolves the picked hit through the descriptor registry, which
+  // nothing else in this binary populates.  Scoped so the process-global
+  // registry is left as it was found even if an assertion below fires.  The
+  // registry holds descriptors by unique_ptr, so this must be heap-allocated.
+  struct ScopedInstDescriptor
+  {
+    ScopedInstDescriptor() : registry(gui::DescriptorRegistry::instance())
+    {
+      registry->registerDescriptor<odb::dbInst*>(new LocalBBoxInstDescriptor);
+    }
+    ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
+    gui::DescriptorRegistry* registry;
+  } scoped_inst_descriptor;
+
+  // Re-root the design under a HIER chip holding one instance of the fixture's
+  // chip, translated far enough that a block-local bbox cannot be mistaken for
+  // a world one.
+  constexpr int kOffsetX = 400000;
+  constexpr int kOffsetY = 250000;
+  odb::dbChip* master = getDb()->getChip();
+  ASSERT_NE(master, nullptr);
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), /*tech=*/nullptr, "root", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst* chiplet = odb::dbChipInst::create(root, master, "die0");
+  chiplet->setLoc(odb::Point3D(kOffsetX, kOffsetY, 0));
+  getDb()->setTopChip(root);
+
+  // buf1 sits at the origin of its own block, so in world space it sits at the
+  // chiplet offset.
+  odb::dbInst* buf1 = block_->findInst("buf1");
+  ASSERT_NE(buf1, nullptr);
+  const odb::Rect local = buf1->getBBox()->getBox();
+
+  WebSocketRequest req;
+  req.id = 77;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(R"({"dbu_x":401000,"dbu_y":251000,"zoom":0,)"
+                      R"("visible_layers":[]})");
+  auto resp = handler_->handleSelect(req, state_);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object root_obj = parseObj(payloadStr(resp));
+  const auto& selected = root_obj.at("selected").as_array();
+  ASSERT_FALSE(selected.empty()) << payloadStr(resp);
+  ASSERT_TRUE(root_obj.contains("bbox")) << payloadStr(resp);
+
+  const auto& bbox = root_obj.at("bbox").as_array();
+  ASSERT_EQ(bbox.size(), 4u);
+  const odb::Rect payload_bbox(bbox[0].to_number<int>(),
+                               bbox[1].to_number<int>(),
+                               bbox[2].to_number<int>(),
+                               bbox[3].to_number<int>());
+
+  // Translated by the chiplet offset, not left in block-local space.
+  EXPECT_EQ(payload_bbox,
+            odb::Rect(local.xMin() + kOffsetX,
+                      local.yMin() + kOffsetY,
+                      local.xMax() + kOffsetX,
+                      local.yMax() + kOffsetY));
+  EXPECT_NE(payload_bbox, local);
+
+  // And it agrees with the world-space bbox selectAt reports for the same hit,
+  // which is what the two used to disagree about.
+  const auto& hit = selected[0].as_object().at("bbox").as_array();
+  EXPECT_EQ(payload_bbox,
+            odb::Rect(hit[0].to_number<int>(),
+                      hit[1].to_number<int>(),
+                      hit[2].to_number<int>(),
+                      hit[3].to_number<int>()));
 }
 
 }  // namespace

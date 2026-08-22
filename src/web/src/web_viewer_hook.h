@@ -114,8 +114,19 @@ class WebViewerHook : public gui::HeadlessViewer
   // delete).  Holds the chart-list mutex while copying.
   std::vector<WebChart*> charts() const;
 
+  // Latest full display-controls state (JSON) pushed by a client via the
+  // "set_display_state" request.  Cached here so the Tcl
+  // save_display_controls command can persist it to a file and
+  // restore_display_controls can broadcast a saved state back.  Empty
+  // until a client has synced at least once.
+  void setDisplayState(std::string json);
+  std::string getDisplayState() const;
+
  private:
   SessionRegistry sessions_;
+
+  mutable std::mutex display_state_mutex_;
+  std::string display_state_json_;
 
   DrainLogsFn drain_logs_;
 

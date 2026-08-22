@@ -16,6 +16,11 @@ set(WEB_ASSET_FILES
     src/index.html
     src/style.css
     src/theme.js
+    src/tile-merge.js
+    src/tile-request.js
+    src/device-pixels.js
+    src/merged-tile-layer.js
+    src/display-state.js
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
@@ -39,6 +44,7 @@ set(WEB_ASSET_FILES
     src/timing-widget.js
     src/drc-widget.js
     src/3d-viewer-widget.js
+    src/selection-browser.js
     src/main.js
 )
 
@@ -55,12 +61,17 @@ add_custom_command(
     --output ${REPORT_ASSETS_CPP}
     --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
     --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/display-state.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/vis-tree.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-request.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/device-pixels.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/merged-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
@@ -77,6 +88,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/selection-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py

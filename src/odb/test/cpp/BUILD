@@ -68,6 +68,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestDbSet",
+    srcs = ["TestDbSet.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestDbWire",
     srcs = ["TestDbWire.cc"],
     data = [
@@ -208,6 +219,7 @@ cc_test(
         "TestDbNet.cpp",
         "TestDbWire.cc",
         "TestDesignIsRouted.cpp",
+        "TestOrderWires.cpp",
         "TestPolygonalFloorplan.cc",
     ],
     args = [],
@@ -363,6 +375,17 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDbStream",
+    srcs = ["TestDbStream.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -1053,6 +1053,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   }
   net_in->setHasJumpers(has_jumpers);
   net_in->setIsConnectedByAbutment(is_abuted);
+  net_in->setAutoTaperEnabled(db_net->isAutoTaperEnabled());
   updateNetRouting(net_in.get(), db_net);
   net_in->setType(db_net->getSigType());
   frNet* raw_net_in = net_in.get();
@@ -2999,7 +3000,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
             }
           }
         }
-        if (obs->getDesignRuleWidth() == -1) {
+        if (obs->getDesignRuleWidth() == -1 && obs->getMinSpacing() == -1) {
           gtl::rectangle_data<frCoord> rect(xl, yl, xh, yh);
           using gtl::operators::operator+=;
           layerPolys[layerNum] += rect;
@@ -3007,6 +3008,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           auto blkIn = std::make_unique<frBlockage>();
           blkIn->setId(num_blockages++);
           blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
+          blkIn->setMinSpacing(obs->getMinSpacing());
           auto pinIn = std::make_unique<frBPin>();
           pinIn->setId(0);
           // pinFig
