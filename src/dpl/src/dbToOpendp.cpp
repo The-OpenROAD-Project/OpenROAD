@@ -271,11 +271,27 @@ void Opendp::createNetwork()
   ///////////////////////////////////
   using odb::dbInst;
   auto block_insts = block->getInsts();
-  std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
-  std::ranges::stable_sort(
-      insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
+  // Sort instances by name for deterministic ordering.  dbInst::getName()
+  // returns a std::string *by value*, so using it directly inside the
+  // comparator allocated two strings per comparison -- O(N log N) string
+  // allocations that dominated importDb() on large designs.  Materialize each
+  // name exactly once (O(N) allocations) and sort on the cached key, which
+  // yields byte-identical ordering (std::string::operator< is the same
+  // lexicographic comparison the old comparator used).
+  std::vector<std::pair<std::string, dbInst*>> insts_by_name;
+  insts_by_name.reserve(block_insts.size());
+  for (dbInst* inst : block_insts) {
+    insts_by_name.emplace_back(inst->getName(), inst);
+  }
+  // Reserve the node/edge containers up front (cheap, exact counts) to avoid
+  // repeated reallocation of the unique_ptr vectors as the netlist is built.
+  network_->reserve(block_insts.size() + block->getBTerms().size(),
+                    block->getNets().size());
+  std::ranges::stable_sort(insts_by_name, [](const auto& a, const auto& b) {
+    return a.first < b.first;
+  });
 
-  for (dbInst* inst : insts) {
+  for (const auto& [inst_name, inst] : insts_by_name) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
