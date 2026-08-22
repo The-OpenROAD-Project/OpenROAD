@@ -87,6 +87,7 @@ or_integration_tests(
     repair_hold13
     repair_hold14
     repair_hold15
+    repair_hold_clock_as_data
     repair_hold_multi_output_load
     repair_setup_buffer_legacy_basic
     repair_setup_clone_legacy_flat
