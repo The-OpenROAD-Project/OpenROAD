@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "boost/container_hash/hash.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db/drObj/drFig.h"
 #include "db/drObj/drNet.h"
@@ -731,19 +730,12 @@ namespace {
 // re-running poly_set.get() (a full boost::polygon scanline reconstruction)
 // for every corner. Behaviour is identical to calling isPolygonCorner() per
 // corner: a point is a polygon corner iff it equals some boundary/hole vertex.
-void collectPolygonCorners(
-    const gtl::polygon_90_set_data<frCoord>& poly_set,
-    std::unordered_set<std::pair<frCoord, frCoord>,
-                       boost::hash<std::pair<frCoord, frCoord>>>& corners)
+void collectPolygonCorners(const gtl::polygon_90_set_data<frCoord>& poly_set,
+                           std::unordered_set<odb::Point>& corners)
 {
-  // Reuse a per-thread scratch buffer across calls instead of allocating a
-  // fresh vector each time. boost::polygon's get() appends to the output
-  // container, so we must clear() first; the buffer is then fully overwritten
-  // on every call, so no stale state leaks between calls (bit-identical).
-  // FlexGC runs one worker per thread, so thread_local keeps per-worker
-  // correctness.
-  thread_local std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
-  polygons.clear();
+  // Called at most once per (net, layer) because the caller caches the result,
+  // so a plain local buffer is fine here.
+  std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
   poly_set.get(polygons);
   for (const auto& polygon : polygons) {
     for (const auto& pt : polygon) {
@@ -758,19 +750,16 @@ void collectPolygonCorners(
   }
 }
 }  // namespace
-void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
-                                                            gcPin* pin)
+void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(
+    gcNet* net,
+    gcPin* pin,
+    std::map<frLayerNum, std::unordered_set<odb::Point>>& fixed_corner_cache)
 {
   // For metal layers, isPolygonCorner() membership is tested once per corner
   // against the net's fixed polygon set on the corner's layer. Materializing
-  // that set (poly_set.get()) per corner is the dominant GC-init cost, so
-  // precompute the fixed-polygon vertex set per layer once and reuse it. The
-  // map is keyed by layerNum and populated lazily; for a single pin all edge
-  // groups share the pin's layer, so this is at most one materialization.
-  std::map<frLayerNum,
-           std::unordered_set<std::pair<frCoord, frCoord>,
-                              boost::hash<std::pair<frCoord, frCoord>>>>
-      fixedCornerCache;
+  // that set (poly_set.get()) per corner is the dominant GC-init cost, so the
+  // caller keeps a per-layer cache of that vertex set, shared across the net's
+  // pins, and we populate it lazily here.
   for (auto& edges : pin->getPolygonEdges()) {
     std::vector<std::unique_ptr<gcCorner>> tmpCorners;
     auto prevEdge = edges.back().get();
@@ -843,11 +832,9 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
         }
 
       } else {
-        auto it = fixedCornerCache.find(layerNum);
-        if (it == fixedCornerCache.end()) {
-          it = fixedCornerCache
-                   .emplace(layerNum,
-                            decltype(fixedCornerCache)::mapped_type())
+        auto it = fixed_corner_cache.find(layerNum);
+        if (it == fixed_corner_cache.end()) {
+          it = fixed_corner_cache.emplace(layerNum, std::unordered_set<odb::Point>())
                    .first;
           collectPolygonCorners(net->getPolygons(true)[layerNum], it->second);
         }
@@ -874,10 +861,13 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
 
 void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
 {
+  // Materialized fixed-polygon vertex set per layer, shared across this net's
+  // pins so poly_set.get() runs at most once per layer instead of per corner.
+  std::map<frLayerNum, std::unordered_set<odb::Point>> fixed_corner_cache;
   int numLayers = getTech()->getLayers().size();
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
-      initNet_pins_polygonCorners_helper(net, pin.get());
+      initNet_pins_polygonCorners_helper(net, pin.get(), fixed_corner_cache);
     }
   }
 }
