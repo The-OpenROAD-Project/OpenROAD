@@ -87,6 +87,59 @@ technology exists in the database.
       design.writedb("reg1.db")
 ````
 
+## ECO (Engineering Change Order) capture and replay
+
+OpenROAD's database records netlist edits in a journal so that a set of
+targeted changes can be captured and replayed as an ECO, instead of re-running
+the whole flow for design closure. The commands below expose this journal:
+
+````{eval-rst}
+.. tabs::
+
+   .. code-tab:: tcl
+
+      begin_eco                  # start recording netlist edits on the current block
+      write_eco filename         # write the recorded edits to an ECO file
+      read_eco filename          # replay an ECO file onto the current block
+````
+
+A typical incremental timing-closure loop is to snapshot a placed (and ideally
+routed) design, apply targeted fixes, and persist just the delta:
+
+````{eval-rst}
+.. tabs::
+
+   .. code-tab:: tcl
+
+      read_lef Nangate45/Nangate45.lef
+      read_def placed.def
+      create_clock -period 0.3 clk
+      set_wire_rc -layer metal3
+      estimate_parasitics -placement
+
+      begin_eco                  # start recording
+      repair_timing -setup       # targeted fix (records cell resizes, buffer edits, ...)
+      write_eco fix.eco          # persist the delta
+````
+
+The persisted ECO can later be replayed on the original, unmodified netlist to
+reproduce the fixed design without re-optimizing:
+
+````{eval-rst}
+.. tabs::
+
+   .. code-tab:: tcl
+
+      read_lef Nangate45/Nangate45.lef
+      read_def placed.def        # the original, pre-fix netlist
+      read_eco fix.eco           # replay -> matches the fixed design
+````
+
+`read_eco` requires a database that is an exact copy of the one in which the
+ECO was recorded, prior to the recorded edits. `write_eco` captures the journal
+that is currently open (started by `begin_eco`); issue it before closing the
+ECO.
+
 The `read_verilog` command is used to build an OpenDB database as shown
 below. Multiple Verilog files for a hierarchical design can be read.
 The `link_design` command is used to flatten the design and make a database.
