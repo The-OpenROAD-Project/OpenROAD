@@ -24,6 +24,7 @@ class dbMaster;
 namespace sta {
 class dbNetwork;
 class LibertyPort;
+class dbSta;
 }  // namespace sta
 
 namespace utl {
@@ -92,7 +93,8 @@ class RamGen
          ppl::IOPlacer* io_placer,
          dpl::Opendp* opendp,
          grt::GlobalRouter* global_router,
-         drt::TritonRoute* detailed_router);
+         drt::TritonRoute* detailed_router,
+         sta::dbSta* sta);
   ~RamGen() = default;
 
   void generate(int mask_size,
@@ -131,6 +133,8 @@ class RamGen
                               int rw_ports,
                               int r_ports,
                               int w_ports);
+
+  void reportTimingAndPower();
 
  private:
   void findMasters();
@@ -221,6 +225,7 @@ class RamGen
   dpl::Opendp* opendp_{nullptr};
   grt::GlobalRouter* global_router_{nullptr};
   drt::TritonRoute* detailed_router_{nullptr};
+  sta::dbSta* sta_{nullptr};
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};
@@ -245,6 +250,7 @@ class RamGen
 
   std::vector<std::vector<odb::dbBTerm*>> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
+  std::vector<odb::dbBTerm*> write_enable_;
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
   std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
