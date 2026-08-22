@@ -10,7 +10,7 @@
 // of the Qt right-click menu, which only exposes colors under "All buffer
 // trees" and wires just 4 of them.
 
-import { applySelectionFlags } from './ui-utils.js';
+import { applySelectionFlags, showToast } from './ui-utils.js';
 
 // Mirrors gui::Painter::kHighlightColors in the backend (index == group).
 const HIGHLIGHT_COLORS = [
@@ -217,28 +217,53 @@ export class ContextMenu {
                 // was selected (Connected Insts wants a net; the others want an
                 // instance).
                 if (resp && resp.connected_count === 0) {
-                    this._toast('Nothing connected — select an '
-                                + 'instance (or a net for "Connected Insts") first.');
+                    showToast('Nothing connected — select an '
+                              + 'instance (or a net for "Connected Insts") first.');
                 }
-                if (typeof this._app.redrawAllLayers === 'function') {
-                    this._app.redrawAllLayers();
-                }
+                this._syncAfterAction(action);
             })
             .catch((err) => {
                 console.error('Context action failed:', action, err);
             });
     }
 
-    // Minimal transient message shown near the top of the map container.
-    _toast(msg) {
-        const host = (this._app.map && this._app.map.getContainer)
-            ? this._app.map.getContainer()
-            : document.body;
-        const el = document.createElement('div');
-        el.className = 'cm-toast';
-        el.textContent = msg;
-        host.appendChild(el);
-        setTimeout(() => { el.classList.add('cm-toast-hide'); }, 1800);
-        setTimeout(() => { el.remove(); }, 2200);
+    // Bring the client back in step with the selection/highlight state the
+    // action just changed server-side.
+    //
+    // redrawAllLayers is not enough on its own: focus nets and route guides
+    // feed the BASE tiles, so clearing them needs the full redraw, but that
+    // path calls the bare overlay refresh.  The Selection Highlight panel and
+    // the Inspector are driven by app.refreshOverlay / app.refreshInspector —
+    // the same hooks the menu bar's "Clear Highlights" and the panel's own
+    // toolbar use — so without them the panel keeps listing objects the
+    // server no longer has selected or highlighted.
+    _syncAfterAction(action) {
+        const app = this._app;
+        // Base tiles only carry focus nets and route guides; every other
+        // action lives entirely in the overlay.
+        if ((action === 'clear_focus_nets' || action === 'clear_route_guides'
+             || action === 'clear_all')
+            && typeof app.redrawAllLayers === 'function') {
+            app.redrawAllLayers();
+        }
+        // The selection itself is gone: reset the client-side pieces of it
+        // the server cannot clear for us (mirrors the selection_invalidated
+        // push handler in main.js).
+        if (action === 'clear_selections' || action === 'clear_all') {
+            app.updateInspector?.(null);
+            app.stopSelectionAnimation?.();
+            if (app.highlightRect && app.map) {
+                app.map.removeLayer(app.highlightRect);
+                app.highlightRect = null;
+            }
+            app.lastSelectionBounds = null;
+        } else {
+            // Selection count/index and the highlight-group badge changed.
+            app.refreshInspector?.();
+        }
+        // Refreshes the overlay tiles AND schedules the Selection Highlight
+        // panel refresh; must run last so it sees the cleanup above.
+        app.refreshOverlay?.();
     }
+
 }

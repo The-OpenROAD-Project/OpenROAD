@@ -145,3 +145,92 @@ describe('ContextMenu Clear submenu', () => {
         assert.deepEqual(cleared, ['rulers']);
     });
 });
+
+// app.refreshOverlay is the hook that also refreshes the Selection Highlight
+// panel (main.js pairs it with selectionBrowser.scheduleRefresh).  Calling
+// only redrawAllLayers leaves the panel listing objects the server has
+// already dropped, so every context action has to go through it.
+describe('ContextMenu refreshes the panels after a server action', () => {
+    function appWithHooks(overrides = {}) {
+        const hooks = [];
+        const { app } = makeApp({
+            websocketManager: { request() { return Promise.resolve({}); } },
+            rulerManager: { clearAllRulers() {} },
+            refreshOverlay: () => hooks.push('refreshOverlay'),
+            refreshInspector: () => hooks.push('refreshInspector'),
+            redrawAllLayers: () => hooks.push('redrawAllLayers'),
+            updateInspector: (d) => hooks.push(['updateInspector', d]),
+            stopSelectionAnimation: () => hooks.push('stopSelectionAnimation'),
+            ...overrides,
+        });
+        return { app, hooks };
+    }
+
+    // The action's promise resolves on a microtask, so let it drain.
+    const settle = () => new Promise((r) => setTimeout(r, 0));
+
+    it('Highlights refreshes the overlay hook and the inspector badge',
+       async () => {
+        const { app, hooks } = appWithHooks();
+        openMenu(app);
+        clickItem('Highlights');
+        await settle();
+        assert.ok(hooks.includes('refreshOverlay'), 'panel refresh hook ran');
+        assert.ok(hooks.includes('refreshInspector'), 'badge refreshed');
+    });
+
+    it('Selections resets the inspector and drops the client-side outline',
+       async () => {
+        const removed = [];
+        const { app, hooks } = appWithHooks();
+        app.highlightRect = {};
+        app.map.removeLayer = (l) => removed.push(l);
+        openMenu(app);
+        clickItem('Selections');
+        await settle();
+        assert.deepEqual(hooks.filter((h) => Array.isArray(h)),
+                         [['updateInspector', null]]);
+        assert.ok(hooks.includes('stopSelectionAnimation'));
+        assert.ok(hooks.includes('refreshOverlay'));
+        assert.equal(removed.length, 1, 'selection outline removed');
+        assert.equal(app.highlightRect, null);
+        assert.equal(app.lastSelectionBounds, null);
+    });
+
+    it('Focus nets redraws the base tiles it feeds', async () => {
+        const { app, hooks } = appWithHooks();
+        openMenu(app);
+        clickItem('Focus nets');
+        await settle();
+        assert.ok(hooks.includes('redrawAllLayers'), 'base tiles redrawn');
+        assert.ok(hooks.includes('refreshOverlay'));
+    });
+
+    it('Select → Output Nets refreshes the panel too', async () => {
+        const { app, hooks } = appWithHooks();
+        openMenu(app);
+        clickItem('Output Nets');
+        await settle();
+        assert.ok(hooks.includes('refreshOverlay'), 'panel refresh hook ran');
+        // A pure overlay change must not pay for a full base-tile redraw.
+        assert.ok(!hooks.includes('redrawAllLayers'));
+    });
+
+    // Goes through ui-utils showToast (#or-toast), the one transient-notice
+    // implementation shared with the Inspector — not a menu-local copy.
+    it('an action that found nothing says so in the shared toast',
+       async () => {
+        const { app } = appWithHooks({
+            websocketManager: {
+                request() { return Promise.resolve({ connected_count: 0 }); },
+            },
+        });
+        openMenu(app);
+        clickItem('Output Nets');
+        await settle();
+        const toast = document.getElementById('or-toast');
+        assert.ok(toast, 'shared toast element should exist');
+        assert.ok(toast.classList.contains('visible'));
+        assert.ok(toast.textContent.includes('Nothing connected'));
+    });
+});

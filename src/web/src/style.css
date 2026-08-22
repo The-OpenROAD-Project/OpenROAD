@@ -924,28 +924,6 @@ html, body {
     vertical-align: middle;
     flex-shrink: 0;
 }
-.cm-toast {
-    position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10001;
-    max-width: 80%;
-    padding: 6px 12px;
-    background: var(--bg-context);
-    border: 1px solid var(--border-strong);
-    border-radius: 4px;
-    box-shadow: 0 2px 8px var(--shadow);
-    color: var(--fg-bright);
-    font-size: 12px;
-    pointer-events: none;
-    opacity: 1;
-    transition: opacity 0.3s ease;
-}
-.cm-toast-hide {
-    opacity: 0;
-}
-
 /* Tcl Console */
 .tcl-console {
     display: flex;
