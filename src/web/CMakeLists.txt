@@ -41,6 +41,7 @@ set(WEB_ASSET_FILES
     src/timing-widget.js
     src/drc-widget.js
     src/3d-viewer-widget.js
+    src/selection-browser.js
     src/main.js
 )
 
@@ -81,6 +82,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/selection-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py
