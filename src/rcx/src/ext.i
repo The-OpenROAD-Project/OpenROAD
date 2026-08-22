@@ -121,11 +121,19 @@ extract(const char* ext_model_file,
   opts._dbg= dbg;
 
   odb::dbChip* top_chip = ord::getOpenRoad()->getDb()->getChip();
+
   if (!top_chip) {
     getLogger()->error(utl::RCX, 517, "No design is loaded.");
   }
 
   if (top_chip->getChipType() == odb::dbChip::ChipType::HIER) {
+    if (opts._v2) {
+      getLogger()->error(utl::RCX,
+                         515,
+                         "Multi-chip (3D) parasitic extraction supports only the v1 "
+                         "RC flow; the v2 flow (-version >= 2.0) is not supported.");
+    }
+
     ext->extractMultiChip(opts);
     return;
   }
@@ -148,7 +156,7 @@ write_spef(const char* file,
   opts.nets = nets;
   opts.net_id = net_id;
   opts.coordinates= coordinates;
-  if (coordinates) {  
+  if (coordinates) {
     opts.N = "Y";
   }
 

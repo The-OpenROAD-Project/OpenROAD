@@ -53,6 +53,7 @@ add_library(rcx_lib
   find_some_net.cpp
   multiChipExtractor.cpp
   multiChipSpefWriter.cpp
+  interChipModel.cpp
 )
 
 target_include_directories(rcx_lib
