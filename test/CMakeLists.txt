@@ -1,6 +1,7 @@
 or_integration_tests(
   "openroad"
   TESTS
+    cmd_log_trace
     error1
     get_core_die_areas
     ord_tclsh_completion
