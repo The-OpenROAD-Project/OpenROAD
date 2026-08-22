@@ -115,6 +115,32 @@ gtest_discover_tests(TestSnap
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+add_executable(TestWebAssets TestWebAssets.cpp)
+
+target_link_libraries(TestWebAssets ${TEST_LIBS})
+
+target_include_directories(TestWebAssets
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestWebAssets
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_executable(TestCssInliner TestCssInliner.cpp)
+
+target_link_libraries(TestCssInliner ${TEST_LIBS})
+
+target_include_directories(TestCssInliner
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestCssInliner
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 add_dependencies(build_and_test
   TestTileGenerator
   TestRequestHandler
@@ -124,4 +150,6 @@ add_dependencies(build_and_test
   TestClockTreeReport
   TestSaveImage
   TestSnap
+  TestWebAssets
+  TestCssInliner
 )
