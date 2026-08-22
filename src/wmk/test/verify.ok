@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO WMK-0033] Placement claim _284_|_285_: bit=1 want=0.
+[INFO WMK-0034] Placement watermark: 4 / 5 claims hold (r_P=0.8000).
+[INFO WMK-0045] Ownership evidence holds in 1 of 1 stage(s) checked.
+verdict 1
+[INFO WMK-0033] Placement claim _284_|_285_: bit=1 want=0.
+[INFO WMK-0034] Placement watermark: 4 / 5 claims hold (r_P=0.8000).
+[WARNING WMK-0043] Stage placement below threshold: 0.8000 < 0.9000.
+[INFO WMK-0046] Ownership evidence does not hold: 0 of 1 stage(s) passed, 1 required.
+strict verdict 0
+[ERROR WMK-0100] Placement claim _276_|_277_: target_bit is "", not 0 or 1.
+refused: WMK-0100

@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 734 components and 2762 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1468 connections.
+[INFO ODB-0133]     Created 497 nets and 1294 connections.
+[INFO WMK-0084] Routing watermark: 142 marked of 457 routed signal nets, mean q_R 0.135879 vs 0.161305, T_R = -0.025426.
+[INFO WMK-0085] Routing watermark: p = 1.48e-01 over 100000 draws, closed-form tail <= 1e0.0 (165 nets carry no wrong-way metal).
+[WARNING WMK-0047] Routing shows no watermark: p = 1.48e-01 > 1.00e-04.
+[INFO WMK-0046] Ownership evidence does not hold: 0 of 1 stage(s) passed, 1 required.
+[INFO WMK-0084] Routing watermark: 147 marked of 457 routed signal nets, mean q_R 0.183892 vs 0.138948, T_R = 0.044943.
+[INFO WMK-0085] Routing watermark: p = 9.66e-01 over 100000 draws, closed-form tail <= 1e0.0 (165 nets carry no wrong-way metal).
+[WARNING WMK-0047] Routing shows no watermark: p = 9.66e-01 > 1.00e-04.
+[INFO WMK-0046] Ownership evidence does not hold: 0 of 1 stage(s) passed, 1 required.
+Summary 2 / 2 (100% pass)
+pass
