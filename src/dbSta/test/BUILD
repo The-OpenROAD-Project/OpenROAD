@@ -32,6 +32,7 @@ ALL_TESTS = [
     "3dic_cross",
     "3dic_get_cells",
     "3dic_read_db",
+    "3dic_spef",
     "block_sta1",
     "check_axioms",
     "clock_pin",
@@ -125,6 +126,20 @@ filegroup(
     ],
 )
 
+# The two-chiplet 3DIC fixture, shared by every test that reads 3dic_cross.3dbx.
+# 3dic_cross itself omits the .3dbx because its own test_name + ".*" glob
+# already picks it up.
+_3DIC_CROSS_FIXTURES = [
+    "//src/odb/test:regression_resources",
+    "3dic_cross.3dbx",
+    "3dic_cross_flop.3dbv",
+    "3dic_cross_flop_a.bmap",
+    "3dic_cross_flop_a.def",
+    "3dic_cross_flop_b.bmap",
+    "3dic_cross_flop_b.def",
+    "3dic_cross_top.v",
+]
+
 [
     filegroup(
         name = test_name + "_resources",
@@ -145,16 +160,8 @@ filegroup(
             "3dic_get_cells": [
                 "//src/odb/test:regression_resources",
             ],
-            "3dic_read_db": [
-                "//src/odb/test:regression_resources",
-                "3dic_cross.3dbx",
-                "3dic_cross_flop.3dbv",
-                "3dic_cross_flop_a.bmap",
-                "3dic_cross_flop_a.def",
-                "3dic_cross_flop_b.bmap",
-                "3dic_cross_flop_b.def",
-                "3dic_cross_top.v",
-            ],
+            "3dic_read_db": _3DIC_CROSS_FIXTURES,
+            "3dic_spef": _3DIC_CROSS_FIXTURES,
             "block_sta1": [
                 "example1_typ.lib",
                 "example1.def",

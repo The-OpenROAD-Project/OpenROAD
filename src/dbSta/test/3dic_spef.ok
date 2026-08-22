@@ -1,0 +1,45 @@
+[INFO ODB-0227] LEF file: ../../odb/test/Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: ../../odb/test/Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: ../../odb/test/Nangate45/fake_bumps.lef, created 1 library cells
+[INFO ODB-0128] Design: flop_chip_a
+[INFO ODB-0252]     Updated 3 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0133]     Created 5 nets and 7 connections.
+[WARNING STA-1140] ../../odb/test/Nangate45/Nangate45_typ.lib line 37, library NangateOpenCellLibrary already exists.
+[INFO ODB-0128] Design: flop_chip_b
+[INFO ODB-0252]     Updated 3 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0133]     Created 5 nets and 7 connections.
+Found 11 unannotated drivers.
+Found 0 partially unannotated drivers.
+Startpoint: chipA/ff (rising edge-triggered flip-flop clocked by clk)
+Endpoint: chipB/ff (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Cap   Delay    Time   Description
+----------------------------------------------------------------
+           0.00    0.00   clock clk (rise edge)
+           0.00    0.00   clock network delay (ideal)
+           0.00    0.00 ^ chipA/ff/CK (DFF_X1)
+   1.55    0.08    0.08 v chipA/ff/Q (DFF_X1)
+   0.97    0.01    0.09 ^ chipA/inv/ZN (INV_X1)
+ 102.97    0.08    0.17 ^ chipA/buf/Z (BUF_X1)
+   1.70    0.24    0.41 ^ chipB/buf/Z (BUF_X1)
+   1.06    0.01    0.41 v chipB/inv/ZN (INV_X1)
+           0.00    0.41 v chipB/ff/D (DFF_X1)
+                   0.41   data arrival time
+
+           1.00    1.00   clock clk (rise edge)
+           0.00    1.00   clock network delay (ideal)
+           0.00    1.00   clock reconvergence pessimism
+                   1.00 ^ chipB/ff/CK (DFF_X1)
+          -0.04    0.96   library setup time
+                   0.96   data required time
+----------------------------------------------------------------
+                   0.96   data required time
+                  -0.41   data arrival time
+----------------------------------------------------------------
+                   0.55   slack (MET)
+
+

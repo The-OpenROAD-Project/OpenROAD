@@ -1,0 +1,27 @@
+// chipA side of the bond net: driver out to the bump pad.
+*SPEF "IEEE 1481-1999"
+*DESIGN "flop_chip_a"
+*DATE "Tue Aug 19 00:00:00 2026"
+*VENDOR "The OpenROAD Project"
+*PROGRAM "OpenROAD"
+*VERSION "test"
+*DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER []
+*T_UNIT 1 NS
+*C_UNIT 1 FF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*D_NET q 2
+*CONN
+*I buf:Z O
+*I bump_q:PAD I
+*CAP
+1 q:1 1
+2 bump_q:PAD 1
+*RES
+1 buf:Z q:1 10
+2 q:1 bump_q:PAD 10
+*END
