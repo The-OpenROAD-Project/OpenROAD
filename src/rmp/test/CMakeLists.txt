@@ -11,6 +11,9 @@ or_integration_tests(
     blif_writer_input_output
     blif_writer_sequential
     const_cell_removal
+    emap_aes_asap7
+    emap_gcd_asap7
+    emap_jpeg_sky130hd
     gcd_restructure
     aes_asap7
     gcd_asap7

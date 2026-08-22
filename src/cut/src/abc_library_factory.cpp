@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright (c) 2024-2026, The OpenROAD Authors
 
 #include "cut/abc_library_factory.h"
 
@@ -8,11 +8,13 @@
 #include <cmath>
 #include <cstring>
 #include <optional>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "cut/utils.h"
 #include "db_sta/dbSta.hh"
 #include "misc/util/abc_global.h"
 #include "misc/vec/vecFlt.h"
@@ -70,16 +72,6 @@ abc::Mio_Library_t* AbcLibrary::mio_library()
         [](abc::Mio_Library_t* lib) { abc::Mio_LibraryDelete(lib); });
   }
   return mio_library_.release();
-}
-
-static bool IsCombinational(sta::LibertyCell* cell)
-{
-  if (!cell) {
-    return false;
-  }
-  return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->isSequential() && !cell->isLevelShifter()
-          && !cell->isIsolationCell() && !cell->isMemory());
 }
 
 static int CountOutputPins(sta::LibertyCell* cell)
@@ -369,25 +361,25 @@ AbcLibraryFactory& AbcLibraryFactory::AddResizer(rsz::Resizer* resizer)
   return *this;
 }
 
-AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Scene* corner)
+AbcLibraryFactory& AbcLibraryFactory::SetScene(sta::Scene* scene)
 {
-  corner_ = corner;
+  scene_ = scene;
   return *this;
 }
 
-AbcLibrary AbcLibraryFactory::Build()
+utl::UniquePtrWithDeleter<abc::SC_Lib> AbcLibraryFactory::BuildScl()
 {
   if (!db_sta_) {
     logger_->error(utl::CUT, 19, "Build called with null sta library");
   }
 
-  if (db_sta_->scenes().size() > 1 && !corner_) {
+  if (db_sta_->scenes().size() > 1 && !scene_) {
     logger_->error(
-        utl::CUT, 20, "More than one corner is loaded, and no corner was set");
+        utl::CUT, 20, "More than one scene is loaded, and no scene was set");
   }
 
-  if (!corner_) {
-    corner_ = db_sta_->scenes()[0];
+  if (!scene_) {
+    scene_ = db_sta_->scenes()[0];
   }
 
   // Populate units from default liberty
@@ -396,9 +388,9 @@ AbcLibrary AbcLibraryFactory::Build()
       = db_sta_->network()->defaultLibertyLibrary();
   PopulateLibraryDetails(abc_library, default_library);
 
-  // Grab cells from requested corner.
+  // Grab cells from requested scene.
   std::vector<sta::LibertyCell*> liberty_cells
-      = GetLibertyCellsFromCorner(corner_);
+      = GetLibertyCellsFromScene(scene_);
 
   PopulateAbcSclLibFromSta(
       abc_library, liberty_cells, default_library->units());
@@ -407,18 +399,21 @@ AbcLibrary AbcLibraryFactory::Build()
   abc::Abc_SclHashCells(abc_library);
   abc::Abc_SclLinkCells(abc_library);
 
-  return AbcLibrary(
-      utl::UniquePtrWithDeleter<abc::SC_Lib>(
-          abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }),
-      logger_);
+  return utl::UniquePtrWithDeleter<abc::SC_Lib>(
+      abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); });
 }
 
-std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromCorner(
-    sta::Scene* corner)
+AbcLibrary AbcLibraryFactory::Build()
+{
+  return AbcLibrary(BuildScl(), logger_);
+}
+
+std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromScene(
+    sta::Scene* scene)
 {
   std::vector<sta::LibertyCell*> result;
   const sta::LibertySeq& libraries
-      = corner->libertyLibraries(sta::MinMax::max());
+      = scene->libertyLibraries(sta::MinMax::max());
   for (sta::LibertyLibrary* library : libraries) {
     sta::LibertyCellIterator cell_iterator(library);
     while (cell_iterator.hasNext()) {
@@ -596,6 +591,21 @@ bool AbcLibrary::IsSupportedCell(const std::string& cell_name)
     }
   }
   return supported_cells_.find(cell_name) != supported_cells_.end();
+}
+
+const std::set<std::string>& AbcLibrary::SupportedCells()
+{
+  if (supported_cells_.empty()) {
+    int num_gates = abc::SC_LibCellNum(abc_library_.get());
+    for (int i = 0; i < num_gates; i++) {
+      abc::SC_Cell* cell = abc::SC_LibCell(abc_library_.get(), i);
+      if (cell->n_outputs != 1) {
+        continue;
+      }
+      supported_cells_.insert(cell->pName);
+    }
+  }
+  return supported_cells_;
 }
 
 void AbcLibrary::InitializeConstGates()
