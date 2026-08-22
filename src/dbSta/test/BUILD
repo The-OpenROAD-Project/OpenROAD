@@ -95,6 +95,7 @@ ALL_TESTS = [
     "sta_to_db1_hier",
     "write_sdc1",
     "write_verilog1",
+    "write_verilog10",
     "write_verilog2",
     "write_verilog3",
     "write_verilog4",
@@ -320,6 +321,9 @@ filegroup(
             ],
             "write_verilog1": [
                 "reg1.def",
+            ],
+            "write_verilog10": [
+                "write_verilog10.def",
             ],
             "write_verilog2": [
                 "reg4.def",
