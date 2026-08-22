@@ -9,21 +9,92 @@
 #include <cstdint>
 #include <cstdlib>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 
 namespace sta {
 
-IpChecker::IpChecker(odb::dbDatabase* db, utl::Logger* logger)
-    : db_(db), logger_(logger)
+namespace {
+
+enum class PinDirection
+{
+  input,
+  output,
+  inout,
+};
+
+bool getLefPinDirection(odb::dbMTerm* mterm, PinDirection& direction)
+{
+  switch (mterm->getIoType().getValue()) {
+    case odb::dbIoType::INPUT:
+      direction = PinDirection::input;
+      return true;
+    case odb::dbIoType::OUTPUT:
+      direction = PinDirection::output;
+      return true;
+    case odb::dbIoType::INOUT:
+      direction = PinDirection::inout;
+      return true;
+    case odb::dbIoType::FEEDTHRU:
+      return false;
+  }
+  return false;
+}
+
+bool getLibertyPinDirection(LibertyPort* port, PinDirection& direction)
+{
+  PortDirection* port_direction = port->direction();
+  if (port_direction == nullptr || port_direction->isUnknown()
+      || port_direction->isPowerGround() || port_direction->isInternal()) {
+    return false;
+  }
+
+  if (port_direction->isInput()) {
+    direction = PinDirection::input;
+    return true;
+  }
+  if (port_direction->isOutput() || port_direction->isTristate()) {
+    direction = PinDirection::output;
+    return true;
+  }
+  if (port_direction->isBidirect()) {
+    direction = PinDirection::inout;
+    return true;
+  }
+
+  return false;
+}
+
+const char* directionName(PinDirection direction)
+{
+  switch (direction) {
+    case PinDirection::input:
+      return "input";
+    case PinDirection::output:
+      return "output";
+    case PinDirection::inout:
+      return "inout";
+  }
+  return "unknown";
+}
+
+}  // namespace
+
+IpChecker::IpChecker(odb::dbDatabase* db, dbSta* sta, utl::Logger* logger)
+    : db_(db), sta_(sta), logger_(logger)
 {
 }
 
@@ -121,6 +192,7 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
   checkPinGeometryPresence(master);            // LEF-CHK-009
   checkPinMinDimensions(master);               // LEF-CHK-010a
   checkPinMinArea(master);                     // LEF-CHK-010b
+  checkLibertyPins(master);                    // LEF/LIB-CHK-011-012
 }
 
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
@@ -689,6 +761,74 @@ void IpChecker::checkPinMinArea(odb::dbMaster* master)
           warning_count_++;
         }
       }
+    }
+  }
+}
+
+// LEF/LIB-CHK-011-012: Check Liberty pin presence and direction.
+void IpChecker::checkLibertyPins(odb::dbMaster* master)
+{
+  if (sta_ == nullptr) {
+    return;
+  }
+
+  dbNetwork* network = sta_->getDbNetwork();
+  if (network == nullptr) {
+    return;
+  }
+
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{
+      network->libertyLibraryIterator()};
+  if (!lib_iter->hasNext()) {
+    return;
+  }
+
+  const std::string master_name = master->getName();
+  LibertyCell* liberty_cell = network->findLibertyCell(master_name);
+  if (liberty_cell == nullptr) {
+    logger_->warn(
+        utl::CHK, 120, "LEF macro {} missing Liberty cell", master_name);
+    warning_count_++;
+    return;
+  }
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    LibertyPort* liberty_port = liberty_cell->findLibertyPort(mterm->getName());
+    if (liberty_port == nullptr) {
+      logger_->warn(utl::CHK,
+                    121,
+                    "Pin {}/{} missing from Liberty cell {}",
+                    master_name,
+                    mterm->getName(),
+                    liberty_cell->name());
+      warning_count_++;
+      continue;
+    }
+
+    PinDirection lef_direction;
+    if (!getLefPinDirection(mterm, lef_direction)) {
+      continue;
+    }
+
+    PinDirection liberty_direction;
+    if (!getLibertyPinDirection(liberty_port, liberty_direction)) {
+      continue;
+    }
+
+    if (lef_direction != liberty_direction) {
+      logger_->warn(utl::CHK,
+                    111,
+                    "Pin {}/{} direction mismatch between LEF ({}) and "
+                    "Liberty ({})",
+                    master_name,
+                    mterm->getName(),
+                    directionName(lef_direction),
+                    directionName(liberty_direction));
+      warning_count_++;
     }
   }
 }
