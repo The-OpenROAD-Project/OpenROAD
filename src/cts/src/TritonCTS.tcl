@@ -397,6 +397,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-balance_levels] \
                                              [-sink_clustering_levels levels] \
                                              [-num_static_layers] \
+                                             [-num_max_leaf_sinks sinks] \
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
                                              [-no_obstruction_aware] \
@@ -413,6 +414,7 @@ proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
     keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size \
           -num_static_layers -sink_clustering_buffer \
+          -num_max_leaf_sinks \
           -distance_between_buffers -branching_point_buffers_distance \
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
@@ -469,6 +471,14 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-num_static_layers)] } {
     set num $keys(-num_static_layers)
     cts::set_num_static_layers $num
+  }
+
+  if { [info exists keys(-num_max_leaf_sinks)] } {
+    set num_max_leaf_sinks $keys(-num_max_leaf_sinks)
+    if { ![string is integer -strict $num_max_leaf_sinks] || $num_max_leaf_sinks < 1 } {
+      utl::error CTS 252 "-num_max_leaf_sinks must be a positive integer."
+    }
+    cts::set_num_max_leaf_sinks $num_max_leaf_sinks
   }
 
   if { [info exists keys(-distance_between_buffers)] } {
@@ -602,6 +612,18 @@ proc report_cts { args } {
   }
 
   cts::report_cts_metrics
+}
+
+sta::define_cmd_args "report_clock_tree" {[-power]}
+
+proc report_clock_tree { args } {
+  sta::parse_key_args "report_clock_tree" args \
+    keys {} flags {-power}
+
+  sta::check_argc_eq0 "report_clock_tree" $args
+
+  set report_power [info exists flags(-power)]
+  cts::report_clock_tree $report_power
 }
 
 namespace eval cts {
