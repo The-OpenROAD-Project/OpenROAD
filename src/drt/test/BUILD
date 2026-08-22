@@ -156,6 +156,33 @@ py_library(
 ]
 
 test_suite(
+    name = "region_query_test",
+    tests = [":fr_region_query_unittest"],
+)
+
+cc_test(
+    name = "fr_region_query_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "frRegionQueryTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//src/drt",  # buildcleaner: keep
+        "//src/drt:base_types",
+        "//src/drt:db_hdrs",
+        "//src/drt:drt_private_hdrs",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
     name = "gc_test",
     tests = [":gc_unittest"],
 )
