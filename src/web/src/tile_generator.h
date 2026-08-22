@@ -109,6 +109,16 @@ struct TileFrame
   double pxY(double dbu) const { return (dbu - origin_y) * scale; }
 };
 
+// How many "color by owner" overlays exist — see colorOverlayLayers().
+inline constexpr size_t kNumColorOverlays = 2;
+
+// Per-instance color overrides for the "color by owner" overlays, indexed by
+// ColorOverlaySpec::index.  A null slot means that overlay paints nothing.
+struct InstColorOverlay
+{
+  std::array<const std::map<uint32_t, Color>*, kNumColorOverlays> colors{};
+};
+
 struct SelectionResult
 {
   std::any object;  // dbInst*, dbNet*, etc.
@@ -280,6 +290,11 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // "Color by owner" overlays.  Plain visibility flags: the client keeps the
+  // `_modules`/`_clusters` layers mounted and these decide whether they draw.
+  bool module_view = false;   // color instances by their dbModule
+  bool cluster_view = false;  // color instances by their dbGroup
+
   // Debug
   bool debug = false;
 
@@ -378,6 +393,38 @@ struct TileVisibility
   bool isSiteSelectable(const std::string& site_name) const;
   bool isLayerSelectable(const std::string& layer_name) const;
 };
+
+// The synthetic layers that paint each instance in the color of its owner.  One
+// table, so the renderer, handleTile (which must keep such a tile out of the
+// tile cache) and the headless save paths cannot disagree.  Adding an overlay
+// is one row here plus one array slot.
+struct ColorOverlaySpec
+{
+  const char* layer;           // synthetic layer name
+  bool TileVisibility::*flag;  // gating visibility flag
+  // Slot in InstColorOverlay::colors and SessionState::owner_colors, kept in
+  // the row so the session side stays a plain array.
+  size_t index;
+  // Owner id of `inst` for this overlay, or 0 when it has no owner.
+  uint32_t (*owner_id)(odb::dbInst* inst);
+  // Colors for the headless save paths, which have no session: the same
+  // defaults the panel starts with.
+  std::map<uint32_t, Color> (*default_colors)(odb::dbBlock* block,
+                                              sta::dbSta* sta);
+  // Request keys only this layer's rendering depends on; the tile cache key
+  // drops them for every other layer.  Unused slots are null.
+  std::array<const char*, 2> keys;
+  // Where the layer sits in the stack, so saveImageLayerOrder composites it in
+  // the order the viewer draws it.  Same scale as PseudoLayerDef::z_index; the
+  // client's numbers differ (it derives them from the pane count), the relative
+  // order does not.
+  int z_index;
+};
+
+// Table of the color-overlay layers, and the lookup its callers use.
+// Returns nullptr when `layer` is not one of them.
+const std::array<ColorOverlaySpec, kNumColorOverlays>& colorOverlayLayers();
+const ColorOverlaySpec* findColorOverlay(std::string_view layer);
 
 class TileGenerator
 {
@@ -495,7 +542,7 @@ class TileGenerator
       const std::vector<odb::Polygon>& highlight_polys = {},
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
-      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const InstColorOverlay* inst_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -609,7 +656,7 @@ class TileGenerator
       const std::vector<odb::Polygon>& highlight_polys = {},
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
-      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const InstColorOverlay* inst_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,

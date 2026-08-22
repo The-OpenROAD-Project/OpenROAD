@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -306,6 +307,21 @@ describe('buildTileRequest', () => {
         }
     });
 
+    // The color-by-owner overlays are switched by these flags travelling in
+    // the payload — the `_modules`/`_clusters` layers stay mounted, so if the
+    // flags stopped being sent the overlays would be stuck on.
+    it('carries the module/cluster overlay flags', () => {
+        const overlayCtx = {
+            ...ctx,
+            visibility: { module_view: false, cluster_view: true },
+        };
+        const req = buildTileRequest({ z: 0, x: 0, y: 0 }, '_clusters',
+                                     overlayCtx);
+        assert.equal(req.layer, '_clusters');
+        assert.equal(req.module_view, false);
+        assert.equal(req.cluster_view, true);
+    });
+
     it('omits pattern when the layer is solid or unset', () => {
         // No app → no pattern field.
         assert.equal('pattern' in buildTileRequest(
@@ -321,6 +337,87 @@ describe('buildTileRequest', () => {
         const patCtx = { ...ctx, app: { layerPatterns: { M1: 3 } } };
         const req = buildTileRequest({ z: 0, x: 0, y: 0 }, 'M1', patCtx);
         assert.equal(req.pattern, 3);
+    });
+});
+
+// A gated layer stays mounted while its flag is off (so the map's layer set is
+// never a second copy of the flag) but must not pay for it: no request, and a
+// 1x1 tile instead of a (256*dpr)² bitmap.
+describe('gated tile layers', () => {
+    function makeLayer(visibility, gate) {
+        const requests = [];
+        const manager = {
+            nextId: 1,
+            request(msg) { requests.push(msg); return Promise.resolve('data:,'); },
+            cancel() {},
+        };
+        const Layer = createWebSocketTileLayer(visibility, new Set(), {}, null,
+                                               null);
+        const layer = new Layer(manager, '_clusters', { gate });
+        return { layer, requests };
+    }
+
+    it('serves a transparent tile and skips the request while gated off', () => {
+        const { layer, requests } = makeLayer({ cluster_view: false },
+                                              'cluster_view');
+        const tile = layer.createTile({ z: 0, x: 0, y: 0 }, () => {});
+        assert.equal(requests.length, 0);
+        assert.match(tile.src, /^data:image\/png;base64,/);
+    });
+
+    it('requests normally once the flag is on', () => {
+        const { layer, requests } = makeLayer({ cluster_view: true },
+                                              'cluster_view');
+        layer.createTile({ z: 1, x: 2, y: 3 }, () => {});
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0].layer, '_clusters');
+        assert.equal(requests[0].cluster_view, true);
+    });
+
+    it('leaves an ungated layer alone', () => {
+        const { layer, requests } = makeLayer({}, undefined);
+        layer.createTile({ z: 0, x: 0, y: 0 }, () => {});
+        assert.equal(requests.length, 1);
+    });
+
+    // A gate naming a flag that does not exist reads undefined, which would
+    // gate the layer off forever: nothing on screen, no error.  Fail open and
+    // warn, so the mistake is visible instead of looking like an empty design.
+    it('renders ungated and warns when the gate names no known flag', () => {
+        const { layer, requests } = makeLayer({ cluster_view: false },
+                                              'clsuter_view');
+        const warnings = [];
+        const realWarn = console.warn;
+        console.warn = msg => warnings.push(msg);
+        try {
+            layer.createTile({ z: 0, x: 0, y: 0 }, () => {});
+            layer.createTile({ z: 0, x: 1, y: 0 }, () => {});
+        } finally {
+            console.warn = realWarn;
+        }
+        assert.equal(requests.length, 2);
+        assert.equal(warnings.length, 1, 'warns once, not per tile');
+        assert.match(warnings[0], /unknown gate 'clsuter_view'/);
+    });
+
+    // Turning the overlay off has to blank the tiles that are already up —
+    // leaving the last image would keep showing an overlay the user switched
+    // off.
+    it('blanks existing tiles in place when the flag goes off', () => {
+        const visibility = { cluster_view: true };
+        const { layer, requests } = makeLayer(visibility, 'cluster_view');
+        const el = { src: 'blob:old', _websocketRequestId: 7 };
+        layer._map = {};
+        layer._tiles = { '1:2:3': { el, coords: { z: 1, x: 2, y: 3 } } };
+
+        visibility.cluster_view = false;
+        layer.refreshTiles();
+        assert.equal(requests.length, 0);
+        assert.match(el.src, /^data:image\/png;base64,/);
+
+        visibility.cluster_view = true;
+        layer.refreshTiles();
+        assert.equal(requests.length, 1);
     });
 });
 

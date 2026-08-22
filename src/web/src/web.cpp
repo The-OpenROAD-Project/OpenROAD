@@ -34,6 +34,7 @@
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
+#include "group_report.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -1103,9 +1104,26 @@ void WebServer::saveReport(const std::string& filename,
   const std::string hierarchy_json
       = boost::json::serialize(serializeHierarchyResult(hier_result));
 
-  auto module_colors = computeDefaultModuleColors(hier_result);
-  const std::map<uint32_t, Color>* mod_colors_ptr
-      = module_colors.empty() ? nullptr : &module_colors;
+  // ── Serialize group (cluster) hierarchy ──
+
+  GroupReport group_report(block);
+  auto group_result = group_report.getReport();
+  const std::string groups_json
+      = boost::json::serialize(serializeGroupResult(group_result));
+
+  // Not via ColorOverlaySpec::default_colors: both reports are already built
+  // above, and the table would compute each tree a second time.
+  std::array<std::map<uint32_t, Color>, kNumColorOverlays> owner_colors;
+  owner_colors[findColorOverlay("_modules")->index]
+      = computeDefaultModuleColors(hier_result);
+  owner_colors[findColorOverlay("_clusters")->index]
+      = computeDefaultGroupColors(group_result);
+  InstColorOverlay inst_colors;
+  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+    if (!owner_colors[spec.index].empty()) {
+      inst_colors.colors[spec.index] = &owner_colors[spec.index];
+    }
+  }
 
   // ── Render tiles at a fixed zoom level ──
 
@@ -1116,18 +1134,25 @@ void WebServer::saveReport(const std::string& filename,
   const int num_tiles = 1 << kZ;
 
   TileVisibility vis;
+  // The renderer gates these overlays on the flags, so the pre-rendered tiles
+  // must be produced with them on or the saved HTML caches empty ones.
+  vis.module_view = true;
+  vis.cluster_view = true;
   // A 256x256 fully-transparent RGBA PNG is exactly 102 bytes with lodepng.
   // Any tile with visible content will be larger.
   constexpr size_t kEmptyPngSize = 102;
 
-  // All layers to cache tiles for.
-  std::vector<std::string> all_layers;
-  all_layers.emplace_back("_instances");
-  for (const auto& name : tech_layers) {
-    all_layers.push_back(name);
+  // In the z order save_image composites them, derived from `vis`, so a new
+  // layer is cached here without this code learning about it.
+  std::vector<std::string> all_layers
+      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
+  // An overlay with no colors renders nothing, so caching its tiles would only
+  // grow the HTML.
+  for (const ColorOverlaySpec& spec : colorOverlayLayers()) {
+    if (inst_colors.colors[spec.index] == nullptr) {
+      std::erase(all_layers, spec.layer);
+    }
   }
-  all_layers.emplace_back("_modules");
-  all_layers.emplace_back("_pins");
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
   std::vector<std::pair<std::string, std::string>> tile_entries;
@@ -1135,7 +1160,7 @@ void WebServer::saveReport(const std::string& filename,
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
         auto png = generator_->generateTile(
-            layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
+            layer, kZ, tx, ty, vis, {}, {}, {}, {}, &inst_colors);
         if (png.size() > kEmptyPngSize) {
           std::string key = layer + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
@@ -1227,7 +1252,9 @@ window.__STATIC_CACHE__ = {
     "chart_filters": )"
       << filters << R"(,
     "module_hierarchy": )"
-      << hierarchy_json << R"(
+      << hierarchy_json << R"(,
+    "group_hierarchy": )"
+      << groups_json << R"(
   },
   tiles: {)";
 

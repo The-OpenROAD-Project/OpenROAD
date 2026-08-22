@@ -421,3 +421,169 @@ describe('layer row selection', () => {
            assert.equal(m1.classList.contains('vis-row-selected'), false);
        });
 });
+
+// The color-by-owner overlays (`_modules`, `_clusters`) and the pin-marker layer
+// are mounted once and stay mounted: their visibility rides in the tile payload
+// and the renderer decides whether to draw.  Mounting/unmounting them instead
+// would make the map's layer set a second record of the flag, free to drift.
+describe('overlay layer toggles', () => {
+    let app, visibility, mapOps, redraws, techData;
+
+    class FakeTileLayer {
+        constructor(wm, name, opts) {
+            this.name = name;
+            this.options = opts || {};
+        }
+        addTo() { mapOps.push('add:' + this.name); return this; }
+        setZIndex(z) { this.options.zIndex = z; return this; }
+        refreshTiles() { mapOps.push('refresh:' + this.name); }
+    }
+    class FakeHeatMapLayer {
+        constructor() {}
+    }
+
+    beforeEach(() => {
+        mapOps = [];
+        redraws = 0;
+        visibility = {};
+        window.sessionStorage.clear();
+        app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            map: {
+                hasLayer: () => true,
+                removeLayer(layer) { mapOps.push('remove:' + layer.name); },
+            },
+            websocketManager: { request: () => Promise.resolve({}) },
+            updateInspector() {},
+            focusComponent() {},
+            refreshOverlay() {},
+        };
+        techData = {
+            layers: ['metal1'],
+            sites: [],
+            chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            layer_hierarchy: {
+                name: 'top',
+                type: 'block',
+                path: 'top',
+                layers: [{ name: 'metal1', color: [1, 2, 3] }],
+                instances: [],
+            },
+        };
+        populateDisplayControls(app, visibility, {}, FakeTileLayer, techData,
+                                () => { redraws++; }, FakeHeatMapLayer);
+    });
+
+    // Toggling goes through the checkbox the user actually clicks, found by the
+    // name attribute VisTree gives it.
+    function toggle(key, groupLabel) {
+        const id = groupLabel ? groupLabel + '/' + key : key;
+        const cb = app.displayControlsEl.querySelector(
+            `input.vis-cb[name="vis:${id}"]`);
+        assert.ok(cb, 'checkbox for ' + id);
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+        return cb;
+    }
+
+    it('mounts the overlay layers once, up front', () => {
+        assert.ok(mapOps.includes('add:_modules'));
+        assert.ok(mapOps.includes('add:_clusters'));
+        assert.ok(mapOps.includes('add:_pins'));
+        assert.ok(mapOps.includes('add:_instances'));
+        // One mount each, not one per toggle.
+        assert.equal(mapOps.filter(op => op === 'add:_clusters').length, 1);
+    });
+
+    // A switchable pseudo layer needs a gate: without one it would request tiles
+    // forever, and gated on a flag that does not exist it would go blank.
+    it('gates every switchable pseudo layer instead of unmounting it', () => {
+        const expected = {
+            _pins: 'pins',
+            _modules: 'module_view',
+            _clusters: 'cluster_view',
+            _access_points: 'access_points',
+            _mfg_grid: 'mfg_grid',
+            _gcell_grid: 'gcell_grid',
+        };
+        for (const [name, gate] of Object.entries(expected)) {
+            const layer = app.allLayers.find(l => l.name === name);
+            assert.ok(layer, name + ' is created');
+            assert.ok(mapOps.includes('add:' + name), name + ' is mounted');
+            assert.equal(layer.options.gate, gate, name + ' gate');
+            assert.ok(gate in visibility, gate + ' is a real visibility flag');
+        }
+        // The instance layer has no toggle, so it carries no gate.
+        const instances = app.allLayers.find(l => l.name === '_instances');
+        assert.equal(instances.options.gate, null);
+    });
+
+    // techData.layers is deduplicated by name, but there is one routing pane per
+    // (chiplet, layer): counting the overlay's z-index off the list would bury it
+    // inside the routing stack on a multi-die design.
+    it('stacks the cluster overlay above every routing pane of a multi-die '
+       + 'design', () => {
+        // Four names shared by two dies: the deduplicated count (4) is well
+        // under the pane count (8), which is what the old formula got wrong.
+        const names = ['metal1', 'metal2', 'metal3', 'metal4'];
+        const dieLayers = names.map((name, i) => ({ name, color: [i, i, i] }));
+        const die = (name) => ({
+            name, type: 'block', path: 'top/' + name,
+            layers: dieLayers, instances: [],
+        });
+        populateDisplayControls(app, visibility, {}, FakeTileLayer, {
+            layers: names,
+            sites: [],
+            chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', layers: [],
+                instances: [die('die0'), die('die1')],
+            },
+        }, () => {}, FakeHeatMapLayer);
+
+        const routing = app.allLayers.filter(l => !l.name.startsWith('_'));
+        assert.equal(routing.length, 8);
+        const topRouting = Math.max(...routing.map(l => l.options.zIndex));
+        assert.ok(app.clustersLayer.options.zIndex > topRouting,
+                  `cluster overlay at ${app.clustersLayer.options.zIndex} must `
+                  + `sit above the routing panes (top ${topRouting})`);
+    });
+
+    it('keeps working over repeated cluster-view toggles', () => {
+        for (let i = 0; i < 4; i++) {
+            mapOps = [];
+            const before = visibility.cluster_view;
+            toggle('cluster_view');
+            assert.equal(visibility.cluster_view, !before,
+                         'flag flips on toggle ' + i);
+            assert.equal(redraws, i + 1, 'redraw requested on toggle ' + i);
+            // The regression: no layer may be mounted or unmounted here.
+            assert.deepEqual(
+                mapOps.filter(op => op.startsWith('add:')
+                                    || op.startsWith('remove:')),
+                [], 'toggle must not touch the map layer set');
+        }
+        assert.equal(visibility.cluster_view, false);
+    });
+
+    it('keeps working over repeated module-view toggles', () => {
+        for (let i = 0; i < 4; i++) {
+            mapOps = [];
+            const before = visibility.module_view;
+            toggle('module_view');
+            assert.equal(visibility.module_view, !before);
+            assert.deepEqual(
+                mapOps.filter(op => op.startsWith('add:')
+                                    || op.startsWith('remove:')),
+                []);
+        }
+    });
+});

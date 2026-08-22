@@ -460,8 +460,8 @@ export class WebSocketManager {
             return Promise.resolve({});
         }
 
-        // set_module_colors is a no-op in static mode (tiles are pre-rendered).
-        if (type === 'set_module_colors') {
+        // Color overrides are no-ops in static mode (tiles are pre-rendered).
+        if (type === 'set_module_colors' || type === 'set_group_colors') {
             return Promise.resolve({ok: 1, count: 0});
         }
 

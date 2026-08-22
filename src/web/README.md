@@ -81,6 +81,7 @@ field and the value is `true` or `false`.
 | `net_clock` | true | Clock nets |
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
+| `cluster_view` | false | Color each instance by the `dbGroup` (cluster) it belongs to |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
 
 #### Examples
@@ -105,6 +106,12 @@ save_image -web -area {0 0 100 100} -width 2048 region.png
 save_image -web -display_option {routing false} \
                 -display_option {net_power false} \
                 layout.png
+
+# Plot the MPL clustering result (one color per cluster)
+rtl_macro_placer -keep_clustering_data
+save_image -web -width 1200 \
+                -display_option {cluster_view true} \
+                clusters.png
 
 # Save with RUDY congestion heatmap overlay
 save_image -web -display_option {rudy true} layout_rudy.png
@@ -169,7 +176,8 @@ web_save_report -setup_paths 200 -hold_paths 200 timing.html
   paths, and view per-level statistics.
 - **Hierarchy browser** — Navigate the module tree with instance counts and area
   statistics. Toggle visibility and assign colors per module using a 31-color
-  palette.
+  palette. The same panel's Instance Groups view does this for the `dbGroup`s
+  MPL writes with `-keep_clustering_data`.
 - **Display controls** — Toggle visibility of cell types (stdcells, macros,
   pads), net types (signal, power, clock), and shapes (routing, pins, blockages,
   rows, tracks).

@@ -4,7 +4,7 @@
 // DRC viewer widget — category selector, violation tree, load/highlight.
 // Matches the capabilities of the Qt GUI DRCWidget.
 
-import { dbuRectToBounds } from './coordinates.js';
+import { zoomToBBox } from './ui-utils.js';
 
 export class DrcWidget {
     constructor(app, redrawAllLayers, refreshOverlay) {
@@ -377,12 +377,12 @@ export class DrcWidget {
         const zoomoutBox = 2 * Math.max(dx, dy);
         const margin = Math.min(zoomoutDist, zoomoutBox);
 
-        this._app.map.fitBounds(
-            dbuRectToBounds(
-                xMin - margin, yMin - margin,
-                xMax + margin, yMax + margin,
-                this._app.designScale, this._app.designMaxDXDY,
-                this._app.designOriginX, this._app.designOriginY));
+        // The margin above is this widget's own zoom rule; the DBU→map
+        // conversion is the shared one (ui-utils.zoomToBBox), with no extra
+        // padding on top of it.
+        zoomToBBox(this._app,
+                   [xMin - margin, yMin - margin, xMax + margin, yMax + margin],
+                   0);
     }
 
     _updateMarker(markerId, field, value) {

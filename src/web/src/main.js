@@ -19,12 +19,12 @@ import {
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
-import { HierarchyBrowser } from './hierarchy-browser.js';
+import { HierarchyPanel } from './hierarchy-panel.js';
 import { createInspectorPanel } from './inspector.js';
 import { isStaticMode, buildMapOptions, beginSelection, isCurrentSelection }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
-import { createMenuBar } from './menu-bar.js';
+import { canFind, createMenuBar, showFindDialog } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
@@ -100,12 +100,12 @@ const app = {
     hoverHighlightLayer: null,
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
+    clustersLayer: null,
     pinsLayer: null,
     accessPointsLayer: null,
     regionsLayer: null,
     mfgGridLayer: null,
     gcellGridLayer: null,
-    hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
@@ -234,6 +234,8 @@ const visibility = {
     tracks_non_pref: false,
     // Module view
     module_view: false,
+    // Cluster (dbGroup) view
+    cluster_view: false,
     // Misc
     detailed: false,
     rulers: true,
@@ -254,6 +256,14 @@ try {
 } catch (_) {
     // Ignore malformed cookie.
 }
+
+// Console handle: main.js is an ES module, so nothing here is reachable from
+// DevTools otherwise.  The two state maps are module-level consts rather than
+// app fields, so they have to be hung on it explicitly.
+if (typeof window !== 'undefined') {
+    window.orApp = app;
+}
+app.visibility = visibility;
 
 // Selectability mirrors the Qt GUI's display-controls "selectable" column.
 // Defaults to true (everything selectable), matching the Qt GUI.  Only
@@ -297,6 +307,7 @@ const selectability = {
     placement_blockages: true,
     routing_obstructions: true,
 };
+app.selectability = selectability;
 
 try {
     const saved = getCookie('or_selectability');
@@ -499,23 +510,8 @@ function redrawAllLayers() {
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
 
-    // Show/hide the toggleable pseudo-layer tile layers.
-    const toggleableLayers = [
-        [app.modulesLayer, visibility.module_view],   // Module view
-        [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
-    ];
-    for (const [layer, visible] of toggleableLayers) {
-        if (!layer) continue;
-        if (visible && !app.map.hasLayer(layer)) {
-            layer.addTo(app.map);
-        } else if (!visible && app.map.hasLayer(layer)) {
-            app.map.removeLayer(layer);
-        }
-    }
+    // Pseudo layers included: they stay mounted and are gated on the visibility
+    // flag each request carries (`gate` in display-controls.js).
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }
@@ -779,7 +775,7 @@ app.navigateInspector = inspector.navigateInspector;
 app.refreshInspector = inspector.refreshInspector;
 
 function createBrowser(container) {
-    new HierarchyBrowser(container, app, redrawAllLayers);
+    new HierarchyPanel(container, app, redrawAllLayers);
 }
 
 function createTimingWidget(container) {
@@ -950,7 +946,7 @@ app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 3;
+const LAYOUT_VERSION = 5;
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
@@ -1055,8 +1051,8 @@ app.toggleShowDbu = function() {
     setCookie('or_show_dbu', app.showDbu ? '1' : '0');
     // Re-render rulers so their labels update.
     if (app.rulerManager) app.rulerManager._rerenderAll();
-    // Re-render hierarchy browser if present.
-    if (app.hierarchyBrowser) app.hierarchyBrowser._render();
+    // Both views format area through fmtArea(app, ...), which reads showDbu.
+    if (app.hierarchyPanel) app.hierarchyPanel.refresh();
     // Update scale bar.
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
@@ -1404,6 +1400,16 @@ document.addEventListener('keydown', (e) => {
     if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
     const key = e.key.toLowerCase();
+    if (key === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Find dialog.  Only swallow the key when there is a dialog to open in
+        // place of the browser's find-in-page bar: a saved static report has
+        // none, and would be left with neither.
+        if (canFind(app)) {
+            e.preventDefault();
+            showFindDialog(app);
+        }
+        return;
+    }
     if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
         app.rulerManager.cancelRulerBuild();
     } else if (key === 'k' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {

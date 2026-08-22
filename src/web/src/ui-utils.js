@@ -3,6 +3,8 @@
 
 // Shared UI utilities.
 
+import { dbuRectToBounds } from './coordinates.js';
+
 // True when the app was bootstrapped from a saved/static report
 // (i.e. there is no live WebSocket backend).
 export function isStaticMode(app) {
@@ -41,6 +43,17 @@ export function onSelectionReset(app, fn) {
         app.selectionResetters = [];
     }
     app.selectionResetters.push(fn);
+}
+
+// Fit the map to a DBU rectangle [xMin, yMin, xMax, yMax].  Shared by the
+// Inspector's "Zoom to", the Clusters panel's double-click and the DRC widget.
+export function zoomToBBox(app, bbox, padding = 20) {
+    if (!bbox || !app || !app.map || !app.designScale) return;
+    const [x1, y1, x2, y2] = bbox;
+    app.map.fitBounds(
+        dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+                        app.designOriginX, app.designOriginY),
+        { padding: [padding, padding] });
 }
 
 // Leaflet map options for the 2D layout viewer.
@@ -130,9 +143,14 @@ export function makeResizableHeaders(table, widths) {
         headers.forEach((th) => th.style.width = '');
         widths = Array.from(headers, (th) => th.offsetWidth + 'px');
     }
-    // Lock in widths and switch to fixed layout
-    headers.forEach((th, i) => th.style.width = widths[i] || '');
-    table.style.tableLayout = 'fixed';
+    // Lock in widths and switch to fixed layout.  A table that is not laid out
+    // — one rendered inside a hidden view — measures every column at zero;
+    // locking that in collapses them.  Stay on auto and let the next render,
+    // with the table visible, lock the real widths.
+    if (!widths.every((w) => w === '0px')) {
+        headers.forEach((th, i) => th.style.width = widths[i] || '');
+        table.style.tableLayout = 'fixed';
+    }
 
     headers.forEach((th, idx) => {
         if (idx === headers.length - 1) return; // skip last column

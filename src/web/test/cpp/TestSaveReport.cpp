@@ -13,6 +13,7 @@
 
 #include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
+#include "hierarchy_report.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "tile_generator.h"
@@ -417,6 +418,95 @@ TEST_F(SaveReportTest, ZeroPathsReport)
 
   ASSERT_TRUE(std::filesystem::exists(path));
   EXPECT_TRUE(contains(html, "\"paths\":[]"));
+}
+
+// ─── Effective owner colors ─────────────────────────────────────────────────
+//
+// The rule the saved report and the viewer must agree on: a collapsed node
+// paints its whole subtree, and where collapsed nodes nest the highest one
+// wins.  The viewer's copy lives in color-tree.js.
+
+constexpr Color kRed{255, 0, 0, 255};
+constexpr Color kGreen{0, 255, 0, 255};
+constexpr Color kBlue{0, 0, 255, 255};
+
+bool sameColor(const Color& a, const Color& b)
+{
+  return a.r == b.r && a.g == b.g && a.b == b.b;
+}
+
+TEST(OwnerColors, NothingCollapsedKeepsOwnColors)
+{
+  // A ── B ── C, all expanded.
+  const std::vector<OwnerColorNode> nodes = {
+      {.parent = -1,
+       .odb_id = 10,
+       .color = kRed,
+       .collapsed = false,
+       .has_color = true},
+      {.parent = 0,
+       .odb_id = 11,
+       .color = kGreen,
+       .collapsed = false,
+       .has_color = true},
+      {.parent = 1,
+       .odb_id = 12,
+       .color = kBlue,
+       .collapsed = false,
+       .has_color = true},
+  };
+  const auto colors = computeEffectiveOwnerColors(nodes);
+  EXPECT_TRUE(sameColor(colors.at(10), kRed));
+  EXPECT_TRUE(sameColor(colors.at(11), kGreen));
+  EXPECT_TRUE(sameColor(colors.at(12), kBlue));
+}
+
+TEST(OwnerColors, HighestCollapsedAncestorWinsThroughExpandedNode)
+{
+  // The case a nearest-ancestor rule gets wrong, and the regression a previous
+  // refactor of this helper actually shipped: B is expanded but sits inside a
+  // collapsed A, so C must paint A's color, not B's.
+  const std::vector<OwnerColorNode> nodes = {
+      {.parent = -1,
+       .odb_id = 10,
+       .color = kRed,
+       .collapsed = true,
+       .has_color = true},
+      {.parent = 0,
+       .odb_id = 11,
+       .color = kGreen,
+       .collapsed = false,
+       .has_color = true},
+      {.parent = 1,
+       .odb_id = 12,
+       .color = kBlue,
+       .collapsed = false,
+       .has_color = true},
+  };
+  const auto colors = computeEffectiveOwnerColors(nodes);
+  EXPECT_TRUE(sameColor(colors.at(11), kRed));
+  EXPECT_TRUE(sameColor(colors.at(12), kRed));
+}
+
+TEST(OwnerColors, CollapsedNodeWithoutColorDoesNotPaintItsSubtree)
+{
+  // The Hierarchy panel's structural rows ("Leaf instances", per-type folders)
+  // have no color, and must not hand a default-constructed one down.
+  const std::vector<OwnerColorNode> nodes = {
+      {.parent = -1,
+       .odb_id = 0,
+       .color = Color(),
+       .collapsed = true,
+       .has_color = false},
+      {.parent = 0,
+       .odb_id = 11,
+       .color = kGreen,
+       .collapsed = false,
+       .has_color = true},
+  };
+  const auto colors = computeEffectiveOwnerColors(nodes);
+  EXPECT_EQ(colors.count(0), 0u);  // no entry for the colorless folder
+  EXPECT_TRUE(sameColor(colors.at(11), kGreen));
 }
 
 }  // namespace

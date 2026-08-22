@@ -4,7 +4,9 @@
 // Inspector panel — property tree, hover highlights, bbox display.
 
 import { dbuRectToBounds } from './coordinates.js';
-import { beginSelection, isCurrentSelection } from './ui-utils.js';
+import {
+    beginSelection, isCurrentSelection, zoomToBBox as sharedZoomToBBox,
+} from './ui-utils.js';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -636,10 +638,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     }
 
     function zoomToBBox(bbox) {
-        if (!bbox || !app.map || !app.designScale) return;
-        const [x1, y1, x2, y2] = bbox;
-        app.map.fitBounds(dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY),
-                          { padding: [20, 20] });
+        sharedZoomToBBox(app, bbox);
     }
 
     function updateInspector(data) {

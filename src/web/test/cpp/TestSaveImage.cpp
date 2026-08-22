@@ -143,6 +143,86 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
 }
 
+// `save_image -web -display_option {cluster_view true}` is the headless path
+// to the per-cluster plot the MPL clustering data exists for: it must paint
+// the palette color of each instance's dbGroup on top of the base layers.
+TEST_F(SaveImageTest, ClusterViewColorsInstancesByGroup)
+{
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(block_->findInst("buf1"));
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const std::string path = tempPng("cluster_view");
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  ASSERT_TRUE(std::filesystem::exists(path));
+  unsigned w = 0, h = 0;
+  auto pixels = decodePngFile(path, w, h);
+  EXPECT_EQ(w, 512u);
+
+  // The first palette color is opaque red at alpha 100, blended over the
+  // instance's own dark fill, so look for a pixel whose red channel clearly
+  // dominates instead of an exact match.
+  bool reddish = false;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i + 3] > 0 && pixels[i] > 60 && pixels[i] > 2 * pixels[i + 1]
+        && pixels[i] > 2 * pixels[i + 2]) {
+      reddish = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(reddish) << "no cluster-colored pixel in the saved image";
+}
+
+// The sibling overlay: both save paths go through colorOverlayLayers() so that
+// neither one can be wired up without the other.
+TEST_F(SaveImageTest, ModuleViewColorsInstancesByModule)
+{
+  // Needs a generator with STA: the module report — and so the default color
+  // map — is empty without one.  The fixture's instances already belong to the
+  // top module, which is what the overlay colors them by.
+  TileGenerator gen(getDb(), getSta(), getLogger());
+  gen.eagerInit();
+
+  const std::string plain_path = tempPng("module_off");
+  gen.saveImage(plain_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  TileVisibility vis;
+  vis.module_view = true;
+  const std::string module_path = tempPng("module_on");
+  gen.saveImage(module_path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto plain = decodePngFile(plain_path, w1, h1);
+  auto with_option = decodePngFile(module_path, w2, h2);
+  ASSERT_EQ(w1, w2);
+  ASSERT_EQ(h1, h2);
+  EXPECT_NE(plain, with_option)
+      << "module_view produced the same image as no option at all";
+}
+
+// Without any group in the database the option must not change the output —
+// and must not error out either, just warn.
+TEST_F(SaveImageTest, ClusterViewWithoutGroupsMatchesTheDefaultImage)
+{
+  const std::string plain_path = tempPng("cluster_off");
+  tile_gen_->saveImage(plain_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const std::string cluster_path = tempPng("cluster_on_nogroups");
+  tile_gen_->saveImage(cluster_path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto plain = decodePngFile(plain_path, w1, h1);
+  auto with_option = decodePngFile(cluster_path, w2, h2);
+  EXPECT_EQ(w1, w2);
+  EXPECT_EQ(h1, h2);
+  EXPECT_EQ(plain, with_option);
+}
+
 TEST_F(SaveImageTest, WidthOption)
 {
   const std::string path = tempPng("width");
