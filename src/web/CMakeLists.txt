@@ -20,6 +20,7 @@ set(WEB_ASSET_FILES
     src/tile-request.js
     src/device-pixels.js
     src/merged-tile-layer.js
+    src/display-state.js
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
@@ -56,6 +57,7 @@ add_custom_command(
     --output ${REPORT_ASSETS_CPP}
     --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
     --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/display-state.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js

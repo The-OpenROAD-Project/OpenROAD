@@ -312,4 +312,16 @@ std::vector<WebChart*> WebViewerHook::charts() const
   return out;
 }
 
+void WebViewerHook::setDisplayState(std::string json)
+{
+  std::lock_guard<std::mutex> lock(display_state_mutex_);
+  display_state_json_ = std::move(json);
+}
+
+std::string WebViewerHook::getDisplayState() const
+{
+  std::lock_guard<std::mutex> lock(display_state_mutex_);
+  return display_state_json_;
+}
+
 }  // namespace web

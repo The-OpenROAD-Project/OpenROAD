@@ -15,20 +15,23 @@ designs without a native GUI.
 ### Web Server
 
 Start the web viewer server. This opens a WebSocket server and launches the
-viewer in the default browser.
+viewer in the default browser. The command blocks until the server stops, so
+the design can be explored interactively; Tcl commands typed in the browser
+console run on the server.
 
 ```tcl
 web_server
     [-port port]
-    -dir dir
+    [-stop]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ---------- | -------------------------------------------------- |
-| `-port` | TCP port to listen on. Default: `8080`. |
-| `-dir` | Path to the document root directory containing the web assets (`index.html`, `*.js`, `*.css`). |
+| `-port` | TCP port to listen on. Default: `0`, which picks a free port. |
+| `-stop` | Stop a running server and return from the blocked `web_server` call. |
+| `-dir` | Deprecated and ignored; the web assets are embedded in the binary. |
 
 ### Save Image
 
@@ -155,6 +158,66 @@ web_save_report timing.html
 web_save_report -setup_paths 200 -hold_paths 200 timing.html
 ```
 
+### Save Display Controls
+
+Write the display-controls state of the connected viewer to a JSON file, so a
+particular set of visibility, selectability, layer-pattern and theme choices
+can be reused later or shared.
+
+```tcl
+save_display_controls
+    filename
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `filename` | Output JSON file path. |
+
+The viewer pushes a snapshot of its state to the server whenever a control
+changes, and this command writes the most recent snapshot. It therefore
+requires a running server (`web_server`) with a viewer open; otherwise it
+errors, or warns if no snapshot has arrived yet. The server caches a single
+snapshot, so with several viewers connected the state saved is that of
+whichever one synced last.
+
+Because Tcl commands typed into the browser console run on the server, this is
+normally invoked from the viewer's own console after arranging the panel.
+
+### Restore Display Controls
+
+Apply a previously saved display-controls file to every connected viewer.
+
+```tcl
+restore_display_controls
+    filename
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `filename` | Input JSON file path, as written by `save_display_controls`. |
+
+The state is broadcast to all connected clients, each of which re-applies it
+and reloads, preserving the current camera position. A key absent from the file
+is reset to its default rather than left as-is. The file is validated before it
+is broadcast; a malformed or unexpectedly shaped file is rejected with an error
+and nothing is applied.
+
+Like `save_display_controls`, this requires a running server.
+
+#### Examples
+
+```tcl
+# In the viewer's Tcl console, after setting up the panel
+save_display_controls my_view.json
+
+# Later, in another session with the viewer open
+restore_display_controls my_view.json
+```
+
 ## Features
 
 - **Tile-based rendering** — The server renders 256x256 PNG tiles on demand,
@@ -172,7 +235,8 @@ web_save_report -setup_paths 200 -hold_paths 200 timing.html
   palette.
 - **Display controls** — Toggle visibility of cell types (stdcells, macros,
   pads), net types (signal, power, clock), and shapes (routing, pins, blockages,
-  rows, tracks).
+  rows, tracks). The panel state can be saved to and restored from a file with
+  `save_display_controls` / `restore_display_controls`.
 - **Focus nets** — Isolate specific nets for inspection, dimming all other
   routing.
 - **Tcl console** — Execute Tcl commands interactively from the browser.
@@ -200,8 +264,11 @@ response shapes, error contract) is documented in
 ## Example scripts
 
 ```tcl
-# Start the web viewer, pointing at the web assets directory
-web_server -dir /path/to/OpenROAD/src/web/src
+# Start the web viewer on an OS-assigned port
+web_server
+
+# Start on a fixed port
+web_server -port 8080
 ```
 
 ## Regression tests
