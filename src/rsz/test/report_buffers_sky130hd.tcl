@@ -6,6 +6,8 @@ read_lef sky130hd/sky130hd_std_cell.lef
 read_liberty sky130hd/sky130hd_tt.lib
 read_def repair_design2.def
 
+buffer_ports -inputs -outputs -verbose
+
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
 
