@@ -41,3 +41,13 @@ check "obstruction count" {llength [$block getObstructions]} 4
 set def_file [make_result_file create_obstruction.def]
 write_def $def_file
 diff_files create_obstruction.defok $def_file
+
+# LEF test: obstruction modifiers must survive abstract LEF output.
+set lef_file [make_result_file create_obstruction.lef]
+write_abstract_lef -bloat_factor 0 $lef_file
+set lef_stream [open $lef_file r]
+set lef_text [read $lef_stream]
+close $lef_stream
+check "LEF obstruction spacing" {
+  regexp {LAYER met1 ;\n\s+RECT[^\n]*SPACING 1\.5} $lef_text
+} 1
