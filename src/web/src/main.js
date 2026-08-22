@@ -4,14 +4,27 @@
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu, dbuToLatLng } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
-import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
+import {
+    createWebSocketTileLayer,
+    createOverlayTileLayer,
+    currentDpr,
+    floorClampZoom,
+} from './websocket-tile-layer.js';
+import { createMergedTileLayer } from './merged-tile-layer.js';
+import { installDeviceGridSnapping } from './device-pixels.js';
+import {
+    tileSizeCss, useStaticTileSize, withDeviceExactTileSize,
+    watchDevicePixelRatio, tileSizeFields,
+} from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
-import { isStaticMode, computeBoundsTransforms, boundsEqual, showToast }
+import { beginSelection, boundsEqual, buildMapOptions,
+         computeBoundsTransforms, computeScaleBar, isCurrentSelection,
+         isStaticMode, maxUsefulZoom, rafCoalesce, showToast }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -19,7 +32,8 @@ import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
-import { getCookie, setCookie, applyGLTheme } from './theme.js';
+import { getCookie, setCookie, applyGLTheme, persistTheme } from './theme.js';
+import { serializeDisplayState, applyDisplayStateEntries } from './display-state.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 
@@ -91,6 +105,10 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
+    accessPointsLayer: null,
+    regionsLayer: null,
+    mfgGridLayer: null,
+    gcellGridLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -105,6 +123,10 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
+    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
+    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // display-controls.js and read lazily by websocket-tile-layer.js.
+    layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
     showDbu: getCookie('or_show_dbu') === '1',
     selectableLayers: new Set(),
@@ -114,6 +136,11 @@ const app = {
     heatMapLegendEl: null,
     renderHeatMapControls: null,
     rulerManager: null,
+    // Bumped by beginSelection() whenever a panel takes over the selection;
+    // see ui-utils.js.  Panels register their reset callbacks in
+    // `selectionResetters` via onSelectionReset().
+    selectionToken: 0,
+    selectionResetters: [],
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
     },
@@ -187,6 +214,17 @@ const visibility = {
     srouting_vias: true,
     pins: true,
     pin_names: true,
+    // Access points (dbAccessPoint X markers) — off by default, matching GUI
+    access_points: false,
+    // Region (dbRegion) boundaries — on by default, matching GUI
+    regions: true,
+    // Manufacturing-grid dots — off by default, matching GUI
+    mfg_grid: false,
+    // GCell grid lines — off by default, matching GUI
+    gcell_grid: false,
+    // Flywires only (selected nets as straight driver->sink lines) —
+    // off by default, matching GUI
+    flywires_only: false,
     blockages: true,
     // Blockages
     placement_blockages: true,
@@ -201,8 +239,13 @@ const visibility = {
     // Module view
     module_view: false,
     // Misc
+    detailed: false,
     rulers: true,
     scale_bar: true,
+    // Route guides of focused nets — off by default, matching GUI
+    focused_nets_guides: false,
+    // Highlight of the current selection — on by default, matching GUI
+    highlight_selected: true,
     // Debug
     debug: false,
 };
@@ -281,6 +324,48 @@ try {
 const WebSocketTileLayer = createWebSocketTileLayer(
     visibility, app.visibleLayerNames, selectability, app.selectableLayers,
     app);
+
+// ─── Tile grouping ──────────────────────────────────────────────────────────
+//
+// One pane per tech layer per chiplet puts a multi-die design at ~97 panes and
+// ~582 MB of decoded tile images, past the browser's ~458 MB ceiling, where
+// Chrome discards decodes and the discarded regions paint white until something
+// forces a full invalidation.  Merging the routing layers into N canvas panes,
+// N derived from a memory budget, bounds the total regardless of how many layers
+// or chiplets the design has.
+//
+//   ?mergetiles=0        legacy one-pane-per-layer, for A/B comparison
+//   ?tilebudget=<MB>     override the budget (default 350 MB)
+//   ?mergegroups=<N>     pin N directly, bypassing the budget
+(function configureTileMerging() {
+    let params = null;
+    try {
+        params = new URLSearchParams(window.location.search);
+    } catch (_) {
+        params = null;
+    }
+    const param = (name) => (params ? params.get(name) : null);
+
+    app.mergeTiles = param('mergetiles') !== '0';
+    const budgetMB = Number(param('tilebudget'));
+    if (Number.isFinite(budgetMB) && budgetMB > 0) {
+        app.tileBudgetBytes = Math.round(budgetMB * 1024 * 1024);
+    }
+    const groups = Number(param('mergegroups'));
+    if (Number.isFinite(groups) && groups > 0) {
+        app.mergeGroupCount = Math.floor(groups);
+    }
+    // display-controls reads dpr through app so it does not have to import a
+    // layer module just to size the memory budget.
+    app.tileDpr = currentDpr;
+    app.MergedTileLayer = createMergedTileLayer({
+        visibility,
+        selectability,
+        visibleLayers: app.visibleLayerNames,
+        selectableLayers: app.selectableLayers,
+        app,
+    }, { dpr: currentDpr });
+})();
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -288,7 +373,16 @@ const HeatMapTileLayer = L.GridLayer.extend({
     initialize: function(websocketManager, appState, options) {
         this._websocketManager = websocketManager;
         this._appState = appState;
-        L.GridLayer.prototype.initialize.call(this, options);
+        // Same grid as the layer tiles it is drawn over.
+        L.GridLayer.prototype.initialize.call(
+            this, withDeviceExactTileSize(options));
+    },
+
+    // Upscale-only display, same as the layout tile layer: the map rests on
+    // integer zoom so heatmap tiles show 1:1 with no fractional rescaling.
+    _clampZoom: function(zoom) {
+        return L.GridLayer.prototype._clampZoom.call(
+            this, floorClampZoom(this, zoom));
     },
 
     createTile: function(coords, done) {
@@ -324,6 +418,10 @@ const HeatMapTileLayer = L.GridLayer.extend({
             z: coords.z,
             x: coords.x,
             y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
         }).then(blob => {
             tile.src = URL.createObjectURL(blob);
         }).catch(() => {
@@ -351,6 +449,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 z: coords.z,
                 x: coords.x,
                 y: coords.y,
+                ...tileSizeFields(currentDpr(), this.getTileSize().x),
             }).then(blob => {
                 if (tile.src && tile.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.src);
@@ -390,20 +489,14 @@ function refreshOverlay() {
         app.overlayLayer.refreshTiles();
     }
 }
-app.refreshOverlay = scheduleRefreshOverlay;
-
-let _overlayRAF = null;
-function scheduleRefreshOverlay() {
-    if (_overlayRAF !== null) return;
-    _overlayRAF = requestAnimationFrame(() => {
-        _overlayRAF = null;
-        refreshOverlay();
-    });
-    // Every selection/highlight mutation refreshes the overlay, so this
-    // single hook keeps the selection browser in sync (it debounces and
-    // skips fetches while hidden).
+// Every selection/highlight mutation refreshes the overlay, so this single
+// hook keeps the selection browser in sync (it debounces and skips fetches
+// while hidden).
+const scheduleRefreshOverlay = rafCoalesce(() => {
+    refreshOverlay();
     if (app.selectionBrowser) app.selectionBrowser.scheduleRefresh();
-}
+});
+app.refreshOverlay = scheduleRefreshOverlay;
 
 function redrawAllLayers() {
     // Persist visibility and selectability state to cookies so they survive
@@ -411,21 +504,24 @@ function redrawAllLayers() {
     setCookie('or_visibility', encodeURIComponent(JSON.stringify(visibility)));
     setCookie('or_selectability',
               encodeURIComponent(JSON.stringify(selectability)));
+    // Keep the server's saved-state snapshot current for save_display_controls.
+    scheduleSyncDisplayState();
 
-    // Show/hide modules layer based on module_view visibility
-    if (app.modulesLayer) {
-        if (visibility.module_view && !app.map.hasLayer(app.modulesLayer)) {
-            app.modulesLayer.addTo(app.map);
-        } else if (!visibility.module_view && app.map.hasLayer(app.modulesLayer)) {
-            app.map.removeLayer(app.modulesLayer);
-        }
-    }
-    // Show/hide pin markers layer (controlled by Shapes > Pins)
-    if (app.pinsLayer) {
-        if (visibility.pins && !app.map.hasLayer(app.pinsLayer)) {
-            app.pinsLayer.addTo(app.map);
-        } else if (!visibility.pins && app.map.hasLayer(app.pinsLayer)) {
-            app.map.removeLayer(app.pinsLayer);
+    // Show/hide the toggleable pseudo-layer tile layers.
+    const toggleableLayers = [
+        [app.modulesLayer, visibility.module_view],   // Module view
+        [app.pinsLayer, visibility.pins],             // Shapes > Pins
+        [app.accessPointsLayer, visibility.access_points],
+        [app.regionsLayer, visibility.regions],
+        [app.mfgGridLayer, visibility.mfg_grid],
+        [app.gcellGridLayer, visibility.gcell_grid],
+    ];
+    for (const [layer, visible] of toggleableLayers) {
+        if (!layer) continue;
+        if (visible && !app.map.hasLayer(layer)) {
+            layer.addTo(app.map);
+        } else if (!visible && app.map.hasLayer(layer)) {
+            app.map.removeLayer(layer);
         }
     }
     for (const layer of app.allLayers) {
@@ -433,6 +529,22 @@ function redrawAllLayers() {
     }
     if (app.heatMapLayer) {
         app.heatMapLayer.refreshTiles();
+    }
+    // Keep the client-side selection outline in sync with the "Highlight
+    // selected" toggle: detach it when off, re-attach it when back on (the
+    // rectangle object is preserved so the current selection survives an
+    // off→on round trip; the server-side highlight is gated by the overlay
+    // refresh below).  An in-flight selection pulse is cancelled on off.
+    if (app.highlightRect) {
+        const showHighlight = visibility.highlight_selected !== false;
+        if (!showHighlight && app.map.hasLayer(app.highlightRect)) {
+            app.map.removeLayer(app.highlightRect);
+        } else if (showHighlight && !app.map.hasLayer(app.highlightRect)) {
+            app.highlightRect.addTo(app.map);
+        }
+    }
+    if (!visibility.highlight_selected && app.clearSelectionPulse) {
+        app.clearSelectionPulse();
     }
     // Overlay layer must also refresh on structural changes (e.g. design
     // reload changes the coordinate space).
@@ -448,13 +560,38 @@ function redrawAllLayers() {
 
 // Debounced wrapper: coalesces back-to-back server pushes (e.g.
 // debug_refresh + debug_paused) into a single redrawAllLayers() call.
-let _redrawRAF = null;
-function scheduleRedrawAllLayers() {
-    if (_redrawRAF !== null) return;
-    _redrawRAF = requestAnimationFrame(() => {
-        _redrawRAF = null;
-        redrawAllLayers();
-    });
+const scheduleRedrawAllLayers = rafCoalesce(redrawAllLayers);
+
+// Push the current display state to the server (coalesced via rAF) so the
+// Tcl save_display_controls command has an up-to-date snapshot to write.
+const scheduleSyncDisplayState = rafCoalesce(() => {
+    if (!app.websocketManager || isStaticMode(app)) return;
+    app.websocketManager.request({
+        type: 'set_display_state',
+        state: serializeDisplayState(),
+    }).catch(() => { /* server offline / not ready — ignore */ });
+});
+app.syncDisplayState = scheduleSyncDisplayState;
+
+// Apply a saved display state (from restore_display_controls) by writing the
+// entries back and reloading, so the well-tested init path rebuilds the panel
+// consistently.  The current camera is preserved across the reload, and
+// sessionStorage survives it — which is why the split store works here.
+function applyDisplayState(state) {
+    if (!state || typeof state !== 'object') return;
+    const entries = state.entries;
+    if (!entries || typeof entries !== 'object') return;
+    applyDisplayStateEntries(entries);
+    // Preserve the current view so restoring controls doesn't move the map.
+    try {
+        if (app.map && typeof sessionStorage !== 'undefined') {
+            const c = app.map.getCenter();
+            sessionStorage.setItem('or_restore_view',
+                JSON.stringify({ lat: c.lat, lng: c.lng,
+                                 zoom: app.map.getZoom() }));
+        }
+    } catch (_) { /* ignore */ }
+    window.location.reload();
 }
 
 function createLayoutViewer(container) {
@@ -470,13 +607,16 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
-    app.map = L.map(mapDiv, {
-        crs: L.CRS.Simple,
-        zoom: 1,
-        zoomSnap: 0,
-        fadeAnimation: false,
-        attributionControl: false,
-    });
+    app.map = L.map(mapDiv, buildMapOptions());
+    // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
+    // boundaries mid-device-pixel and they show as dark hairlines; this nudges
+    // each tile container back onto the grid after every move.
+    installDeviceGridSnapping(app.map);
+    // Tiles are rasterized for the ratio in force when they were requested and
+    // are never revisited on their own, so a window moved to another monitor —
+    // or a browser zoom change — leaves every tile stretched from the old ratio
+    // into the new box until something forces a refresh. Nothing did.
+    watchDevicePixelRatio(() => redrawAllLayers());
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';
@@ -500,25 +640,44 @@ function createLayoutViewer(container) {
     });
     app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
 
-    // Scale bar overlay (bottom-left, above coord bar).
+    // Scale bar overlay (bottom-left, above coord bar).  Content is an
+    // inline SVG rebuilt on each update (bracket + ticks + 0/total labels).
     const scaleBar = document.createElement('div');
     scaleBar.id = 'scale-bar';
     mapDiv.appendChild(scaleBar);
-    const scaleBarLine = document.createElement('div');
-    scaleBarLine.className = 'scale-bar-line';
-    scaleBar.appendChild(scaleBarLine);
-    const scaleBarLabel = document.createElement('span');
-    scaleBarLabel.className = 'scale-bar-label';
-    scaleBar.appendChild(scaleBarLabel);
 
-    // Round to the nearest 1/2/5 × 10^n value (e.g. 1, 2, 5, 10, 20, …).
-    function niceRound(value) {
-        const mag = Math.pow(10, Math.floor(Math.log10(value)));
-        const residual = value / mag;
-        if (residual < 1.5) return 1 * mag;
-        if (residual < 3.5) return 2 * mag;
-        if (residual < 7.5) return 5 * mag;
-        return 10 * mag;
+    const SB_H = 22;       // svg height
+    const SB_BAR_H = 8;    // bracket height
+    const SB_PAD = 22;     // horizontal room for end labels overflowing the bar
+
+    function renderScaleBar(barPx, label, segments) {
+        const top = 2;
+        const base = top + SB_BAR_H;
+        const x0 = SB_PAD;
+        const x1 = SB_PAD + barPx;
+        const labelY = SB_H - 2;
+        const wide = barPx >= 40;  // hide "0"/ticks on very short bars
+        const parts = [];
+        // Bracket: |_| (left/right verticals + baseline, open top).
+        parts.push(`<path d="M${x0} ${top} V${base} H${x1} V${top}" `
+            + `fill="none" stroke="currentColor" stroke-width="2"/>`);
+        // Interior ticks (half height), only when the bar is wide enough.
+        if (wide && segments > 1) {
+            for (let i = 1; i < segments; i++) {
+                const tx = x0 + (barPx * i) / segments;
+                parts.push(`<line x1="${tx}" y1="${base - SB_BAR_H / 2}" `
+                    + `x2="${tx}" y2="${base}" stroke="currentColor" stroke-width="1"/>`);
+            }
+        }
+        // Labels: "0" at the left end, the total at the right end.
+        if (wide) {
+            parts.push(`<text x="${x0}" y="${labelY}" text-anchor="middle" `
+                + `class="scale-bar-text">0</text>`);
+        }
+        parts.push(`<text x="${x1}" y="${labelY}" text-anchor="middle" `
+            + `class="scale-bar-text">${label}</text>`);
+        scaleBar.innerHTML =
+            `<svg width="${x1 + SB_PAD}" height="${SB_H}">${parts.join('')}</svg>`;
     }
 
     function updateScaleBar() {
@@ -526,39 +685,30 @@ function createLayoutViewer(container) {
             scaleBar.style.display = 'none';
             return;
         }
-        scaleBar.style.display = '';
-
         // Pixels per DBU at current zoom: designScale * 2^zoom.
-        const zoom = app.map.getZoom();
-        const pxPerDbu = app.designScale * Math.pow(2, zoom);
-
+        const pxPerDbu = app.designScale * Math.pow(2, app.map.getZoom());
         // Target bar width: ~15% of the map container width.
         const containerWidth = app.map.getContainer().clientWidth || 400;
-        const targetPx = containerWidth * 0.15;
-
-        let barPx, label;
-        if (app.showDbu) {
-            const niceDbu = Math.max(1, niceRound(targetPx / pxPerDbu));
-            barPx = Math.round(niceDbu * pxPerDbu);
-            label = String(Math.round(niceDbu));
-        } else {
-            const dbuPerUm = app.techData?.dbu_per_micron || 1000;
-            const pxPerUm = pxPerDbu * dbuPerUm;
-            const niceUm = niceRound(targetPx / pxPerUm);
-
-            barPx = Math.round(niceUm * pxPerUm);
-
-            // Format with appropriate units.
-            if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
-            else if (niceUm >= 1) label = niceUm + ' \u00b5m';
-            else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
-            else label = (niceUm * 1e6) + ' pm';
+        const sb = computeScaleBar({
+            targetPx: containerWidth * 0.15,
+            pxPerDbu,
+            dbuPerMicron: app.techData?.dbu_per_micron,
+            showDbu: app.showDbu,
+        });
+        if (!sb) {
+            scaleBar.style.display = 'none';
+            return;
         }
-
-        scaleBarLine.style.width = barPx + 'px';
-        scaleBarLabel.textContent = label;
+        scaleBar.style.display = '';
+        renderScaleBar(sb.barPx, sb.label, sb.segments);
     }
-    app.map.on('zoomend moveend resize', updateScaleBar);
+
+    // Coalesce updates during continuous zoom gestures so the bar tracks
+    // the animation instead of only snapping at gesture end.  Pan doesn't
+    // change the bar (geometry depends only on zoom and container width),
+    // so 'move'/'moveend' are deliberately not listened to.
+    const scheduleUpdateScaleBar = rafCoalesce(updateScaleBar);
+    app.map.on('zoom zoomend resize', scheduleUpdateScaleBar);
     app.updateScaleBar = updateScaleBar;
 
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
@@ -678,6 +828,9 @@ function createTclConsole(container) {
 
 // ─── Inspector Panel ────────────────────────────────────────────────────────
 
+// Expose visibility so the inspector can honor the "Highlight selected"
+// toggle when drawing its client-side selection outline/pulse.
+app.visibility = visibility;
 const inspector = createInspectorPanel(app, redrawAllLayers, scheduleRefreshOverlay);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
@@ -877,6 +1030,9 @@ const LAYOUT_VERSION = 4;
 
 const staticCache = window.__STATIC_CACHE__ || null;
 if (staticCache) {
+    // Before any layer or the map scale is built: a report's tiles are baked at
+    // a fixed size and cannot be re-rendered to fit a different box.
+    useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
@@ -962,14 +1118,11 @@ app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     applyGLTheme(next);
-    setCookie('or_theme', next);
-    // Also write to localStorage for standalone file:// reports.
-    if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('or_theme', next);
-    }
+    persistTheme(next);
     // Re-render canvas-based widgets that read theme colors.
     if (app.chartsWidget) app.chartsWidget.render();
     if (app.clockTreeWidget) app.clockTreeWidget.render();
+    scheduleSyncDisplayState();
 };
 
 app.toggleShowDbu = function() {
@@ -983,6 +1136,7 @@ app.toggleShowDbu = function() {
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
     if (app.refreshInspector) app.refreshInspector();
+    scheduleSyncDisplayState();
 };
 
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
@@ -1018,7 +1172,9 @@ function ensureDebugContinueButton() {
 // click and highlight lands offset from the re-rendered tiles.
 
 function applyBounds(designBounds) {
-    const t = computeBoundsTransforms(designBounds);
+    // The map's whole coordinate system is defined in units of one tile, so
+    // this must be the size the layers actually use.
+    const t = computeBoundsTransforms(designBounds, tileSizeCss());
     if (!t) return false;
     app.currentBounds = designBounds;
     app.designScale = t.scale;
@@ -1026,6 +1182,11 @@ function applyBounds(designBounds) {
     app.designOriginX = t.originX;
     app.designOriginY = t.originY;
     app.fitBounds = t.fitBounds;
+    // Bound the zoom before the first fit: the tile layers are L.GridLayer,
+    // which contributes no maxZoom, so the map would otherwise let the user
+    // zoom until the tile math degenerates.  Set per design, since the cap
+    // depends on this design's scale.
+    app.map.setMaxZoom(maxUsefulZoom(t.scale));
     return true;
 }
 
@@ -1140,6 +1301,9 @@ app.websocketManager.onPush = (msg) => {
         let text = msg.text;
         if (text.endsWith('\n')) text = text.slice(0, -1);
         if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'restore_display_state') {
+        // restore_display_controls (Tcl) broadcast a saved state — apply it.
+        applyDisplayState(msg.state);
     } else if (msg.type === 'shutdown') {
         // Server is stopping intentionally (web_server -stop).
         // Disable auto-reconnect and show a clear message. Note that
@@ -1196,6 +1360,20 @@ app.websocketManager.readyPromise.then(async () => {
                     }
                 };
             }
+
+            // Restore the pre-reload camera saved by applyDisplayState so
+            // restore_display_controls doesn't move the view.
+            try {
+                const raw = sessionStorage.getItem('or_restore_view');
+                if (raw) {
+                    sessionStorage.removeItem('or_restore_view');
+                    const v = JSON.parse(raw);
+                    if (v && isFinite(v.lat) && isFinite(v.lng)
+                        && isFinite(v.zoom)) {
+                        app.map.setView([v.lat, v.lng], v.zoom);
+                    }
+                }
+            } catch (_) { /* ignore */ }
         }
 
         // Click-to-select: convert click position to DBU and query server
@@ -1243,8 +1421,14 @@ app.websocketManager.readyPromise.then(async () => {
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
+            const token = beginSelection(app);
             app.websocketManager.request(selectRequest)
                 .then(data => {
+                    // A newer selection (another click, a layer row, the
+                    // Inspector) has already replaced this one on the server;
+                    // this response describes a selection that no longer
+                    // exists, so it must not drive the Inspector.
+                    if (!isCurrentSelection(app, token)) return;
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {
@@ -1257,11 +1441,22 @@ app.websocketManager.readyPromise.then(async () => {
                         }
                         updateInspector(data);
                         focusComponent('Inspector');
-                        // Highlight selected instance bbox
-                        if (inst.bbox) {
-                            highlightBBox(inst.bbox[0], inst.bbox[1],
-                                          inst.bbox[2], inst.bbox[3]);
-                            pulseHighlight(inst.bbox);
+                        // Outline the object the Inspector is showing, using
+                        // ITS bbox — `data.bbox` — not `selected[0].bbox`.
+                        // For a net the two are different rects: selected[]
+                        // carries the hit-test bbox (dbNet::getTermBBox,
+                        // terminals only) while data.bbox is the descriptor's
+                        // full extent (wire ∪ terminals).  On a power net whose
+                        // straps span the design they differ by ~2x, so the box
+                        // landed nowhere near the net the Inspector was
+                        // describing.  selected[0] is also the wrong OBJECT
+                        // whenever the server cycled `pick` through overlapping
+                        // hits.  Instances are unaffected either way: their
+                        // hit-test bbox IS the descriptor bbox.
+                        if (data.bbox) {
+                            highlightBBox(data.bbox[0], data.bbox[1],
+                                          data.bbox[2], data.bbox[3]);
+                            pulseHighlight(data.bbox);
                         }
                         if (selectRequest.show_connectivity
                             && data.connected_added > 0) {
@@ -1374,6 +1569,11 @@ app.websocketManager.readyPromise.then(async () => {
         if (hasDesign && !boundsData.shapes_ready) {
             document.getElementById('loading-overlay').style.display = 'flex';
         }
+
+        // Seed the server's display-state cache with the cookie-restored
+        // state, so save_display_controls works before any interaction
+        // (otherwise it would warn or write a previous session's state).
+        scheduleSyncDisplayState();
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }

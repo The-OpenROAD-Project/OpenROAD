@@ -55,7 +55,7 @@ class MBFF
        std::unique_ptr<AbstractGraphics> graphics);
 
   ~MBFF();
-  void Run(int mx_sz, float alpha, float beta);
+  void Run(int mx_sz, float alpha, float beta, float clock_power_weight);
   bool IsValidTray(odb::dbInst* tray);
 
  private:
@@ -89,6 +89,7 @@ class MBFF
     bool pos_output{false};
     bool inv_output{false};
     bool is_scan_cell{false};
+    bool is_register{false};
 
     std::string to_string() const;
     bool operator<(const Mask& rhs) const;
@@ -243,6 +244,9 @@ class MBFF
   float single_bit_width_;
   float single_bit_power_;
   float clock_period_;
+  // Per-sink clock-tree power expressed as a multiple of single_bit_power_.
+  // 0 reproduces the legacy cost model (clock-tree savings not credited).
+  float clock_power_weight_;
   odb::dbMaster* single_bit_master_;
 
   // launch-capture FF-pair vars

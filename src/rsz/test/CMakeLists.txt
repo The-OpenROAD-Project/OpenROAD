@@ -28,6 +28,7 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gain_buffering2
+    gain_buffering3
     gcd_resize
     insert_buffer
     insert_buffer_hier
@@ -220,6 +221,7 @@ or_integration_tests(
     repair_setup6_multi
     repair_setup7_multi
     report_equiv_cells
+    unset_dont_use_equiv_cells
     replace_arith_modules1
     replace_arith_modules2
     replace_arith_modules3

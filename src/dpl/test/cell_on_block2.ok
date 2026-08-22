@@ -5,25 +5,51 @@
 [INFO ODB-0130]     Created 201 pins.
 [INFO ODB-0131]     Created 11904 components and 90887 component-terminals.
 [INFO ODB-0133]     Created 31790 nets and 67032 connections.
-[INFO DPL-0006] Core area: 8048318.98 um^2, Instances area: 52327.69 um^2, Utilization: 0.7%
+[INFO DPL-0006] Core area: 8048318.98 um^2
+[INFO DPL-0007] Movable instances area: 35719.26 um^2
+[INFO DPL-0008] Fixed instances area within core: 7065060.67 um^2
+[INFO DPL-0009] Utilization: 88.2%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                    2916
-Diamond Move Success:           2916 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
+	Automatic search window extension enabled.
+	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (4 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 11766 cells
+[INFO DPL-0393]   height 15 row(s): 18 cells
+[INFO DPL-0393]   height 83 row(s): 108 cells
+[INFO DPL-0393]   height 174 row(s): 12 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |       3643 |       831 |      2410
+        1 |       3642 |       870 |      2637
+        2 |       2624 |       738 |      1781
+        3 |       1978 |       678 |      1300
+        4 |       1702 |       638 |      1040
+        5 |       1363 |       527 |       836
+        6 |       1327 |       485 |       842
+        7 |        901 |       403 |       498
+        8 |        813 |       351 |       462
+        9 |        782 |       308 |       465
+       10 |        586 |       250 |       336
+       20 |        180 |        78 |       102
+       30 |         17 |        11 |         6
+       40 |         13 |         9 |         4
+       50 |          5 |         5 |         0
+       60 |         21 |         5 |        16
+       70 |          8 |         2 |         6
+       80 |          1 |         1 |         0
+       83 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 83.
 Placement Analysis
 ---------------------------------
-total displacement     291565.6 u
-average displacement       24.8 u
-max displacement         1411.8 u
+total displacement     300806.6 u
+average displacement       25.6 u
+max displacement         1402.7 u
 original HPWL         1353118.6 u
-legalized HPWL        1391680.1 u
+legalized HPWL        1395741.9 u
 delta HPWL                    3 %
 
 No differences found.

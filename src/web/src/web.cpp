@@ -14,6 +14,7 @@
 #include <fstream>
 #include <functional>
 #include <ios>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -31,6 +32,7 @@
 #include "boost/beast/websocket.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
+#include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
@@ -93,10 +95,7 @@ static http::response<http::string_body> handle_request(
   res.set(http::field::access_control_allow_origin, "*");
 
   if (req.method() == http::verb::get) {
-    std::string file_path(req.target());
-    if (file_path == "/") {
-      file_path = "/index.html";
-    }
+    const std::string file_path = assetPathFromTarget(req.target());
     const auto* asset = findEmbeddedAsset(file_path);
     if (asset) {
       res.set(http::field::content_type, asset->content_type);
@@ -378,6 +377,27 @@ WebSocketSession::WebSocketSession(
         return resp;
       },
       /*run_inline=*/true);
+
+  // Client continuously syncs its full display-controls state here so the
+  // Tcl save_display_controls command can persist it to a file.  Runs
+  // inline (no net::post) — it only touches the mutex-guarded cache.
+  dispatcher_.add(
+      "set_display_state",
+      WebSocketRequest::kSetDisplayState,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        if (viewer_hook_ != nullptr) {
+          if (auto* state = req.json.if_contains("state")) {
+            viewer_hook_->setDisplayState(boost::json::serialize(*state));
+          }
+        }
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = R"({"ok":1})";
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
 }
 
 WebSocketSession::~WebSocketSession()
@@ -537,6 +557,39 @@ void WebSocketSession::do_read()
       });
 }
 
+namespace {
+
+// Run a request handler, converting any exception into an error response.
+//
+// Handlers run either on the read thread or on a bare io_context thread, and
+// neither has a try/catch above it: the threads run io_context::run() directly
+// (see createAndRunListener), so an exception escaping a handler unwinds out of
+// the thread function and calls std::terminate -- the whole openroad process
+// dies, taking the design with it.  A malformed request must cost the client
+// one error response, never the session.
+//
+// The obvious offender is a field whose JSON type is wrong -- boost::json's
+// as_int64()/as_string() throw rather than return an error.  See
+// parseTileCoords() in request_handler.h for why a careful client cannot avoid
+// this on its own.
+WebSocketResponse invoke_handler(const RequestDispatcher::HandleFn& handle,
+                                 const WebSocketRequest& req,
+                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  // `handle` returns by value, so on a throw `resp` is still the untouched
+  // default -- no partial payload to clear.
+  try {
+    resp = handle(req, state);
+  } catch (const std::exception& e) {
+    resp = errorResponse(req.id, std::string("server error: ") + e.what());
+  }
+  resp.request_type = req.raw_type;
+  return resp;
+}
+
+}  // namespace
+
 void WebSocketSession::on_read(beast::error_code ec)
 {
   if (ec) {
@@ -560,19 +613,16 @@ void WebSocketSession::on_read(beast::error_code ec)
   const auto* entry = dispatcher_.find(req.type);
   if (entry != nullptr) {
     if (entry->run_inline) {
-      auto resp = entry->handle(req, state_);
-      resp.request_type = req.raw_type;
-      queue_response(resp);
+      queue_response(invoke_handler(entry->handle, req, state_));
     } else {
       auto handle = entry->handle;
-      net::post(websocket_.get_executor(),
-                [self = std::move(self),
-                 req = std::move(req),
-                 handle = std::move(handle)]() {
-                  auto resp = handle(req, self->state_);
-                  resp.request_type = req.raw_type;
-                  self->queue_response(resp);
-                });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self),
+           req = std::move(req),
+           handle = std::move(handle)]() {
+            self->queue_response(invoke_handler(handle, req, self->state_));
+          });
     }
   } else {
     // Unknown type -- return an error so the client knows the request
@@ -1356,6 +1406,119 @@ void WebServer::saveImage(const std::string& filename,
     }
   }
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+}
+
+void WebServer::saveDisplayControls(const std::string& filename)
+{
+  if (!viewer_hook_) {
+    logger_->error(utl::WEB, 51, "Web server is not running.");
+    return;
+  }
+  const std::string state = viewer_hook_->getDisplayState();
+  if (state.empty()) {
+    logger_->warn(utl::WEB,
+                  44,
+                  "No display state has been received from a client yet; "
+                  "open the web viewer before saving.");
+    return;
+  }
+  std::ofstream out(filename);
+  if (!out) {
+    logger_->error(utl::WEB, 45, "Cannot open {} for writing.", filename);
+    return;
+  }
+  out << state;
+  // Opening the file succeeding says nothing about the write: a full disk or a
+  // quota surfaces only here, and reporting success would leave a truncated
+  // file behind.  close() flushes, so check after it.
+  out.close();
+  if (!out) {
+    logger_->error(
+        utl::WEB, 53, "Failed writing display controls to {}.", filename);
+    return;
+  }
+  logger_->info(utl::WEB, 46, "Saved display controls to {}.", filename);
+}
+
+void WebServer::restoreDisplayControls(const std::string& filename)
+{
+  if (!viewer_hook_) {
+    logger_->error(utl::WEB, 47, "Web server is not running.");
+    return;
+  }
+  std::ifstream in(filename);
+  if (!in) {
+    logger_->error(utl::WEB, 48, "Cannot open {}.", filename);
+    return;
+  }
+  const std::string state((std::istreambuf_iterator<char>(in)),
+                          std::istreambuf_iterator<char>());
+  boost::json::value parsed;
+  try {
+    parsed = boost::json::parse(state);
+  } catch (const std::exception& e) {
+    logger_->error(utl::WEB,
+                   49,
+                   "Invalid display-controls JSON in {}: {}",
+                   filename,
+                   e.what());
+    return;
+  }
+  // Validate the shape here, at the file boundary, so the client can trust
+  // what it is handed: it writes these values straight into document.cookie,
+  // where a ';' would inject cookie attributes, and a JSON number or boolean
+  // would silently change a key's meaning.  Rejecting loudly beats a restore
+  // that half-applies.
+  const auto* root = parsed.if_object();
+  const auto* entries_value
+      = root != nullptr ? root->if_contains("entries") : nullptr;
+  const boost::json::object* entries
+      = entries_value != nullptr ? entries_value->if_object() : nullptr;
+  if (entries == nullptr) {
+    logger_->error(utl::WEB,
+                   52,
+                   "Invalid display-controls state in {}: expected an "
+                   "\"entries\" object.",
+                   filename);
+    return;
+  }
+  // One error site for every way an entry can be unusable, so the reason is
+  // carried as text rather than burning a message id per case.  error() does
+  // not return, so reporting at the point of detection needs no loop-carried
+  // state.
+  for (const auto& [key, value] : *entries) {
+    const char* reason = nullptr;
+    if (!value.is_string()) {
+      reason = "is not a string";
+    } else if (const std::string_view text = value.get_string();
+               text.find_first_of(";\r\n") != std::string_view::npos) {
+      // Cookie delimiters would let the file forge attributes on the cookies
+      // the client writes these into.  No legitimate value carries them: the
+      // cookie-backed ones are URI-encoded by their writers, the rest is JSON.
+      reason = "contains a ';', CR or LF";
+    }
+    if (reason != nullptr) {
+      logger_->error(utl::WEB,
+                     54,
+                     "Invalid display-controls state in {}: entry \"{}\" {}.",
+                     filename,
+                     std::string(key),
+                     reason);
+    }
+  }
+
+  boost::json::object msg;
+  msg["type"] = "restore_display_state";
+  msg["state"] = std::move(parsed);
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+  logger_->info(utl::WEB, 50, "Restored display controls from {}.", filename);
+}
+
+void WebServer::setDisplayState(std::string json)
+{
+  if (viewer_hook_) {
+    viewer_hook_->setDisplayState(std::move(json));
+  }
 }
 
 ListenerHandle createAndRunListener(

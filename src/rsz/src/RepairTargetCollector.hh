@@ -272,6 +272,8 @@ class RepairTargetCollector
   // === Internal collection helpers =========================================
   set<const sta::Pin*> collectPinsByPathEndpoint(const sta::Pin* endpoint_pin,
                                                  size_t paths_per_endpoint = 1);
+  // Worst-slack path to an endpoint pin (pure read, nullptr if none).
+  sta::Path* worstSlackPathForPin(const sta::Pin* endpoint_pin) const;
   void collectBySlack();
   void collectByPaths(int endPointIndex = 1,
                       int numEndpoints = 1,

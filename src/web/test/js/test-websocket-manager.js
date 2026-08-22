@@ -259,7 +259,8 @@ describe('WebSocketManager flow control', () => {
         // The critical regression: cancelling already-sent requests must NOT
         // pump new ones (the bytes are committed; the server still has to
         // process them). Doing so re-floods the socket — the original bug.
-        assert.equal(mgr.socket.sent.length, firstBurst,
+        const tileRequests = mgr.socket.sent.filter(msg => JSON.parse(msg).type !== 'cancel').length;
+        assert.equal(tileRequests, firstBurst,
             'cancel must not trigger new sends');
         assert.equal(mgr._inFlight, firstBurst,
             'cancel must not free wire slots');
@@ -269,8 +270,41 @@ describe('WebSocketManager flow control', () => {
             deliverReply(mgr, id);
         }
         assert.equal(mgr._inFlight, firstBurst, 'refilled to the cap');
-        assert.equal(mgr.socket.sent.length, firstBurst * 2,
+        const finalTileRequests = mgr.socket.sent.filter(msg => JSON.parse(msg).type !== 'cancel').length;
+        assert.equal(finalTileRequests, firstBurst * 2,
             'replies — not cancels — drive the next burst');
+    });
+
+    it('does not count a cancel acknowledgement as a request reply', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 1;
+
+        const first = mgr.request({ type: 'tile', n: 0 });
+        first.catch(() => {});
+        mgr.request({ type: 'tile', n: 1 }).catch(() => {});
+        mgr.request({ type: 'tile', n: 2 }).catch(() => {});
+
+        mgr.cancel(first.requestId);
+        const cancel = mgr.socket.sent.map(msg => JSON.parse(msg))
+            .find(msg => msg.type === 'cancel');
+        assert.ok(cancel, 'cancel request was sent');
+
+        // The server acknowledges every cancel with the cancel message's own
+        // id.  That message was never counted in the wire window, so its reply
+        // must not release another queued tile.
+        deliverReply(mgr, cancel.id);
+        assert.equal(mgr._inFlight, 1);
+        assert.equal(mgr._queue.size, 2);
+        assert.equal(mgr.socket.sent.filter(
+            msg => JSON.parse(msg).type === 'tile').length, 1);
+
+        // The cancelled tile's eventual response is what frees the slot.
+        deliverReply(mgr, first.requestId);
+        assert.equal(mgr._inFlight, 1);
+        assert.equal(mgr._queue.size, 1);
+        assert.equal(mgr.socket.sent.filter(
+            msg => JSON.parse(msg).type === 'tile').length, 2);
     });
 
     it('cancelling a queued request drops it before it is sent', async () => {
@@ -321,6 +355,38 @@ describe('WebSocketManager flow control', () => {
         mgr.cancel(queuedId);
         // The promise must reject — not hang forever — so callers clean up.
         await assert.rejects(observed, { message: 'Request cancelled' });
+    });
+
+    it('cancelling a sent request settles its promise', async () => {
+        // The sent branch has to settle for the same reason the queued one
+        // does, and the cost of not doing so is higher: the merged tile layer
+        // releases its decoded ImageBitmaps in a finally, which never runs if
+        // the await never returns.  Every pruned or refreshed tile would then
+        // keep its decodes alive — the growth the merge exists to bound.
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+
+        const promise = mgr.request({ type: 'tile', n: 0 });
+        const id = promise.requestId;
+        assert.ok(mgr.pending.has(id), 'request is on the wire');
+
+        mgr.cancel(id);
+        // Raced against a timer rather than awaited directly: the failure mode
+        // being guarded against is a promise that never settles, and awaiting
+        // that hangs the suite instead of failing it.
+        const outcome = await Promise.race([
+            promise.then(() => 'resolved', (e) => e.message),
+            new Promise(r => setTimeout(() => r('never settled'), 50)),
+        ]);
+        assert.equal(outcome, 'Request cancelled');
+
+        // Settling must not disturb the wire-slot accounting: the bytes are
+        // committed and the slot frees only when the stale reply lands.
+        assert.equal(mgr._inFlight, 1, 'cancel must not free the wire slot');
+        assert.ok(!mgr.pending.has(id), 'the stale reply is no longer tracked');
+        // And the stale reply must still be harmless once it arrives.
+        deliverReply(mgr, id);
+        assert.equal(mgr._inFlight, 0, 'the reply freed the slot');
     });
 });
 

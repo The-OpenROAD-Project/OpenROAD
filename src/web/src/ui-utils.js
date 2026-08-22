@@ -114,6 +114,260 @@ export function boundsEqual(a, b) {
         && a[1][0] === b[1][0] && a[1][1] === b[1][1];
 }
 
+// --- Selection ownership ---
+//
+// Several panels can replace the selection: the canvas, the Inspector's links
+// and prev/next, the Display Control's layer rows, the fanout chart, the
+// schematic and the rulers.  The server runs its handlers on a thread pool, so
+// two selections issued in quick succession can complete out of order and the
+// slower — older — one would otherwise land last, leaving the Inspector
+// describing an object the server no longer has selected.
+//
+// beginSelection() hands ownership to the caller and returns a token; the
+// caller drops its own response once isCurrentSelection() goes false.  Panels
+// that decorate their own selection register a reset callback so the new owner
+// clears the previous one's decoration — the callback also runs for the panel
+// that called beginSelection(), so paint after the call, never before.
+
+export function beginSelection(app) {
+    app.selectionToken = (app.selectionToken || 0) + 1;
+    for (const reset of app.selectionResetters || []) {
+        reset();
+    }
+    return app.selectionToken;
+}
+
+export function isCurrentSelection(app, token) {
+    return app.selectionToken === token;
+}
+
+export function onSelectionReset(app, fn) {
+    if (!app.selectionResetters) {
+        app.selectionResetters = [];
+    }
+    app.selectionResetters.push(fn);
+}
+
+// Leaflet map options for the 2D layout viewer.
+//
+// zoomSnap:1 + zoomDelta:1 force the map to rest only at INTEGER zoom levels,
+// so server tiles are displayed 1:1 at rest with no fractional CSS rescaling
+// of the tile pane.  Downscaling a band-limited dense raster (bump arrays)
+// re-introduces the moiré beat the server worked to remove; resting on integer
+// zoom (combined with the floor _clampZoom override in the tile layers, which
+// guarantees the pane is only ever upscaled) prevents that.
+//
+// `crs` is parameterized so this is unit-testable without the Leaflet global.
+export function buildMapOptions(
+    crs = (typeof L !== 'undefined' ? L.CRS.Simple : undefined)) {
+    return {
+        crs,
+        zoom: 1,
+        zoomSnap: 1,
+        zoomDelta: 1,
+        fadeAnimation: false,
+        attributionControl: false,
+    };
+}
+
+// Build a display-controls group header row: an expand/collapse triangle and
+// a stretching name cell.  Callers fill in `name.textContent` and append their
+// checkbox columns after it, which pins those columns to the row's right edge
+// (see the .vis-name / .vis-cb rules in style.css).
+//
+// The header is a plain <div>, not a <label>: a <label> wrapping the
+// visibility checkbox activates that checkbox for a click anywhere in the
+// row, so any click that misses a checkbox toggles the whole category's
+// visibility.  Here only the checkboxes toggle state; the triangle, the
+// group name and the empty space expand/collapse, matching the Qt GUI's
+// tree where clicking an item's name never changes visibility.
+export function makeGroupHeader(className = 'vis-group-header') {
+    const header = document.createElement('div');
+    header.className = className;
+    const arrow = document.createElement('span');
+    arrow.className = 'vis-arrow';
+    header.appendChild(arrow);
+    const name = document.createElement('span');
+    name.className = 'vis-name';
+    header.appendChild(name);
+    return { header, arrow, name };
+}
+
+// Wire `header` so clicking its triangle, its name cell, or its own bare area
+// (the empty space, which targets `header` itself) expands or collapses
+// `children`, keeping `arrow`'s glyph in sync.  `collapsed` is the initial
+// state and is applied immediately.
+//
+// Only those three targets collapse.  Every other element in the row keeps its
+// own click, so a control added later cannot both act and collapse the group:
+// the worst a new child can do is not respond, which is visible immediately,
+// rather than firing two actions at once.
+//
+// The name cell is listed explicitly because it is an element: the group name
+// used to be a bare text node whose clicks reported `header` as the target,
+// and moving it into a stretching .vis-name span (for column alignment) would
+// otherwise have silently dropped the largest click target in the row.
+export function attachGroupCollapse(header, arrow, children, collapsed) {
+    const apply = (c) => {
+        children.classList.toggle('collapsed', c);
+        arrow.textContent = c ? '▶' : '▼';
+    };
+    apply(!!collapsed);
+    header.addEventListener('click', (e) => {
+        const isName = e.target && e.target.parentNode === header
+            && e.target.classList
+            && e.target.classList.contains('vis-name');
+        if (e.target !== header && e.target !== arrow && !isName) return;
+        apply(!children.classList.contains('collapsed'));
+    });
+}
+
+// Deepest zoom worth offering, given `designScale` (pixels per DBU at zoom 0).
+//
+// Leaflet's default maxZoom is Infinity unless a layer supplies one, and
+// L.GridLayer -- unlike L.TileLayer -- supplies none.  Left unbounded the zoom
+// keeps climbing past any useful magnification until the arithmetic gives out:
+// the server's tile span (maxDXDY / 2^z) underflows to zero, so tiles come back
+// empty and the design appears to vanish, and the map's own 2^z factors reach
+// Infinity, which JSON.stringify writes as `null` in the tile request.
+//
+// The cap is where one DBU already covers `maxPxPerDbu` screen pixels: a DBU is
+// the smallest distance the database can express, so magnifying it further
+// shows nothing that was not already visible.  Returned as an integer because
+// the map rests on integer zoom levels (see buildMapOptions).
+// Must match kMaxTileZoom in request_handler.h: the server refuses a deeper
+// tile, so asking for one would only trade blank tiles for error responses.
+export const MAX_TILE_ZOOM = 30;
+
+export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
+    if (!Number.isFinite(designScale) || designScale <= 0) {
+        // Callers hold off until the design bounds arrive, so this is a
+        // belt-and-braces value: still finite, so the zoom stays bounded.
+        return MAX_TILE_ZOOM;
+    }
+    const z = Math.ceil(Math.log2(maxPxPerDbu / designScale));
+    // Never above the server's ceiling, and never below 1: a design so small
+    // that one DBU already fills the budget at zoom 0 would otherwise pin the
+    // user at the fit zoom with no way to zoom in at all.
+    return Math.max(1, Math.min(MAX_TILE_ZOOM, z));
+}
+
+// True for a "#rrggbb" hex color string (the form an <input type="color">
+// emits and the form persisted for the background color).
+export function isValidHexColor(s) {
+    return typeof s === 'string' && /^#[0-9a-fA-F]{6}$/.test(s);
+}
+
+// Normalize a CSS color to the "#rrggbb" form an <input type="color">
+// requires, or null when unrecognized.  Handles the forms a CSS custom
+// property can hold: "#rgb", "#rrggbb", and "rgb(r, g, b)".
+export function cssColorToHex(s) {
+    if (typeof s !== 'string') return null;
+    const str = s.trim();
+    if (isValidHexColor(str)) return str.toLowerCase();
+    const short = str.match(/^#([0-9a-fA-F]{3})$/);
+    if (short) {
+        return '#' + short[1].split('').map(c => c + c).join('').toLowerCase();
+    }
+    const rgb = str.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/);
+    if (rgb) {
+        const parts = rgb.slice(1).map(Number);
+        if (parts.some(v => v > 255)) return null;
+        return '#' + parts.map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+    return null;
+}
+
+// Wrap fn in a single-flight requestAnimationFrame scheduler: calls made
+// while a frame is already pending coalesce into one invocation of fn.
+export function rafCoalesce(fn) {
+    let pending = null;
+    return () => {
+        if (pending !== null) {
+            return;
+        }
+        pending = requestAnimationFrame(() => {
+            pending = null;
+            fn();
+        });
+    };
+}
+
+// Round a positive value to the nearest 1/2/5/10 × 10^n, returning both the
+// rounded value and the chosen leading digit (used to pick tick subdivisions).
+export function niceRoundParts(value) {
+    const mag = Math.pow(10, Math.floor(Math.log10(value)));
+    const residual = value / mag;
+    let digit;
+    if (residual < 1.5) {
+        digit = 1;
+    } else if (residual < 3.5) {
+        digit = 2;
+    } else if (residual < 7.5) {
+        digit = 5;
+    } else {
+        digit = 10;
+    }
+    return { value: digit * mag, digit };
+}
+
+// Compute the scale-bar geometry and label from the current zoom.
+//   targetPx      desired bar length in screen pixels (~15% of viewport)
+//   pxPerDbu      pixels per DBU at the current zoom
+//   dbuPerMicron  DBU per micron for the design (metric mode)
+//   showDbu       true → label in DBU (no unit suffix), false → metric
+// Returns { barPx, label, segments } or null when not drawable.
+// Pure (no DOM) so it can be unit-tested.
+export function computeScaleBar({ targetPx, pxPerDbu, dbuPerMicron, showDbu }) {
+    if (!Number.isFinite(pxPerDbu) || pxPerDbu <= 0
+        || !Number.isFinite(targetPx) || targetPx <= 0) {
+        return null;
+    }
+
+    let barPx;
+    let label;
+    let digit;
+    if (showDbu) {
+        const nice = niceRoundParts(Math.max(1, targetPx / pxPerDbu));
+        digit = nice.digit;
+        barPx = Math.round(nice.value * pxPerDbu);
+        label = String(Math.round(nice.value));
+    } else {
+        // A corrupt (non-finite/non-positive) DBU-per-micron would send
+        // niceRoundParts a negative value and yield NaN geometry; fall
+        // back to the same default used for a missing value.
+        const dbuPerUm = (Number.isFinite(dbuPerMicron) && dbuPerMicron > 0)
+            ? dbuPerMicron : 1000;
+        const pxPerUm = pxPerDbu * dbuPerUm;
+        const nice = niceRoundParts(targetPx / pxPerUm);
+        digit = nice.digit;
+        const niceUm = nice.value;
+        barPx = Math.round(niceUm * pxPerUm);
+        // Pick the unit whose value comes out as a clean integer.
+        let scale;
+        let unit;
+        if (niceUm >= 1000) {
+            scale = 1 / 1000;
+            unit = 'mm';
+        } else if (niceUm >= 1) {
+            scale = 1;
+            unit = 'µm';
+        } else if (niceUm >= 0.001) {
+            scale = 1000;
+            unit = 'nm';
+        } else {
+            scale = 1e6;
+            unit = 'pm';
+        }
+        label = Math.round(niceUm * scale) + ' ' + unit;
+    }
+
+    // Interior subdivisions: 1 → 5 ticks, otherwise the leading digit
+    // (2 → 2, 5 → 5, 10 → 10), mirroring the Qt scale bar's peg count.
+    const segments = digit === 1 ? 5 : digit;
+    return { barPx, label, segments };
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

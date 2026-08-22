@@ -4,8 +4,14 @@
 // Display controls — layer checkboxes and visibility tree.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { VisTree } from './vis-tree.js';
-import { getCookie, setCookie } from './theme.js';
+import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
+    from './vis-tree.js';
+import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor,
+         getThemeDefaultBgColor }
+    from './theme.js';
+import { isStaticMode, makeGroupHeader, attachGroupCollapse, beginSelection,
+         isCurrentSelection, onSelectionReset, isValidHexColor }
+    from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -15,6 +21,19 @@ export function layerRangeSet(center, lower, upper, count) {
     const hi = Math.min(count - 1, center + upper);
     for (let i = lo; i <= hi; i++) indices.add(i);
     return indices;
+}
+
+// Reduce a layer-name → FillPattern-int map to only the non-solid entries so
+// the cookie stays small and Solid (the default) never needs persisting.
+// Values mirror the server's FillPattern enum (1 = solid).
+export function nonSolidPatterns(patterns) {
+    const out = {};
+    for (const [name, value] of Object.entries(patterns || {})) {
+        if (value !== 1) {
+            out[name] = value;
+        }
+    }
+    return out;
 }
 
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
@@ -51,6 +70,13 @@ const fallbackLayerPalette = [
     [180, 70, 150],  // magenta
 ];
 
+import {
+    computeGroupCount, estimateTilesPerPane, measureViewport,
+    partitionIntoGroups, reserveForUnmergedPanes, setItemVisible, tileBytes,
+    DEFAULT_BUDGET_BYTES, UNMERGED_PANE_COUNT,
+} from './tile-merge.js';
+import { buildMergedPanes } from './merged-tile-layer.js';
+
 // Populate display controls with layer checkboxes and visibility tree.
 export function populateDisplayControls(app, visibility, selectability,
                                          WebSocketTileLayer,
@@ -60,28 +86,123 @@ export function populateDisplayControls(app, visibility, selectability,
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
 
-    // Instance borders layer (always below routing layers)
-    const instancesLayer = new WebSocketTileLayer(app.websocketManager, '_instances', {
-        zIndex: 0,
-    });
-    instancesLayer.addTo(app.map);
-    app.allLayers.push(instancesLayer);
+    // Column header (visibility / selectability icons), mirroring the Qt GUI's
+    // QHeaderView.  Added first so it is the panel's sticky top row.
+    app.displayControlsEl.appendChild(makeColumnHeader());
 
+    // ─── Tile grouping ───────────────────────────────────────────────────
+    //
+    // Two modes.  Legacy: one Leaflet pane per tech layer per chiplet, which on
+    // a multi-die design is ~97 panes holding ~582 MB of decoded tile images —
+    // past the browser's ~458 MB ceiling, where it starts discarding decodes and
+    // the discarded regions paint white.  Merged:
+    // the routing layers are composited into N canvas panes, N chosen from a
+    // memory budget, so the total is bounded no matter how many layers or
+    // chiplets the design has.
+    //
+    // Only the routing layers are merged.  The pseudo layers (_instances,
+    // _pins, _modules and the Misc overlays below) stay as their own panes:
+    // there is a fixed handful of them, they carry no meaningful memory, and
+    // they have their own add/remove rules driven by the Shapes, Module-view
+    // and Misc toggles which are not worth folding into the draw list.
+    const mergedLayerClass = app.mergeTiles ? app.MergedTileLayer : null;
+    // Panes whose draw list changed during one tree update, refreshed once at
+    // the end rather than per layer — a group toggle walks every node, and
+    // refreshing per node would re-request the same pane dozens of times.
+    const dirtyPanes = new Set();
+
+    function flushDirtyPanes() {
+        for (const pane of dirtyPanes) {
+            pane.refreshTiles();
+        }
+        dirtyPanes.clear();
+    }
+
+    // A routing layer, as the tree sees it.  In legacy mode this IS the Leaflet
+    // layer; in merged mode it is an adapter over one entry of a pane's draw
+    // list, exposing the same three things the tree uses.
+    function makeRoutingLayer(name, zIndex) {
+        if (!mergedLayerClass) {
+            const layer = new WebSocketTileLayer(app.websocketManager, name, {
+                opacity: 0.7,
+                zIndex,
+            });
+            layer._orShow = () => layer.addTo(app.map);
+            layer._orHide = () => app.map.removeLayer(layer);
+            return layer;
+        }
+        // 0.7 matches the legacy per-layer pane opacity.  It is applied inside
+        // the merged canvas; the pane itself must stay opaque or every layer
+        // gets multiplied by 0.7 twice (see MERGED_PANE_OPACITY).
+        const item = { layer: name, opacity: 0.7, visible: false };
+        return {
+            _orItem: item,
+            _orPane: null,
+            refreshTiles() {
+                if (this._orPane) {
+                    dirtyPanes.add(this._orPane);
+                    flushDirtyPanes();
+                }
+            },
+            // setItemVisible reports whether the state actually changed, and
+            // only a real change dirties the pane.  The tree's onChange walks
+            // EVERY node and asserts the desired state on each, so dirtying
+            // unconditionally made one checkbox re-request every tile in every
+            // pane.
+            _orShow() {
+                if (setItemVisible(item, true) && this._orPane) {
+                    dirtyPanes.add(this._orPane);
+                }
+            },
+            _orHide() {
+                if (setItemVisible(item, false) && this._orPane) {
+                    dirtyPanes.add(this._orPane);
+                }
+            },
+        };
+    }
+
+    // Create a pseudo-layer tile layer and register it on the app.
+    // `appProp` names the app.<prop> slot (null = anonymous); `addToMap`
+    // attaches it immediately (layers whose toggle is default-ON).
+    function addPseudoLayer(name, appProp, zIndex, addToMap) {
+        const layer = new WebSocketTileLayer(app.websocketManager, name, {
+            zIndex,
+        });
+        if (addToMap) layer.addTo(app.map);
+        if (appProp) app[appProp] = layer;
+        app.allLayers.push(layer);
+        return layer;
+    }
+
+    // The initial attach state must follow `visibility`, which was already
+    // restored from the or_visibility cookie: a hardcoded attach leaves the
+    // checkbox (rendered from `visibility`) out of sync with the map until
+    // the first toggle runs redrawAllLayers.
+
+    // Instance borders layer (always below routing layers; no toggle)
+    addPseudoLayer('_instances', null, 0, true);
     // IO pin markers layer (between instances and routing layers)
-    const pinsLayer = new WebSocketTileLayer(app.websocketManager, '_pins', {
-        zIndex: 1,
-    });
-    pinsLayer.addTo(app.map);
-    app.pinsLayer = pinsLayer;
-    app.allLayers.push(pinsLayer);
+    addPseudoLayer('_pins', 'pinsLayer', 1, visibility.pins);
+    // Module coloring overlay (Module view)
+    addPseudoLayer('_modules', 'modulesLayer', 2, visibility.module_view);
+    // Access-point markers overlay (Misc > Access Points)
+    addPseudoLayer(
+        '_access_points', 'accessPointsLayer', 1000, visibility.access_points);
+    // Manufacturing-grid dots overlay (Misc > Manufacturing grid)
+    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
+    // GCell-grid lines overlay (topmost, GUI paint order)
+    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
 
-    // Module coloring overlay layer (between instances and routing layers)
-    const modulesLayer = new WebSocketTileLayer(app.websocketManager, '_modules', {
-        zIndex: 2,
-    });
-    // Don't add to map until "Module view" is enabled
-    app.modulesLayer = modulesLayer;
-    app.allLayers.push(modulesLayer);
+    // Region boundaries overlay (above access points, GUI paint order).
+    // Only created when the design has dbRegions — the layer is default-ON
+    // (Qt parity) and would otherwise issue per-viewport tile requests that
+    // always come back transparent.  (Regions created via Tcl mid-session
+    // need a page reload to appear.)
+    app.regionsLayer = null;
+    if (techData && techData.has_regions) {
+        addPseudoLayer('_regions', 'regionsLayer', 1001, visibility.regions);
+    }
 
     // --- Layers group (using CheckboxTreeModel) ---
 
@@ -95,31 +216,84 @@ export function populateDisplayControls(app, visibility, selectability,
     let chipletModel = null;
 
     // Restore saved hidden-layers and non-selectable-layers sets.
+    // Per-layer visibility/selectability intentionally live in
+    // sessionStorage, not cookies: they must survive the page reload that
+    // opening a database triggers, but start fresh in a new session — the
+    // Qt GUI does not persist layer options between sessions either
+    // (review feedback on #10795).
     let savedHiddenLayers = new Set();
     let savedNonSelectableLayers = new Set();
     try {
-        const raw = getCookie('or_hidden_layers');
-        if (raw) savedHiddenLayers = new Set(JSON.parse(decodeURIComponent(raw)));
+        const raw = window.sessionStorage.getItem('or_hidden_layers');
+        if (raw) savedHiddenLayers = new Set(JSON.parse(raw));
     } catch (_) { /* ignore */ }
     try {
-        const raw = getCookie('or_nonselectable_layers');
+        const raw = window.sessionStorage.getItem('or_nonselectable_layers');
         if (raw) {
-            savedNonSelectableLayers
-                = new Set(JSON.parse(decodeURIComponent(raw)));
+            savedNonSelectableLayers = new Set(JSON.parse(raw));
         }
     } catch (_) { /* ignore */ }
+
+    // Restore saved per-layer fill patterns (raw layer name → FillPattern int).
+    // Kept in sessionStorage alongside the visibility/selectability sets so a
+    // pattern survives the open-database reload but starts fresh in a new
+    // session, matching the Qt GUI (review feedback on #10795).
+    try {
+        const raw = window.sessionStorage.getItem('or_layer_patterns');
+        if (raw) Object.assign(app.layerPatterns, JSON.parse(raw));
+    } catch (_) { /* ignore */ }
+
+    // Persist only non-solid patterns; setting a layer back to Solid drops it.
+    function persistLayerPatterns() {
+        try {
+            window.sessionStorage.setItem(
+                'or_layer_patterns',
+                JSON.stringify(nonSolidPatterns(app.layerPatterns)));
+        } catch (_) { /* ignore */ }
+    }
+
+    // Apply a fill pattern to one layer and re-render just that layer's tiles.
+    function setLayerPattern(name, layer, value) {
+        if (value === 1) {
+            delete app.layerPatterns[name];
+        } else {
+            app.layerPatterns[name] = value;
+        }
+        persistLayerPatterns();
+        if (layer && typeof layer.refreshTiles === 'function') {
+            layer.refreshTiles();
+        }
+    }
+
+    // Fill-pattern choices for the layer context menu (values match the
+    // server's FillPattern enum: kNone=0, kSolid=1, kDiagonal=2, …).
+    const PATTERN_OPTIONS = [
+        { label: 'Solid', value: 1 },
+        { label: 'Diagonal', value: 2 },
+        { label: 'Cross', value: 3 },
+        { label: 'Dots', value: 4 },
+        { label: 'None (no fill)', value: 0 },
+    ];
 
     // Global counter so each layer (across the whole hierarchy) gets a unique
     // z-index and palette slot regardless of which chiplet it belongs to.
     let nextLayerSlot = 0;
 
-    function buildLayerSpec(hierarchyNode, parentId = 'layers') {
+    // `ownerPath` is the chiplet whose dbTech owns the layers rendered at this
+    // level.  Category nodes (Backside/Implant/Other) are pure UI folders with
+    // no path of their own, so they inherit their parent chiplet's — the
+    // select_layer request needs it to pick the right tech in a multi-die
+    // design, where two chips can both have an "M1".
+    function buildLayerSpec(hierarchyNode, parentId = 'layers',
+                            ownerPath = undefined) {
         const children = [];
+        const chipletPath = hierarchyNode.type === 'category'
+            ? ownerPath : hierarchyNode.path;
 
         if (hierarchyNode.instances && hierarchyNode.instances.length > 0) {
             hierarchyNode.instances.forEach((inst, idx) => {
                 const instId = parentId + "/" + (inst.name || idx);
-                children.push(buildLayerSpec(inst, instId));
+                children.push(buildLayerSpec(inst, instId, chipletPath));
             });
         }
 
@@ -128,33 +302,47 @@ export function populateDisplayControls(app, visibility, selectability,
                 const name = layerObj.name || layerObj;
                 const slot = nextLayerSlot++;
                 const zIndex = slot + 3;
-                const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                    opacity: 0.7,
-                    zIndex: zIndex,
-                });
+                const layer = makeRoutingLayer(name, zIndex);
 
                 const id = `${parentId}/${name}`;
                 layer._nodeId = id;
 
                 const visible = !savedHiddenLayers.has(id);
                 if (visible) {
-                    layer.addTo(app.map);
+                    layer._orShow();
                     app.visibleLayers.add(id);
                     app.visibleLayerNames.add(name);
                 }
-                app.allLayers.push(layer);
+                // In merged mode the panes go into allLayers instead, once the
+                // grouping is known — a draw-list entry is not something
+                // redrawAllLayers() can refresh.
+                if (!mergedLayerClass) {
+                    app.allLayers.push(layer);
+                }
                 leafletLayers.push(layer);
 
                 layerIds.push(id);
                 children.push({
                     id,
-                    data: { name, layer, color: layerObj.color, colorIndex: slot, nodeId: id },
+                    // ownerChipletPath, not chipletPath: the latter means
+                    // "this node IS that chiplet" and drives the Chiplets
+                    // panel sync, which must only ever see group nodes.
+                    data: { name, layer, color: layerObj.color,
+                            colorIndex: slot, nodeId: id,
+                            ownerChipletPath: chipletPath },
                     checked: visible,
                 });
             });
         }
 
         const nodeData = { name: hierarchyNode.name, isInstance: true };
+        // Review feedback on #10795: the Implant and Other categories
+        // start collapsed (they are rarely-used layer groups).
+        if (hierarchyNode.type === 'category'
+            && (hierarchyNode.name === 'Implant'
+                || hierarchyNode.name === 'Other')) {
+            nodeData.startCollapsed = true;
+        }
         // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
         // backend emits in layer_hierarchy; it matches ChipletNode::path
         // exactly so toggling this node can drive app.visibleChiplets.
@@ -178,27 +366,141 @@ export function populateDisplayControls(app, visibility, selectability,
         layerSpec = {
             id: 'layers_parent',
             children: techData.layers.map((name, index) => {
-                const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                    opacity: 0.7,
-                    zIndex: index + 3,
-                });
+                const layer = makeRoutingLayer(name, index + 3);
 
                 const id = `layers_parent/${name}`;
                 layer._nodeId = id;
-                
+
                 const visible = !savedHiddenLayers.has(id);
                 if (visible) {
-                    layer.addTo(app.map);
+                    layer._orShow();
                     app.visibleLayers.add(id);
                     app.visibleLayerNames.add(name);
                 }
-                app.allLayers.push(layer);
+                if (!mergedLayerClass) {
+                    app.allLayers.push(layer);
+                }
                 leafletLayers.push(layer);
 
                 layerIds.push(id);
                 return { id, data: { name, layer, colorIndex: index, nodeId: id }, checked: visible };
             }),
         };
+    }
+
+    // ─── Build the merged panes ──────────────────────────────────────────
+    //
+    // leafletLayers is in slot order, which IS the z-order, so it can be
+    // partitioned directly.  Runs must be contiguous: each group becomes one
+    // image, and interleaved groups have no stacking that reproduces the
+    // original (see partitionIntoGroups).
+    if (mergedLayerClass && leafletLayers.length > 0) {
+        const items = leafletLayers.map(l => l._orItem);
+        const budget = app.tileBudgetBytes || DEFAULT_BUDGET_BYTES;
+
+        // How many groups fit right now.  measureViewport falls back to the
+        // window when the container has not been laid out yet: a 0x0 container
+        // yields 1 tile per pane, which makes the budget look big enough for
+        // one pane per layer and silently disables the merging entirely.
+        function wantedGroupCount() {
+            const { width, height } = measureViewport(app.map.getContainer());
+            const tilesPerPane = estimateTilesPerPane(width, height);
+            const perTile = tileBytes(256, app.tileDpr ? app.tileDpr() : 1);
+            // The panes that are NOT merged still hold full tile grids, and
+            // they are not free: at dpr 3 each costs ~54 MB, so the three of
+            // them would put the real total over the ceiling while the budget
+            // reported it as fitting.  Charge them first.
+            const count = app.mergeGroupCount || computeGroupCount({
+                budgetBytes: reserveForUnmergedPanes(budget, tilesPerPane,
+                                                     perTile),
+                tilesPerPane,
+                bytesPerTile: perTile,
+                paneCount: items.length,
+            });
+            return { count, tilesPerPane, perTile };
+        }
+
+        function describe(paneCount, tilesPerPane, perTile) {
+            // estimatedMB counts the unmerged panes too, so the reported figure
+            // is the whole viewer's tile memory rather than just the part this
+            // grouping controls.
+            const total = (paneCount + UNMERGED_PANE_COUNT) * tilesPerPane
+                          * perTile;
+            return {
+                layers: items.length,
+                groups: paneCount,
+                tilesPerPane,
+                unmergedPanes: UNMERGED_PANE_COUNT,
+                budgetMB: Math.round(budget / (1024 * 1024)),
+                estimatedMB: Math.round(total / (1024 * 1024)),
+            };
+        }
+
+        // Hand each group to a pane and point every tree entry at the pane that
+        // owns its draw item.
+        function assign(panes, groups) {
+            let at = 0;
+            groups.forEach((group, gi) => {
+                for (let i = 0; i < group.length; i++) {
+                    leafletLayers[at++]._orPane = panes[gi];
+                }
+            });
+        }
+
+        const initial = wantedGroupCount();
+        const groups = partitionIntoGroups(items, initial.count);
+        // zIndex 3 upwards, matching the slots the per-layer panes used, so the
+        // routing stack still sits above _instances/_pins/_modules.
+        const panes = buildMergedPanes(mergedLayerClass, app.websocketManager,
+                                       groups, app.map, 3);
+        assign(panes, groups);
+        // These are what redrawAllLayers() refreshes — the design-changed push,
+        // pattern changes and visibility changes all arrive through it.
+        app.allLayers.push(...panes);
+        app.mergedPanes = panes;
+        app.mergeStats
+            = describe(panes.length, initial.tilesPerPane, initial.perTile);
+        console.log('[tiles] merged %d layers into %d panes '
+                    + '(~%d MB of %d MB budget, %d tiles/pane)',
+                    app.mergeStats.layers, app.mergeStats.groups,
+                    app.mergeStats.estimatedMB, app.mergeStats.budgetMB,
+                    initial.tilesPerPane);
+
+        // A pane holds a full grid of tiles, so enlarging the window raises the
+        // per-pane cost and a grouping that fitted the budget at startup no
+        // longer does — the same failure, arriving later.  Recompute on resize.
+        //
+        // Shrink only.  Growing N back when the window shrinks would churn
+        // panes on every drag of a splitter for no safety benefit, and leaves
+        // the merge coarser than strictly necessary, which is the harmless
+        // direction.  A layer toggle then re-merges a slightly larger group.
+        app.map.on('resize', () => {
+            const want = wantedGroupCount();
+            if (want.count >= app.mergedPanes.length) {
+                return;
+            }
+            const regrouped = partitionIntoGroups(items, want.count);
+            // Reuse the surviving panes and drop the surplus, so z-order and
+            // pane identity stay stable for the ones that remain.
+            const keep = app.mergedPanes.slice(0, regrouped.length);
+            for (const pane of app.mergedPanes.slice(regrouped.length)) {
+                app.map.removeLayer(pane);
+                const at = app.allLayers.indexOf(pane);
+                if (at >= 0) {
+                    app.allLayers.splice(at, 1);
+                }
+            }
+            app.mergedPanes = keep;
+            assign(keep, regrouped);
+            keep.forEach((pane, i) => pane.setItems(regrouped[i]));
+            app.mergeStats
+                = describe(keep.length, want.tilesPerPane, want.perTile);
+            console.log('[tiles] window grew — regrouped %d layers into %d '
+                        + 'panes (~%d MB of %d MB budget, %d tiles/pane)',
+                        app.mergeStats.layers, app.mergeStats.groups,
+                        app.mergeStats.estimatedMB, app.mergeStats.budgetMB,
+                        want.tilesPerPane);
+        });
     }
 
     // Parallel selectability model with the same node ids as layerSpec so
@@ -253,11 +555,11 @@ export function populateDisplayControls(app, visibility, selectability,
                 const id = node.data.nodeId || node.data.name;
                 allLayerIds.push(id);
                 if (node.checked) {
-                    node.data.layer.addTo(app.map);
+                    node.data.layer._orShow();
                     app.visibleLayers.add(id);
                     app.visibleLayerNames.add(node.data.name);
                 } else {
-                    app.map.removeLayer(node.data.layer);
+                    node.data.layer._orHide();
                     app.visibleLayers.delete(id);
                 }
             }
@@ -284,6 +586,9 @@ export function populateDisplayControls(app, visibility, selectability,
                 }
             }
         });
+        // One refresh per affected merged pane, after the whole walk: a group
+        // toggle touches many nodes that share a pane.
+        flushDirtyPanes();
         // Visibility off ⇒ selectability disabled — refresh selectability DOM.
         syncLayerSelDom();
         // Refresh pins layer so it filters by the updated visible_layers.
@@ -292,8 +597,14 @@ export function populateDisplayControls(app, visibility, selectability,
         }
 
         const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));
-        setCookie('or_hidden_layers',
-                  encodeURIComponent(JSON.stringify(hiddenNodes)));
+        try {
+            window.sessionStorage.setItem(
+                'or_hidden_layers', JSON.stringify(hiddenNodes));
+        } catch (_) { /* ignore */ }
+        // or_hidden_layers is part of the saved display state; the chiplet
+        // mirror below only reaches the sync (via redrawAllLayers) when the
+        // visible-chiplet set changes, so push explicitly (rAF-coalesced).
+        app.syncDisplayState();
 
         // Mirror chiplet toggles into the Chiplets panel.  Toggling
         // wrapper_1 in the Layers tree must also remove its path from
@@ -346,8 +657,13 @@ export function populateDisplayControls(app, visibility, selectability,
         syncLayerSelDom();
         const nonSel
             = techData.layers.filter(n => !app.selectableLayers.has(n));
-        setCookie('or_nonselectable_layers',
-                  encodeURIComponent(JSON.stringify(nonSel)));
+        try {
+            window.sessionStorage.setItem(
+                'or_nonselectable_layers', JSON.stringify(nonSel));
+        } catch (_) { /* ignore */ }
+        // Selectability changes the rendering of nothing, so no redraw runs;
+        // push the saved display state explicitly.
+        app.syncDisplayState();
     });
     layerSelModel.addFromSpec(layerSelSpec);
 
@@ -382,6 +698,20 @@ export function populateDisplayControls(app, visibility, selectability,
         contextMenu.style.display = 'none';
     }
 
+    // Append a clickable row to the layer context menu.  onClick runs, then the
+    // menu closes.  Shared by the visibility-range items and the fill-pattern
+    // items so both stay in sync.
+    function addContextMenuItem(label, onClick) {
+        const div = document.createElement('div');
+        div.className = 'context-menu-item';
+        div.textContent = label;
+        div.addEventListener('click', () => {
+            onClick();
+            hideContextMenu();
+        });
+        contextMenu.appendChild(div);
+    }
+
     const n = leafletLayers.length;
     const menuItems = [
         { label: 'Show only this layer',  fn: (i) => layerRangeSet(i, 0, 0, n) },
@@ -398,14 +728,121 @@ export function populateDisplayControls(app, visibility, selectability,
         if (e.key === 'Escape') hideContextMenu();
     });
 
+    // --- Layer row selection ---
+    //
+    // Clicking a layer's name selects it and shows its properties in the
+    // Inspector, as the Qt GUI does (DisplayControls::displayItemSelected
+    // emits `selected(makeSelected(tech_layer))` when a row is clicked).
+    //
+    // Only the checkboxes toggle state — leaf rows are <div>s rather than
+    // <label>s so that a click on the name, the indent spacer or the row's
+    // padding does not activate the visibility checkbox, matching the Qt GUI
+    // where the name column selects and the checkbox column toggles.
+    //
+    // Saved reports have no backend to answer select_layer, so their rows are
+    // not selectable: the name is inert there and only the checkboxes work.
+    const layerRowsSelectable = !isStaticMode(app);
+    let selectedLayerRow = null;
+
+    function clearSelectedLayerRow() {
+        if (selectedLayerRow) {
+            selectedLayerRow.classList.remove('vis-row-selected');
+            selectedLayerRow = null;
+        }
+    }
+
+    // Another panel taking the selection (a canvas click, Inspector
+    // navigation, the fanout chart, ...) leaves this row's highlight claiming
+    // a selection the server no longer holds, so drop it.
+    if (layerRowsSelectable) {
+        onSelectionReset(app, clearSelectedLayerRow);
+    }
+
+    function selectLayerRow(row, name, chipletPath) {
+        // Take the selection before painting: beginSelection() runs the
+        // resetters, which clears whichever row was highlighted before.
+        const token = beginSelection(app);
+        selectedLayerRow = row;
+        row.classList.add('vis-row-selected');
+
+        const msg = { type: 'select_layer', layer: name,
+                      use_dbu: app.showDbu };
+        if (chipletPath) msg.chiplet = chipletPath;
+        app.websocketManager.request(msg).then(data => {
+            // Clicking through several layers — or clicking a layer and then
+            // selecting elsewhere — leaves one request in flight per click,
+            // and they can land out of order.  A response that is no longer
+            // the newest selection must not drive the Inspector.
+            if (!isCurrentSelection(app, token)) {
+                return;
+            }
+            if (app.updateInspector) {
+                app.updateInspector(data);
+            }
+            if (app.focusComponent) {
+                app.focusComponent('Inspector');
+            }
+            // The server replaced the selection set, so whatever highlight the
+            // previous selection painted is stale.  A tech layer contributes
+            // no shapes of its own, so only the overlay needs repainting —
+            // not every tile.
+            if (app.refreshOverlay) {
+                app.refreshOverlay();
+            }
+        }).catch(err => {
+            console.error('select_layer failed:', err);
+            // The server did not take the selection, so drop the highlight
+            // rather than leave the panel claiming a selection that is not
+            // there.  Only if this click is still the newest one — a later
+            // selection has already moved the highlight.
+            if (isCurrentSelection(app, token)) {
+                clearSelectedLayerRow();
+            }
+        });
+    }
+
     function buildLayerDOM(node, isRoot = false) {
         const selNode = layerSelModel.get(node.id);
         if (!node.children || node.children.length === 0) {
-            // Leaf node (layer)
-            const label = document.createElement('label');
+            // Leaf node (layer).  Column order matches the Qt GUI: the name
+            // stretches on the left, the visibility and selectability
+            // checkboxes are pinned to the right under the header icons.
+            //
+            // A <div>, not a <label>: a <label> wrapping the visibility
+            // checkbox activates it for a click anywhere in the row, so
+            // clicking the name, the indent spacer or the row's padding
+            // flipped the layer.  Only the checkboxes toggle state now.
+            const label = document.createElement('div');
+            label.className
+                = layerRowsSelectable ? 'vis-leaf vis-leaf-selectable'
+                                      : 'vis-leaf';
+
+            const spacer = document.createElement('span');
+            spacer.className = 'vis-arrow';
+            spacer.style.visibility = 'hidden';
+            spacer.textContent = '▶';
+            label.appendChild(spacer);
+
+            const index = node.data.colorIndex;
+            const name = node.data.name;
+
+            const nameSpan = makeNameSpan();
+            const colorSwatch = document.createElement('span');
+            colorSwatch.className = 'layer-color';
+            const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
+            colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
+            nameSpan.appendChild(colorSwatch);
+            nameSpan.appendChild(document.createTextNode(name));
+            label.appendChild(nameSpan);
+            if (layerRowsSelectable) {
+                nameSpan.addEventListener('click', () => {
+                    selectLayerRow(label, name, node.data.ownerChipletPath);
+                });
+            }
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            checkbox.className = 'vis-cb';
             checkbox.title = 'Visible';
             checkbox.checked = node.checked;
             node.cb = checkbox;
@@ -425,18 +862,9 @@ export function populateDisplayControls(app, visibility, selectability,
                     layerSelModel.check(node.id, selCheckbox.checked);
                 });
                 label.appendChild(selCheckbox);
+            } else {
+                label.appendChild(makeSelSpacer());
             }
-
-            const index = node.data.colorIndex;
-            const name = node.data.name;
-
-            const colorSwatch = document.createElement('span');
-            colorSwatch.className = 'layer-color';
-            const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
-            colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
-            label.appendChild(colorSwatch);
-
-            label.appendChild(document.createTextNode(name));
 
             // Setup context menu for layer
             label.addEventListener('contextmenu', (e) => {
@@ -444,15 +872,25 @@ export function populateDisplayControls(app, visibility, selectability,
                 e.stopPropagation();
                 contextMenu.innerHTML = '';
                 for (const item of menuItems) {
-                    const div = document.createElement('div');
-                    div.className = 'context-menu-item';
-                    div.textContent = item.label;
-                    div.addEventListener('click', () => {
-                        showOnlyLayers(item.fn(index));
-                        hideContextMenu();
-                    });
-                    contextMenu.appendChild(div);
+                    addContextMenuItem(item.label,
+                        () => showOnlyLayers(item.fn(index)));
                 }
+
+                // Fill-pattern submenu: choosing one re-renders only this
+                // layer's tiles and persists the choice.
+                const sep = document.createElement('div');
+                sep.className = 'context-menu-separator';
+                sep.style.borderTop = '1px solid #555';
+                sep.style.margin = '4px 0';
+                contextMenu.appendChild(sep);
+                const current = app.layerPatterns[name] ?? 1;
+                for (const opt of PATTERN_OPTIONS) {
+                    const marker = current === opt.value ? '● ' : '   ';
+                    addContextMenuItem(
+                        marker + 'Fill: ' + opt.label,
+                        () => setLayerPattern(name, node.data.layer, opt.value));
+                }
+
                 contextMenu.style.left = e.clientX + 'px';
                 contextMenu.style.top = e.clientY + 'px';
                 contextMenu.style.display = 'block';
@@ -464,16 +902,13 @@ export function populateDisplayControls(app, visibility, selectability,
             const group = document.createElement('div');
             group.className = 'vis-group';
 
-            const header = document.createElement('label');
-            header.className = 'vis-group-header';
-            
-            const arrow = document.createElement('span');
-            arrow.className = 'vis-arrow';
-            arrow.textContent = '▼';
-            header.appendChild(arrow);
+            const { header, arrow, name } = makeGroupHeader();
+            name.textContent
+                = isRoot ? 'Layers' : (node.data.name || 'Group');
 
             const cb = document.createElement('input');
             cb.type = 'checkbox';
+            cb.className = 'vis-cb';
             cb.title = 'Visible';
             cb.checked = node.checked;
             cb.indeterminate = node.indeterminate;
@@ -495,10 +930,10 @@ export function populateDisplayControls(app, visibility, selectability,
                     layerSelModel.check(node.id, selCb.checked);
                 });
                 header.appendChild(selCb);
+            } else {
+                header.appendChild(makeSelSpacer());
             }
 
-            const name = isRoot ? 'Layers' : (node.data.name || 'Group');
-            header.appendChild(document.createTextNode(name));
             group.appendChild(header);
 
             const kids = document.createElement('div');
@@ -510,13 +945,9 @@ export function populateDisplayControls(app, visibility, selectability,
             }
             group.appendChild(kids);
 
-            // Toggle collapse
-            arrow.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const collapsed = kids.classList.toggle('collapsed');
-                arrow.textContent = collapsed ? '▶' : '▼';
-            });
+            // Categories flagged startCollapsed (Implant/Other) open folded.
+            attachGroupCollapse(header, arrow, kids,
+                                !!(node.data && node.data.startCollapsed));
 
             return group;
         }
@@ -757,12 +1188,9 @@ export function populateDisplayControls(app, visibility, selectability,
         const chipletGroup = document.createElement('div');
         chipletGroup.className = 'vis-group';
 
-        const chipletHeader = document.createElement('label');
-        chipletHeader.className = 'vis-group-header';
-        const chipletArrow = document.createElement('span');
-        chipletArrow.className = 'vis-arrow';
-        chipletArrow.textContent = '▼';
-        chipletHeader.appendChild(chipletArrow);
+        const { header: chipletHeader, arrow: chipletArrow,
+                name: chipletName } = makeGroupHeader();
+        chipletName.textContent = 'Chiplets';
 
         // Group-level checkbox: toggles every chiplet at once and
         // shows tri-state when the children disagree, matching the
@@ -771,6 +1199,7 @@ export function populateDisplayControls(app, visibility, selectability,
         if (rootNode) {
             const parentCb = document.createElement('input');
             parentCb.type = 'checkbox';
+            parentCb.className = 'vis-cb';
             parentCb.checked = rootNode.checked;
             parentCb.indeterminate = rootNode.indeterminate;
             rootNode.cb = parentCb;
@@ -784,7 +1213,8 @@ export function populateDisplayControls(app, visibility, selectability,
             });
             chipletHeader.appendChild(parentCb);
         }
-        chipletHeader.appendChild(document.createTextNode('Chiplets'));
+        // Chiplets have no selectability column; keep the layout aligned.
+        chipletHeader.appendChild(makeSelSpacer());
         chipletGroup.appendChild(chipletHeader);
 
         const chipletChildren = document.createElement('div');
@@ -794,12 +1224,16 @@ export function populateDisplayControls(app, visibility, selectability,
             const c = node.data;
             // The root is rendered by the header above; skip it here.
             if (node !== rootNode) {
-                const label = document.createElement('label');
+                // A <div>, like the layer rows: only the checkbox toggles.
+                const label = document.createElement('div');
+                label.className = 'vis-leaf';
                 label.style.paddingLeft = (8 * (c.depth - 1)) + 'px';
                 label.title = c.path
                     + (c.master ? ` (${c.master})` : '');
+                label.appendChild(makeNameSpan(c.name));
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
+                checkbox.className = 'vis-cb';
                 checkbox.checked = node.checked;
                 checkbox.indeterminate = node.indeterminate;
                 node.cb = checkbox;
@@ -808,7 +1242,7 @@ export function populateDisplayControls(app, visibility, selectability,
                     mirrorChipletToLayers(c.path, checkbox.checked);
                 });
                 label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(c.name));
+                label.appendChild(makeSelSpacer());
                 chipletChildren.appendChild(label);
             }
             if (node.children) {
@@ -818,12 +1252,8 @@ export function populateDisplayControls(app, visibility, selectability,
         chipletModel.roots.forEach(renderChipletNode);
         chipletGroup.appendChild(chipletChildren);
 
-        chipletArrow.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const collapsed = chipletChildren.classList.toggle('collapsed');
-            chipletArrow.textContent = collapsed ? '▶' : '▼';
-        });
+        attachGroupCollapse(chipletHeader, chipletArrow, chipletChildren,
+                            false);
 
         app.displayControlsEl.appendChild(chipletGroup);
     } else {
@@ -917,19 +1347,69 @@ export function populateDisplayControls(app, visibility, selectability,
             { key: 'inst_pin_names', label: 'Pin Names', disabledBy: 'inst_pins' },
             { key: 'blockages', label: 'Blockages' },
         ]},
+        { key: 'detailed', label: 'Detailed view' },
         { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
+        { key: 'access_points', label: 'Access Points' },
+        { key: 'regions', label: 'Regions' },
+        { key: 'mfg_grid', label: 'Manufacturing grid' },
+        { key: 'gcell_grid', label: 'GCell grid' },
+        { key: 'flywires_only', label: 'Flywires only' },
+        { key: 'focused_nets_guides', label: 'Focused nets guides' },
+        { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
-    visTree.add({ key: 'debug', label: 'Debug tiles' });
-    // Debug graphics overlay: calls drawObjects() on registered renderers
-    // (e.g. gpl::GraphicsImpl when global_placement_debug is enabled).
-    visTree.add({ label: 'Debug Graphics', visKey: 'debug_renderers',
-        children: [
-            { key: 'debug_live', label: 'Live (don\'t require pause)' },
-        ],
-    });
+    // Developer overlays.  All three are plain leaves under a visKey-less
+    // group: giving the group `visKey: 'debug_renderers'` would tie the
+    // renderer overlay to the group's tri-state, so ticking the unrelated
+    // "Tiles" row would switch the renderers on via the indeterminate state.
+    visTree.add({ label: 'Debug Graphics', children: [
+        // Renderer overlay: calls drawObjects() on registered renderers
+        // (e.g. gpl::GraphicsImpl when global_placement_debug is enabled).
+        { key: 'debug_renderers', label: 'Renderers' },
+        { key: 'debug_live', label: 'Live (don\'t require pause)',
+          disabledBy: 'debug_renderers' },
+        { key: 'debug', label: 'Tiles' },
+    ]});
     visTree.render(app.displayControlsEl);
+
+    // Background color control (Qt GUI "Background" parity): a swatch that
+    // opens the native color picker + a reset-to-theme link.  The layout
+    // background is the CSS var --bg-map on the Leaflet container, so this
+    // is purely client-side (tiles are transparent).
+    const bgRow = document.createElement('div');
+    bgRow.className = 'bg-color-row';
+    const bgLabel = document.createElement('span');
+    bgLabel.textContent = 'Background';
+    const bgInput = document.createElement('input');
+    bgInput.type = 'color';
+    bgInput.className = 'bg-color-input';
+    bgInput.title = 'Layout background color';
+    const savedBg = getCookie('or_bg_color');
+    bgInput.value = isValidHexColor(savedBg) ? savedBg : getThemeDefaultBgColor();
+    // 'input' fires on every tick while dragging inside the picker: keep it
+    // to the cheap CSS-var preview.  Persistence (cookie), the 3D-viewer
+    // re-render and the server sync run once, on 'change' (picker closed).
+    bgInput.addEventListener('input', () => {
+        document.documentElement.style.setProperty('--bg-map', bgInput.value);
+    });
+    bgInput.addEventListener('change', () => {
+        setBackgroundColor(bgInput.value, app);
+    });
+    const bgReset = document.createElement('button');
+    bgReset.className = 'bg-color-reset';
+    bgReset.textContent = 'Reset';
+    bgReset.title = 'Reset background to the theme default';
+    bgReset.addEventListener('click', () => {
+        // resetBackgroundColor removes the inline --bg-map override, so
+        // the default read afterwards is the theme's own value.
+        resetBackgroundColor(app);
+        bgInput.value = getThemeDefaultBgColor();
+    });
+    bgRow.appendChild(bgLabel);
+    bgRow.appendChild(bgInput);
+    bgRow.appendChild(bgReset);
+    app.displayControlsEl.appendChild(bgRow);
 
     if (!app.heatMapLayer) {
         app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {
@@ -942,27 +1422,17 @@ export function populateDisplayControls(app, visibility, selectability,
     heatMapGroup.className = 'vis-group heatmap-controls';
     app.displayControlsEl.appendChild(heatMapGroup);
 
-    const heatMapHeader = document.createElement('label');
-    heatMapHeader.className = 'vis-group-header heatmap-header';
-    const heatMapArrow = document.createElement('span');
-    heatMapArrow.className = 'vis-arrow';
-    heatMapArrow.textContent = '▼';
-    heatMapHeader.appendChild(heatMapArrow);
-    heatMapHeader.appendChild(document.createTextNode('Heat Maps'));
+    const { header: heatMapHeader, arrow: heatMapArrow,
+            name: heatMapName }
+        = makeGroupHeader('vis-group-header heatmap-header');
+    heatMapName.textContent = 'Heat Maps';
     heatMapGroup.appendChild(heatMapHeader);
 
     const heatMapContainer = document.createElement('div');
-    heatMapContainer.className = 'vis-group-children heatmap-group-children collapsed';
+    heatMapContainer.className = 'vis-group-children heatmap-group-children';
     heatMapGroup.appendChild(heatMapContainer);
 
-    let heatMapCollapsed = true;
-    heatMapArrow.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        heatMapCollapsed = !heatMapCollapsed;
-        heatMapContainer.classList.toggle('collapsed', heatMapCollapsed);
-        heatMapArrow.textContent = heatMapCollapsed ? '▶' : '▼';
-    });
+    attachGroupCollapse(heatMapHeader, heatMapArrow, heatMapContainer, true);
 
     function addCheckbox(parent, label, checked, onChange) {
         const row = document.createElement('label');

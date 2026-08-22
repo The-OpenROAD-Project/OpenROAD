@@ -16,4 +16,21 @@ struct Color
   Color darken(double factor = 0.5) const;
 };
 
+// Per-layer brush pattern used when rasterizing layer shapes.  The integer
+// values mirror gui::Painter::Brush so the web frontend, this enum and the
+// Qt GUI all agree on the ordering.
+enum class FillPattern
+{
+  kNone = 0,      // no fill (skip)
+  kSolid = 1,     // full fill (default; current behavior)
+  kDiagonal = 2,  // diagonal hatch
+  kCross = 3,     // crosshatch grid
+  kDots = 4,      // dotted
+};
+
+// Selection-highlight yellow shared by the tile highlight border
+// (TileGenerator::drawHighlight) and the selection flywires
+// (request_handler's collectNetFlightLines).
+inline constexpr Color kSelectionYellow{.r = 255, .g = 255, .b = 0, .a = 255};
+
 }  // namespace web

@@ -597,9 +597,10 @@ void OpenRoad::writeDb(std::ostream& stream)
   db_->write(stream);
 }
 
-void OpenRoad::writeDb(const char* filename)
+void OpenRoad::writeDb(const char* filename,
+                       std::optional<int> compression_level)
 {
-  utl::OutStreamHandler stream_handler(filename, true);
+  utl::OutStreamHandler stream_handler(filename, true, compression_level);
   writeDb(stream_handler.getStream());
 }
 

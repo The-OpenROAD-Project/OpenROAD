@@ -155,7 +155,9 @@ void GlobalRouter::clear()
   routing_tracks_.clear();
   routing_layers_.clear();
   grid_->clear();
-  if (!use_cugr_) {
+  if (use_cugr_) {
+    cugr_->clear();
+  } else {
     fastroute_->clear();
   }
   vertical_capacities_.clear();
@@ -346,6 +348,26 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   return net_routes;
 }
 
+void GlobalRouter::ensureEngineSelected()
+{
+  if (engine_selected_) {
+    return;
+  }
+  odb::dbBlock* block = block_;
+  if (block == nullptr && db_->getChip() != nullptr) {
+    block = db_->getChip()->getBlock();
+  }
+  if (block == nullptr) {
+    // No design loaded yet; retry on the next call.
+    return;
+  }
+  engine_selected_ = true;
+  if (odb::dbBoolProperty* prop
+      = odb::dbBoolProperty::find(block, kUseCugrProperty)) {
+    use_cugr_ = prop->getValue();
+  }
+}
+
 bool GlobalRouter::haveRoutes()
 {
   if (!designIsPlaced()) {
@@ -423,6 +445,7 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
 
 void GlobalRouter::startIncremental()
 {
+  ensureEngineSelected();
   is_incremental_ = true;
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
@@ -441,10 +464,26 @@ void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
   updateDirtyRoutes(save_guides);
+  reportIncrementalCongestion();
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
   grouter_cbk_ = nullptr;
   finishGlobalRouting(save_guides);
+}
+
+void GlobalRouter::reportIncrementalCongestion()
+{
+  if (!incremental_congestion_report_pending_ || cugr_ == nullptr) {
+    return;
+  }
+  incremental_congestion_report_pending_ = false;
+  if (cugr_->totalOverflow() > 0) {
+    is_congested_ = true;
+    logger_->warn(GRT,
+                  128,
+                  "Incremental global routing finished with congestion. Check "
+                  "the congestion regions in the DRC Viewer.");
+  }
 }
 
 void GlobalRouter::globalRoute(bool save_guides)
@@ -453,7 +492,10 @@ void GlobalRouter::globalRoute(bool save_guides)
   bool has_routable_nets = false;
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
-    if (net->getITerms().size() + net->getBTerms().size() > 1) {
+    auto iterms = net->getITerms();
+    auto bterms = net->getBTerms();
+    if (iterms.hasMoreThan(1) || bterms.hasMoreThan(1)
+        || (!iterms.empty() && !bterms.empty())) {
       has_routable_nets = true;
       break;
     }
@@ -478,10 +520,7 @@ void GlobalRouter::globalRoute(bool save_guides)
       if (verbose_) {
         reportResources();
       }
-      cugr_->route();
-      routes_ = cugr_->getRoutes();
-      updatePinAccessPoints();
-      addRemainingGuides(routes_, nets, min_layer, max_layer);
+      findRoutingCugr(nets, /*incremental=*/false);
     } else {
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
       if (verbose_) {
@@ -513,7 +552,11 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   saveCongestion();
 
   if (verbose_) {
-    reportCongestion();
+    if (use_cugr_) {
+      cugr_->reportCongestion();
+    } else {
+      reportCongestion();
+    }
   }
   computeWirelength();
   if (verbose_) {
@@ -599,36 +642,86 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  bool diode_only,
                                  const int num_threads)
 {
+  ensureEngineSelected();
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
-    initFastRoute(min_layer, max_layer);
-    // Repopulate edge usage from routes_ using updateNetResources, which
-    // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
-    // there is too much congestion
-    std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
-    int net_id;
-    bool exists;
-    for (const auto& [db_net, groute] : routes_) {
-      if (!isDetailedRouted(db_net)) {
-        auto it = db_net_map_.find(db_net);
-        if (it != db_net_map_.end()) {
-          updateNetResources(it->second, false);
-          // Mark the net so congestion-loop releases use the matching
-          // GRoute-based path (updateNetResources) rather than the
-          // sttree-based clearNetRoute (which sees empty sttrees here
-          // and would leave the 3D usage un-released, causing underflow).
-          it->second->setAreSegmentsRestored(true);
-          if (db_net->getNonDefaultRule() != nullptr) {
-            fastroute_->getNetId(db_net, net_id, exists);
-            ndr_nets.emplace_back(db_net, net_id);
+    if (use_cugr_) {
+      initCUGR(min_layer, max_layer);
+      // Adopt the existing routing into CUGR's demand, like FastRoute's
+      // findNetsObstructions: real wires for detailed-routed nets, guide
+      // routes otherwise. updateNet releases a net's demand on reroute.
+      int from_wires = 0;
+      int from_guides = 0;
+      int failed = 0;
+      for (odb::dbNet* db_net : block_->getNets()) {
+        const bool is_routed = isDetailedRouted(db_net);
+        auto it = routes_.find(db_net);
+        if (!is_routed && it == routes_.end()) {
+          continue;  // nothing to adopt (e.g. single-pin nets)
+        }
+        if (is_routed
+            && cugr_->restoreNetRoute(db_net,
+                                      makeRouteFromWires(db_net, max_layer))) {
+          from_wires++;
+        } else if (it != routes_.end()
+                   && cugr_->restoreNetRoute(db_net, it->second)) {
+          from_guides++;
+          debugPrint(logger_,
+                     GRT,
+                     "repair_antennas",
+                     2,
+                     "net {} adopted from guides (routed: {})",
+                     db_net->getConstName(),
+                     is_routed);
+        } else {
+          failed++;
+          debugPrint(logger_,
+                     GRT,
+                     "repair_antennas",
+                     2,
+                     "net {} adoption failed",
+                     db_net->getConstName());
+        }
+      }
+      debugPrint(logger_,
+                 GRT,
+                 "repair_antennas",
+                 1,
+                 "Demand adoption: {} nets from wires, {} from guides, {} "
+                 "failed",
+                 from_wires,
+                 from_guides,
+                 failed);
+    } else {
+      initFastRoute(min_layer, max_layer);
+      // Repopulate edge usage from routes_ using updateNetResources, which
+      // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
+      // there is too much congestion
+      std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
+      int net_id;
+      bool exists;
+      for (const auto& [db_net, groute] : routes_) {
+        if (!isDetailedRouted(db_net)) {
+          auto it = db_net_map_.find(db_net);
+          if (it != db_net_map_.end()) {
+            updateNetResources(it->second, false);
+            // Mark the net so congestion-loop releases use the matching
+            // GRoute-based path (updateNetResources) rather than the
+            // sttree-based clearNetRoute (which sees empty sttrees here
+            // and would leave the 3D usage un-released, causing underflow).
+            it->second->setAreSegmentsRestored(true);
+            if (db_net->getNonDefaultRule() != nullptr) {
+              fastroute_->getNetId(db_net, net_id, exists);
+              ndr_nets.emplace_back(db_net, net_id);
+            }
           }
         }
       }
+      // Disable the extra edge cost for NDR nets on congested 2D edges.
+      // Uses routes_ segments directly since sttrees are not yet populated.
+      disableCongestedNDRNetsFromRoutes(ndr_nets);
     }
-    // Disable the extra edge cost for NDR nets on congested 2D edges.
-    // Uses routes_ segments directly since sttrees are not yet populated.
-    disableCongestedNDRNetsFromRoutes(ndr_nets);
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
@@ -678,8 +771,8 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                           num_threads);
     // if run in GRT and it need run jumper insertion
     std::vector<odb::dbNet*> nets_with_jumpers;
-    if (!haveDetailedRoutes(nets_to_repair)
-        && repair_antennas_->hasNewViolations() && !diode_only) {
+    if (!diode_only && repair_antennas_->hasNewViolations()
+        && !haveDetailedRoutes(nets_to_repair)) {
       // Run jumper insertion and clean
       repair_antennas_->jumperInsertion(routes_,
                                         grid_->getTileSize(),
@@ -687,7 +780,14 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                         nets_with_jumpers);
       repair_antennas_->clearViolations();
 
+      // Save guides first so the flush below cannot revert accepted jumpers.
       saveGuides(nets_with_jumpers);
+      // Flush reroutes queued by failed re-adoptions; no IncrementalGRoute
+      // scope exists here, so report congestion directly.
+      if (use_cugr_ && !dirty_nets_.empty()) {
+        updateDirtyRoutes(/*save_guides=*/true);
+        reportIncrementalCongestion();
+      }
       // run again antenna checker
       violations
           = repair_antennas_->checkAntennaViolations(routes_,
@@ -1080,10 +1180,13 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     return false;
   }
 
-  if (net->areSegmentsRestored()) {
-    updateNetResources(net, true);
-  } else if (!net->isMergedNet()) {
-    fastroute_->clearNetRoute(db_net);
+  // CUGR releases the old routing inside restoreNetRoute.
+  if (!use_cugr_) {
+    if (net->areSegmentsRestored()) {
+      updateNetResources(net, true);
+    } else if (!net->isMergedNet()) {
+      fastroute_->clearNetRoute(db_net);
+    }
   }
 
   routes_[db_net].clear();
@@ -1099,22 +1202,35 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
 
   addImplicitVias(routes_[db_net]);
 
+  // Validate that the restored routing covers every pin; on failure fall back
+  // to a reroute. CUGR checks coverage against its own routing tree inside
+  // restoreNetRoute; the FastRoute path checks directly and names the pins.
   std::string pins_not_covered;
-  if (!updateUncoveredPinsPositions(db_net, pins_not_covered)) {
-    logger_->warn(GRT,
-                  304,
-                  "Fail to restore routing segments from guides for net {}. "
-                  "The following pins are not covered: {}.",
-                  net->getName(),
-                  pins_not_covered);
+  const bool restored
+      = use_cugr_ ? cugr_->restoreNetRoute(db_net, routes_[db_net])
+                  : updateUncoveredPinsPositions(db_net, pins_not_covered);
+  if (!restored) {
+    if (use_cugr_) {
+      routes_[db_net].clear();
+    }
+    logger_->warn(
+        GRT,
+        304,
+        "Fail to restore routing segments from guides for net {}.{}",
+        net->getName(),
+        pins_not_covered.empty()
+            ? std::string()
+            : " The following pins are not covered: " + pins_not_covered + ".");
     return false;
   }
 
   net->setRestoreRouteFromGuides(false);
+  if (use_cugr_) {
+    return true;
+  }
+
   net->setAreSegmentsRestored(true);
-
   makeFastrouteNet(net);
-
   updateNetResources(net, false);
 
   return true;
@@ -1302,7 +1418,12 @@ void GlobalRouter::destroyNetWire(Net* net)
 {
   odb::dbWire* wire = net->getDbNet()->getWire();
   if (wire != nullptr) {
-    removeWireUsage(wire);
+    // removeWireUsage releases FastRoute capacity obstructions. CUGR's
+    // release happens in updateNet, which drops the net's adopted tree
+    // demand before the reroute.
+    if (!use_cugr_) {
+      removeWireUsage(wire);
+    }
     odb::dbWire::destroy(wire);
   }
   net->setHasWires(false);
@@ -1346,6 +1467,67 @@ void GlobalRouter::removeRectUsage(const odb::Rect& rect,
 {
   // Release resources of Rect same like was used
   applyObstructionAdjustment(rect, tech_layer, false, true);
+}
+
+// Convert a net's detailed wires to a gcell-granularity route for CUGR
+// demand adoption. DRT may deviate from the guides, so consumption must
+// come from the real wires.
+GRoute GlobalRouter::makeRouteFromWires(odb::dbNet* db_net, const int max_layer)
+{
+  GRoute route;
+  odb::dbWire* wire = db_net->getWire();
+  if (wire == nullptr) {
+    return route;
+  }
+
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbWirePathItr pitr;
+  for (pitr.begin(wire); pitr.getNextPath(path);) {
+    // Walk the centerline points: corners of the width-expanded shape
+    // boxes can land in neighboring gcells and break the gcell trace.
+    odb::Point prev_point = path.point;
+    while (pitr.getNextShape(pshape)) {
+      const odb::dbShape& shape = pshape.shape;
+      if (shape.isVia()) {
+        odb::dbTechLayer* bottom_layer;
+        odb::dbTechLayer* top_layer;
+        if (odb::dbTechVia* tech_via = shape.getTechVia()) {
+          bottom_layer = tech_via->getBottomLayer();
+          top_layer = tech_via->getTopLayer();
+        } else {
+          odb::dbVia* via = shape.getVia();
+          bottom_layer = via->getBottomLayer();
+          top_layer = via->getTopLayer();
+        }
+        const int via_min_layer = bottom_layer->getRoutingLevel();
+        const int via_max_layer = top_layer->getRoutingLevel();
+        const odb::Point center = grid_->getPositionOnGrid(pshape.point);
+        // Keep the below-min pin access layers — restoreNetRoute requires
+        // the tree to cover the pins — but clamp at the ceiling: the CUGR
+        // grid has no layers above it and clamps pin access points to it,
+        // so a net reaching a pin only above max_layer adopts from guides.
+        for (int level = via_min_layer;
+             level < std::min(via_max_layer, max_layer);
+             level++) {
+          route.emplace_back(
+              center.x(), center.y(), level, center.x(), center.y(), level + 1);
+        }
+      } else {
+        const int level = shape.getTechLayer()->getRoutingLevel();
+        if (level <= max_layer) {
+          const odb::Point p0 = grid_->getPositionOnGrid(prev_point);
+          const odb::Point p1 = grid_->getPositionOnGrid(pshape.point);
+          // Skip spans within a single gcell.
+          if ((p0.x() == p1.x()) != (p0.y() == p1.y())) {
+            route.emplace_back(p0.x(), p0.y(), level, p1.x(), p1.y(), level);
+          }
+        }
+      }
+      prev_point = pshape.point;
+    }
+  }
+  return route;
 }
 
 bool GlobalRouter::isDetailedRouted(odb::dbNet* db_net)
@@ -1523,31 +1705,63 @@ void GlobalRouter::computePinPositionOnGrid(
   pin.setConnectionLayer(pin_position.layer());
 }
 
+void GlobalRouter::updatePinAccessPoints(Net* net, odb::dbNet* db_net)
+{
+  odb::PtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
+  odb::PtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
+  cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
+  cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
+
+  auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
+    if (auto it = ap_map.find(term); it != ap_map.end()) {
+      const auto& ap = it->second;
+      // CUGR clamps its APs to the ceiling; keep a top-metal pin's real layer
+      // so connectTopLevelPins still stacks the vias above it.
+      if (pin.getConnectionLayer() <= getMaxRoutingLayer()) {
+        pin.setConnectionLayer(ap.z());
+      }
+      pin.setOnGridPosition(
+          grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+    }
+  };
+
+  for (Pin& pin : net->getPins()) {
+    if (pin.isPort()) {
+      updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
+    } else {
+      updatePinPos(pin, pin.getITerm(), iterm_to_aps);
+    }
+  }
+}
+
 void GlobalRouter::updatePinAccessPoints()
 {
   for (const auto& [db_net, net] : db_net_map_) {
-    odb::PtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
-    odb::PtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
-    cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
-    cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
-
-    auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
-      if (auto it = ap_map.find(term); it != ap_map.end()) {
-        const auto& ap = it->second;
-        pin.setConnectionLayer(ap.z());
-        pin.setOnGridPosition(
-            grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
-      }
-    };
-
-    for (Pin& pin : net->getPins()) {
-      if (pin.isPort()) {
-        updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
-      } else {
-        updatePinPos(pin, pin.getITerm(), iterm_to_aps);
-      }
-    }
+    updatePinAccessPoints(net, db_net);
   }
+}
+
+// CUGR analog of findRouting(): route, then export into routes_ in place so
+// incremental callers merge instead of replace. The mode is explicit since
+// is_incremental_ is unset on the IncrementalGRoute path.
+void GlobalRouter::findRoutingCugr(std::vector<Net*>& nets, bool incremental)
+{
+  cugr_->route(incremental);
+  for (Net* net : nets) {
+    odb::dbNet* db_net = net->getDbNet();
+    GRoute route = cugr_->getNetRoute(db_net);
+    if (route.empty()) {
+      // CUGR exports nothing for local and < 2-pin nets; drop stale
+      // entries and let addRemainingGuides rebuild the local ones.
+      routes_.erase(db_net);
+    } else {
+      routes_[db_net] = std::move(route);
+    }
+    updatePinAccessPoints(net, db_net);
+  }
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  addRemainingGuides(routes_, nets, min_layer, max_layer);
 }
 
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
@@ -2111,15 +2325,27 @@ void GlobalRouter::computeRegionAdjustments(const odb::Rect& region,
   }
 }
 
+int GlobalRouter::dbuToTile(const int dbu_coord, const bool is_x) const
+{
+  const int origin = is_x ? grid_->getXMin() : grid_->getYMin();
+  const int grids = is_x ? grid_->getXGrids() : grid_->getYGrids();
+  const int tile = (dbu_coord - origin) / grid_->getTileSize();
+  return std::clamp(tile, 0, grids - 1);
+}
+
 bool GlobalRouter::hasAvailableResources(bool is_horizontal,
                                          const int& pos_x,
                                          const int& pos_y,
                                          const int& layer_level,
                                          odb::dbNet* db_net)
 {
-  // transform from real position to grid pos of fastroute
-  int grid_x = ((pos_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_y = ((pos_y - grid_->getYMin()) / grid_->getTileSize());
+  const int grid_x = dbuToTile(pos_x, /*is_x=*/true);
+  const int grid_y = dbuToTile(pos_y, /*is_x=*/false);
+  if (use_cugr_) {
+    // Orientation is implied by the layer; via headroom is checked only at
+    // the endpoints, by hasJumperResources.
+    return cugr_->hasAvailableResources(db_net, layer_level, grid_x, grid_y);
+  }
   int cap = 0;
   if (is_horizontal) {
     cap = fastroute_->getAvailableResources(
@@ -2129,6 +2355,25 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
         grid_x, grid_y, grid_x, grid_y + 1, layer_level);
   }
   return cap >= fastroute_->getDbNetLayerEdgeCost(db_net, layer_level);
+}
+
+bool GlobalRouter::hasJumperResources(const int init_x,
+                                      const int init_y,
+                                      const int final_x,
+                                      const int final_y,
+                                      const int layer_level,
+                                      odb::dbNet* db_net) const
+{
+  if (!use_cugr_) {
+    // FastRoute charges only the wire edge, already checked during the scan.
+    return true;
+  }
+  return cugr_->hasJumperResources(db_net,
+                                   layer_level,
+                                   dbuToTile(init_x, /*is_x=*/true),
+                                   dbuToTile(init_y, /*is_x=*/false),
+                                   dbuToTile(final_x, /*is_x=*/true),
+                                   dbuToTile(final_y, /*is_x=*/false));
 }
 
 // Find the position of the middle of a GCell closest to the position
@@ -2145,36 +2390,40 @@ void GlobalRouter::updateResources(const int& init_x,
                                    int used,
                                    odb::dbNet* db_net)
 {
-  // transform from real position to grid pos of fastrouter
-  int x0
-      = ((std::min(init_x, final_x) - grid_->getXMin()) / grid_->getTileSize());
-  int y0
-      = ((std::min(init_y, final_y) - grid_->getYMin()) / grid_->getTileSize());
-  int x1
-      = ((std::max(final_x, init_x) - grid_->getXMin()) / grid_->getTileSize());
-  int y1
-      = ((std::max(final_y, init_y) - grid_->getYMin()) / grid_->getTileSize());
-
-  // The last gcell is oversized and includes space that the above
-  // calculation doesn't represent so correct it:
-  x1 = std::min(x1, grid_->getXGrids() - 1);
-  y1 = std::min(y1, grid_->getYGrids() - 1);
+  const int x0 = dbuToTile(std::min(init_x, final_x), /*is_x=*/true);
+  const int y0 = dbuToTile(std::min(init_y, final_y), /*is_x=*/false);
+  const int x1 = dbuToTile(std::max(final_x, init_x), /*is_x=*/true);
+  const int y1 = dbuToTile(std::max(final_y, init_y), /*is_x=*/false);
   fastroute_->updateEdge2DAnd3DUsage(x0, y0, x1, y1, layer_level, used, db_net);
 }
 
-void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
-                                             const int& init_y,
-                                             const int& final_x,
-                                             const int& final_y,
-                                             const int& layer_level,
-                                             const int& new_layer_level,
-                                             odb::dbNet* db_net)
+bool GlobalRouter::updateJumperedRoute(const int& init_x,
+                                       const int& init_y,
+                                       const int& final_x,
+                                       const int& final_y,
+                                       const int& layer_level,
+                                       const int& new_layer_level,
+                                       odb::dbNet* db_net)
 {
-  // transform from real position to grid pos of fastrouter
-  int grid_init_x = ((init_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_init_y = ((init_y - grid_->getYMin()) / grid_->getTileSize());
-  int grid_final_x = ((final_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_final_y = ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  if (use_cugr_) {
+    // A failed adoption releases the net's old demand; the caller must roll
+    // the jumper back and call restoreNetDemand to recommit the route.
+    if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
+      return false;
+    }
+    // The adopted route supersedes any guide restore a prior failure queued.
+    if (Net* net = getNet(db_net)) {
+      net->setRestoreRouteFromGuides(false);
+    }
+    return true;
+  }
+  // Move the span's edge usage from the original layer to the jumper's.
+  updateResources(init_x, init_y, final_x, final_y, layer_level, -1, db_net);
+  updateResources(init_x, init_y, final_x, final_y, new_layer_level, 1, db_net);
+  const int grid_init_x = dbuToTile(init_x, /*is_x=*/true);
+  const int grid_init_y = dbuToTile(init_y, /*is_x=*/false);
+  const int grid_final_x = dbuToTile(final_x, /*is_x=*/true);
+  const int grid_final_y = dbuToTile(final_y, /*is_x=*/false);
   // update treeedges
   fastroute_->updateRouteGridsLayer(grid_init_x,
                                     grid_init_y,
@@ -2183,6 +2432,27 @@ void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
                                     layer_level - 1,
                                     new_layer_level - 1,
                                     db_net);
+  return true;
+}
+
+void GlobalRouter::restoreNetDemand(odb::dbNet* db_net)
+{
+  if (!use_cugr_) {
+    return;
+  }
+  if (!cugr_->restoreNetRoute(db_net, routes_[db_net])) {
+    logger_->warn(GRT,
+                  311,
+                  "Net {} route could not be re-adopted after a rejected "
+                  "jumper; scheduling a reroute.",
+                  db_net->getConstName());
+    // The demand was released; force a guide restore (or a true reroute on
+    // failure) when the dirty queue is flushed.
+    if (Net* net = getNet(db_net)) {
+      net->setRestoreRouteFromGuides(true);
+    }
+    addDirtyNet(db_net);
+  }
 }
 
 // Use release flag to increase rather than reduce resources on obstruction
@@ -2767,6 +3037,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
 void GlobalRouter::loadGuidesFromDB()
 {
+  ensureEngineSelected();
   if (!routes_.empty()) {
     return;
   }
@@ -2799,7 +3070,12 @@ void GlobalRouter::loadGuidesFromDB()
 
   updateEdgesUsage();
   if (block_->getGCellGrid() == nullptr) {
-    updateDbCongestion();
+    if (use_cugr_) {
+      // CUGR has no routing state here; derive congestion from the guides.
+      updateDbCongestionFromGuides();
+    } else {
+      updateDbCongestion();
+    }
   }
   if (heatmap_) {
     heatmap_->invalidate();
@@ -3145,6 +3421,14 @@ void GlobalRouter::saveGuidesFromFile(
 
 void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
 {
+  // Tag the block with the engine choice so fresh sessions restore it.
+  if (odb::dbBoolProperty* prop
+      = odb::dbBoolProperty::find(block_, kUseCugrProperty)) {
+    prop->setValue(use_cugr_);
+  } else {
+    odb::dbBoolProperty::create(block_, kUseCugrProperty, use_cugr_);
+  }
+
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
@@ -3162,10 +3446,9 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
     }
     Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
-    RoutePointToPinsMap point_to_pins;
-    if (!use_cugr_) {
-      point_to_pins = findRoutePtPins(net);
-    }
+    // The is-connected-to-term guide flags set below feed ant::WireBuilder's
+    // pin binding; without them antenna checking computes no gate data.
+    RoutePointToPinsMap point_to_pins = findRoutePtPins(net);
 
     int jumper_count = 0;
     if (!route.empty()) {
@@ -3191,14 +3474,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide2 = odb::dbGuide::create(
                 db_net, layer2, layer1, box, guide_is_congested);
 
-            if (!use_cugr_) {
-              RoutePt route_pt1(
-                  segment.init_x, segment.init_y, segment.init_layer);
-              RoutePt route_pt2(
-                  segment.final_x, segment.final_y, segment.final_layer);
-              addPinsConnectedToGuides(point_to_pins, route_pt1, guide1);
-              addPinsConnectedToGuides(point_to_pins, route_pt2, guide2);
-            }
+            addPinsConnectedToGuides(point_to_pins, segment, guide1, guide2);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             int via_layer_idx
@@ -3208,14 +3484,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             auto guide = odb::dbGuide::create(
                 db_net, layer, via_layer, box, guide_is_congested);
 
-            if (!use_cugr_) {
-              RoutePt route_pt1(
-                  segment.init_x, segment.init_y, segment.init_layer);
-              RoutePt route_pt2(
-                  segment.final_x, segment.final_y, segment.final_layer);
-              addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-              addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
-            }
+            addPinsConnectedToGuides(point_to_pins, segment, guide, guide);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < getMinRoutingLayer()
@@ -3237,14 +3506,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             jumper_count++;
           }
 
-          if (!use_cugr_) {
-            RoutePt route_pt1(
-                segment.init_x, segment.init_y, segment.init_layer);
-            RoutePt route_pt2(
-                segment.final_x, segment.final_y, segment.final_layer);
-            addPinsConnectedToGuides(point_to_pins, route_pt1, guide);
-            addPinsConnectedToGuides(point_to_pins, route_pt2, guide);
-          }
+          addPinsConnectedToGuides(point_to_pins, segment, guide, guide);
         }
       }
     }
@@ -3287,6 +3549,17 @@ void GlobalRouter::addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
     itr->second.connected = true;
     guide->setIsConnectedToTerm(true);
   }
+}
+
+void GlobalRouter::addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                                            const GSegment& segment,
+                                            odb::dbGuide* init_guide,
+                                            odb::dbGuide* final_guide)
+{
+  RoutePt init_pt(segment.init_x, segment.init_y, segment.init_layer);
+  RoutePt final_pt(segment.final_x, segment.final_y, segment.final_layer);
+  addPinsConnectedToGuides(point_to_pins, init_pt, init_guide);
+  addPinsConnectedToGuides(point_to_pins, final_pt, final_guide);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
@@ -3482,6 +3755,10 @@ AdjacencyList GlobalRouter::buildNetGraph(odb::dbNet* net)
 bool GlobalRouter::isConnected(odb::dbNet* net)
 {
   int total_segments = routes_[net].size();
+  // An empty route has no segments that could be disconnected.
+  if (total_segments == 0) {
+    return true;
+  }
   std::vector<int> parent(total_segments), rank(total_segments, 0);
   for (int i = 0; i < total_segments; i++) {
     parent[i] = i;
@@ -3504,8 +3781,13 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     return parent[x];
   };
 
-  std::function<void(int, int)> uniteGroups = [&](int u, int v) {
+  // Unites the groups of u and v, returning true only when they were in
+  // different groups.
+  auto uniteGroups = [&](int u, int v) -> bool {
     int root_u = find(u), root_v = find(v);
+    if (root_u == root_v) {
+      return false;
+    }
     if (rank[root_u] > rank[root_v]) {
       parent[root_v] = root_u;
     } else if (rank[root_u] < rank[root_v]) {
@@ -3514,6 +3796,7 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
       parent[root_v] = root_u;
       rank[root_u]++;
     }
+    return true;
   };
 
   for (int i = 1; i < total_segments; i++) {
@@ -3529,13 +3812,42 @@ bool GlobalRouter::isConnected(odb::dbNet* net)
     initialized_groups++;
 
     for (int j = i - 1; j >= 0 && initialized_groups > 1; --j) {
-      if (segmentsConnect(routes_[net][i], routes_[net][j])) {
-        uniteGroups(i, j);
+      if (segmentsConnect(routes_[net][i], routes_[net][j])
+          && uniteGroups(i, j)) {
         initialized_groups--;
       }
     }
   }
   return (initialized_groups == 1);
+}
+
+// Debug aid: report each connected component of the net's segments.
+void GlobalRouter::reportDisconnectedComponents(odb::dbNet* db_net)
+{
+  const GRoute& segments = routes_[db_net];
+  const AdjacencyList graph = buildNetGraph(db_net);
+  std::vector<bool> visited(segments.size(), false);
+  int component = 0;
+  for (int start = 0; start < static_cast<int>(segments.size()); start++) {
+    if (visited[start]) {
+      continue;
+    }
+    component++;
+    logger_->report("Net {} component {}:", db_net->getName(), component);
+    std::vector<int> stack = {start};
+    visited[start] = true;
+    while (!stack.empty()) {
+      const int seg = stack.back();
+      stack.pop_back();
+      printSegment(segments[seg]);
+      for (const int neighbor : graph[seg]) {
+        if (!visited[neighbor]) {
+          visited[neighbor] = true;
+          stack.push_back(neighbor);
+        }
+      }
+    }
+  }
 }
 
 bool GlobalRouter::segmentsConnect(const GSegment& segment1,
@@ -3634,6 +3946,9 @@ void GlobalRouter::connectTopLevelPins(odb::dbNet* db_net, GRoute& route)
   }
 }
 
+// Synthesize via-stack routes for local nets (neither engine exports them)
+// and connect pins above the max routing layer; nets left route-less here
+// have no guides and antenna checking fails design-wide (ANT-0008).
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       std::vector<Net*>& nets,
                                       int min_routing_layer,
@@ -4497,23 +4812,24 @@ static void getViaDims(
   prl_up = -1;
   width_down = -1;
   prl_down = -1;
+  // Both vias are measured by their enclosure on tech_layer: the up via's
+  // bottom enclosure and the down via's top enclosure, since the spacing
+  // rules are evaluated on tech_layer.
+  auto find_enclosure_dims
+      = [tech_layer](odb::dbTechVia* via, int& width, int& prl) {
+          for (auto box : via->getBoxes()) {
+            if (box->getTechLayer() == tech_layer) {
+              width = std::min(box->getDX(), box->getDY());
+              prl = std::max(box->getDX(), box->getDY());
+              break;
+            }
+          }
+        };
   if (default_vias.contains(tech_layer)) {
-    for (auto box : default_vias[tech_layer]->getBoxes()) {
-      if (box->getTechLayer() == tech_layer) {
-        width_up = std::min(box->getDX(), box->getDY());
-        prl_up = std::max(box->getDX(), box->getDY());
-        break;
-      }
-    }
+    find_enclosure_dims(default_vias[tech_layer], width_up, prl_up);
   }
   if (default_vias.contains(bottom_layer)) {
-    for (auto box : default_vias[bottom_layer]->getBoxes()) {
-      if (box->getTechLayer() == tech_layer) {
-        width_down = std::min(box->getDX(), box->getDY());
-        prl_down = std::max(box->getDX(), box->getDY());
-        break;
-      }
-    }
+    find_enclosure_dims(default_vias[bottom_layer], width_down, prl_down);
   }
 }
 
@@ -5557,27 +5873,22 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
 
 void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
-  if (use_cugr_) {
-    // TODO: Fully support merging nets in CUGR.
-    // For now, we simply rip up and add the base net to the dirty list
-    // to be completely re-routed from scratch.
-    addDirtyNet(db_net1);
-    return;
-  }
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
-  // Try to connect the routing of the two nets
+  // Try to connect the routing of the two nets.
+  // For CUGR, connectRouting also performs the CUGR-specific capacity check
+  // and populates connection_segs so that the CUGR tree can be updated.
   if (connectRouting(db_net1, db_net2)) {
+    saveGuides({db_net1});
     net1->setIsMergedNet(true);
     net1->setMergedNet(db_net2);
     net1->setDirtyNet(false);
     net2->setIsMergedNet(true);
     net2->setMergedNet(db_net1);
-    saveGuides({db_net1});
   } else {
-    // After failing to connect the routing, the survivor net still have
+    // After failing to connect the routing, the survivor net still has
     // uncovered pins and needs to be re-routed
-    net1->setDirtyNet(true);
+    addDirtyNet(db_net1);
   }
 }
 
@@ -5596,6 +5907,11 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 
   GRoute& net1_route = routes_[db_net1];
   GRoute& net2_route = routes_[db_net2];
+
+  if (net1_route.empty() || net2_route.empty()) {
+    return false;
+  }
+
   if (pin_pos1 != pin_pos2) {
     const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
@@ -5603,19 +5919,32 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
     for (const GSegment& seg : connection) {
-      const int x1 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
-                     / grid_->getTileSize();
-      const int y1 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
-                     / grid_->getTileSize();
-      const int x2 = (std::max(seg.init_x, seg.final_x) - grid_->getXMin())
-                     / grid_->getTileSize();
-      const int y2 = (std::max(seg.init_y, seg.final_y) - grid_->getYMin())
-                     / grid_->getTileSize();
-      const int layer = seg.init_layer;
       if (!seg.isVia()) {
-        if (!fastroute_->hasAvailableResources(
-                x1, y1, x2, y2, layer, db_net1)) {
-          return false;
+        const int x1 = dbuToTile(std::min(seg.init_x, seg.final_x), true);
+        const int y1 = dbuToTile(std::min(seg.init_y, seg.final_y), false);
+        const int x2 = dbuToTile(std::max(seg.init_x, seg.final_x), true);
+        const int y2 = dbuToTile(std::max(seg.init_y, seg.final_y), false);
+        const int layer = seg.init_layer;
+
+        if (use_cugr_) {
+          if (y1 == y2) {  // horizontal
+            for (int x = x1; x < x2; x++) {
+              if (!cugr_->hasAvailableResources(db_net1, layer, x, y1)) {
+                return false;
+              }
+            }
+          } else {  // vertical
+            for (int y = y1; y < y2; y++) {
+              if (!cugr_->hasAvailableResources(db_net1, layer, x1, y)) {
+                return false;
+              }
+            }
+          }
+        } else {
+          if (!fastroute_->hasAvailableResources(
+                  x1, y1, x2, y2, layer, db_net1)) {
+            return false;
+          }
         }
       }
     }
@@ -5653,13 +5982,45 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
+    if (use_cugr_) {
+      cugr_->mergeNet(db_net1, db_net2, connection);
+    }
   } else {
+    // Both pins are in the same gcell, but the two routes may reach it on
+    // disjoint layer ranges. Bridge any layer gap with vias.
+    const auto [min1, max1] = findLayerRangeOverPosition(pin_pos1, net1_route);
+    const auto [min2, max2] = findLayerRangeOverPosition(pin_pos1, net2_route);
+    if (max1 != -1 && max2 != -1) {
+      if (max1 < min2) {
+        insertViasForConnection(net1_route, pin_pos1, max1, min2);
+      } else if (max2 < min1) {
+        insertViasForConnection(net1_route, pin_pos1, max2, min1);
+      }
+    }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
+    // For CUGR: transfer tree ownership and mark removed_net in merged_nets_
+    // so that the net-destroy callback does not subtract the removed net's
+    // tree usage from GridGraph (the wires were folded into net1_route above).
+    if (use_cugr_) {
+      cugr_->mergeNet(db_net1, db_net2, /*connection=*/{});
+    }
   }
 
   updateNetPins(net1);
   std::string dump;
-  return netIsCovered(db_net1, dump);
+  if (!netIsCovered(db_net1, dump)) {
+    return false;
+  }
+  // netIsCovered() alone allows two disjoint clusters that each cover their own
+  // pins, so the merged routing must also form a single connected component.
+  if (!isConnected(db_net1)) {
+    reportDisconnectedComponents(db_net1);
+    logger_->error(GRT,
+                   298,
+                   "Net {} has disconnected segments after merge.",
+                   net1->getName());
+  }
+  return true;
 }
 
 void GlobalRouter::findBufferPinPostions(Net* net1,
@@ -5702,6 +6063,24 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
                    "pin position.");
   }
   return top_layer;
+}
+
+// Layer range of the segments that cover the position. Returns
+// {INT_MAX, -1} when no segment covers it.
+std::pair<int, int> GlobalRouter::findLayerRangeOverPosition(
+    const odb::Point& pos,
+    const GRoute& route)
+{
+  int min_layer = std::numeric_limits<int>::max();
+  int max_layer = -1;
+  for (const GSegment& seg : route) {
+    const odb::Rect seg_box(seg.init_x, seg.init_y, seg.final_x, seg.final_y);
+    if (seg_box.intersects(pos)) {
+      min_layer = std::min({min_layer, seg.init_layer, seg.final_layer});
+      max_layer = std::max({max_layer, seg.init_layer, seg.final_layer});
+    }
+  }
+  return {min_layer, max_layer};
 }
 
 std::vector<GSegment> GlobalRouter::createConnectionForPositions(
@@ -5901,27 +6280,16 @@ void GlobalRouter::reportResources()
 
 void GlobalRouter::reportCongestion()
 {
-  if (use_cugr_) {
-    cugr_->computeCongestionInformation();
-  } else {
-    fastroute_->computeCongestionInformation();
-  }
+  // FastRoute only; the CUGR path prints its own report (GRT-0130).
+  fastroute_->computeCongestionInformation();
 
-  const std::vector<int>& resources
-      = use_cugr_ ? cugr_->getTotalCapacityPerLayer()
-                  : fastroute_->getTotalCapacityPerLayer();
-  const std::vector<int>& demands = use_cugr_
-                                        ? cugr_->getTotalUsagePerLayer()
-                                        : fastroute_->getTotalUsagePerLayer();
-  const std::vector<int>& overflows
-      = use_cugr_ ? cugr_->getTotalOverflowPerLayer()
-                  : fastroute_->getTotalOverflowPerLayer();
+  const std::vector<int>& resources = fastroute_->getTotalCapacityPerLayer();
+  const std::vector<int>& demands = fastroute_->getTotalUsagePerLayer();
+  const std::vector<int>& overflows = fastroute_->getTotalOverflowPerLayer();
   const std::vector<int>& max_h_overflows
-      = use_cugr_ ? cugr_->getMaxHorizontalOverflows()
-                  : fastroute_->getMaxHorizontalOverflows();
+      = fastroute_->getMaxHorizontalOverflows();
   const std::vector<int>& max_v_overflows
-      = use_cugr_ ? cugr_->getMaxVerticalOverflows()
-                  : fastroute_->getMaxVerticalOverflows();
+      = fastroute_->getMaxVerticalOverflows();
 
   int total_resource = 0;
   int total_demand = 0;
@@ -6336,6 +6704,7 @@ std::vector<Net*> IncrementalGRoute::updateRoutes(bool save_guides)
 
 IncrementalGRoute::~IncrementalGRoute()
 {
+  groute_->reportIncrementalCongestion();
   db_cbk_.removeOwner();
 }
 
@@ -6368,27 +6737,82 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   if (use_cugr_) {
-    cugr_->setVerbose(false);
-    std::vector<Net*> dirty_nets;
-    dirty_nets.reserve(dirty_nets_.size());
-    for (odb::dbNet* db_net : dirty_nets_) {
-      // Rebuild the GlobalRouter pin set from the netlist (as updateDirtyNets
-      // does for FastRoute); updatePinAccessPoints below fixes the positions.
-      Net* net = getNet(db_net);
-      updateNetPins(net);
-      net->setDirtyNet(false);
-      net->clearLastPinPositions();
+    return updateDirtyRoutesCugr(save_guides);
+  }
+  return updateDirtyRoutesFastRoute(save_guides);
+}
+
+std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
+{
+  cugr_->setVerbose(false);
+  std::vector<Net*> dirty_nets;
+  dirty_nets.reserve(dirty_nets_.size());
+  std::vector<odb::dbNet*> restored_nets;
+  for (odb::dbNet* db_net : dirty_nets_) {
+    // Rebuild the pin set from the netlist; positions are synced below.
+    Net* net = getNet(db_net);
+    updateNetPins(net);
+    // Stale detailed wires (post-detailed-route repair) must go: the
+    // reroute and its guides supersede them, and the antenna checker
+    // must not read them. No-op for nets without wires.
+    destroyNetWire(net);
+    // Journal-restored nets get their pre-change routing back from the odb
+    // guides instead of a reroute; a failed restore forces the reroute.
+    const bool restore_requested
+        = net->restoreRouteFromGuides() && !net->isResAware();
+    const bool restored = restore_requested && loadRoutingFromDBGuides(db_net);
+    net->setRestoreRouteFromGuides(false);
+    if (restored) {
+      restored_nets.push_back(db_net);
+    }
+    // Reroute a dirty net only if needed: res-aware, no route yet (new or
+    // journal-restored), restore requested but failed, or a pin moved gcell.
+    const auto route_it = routes_.find(db_net);
+    const bool has_route
+        = (route_it != routes_.end() && !route_it->second.empty());
+    const bool reroute = !restored
+                         && (net->isResAware() || !has_route
+                             || restore_requested || pinPositionsChanged(net));
+    net->setDirtyNet(false);
+    net->clearLastPinPositions();
+    if (reroute) {
       cugr_->updateNet(db_net);
       dirty_nets.push_back(net);
     }
-    dirty_nets_.clear();
-    cugr_->routeIncremental();
-    routes_ = cugr_->getRoutes();
-    // Sync pin access points with CUGR's routing, as the full route does.
-    updatePinAccessPoints();
-    return dirty_nets;
   }
 
+  dirty_nets_.clear();
+  findRoutingCugr(dirty_nets, /*incremental=*/true);
+  // Restored nets keep their guide-derived route; sync pins to the access
+  // points restoreNetRoute recorded so later dirty rounds compare cleanly.
+  for (odb::dbNet* db_net : restored_nets) {
+    updatePinAccessPoints(getNet(db_net), db_net);
+  }
+  // Keep odb guides in lockstep with routes_ so an rsz journal restore can
+  // recover the pre-change routing (the guide edits are ECO-journaled).
+  if (save_guides) {
+    std::vector<odb::dbNet*> rerouted;
+    rerouted.reserve(dirty_nets.size());
+    for (Net* net : dirty_nets) {
+      odb::dbNet* db_net = net->getDbNet();
+      // saveGuides skips unrouted nets, so clear their stale guides here.
+      if (routes_.find(db_net) == routes_.end()) {
+        db_net->clearGuides();
+      } else {
+        rerouted.push_back(db_net);
+      }
+    }
+    saveGuides(rerouted);
+  }
+  if (!dirty_nets.empty()) {
+    incremental_congestion_report_pending_ = true;
+  }
+
+  return dirty_nets;
+}
+
+std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
+{
   std::vector<Net*> dirty_nets;
 
   fastroute_->setResistanceAware(resistance_aware_);
@@ -6597,7 +7021,11 @@ void GRouteDbCbk::inDbNetPostMerge(odb::dbNet* preserved_net,
 void GRouteDbCbk::inDbNetPostGuideRestore(odb::dbNet* net)
 {
   Net* fr_net = grouter_->getNet(net);
+  if (fr_net == nullptr) {
+    return;
+  }
   fr_net->setRestoreRouteFromGuides(true);
+  fr_net->setIsResAware(false);
   grouter_->addDirtyNet(net);
 }
 

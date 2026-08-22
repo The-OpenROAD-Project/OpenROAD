@@ -130,10 +130,13 @@ struct WebSocketRequest
     kInspectSelection,
     kInspectGroup,
     kDeselect,
+    kSelectLayer,
     kDebugContinue,
     kDebugCharts,
+    kSetDisplayState,
     kGet3DData,
     kOverlayTile,
+    kCancel,
     kUnknown
   };
 
@@ -188,6 +191,28 @@ struct SessionState
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;
+  // Misc > Flywires only: highlight selected nets with straight
+  // driver->sink lines instead of their routed wire/guides (GUI
+  // isFlywireHighlightOnly() parity).
+  bool flywires_only = false;
+  // Which selection the highlight_* vectors were derived from, or kNone while
+  // they hold nothing.  A flywires_only flip has to re-derive them from the
+  // SAME source: the multi-selection normally, but a single object when the
+  // user followed an inspector link out of the selection set (handleInspect
+  // deliberately narrows the highlight to the link target).  kNone doubles as
+  // the "dismissed" state, so a flip cannot resurrect highlights the user
+  // cleared.
+  //
+  // Tracking the source is a shim over the fact that selection_set and
+  // current_inspected are two overlapping answers to "what is selected"; the
+  // Qt GUI keeps only the set and narrows it on a link follow.
+  enum class HighlightSource : uint8_t
+  {
+    kNone,
+    kInspected,
+    kSelectionSet
+  };
+  HighlightSource highlight_source = HighlightSource::kNone;
 
   std::mutex selectables_mutex;
   std::vector<gui::Selected> selectables;
@@ -228,7 +253,22 @@ struct SessionState
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
+
+  // Tile-request ids the client has abandoned (pan/zoom away).  Populated by
+  // the inline `cancel` handler and consumed at the top of handleTile so a
+  // still-queued render is skipped.  Best-effort (a render already running on
+  // a worker thread is not interrupted).
+  std::mutex cancelled_mutex;
+  std::set<uint32_t> cancelled_ids;
 };
+
+// Map an HTTP request target onto an embedded asset path.
+//
+// Strips the query string and fragment, which the asset lookup must not see:
+// the viewer's options are passed as query parameters (?mergetiles=0 and
+// friends), and matching "/?mergetiles=0" against the asset table simply fails,
+// so the whole page 404s.  Also maps "/" onto the index document.
+std::string assetPathFromTarget(std::string_view target);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
@@ -239,6 +279,12 @@ struct SessionState
 // For required fields, prefer the bare boost::json idiom
 // `obj.at(key).as_int64()` / `as_string()` / `as_bool()` / `as_double()`,
 // which throws on either missing or wrong-typed input.
+//
+// Throwing is safe here: WebSocketSession dispatches every handler through
+// invoke_handler(), which turns an escaped exception into an error response
+// for that one request.  It was not always so — the handlers ran with no
+// try/catch above them and out of io_context::run(), so a wrong-typed field
+// terminated the process.
 template <class T>
 T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
 {
@@ -253,6 +299,35 @@ T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
 // flagged it stale.  Must be called before dereferencing any stored
 // gui::Selected.  Returns true when the state was cleared.
 bool consumeStaleSelection(SessionState& state);
+
+// Build a kError response carrying `message`.  The three-line
+// type/string/assign dance is easy to get subtly wrong (the payload is bytes,
+// not a string), so it lives in one place.
+WebSocketResponse errorResponse(uint32_t id, std::string_view message);
+
+// Deepest tile zoom the server will address.  2^kMaxTileZoom must stay inside
+// an int, since the grid size is computed as an int in several renderers.
+// The client mirrors this ceiling in maxUsefulZoom() (ui-utils.js).
+constexpr int kMaxTileZoom = 30;
+
+// Read the z/x/y grid coordinates of a tile request into `z`/`x`/`y`.
+// Returns false, with `error` describing the offending field, when a
+// coordinate is missing, is not an integer, or the zoom is outside
+// [0, kMaxTileZoom].  x and y are not bounded to the grid: Leaflet asks for
+// off-grid tiles as a matter of course and the renderers answer with a
+// transparent tile.
+//
+// The type check is not paranoia about hand-written clients: JSON.stringify
+// serializes NaN and Infinity as `null`, so any client-side arithmetic that
+// goes non-finite -- an unbounded zoom being the one we hit -- reaches the
+// server as a null where a number belongs.  Reporting that as an error beats
+// rendering the transparent tiles that a degenerate zoom would otherwise
+// produce, which look to the user like the design vanished.
+bool parseTileCoords(const boost::json::object& json,
+                     int& z,
+                     int& x,
+                     int& y,
+                     std::string& error);
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
@@ -307,6 +382,8 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleDeselect(const WebSocketRequest& req,
                                    SessionState& state);
+  WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
@@ -398,6 +475,11 @@ class TileHandler
                                      SessionState& state);
   WebSocketResponse handleHeatMapTile(const WebSocketRequest& req,
                                       SessionState& state);
+  // Marks a tile-request id as cancelled so a still-queued render is skipped.
+  // Registered run_inline so it executes on the read thread, ahead of the
+  // posted render it cancels.
+  WebSocketResponse handleCancel(const WebSocketRequest& req,
+                                 SessionState& state);
 
  private:
   static WebSocketResponse serializeBounds(uint32_t id,
@@ -417,7 +499,9 @@ class TileHandler
       const std::vector<FlightLine>& flight_lines,
       const std::map<uint32_t, Color>* module_colors,
       const std::set<uint32_t>* focus_net_ids,
-      const std::set<uint32_t>* route_guide_net_ids);
+      const std::set<uint32_t>* route_guide_net_ids,
+      double dpr = 1.0,
+      int tile_px = 0);
 
   std::shared_ptr<TileGenerator> gen_;
 };

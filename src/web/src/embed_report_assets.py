@@ -14,8 +14,12 @@ import re
 
 def process_js_file(content):
     """Process a single JS file for concatenation into a shared scope."""
-    # Remove import lines.
-    content = re.sub(r"^import\s+.*;\s*$", "", content, flags=re.MULTILINE)
+    # Remove import statements, including ones wrapped over several lines.
+    # `[^;]*` spans newlines but stops at the first ';', so a statement is
+    # consumed whole and no real code can be swallowed.  A single-line-only
+    # pattern left the tail of a wrapped import behind, which is a syntax error
+    # for the whole concatenated bundle.
+    content = re.sub(r"^import\s[^;]*;[ \t]*$", "", content, flags=re.MULTILINE)
 
     # Find exported names and strip the export keyword.
     # Two patterns:

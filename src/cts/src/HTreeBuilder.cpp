@@ -1244,6 +1244,7 @@ void HTreeBuilder::run()
 
   initSinkRegion();
 
+  double prevMaxHPWL = std::numeric_limits<double>::max();
   for (int level = 1; level <= clockTreeMaxDepth_; ++level) {
     const unsigned numSinksPerSubRegion
         = computeNumberOfSinksPerSubRegion(level);
@@ -1283,6 +1284,18 @@ void HTreeBuilder::run()
                                                  : numMaxLeafSinks_);
           break;
         }
+        if (maxHPWL >= prevMaxHPWL) {
+          logger_->info(CTS,
+                        54,
+                        " Stop criterion found. Sink region hpwl "
+                        "({:.3f} um) did not improve and max "
+                        "number of sinks is {}.",
+                        maxHPWL / options_->getDbUnits(),
+                        options_->getMaxFanout() ? options_->getMaxFanout()
+                                                 : numMaxLeafSinks_);
+          break;
+        }
+        prevMaxHPWL = maxHPWL;
       } else {
         logger_->info(CTS,
                       32,
@@ -1977,7 +1990,6 @@ void HTreeBuilder::createClockSubNets()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
-  rootClockSubNet.setTreeLevel(0);
   rootClockSubNet.addInst(rootBuffer);
   treeBufLevels_++;
 
@@ -2079,11 +2091,6 @@ void HTreeBuilder::createClockSubNets()
                              wireSegmentUnit_,
                              this);
 
-      // Set clock tree level the first time only.
-      if (builder.getDrivingSubNet()->getTreeLevel() < 0) {
-        builder.getDrivingSubNet()->setTreeLevel(levelIdx);
-      }
-
       if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());
       } else {
@@ -2154,7 +2161,6 @@ void HTreeBuilder::createSingleBufferClockNet()
 
   addTreeLevelBuffer(&rootBuffer);
   ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
-  clockSubNet.setTreeLevel(0);
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });

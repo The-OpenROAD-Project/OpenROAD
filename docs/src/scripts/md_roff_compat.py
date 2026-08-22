@@ -6,6 +6,7 @@
 
 import os
 import re
+import sys
 from manpage import ManPage
 from extract_utils import extract_tcl_command, extract_description
 from extract_utils import extract_tcl_code, extract_arguments
@@ -61,12 +62,16 @@ def extract_global_see_also(text):
 
 tools = [
     "ant",
+    "cgt",
     "cts",
+    "cut",
     "dbSta",
     "dft",
     "dpl",
     "drt",
     "dst",
+    "est",
+    "exa",
     "fin",
     "gpl",
     "grt",
@@ -79,40 +84,61 @@ tools = [
     "pdn",
     "ppl",
     "psm",
+    "ram",
     "rcx",
     "rmp",
     "rsz",
     "sta",
     "stt",
+    "syn",
     "tap",
+    "tst",
     "upf",
     "utl",
+    "web",
 ]
 
-# Process man2 (except odb and sta)
+# Process man2. The excluded modules contribute man3 message pages but no
+# command pages: odb and sta are documented elsewhere (doxygen / upstream),
+# dbSta and dst ship no README for link_readmes.sh to symlink, and cut and tst
+# expose no Tcl commands (cut is internal, tst is unit-test infrastructure not
+# linked into the application), so their READMEs have no command section to
+# parse.
 DEST_DIR2 = SRC_DIR = "./md/man2"
-exclude2 = ["odb", "sta"]
+exclude2 = ["cut", "dbSta", "dst", "odb", "sta", "tst"]
 docs2 = [f"{SRC_DIR}/{tool}.md" for tool in tools if tool not in exclude2]
 
-# Process man3 (add extra path for ORD messages)
-SRC_DIR = "../src"
+# Process man3. The pages come from the generated messages.txt files, laid out
+# as <root>/src/<module>/messages.txt plus <root>/messages.txt for the ORD
+# messages. The CMake build writes them into the source tree, so the default
+# root is the repository root. Bazel writes them under bazel-out, so
+# //docs:man_pages sets MESSAGES_ROOT_DIR to its generated tree instead.
+MESSAGES_ROOT_DIR = os.environ.get("MESSAGES_ROOT_DIR", "..")
 DEST_DIR3 = "./md/man3"
 exclude = [
     "sta"
 ]  # sta excluded because its format is different, and no severity level.
-docs3 = [f"{SRC_DIR}/{tool}/messages.txt" for tool in tools if tool not in exclude]
-docs3.append("../messages.txt")
+docs3 = [
+    f"{MESSAGES_ROOT_DIR}/src/{tool}/messages.txt"
+    for tool in tools
+    if tool not in exclude
+]
+docs3.append(f"{MESSAGES_ROOT_DIR}/messages.txt")
 
 
 def man2(path=DEST_DIR2):
     for doc in docs2:
         if not os.path.exists(doc):
-            print(f"{doc} doesn't exist. Continuing")
+            print(f"{doc} doesn't exist. Continuing", file=sys.stderr)
             continue
-        man2_translate(doc, path)
+        man2_translate(doc, path, quiet=True)
 
 
-def man2_translate(doc, path):
+# The per-README parse report is the golden output of the per-module
+# readme_msgs_check tests, which call this directly, so it stays on by default.
+# The whole-tree build above silences it: repeated across every module it
+# drowns out the diagnostics worth reading.
+def man2_translate(doc, path, quiet=False):
     with open(doc) as f:
         text = f.read()
         # new function names (reading tcl synopsis + convert gui:: to gui_)
@@ -134,14 +160,15 @@ def man2_translate(doc, path):
         global_examples = extract_global_examples(text)
         global_see_also = extract_global_see_also(text)
 
-        print(f"{os.path.basename(doc)}")
-        print(f"""Names: {len(func_names)},\
+        if not quiet:
+            print(f"{os.path.basename(doc)}")
+            print(f"""Names: {len(func_names)},\
         Desc: {len(func_descs)},\
         Syn: {len(func_synopsis)},\
         Options: {len(func_options)},\
         Args: {len(func_args)}""")
-        print(f"Global Examples: {'Found' if global_examples else 'None'}")
-        print(f"Global See Also: {'Found' if global_see_also else 'None'}")
+            print(f"Global Examples: {'Found' if global_examples else 'None'}")
+            print(f"Global See Also: {'Found' if global_see_also else 'None'}")
 
         # Identify ### headers that are missing a ```tcl block — these cause count mismatches.
         missing_tcl_headers = []
@@ -181,7 +208,7 @@ def man2_translate(doc, path):
         )
 
         for func_id in range(len(func_synopsis)):
-            manpage = ManPage()
+            manpage = ManPage(source=doc)
             manpage.name = func_names[func_id]
             manpage.desc = func_descs[func_id]
             manpage.synopsis = func_synopsis[func_id]
@@ -218,19 +245,19 @@ def man2_translate(doc, path):
                 ]
 
             manpage.write_roff_file(path)
-    print("Man2 successfully compiled.")
+    if not quiet:
+        print("Man2 successfully compiled.")
 
 
 def man3(path=DEST_DIR3):
     for doc in docs3:
-        print(f"Processing {doc}")
         if not os.path.exists(doc):
-            print(f"{doc} doesn't exist. Continuing")
+            print(f"{doc} doesn't exist. Continuing", file=sys.stderr)
             continue
-        man3_translate(doc, path)
+        man3_translate(doc, path, quiet=True)
 
 
-def man3_translate(doc, path):
+def man3_translate(doc, path, quiet=False):
     with open(doc) as f:
         for line in f:
             parts = line.split()
@@ -240,7 +267,7 @@ def man3_translate(doc, path):
                 " ".join(parts[3:-2]),
                 parts[-2],
             )
-            manpage = ManPage()
+            manpage = ManPage(source=doc)
             manpage.name = f"{module}-{num}"
             if "with-total" in manpage.name:
                 print(parts)
@@ -250,7 +277,8 @@ def man3_translate(doc, path):
             # man3 messages typically don't have examples or see also
             manpage.write_roff_file(path)
 
-    print("Man3 successfully compiled.")
+    if not quiet:
+        print("Man3 successfully compiled.")
 
 
 if __name__ == "__main__":

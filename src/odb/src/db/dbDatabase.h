@@ -50,7 +50,19 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 135;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 139;  // Current revision number
+
+// Revision where dbTech::extraction_rules_file_ was removed
+inline constexpr uint32_t kSchemaRemoveTechExtractionRulesFile = 139;
+
+// Revision where _dbBox::min_spacing_ was added
+inline constexpr uint32_t kSchemaDbBoxMinSpacing = 138;
+
+// Revision where dbChipCapNode/dbChipRSeg inter-chip parasitics were added
+inline constexpr uint32_t kSchemaChipParasitics = 137;
+
+// Revision where dbNet::disable_auto_taper flag was added
+inline constexpr uint32_t kSchemaNetDisableAutoTaper = 136;
 
 // Revision where dbTech::extraction_rules_file_ was added
 inline constexpr uint32_t kSchemaTechExtractionRulesFile = 135;
