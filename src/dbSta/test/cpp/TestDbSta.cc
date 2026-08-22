@@ -264,7 +264,8 @@ TEST_F(TestDbSta, ReassociateModITermPin)
   db_network_->checkAxioms();
 }
 
-// Regression for #10210 (stale Path* dereference in rsz).
+// Regression for #10210 (stale Path* dereference in rsz) and the rsz-side
+// resetSearchAfterRepair() mitigation.
 //
 // Topology (TestDbSta_StalePrevPath.v):
 //   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
@@ -277,6 +278,9 @@ TEST_F(TestDbSta, ReassociateModITermPin)
 //   4. Assert the captured Path's prev slot has been recycled: pin()
 //      decodes to data that belongs to a different instance than nd1's
 //      real input.
+//   5. Apply the rsz mitigation (Resizer::resetSearchAfterRepair) and assert a
+//      fresh worst-path lookup is clean -- every node's vertex resolves, so no
+//      recycled slot survives for CheckCrpr::findCrpr to walk.
 TEST_F(TestDbSta, StalePrevPath)
 {
   const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
@@ -329,6 +333,21 @@ TEST_F(TestDbSta, StalePrevPath)
   EXPECT_NE(pre_pin_name, post_pin_name)
       << "but slot content should differ after free+reuse. before="
       << pre_pin_name << " after=" << post_pin_name;
+
+  // 5. rsz's #10210 mitigation: repair_timing runs resetSearchAfterRepair() at
+  //    its end.  Dropping the interned search state must make a fresh
+  //    worst-path lookup clean again -- every node's vertex resolves, so no
+  //    recycled slot survives for CheckCrpr::findCrpr to walk.
+  resizer_.resetSearchAfterRepair();
+  Path* fixed_path = sta_->vertexWorstArrivalPath(
+      sta_->ensureGraph()->pinDrvrVertex(network->findPin(nd1, "ZN")),
+      MinMax::max());
+  ASSERT_NE(fixed_path, nullptr);
+  EXPECT_EQ(network->pathName(fixed_path->pin(sta_.get())), "nd1/ZN");
+  for (const Path* p = fixed_path; p != nullptr; p = p->prevPath()) {
+    EXPECT_NE(p->vertex(sta_.get()), nullptr)
+        << "reset left a stale path node for findCrpr to walk";
+  }
 }
 
 }  // namespace sta

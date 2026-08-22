@@ -438,6 +438,14 @@ repair_hold_pin(Pin *end_pin,
                       max_buffer_percent, max_passes);
 }
 
+void
+reset_search_after_repair()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->resetSearchAfterRepair();
+}
+
 int
 hold_buffer_count()
 {
