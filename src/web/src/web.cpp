@@ -1051,7 +1051,7 @@ void WebServer::saveReport(const std::string& filename,
   generator_->eagerInit();
 
   odb::dbBlock* block = generator_->getBlock();
-  if (!block) {
+  if (!block && generator_->chiplets().size() <= 1) {
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
   }
@@ -1155,7 +1155,11 @@ void WebServer::saveReport(const std::string& filename,
     for (const auto& path : paths) {
       std::vector<ColoredRect> rects;
       std::vector<FlightLine> lines;
-      collectTimingPathShapes(block, path, rects, lines);
+      if (block) {
+        collectTimingPathShapes(block, path, rects, lines);
+      } else {
+        collectTimingPathShapes(generator_->chiplets(), path, rects, lines);
+      }
       const int overlay_px = 256 * (1 << kZ);
       auto png = generator_->renderOverlayPng(overlay_px, rects, lines);
       if (png.size() > kEmptyPngSize) {
