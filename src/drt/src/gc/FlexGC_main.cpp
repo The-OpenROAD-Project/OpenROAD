@@ -347,7 +347,13 @@ bool FlexGCWorker::Impl::checkMetalSpacing_prl_hasPolyEdge(
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
   auto& workerRegionQuery = getWorkerRegionQuery();
-  std::vector<std::pair<segment_t, gcSegment*>> result;
+  // Reuse a per-thread scratch buffer; queryPolygonEdge appends via
+  // back_inserter so clear() first. This is a leaf check (its only callee that
+  // matters is the region query; it does not recurse into another
+  // hasPolyEdge), so a single reused worker buffer is safe and bit-identical
+  // (deterministic rtree order, buffer fully overwritten each call).
+  auto& result = prl_has_poly_edge_result_;
+  result.clear();
   box_t queryBox(point_t(gtl::xl(markerRect), gtl::yl(markerRect)),
                  point_t(gtl::xh(markerRect), gtl::yh(markerRect)));
   workerRegionQuery.queryPolygonEdge(queryBox, layerNum, result);
@@ -707,7 +713,11 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
     myBloat(bloatMarkerRect, minWidth, queryBox);
 
     auto& workerRegionQuery = getWorkerRegionQuery();
-    std::vector<rq_box_value_t<gcRect*>> result;
+    // Per-thread scratch reuse (cleared each call; appended via back_inserter;
+    // not recursive; a distinct buffer from the other query buffers so no
+    // aliasing). Bit-identical: deterministic rtree order, fully overwritten.
+    auto& result = skip_same_net_result_;
+    result.clear();
     workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
     // std::cout <<"3rd obj" <<std::endl;
     for (auto& [objBox, objPtr] : result) {
@@ -868,10 +878,21 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect,
   myBloat(*rect, maxSpcVal, queryBox);
 
   auto& workerRegionQuery = getWorkerRegionQuery();
-  std::vector<rq_box_value_t<gcRect*>> result;
+  // Reuse per-thread scratch buffers for the region-query results instead of
+  // allocating fresh vectors on every max-rectangle check. This 1-rect
+  // overload is only called sequentially from checkMetalSpacing() (never
+  // recursively / re-entrantly: the recursive calls below use the 2-rect
+  // overload which does not query), so a single reused buffer per result
+  // type is safe. queryMaxRectangle/querySpcRectangle append via
+  // back_inserter, so we clear() first; the buffer is then fully overwritten,
+  // and the rtree query order is deterministic -> bit-identical. One GC worker
+  // per worker keeps the reuse correct.
+  auto& result = metal_spacing_result_;
+  result.clear();
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
   if (checkNDRs) {
-    std::vector<rq_box_value_t<gcRect>> resultS;
+    auto& resultS = metal_spacing_result_shapes_;
+    resultS.clear();
     workerRegionQuery.querySpcRectangle(queryBox, layerNum, resultS);
     for (auto& [objBox, ptr] : resultS) {
       checkMetalSpacing_main(rect, &ptr, checkNDRs, isSpcRect);
@@ -1242,7 +1263,12 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
   auto layerNum = corner->getNextEdge()->getLayerNum();
   auto net = corner->getNextEdge()->getNet();
   auto& workerRegionQuery = getWorkerRegionQuery();
-  std::vector<rq_box_value_t<gcRect*>> result;
+  // Per-thread scratch reuse (cleared each call; appended via back_inserter;
+  // the marker overload called in the loop below does not re-enter this
+  // corner-query path). Bit-identical: deterministic rtree order, fully
+  // overwritten each call.
+  auto& result = corner_spacing_result_;
+  result.clear();
   box_t queryBox(point_t(cornerX, cornerY), point_t(cornerX, cornerY));
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
   for (auto& [objBox, objPtr] : result) {
