@@ -236,6 +236,19 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
     queue_response(resp);
   }
 
+  // Moving an object does not dangle any pointer, so the selection stands --
+  // but every shape derived from the old placement is now wrong.  This fires
+  // in all sessions, which is what makes another client's set_property edit
+  // reach this one's cached highlight-group rectangles.
+  void inDbPostMoveInst(odb::dbInst*) override
+  {
+    state_.highlight_geometry_stale = true;
+  }
+  void inDbInstSwapMasterAfter(odb::dbInst*) override
+  {
+    state_.highlight_geometry_stale = true;
+  }
+
   void inDbInstDestroy(odb::dbInst*) override { invalidateSelection(); }
   void inDbNetDestroy(odb::dbNet*) override { invalidateSelection(); }
   void inDbITermDestroy(odb::dbITerm*) override { invalidateSelection(); }

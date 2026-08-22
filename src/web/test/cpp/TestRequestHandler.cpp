@@ -821,6 +821,122 @@ TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
   }
 }
 
+// A net descriptor that draws the driver->sink fan itself, the way the real
+// DbNetDescriptor does for an unrouted net (draw_flywires stays true when
+// there is no wire and no guides).  FakeNetDescriptor draws only a wire rect,
+// so on its own it cannot catch the fan being collected twice.
+class FlywireDrawingNetDescriptor : public FakeNetDescriptor
+{
+ public:
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    FakeNetDescriptor::highlight(object, painter);
+    painter.drawLine(odb::Point(0, 0), odb::Point(1000, 1000));
+  }
+};
+
+// ShapeCollector captures drawLine, so the descriptor's own fan and the fan
+// collectNetFlightLines derives are the same lines.  Taking both drew every
+// flywire twice and let a large net exceed the kMaxFlywires budget.
+TEST_F(TileHandlerTest, UnroutedNetFlywiresAreNotCollectedTwice)
+{
+  odb::dbNet* net = makeConnectedNet("dup");
+  ASSERT_NE(net, nullptr);
+  ASSERT_EQ(net->getWire(), nullptr);
+  ASSERT_TRUE(net->getGuides().empty());
+
+  static FlywireDrawingNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Toggle off: one driver and one sink, so exactly one flywire.
+  WebSocketRequest req = overlayRequest(30, /*flywires_only=*/false);
+  // A flip is what re-derives the highlight, so start from the other state.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.flywires_only = true;
+  }
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_lines.size(), 1u)
+      << "one driver x one sink is one flywire, not one per collector";
+}
+
+// A net parked in a persistent highlight group is derived the same way the
+// selection is, so "Flywires only" has to reach it too.
+TEST_F(TileHandlerTest, HighlightGroupsHonourFlywiresOnly)
+{
+  odb::dbNet* net = makeConnectedNet("grp");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[0].insert(
+        net_descriptor.makeSelected(std::any(net)));
+  }
+
+  WebSocketRequest req = overlayRequest(31, /*flywires_only=*/true);
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.highlight_group_lines.empty())
+      << "the group member's flywires should be drawn in the group colour";
+  for (const auto& colored : state_.highlight_group_rects) {
+    EXPECT_LT(colored.rect.dx(), FakeNetDescriptor::kWireRectSize)
+        << "a group member's wire shapes must be suppressed in flywire mode";
+  }
+}
+
+// An edit that moves a group member invalidates the rectangles derived from
+// its old placement.  The editing client rebuilds its own; every OTHER
+// session learns only through the odb callback that raises this flag, since
+// the edit broadcast just asks them to redraw -- from this stale cache.
+TEST_F(TileHandlerTest, GeometryChangeRebuildsHighlightGroupShapes)
+{
+  odb::dbMaster* master = db_->findMaster("BUF_X1");
+  ASSERT_NE(master, nullptr);
+  odb::dbInst* inst = odb::dbInst::create(block_, master, "moved_inst");
+  inst->setLocation(1000, 1000);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  static LocalBBoxInstDescriptor inst_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[0].insert(
+        inst_descriptor.makeSelected(std::any(inst)));
+  }
+
+  // Build the cache at the original placement.
+  WebSocketRequest req = overlayRequest(32, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  odb::Rect before;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+    before = state_.highlight_group_rects.front().rect;
+  }
+
+  // Move it and raise the flag the session's inDbPostMoveInst would.
+  inst->setLocation(40000, 40000);
+  state_.highlight_geometry_stale = true;
+
+  // Same toggle position, so only the staleness can trigger the rebuild.
+  req = overlayRequest(33, /*flywires_only=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  ASSERT_EQ(state_.highlight_group_rects.size(), 1u);
+  EXPECT_NE(state_.highlight_group_rects.front().rect, before)
+      << "the group rectangle must follow the instance to its new placement";
+  EXPECT_FALSE(state_.highlight_geometry_stale)
+      << "the flag is consumed so the next overlay does not rebuild again";
+}
+
 TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
 {
   odb::dbNet* net = makeConnectedNet("sig2");

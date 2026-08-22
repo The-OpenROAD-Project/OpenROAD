@@ -709,6 +709,9 @@ static void appendHighlightShapes(const gui::Selected& sel,
   if (!sel) {
     return;
   }
+  // Set when the flywire fan was collected here, so the descriptor's own
+  // copy of it is not appended on top.
+  bool own_flywires = false;
   // Pointer-form any_cast: DbNetDescriptor::isNet() is true for BOTH of
   // its payload types (dbNet* and NetWithSink) — the value-form cast
   // would throw std::bad_any_cast on the latter.  Non-dbNet* payloads
@@ -726,14 +729,22 @@ static void appendHighlightShapes(const gui::Selected& sel,
       return;
     }
     if (net && !net->getWire() && net->getGuides().empty()) {
+      // Unrouted net: DbNetDescriptor::highlight draws the driver->sink fan
+      // itself (draw_flywires stays true with no wire and no guides), and
+      // ShapeCollector captures drawLine, so taking both would emit the fan
+      // twice.  Collect it here instead of from the descriptor: this path
+      // honours kMaxFlywires, which the descriptor does not.
       collectNetFlightLines(net, lines);
+      own_flywires = true;
     }
   }
   ShapeCollector collector;
   sel.highlight(collector);
   rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
   polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
-  lines.insert(lines.end(), collector.lines.begin(), collector.lines.end());
+  if (!own_flywires) {
+    lines.insert(lines.end(), collector.lines.begin(), collector.lines.end());
+  }
 }
 
 static void collectHighlightShapes(const gui::Selected& sel,
@@ -927,8 +938,10 @@ static void setSelectionSetHighlights(SessionState& state)
 // translucent fill); filled=true reuses the DRC/timing colored-rect
 // rendering (blend fill + solid outline).  Polygonal highlight shapes
 // fall back to their bounding rects — groups typically hold insts/nets,
-// whose highlight() emits rects.  Requires state.selection_mutex and the
-// STA lock (sel.highlight() calls descriptor code).
+// whose highlight() emits rects.  Goes through appendHighlightShapes, not
+// sel.highlight() directly, so a group member honours "Flywires only" the
+// same way the current selection does.  Requires state.selection_mutex and
+// the STA lock (sel.highlight() calls descriptor code).
 static void rebuildHighlightGroupShapesLocked(SessionState& state)
 {
   state.highlight_group_rects.clear();
@@ -946,13 +959,15 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
       if (!sel) {
         continue;
       }
-      ShapeCollector collector;
-      sel.highlight(collector);
-      for (const auto& rect : collector.rects) {
+      std::vector<odb::Rect> rects;
+      std::vector<odb::Polygon> polys;
+      std::vector<FlightLine> lines;
+      appendHighlightShapes(sel, rects, polys, lines, state.flywires_only);
+      for (const auto& rect : rects) {
         state.highlight_group_rects.push_back(
             {.rect = rect, .color = color, .layer = "", .filled = true});
       }
-      for (const auto& poly : collector.polys) {
+      for (const auto& poly : polys) {
         state.highlight_group_rects.push_back({.rect = poly.getEnclosingRect(),
                                                .color = color,
                                                .layer = "",
@@ -960,7 +975,7 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
       }
       // Members whose highlight() draws lines (e.g. unrouted nets) would
       // otherwise be invisible in the overlay; tint them with the group.
-      for (const auto& line : collector.lines) {
+      for (const auto& line : lines) {
         state.highlight_group_lines.push_back(
             {.p1 = line.p1, .p2 = line.p2, .color = color});
       }
@@ -4291,10 +4306,14 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     // behind them) if a destroy invalidated the selection.
     consumeStaleSelection(state);
 
-    // Re-derive the selection highlights when either:
+    // Re-derive the selection highlights when any of:
     //  - the "Flywires only" toggle flipped (so the change takes effect
     //    without re-selecting) — but only while the highlights are live: a
     //    flip after an explicit "clear highlights" must not resurrect them;
+    //  - an edit moved a selected object.  The mover may be another session,
+    //    whose broadcast only tells this client to redraw — the shapes it
+    //    would redraw from live here, so they have to be rebuilt on this
+    //    side or the highlight stays at the old placement;
     //  - debug renderers are active — instance positions change between
     //    frames, so the highlight must track the moving instance.
     const bool flywires_only = jsonOr(req.json, "flywires_only", false);
@@ -4305,7 +4324,12 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
       state.flywires_only = flywires_only;
       const bool live
           = state.highlight_source != SessionState::HighlightSource::kNone;
-      if ((flipped && live) || (debug_renderers && state.current_inspected)) {
+      // exchange() once: both the selection and the group shapes below are
+      // rebuilt from this one notification.
+      const bool geometry_stale
+          = state.highlight_geometry_stale.exchange(false);
+      if (((flipped || geometry_stale) && live)
+          || (debug_renderers && state.current_inspected)) {
         // Re-derive from the SAME source the shapes came from.  Preferring
         // current_inspected unconditionally would drop every other item of a
         // shift+click multi-selection on the first flip, with no way back. With
@@ -4317,6 +4341,12 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
         } else {
           setSelectionHighlights(state, state.current_inspected);
         }
+      }
+      // Group shapes are derived the same way and go stale for the same two
+      // reasons.  Unconditional on `live`: groups are a state of their own
+      // and are not cleared with the selection.
+      if (flipped || geometry_stale) {
+        rebuildHighlightGroupShapesLocked(state);
       }
     }
 

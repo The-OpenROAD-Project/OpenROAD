@@ -182,6 +182,16 @@ struct SessionState
   // the flag via consumeStaleSelection() before touching any Selected.
   std::atomic<bool> selection_stale{false};
 
+  // Raised by the session's odb geometry callbacks when a placement or
+  // master swap moves an object (a set_property X/Y edit, or a Tcl command).
+  // The highlight groups hold shapes derived from the old geometry, and the
+  // edit can come from ANOTHER session -- whose broadcast only asks this
+  // client to redraw, which would re-send the stale rectangles.  The overlay
+  // handler rebuilds them when it sees this set.  Not folded into
+  // selection_stale: nothing here dangles, so the selection itself must
+  // survive.
+  std::atomic<bool> highlight_geometry_stale{false};
+
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
   std::vector<odb::Polygon> highlight_polys;

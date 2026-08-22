@@ -187,6 +187,36 @@ describe('SelectionBrowser lifecycle', () => {
                      'no list_selection request while hidden');
     });
 
+    it('re-runs a refresh that arrived while one was in flight', async () => {
+        // A mutation refreshing mid-request would otherwise be dropped, and
+        // the table -- and the row indices inspect/deselect send back --
+        // would keep describing the pre-mutation set.
+        let release;
+        const gate = new Promise(r => { release = r; });
+        let calls = 0;
+        const app = createMockApp();
+        app.websocketManager.request = (msg) => {
+            app._requests.push(msg);
+            if (msg.type !== 'list_selection') return Promise.resolve({ ok: 1 });
+            calls += 1;
+            return calls === 1 ? gate.then(() => LIST) : Promise.resolve(LIST);
+        };
+        const container = makeContainer();
+        const browser = new SelectionBrowser(container, app, () => {});
+        assert.equal(calls, 1, 'the constructor issued the first fetch');
+
+        // Second refresh lands while the first is still outstanding.
+        browser.refresh();
+        assert.equal(calls, 1, 'no second request while one is in flight');
+        assert.ok(browser._staleWhileInFlight, 'the skipped refresh is recorded');
+
+        release();
+        await settle();
+        assert.equal(calls, 2, 'the skipped refresh re-runs once the first lands');
+        assert.equal(browser._staleWhileInFlight, false);
+        assert.equal(browser._inFlight, false);
+    });
+
     it('clears the pending debounced refresh on destroy', () => {
         const app = createMockApp({ list_selection: () => LIST });
         const container = makeCapturingContainer();

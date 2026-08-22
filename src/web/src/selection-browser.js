@@ -21,6 +21,7 @@ export class SelectionBrowser {
         this._sortAsc = true;
         this._pendingRefresh = null;
         this._inFlight = false;
+        this._staleWhileInFlight = false;
         this._visible = true;
 
         this._el = document.createElement('div');
@@ -39,6 +40,7 @@ export class SelectionBrowser {
         // destroyed panel (dangling timer / errors after tab close).
         container.on?.('destroy', () => {
             this._visible = false;
+            this._staleWhileInFlight = false;
             if (this._pendingRefresh !== null) {
                 clearTimeout(this._pendingRefresh);
                 this._pendingRefresh = null;
@@ -64,16 +66,33 @@ export class SelectionBrowser {
     refresh() {
         // Skip network + render work while the panel is hidden; a pending
         // debounced refresh can also fire after a 'hide'.
-        if (!this._visible || isStaticMode(this._app) || this._inFlight) return;
+        if (!this._visible || isStaticMode(this._app)) return;
+        if (this._inFlight) {
+            // The in-flight request was issued before the mutation that
+            // prompted this call, so its response describes the old set.
+            // Dropping the refresh would leave the table — and the row
+            // indices inspect/deselect send back — describing objects the
+            // server no longer has.  Re-run once the response lands.
+            this._staleWhileInFlight = true;
+            return;
+        }
         this._inFlight = true;
+        const settle = () => {
+            this._inFlight = false;
+            if (this._staleWhileInFlight) {
+                this._staleWhileInFlight = false;
+                this.refresh();
+            }
+        };
         this._app.websocketManager.request({ type: 'list_selection' })
             .then((data) => {
-                this._inFlight = false;
-                if (!data.ok) return;
-                this._data = data;
-                this._render();
+                if (data.ok) {
+                    this._data = data;
+                    this._render();
+                }
+                settle();
             })
-            .catch(() => { this._inFlight = false; });
+            .catch(settle);
     }
 
     // ── data shaping ────────────────────────────────────────────────
