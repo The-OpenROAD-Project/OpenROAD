@@ -379,11 +379,17 @@ create_menu_item
 | `-path` | Menu to place the item in, as a `/`-separated hierarchy. The first segment is a top-level menu, created if it does not exist; deeper segments nest as submenus. The type is `string`. The default is `Custom Scripts`. |
 | `-text` | Text to put on the item. The type is `string`. Required. |
 | `-script` | Tcl script to evaluate when the item is chosen. The type is `string`. Required. |
-| `-shortcut` | Key shortcut to display beside the item, e.g. `Ctrl+H`. The type is `string`. The default is none. |
+| `-shortcut` | Key shortcut that triggers the item, e.g. `Ctrl+H`. Displayed beside the label. The type is `string`. The default is none. |
 | `-echo` | Echo the script into the browser's Tcl console before running it. |
 
-On the web path `-shortcut` is only a hint: the menu bar renders it beside the
-item but does not bind the key. The Qt GUI does bind it.
+`-shortcut` is written the way Qt writes it: modifiers (`Ctrl`, `Shift`,
+`Alt`, `Meta` — `Cmd` is accepted for `Meta`) joined to a key with `+`, in any
+order. On the web path the key is matched as the browser reports it, so name
+non-printing keys accordingly: `Escape`, `ArrowUp`, `F5`. A spec naming no key
+(`Ctrl+`) or an unrecognized modifier is ignored rather than bound to
+something the script did not ask for, and a shortcut is not delivered while a
+text field has focus. A custom shortcut that claims a key the viewer already
+uses takes it over, rather than triggering both.
 
 ### Remove Menu Item
 
@@ -453,8 +459,9 @@ them — something the single-window Qt GUI cannot do.
   routing.
 - **Tcl console** — Execute Tcl commands interactively from the browser.
 - **Custom menu items and toolbar buttons** — Bind Tcl scripts to the viewer's
-  menu bar and toolbar with `create_menu_item` / `create_toolbar_button`. The
-  registry lives on the server, so it is shared by every connected browser.
+  menu bar, toolbar and keyboard with `create_menu_item` /
+  `create_toolbar_button`. The registry lives on the server, so it is shared by
+  every connected browser.
 - **Image export** — Save the layout as a PNG with `save_image -web` or as an
   animated GIF with `save_animated_gif`, both headless. Panels export
   themselves client-side: the schematic as SVG or PNG, the 3D view as PNG, and

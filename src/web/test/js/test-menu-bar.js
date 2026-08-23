@@ -4,7 +4,11 @@
 import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createMenuBar } from '../../src/menu-bar.js';
+import {
+    createMenuBar,
+    canonicalShortcut,
+    eventShortcut,
+} from '../../src/menu-bar.js';
 
 function waitForMicrotasks() {
     return new Promise(resolve => setTimeout(resolve, 0));
@@ -128,5 +132,136 @@ describe('MenuBar', () => {
         labels = [...document.querySelectorAll('.menu-label')]
             .map(el => el.firstChild.textContent);
         assert.ok(labels.includes('Custom Scripts'), 'menu appears after rebuild');
+    });
+    it('binds a custom item\'s -shortcut to the key', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const requests = [];
+        const app = {
+            designScale: 1,
+            websocketManager: {
+                request(msg) { requests.push(msg); return Promise.resolve({}); },
+            },
+            focusComponent() {},
+            customMenu: [
+                { key: 'a', path: '', text: 'Slack', script: 'report_worst_slack',
+                  shortcut: 'Ctrl+Shift+H', echo: false },
+            ],
+        };
+        createMenuBar(app);
+
+        document.dispatchEvent(new window.KeyboardEvent('keydown', {
+            key: 'H', ctrlKey: true, shiftKey: true, bubbles: true,
+        }));
+        assert.deepEqual(requests.map(r => r.cmd), ['report_worst_slack']);
+
+        // A near miss (wrong modifier set) must not fire.
+        document.dispatchEvent(new window.KeyboardEvent('keydown', {
+            key: 'H', ctrlKey: true, bubbles: true,
+        }));
+        assert.equal(requests.length, 1);
+    });
+
+    it('a custom shortcut overrides a built-in key rather than firing both',
+       () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const requests = [];
+        let builtinRan = false;
+        const app = {
+            designScale: 1,
+            websocketManager: {
+                request(msg) { requests.push(msg); return Promise.resolve({}); },
+            },
+            focusComponent() {},
+            customMenu: [
+                { key: 'a', path: '', text: 'Mine', script: 'puts mine',
+                  shortcut: 'T', echo: false },
+            ],
+        };
+        // createMenuBar registers first, as it does in main.js, so a later
+        // capture listener stands in for main.js's built-in chain.
+        createMenuBar(app);
+        document.addEventListener('keydown', () => { builtinRan = true; }, true);
+
+        document.dispatchEvent(new window.KeyboardEvent('keydown', {
+            key: 't', bubbles: true,
+        }));
+        assert.deepEqual(requests.map(r => r.cmd), ['puts mine']);
+        assert.equal(builtinRan, false, 'built-in handler was not also run');
+    });
+
+    it('ignores shortcuts while typing in a field', () => {
+        document.body.innerHTML
+            = '<div id="menu-bar"></div><input id="f"><textarea id="t"></textarea>';
+        const requests = [];
+        const app = {
+            designScale: 1,
+            websocketManager: {
+                request(msg) { requests.push(msg); return Promise.resolve({}); },
+            },
+            focusComponent() {},
+            customMenu: [
+                { key: 'a', path: '', text: 'X', script: 'x', shortcut: 'K',
+                  echo: false },
+            ],
+        };
+        createMenuBar(app);
+
+        for (const id of ['f', 't']) {
+            document.getElementById(id).dispatchEvent(
+                new window.KeyboardEvent('keydown', { key: 'k', bubbles: true }));
+        }
+        assert.equal(requests.length, 0);
+    });
+
+    // setup-dom.js hands every test in this file the same jsdom document, and
+    // each createMenuBar leaves its own capture listener on it.  So each
+    // shortcut test claims a chord of its own; sharing one would let an
+    // earlier test's listener answer first and swallow the keystroke.
+    it('a rebuild drops the shortcut of an item that went away', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const requests = [];
+        const app = {
+            designScale: 1,
+            websocketManager: {
+                request(msg) { requests.push(msg); return Promise.resolve({}); },
+            },
+            focusComponent() {},
+            customMenu: [
+                { key: 'a', path: '', text: 'X', script: 'x', shortcut: 'J',
+                  echo: false },
+            ],
+        };
+        createMenuBar(app);
+        document.dispatchEvent(new window.KeyboardEvent('keydown',
+                                                        { key: 'j', bubbles: true }));
+        assert.equal(requests.length, 1);
+
+        app.customMenu = [];
+        app.rebuildMenuBar();
+        document.dispatchEvent(new window.KeyboardEvent('keydown',
+                                                        { key: 'j', bubbles: true }));
+        assert.equal(requests.length, 1, 'removed item no longer bound');
+    });
+
+    it('canonicalShortcut normalizes and rejects unbindable specs', () => {
+        assert.equal(canonicalShortcut('Ctrl+H'), 'ctrl+h');
+        // Modifier order in the spec does not matter; the canonical one is fixed.
+        assert.equal(canonicalShortcut('shift+CTRL+k'), 'ctrl+shift+k');
+        assert.equal(canonicalShortcut(' Cmd + S '), 'meta+s');
+        assert.equal(canonicalShortcut('F'), 'f');
+        assert.equal(canonicalShortcut('Escape'), 'escape');
+        // Nothing left to bind, or a modifier we do not know: refuse, rather
+        // than bind a chord the author did not ask for.
+        assert.equal(canonicalShortcut(''), null);
+        assert.equal(canonicalShortcut('Ctrl+'), null);
+        assert.equal(canonicalShortcut('Ctrl+Shift'), null);
+        assert.equal(canonicalShortcut('Hyper+K'), null);
+        assert.equal(canonicalShortcut(undefined), null);
+    });
+
+    it('eventShortcut matches canonicalShortcut for the same chord', () => {
+        const e = new window.KeyboardEvent('keydown',
+                                           { key: 'K', ctrlKey: true, shiftKey: true });
+        assert.equal(eventShortcut(e), canonicalShortcut('Ctrl+Shift+K'));
     });
 });

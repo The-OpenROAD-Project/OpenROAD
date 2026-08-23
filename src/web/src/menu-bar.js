@@ -4,10 +4,65 @@
 import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { runTclScript } from './ui-utils.js';
 
-// Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
-// The static menus below are merged with custom items registered from Tcl
-// (`create_menu_item`, delivered in app.customMenu); call
-// app.rebuildMenuBar() after updating app.customMenu to re-render live.
+// The menu bar in #menu-bar: static menus merged with the custom items
+// registered from Tcl (`create_menu_item`, delivered in app.customMenu).
+//
+// A static item's `shortcut` is display text only -- the built-in keys are
+// hand-written in main.js's keydown listener, which does not consult this
+// tree.  A custom item's is bound here, by bindCustomShortcuts: the Tcl side
+// has no other way to reach the keyboard.
+
+// Canonical form of a Qt-style accelerator ("Ctrl+Shift+K", "F", "Escape"):
+// modifiers lowercased into a fixed order, then the key.  Returns null when
+// there is no key left to bind, so a stray "Ctrl+" cannot swallow every
+// Ctrl press.  The key is compared against KeyboardEvent.key lowercased, so
+// name it as the browser reports it ("escape", "arrowup", "f5").
+const kModifierAliases = {
+    ctrl: 'ctrl',
+    control: 'ctrl',
+    shift: 'shift',
+    alt: 'alt',
+    // "cmd" is what a macOS user writes for the key Qt calls Meta.
+    meta: 'meta',
+    cmd: 'meta',
+    command: 'meta',
+    super: 'meta',
+};
+
+export function canonicalShortcut(spec) {
+    if (typeof spec !== 'string') return null;
+    const parts = spec.split('+').map(p => p.trim().toLowerCase())
+        .filter(Boolean);
+    if (parts.length === 0) return null;
+    const key = parts.pop();
+    // The last token has to be a key, not a modifier: "Ctrl+" and
+    // "Ctrl+Shift" name no key, and binding them to the bare modifier would
+    // fire on a chord the author never asked for.
+    if (kModifierAliases[key] !== undefined) return null;
+    const mods = new Set();
+    for (const p of parts) {
+        const mod = kModifierAliases[p];
+        if (mod === undefined) {
+            return null;  // an unknown modifier would bind the wrong chord
+        }
+        mods.add(mod);
+    }
+    const order = ['ctrl', 'alt', 'shift', 'meta'];
+    return [...order.filter(m => mods.has(m)), key].join('+');
+}
+
+// The same canonical form for a live KeyboardEvent.
+export function eventShortcut(e) {
+    const mods = [];
+    if (e.ctrlKey) mods.push('ctrl');
+    if (e.altKey) mods.push('alt');
+    if (e.shiftKey) mods.push('shift');
+    if (e.metaKey) mods.push('meta');
+    return [...mods, String(e.key).toLowerCase()].join('+');
+}
+
+// Builds the bar and returns nothing; call app.rebuildMenuBar() after
+// updating app.customMenu to re-render live.
 export function createMenuBar(app) {
     const staticMenus = [
         { label: 'File', items: [
@@ -82,6 +137,9 @@ export function createMenuBar(app) {
 
     const bar = document.getElementById('menu-bar');
     let openMenu = null;
+    // Canonical chord -> action, for the custom items only.  Repopulated by
+    // render() (see buildMenuTree).
+    const customShortcuts = new Map();
 
     function closeAll() {
         if (openMenu) {
@@ -131,11 +189,19 @@ export function createMenuBar(app) {
             for (let i = 1; i < segments.length; i++) {
                 node = getOrCreateSub(node, segments[i]);
             }
+            const action = () => runTclScript(app, item.script, item.echo);
             node.items.push({
                 label: item.text,
                 shortcut: item.shortcut,
-                action: () => runTclScript(app, item.script, item.echo),
+                action,
             });
+            const chord = canonicalShortcut(item.shortcut);
+            if (chord) {
+                // Last registration wins, matching the menu order: two items
+                // asking for one chord is the author's bug, and firing both
+                // would run a script they did not mean to.
+                customShortcuts.set(chord, action);
+            }
         }
         return tree;
     }
@@ -212,6 +278,9 @@ export function createMenuBar(app) {
     function render() {
         bar.innerHTML = '';
         openMenu = null;
+        // Rebuilt from scratch: a button removed from the registry must lose
+        // its key too.
+        customShortcuts.clear();
 
         for (const menu of buildMenuTree()) {
             const label = document.createElement('div');
@@ -268,6 +337,32 @@ export function createMenuBar(app) {
     app.rebuildMenuBar = render;
 
     document.addEventListener('click', closeAll);
+    bindCustomShortcuts(customShortcuts);
+}
+
+// One capture-phase listener for the custom items' accelerators.  Registered
+// once per menu bar and reading the live map, so a rebuild does not stack up
+// listeners.
+//
+// createMenuBar runs before main.js installs its own keydown handler, so this
+// sees the event first and stopImmediatePropagation() keeps the built-in from
+// also firing: a custom item that claims an already-used key overrides it
+// rather than triggering both.
+function bindCustomShortcuts(customShortcuts) {
+    document.addEventListener('keydown', (e) => {
+        if (customShortcuts.size === 0) return;
+        // Never steal a keystroke aimed at a text field (same guard main.js
+        // applies), or the Tcl console would be unusable.
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) {
+            return;
+        }
+        const action = customShortcuts.get(eventShortcut(e));
+        if (!action) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        action();
+    }, true);
 }
 
 // ─── File Browser Dialog (Open/Save DB) ─────────────────────────────────────
