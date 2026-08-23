@@ -2741,12 +2741,28 @@ class FindHandlerTest : public tst::Nangate45Fixture
     last_resp_ = handler_->handleFind(req, state_);
   }
 
+  // Pattern-matching assertions only.  Drops the previous find's selection
+  // first: a find ADDS to the selection (Qt parity), and two of this
+  // fixture's null-descriptor Selecteds cannot be ordered against each other
+  // -- Selected::operator< dereferences the descriptor once the payload types
+  // match.  Accumulation is covered by FindAddsToTheExistingSelection, which
+  // pre-seeds a differently-typed payload so the comparison stays safe.
   int64_t findCount(const std::string& obj_type,
                     const std::string& pattern,
                     bool match_case = false)
   {
+    {
+      std::lock_guard<std::mutex> lock(state_.selection_mutex);
+      state_.selection_set.clear();
+      state_.selection_itr = state_.selection_set.end();
+    }
     runFind(obj_type, pattern, match_case);
     return parseObj(payloadStr(last_resp_)).at("count").as_int64();
+  }
+
+  gui::Selected makeFakeSelected(FakeInspectable* object)
+  {
+    return gui::Selected(object, &fake_descriptor_);
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -2754,6 +2770,11 @@ class FindHandlerTest : public tst::Nangate45Fixture
   std::unique_ptr<SelectHandler> handler_;
   SessionState state_;
   WebSocketResponse last_resp_;
+  FakeDescriptor fake_descriptor_;
+  FakeInspectable fake_preselected_{.name = "preselected",
+                                    .type = "FakePreselected",
+                                    .bbox = {0, 0, 10, 10},
+                                    .properties = {}};
 };
 
 TEST_F(FindHandlerTest, InstGlobExactAndNoMatch)
@@ -2787,6 +2808,35 @@ TEST_F(FindHandlerTest, UnknownTypeReturnsError)
 {
   runFind("bogus", "*");
   EXPECT_EQ(last_resp_.type, WebSocketResponse::kError);
+}
+
+// Qt parity: Gui::select() passes its matches to MainWindow::addSelected, so
+// a search must not discard a selection the user already had.
+//
+// The pre-existing entry is FakeDescriptor-backed on purpose.  Its payload
+// type (FakeInspectable*) differs from the one an unregistered dbInst
+// descriptor yields, and Selected::operator< compares differing payload types
+// by type_info alone -- so the set stays ordered without dereferencing the
+// null descriptor that makes multi-match asserts impossible here (see the
+// comment above this fixture).
+TEST_F(FindHandlerTest, FindAddsToTheExistingSelection)
+{
+  placeInst("BUF_X16", "u_buf0", 0, 0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_preselected_));
+  }
+
+  runFind("inst", "u_buf0");
+
+  const auto root = parseObj(payloadStr(last_resp_));
+  EXPECT_EQ(root.at("count").as_int64(), 1);
+  // 2, not 1: the found instance joined the pre-existing selection.
+  EXPECT_EQ(root.at("selection_count").as_int64(), 2);
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(
+      state_.selection_set.contains(makeFakeSelected(&fake_preselected_)))
+      << "the pre-existing selection must survive a find";
 }
 
 // set_property tests (descriptor editors)

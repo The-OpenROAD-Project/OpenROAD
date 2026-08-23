@@ -119,6 +119,54 @@ function drawSvgOverlays(app, ctx, mapRect) {
     return Promise.all(jobs);
 }
 
+// Rasterize the HTML marker labels — the ruler distance readouts, which are
+// L.divIcon <div>s in a marker pane rather than SVG, so drawSvgOverlays cannot
+// see them.  Without this the capture keeps a ruler's line and ticks but drops
+// the measurement the ruler exists to show.
+//
+// Painted directly onto the canvas rather than serialized through an <img>
+// data URL like the SVG panes: a detached document does not inherit the app's
+// stylesheet, so a foreignObject copy of the label would come out unstyled
+// (no background, default font).  Reading the computed style and drawing the
+// box and text keeps it looking like what is on screen.
+function drawHtmlLabels(app, ctx, mapRect) {
+    const labels = app.map.getContainer()
+        .querySelectorAll('.leaflet-pane .ruler-label');
+    labels.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) {
+            return;
+        }
+        const text = el.textContent;
+        if (!text) {
+            return;
+        }
+        const cs = getComputedStyle(el);
+        const x = r.left - mapRect.left;
+        const y = r.top - mapRect.top;
+        ctx.save();
+        ctx.fillStyle = cs.backgroundColor || 'rgba(0, 0, 0, 0.75)';
+        // Round the corners when the canvas supports it; a square box is a
+        // better failure than no label at all.
+        const radius = Math.min(parseFloat(cs.borderTopLeftRadius) || 0,
+                                r.height / 2);
+        if (radius > 0 && typeof ctx.roundRect === 'function') {
+            ctx.beginPath();
+            ctx.roundRect(x, y, r.width, r.height, radius);
+            ctx.fill();
+        } else {
+            ctx.fillRect(x, y, r.width, r.height);
+        }
+        ctx.fillStyle = cs.color || '#eee';
+        ctx.font = cs.font || `${cs.fontSize || '12px'} ${cs.fontFamily || 'monospace'}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x + (parseFloat(cs.paddingLeft) || 0),
+                     y + r.height / 2);
+        ctx.restore();
+    });
+}
+
 // Count tiles that haven't finished loading across every GridLayer (base,
 // overlay/highlights, heatmap, ...): a layer still marked _loading, or a
 // current tile whose <img> hasn't decoded yet.  Zero => the scene is painted.
@@ -205,6 +253,8 @@ async function renderToBlob(app) {
     drawGridLayers(app, ctx, mapRect);
     drawImageOverlays(app, ctx, mapRect);
     await drawSvgOverlays(app, ctx, mapRect);
+    // Last, so the labels sit above the ruler lines they annotate.
+    drawHtmlLabels(app, ctx, mapRect);
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }
 

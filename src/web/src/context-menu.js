@@ -12,7 +12,14 @@
 
 import { applySelectionFlags, showToast } from './ui-utils.js';
 
-// Mirrors gui::Painter::kHighlightColors in the backend (index == group).
+// Mirrors gui::Painter::kHighlightColors in the backend (index == group), so
+// a swatch shows the color the server will actually fill with.
+//
+// Groups 6 and 9 are both #800080 on purpose: kDarkMagenta and kPurple are
+// defined with identical RGB in gui.h, so the two groups really do render the
+// same color.  Changing dark_magenta here to a "correct" #8b008b would make
+// the swatch lie about the result; the duplication has to be fixed in
+// gui::Painter first, and then here.
 const HIGHLIGHT_COLORS = [
     { name: 'green',        hex: '#00ff00' },
     { name: 'yellow',       hex: '#ffff00' },

@@ -3305,8 +3305,26 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
         state.timing_rects.clear();
         state.timing_lines.clear();
         state.navigation_history.clear();
-        state.selection_set = std::move(found);
-        state.selection_itr = state.selection_set.begin();
+        // Qt parity: Gui::select() hands its matches to
+        // MainWindow::addSelected, so a search ADDS to the selection rather
+        // than replacing it -- successive searches accumulate, and a
+        // selection the user built by hand survives one.  "Clear ->
+        // Selections" is how you start over.
+        // The cycling iterator is taken from the insert of the FIRST match,
+        // so prev/next start from what was just found rather than from the
+        // merged set's first element.  Kept from the insert rather than a
+        // later find(): `first` is already in the set by then, and re-finding
+        // it would only repeat the comparisons the insert has done.
+        auto first_itr = state.selection_set.end();
+        for (const auto& sel : found) {
+          const auto [itr, inserted] = state.selection_set.insert(sel);
+          if (first_itr == state.selection_set.end()) {
+            first_itr = itr;  // `found` is ordered, so this is `first`
+          }
+        }
+        state.selection_itr = first_itr != state.selection_set.end()
+                                  ? first_itr
+                                  : state.selection_set.begin();
         setSelectionSetHighlights(state);
         runDeselectAction(state.current_inspected, first);
         state.current_inspected = first;
