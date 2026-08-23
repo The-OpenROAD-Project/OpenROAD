@@ -75,7 +75,7 @@ js_test(
 
 js_test(
     name = "schematic_widget_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -360,8 +360,11 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
