@@ -192,7 +192,7 @@ bool Connect::updateSharedLayerWidths(
 {
   bool changed = false;
 
-  for (int i = 1; i < stack.size(); i++) {
+  for (size_t i = 1; i < stack.size(); i++) {
     const DbVia* below = stack[i - 1].get();
     const DbVia* above = stack[i].get();
     if (!below->hasGenerator() || !above->hasGenerator()) {
@@ -232,7 +232,7 @@ std::vector<Connect::ViaLayerRects> Connect::generateViaRects(
 
   std::vector<ViaLayerRects> stack;
   stack.push_back({lower});
-  for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
+  for (size_t i = 0; i < intermediate_routing_layers_.size(); i++) {
     stack.push_back({intersection});
   }
   stack.push_back({upper});
@@ -645,7 +645,7 @@ void Connect::makeVia(odb::dbSWire* wire,
       stack.clear();
 
       bool failed = false;
-      for (int i = 1; i < layers.size(); i++) {
+      for (size_t i = 1; i < layers.size(); i++) {
         const auto& via_lower_rects = stack_rects[i - 1];
         const auto& via_upper_rects = stack_rects[i];
         auto* l0 = layers[i - 1];

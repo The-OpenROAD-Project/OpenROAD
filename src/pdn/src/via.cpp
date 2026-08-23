@@ -921,7 +921,7 @@ DbGenerateStackedVia::DbGenerateStackedVia(
 {
   const int bottom_layer = bottom->getRoutingLevel();
   auto* tech = bottom->getTech();
-  for (int i = 0; i < vias_.size() + 1; i++) {
+  for (size_t i = 0; i <= vias_.size(); i++) {
     auto layer
         = std::make_unique<TechLayer>(tech->findRoutingLayer(bottom_layer + i));
     layers_.push_back(std::move(layer));
