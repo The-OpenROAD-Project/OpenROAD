@@ -212,6 +212,66 @@ describe('LabelManager', () => {
         assert.equal(upd.size, 20);
     });
 
+    it('applyRemoteLabels adopts a pushed set and repaints', async () => {
+        const { mgr, app, requests, overlayRefreshes } = makeManager();
+        mgr.applyRemoteLabels([{ name: 'L9', x: 1, y: 2, text: 'from tcl' }]);
+        assert.equal(mgr._labels.length, 1);
+        assert.equal(mgr._labels[0].name, 'L9');
+        assert.ok(overlayRefreshes.n >= 1, 'overlay repainted');
+        // The push already carries the set; no round-trip needed.
+        assert.equal(requests.filter(r => r.type === 'list_labels').length, 0);
+    });
+
+    it('applyRemoteLabels clears a selection whose label was removed',
+       async () => {
+        let inspected = 'unset';
+        globalThis.window = { prompt: () => 'note' };
+        const app = {
+            map: {
+                createPane() { return { style: {} }; },
+                getContainer() {
+                    return { style: {}, classList: { toggle() {} } };
+                },
+            },
+            designScale: 1e-6, designMaxDXDY: 1000000,
+            designOriginX: 0, designOriginY: 0,
+            refreshOverlay() {}, formatDbu(v) { return String(v); },
+            inspectorEl: null,
+            websocketManager: {
+                request(msg) {
+                    if (msg.type === 'list_labels') {
+                        return Promise.resolve({
+                            labels: [{ name: 'L0', x: 1, y: 2, text: 'a',
+                                       anchor: 'center' }],
+                            anchors: ['center'],
+                        });
+                    }
+                    return Promise.resolve({});
+                },
+            },
+        };
+        const mgr = new LabelManager(
+            app, { labels: true }, (d) => { inspected = d; }, () => {});
+        await mgr.reload();
+        mgr._select('L0');
+        assert.ok(inspected && inspected.name === 'L0');
+
+        // Another client deleted it.  Leaving it selected would keep the
+        // Inspector showing a label that no longer exists.
+        mgr.applyRemoteLabels([]);
+        assert.equal(mgr._selectedName, null);
+        assert.equal(inspected, null);
+    });
+
+    it('applyRemoteLabels keeps a selection that survived the push',
+       async () => {
+        const { mgr } = makeManager();
+        mgr._applyLabels([{ name: 'L0', x: 1, y: 2, text: 'a' }]);
+        mgr._selectedName = 'L0';
+        mgr.applyRemoteLabels([{ name: 'L0', x: 9, y: 9, text: 'moved' }]);
+        assert.equal(mgr._selectedName, 'L0');
+    });
+
     it('deleteLabel sends a delete_label request and refreshes', async () => {
         const { mgr, requests, overlayRefreshes } = makeManager();
         await mgr.deleteLabel('L0');

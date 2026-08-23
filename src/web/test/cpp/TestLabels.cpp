@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -238,6 +239,110 @@ TEST_F(LabelTest, EveryAnchorIsAcceptedByTheHandler)
     EXPECT_NE(payloadStr(resp).find("\"ok\":true"), std::string::npos) << name;
   }
   EXPECT_EQ(gen_->labelsForDraw().size(), anchorNames().size());
+}
+
+// Labels live in the shared TileGenerator, so a mutation from one session (or
+// from Tcl) changes what every other client should draw.  Nothing else tells
+// them: labels are outside ODB, so no design-change callback covers them.
+class LabelBroadcastTest : public LabelTest
+{
+ protected:
+  void SetUp() override
+  {
+    LabelTest::SetUp();
+    handler_ = std::make_unique<TileHandler>(gen_);
+    handler_->setBroadcastFn(
+        [this](const std::string& msg) { sent_.push_back(msg); });
+  }
+
+  WebSocketResponse add(const std::string& name)
+  {
+    WebSocketRequest req;
+    req.id = ++id_;
+    req.type = WebSocketRequest::kAddLabel;
+    req.json = parseObj(R"({"x":1,"y":2,"text":"t","name":")" + name + R"("})");
+    return handler_->handleAddLabel(req);
+  }
+
+  std::unique_ptr<TileHandler> handler_;
+  std::vector<std::string> sent_;
+  uint32_t id_ = 0;
+};
+
+TEST_F(LabelBroadcastTest, AddBroadcastsTheNewSet)
+{
+  ASSERT_EQ(add("L0").type, WebSocketResponse::kJson);
+  ASSERT_EQ(sent_.size(), 1u);
+
+  const boost::json::object msg = parseObj(sent_[0]);
+  EXPECT_EQ(msg.at("type").as_string(), "labels_changed");
+  // The set rides along so a client can repaint without a round-trip.
+  ASSERT_TRUE(msg.contains("labels"));
+  EXPECT_EQ(msg.at("labels").as_array().size(), 1u);
+}
+
+TEST_F(LabelBroadcastTest, RejectedAddDoesNotBroadcast)
+{
+  ASSERT_EQ(add("L0").type, WebSocketResponse::kJson);
+  sent_.clear();
+  // Duplicate name: refused, so nothing changed for anyone to hear about.
+  add("L0");
+  EXPECT_TRUE(sent_.empty());
+}
+
+TEST_F(LabelBroadcastTest, UpdateDeleteAndClearBroadcast)
+{
+  ASSERT_EQ(add("L0").type, WebSocketResponse::kJson);
+  sent_.clear();
+
+  WebSocketRequest upd;
+  upd.id = 10;
+  upd.type = WebSocketRequest::kUpdateLabel;
+  upd.json = parseObj(R"({"name":"L0","x":5,"y":6,"text":"new"})");
+  ASSERT_EQ(handler_->handleUpdateLabel(upd).type, WebSocketResponse::kJson);
+  EXPECT_EQ(sent_.size(), 1u);
+
+  WebSocketRequest del;
+  del.id = 11;
+  del.type = WebSocketRequest::kDeleteLabel;
+  del.json = parseObj(R"({"name":"L0"})");
+  ASSERT_EQ(handler_->handleDeleteLabel(del).type, WebSocketResponse::kJson);
+  EXPECT_EQ(sent_.size(), 2u);
+
+  WebSocketRequest clr;
+  clr.id = 12;
+  clr.type = WebSocketRequest::kClearLabels;
+  clr.json = parseObj("{}");
+  handler_->handleClearLabels(clr);
+  EXPECT_EQ(sent_.size(), 3u);
+}
+
+TEST_F(LabelBroadcastTest, MissingTargetDoesNotBroadcast)
+{
+  WebSocketRequest del;
+  del.id = 1;
+  del.type = WebSocketRequest::kDeleteLabel;
+  del.json = parseObj(R"({"name":"nope"})");
+  handler_->handleDeleteLabel(del);
+
+  WebSocketRequest upd;
+  upd.id = 2;
+  upd.type = WebSocketRequest::kUpdateLabel;
+  upd.json = parseObj(R"({"name":"nope","x":1,"y":1,"text":"t"})");
+  handler_->handleUpdateLabel(upd);
+
+  EXPECT_TRUE(sent_.empty());
+}
+
+TEST_F(LabelBroadcastTest, WorksWithNoBroadcastFnInstalled)
+{
+  // The handler is also constructed in contexts with no session registry.
+  TileHandler bare(gen_);
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kAddLabel;
+  req.json = parseObj(R"({"x":1,"y":2,"text":"t"})");
+  EXPECT_EQ(bare.handleAddLabel(req).type, WebSocketResponse::kJson);
 }
 
 }  // namespace

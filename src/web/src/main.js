@@ -1319,6 +1319,13 @@ app.websocketManager.onPush = (msg) => {
             app.highlightRect = null;
         }
         scheduleRefreshOverlay();
+    } else if (msg.type === 'labels_changed') {
+        // Labels live server-side and are shared, so another client's edit
+        // (or a Tcl add_label) changes what this one should be drawing.
+        // The push carries the new set, so adopt it without a round-trip.
+        if (app.labelManager) {
+            app.labelManager.applyRemoteLabels(msg.labels);
+        }
     } else if (msg.type === 'drcUpdated') {
         if (app._drcUpdateTimeout) {
             clearTimeout(app._drcUpdateTimeout);

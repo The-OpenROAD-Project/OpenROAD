@@ -4786,6 +4786,19 @@ TileHandler::TileHandler(std::shared_ptr<TileGenerator> gen)
 {
 }
 
+void TileHandler::broadcastLabelsChanged()
+{
+  if (!broadcast_fn_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "labels_changed";
+  // Carry the new set so a client can repaint from the push alone, the same
+  // shape every label response already returns.
+  msg["labels"] = gen_->labelsJson();
+  broadcast_fn_(boost::json::serialize(msg));
+}
+
 void TileHandler::registerRequests(RequestDispatcher& d)
 {
   d.add("tile",
@@ -5359,6 +5372,9 @@ WebSocketResponse TileHandler::handleAddLabel(const WebSocketRequest& req)
     root["name"] = result;
     root["labels"] = gen_->labelsJson();
     writePayload(resp, root);
+    if (!result.empty()) {
+      broadcastLabelsChanged();
+    }
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -5379,6 +5395,9 @@ WebSocketResponse TileHandler::handleDeleteLabel(const WebSocketRequest& req)
     root["ok"] = ok;
     root["labels"] = gen_->labelsJson();
     writePayload(resp, root);
+    if (ok) {
+      broadcastLabelsChanged();
+    }
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -5402,6 +5421,9 @@ WebSocketResponse TileHandler::handleUpdateLabel(const WebSocketRequest& req)
     root["ok"] = ok;
     root["labels"] = gen_->labelsJson();
     writePayload(resp, root);
+    if (ok) {
+      broadcastLabelsChanged();
+    }
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -5420,6 +5442,7 @@ WebSocketResponse TileHandler::handleClearLabels(const WebSocketRequest& req)
   root["ok"] = true;
   root["labels"] = gen_->labelsJson();
   writePayload(resp, root);
+  broadcastLabelsChanged();
   return resp;
 }
 

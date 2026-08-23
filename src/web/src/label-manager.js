@@ -83,6 +83,21 @@ export class LabelManager {
         this._app.refreshOverlay();
     }
 
+    // A labels_changed push: someone else (another browser, or Tcl) edited the
+    // shared label set.  Same repaint as a local mutation, but drop the
+    // selection if the label it pointed at is gone, or the Inspector would go
+    // on showing a label that no longer exists.
+    applyRemoteLabels(labels) {
+        this._applyLabels(labels);
+        if (this._selectedName
+            && !this._labels.some(l => l.name === this._selectedName)) {
+            this._selectedName = null;
+            this._updateInspector(null);
+            this._renderHandles();
+        }
+        this._app.refreshOverlay();
+    }
+
     _updateLabel(name, fields) {
         return this._wm().request({ type: 'update_label', name, ...fields });
     }

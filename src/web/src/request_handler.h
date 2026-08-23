@@ -510,6 +510,16 @@ class TileHandler
   explicit TileHandler(std::shared_ptr<TileGenerator> gen);
   void registerRequests(RequestDispatcher& dispatcher);
 
+  // Push a message to every connected client after a label mutation.  Labels
+  // live in the shared TileGenerator, so one client's edit changes what all
+  // of them should be drawing; without this the others keep stale handles and
+  // a stale overlay until something unrelated makes them reload.  The session
+  // wires this to SessionRegistry::broadcast, as it does for SelectHandler.
+  void setBroadcastFn(std::function<void(const std::string&)> fn)
+  {
+    broadcast_fn_ = std::move(fn);
+  }
+
   void initializeHeatMaps(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
@@ -523,6 +533,10 @@ class TileHandler
   WebSocketResponse handleUpdateLabel(const WebSocketRequest& req);
   WebSocketResponse handleClearLabels(const WebSocketRequest& req);
   WebSocketResponse handleListLabels(const WebSocketRequest& req);
+  // Tell every client the label set changed.  Public so the Tcl-driven
+  // entry points (add_label and friends) can announce their edits too:
+  // labels sit outside ODB, so no design-change callback covers them.
+  void broadcastLabelsChanged();
   WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
                                           SessionState& state);
   WebSocketResponse handleHeatMaps(const WebSocketRequest& req,
@@ -562,6 +576,7 @@ class TileHandler
       int tile_px = 0);
 
   std::shared_ptr<TileGenerator> gen_;
+  std::function<void(const std::string&)> broadcast_fn_;
 };
 
 // Handles DRC_CATEGORIES, DRC_MARKERS, DRC_LOAD_REPORT,

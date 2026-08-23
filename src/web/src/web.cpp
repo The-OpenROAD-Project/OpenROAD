@@ -509,6 +509,14 @@ WebSocketSession::WebSocketSession(
     }
   });
 
+  // Labels are global, not per-session, so one client's edit changes what
+  // every client should be drawing.
+  tile_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
+    if (hook != nullptr) {
+      hook->sessions().broadcast(j);
+    }
+  });
+
   // Register all handler request types with the dispatcher.
   select_handler_.registerRequests(dispatcher_);
   tcl_handler_.registerRequests(dispatcher_);
@@ -1680,6 +1688,21 @@ Color parseColorString(const std::string& s)
 
 }  // namespace
 
+// Push the current label set to every connected client.  Labels sit outside
+// ODB, so no design-change callback fires for them and a Tcl-driven edit
+// would otherwise leave every open browser showing the old set.  A no-op
+// before serve(), where there is nobody to tell.
+void WebServer::broadcastLabels()
+{
+  if (!viewer_hook_ || !generator_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "labels_changed";
+  msg["labels"] = generator_->labelsJson();
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+}
+
 std::string WebServer::addLabel(const int x,
                                 const int y,
                                 const std::string& text,
@@ -1713,14 +1736,16 @@ std::string WebServer::addLabel(const int x,
       {x, y}, text, parseColorString(color), size, anchor_name, name);
   if (result.empty()) {
     logger_->warn(utl::WEB, 57, "Label name '{}' already exists.", name);
+  } else {
+    broadcastLabels();
   }
   return result;
 }
 
 void WebServer::deleteLabel(const std::string& name)
 {
-  if (generator_) {
-    generator_->deleteLabel(name);
+  if (generator_ && generator_->deleteLabel(name)) {
+    broadcastLabels();
   }
 }
 
@@ -1728,6 +1753,7 @@ void WebServer::clearLabels()
 {
   if (generator_) {
     generator_->clearLabels();
+    broadcastLabels();
   }
 }
 

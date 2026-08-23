@@ -161,6 +161,11 @@ class WebServer
   // worker (would otherwise raise EDEADLK on self-join).
   void stopAndJoinIoThreads();
 
+  // Push the current label set to every connected client.  Labels are global
+  // and live outside ODB, so nothing else notifies the other sessions that a
+  // Tcl-driven add/delete/clear changed what they should draw.
+  void broadcastLabels();
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
