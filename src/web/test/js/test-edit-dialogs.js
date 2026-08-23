@@ -238,3 +238,64 @@ describe('Insert Buffer dialog', () => {
             .some(b => b.textContent === 'Pick location'), false);
     });
 });
+
+describe('Editing dialog teardown', () => {
+    beforeEach(() => { document.body.innerHTML = ''; });
+
+    // The modal installs a document-level keydown listener for Escape.  Every
+    // way out of the dialog has to take it back off again, or each open/close
+    // cycle leaves another handler behind holding the dialog's closure alive.
+    for (const exit of ['Close button', 'overlay click', 'Escape']) {
+        it(`removes its keydown listener on exit via ${exit}`, async () => {
+            const app = makeApp(msg => {
+                if (msg.type === 'global_connect_info') {
+                    return { rules: [], nets: [], regions: [] };
+                }
+                return {};
+            });
+
+            const added = [];
+            const removed = [];
+            const origAdd = document.addEventListener;
+            const origRemove = document.removeEventListener;
+            document.addEventListener = function (type, fn, opts) {
+                if (type === 'keydown') added.push(fn);
+                return origAdd.call(this, type, fn, opts);
+            };
+            document.removeEventListener = function (type, fn, opts) {
+                if (type === 'keydown') removed.push(fn);
+                return origRemove.call(this, type, fn, opts);
+            };
+            try {
+                showGlobalConnectDialog(app);
+                await waitMicrotasks();
+                assert.equal(added.length, 1, 'one keydown listener installed');
+
+                if (exit === 'Close button') {
+                    [...document.querySelectorAll('.gc-dialog button')]
+                        .find(b => b.textContent === 'Close').click();
+                } else if (exit === 'overlay click') {
+                    const overlay = document.querySelector('.modal-overlay');
+                    overlay.dispatchEvent(new window.MouseEvent('click',
+                                                                { bubbles: true }));
+                } else {
+                    document.dispatchEvent(new window.KeyboardEvent(
+                        'keydown', { key: 'Escape', bubbles: true }));
+                }
+                await waitMicrotasks();
+
+                assert.equal(document.querySelector('.modal-overlay'), null,
+                             'dialog closed');
+                // Only this dialog's listener is asserted on: earlier tests in
+                // this file leave their dialogs open on the shared jsdom
+                // document, so an Escape reaches their handlers too and they
+                // unregister themselves as well.
+                assert.equal(removed.filter(fn => fn === added[0]).length, 1,
+                             'the installed listener was removed exactly once');
+            } finally {
+                document.addEventListener = origAdd;
+                document.removeEventListener = origRemove;
+            }
+        });
+    }
+});
