@@ -141,6 +141,7 @@ or_integration_tests(
     sky130_spm_floating_bpin
     sky130_spm_halo_too_big
     sroute_test
+    stacked_via_merged_enclosure
     widthtable
 )
 
