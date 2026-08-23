@@ -99,6 +99,7 @@ struct WebSocketRequest
     kSlackHistogram,
     kFanoutHistogram,
     kSelectFanoutBin,
+    kFind,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
@@ -136,6 +137,7 @@ struct WebSocketRequest
     kSetDisplayState,
     kGet3DData,
     kOverlayTile,
+    kContextAction,
     kCancel,
     kUnknown
   };
@@ -241,6 +243,10 @@ struct SessionState
   // selection_mutex.
   std::array<gui::SelectionSet, gui::kNumHighlightSet> highlight_groups;
   std::vector<ColoredRect> highlight_group_rects;
+  // Octilinear group members (special-wire shapes) keep their outline rather
+  // than collapsing to a bounding rect.  Guarded by selection_mutex, rebuilt
+  // with highlight_group_rects.
+  std::vector<ColoredPolygon> highlight_group_polys;
   // Flight lines emitted by group members whose highlight() draws lines
   // (e.g. unrouted nets), tinted with the group color.  Guarded by
   // selection_mutex, rebuilt with highlight_group_rects.
@@ -368,6 +374,8 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleFind(const WebSocketRequest& req,
+                               SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
   WebSocketResponse handleSelectNext(const WebSocketRequest& req,
@@ -400,6 +408,8 @@ class SelectHandler
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);
+  WebSocketResponse handleContextAction(const WebSocketRequest& req,
+                                        SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

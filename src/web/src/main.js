@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import { latLngToDbu, dbuToLatLng } from './coordinates.js';
+import { latLngToDbu, dbuToLatLng, dbuRectToBounds } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import {
     createWebSocketTileLayer,
@@ -22,9 +22,10 @@ import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
-import { beginSelection, boundsEqual, buildMapOptions,
-         computeBoundsTransforms, computeScaleBar, isCurrentSelection,
-         isStaticMode, maxUsefulZoom, rafCoalesce, showToast }
+import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
+         buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
+         formatDbu, formatDistance, isCurrentSelection, isStaticMode,
+         maxUsefulZoom, parseDbu, rafCoalesce, showToast, unitLabel }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -36,6 +37,9 @@ import { getCookie, setCookie, applyGLTheme, persistTheme } from './theme.js';
 import { serializeDisplayState, applyDisplayStateEntries } from './display-state.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
+import { ContextMenu } from './context-menu.js';
+import { showFindDialog, showGotoDialog } from './search-nav.js';
+import { captureLayout } from './capture.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -88,6 +92,9 @@ function updateStatus() {
 const app = {
     map: null,
     fitBounds: null,
+    lastSelectionBounds: null,  // Leaflet bounds of the last selected object
+    selHasInst: false,          // selection contains any instance
+    selHasNet: false,           // selection contains any net
     displayControlsEl: null,
     allLayers: [],
     designScale: null,   // pixels-per-DBU for coordinate conversion
@@ -144,23 +151,21 @@ const app = {
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
     },
-    // Format a DBU value as a display string, respecting the showDbu setting.
-    // Mirrors Qt GUI's MainWindow::convertDBUToString.
-    formatDbu(value, addUnits = false) {
-        if (this.showDbu) return String(Math.round(value));
-        const dbuPerUm = this.getDbuPerMicron();
-        const precision = Math.ceil(Math.log10(dbuPerUm));
-        const um = (value / dbuPerUm).toFixed(precision);
-        return addUnits ? um + ' \u00b5m' : um;
+    // The display-unit state the ui-utils formatters below are driven by.
+    unitOpts() {
+        return { showDbu: this.showDbu, dbuPerMicron: this.getDbuPerMicron() };
     },
-    // Format a distance (always positive) with auto-scaling units.
+    formatDbu(value, addUnits = false) {
+        return formatDbu(value, this.unitOpts(), addUnits);
+    },
+    parseDbu(str) {
+        return parseDbu(str, this.unitOpts());
+    },
     formatDistance(dbuLength) {
-        if (this.showDbu) return String(Math.round(dbuLength));
-        const dbuPerUm = this.getDbuPerMicron();
-        const um = dbuLength / dbuPerUm;
-        if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
-        if (um >= 1) return um.toFixed(3) + ' um';
-        return (um * 1000).toFixed(1) + ' nm';
+        return formatDistance(dbuLength, this.unitOpts());
+    },
+    unitLabel() {
+        return unitLabel(this.unitOpts());
     },
 };
 
@@ -305,6 +310,11 @@ const selectability = {
     placement_blockages: true,
     routing_obstructions: true,
 };
+
+// Expose the live visibility/selectability so the context menu "Save" can
+// serialize the same payload the tile requests use (visibility-aware export).
+app.visibility = visibility;
+app.selectability = selectability;
 
 try {
     const saved = getCookie('or_selectability');
@@ -594,6 +604,13 @@ function applyDisplayState(state) {
     window.location.reload();
 }
 
+// Expose so the context menu can refresh base + overlay tiles after a
+// server-side context_action (e.g. Select → Connected).
+app.redrawAllLayers = redrawAllLayers;
+
+// Expose the WYSIWYG capture so the context menu "Save" can grab the scene.
+app.captureLayout = (opts = {}) => captureLayout(app, opts);
+
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
     mapDiv.className = 'layout-viewer';
@@ -620,6 +637,26 @@ function createLayoutViewer(container) {
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';
+
+    // "Fit" button below the default zoom (+/-) control, top-left.
+    const FitControl = L.Control.extend({
+        onAdd: function() {
+            const c = L.DomUtil.create(
+                'div', 'leaflet-bar leaflet-control leaflet-control-fit');
+            const a = L.DomUtil.create('a', '', c);
+            a.href = '#';
+            a.title = 'Fit';
+            a.setAttribute('role', 'button');
+            a.setAttribute('aria-label', 'Fit');
+            a.textContent = '⤢';
+            L.DomEvent.on(a, 'click', L.DomEvent.stop)
+                .on(a, 'click', () => {
+                    if (app.fitBounds) app.map.fitBounds(app.fitBounds);
+                });
+            return c;
+        },
+    });
+    new FitControl({ position: 'topleft' }).addTo(app.map);
 
     new ResizeObserver(() => {
         app.map.invalidateSize({ animate: false });
@@ -1143,6 +1180,9 @@ app.toggleShowDbu = function() {
 
 createMenuBar(app);
 
+// Canvas right-click context menu ("Select →" connected objects).
+app.contextMenu = new ContextMenu(app);
+
 // Debug-graphics pause affordance: appended lazily when the first
 // debug_paused push arrives.  Clicking "Continue" tells the server to
 // release the placer thread.
@@ -1381,22 +1421,20 @@ app.websocketManager.readyPromise.then(async () => {
             // Hide loading overlay — shapes are always ready in static mode.
             document.getElementById('loading-overlay').style.display = 'none';
         }
-        if (!staticCache) app.map.on('click', (e) => {
-            if (!app.designScale) return;
-            if (app.rulerManager && app.rulerManager.isActive()) return;
+        // Shared select-at-point logic used by left-click and right-click.
+        // Returns the server response (or null).  `focusInspector` switches the
+        // panel to the Inspector (left-click); right-click keeps the current
+        // panel and only updates the selection so the context menu can reflect
+        // the object under the cursor.
+        function selectAtLatLng(latlng, opts = {}) {
+            const { addToSelection = false, focusInspector = true,
+                    context = false, showConnectivity = false } = opts;
+            if (!app.designScale) return Promise.resolve(null);
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
-                e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
+                latlng.lat, latlng.lng, app.designScale, app.designMaxDXDY,
                 app.designOriginX, app.designOriginY);
 
-            const vf = {};
-            for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = !!v;
-            }
-            // Selectability is sent with `s_` prefix to mirror the flat
-            // visibility key scheme; the server parses both columns.
-            for (const [k, v] of Object.entries(selectability)) {
-                vf['s_' + k] = !!v;
-            }
+            const vf = buildVisibilityFlags(visibility, selectability);
             const selectRequest = {
                 type: 'select',
                 dbu_x,
@@ -1407,22 +1445,22 @@ app.websocketManager.readyPromise.then(async () => {
                 use_dbu: app.showDbu,
                 ...vf,
             };
-            if (e.originalEvent && e.originalEvent.shiftKey) {
+            if (addToSelection) {
                 selectRequest.add_to_selection = true;
+            }
+            if (context) {
+                selectRequest.context = true;
             }
             // Ctrl+click: Qt parity (selectHighlightConnectedNets) — also
             // pull the clicked instance's SIGNAL nets into the selection.
-            // Accept Cmd+click too: on macOS Ctrl+click is the context-menu
-            // gesture, so metaKey is the reachable modifier there.
-            if (e.originalEvent
-                && (e.originalEvent.ctrlKey || e.originalEvent.metaKey)) {
+            if (showConnectivity) {
                 selectRequest.show_connectivity = true;
             }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
             const token = beginSelection(app);
-            app.websocketManager.request(selectRequest)
+            return app.websocketManager.request(selectRequest)
                 .then(data => {
                     // A newer selection (another click, a layer row, the
                     // Inspector) has already replaced this one on the server;
@@ -1431,6 +1469,8 @@ app.websocketManager.readyPromise.then(async () => {
                     if (!isCurrentSelection(app, token)) return;
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
+                    // Type flags so the context menu can enable items by type.
+                    applySelectionFlags(app, data);
                     if (data.selected && data.selected.length > 0) {
                         const inst = data.selected[0];
                         if (inst.type === 'Inst') {
@@ -1440,7 +1480,7 @@ app.websocketManager.readyPromise.then(async () => {
                             }
                         }
                         updateInspector(data);
-                        focusComponent('Inspector');
+                        if (focusInspector) focusComponent('Inspector');
                         // Outline the object the Inspector is showing, using
                         // ITS bbox — `data.bbox` — not `selected[0].bbox`.
                         // For a net the two are different rects: selected[]
@@ -1455,8 +1495,14 @@ app.websocketManager.readyPromise.then(async () => {
                         // hit-test bbox IS the descriptor bbox.
                         if (data.bbox) {
                             highlightBBox(data.bbox[0], data.bbox[1],
-                                          data.bbox[2], data.bbox[3]);
-                            pulseHighlight(data.bbox);
+                                          data.bbox[2], data.bbox[3], data.type);
+                            pulseHighlight(data.bbox, data.type);
+                            // Remember bounds for "Zoom to Selection".
+                            app.lastSelectionBounds = dbuRectToBounds(
+                                data.bbox[0], data.bbox[1],
+                                data.bbox[2], data.bbox[3],
+                                app.designScale, app.designMaxDXDY,
+                                app.designOriginX, app.designOriginY);
                         }
                         if (selectRequest.show_connectivity
                             && data.connected_added > 0) {
@@ -1464,21 +1510,35 @@ app.websocketManager.readyPromise.then(async () => {
                                       + 'connected net'
                                       + (data.connected_added > 1 ? 's' : ''));
                         }
-                    } else if (!selectRequest.add_to_selection) {
-                        // Shift+click on empty space preserves the existing
-                        // multi-selection on the server, so leave the
-                        // inspector/navigation controls and highlight intact.
+                    } else if (!addToSelection && !context) {
+                        // Empty left-click: clear inspector/highlight.  An empty
+                        // right-click (context) keeps the current selection.
                         updateInspector(null);
                         if (app.highlightRect) {
                             app.map.removeLayer(app.highlightRect);
                             app.highlightRect = null;
                         }
+                        app.lastSelectionBounds = null;
                     }
                     refreshOverlay();
+                    return data;
                 })
                 .catch(err => {
                     console.error('Select failed:', err);
+                    return null;
                 });
+        }
+        app.selectAtLatLng = selectAtLatLng;
+
+        if (!staticCache) app.map.on('click', (e) => {
+            if (app.rulerManager && app.rulerManager.isActive()) return;
+            const ev = e.originalEvent;
+            selectAtLatLng(e.latlng, {
+                addToSelection: !!(ev && ev.shiftKey),
+                // Accept Cmd+click too: on macOS Ctrl+click is the
+                // context-menu gesture, so metaKey is the reachable modifier.
+                showConnectivity: !!(ev && (ev.ctrlKey || ev.metaKey)),
+            });
         });
 
         // ─── Right-click rubber-band zoom ──────────────────────────────
@@ -1527,18 +1587,33 @@ app.websocketManager.readyPromise.then(async () => {
                 rbStart = null;
                 app.map.dragging.enable();
 
-                if (!wasShowing) return;
-
-                // Convert the two screen corners to lat/lng and zoom
                 const rect = container.getBoundingClientRect();
-                const p1 = app.map.containerPointToLatLng([
-                    start.x - rect.left, start.y - rect.top]);
-                const p2 = app.map.containerPointToLatLng([
+
+                if (wasShowing) {
+                    // Drag — rubber-band zoom.
+                    const p1 = app.map.containerPointToLatLng([
+                        start.x - rect.left, start.y - rect.top]);
+                    const p2 = app.map.containerPointToLatLng([
+                        e.clientX - rect.left, e.clientY - rect.top]);
+                    app.map.fitBounds([
+                        [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
+                        [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
+                    ]);
+                    return;
+                }
+
+                // Pure click — select the object under the cursor, then show
+                // the context menu contextualized on it (Qt-like).  Only over
+                // the map and not while a ruler is being placed.
+                const overMap = e.clientX >= rect.left && e.clientX <= rect.right
+                             && e.clientY >= rect.top  && e.clientY <= rect.bottom;
+                if (!overMap) return;
+                if (app.rulerManager && app.rulerManager.isActive()) return;
+
+                const latlng = app.map.containerPointToLatLng([
                     e.clientX - rect.left, e.clientY - rect.top]);
-                app.map.fitBounds([
-                    [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
-                    [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
-                ]);
+                app.selectAtLatLng(latlng, { context: true, focusInspector: false })
+                    .then(() => app.contextMenu.show({ originalEvent: e }));
             });
         }
 
@@ -1607,6 +1682,17 @@ document.addEventListener('keydown', (e) => {
         } else {
             app.map.zoomOut();
         }
+    } else if (key === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Both dialog shortcuts must preventDefault.  The dialog focuses and
+        // select()s its first field synchronously, so this keystroke's own
+        // default action would then be delivered to that field and replace
+        // the prefilled value with the shortcut's own letter.  Ctrl/Cmd+F
+        // additionally has the browser's find bar to suppress.
+        e.preventDefault();
+        if (app.designScale) showFindDialog(app);
+    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();  // see above
+        if (app.designScale) showGotoDialog(app);
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();
     }

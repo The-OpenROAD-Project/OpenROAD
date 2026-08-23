@@ -61,6 +61,12 @@ struct FlightLine
   Color color;
 };
 
+struct ColoredPolygon
+{
+  odb::Polygon poly;
+  Color color;
+};
+
 // Decimal places needed to print a DBU length in microns without collapsing two
 // adjacent DBU onto the same string.  That is the smallest p with 10^p >=
 // dbu_per_micron, hence ceil() and not round(): at 2000 DBU/µm (Nangate45)
@@ -523,13 +529,28 @@ class TileGenerator
       bool has_visible_layers = false,
       const std::set<std::string>& visible_layers = {},
       double dpr = 1.0,
-      int tile_px = 0) const;
+      int tile_px = 0,
+      const std::vector<ColoredPolygon>& colored_polys = {}) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
                                                  int y,
                                                  double dpr = 1.0,
                                                  int tile_px = 0) const;
+
+  // Render full design (or region) to PNG bytes.  Works without a running
+  // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  // Returns an empty vector on error (no design / invalid dimensions).
+  // `out_width`/`out_height` receive the encoded image's pixel dimensions,
+  // which the caller cannot predict: they follow from the region and the
+  // 16k clamp, not from `width_px` alone.
+  std::vector<unsigned char> renderImagePng(const odb::Rect& region,
+                                            int width_px,
+                                            double dbu_per_pixel,
+                                            const TileVisibility& vis,
+                                            const Color& bg = {},
+                                            int* out_width = nullptr,
+                                            int* out_height = nullptr) const;
 
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
@@ -666,6 +687,10 @@ class TileGenerator
   void drawFlightLines(std::vector<unsigned char>& image,
                        const std::vector<FlightLine>& lines,
                        const TileFrame& frame) const;
+
+  void drawColoredPolygons(std::vector<unsigned char>& image,
+                           const std::vector<ColoredPolygon>& polys,
+                           const TileFrame& frame) const;
 
   // Private counterpart of setDebugOverlayCallback: invokes the
   // installed callback (if any) for this tile.  See the public API

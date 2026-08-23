@@ -9,6 +9,31 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Serialize the layer/selectability visibility flags the way the server
+// parses them: each visibility key as a boolean, each selectability key with
+// an `s_` prefix.  Callers add request-specific fields (visible_layers,
+// selectable_layers, visible_chiplets) on top.  Shared by the tile requests,
+// click-select, and the Save export so the columns can't drift.
+export function buildVisibilityFlags(visibility, selectability) {
+    const vf = {};
+    for (const [k, v] of Object.entries(visibility || {})) {
+        vf[k] = !!v;
+    }
+    for (const [k, v] of Object.entries(selectability || {})) {
+        vf['s_' + k] = !!v;
+    }
+    return vf;
+}
+
+// Sync the client-side selection type flags from a server response so the
+// context menu can enable/disable items by selection type.
+export function applySelectionFlags(app, resp) {
+    if (resp && typeof resp.sel_has_inst === 'boolean') {
+        app.selHasInst = resp.sel_has_inst;
+        app.selHasNet = !!resp.sel_has_net;
+    }
+}
+
 // Transient notice near the bottom of the viewport (e.g. why a property
 // edit was rejected).  Repeated calls replace the current message and
 // restart the timer.
@@ -250,6 +275,53 @@ export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
     // that one DBU already fills the budget at zoom 0 would otherwise pin the
     // user at the fit zoom with no way to zoom in at all.
     return Math.max(1, Math.min(MAX_TILE_ZOOM, z));
+}
+
+// --- Display units ---
+//
+// Every length the UI shows or accepts is stored in DBU and displayed in
+// whichever unit the "Show DBU" setting (Qt's MainWindow::useDBU) selects.
+// These are pure so the app object, the rulers, the Go-to dialog and their
+// tests all share one implementation instead of each keeping a copy; `opts`
+// is `{ showDbu, dbuPerMicron }`.
+
+// DBU → display string.  Mirrors Qt's MainWindow::convertDBUToString.
+export function formatDbu(value, { showDbu, dbuPerMicron }, addUnits = false) {
+    if (showDbu) return String(Math.round(value));
+    const dbuPerUm = dbuPerMicron > 0 ? dbuPerMicron : 1000;
+    // Enough decimals that two adjacent DBU cannot print the same, which is
+    // ceil() and not round(): at 2000 DBU/µm round() would give 3, and 1 and
+    // 2 DBU would both come out as "0.001".
+    const precision = Math.ceil(Math.log10(dbuPerUm));
+    const um = (value / dbuPerUm).toFixed(precision);
+    return addUnits ? um + ' µm' : um;
+}
+
+// Display string → DBU, the inverse of formatDbu, or null when the text is
+// not a number.  Mirrors Qt's MainWindow::convertStringToDBU.
+export function parseDbu(str, { showDbu, dbuPerMicron }) {
+    const num = parseFloat(str);
+    if (!Number.isFinite(num)) return null;
+    if (showDbu) return Math.round(num);
+    const dbuPerUm = dbuPerMicron > 0 ? dbuPerMicron : 1000;
+    return Math.round(num * dbuPerUm);
+}
+
+// A distance (always positive) with an auto-scaled unit, for the ruler
+// labels.  Unlike formatDbu this always names its unit, because the value
+// appears on the canvas with no column header to carry it.
+export function formatDistance(dbuLength, { showDbu, dbuPerMicron }) {
+    if (showDbu) return String(Math.round(dbuLength));
+    const dbuPerUm = dbuPerMicron > 0 ? dbuPerMicron : 1000;
+    const um = dbuLength / dbuPerUm;
+    if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
+    if (um >= 1) return um.toFixed(3) + ' um';
+    return (um * 1000).toFixed(1) + ' nm';
+}
+
+// Unit suffix for a field label, e.g. "X (µm)" / "X (DBU)".
+export function unitLabel({ showDbu }) {
+    return showDbu ? 'DBU' : 'µm';
 }
 
 // True for a "#rrggbb" hex color string (the form an <input type="color">
