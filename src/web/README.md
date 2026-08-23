@@ -113,6 +113,81 @@ save_image -web -display_option {routing false} \
 save_image -web -display_option {rudy true} layout_rudy.png
 ```
 
+### Save Animated GIF
+
+Build an animated GIF from a sequence of layout snapshots, so an optimization
+loop can be watched frame by frame. Frames are composited by the web tile
+renderer, so this runs headless and needs neither a display nor a running
+server.
+
+The command is a three-call state machine. `-start` opens a stream and returns
+an integer key; each `-add` captures the current state of the design as one
+frame; `-end` finalizes the file. Several streams can be open at once, told
+apart by their keys.
+
+This command shadows the Qt GUI's `save_animated_gif`: the web module's Tcl
+procedures are loaded after the GUI's, so in a build with both, this is the
+one that runs.
+
+```tcl
+save_animated_gif
+    (-start|-add|-end)
+    [-area {x0 y0 x1 y1}]
+    [-width width]
+    [-resolution microns_per_pixel]
+    [-delay delay]
+    [-key key]
+    [-display_option option]
+    [path]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `-start` | Open a new GIF stream and return its key. Requires `path`; the frame options are ignored. |
+| `-add` | Capture the design's current state as one frame. Takes no `path`. |
+| `-end` | Finalize and close the GIF. Takes no `path`. |
+| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. The default is the die area with a 5% margin. |
+| `-width` | Frame width in pixels. The type is `int`, and must be positive. Cannot be used with `-resolution`. The default is `1024`. |
+| `-resolution` | Resolution in microns per pixel. The type is `float`, and must be positive; it is raised to 1 DBU per pixel if finer. Cannot be used with `-width`. |
+| `-delay` | Time each frame is shown, in hundredths of a second. The type is `int`, and must be positive. The default is `250`, i.e. 2.5 seconds. |
+| `-key` | Which open stream to act on, as returned by `-start`. The type is `int`. The default is the most recently opened stream. |
+| `-display_option` | Repeatable visibility overrides as `{control value}` pairs, the same keys `save_image -web` accepts. See [Display option keys](#display-option-keys-web-mode) above. |
+| `path` | Output GIF file path. Required with `-start`, rejected otherwise. |
+
+The first frame fixes the GIF's dimensions; a later frame that comes out a
+different size — because the design's bounding box grew, say — is rescaled to
+match rather than starting a second GIF. Area outside the design is left
+transparent, which most viewers show as black. Ending a stream that never
+received a frame writes no file and warns.
+
+The maximum frame dimension is 16384 pixels, as for `save_image`; larger
+requests are clamped.
+
+#### Examples
+
+```tcl
+# One GIF, one frame per placement iteration
+set gif [save_animated_gif -start placement.gif]
+for {set i 0} {$i < 10} {incr i} {
+  global_placement -incremental
+  save_animated_gif -add -key $gif -width 800 -delay 50
+}
+save_animated_gif -end -key $gif
+
+# A single stream needs no key
+save_animated_gif -start route.gif
+save_animated_gif -add -resolution 0.1
+save_animated_gif -add -resolution 0.1
+save_animated_gif -end
+
+# Zoom in on a region and show only routing
+save_animated_gif -add -area {0 0 100 100} \
+                       -display_option {stdcells false} \
+                       -display_option {routing true}
+```
+
 ### Save Report
 
 Generate a self-contained HTML timing report. The report uses the same
@@ -218,6 +293,139 @@ save_display_controls my_view.json
 restore_display_controls my_view.json
 ```
 
+### Create Toolbar Button
+
+Add a button to the viewer's toolbar that runs a Tcl script when clicked.
+
+Returns the button's key, either `name` or `buttonN`.
+
+This command shadows the Qt GUI's `create_toolbar_button`: the web module's
+Tcl procedures are loaded after the GUI's, so in a build with both, this is
+the one that runs.
+
+```tcl
+create_toolbar_button
+    [-name name]
+    -text button_text
+    -script tcl_script
+    [-icon icon]
+    [-tooltip tooltip]
+    [-toggle]
+    [-script_off tcl_script_off]
+    [-echo]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `-name` | Key used to remove the button later. The type is `string`. The default is a generated `buttonN`. Re-using a registered name is an error. |
+| `-text` | Label to put on the button. The type is `string`. Required. |
+| `-script` | Tcl script to evaluate when the button is clicked, or — with `-toggle` — when it is switched on. The type is `string`. Required. |
+| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI, `http(s):` URL or a path starting with `/` or `./`. The type is `string`. The default is no icon. |
+| `-tooltip` | Hover text. The type is `string`. The default is no tooltip. |
+| `-toggle` | Make the button a two-state switch: clicking it runs `-script` when turning it on and `-script_off` when turning it off. |
+| `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |
+| `-echo` | Echo the script into the browser's Tcl console before running it. |
+
+`-icon`, `-tooltip` and `-toggle` are web-only; the Qt GUI's buttons are
+text-only and stateless.
+
+### Remove Toolbar Button
+
+Remove a button added by `create_toolbar_button`. Removing a name that is not
+registered does nothing.
+
+```tcl
+remove_toolbar_button
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `name` | Key of the button to remove, as returned by `create_toolbar_button`. The type is `string`. |
+
+### Create Menu Item
+
+Add an item to the viewer's menu bar that runs a Tcl script when chosen.
+
+Returns the item's key, either `name` or `actionN`.
+
+This command shadows the Qt GUI's `create_menu_item`: the web module's Tcl
+procedures are loaded after the GUI's, so in a build with both, this is the
+one that runs.
+
+```tcl
+create_menu_item
+    [-name name]
+    [-path menu_path]
+    -text item_text
+    -script tcl_script
+    [-shortcut shortcut]
+    [-echo]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `-name` | Key used to remove the item later. The type is `string`. The default is a generated `actionN`. Re-using a registered name is an error. |
+| `-path` | Menu to place the item in, as a `/`-separated hierarchy. The first segment is a top-level menu, created if it does not exist; deeper segments nest as submenus. The type is `string`. The default is `Custom Scripts`. |
+| `-text` | Text to put on the item. The type is `string`. Required. |
+| `-script` | Tcl script to evaluate when the item is chosen. The type is `string`. Required. |
+| `-shortcut` | Key shortcut to display beside the item, e.g. `Ctrl+H`. The type is `string`. The default is none. |
+| `-echo` | Echo the script into the browser's Tcl console before running it. |
+
+Unlike the Qt GUI's, `-shortcut` is only a hint here: the web menu bar renders
+it beside the item but does not bind the key.
+
+### Remove Menu Item
+
+Remove an item added by `create_menu_item`. Removing a name that is not
+registered does nothing.
+
+```tcl
+remove_menu_item
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----------- | ------------------------------------------------- |
+| `name` | Key of the item to remove, as returned by `create_menu_item`. The type is `string`. |
+
+#### Examples
+
+```tcl
+# A button that reports the current worst slack
+create_toolbar_button -text "Worst slack" \
+                      -script {report_worst_slack} \
+                      -icon "⏱" \
+                      -tooltip "Report the worst setup slack" \
+                      -echo
+
+# A two-state button, running one script when switched on and another off
+create_toolbar_button -name drt_debug -text "DRT maze" -toggle \
+                      -script {set_debug_level DRT maze 1} \
+                      -script_off {set_debug_level DRT maze 0}
+remove_toolbar_button drt_debug
+
+# A menu item under a submenu of its own
+create_menu_item -name checkpoint -path "Flow/Checkpoints" \
+                 -text "Write DB..." -shortcut "Ctrl+S" \
+                 -script {write_db checkpoint.odb}
+remove_menu_item checkpoint
+```
+
+These commands can be run before `web_server`, from a startup script: the
+registry lives on the server, so it survives page reloads and is served to
+clients that connect later. Each change is also pushed to every connected
+client, so a button created in one browser's Tcl console appears in all of
+them — something the single-window Qt GUI cannot do.
+
 ## Features
 
 - **Tile-based rendering** — The server renders 256x256 PNG tiles on demand,
@@ -240,6 +448,16 @@ restore_display_controls my_view.json
 - **Focus nets** — Isolate specific nets for inspection, dimming all other
   routing.
 - **Tcl console** — Execute Tcl commands interactively from the browser.
+- **Custom menu items and toolbar buttons** — Bind Tcl scripts to the viewer's
+  menu bar and toolbar with `create_menu_item` / `create_toolbar_button`. The
+  registry lives on the server, so it is shared by every connected browser.
+- **Image export** — Save the layout as a PNG with `save_image -web` or as an
+  animated GIF with `save_animated_gif`, both headless. Panels export
+  themselves client-side: the schematic as SVG or PNG, the 3D view as PNG, and
+  the charts as CSV or PNG.
+- **Editing utilities** — Inspect, delete and re-apply global-connect rules,
+  and insert a buffer on a net, from dialogs in the Tools menu and the
+  inspector.
 
 ## Architecture
 

@@ -337,10 +337,13 @@ proc save_animated_gif { args } {
       }
       set okey [lindex $opt 0]
       set oval [lindex $opt 1]
+      # Real JSON booleans, for the reason save_image spells out above: an
+      # integer here makes TileVisibility::parseFromJson discard the whole
+      # visibility object (WEB-0042), so every -display_option is a no-op.
       if { $oval eq "true" || $oval eq "1" } {
-        set oval 1
+        set oval "true"
       } else {
-        set oval 0
+        set oval "false"
       }
       lappend pairs "\"$okey\":$oval"
     }
