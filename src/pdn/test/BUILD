@@ -125,6 +125,7 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_offset",
     "pads_black_parrot_straps",
     "pads_connect_from_non_pref_edge",
+    "pads_ihp_sg13g2_balance",
     "power_switch",
     "power_switch_cut_rows",
     "power_switch_daisy",
@@ -310,6 +311,12 @@ filegroup(
                 "ihp_ethmac/sg13g2.lef",
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
+            ],
+            "pads_ihp_sg13g2_balance": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_tensorcore/sg13g2_io.lef",
+                "ihp_tensorcore/floorplan.def",
             ],
         }.get(test_name, []),
     )
