@@ -483,7 +483,11 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
     odb::Rect bbox = row->getBBox();
-    const bool power_on_top = row->getOrient() == odb::dbOrientType::R0;
+    // Only MX ("FS") and R180 ("S") invert the master's y-axis and therefore
+    // swap the power and ground rails; R0 ("N") and MY ("FN") leave them alone.
+    const odb::dbOrientType orient = row->getOrient();
+    const bool power_on_top
+        = orient == odb::dbOrientType::R0 || orient == odb::dbOrientType::MY;
 
     int x0 = bbox.xMin();
     if (x0 == core.xMin()) {
