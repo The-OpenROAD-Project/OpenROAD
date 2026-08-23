@@ -116,18 +116,18 @@ save_image -web -display_option {rudy true} layout_rudy.png
 ### Save Animated GIF
 
 Build an animated GIF from a sequence of layout snapshots, so an optimization
-loop can be watched frame by frame. Frames are composited by the web tile
-renderer, so this runs headless and needs neither a display nor a running
-server.
+loop can be watched frame by frame.
 
 The command is a three-call state machine. `-start` opens a stream and returns
 an integer key; each `-add` captures the current state of the design as one
 frame; `-end` finalizes the file. Several streams can be open at once, told
 apart by their keys.
 
-This command shadows the Qt GUI's `save_animated_gif`: the web module's Tcl
-procedures are loaded after the GUI's, so in a build with both, this is the
-one that runs.
+This is the same command the Qt GUI provides, and it dispatches to whichever
+viewer is up: the Qt GUI grabs its own window, while the web renderer
+composites the frame server-side, needing neither a display nor a running
+server — so it also covers a Qt build launched without `-gui`.
+`-display_option` is web-only, so on the Qt path it warns and is ignored.
 
 ```tcl
 save_animated_gif
@@ -156,14 +156,16 @@ save_animated_gif
 | `-display_option` | Repeatable visibility overrides as `{control value}` pairs, the same keys `save_image -web` accepts. See [Display option keys](#display-option-keys-web-mode) above. |
 | `path` | Output GIF file path. Required with `-start`, rejected otherwise. |
 
-The first frame fixes the GIF's dimensions; a later frame that comes out a
-different size — because the design's bounding box grew, say — is rescaled to
-match rather than starting a second GIF. Area outside the design is left
-transparent, which most viewers show as black. Ending a stream that never
-received a frame writes no file and warns.
+The defaults above are the web renderer's; on the Qt path the GUI's own apply
+— `-area` defaults to what is visible on screen, and `-resolution` to the
+zoom the GUI is at.
 
-The maximum frame dimension is 16384 pixels, as for `save_image`; larger
-requests are clamped.
+On the web path, the first frame fixes the GIF's dimensions; a later frame that
+comes out a different size — because the design's bounding box grew, say — is
+rescaled to match rather than starting a second GIF. Area outside the design is
+left transparent, which most viewers show as black. Ending a stream that never
+received a frame writes no file and warns. The maximum frame dimension is 16384
+pixels, as for `save_image`; larger requests are clamped.
 
 #### Examples
 
@@ -299,9 +301,9 @@ Add a button to the viewer's toolbar that runs a Tcl script when clicked.
 
 Returns the button's key, either `name` or `buttonN`.
 
-This command shadows the Qt GUI's `create_toolbar_button`: the web module's
-Tcl procedures are loaded after the GUI's, so in a build with both, this is
-the one that runs.
+This is the same command the Qt GUI provides, and it dispatches to whichever
+viewer is up: the Qt GUI when its window is running, the web viewer otherwise
+— including in a Qt build launched without `-gui`.
 
 ```tcl
 create_toolbar_button
@@ -328,8 +330,10 @@ create_toolbar_button
 | `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |
 | `-echo` | Echo the script into the browser's Tcl console before running it. |
 
-`-icon`, `-tooltip` and `-toggle` are web-only; the Qt GUI's buttons are
-text-only and stateless.
+`-icon`, `-tooltip`, `-toggle` and `-script_off` are web-only: the Qt GUI's
+buttons are text-only and stateless, so when the dispatch lands on Qt these
+warn and are ignored rather than erroring, letting one script drive either
+viewer.
 
 ### Remove Toolbar Button
 
@@ -353,9 +357,9 @@ Add an item to the viewer's menu bar that runs a Tcl script when chosen.
 
 Returns the item's key, either `name` or `actionN`.
 
-This command shadows the Qt GUI's `create_menu_item`: the web module's Tcl
-procedures are loaded after the GUI's, so in a build with both, this is the
-one that runs.
+This is the same command the Qt GUI provides, and it dispatches to whichever
+viewer is up: the Qt GUI when its window is running, the web viewer otherwise
+— including in a Qt build launched without `-gui`.
 
 ```tcl
 create_menu_item
@@ -378,8 +382,8 @@ create_menu_item
 | `-shortcut` | Key shortcut to display beside the item, e.g. `Ctrl+H`. The type is `string`. The default is none. |
 | `-echo` | Echo the script into the browser's Tcl console before running it. |
 
-Unlike the Qt GUI's, `-shortcut` is only a hint here: the web menu bar renders
-it beside the item but does not bind the key.
+On the web path `-shortcut` is only a hint: the menu bar renders it beside the
+item but does not bind the key. The Qt GUI does bind it.
 
 ### Remove Menu Item
 
@@ -420,8 +424,8 @@ create_menu_item -name checkpoint -path "Flow/Checkpoints" \
 remove_menu_item checkpoint
 ```
 
-These commands can be run before `web_server`, from a startup script: the
-registry lives on the server, so it survives page reloads and is served to
+On the web path these can be run before `web_server`, from a startup script:
+the registry lives on the server, so it survives page reloads and is served to
 clients that connect later. Each change is also pushed to every connected
 client, so a button created in one browser's Tcl console appears in all of
 them — something the single-window Qt GUI cannot do.

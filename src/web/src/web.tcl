@@ -164,6 +164,34 @@ proc web_save_report { args } {
   web::save_report_cmd $path $max_setup $max_hold
 }
 
+# --- Viewer dispatch ---
+#
+# The Qt GUI defines add_label, create_toolbar_button, create_menu_item and
+# save_animated_gif as global procs as well, and web.tcl is evaluated after
+# gui.tcl, so whichever definition lands here is the only one a user can
+# reach.  So rather than take the name over, each proc below keeps one Tcl
+# interface and dispatches on the viewer that is actually up: the Qt main
+# window when it is running, the web viewer otherwise.  That is the precedence
+# gui::Gui itself applies between its main window and a HeadlessViewer, and it
+# is why a Qt build launched without -gui lands on the web viewer rather than
+# on the GUI command's "not usable in non-GUI mode".
+#
+# gui::has_ui is the predicate: gui.i exports it in a Qt build and stub.cpp
+# defines it in a build without Qt, so it always answers.
+
+namespace eval web {
+# Options the web viewer adds that the Qt path cannot honour: its toolbar
+# buttons are text-only and stateless, and its save_animated_gif takes no
+# display options.  A warning rather than an error, so one script can drive
+# either viewer.
+proc warn_qt_unsupported { cmd unsupported } {
+  if { [llength $unsupported] == 0 } {
+    return
+  }
+  utl::warn WEB 76 "$cmd: the Qt GUI does not support [join $unsupported {, }]; ignored."
+}
+}
+
 sta::define_cmd_args "add_label" {-position {x y} \
                                   [-anchor anchor] \
                                   [-color color] \
@@ -186,12 +214,6 @@ proc add_label { args } {
   sta::check_argc_eq1 "add_label" $args
   set text [lindex $args 0]
 
-  # -position is in microns; convert to DBU for the renderer.
-  set db [ord::get_db]
-  set dbu [$db getDbuPerMicron]
-  set x [expr { int([lindex $pos 0] * $dbu) }]
-  set y [expr { int([lindex $pos 1] * $dbu) }]
-
   set anchor ""
   if { [info exists keys(-anchor)] } { set anchor $keys(-anchor) }
   set color ""
@@ -201,13 +223,28 @@ proc add_label { args } {
   set name ""
   if { [info exists keys(-name)] } { set name $keys(-name) }
 
-  web::add_label_cmd $x $y $text $anchor $color $size $name
+  if { [gui::has_ui] } {
+    # gui::add_label takes -position's microns and converts them itself.
+    return [gui::add_label [lindex $pos 0] [lindex $pos 1] $text \
+      $anchor $color $size $name]
+  }
+
+  # The web renderer takes DBU.
+  set db [ord::get_db]
+  set dbu [$db getDbuPerMicron]
+  set x [expr { int([lindex $pos 0] * $dbu) }]
+  set y [expr { int([lindex $pos 1] * $dbu) }]
+  return [web::add_label_cmd $x $y $text $anchor $color $size $name]
 }
 
 sta::define_cmd_args "delete_label" { name }
 
 proc delete_label { args } {
   sta::check_argc_eq1 "delete_label" $args
+  if { [gui::has_ui] } {
+    gui::delete_label [lindex $args 0]
+    return
+  }
   web::delete_label_cmd [lindex $args 0]
 }
 
@@ -215,6 +252,10 @@ sta::define_cmd_args "clear_labels" {}
 
 proc clear_labels { args } {
   sta::check_argc_eq0 "clear_labels" $args
+  if { [gui::has_ui] } {
+    gui::clear_labels
+    return
+  }
   web::clear_labels_cmd
 }
 
@@ -257,6 +298,9 @@ proc save_animated_gif { args } {
   # -start opens a new GIF and returns its key.
   if { [info exists flags(-start)] } {
     sta::check_argc_eq1 "save_animated_gif" $args
+    if { [gui::has_ui] } {
+      return [gui::gif_start [lindex $args 0]]
+    }
     return [web::gif_start_cmd [lindex $args 0]]
   }
 
@@ -269,6 +313,10 @@ proc save_animated_gif { args } {
 
   # -end finalizes the GIF file.
   if { [info exists flags(-end)] } {
+    if { [gui::has_ui] } {
+      gui::gif_end $key
+      return
+    }
     web::gif_end_cmd $key
     return
   }
@@ -310,6 +358,17 @@ proc save_animated_gif { args } {
   if { [info exists keys(-delay)] } {
     sta::check_positive_int "-delay" $keys(-delay)
     set delay $keys(-delay)
+  }
+
+  if { [gui::has_ui] } {
+    set unsupported {}
+    if { [llength $list(-display_option)] > 0 } {
+      lappend unsupported "-display_option"
+    }
+    web::warn_qt_unsupported "save_animated_gif" $unsupported
+    # gui::gif_add takes the area in microns.
+    gui::gif_add $key {*}$area $width $resolution $delay
+    return
   }
 
   # Convert area from microns to DBU for the web renderer.
@@ -397,6 +456,21 @@ proc create_toolbar_button { args } {
   set toggle [info exists flags(-toggle)]
   set echo [info exists flags(-echo)]
 
+  if { [gui::has_ui] } {
+    set unsupported {}
+    foreach {opt val} [list -icon $icon -tooltip $tooltip \
+      -script_off $script_off] {
+      if { $val ne "" } {
+        lappend unsupported $opt
+      }
+    }
+    if { $toggle } {
+      lappend unsupported "-toggle"
+    }
+    web::warn_qt_unsupported "create_toolbar_button" $unsupported
+    return [gui::create_toolbar_button $name $keys(-text) $keys(-script) $echo]
+  }
+
   return [web::create_toolbar_button_cmd $name $keys(-text) $keys(-script) \
     $icon $tooltip $toggle $script_off $echo]
 }
@@ -435,6 +509,11 @@ proc create_menu_item { args } {
   }
   set echo [info exists flags(-echo)]
 
+  if { [gui::has_ui] } {
+    return [gui::create_menu_item $name $path $keys(-text) $keys(-script) \
+      $shortcut $echo]
+  }
+
   return [web::create_menu_item_cmd $name $path $keys(-text) $keys(-script) \
     $shortcut $echo]
 }
@@ -443,6 +522,10 @@ sta::define_cmd_args "remove_toolbar_button" { name }
 
 proc remove_toolbar_button { args } {
   sta::check_argc_eq1 "remove_toolbar_button" $args
+  if { [gui::has_ui] } {
+    gui::remove_toolbar_button [lindex $args 0]
+    return
+  }
   web::remove_toolbar_button_cmd [lindex $args 0]
 }
 
@@ -450,5 +533,9 @@ sta::define_cmd_args "remove_menu_item" { name }
 
 proc remove_menu_item { args } {
   sta::check_argc_eq1 "remove_menu_item" $args
+  if { [gui::has_ui] } {
+    gui::remove_menu_item [lindex $args 0]
+    return
+  }
   web::remove_menu_item_cmd [lindex $args 0]
 }
