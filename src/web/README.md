@@ -464,8 +464,9 @@ them — something the single-window Qt GUI cannot do.
   every connected browser.
 - **Image export** — Save the layout as a PNG with `save_image -web` or as an
   animated GIF with `save_animated_gif`, both headless. Panels export
-  themselves client-side: the schematic as SVG or PNG, the 3D view as PNG, and
-  the charts as CSV or PNG.
+  themselves client-side, from a button in the panel rather than a Tcl command:
+  the schematic as SVG or PNG, the 3D view as PNG, the charts as CSV or PNG,
+  and the clock tree as PNG.
 - **Editing utilities** — Inspect, delete and re-apply global-connect rules,
   and insert a buffer on a net, from dialogs in the Tools menu and the
   inspector.
