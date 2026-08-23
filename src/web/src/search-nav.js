@@ -135,20 +135,25 @@ export function showGotoDialog(app) {
     if (!app.designScale || !app.map) {
         return;
     }
-    const dbuPerUm = app.getDbuPerMicron ? app.getDbuPerMicron() : 1000;
+    // Every field is read and written in whichever unit the "Show DBU"
+    // setting (Qt's MainWindow::useDBU) is displaying, so the numbers here
+    // match the ones the Inspector, the rulers and the scale bar are showing.
+    const fmt = (dbu) => app.formatDbu(dbu);
+    const parse = (str) => app.parseDbu(str);
+    const unit = app.unitLabel();
 
-    // Prefill X/Y with the current view center (in microns).
+    // Prefill X/Y with the current view center, so "Go to" with no edits is
+    // a no-op.
     const c = app.map.getCenter();
     const centerDbu = latLngToDbu(c.lat, c.lng, app.designScale,
         app.designMaxDXDY, app.designOriginX, app.designOriginY);
-    const fmt = (dbu) => (dbu / dbuPerUm).toFixed(3);
 
     const { overlay, close, okBtn, showError } = buildModal('Go to Position', `
-        <div class="sn-row"><label>X (µm)</label>
+        <div class="sn-row"><label>X (${unit})</label>
             <input type="text" class="fb-path-input sn-x" value="${fmt(centerDbu.dbuX)}"></div>
-        <div class="sn-row"><label>Y (µm)</label>
+        <div class="sn-row"><label>Y (${unit})</label>
             <input type="text" class="fb-path-input sn-y" value="${fmt(centerDbu.dbuY)}"></div>
-        <div class="sn-row"><label>Size (µm)</label>
+        <div class="sn-row"><label>Size (${unit})</label>
             <input type="text" class="fb-path-input sn-size" placeholder="optional zoom window"></div>`,
         'Go to');
 
@@ -159,21 +164,20 @@ export function showGotoDialog(app) {
     xIn.select();
 
     function doGoto() {
-        const x = parseFloat(xIn.value);
-        const y = parseFloat(yIn.value);
-        if (!Number.isFinite(x) || !Number.isFinite(y)) {
-            showError('X and Y must be numbers (microns).');
+        const dbuX = parse(xIn.value);
+        const dbuY = parse(yIn.value);
+        if (dbuX === null || dbuY === null) {
+            showError(`X and Y must be numbers (${unit}).`);
             return;
         }
-        const dbuX = Math.round(x * dbuPerUm);
-        const dbuY = Math.round(y * dbuPerUm);
         const latlng = dbuToLatLng(dbuX, dbuY, app.designScale,
             app.designMaxDXDY, app.designOriginX, app.designOriginY);
 
+        // A size of 0 or less is not a window; fall through to the recentre.
         const sizeVal = sizeIn.value.trim();
-        const size = sizeVal ? parseFloat(sizeVal) : NaN;
-        if (Number.isFinite(size) && size > 0) {
-            const half = (size * dbuPerUm) / 2;
+        const sizeDbu = sizeVal ? parse(sizeVal) : null;
+        if (sizeDbu !== null && sizeDbu > 0) {
+            const half = sizeDbu / 2;
             app.map.fitBounds(dbuRectToBounds(
                 dbuX - half, dbuY - half, dbuX + half, dbuY + half,
                 app.designScale, app.designMaxDXDY,

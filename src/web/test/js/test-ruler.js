@@ -3,6 +3,7 @@
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { formatDbu, formatDistance, parseDbu } from '../../src/ui-utils.js';
 
 // ─── Minimal Leaflet mock ────────────────────────────────────────────────────
 // RulerManager uses L.layerGroup, L.polyline, L.circleMarker, L.marker,
@@ -72,23 +73,23 @@ function makeApp() {
             },
         },
         inspectorEl: null,
+        // Delegated to the real formatters, not reimplemented, so a change
+        // to the display-unit rules cannot pass here and fail in the app.
         getDbuPerMicron() {
             return this.techData?.dbu_per_micron || 1000;
         },
+        unitOpts() {
+            return { showDbu: this.showDbu,
+                     dbuPerMicron: this.getDbuPerMicron() };
+        },
         formatDbu(value, addUnits = false) {
-            if (this.showDbu) return String(Math.round(value));
-            const dbuPerUm = this.getDbuPerMicron();
-            const precision = Math.ceil(Math.log10(dbuPerUm));
-            const um = (value / dbuPerUm).toFixed(precision);
-            return addUnits ? um + ' \u00b5m' : um;
+            return formatDbu(value, this.unitOpts(), addUnits);
+        },
+        parseDbu(str) {
+            return parseDbu(str, this.unitOpts());
         },
         formatDistance(dbuLength) {
-            if (this.showDbu) return String(Math.round(dbuLength));
-            const dbuPerUm = this.getDbuPerMicron();
-            const um = dbuLength / dbuPerUm;
-            if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
-            if (um >= 1) return um.toFixed(3) + ' um';
-            return (um * 1000).toFixed(1) + ' nm';
+            return formatDistance(dbuLength, this.unitOpts());
         },
         _container: container,
         _classList: classList,

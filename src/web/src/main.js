@@ -24,8 +24,8 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
          buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
-         isCurrentSelection, isStaticMode, maxUsefulZoom, rafCoalesce,
-         showToast }
+         formatDbu, formatDistance, isCurrentSelection, isStaticMode,
+         maxUsefulZoom, parseDbu, rafCoalesce, showToast, unitLabel }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -151,23 +151,21 @@ const app = {
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
     },
-    // Format a DBU value as a display string, respecting the showDbu setting.
-    // Mirrors Qt GUI's MainWindow::convertDBUToString.
-    formatDbu(value, addUnits = false) {
-        if (this.showDbu) return String(Math.round(value));
-        const dbuPerUm = this.getDbuPerMicron();
-        const precision = Math.ceil(Math.log10(dbuPerUm));
-        const um = (value / dbuPerUm).toFixed(precision);
-        return addUnits ? um + ' \u00b5m' : um;
+    // The display-unit state the ui-utils formatters below are driven by.
+    unitOpts() {
+        return { showDbu: this.showDbu, dbuPerMicron: this.getDbuPerMicron() };
     },
-    // Format a distance (always positive) with auto-scaling units.
+    formatDbu(value, addUnits = false) {
+        return formatDbu(value, this.unitOpts(), addUnits);
+    },
+    parseDbu(str) {
+        return parseDbu(str, this.unitOpts());
+    },
     formatDistance(dbuLength) {
-        if (this.showDbu) return String(Math.round(dbuLength));
-        const dbuPerUm = this.getDbuPerMicron();
-        const um = dbuLength / dbuPerUm;
-        if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
-        if (um >= 1) return um.toFixed(3) + ' um';
-        return (um * 1000).toFixed(1) + ' nm';
+        return formatDistance(dbuLength, this.unitOpts());
+    },
+    unitLabel() {
+        return unitLabel(this.unitOpts());
     },
 };
 
@@ -1685,10 +1683,15 @@ document.addEventListener('keydown', (e) => {
             app.map.zoomOut();
         }
     } else if (key === 'f' && (e.ctrlKey || e.metaKey)) {
-        // Ctrl/Cmd+F: Find (prevent the browser's own find bar).
+        // Both dialog shortcuts must preventDefault.  The dialog focuses and
+        // select()s its first field synchronously, so this keystroke's own
+        // default action would then be delivered to that field and replace
+        // the prefilled value with the shortcut's own letter.  Ctrl/Cmd+F
+        // additionally has the browser's find bar to suppress.
         e.preventDefault();
         if (app.designScale) showFindDialog(app);
     } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();  // see above
         if (app.designScale) showGotoDialog(app);
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();
