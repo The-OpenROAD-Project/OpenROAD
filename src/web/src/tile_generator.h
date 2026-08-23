@@ -62,10 +62,23 @@ struct FlightLine
   Color color;
 };
 
+// The nine canonical anchor names, in gui::Painter::anchors() order.  That
+// table (src/gui/src/painter.cpp) is the source of truth for the spelling and
+// is duplicated rather than shared because libweb has no link dependency on
+// the Qt GUI — the same trade-off spectrumColor() makes in color.h.  Keep the
+// two in sync: add_label is one user-facing command, so -anchor has to mean
+// the same thing whichever GUI runs it.
+const std::vector<std::string>& anchorNames();
+
+// True when `anchor` is one of anchorNames().  The empty string is NOT valid;
+// callers that treat empty as "use the default" must substitute "center"
+// before asking.
+bool isValidAnchor(const std::string& anchor);
+
 // A short text label anchored at a DBU point, drawn on the overlay tile.
 // Used by the timing-cone overlay (depth annotations) and by user labels
-// (2.12).  `size` is the font pixel size (0 = default) and `anchor` is one of
-// "center", "top_left", "top_right", "bottom_left", "bottom_right".
+// (2.12).  `size` is the font pixel size (0 = default) and `anchor` names the
+// point of the text box that sits on `pos` — see anchorNames().
 struct TextLabel
 {
   odb::Point pos;

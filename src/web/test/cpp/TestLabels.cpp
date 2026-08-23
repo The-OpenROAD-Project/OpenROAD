@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
@@ -43,7 +45,7 @@ TEST_F(LabelTest, AddAutoNamesAndStores)
   const std::string n0
       = gen_->addLabel({10, 20}, "hello", white, 0, "center", "");
   const std::string n1
-      = gen_->addLabel({30, 40}, "world", white, 12, "top_left", "");
+      = gen_->addLabel({30, 40}, "world", white, 12, "top left", "");
   EXPECT_EQ(n0, "label0");
   EXPECT_EQ(n1, "label1");
 
@@ -51,7 +53,7 @@ TEST_F(LabelTest, AddAutoNamesAndStores)
   ASSERT_EQ(draw.size(), 2u);
   EXPECT_EQ(draw[0].text, "hello");
   EXPECT_EQ(draw[1].size, 12);
-  EXPECT_EQ(draw[1].anchor, "top_left");
+  EXPECT_EQ(draw[1].anchor, "top left");
 }
 
 TEST_F(LabelTest, DuplicateNameRejected)
@@ -94,7 +96,7 @@ TEST_F(LabelTest, UpdateMutatesInPlace)
   gen_->addLabel({0, 0}, "old", c, 0, "center", "L");
 
   const Color red{.r = 255, .g = 0, .b = 0, .a = 255};
-  EXPECT_TRUE(gen_->updateLabel("L", {7, 8}, "new", red, 20, "top_left"));
+  EXPECT_TRUE(gen_->updateLabel("L", {7, 8}, "new", red, 20, "top left"));
 
   const auto draw = gen_->labelsForDraw();
   ASSERT_EQ(draw.size(), 1u);
@@ -102,7 +104,7 @@ TEST_F(LabelTest, UpdateMutatesInPlace)
   EXPECT_EQ(draw[0].pos.x(), 7);
   EXPECT_EQ(draw[0].pos.y(), 8);
   EXPECT_EQ(draw[0].size, 20);
-  EXPECT_EQ(draw[0].anchor, "top_left");
+  EXPECT_EQ(draw[0].anchor, "top left");
   EXPECT_EQ(draw[0].color.r, 255);
 }
 
@@ -119,7 +121,7 @@ TEST_F(LabelTest, UpdateMissingIsNoOp)
 TEST_F(LabelTest, JsonRoundTrip)
 {
   const Color c{.r = 10, .g = 20, .b = 30, .a = 255};
-  gen_->addLabel({5, 6}, "hi", c, 8, "bottom_right", "L");
+  gen_->addLabel({5, 6}, "hi", c, 8, "bottom right", "L");
   const boost::json::array arr = gen_->labelsJson();
   ASSERT_EQ(arr.size(), 1u);
   const auto& o = arr[0].as_object();
@@ -128,7 +130,7 @@ TEST_F(LabelTest, JsonRoundTrip)
   EXPECT_EQ(o.at("y").as_int64(), 6);
   EXPECT_EQ(o.at("text").as_string(), "hi");
   EXPECT_EQ(o.at("size").as_int64(), 8);
-  EXPECT_EQ(o.at("anchor").as_string(), "bottom_right");
+  EXPECT_EQ(o.at("anchor").as_string(), "bottom right");
   EXPECT_EQ(o.at("color").as_object().at("r").as_int64(), 10);
 }
 
@@ -151,6 +153,72 @@ TEST_F(LabelTest, HandlerAddThenList)
   auto list_resp = handler->handleListLabels(list);
   EXPECT_NE(payloadStr(list_resp).find("probe"), std::string::npos);
   EXPECT_EQ(gen_->labelsForDraw().size(), 1u);
+}
+
+// The spellings are shared with the Qt GUI's add_label, so pin them here
+// against gui::Painter::anchors() (src/gui/src/painter.cpp), which libweb
+// cannot link and therefore cannot assert against at compile time.
+TEST_F(LabelTest, AnchorNamesMatchTheQtGui)
+{
+  std::vector<std::string> got = anchorNames();
+  std::sort(got.begin(), got.end());
+  const std::vector<std::string> want = {"bottom center",
+                                         "bottom left",
+                                         "bottom right",
+                                         "center",
+                                         "left center",
+                                         "right center",
+                                         "top center",
+                                         "top left",
+                                         "top right"};
+  EXPECT_EQ(got, want);
+  for (const std::string& name : anchorNames()) {
+    EXPECT_TRUE(isValidAnchor(name)) << name;
+  }
+}
+
+TEST_F(LabelTest, UnknownAnchorIsNotValid)
+{
+  // The old web-only spelling: it must not quietly keep working, or a script
+  // using it would centre every label with no diagnostic.
+  EXPECT_FALSE(isValidAnchor("top_left"));
+  EXPECT_FALSE(isValidAnchor("Top Left"));
+  EXPECT_FALSE(isValidAnchor("middle"));
+  // Empty is the caller's cue to substitute "center", not a name itself.
+  EXPECT_FALSE(isValidAnchor(""));
+}
+
+TEST_F(LabelTest, HandlerRejectsUnknownAnchor)
+{
+  auto handler = std::make_unique<TileHandler>(gen_);
+
+  WebSocketRequest add;
+  add.id = 1;
+  add.type = WebSocketRequest::kAddLabel;
+  add.json
+      = parseObj(R"({"x":1,"y":2,"text":"t","size":0,"anchor":"top_left"})");
+  auto resp = handler->handleAddLabel(add);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("anchor not recognized"), std::string::npos);
+  // Refused outright — no half-created label left behind.
+  EXPECT_TRUE(gen_->labelsForDraw().empty());
+}
+
+TEST_F(LabelTest, EveryAnchorIsAcceptedByTheHandler)
+{
+  auto handler = std::make_unique<TileHandler>(gen_);
+  uint32_t id = 0;
+  for (const std::string& name : anchorNames()) {
+    WebSocketRequest add;
+    add.id = ++id;
+    add.type = WebSocketRequest::kAddLabel;
+    add.json = parseObj(R"({"x":0,"y":0,"text":"t","size":0,"anchor":")" + name
+                        + R"("})");
+    auto resp = handler->handleAddLabel(add);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << name;
+    EXPECT_NE(payloadStr(resp).find("\"ok\":true"), std::string::npos) << name;
+  }
+  EXPECT_EQ(gen_->labelsForDraw().size(), anchorNames().size());
 }
 
 }  // namespace

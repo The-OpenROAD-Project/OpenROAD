@@ -5322,11 +5322,22 @@ struct LabelFields
 
 LabelFields parseLabelFields(const boost::json::object& obj)
 {
+  std::string anchor = jsonOr<std::string>(obj, "anchor", "center");
+  if (anchor.empty()) {
+    anchor = "center";
+  }
+  // The Inspector offers a fixed list, so an unknown name here means a
+  // hand-written API call.  Refuse it: centring a label the caller asked to
+  // corner-anchor is a silent wrong answer.  Throwing becomes an error
+  // response via the handler's catch.
+  if (!isValidAnchor(anchor)) {
+    throw std::runtime_error("anchor not recognized: " + anchor);
+  }
   return {.pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
                             static_cast<int>(obj.at("y").as_int64())),
           .text = std::string(obj.at("text").as_string()),
           .size = static_cast<int>(jsonOr<int64_t>(obj, "size", 0)),
-          .anchor = jsonOr<std::string>(obj, "anchor", "center"),
+          .anchor = anchor,
           .color = parseLabelColor(obj)};
 }
 

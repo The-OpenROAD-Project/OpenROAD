@@ -5639,6 +5639,82 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
   }
 }
 
+namespace {
+
+// One anchor name and where it puts the text box relative to the anchor
+// point, as an edge to pin per axis.  kMin is the low-coordinate edge in
+// PIXEL space, so vertically it is the box's top (pixel rows grow downward
+// while DBU grow up).
+struct AnchorEntry
+{
+  enum Edge
+  {
+    kMin,
+    kMid,
+    kMax
+  };
+  const char* name;
+  Edge h;
+  Edge v;
+};
+
+// The one table behind anchorNames(), isValidAnchor() and the placement in
+// drawTextLabels, so a name can never be accepted and then not drawn.  The
+// spellings must match gui::Painter::anchors(); the order is only that of the
+// literal in painter.cpp and means nothing (anchors() is a std::map, so it
+// iterates alphabetically).  The edges reproduce the switch over
+// gui::Painter::Anchor in drawPainterOps.
+constexpr AnchorEntry kAnchors[] = {
+    {"bottom left", AnchorEntry::kMin, AnchorEntry::kMax},
+    {"bottom right", AnchorEntry::kMax, AnchorEntry::kMax},
+    {"top left", AnchorEntry::kMin, AnchorEntry::kMin},
+    {"top right", AnchorEntry::kMax, AnchorEntry::kMin},
+    {"center", AnchorEntry::kMid, AnchorEntry::kMid},
+    {"bottom center", AnchorEntry::kMid, AnchorEntry::kMax},
+    {"top center", AnchorEntry::kMid, AnchorEntry::kMin},
+    {"left center", AnchorEntry::kMin, AnchorEntry::kMid},
+    {"right center", AnchorEntry::kMax, AnchorEntry::kMid},
+};
+
+// "center" is both the documented default and the unrecognized-name
+// fallback; pin its slot so reordering kAnchors cannot quietly change either.
+constexpr size_t kCenterAnchor = 4;
+static_assert(std::string_view(kAnchors[kCenterAnchor].name) == "center");
+
+// The entry for `anchor`, or the "center" entry when it names nothing.
+const AnchorEntry& anchorEntry(const std::string& anchor)
+{
+  for (const AnchorEntry& a : kAnchors) {
+    if (anchor == a.name) {
+      return a;
+    }
+  }
+  return kAnchors[kCenterAnchor];
+}
+
+}  // namespace
+
+const std::vector<std::string>& anchorNames()
+{
+  static const std::vector<std::string> names = [] {
+    std::vector<std::string> out;
+    out.reserve(std::size(kAnchors));
+    for (const AnchorEntry& a : kAnchors) {
+      out.emplace_back(a.name);
+    }
+    return out;
+  }();
+  return names;
+}
+
+bool isValidAnchor(const std::string& anchor)
+{
+  return std::any_of(
+      std::begin(kAnchors),
+      std::end(kAnchors),
+      [&anchor](const AnchorEntry& a) { return anchor == a.name; });
+}
+
 void TileGenerator::drawTextLabels(std::vector<unsigned char>& image,
                                    const std::vector<TextLabel>& labels,
                                    const TileFrame& frame) const
@@ -5663,20 +5739,22 @@ void TileGenerator::drawTextLabels(std::vector<unsigned char>& image,
     const int pixel_x = toPxX(label.pos.x(), frame);
     const int pixel_y = toPxY(label.pos.y(), frame, dim);
 
-    // Position the text box relative to the anchor point.  Default "center".
+    // Position the text box relative to the anchor point.  An unrecognized
+    // name centres, matching Painter::stringToAnchor's fallback; the API
+    // layers reject one before it gets here, so this is only the last word.
     // The box may straddle a tile seam; skip only when it is fully off-tile so
     // each tile draws its slice (drawText clips per-pixel).
+    const AnchorEntry& a = anchorEntry(label.anchor);
     int text_px_min = pixel_x - text_width / 2;
-    int text_py_min = pixel_y - text_height / 2;
-    const std::string& a = label.anchor;
-    if (a == "top_left" || a == "bottom_left") {
+    if (a.h == AnchorEntry::kMin) {
       text_px_min = pixel_x;
-    } else if (a == "top_right" || a == "bottom_right") {
+    } else if (a.h == AnchorEntry::kMax) {
       text_px_min = pixel_x - text_width;
     }
-    if (a == "top_left" || a == "top_right") {
+    int text_py_min = pixel_y - text_height / 2;
+    if (a.v == AnchorEntry::kMin) {
       text_py_min = pixel_y;
-    } else if (a == "bottom_left" || a == "bottom_right") {
+    } else if (a.v == AnchorEntry::kMax) {
       text_py_min = pixel_y - text_height;
     }
 

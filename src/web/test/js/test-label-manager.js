@@ -141,14 +141,14 @@ describe('LabelManager', () => {
         const { mgr, requests } = makeManager();
         const label = { name: 'L0', x: 5, y: 6, text: 'old', size: 0,
                         anchor: 'center', color: { r: 0, g: 0, b: 0, a: 255 } };
-        await mgr._edit(label, { text: 'new', size: 14, anchor: 'top_left' });
+        await mgr._edit(label, { text: 'new', size: 14, anchor: 'top left' });
         await flush();
         const upd = requests.find(r => r.type === 'update_label');
         assert.ok(upd, 'update_label requested');
         assert.equal(upd.name, 'L0');
         assert.equal(upd.text, 'new');
         assert.equal(upd.size, 14);
-        assert.equal(upd.anchor, 'top_left');
+        assert.equal(upd.anchor, 'top left');
         assert.equal(requests.filter(r => r.type === 'delete_label').length, 0);
     });
 });

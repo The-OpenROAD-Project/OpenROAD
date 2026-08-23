@@ -1691,13 +1691,26 @@ std::string WebServer::addLabel(const int x,
   if (!generator_) {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
   }
-  const std::string result
-      = generator_->addLabel({x, y},
-                             text,
-                             parseColorString(color),
-                             size,
-                             anchor.empty() ? "center" : anchor,
-                             name);
+  // Reject an unknown anchor rather than silently centring the label, which
+  // reads as "the option did nothing".  Qt's add_label errors the same way
+  // (GUI-45); listing the choices saves a trip to the manual over a typo.
+  const std::string anchor_name = anchor.empty() ? "center" : anchor;
+  if (!isValidAnchor(anchor_name)) {
+    std::string choices;
+    for (const std::string& n : anchorNames()) {
+      if (!choices.empty()) {
+        choices += ", ";
+      }
+      choices += n;
+    }
+    logger_->error(utl::WEB,
+                   58,
+                   "Anchor not recognized: {}. Expected one of: {}.",
+                   anchor_name,
+                   choices);
+  }
+  const std::string result = generator_->addLabel(
+      {x, y}, text, parseColorString(color), size, anchor_name, name);
   if (result.empty()) {
     logger_->warn(utl::WEB, 57, "Label name '{}' already exists.", name);
   }
