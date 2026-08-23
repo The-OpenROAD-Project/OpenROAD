@@ -1268,8 +1268,10 @@ bool FlexPA::EnoughAccessPoints(
   }
 
   reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
+  reqs.far_from_edge
+      = !isMacroCellTerm(inst_term) || EnoughPointsFarFromEdge(aps, inst_term);
 
-  return (reqs.sparse_points);
+  return reqs.sparse_points && reqs.far_from_edge;
 }
 
 template <typename T>
@@ -1464,6 +1466,11 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                     : std::to_string(
                           router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN))
              + " sparse access points";
+    }
+    if (!reqs.far_from_edge) {
+      unmet_requirements
+          += "\n\tAt least 1 access point two routing widths from the "
+             "instance edge";
     }
     debugPrint(logger_,
                utl::DRT,

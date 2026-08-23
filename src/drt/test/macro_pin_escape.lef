@@ -1,0 +1,19 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO macro_pin_escape
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10 BY 10 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal2 ;
+        RECT 0 4.8 0.3 5.2 ;
+    END
+  END A
+END macro_pin_escape
+
+END LIBRARY
