@@ -311,12 +311,24 @@ export class SchematicWidget {
     syncCone(detail = {}) {
         const faninEl = this.controls.querySelector('#schematic-fanin-depth');
         const fanoutEl = this.controls.querySelector('#schematic-fanout-depth');
-        if (faninEl && detail.fanin_depth !== undefined) {
-            faninEl.value = detail.fanin_depth;
-        }
-        if (fanoutEl && detail.fanout_depth !== undefined) {
-            fanoutEl.value = detail.fanout_depth;
-        }
+        // The two views read a depth differently: the timing cone treats 0 as
+        // unlimited and can have a direction switched off entirely, while
+        // handleSchematicCone expands while d < depth, so 0 means "no
+        // expansion".  Copying the number across verbatim turns the default
+        // full cone into a target-only schematic.  Translate instead: a
+        // disabled direction is 0, and unlimited becomes this control's
+        // maximum — the server caps the cone at kMaxConeInsts regardless.
+        const apply = (el, enabled, depth) => {
+            if (!el) return;
+            const max = parseInt(el.max, 10) || 10;
+            if (enabled === false) {
+                el.value = 0;
+            } else if (depth !== undefined) {
+                el.value = depth > 0 ? Math.min(depth, max) : max;
+            }
+        };
+        apply(faninEl, detail.fanin, detail.fanin_depth);
+        apply(fanoutEl, detail.fanout, detail.fanout_depth);
         this.refresh();
         if (this.appState.focusComponent) {
             this.appState.focusComponent('SchematicWidget');

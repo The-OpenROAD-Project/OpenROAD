@@ -326,6 +326,11 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // User text labels (2.12).  On by default like the Qt GUI's Misc/"Labels",
+  // which gates RenderThread::drawLabels — and so gates them in Qt's
+  // save_image too, since that renders through the same path.
+  bool labels = true;
+
   // Debug
   bool debug = false;
 

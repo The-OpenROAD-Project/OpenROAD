@@ -3,9 +3,13 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
 import {
-    canonicalizeCell, canonicalizeForSkin, scopeCssSelector,
+    canonicalizeCell, canonicalizeForSkin, scopeCssSelector, SchematicWidget,
 } from '../../src/schematic-widget.js';
+
+const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+globalThis.document = dom.window.document;
 
 // Helper: a server-style cell object.
 function cell(extra) {
@@ -260,4 +264,58 @@ describe('scopeCssSelector', () => {
                scopeCssSelector('div .schematic-widget', SCOPE),
                '.schematic-widget div .schematic-widget');
        });
+});
+
+
+// syncCone only reads `detail` and writes the two depth inputs, so exercise it
+// on a stand-in rather than building a whole widget (which needs Leaflet and a
+// live socket).
+describe('SchematicWidget.syncCone', () => {
+    function makeStub() {
+        const controls = document.createElement('div');
+        controls.innerHTML =
+            '<input id="schematic-fanin-depth"  type="number" value="1" min="0" max="10">' +
+            '<input id="schematic-fanout-depth" type="number" value="1" min="0" max="10">';
+        const stub = {
+            controls,
+            refreshed: 0,
+            refresh() { this.refreshed++; },
+            appState: {},
+        };
+        return stub;
+    }
+    const depths = (s) => [
+        s.controls.querySelector('#schematic-fanin-depth').value,
+        s.controls.querySelector('#schematic-fanout-depth').value,
+    ];
+
+    it('translates the timing cone\'s "0 = unlimited" to this view\'s max', () => {
+        const s = makeStub();
+        // The timing cone panel's own default: both directions on, both
+        // depths 0 meaning unlimited.  Copied verbatim this used to mean "do
+        // not expand", collapsing the schematic to the target instance.
+        SchematicWidget.prototype.syncCone.call(s, {
+            inst_name: 'b0', fanin: true, fanout: true,
+            fanin_depth: 0, fanout_depth: 0,
+        });
+        assert.deepEqual(depths(s), ['10', '10']);
+        assert.equal(s.refreshed, 1);
+    });
+
+    it('zeroes a direction the timing cone has switched off', () => {
+        const s = makeStub();
+        SchematicWidget.prototype.syncCone.call(s, {
+            inst_name: 'b0', fanin: false, fanout: true, fanout_depth: 3,
+        });
+        assert.deepEqual(depths(s), ['0', '3']);
+    });
+
+    it('passes a finite depth through, clamped to the control maximum', () => {
+        const s = makeStub();
+        SchematicWidget.prototype.syncCone.call(s, {
+            inst_name: 'b0', fanin: true, fanout: true,
+            fanin_depth: 2, fanout_depth: 50,
+        });
+        assert.deepEqual(depths(s), ['2', '10']);
+    });
 });

@@ -299,9 +299,15 @@ export class TimingWidget {
             this._renderConeStatus(res);
             if (this._coneSyncSchematic.checked && inst) {
                 // Web-only: mirror the cone in the schematic SVG view.
+                // Carry the direction flags too: the schematic has no notion
+                // of a disabled direction, so without them an unchecked
+                // Fanin/Fanout still expands there.  Depths keep this
+                // widget's "0 = unlimited" meaning; syncCone translates.
                 document.dispatchEvent(new CustomEvent('openroad-cone-sync', {
                     detail: {
                         inst_name: inst,
+                        fanin: req.fanin,
+                        fanout: req.fanout,
                         fanin_depth: req.fanin_depth,
                         fanout_depth: req.fanout_depth,
                     },

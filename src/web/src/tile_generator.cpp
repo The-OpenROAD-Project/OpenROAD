@@ -226,6 +226,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"special_nets",       &TileVisibility::special_nets,       true},
     {"srouting_segments",  &TileVisibility::srouting_segments,  true},
     {"srouting_vias",      &TileVisibility::srouting_vias,      true},
+    {"labels",             &TileVisibility::labels,             true},
     {"pins",               &TileVisibility::pins,               true},
     {"pin_markers",        &TileVisibility::pin_markers,        true},
     {"pin_names",          &TileVisibility::pin_names,          true},
@@ -4641,8 +4642,11 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
       = saveImageLayerOrder(vis, getLayers());
 
   // Snapshot the user labels once (locks labels_mutex_ + copies) instead of
-  // per tile — the set is identical for every tile in the image.
-  const std::vector<TextLabel> labels = labelsForDraw();
+  // per tile — the set is identical for every tile in the image.  Skipped
+  // when Labels is off, so a saved image can reproduce a view with them
+  // hidden; Qt gates its own drawLabels the same way.
+  const std::vector<TextLabel> labels
+      = vis.labels ? labelsForDraw() : std::vector<TextLabel>{};
 
   // Render each tile, compositing all layers.
   for (int ty = ty_min; ty <= ty_max; ++ty) {
