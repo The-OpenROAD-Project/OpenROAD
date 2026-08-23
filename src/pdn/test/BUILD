@@ -47,6 +47,7 @@ COMPULSORY_TESTS = [
     "core_grid_no_trim",
     "core_grid_obstruction",
     "core_grid_offset_strap",
+    "core_grid_ring_on_pin_layer",
     "core_grid_single_pin",
     "core_grid_snap",
     "core_grid_split_cuts",

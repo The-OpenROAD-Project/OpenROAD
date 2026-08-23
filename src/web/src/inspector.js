@@ -134,6 +134,13 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             select.insertBefore(opt, select.firstChild);
         }
         select.addEventListener('change', () => {
+            if (data.onPropertyChange) {
+                // Client-side (ruler, label): same string contract as the
+                // contentEditable path, so the handler needs no select-specific
+                // case.
+                data.onPropertyChange(prop.name, select.value);
+                return;
+            }
             if (prop.editor.type === 'bool') {
                 data.onPropertyEdit(prop, { value: select.value === 'True' });
             } else {
@@ -460,12 +467,12 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 if (data.bbox && app.map && app.designScale) {
                     const [x1, y1, x2, y2] = data.bbox;
                     if (data.type !== 'Inst') {
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
                     if (data.selection_count > 1) {
                         animateSelection(data.bbox);
                     } else {
-                        pulseHighlight(data.bbox);
+                        pulseHighlight(data.bbox, data.type);
                     }
                 }
                 // Redraw tiles to restore selection-set highlights.
@@ -514,9 +521,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                     // For non-instance objects, show dashed bbox outline
                     // (instances get the yellow tile-based highlight instead)
                     if (data.type !== 'Inst') {
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    pulseHighlight(data.bbox, data.type);
                 }
                 // Refresh overlay to update instance highlight
                 refreshOverlay();
@@ -558,9 +565,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 if (data.bbox && app.map && app.designScale) {
                     if (data.type !== 'Inst') {
                         const [x1, y1, x2, y2] = data.bbox;
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    pulseHighlight(data.bbox, data.type);
                 }
                 refreshOverlay();
             })
@@ -570,10 +577,15 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             });
     }
 
-    function highlightBBox(x1, y1, x2, y2) {
+    function highlightBBox(x1, y1, x2, y2, type) {
         if (app.highlightRect) {
             app.map.removeLayer(app.highlightRect);
             app.highlightRect = null;
+        }
+        // A net's bbox spans its whole extent, which is distracting; the net's
+        // trace is already highlighted via the overlay, so skip the rectangle.
+        if (type === 'Net') {
+            return;
         }
         const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY);
         // Always build the outline; only attach it while the "Highlight
@@ -592,7 +604,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     // animation.  The pulse is a filled rectangle that fades in and out
     // several times, then removes itself.
     let pulseLayer = null;
-    function pulseHighlight(bbox) {
+    function pulseHighlight(bbox, type) {
         if (!bbox || !app.map || !app.designScale) return;
         // Clear any pulse in flight before honoring the toggle, so a call
         // while highlighting is off doesn't leave a stale pulse behind.
@@ -605,6 +617,8 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         if (app.visibility && app.visibility.highlight_selected === false) {
             return;
         }
+        // A net's bbox spans the whole net; don't pulse a giant rectangle.
+        if (type === 'Net') return;
         const [x1, y1, x2, y2] = bbox;
         const bounds = dbuRectToBounds(
             x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
@@ -832,10 +846,12 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         row.appendChild(valEl);
 
         // Editable property.  Choice editors (list/bool) render a select;
-        // string/number editors (and the client-side ruler path, which
-        // supplies its own onPropertyChange) make the value contentEditable
-        // with Enter/Escape keys.
-        const isChoice = prop.editable && data && data.onPropertyEdit
+        // string/number editors make the value contentEditable with
+        // Enter/Escape keys.  Client-side properties (rulers, labels) route
+        // through onPropertyChange and server-backed ones through
+        // onPropertyEdit, but either can offer a choice list.
+        const isChoice = prop.editable && data
+            && (data.onPropertyEdit || data.onPropertyChange)
             && prop.editor
             && (prop.editor.type === 'list' || prop.editor.type === 'bool');
         if (isChoice && prop.value_select_id === undefined) {

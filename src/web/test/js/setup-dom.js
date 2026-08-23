@@ -9,6 +9,7 @@ const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
 globalThis.document = dom.window.document;
 globalThis.window = dom.window;
 globalThis.Event = dom.window.Event;
+globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.HTMLCanvasElement = dom.window.HTMLCanvasElement;
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);

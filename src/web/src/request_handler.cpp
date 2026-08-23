@@ -3,6 +3,8 @@
 
 #include "request_handler.h"
 
+#include <fnmatch.h>
+
 #include <algorithm>
 #include <any>
 #include <cmath>
@@ -138,6 +140,23 @@ void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 {
   std::string s = boost::json::serialize(v);
   resp.payload.assign(s.begin(), s.end());
+}
+
+// Read a JSON number as a double, accepting the integer kinds too.  JS
+// serializes whole numbers without a decimal point (5.0 -> "5"), so Boost.JSON
+// parses them as int64/uint64 and value::as_double() would throw.
+double jsonToDouble(const boost::json::value& v)
+{
+  if (v.is_double()) {
+    return v.get_double();
+  }
+  if (v.is_int64()) {
+    return static_cast<double>(v.get_int64());
+  }
+  if (v.is_uint64()) {
+    return static_cast<double>(v.get_uint64());
+  }
+  throw std::runtime_error("value is not a number");
 }
 
 }  // namespace
@@ -786,6 +805,31 @@ static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
   }
 }
 
+// Report whether the selection set contains any instance / any net, so the
+// frontend context menu can enable/disable items by type (mirrors the Qt
+// LayoutViewer::updateContextMenuItems + Gui::anyObjectInSet).
+static void addSelectionTypeFlags(boost::json::object& root,
+                                  const gui::SelectionSet& selection)
+{
+  bool has_inst = false;
+  bool has_net = false;
+  for (const auto& s : selection) {
+    if (!s) {
+      continue;
+    }
+    if (s.isInst()) {
+      has_inst = true;
+    } else if (s.isNet()) {
+      has_net = true;
+    }
+    if (has_inst && has_net) {
+      break;
+    }
+  }
+  root["sel_has_inst"] = has_inst;
+  root["sel_has_net"] = has_net;
+}
+
 // Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
 // Expands the selection with SIGNAL nets attached to the selected
 // instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
@@ -936,15 +980,14 @@ static void setSelectionSetHighlights(SessionState& state)
 // Rebuild the per-group overlay shapes from the group members.  Colors
 // come from the Qt GUI's palette (gui::Painter::kHighlightColors,
 // translucent fill); filled=true reuses the DRC/timing colored-rect
-// rendering (blend fill + solid outline).  Polygonal highlight shapes
-// fall back to their bounding rects — groups typically hold insts/nets,
-// whose highlight() emits rects.  Goes through appendHighlightShapes, not
-// sel.highlight() directly, so a group member honours "Flywires only" the
+// rendering (blend fill + solid outline).  Goes through appendHighlightShapes,
+// not sel.highlight() directly, so a group member honours "Flywires only" the
 // same way the current selection does.  Requires state.selection_mutex and
 // the STA lock (sel.highlight() calls descriptor code).
 static void rebuildHighlightGroupShapesLocked(SessionState& state)
 {
   state.highlight_group_rects.clear();
+  state.highlight_group_polys.clear();
   state.highlight_group_lines.clear();
   for (int group = 0; group < gui::kNumHighlightSet; ++group) {
     if (state.highlight_groups[group].empty()) {
@@ -968,10 +1011,7 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
             {.rect = rect, .color = color, .layer = "", .filled = true});
       }
       for (const auto& poly : polys) {
-        state.highlight_group_rects.push_back({.rect = poly.getEnclosingRect(),
-                                               .color = color,
-                                               .layer = "",
-                                               .filled = true});
+        state.highlight_group_polys.push_back({.poly = poly, .color = color});
       }
       // Members whose highlight() draws lines (e.g. unrouted nets) would
       // otherwise be invisible in the overlay; tint them with the group.
@@ -1012,6 +1052,7 @@ bool consumeStaleSelection(SessionState& state)
       members.clear();
     }
     state.highlight_group_rects.clear();
+    state.highlight_group_polys.clear();
     state.highlight_group_lines.clear();
   }
   {
@@ -1446,6 +1487,16 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectFanoutBin(req, state);
         });
+  d.add("select_net_length_bin",
+        WebSocketRequest::kSelectNetLengthBin,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelectNetLengthBin(req, state);
+        });
+  d.add("find",
+        WebSocketRequest::kFind,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleFind(req, state);
+        });
   d.add("set_route_guides",
         WebSocketRequest::kSetRouteGuides,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -1455,6 +1506,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kGet3DData,
         [this](const WebSocketRequest& req, SessionState&) {
           return handleGet3DData(req);
+        });
+  d.add("context_action",
+        WebSocketRequest::kContextAction,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleContextAction(req, state);
         });
 }
 
@@ -1480,6 +1536,9 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
                          arrayAsStringSet(req.json.at("visible_layers")));
 
     const bool add_to_selection = jsonOr(req.json, "add_to_selection", false);
+    // Right-click (context menu) select: only replace the selection when the
+    // cursor is over a NOT-already-selected object; otherwise keep it.
+    const bool context = jsonOr(req.json, "context", false);
     const bool show_connectivity = jsonOr(req.json, "show_connectivity", false);
 
     // STA's highlight() and getProperties() are not thread-safe;
@@ -1560,8 +1619,17 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         if (inspected_sel) {
           state.selection_itr = state.selection_set.insert(inspected_sel).first;
         }
+      } else if (context
+                 && (!inspected_sel
+                     || state.selection_set.contains(inspected_sel))) {
+        // Right-click on empty space or on an already-selected object: keep the
+        // current selection so the context menu operates on it.
+        if (inspected_sel) {
+          state.selection_itr = state.selection_set.find(inspected_sel);
+        }
       } else {
-        // Normal click: replace selection set.
+        // Normal click, or a context click on a new (unselected) object:
+        // replace the selection set.
         state.selection_set.clear();
         if (inspected_sel) {
           state.selection_set.insert(inspected_sel);
@@ -1577,19 +1645,288 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
 
       // Highlight all items in the selection set.
       setSelectionSetHighlights(state);
-      runDeselectAction(state.current_inspected, inspected_sel);
-      state.current_inspected = inspected_sel;
+      // Keep the current inspected object on an empty context click: the menu
+      // has to keep describing what the user last inspected.
+      if (inspected_sel || !context) {
+        runDeselectAction(state.current_inspected, inspected_sel);
+        state.current_inspected = inspected_sel;
+      }
 
       root["selection_count"]
           = static_cast<int64_t>(state.selection_set.size());
       root["selection_index"] = static_cast<int64_t>(
           selectionIteratorPosition(state.selection_set, state.selection_itr));
+      addSelectionTypeFlags(root, state.selection_set);
     }
 
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// ── Context-menu "Select →" actions ───────────────────────────────────────
+//
+// Mirror the Qt GUI's LayoutViewer "Select →" context menu, operating on the
+// session's current selection set.  Connected-object traversal replicates
+// MainWindow::selectHighlightConnected{Insts,Nets,BufferTrees}
+// (mainWindow.cpp).
+
+namespace {
+
+// True if `inst` is a buffer cell (per liberty).  When `include_inverters` is
+// set, single-input inverters also count, so buffer-tree traversal follows
+// inverter-based repeater chains (a superset of the Qt behavior, opt-in).
+bool isRepeaterInst(odb::dbInst* inst, sta::dbSta* sta, bool include_inverters)
+{
+  if (inst == nullptr || sta == nullptr) {
+    return false;
+  }
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(inst->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  return lib_cell->isBuffer() || (include_inverters && lib_cell->isInverter());
+}
+
+// Walk the buffer tree rooted at `net`, collecting every net and buffer inst
+// reachable by passing through buffer (optionally inverter) cells.  Mirrors
+// gui::BufferTree::populate without depending on the gui module's private
+// BufferTree type.
+void collectBufferTree(odb::dbNet* net,
+                       sta::dbSta* sta,
+                       bool include_inverters,
+                       odb::PtrSet<odb::dbNet>& nets,
+                       odb::PtrSet<odb::dbInst>& insts)
+{
+  if (net == nullptr || nets.contains(net)) {
+    return;
+  }
+  nets.insert(net);
+  for (auto* iterm : net->getITerms()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (!isRepeaterInst(inst, sta, include_inverters)) {
+      continue;
+    }
+    insts.insert(inst);
+    for (auto* next : inst->getITerms()) {
+      if (!next->getSigType().isSupply()) {
+        collectBufferTree(next->getNet(), sta, include_inverters, nets, insts);
+      }
+    }
+  }
+}
+
+// Collect the objects connected to the current selection, per `action`.
+gui::SelectionSet computeConnectedSet(const std::string& action,
+                                      const gui::SelectionSet& selection,
+                                      const bool output,
+                                      const bool input,
+                                      const bool include_inverters,
+                                      sta::dbSta* sta)
+{
+  auto* registry = gui::DescriptorRegistry::instance();
+  gui::SelectionSet result;
+
+  const bool want_insts = action.find("insts") != std::string::npos;
+  const bool want_buffer_trees
+      = action.find("buffer_trees") != std::string::npos;
+  const bool want_nets
+      = !want_buffer_trees && action.find("nets") != std::string::npos;
+
+  for (const auto& sel : selection) {
+    if (!sel) {
+      continue;
+    }
+    if (want_insts && sel.isNet()) {
+      // "Connected Insts": from selected net(s), select the owning instances
+      // of the net's terminals (deduped by the SelectionSet) so they show as
+      // bboxes, matching the label.
+      auto* net = std::any_cast<odb::dbNet*>(sel.getObject());
+      if (net == nullptr) {
+        continue;
+      }
+      for (auto* iterm : net->getITerms()) {
+        odb::dbInst* inst = iterm->getInst();
+        if (inst != nullptr) {
+          result.insert(registry->makeSelected(inst));
+        }
+      }
+    } else if (want_nets && sel.isInst()) {
+      // "Output/Input/All Nets": from selected inst(s), select signal nets by
+      // pin direction (mirrors MainWindow::selectHighlightConnectedNets).
+      auto* inst = std::any_cast<odb::dbInst*>(sel.getObject());
+      if (inst == nullptr) {
+        continue;
+      }
+      for (auto* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (net == nullptr || net->getSigType() != odb::dbSigType::SIGNAL) {
+          continue;
+        }
+        const auto dir = iterm->getIoType();
+        if (output
+            && (dir == odb::dbIoType::OUTPUT || dir == odb::dbIoType::INOUT)) {
+          result.insert(registry->makeSelected(net));
+        }
+        if (input
+            && (dir == odb::dbIoType::INPUT || dir == odb::dbIoType::INOUT)) {
+          // TODO: the Qt GUI selects DbNetDescriptor::NetWithSink{net, iterm}
+          // so the input flightline points at this specific sink pin.  That
+          // descriptor lives in a private gui header; until it is exposed the
+          // web selects the plain net (all sinks highlighted).
+          result.insert(registry->makeSelected(net));
+        }
+      }
+    } else if (want_buffer_trees && sel.isInst()) {
+      // "All buffer trees": from selected inst(s), expand the buffer tree(s)
+      // reachable through its signal pins.
+      auto* inst = std::any_cast<odb::dbInst*>(sel.getObject());
+      if (inst == nullptr) {
+        continue;
+      }
+      odb::PtrSet<odb::dbNet> tree_nets;
+      odb::PtrSet<odb::dbInst> tree_insts;
+      for (auto* iterm : inst->getITerms()) {
+        const auto dir = iterm->getIoType();
+        if (iterm->getSigType().isSupply()
+            || (dir != odb::dbIoType::INPUT && dir != odb::dbIoType::OUTPUT
+                && dir != odb::dbIoType::INOUT)) {
+          continue;
+        }
+        odb::dbNet* net = iterm->getNet();
+        if (net == nullptr || net->getSigType() != odb::dbSigType::SIGNAL) {
+          continue;
+        }
+        collectBufferTree(net, sta, include_inverters, tree_nets, tree_insts);
+      }
+      // Select the tree's nets and buffer instances via their already
+      // registered dbNet/dbInst descriptors (no gui::BufferTree dependency).
+      for (auto* tree_net : tree_nets) {
+        result.insert(registry->makeSelected(tree_net));
+      }
+      for (auto* tree_inst : tree_insts) {
+        result.insert(registry->makeSelected(tree_inst));
+      }
+    }
+  }
+  return result;
+}
+
+}  // namespace
+
+WebSocketResponse SelectHandler::handleContextAction(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const std::string action(req.json.at("action").as_string());
+    const bool output = jsonOr(req.json, "output", false);
+    const bool input = jsonOr(req.json, "input", false);
+    const bool include_inverters = jsonOr(req.json, "include_inverters", false);
+    const int group = static_cast<int>(jsonOr(req.json, "group", int64_t{0}));
+    if (group < 0 || group >= gui::kNumHighlightSet) {
+      throw std::runtime_error("invalid highlight group");
+    }
+
+    // STA traversal and makeSelected() are not thread-safe; serialize with
+    // other STA callers (select, timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+
+    // Reset helpers, composed by clear_all.
+    auto clearSelection = [&]() {
+      state.selection_set.clear();
+      state.selection_itr = state.selection_set.end();
+      state.current_inspected = gui::Selected();
+      state.navigation_history.clear();
+      clearSelectionHighlights(state);
+    };
+    auto clearHighlightGroups = [&]() {
+      for (auto& members : state.highlight_groups) {
+        members.clear();
+      }
+      rebuildHighlightGroupShapesLocked(state);
+    };
+    auto clearFocusNets = [&]() {
+      std::lock_guard<std::mutex> flock(state.focus_nets_mutex);
+      state.focus_net_ids.clear();
+    };
+    auto clearRouteGuides = [&]() {
+      std::lock_guard<std::mutex> rlock(state.route_guides_mutex);
+      state.route_guide_net_ids.clear();
+    };
+
+    int connected_count = 0;
+    if (action.starts_with("select_") || action.starts_with("highlight_")) {
+      // Both branches resolve the same connected set (computeConnectedSet keys
+      // off the "insts"/"nets"/"buffer_trees" substring, not the prefix).
+      const gui::SelectionSet connected
+          = computeConnectedSet(action,
+                                state.selection_set,
+                                output,
+                                input,
+                                include_inverters,
+                                gen_->getSta());
+      if (action.starts_with("select_")) {
+        for (const auto& s : connected) {
+          if (state.selection_set.insert(s).second) {
+            ++connected_count;
+          }
+        }
+        state.selection_itr = state.selection_set.begin();
+        setSelectionSetHighlights(state);
+      } else {
+        // An object lives in at most one group, so a re-highlight moves it.
+        for (const auto& s : connected) {
+          if (!s) {
+            continue;
+          }
+          ++connected_count;
+          removeFromHighlightGroupsLocked(state, s);
+          state.highlight_groups[group].insert(s);
+        }
+        rebuildHighlightGroupShapesLocked(state);
+      }
+    } else if (action == "clear_highlights") {
+      clearHighlightGroups();
+    } else if (action == "clear_selections") {
+      clearSelection();
+    } else if (action == "clear_focus_nets") {
+      clearFocusNets();
+    } else if (action == "clear_route_guides") {
+      clearRouteGuides();
+    } else if (action == "clear_all") {
+      clearSelection();
+      clearHighlightGroups();
+      clearFocusNets();
+      clearRouteGuides();
+    } else {
+      throw std::runtime_error("unknown context action: " + action);
+    }
+
+    boost::json::object root;
+    root["ok"] = true;
+    // connected_count == 0 lets the frontend surface "nothing connected —
+    // select an instance/net first" (the Qt GUI is silent in this case).
+    root["connected_count"] = static_cast<int64_t>(connected_count);
+    root["selection_count"] = static_cast<int64_t>(state.selection_set.size());
+    addSelectionTypeFlags(root, state.selection_set);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("context_action error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -2062,6 +2399,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
           members.clear();
         }
         state.highlight_group_rects.clear();
+        state.highlight_group_polys.clear();
         state.highlight_group_lines.clear();
       } else if (executed && next != sel) {
         runDeselectAction(sel, next);
@@ -2816,34 +3154,219 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
     }
 
     boost::json::object root;
-    root["count"] = static_cast<int>(matched.size());
+    selectMatchedNets(matched, state, root, use_dbu);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
 
-    // Selecting/highlighting every net in a densely populated bin (tens of
-    // thousands of nets in a large design) is prohibitively expensive and can
-    // hang or exhaust memory. Cap the selection so navigation stays usable
-    // while reporting the true bin count above.
-    constexpr size_t kMaxFanoutSelection = 1000;
-    const bool truncated = matched.size() > kMaxFanoutSelection;
-    if (truncated) {
-      matched.resize(kMaxFanoutSelection);
+void SelectHandler::selectMatchedNets(std::vector<odb::dbNet*>& matched,
+                                      SessionState& state,
+                                      boost::json::object& root,
+                                      const bool use_dbu)
+{
+  root["count"] = static_cast<int>(matched.size());
+
+  // Selecting/highlighting every net in a densely populated bin (tens of
+  // thousands of nets in a large design) is prohibitively expensive and can
+  // hang or exhaust memory. Cap the selection so navigation stays usable
+  // while reporting the true bin count above.
+  constexpr size_t kMaxNetSelection = 1000;
+  const bool truncated = matched.size() > kMaxNetSelection;
+  if (truncated) {
+    matched.resize(kMaxNetSelection);
+  }
+  root["truncated"] = truncated;
+  root["selection_limit"] = static_cast<int>(kMaxNetSelection);
+
+  if (matched.empty()) {
+    return;
+  }
+
+  auto* registry = gui::DescriptorRegistry::instance();
+  gui::SelectionSet new_selection;
+  for (auto* n : matched) {
+    new_selection.insert(registry->makeSelected(n));
+  }
+  gui::Selected first = registry->makeSelected(matched.front());
+
+  int hl_group = -1;
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    hl_group = highlightGroupOfLocked(state, first);
+  }
+  std::vector<gui::Selected> new_selectables;
+  writeInspectPayload(root,
+                      first,
+                      new_selectables,
+                      /*can_navigate_back=*/false,
+                      use_dbu,
+                      gen_->getLogger(),
+                      hl_group);
+  {
+    std::lock_guard<std::mutex> lock(state.selectables_mutex);
+    state.selectables = std::move(new_selectables);
+  }
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    state.hover_rects.clear();
+    state.timing_rects.clear();
+    state.timing_lines.clear();
+    state.navigation_history.clear();
+
+    state.selection_set = std::move(new_selection);
+    state.selection_itr = state.selection_set.find(first);
+    if (state.selection_itr == state.selection_set.end()) {
+      state.selection_itr = state.selection_set.begin();
     }
-    root["truncated"] = truncated;
-    root["selection_limit"] = static_cast<int>(kMaxFanoutSelection);
+    // Highlight every selected net in the layout.
+    setSelectionSetHighlights(state);
+    runDeselectAction(state.current_inspected, first);
+    state.current_inspected = first;
 
-    if (!matched.empty()) {
-      auto* registry = gui::DescriptorRegistry::instance();
-      gui::SelectionSet new_selection;
-      for (auto* n : matched) {
-        new_selection.insert(registry->makeSelected(n));
+    root["selection_count"] = static_cast<int64_t>(state.selection_set.size());
+    root["selection_index"] = static_cast<int64_t>(
+        selectionIteratorPosition(state.selection_set, state.selection_itr));
+  }
+}
+
+WebSocketResponse SelectHandler::handleSelectNetLengthBin(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    consumeStaleSelection(state);
+    // Bin edges arrive in the histogram's display units (µm or DBU); convert
+    // to DBU to compare against netHpwlDbu().
+    const double lower = jsonToDouble(req.json.at("lower"));
+    const double upper = jsonToDouble(req.json.at("upper"));
+
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("no design loaded");
+    }
+
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    const double dbu_per_micron = std::max(1, block->getDbUnitsPerMicron());
+    const double to_dbu = use_dbu ? 1.0 : dbu_per_micron;
+    const double lower_dbu = lower * to_dbu;
+    const double upper_dbu = upper * to_dbu;
+
+    std::vector<odb::dbNet*> matched;
+    for (odb::dbNet* net : block->getNets()) {
+      if (net->getSigType().isSupply()) {
+        continue;
       }
-      gui::Selected first = registry->makeSelected(matched.front());
+      const double hpwl = netHpwlDbu(net);
+      if (hpwl >= lower_dbu && hpwl < upper_dbu) {
+        matched.push_back(net);
+      }
+    }
 
+    boost::json::object root;
+    selectMatchedNets(matched, state, root, use_dbu);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Find objects by name/glob (mirrors the Qt FindObjectDialog + Gui::select):
+// obj_type in {inst, net, port}; pattern is a Unix glob (*, ?, []) or an exact
+// name; selects all matches and returns their union bbox for auto-zoom.
+WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
+                                            SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const std::string obj_type(req.json.at("obj_type").as_string());
+    const std::string pattern(req.json.at("pattern").as_string());
+    const bool match_case = jsonOr(req.json, "match_case", false);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+
+    odb::dbBlock* block = gen_->getBlock();
+    if (block == nullptr) {
+      throw std::runtime_error("no design loaded");
+    }
+
+    // STA highlight()/getProperties() and makeSelected() are not thread-safe.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
+
+    const int fn_flags = match_case ? 0 : FNM_CASEFOLD;
+    auto matches = [&](const char* name) {
+      return name != nullptr && fnmatch(pattern.c_str(), name, fn_flags) == 0;
+    };
+
+    auto* registry = gui::DescriptorRegistry::instance();
+    gui::SelectionSet found;
+    constexpr size_t kMaxFindSelection = 1000;
+    int total = 0;
+    auto collect = [&](auto&& range) {
+      for (auto* obj : range) {
+        if (matches(obj->getConstName())) {
+          ++total;
+          if (found.size() < kMaxFindSelection) {
+            found.insert(registry->makeSelected(obj));
+          }
+        }
+      }
+    };
+    if (obj_type == "inst") {
+      collect(block->getInsts());
+    } else if (obj_type == "net") {
+      collect(block->getNets());
+    } else if (obj_type == "port") {
+      collect(block->getBTerms());
+    } else {
+      throw std::runtime_error("unknown obj_type: " + obj_type);
+    }
+
+    boost::json::object root;
+    root["count"] = static_cast<int64_t>(total);
+    root["truncated"] = total > static_cast<int>(kMaxFindSelection);
+
+    if (!found.empty()) {
+      // Union bbox of all matched objects (for the frontend auto-zoom).
+      odb::Rect uni;
+      uni.mergeInit();
+      for (const auto& sel : found) {
+        odb::Rect b;
+        if (sel && sel.getBBox(b)) {
+          uni.merge(b);
+        }
+      }
+      if (!uni.isInverted()) {
+        boost::json::array bbox;
+        bbox.emplace_back(uni.xMin());
+        bbox.emplace_back(uni.yMin());
+        bbox.emplace_back(uni.xMax());
+        bbox.emplace_back(uni.yMax());
+        root["bbox"] = std::move(bbox);
+      }
+
+      const gui::Selected first = *found.begin();
+      std::vector<gui::Selected> new_selectables;
       int hl_group = -1;
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
         hl_group = highlightGroupOfLocked(state, first);
       }
-      std::vector<gui::Selected> new_selectables;
       writeInspectPayload(root,
                           first,
                           new_selectables,
@@ -2861,29 +3384,48 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
         state.timing_rects.clear();
         state.timing_lines.clear();
         state.navigation_history.clear();
-
-        state.selection_set = std::move(new_selection);
-        state.selection_itr = state.selection_set.find(first);
-        if (state.selection_itr == state.selection_set.end()) {
-          state.selection_itr = state.selection_set.begin();
+        // Qt parity: Gui::select() hands its matches to
+        // MainWindow::addSelected, so a search ADDS to the selection rather
+        // than replacing it -- successive searches accumulate, and a
+        // selection the user built by hand survives one.  "Clear ->
+        // Selections" is how you start over.
+        // The cycling iterator is taken from the insert of the FIRST match,
+        // so prev/next start from what was just found rather than from the
+        // merged set's first element.  Kept from the insert rather than a
+        // later find(): `first` is already in the set by then, and re-finding
+        // it would only repeat the comparisons the insert has done.
+        auto first_itr = state.selection_set.end();
+        for (const auto& sel : found) {
+          const auto [itr, inserted] = state.selection_set.insert(sel);
+          if (first_itr == state.selection_set.end()) {
+            first_itr = itr;  // `found` is ordered, so this is `first`
+          }
         }
-        // Highlight every selected net in the layout.
+        state.selection_itr = first_itr != state.selection_set.end()
+                                  ? first_itr
+                                  : state.selection_set.begin();
         setSelectionSetHighlights(state);
         runDeselectAction(state.current_inspected, first);
         state.current_inspected = first;
-
         root["selection_count"]
             = static_cast<int64_t>(state.selection_set.size());
         root["selection_index"]
             = static_cast<int64_t>(selectionIteratorPosition(
                 state.selection_set, state.selection_itr));
       }
+    } else {
+      root["selection_count"] = static_cast<int64_t>(0);
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      addSelectionTypeFlags(root, state.selection_set);
     }
 
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
-    const std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("find error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -3742,6 +4284,11 @@ void TimingHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTimingHighlight(req, state);
         });
+  d.add("timing_cone",
+        WebSocketRequest::kTimingCone,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTimingCone(req, state);
+        });
   d.add("slack_histogram",
         WebSocketRequest::kSlackHistogram,
         [this](const WebSocketRequest& req, SessionState&) {
@@ -3751,6 +4298,11 @@ void TimingHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kFanoutHistogram,
         [this](const WebSocketRequest& req, SessionState&) {
           return handleFanoutHistogram(req);
+        });
+  d.add("net_length_histogram",
+        WebSocketRequest::kNetLengthHistogram,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleNetLengthHistogram(req);
         });
   d.add("chart_filters",
         WebSocketRequest::kChartFilters,
@@ -3848,6 +4400,187 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
   return resp;
 }
 
+namespace {
+
+// Center of a cone pin in DBU: ITerm average pin location (fallback: instance
+// center), or the first BPin box center for a BTerm.
+odb::Point conePinCenter(const TimingConeNode& node)
+{
+  if (node.iterm) {
+    int x = 0;
+    int y = 0;
+    if (node.iterm->getAvgXY(&x, &y)) {
+      return {x, y};
+    }
+    const odb::Rect bbox = node.iterm->getInst()->getBBox()->getBox();
+    return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
+  }
+  if (node.bterm) {
+    for (odb::dbBPin* bpin : node.bterm->getBPins()) {
+      const odb::Rect r = bpin->getBBox();
+      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+    }
+  }
+  return {0, 0};
+}
+
+}  // namespace
+
+WebSocketResponse TimingHandler::handleTimingCone(const WebSocketRequest& req,
+                                                  SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const bool clear = jsonOr(req.json, "clear", false);
+    const bool fanin = !clear && jsonOr(req.json, "fanin", false);
+    const bool fanout = !clear && jsonOr(req.json, "fanout", false);
+
+    std::vector<ColoredRect> new_rects;
+    std::vector<FlightLine> new_lines;
+    std::vector<TextLabel> new_labels;
+    boost::json::object out;
+    out["ok"] = true;
+
+    if (!clear && (fanin || fanout)) {
+      // Prefer an explicit pin; otherwise fall back to a representative pin of
+      // the selected instance (output pin, else first signal pin) so the cone
+      // can be triggered straight from a layout instance selection.
+      std::string pin_name = jsonOr<std::string>(req.json, "pin_name", "");
+      if (pin_name.empty()) {
+        const std::string inst_name
+            = jsonOr<std::string>(req.json, "inst_name", "");
+        odb::dbBlock* block = gen_->getBlock();
+        if (!inst_name.empty() && block != nullptr) {
+          if (odb::dbInst* inst = block->findInst(inst_name.c_str())) {
+            odb::dbITerm* chosen = nullptr;
+            for (odb::dbITerm* iterm : inst->getITerms()) {
+              if (iterm->getSigType().isSupply()) {
+                continue;
+              }
+              if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+                chosen = iterm;
+                break;
+              }
+              if (chosen == nullptr) {
+                chosen = iterm;
+              }
+            }
+            if (chosen != nullptr) {
+              pin_name = chosen->getName();
+            }
+          }
+        }
+      }
+      const int fanin_depth
+          = static_cast<int>(jsonOr<int64_t>(req.json, "fanin_depth", 0));
+      const int fanout_depth
+          = static_cast<int>(jsonOr<int64_t>(req.json, "fanout_depth", 0));
+      // color_mode "depth" colors by logic level; anything else colors by
+      // slack (the Qt-parity default).
+      const bool color_by_depth
+          = jsonOr<std::string>(req.json, "color_mode", "slack") == "depth";
+
+      TimingConeResult cone;
+      {
+        std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+        cone = timing_report_->computeTimingCone(
+            pin_name, fanin, fanout, fanin_depth, fanout_depth);
+      }
+      if (!cone.ok) {
+        resp.type = WebSocketResponse::kError;
+        const std::string err = "timing cone: " + cone.error;
+        resp.payload.assign(err.begin(), err.end());
+        return resp;
+      }
+
+      // Color ratio in [0,1] fed to the Turbo spectrum.  Slack mode mirrors the
+      // Qt renderer (worst slack → hot end); depth mode maps |level|.
+      const double slack_range = cone.max_slack - cone.min_slack;
+      int max_abs_depth = 1;
+      for (const auto& node : cone.nodes) {
+        max_abs_depth = std::max(max_abs_depth, std::abs(node.depth));
+      }
+      auto ratio_of = [&](const TimingConeNode& node) -> double {
+        if (color_by_depth) {
+          return static_cast<double>(std::abs(node.depth)) / max_abs_depth;
+        }
+        if (!cone.constrained || slack_range == 0.0 || !node.has_slack) {
+          return 0.5;
+        }
+        return 1.0 - (node.slack - cone.min_slack) / slack_range;
+      };
+
+      // Highlight each instance once, colored by its worst-slack pin.
+      // NOTE: odb deletes std::less<dbInst*>, so key on odb::PtrMap.  One hash
+      // per node via try_emplace + the returned iterator (not contains + [] ).
+      odb::PtrMap<odb::dbInst, const TimingConeNode*> worst_by_inst;
+      for (const auto& node : cone.nodes) {
+        if (node.inst == nullptr) {
+          continue;
+        }
+        auto [it, inserted] = worst_by_inst.try_emplace(node.inst, &node);
+        if (!inserted) {
+          const TimingConeNode* cur = it->second;
+          if (!cur->has_slack || (node.has_slack && node.slack < cur->slack)) {
+            it->second = &node;
+          }
+        }
+      }
+      for (const auto& [inst, node] : worst_by_inst) {
+        Color color = spectrumColor(ratio_of(*node), 150);
+        new_rects.push_back({inst->getBBox()->getBox(), color, "", true});
+      }
+
+      // Pin centers, computed once per node (conePinCenter walks iterm
+      // geometry, and a source is reused across all the sinks it drives).
+      std::vector<odb::Point> centers(cone.nodes.size());
+      for (size_t i = 0; i < cone.nodes.size(); ++i) {
+        centers[i] = conePinCenter(cone.nodes[i]);
+      }
+
+      // Flight lines source(depth L) → sink(L+1), colored by source slack, and
+      // per-pin depth labels.
+      for (size_t i = 0; i < cone.nodes.size(); ++i) {
+        const TimingConeNode& node = cone.nodes[i];
+        const odb::Point& sink = centers[i];
+        new_labels.push_back({sink,
+                              std::to_string(node.depth),
+                              Color{.r = 255, .g = 255, .b = 255, .a = 255}});
+        for (const int src_idx : node.source_indices) {
+          new_lines.push_back(
+              {centers[src_idx],
+               sink,
+               spectrumColor(ratio_of(cone.nodes[src_idx]), 255)});
+        }
+      }
+
+      out["node_count"] = static_cast<int64_t>(cone.nodes.size());
+      out["constrained"] = cone.constrained;
+      out["min_slack"] = cone.min_slack;
+      out["max_slack"] = cone.max_slack;
+      out["time_unit"] = cone.time_unit;
+      out["color_mode"] = color_by_depth ? "depth" : "slack";
+      out["max_depth"] = max_abs_depth;
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(state.cone_mutex);
+      state.cone_rects = std::move(new_rects);
+      state.cone_lines = std::move(new_lines);
+      state.cone_labels = std::move(new_labels);
+    }
+
+    writePayload(resp, out);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 WebSocketResponse TimingHandler::handleSlackHistogram(
     const WebSocketRequest& req)
 {
@@ -3856,10 +4589,19 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    // `path_groups` (array) requests a stacked per-group breakdown; the scalar
+    // `path_group` remains for the single/unfiltered case.
+    std::vector<std::string> path_groups;
+    if (auto* v = req.json.if_contains("path_groups")) {
+      for (const auto& e : v->as_array()) {
+        path_groups.emplace_back(e.as_string());
+      }
+    }
     auto histogram = timing_report_->getSlackHistogram(
         req.json.at("is_setup").as_bool(),
         jsonOr<std::string>(req.json, "path_group", ""),
-        jsonOr<std::string>(req.json, "clock_name", ""));
+        jsonOr<std::string>(req.json, "clock_name", ""),
+        path_groups);
     writePayload(resp, serializeSlackHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -3880,6 +4622,26 @@ WebSocketResponse TimingHandler::handleFanoutHistogram(
     odb::dbBlock* block = gen_->getBlock();
     auto histogram = computeFanoutHistogram(block);
     writePayload(resp, serializeFanoutHistogram(histogram));
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TimingHandler::handleNetLengthHistogram(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    auto histogram = computeNetLengthHistogram(block, use_dbu);
+    writePayload(resp, serializeNetLengthHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -4024,6 +4786,19 @@ TileHandler::TileHandler(std::shared_ptr<TileGenerator> gen)
 {
 }
 
+void TileHandler::broadcastLabelsChanged()
+{
+  if (!broadcast_fn_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "labels_changed";
+  // Carry the new set so a client can repaint from the push alone, the same
+  // shape every label response already returns.
+  msg["labels"] = gen_->labelsJson();
+  broadcast_fn_(boost::json::serialize(msg));
+}
+
 void TileHandler::registerRequests(RequestDispatcher& d)
 {
   d.add("tile",
@@ -4084,6 +4859,31 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kOverlayTile,
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleOverlayTile(req, state);
+        });
+  d.add("add_label",
+        WebSocketRequest::kAddLabel,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleAddLabel(req);
+        });
+  d.add("delete_label",
+        WebSocketRequest::kDeleteLabel,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleDeleteLabel(req);
+        });
+  d.add("update_label",
+        WebSocketRequest::kUpdateLabel,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleUpdateLabel(req);
+        });
+  d.add("clear_labels",
+        WebSocketRequest::kClearLabels,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleClearLabels(req);
+        });
+  d.add("list_labels",
+        WebSocketRequest::kListLabels,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleListLabels(req);
         });
 }
 
@@ -4362,6 +5162,7 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     std::vector<odb::Rect> rects;
     std::vector<odb::Polygon> polys;
     std::vector<ColoredRect> colored;
+    std::vector<ColoredPolygon> colored_polys;
     std::vector<FlightLine> lines;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
@@ -4384,6 +5185,25 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
           colored.end(), state.drc_rects.begin(), state.drc_rects.end());
       lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
     }
+
+    // Merge timing-cone overlay shapes (instances, flight lines, depth
+    // labels).
+    std::vector<TextLabel> labels;
+    {
+      std::lock_guard<std::mutex> lock(state.cone_mutex);
+      colored.insert(
+          colored.end(), state.cone_rects.begin(), state.cone_rects.end());
+      lines.insert(
+          lines.end(), state.cone_lines.begin(), state.cone_lines.end());
+      labels = state.cone_labels;
+    }
+
+    // Merge user text labels (2.12) unless the client hid the "Labels" group.
+    // Absent flag → draw (default visible).
+    if (jsonOr(req.json, "draw_labels", true)) {
+      std::vector<TextLabel> user_labels = gen_->labelsForDraw();
+      labels.insert(labels.end(), user_labels.begin(), user_labels.end());
+    }
     {
       // Highlight groups append last so they paint on top (the Qt GUI
       // draws drawHighlighted "always last so on top").  They are a state of
@@ -4393,6 +5213,7 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
       colored.insert(colored.end(),
                      state.highlight_group_rects.begin(),
                      state.highlight_group_rects.end());
+      colored_polys = state.highlight_group_polys;
       lines.insert(lines.end(),
                    state.highlight_group_lines.begin(),
                    state.highlight_group_lines.end());
@@ -4449,7 +5270,9 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                              has_vis_layers,
                                              vis_layers,
                                              dpr,
-                                             tile_px);
+                                             tile_px,
+                                             colored_polys,
+                                             labels);
 
     // The selection highlight the client draws over the layer tiles comes from
     // here, so the shape counts say whether a "missing" highlight was never
@@ -4459,7 +5282,7 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                "tile",
                1,
                "overlay tile: id={} z/x/y={}/{}/{} dpr={} tile_px={} rects={} "
-               "polys={} colored={} lines={} route_guide_nets={} "
+               "polys={} colored={} lines={} labels={} route_guide_nets={} "
                "flywires_only={} bytes={}",
                req.id,
                z,
@@ -4471,6 +5294,7 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                polys.size(),
                colored.size(),
                lines.size(),
+               labels.size(),
                route_guides.size(),
                flywires_only,
                resp.payload.size());
@@ -4479,6 +5303,165 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
+  return resp;
+}
+
+namespace {
+
+// Parse an optional {r,g,b,a} color object; defaults to opaque white.
+Color parseLabelColor(const boost::json::object& obj)
+{
+  Color c{.r = 255, .g = 255, .b = 255, .a = 255};
+  if (auto* v = obj.if_contains("color")) {
+    const auto& co = v->as_object();
+    c.r = static_cast<unsigned char>(jsonOr<int64_t>(co, "r", 255));
+    c.g = static_cast<unsigned char>(jsonOr<int64_t>(co, "g", 255));
+    c.b = static_cast<unsigned char>(jsonOr<int64_t>(co, "b", 255));
+    c.a = static_cast<unsigned char>(jsonOr<int64_t>(co, "a", 255));
+  }
+  return c;
+}
+
+// Common label attributes shared by add_label and update_label (name is
+// handled separately since only add auto-generates it).
+struct LabelFields
+{
+  odb::Point pos;
+  std::string text;
+  int size;
+  std::string anchor;
+  Color color;
+};
+
+LabelFields parseLabelFields(const boost::json::object& obj)
+{
+  std::string anchor = jsonOr<std::string>(obj, "anchor", "center");
+  if (anchor.empty()) {
+    anchor = "center";
+  }
+  // The Inspector offers a fixed list, so an unknown name here means a
+  // hand-written API call.  Refuse it: centring a label the caller asked to
+  // corner-anchor is a silent wrong answer.  Throwing becomes an error
+  // response via the handler's catch.
+  if (!isValidAnchor(anchor)) {
+    throw std::runtime_error("anchor not recognized: " + anchor);
+  }
+  return {.pos = odb::Point(static_cast<int>(obj.at("x").as_int64()),
+                            static_cast<int>(obj.at("y").as_int64())),
+          .text = std::string(obj.at("text").as_string()),
+          .size = static_cast<int>(jsonOr<int64_t>(obj, "size", 0)),
+          .anchor = anchor,
+          .color = parseLabelColor(obj)};
+}
+
+}  // namespace
+
+WebSocketResponse TileHandler::handleAddLabel(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const LabelFields f = parseLabelFields(req.json);
+    const std::string name = jsonOr<std::string>(req.json, "name", "");
+
+    const std::string result
+        = gen_->addLabel(f.pos, f.text, f.color, f.size, f.anchor, name);
+    boost::json::object root;
+    root["ok"] = !result.empty();
+    root["name"] = result;
+    root["labels"] = gen_->labelsJson();
+    writePayload(resp, root);
+    if (!result.empty()) {
+      broadcastLabelsChanged();
+    }
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleDeleteLabel(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const std::string name(req.json.at("name").as_string());
+    const bool ok = gen_->deleteLabel(name);
+    boost::json::object root;
+    root["ok"] = ok;
+    root["labels"] = gen_->labelsJson();
+    writePayload(resp, root);
+    if (ok) {
+      broadcastLabelsChanged();
+    }
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleUpdateLabel(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const std::string name(req.json.at("name").as_string());
+    const LabelFields f = parseLabelFields(req.json);
+
+    const bool ok
+        = gen_->updateLabel(name, f.pos, f.text, f.color, f.size, f.anchor);
+    boost::json::object root;
+    root["ok"] = ok;
+    root["labels"] = gen_->labelsJson();
+    writePayload(resp, root);
+    if (ok) {
+      broadcastLabelsChanged();
+    }
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleClearLabels(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  gen_->clearLabels();
+  boost::json::object root;
+  root["ok"] = true;
+  root["labels"] = gen_->labelsJson();
+  writePayload(resp, root);
+  broadcastLabelsChanged();
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleListLabels(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  boost::json::object root;
+  root["labels"] = gen_->labelsJson();
+  // The Inspector's Anchor picker is built from this, so the choices it
+  // offers are exactly the ones parseLabelFields will accept.  Sent with the
+  // startup list rather than hard-coded client-side, where it could drift.
+  boost::json::array anchors;
+  for (const std::string& name : anchorNames()) {
+    anchors.emplace_back(name);
+  }
+  root["anchors"] = std::move(anchors);
+  writePayload(resp, root);
   return resp;
 }
 
@@ -5410,6 +6393,8 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
           state.navigation_history.clear();
         } else {
           state.highlight_rects.push_back(bbox);
+          state.highlight_polys.clear();
+          state.highlight_lines.clear();
         }
       }
 

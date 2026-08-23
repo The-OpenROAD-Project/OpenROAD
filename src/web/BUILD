@@ -44,9 +44,13 @@ genrule(
         "src/display-controls.js",
         "src/inspector.js",
         "src/ruler.js",
+        "src/label-manager.js",
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
+        "src/context-menu.js",
+        "src/search-nav.js",
+        "src/capture.js",
         "src/title.js",
         "src/clock-tree-widget.js",
         "src/schematic-widget.js",
@@ -76,9 +80,13 @@ genrule(
           " $(location src/display-controls.js)" +
           " $(location src/inspector.js)" +
           " $(location src/ruler.js)" +
+          " $(location src/label-manager.js)" +
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/context-menu.js)" +
+          " $(location src/search-nav.js)" +
+          " $(location src/capture.js)" +
           " $(location src/title.js)" +
           " $(location src/clock-tree-widget.js)" +
           " $(location src/schematic-widget.js)" +
@@ -109,9 +117,13 @@ _WEB_ASSET_FILES = [
     "src/display-controls.js",
     "src/inspector.js",
     "src/ruler.js",
+    "src/label-manager.js",
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/menu-bar.js",
+    "src/context-menu.js",
+    "src/search-nav.js",
+    "src/capture.js",
     "src/title.js",
     "src/clock-tree-widget.js",
     "src/schematic-widget.js",

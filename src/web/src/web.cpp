@@ -5,6 +5,9 @@
 
 #include <netinet/in.h>
 
+#include <algorithm>
+#include <cctype>
+#include <charconv>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
@@ -20,6 +23,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -36,6 +40,7 @@
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
+#include "color.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -82,11 +87,200 @@ static std::vector<unsigned char> serialize_response(
 }
 
 //------------------------------------------------------------------------------
-// HTTP request handler (serves embedded static assets)
+// HTTP request handler (serves embedded static assets + image downloads)
 //------------------------------------------------------------------------------
 
+namespace {
+
+// Sanitize a client-supplied download filename before it goes into the
+// Content-Disposition header: drop directory components, keep only
+// [A-Za-z0-9._-] (replacing the rest with '_'), cap the length, and fall back
+// to a default when empty.  Prevents header injection via quotes/CRLF.
+std::string sanitizeFilename(std::string name)
+{
+  const auto slash = name.find_last_of("/\\");
+  if (slash != std::string::npos) {
+    name.erase(0, slash + 1);
+  }
+  constexpr std::size_t kMaxLen = 128;
+  if (name.size() > kMaxLen) {
+    name.resize(kMaxLen);
+  }
+  for (char& c : name) {
+    const bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9') || c == '.' || c == '_'
+                    || c == '-';
+    if (!ok) {
+      c = '_';
+    }
+  }
+  if (name.empty()) {
+    name = "layout.png";
+  }
+  return name;
+}
+
+// Parse an integer that must span the whole string_view (no trailing garbage),
+// exception-free.  Returns false on any malformed/partial input.
+template <typename T>
+bool parseIntExact(std::string_view s, T& out, int base = 10)
+{
+  const char* const first = s.data();
+  const char* const last = first + s.size();
+  const auto res = std::from_chars(first, last, out, base);
+  return res.ec == std::errc{} && res.ptr == last;
+}
+
+// Percent-decode a URL query value (e.g. the JSON `vis` payload).
+std::string urlDecode(std::string_view s)
+{
+  std::string out;
+  out.reserve(s.size());
+  for (std::size_t i = 0; i < s.size(); ++i) {
+    if (s[i] == '%' && i + 2 < s.size()) {
+      int value = 0;
+      if (parseIntExact(s.substr(i + 1, 2), value, 16)) {
+        out.push_back(static_cast<char>(value));
+        i += 2;
+        continue;
+      }
+      // Not valid hex: keep the literal '%'.
+    }
+    out.push_back(s[i] == '+' ? ' ' : s[i]);
+  }
+  return out;
+}
+
+// Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
+std::map<std::string, std::string> parseQuery(std::string_view target)
+{
+  std::map<std::string, std::string> params;
+  const auto qpos = target.find('?');
+  if (qpos == std::string_view::npos) {
+    return params;
+  }
+  const std::string_view qs = target.substr(qpos + 1);
+  std::size_t start = 0;
+  while (start < qs.size()) {
+    std::size_t amp = qs.find('&', start);
+    if (amp == std::string_view::npos) {
+      amp = qs.size();
+    }
+    const std::string_view kv = qs.substr(start, amp - start);
+    const std::size_t eq = kv.find('=');
+    if (eq != std::string_view::npos) {
+      params.emplace(std::string(kv.substr(0, eq)),
+                     urlDecode(kv.substr(eq + 1)));
+    }
+    start = amp + 1;
+  }
+  return params;
+}
+
+// Parse "x0,y0,x1,y1" (DBU) into a Rect.  Returns false on malformed input.
+bool parseBbox(const std::string& s, odb::Rect& out)
+{
+  const std::string_view sv(s);
+  int v[4];
+  int idx = 0;
+  std::size_t start = 0;
+  while (idx < 4) {
+    const std::size_t comma = sv.find(',', start);
+    const std::string_view tok
+        = sv.substr(start,
+                    comma == std::string_view::npos ? std::string_view::npos
+                                                    : comma - start);
+    if (!parseIntExact(tok, v[idx++])) {
+      return false;
+    }
+    if (comma == std::string_view::npos) {
+      break;
+    }
+    start = comma + 1;
+  }
+  if (idx != 4) {
+    return false;
+  }
+  out = odb::Rect(std::min(v[0], v[2]),
+                  std::min(v[1], v[3]),
+                  std::max(v[0], v[2]),
+                  std::max(v[1], v[3]));
+  return true;
+}
+
+// Render the layout image requested by /download/image into `res`.
+void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
+                         std::string_view target,
+                         http::response<http::string_body>& res)
+{
+  if (!generator) {
+    res.result(http::status::not_found);
+    res.body() = "No design loaded.";
+    return;
+  }
+  const auto params = parseQuery(target);
+  const auto type_it = params.find("type");
+  const std::string type = type_it == params.end() ? "entire" : type_it->second;
+
+  odb::Rect region;  // zero-area => entire die (renderImagePng default)
+  if (type == "visible") {
+    const auto bbox_it = params.find("bbox");
+    if (bbox_it == params.end() || !parseBbox(bbox_it->second, region)) {
+      res.result(http::status::bad_request);
+      res.body() = "Missing or malformed bbox.";
+      return;
+    }
+  }
+
+  // Respect the session's layer visibility: the frontend sends the same
+  // visibility payload it uses for tiles as a JSON `vis` query param.
+  TileVisibility vis;
+  const auto vis_it = params.find("vis");
+  if (vis_it != params.end()) {
+    // Non-throwing parse: a malformed vis falls back to defaults (all visible).
+    std::error_code ec;
+    const boost::json::value parsed = boost::json::parse(vis_it->second, ec);
+    if (!ec && parsed.is_object()) {
+      vis.parseFromJson(parsed.as_object());
+    }
+  }
+
+  // Background color (RRGGBB hex) so the saved image matches the viewer's
+  // background; absent => transparent.
+  Color bg{};  // {0,0,0,0}
+  const auto bg_it = params.find("bg");
+  unsigned rgb = 0;
+  if (bg_it != params.end() && bg_it->second.size() == 6
+      && parseIntExact(bg_it->second, rgb, 16)) {
+    bg = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+               .b = static_cast<unsigned char>(rgb & 0xFF),
+               .a = 255};
+  }
+  // Malformed/absent bg: keep transparent.
+
+  const std::vector<unsigned char> png = generator->renderImagePng(
+      region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
+  if (png.empty()) {
+    res.result(http::status::internal_server_error);
+    res.body() = "Image render failed.";
+    return;
+  }
+
+  const auto fname_it = params.find("filename");
+  const std::string filename = sanitizeFilename(
+      fname_it == params.end() ? "layout.png" : fname_it->second);
+  res.set(http::field::content_type, "image/png");
+  res.set(http::field::content_disposition,
+          "attachment; filename=\"" + filename + "\"");
+  res.body().assign(reinterpret_cast<const char*>(png.data()), png.size());
+}
+
+}  // namespace
+
 static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req)
+    http::request<http::string_body>&& req,
+    const std::shared_ptr<TileGenerator>& generator)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -95,14 +289,22 @@ static http::response<http::string_body> handle_request(
   res.set(http::field::access_control_allow_origin, "*");
 
   if (req.method() == http::verb::get) {
-    const std::string file_path = assetPathFromTarget(req.target());
-    const auto* asset = findEmbeddedAsset(file_path);
-    if (asset) {
-      res.set(http::field::content_type, asset->content_type);
-      res.body() = std::string(asset->content());
+    // The route match uses the path alone; the download handler needs the
+    // raw target because its parameters live in the query string.
+    const std::string target(req.target());
+    const std::string file_path = assetPathFromTarget(target);
+
+    if (file_path == "/download/image") {
+      handleImageDownload(generator, target, res);
     } else {
-      res.result(http::status::not_found);
-      res.body() = "Resource not found.";
+      const auto* asset = findEmbeddedAsset(file_path);
+      if (asset) {
+        res.set(http::field::content_type, asset->content_type);
+        res.body() = std::string(asset->content());
+      } else {
+        res.result(http::status::not_found);
+        res.body() = "Resource not found.";
+      }
     }
   } else {
     res.result(http::status::not_found);
@@ -302,6 +504,14 @@ WebSocketSession::WebSocketSession(
   // DB-mutating requests (set_property) notify every connected client so
   // all views re-render.  Fire-and-forget; safe from any thread.
   select_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
+    if (hook != nullptr) {
+      hook->sessions().broadcast(j);
+    }
+  });
+
+  // Labels are global, not per-session, so one client's edit changes what
+  // every client should be drawing.
+  tile_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
     if (hook != nullptr) {
       hook->sessions().broadcast(j);
     }
@@ -737,10 +947,13 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   beast::flat_buffer buffer_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
+  std::shared_ptr<TileGenerator> generator_;
   utl::Logger* logger_;
 
  public:
-  HttpSession(Tcp::socket&& socket, utl::Logger* logger);
+  HttpSession(Tcp::socket&& socket,
+              std::shared_ptr<TileGenerator> generator,
+              utl::Logger* logger);
 
   void run() { do_read(); }
 
@@ -755,8 +968,12 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   void do_close();
 };
 
-HttpSession::HttpSession(Tcp::socket&& socket, utl::Logger* logger)
-    : stream_(std::move(socket)), logger_(logger)
+HttpSession::HttpSession(Tcp::socket&& socket,
+                         std::shared_ptr<TileGenerator> generator,
+                         utl::Logger* logger)
+    : stream_(std::move(socket)),
+      generator_(std::move(generator)),
+      logger_(logger)
 {
 }
 
@@ -793,7 +1010,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_)));
+      handle_request(std::move(req_), generator_));
   do_write();
 }
 
@@ -916,7 +1133,8 @@ void DetectSession::on_read(beast::error_code ec)
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
-    auto s = std::make_shared<HttpSession>(stream_.release_socket(), logger_);
+    auto s = std::make_shared<HttpSession>(
+        stream_.release_socket(), generator_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -1419,6 +1637,124 @@ void WebServer::saveImage(const std::string& filename,
     }
   }
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+}
+
+namespace {
+
+// Parse a color given as "#rgb", "#rrggbb", or a small set of names.
+// Defaults to opaque white on empty/unknown input.
+Color parseColorString(const std::string& s)
+{
+  Color c{.r = 255, .g = 255, .b = 255, .a = 255};
+  if (s.empty()) {
+    return c;
+  }
+  std::string lower;
+  lower.reserve(s.size());
+  for (char ch : s) {
+    lower.push_back(static_cast<char>(std::tolower(ch)));
+  }
+  static const std::map<std::string, Color> kNamed = {
+      {"white", {255, 255, 255, 255}},
+      {"black", {0, 0, 0, 255}},
+      {"red", {255, 0, 0, 255}},
+      {"green", {0, 255, 0, 255}},
+      {"blue", {0, 0, 255, 255}},
+      {"yellow", {255, 255, 0, 255}},
+      {"cyan", {0, 255, 255, 255}},
+      {"magenta", {255, 0, 255, 255}},
+  };
+  const auto it = kNamed.find(lower);
+  if (it != kNamed.end()) {
+    return it->second;
+  }
+  if (lower[0] == '#') {
+    lower.erase(0, 1);
+  }
+  auto hex = [](const std::string& h) {
+    return static_cast<unsigned char>(std::strtol(h.c_str(), nullptr, 16));
+  };
+  if (lower.size() == 6) {
+    c.r = hex(lower.substr(0, 2));
+    c.g = hex(lower.substr(2, 2));
+    c.b = hex(lower.substr(4, 2));
+  } else if (lower.size() == 3) {
+    c.r = hex(std::string(2, lower[0]));
+    c.g = hex(std::string(2, lower[1]));
+    c.b = hex(std::string(2, lower[2]));
+  }
+  return c;
+}
+
+}  // namespace
+
+// Push the current label set to every connected client.  Labels sit outside
+// ODB, so no design-change callback fires for them and a Tcl-driven edit
+// would otherwise leave every open browser showing the old set.  A no-op
+// before serve(), where there is nobody to tell.
+void WebServer::broadcastLabels()
+{
+  if (!viewer_hook_ || !generator_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "labels_changed";
+  msg["labels"] = generator_->labelsJson();
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+}
+
+std::string WebServer::addLabel(const int x,
+                                const int y,
+                                const std::string& text,
+                                const std::string& anchor,
+                                const std::string& color,
+                                const int size,
+                                const std::string& name)
+{
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+  }
+  // Reject an unknown anchor rather than silently centring the label, which
+  // reads as "the option did nothing".  Qt's add_label errors the same way
+  // (GUI-45); listing the choices saves a trip to the manual over a typo.
+  const std::string anchor_name = anchor.empty() ? "center" : anchor;
+  if (!isValidAnchor(anchor_name)) {
+    std::string choices;
+    for (const std::string& n : anchorNames()) {
+      if (!choices.empty()) {
+        choices += ", ";
+      }
+      choices += n;
+    }
+    logger_->error(utl::WEB,
+                   58,
+                   "Anchor not recognized: {}. Expected one of: {}.",
+                   anchor_name,
+                   choices);
+  }
+  const std::string result = generator_->addLabel(
+      {x, y}, text, parseColorString(color), size, anchor_name, name);
+  if (result.empty()) {
+    logger_->warn(utl::WEB, 57, "Label name '{}' already exists.", name);
+  } else {
+    broadcastLabels();
+  }
+  return result;
+}
+
+void WebServer::deleteLabel(const std::string& name)
+{
+  if (generator_ && generator_->deleteLabel(name)) {
+    broadcastLabels();
+  }
+}
+
+void WebServer::clearLabels()
+{
+  if (generator_) {
+    generator_->clearLabels();
+    broadcastLabels();
+  }
 }
 
 void WebServer::saveDisplayControls(const std::string& filename)

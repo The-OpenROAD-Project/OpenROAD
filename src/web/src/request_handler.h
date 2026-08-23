@@ -94,11 +94,15 @@ struct WebSocketRequest
     kTclComplete,
     kTimingReport,
     kTimingHighlight,
+    kTimingCone,
     kClockTree,
     kClockTreeHighlight,
     kSlackHistogram,
     kFanoutHistogram,
+    kNetLengthHistogram,
     kSelectFanoutBin,
+    kSelectNetLengthBin,
+    kFind,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
@@ -136,6 +140,12 @@ struct WebSocketRequest
     kSetDisplayState,
     kGet3DData,
     kOverlayTile,
+    kAddLabel,
+    kDeleteLabel,
+    kUpdateLabel,
+    kClearLabels,
+    kListLabels,
+    kContextAction,
     kCancel,
     kUnknown
   };
@@ -241,6 +251,10 @@ struct SessionState
   // selection_mutex.
   std::array<gui::SelectionSet, gui::kNumHighlightSet> highlight_groups;
   std::vector<ColoredRect> highlight_group_rects;
+  // Octilinear group members (special-wire shapes) keep their outline rather
+  // than collapsing to a bounding rect.  Guarded by selection_mutex, rebuilt
+  // with highlight_group_rects.
+  std::vector<ColoredPolygon> highlight_group_polys;
   // Flight lines emitted by group members whose highlight() draws lines
   // (e.g. unrouted nets), tinted with the group color.  Guarded by
   // selection_mutex, rebuilt with highlight_group_rects.
@@ -259,6 +273,15 @@ struct SessionState
   std::string active_drc_category;     // name of active top-level category
   std::vector<ColoredRect> drc_rects;  // filled rect shapes for overlay
   std::vector<FlightLine> drc_lines;   // line/X shapes for overlay
+
+  // Timing-cone overlay (fanin/fanout).  cone_rects highlights instances,
+  // cone_lines are the slack-colored flight lines and cone_labels are the
+  // per-pin logic-depth annotations.  Populated by handleTimingCone and merged
+  // into the overlay by handleOverlayTile.
+  std::mutex cone_mutex;
+  std::vector<ColoredRect> cone_rects;
+  std::vector<FlightLine> cone_lines;
+  std::vector<TextLabel> cone_labels;
 
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
@@ -368,6 +391,10 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleSelectNetLengthBin(const WebSocketRequest& req,
+                                             SessionState& state);
+  WebSocketResponse handleFind(const WebSocketRequest& req,
+                               SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
   WebSocketResponse handleSelectNext(const WebSocketRequest& req,
@@ -400,8 +427,19 @@ class SelectHandler
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);
+  WebSocketResponse handleContextAction(const WebSocketRequest& req,
+                                        SessionState& state);
 
  private:
+  // Build a multi-selection from `matched` nets: caps the count, writes count/
+  // truncated/selection_* into `root`, and updates `state` (selection set,
+  // highlights, inspector).  Shared by handleSelectFanoutBin and
+  // handleSelectNetLengthBin.  Caller must hold tcl_eval_->mutex.
+  void selectMatchedNets(std::vector<odb::dbNet*>& matched,
+                         SessionState& state,
+                         boost::json::object& root,
+                         bool use_dbu);
+
   std::shared_ptr<TileGenerator> gen_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::function<void(const std::string&)> broadcast_fn_;
@@ -433,8 +471,11 @@ class TimingHandler
   WebSocketResponse handleTimingReport(const WebSocketRequest& req);
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleTimingCone(const WebSocketRequest& req,
+                                     SessionState& state);
   WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
   WebSocketResponse handleFanoutHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleNetLengthHistogram(const WebSocketRequest& req);
   WebSocketResponse handleChartFilters(const WebSocketRequest& req);
 
  private:
@@ -469,12 +510,33 @@ class TileHandler
   explicit TileHandler(std::shared_ptr<TileGenerator> gen);
   void registerRequests(RequestDispatcher& dispatcher);
 
+  // Push a message to every connected client after a label mutation.  Labels
+  // live in the shared TileGenerator, so one client's edit changes what all
+  // of them should be drawing; without this the others keep stale handles and
+  // a stale overlay until something unrelated makes them reload.  The session
+  // wires this to SessionRegistry::broadcast, as it does for SelectHandler.
+  void setBroadcastFn(std::function<void(const std::string&)> fn)
+  {
+    broadcast_fn_ = std::move(fn);
+  }
+
   void initializeHeatMaps(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
   WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
                                       SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
+  // User text labels (2.12).  Labels live in the shared TileGenerator, so all
+  // clients and save_image see them.
+  WebSocketResponse handleAddLabel(const WebSocketRequest& req);
+  WebSocketResponse handleDeleteLabel(const WebSocketRequest& req);
+  WebSocketResponse handleUpdateLabel(const WebSocketRequest& req);
+  WebSocketResponse handleClearLabels(const WebSocketRequest& req);
+  WebSocketResponse handleListLabels(const WebSocketRequest& req);
+  // Tell every client the label set changed.  Public so the Tcl-driven
+  // entry points (add_label and friends) can announce their edits too:
+  // labels sit outside ODB, so no design-change callback covers them.
+  void broadcastLabelsChanged();
   WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
                                           SessionState& state);
   WebSocketResponse handleHeatMaps(const WebSocketRequest& req,
@@ -514,6 +576,7 @@ class TileHandler
       int tile_px = 0);
 
   std::shared_ptr<TileGenerator> gen_;
+  std::function<void(const std::string&)> broadcast_fn_;
 };
 
 // Handles DRC_CATEGORIES, DRC_MARKERS, DRC_LOAD_REPORT,

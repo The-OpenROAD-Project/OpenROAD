@@ -75,7 +75,7 @@ js_test(
 
 js_test(
     name = "schematic_widget_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -84,6 +84,27 @@ js_test(
     name = "vis_tree_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "context_menu_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-context-menu.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "search_nav_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-search-nav.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "capture_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-capture.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -137,6 +158,13 @@ js_test(
 )
 
 js_test(
+    name = "timing_cone_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-timing-cone.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "inspector_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-inspector.js",
@@ -147,6 +175,13 @@ js_test(
     name = "ruler_test",
     data = JS_FILES,
     entry_point = "js/test-ruler.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "label_manager_test",
+    data = JS_FILES,
+    entry_point = "js/test-label-manager.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -312,6 +347,60 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "timing_cone_test",
+    srcs = ["cpp/TestTimingCone.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "charts_test",
+    srcs = ["cpp/TestCharts.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "labels_test",
+    srcs = ["cpp/TestLabels.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
