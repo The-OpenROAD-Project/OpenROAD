@@ -19,6 +19,7 @@ or_integration_tests(
     asap7_vias_dont_use
     asap7_vias_fixed_vias
     asap7_vias_max_rows_columns
+    asap7_M1_M2_followpin_enclosure
     asap7_M1_M3_followpins
     asap7_M1_M3_followpins_staggered
     asap7_macro_notcovered

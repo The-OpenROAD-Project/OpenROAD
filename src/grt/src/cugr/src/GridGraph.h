@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,31 +35,18 @@ struct AccessPoint
   }
 };
 
-// Only hash and compare on the point, not the layers
-class AccessPointHash
+struct PointTHash
 {
- public:
-  AccessPointHash(int y_size) : y_size_(y_size) {}
-
-  std::size_t operator()(const AccessPoint& ap) const
+  std::size_t operator()(const PointT& point) const
   {
-    return robin_hood::hash_int(ap.point.x() * y_size_ + ap.point.y());
-  }
-
- private:
-  const uint64_t y_size_;
-};
-
-struct AccessPointEqual
-{
-  bool operator()(const AccessPoint& lhs, const AccessPoint& rhs) const
-  {
-    return lhs.point == rhs.point;
+    return robin_hood::hash_int((static_cast<uint64_t>(point.x()) << 32)
+                                | static_cast<uint32_t>(point.y()));
   }
 };
 
-using AccessPointSet
-    = robin_hood::unordered_set<AccessPoint, AccessPointHash, AccessPointEqual>;
+// Selected access cell -> union of the fixed layer intervals of the pins
+// that share it, so the routing tree honors every pin's connection layers.
+using AccessPointMap = robin_hood::unordered_map<PointT, IntervalT, PointTHash>;
 
 struct GraphEdge
 {
@@ -238,7 +226,7 @@ class GridGraph
                       double threshold) const;
 
   // Misc
-  AccessPointSet selectAccessPoints(GRNet* net) const;
+  AccessPointMap selectAccessPoints(GRNet* net) const;
 
   // Methods for updating demands - Public API.
 
@@ -254,7 +242,12 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                    const std::vector<double>& net_costs = {});
+                    const std::vector<double>& net_costs = {},
+                    bool adopted = false);
+  // Net-aware forms: the tree, NDR costs and adopted mark all
+  // travel with the net, so adopt/release sites cannot disagree.
+  void addTreeUsage(const GRNet& net);
+  void removeTreeUsage(const GRNet& net);
 
   /**
    * @brief Removes the demand previously added for a routing tree.
@@ -266,7 +259,39 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                       const std::vector<double>& net_costs = {});
+                       const std::vector<double>& net_costs = {},
+                       bool adopted = false);
+
+  // Debug: snapshot/restore per-edge demand for consistency checks.
+  std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
+  void restoreDemand(
+      const std::vector<std::vector<std::vector<CapacityT>>>& snap);
+
+  // Accumulates a tree's via-stub demand into a flat [layer][x][y] map
+  // (see edgeFlatIndex), mirroring commitVia's deposits; used to attribute
+  // demand for reporting.
+  void accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
+                           const std::vector<double>& net_costs,
+                           std::vector<CapacityT>& via_demand) const;
+
+  size_t edgeFlatIndex(const int layer, const int x, const int y) const
+  {
+    return (static_cast<size_t>(layer) * x_size_ + x) * y_size_ + y;
+  }
+
+  // Non-template forEachViaFlankEdge for callers outside GridGraph.cpp.
+  void forEachViaFlankEdge(
+      int layer_index,
+      PointT loc,
+      const std::vector<double>& net_costs,
+      const std::function<void(int, PointT, CapacityT, double)>& fn) const;
+
+  // Enumerate the lower cells of the preferred-direction edges a wire from
+  // u to v occupies on `layer_index` — the cells commitWire charges.
+  void forEachWireEdge(int layer_index,
+                       PointT u,
+                       PointT v,
+                       const std::function<void(PointT)>& fn) const;
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -325,8 +350,16 @@ class GridGraph
       const odb::Point& inst_location) const;
   AccessPoint selectAccessPoint(
       const std::vector<AccessPoint>& access_points) const;
-  bool findODBAccessPoints(GRNet* net,
-                           AccessPointSet& selected_access_points) const;
+  // Select APs from DRT-created ODB access points; returns the pin indices
+  // that have none, for the shape-derived fallback.
+  std::vector<int> findODBAccessPoints(
+      GRNet* net,
+      AccessPointMap& selected_access_points) const;
+  // Shape-derived AP selection for one pin: pick the most accessible cell
+  // closest to the net center among the cells the pin shapes touch.
+  void selectShapeAccessPoint(GRNet* net,
+                              int pin_idx,
+                              AccessPointMap& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
@@ -353,9 +386,29 @@ class GridGraph
                  const std::vector<double>& net_costs = {});
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
-                  const std::vector<double>& net_costs = {});
+                  const std::vector<double>& net_costs = {},
+                  bool adopted = false);
+  // Demand of an adopted wrong-way wire crossing the gcell at `loc`,
+  // deposited on the layer's flanking edges like a via stub.
+  void commitWrongWayWire(int layer_index,
+                          PointT loc,
+                          bool rip_up,
+                          double layer_factor);
   // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
   CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
+  // Enumerates the flanking edges a via at `loc` (between `layer_index` and
+  // `layer_index + 1`) deposits demand on, with the layer's NDR factor:
+  // fn(l, edge_lower_point, demand, layer_factor).
+  // Defined in GridGraph.cpp; all instantiations live there.
+  template <typename F>
+  void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
+  template <typename F>
+  void forEachViaFlankEdgeImpl(int layer_index,
+                               PointT loc,
+                               const std::vector<double>& net_costs,
+                               F&& fn) const;
+  template <typename F>
+  void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;

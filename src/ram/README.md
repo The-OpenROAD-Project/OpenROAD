@@ -82,7 +82,7 @@ generate_ram [-mask_size bits]
 
 ## Example scripts
 
-See [test/make_8x8.tcl](test/make_8x8.tcl).
+See [test/make_8x8_sky130.tcl](test/make_8x8_sky130.tcl).
 
 ## Regression tests
 

@@ -1243,30 +1243,50 @@ proc add_3dblox_alignment_marker_rule { args } {
   }
 }
 
-sta::define_cmd_args "set_extraction_rules_file" {
-    [-tech tech_name] rules_file
-}
-
-proc set_extraction_rules_file { args } {
-  sta::parse_key_args "set_extraction_rules_file" args \
-    keys {-tech} flags {}
-  sta::check_argc_eq1 "set_extraction_rules_file" $args
-
+# On-demand structural summary of a 3DIC (3DBlox) design: chiplet, chip-net,
+# bond-region and bump counts, plus per-chip-inst master references. Useful as
+# a post-read sanity check before cross-chiplet timing.
+sta::define_cmd_args "report_3dic_summary" {}
+proc report_3dic_summary { args } {
+  sta::parse_key_args "report_3dic_summary" args keys {} flags {}
   set db [ord::get_db]
-  if { [info exists keys(-tech)] } {
-    set tech [$db findTech $keys(-tech)]
-  } elseif { [$db hasHierarchicalChip] } {
-    utl::error ODB 478 "Could not set extraction rules file.\
-      Use -tech to specify a technology in a 3D design."
-  } else {
-    set tech [$db getTech]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::warn ODB 405 "No chip loaded; nothing to report."
+    return
   }
-
-  if { $tech == "NULL" } {
-    utl::error ODB 477 "Could not set extraction rules file. Tech not found."
+  set chip_insts [$chip getChipInsts]
+  set chip_nets [$chip getChipNets]
+  set chip_conns [$chip getChipConns]
+  # Connected bumps sit on top-level chip-nets; total counts every pad of
+  # every placement (spare/reserved pads included -- often the majority).
+  set connected_bump_count 0
+  foreach n $chip_nets {
+    incr connected_bump_count [$n getNumBumpInsts]
   }
-
-  $tech setExtractionRulesFile [lindex $args 0]
+  set bump_pad_count 0
+  foreach ci $chip_insts {
+    set master [$ci getMasterChip]
+    if { $master == "NULL" } {
+      continue
+    }
+    foreach region [$master getChipRegions] {
+      incr bump_pad_count [llength [$region getChipBumps]]
+    }
+  }
+  utl::report "3DIC summary for chip [$chip getName]:"
+  utl::report "  chiplets        : [llength $chip_insts]"
+  utl::report "  top-level nets  : [llength $chip_nets]"
+  utl::report "  3D bond regions : [llength $chip_conns]"
+  utl::report "  bump pads       : $bump_pad_count ($connected_bump_count connected)"
+  if { [llength $chip_insts] > 0 } {
+    utl::report "  chiplet instances:"
+    foreach ci $chip_insts {
+      set ref [$ci getMasterChip]
+      set ref_name [expr { $ref == "NULL" ? "<unbound>" : [$ref getName] }]
+      utl::report "    [$ci getName] (reference: $ref_name)"
+    }
+  }
 }
 
 namespace eval odb {

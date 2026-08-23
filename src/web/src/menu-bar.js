@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { showFindDialog, showGotoDialog } from './search-nav.js';
+
 // Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
 export function createMenuBar(app) {
     const menus = [
@@ -19,8 +21,12 @@ export function createMenuBar(app) {
             { label: 'Show DBU', action: () => app.toggleShowDbu(),
               checked: () => app.showDbu },
             { type: 'separator' },
-            { label: 'Find...', shortcut: 'Ctrl+F', disabled: true },
-            { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
+            { label: 'Find...', shortcut: 'Ctrl+F',
+              action: () => showFindDialog(app),
+              enabledWhen: () => !!app.designScale },
+            { label: 'Go to Position...', shortcut: 'Shift+G',
+              action: () => showGotoDialog(app),
+              enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Tools', items: [
             { label: 'Ruler', shortcut: 'K',
@@ -34,12 +40,25 @@ export function createMenuBar(app) {
               action: () => { if (app.labelManager) app.labelManager.toggleLabelMode(); } },
             { label: 'Clear Labels',
               action: () => { if (app.labelManager) app.labelManager.clearAllLabels(); } },
+            { type: 'separator' },
+            { label: 'Clear Highlights',
+              action: () => {
+                  app.websocketManager.request(
+                      { type: 'clear_highlights', group: -1 })
+                      .then(() => {
+                          if (app.refreshOverlay) app.refreshOverlay();
+                          if (app.refreshInspector) app.refreshInspector();
+                      })
+                      .catch(() => {});
+              } },
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },
             { label: '3D Viewer', action: () => app.focusComponent('3DViewer') },
             { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
+            { label: 'Selection Browser',
+              action: () => app.focusComponent('SelectHighlight') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
             { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },

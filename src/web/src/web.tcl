@@ -103,10 +103,14 @@ proc save_image { args } {
         }
         set key [lindex $opt 0]
         set val [lindex $opt 1]
+        # Emit real JSON booleans: TileVisibility::parseFromJson reads every
+        # field with value_to<bool>, which rejects 1/0 — and the caller catches
+        # that by discarding the WHOLE visibility object (WEB-0042), so one
+        # integer used to turn every -display_option into a no-op.
         if { $val eq "true" || $val eq "1" } {
-          set val 1
+          set val "true"
         } else {
-          set val 0
+          set val "false"
         }
         lappend pairs "\"$key\":$val"
       }
@@ -173,11 +177,11 @@ proc add_label { args } {
     keys {-position -anchor -color -size -name} flags {}
 
   if { ![info exists keys(-position)] } {
-    utl::error WEB 44 "-position is required."
+    utl::error WEB 55 "-position is required."
   }
   set pos $keys(-position)
   if { [llength $pos] != 2 } {
-    utl::error WEB 45 "-position must have 2 elements {x y}."
+    utl::error WEB 56 "-position must have 2 elements {x y}."
   }
   sta::check_argc_eq1 "add_label" $args
   set text [lindex $args 0]
@@ -212,4 +216,24 @@ sta::define_cmd_args "clear_labels" {}
 proc clear_labels { args } {
   sta::check_argc_eq0 "clear_labels" $args
   web::clear_labels_cmd
+}
+
+sta::define_cmd_args "save_display_controls" { filename }
+
+proc save_display_controls { args } {
+  sta::parse_key_args "save_display_controls" args keys {} flags {}
+  sta::check_argc_eq1 "save_display_controls" $args
+  set path [lindex $args 0]
+
+  web::save_display_controls_cmd $path
+}
+
+sta::define_cmd_args "restore_display_controls" { filename }
+
+proc restore_display_controls { args } {
+  sta::parse_key_args "restore_display_controls" args keys {} flags {}
+  sta::check_argc_eq1 "restore_display_controls" $args
+  set path [lindex $args 0]
+
+  web::restore_display_controls_cmd $path
 }

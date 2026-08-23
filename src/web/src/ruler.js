@@ -11,6 +11,7 @@
 //   Shift+K  : clear all rulers
 
 import { dbuToLatLng, latLngToDbu } from './coordinates.js';
+import { beginSelection } from './ui-utils.js';
 
 const RULER_COLOR = '#00ffff';
 const RULER_SELECTED_COLOR = '#ffff00';
@@ -495,7 +496,11 @@ export class RulerManager {
         const ruler = this._rulers.find(r => r.id === rulerId);
         if (!ruler) return;
 
-        const dbuPerUm = this._app.techData?.dbu_per_micron || 1000;
+        // A ruler is a client-side object, but it still takes over the
+        // Inspector, so other panels must drop the selection they painted and
+        // any of their responses still in flight must not overwrite it.
+        beginSelection(this._app);
+
         const dx = Math.abs(ruler.pt1.x - ruler.pt0.x);
         const dy = Math.abs(ruler.pt1.y - ruler.pt0.y);
         const length = ruler.euclidian
@@ -503,13 +508,7 @@ export class RulerManager {
             : dx + dy;
 
         const fmt = (dbu) => this._app.formatDbu(dbu, true);
-
-        const parseDbu = (str) => {
-            const num = parseFloat(str);
-            if (isNaN(num)) return null;
-            if (this._app.showDbu) return Math.round(num);
-            return Math.round(num * dbuPerUm);
-        };
+        const parseDbu = (str) => this._app.parseDbu(str);
 
         const data = {
             type: 'Ruler',

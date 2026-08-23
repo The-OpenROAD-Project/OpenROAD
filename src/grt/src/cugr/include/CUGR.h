@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -39,6 +40,7 @@ namespace grt {
 class Design;
 class GridGraph;
 class GRNet;
+class GRTreeNode;
 class BoxT;
 
 struct Constants
@@ -90,11 +92,18 @@ class CUGR
   void init(int min_routing_layer,
             int max_routing_layer,
             const odb::PtrSet<odb::dbNet>& clock_nets);
-  void route(bool incremental = false);
+  // Reset per-session netlist state (like FastRouteCore::clear); Tcl-applied
+  // configuration survives, and init() rebuilds design_/grid_graph_.
+  void clear();
+  void route(bool incremental);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
+  // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
+  // overflow split into wire vs via-stub shares (proportional attribution);
+  // sub-min layers shown as all-zero rows. Gated on verbose_.
+  void reportCongestion() const;
   void getITermsAccessPoints(
       odb::dbNet* net,
       odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points);
@@ -121,7 +130,31 @@ class CUGR
   void setVerbose(bool verbose) { verbose_ = verbose; }
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
-  void routeIncremental();
+  // Transfer removed net tree ownership to preserved net without removing
+  // its GridGraph usage. Called at inDbNetPostMerge time.
+  void mergeNet(odb::dbNet* preserved_net,
+                odb::dbNet* removed_net,
+                const std::vector<GSegment>& connection);
+  // True if the edge on (layer_index, tile_x, tile_y) has capacity left for
+  // db_net's NDR demand on that layer (1.0 for non-NDR nets); the CUGR
+  // analog of FastRouteCore::hasAvailableResources.
+  bool hasAvailableResources(odb::dbNet* db_net,
+                             int layer_index,
+                             int tile_x,
+                             int tile_y) const;
+  // True if a complete jumper -- the wire on layer_index between the tiles
+  // plus a two-layer via stack at each endpoint -- fits the headroom of
+  // every edge it would charge, accumulating demands that share an edge.
+  bool hasJumperResources(odb::dbNet* db_net,
+                          int layer_index,
+                          int init_tile_x,
+                          int init_tile_y,
+                          int final_tile_x,
+                          int final_tile_y) const;
+  // Adopts an externally restored routing (journal restore): rebuilds the
+  // net's routing tree from the segments and swaps the grid-graph demand
+  // without scheduling a reroute. Returns false if the net must be rerouted.
+  bool restoreNetRoute(odb::dbNet* db_net, const GRoute& route);
 
   const std::vector<int>& getOriginalResources() const;
   void computeCongestionInformation();
@@ -135,6 +168,8 @@ class CUGR
   void saveCongestion();
 
  private:
+  // True if (layer_0, tile_x, tile_y) indexes an existing grid edge.
+  bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
   void updateCriticalNets(const std::vector<int>& net_indices);
@@ -150,6 +185,12 @@ class CUGR
   void demoteNonCriticalNets(float slack_th);
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks(const std::vector<int>& net_indices);
+  // Builds a routing tree spanning the segments' gcells; nullptr if the
+  // segments are malformed or disconnected.
+  std::shared_ptr<GRTreeNode> buildTreeFromRoute(const GRoute& route) const;
+  // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
+  // from every committed tree and report drift from the tracked demand.
+  void verifyDemandConsistency(const char* tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -226,6 +267,16 @@ class CUGR
   void buildNetRoute(const GRNet* net, GRoute& route) const;
   void printStatistics() const;
 
+  // Tile classification for debugCongestion2D.
+  struct Congestion2D
+  {
+    double total_3d_overflow = 0.0;
+    double total_2d_overflow = 0.0;
+    int tiles_3d_only = 0;
+    int tiles_2d = 0;
+  };
+  Congestion2D computeCongestion2D() const;
+
   /**
    * @brief Diagnoses whether residual overflow is spreadable.
    *
@@ -252,13 +303,15 @@ class CUGR
   std::vector<int> net_indices_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
   std::unordered_map<odb::dbNet*, GRNet*> db_net_map_;
+  // Nets merged into a survivor; removeNet() must NOT remove their GridGraph
+  // usage.
+  std::unordered_set<odb::dbNet*> merged_nets_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   utl::ServiceRegistry* service_registry_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;
-  NetRouteMap routes_;
 
   Constants constants_;
 

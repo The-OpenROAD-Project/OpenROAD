@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -28,13 +29,18 @@ genrule(
     srcs = [
         "src/style.css",
         "src/theme.js",
+        "src/display-state.js",
         "src/3d-viewer-widget.js",
         "src/coordinates.js",
         "src/ui-utils.js",
         "src/checkbox-tree-model.js",
         "src/vis-tree.js",
         "src/websocket-manager.js",
+        "src/tile-merge.js",
+        "src/tile-request.js",
+        "src/device-pixels.js",
         "src/websocket-tile-layer.js",
+        "src/merged-tile-layer.js",
         "src/display-controls.js",
         "src/inspector.js",
         "src/ruler.js",
@@ -42,12 +48,16 @@ genrule(
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
+        "src/context-menu.js",
+        "src/search-nav.js",
+        "src/capture.js",
         "src/title.js",
         "src/clock-tree-widget.js",
         "src/schematic-widget.js",
         "src/charts-widget.js",
         "src/timing-widget.js",
         "src/drc-widget.js",
+        "src/selection-browser.js",
         "src/main.js",
     ],
     outs = ["src/report_assets.cpp"],
@@ -55,13 +65,18 @@ genrule(
           " --output $@" +
           " --css $(location src/style.css)" +
           " --js $(location src/theme.js)" +
+          " $(location src/display-state.js)" +
           " $(location src/3d-viewer-widget.js)" +
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +
           " $(location src/checkbox-tree-model.js)" +
           " $(location src/vis-tree.js)" +
           " $(location src/websocket-manager.js)" +
+          " $(location src/tile-merge.js)" +
+          " $(location src/tile-request.js)" +
+          " $(location src/device-pixels.js)" +
           " $(location src/websocket-tile-layer.js)" +
+          " $(location src/merged-tile-layer.js)" +
           " $(location src/display-controls.js)" +
           " $(location src/inspector.js)" +
           " $(location src/ruler.js)" +
@@ -69,12 +84,16 @@ genrule(
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/context-menu.js)" +
+          " $(location src/search-nav.js)" +
+          " $(location src/capture.js)" +
           " $(location src/title.js)" +
           " $(location src/clock-tree-widget.js)" +
           " $(location src/schematic-widget.js)" +
           " $(location src/charts-widget.js)" +
           " $(location src/timing-widget.js)" +
           " $(location src/drc-widget.js)" +
+          " $(location src/selection-browser.js)" +
           " $(location src/main.js)",
     tools = [":embed_report_assets"],
 )
@@ -83,6 +102,11 @@ _WEB_ASSET_FILES = [
     "src/index.html",
     "src/style.css",
     "src/theme.js",
+    "src/tile-merge.js",
+    "src/tile-request.js",
+    "src/device-pixels.js",
+    "src/merged-tile-layer.js",
+    "src/display-state.js",
     "src/3d-viewer-widget.js",
     "src/coordinates.js",
     "src/ui-utils.js",
@@ -97,6 +121,9 @@ _WEB_ASSET_FILES = [
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/menu-bar.js",
+    "src/context-menu.js",
+    "src/search-nav.js",
+    "src/capture.js",
     "src/title.js",
     "src/clock-tree-widget.js",
     "src/schematic-widget.js",
@@ -104,6 +131,7 @@ _WEB_ASSET_FILES = [
     "src/charts-widget.js",
     "src/timing-widget.js",
     "src/drc-widget.js",
+    "src/selection-browser.js",
     "src/main.js",
 ]
 
@@ -248,4 +276,10 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+exports_files(["README.md"])
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

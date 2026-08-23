@@ -4,6 +4,8 @@
 // NetlistsVG is used to render a Yosys-compatible JSON netlist into an SVG.
 // It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
 
+import { beginSelection, isCurrentSelection } from './ui-utils.js';
+
 export class SchematicWidget {
     constructor(container, appState) {
         this.container = container;
@@ -199,8 +201,12 @@ export class SchematicWidget {
         const wm = this.appState.websocketManager;
         if (!wm) return;
         console.log('[Schematic] inspect:', instName);
+        // Replaces the server-side selection, so it takes ownership from any
+        // other panel's in-flight selection (see ui-utils.js).
+        const token = beginSelection(this.appState);
         wm.request({ type: 'schematic_inspect', inst_name: instName, use_dbu: this.appState.showDbu })
             .then(data => {
+                if (!isCurrentSelection(this.appState, token)) return;
                 if (this.appState.updateInspector) {
                     this.appState.updateInspector(data);
                 }

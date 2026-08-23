@@ -197,7 +197,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
       bool repaired_net = false;
-      if (max_fanout <= 0) {
+      if (max_fanout <= 0 || max_fanout > 1e9) {
         max_fanout = 1e9;
       }
 
@@ -1602,7 +1602,7 @@ void RepairDesign::repairNetWire(
       // the new repeater's input pin cap does not shrink the load the
       // driver sees). Two such iterations in a row terminate the loop.
       const double prev_ref_cap = ref_cap;
-      const bool zero_advance = (buf_dist <= 0.0);
+      const bool zero_advance = (buf_dist < 1.0);
       double dx = from_x - to_x;
       double dy = from_y - to_y;
       double d = (length == 0) ? 0.0 : buf_dist / length;
