@@ -188,7 +188,11 @@ export class LabelManager {
                 { name: 'Text', value: label.text, editable: true },
                 { name: 'x', value: fmt(label.x) },
                 { name: 'y', value: fmt(label.y) },
-                { name: 'Size', value: String(label.size || 0), editable: true },
+                // "Font size", not "Size": it is a font height in pixels, not
+                // a distance in the design, so it does not follow the µm/DBU
+                // display-unit switch the way x and y do.
+                { name: 'Font size', value: String(label.size || 0),
+                  editable: true },
                 { name: 'Anchor', value: label.anchor || 'center',
                   editable: true,
                   editor: { type: 'list', options: this._anchors } },
@@ -197,7 +201,7 @@ export class LabelManager {
                 const patch = { text: label.text, size: label.size || 0,
                                 anchor: label.anchor || 'center' };
                 if (propName === 'Text') patch.text = newValue;
-                else if (propName === 'Size') patch.size = parseInt(newValue, 10) || 0;
+                else if (propName === 'Font size') patch.size = parseInt(newValue, 10) || 0;
                 else if (propName === 'Anchor') patch.anchor = newValue.trim();
                 this._edit(label, patch);
             },

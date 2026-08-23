@@ -157,6 +157,61 @@ describe('LabelManager', () => {
         assert.equal(anchor.value, 'top left');
     });
 
+    it('Font size edits the label size and is not unit-converted',
+       async () => {
+        let captured = null;
+        globalThis.window = { prompt: () => 'note' };
+        const requests = [];
+        const app = {
+            map: {
+                createPane() { return { style: {} }; },
+                getContainer() {
+                    return { style: {}, classList: { toggle() {} } };
+                },
+            },
+            designScale: 1e-6, designMaxDXDY: 1000000,
+            designOriginX: 0, designOriginY: 0,
+            refreshOverlay() {},
+            // Whatever the display-unit switch is doing to x/y, it must not
+            // reach the font size.
+            formatDbu(v) { return `${v / 1000} um`; },
+            inspectorEl: null,
+            websocketManager: {
+                request(msg) {
+                    requests.push(msg);
+                    if (msg.type === 'list_labels') {
+                        return Promise.resolve({
+                            labels: [{ name: 'L0', x: 1000, y: 2000, text: 'a',
+                                       size: 14, anchor: 'center' }],
+                            anchors: ['center'],
+                        });
+                    }
+                    return Promise.resolve({});
+                },
+            },
+        };
+        const mgr = new LabelManager(
+            app, { labels: true }, (d) => { captured = d; }, () => {});
+        await mgr.reload();
+        mgr._select('L0');
+
+        const names = captured.properties.map(p => p.name);
+        assert.ok(names.includes('Font size'), 'labelled "Font size"');
+        assert.ok(!names.includes('Size'), 'not the ambiguous "Size"');
+
+        const size = captured.properties.find(p => p.name === 'Font size');
+        // Raw pixels: no unit suffix, unlike x and y.
+        assert.equal(size.value, '14');
+        assert.equal(captured.properties.find(p => p.name === 'x').value,
+                     '1 um');
+
+        captured.onPropertyChange('Font size', '20');
+        await flush();
+        const upd = requests.find(r => r.type === 'update_label');
+        assert.ok(upd, 'update_label requested');
+        assert.equal(upd.size, 20);
+    });
+
     it('deleteLabel sends a delete_label request and refreshes', async () => {
         const { mgr, requests, overlayRefreshes } = makeManager();
         await mgr.deleteLabel('L0');
