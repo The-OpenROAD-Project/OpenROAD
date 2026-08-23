@@ -118,6 +118,7 @@ class FollowPins : public Straps
   // search for the shape of the power pins in the standard cells to determine
   // the width if possible
   void determineWidth();
+  void determinePitch();
 };
 
 class PadDirectConnectionStraps : public Straps

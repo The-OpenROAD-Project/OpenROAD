@@ -426,22 +426,41 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 
   // set the pitch of the straps
-  auto rows = getDomain()->getRows();
-  if (!rows.empty()) {
-    auto* row = *rows.begin();
-    odb::Rect bbox = row->getBBox();
-    setPitch(2 * bbox.dy());
+  determinePitch();
+  if (getPitch() == 0) {
+    getLogger()->error(
+        utl::PDN, 190, "Unable to determine the pitch of the rows.");
+  }
+}
 
-    if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
-      setDirection(odb::dbTechLayerDir::HORIZONTAL);
-    } else {
-      setDirection(odb::dbTechLayerDir::VERTICAL);
-    }
+void FollowPins::determinePitch()
+{
+  auto rows = getDomain()->getRows();
+  if (rows.empty()) {
+    return;
+  }
+
+  // find the row with the smallest height, as that is the pitch of the rows
+  const auto min_row = std::min_element(
+      rows.begin(), rows.end(),
+      [](odb::dbRow* a, odb::dbRow* b) {
+        odb::dbSite* a_site = a->getSite();
+        odb::dbSite* b_site = b->getSite();
+        return a_site->getHeight() < b_site->getHeight();
+      });
+
+  if (min_row == rows.end()) {
+    return;
+  }
+
+  auto* row = *min_row;
+  odb::Rect bbox = row->getBBox();
+  setPitch(2 * bbox.dy());
+
+  if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
+    setDirection(odb::dbTechLayerDir::HORIZONTAL);
   } else {
-    if (getPitch() == 0) {
-      getLogger()->error(
-          utl::PDN, 190, "Unable to determine the pitch of the rows.");
-    }
+    setDirection(odb::dbTechLayerDir::VERTICAL);
   }
 }
 
