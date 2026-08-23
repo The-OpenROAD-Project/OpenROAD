@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Creates a menu bar in #menu-bar.  The static menus below are merged with
-// custom items registered from Tcl (`create_menu_item`, delivered in
-// app.customMenu); call app.rebuildMenuBar() after updating app.customMenu to
-// re-render live.
+import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { runTclScript } from './ui-utils.js';
 
+// Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
+// The static menus below are merged with custom items registered from Tcl
+// (`create_menu_item`, delivered in app.customMenu); call
+// app.rebuildMenuBar() after updating app.customMenu to re-render live.
 export function createMenuBar(app) {
     const staticMenus = [
         { label: 'File', items: [
@@ -24,14 +25,36 @@ export function createMenuBar(app) {
             { label: 'Show DBU', action: () => app.toggleShowDbu(),
               checked: () => app.showDbu },
             { type: 'separator' },
-            { label: 'Find...', shortcut: 'Ctrl+F', disabled: true },
-            { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
+            { label: 'Find...', shortcut: 'Ctrl+F',
+              action: () => showFindDialog(app),
+              enabledWhen: () => !!app.designScale },
+            { label: 'Go to Position...', shortcut: 'Shift+G',
+              action: () => showGotoDialog(app),
+              enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Tools', items: [
             { label: 'Ruler', shortcut: 'K',
               action: () => { if (app.rulerManager) app.rulerManager.toggleRulerMode(); } },
             { label: 'Clear Rulers', shortcut: 'Shift+K',
               action: () => { if (app.rulerManager) app.rulerManager.clearAllRulers(); } },
+            { label: 'Euclidian rulers', action: () => app.toggleRulerStyle(),
+              checked: () => app.rulerStyle !== 'manhattan' },
+            { type: 'separator' },
+            { label: 'Add Label', shortcut: 'L',
+              action: () => { if (app.labelManager) app.labelManager.toggleLabelMode(); } },
+            { label: 'Clear Labels',
+              action: () => { if (app.labelManager) app.labelManager.clearAllLabels(); } },
+            { type: 'separator' },
+            { label: 'Clear Highlights',
+              action: () => {
+                  app.websocketManager.request(
+                      { type: 'clear_highlights', group: -1 })
+                      .then(() => {
+                          if (app.refreshOverlay) app.refreshOverlay();
+                          if (app.refreshInspector) app.refreshInspector();
+                      })
+                      .catch(() => {});
+              } },
             { type: 'separator' },
             { label: 'Global Connect...',
               action: () => { if (app.showGlobalConnectDialog) app.showGlobalConnectDialog(); },
@@ -42,6 +65,8 @@ export function createMenuBar(app) {
             { label: '3D Viewer', action: () => app.focusComponent('3DViewer') },
             { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
+            { label: 'Selection Browser',
+              action: () => app.focusComponent('SelectHighlight') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
             { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },

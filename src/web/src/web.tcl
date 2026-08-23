@@ -103,10 +103,14 @@ proc save_image { args } {
         }
         set key [lindex $opt 0]
         set val [lindex $opt 1]
+        # Emit real JSON booleans: TileVisibility::parseFromJson reads every
+        # field with value_to<bool>, which rejects 1/0 — and the caller catches
+        # that by discarding the WHOLE visibility object (WEB-0042), so one
+        # integer used to turn every -display_option into a no-op.
         if { $val eq "true" || $val eq "1" } {
-          set val 1
+          set val "true"
         } else {
-          set val 0
+          set val "false"
         }
         lappend pairs "\"$key\":$val"
       }
@@ -160,6 +164,80 @@ proc web_save_report { args } {
   web::save_report_cmd $path $max_setup $max_hold
 }
 
+sta::define_cmd_args "add_label" {-position {x y} \
+                                  [-anchor anchor] \
+                                  [-color color] \
+                                  [-size size] \
+                                  [-name name] \
+                                  text
+}
+
+proc add_label { args } {
+  sta::parse_key_args "add_label" args \
+    keys {-position -anchor -color -size -name} flags {}
+
+  if { ![info exists keys(-position)] } {
+    utl::error WEB 55 "-position is required."
+  }
+  set pos $keys(-position)
+  if { [llength $pos] != 2 } {
+    utl::error WEB 56 "-position must have 2 elements {x y}."
+  }
+  sta::check_argc_eq1 "add_label" $args
+  set text [lindex $args 0]
+
+  # -position is in microns; convert to DBU for the renderer.
+  set db [ord::get_db]
+  set dbu [$db getDbuPerMicron]
+  set x [expr { int([lindex $pos 0] * $dbu) }]
+  set y [expr { int([lindex $pos 1] * $dbu) }]
+
+  set anchor ""
+  if { [info exists keys(-anchor)] } { set anchor $keys(-anchor) }
+  set color ""
+  if { [info exists keys(-color)] } { set color $keys(-color) }
+  set size 0
+  if { [info exists keys(-size)] } { set size $keys(-size) }
+  set name ""
+  if { [info exists keys(-name)] } { set name $keys(-name) }
+
+  web::add_label_cmd $x $y $text $anchor $color $size $name
+}
+
+sta::define_cmd_args "delete_label" { name }
+
+proc delete_label { args } {
+  sta::check_argc_eq1 "delete_label" $args
+  web::delete_label_cmd [lindex $args 0]
+}
+
+sta::define_cmd_args "clear_labels" {}
+
+proc clear_labels { args } {
+  sta::check_argc_eq0 "clear_labels" $args
+  web::clear_labels_cmd
+}
+
+sta::define_cmd_args "save_display_controls" { filename }
+
+proc save_display_controls { args } {
+  sta::parse_key_args "save_display_controls" args keys {} flags {}
+  sta::check_argc_eq1 "save_display_controls" $args
+  set path [lindex $args 0]
+
+  web::save_display_controls_cmd $path
+}
+
+sta::define_cmd_args "restore_display_controls" { filename }
+
+proc restore_display_controls { args } {
+  sta::parse_key_args "restore_display_controls" args keys {} flags {}
+  sta::check_argc_eq1 "restore_display_controls" $args
+  set path [lindex $args 0]
+
+  web::restore_display_controls_cmd $path
+}
+
 sta::define_cmd_args "save_animated_gif" {(-start|-add|-end) \
                                          [-area {x0 y0 x1 y1}] \
                                          [-width width] \
@@ -196,7 +274,7 @@ proc save_animated_gif { args } {
   }
 
   if { ![info exists flags(-add)] } {
-    utl::error WEB 60 "One of -start, -add or -end is required."
+    utl::error WEB 63 "One of -start, -add or -end is required."
   }
 
   # -add captures one frame.  Convert -resolution (microns/pixel) to
@@ -215,14 +293,14 @@ proc save_animated_gif { args } {
   if { [info exists keys(-area)] } {
     set area $keys(-area)
     if { [llength $area] != 4 } {
-      utl::error WEB 61 "Area must contain 4 elements."
+      utl::error WEB 64 "Area must contain 4 elements."
     }
   }
 
   set width 0
   if { [info exists keys(-width)] } {
     if { $resolution != 0 } {
-      utl::error WEB 62 "Cannot set -width if -resolution has already been specified."
+      utl::error WEB 65 "Cannot set -width if -resolution has already been specified."
     }
     sta::check_positive_int "-width" $keys(-width)
     set width $keys(-width)
@@ -255,7 +333,7 @@ proc save_animated_gif { args } {
     set pairs {}
     foreach opt $list(-display_option) {
       if { [llength $opt] != 2 } {
-        utl::error WEB 63 "Display option must have 2 elements {control} {value}."
+        utl::error WEB 66 "Display option must have 2 elements {control} {value}."
       }
       set okey [lindex $opt 0]
       set oval [lindex $opt 1]
@@ -291,10 +369,10 @@ proc create_toolbar_button { args } {
     flags {-toggle -echo}
 
   if { ![info exists keys(-text)] } {
-    utl::error WEB 47 "-text is required."
+    utl::error WEB 59 "-text is required."
   }
   if { ![info exists keys(-script)] } {
-    utl::error WEB 48 "-script is required."
+    utl::error WEB 60 "-script is required."
   }
 
   set name ""
@@ -334,10 +412,10 @@ proc create_menu_item { args } {
     flags {-echo}
 
   if { ![info exists keys(-text)] } {
-    utl::error WEB 49 "-text is required."
+    utl::error WEB 61 "-text is required."
   }
   if { ![info exists keys(-script)] } {
-    utl::error WEB 50 "-script is required."
+    utl::error WEB 62 "-script is required."
   }
 
   set name ""

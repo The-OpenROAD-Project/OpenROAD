@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <list>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -1429,6 +1430,7 @@ void extMain::makeCornerNameMap()
 
 std::unique_ptr<extRCModel> parseRules(
     odb::dbTech* tech,
+    const std::string& rules_file,
     const Array1D<extCorner*>* extractor_corner_table,
     bool is_v2,
     utl::Logger* logger)
@@ -1455,7 +1457,6 @@ std::unique_ptr<extRCModel> parseRules(
     }
   }
 
-  const std::string rules_file = tech->getExtractionRulesFile();
   if (rules_file.empty()) {
     logger->error(RCX,
                   17,
@@ -1619,7 +1620,7 @@ void extMain::getPrevControl()
 bool extMain::modelExists()
 {
   if ((_prevControl->_ruleFileName.empty()) && (getRCmodel(0) == nullptr)
-      && (_block->getTech()->getExtractionRulesFile().empty())) {
+      && (extraction_rules_file_.empty())) {
     logger_->warn(RCX,
                   127,
                   "No RC model was read with command <load_model>, "

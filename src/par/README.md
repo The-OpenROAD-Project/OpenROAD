@@ -20,7 +20,7 @@ to partition a hypergraph or a gate-level netlist.
 
 We use Google OR-Tools as our ILP solver. 
 
-Our recommendation is to follow the OpenROAD [DependencyInstaller](../etc/DependencyInstaller.sh) for installation of this requirement.
+Our recommendation is to follow the OpenROAD [DependencyInstaller](../../etc/DependencyInstaller.sh) for installation of this requirement.
 
 Alternatively, you may also install Google OR-Tools 
 following these [instructions](https://developers.google.com/optimization/install).

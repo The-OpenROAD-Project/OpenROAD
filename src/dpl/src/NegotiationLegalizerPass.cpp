@@ -292,10 +292,10 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 {
   if (debug_observer_) {
     debug_observer_->clearNegotiationSearchWindows();
+    debug_observer_->clearCurrentIterMovers();
   }
 
   current_iter_ = iter;
-  current_iter_movers_.clear();
 
   // Reset per-iteration stuck-cell tallies.
   stuck_no_candidate_count_iter_ = 0;
@@ -350,8 +350,8 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
       continue;
     }
     const NegCell& cell = cells_[idx];
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
+    const int xBegin = cell.x;
+    const int xEnd = cell.x + cell.width;
     for (int dy = 0; dy < cell.height; ++dy) {
       for (int gx = xBegin; gx < xEnd; ++gx) {
         if (gridExists(gx, cell.y + dy)) {
@@ -449,8 +449,7 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
   syncCellToDplGrid(cell_idx);
   if (did_move && debug_observer_
       && (opendp_->iterative_debug_ || opendp_->deep_iterative_debug_)) {
-    current_iter_movers_.insert(cells_[cell_idx].db_inst);
-    debug_observer_->setCurrentIterMovers(current_iter_movers_);
+    debug_observer_->addCurrentIterMover(cells_[cell_idx].db_inst);
   }
   if (opendp_->deep_iterative_debug_ && debug_observer_
       && current_iter_ >= opendp_->negotiation_debug_start_) {
@@ -792,7 +791,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     if (opendp_->deep_iterative_debug_
         && iter >= opendp_->negotiation_debug_start_
         && cell.db_inst == debug_observer_->getDebugInstance()) {
-      const DbuX site_width = opendp_->grid_->getSiteWidth();
       odb::dbBlock* block = cell.db_inst->getBlock();
       const double inst_area_um2
           = block->dbuAreaToMicrons(cell.db_inst->getBBox()->getBox().area());
@@ -820,10 +818,13 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
             block->dbuToMicrons(curr_win.dy()),
             block->dbuAreaToMicrons(curr_win.area()));
       }
+      // Reported in absolute dbu (like the windows above), so the location
+      // can be compared against the search window and the cell's own
+      // orig/target coordinates.
       logger_->report("  Best location for {} is ({}, {}) with cost {}.",
                       cell.db_inst->getName(),
-                      gridToDbu(GridX{best_x}, site_width).v,
-                      opendp_->grid_->gridYToDbu(GridY{best_y}).v,
+                      toX(best_x),
+                      toY(best_y),
                       best_cost == static_cast<double>(kInfCost)
                           ? "inf"
                           : std::to_string(best_cost));
@@ -908,10 +909,8 @@ double NegotiationLegalizer::negotiationCost(int cell_idx,
     return cost;
   }
 
-  const int xBegin = std::max(0, x - cell.pad_left);
-  const int xEnd = std::min(grid_w_, x + cell.width + cell.pad_right);
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int gx = xBegin; gx < xEnd; ++gx) {
+    for (int gx = x; gx < x + cell.width; ++gx) {
       const int gy = y + dy;
       if (!gridExists(gx, gy)) {
         return cost + kInfCost;
@@ -977,23 +976,25 @@ void NegotiationLegalizer::updateHistoryCosts(
   // pixel whose hist_cost is read has >= 2 overlapping cells, and at least
   // one of them is illegal (hence active). Dedupe shared pixels so each is
   // bumped once.
-  hist_seen_pixels_.clear();
+  ++hist_gen_;
   for (int idx : activeCells) {
     const NegCell& cell = cells_[idx];
     if (cell.fixed) {
       continue;
     }
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
+    const int xBegin = cell.x;
+    const int xEnd = cell.x + cell.width;
     for (int dy = 0; dy < cell.height; ++dy) {
       const int gy = cell.y + dy;
       for (int gx = xBegin; gx < xEnd; ++gx) {
         if (!gridExists(gx, gy)) {
           continue;
         }
-        if (!hist_seen_pixels_.insert(gy * grid_w_ + gx).second) {
+        const int pid = gy * grid_w_ + gx;
+        if (hist_seen_stamp_[pid] == hist_gen_) {
           continue;
         }
+        hist_seen_stamp_[pid] = hist_gen_;
         Pixel& g = gridAt(gx, gy);
         const int ov = g.overuse();
         if (ov > 0) {
@@ -1037,8 +1038,8 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
     const int drcCount = opendp_->drc_engine_->countDRCViolations(
         node, GridX{cell.x}, GridY{cell.y}, orient);
     if (drcCount > 0) {
-      const int xBegin = effXBegin(cell);
-      const int xEnd = effXEnd(cell);
+      const int xBegin = cell.x;
+      const int xEnd = cell.x + cell.width;
       for (int dy = 0; dy < cell.height; ++dy) {
         for (int gx = xBegin; gx < xEnd; ++gx) {
           if (gridExists(gx, cell.y + dy)) {
@@ -1063,8 +1064,8 @@ void NegotiationLegalizer::sortByNegotiationOrder(
   auto cellOveruse = [this](int idx) {
     const NegCell& cell = cells_[idx];
     int ov = 0;
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
+    const int xBegin = cell.x;
+    const int xEnd = cell.x + cell.width;
     for (int dy = 0; dy < cell.height; ++dy) {
       for (int gx = xBegin; gx < xEnd; ++gx) {
         if (gridExists(gx, cell.y + dy)) {

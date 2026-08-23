@@ -6,7 +6,7 @@
 // The web GUI renders widgets in the browser (canvas / SVG / WebGL), so —
 // unlike the Qt GUI, which re-renders widgets server-side to a file — export
 // happens client-side and downloads directly in the browser.  These helpers
-// are shared by schematic (SVG/PNG), 3D (PNG), and charts (CSV).
+// are shared by the schematic (SVG/PNG) and 3D (PNG) widgets.
 
 // Trigger a browser download of a data: or blob: URL.
 export function downloadUrl(url, filename) {
@@ -24,17 +24,6 @@ export function downloadBlob(blob, filename) {
     downloadUrl(url, filename);
     // Defer revoke so the download has a chance to start.
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-// Download rows (array of arrays) as a CSV file.  Values containing commas,
-// quotes, or newlines are quoted per RFC 4180.
-export function downloadCsv(rows, filename) {
-    const escape = (v) => {
-        const s = v === null || v === undefined ? '' : String(v);
-        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-    };
-    const csv = rows.map(r => r.map(escape).join(',')).join('\r\n');
-    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
 }
 
 // Serialize an <svg> element to a standalone SVG string (ensures the xmlns and

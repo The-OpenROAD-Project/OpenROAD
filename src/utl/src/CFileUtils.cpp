@@ -10,6 +10,7 @@
 #include <fstream>
 #include <span>
 #include <string>
+#include <system_error>
 
 #include "utl/Logger.h"
 

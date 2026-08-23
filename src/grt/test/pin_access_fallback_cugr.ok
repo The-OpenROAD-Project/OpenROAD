@@ -1,0 +1,104 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1162 components and 5669 component-terminals.
+[INFO ODB-0133]     Created 348 nets and 1021 connections.
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
+[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
+[INFO DRT-0167] List of default vias:
+  Layer via
+    default via: M1M2_PR
+  Layer via2
+    default via: M2M3_PR
+  Layer via3
+    default via: M3M4_PR
+  Layer via4
+    default via: M4M5_PR
+[INFO DRT-0168] Init region query.
+[INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
+[INFO DRT-0033] FR_VIA shape region query size = 0.
+[INFO DRT-0033] li1 shape region query size = 12280.
+[INFO DRT-0033] mcon shape region query size = 6606.
+[INFO DRT-0033] met1 shape region query size = 2990.
+[INFO DRT-0033] via shape region query size = 0.
+[INFO DRT-0033] met2 shape region query size = 29.
+[INFO DRT-0033] via2 shape region query size = 0.
+[INFO DRT-0033] met3 shape region query size = 25.
+[INFO DRT-0033] via3 shape region query size = 0.
+[INFO DRT-0033] met4 shape region query size = 0.
+[INFO DRT-0033] via4 shape region query size = 0.
+[INFO DRT-0033] met5 shape region query size = 0.
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 70
+[INFO GRT-0019] Found 6 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+Design statistics
+Nets:                348
+Special nets:        0
+Routing layers:      6
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      30629          6126          80.00%
+met2       Vertical        25000          5000          80.00%
+met3       Horizontal      16240          3248          80.00%
+met4       Vertical        12480          2496          80.00%
+met5       Horizontal       3600          1640          54.44%
+---------------------------------------------------------------
+
+Stage 1: Pattern routing.
+Stage 2: Resistance-aware re-route of critical nets.
+Stage 3: Pattern routing with detours.
+Stage 4: Maze routing on sparsified graph.
+Stage 5: Iterative rip-up and re-route.
+[INFO GRT-0117] Start extra iteration 1/5
+[INFO GRT-0117] Start extra iteration 2/5
+[INFO GRT-0117] Start extra iteration 3/5
+[INFO GRT-0117] Start extra iteration 4/5
+[INFO GRT-0117] Start extra iteration 5/5
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (73).
+Routing statistics
+Wire length:           49376
+Total via count:       2483
+Total congestion:      73.41
+Min resource:          -1.06
+Bottleneck:            (1, 15, 15)
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
+--------------------------------------------------------------------------------------------------------------
+li1       V         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
+met1      H      6125.75       941.00       151.61      1092.61      17.84      25.53       6.46          1.06
+met2      V      5000.00       846.00       122.40       968.40      19.37      15.68       3.03          1.03
+met3      H      3248.00       414.00        65.58       479.58      14.77      16.15       2.06          0.54
+met4      V      2496.00       322.00        13.37       335.37      13.44       3.24       0.08          0.67
+met5      H      1640.00         5.00         2.37         7.37       0.45       0.90       0.29          0.39
+--------------------------------------------------------------------------------------------------------------
+Total           18509.75      2528.00       355.32      2883.32      15.58      61.48      11.93          1.06
+[INFO GRT-0018] Total wirelength: 25329 um
+[INFO GRT-0014] Routed nets: 348
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
+No differences found.

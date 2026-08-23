@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -755,6 +756,7 @@ class extRCModel
                  const char* suffix,
                  const char* permissions);
   void mkNet_prefix(extMeasure* m, const char* wiresNameSuffix);
+  bool isNewPattern(extMeasure* m, std::set<std::string>& pattern_names);
   void mkFileNames(extMeasure* m, char* wiresNameSuffix);
   void writeWires2(FILE* fp, extMeasure* measure, uint32_t wireCnt);
   int writeBenchWires(FILE* fp, extMeasure* measure);
@@ -1831,6 +1833,15 @@ class extMain
                                bool v = false);
   bool modelExists();
 
+  void setExtractionRulesFile(const std::string& extraction_rules_file)
+  {
+    extraction_rules_file_ = extraction_rules_file;
+  }
+  const std::string& getExtractionRulesFile() const
+  {
+    return extraction_rules_file_;
+  }
+
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
                           uint32_t dir);
@@ -2661,6 +2672,8 @@ class extMain
  private:
   utl::Logger* logger_;
 
+  std::string extraction_rules_file_;
+
   bool _batchScaleExt = true;
   Array1D<extCorner*>* _processCornerTable = nullptr;
   Array1D<extCorner*>* _scaledCornerTable = nullptr;
@@ -2825,6 +2838,7 @@ class extMain
 
 std::unique_ptr<extRCModel> parseRules(
     odb::dbTech* tech,
+    const std::string& rules_file,
     const Array1D<extCorner*>* extractor_corner_table,
     bool is_v2,
     utl::Logger* logger);

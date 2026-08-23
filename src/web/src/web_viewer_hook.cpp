@@ -317,6 +317,18 @@ std::vector<WebChart*> WebViewerHook::charts() const
   return out;
 }
 
+void WebViewerHook::setDisplayState(std::string json)
+{
+  std::lock_guard<std::mutex> lock(display_state_mutex_);
+  display_state_json_ = std::move(json);
+}
+
+std::string WebViewerHook::getDisplayState() const
+{
+  std::lock_guard<std::mutex> lock(display_state_mutex_);
+  return display_state_json_;
+}
+
 //------------------------------------------------------------------------------
 // Custom UI registry
 //------------------------------------------------------------------------------
@@ -405,7 +417,7 @@ std::string WebViewerHook::addToolbarButton(utl::Logger* logger,
                                                       .echo = echo},
                                          &is_duplicate);
   if (is_duplicate) {
-    logger->error(utl::WEB, 51, "Toolbar button {} already defined.", key);
+    logger->error(utl::WEB, 67, "Toolbar button {} already defined.", key);
   }
   return key;
 }
@@ -438,7 +450,7 @@ std::string WebViewerHook::addMenuItem(utl::Logger* logger,
                                                         .echo = echo},
                                          &is_duplicate);
   if (is_duplicate) {
-    logger->error(utl::WEB, 52, "Menu item {} already defined.", key);
+    logger->error(utl::WEB, 68, "Menu item {} already defined.", key);
   }
   return key;
 }

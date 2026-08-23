@@ -4,6 +4,7 @@
 // NetlistsVG is used to render a Yosys-compatible JSON netlist into an SVG.
 // It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
 
+import { beginSelection, isCurrentSelection } from './ui-utils.js';
 import {
     downloadBlob,
     svgToString,
@@ -213,8 +214,12 @@ export class SchematicWidget {
         const wm = this.appState.websocketManager;
         if (!wm) return;
         console.log('[Schematic] inspect:', instName);
+        // Replaces the server-side selection, so it takes ownership from any
+        // other panel's in-flight selection (see ui-utils.js).
+        const token = beginSelection(this.appState);
         wm.request({ type: 'schematic_inspect', inst_name: instName, use_dbu: this.appState.showDbu })
             .then(data => {
+                if (!isCurrentSelection(this.appState, token)) return;
                 if (this.appState.updateInspector) {
                     this.appState.updateInspector(data);
                 }
@@ -308,6 +313,38 @@ export class SchematicWidget {
         } catch (err) {
             console.error('NetlistSVG init failed:', err);
             this.setStatus(`Init error: ${err.message}`);
+        }
+    }
+
+    // Web-only: mirror the layout timing cone here when the timing widget asks
+    // to sync (see TimingWidget._applyCone).  Matches the schematic depth
+    // inputs to the cone request and re-renders for the same target.  Called
+    // from a single 'openroad-cone-sync' listener registered in main.js — kept
+    // out of the constructor so listeners don't accumulate across designs.
+    syncCone(detail = {}) {
+        const faninEl = this.controls.querySelector('#schematic-fanin-depth');
+        const fanoutEl = this.controls.querySelector('#schematic-fanout-depth');
+        // The two views read a depth differently: the timing cone treats 0 as
+        // unlimited and can have a direction switched off entirely, while
+        // handleSchematicCone expands while d < depth, so 0 means "no
+        // expansion".  Copying the number across verbatim turns the default
+        // full cone into a target-only schematic.  Translate instead: a
+        // disabled direction is 0, and unlimited becomes this control's
+        // maximum — the server caps the cone at kMaxConeInsts regardless.
+        const apply = (el, enabled, depth) => {
+            if (!el) return;
+            const max = parseInt(el.max, 10) || 10;
+            if (enabled === false) {
+                el.value = 0;
+            } else if (depth !== undefined) {
+                el.value = depth > 0 ? Math.min(depth, max) : max;
+            }
+        };
+        apply(faninEl, detail.fanin, detail.fanin_depth);
+        apply(fanoutEl, detail.fanout, detail.fanout_depth);
+        this.refresh();
+        if (this.appState.focusComponent) {
+            this.appState.focusComponent('SchematicWidget');
         }
     }
 

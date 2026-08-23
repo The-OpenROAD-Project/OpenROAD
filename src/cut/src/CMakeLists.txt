@@ -7,7 +7,8 @@ project(cut)
 add_library(cut)
 
 messages(
-TARGET cut
+  TARGET cut
+  OUTPUT_DIR ..
 )
 
 target_include_directories(cut

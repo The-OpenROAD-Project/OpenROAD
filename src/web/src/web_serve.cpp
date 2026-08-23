@@ -218,8 +218,7 @@ void WebServer::serve(int port)
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
          hook = viewer_hook_.get()](std::vector<unsigned char>& image,
-                                    const odb::Rect& dbu_tile,
-                                    double scale,
+                                    const TileFrame& frame,
                                     bool debug_live) {
           if (hook == nullptr) {
             return;
@@ -232,11 +231,25 @@ void WebServer::serve(int port)
             return;
           }
           for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
-            WebPainter painter(dbu_tile, scale);
+            // A Renderer sees the tile as a whole-DBU window (Painter's API is
+            // integer DBU); only the rasterization below needs the exact
+            // origin, which it takes from the frame.
+            WebPainter painter(frame.cull, frame.scale);
             renderer->drawObjects(painter);
-            gen->rasterizeWebPainterOps(image, painter.ops(), dbu_tile, scale);
+            gen->rasterizeWebPainterOps(image, painter.ops(), frame);
           }
         });
+
+    // After a design edit invalidates the tile cache, push a refresh so every
+    // connected client re-requests its tiles (mirrors the Qt GUI's repaint on
+    // Search::modified).  Fired on the design-mutation thread; broadcast() is
+    // safe from any thread (it posts writes onto each session's strand).
+    generator_->setDesignChangedCallback([hook = viewer_hook_.get()]() {
+      if (hook == nullptr) {
+        return;
+      }
+      hook->sessions().broadcast(R"({"type":"refresh"})");
+    });
 
     auto const address = net::ip::make_address("0.0.0.0");
     uint16_t const u_port = port;
@@ -393,6 +406,9 @@ void WebServer::stop()
 
   if (viewer_hook_) {
     TileGenerator::setDebugOverlayCallback({});
+    if (generator_) {
+      generator_->setDesignChangedCallback({});
+    }
     if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
       gui::Gui::get()->setHeadlessViewer(nullptr);
     }

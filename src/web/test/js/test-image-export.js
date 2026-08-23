@@ -6,7 +6,6 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     downloadUrl,
-    downloadCsv,
     svgToString,
 } from '../../src/image-export.js';
 
@@ -51,26 +50,6 @@ describe('image-export', () => {
         assert.ok(clicks[0].href.startsWith('data:text/plain'));
         // Anchor is cleaned up after clicking.
         assert.equal(document.querySelectorAll('a').length, 0);
-    });
-
-    it('downloadCsv builds RFC-4180 CSV with proper quoting', async () => {
-        downloadCsv([
-            ['lower', 'upper', 'count'],
-            [-1.5, 0, 10],
-            ['a,b', 'quote"x', 3],
-        ], 'histogram.csv');
-
-        assert.equal(clicks.length, 1);
-        assert.equal(clicks[0].download, 'histogram.csv');
-        assert.equal(objectUrls.length, 1);
-        const blob = objectUrls[0];
-        assert.match(blob.type, /text\/csv/);
-        const text = await blob.text();
-        const lines = text.split('\r\n');
-        assert.equal(lines[0], 'lower,upper,count');
-        assert.equal(lines[1], '-1.5,0,10');
-        // Comma and quote get quoted; embedded quote is doubled.
-        assert.equal(lines[2], '"a,b","quote""x",3');
     });
 
     it('svgToString injects xmlns and serializes the element', () => {
