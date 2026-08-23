@@ -302,6 +302,13 @@ static http::response<http::string_body> handle_request(
       const auto* asset = findEmbeddedAsset(file_path);
       if (asset) {
         res.set(http::field::content_type, asset->content_type);
+        // The assets are compiled into the binary, so their URLs carry no
+        // version and never change.  Without this a browser is free to
+        // heuristically cache them, and a tab reloaded against a rebuilt
+        // OpenROAD keeps running the old JavaScript -- the change appears
+        // to have done nothing until someone thinks to hard-reload.  They
+        // are served from memory, so re-fetching them costs nothing.
+        res.set(http::field::cache_control, "no-store");
         res.body() = std::string(asset->content());
       } else {
         res.result(http::status::not_found);
