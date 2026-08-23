@@ -120,7 +120,13 @@ html[data-theme="light"] {
 
 /* ─── Ruler overlay ──────────────────────────────────────────────────────── */
 
-.ruler-mode-cursor {
+/* Placement-mode crosshair for the ruler and label tools.  Qualified with
+   .leaflet-container so it outranks that element's own `cursor: default
+   !important` below on specificity; a bare .ruler-mode-cursor ties it and
+   loses the source-order tiebreak.  .leaflet-dragging still wins over both,
+   so panning shows the grab cursor. */
+.leaflet-container.ruler-mode-cursor,
+.leaflet-container.label-mode-cursor {
     cursor: crosshair !important;
 }
 .ruler-label {
@@ -132,6 +138,22 @@ html[data-theme="light"] {
     white-space: nowrap;
     pointer-events: none;
     border: none;
+}
+
+/* Draggable handle for a user text label (2.12); the label text itself is
+   drawn server-side on the overlay tile. */
+.label-handle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ruler-label-bg, #00ffff);
+    border: 1px solid var(--fg-bright, #fff);
+    box-sizing: border-box;
+    cursor: move;
+}
+.label-handle-selected {
+    background: #ffff00;
+    border-color: #ffff00;
 }
 
 /* Rubber-band zoom overlay (right-click drag) */
@@ -1593,6 +1615,24 @@ html, body {
     color: var(--fg-muted);
     font-size: 12px;
 }
+
+.timing-cone-panel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--fg-primary);
+}
+.timing-cone-title { color: var(--fg-muted); }
+.timing-cone-panel label { font-size: 12px; }
+.timing-cone-depth-label { display: inline-flex; align-items: center; gap: 3px; }
+.timing-cone-depth { width: 42px; }
+.timing-cone-colormode { font-size: 12px; }
+.timing-cone-status { color: var(--fg-muted); flex: 1; min-width: 80px; }
 
 .timing-tab-bar {
     display: flex;

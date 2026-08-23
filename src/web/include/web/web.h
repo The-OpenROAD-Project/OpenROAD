@@ -122,6 +122,18 @@ class WebServer
                  double dbu_per_pixel,
                  const std::string& vis_json);
 
+  // User text labels (2.12), Tcl-driven (add_label/delete_label/clear_labels).
+  // Delegate to the shared TileGenerator store; returns the label name.
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       const std::string& anchor,
+                       const std::string& color,
+                       int size,
+                       const std::string& name);
+  void deleteLabel(const std::string& name);
+  void clearLabels();
+
   // Persist the connected client's current display-controls state (as
   // synced via the "set_display_state" request) to a JSON file.  The cache
   // holds a single snapshot: with several clients connected, the state of
@@ -148,6 +160,11 @@ class WebServer
   // clears threads_. Detaches the current thread if it happens to be a
   // worker (would otherwise raise EDEADLK on self-join).
   void stopAndJoinIoThreads();
+
+  // Push the current label set to every connected client.  Labels are global
+  // and live outside ODB, so nothing else notifies the other sessions that a
+  // Tcl-driven add/delete/clear changed what they should draw.
+  void broadcastLabels();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

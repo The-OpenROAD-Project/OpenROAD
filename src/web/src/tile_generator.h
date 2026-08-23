@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "color.h"
 #include "glyph_cache.h"
@@ -59,6 +60,45 @@ struct FlightLine
   odb::Point p1;
   odb::Point p2;
   Color color;
+};
+
+// The nine canonical anchor names, in gui::Painter::anchors() order.  That
+// table (src/gui/src/painter.cpp) is the source of truth for the spelling and
+// is duplicated rather than shared because libweb has no link dependency on
+// the Qt GUI — the same trade-off spectrumColor() makes in color.h.  Keep the
+// two in sync: add_label is one user-facing command, so -anchor has to mean
+// the same thing whichever GUI runs it.
+const std::vector<std::string>& anchorNames();
+
+// True when `anchor` is one of anchorNames().  The empty string is NOT valid;
+// callers that treat empty as "use the default" must substitute "center"
+// before asking.
+bool isValidAnchor(const std::string& anchor);
+
+// A short text label anchored at a DBU point, drawn on the overlay tile.
+// Used by the timing-cone overlay (depth annotations) and by user labels
+// (2.12).  `size` is the font pixel size (0 = default) and `anchor` names the
+// point of the text box that sits on `pos` — see anchorNames().
+struct TextLabel
+{
+  odb::Point pos;
+  std::string text;
+  Color color;
+  int size = 0;
+  std::string anchor = "center";
+};
+
+// A user-created text annotation stored on the design (mirrors the Qt GUI's
+// gui::Label).  Global (not per-session) so it renders into every client's
+// tiles and into save_image, matching the Qt GUI.
+struct StoredLabel
+{
+  odb::Point pos;
+  std::string text;
+  Color color;
+  int size = 0;
+  std::string anchor = "center";
+  std::string name;
 };
 
 struct ColoredPolygon
@@ -286,6 +326,11 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // User text labels (2.12).  On by default like the Qt GUI's Misc/"Labels",
+  // which gates RenderThread::drawLabels — and so gates them in Qt's
+  // save_image too, since that renders through the same path.
+  bool labels = true;
+
   // Debug
   bool debug = false;
 
@@ -478,6 +523,33 @@ class TileGenerator
   odb::dbTech* getTech() const;
   odb::dbDatabase* getDb() const { return db_; }
 
+  // ─── User text labels (2.12) ─────────────────────────────────────────
+  // Design-level annotations, global (not per-session), so they render into
+  // overlay tiles and save_image for every client — mirrors the Qt GUI.
+  // addLabel returns the label's name (auto-generated "label<N>" when `name`
+  // is empty; a clashing name is rejected and "" is returned).
+  std::string addLabel(const odb::Point& pos,
+                       const std::string& text,
+                       const Color& color,
+                       int size,
+                       const std::string& anchor,
+                       const std::string& name);
+  bool deleteLabel(const std::string& name);
+  // Atomically mutate an existing label in place (used for move/edit so the
+  // label can never be lost by a delete+add race).  No-op returning false if
+  // no label has `name`.
+  bool updateLabel(const std::string& name,
+                   const odb::Point& pos,
+                   const std::string& text,
+                   const Color& color,
+                   int size,
+                   const std::string& anchor);
+  void clearLabels();
+  // Snapshot of all labels as drawable TextLabels (thread-safe).
+  std::vector<TextLabel> labelsForDraw() const;
+  // Labels serialized for the client (name/x/y/text/color/size/anchor).
+  boost::json::array labelsJson() const;
+
   // Cached, sorted list of chiplets reachable from db_->getChip().
   // The cache is invalidated by eagerInit() and rebuilt lazily on the
   // next call.  Hot-path call-sites (renderTileBuffer, getBounds,
@@ -530,7 +602,8 @@ class TileGenerator
       const std::set<std::string>& visible_layers = {},
       double dpr = 1.0,
       int tile_px = 0,
-      const std::vector<ColoredPolygon>& colored_polys = {}) const;
+      const std::vector<ColoredPolygon>& colored_polys = {},
+      const std::vector<TextLabel>& labels = {}) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
@@ -691,6 +764,24 @@ class TileGenerator
   void drawColoredPolygons(std::vector<unsigned char>& image,
                            const std::vector<ColoredPolygon>& polys,
                            const TileFrame& frame) const;
+
+  // Draw centered text labels (e.g. timing-cone logic depth) on the overlay.
+  void drawTextLabels(std::vector<unsigned char>& image,
+                      const std::vector<TextLabel>& labels,
+                      const TileFrame& frame) const;
+
+  // Raw (un-encoded) RGBA tile with only the user labels drawn on a
+  // transparent background, for the given Leaflet z/x/y.  Used to composite
+  // labels into save_image.  `labels` is passed in (snapshot once per image)
+  // so the mutex isn't locked and copied per tile.  Returns empty if `labels`
+  // is empty.
+  std::vector<unsigned char> renderLabelTile(
+      int z,
+      int x,
+      int y,
+      const std::vector<TextLabel>& labels,
+      double dpr = 1.0,
+      int tile_px = 0) const;
 
   // Private counterpart of setDebugOverlayCallback: invokes the
   // installed callback (if any) for this tile.  See the public API
@@ -904,6 +995,11 @@ class TileGenerator
   // The Search::revision() the three caches above were built at; see
   // dropOverlayCachesIfStale.
   mutable uint64_t overlay_cache_revision_ = 0;
+
+  // User text labels (2.12).  Global design annotations; see addLabel().
+  mutable std::mutex labels_mutex_;
+  std::vector<StoredLabel> labels_;
+  int next_label_id_ = 0;
 
   static constexpr int kTileSizeInPixel = 256;
 };

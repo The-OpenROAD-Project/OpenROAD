@@ -344,6 +344,61 @@ describe('Inspector focus nets', () => {
             assert.equal(app._requests[0].value, undefined);
         });
 
+        it('client-side list editor renders a select and reports a string',
+           async () => {
+            // Labels and rulers own their state locally, so they supply
+            // onPropertyChange rather than onPropertyEdit.  They still get a
+            // picker: a free-text Anchor field would accept names the server
+            // rejects.
+            const seen = [];
+            panel.updateInspector({
+                type: 'Label',
+                name: 'label0',
+                bbox: [0, 0, 0, 0],
+                properties: [
+                    { name: 'Anchor', value: 'center', editable: true,
+                      editor: { type: 'list',
+                                options: ['center', 'top left'] } },
+                ],
+                onPropertyChange: (n, v) => seen.push([n, v]),
+            });
+            const select
+                = app.inspectorEl.querySelector('.inspector-editor-select');
+            assert.ok(select, 'client-side list editor should render a select');
+            assert.equal(select.value, 'center');
+            select.value = 'top left';
+            select.dispatchEvent(new dom.window.Event('change'));
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.deepEqual(seen, [['Anchor', 'top left']]);
+            // Purely client-side: nothing goes to the server from here.
+            assert.equal(app._requests.length, 0);
+        });
+
+        it('client-side bool editor reports the option string', async () => {
+            const seen = [];
+            panel.updateInspector({
+                type: 'Ruler',
+                name: 'ruler0',
+                bbox: [0, 0, 0, 0],
+                properties: [
+                    { name: 'Euclidian', value: 'True', editable: true,
+                      editor: { type: 'bool' } },
+                ],
+                onPropertyChange: (n, v) => seen.push([n, v]),
+            });
+            const select
+                = app.inspectorEl.querySelector('.inspector-editor-select');
+            assert.ok(select);
+            assert.equal(select.value, 'True');
+            select.value = 'False';
+            select.dispatchEvent(new dom.window.Event('change'));
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.deepEqual(seen, [['Euclidian', 'False']]);
+            assert.equal(app._requests.length, 0);
+        });
+
         it('bool editor renders True/False and commits a boolean', async () => {
             panel.updateInspector(editableData([
                 { name: 'Dont Touch', value: 'False', editable: true,

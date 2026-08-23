@@ -44,6 +44,7 @@ genrule(
         "src/display-controls.js",
         "src/inspector.js",
         "src/ruler.js",
+        "src/label-manager.js",
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
@@ -79,6 +80,7 @@ genrule(
           " $(location src/display-controls.js)" +
           " $(location src/inspector.js)" +
           " $(location src/ruler.js)" +
+          " $(location src/label-manager.js)" +
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
@@ -115,6 +117,7 @@ _WEB_ASSET_FILES = [
     "src/display-controls.js",
     "src/inspector.js",
     "src/ruler.js",
+    "src/label-manager.js",
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/menu-bar.js",

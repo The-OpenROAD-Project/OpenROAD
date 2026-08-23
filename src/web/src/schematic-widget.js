@@ -303,6 +303,38 @@ export class SchematicWidget {
         }
     }
 
+    // Web-only: mirror the layout timing cone here when the timing widget asks
+    // to sync (see TimingWidget._applyCone).  Matches the schematic depth
+    // inputs to the cone request and re-renders for the same target.  Called
+    // from a single 'openroad-cone-sync' listener registered in main.js — kept
+    // out of the constructor so listeners don't accumulate across designs.
+    syncCone(detail = {}) {
+        const faninEl = this.controls.querySelector('#schematic-fanin-depth');
+        const fanoutEl = this.controls.querySelector('#schematic-fanout-depth');
+        // The two views read a depth differently: the timing cone treats 0 as
+        // unlimited and can have a direction switched off entirely, while
+        // handleSchematicCone expands while d < depth, so 0 means "no
+        // expansion".  Copying the number across verbatim turns the default
+        // full cone into a target-only schematic.  Translate instead: a
+        // disabled direction is 0, and unlimited becomes this control's
+        // maximum — the server caps the cone at kMaxConeInsts regardless.
+        const apply = (el, enabled, depth) => {
+            if (!el) return;
+            const max = parseInt(el.max, 10) || 10;
+            if (enabled === false) {
+                el.value = 0;
+            } else if (depth !== undefined) {
+                el.value = depth > 0 ? Math.min(depth, max) : max;
+            }
+        };
+        apply(faninEl, detail.fanin, detail.fanin_depth);
+        apply(fanoutEl, detail.fanout, detail.fanout_depth);
+        this.refresh();
+        if (this.appState.focusComponent) {
+            this.appState.focusComponent('SchematicWidget');
+        }
+    }
+
     // ── Refresh ──────────────────────────────────────────────────────────────
 
     refresh() {

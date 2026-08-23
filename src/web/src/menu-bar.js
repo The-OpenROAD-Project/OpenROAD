@@ -33,6 +33,14 @@ export function createMenuBar(app) {
               action: () => { if (app.rulerManager) app.rulerManager.toggleRulerMode(); } },
             { label: 'Clear Rulers', shortcut: 'Shift+K',
               action: () => { if (app.rulerManager) app.rulerManager.clearAllRulers(); } },
+            { label: 'Euclidian rulers', action: () => app.toggleRulerStyle(),
+              checked: () => app.rulerStyle !== 'manhattan' },
+            { type: 'separator' },
+            { label: 'Add Label', shortcut: 'L',
+              action: () => { if (app.labelManager) app.labelManager.toggleLabelMode(); } },
+            { label: 'Clear Labels',
+              action: () => { if (app.labelManager) app.labelManager.clearAllLabels(); } },
+            { type: 'separator' },
             { label: 'Clear Highlights',
               action: () => {
                   app.websocketManager.request(

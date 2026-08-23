@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 
 #include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <csignal>
 #include <cstdint>
@@ -39,6 +40,7 @@
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
+#include "color.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
@@ -502,6 +504,14 @@ WebSocketSession::WebSocketSession(
   // DB-mutating requests (set_property) notify every connected client so
   // all views re-render.  Fire-and-forget; safe from any thread.
   select_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
+    if (hook != nullptr) {
+      hook->sessions().broadcast(j);
+    }
+  });
+
+  // Labels are global, not per-session, so one client's edit changes what
+  // every client should be drawing.
+  tile_handler_.setBroadcastFn([hook = viewer_hook_](const std::string& j) {
     if (hook != nullptr) {
       hook->sessions().broadcast(j);
     }
@@ -1627,6 +1637,124 @@ void WebServer::saveImage(const std::string& filename,
     }
   }
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+}
+
+namespace {
+
+// Parse a color given as "#rgb", "#rrggbb", or a small set of names.
+// Defaults to opaque white on empty/unknown input.
+Color parseColorString(const std::string& s)
+{
+  Color c{.r = 255, .g = 255, .b = 255, .a = 255};
+  if (s.empty()) {
+    return c;
+  }
+  std::string lower;
+  lower.reserve(s.size());
+  for (char ch : s) {
+    lower.push_back(static_cast<char>(std::tolower(ch)));
+  }
+  static const std::map<std::string, Color> kNamed = {
+      {"white", {255, 255, 255, 255}},
+      {"black", {0, 0, 0, 255}},
+      {"red", {255, 0, 0, 255}},
+      {"green", {0, 255, 0, 255}},
+      {"blue", {0, 0, 255, 255}},
+      {"yellow", {255, 255, 0, 255}},
+      {"cyan", {0, 255, 255, 255}},
+      {"magenta", {255, 0, 255, 255}},
+  };
+  const auto it = kNamed.find(lower);
+  if (it != kNamed.end()) {
+    return it->second;
+  }
+  if (lower[0] == '#') {
+    lower.erase(0, 1);
+  }
+  auto hex = [](const std::string& h) {
+    return static_cast<unsigned char>(std::strtol(h.c_str(), nullptr, 16));
+  };
+  if (lower.size() == 6) {
+    c.r = hex(lower.substr(0, 2));
+    c.g = hex(lower.substr(2, 2));
+    c.b = hex(lower.substr(4, 2));
+  } else if (lower.size() == 3) {
+    c.r = hex(std::string(2, lower[0]));
+    c.g = hex(std::string(2, lower[1]));
+    c.b = hex(std::string(2, lower[2]));
+  }
+  return c;
+}
+
+}  // namespace
+
+// Push the current label set to every connected client.  Labels sit outside
+// ODB, so no design-change callback fires for them and a Tcl-driven edit
+// would otherwise leave every open browser showing the old set.  A no-op
+// before serve(), where there is nobody to tell.
+void WebServer::broadcastLabels()
+{
+  if (!viewer_hook_ || !generator_) {
+    return;
+  }
+  boost::json::object msg;
+  msg["type"] = "labels_changed";
+  msg["labels"] = generator_->labelsJson();
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
+}
+
+std::string WebServer::addLabel(const int x,
+                                const int y,
+                                const std::string& text,
+                                const std::string& anchor,
+                                const std::string& color,
+                                const int size,
+                                const std::string& name)
+{
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+  }
+  // Reject an unknown anchor rather than silently centring the label, which
+  // reads as "the option did nothing".  Qt's add_label errors the same way
+  // (GUI-45); listing the choices saves a trip to the manual over a typo.
+  const std::string anchor_name = anchor.empty() ? "center" : anchor;
+  if (!isValidAnchor(anchor_name)) {
+    std::string choices;
+    for (const std::string& n : anchorNames()) {
+      if (!choices.empty()) {
+        choices += ", ";
+      }
+      choices += n;
+    }
+    logger_->error(utl::WEB,
+                   58,
+                   "Anchor not recognized: {}. Expected one of: {}.",
+                   anchor_name,
+                   choices);
+  }
+  const std::string result = generator_->addLabel(
+      {x, y}, text, parseColorString(color), size, anchor_name, name);
+  if (result.empty()) {
+    logger_->warn(utl::WEB, 57, "Label name '{}' already exists.", name);
+  } else {
+    broadcastLabels();
+  }
+  return result;
+}
+
+void WebServer::deleteLabel(const std::string& name)
+{
+  if (generator_ && generator_->deleteLabel(name)) {
+    broadcastLabels();
+  }
+}
+
+void WebServer::clearLabels()
+{
+  if (generator_) {
+    generator_->clearLabels();
+    broadcastLabels();
+  }
 }
 
 void WebServer::saveDisplayControls(const std::string& filename)

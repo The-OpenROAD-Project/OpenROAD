@@ -30,6 +30,7 @@ import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
+import { LabelManager } from './label-manager.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
@@ -136,6 +137,10 @@ const app = {
     layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
     showDbu: getCookie('or_show_dbu') === '1',
+    // Default style for NEW rulers (2.12): 'euclidian' | 'manhattan'.
+    rulerStyle: getCookie('or_ruler_style') === 'manhattan'
+        ? 'manhattan' : 'euclidian',
+    labelManager: null,
     selectableLayers: new Set(),
     heatMapData: null,
     activeHeatMap: '',
@@ -246,6 +251,7 @@ const visibility = {
     // Misc
     detailed: false,
     rulers: true,
+    labels: true,
     scale_bar: true,
     // Route guides of focused nets — off by default, matching GUI
     focused_nets_guides: false,
@@ -563,6 +569,9 @@ function redrawAllLayers() {
     if (app.rulerManager) {
         app.rulerManager.updateVisibility();
     }
+    if (app.labelManager) {
+        app.labelManager.updateVisibility();
+    }
     if (app.updateScaleBar) {
         app.updateScaleBar();
     }
@@ -749,6 +758,7 @@ function createLayoutViewer(container) {
     app.updateScaleBar = updateScaleBar;
 
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
+    app.labelManager = new LabelManager(app, visibility, updateInspector, focusComponent);
 }
 
 function createDisplayControls(container) {
@@ -1176,6 +1186,13 @@ app.toggleShowDbu = function() {
     scheduleSyncDisplayState();
 };
 
+// Toggle the default style used for NEW rulers (2.12); existing rulers keep
+// their per-ruler "Euclidian" flag.  Persisted like other preferences.
+app.toggleRulerStyle = function() {
+    app.rulerStyle = app.rulerStyle === 'manhattan' ? 'euclidian' : 'manhattan';
+    setCookie('or_ruler_style', app.rulerStyle);
+};
+
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
 
 createMenuBar(app);
@@ -1302,6 +1319,13 @@ app.websocketManager.onPush = (msg) => {
             app.highlightRect = null;
         }
         scheduleRefreshOverlay();
+    } else if (msg.type === 'labels_changed') {
+        // Labels live server-side and are shared, so another client's edit
+        // (or a Tcl add_label) changes what this one should be drawing.
+        // The push carries the new set, so adopt it without a round-trip.
+        if (app.labelManager) {
+            app.labelManager.applyRemoteLabels(msg.labels);
+        }
     } else if (msg.type === 'drcUpdated') {
         if (app._drcUpdateTimeout) {
             clearTimeout(app._drcUpdateTimeout);
@@ -1374,6 +1398,11 @@ app.websocketManager.readyPromise.then(async () => {
         // No design loaded — skip map setup, let user open a DB via menu.
         const hasDesign = applyBounds(designBounds);
         if (hasDesign) {
+            // Load any server-side text labels (2.12) now that applyBounds
+            // has set the coordinate transform, so their handles can be
+            // placed.
+            if (app.labelManager) app.labelManager.reload();
+
             app.map.fitBounds(app.fitBounds);
 
             if (staticCache) {
@@ -1433,6 +1462,13 @@ app.websocketManager.readyPromise.then(async () => {
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
                 latlng.lat, latlng.lng, app.designScale, app.designMaxDXDY,
                 app.designOriginX, app.designOriginY);
+
+            // In label-placement mode, a click creates a text annotation
+            // instead of selecting (2.12).
+            if (app.labelManager && app.labelManager.isActive()) {
+                app.labelManager.handleMapClick(dbu_x, dbu_y);
+                return;
+            }
 
             const vf = buildVisibilityFlags(visibility, selectability);
             const selectRequest = {
@@ -1654,6 +1690,13 @@ app.websocketManager.readyPromise.then(async () => {
     }
 });
 
+// ─── Timing cone → schematic sync ───────────────────────────────────────────
+// Single global listener (registered once here, not per SchematicWidget) that
+// forwards the timing widget's cone-sync event to the current schematic widget.
+document.addEventListener('openroad-cone-sync', (e) => {
+    app.schematicWidget?.syncCone(e.detail || {});
+});
+
 // ─── Keyboard Shortcuts ─────────────────────────────────────────────────────
 
 document.addEventListener('keydown', (e) => {
@@ -1664,10 +1707,15 @@ document.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
         app.rulerManager.cancelRulerBuild();
+    } else if (key === 'escape' && app.labelManager
+               && app.labelManager.isActive()) {
+        app.labelManager.cancelLabelMode();
     } else if (key === 'k' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         if (app.rulerManager) app.rulerManager.toggleRulerMode();
     } else if (key === 'k' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
         if (app.rulerManager) app.rulerManager.clearAllRulers();
+    } else if (key === 'l' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (app.labelManager) app.labelManager.toggleLabelMode();
     } else if (key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
         app.map.fitBounds(app.fitBounds);
     } else if (key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {

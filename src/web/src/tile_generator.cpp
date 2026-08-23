@@ -226,6 +226,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"special_nets",       &TileVisibility::special_nets,       true},
     {"srouting_segments",  &TileVisibility::srouting_segments,  true},
     {"srouting_vias",      &TileVisibility::srouting_vias,      true},
+    {"labels",             &TileVisibility::labels,             true},
     {"pins",               &TileVisibility::pins,               true},
     {"pin_markers",        &TileVisibility::pin_markers,        true},
     {"pin_names",          &TileVisibility::pin_names,          true},
@@ -2048,7 +2049,8 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const std::set<std::string>& visible_layers,
     const double dpr,
     const int requested_tile_px,
-    const std::vector<ColoredPolygon>& colored_polys) const
+    const std::vector<ColoredPolygon>& colored_polys,
+    const std::vector<TextLabel>& labels) const
 {
   // Same contract as renderTileBuffer: the client states the device-pixel
   // square it will display this tile in, because an overlay drawn at a
@@ -2072,6 +2074,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   // Short-circuit: if there's nothing to draw, return a blank tile.
   if (highlight_rects.empty() && highlight_polys.empty()
       && colored_rects.empty() && colored_polys.empty() && flight_lines.empty()
+      && labels.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
     std::vector<unsigned char> png;
     lodepng::encode(png, image, dim, dim);
@@ -2107,6 +2110,9 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   }
   if (!flight_lines.empty()) {
     drawFlightLines(image, flight_lines, frame);
+  }
+  if (!labels.empty()) {
+    drawTextLabels(image, labels, frame);
   }
   if (route_guide_net_ids && !route_guide_net_ids->empty()) {
     // Draw route guides only for visible tech layers.
@@ -4635,6 +4641,13 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
   const std::vector<std::string> layers_to_render
       = saveImageLayerOrder(vis, getLayers());
 
+  // Snapshot the user labels once (locks labels_mutex_ + copies) instead of
+  // per tile — the set is identical for every tile in the image.  Skipped
+  // when Labels is off, so a saved image can reproduce a view with them
+  // hidden; Qt gates its own drawLabels the same way.
+  const std::vector<TextLabel> labels
+      = vis.labels ? labelsForDraw() : std::vector<TextLabel>{};
+
   // Render each tile, compositing all layers.
   for (int ty = ty_min; ty <= ty_max; ++ty) {
     for (int tx = tx_min; tx <= tx_max; ++tx) {
@@ -4660,6 +4673,26 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
             }
             const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
             compositePixel(&output[dst_idx], &tile_buf[src_idx]);
+          }
+        }
+      }
+
+      // Composite user text labels on top of all layers (Qt-parity: labels
+      // appear in save_image).
+      auto label_buf = labels.empty()
+                           ? std::vector<unsigned char>()
+                           : renderLabelTile(z, tx, leaflet_y, labels);
+      if (!label_buf.empty()) {
+        for (int py = 0; py < kTileSizeInPixel; ++py) {
+          for (int px = 0; px < kTileSizeInPixel; ++px) {
+            const int src_idx = (py * kTileSizeInPixel + px) * 4;
+            const int dst_x = out_ox + px;
+            const int dst_y = out_oy + py;
+            if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+              continue;
+            }
+            const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
+            compositePixel(&output[dst_idx], &label_buf[src_idx]);
           }
         }
       }
@@ -5608,6 +5641,280 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
     c.a = 220;
     drawLine(image, px0, py0, px1, py1, c, penWidthCss(frame));
   }
+}
+
+namespace {
+
+// One anchor name and where it puts the text box relative to the anchor
+// point, as an edge to pin per axis.  kMin is the low-coordinate edge in
+// PIXEL space, so vertically it is the box's top (pixel rows grow downward
+// while DBU grow up).
+struct AnchorEntry
+{
+  enum Edge
+  {
+    kMin,
+    kMid,
+    kMax
+  };
+  const char* name;
+  Edge h;
+  Edge v;
+};
+
+// The one table behind anchorNames(), isValidAnchor() and the placement in
+// drawTextLabels, so a name can never be accepted and then not drawn.  The
+// spellings must match gui::Painter::anchors(); the order is only that of the
+// literal in painter.cpp and means nothing (anchors() is a std::map, so it
+// iterates alphabetically).  The edges reproduce the switch over
+// gui::Painter::Anchor in drawPainterOps.
+constexpr AnchorEntry kAnchors[] = {
+    {"bottom left", AnchorEntry::kMin, AnchorEntry::kMax},
+    {"bottom right", AnchorEntry::kMax, AnchorEntry::kMax},
+    {"top left", AnchorEntry::kMin, AnchorEntry::kMin},
+    {"top right", AnchorEntry::kMax, AnchorEntry::kMin},
+    {"center", AnchorEntry::kMid, AnchorEntry::kMid},
+    {"bottom center", AnchorEntry::kMid, AnchorEntry::kMax},
+    {"top center", AnchorEntry::kMid, AnchorEntry::kMin},
+    {"left center", AnchorEntry::kMin, AnchorEntry::kMid},
+    {"right center", AnchorEntry::kMax, AnchorEntry::kMid},
+};
+
+// "center" is both the documented default and the unrecognized-name
+// fallback; pin its slot so reordering kAnchors cannot quietly change either.
+constexpr size_t kCenterAnchor = 4;
+static_assert(std::string_view(kAnchors[kCenterAnchor].name) == "center");
+
+// The entry for `anchor`, or the "center" entry when it names nothing.
+const AnchorEntry& anchorEntry(const std::string& anchor)
+{
+  for (const AnchorEntry& a : kAnchors) {
+    if (anchor == a.name) {
+      return a;
+    }
+  }
+  return kAnchors[kCenterAnchor];
+}
+
+}  // namespace
+
+const std::vector<std::string>& anchorNames()
+{
+  static const std::vector<std::string> names = [] {
+    std::vector<std::string> out;
+    out.reserve(std::size(kAnchors));
+    for (const AnchorEntry& a : kAnchors) {
+      out.emplace_back(a.name);
+    }
+    return out;
+  }();
+  return names;
+}
+
+bool isValidAnchor(const std::string& anchor)
+{
+  return std::any_of(
+      std::begin(kAnchors),
+      std::end(kAnchors),
+      [&anchor](const AnchorEntry& a) { return anchor == a.name; });
+}
+
+void TileGenerator::drawTextLabels(std::vector<unsigned char>& image,
+                                   const std::vector<TextLabel>& labels,
+                                   const TileFrame& frame) const
+{
+  const int dim = bufferDim(image);
+  for (const auto& label : labels) {
+    if (label.text.empty()) {
+      continue;
+    }
+    // The label's size is authored in CSS px, so it scales with the display
+    // like every other pixel-specified size; a fixed value would shrink as
+    // the ratio rises.
+    constexpr int kDefaultLabelFontHeightCss = 14;
+    const int font_px = std::max(
+        1,
+        static_cast<int>(std::lround(
+            (label.size > 0 ? label.size : kDefaultLabelFontHeightCss)
+            * frame.px_per_css)));
+    const GlyphCache::FontSize& font = fontAtlasGetFont(font_px);
+    const int text_width = getTextWidth(label.text, font);
+    const int text_height = getTextHeight(font);
+    const int pixel_x = toPxX(label.pos.x(), frame);
+    const int pixel_y = toPxY(label.pos.y(), frame, dim);
+
+    // Position the text box relative to the anchor point.  An unrecognized
+    // name centres, matching Painter::stringToAnchor's fallback; the API
+    // layers reject one before it gets here, so this is only the last word.
+    // The box may straddle a tile seam; skip only when it is fully off-tile so
+    // each tile draws its slice (drawText clips per-pixel).
+    const AnchorEntry& a = anchorEntry(label.anchor);
+    int text_px_min = pixel_x - text_width / 2;
+    if (a.h == AnchorEntry::kMin) {
+      text_px_min = pixel_x;
+    } else if (a.h == AnchorEntry::kMax) {
+      text_px_min = pixel_x - text_width;
+    }
+    int text_py_min = pixel_y - text_height / 2;
+    if (a.v == AnchorEntry::kMin) {
+      text_py_min = pixel_y;
+    } else if (a.v == AnchorEntry::kMax) {
+      text_py_min = pixel_y - text_height;
+    }
+
+    if (text_px_min + text_width <= 0 || text_px_min >= dim
+        || text_py_min + text_height <= 0 || text_py_min >= dim) {
+      continue;
+    }
+    drawText(image, text_px_min, text_py_min, label.text, font, label.color);
+  }
+}
+
+std::vector<unsigned char> TileGenerator::renderLabelTile(
+    const int z,
+    const int x,
+    int y,
+    const std::vector<TextLabel>& labels,
+    const double dpr,
+    const int requested_tile_px) const
+{
+  if (labels.empty()) {
+    return {};
+  }
+  // Same contract as generateOverlayTile: the caller states the device-pixel
+  // square it will composite this tile into, so the glyphs land at the same
+  // size and registration as the tiles beneath.
+  const double effective_dpr = dpr > 0.0 ? dpr : 1.0;
+  const int dim
+      = requested_tile_px > 0
+            ? requested_tile_px
+            : static_cast<int>(std::lround(kTileSizeInPixel * effective_dpr));
+  std::vector<unsigned char> image(static_cast<size_t>(dim) * dim * 4,
+                                   0);  // transparent
+
+  // Tile bounding box in DBU (same math as generateOverlayTile).
+  const double num_tiles_at_zoom = pow(2, z);
+  y = num_tiles_at_zoom - 1 - y;  // flip Y
+  const odb::Rect full_bounds = getBounds();
+  if (full_bounds.maxDXDY() <= 0) {
+    return {};
+  }
+  const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+  const TileFrame frame = tileFrame(
+      full_bounds, x, y, tile_dbu_size, dim / tile_dbu_size, effective_dpr);
+
+  drawTextLabels(image, labels, frame);
+  return image;
+}
+
+//------------------------------------------------------------------------------
+// User text labels (2.12) — global design annotations
+//------------------------------------------------------------------------------
+
+std::string TileGenerator::addLabel(const odb::Point& pos,
+                                    const std::string& text,
+                                    const Color& color,
+                                    const int size,
+                                    const std::string& anchor,
+                                    const std::string& name)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  auto name_in_use = [this](const std::string& n) {
+    for (const auto& l : labels_) {
+      if (l.name == n) {
+        return true;
+      }
+    }
+    return false;
+  };
+  std::string label_name = name;
+  if (label_name.empty()) {
+    // Auto-generate; skip ids already taken by a user-named label.
+    do {
+      label_name = "label" + std::to_string(next_label_id_++);
+    } while (name_in_use(label_name));
+  } else if (name_in_use(label_name)) {
+    // Reject a duplicate explicit name (mirrors the Qt GUI, which warns
+    // GUI-44).
+    return "";
+  }
+  labels_.push_back(
+      {pos, text, color, size, anchor.empty() ? "center" : anchor, label_name});
+  return label_name;
+}
+
+bool TileGenerator::deleteLabel(const std::string& name)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  for (auto it = labels_.begin(); it != labels_.end(); ++it) {
+    if (it->name == name) {
+      labels_.erase(it);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TileGenerator::updateLabel(const std::string& name,
+                                const odb::Point& pos,
+                                const std::string& text,
+                                const Color& color,
+                                const int size,
+                                const std::string& anchor)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  for (auto& l : labels_) {
+    if (l.name == name) {
+      l.pos = pos;
+      l.text = text;
+      l.color = color;
+      l.size = size;
+      l.anchor = anchor.empty() ? "center" : anchor;
+      return true;
+    }
+  }
+  return false;
+}
+
+void TileGenerator::clearLabels()
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  labels_.clear();
+}
+
+std::vector<TextLabel> TileGenerator::labelsForDraw() const
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  std::vector<TextLabel> out;
+  out.reserve(labels_.size());
+  for (const auto& l : labels_) {
+    out.push_back({l.pos, l.text, l.color, l.size, l.anchor});
+  }
+  return out;
+}
+
+boost::json::array TileGenerator::labelsJson() const
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  boost::json::array arr;
+  arr.reserve(labels_.size());
+  for (const auto& l : labels_) {
+    boost::json::object o;
+    o["name"] = l.name;
+    o["x"] = l.pos.x();
+    o["y"] = l.pos.y();
+    o["text"] = l.text;
+    o["size"] = l.size;
+    o["anchor"] = l.anchor;
+    boost::json::object c;
+    c["r"] = static_cast<int>(l.color.r);
+    c["g"] = static_cast<int>(l.color.g);
+    c["b"] = static_cast<int>(l.color.b);
+    c["a"] = static_cast<int>(l.color.a);
+    o["color"] = std::move(c);
+    arr.emplace_back(std::move(o));
+  }
+  return arr;
 }
 
 void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,

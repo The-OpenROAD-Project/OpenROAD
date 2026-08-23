@@ -389,7 +389,8 @@ export class RulerManager {
             pt1: { ...pt1 },
             name: `ruler${id}`,
             label: '',
-            euclidian: true,
+            // Global default style for new rulers (2.12); per-ruler editable.
+            euclidian: this._app.rulerStyle !== 'manhattan',
         };
         this._rulers.push(ruler);
         this._renderRuler(ruler);
@@ -528,7 +529,11 @@ export class RulerManager {
                 { name: 'Delta x', value: fmt(dx) },
                 { name: 'Delta y', value: fmt(dy) },
                 { name: 'Length', value: fmt(length) },
-                { name: 'Euclidian', value: ruler.euclidian ? 'true' : 'false', editable: true },
+                // 'True'/'False' to match the bool editor's option labels, so
+                // the select opens on the current value instead of showing it
+                // as an unrecognized placeholder.
+                { name: 'Euclidian', value: ruler.euclidian ? 'True' : 'False',
+                  editable: true, editor: { type: 'bool' } },
             ],
             onPropertyChange: (propName, newValue) => {
                 switch (propName) {
