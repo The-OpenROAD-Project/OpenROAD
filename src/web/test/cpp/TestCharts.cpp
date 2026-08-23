@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cmath>
+#include <cstdint>
+
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "timing_report.h"
@@ -96,6 +99,51 @@ TEST_F(NetLengthTest, EmptyBlockHasNoNets)
   NetLengthHistogramResult h = computeNetLengthHistogram(block_, false);
   EXPECT_EQ(h.total_nets, 0);
   EXPECT_TRUE(h.bins.empty());
+}
+
+// The bins are upper-exclusive and so is select_net_length_bin, so the
+// longest net must fall strictly inside the last bin.  When it only lands
+// there by clamping, the bar counts nets that double-clicking it then fails
+// to select.  The bug needs the longest net to be an exact multiple of the
+// snapped bin width, so drive HPWL to chosen round values rather than hoping
+// a geometry sweep lands on one.
+TEST_F(NetLengthTest, LongestNetIsBelowTheLastBinUpperEdge)
+{
+  block_->setDieArea(odb::Rect(0, 0, 400000, 400000));
+  odb::dbInst* src = placeInst("BUF_X16", "src", 0, 0);
+  odb::dbInst* sink = placeInst("BUF_X16", "sink", 100000, 0);
+  odb::dbNet* net = odb::dbNet::create(block_, "n");
+  net->setSigType(odb::dbSigType::SIGNAL);
+  iterm(src, odb::dbIoType::OUTPUT)->connect(net);
+  iterm(sink, odb::dbIoType::INPUT)->connect(net);
+
+  // HPWL tracks the sink's x with a fixed offset (pin geometry plus the
+  // constant dy), so solve for the placement that yields an exact length.
+  const int64_t offset = netHpwlDbu(net) - 100000;
+
+  for (const int64_t target : {10000, 20000, 50000, 100000, 200000}) {
+    sink->setLocation(static_cast<int>(target - offset), 0);
+    ASSERT_EQ(netHpwlDbu(net), target);
+
+    const NetLengthHistogramResult h = computeNetLengthHistogram(block_, true);
+    ASSERT_FALSE(h.bins.empty()) << "target=" << target;
+    const double bin_width = h.bins.front().upper - h.bins.front().lower;
+    ASSERT_GT(bin_width, 0) << "target=" << target;
+    // The case that used to break: the longest net sits exactly on a bin edge.
+    ASSERT_EQ(std::fmod(static_cast<double>(target), bin_width), 0.0)
+        << "target=" << target << " bin_width=" << bin_width;
+
+    EXPECT_LT(static_cast<double>(target), h.bins.back().upper)
+        << "target=" << target;
+    EXPECT_GT(h.bins.back().count, 0)
+        << "empty trailing bar, target=" << target;
+
+    int sum = 0;
+    for (const auto& bin : h.bins) {
+      sum += bin.count;
+    }
+    EXPECT_EQ(sum, h.total_nets) << "target=" << target;
+  }
 }
 
 TEST(NetHpwlTest, NullNetIsZero)

@@ -633,9 +633,10 @@ std::map<int, std::set<const sta::Pin*>> walkConeLevels(
     auto& next = levels[next_level];
 
     for (const auto* pin : current) {
-      // Input pins only have a load vertex; output pins only a driver vertex.
-      // Fall back to pinLoadVertex so the walk expands through input pins
-      // instead of stopping one level in.
+      // Graph::pinDrvrVertex returns the pin's single vertex for everything
+      // except a bidirect pin, where it looks up a separate driver vertex and
+      // can come back null.  Fall back to the load vertex so a bidirect pin
+      // still expands.
       auto* pin_vertex = graph->pinDrvrVertex(pin);
       if (pin_vertex == nullptr) {
         pin_vertex = graph->pinLoadVertex(pin);
@@ -786,8 +787,8 @@ TimingConeResult TimingReport::computeTimingCone(const std::string& pin_name,
       node.inst = iterm ? iterm->getInst() : nullptr;
       node.depth = depth;
 
-      // Input pins have only a load vertex — fall back to it so slack is
-      // annotated for the whole cone, not just driver pins.
+      // Same bidirect fallback as the level walk above, so those pins are
+      // still slack-annotated.
       sta::Vertex* vertex = graph->pinDrvrVertex(pin);
       if (vertex == nullptr) {
         vertex = graph->pinLoadVertex(pin);
@@ -818,15 +819,22 @@ TimingConeResult TimingReport::computeTimingCone(const std::string& pin_name,
       continue;
     }
 
-    // Map both driver and load vertices of the next level's pins to node index.
+    // Map both driver and load vertices of the next level's pins to node
+    // index.  They are the same vertex except on a bidirect pin.  Skip a null
+    // rather than storing it: every pin lacking a vertex would otherwise
+    // collide on a single null key.
     std::map<sta::Vertex*, int> next_vertices;
     for (const auto* next_pin : next_level_it->second) {
       auto idx_it = pin_to_index.find(next_pin);
       if (idx_it == pin_to_index.end()) {
         continue;
       }
-      next_vertices[graph->pinDrvrVertex(next_pin)] = idx_it->second;
-      next_vertices[graph->pinLoadVertex(next_pin)] = idx_it->second;
+      if (sta::Vertex* v = graph->pinDrvrVertex(next_pin); v != nullptr) {
+        next_vertices[v] = idx_it->second;
+      }
+      if (sta::Vertex* v = graph->pinLoadVertex(next_pin); v != nullptr) {
+        next_vertices[v] = idx_it->second;
+      }
     }
 
     for (const auto* src_pin : level_it->second) {
@@ -1085,9 +1093,14 @@ NetLengthHistogramResult computeNetLengthHistogram(odb::dbBlock* block,
 
   constexpr int kDefaultBuckets = 10;
   const float bin_width = snapBinInterval(max_len / kDefaultBuckets);
-  const float bin_max = std::ceil(max_len / bin_width) * bin_width;
+  // floor+1, not ceil: the bins are upper-exclusive, and so is the
+  // select-by-bin drilldown.  With ceil, a max_len that is an exact multiple
+  // of bin_width makes the last bin [max_len - width, max_len) — the longest
+  // nets get clamped into a bar that then selects none of them.  floor+1
+  // keeps the last upper edge above max_len, and cannot leave an empty
+  // trailing bar since the longest net always lands in it.
   const int num_bins
-      = std::max(1, static_cast<int>(std::round(bin_max / bin_width)));
+      = std::max(1, static_cast<int>(std::floor(max_len / bin_width)) + 1);
 
   std::vector<int> counts(num_bins, 0);
   for (float len : lengths) {
