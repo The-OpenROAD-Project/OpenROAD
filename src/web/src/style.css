@@ -175,9 +175,27 @@ html, body {
     color: var(--fg-primary);
 }
 
+/* The chrome above the panels is not a fixed height: the toolbar collapses
+   when no button is registered and appears when one is (see #toolbar:empty).
+   Stack it as a flex column and let #gl-container take whatever is left, so
+   the panels can never be pushed past the bottom of the window -- body is
+   overflow:hidden, so anything past it is simply unreachable. */
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+#menu-bar,
+#toolbar {
+    flex: none;
+}
+
 #gl-container {
-    width: 100vw;
-    height: calc(100vh - 24px);
+    flex: 1;
+    /* Without this a flex item refuses to shrink below its content's height,
+       which for GoldenLayout is whatever size it was last given. */
+    min-height: 0;
+    width: 100%;
 }
 
 /* Menu bar */

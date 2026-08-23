@@ -1117,11 +1117,20 @@ app.goldenLayout.on('stateChanged', () => {
     localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
 });
 
-// Handle window resize
-window.addEventListener('resize', () => {
-    const menuBarHeight = document.getElementById('menu-bar').offsetHeight;
-    app.goldenLayout.setSize(window.innerWidth, window.innerHeight - menuBarHeight);
-});
+// Resize GoldenLayout to the space #gl-container actually has.  The container
+// is flex-sized (see style.css), so its height also moves when the toolbar
+// appears or collapses -- and GoldenLayout does not track its container on its
+// own, so every cause has to come through here.  Measuring the element beats
+// subtracting the chrome's height from window.innerHeight: that arithmetic has
+// to be kept in step with the chrome, and missing the toolbar pushed the
+// bottom of the panels (the Tcl console's prompt) off screen.
+function syncLayoutSize() {
+    const el = document.getElementById('gl-container');
+    app.goldenLayout.setSize(el.clientWidth, el.clientHeight);
+}
+app.syncLayoutSize = syncLayoutSize;
+
+window.addEventListener('resize', syncLayoutSize);
 
 // componentType → display title (must match defaultLayoutConfig).
 const componentTitles = {
@@ -1223,6 +1232,9 @@ function applyCustomUi(data) {
     app.customToolbar = data.toolbar || [];
     if (app.rebuildMenuBar) app.rebuildMenuBar();
     if (app.rebuildToolbar) app.rebuildToolbar();
+    // The toolbar may have just appeared or collapsed, changing how much room
+    // is left for the panels.
+    syncLayoutSize();
 }
 
 app.customMenu = [];
