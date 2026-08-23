@@ -6,20 +6,4 @@
 [INFO ODB-0131]     Created 32 components and 168 component-terminals.
 [INFO ODB-0132]     Created 4 special nets and 128 connections.
 [INFO PDN-0001] Inserting grid: stdcell_grid
-VDD: 12 pad connections (north 6, south 6, east 0, west 0)
-  clk_pad
-  data_in_pads\[0\].data_in_pad
-  data_in_pads\[1\].data_in_pad
-  data_in_pads\[2\].data_in_pad
-  data_in_pads\[3\].data_in_pad
-  data_in_pads\[4\].data_in_pad
-  data_in_pads\[5\].data_in_pad
-  data_in_pads\[6\].data_in_pad
-  kernel_we_pad
-  rst_n_pad
-  vss_pad_n
-  vss_pad_s
-VSS: 2 pad connections (north 1, south 1, east 0, west 0)
-  data_in_pads\[2\].data_in_pad
-  data_in_pads\[6\].data_in_pad
 No differences found.
