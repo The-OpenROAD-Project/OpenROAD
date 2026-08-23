@@ -437,7 +437,7 @@ describe('Ruler inspector data', () => {
         assert.equal(propMap['Delta x'], '3.000 \u00b5m');
         assert.equal(propMap['Delta y'], '4.000 \u00b5m');
         assert.equal(propMap['Length'], '5.000 \u00b5m');
-        assert.equal(propMap['Euclidian'], 'true');
+        assert.equal(propMap['Euclidian'], 'True');
     });
 
     it('_selectRuler produces DBU values when showDbu is true', () => {

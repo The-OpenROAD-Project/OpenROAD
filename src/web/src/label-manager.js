@@ -19,6 +19,7 @@ export class LabelManager {
         this._focusComponent = focusComponent;
 
         this._labels = [];          // server snapshot (name/x/y/text/size/anchor/color)
+        this._anchors = [];         // anchor names the server accepts
         this._mode = false;         // placement mode (next click creates a label)
         this._selectedName = null;
 
@@ -93,6 +94,9 @@ export class LabelManager {
         if (!wm) return;
         try {
             const res = await wm.request({ type: 'list_labels' });
+            // Taken from the server so the Anchor picker offers exactly the
+            // names add_label/update_label accept.
+            this._anchors = res.anchors || [];
             this._applyLabels(res.labels);
         } catch (_) {
             this._applyLabels([]);
@@ -186,7 +190,8 @@ export class LabelManager {
                 { name: 'y', value: fmt(label.y) },
                 { name: 'Size', value: String(label.size || 0), editable: true },
                 { name: 'Anchor', value: label.anchor || 'center',
-                  editable: true },
+                  editable: true,
+                  editor: { type: 'list', options: this._anchors } },
             ],
             onPropertyChange: (propName, newValue) => {
                 const patch = { text: label.text, size: label.size || 0,

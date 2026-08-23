@@ -35,7 +35,9 @@ function makeManager(responses = {}, promptValue = 'note') {
     const app = {
         map: {
             createPane() { return { style: {} }; },
-            getContainer() { return { style: {} }; },
+            getContainer() {
+                return { style: {}, classList: { toggle() {} } };
+            },
         },
         designScale: 1e-6,
         designMaxDXDY: 1000000,
@@ -100,6 +102,59 @@ describe('LabelManager', () => {
         await mgr.reload();
         assert.equal(mgr._labels.length, 1);
         assert.equal(mgr._labels[0].name, 'L0');
+    });
+
+    it('reload adopts the anchor list the server accepts', async () => {
+        const { mgr } = makeManager({
+            list_labels: {
+                labels: [],
+                anchors: ['center', 'top left', 'bottom right'],
+            },
+        });
+        await mgr.reload();
+        assert.deepEqual(mgr._anchors,
+                         ['center', 'top left', 'bottom right']);
+    });
+
+    it('Anchor is a choice property built from the server list', async () => {
+        let captured = null;
+        globalThis.window = { prompt: () => 'note' };
+        const app = {
+            map: {
+                createPane() { return { style: {} }; },
+                getContainer() {
+                    return { style: {}, classList: { toggle() {} } };
+                },
+            },
+            designScale: 1e-6, designMaxDXDY: 1000000,
+            designOriginX: 0, designOriginY: 0,
+            refreshOverlay() {}, formatDbu(v) { return String(v); },
+            inspectorEl: null,
+            websocketManager: {
+                request(msg) {
+                    if (msg.type === 'list_labels') {
+                        return Promise.resolve({
+                            labels: [{ name: 'L0', x: 1, y: 2, text: 'a',
+                                       anchor: 'top left' }],
+                            anchors: ['center', 'top left'],
+                        });
+                    }
+                    return Promise.resolve({});
+                },
+            },
+        };
+        const mgr = new LabelManager(
+            app, { labels: true }, (d) => { captured = d; }, () => {});
+        await mgr.reload();
+        mgr._select('L0');
+        const anchor = captured.properties.find(p => p.name === 'Anchor');
+        assert.ok(anchor, 'Anchor property present');
+        assert.equal(anchor.editable, true);
+        // A list editor, so the Inspector renders a picker instead of a raw
+        // text field that would accept an unusable value.
+        assert.equal(anchor.editor.type, 'list');
+        assert.deepEqual(anchor.editor.options, ['center', 'top left']);
+        assert.equal(anchor.value, 'top left');
     });
 
     it('deleteLabel sends a delete_label request and refreshes', async () => {

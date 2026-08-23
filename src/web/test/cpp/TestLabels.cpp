@@ -204,6 +204,25 @@ TEST_F(LabelTest, HandlerRejectsUnknownAnchor)
   EXPECT_TRUE(gen_->labelsForDraw().empty());
 }
 
+// The Inspector's Anchor picker is built from this list, so shipping it is
+// what keeps the offered choices and the accepted ones from drifting apart.
+TEST_F(LabelTest, ListLabelsShipsTheAnchorChoices)
+{
+  auto handler = std::make_unique<TileHandler>(gen_);
+  WebSocketRequest list;
+  list.id = 1;
+  list.type = WebSocketRequest::kListLabels;
+  const boost::json::object root
+      = parseObj(payloadStr(handler->handleListLabels(list)));
+
+  ASSERT_TRUE(root.contains("anchors"));
+  const boost::json::array& arr = root.at("anchors").as_array();
+  ASSERT_EQ(arr.size(), anchorNames().size());
+  for (const auto& v : arr) {
+    EXPECT_TRUE(isValidAnchor(std::string(v.as_string())));
+  }
+}
+
 TEST_F(LabelTest, EveryAnchorIsAcceptedByTheHandler)
 {
   auto handler = std::make_unique<TileHandler>(gen_);

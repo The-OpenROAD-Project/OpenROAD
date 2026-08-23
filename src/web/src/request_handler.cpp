@@ -5430,6 +5430,14 @@ WebSocketResponse TileHandler::handleListLabels(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   boost::json::object root;
   root["labels"] = gen_->labelsJson();
+  // The Inspector's Anchor picker is built from this, so the choices it
+  // offers are exactly the ones parseLabelFields will accept.  Sent with the
+  // startup list rather than hard-coded client-side, where it could drift.
+  boost::json::array anchors;
+  for (const std::string& name : anchorNames()) {
+    anchors.emplace_back(name);
+  }
+  root["anchors"] = std::move(anchors);
   writePayload(resp, root);
   return resp;
 }

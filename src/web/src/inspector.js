@@ -134,6 +134,13 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             select.insertBefore(opt, select.firstChild);
         }
         select.addEventListener('change', () => {
+            if (data.onPropertyChange) {
+                // Client-side (ruler, label): same string contract as the
+                // contentEditable path, so the handler needs no select-specific
+                // case.
+                data.onPropertyChange(prop.name, select.value);
+                return;
+            }
             if (prop.editor.type === 'bool') {
                 data.onPropertyEdit(prop, { value: select.value === 'True' });
             } else {
@@ -839,10 +846,12 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         row.appendChild(valEl);
 
         // Editable property.  Choice editors (list/bool) render a select;
-        // string/number editors (and the client-side ruler path, which
-        // supplies its own onPropertyChange) make the value contentEditable
-        // with Enter/Escape keys.
-        const isChoice = prop.editable && data && data.onPropertyEdit
+        // string/number editors make the value contentEditable with
+        // Enter/Escape keys.  Client-side properties (rulers, labels) route
+        // through onPropertyChange and server-backed ones through
+        // onPropertyEdit, but either can offer a choice list.
+        const isChoice = prop.editable && data
+            && (data.onPropertyEdit || data.onPropertyChange)
             && prop.editor
             && (prop.editor.type === 'list' || prop.editor.type === 'bool');
         if (isChoice && prop.value_select_id === undefined) {
