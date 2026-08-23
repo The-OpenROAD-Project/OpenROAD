@@ -180,7 +180,7 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
       allow_repair_channels_,
       domain_->getPDNGen()->getDebugRenderer());
 
-  if (logger_->debugCheck(utl::PDN, "Pad", 1)) {
+  if (logger->debugCheck(utl::PDN, "Pad", 1)) {
     PadDirectConnectionStraps::reportConnectionBalance(getGridComponents());
   }
 }

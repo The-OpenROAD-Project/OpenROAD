@@ -1307,7 +1307,9 @@ bool PadDirectConnectionStraps::buildOverPad(
   std::ranges::sort(offsets, [preferred](int lhs, int rhs) {
     return std::abs(lhs - preferred) < std::abs(rhs - preferred);
   });
-  offsets.insert(offsets.begin(), preferred);
+  if (preferred >= lane_min && preferred <= lane_max) {
+    offsets.insert(offsets.begin(), preferred);
+  }
 
   debugPrint(getLogger(),
              utl::PDN,
