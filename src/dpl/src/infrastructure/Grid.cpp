@@ -731,7 +731,7 @@ void Grid::examineRows(odb::dbBlock* block)
     // sites and produce more sites than the grid can represent, which would
     // otherwise overflow the pixel grid during markHopeless().
     const int site_width = site->getWidth();
-    if (row->getSpacing() < site_width) {
+    if (row->getSiteCount() > 1 && row->getSpacing() < site_width) {
       logger_->error(DPL,
                      52,
                      "Row {} has site spacing ({}) smaller than the site "
