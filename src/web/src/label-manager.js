@@ -56,9 +56,13 @@ export class LabelManager {
         this._setCursor(false);
     }
 
+    // Toggled as a class, not an inline style: .leaflet-container carries
+    // `cursor: default !important`, which an inline declaration of normal
+    // priority cannot override.
     _setCursor(on) {
         const c = this._app.map?.getContainer();
-        if (c) c.style.cursor = on ? 'crosshair' : '';
+        if (!c) return;
+        c.classList.toggle('label-mode-cursor', on);
     }
 
     _wm() {

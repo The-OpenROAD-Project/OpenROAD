@@ -120,7 +120,13 @@ html[data-theme="light"] {
 
 /* ─── Ruler overlay ──────────────────────────────────────────────────────── */
 
-.ruler-mode-cursor {
+/* Placement-mode crosshair for the ruler and label tools.  Qualified with
+   .leaflet-container so it outranks that element's own `cursor: default
+   !important` below on specificity; a bare .ruler-mode-cursor ties it and
+   loses the source-order tiebreak.  .leaflet-dragging still wins over both,
+   so panning shows the grab cursor. */
+.leaflet-container.ruler-mode-cursor,
+.leaflet-container.label-mode-cursor {
     cursor: crosshair !important;
 }
 .ruler-label {
