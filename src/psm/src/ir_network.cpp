@@ -677,8 +677,13 @@ void IRNetwork::generateCutNodesForSBox(
 IRNetwork::ShapeTree IRNetwork::getShapeTree(odb::dbTechLayer* layer) const
 {
   // generate Rtree of shapes to associate with vias
+  const auto find_layer = shapes_.find(layer);
+  if (find_layer == shapes_.end()) {
+    return ShapeTree();
+  }
+
   std::vector<Shape*> tree_values;
-  for (const auto& shape : shapes_.at(layer)) {
+  for (const auto& shape : find_layer->second) {
     tree_values.emplace_back(shape.get());
   }
   ShapeTree tree(tree_values.begin(), tree_values.end());
@@ -688,8 +693,13 @@ IRNetwork::ShapeTree IRNetwork::getShapeTree(odb::dbTechLayer* layer) const
 IRNetwork::NodeTree IRNetwork::getNodeTree(odb::dbTechLayer* layer) const
 {
   // generate Rtree of shapes to associate with vias
+  const auto find_layer = nodes_.find(layer);
+  if (find_layer == nodes_.end()) {
+    return NodeTree();
+  }
+
   std::vector<Node*> tree_values;
-  for (const auto& node : nodes_.at(layer)) {
+  for (const auto& node : find_layer->second) {
     tree_values.emplace_back(node.get());
   }
   NodeTree tree(tree_values.begin(), tree_values.end());

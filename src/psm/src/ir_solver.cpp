@@ -24,12 +24,14 @@
 #include "debug_gui.h"
 #include "est/EstimateParasitics.h"
 #include "ir_network.h"
+#include "ir_short.h"
 #include "node.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "psm/pdnsim.h"
 #include "shape.h"
 #include "sta/Liberty.hh"
@@ -62,6 +64,8 @@ IRSolver::IRSolver(
       generated_source_settings_(generated_source_settings)
 {
 }
+
+IRSolver::~IRSolver() = default;
 
 void IRSolver::enableGui(bool enable)
 {
@@ -118,7 +122,7 @@ PDNSim::IRDropByPoint IRSolver::getIRDrop(odb::dbTechLayer* layer,
   return ir_drop;
 }
 
-bool IRSolver::check(bool check_bterms)
+bool IRSolver::check(bool check_bterms, bool check_placed)
 {
   const utl::DebugScopedTimer timer(logger_, utl::PSM, "timer", 1, "Check: {}");
   if (connected_.has_value()) {
@@ -138,7 +142,8 @@ bool IRSolver::check(bool check_bterms)
       reportUnconnectedNodes();
       connected_ = false;
     }
-    if (!checkShort()) {
+    if (!checkShort(check_placed)) {
+      reportShortedNodes();
       connected_ = false;
     }
   }
@@ -369,12 +374,518 @@ void IRSolver::reportUnconnectedNodes() const
   }
 }
 
-bool IRSolver::checkShort() const
+const IRNetwork::ShapeTree* IRSolver::getShortCheckTree(
+    odb::dbTechLayer* layer) const
+{
+  const auto find_tree = short_check_trees_.find(layer);
+  if (find_tree == short_check_trees_.end()) {
+    return nullptr;
+  }
+
+  return &find_tree->second;
+}
+
+std::vector<odb::Polygon> IRSolver::determineShortShapes(
+    odb::dbTechLayer* layer,
+    const odb::Rect& rect) const
+{
+  std::vector<odb::Polygon> short_shapes;
+
+  const IRNetwork::ShapeTree* check_tree = getShortCheckTree(layer);
+  if (check_tree == nullptr) {
+    return short_shapes;
+  }
+
+  auto check_short
+      = check_tree->qbegin(boost::geometry::index::intersects(rect));
+  for (; check_short != check_tree->qend(); check_short++) {
+    const Shape* shape = *check_short;
+    const odb::Rect& check = shape->getShape();
+    if (!check.overlaps(rect)) {
+      // the rtree reports shapes that only touch the rect too, those
+      // intersect in a zero area rect and are not shorted
+      continue;
+    }
+    short_shapes.emplace_back(check.intersect(rect));
+  }
+
+  return short_shapes;
+}
+
+std::vector<odb::Polygon> IRSolver::determineShortShapes(
+    odb::dbTechLayer* layer,
+    const odb::Polygon& polygon,
+    bool require_overlap) const
+{
+  using boost::polygon::operators::operator&;
+
+  std::vector<odb::Polygon> short_shapes;
+
+  const IRNetwork::ShapeTree* check_tree = getShortCheckTree(layer);
+  if (check_tree == nullptr) {
+    return short_shapes;
+  }
+
+  auto check_short = check_tree->qbegin(
+      boost::geometry::index::intersects(polygon.getEnclosingRect()));
+  if (check_short == check_tree->qend()) {
+    // nothing for the polygon to short against, so skip converting it
+    return short_shapes;
+  }
+
+  // odb::Polygon cannot be written by boost, so the overlap is computed as
+  // a polygon set. The polygon is converted once and held for every shape
+  // it is checked against.
+  const odb::geom::BoostPolygonSet check_polygon
+      = odb::geom::toPolygonSet(polygon);
+
+  for (; check_short != check_tree->qend(); check_short++) {
+    const Shape* shape = *check_short;
+
+    // odb::Rect is a boost rectangle, so it intersects the set as-is rather
+    // than being built into a polygon set of its own for every shape.
+    const odb::geom::BoostPolygonSet overlap_set
+        = check_polygon & shape->getShape();
+    if (overlap_set.empty()) {
+      continue;
+    }
+
+    if (require_overlap
+        && !shape->getShape().overlaps(
+            odb::geom::getEnclosingRect(overlap_set))) {
+      // shapes that only touch intersect in a zero area polygon and are
+      // not shorted
+      continue;
+    }
+
+    std::vector<odb::Polygon> overlaps
+        = odb::geom::extractPolygons(overlap_set);
+    short_shapes.insert(short_shapes.end(),
+                        std::make_move_iterator(overlaps.begin()),
+                        std::make_move_iterator(overlaps.end()));
+  }
+
+  return short_shapes;
+}
+
+void IRSolver::reportShortedNodes() const
+{
+  if (shorts_.empty()) {
+    return;
+  }
+  const double dbu = getBlock()->getDbUnitsPerMicron();
+
+  odb::dbMarkerCategory* tool_category
+      = odb::dbMarkerCategory::createOrGet(getBlock(), "PSM");
+  tool_category->setSource("PSM");
+  odb::dbMarkerCategory* net_category = odb::dbMarkerCategory::createOrReplace(
+      tool_category, net_->getName().c_str());
+
+  odb::dbMarkerCategory* category
+      = odb::dbMarkerCategory::create(net_category, "Shorts");
+
+  for (const auto& shorted : shorts_) {
+    shorted->report(net_, logger_, dbu);
+    shorted->commit(net_, category);
+  }
+}
+
+bool IRSolver::addShort(std::unique_ptr<IRShort> short_entry)
+{
+  if (shorts_.size() >= kMaxShortEntries) {
+    return false;
+  }
+
+  shorts_.push_back(std::move(short_entry));
+
+  return true;
+}
+
+bool IRSolver::checkShort(bool check_placed)
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Check short: {}");
 
-  // Dummy implementation of short
+  shorts_.clear();
+
+  // Build the tree of every layer the net holds shapes on up front, a
+  // layer without a tree has nothing for the objects below to short to
+  short_check_trees_.clear();
+  for (const auto& [layer, layer_shapes] : network_->getShapes()) {
+    short_check_trees_.try_emplace(layer, network_->getShapeTree(layer));
+  }
+
+  if (!findShorts(check_placed)) {
+    logger_->warn(utl::PSM,
+                  44,
+                  "Stopped checking {} after {} shorted shapes, the design "
+                  "holds more than this reports.",
+                  net_->getName(),
+                  shorts_.size());
+  }
+
+  // the trees are only needed while the objects are walked
+  short_check_trees_.clear();
+
+  return shorts_.empty();
+}
+
+bool IRSolver::checkShortBPinBox(odb::dbBPin* bpin, odb::dbBox* box)
+{
+  if (box->isVia()) {
+    std::vector<odb::dbShape> via_boxes;
+    box->getViaBoxes(via_boxes);
+    for (const odb::dbShape& via_box : via_boxes) {
+      odb::dbTechLayer* layer = via_box.getTechLayer();
+      if (layer == nullptr) {
+        // via box
+        continue;
+      }
+      for (const auto& overlap :
+           determineShortShapes(layer, via_box.getBox())) {
+        if (!addShort(std::make_unique<IRShortBPin>(layer, overlap, bpin))) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  odb::dbTechLayer* layer = box->getTechLayer();
+  for (const auto& overlap : determineShortShapes(layer, box->getBox())) {
+    if (!addShort(std::make_unique<IRShortBPin>(layer, overlap, bpin))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool IRSolver::checkShortNetBox(odb::dbNet* net, odb::dbBox* box)
+{
+  if (box->isVia()) {
+    std::vector<odb::dbShape> via_boxes;
+    box->getViaBoxes(via_boxes);
+    for (const odb::dbShape& via_box : via_boxes) {
+      odb::dbTechLayer* layer = via_box.getTechLayer();
+      if (layer == nullptr) {
+        // via box
+        continue;
+      }
+      for (const auto& overlap :
+           determineShortShapes(layer, via_box.getBox())) {
+        if (!addShort(std::make_unique<IRShortNet>(layer, overlap, net))) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  odb::dbTechLayer* layer = box->getTechLayer();
+  for (const auto& overlap : determineShortShapes(layer, box->getBox())) {
+    if (!addShort(std::make_unique<IRShortNet>(layer, overlap, net))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool IRSolver::checkShortNetShape(odb::dbNet* net, const odb::dbShape& shape)
+{
+  if (shape.isVia()) {
+    std::vector<odb::dbShape> via_boxes;
+    odb::dbShape::getViaBoxes(shape, via_boxes);
+    for (const odb::dbShape& via_box : via_boxes) {
+      odb::dbTechLayer* layer = via_box.getTechLayer();
+      if (layer == nullptr) {
+        // via box
+        continue;
+      }
+      for (const auto& overlap :
+           determineShortShapes(layer, via_box.getBox())) {
+        if (!addShort(std::make_unique<IRShortNet>(layer, overlap, net))) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  odb::dbTechLayer* layer = shape.getTechLayer();
+  for (const auto& overlap : determineShortShapes(layer, shape.getBox())) {
+    if (!addShort(std::make_unique<IRShortNet>(layer, overlap, net))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+IRSolver::LayerPolygons IRSolver::getMasterObstructions(
+    odb::dbMaster* master) const
+{
+  odb::Rect boundary;
+  master->getPlacementBoundary(boundary);
+
+  using boost::polygon::operators::operator+;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+  using boost::polygon::operators::operator&=;
+
+  // Every obstruction of a layer goes into one set, so the shapes are
+  // converted to boost once here and back to odb once at the end, with the
+  // clip and the pin removal done on the set in between.
+  odb::PtrMap<odb::dbTechLayer, odb::geom::BoostPolygonSet> obstructions;
+  for (odb::dbPolygon* obs : master->getPolygonObstructions()) {
+    obstructions[obs->getTechLayer()]
+        += odb::geom::toPolygonSet(obs->getPolygon());
+  }
+  for (odb::dbBox* obs : master->getObstructions(false)) {
+    obstructions[obs->getTechLayer()] += odb::geom::toPolygonSet(obs->getBox());
+  }
+
+  // Get the pins, bloated by one dbu so an obstruction does not come out of
+  // the difference below ending flush with a pin and short on that edge
+  // alone
+  odb::PtrMap<odb::dbTechLayer, odb::geom::BoostPolygonSet> pins;
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbPolygon* geom : mpin->getPolygonGeometry()) {
+        // bloating the set is the same as Polygon::bloat, without the trip
+        // back into odb only to convert it here again
+        pins[geom->getTechLayer()]
+            += odb::geom::toPolygonSet(geom->getPolygon()) + 1;
+      }
+      for (odb::dbBox* geom : mpin->getGeometry(false)) {
+        odb::Rect pin;
+        geom->getBox().bloat(1, pin);
+        pins[geom->getTechLayer()] += odb::geom::toPolygonSet(pin);
+      }
+    }
+  }
+
+  const odb::geom::BoostPolygonSet cell = odb::geom::toPolygonSet(boundary);
+
+  LayerPolygons filtered_obstructions;
+  for (auto& [layer, layer_obstructions] : obstructions) {
+    // Obstructions are clipped to the cell, a master that claims metal
+    // outside of its own area is claiming metal of whatever is placed next
+    // to it. Pad cells do this to keep the router away from the ring they
+    // abut into, which is not metal this instance holds.
+    layer_obstructions &= cell;
+
+    // Remove the pins from the obstructions, a master is allowed to cover
+    // its own pins and those are checked as iterms of their own. The set
+    // holds the union of every pin on the layer, so each pin comes out of
+    // what the others left.
+    const auto find_pins = pins.find(layer);
+    if (find_pins != pins.end()) {
+      layer_obstructions -= find_pins->second;
+    }
+
+    if (layer_obstructions.empty()) {
+      continue;
+    }
+
+    filtered_obstructions[layer]
+        = odb::geom::extractPolygons(layer_obstructions);
+  }
+
+  return filtered_obstructions;
+}
+
+odb::PtrSet<odb::dbTechLayer> IRSolver::getNetPinLayers(odb::dbInst* inst) const
+{
+  odb::PtrSet<odb::dbTechLayer> layers;
+
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getNet() != net_) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
+      for (odb::dbBox* geom : mpin->getGeometry()) {
+        layers.insert(geom->getTechLayer());
+      }
+    }
+  }
+
+  return layers;
+}
+
+bool IRSolver::findShorts(bool check_placed)
+{
+  // Check nets
+  for (odb::dbNet* net : getBlock()->getNets()) {
+    if (net == net_) {
+      continue;
+    }
+
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      for (odb::dbBPin* bpin : bterm->getBPins()) {
+        if (check_placed) {
+          if (!bpin->getPlacementStatus().isPlaced()) {
+            continue;
+          }
+        } else {
+          if (!bpin->getPlacementStatus().isFixed()) {
+            continue;
+          }
+        }
+
+        for (odb::dbBox* geom : bpin->getBoxes()) {
+          // Check if the box intersects with any of the shapes in the power net
+          if (!checkShortBPinBox(bpin, geom)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* sbox : swire->getWires()) {
+        // Check if the sbox intersects with any of the shapes in the power net
+        if (sbox->getDirection() == odb::dbSBox::OCTILINEAR) {
+          odb::dbTechLayer* layer = sbox->getTechLayer();
+          for (const auto& overlap :
+               determineShortShapes(layer, sbox->getOct())) {
+            if (!addShort(std::make_unique<IRShortNet>(layer, overlap, net))) {
+              return false;
+            }
+          }
+        } else if (!checkShortNetBox(net, static_cast<odb::dbBox*>(sbox))) {
+          return false;
+        }
+      }
+    }
+
+    odb::dbWire* wire = net->getWire();
+    if (wire != nullptr) {
+      odb::dbWireShapeItr itr;
+      itr.begin(wire);
+      odb::dbShape shape;
+      while (itr.next(shape)) {
+        // Check if the wire shape intersects with any of the shapes in the
+        // power net, vias are expanded into the boxes of each layer
+        if (!checkShortNetShape(net, shape)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  // Check instances (honor floorplanning flag)
+  odb::PtrMap<odb::dbMaster, LayerPolygons> master_obstructions;
+  for (odb::dbInst* inst : getBlock()->getInsts()) {
+    if (check_placed) {
+      if (!inst->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+    } else {
+      if (!inst->getPlacementStatus().isFixed()) {
+        continue;
+      }
+    }
+
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getNet() == net_) {
+        continue;
+      }
+
+      if (iterm->getNet() == nullptr
+          && iterm->getSigType() == net_->getSigType()) {
+        // A supply pin with no net that lands on a supply of the same type
+        // is connected to it by abutment, the netlist just does not hold
+        // that connection. Tap and filler cells are placed this way. A pin
+        // of the other supply, or a signal pin, is still a short.
+        continue;
+      }
+
+      // Check if the iterm intersects with any of the shapes in the power net
+      for (const auto& [layer, geom] : iterm->getGeometries()) {
+        for (const auto& overlap : determineShortShapes(layer, geom)) {
+          if (!addShort(
+                  std::make_unique<IRShortITerm>(layer, overlap, iterm))) {
+            return false;
+          }
+        }
+      }
+    }
+
+    // The obstructions only depend on the master, so they are held for the
+    // next instance of it
+    odb::dbMaster* master = inst->getMaster();
+    if (master_obstructions.find(master) == master_obstructions.end()) {
+      master_obstructions[master] = getMasterObstructions(master);
+    }
+    const LayerPolygons& obstructions = master_obstructions[master];
+    if (obstructions.empty()) {
+      continue;
+    }
+
+    // Layers where this instance holds a pin of the net. The net has to
+    // reach that pin, so the metal of the net and the metal of the instance
+    // are coincident there by construction, and the obstruction around the
+    // pin covers the wire or via landing on it. Layers the instance does
+    // not connect on are still checked.
+    const odb::PtrSet<odb::dbTechLayer> connected_layers
+        = getNetPinLayers(inst);
+
+    const odb::dbTransform xform = inst->getTransform();
+    for (const auto& [layer, layer_obstructions] : obstructions) {
+      if (connected_layers.find(layer) != connected_layers.end()) {
+        continue;
+      }
+
+      for (const auto& obs : layer_obstructions) {
+        odb::Polygon transformed_obs = obs;
+        xform.apply(transformed_obs);
+        for (const auto& overlap :
+             determineShortShapes(layer, transformed_obs, true)) {
+          if (!addShort(std::make_unique<IRShortInst>(layer, overlap, inst))) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+  // check obs / blockages
+  for (odb::dbObstruction* obs : getBlock()->getObstructions()) {
+    // Check if the obstruction intersects with any of the shapes in the power
+    // net
+    if (obs->isExceptPGNetsObstruction() || obs->isSlotObstruction()
+        || obs->isFillObstruction()) {
+      continue;
+    }
+    odb::dbBox* box = obs->getBBox();
+    odb::dbTechLayer* layer = box->getTechLayer();
+    for (const auto& overlap : determineShortShapes(layer, box->getBox())) {
+      if (!addShort(
+              std::make_unique<IRShortObstruction>(layer, overlap, obs))) {
+        return false;
+      }
+    }
+  }
+
+  // Check fill
+  for (odb::dbFill* fill : getBlock()->getFills()) {
+    // Check if the fill intersects with any of the shapes in the power net
+    odb::Rect fill_rect;
+    fill->getRect(fill_rect);
+    for (const auto& overlap :
+         determineShortShapes(fill->getTechLayer(), fill_rect)) {
+      if (!addShort(std::make_unique<IRShortFill>(overlap, fill))) {
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 

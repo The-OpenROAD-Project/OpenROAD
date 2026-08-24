@@ -120,7 +120,7 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
                                bool require_bterm)
 {
   auto* solver = getIRSolver(net, floorplanning);
-  const bool check = solver->check(require_bterm);
+  const bool check = solver->check(require_bterm, !floorplanning);
   solver->writeErrorFile(error_file);
 
   if (debug_gui_enabled_) {
