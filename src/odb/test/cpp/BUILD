@@ -379,3 +379,14 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "TestDbStream",
+    srcs = ["TestDbStream.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

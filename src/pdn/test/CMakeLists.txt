@@ -19,6 +19,7 @@ or_integration_tests(
     asap7_vias_dont_use
     asap7_vias_fixed_vias
     asap7_vias_max_rows_columns
+    asap7_M1_M2_followpin_enclosure
     asap7_M1_M3_followpins
     asap7_M1_M3_followpins_staggered
     asap7_macro_notcovered
@@ -42,6 +43,7 @@ or_integration_tests(
     core_grid_no_trim
     core_grid_obstruction
     core_grid_offset_strap
+    core_grid_ring_on_pin_layer
     core_grid_single_pin
     core_grid_snap
     core_grid_split_cuts
@@ -119,6 +121,7 @@ or_integration_tests(
     pads_black_parrot_offset
     pads_black_parrot_straps
     pads_connect_from_non_pref_edge
+    pads_ihp_sg13g2_balance
     power_switch
     power_switch_cut_rows
     power_switch_daisy

@@ -348,6 +348,26 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   return net_routes;
 }
 
+void GlobalRouter::ensureEngineSelected()
+{
+  if (engine_selected_) {
+    return;
+  }
+  odb::dbBlock* block = block_;
+  if (block == nullptr && db_->getChip() != nullptr) {
+    block = db_->getChip()->getBlock();
+  }
+  if (block == nullptr) {
+    // No design loaded yet; retry on the next call.
+    return;
+  }
+  engine_selected_ = true;
+  if (odb::dbBoolProperty* prop
+      = odb::dbBoolProperty::find(block, kUseCugrProperty)) {
+    use_cugr_ = prop->getValue();
+  }
+}
+
 bool GlobalRouter::haveRoutes()
 {
   if (!designIsPlaced()) {
@@ -425,6 +445,7 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
 
 void GlobalRouter::startIncremental()
 {
+  ensureEngineSelected();
   is_incremental_ = true;
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
@@ -621,6 +642,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  bool diode_only,
                                  const int num_threads)
 {
+  ensureEngineSelected();
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
@@ -1693,7 +1715,11 @@ void GlobalRouter::updatePinAccessPoints(Net* net, odb::dbNet* db_net)
   auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
     if (auto it = ap_map.find(term); it != ap_map.end()) {
       const auto& ap = it->second;
-      pin.setConnectionLayer(ap.z());
+      // CUGR clamps its APs to the ceiling; keep a top-metal pin's real layer
+      // so connectTopLevelPins still stacks the vias above it.
+      if (pin.getConnectionLayer() <= getMaxRoutingLayer()) {
+        pin.setConnectionLayer(ap.z());
+      }
       pin.setOnGridPosition(
           grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
     }
@@ -3011,6 +3037,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
 void GlobalRouter::loadGuidesFromDB()
 {
+  ensureEngineSelected();
   if (!routes_.empty()) {
     return;
   }
@@ -3043,7 +3070,12 @@ void GlobalRouter::loadGuidesFromDB()
 
   updateEdgesUsage();
   if (block_->getGCellGrid() == nullptr) {
-    updateDbCongestion();
+    if (use_cugr_) {
+      // CUGR has no routing state here; derive congestion from the guides.
+      updateDbCongestionFromGuides();
+    } else {
+      updateDbCongestion();
+    }
   }
   if (heatmap_) {
     heatmap_->invalidate();
@@ -3389,6 +3421,14 @@ void GlobalRouter::saveGuidesFromFile(
 
 void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
 {
+  // Tag the block with the engine choice so fresh sessions restore it.
+  if (odb::dbBoolProperty* prop
+      = odb::dbBoolProperty::find(block_, kUseCugrProperty)) {
+    prop->setValue(use_cugr_);
+  } else {
+    odb::dbBoolProperty::create(block_, kUseCugrProperty, use_cugr_);
+  }
+
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 

@@ -78,6 +78,14 @@ bool enabled()
   return gui::Gui::enabled();
 }
 
+// True only while the Qt main window is running.  Tcl commands that a
+// non-Qt viewer also implements dispatch on this, so the non-Qt stub
+// defines it too (see stub.cpp) and it is always callable.
+bool has_ui()
+{
+  return gui::Gui::hasUI();
+}
+
 void
 selection_add_net(const char* name)
 {
