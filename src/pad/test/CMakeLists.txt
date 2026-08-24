@@ -48,6 +48,7 @@ or_integration_tests(
     rdl_route_assignments_overlapping_iterms
     rdl_route_bump_to_bump_only
     rdl_route_bump_via
+    rdl_route_daisy_chain
     rdl_route_failed
     rdl_route_fixed
     rdl_route_invalid
