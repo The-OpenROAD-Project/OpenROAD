@@ -449,10 +449,6 @@ void FollowPins::determinePitch()
         return a_site->getHeight() < b_site->getHeight();
       });
 
-  if (min_row == rows.end()) {
-    return;
-  }
-
   auto* row = *min_row;
   odb::Rect bbox = row->getBBox();
   row_height_ = bbox.dy();
