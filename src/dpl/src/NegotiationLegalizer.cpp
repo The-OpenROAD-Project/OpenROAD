@@ -379,6 +379,13 @@ bool NegotiationLegalizer::initFromDb()
   hist_seen_stamp_.assign(static_cast<size_t>(grid_w_) * grid_h_, 0);
   hist_gen_ = 0;
 
+  // Cached, not derived per candidate: findBestLocation prices every position
+  // in every active cell's window on every negotiation iteration.
+  row_y_dbu_.resize(grid_h_ + 1);
+  for (int gy = 0; gy <= grid_h_; ++gy) {
+    row_y_dbu_[gy] = dpl_grid->gridYToDbu(GridY{gy}).v;
+  }
+
   cells_.clear();
   cells_.reserve(block->getInsts().size());
 
@@ -1045,7 +1052,7 @@ double NegotiationLegalizer::avgDisplacement() const
   int count = 0;
   for (const auto& cell : cells_) {
     if (!cell.fixed) {
-      sum += cell.displacement();
+      sum += displacementInSites(cell, cell.x, cell.y);
       ++count;
     }
   }
@@ -1057,7 +1064,7 @@ int NegotiationLegalizer::maxDisplacement() const
   int mx = 0;
   for (const auto& cell : cells_) {
     if (!cell.fixed) {
-      mx = std::max(mx, cell.displacement());
+      mx = std::max(mx, displacementInSites(cell, cell.x, cell.y));
     }
   }
   return mx;
