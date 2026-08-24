@@ -25,11 +25,11 @@
 [INFO DPL-0393]   height 1 row(s): 17 cells
 Placement Analysis
 ---------------------------------
-total displacement         16.5 u
+total displacement         16.2 u
 average displacement        1.0 u
 max displacement            2.1 u
 original HPWL            2531.1 u
-legalized HPWL           2533.3 u
+legalized HPWL           2533.0 u
 delta HPWL                    0 %
 
 worst slack max -0.38
@@ -39,7 +39,7 @@ worst slack max -0.38
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.383 |       -0.4 |       -0.5 |      4 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.384 |       -0.4 |       -0.5 |      4 | r2/D
       21* |       3 |       7 |        3 |      0 |     0 |    +7.3% |   -0.060 |       -0.1 |       -0.2 |      4 | r2/D
     final |       3 |       7 |        3 |      0 |     0 |    +7.3% |   -0.060 |       -0.1 |       -0.2 |      4 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------

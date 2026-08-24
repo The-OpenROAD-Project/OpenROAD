@@ -20,16 +20,8 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |         21 |         3 |         9
-        1 |         21 |         3 |         9
-        2 |         21 |         3 |         9
-        3 |         21 |         3 |         9
-[WARNING DPL-0700] Negotiation phase 1: violations stuck at 21 for 3 consecutive iterations.
-Using old diamond search for 3 remaining illegal cells.
-diamond recovery: recovered 3/3 stuck cells.
-Negotiation phase 2: isolation point active, 1000 iterations.
-      400 |          0 |         0 |         0
-Negotiation phase 2 converged at iteration 0.
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement         64.0 u
