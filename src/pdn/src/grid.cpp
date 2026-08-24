@@ -1326,8 +1326,7 @@ odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
-  std::shared_ptr<odb::PtrMap<odb::dbNet, int>> net_map
-      = std::make_shared<odb::PtrMap<odb::dbNet, int>>();
+  auto net_map = std::make_shared<odb::PtrMap<odb::dbNet, int>>();
   std::vector<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
