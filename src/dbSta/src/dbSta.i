@@ -265,7 +265,6 @@ write_verilog_cmd(const char *filename,
   sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
   sta::writeVerilog(filename, include_pwr_gnd, remove_cells, network);
-  delete remove_cells;
 }
 
 void
