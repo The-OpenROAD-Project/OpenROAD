@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { waitForMicrotasks } from './setup-dom.js';
+import { dbuRectToBounds } from '../../src/coordinates.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -269,9 +270,16 @@ describe('MenuBar', () => {
 describe('Find dialog', () => {
     function createApp(response) {
         const requests = [];
+        const fitted = [];
         return {
             requests,
+            fitted,
+            // scale=1, maxDXDY=0, origins=0 keeps the DBU→map math trivial.
             designScale: 1,
+            designMaxDXDY: 0,
+            designOriginX: 0,
+            designOriginY: 0,
+            map: { fitBounds(b) { fitted.push(b); } },
             showDbu: false,
             // The palette the dialog builds its group list and swatch from
             // comes from the server's tech response (Painter::kHighlightColors,
@@ -328,6 +336,49 @@ describe('Find dialog', () => {
         assert.match(info.textContent, /Found 12/);
         assert.equal(app.inspected.type, 'Group');
         assert.ok(app.overlayRefreshed);
+    });
+
+    // The server returns the union of the matches so the view can be taken to
+    // them; the Qt Find dialog only selects, leaving off-screen hits invisible.
+    it('zooms the map to the union bbox the server returned', async () => {
+        document.body.innerHTML = '';
+        const app = createApp(() => ({
+            found: 2, properties: [], match_bbox: [0, 0, 20000, 30000],
+            // The first match's own box, which the Inspector outlines; the
+            // dialog must zoom to the union, not to this.
+            bbox: [0, 0, 1000, 1000],
+        }));
+
+        showFindDialog(app);
+        document.querySelector('.find-pattern').value = '*';
+        document.querySelector('.modal-buttons .ok').click();
+        await waitForMicrotasks();
+
+        assert.equal(app.fitted.length, 1, 'fitBounds called once');
+        assert.deepEqual(
+            app.fitted[0],
+            dbuRectToBounds(0, 0, 20000, 30000, app.designScale,
+                            app.designMaxDXDY, app.designOriginX,
+                            app.designOriginY));
+        // Kept for the Inspector's own "zoom to selection".
+        assert.equal(app.lastSelectionBounds, app.fitted[0]);
+    });
+
+    // A search that matched nothing, or whose matches report no box, comes back
+    // without the field.  Moving the view then would throw it off the design.
+    it('leaves the view alone when the response carries no match_bbox',
+       async () => {
+        document.body.innerHTML = '';
+        const app = createApp(() => ({
+            found: 2, properties: [], bbox: [0, 0, 1000, 1000],
+        }));
+
+        showFindDialog(app);
+        document.querySelector('.find-pattern').value = '*';
+        document.querySelector('.modal-buttons .ok').click();
+        await waitForMicrotasks();
+
+        assert.equal(app.fitted.length, 0);
     });
 
     // The server caps how many objects one find may select, so "Found 50000"

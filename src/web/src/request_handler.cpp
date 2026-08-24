@@ -3,8 +3,6 @@
 
 #include "request_handler.h"
 
-#include <fnmatch.h>
-
 #include <algorithm>
 #include <any>
 #include <cmath>
@@ -3118,6 +3116,7 @@ WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
         // Whatever is left keeps its highlight; with nothing left the overlay
         // clears, which is the point of the request.
         if (state.current_inspected == sel) {
+          runDeselectAction(state.current_inspected, gui::Selected());
           state.current_inspected = gui::Selected();
         }
       } else {
@@ -3125,6 +3124,10 @@ WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
           state.selection_set.clear();
         }
         state.selection_set.insert(sel);
+        // Before the overwrite: the outgoing object's deselect action is what
+        // tears down whatever it put up (a timing cone, say), and it cannot be
+        // reached once current_inspected has moved on.
+        runDeselectAction(state.current_inspected, sel);
         state.current_inspected = sel;
       }
       state.selection_itr = deselect ? state.selection_set.begin()
@@ -3272,6 +3275,10 @@ WebSocketResponse SelectHandler::handleFindObjects(const WebSocketRequest& req,
       if (!state.selection_set.empty()) {
         first = *state.selection_itr;
       }
+      // Before the overwrite, as in the other selection handlers: whatever the
+      // outgoing object put up (a timing cone, say) is torn down by its own
+      // deselect action, which is unreachable once this moves on.
+      runDeselectAction(state.current_inspected, first);
       state.current_inspected = first;
       truncated = setSelectionSetHighlights(state);
 
@@ -3308,6 +3315,11 @@ WebSocketResponse SelectHandler::handleFindObjects(const WebSocketRequest& req,
     root["highlight_truncated"] = truncated;
     // Union of the matches, for the client to zoom the view to what it found.
     // Absent when nothing matched or nothing reports a box.
+    //
+    // NOT "bbox": writeInspectPayload above owns that key for the FIRST match's
+    // own box, which is what the client draws the selection outline from and
+    // what its "Zoom to" button uses.  Overwriting it framed one object with
+    // the extent of all of them.
     odb::Rect match_bbox;
     match_bbox.mergeInit();
     for (const gui::Selected& sel : found) {
@@ -3317,10 +3329,10 @@ WebSocketResponse SelectHandler::handleFindObjects(const WebSocketRequest& req,
       }
     }
     if (!match_bbox.isInverted()) {
-      root["bbox"] = boost::json::array{match_bbox.xMin(),
-                                        match_bbox.yMin(),
-                                        match_bbox.xMax(),
-                                        match_bbox.yMax()};
+      root["match_bbox"] = boost::json::array{match_bbox.xMin(),
+                                              match_bbox.yMin(),
+                                              match_bbox.xMax(),
+                                              match_bbox.yMax()};
     }
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
@@ -3335,9 +3347,6 @@ WebSocketResponse SelectHandler::handleFindObjects(const WebSocketRequest& req,
   }
   return resp;
 }
-
-// Drop every colored highlight group (and, unless the caller asks to keep
-// it, the selection itself).  Backs the Find dialog's "Clear" button.
 
 WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
                                              SessionState& state)
@@ -3602,10 +3611,6 @@ WebSocketResponse SelectHandler::handleSelectNetLengthBin(
   }
   return resp;
 }
-
-// Find objects by name/glob (mirrors the Qt FindObjectDialog + Gui::select):
-// obj_type in {inst, net, port}; pattern is a Unix glob (*, ?, []) or an exact
-// name; selects all matches and returns their union bbox for auto-zoom.
 
 WebSocketResponse SelectHandler::handleSetRouteGuides(
     const WebSocketRequest& req,

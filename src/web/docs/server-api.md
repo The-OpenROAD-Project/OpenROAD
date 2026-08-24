@@ -638,10 +638,12 @@ matches a pattern — the counterpart of the Qt GUI's Find dialog and of
 
 **Response (JSON):** the inspect payload of the first match plus `found`,
 `found_truncated`, `selection_count`, `selection_index`,
-`highlight_truncated`, and `bbox` — the `[x0, y0, x1, y1]` union of the
-matches in DBU, for the client to zoom to.  `bbox` is absent when nothing
-matched or no match reports a box.  Errors on an unknown `object_type`, an
-out-of-range `highlight_group`, or a malformed regexp.
+`highlight_truncated`, and `match_bbox` — the `[x0, y0, x1, y1]` union of the
+matches in DBU, for the client to zoom to.  It is absent when nothing matched
+or no match reports a box.  Note it is *not* the inspect payload's own `bbox`,
+which is the first match's box and is what the selection outline is drawn from.
+Errors on an unknown `object_type`, an out-of-range `highlight_group`, or a
+malformed regexp.
 
 ### `clear_highlights`
 

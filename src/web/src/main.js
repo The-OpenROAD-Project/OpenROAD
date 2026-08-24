@@ -279,12 +279,11 @@ try {
 }
 
 // Console handle: main.js is an ES module, so nothing here is reachable from
-// DevTools otherwise.  The two state maps are module-level consts rather than
-// app fields, so they have to be hung on it explicitly.
+// DevTools otherwise.  `app` carries the visibility and selectability maps
+// (see below), which is most of what there is to poke at.
 if (typeof window !== 'undefined') {
     window.orApp = app;
 }
-app.visibility = visibility;
 
 // Selectability mirrors the Qt GUI's display-controls "selectable" column.
 // Defaults to true (everything selectable), matching the Qt GUI.  Only
@@ -328,10 +327,10 @@ const selectability = {
     placement_blockages: true,
     routing_obstructions: true,
 };
-app.selectability = selectability;
 
 // Expose the live visibility/selectability so the context menu "Save" can
-// serialize the same payload the tile requests use (visibility-aware export).
+// serialize the same payload the tile requests use (visibility-aware export),
+// and so the Clusters panel can tell whether its overlay is switched on.
 app.visibility = visibility;
 app.selectability = selectability;
 

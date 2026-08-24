@@ -515,10 +515,13 @@ export function showFindDialog(app) {
                 }
                 // Center the matches, which the Qt Find dialog does not do:
                 // a name search whose hits are off screen otherwise looks
-                // like it found nothing.
-                if (Array.isArray(data.bbox) && app.map && app.designScale) {
+                // like it found nothing.  `match_bbox` spans all of them;
+                // `bbox` is the first match's own box, which the Inspector
+                // outlines.
+                const box = data.match_bbox;
+                if (Array.isArray(box) && app.map && app.designScale) {
                     app.lastSelectionBounds = dbuRectToBounds(
-                        data.bbox[0], data.bbox[1], data.bbox[2], data.bbox[3],
+                        box[0], box[1], box[2], box[3],
                         app.designScale, app.designMaxDXDY,
                         app.designOriginX, app.designOriginY);
                     app.map.fitBounds(app.lastSelectionBounds);

@@ -322,10 +322,20 @@ class FakeGroupDescriptor : public gui::Descriptor
 
   std::string getTypeName() const override { return "Group"; }
 
-  bool getBBox(const std::any& /* object */,
-               odb::Rect& /* bbox */) const override
+  // Off by default, matching gui::DbGroupDescriptor: a dbGroup only reports a
+  // box when it has a region, which MPL's clusters do not.  The find_objects
+  // union-bbox tests turn it on, since a descriptor that reports nothing is
+  // exactly the case where no bbox comes back.
+  bool report_bbox = false;
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
   {
-    return false;
+    if (!report_bbox) {
+      return false;
+    }
+    bbox.mergeInit();
+    mergeInstBoxes(std::any_cast<odb::dbGroup*>(object), bbox);
+    return !bbox.isInverted();
   }
 
   void visitAllObjects(
@@ -366,6 +376,16 @@ class FakeGroupDescriptor : public gui::Descriptor
   }
 
  private:
+  static void mergeInstBoxes(odb::dbGroup* group, odb::Rect& bbox)
+  {
+    for (odb::dbInst* inst : group->getInsts()) {
+      bbox.merge(inst->getBBox()->getBox());
+    }
+    for (odb::dbGroup* child : group->getGroups()) {
+      mergeInstBoxes(child, bbox);
+    }
+  }
+
   odb::dbBlock* block_;
 };
 
@@ -1965,8 +1985,9 @@ class GroupSelectTest : public tst::Nangate45Fixture
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
 
+    group_desc_ = new FakeGroupDescriptor(block_);
     gui::DescriptorRegistry::instance()->registerDescriptor(
-        typeid(odb::dbGroup*), new FakeGroupDescriptor(block_));
+        typeid(odb::dbGroup*), group_desc_);
   }
 
   void TearDown() override
@@ -1992,6 +2013,9 @@ class GroupSelectTest : public tst::Nangate45Fixture
   SessionState state_;
   odb::dbGroup* root_ = nullptr;
   odb::dbGroup* child_ = nullptr;
+  // Owned by the registry, which outlives the test body; kept so a test can
+  // turn on the descriptor's optional bbox.
+  FakeGroupDescriptor* group_desc_ = nullptr;
 };
 
 // Clicking a row in the Clusters panel selects the dbGroup, and the group's
@@ -2239,6 +2263,77 @@ TEST_F(GroupSelectTest, FindObjectsAnchorsGlobPatterns)
   // name, and so must this.
   auto obj = findObjects(R"({"object_type":"Group","pattern":"root"})");
   EXPECT_EQ(obj.at("found").as_int64(), 1);
+}
+
+// The Find dialog zooms the view to what it found, so the response carries the
+// union of the matches.  Recursive through the descriptor, which is what makes
+// a match on the root cluster frame the nested cluster's instances too.
+TEST_F(GroupSelectTest, FindObjectsReturnsTheUnionBBoxOfTheMatches)
+{
+  group_desc_->report_bbox = true;
+
+  auto obj = findObjects(R"({"object_type":"Group","pattern":"*"})");
+  ASSERT_EQ(obj.at("found").as_int64(), 2);
+  ASSERT_TRUE(obj.contains("match_bbox"));
+
+  odb::Rect expected;
+  expected.mergeInit();
+  for (odb::dbInst* inst : block_->getInsts()) {
+    expected.merge(inst->getBBox()->getBox());
+  }
+  const auto& bbox = obj.at("match_bbox").as_array();
+  ASSERT_EQ(bbox.size(), 4u);
+  EXPECT_EQ(bbox[0].as_int64(), expected.xMin());
+  EXPECT_EQ(bbox[1].as_int64(), expected.yMin());
+  EXPECT_EQ(bbox[2].as_int64(), expected.xMax());
+  EXPECT_EQ(bbox[3].as_int64(), expected.yMax());
+}
+
+// The union travels under its own key: `bbox` belongs to the embedded inspect
+// payload and is the FIRST match's own box, which the client outlines and
+// zooms to from the Inspector.  Overwriting it framed one object with the
+// extent of all of them.
+TEST_F(GroupSelectTest, FindObjectsKeepsTheInspectedObjectsOwnBBox)
+{
+  group_desc_->report_bbox = true;
+
+  // A pattern matching only the nested cluster, whose box is a strict subset
+  // of the union — so the two keys cannot coincide.
+  auto obj = findObjects(R"({"object_type":"Group","pattern":"*glue*"})");
+  ASSERT_EQ(obj.at("found").as_int64(), 1);
+  ASSERT_TRUE(obj.contains("bbox"));
+
+  odb::Rect child_box;
+  child_box.mergeInit();
+  for (odb::dbInst* inst : child_->getInsts()) {
+    child_box.merge(inst->getBBox()->getBox());
+  }
+  const auto& bbox = obj.at("bbox").as_array();
+  EXPECT_EQ(bbox[0].as_int64(), child_box.xMin());
+  EXPECT_EQ(bbox[1].as_int64(), child_box.yMin());
+  EXPECT_EQ(bbox[2].as_int64(), child_box.xMax());
+  EXPECT_EQ(bbox[3].as_int64(), child_box.yMax());
+}
+
+// Absent, not a degenerate box: the client keys the auto-zoom off the field
+// being there, and zooming to [0,0,0,0] would throw the view off the design.
+TEST_F(GroupSelectTest, FindObjectsOmitsTheMatchBBoxWhenNothingMatched)
+{
+  group_desc_->report_bbox = true;
+
+  auto obj = findObjects(R"({"object_type":"Group","pattern":"nosuch*"})");
+  ASSERT_EQ(obj.at("found").as_int64(), 0);
+  EXPECT_FALSE(obj.contains("match_bbox"));
+}
+
+// A descriptor that reports no box of its own (gui::DbGroupDescriptor, unless
+// the group has a region) leaves nothing to union, and the field stays out
+// rather than coming back inverted or zeroed.
+TEST_F(GroupSelectTest, FindObjectsOmitsTheMatchBBoxWhenNoMatchReportsOne)
+{
+  auto obj = findObjects(R"({"object_type":"Group","pattern":"*"})");
+  ASSERT_EQ(obj.at("found").as_int64(), 2);
+  EXPECT_FALSE(obj.contains("match_bbox"));
 }
 
 TEST_F(GroupSelectTest, FindObjectsSupportsRegexp)
