@@ -549,7 +549,11 @@ ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
       level_(0),
       subtree_visibility_(true)
 {
-  net_ = getNet(*clock_->pins().begin());
+  // A virtual clock has no pins; net_ stays null and ClockWidget::populate
+  // skips the tree. Dereferencing pins().begin() here would be UB.
+  if (!clock_->pins().empty()) {
+    net_ = getNet(*clock_->pins().begin());
+  }
 }
 
 std::set<const sta::Pin*> ClockTree::getDrivers(bool visibility = false) const

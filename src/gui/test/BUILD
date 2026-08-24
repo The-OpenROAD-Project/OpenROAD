@@ -9,6 +9,12 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
     "supported",
+    "clocktree_virtual_clock",
+]
+
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+    "clocktree_virtual_clock",
 ]
 
 filegroup(
@@ -32,6 +38,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"],
         visibility = ["//visibility:public"],
     )
