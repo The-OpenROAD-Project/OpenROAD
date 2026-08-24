@@ -1226,6 +1226,7 @@ Divergence occured in 1 regions.
 [INFO GPL-1012] Total routability artificial inflation: 4287.00 (+1.02%)
 [INFO GPL-1013] Total timing-driven delta area: -34326.85 (-8.17%)
 [INFO GPL-1014] Final placement area: 389871.15 (-7.15%)
+[INFO GPL-1018] Final HPWL (um): 1873476.22
 [INFO DPL-0006] Core area: 878902.94 um^2
 [INFO DPL-0007] Movable instances area: 334449.51 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2
