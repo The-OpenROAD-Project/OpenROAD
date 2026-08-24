@@ -4544,7 +4544,7 @@ static std::vector<unsigned char> lanczos2Downsample(
   return dst;
 }
 
-std::vector<unsigned char> TileGenerator::renderImagePng(
+std::vector<unsigned char> TileGenerator::renderImageBuffer(
     const odb::Rect& region,
     const int width_px,
     const double dbu_per_pixel,
@@ -4732,6 +4732,32 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
         compositePixel(&final_buf[dst_idx], &output[src_idx]);
       }
     }
+  }
+
+  if (out_width) {
+    *out_width = final_w;
+  }
+  if (out_height) {
+    *out_height = final_h;
+  }
+  return final_buf;
+}
+
+std::vector<unsigned char> TileGenerator::renderImagePng(
+    const odb::Rect& region,
+    const int width_px,
+    const double dbu_per_pixel,
+    const TileVisibility& vis,
+    const Color& bg,
+    int* out_width,
+    int* out_height) const
+{
+  int final_w = 0;
+  int final_h = 0;
+  const std::vector<unsigned char> final_buf = renderImageBuffer(
+      region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h);
+  if (final_buf.empty()) {
+    return {};  // renderImageBuffer already logged the error.
   }
 
   // Encode to PNG.
