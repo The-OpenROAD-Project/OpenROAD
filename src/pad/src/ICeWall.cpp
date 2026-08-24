@@ -137,6 +137,14 @@ void ICeWall::makeBTerm(odb::dbNet* net,
                         odb::dbTechLayer* layer,
                         const odb::Rect& shape) const
 {
+  makeBTermPin(net, layer, shape);
+  Utilities::makeSpecial(net);
+}
+
+void ICeWall::makeBTermPin(odb::dbNet* net,
+                           odb::dbTechLayer* layer,
+                           const odb::Rect& shape) const
+{
   odb::dbBTerm* bterm = net->get1stBTerm();
   if (bterm == nullptr) {
     logger_->warn(utl::PAD,
@@ -150,13 +158,15 @@ void ICeWall::makeBTerm(odb::dbNet* net,
           utl::PAD, 34, "Unable to create block terminal: {}", net->getName());
     }
   }
-  bterm->setSigType(net->getSigType());
+  if (bterm->getSigType() != net->getSigType()) {
+    bterm->setSigType(net->getSigType());
+  }
   odb::dbBPin* pin = odb::dbBPin::create(bterm);
   odb::dbBox::create(
       pin, layer, shape.xMin(), shape.yMin(), shape.xMax(), shape.yMax());
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const double dbus = net->getBlock()->getDbUnitsPerMicron();
   logger_->info(utl::PAD,
                 116,
                 "Creating terminal for {} on {} at ({:.3f}um, {:.3f}um) - "
@@ -167,7 +177,58 @@ void ICeWall::makeBTerm(odb::dbNet* net,
                 shape.yMin() / dbus,
                 shape.xMax() / dbus,
                 shape.yMax() / dbus);
-  Utilities::makeSpecial(net);
+}
+
+std::optional<ICeWall::InstPin> ICeWall::findTopPin(odb::dbInst* inst) const
+{
+  odb::dbTechLayer* top_layer = nullptr;
+  std::set<odb::Rect> top_shapes;
+
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::dbTechLayer* layer = box->getTechLayer();
+
+        // Pin geometry may also hold via boxes and those have no tech layer.
+        if (!layer) {
+          continue;
+        }
+
+        if (!top_layer
+            || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
+          top_layer = layer;
+
+          if (top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+            top_shapes.clear();
+          }
+
+          top_shapes.insert(box->getBox());
+        }
+      }
+    }
+  }
+
+  if (!top_layer) {
+    return std::nullopt;
+  }
+
+  odb::Rect master_box;
+  inst->getMaster()->getPlacementBoundary(master_box);
+
+  odb::Rect pin_shape;
+  for (const odb::Rect& top_shape : top_shapes) {
+    if (top_shape.intersects(master_box.center())) {
+      pin_shape = top_shape;
+    }
+  }
+
+  if (pin_shape.area() == 0) {
+    pin_shape = *(top_shapes.begin());
+  }
+
+  inst->getTransform().apply(pin_shape);
+
+  return InstPin{top_layer, pin_shape};
 }
 
 void ICeWall::assignBump(odb::dbInst* inst,
@@ -187,10 +248,6 @@ void ICeWall::assignBump(odb::dbInst* inst,
 
   assertMasterType(inst, odb::dbMasterType::COVER_BUMP);
 
-  const odb::dbTransform xform = inst->getTransform();
-
-  odb::dbTechLayer* top_layer = nullptr;
-  std::set<odb::Rect> top_shapes;
   for (auto* iterm : inst->getITerms()) {
     if (iterm->getNet() != net) {
       iterm->connect(net);
@@ -219,46 +276,61 @@ void ICeWall::assignBump(odb::dbInst* inst,
     if (dont_route) {
       routing_map_[iterm] = nullptr;
     }
-
-    for (auto* mpin : iterm->getMTerm()->getMPins()) {
-      for (auto* geom : mpin->getGeometry()) {
-        auto* layer = geom->getTechLayer();
-        if (layer == nullptr) {
-          continue;
-        }
-
-        if (top_layer == nullptr
-            || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
-          top_layer = layer;
-          if (top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
-            top_shapes.clear();
-          }
-          top_shapes.insert(geom->getBox());
-        }
-      }
-    }
   }
 
-  if (top_layer != nullptr) {
-    odb::Rect master_box;
-    inst->getMaster()->getPlacementBoundary(master_box);
-    const odb::Point center = master_box.center();
+  const auto bump_pin = findTopPin(inst);
 
-    const odb::Rect* top_shape_ptr = nullptr;
-    for (const odb::Rect& shape : top_shapes) {
-      if (shape.intersects(center)) {
-        top_shape_ptr = &shape;
+  if (bump_pin) {
+    makeBTerm(net, bump_pin->layer, bump_pin->shape);
+  }
+}
+
+void ICeWall::makeBTermPinsFromBumps(odb::dbBlock* block) const
+{
+  for (odb::dbBTerm* bterm : block->getBTerms()) {
+    if (!bterm->getBPins().empty()) {
+      continue;
+    }
+
+    odb::dbNet* net = bterm->getNet();
+
+    if (net->getSigType().isSupply()) {
+      continue;
+    }
+
+    odb::dbInst* bump_inst = nullptr;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbMaster* master = iterm->getInst()->getMaster();
+
+      if (master->getType() == odb::dbMasterType::COVER_BUMP) {
+        bump_inst = iterm->getInst();
+        break;
       }
     }
 
-    if (top_shape_ptr == nullptr) {
-      top_shape_ptr = &(*top_shapes.begin());
+    if (!bump_inst) {
+      logger_->warn(utl::PAD,
+                    121,
+                    "Could not make a pin for terminal {}. No bump instance "
+                    "is connected to net {}.",
+                    bterm->getName(),
+                    net->getName());
+      continue;
     }
 
-    odb::Rect top_shape = *top_shape_ptr;
+    const auto bump_pin = findTopPin(bump_inst);
 
-    xform.apply(top_shape);
-    makeBTerm(net, top_layer, top_shape);
+    if (!bump_pin) {
+      logger_->warn(utl::PAD,
+                    122,
+                    "Could not make a pin for terminal {}. Bump {} has no "
+                    "pin geometry.",
+                    bterm->getName(),
+                    bump_inst->getName());
+      continue;
+    }
+
+    makeBTermPin(net, bump_pin->layer, bump_pin->shape);
   }
 }
 
