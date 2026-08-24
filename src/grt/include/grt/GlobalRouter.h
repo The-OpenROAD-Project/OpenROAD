@@ -162,7 +162,12 @@ class GlobalRouter
   void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
   bool isNetResAware(odb::dbNet* db_net);
   void setMacroExtension(int macro_extension);
-  void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
+  void setUseCUGR(bool use_cugr)
+  {
+    use_cugr_ = use_cugr;
+    engine_selected_ = true;
+  };
+  bool isUseCUGR() const { return use_cugr_; };
   void setSkipLargeFanoutNets(int skip_large_fanout)
   {
     skip_large_fanout_ = skip_large_fanout;
@@ -216,6 +221,15 @@ class GlobalRouter
                              const int& pos_y,
                              const int& layer_level,
                              odb::dbNet* db_net);
+  // True if a whole jumper (wire on layer_level between the positions plus
+  // a via stack at each end) fits the per-edge headroom, accumulating
+  // demands that share an edge. Always true under FastRoute.
+  bool hasJumperResources(int init_x,
+                          int init_y,
+                          int final_x,
+                          int final_y,
+                          int layer_level,
+                          odb::dbNet* db_net) const;
   odb::Point getPositionOnGrid(const odb::Point& real_position);
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
@@ -230,13 +244,20 @@ class GlobalRouter
                        const int& layer_level,
                        int used,
                        odb::dbNet* db_net);
-  void updateFastRouteGridsLayer(const int& init_x,
-                                 const int& init_y,
-                                 const int& final_x,
-                                 const int& final_y,
-                                 const int& layer_level,
-                                 const int& new_layer_level,
-                                 odb::dbNet* db_net);
+  // Moves a jumpered span's bookkeeping between the layers; routes_[db_net]
+  // must already hold the finished jumpered route. Returns false when CUGR
+  // rejects it: the caller must undo the jumper and call restoreNetDemand.
+  bool updateJumperedRoute(const int& init_x,
+                           const int& init_y,
+                           const int& final_x,
+                           const int& final_y,
+                           const int& layer_level,
+                           const int& new_layer_level,
+                           odb::dbNet* db_net);
+  // Recommits routes_[db_net]'s demand after a rejected jumper was rolled
+  // back; on failure schedules a dirty-net reroute. No-op under FastRoute,
+  // whose bookkeeping is untouched by a rejected jumper.
+  void restoreNetDemand(odb::dbNet* db_net);
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
@@ -356,6 +377,9 @@ class GlobalRouter
 
  private:
   void finishGlobalRouting(bool save_guides = false);
+  void ensureEngineSelected();
+  // DBU coordinate to gcell index, clamped into the (oversized) last gcell.
+  int dbuToTile(int dbu_coord, bool is_x) const;
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
@@ -503,6 +527,7 @@ class GlobalRouter
   void deleteSegment(Net* net, GRoute& segments, int seg_id);
   void destroyNetWire(Net* net);
   void removeWireUsage(odb::dbWire* wire);
+  GRoute makeRouteFromWires(odb::dbNet* db_net, int max_layer);
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
   bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
@@ -575,7 +600,10 @@ class GlobalRouter
   int total_diodes_count_;
   bool is_congested_{false};
   bool incremental_congestion_report_pending_{false};
+  // Block property recording which engine produced the persisted guides.
+  static constexpr char kUseCugrProperty[] = "grt_use_cugr";
   bool use_cugr_{false};
+  bool engine_selected_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
   bool has_macros_or_pads_{false};
   bool check_pin_placement_{true};

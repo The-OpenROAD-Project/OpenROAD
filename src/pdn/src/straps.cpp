@@ -2357,7 +2357,8 @@ void RepairChannelStraps::repairGridChannels(
 
   if (!channels.empty() && renderer != nullptr) {
     renderer->update();
-    renderer->pause();
+    renderer->pause(fmt::format(
+        "{} channel(s) to repair in {}", channels.size(), grid->getLongName()));
   }
 
   if (channels.empty()) {

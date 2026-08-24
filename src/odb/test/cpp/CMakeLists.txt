@@ -8,12 +8,13 @@ set(GTEST_LIBS
         GTest::gtest_main
 )
 
-add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc)
+add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc TestOrderWires.cpp)
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)
 add_executable(TestLef58Properties TestLef58Properties.cpp)
 add_executable(TestGroup TestGroup.cpp)
+add_executable(TestDbSet TestDbSet.cpp)
 add_executable(TestGCellGrid TestGCellGrid.cpp)
 add_executable(TestJournal TestJournal.cpp)
 add_executable(TestAccessPoint TestAccessPoint.cpp)
@@ -29,6 +30,7 @@ add_executable(TestSwapMaster TestSwapMaster.cpp)
 add_executable(TestSwapMasterUnusedPort TestSwapMasterUnusedPort.cpp)
 add_executable(TestWriteReadDbHier TestWriteReadDbHier.cpp)
 add_executable(TestObjectType TestObjectType.cpp)
+add_executable(TestDbStream TestDbStream.cpp)
 
 target_link_libraries(OdbGTests
         db
@@ -67,6 +69,11 @@ target_link_libraries(TestLef58Properties
         ${GTEST_LIBS}
 )
 target_link_libraries(TestGroup
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestDbSet
         db
         odb_test_helper
         ${GTEST_LIBS}
@@ -151,6 +158,11 @@ target_link_libraries(TestWriteReadDbHier
         tst_integrated_fixture
         ${GTEST_LIBS}
 )
+target_link_libraries(TestDbStream
+        db
+        tst_base
+        ${GTEST_LIBS}
+)
 target_link_libraries(TestObjectType
         db
         tst_base
@@ -169,11 +181,12 @@ gtest_discover_tests(OdbGTests
     TEST_FILTER "-TestAccessPoint.*,-TestCallBacks.*,-TestGCellGrid.*,-TestGeom.*,-TestGroup.*,-TestGuide.*,-TestJournal.*-TestLef58Properties.*,-TestMaster.*,-TestModule.*,-TestNetTrack.*,-TestChips.*,-Test3DBloxParser.*,-Test3DBloxChecker.*"
 )
 
-add_dependencies(build_and_test 
-        TestCallBacks 
-        TestGeom 
-        TestModule 
-        TestGroup 
+add_dependencies(build_and_test
+        TestCallBacks
+        TestGeom
+        TestModule
+        TestGroup
+        TestDbSet
         TestGCellGrid 
         TestGuide
         TestNetTrack
@@ -187,6 +200,7 @@ add_dependencies(build_and_test
         TestWriteReadDbHier
         OdbGTests
         TestObjectType
+        TestDbStream
 )
 add_subdirectory(helper)
 add_subdirectory(scan)

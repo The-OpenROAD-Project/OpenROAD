@@ -10,7 +10,9 @@
 #include <string>
 #include <vector>
 
+#include "boost/json/parse.hpp"
 #include "gtest/gtest.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -423,9 +425,10 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   vis.access_points = true;
   vis.regions = true;
   vis.gcell_grid = true;
+  vis.rudy = true;
 
   // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
-  // _access_points 1000, _regions 1001, _gcell_grid 1002.
+  // _access_points 1000, _regions 1001, _gcell_grid 1002, _rudy 1003.
   const std::vector<std::string> expected = {"_instances",
                                              "_pins",
                                              "_mfg_grid",
@@ -433,7 +436,8 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
                                              "metal2",
                                              "_access_points",
                                              "_regions",
-                                             "_gcell_grid"};
+                                             "_gcell_grid",
+                                             "_rudy"};
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
 }
 
@@ -448,10 +452,121 @@ TEST_F(SaveImageTest, LayerCompositionOrderHonorsVisibility)
   vis.mfg_grid = false;
   vis.access_points = false;
   vis.gcell_grid = false;
+  vis.rudy = false;
 
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
             (std::vector<std::string>{"_instances", "metal1"}))
       << "hidden overlays must not be composited at all";
+}
+
+TEST_F(SaveImageTest, ParseFromJsonRudyOption)
+{
+  TileVisibility vis;
+  EXPECT_FALSE(vis.rudy);
+  auto json_obj = boost::json::parse("{\"rudy\":true}").as_object();
+  vis.parseFromJson(json_obj);
+  EXPECT_TRUE(vis.rudy);
+}
+
+class TestRUDYHeatMap : public gui::HeatMapDataSource
+{
+ public:
+  explicit TestRUDYHeatMap(utl::Logger* logger)
+      : gui::HeatMapDataSource(logger,
+                               "Estimated Congestion (RUDY)",
+                               "RUDY",
+                               "RUDY")
+  {
+  }
+
+  odb::Rect getBounds() const override
+  {
+    return getBlock() ? getBlock()->getDieArea()
+                      : odb::Rect(0, 0, 100000, 100000);
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    addToMap(odb::Rect(20000, 20000, 80000, 80000), 10.0);
+    return true;
+  }
+
+  void combineMapData(bool /*base_has_value*/,
+                      double& base,
+                      double new_data,
+                      double /*data_area*/,
+                      double /*intersection_area*/,
+                      double /*rect_area*/) override
+  {
+    base = new_data;
+  }
+};
+
+TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
+{
+  auto logger = getLogger();
+  gui::registerHeatMapSource(
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger]() {
+        return std::make_shared<TestRUDYHeatMap>(logger);
+      });
+
+  const std::string path_no_rudy = tempPng("no_rudy");
+  TileVisibility vis_off;
+  vis_off.rudy = false;
+  tile_gen_->saveImage(path_no_rudy, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
+
+  const std::string path_rudy = tempPng("with_rudy");
+  TileVisibility vis_on;
+  vis_on.rudy = true;
+  tile_gen_->saveImage(path_rudy, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
+
+  ASSERT_TRUE(std::filesystem::exists(path_no_rudy));
+  ASSERT_TRUE(std::filesystem::exists(path_rudy));
+
+  unsigned w1 = 0, h1 = 0;
+  auto pixels_no_rudy = decodePngFile(path_no_rudy, w1, h1);
+  unsigned w2 = 0, h2 = 0;
+  auto pixels_rudy = decodePngFile(path_rudy, w2, h2);
+
+  EXPECT_EQ(w1, 512u);
+  EXPECT_EQ(w2, 512u);
+  EXPECT_GT(countNonTransparentPixels(pixels_rudy),
+            countNonTransparentPixels(pixels_no_rudy))
+      << "Enabling rudy heatmap should render additional heatmap pixels";
+}
+
+// Qt gates drawLabels on the Misc/"Labels" control, and its save_image goes
+// through the same painter, so a saved image reproduces a view with labels
+// hidden.  save_image -display_option {labels false} has to do the same here.
+TEST_F(SaveImageTest, LabelsFollowTheVisibilityFlag)
+{
+  // Render the generator's own bounds: labels outside them fall off every
+  // tile and would make this pass for the wrong reason.
+  const odb::Rect region = tile_gen_->getBounds();
+  ASSERT_GT(region.maxDXDY(), 0);
+  const Color white{.r = 255, .g = 255, .b = 255, .a = 255};
+
+  TileVisibility vis;
+  const std::vector<unsigned char> before
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+  ASSERT_FALSE(before.empty());
+
+  const odb::Point centre((region.xMin() + region.xMax()) / 2,
+                          (region.yMin() + region.yMax()) / 2);
+  ASSERT_FALSE(
+      tile_gen_->addLabel(centre, "PROBE", white, 24, "center", "L").empty());
+
+  const std::vector<unsigned char> shown
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+  vis.labels = false;
+  const std::vector<unsigned char> hidden
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+
+  // Drawn when on...
+  EXPECT_NE(shown, before) << "label did not change the image";
+  // ...and with it off the image is the one from before the label existed.
+  EXPECT_EQ(hidden, before) << "label still drawn with labels off";
 }
 
 }  // namespace

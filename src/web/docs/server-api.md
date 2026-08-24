@@ -637,19 +637,22 @@ matches a pattern — the counterpart of the Qt GUI's Find dialog and of
 | `use_dbu`          | `bool`   |    —     | Same as `inspect`.                                               |
 
 **Response (JSON):** the inspect payload of the first match plus `found`,
-`selection_count`, `selection_index` and `highlight_truncated`.  Errors on an
-unknown `object_type`, an out-of-range `highlight_group`, or a malformed
-regexp.
+`found_truncated`, `selection_count`, `selection_index`,
+`highlight_truncated`, and `bbox` — the `[x0, y0, x1, y1]` union of the
+matches in DBU, for the client to zoom to.  `bbox` is absent when nothing
+matched or no match reports a box.  Errors on an unknown `object_type`, an
+out-of-range `highlight_group`, or a malformed regexp.
 
 ### `clear_highlights`
 
-Drop every colored highlight group.
+Drop the members of the colored highlight groups.  The selection is separate
+state and is left alone.
 
-| Field            | Type   | Required | Description                                              |
-| ---------------- | ------ | :------: | -------------------------------------------------------- |
-| `keep_selection` | `bool` |    —     | Default `false`, which also clears the selection itself.  |
+| Field   | Type  | Required | Description                                                     |
+| ------- | ----- | :------: | --------------------------------------------------------------- |
+| `group` | `int` |    —     | `0..15` to clear just that group; `-1` (default) clears them all. |
 
-**Response (JSON):** `{"ok": 1}`.
+**Response (JSON):** `{"ok": 1, "cleared": <members removed>}`.
 
 ### `set_focus_nets`
 

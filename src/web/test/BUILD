@@ -34,6 +34,10 @@ filegroup(
 
 [regression_test(
     name = test_name,
+    # Passfail, like the CMake registration: the log carries absolute paths
+    # and image sizes, so there is no golden file to diff it against.
+    check_log = False,
+    check_passfail = True,
     data = [":test_resources"],
 ) for test_name in TESTS]
 
@@ -47,7 +51,9 @@ DOM_TEST_DATA = [
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":gif_test",
         ":request_handler_test",
+        ":save_display_controls_test",
         ":tile_generator_test",
     ],
 )
@@ -60,8 +66,15 @@ js_test(
 )
 
 js_test(
+    name = "display_state_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-display-state.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "schematic_widget_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -70,6 +83,27 @@ js_test(
     name = "vis_tree_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "context_menu_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-context-menu.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "search_nav_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-search-nav.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "capture_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-capture.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -151,6 +185,13 @@ js_test(
 )
 
 js_test(
+    name = "timing_cone_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-timing-cone.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "inspector_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-inspector.js",
@@ -161,6 +202,13 @@ js_test(
     name = "ruler_test",
     data = JS_FILES,
     entry_point = "js/test-ruler.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "label_manager_test",
+    data = JS_FILES,
+    entry_point = "js/test-label-manager.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -179,9 +227,37 @@ js_test(
 )
 
 js_test(
+    name = "selection_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-selection-browser.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "menu_bar_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-menu-bar.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "toolbar_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-toolbar.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "image_export_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-image-export.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "edit_dialogs_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-edit-dialogs.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -252,6 +328,22 @@ cc_test(
 )
 
 cc_test(
+    name = "gif_test",
+    srcs = ["cpp/TestGif.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "request_handler_test",
     srcs = ["cpp/TestRequestHandler.cpp"],
     data = [
@@ -262,6 +354,7 @@ cc_test(
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
+        "//src/utl",
         "//src/web",
         "@boost.json",
         "@googletest//:gtest",
@@ -296,11 +389,13 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui",
         "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -317,6 +412,60 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "timing_cone_test",
+    srcs = ["cpp/TestTimingCone.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "charts_test",
+    srcs = ["cpp/TestCharts.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "labels_test",
+    srcs = ["cpp/TestLabels.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -359,6 +508,22 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "save_display_controls_test",
+    srcs = ["cpp/TestSaveDisplayControls.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

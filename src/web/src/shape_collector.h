@@ -10,11 +10,16 @@
 
 #include "gui/gui.h"
 #include "odb/geom.h"
+#include "tile_generator.h"
 
 namespace web {
 
-// A gui::Painter that collects the rectangles and polygons a
+// A gui::Painter that collects the rectangles, polygons and lines a
 // descriptor->highlight() draws, for the overlay renderer to paint.
+//
+// Lines matter for nets: an unrouted net's highlight (and the Qt GUI's
+// NetWithSink sink path) is drawn as flight lines, which used to be silently
+// dropped here.
 //
 // `budget` bounds what one object may accumulate: a descriptor can emit one
 // shape per leaf.  Past it only the union of the dropped shapes is kept, which
@@ -30,6 +35,7 @@ class ShapeCollector : public gui::Painter
 
   std::vector<odb::Rect> rects;
   std::vector<odb::Polygon> polys;
+  std::vector<FlightLine> lines;
   // Union of everything dropped for exceeding the budget; inverted while
   // nothing was dropped.
   odb::Rect overflow_bbox;
@@ -42,6 +48,7 @@ class ShapeCollector : public gui::Painter
   {
     rects.clear();
     polys.clear();
+    lines.clear();
     overflow_bbox.mergeInit();
     budget_ = budget;
   }
@@ -79,6 +86,12 @@ class ShapeCollector : public gui::Painter
   {
     drawPolygon(odb::Polygon(oct));
   }
+  void drawLine(const odb::Point& p1, const odb::Point& p2) override
+  {
+    // Selection-highlight yellow (matches the rect/poly highlight color).
+    lines.push_back(
+        {.p1 = p1, .p2 = p2, .color = {.r = 255, .g = 255, .b = 0, .a = 255}});
+  }
 
   // No-ops
   Color getPenColor() override { return {}; }
@@ -90,7 +103,6 @@ class ShapeCollector : public gui::Painter
   void setFont(const Font&) override {}
   void saveState() override {}
   void restoreState() override {}
-  void drawLine(const odb::Point&, const odb::Point&) override {}
   void drawCircle(int, int, int) override {}
   void drawX(int, int, int) override {}
   void drawPolygon(const std::vector<odb::Point>&) override {}
