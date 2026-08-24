@@ -497,16 +497,23 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   odb::dbNet* power = getDomain()->getPower();
   odb::dbNet* ground = getDomain()->getGround();
 
+  const int double_height = 2 * row_height_;
+
   const int x_start = boundary.xMin();
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
-    odb::Rect bbox = row->getBBox();
+    const bool even_height_row
+        = (row->getSite()->getHeight() % double_height) == 0;
+
     // Only MX ("FS") and R180 ("S") invert the master's y-axis and therefore
     // swap the power and ground rails; R0 ("N") and MY ("FN") leave them alone.
     const odb::dbOrientType orient = row->getOrient();
-    const bool power_on_top
+    const bool is_right_side_up
         = orient == odb::dbOrientType::R0 || orient == odb::dbOrientType::MY;
+    const bool start_with_power = even_height_row ? false : !is_right_side_up;
+
+    const odb::Rect bbox = row->getBBox();
 
     int x0 = bbox.xMin();
     if (x0 == core.xMin()) {
@@ -517,7 +524,7 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       x1 = x_end;
     }
 
-    bool do_power = !power_on_top;
+    bool do_power = start_with_power;
     for (int y = bbox.yMin(); y <= bbox.yMax(); y += row_height_) {
       const int y_start = y - width / 2;
       auto strap = std::make_unique<FollowPinShape>(

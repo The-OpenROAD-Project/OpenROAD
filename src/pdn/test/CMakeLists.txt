@@ -43,6 +43,7 @@ or_integration_tests(
     core_grid_mirrored_rows
     core_grid_multiheight_rows
     core_grid_multiheight_rows_pitch
+    core_grid_multiheight_site_order
     core_grid_no_trim
     core_grid_obstruction
     core_grid_offset_strap
