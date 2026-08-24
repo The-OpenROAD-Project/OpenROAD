@@ -58,6 +58,13 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
   }
 }
 
+bool tmg_rcterm::isBumpPin() const
+{
+  return iterm
+         && iterm->getInst()->getMaster()->getType()
+                == dbMasterType::COVER_BUMP;
+}
+
 tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 {
   rcV_.reserve(1024);
@@ -494,6 +501,12 @@ void tmg_conn::detachTilePins()
     for (int k = 0; !sliceDone && k < termV_.size(); k++) {
       tmg_rcterm* tx = &termV_[k];
       if (tx->bterm) {
+        continue;
+      }
+      if (tx->isBumpPin()) {
+        // A bump pad pin is a special case, because a bterm with the same
+        // geometry should exist and be the actual terminal of this point.
+        // Based on that, we don't need to detach the bterm from it.
         continue;
       }
       dbMTerm* mterm = tx->iterm->getMTerm();
@@ -1003,8 +1016,19 @@ static void removePointFromTerm(tmg_rcpt* pt, tmg_rcterm* x)
   pt->next_for_term = nullptr;
 }
 
+void tmg_conn::replaceBumpPinByBTerm(tmg_rcpt& pt)
+{
+  termV_[pt.tindex].replaced_by_bterm = true;
+  removePointFromTerm(&pt, &termV_[pt.tindex]);
+  pt.tindex = -1;
+}
+
 void tmg_conn::connectTerm(const int j, const bool soft)
 {
+  if (termV_[j].replaced_by_bterm) {
+    return;
+  }
+
   csV_ = &csVV_[j];
   csN_ = csNV_[j];
   if (!csN_) {
@@ -1123,6 +1147,9 @@ void tmg_conn::connectTerm(const int j, const bool soft)
         removePointFromTerm(pt, &termV_[pt->tindex]);
         pt->tindex = -1;
       }
+      if (pt->tindex >= 0 && x->bterm && termV_[pt->tindex].isBumpPin()) {
+        replaceBumpPinByBTerm(*pt);
+      }
       if (pt->tindex >= 0) {
         logger_->error(ODB,
                        390,
@@ -1152,6 +1179,9 @@ void tmg_conn::connectTerm(const int j, const bool soft)
         // override old connection if it is on the other
         removePointFromTerm(pt, &termV_[pt->tindex]);
         pt->tindex = -1;
+      }
+      if (pt->tindex >= 0 && x->bterm && termV_[pt->tindex].isBumpPin()) {
+        replaceBumpPinByBTerm(*pt);
       }
       if (pt->tindex >= 0) {
         logger_->error(ODB,
@@ -1188,6 +1218,9 @@ void tmg_conn::connectTerm(const int j, const bool soft)
         // override old connection if it is on the other
         removePointFromTerm(pt, &termV_[pt->tindex]);
         pt->tindex = -1;
+      }
+      if (pt->tindex >= 0 && x->bterm && termV_[pt->tindex].isBumpPin()) {
+        replaceBumpPinByBTerm(*pt);
       }
       if (pt->tindex >= 0) {
         logger_->error(ODB,
@@ -1360,7 +1393,7 @@ void tmg_conn::analyzeNet(dbNet* net)
 bool tmg_conn::checkConnected()
 {
   for (const tmg_rcterm& x : termV_) {
-    if (x.pt == nullptr) {
+    if (x.pt == nullptr && !x.replaced_by_bterm) {
       return false;
     }
   }
@@ -1435,7 +1468,7 @@ bool tmg_conn::checkConnected()
   }
   bool con = true;
   for (tmg_rcterm& x : termV_) {
-    if (!x.first_pt) {
+    if (!x.first_pt && !x.replaced_by_bterm) {
       con = false;
     }
     x.first_pt = nullptr;  // cleanup
@@ -1464,7 +1497,7 @@ void tmg_conn::treeReorder(const bool no_convert)
   }
   for (tmg_rcterm& x : termV_) {
     x.first_pt = nullptr;
-    if (x.pt == nullptr) {
+    if (x.pt == nullptr && !x.replaced_by_bterm) {
       connected_ = false;
     }
   }

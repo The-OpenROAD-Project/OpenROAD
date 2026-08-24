@@ -103,10 +103,18 @@ struct tmg_rcterm
 {
   tmg_rcterm(dbITerm* iterm) : iterm(iterm), bterm(nullptr) {}
   tmg_rcterm(dbBTerm* bterm) : iterm(nullptr), bterm(bterm) {}
+
+  bool isBumpPin() const;
+
   dbITerm* const iterm;
   dbBTerm* const bterm;
   tmg_rcpt* pt;        // list of points
   tmg_rcpt* first_pt;  // first point in dfs
+
+  // This is a PAD terminal that should be ignored, because there
+  // is a bterm with the same placement which is the terminal that
+  // actually exercises the logical connection.
+  bool replaced_by_bterm{false};
 };
 
 struct tmg_rcshort
@@ -191,6 +199,7 @@ class tmg_conn
   void connectShapes(int j, int k);
   void connectTerm(int j, bool soft);
   void connectTermSoft(int j, int rt, Rect& rect, int k);
+  void replaceBumpPinByBTerm(tmg_rcpt& pt);
   void addShort(int i0, int i1);
   void relocateShorts();
   void setSring();
