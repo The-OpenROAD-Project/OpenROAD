@@ -442,8 +442,7 @@ void FollowPins::determinePitch()
 
   // find the row with the smallest height, as that is the pitch of the rows
   const auto min_row = std::min_element(
-      rows.begin(), rows.end(),
-      [](odb::dbRow* a, odb::dbRow* b) {
+      rows.begin(), rows.end(), [](odb::dbRow* a, odb::dbRow* b) {
         odb::dbSite* a_site = a->getSite();
         odb::dbSite* b_site = b->getSite();
         return a_site->getHeight() < b_site->getHeight();
@@ -522,7 +521,9 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     for (int y = bbox.yMin(); y <= bbox.yMax(); y += row_height_) {
       const int y_start = y - width / 2;
       auto strap = std::make_unique<FollowPinShape>(
-            layer, do_power ? power : ground, odb::Rect(x0, y_start, x1, y_start + width));
+          layer,
+          do_power ? power : ground,
+          odb::Rect(x0, y_start, x1, y_start + width));
       strap->addRow(row);
       addShape(std::move(strap));
       do_power = !do_power;
