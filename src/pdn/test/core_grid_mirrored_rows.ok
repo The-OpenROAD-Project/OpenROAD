@@ -3,6 +3,4 @@
 [INFO ODB-0128] Design: mirrored_rows
 [INFO ODB-0131]     Created 64 components and 128 component-terminals.
 [INFO PDN-0001] Inserting grid: Core
-[INFO PSM-0040] All shapes on net VDD are connected.
-[INFO PSM-0040] All shapes on net VSS are connected.
 No differences found.

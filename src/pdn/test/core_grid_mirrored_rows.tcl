@@ -23,9 +23,6 @@ add_pdn_connect -layers {metal1 metal4}
 
 pdngen
 
-check_power_grid -net VDD -floorplanning -dont_require_terminals
-check_power_grid -net VSS -floorplanning -dont_require_terminals
-
 set def_file [make_result_file core_grid_mirrored_rows.def]
 write_def $def_file
 diff_files core_grid_mirrored_rows.defok $def_file

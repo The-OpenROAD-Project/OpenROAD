@@ -45,6 +45,7 @@ COMPULSORY_TESTS = [
     "core_grid_failed_via_report",
     "core_grid_min_width_layers",
     "core_grid_mirrored_rows",
+    "core_grid_multiheight_rows",
     "core_grid_multiheight_rows_pitch",
     "core_grid_no_trim",
     "core_grid_obstruction",

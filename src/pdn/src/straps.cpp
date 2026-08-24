@@ -418,7 +418,7 @@ std::string Straps::getNetString() const
 ////
 
 FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
-    : Straps(grid, layer, width, 0)
+    : Straps(grid, layer, width, 0), row_height_(0)
 {
   if (getWidth() == 0) {
     // width not specified, so attempt to find it
@@ -427,7 +427,7 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
 
   // set the pitch of the straps
   determinePitch();
-  if (getPitch() == 0) {
+  if (getPitch() == 0 || row_height_ == 0) {
     getLogger()->error(
         utl::PDN, 190, "Unable to determine the pitch of the rows.");
   }
@@ -455,7 +455,8 @@ void FollowPins::determinePitch()
 
   auto* row = *min_row;
   odb::Rect bbox = row->getBBox();
-  setPitch(2 * bbox.dy());
+  row_height_ = bbox.dy();
+  setPitch(2 * row_height_);
 
   if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
     setDirection(odb::dbTechLayerDir::HORIZONTAL);
@@ -517,20 +518,15 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       x1 = x_end;
     }
 
-    const int power_y_bot
-        = (power_on_top ? bbox.yMax() : bbox.yMin()) - width / 2;
-    const int ground_y_bot
-        = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
-
-    auto power_strap = std::make_unique<FollowPinShape>(
-        layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
-    power_strap->addRow(row);
-    addShape(std::move(power_strap));
-
-    auto ground_strap = std::make_unique<FollowPinShape>(
-        layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
-    ground_strap->addRow(row);
-    addShape(std::move(ground_strap));
+    bool do_power = !power_on_top;
+    for (int y = bbox.yMin(); y <= bbox.yMax(); y += row_height_) {
+      const int y_start = y - width / 2;
+      auto strap = std::make_unique<FollowPinShape>(
+            layer, do_power ? power : ground, odb::Rect(x0, y_start, x1, y_start + width));
+      strap->addRow(row);
+      addShape(std::move(strap));
+      do_power = !do_power;
+    }
   }
 }
 
