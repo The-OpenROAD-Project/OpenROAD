@@ -456,5 +456,38 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
       << "Enabling rudy heatmap should render additional heatmap pixels";
 }
 
+// Qt gates drawLabels on the Misc/"Labels" control, and its save_image goes
+// through the same painter, so a saved image reproduces a view with labels
+// hidden.  save_image -display_option {labels false} has to do the same here.
+TEST_F(SaveImageTest, LabelsFollowTheVisibilityFlag)
+{
+  // Render the generator's own bounds: labels outside them fall off every
+  // tile and would make this pass for the wrong reason.
+  const odb::Rect region = tile_gen_->getBounds();
+  ASSERT_GT(region.maxDXDY(), 0);
+  const Color white{.r = 255, .g = 255, .b = 255, .a = 255};
+
+  TileVisibility vis;
+  const std::vector<unsigned char> before
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+  ASSERT_FALSE(before.empty());
+
+  const odb::Point centre((region.xMin() + region.xMax()) / 2,
+                          (region.yMin() + region.yMax()) / 2);
+  ASSERT_FALSE(
+      tile_gen_->addLabel(centre, "PROBE", white, 24, "center", "L").empty());
+
+  const std::vector<unsigned char> shown
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+  vis.labels = false;
+  const std::vector<unsigned char> hidden
+      = tile_gen_->renderImagePng(region, 512, 0, vis);
+
+  // Drawn when on...
+  EXPECT_NE(shown, before) << "label did not change the image";
+  // ...and with it off the image is the one from before the label existed.
+  EXPECT_EQ(hidden, before) << "label still drawn with labels off";
+}
+
 }  // namespace
 }  // namespace web

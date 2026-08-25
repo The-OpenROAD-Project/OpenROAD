@@ -81,8 +81,8 @@ bool SwapPinsGenerator::resolveDriverContext(const Target& target,
   }
 
   drvr = resizer_.network()->instance(drvr_pin);
-  scene = target.endpoint_path->scene(resizer_.sta());
-  min_max = target.endpoint_path->minMax(resizer_.sta());
+  scene = target.activeScene(resizer_);
+  min_max = target.minMax(resizer_);
   return drvr != nullptr;
 }
 

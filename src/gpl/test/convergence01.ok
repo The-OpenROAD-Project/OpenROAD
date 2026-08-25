@@ -161,4 +161,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1011] Original area (um^2): 14.41
 [INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 14.41 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 401.79
 No differences found.

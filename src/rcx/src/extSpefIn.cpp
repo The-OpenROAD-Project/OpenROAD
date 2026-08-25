@@ -648,7 +648,8 @@ uint32_t extSpef::getCapNodeId(const char* nodeWord,
     } else {
       if (_readAllCorners) {
         for (uint32_t ii = 0; ii < capCnt; ii++) {
-          double capVal = _cap_unit * _nodeParser->getDouble(ii);
+          double capVal
+              = scale_factors_.capacitance * _nodeParser->getDouble(ii);
           if (_addRepeatedCapValue) {
             cap->addCapacitance(capVal, ii);
           } else {
@@ -656,7 +657,8 @@ uint32_t extSpef::getCapNodeId(const char* nodeWord,
           }
         }
       } else {
-        double capVal = _cap_unit * _nodeParser->getDouble(_in_spef_corner);
+        double capVal = scale_factors_.capacitance
+                        * _nodeParser->getDouble(_in_spef_corner);
         if (_addRepeatedCapValue) {
           cap->addCapacitance(capVal, _db_ext_corner);
         } else {
@@ -917,16 +919,18 @@ uint32_t extSpef::diffNetCap(dbNet* net)
   if (_readAllCorners) {
     for (uint32_t ii = 0; ii < capCnt; ii++) {
       const double dbCap = net->getTotalCapacitance(ii, true);
-      const double refCap = _cap_unit * _nodeParser->getDouble(ii);
+      const double refCap
+          = scale_factors_.capacitance * _nodeParser->getDouble(ii);
 
       printDiff(net, dbCap, refCap, "netCap", ii);
     }
   } else {
-    printDiff(net,
-              net->getTotalCapacitance(_db_ext_corner, true),
-              _cap_unit * _nodeParser->getDouble(_in_spef_corner),
-              "netCap",
-              _db_ext_corner);
+    printDiff(
+        net,
+        net->getTotalCapacitance(_db_ext_corner, true),
+        scale_factors_.capacitance * _nodeParser->getDouble(_in_spef_corner),
+        "netCap",
+        _db_ext_corner);
   }
 
   return capCnt;
@@ -1193,10 +1197,11 @@ uint32_t extSpef::collectRefCCap(dbNet* srcNet,
   float refCap = 0.0;
   if (_readAllCorners) {
     for (uint32_t i = 0; i < capCnt; i++) {
-      refCap += _cap_unit * _nodeParser->getDouble(i);
+      refCap += scale_factors_.capacitance * _nodeParser->getDouble(i);
     }
   } else {
-    refCap += _cap_unit * _nodeParser->getDouble(_in_spef_corner);
+    refCap
+        += scale_factors_.capacitance * _nodeParser->getDouble(_in_spef_corner);
   }
   dbNet* otherNet;
   if (_d_corner_net == srcNet) {
@@ -1225,7 +1230,7 @@ uint32_t extSpef::diffCCap(dbNet* srcNet,
                            const uint32_t capCnt)
 {
   for (uint32_t i = 0; i < capCnt; i++) {
-    double refCap = _cap_unit * _nodeParser->getDouble(i);
+    double refCap = scale_factors_.capacitance * _nodeParser->getDouble(i);
     _netCCapTable[i] += refCap;
   }
   if (_calib) {
@@ -1252,20 +1257,22 @@ uint32_t extSpef::diffCCap(dbNet* srcNet,
 
   if (_readAllCorners) {
     for (uint32_t ii = 0; ii < capCnt; ii++) {
-      const double refCap = _cap_unit * _nodeParser->getDouble(ii);
+      const double refCap
+          = scale_factors_.capacitance * _nodeParser->getDouble(ii);
       const double dbCap = ccap->getCapacitance(ii);
 
       printDiffCC(srcNet, tgtNet, srcId, dstId, dbCap, refCap, "ccCap", ii);
     }
   } else {
-    printDiffCC(srcNet,
-                tgtNet,
-                srcId,
-                dstId,
-                ccap->getCapacitance(_db_ext_corner),
-                _cap_unit * _nodeParser->getDouble(_in_spef_corner),
-                "ccCap",
-                _db_ext_corner);
+    printDiffCC(
+        srcNet,
+        tgtNet,
+        srcId,
+        dstId,
+        ccap->getCapacitance(_db_ext_corner),
+        scale_factors_.capacitance * _nodeParser->getDouble(_in_spef_corner),
+        "ccCap",
+        _db_ext_corner);
   }
   return capCnt;
 }
@@ -1279,7 +1286,7 @@ uint32_t extSpef::diffGndCap(dbNet* net,
   }
 
   for (uint32_t ii = 0; ii < capCnt; ii++) {
-    double refCap = _cap_unit * _nodeParser->getDouble(ii);
+    double refCap = scale_factors_.capacitance * _nodeParser->getDouble(ii);
     _netGndCapTable[ii] += refCap;
   }
   return 0;  // TODO - have to get cap from Rseg!
@@ -1995,11 +2002,13 @@ uint32_t extSpef::readDNet(const uint32_t debug)
             if (_readAllCorners) {
               for (uint32_t ii = 0; ii < capCnt; ii++) {
                 srcCapNode->addCapacitance(
-                    _cap_unit * _nodeParser->getDouble(ii), ii);
+                    scale_factors_.capacitance * _nodeParser->getDouble(ii),
+                    ii);
               }
             } else {
               srcCapNode->addCapacitance(
-                  _cap_unit * _nodeParser->getDouble(_in_spef_corner),
+                  scale_factors_.capacitance
+                      * _nodeParser->getDouble(_in_spef_corner),
                   _db_ext_corner);
             }
             continue;
@@ -2007,12 +2016,13 @@ uint32_t extSpef::readDNet(const uint32_t debug)
           dbCCSeg* ccap = dbCCSeg::create(srcCapNode, tgtCapNode, true);
           if (_readAllCorners) {
             for (uint32_t ii = 0; ii < capCnt; ii++) {
-              ccap->setCapacitance(_cap_unit * _nodeParser->getDouble(ii), ii);
+              ccap->setCapacitance(
+                  scale_factors_.capacitance * _nodeParser->getDouble(ii), ii);
             }
           } else {
-            ccap->setCapacitance(
-                _cap_unit * _nodeParser->getDouble(_in_spef_corner),
-                _db_ext_corner);
+            ccap->setCapacitance(scale_factors_.capacitance
+                                     * _nodeParser->getDouble(_in_spef_corner),
+                                 _db_ext_corner);
           }
         }
       }
@@ -2046,7 +2056,7 @@ uint32_t extSpef::readDNet(const uint32_t debug)
         if (_diff) {
           uint32_t resCnt = _nodeParser->mkWords(_parser->get(3));
           for (uint32_t ii = 0; ii < resCnt; ii++) {
-            double res = _res_unit * _nodeParser->getDouble(ii);
+            double res = scale_factors_.resistance * _nodeParser->getDouble(ii);
             _netResTable[ii] += res;
           }
           continue;
@@ -2087,12 +2097,13 @@ uint32_t extSpef::readDNet(const uint32_t debug)
           uint32_t resCnt = _nodeParser->mkWords(_parser->get(3));
           if (_readAllCorners) {
             for (uint32_t ii = 0; ii < resCnt; ii++) {
-              rseg->setResistance(_res_unit * _nodeParser->getDouble(ii), ii);
+              rseg->setResistance(
+                  scale_factors_.resistance * _nodeParser->getDouble(ii), ii);
             }
           } else {
-            rseg->setResistance(
-                _res_unit * _nodeParser->getDouble(_in_spef_corner),
-                _db_ext_corner);
+            rseg->setResistance(scale_factors_.resistance
+                                    * _nodeParser->getDouble(_in_spef_corner),
+                                _db_ext_corner);
           }
 
           rseg->setSourceNode(srcCapNodeId);
@@ -2897,22 +2908,19 @@ bool extSpef::readHeaderInfo(const uint32_t debug, const bool skipFlag)
     } else if (_parser->isKeyword(0, "*R_UNIT")) {
       spef_header_.resistance_unit_word = required_word(2, "*R_UNIT");
 
-      _res_unit = 1.0;
-      if (spef_header_.resistance_unit_word == "MOHM") {
-        _res_unit = 0.001 * _parser->getInt(1);
-      }
+      scale_factors_.resistance = 1.0;
       if (spef_header_.resistance_unit_word == "KOHM") {
-        _res_unit = 1000.0 * _parser->getInt(1);
+        scale_factors_.resistance = 1000.0 * _parser->getInt(1);
       }
 
     } else if (_parser->isKeyword(0, "*C_UNIT")) {
       spef_header_.capacitance_unit_word = required_word(2, "*C_UNIT");
 
-      _cap_unit = 1.0;
+      scale_factors_.capacitance = 1.0;
       if (spef_header_.capacitance_unit_word == "PF") {
-        _cap_unit = 1000.0 * _parser->getInt(1);
+        scale_factors_.capacitance = 1000.0 * _parser->getInt(1);
       } else if (spef_header_.capacitance_unit_word == "FF") {
-        _cap_unit = 1.0 * _parser->getInt(1);
+        scale_factors_.capacitance = 1.0 * _parser->getInt(1);
       }
     } else if (_parser->isKeyword(0, "*L_UNIT")) {
       continue;

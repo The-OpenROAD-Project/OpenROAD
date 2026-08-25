@@ -172,16 +172,16 @@ Dummys used:
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |         80 |         8 |        72
+        0 |         54 |        10 |        44
         1 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
-total displacement       8319.6 u
-average displacement        2.4 u
-max displacement          146.6 u
+total displacement       7826.7 u
+average displacement        2.2 u
+max displacement          146.4 u
 original HPWL          292246.9 u
-legalized HPWL         292665.5 u
+legalized HPWL         292716.2 u
 delta HPWL                    0 %
 
 Clock clk

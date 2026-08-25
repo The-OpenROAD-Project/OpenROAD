@@ -162,29 +162,32 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |       1931 |        51 |       953
-        1 |       1905 |        47 |       931
-        2 |       1905 |        47 |       931
-        3 |       1899 |        45 |       927
-        4 |       1899 |        45 |       927
-        5 |       1899 |        45 |       927
-        6 |       1899 |        45 |       927
-[WARNING DPL-0700] Negotiation phase 1: violations stuck at 1899 for 3 consecutive iterations.
+        0 |       1767 |        63 |       867
+        1 |       1732 |        56 |       839
+        2 |       1733 |        57 |       839
+        3 |       1730 |        54 |       839
+        4 |       1723 |        49 |       837
+        5 |       1723 |        48 |       838
+        6 |       1719 |        45 |       837
+        7 |       1719 |        45 |       837
+        8 |       1719 |        45 |       837
+        9 |       1719 |        45 |       837
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 1719 for 3 consecutive iterations.
 Using old diamond search for 45 remaining illegal cells.
 diamond recovery: recovered 41/45 stuck cells.
 Negotiation phase 2: isolation point active, 1000 iterations.
-      400 |        220 |         4 |       108
-      403 |        220 |         4 |       108
-[WARNING DPL-0702] Negotiation phase 2: violations stuck at 220 for 3 consecutive iterations. Using diamond search for 4 remaining illegal cells.
+      400 |        204 |         4 |       100
+      403 |        204 |         4 |       100
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 204 for 3 consecutive iterations. Using diamond search for 4 remaining illegal cells.
 diamond recovery: recovered 0/4 stuck cells.
 [WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 4
 Placement Analysis
 ---------------------------------
-total displacement       7082.4 u
+total displacement       7128.7 u
 average displacement        2.0 u
 max displacement          138.7 u
 original HPWL          291762.9 u
-legalized HPWL         292280.4 u
+legalized HPWL         292347.0 u
 delta HPWL                    0 %
 
 Clock clk

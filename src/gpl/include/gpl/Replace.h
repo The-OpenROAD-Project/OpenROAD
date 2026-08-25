@@ -104,6 +104,9 @@ struct PlaceOptions
   int padLeft = 0;
   int padRight = 0;
 
+  // Concurrent IO pin + cell placement
+  bool placeIosMode = false;
+
   void skipIo();
   void validate(utl::Logger* log);
 };
@@ -163,6 +166,8 @@ class Replace
                          int threads,
                          bool check_density);
   void checkHasCoreRows();
+  void checkPlaceIosSupported(const PlaceOptions& options);
+  void reportHpwlMetric();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
