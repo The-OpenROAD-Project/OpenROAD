@@ -27,6 +27,30 @@ MIME_TYPES = {
 # literal early, so as_text() checks rather than assumes.
 DELIMITER = "__WEB_ASSET__"
 
+# Emitted verbatim after the table; only the table itself varies per build.
+LOOKUP_FUNCTIONS = """\
+const EmbeddedAsset* findEmbeddedAsset(std::string_view path)
+{
+  for (const auto& entry : kAssetTable) {
+    if (path == entry.path) {
+      return &entry.asset;
+    }
+  }
+  return nullptr;
+}
+
+size_t embeddedAssetCount()
+{
+  return std::size(kAssetTable);
+}
+
+const EmbeddedAssetEntry& embeddedAssetAt(const size_t index)
+{
+  return kAssetTable[index];
+}
+
+"""
+
 
 def c_identifier(served_path):
     """Convert a served path to a unique, valid C identifier."""
@@ -128,26 +152,7 @@ def main():
             )
         out.write("};\n\n")
 
-        out.write("const EmbeddedAsset* findEmbeddedAsset(std::string_view path)\n")
-        out.write("{\n")
-        out.write("  for (const auto& entry : kAssetTable) {\n")
-        out.write("    if (path == entry.path) {\n")
-        out.write("      return &entry.asset;\n")
-        out.write("    }\n")
-        out.write("  }\n")
-        out.write("  return nullptr;\n")
-        out.write("}\n\n")
-
-        out.write("size_t embeddedAssetCount()\n")
-        out.write("{\n")
-        out.write("  return std::size(kAssetTable);\n")
-        out.write("}\n\n")
-
-        out.write("const EmbeddedAssetEntry& embeddedAssetAt(const size_t index)\n")
-        out.write("{\n")
-        out.write("  return kAssetTable[index];\n")
-        out.write("}\n\n")
-
+        out.write(LOOKUP_FUNCTIONS)
         out.write("}  // namespace web\n")
 
     os.replace(partial, args.output)

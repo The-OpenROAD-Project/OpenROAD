@@ -1424,7 +1424,7 @@ const EmbeddedAsset* ReportAssets::find(const std::string_view path)
   const EmbeddedAsset* asset = findEmbeddedAsset(path);
   if (!asset) {
     // A miss is a binary built with the wrong asset list, not bad input.
-    logger_->warn(utl::WEB, 44, "Missing embedded asset {}.", path);
+    logger_->warn(utl::WEB, 77, "Missing embedded asset {}.", path);
     missing_ = true;
   }
   return asset;
@@ -1827,7 +1827,7 @@ import * as THREE from 'three';
     std::error_code remove_error;
     std::filesystem::remove(filename, remove_error);
     logger_->error(utl::WEB,
-                   45,
+                   78,
                    "Not saving {}: the binary was built with an incomplete "
                    "asset list.",
                    filename);
