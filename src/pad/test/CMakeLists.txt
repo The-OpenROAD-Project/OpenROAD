@@ -10,6 +10,7 @@ or_integration_tests(
     bump_array_remove_single
     connect_by_abutment
     connect_by_abutment_with_single_pinnet
+    make_bterm_pins_from_bumps
     make_corner_sites
     make_io_sites
     make_io_sites_different_sites

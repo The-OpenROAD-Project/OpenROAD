@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 30 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 2 components and 5 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO PAD-0116] Creating terminal for in0 on metal10 at (50.000um, 50.000um) - (95.000um, 95.000um)
+[WARNING PAD-0121] Could not make a pin for terminal out0. No bump instance is connected to net out0.
+No differences found.
