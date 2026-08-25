@@ -137,14 +137,6 @@ void ICeWall::makeBTerm(odb::dbNet* net,
                         odb::dbTechLayer* layer,
                         const odb::Rect& shape) const
 {
-  makeBTermPin(net, layer, shape);
-  Utilities::makeSpecial(net);
-}
-
-void ICeWall::makeBTermPin(odb::dbNet* net,
-                           odb::dbTechLayer* layer,
-                           const odb::Rect& shape) const
-{
   odb::dbBTerm* bterm = net->get1stBTerm();
   if (bterm == nullptr) {
     logger_->warn(utl::PAD,
@@ -158,25 +150,37 @@ void ICeWall::makeBTermPin(odb::dbNet* net,
           utl::PAD, 34, "Unable to create block terminal: {}", net->getName());
     }
   }
+
   if (bterm->getSigType() != net->getSigType()) {
     bterm->setSigType(net->getSigType());
   }
+
+  makeBTermPin(bterm, layer, shape);
+  Utilities::makeSpecial(net);
+}
+
+void ICeWall::makeBTermPin(odb::dbBTerm* bterm,
+                           odb::dbTechLayer* layer,
+                           const odb::Rect& shape) const
+{
   odb::dbBPin* pin = odb::dbBPin::create(bterm);
   odb::dbBox::create(
       pin, layer, shape.xMin(), shape.yMin(), shape.xMax(), shape.yMax());
+
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-  const double dbus = net->getBlock()->getDbUnitsPerMicron();
+  odb::dbBlock* block = bterm->getBlock();
+
   logger_->info(utl::PAD,
                 116,
                 "Creating terminal for {} on {} at ({:.3f}um, {:.3f}um) - "
                 "({:.3f}um, {:.3f}um)",
-                net->getName(),
+                bterm->getName(),
                 layer->getName(),
-                shape.xMin() / dbus,
-                shape.yMin() / dbus,
-                shape.xMax() / dbus,
-                shape.yMax() / dbus);
+                block->dbuToMicrons(shape.xMin()),
+                block->dbuToMicrons(shape.yMin()),
+                block->dbuToMicrons(shape.xMax()),
+                block->dbuToMicrons(shape.yMax()));
 }
 
 std::optional<ICeWall::InstPin> ICeWall::findTopPin(odb::dbInst* inst) const
@@ -344,7 +348,7 @@ void ICeWall::makeBTermPinsFromBumps(odb::dbBlock* block) const
       continue;
     }
 
-    makeBTermPin(net, bump_pin->layer, bump_pin->shape);
+    makeBTermPin(bterm, bump_pin->layer, bump_pin->shape);
   }
 }
 

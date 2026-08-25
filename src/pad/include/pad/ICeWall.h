@@ -129,7 +129,7 @@ class ICeWall
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
                  const odb::Rect& shape) const;
-  void makeBTermPin(odb::dbNet* net,
+  void makeBTermPin(odb::dbBTerm* bterm,
                     odb::dbTechLayer* layer,
                     const odb::Rect& shape) const;
   std::optional<InstPin> findTopPin(odb::dbInst* inst) const;
