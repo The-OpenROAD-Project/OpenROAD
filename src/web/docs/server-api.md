@@ -126,7 +126,10 @@ The `_modules` and `_clusters` layers color each instance by its `dbModule` /
 `set_group_colors`); otherwise the tile comes back fully transparent.  Clients
 should therefore keep both layers mounted and toggle the flag, not the layer:
 making the map's layer set a second record of the flag is what let the viewer's
-"Cluster view" checkbox get stuck until a page reload.
+hierarchy coloring checkbox get stuck until a page reload.  The viewer drives
+both flags from one "Hierarchy view" checkbox and the Hierarchy tab's active
+source, so at most one of them is ever true there; a Tcl or test client is free
+to set both.
 
 ### `bounds`
 
@@ -526,7 +529,7 @@ Highlight a single clock-tree node's instance in the layout.
 
 ### `module_hierarchy`
 
-Return the module hierarchy tree (left sidebar).
+Return the `dbModule` tree (Verilog Modules view of the Hierarchy panel).
 
 No request fields.
 
@@ -610,7 +613,7 @@ Select a cluster by `dbGroup` id, highlighting every member instance
 | `odb_id`           | `int`  |    ✓     | `dbGroup::getId()`, as returned by `group_hierarchy`. |
 | `add_to_selection` | `bool` |    —     | Default `false` (replace the selection).            |
 | `deselect`         | `bool` |    —     | Default `false`. When true, removes this group from the selection instead of selecting it; whatever else is selected keeps its highlight. Deselecting a group that is not selected is a no-op, so a client can fire it whenever a cluster is hidden. The response then carries no `name`/`properties` (nothing is being described — this is not an error). |
-| `no_highlight`     | `bool` |    —     | Default `false`. When true the group is selected (so it can be inspected) without pushing any highlight shapes onto the overlay, and `highlight_truncated` comes back `false`. What the viewer's Instance Groups view uses: it shows the selected cluster by narrowing `set_group_colors` to that cluster's subtree, so the `_clusters` layer paints it in its own color, and the yellow selection veil would only cover that color. |
+| `no_highlight`     | `bool` |    —     | Default `false`. When true the group is selected (so it can be inspected) without pushing any highlight shapes onto the overlay, and `highlight_truncated` comes back `false`. For a client that shows the cluster through `set_group_colors` instead: the `_clusters` layer paints it in its own color, which the yellow selection veil would only cover. Nothing in the viewer sends this — neither of the Hierarchy panel's views selects anything, and there is no module equivalent of this request for the Verilog Modules one to use. The callers are Tcl and test clients. |
 | `use_dbu`          | `bool` |    —     | Same as `inspect`.                                  |
 
 **Response (JSON):** the inspect payload plus `selection_count`,

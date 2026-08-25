@@ -111,6 +111,25 @@ describe('tile_px on the wire', () => {
     });
 });
 
+// The server keys its tile cache on the request JSON minus the flags each
+// layer is known to ignore (request_handler.cpp).  A key it has never heard of
+// survives that filter, so shipping a client-only flag makes toggling it a
+// cache miss on every metal layer on screen.
+describe('client-only visibility flags', () => {
+    it('keeps ui_hierarchy_view off the wire', () => {
+        const req = buildTileRequestFor(
+            { x: 0, y: 0, z: 0 }, 'metal1',
+            { visibility: { ui_hierarchy_view: true, cluster_view: true },
+              selectability: { pins: true } },
+            1, 240);
+
+        assert.equal('ui_hierarchy_view' in req, false);
+        // The flags the server does read still travel, prefix and all.
+        assert.equal(req.cluster_view, true);
+        assert.equal(req.s_pins, true);
+    });
+});
+
 describe('watchDevicePixelRatio', () => {
     // Without this, tiles rasterized at the old ratio stay on screen stretched
     // into the new box — a tile fetched at 1.25 and shown at 1.6667 is a 33%

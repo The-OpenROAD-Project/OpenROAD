@@ -3,7 +3,8 @@
 
 // Clusters widget — dbGroup tree with per-cluster coloring, mirroring
 // HierarchyBrowser.  A checkbox feeds the cluster's color to the `_clusters`
-// layer, a click isolates it there (see _selectRow), a double click zooms.
+// layer and a double click zooms to it; the row itself does nothing, as in
+// HierarchyBrowser.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import {
@@ -11,8 +12,7 @@ import {
     serializeColorMap,
 } from './color-tree.js';
 import {
-    beginSelection, isCurrentSelection, isStaticMode, makeResizableHeaders,
-    onSelectionReset, zoomToBBox,
+    HIERARCHY_OFF_HINT, isStaticMode, makeResizableHeaders, zoomToBBox,
 } from './ui-utils.js';
 
 const COLS = [
@@ -21,9 +21,13 @@ const COLS = [
 ];
 
 export class ClustersWidget {
-    constructor(container, app, redrawAllLayers) {
+    // `gate` is the visibility flag this view's overlay draws under, handed
+    // down by HierarchyPanel so the source↔flag pairing lives only in its
+    // VIEWS table.
+    constructor(container, app, redrawAllLayers, gate = 'cluster_view') {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._gate = gate;
         this._nodes = [];               // flat server response
         this._rows = [];                // DFS-ordered rows with depth
         this._childrenMap = new Map();  // id → [child ids]
@@ -36,28 +40,12 @@ export class ClustersWidget {
         // Checkbox tree model for cluster visibility (tri-state propagation).
         this._checkModel = null;
 
-        this._selectedOdbId = null;
         // Distinguishes "nothing loaded yet" from "loaded, and this design has
         // no clusters" — the two need opposite advice, and conflating them told
         // the user to press Update right after they pressed it.
         this._loaded = false;
 
         this._build(container);
-
-        // Expose on app so display-controls / tests can interact.
-        app.clustersWidget = this;
-
-        // Another panel taking the selection releases this row and its
-        // isolation.  Guarded on being the live panel: the resetter list has no
-        // unregister, so predecessors would keep resending the full map.
-        onSelectionReset(app, () => {
-            if (app.clustersWidget !== this) return;
-            const wasIsolated = this._selectedOdbId != null;
-            this._clearSelectedRow();
-            if (wasIsolated) {
-                this._sendGroupColors();
-            }
-        });
 
         // Auto-load in static mode (data is already cached).
         if (isStaticMode(app)) {
@@ -109,48 +97,43 @@ export class ClustersWidget {
     // Delegated once on the table, for the panel's whole life: per-row
     // listeners made a checkbox click cost 530 ms at 5000 rows.
     _installTableHandlers() {
+        // The row's node, or null off any row.  `data-row-id` is the node id
+        // buildTreeIndex keyed the map by, so the node carries it back.
         const rowOf = (e) => {
             const tr = e.target.closest ? e.target.closest('tr[data-row-id]')
                                         : null;
-            if (!tr) return null;
-            const id = Number(tr.dataset.rowId);
-            const node = this._nodeMap.get(id);
-            return node ? { tr, id, node } : null;
+            return tr ? this._nodeMap.get(Number(tr.dataset.rowId)) || null
+                      : null;
         };
-        const isCheckbox = (t) => t.tagName === 'INPUT' && t.type === 'checkbox';
 
         this._table.addEventListener('change', (e) => {
-            if (!isCheckbox(e.target)) return;
-            const row = rowOf(e);
-            if (!row || !this._checkModel) return;
-            this._checkModel.check(row.id, e.target.checked);
+            const cb = e.target;
+            if (cb.tagName !== 'INPUT' || cb.type !== 'checkbox') return;
+            const node = rowOf(e);
+            if (!node || !this._checkModel) return;
+            this._checkModel.check(node.id, cb.checked);
             // A check changes checkbox states (down the subtree and up the
             // ancestors) and nothing else — the tree shape and the colors are
             // untouched — so the rows do not need rebuilding.
             this._syncCheckboxes();
         });
 
+        // Only the arrow acts on a click.  A double click delivers two clicks
+        // before the dblclick, and acting on the second one would undo the
+        // collapse the first one made.
         this._table.addEventListener('click', (e) => {
-            // The checkbox reports through `change`; letting its click through
-            // here would also select the row.
-            if (isCheckbox(e.target)) return;
-            // A double click delivers two clicks first, and acting on the
-            // second one undoes the first (deselect, or a second toggle).
             if (e.detail > 1) return;
-            const row = rowOf(e);
-            if (!row) return;
-            if (e.target.classList.contains('hierarchy-arrow')) {
-                if ((this._childrenMap.get(row.id) || []).length > 0) {
-                    this._toggleNode(row.id);
-                }
-                return;
+            if (!e.target.classList.contains('hierarchy-arrow')) return;
+            const node = rowOf(e);
+            if (!node) return;
+            if ((this._childrenMap.get(node.id) || []).length > 0) {
+                this._toggleNode(node.id);
             }
-            this._selectRow(row.tr, row.node);
         });
 
         this._table.addEventListener('dblclick', (e) => {
-            const row = rowOf(e);
-            if (row) this._zoomToNode(row.node);
+            const node = rowOf(e);
+            if (node) this._zoomToNode(node);
         });
     }
 
@@ -186,7 +169,7 @@ export class ClustersWidget {
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
-            this._statusLabel.textContent = this._nodes.length + ' groups';
+            this.refreshStatus();
             await this._sendGroupColors();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
@@ -201,14 +184,6 @@ export class ClustersWidget {
         this._childrenMap = index.childrenMap;
         this._nodeMap = index.nodeMap;
         this._rows = index.rows;
-
-        // A reload can hand back a tree without the selected cluster in it; the
-        // selection has to go with it, or the isolation below would filter the
-        // color map down to a cluster that no longer exists and paint nothing.
-        if (this._selectedOdbId != null
-            && !this._nodes.some(n => n.odb_id === this._selectedOdbId)) {
-            this._selectedOdbId = null;
-        }
 
         // Every non-root cluster with children starts collapsed, so a
         // top-level cluster paints its whole subtree in one color.
@@ -227,18 +202,8 @@ export class ClustersWidget {
                 const st = this._groupState.get(node.data.odb_id);
                 if (st) st.visible = node.checked;
             });
-            // Hiding the selected cluster (directly, or via an ancestor whose
-            // uncheck propagated down to it) must release its highlight too,
-            // otherwise its instances stay lit while the panel shows it off.
-            const selected = this._selectedOdbId != null
-                ? this._groupState.get(this._selectedOdbId) : null;
-            if (selected && !selected.visible) {
-                // Resends the colors itself, so this must not do it again.
-                this._deselectCluster(this._selectedOdbId);
-            } else {
-                this._sendGroupColors();
-            }
-            this._hintIfClusterViewOff();
+            this._sendGroupColors();
+            this.refreshStatus();
         });
         this._checkModel.buildFromNodes(this._nodes.map(n => ({
             id: n.id,
@@ -269,62 +234,40 @@ export class ClustersWidget {
                                this._collapsed);
     }
 
-    // While a cluster is selected, the color map is narrowed to it and its
-    // subtree — the `_clusters` layer keys off each instance's own dbGroup, so
-    // nested clusters need their own entries.  null = no selection.
-    // Derived, not stored: a cached set is a second copy of the selection.
-    _isolatedOdbIds() {
-        if (this._selectedOdbId == null) return null;
-        const selected
-            = this._nodes.find(n => n.odb_id === this._selectedOdbId);
-        if (!selected) return null;
-        const ids = new Set();
-        const walk = (id) => {
-            const node = this._nodeMap.get(id);
-            if (node && node.odb_id != null) {
-                ids.add(node.odb_id);
-            }
-            for (const childId of this._childrenMap.get(id) || []) {
-                walk(childId);
-            }
-        };
-        walk(selected.id);
-        return ids;
+    // The status line: the overlay warning, else the cluster count.  The one
+    // writer, called on every change that can flip it — a checkbox here, a
+    // load, and the Hierarchy view checkbox or a source switch from outside
+    // (HierarchyPanel).  Without the warning the checkboxes change nothing on
+    // screen and ticking one looks like it did nothing at all.
+    refreshStatus() {
+        // Before the first Update there is no count to show, and writing one
+        // would talk over the table's "click Update" placeholder.
+        if (!this._loaded) return;
+        // The layer's own gate, not ui_hierarchy_view: it is what decides
+        // whether this view's colors reach the tiles.
+        this._statusLabel.textContent
+            = this._app.visibility
+              && this._app.visibility[this._gate] === false
+                ? HIERARCHY_OFF_HINT
+                : this._nodes.length + ' groups';
     }
 
-    // Warn when the cluster overlay is off: neither the checkboxes nor a
-    // selection change anything on screen until it is on, so a click on a row
-    // would otherwise look like it did nothing at all.
-    _hintIfClusterViewOff() {
-        if (this._app.visibility
-            && this._app.visibility.cluster_view === false) {
-            this._statusLabel.textContent = 'Cluster view is off — enable it '
-                + 'in Display Controls';
-            return true;
-        }
-        return false;
-    }
-
-    // Status line for a freshly selected cluster: the two reasons its color
-    // may not show up, else back to the cluster count.
-    _setSelectionStatus(node) {
-        const st = node && node.odb_id != null
-            ? this._groupState.get(node.odb_id) : null;
-        if (st && !st.visible) {
-            this._statusLabel.textContent
-                = 'Group is hidden — tick its checkbox to color it';
-            return;
-        }
-        if (this._hintIfClusterViewOff()) return;
-        this._statusLabel.textContent = this._nodes.length + ' groups';
+    // Drop this view's colors from the session, on the way out.  The overlay
+    // only draws while its flag is on AND the session holds a map, so an empty
+    // map stops it without touching the flag -- which stays a plain derivation
+    // of the Hierarchy view checkbox and the remembered source.
+    clearOverlay() {
+        this._groupState.clear();
+        // Nothing to clear on a static report: there is no session.
+        if (isStaticMode(this._app)) return Promise.resolve();
+        return this._sendGroupColors();
     }
 
     async _sendGroupColors() {
         try {
             await this._app.websocketManager.request({
                 type: 'set_group_colors',
-                colors: serializeColorMap(this._groupState, undefined,
-                                          this._isolatedOdbIds()),
+                colors: serializeColorMap(this._groupState),
             });
         } catch (err) {
             console.error('set_group_colors failed:', err);
@@ -338,95 +281,6 @@ export class ClustersWidget {
         } else {
             this._redrawAllLayers();
         }
-    }
-
-    _clearSelectedRow() {
-        // Found in the DOM rather than remembered: _render() rebuilds the table
-        // on every change, so a kept row reference would be detached half the
-        // time while _selectedOdbId stays true either way.
-        const row = this._table.querySelector('tr.selected');
-        if (row) {
-            row.classList.remove('selected');
-        }
-        // Also drops the isolation, since _isolatedOdbIds reads this field.
-        // Callers resend the colors once they know whether a new selection
-        // follows, so switching clusters costs one set_group_colors, not two.
-        this._selectedOdbId = null;
-    }
-
-    // Drop `odbId` from the server's selection and release the isolation.
-    // Used when the row is clicked again and when the cluster is hidden.
-    _deselectCluster(odbId) {
-        this._clearSelectedRow();
-        // Back to the full map: every checked cluster paints again.
-        this._sendGroupColors();
-        this._statusLabel.textContent = this._nodes.length + ' groups';
-        if (isStaticMode(this._app)) return;
-        // Same ownership discipline as _selectRow: a deselect that lands after
-        // another panel has taken the selection must not clear the Inspector
-        // out from under it.
-        const token = beginSelection(this._app);
-        this._app.websocketManager.request({
-            type: 'select_group',
-            odb_id: odbId,
-            deselect: true,
-            use_dbu: this._app.showDbu,
-        }).then(data => {
-            if (!isCurrentSelection(this._app, token)) return;
-            if (this._app.updateInspector) {
-                this._app.updateInspector(data);
-            }
-            if (this._app.refreshOverlay) {
-                this._app.refreshOverlay();
-            }
-        }).catch(err => console.error('select_group (deselect) failed:', err));
-    }
-
-    // Select the dbGroup for the Inspector and isolate it in the layout: only
-    // its subtree's instances stay colored.  `no_highlight` because the
-    // selection veil would cover that color, and the overlay has no shape cap.
-    _selectRow(tr, node) {
-        if (isStaticMode(this._app)) return;
-        // Clicking the selected row again is how a selection is undone from
-        // here — the panel is the only place that can.
-        if (this._selectedOdbId === node.odb_id) {
-            this._deselectCluster(node.odb_id);
-            return;
-        }
-        // Cleared before beginSelection so this panel's own reset handler has
-        // nothing to restore: the isolated map below is the only one sent.
-        this._clearSelectedRow();
-        const token = beginSelection(this._app);
-        this._selectedOdbId = node.odb_id;
-        tr.classList.add('selected');
-
-        this._sendGroupColors();
-        this._setSelectionStatus(node);
-
-        this._app.websocketManager.request({
-            type: 'select_group',
-            odb_id: node.odb_id,
-            no_highlight: true,
-            use_dbu: this._app.showDbu,
-        }).then(data => {
-            // Clicks can land out of order; only the newest one may drive the
-            // Inspector.
-            if (!isCurrentSelection(this._app, token)) return;
-            if (this._app.updateInspector) {
-                this._app.updateInspector(data);
-            }
-            if (this._app.refreshOverlay) {
-                this._app.refreshOverlay();
-            }
-        }).catch(err => {
-            console.error('select_group failed:', err);
-            if (isCurrentSelection(this._app, token)) {
-                this._clearSelectedRow();
-                // The cluster is not selected after all; drop the isolation so
-                // the layout does not keep showing one cluster on its own.
-                this._sendGroupColors();
-            }
-        });
     }
 
     _zoomToNode(node) {
@@ -519,14 +373,6 @@ export class ClustersWidget {
             }
             tr.children[1].style.textAlign = 'left';
 
-            if (!isStaticMode(this._app)) {
-                tr.style.cursor = 'pointer';
-            }
-            // The table is rebuilt on every collapse change, so the selected
-            // row is re-marked from the remembered cluster id.
-            if (node.odb_id != null && node.odb_id === this._selectedOdbId) {
-                tr.classList.add('selected');
-            }
             tbody.appendChild(tr);
         }
 

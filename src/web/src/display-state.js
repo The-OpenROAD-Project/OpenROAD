@@ -37,6 +37,11 @@ const DISPLAY_STATE_KEYS = [
     { key: 'or_hidden_chiplets', store: 'cookie' },
     { key: 'or_bg_color', store: 'cookie' },
     { key: 'or_show_dbu', store: 'cookie' },
+    // Which tree the Hierarchy tab is showing.  Part of the display state
+    // because it decides which overlay the "Hierarchy view" checkbox in
+    // or_visibility turns on: restoring one without the other paints the
+    // wrong one.
+    { key: 'or_hierarchy_source', store: 'cookie' },
     { key: 'or_theme', store: 'theme' },
     { key: 'or_use_true_z', store: 'cookie' },
 ];

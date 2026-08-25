@@ -8,7 +8,9 @@ import {
     buildTreeIndex, computeEffectiveColors, fmtArea, fmtInt, isHidden,
     serializeColorMap,
 } from './color-tree.js';
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import {
+    HIERARCHY_OFF_HINT, isStaticMode, makeResizableHeaders,
+} from './ui-utils.js';
 
 const COLS = [
     'Instance', 'Module', 'Instances', 'Macros', 'Modules',
@@ -19,9 +21,14 @@ const COLS = [
 const NODE_KIND = { MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3 };
 
 export class HierarchyBrowser {
-    constructor(container, app, redrawAllLayers) {
+    // `gate` is the visibility flag this view's overlay draws under, handed
+    // down by HierarchyPanel so the source↔flag pairing lives only in its
+    // VIEWS table.
+    constructor(container, app, redrawAllLayers, gate = 'module_view') {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._gate = gate;
+        this._loaded = false;
         this._nodes = [];      // flat server response
         this._rows = [];       // DFS-ordered rows with depth
         this._childrenMap = new Map();  // id → [child ids]
@@ -97,13 +104,12 @@ export class HierarchyBrowser {
                 type: 'module_hierarchy',
             });
             this._nodes = data.nodes || [];
+            this._loaded = true;
             this._buildTree();
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
-            const nMods = this._nodes.filter(
-                n => (n.node_kind || 0) === NODE_KIND.MODULE).length;
-            this._statusLabel.textContent = nMods + ' modules';
+            this.refreshStatus();
             await this._sendModuleColors();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
@@ -156,6 +162,22 @@ export class HierarchyBrowser {
         })));
     }
 
+    // The status line: the overlay warning, else the module count.  Mirrors
+    // ClustersWidget — with one checkbox for both overlays, a user on this
+    // view is the likeliest to tick a module and see nothing happen, so this
+    // is the view that most needs to say why.  HierarchyPanel calls it when
+    // the Hierarchy view checkbox or the source moves.
+    refreshStatus() {
+        if (!this._loaded) return;
+        const modules = this._nodes.filter(
+            n => (n.node_kind || 0) === NODE_KIND.MODULE).length;
+        this._statusLabel.textContent
+            = this._app.visibility
+              && this._app.visibility[this._gate] === false
+                ? HIERARCHY_OFF_HINT
+                : modules + ' modules';
+    }
+
     // Read server-assigned colors for each MODULE node.
     _readServerColors() {
         this._moduleState.clear();
@@ -179,6 +201,17 @@ export class HierarchyBrowser {
     _computeEffectiveColors() {
         computeEffectiveColors(this._rows, this._nodeMap, this._moduleState,
                                this._collapsed);
+    }
+
+    // Drop this view's colors from the session, on the way out.  The overlay
+    // only draws while its flag is on AND the session holds a map, so an empty
+    // map stops it without touching the flag -- which stays a plain derivation
+    // of the Hierarchy view checkbox and the remembered source.
+    clearOverlay() {
+        this._moduleState.clear();
+        // Nothing to clear on a static report: there is no session.
+        if (isStaticMode(this._app)) return Promise.resolve();
+        return this._sendModuleColors();
     }
 
     // Send the current effective color map to the server.

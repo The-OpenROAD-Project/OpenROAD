@@ -85,6 +85,7 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `module_view` | false | Color each instance by the `dbModule` it belongs to |
 | `cluster_view` | false | Color each instance by the `dbGroup` (cluster) it belongs to |
 
 Cluster coloring reads the `dbGroup`s that
@@ -95,11 +96,14 @@ expanded lends its color to all of its descendants — the same default the
 viewer's Instance Groups view shows. When the design has no groups the option
 warns and the image is rendered as if it were off.
 
-In the viewer, clicking a row in the Hierarchy panel's Instance Groups view
-isolates that cluster: only its instances (and those of its nested clusters)
-stay colored, in the color of its swatch, until the row is clicked again. Since
-this is what the `cluster_view` overlay draws, the colors are only visible
-while it is on — the view says so when it is off.
+In the viewer both of the Hierarchy panel's views drive this coloring — Verilog
+Modules through `module_view`, Instance Groups through `cluster_view`. A row's
+checkbox decides whether that module or cluster paints, and in the Instance
+Groups view a double click takes the view to the cluster. The colors show only
+while the matching overlay is on, and the view's status line says so when it is
+off. One "Hierarchy view" checkbox in Display Controls turns on whichever
+overlay goes with the source the tab is showing; the two flags above are how the
+headless `save_image` path asks for either one directly.
 
 #### Examples
 

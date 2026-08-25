@@ -7,16 +7,62 @@
 
 import { ClustersWidget } from './clusters-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
+import { getCookie, setCookie } from './theme.js';
 
-// Add a view here and it shows up in the dropdown.  The labels name where the
-// tree comes from, not what it is called internally: one is the Verilog module
-// tree, the other the design's dbGroups.
+// Add a view here and it shows up in the dropdown, with its overlay wired up.
+// The labels name where the tree comes from, not what it is called internally:
+// one is the Verilog module tree, the other the design's dbGroups.  `gate` is
+// the visibility flag its overlay draws under, `layer` the pseudo-layer that
+// paints it.
 const VIEWS = [
-    { name: 'instances', label: 'Verilog Modules', build: (c, app, redraw) =>
-        new HierarchyBrowser(c, app, redraw) },
-    { name: 'clusters', label: 'Instance Groups', build: (c, app, redraw) =>
-        new ClustersWidget(c, app, redraw) },
+    { name: 'instances', label: 'Verilog Modules',
+        gate: 'module_view', layer: 'modulesLayer', noun: 'modules',
+        build: (c, app, redraw, gate) =>
+            new HierarchyBrowser(c, app, redraw, gate) },
+    { name: 'clusters', label: 'Instance Groups',
+        gate: 'cluster_view', layer: 'clustersLayer', noun: 'groups',
+        build: (c, app, redraw, gate) =>
+            new ClustersWidget(c, app, redraw, gate) },
 ];
+
+// The source outlives the page: it decides which overlay `ui_hierarchy_view`
+// turns on, so a session that came back on the other one would paint the
+// wrong thing.  Part of the saved display state (see display-state.js).
+const SOURCE_COOKIE = 'or_hierarchy_source';
+
+// Validated, not trusted: a stale or hand-edited cookie naming a view that no
+// longer exists would leave the panel with no active view at all, since
+// selectView() ignores names it does not know.
+function savedSource() {
+    const name = getCookie(SOURCE_COOKIE);
+    return VIEWS.some(v => v.name === name) ? name : VIEWS[0].name;
+}
+
+// Whose source is showing: the panel's, or the last one recorded if a saved
+// layout came back without the tab.
+export function activeHierarchySource(app) {
+    const panel = app ? app.hierarchyPanel : null;
+    return panel ? panel.activeView() : savedSource();
+}
+
+// The two color overlays are one control: `ui_hierarchy_view` says whether the
+// hierarchy paints at all, `source` says which of the two does it.  Their own
+// flags stay the gate each pseudo-layer and the server read, so the Tcl
+// `-display_option {cluster_view true}` path is untouched by this.
+//
+// A pure derivation over the map it is handed — the source comes in rather
+// than being fetched, so nothing here depends on which panel is registered.
+// Callers without one of their own get it from activeHierarchySource().
+// Returns whether anything moved, so callers can skip a repaint nobody needs.
+export function syncHierarchyOverlay(visibility, source) {
+    let changed = false;
+    for (const view of VIEWS) {
+        const on = !!visibility.ui_hierarchy_view && view.name === source;
+        changed = changed || visibility[view.gate] !== on;
+        visibility[view.gate] = on;
+    }
+    return changed;
+}
 
 export class HierarchyPanel {
     constructor(container, app, redrawAllLayers) {
@@ -50,15 +96,32 @@ export class HierarchyPanel {
         // root then takes it out of the flow.  Wrapping each view in its own
         // element instead leaves the wrapper occupying the panel's height.
         for (const view of VIEWS) {
-            this._widgets.set(view.name,
-                              view.build(container, app, redrawAllLayers));
+            this._widgets.set(
+                view.name,
+                view.build(container, app, redrawAllLayers, view.gate));
         }
 
         app.hierarchyPanel = this;
-        this.selectView(VIEWS[0].name);
+        this.selectView(savedSource());
+
+        container.on('destroy', () => this._onDestroy());
     }
 
-    // Show one view and hand it the selector.  Entry point for the View menu.
+    // Closing the tab takes the coloring with it: the overlays are fed by
+    // these views, and with the tab gone there is no source dropdown and no
+    // per-row checkbox left to control what they paint.  The flags stay as
+    // they are -- the Display Controls checkbox is the user's, not ours -- and
+    // an empty color map is what stops the drawing.
+    _onDestroy() {
+        // A reopened tab registers before the old one is destroyed; only the
+        // panel still on the app may clear it.
+        if (this._app.hierarchyPanel === this) this._app.hierarchyPanel = null;
+        // Both, not just the visible one: the hidden view has a map on the
+        // server too.
+        for (const widget of this._widgets.values()) widget.clearOverlay();
+    }
+
+    // Show one view and hand it the selector.  What the Source dropdown calls.
     selectView(name) {
         if (!this._widgets.has(name)) return;
         for (const [view_name, widget] of this._widgets) {
@@ -74,6 +137,35 @@ export class HierarchyPanel {
         }
         this._select.value = name;
         this._activeView = name;
+        setCookie(SOURCE_COOKIE, name);
+        // Set last: the derivation reads activeView() back off the panel.
+        this.syncOverlay();
+    }
+
+    // Move the overlay to the view now on screen.  Repaints only the two
+    // pseudo-layers, and only when a flag actually moved: nothing else reads
+    // these flags, so a full redraw would re-request every metal layer's grid
+    // for a change they ignore.  Display Controls does its own redraw, so it
+    // calls refreshActiveStatus() instead of this.
+    syncOverlay() {
+        const app = this._app;
+        if (!app || !app.visibility) return;
+        if (syncHierarchyOverlay(app.visibility, this._activeView)) {
+            // Both, not just the one now on: the other has to stop painting.
+            for (const view of VIEWS) {
+                const layer = app[view.layer];
+                if (layer) layer.refreshTiles();
+            }
+        }
+        this.refreshActiveStatus();
+    }
+
+    // Let the visible view redo its status line, which reports whether its
+    // overlay is switched on.  Nothing else writes that line, so a warning
+    // would otherwise outlive what it warns about.
+    refreshActiveStatus() {
+        const widget = this.activeWidget();
+        if (widget) widget.refreshStatus();
     }
 
     // Re-render after something that changes how the rows are formatted (the

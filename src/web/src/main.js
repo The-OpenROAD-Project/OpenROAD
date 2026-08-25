@@ -248,6 +248,11 @@ const visibility = {
     // Tracks (off by default, matching GUI)
     tracks_pref: false,
     tracks_non_pref: false,
+    // Hierarchy coloring.  ui_hierarchy_view is the control the user sees; the
+    // other two are derived from it and the Hierarchy tab's active source,
+    // and are what the layers and the server actually read.  See
+    // syncHierarchyOverlay in hierarchy-panel.js.
+    ui_hierarchy_view: false,
     // Module view
     module_view: false,
     // Cluster (dbGroup) view
@@ -272,6 +277,13 @@ try {
         const parsed = JSON.parse(decodeURIComponent(saved));
         for (const [k, v] of Object.entries(parsed)) {
             visibility[k] = !!v;
+        }
+        // Cookies written before the two overlays became one control carry
+        // their flags but no ui_hierarchy_view; without this an overlay the user
+        // had on would come back off.
+        if (!('ui_hierarchy_view' in parsed)) {
+            visibility.ui_hierarchy_view
+                = visibility.module_view || visibility.cluster_view;
         }
     }
 } catch (_) {

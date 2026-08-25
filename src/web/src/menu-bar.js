@@ -23,14 +23,6 @@ function highlightColors(app) {
     return Array.isArray(colors) ? colors : [];
 }
 
-// Focus the Hierarchy tab and switch it to one of its tree views.
-function showHierarchyView(app, view) {
-    app.focusComponent('Browser');
-    if (app.hierarchyPanel) {
-        app.hierarchyPanel.selectView(view);
-    }
-}
-
 // Is the Find dialog usable?  Needs a design, and a server to search it.
 export function canFind(app) {
     return !!app.designScale && !isStaticMode(app);
@@ -155,11 +147,7 @@ export function createMenuBar(app) {
             { label: 'Selection Browser',
               action: () => app.focusComponent('SelectHighlight') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
-            // Both live in the Hierarchy panel now, as two views of one tab.
-            { label: 'Hierarchy: Verilog Modules',
-              action: () => showHierarchyView(app, 'instances') },
-            { label: 'Hierarchy: Instance Groups',
-              action: () => showHierarchyView(app, 'clusters') },
+            { label: 'Hierarchy', action: () => app.focusComponent('Browser') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
             { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },

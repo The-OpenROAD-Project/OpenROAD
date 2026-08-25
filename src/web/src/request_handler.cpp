@@ -3134,9 +3134,9 @@ WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
                                      : state.selection_set.find(sel);
 
       if (no_highlight) {
-        // The Clusters view paints the selection through the `_clusters` layer
-        // instead, in the cluster's own color, which the selection veil would
-        // cover.
+        // For a client that shows the cluster through set_group_colors
+        // instead: the `_clusters` layer paints it in the cluster's own color,
+        // which the selection veil would cover.
         clearSelectionHighlights(state);
       } else {
         truncated = setSelectionSetHighlights(state);

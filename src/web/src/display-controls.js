@@ -4,6 +4,8 @@
 // Display controls — layer checkboxes and visibility tree.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
+import { activeHierarchySource, syncHierarchyOverlay }
+    from './hierarchy-panel.js';
 import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
     from './vis-tree.js';
 import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor,
@@ -1272,7 +1274,21 @@ export function populateDisplayControls(app, visibility, selectability,
     // --- Visibility tree (ordered to match Qt GUI display controls) ---
     // Subtrees that opt into a second "selectable" checkbox column mirror
     // the Qt GUI's selectability column (see displayControls.cpp).
-    const visTree = new VisTree(visibility, selectability, redrawAllLayers);
+    // The Hierarchy view checkbox governs two flags, and which one it turns on
+    // depends on the tab's source.  Derive only: redrawAllLayers repaints the
+    // two overlay layers along with everything else (they are in allLayers),
+    // and this runs on every checkbox in the tree, not just that one.
+    const applyHierarchyOverlay = () => {
+        syncHierarchyOverlay(visibility, activeHierarchySource(app));
+        if (app.hierarchyPanel) app.hierarchyPanel.refreshActiveStatus();
+    };
+
+    const visTree = new VisTree(visibility, selectability, () => {
+        // Before the redraw: the tile requests it issues carry the two flags
+        // this derives from the single Hierarchy view checkbox.
+        applyHierarchyOverlay();
+        redrawAllLayers();
+    });
     visTree.add({ label: 'Nets', addSelectable: true, children: [
         { key: 'net_signal', label: 'Signal' },
         { key: 'net_power', label: 'Power' },
@@ -1365,9 +1381,11 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'focused_nets_guides', label: 'Focused nets guides' },
         { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
-    visTree.add({ key: 'module_view', label: 'Module view' });
-    // Cluster coloring (the dbGroups MPL writes with -keep_clustering_data).
-    visTree.add({ key: 'cluster_view', label: 'Cluster view' });
+    // One control for both hierarchy overlays -- module colors and the cluster
+    // colors MPL writes with -keep_clustering_data.  Which of the two paints
+    // comes from the Hierarchy tab's Source dropdown, so the two can never
+    // stack on the same instance; see syncHierarchyOverlay.
+    visTree.add({ key: 'ui_hierarchy_view', label: 'Hierarchy view' });
     // Developer overlays.  All three are plain leaves under a visKey-less
     // group: giving the group `visKey: 'debug_renderers'` would tie the
     // renderer overlay to the group's tri-state, so ticking the unrelated
@@ -1381,6 +1399,9 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'debug', label: 'Tiles' },
     ]});
     visTree.render(app.displayControlsEl);
+    // render() syncs the DOM and the visibility map but does not run onChange,
+    // so the restored Hierarchy view checkbox needs its flags derived once here.
+    applyHierarchyOverlay();
 
     // Background color control (Qt GUI "Background" parity): a swatch that
     // opens the native color picker + a reset-to-theme link.  The layout

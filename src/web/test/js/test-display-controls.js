@@ -557,12 +557,12 @@ describe('overlay layer toggles', () => {
                   + `sit above the routing panes (top ${topRouting})`);
     });
 
-    it('keeps working over repeated cluster-view toggles', () => {
+    it('keeps working over repeated hierarchy-view toggles', () => {
         for (let i = 0; i < 4; i++) {
             mapOps = [];
-            const before = visibility.cluster_view;
-            toggle('cluster_view');
-            assert.equal(visibility.cluster_view, !before,
+            const before = visibility.ui_hierarchy_view;
+            toggle('ui_hierarchy_view');
+            assert.equal(visibility.ui_hierarchy_view, !before,
                          'flag flips on toggle ' + i);
             assert.equal(redraws, i + 1, 'redraw requested on toggle ' + i);
             // The regression: no layer may be mounted or unmounted here.
@@ -571,19 +571,47 @@ describe('overlay layer toggles', () => {
                                     || op.startsWith('remove:')),
                 [], 'toggle must not touch the map layer set');
         }
-        assert.equal(visibility.cluster_view, false);
+        assert.equal(visibility.ui_hierarchy_view, false);
     });
 
-    it('keeps working over repeated module-view toggles', () => {
-        for (let i = 0; i < 4; i++) {
-            mapOps = [];
-            const before = visibility.module_view;
-            toggle('module_view');
-            assert.equal(visibility.module_view, !before);
-            assert.deepEqual(
-                mapOps.filter(op => op.startsWith('add:')
-                                    || op.startsWith('remove:')),
-                []);
-        }
+    // One checkbox for two overlays, and which one it turns on depends on the
+    // Hierarchy tab's source.  This panel derives the flags and asks the tab
+    // to redo its status line -- but must NOT repaint: redrawAllLayers runs
+    // right after and covers both overlay layers, and this callback fires for
+    // every checkbox in the tree, so repainting here would cancel and re-issue
+    // a screen of overlay tiles on each unrelated click.
+    it('derives the flags for the tab\'s source without repainting', () => {
+        const calls = [];
+        app.hierarchyPanel = {
+            activeView: () => 'clusters',
+            syncOverlay: () => calls.push('syncOverlay'),
+            refreshActiveStatus: () => calls.push('refreshActiveStatus'),
+        };
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.cluster_view, true);
+        assert.equal(visibility.module_view, false,
+                     'the other source must not paint at the same time');
+        assert.deepEqual(calls, ['refreshActiveStatus'],
+                         'the status line, not a repaint');
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.cluster_view, false);
+        assert.equal(visibility.module_view, false);
+    });
+
+    // A saved layout can come back without the Hierarchy tab; the checkbox
+    // still has to reach the flags, or the overlay could never be turned on.
+    it('derives the flags itself when there is no panel', () => {
+        assert.equal(app.hierarchyPanel, undefined);
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.module_view, true,
+                     'falls back to the remembered source');
+        assert.equal(visibility.cluster_view, false);
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.module_view, false);
+        assert.equal(visibility.cluster_view, false);
     });
 });

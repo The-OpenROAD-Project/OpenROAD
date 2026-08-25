@@ -131,6 +131,36 @@ describe('MenuBar', () => {
             .map(el => el.firstChild.textContent);
         assert.ok(labels.includes('Custom Scripts'), 'menu appears after rebuild');
     });
+
+    // One item per tab, like every other entry in Windows.  The Hierarchy tab
+    // once had two ("Verilog Modules" and "Instance Groups"), which duplicated
+    // the Source dropdown the tab carries in its own toolbar.
+    it('gives the Hierarchy tab a single Windows entry that only focuses it',
+       () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const focused = [];
+        const selected = [];
+        const app = {
+            designScale: 1,
+            websocketManager: { request: () => Promise.resolve({}) },
+            focusComponent(type) { focused.push(type); },
+            hierarchyPanel: { selectView(name) { selected.push(name); } },
+        };
+        createMenuBar(app);
+
+        const windowsLabel = [...document.querySelectorAll('.menu-label')]
+            .find(el => el.firstChild.textContent === 'Windows');
+        const items = [...windowsLabel.querySelectorAll('.menu-item')]
+            .filter(el => el.textContent.startsWith('Hierarchy'));
+        assert.deepEqual(items.map(el => el.textContent), ['Hierarchy']);
+
+        items[0].click();
+        assert.deepEqual(focused, ['Browser']);
+        // The source stays where the user left it: the menu focuses the tab
+        // and does not reach into the panel to reset its view.
+        assert.deepEqual(selected, []);
+    });
+
     it('binds a custom item\'s -shortcut to the key', () => {
         document.body.innerHTML = '<div id="menu-bar"></div>';
         const requests = [];

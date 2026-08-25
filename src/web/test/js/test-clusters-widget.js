@@ -46,12 +46,6 @@ function createMockApp({ ...overrides } = {}) {
                 if (msg.type === 'group_hierarchy') {
                     return Promise.resolve({ nodes: NODES });
                 }
-                if (msg.type === 'select_group') {
-                    return Promise.resolve({
-                        name: 'root', type: 'Group', properties: [],
-                        highlight_truncated: false,
-                    });
-                }
                 return Promise.resolve({ ok: 1, count: 0 });
             },
         },
@@ -62,8 +56,6 @@ function createMockApp({ ...overrides } = {}) {
         showDbu: false,
         getDbuPerMicron() { return 1000; },
         map: { fitBounds(bounds) { app.fitted = bounds; } },
-        updateInspector(data) { app.inspected = data; },
-        refreshOverlay() { app.overlayRefreshed = true; },
         ...overrides,
     };
     return app;
@@ -85,8 +77,23 @@ describe('ClustersWidget', () => {
 
         assert.ok(widget._table);
         assert.equal(widget._updateBtn.textContent, 'Update');
-        // Registers itself on the app so other panels can reach it.
-        assert.equal(app.clustersWidget, widget);
+    });
+
+    // Closing the Hierarchy tab hands the overlay back: the flag stays as the
+    // user left it, and an empty map is what stops the layer drawing.
+    it('clears its color map on the way out', async () => {
+        const app = createMockApp();
+        const widget = new ClustersWidget(makeContainer(), app, () => {});
+        await widget.update();
+        assert.notEqual(
+            app.sent.filter(m => m.type === 'set_group_colors').at(-1).colors,
+            '', 'painting something to begin with');
+
+        await widget.clearOverlay();
+
+        assert.equal(
+            app.sent.filter(m => m.type === 'set_group_colors').at(-1).colors,
+            '');
     });
 
     // Straight from the constructor, with no _render() of our own: the panel has
@@ -202,236 +209,75 @@ describe('ClustersWidget', () => {
             '');
     });
 
-    it('selects the dbGroup when a row is clicked', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        const tr = widget._table.querySelector('tbody tr');
-        tr.dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-
-        const select = app.sent.find(m => m.type === 'select_group');
-        assert.ok(select, 'select_group request issued');
-        assert.equal(select.odb_id, 10);
-        assert.ok(tr.classList.contains('selected'));
-        assert.equal(app.inspected.type, 'Group');
-        assert.ok(app.overlayRefreshed);
-    });
-
-    // The panel is the only place a cluster selection can be undone from, so
-    // the two gestures that mean "stop showing this" must both release the
-    // highlight: clicking the selected row again, and hiding the cluster.
-    it('deselects when the selected row is clicked again', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        const tr = widget._table.querySelector('tbody tr');
-        tr.dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-        assert.ok(tr.classList.contains('selected'));
-
-        tr.dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-
-        const deselect = app.sent.filter(m => m.type === 'select_group')
-                            .find(m => m.deselect);
-        assert.ok(deselect, 'deselect request issued');
-        assert.equal(deselect.odb_id, 10);
-        assert.equal(tr.classList.contains('selected'), false);
-    });
-
-    it('deselects the cluster when it is hidden', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        // Select the (root) cluster, then untick it.
-        widget._table.querySelector('tbody tr')
-            .dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-        assert.equal(widget._selectedOdbId, 10);
-
-        widget._checkModel.check(0, false);
-        await waitForMicrotasks();
-
-        assert.ok(app.sent.some(m => m.type === 'select_group' && m.deselect
-                                     && m.odb_id === 10),
-                  'hiding the selected cluster releases its highlight');
-        assert.equal(widget._selectedOdbId, null);
-    });
-
-    it('keeps the selected row marked across a re-render', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        widget._table.querySelector('tbody tr')
-            .dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-
-        // Collapsing a node rebuilds the table.
-        widget._toggleNode(1);
-        const marked = widget._table.querySelectorAll('tbody tr.selected');
-        assert.equal(marked.length, 1);
-        assert.match(marked[0].children[0].textContent, /root/);
-    });
-
-    // Clicking a cluster leaves only its instances painted, in the row's color.
-    // The layer keys off each instance's own dbGroup, so the map has to carry the
-    // whole subtree, not just the clicked cluster.
-    it('isolates the selected cluster subtree in the color map', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        // Row 1 is (root)_glue_logic (odb 11), collapsed over its leaf (odb 12).
-        widget._table.querySelectorAll('tbody tr')[1]
-            .dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-
-        const parts = app.sent.filter(m => m.type === 'set_group_colors')
-                          .at(-1).colors.split(';').sort();
-        // Collapsed, so the leaf inherits its parent's color — the same green
-        // the swatch shows.
-        assert.deepEqual(parts, ['11:0,255,0,100', '12:0,255,0,100']);
-
-        // No overlay shapes for this selection: the yellow veil would cover the
-        // cluster color, and the cap that truncates big clusters does not apply
-        // to the tile layer.
-        const select = app.sent.filter(m => m.type === 'select_group').at(-1);
-        assert.equal(select.no_highlight, true);
-    });
-
-    it('restores every cluster when the selection is dropped', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        const tr = widget._table.querySelectorAll('tbody tr')[1];
-        tr.dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-        assert.equal(widget._isolatedOdbIds().size, 2);
-
-        tr.dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-
-        assert.equal(widget._isolatedOdbIds(), null);
-        const parts = app.sent.filter(m => m.type === 'set_group_colors')
-                          .at(-1).colors.split(';');
-        assert.equal(parts.length, 4);
-        assert.equal(widget._statusLabel.textContent, '4 groups');
-    });
-
-    // A double click delivers click(detail 1), click(detail 2) and then dblclick;
-    // acting on the second one deselects the cluster the first just isolated.
-    it('keeps the cluster selected through a double click', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        const tr = widget._table.querySelectorAll('tbody tr')[1];
-        const click = (detail) => tr.dispatchEvent(
-            new window.MouseEvent('click', { bubbles: true, detail }));
-        click(1);
-        click(2);
-        tr.dispatchEvent(
-            new window.MouseEvent('dblclick', { bubbles: true, detail: 2 }));
-        await waitForMicrotasks();
-
-        assert.equal(widget._selectedOdbId, 11);
-        assert.equal(app.sent.filter(m => m.type === 'select_group').length, 1);
-        assert.ok(app.fitted, 'the double click still zoomed to the cluster');
-    });
-
-    // Switching clusters used to put two color maps in flight: the panel's own
-    // selection-reset handler restored the full one, then the click sent the
-    // isolated one.
-    it('sends one color map per cluster switch', async () => {
-        const app = createMockApp();
-        const widget = new ClustersWidget(makeContainer(), app, () => {});
-        await widget.update();
-
-        const rows = widget._table.querySelectorAll('tbody tr');
-        rows[1].dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-        const before
-            = app.sent.filter(m => m.type === 'set_group_colors').length;
-
-        rows[2].dispatchEvent(new window.Event('click', { bubbles: true }));
-        await waitForMicrotasks();
-
-        const colorMsgs = app.sent.filter(m => m.type === 'set_group_colors');
-        assert.equal(colorMsgs.length - before, 1);
-        // And the one that was sent is the new cluster's isolated map.
-        assert.equal(colorMsgs.at(-1).colors, '13:255,255,0,100');
-    });
-
-    // Hiding the selected cluster already released the selection; the isolated
-    // map has to go with it, or the layout would keep showing one cluster on its
-    // own with no selected row to explain it.
-    it('restores the full color map when the selected cluster is hidden',
-       async () => {
-           const app = createMockApp();
-           const widget = new ClustersWidget(makeContainer(), app, () => {});
-           await widget.update();
-
-           widget._table.querySelectorAll('tbody tr')[1]
-               .dispatchEvent(new window.Event('click', { bubbles: true }));
-           await waitForMicrotasks();
-
-           widget._checkModel.check(1, false);
-           await waitForMicrotasks();
-
-           assert.equal(widget._isolatedOdbIds(), null);
-           // The unticked subtree drops out, and so does root: partly ticked, its
-           // checkbox goes indeterminate, which the model reports as unchecked.
-           // The point is that the map is no longer the isolated one.
-           const parts = app.sent.filter(m => m.type === 'set_group_colors')
-                             .at(-1).colors.split(';').sort();
-           assert.deepEqual(parts, ['13:255,255,0,100']);
-       });
-
-    // Selecting a cluster paints nothing while the `_clusters` overlay is off,
+    // Ticking a cluster paints nothing while the `_clusters` overlay is off,
     // which reads as a broken panel unless it says so.
-    it('warns when the cluster overlay is off', async () => {
+    it('warns when the cluster overlay is off, and clears it again', async () => {
         const app = createMockApp({ visibility: { cluster_view: false } });
         const widget = new ClustersWidget(makeContainer(), app, () => {});
         await widget.update();
 
-        widget._table.querySelector('tbody tr')
-            .dispatchEvent(new window.Event('click', { bubbles: true }));
+        widget._checkModel.check(3, false);
         await waitForMicrotasks();
-        assert.match(widget._statusLabel.textContent, /Cluster view is off/);
+        // Names the one checkbox Display Controls has for both overlays, not
+        // the flag: the user has no "Cluster view" row to go and find.
+        assert.match(widget._statusLabel.textContent, /Hierarchy view is off/);
 
+        // Nothing else writes this label, so the warning has to take itself
+        // down once the overlay is back.
         app.visibility.cluster_view = true;
-        widget._table.querySelectorAll('tbody tr')[1]
-            .dispatchEvent(new window.Event('click', { bubbles: true }));
+        widget._checkModel.check(3, true);
         await waitForMicrotasks();
         assert.equal(widget._statusLabel.textContent, '4 groups');
     });
 
-    // The checkbox stays the authority on what may appear: an unticked cluster
-    // is not painted just because it was clicked.
-    it('says so when the selected cluster is hidden by its checkbox',
-       async () => {
-           const app = createMockApp();
-           const widget = new ClustersWidget(makeContainer(), app, () => {});
-           await widget.update();
+    // The overlay is turned on from Display Controls and from the Source
+    // dropdown, neither of which touches a checkbox here; HierarchyPanel calls
+    // this so the warning does not outlive what it is warning about.
+    it('refreshStatus follows the flag with no checkbox involved', async () => {
+        const app = createMockApp({ visibility: { cluster_view: true } });
+        const widget = new ClustersWidget(makeContainer(), app, () => {});
+        await widget.update();
+        assert.equal(widget._statusLabel.textContent, '4 groups');
 
-           widget._checkModel.check(3, false);
-           await waitForMicrotasks();
+        app.visibility.cluster_view = false;
+        widget.refreshStatus();
+        assert.match(widget._statusLabel.textContent, /Hierarchy view is off/);
 
-           // Row 2 is macro_cluster (odb 13), the one just unticked.
-           widget._table.querySelectorAll('tbody tr')[2]
-               .dispatchEvent(new window.Event('click', { bubbles: true }));
-           await waitForMicrotasks();
+        app.visibility.cluster_view = true;
+        widget.refreshStatus();
+        assert.equal(widget._statusLabel.textContent, '4 groups');
+    });
 
-           assert.match(widget._statusLabel.textContent, /hidden/);
-           assert.equal(app.sent.filter(m => m.type === 'set_group_colors')
-                            .at(-1).colors, '');
-       });
+    // "0 groups" would talk over the table's own "click Update to load" line.
+    it('refreshStatus says nothing before the first load', () => {
+        const app = createMockApp({ visibility: { cluster_view: false } });
+        const widget = new ClustersWidget(makeContainer(), app, () => {});
+
+        widget.refreshStatus();
+        assert.equal(widget._statusLabel.textContent, '');
+    });
+
+    // The row used to select its cluster and isolate it: the color map was
+    // narrowed to that subtree, so every other ticked cluster stopped painting.
+    // Clicking a row does nothing at all now, as in the Verilog Modules view.
+    it('leaves every ticked cluster painted when a row is clicked', async () => {
+        const app = createMockApp();
+        const widget = new ClustersWidget(makeContainer(), app, () => {});
+        await widget.update();
+        const before = app.sent.filter(m => m.type === 'set_group_colors')
+                          .at(-1).colors;
+        assert.equal(before.split(';').length, 4, 'all four start out painted');
+
+        for (const tr of widget._table.querySelectorAll('tbody tr')) {
+            tr.dispatchEvent(new window.Event('click', { bubbles: true }));
+        }
+        await waitForMicrotasks();
+
+        assert.deepEqual(app.sent.filter(m => m.type === 'select_group'), []);
+        assert.equal(app.sent.filter(m => m.type === 'set_group_colors')
+                         .at(-1).colors, before);
+        assert.equal(widget._table.querySelector('tr.selected'), null);
+    });
 
     it('zooms to a cluster bbox on double click and ignores empty ones',
        async () => {

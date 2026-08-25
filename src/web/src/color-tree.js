@@ -69,15 +69,13 @@ export function computeEffectiveColors(rows, nodeMap, state, collapsed) {
 }
 
 // The wire form both set_module_colors and set_group_colors take:
-// "<odb id>:<r>,<g>,<b>,<a>;..." over the visible entries only.  `only`, a Set
-// of odb ids, restricts which owners are sent — never which color each gets.
-export function serializeColorMap(state, alpha = 100, only = null) {
+// "<odb id>:<r>,<g>,<b>,<a>;..." over the visible entries only.
+export function serializeColorMap(state) {
     const parts = [];
     for (const [odbId, st] of state) {
         if (!st.visible) continue;
-        if (only && !only.has(odbId)) continue;
         const [r, g, b] = st.effectiveColor;
-        parts.push(`${odbId}:${r},${g},${b},${alpha}`);
+        parts.push(`${odbId}:${r},${g},${b},100`);
     }
     return parts.join(';');
 }
