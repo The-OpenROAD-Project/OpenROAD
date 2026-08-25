@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Search & navigation dialogs (issue #10619 table 2.8):
-//  - Find: name/glob search by object type (mirrors Qt FindObjectDialog).
+// Navigation dialogs (issue #10619 table 2.8):
 //  - Go to position: jump the view to x,y in microns (mirrors Qt GotoDialog).
-// Both reuse the .modal-overlay/.modal-dialog pattern from menu-bar.js.
+// Reuses the .modal-overlay/.modal-dialog pattern from menu-bar.js; Find
+// lives in menu-bar.js, which searches every descriptor type the server
+// registers.
 
 import { dbuToLatLng, dbuRectToBounds, latLngToDbu } from './coordinates.js';
-import { applySelectionFlags } from './ui-utils.js';
 
 // Build a modal shell and return handles.  Closes on backdrop click / Escape.
 function buildModal(title, bodyHtml, okLabel) {
@@ -39,94 +39,6 @@ function buildModal(title, bodyHtml, okLabel) {
         errorDiv.classList.toggle('info', !!isInfo);
     };
     return { overlay, close, okBtn: overlay.querySelector('.ok'), showError };
-}
-
-// ── Find ──────────────────────────────────────────────────────────────────
-
-const FIND_TYPES = [
-    { label: 'Instance', value: 'inst' },
-    { label: 'Net', value: 'net' },
-    { label: 'Port', value: 'port' },
-];
-
-export function showFindDialog(app) {
-    if (!app.designScale) {
-        return;
-    }
-    const typeOptions = FIND_TYPES
-        .map((t) => `<option value="${t.value}">${t.label}</option>`)
-        .join('');
-    const { overlay, close, okBtn, showError } = buildModal('Find Object', `
-        <div class="sn-row">
-            <label>Name</label>
-            <input type="text" class="fb-path-input sn-pattern"
-                   placeholder="name or glob (*, ?, [])">
-        </div>
-        <div class="sn-row">
-            <label>Type</label>
-            <select class="sn-type">${typeOptions}</select>
-        </div>
-        <label class="sn-check">
-            <input type="checkbox" class="sn-case"> Match case
-        </label>`, 'Find');
-
-    const patternInput = overlay.querySelector('.sn-pattern');
-    const typeSel = overlay.querySelector('.sn-type');
-    const caseChk = overlay.querySelector('.sn-case');
-    patternInput.focus();
-
-    function doFind() {
-        const pattern = patternInput.value.trim();
-        if (!pattern) {
-            showError('Enter a name or glob pattern.');
-            return;
-        }
-        if (!app.websocketManager) {
-            return;
-        }
-        showError('Searching…', true);
-        app.websocketManager
-            .request({
-                type: 'find',
-                obj_type: typeSel.value,
-                pattern,
-                match_case: caseChk.checked,
-            })
-            .then((resp) => {
-                applySelectionFlags(app, resp);
-                const count = resp && resp.count ? resp.count : 0;
-                if (!count) {
-                    showError('No objects found.');
-                    return;
-                }
-                // Auto-zoom to the matched objects — an improvement over the Qt
-                // Find dialog, which only selects without centering.
-                if (Array.isArray(resp.bbox)) {
-                    app.lastSelectionBounds = dbuRectToBounds(
-                        resp.bbox[0], resp.bbox[1], resp.bbox[2], resp.bbox[3],
-                        app.designScale, app.designMaxDXDY,
-                        app.designOriginX, app.designOriginY);
-                    app.map.fitBounds(app.lastSelectionBounds);
-                }
-                if (typeof app.updateInspector === 'function') {
-                    app.updateInspector(resp);
-                }
-                if (typeof app.redrawAllLayers === 'function') {
-                    app.redrawAllLayers();
-                }
-                const shown = resp.selection_count || count;
-                showError(resp.truncated
-                    ? `${count} found (showing first ${shown}).`
-                    : `${count} found.`, true);
-            })
-            .catch((err) => showError('Find failed: ' + err));
-    }
-
-    okBtn.addEventListener('click', doFind);
-    patternInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); doFind(); }
-    });
-    return { close };
 }
 
 // ── Go to position ──────────────────────────────────────────────────────────

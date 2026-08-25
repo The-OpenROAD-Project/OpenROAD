@@ -85,6 +85,25 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `module_view` | false | Color each instance by the `dbModule` it belongs to |
+| `cluster_view` | false | Color each instance by the `dbGroup` (cluster) it belongs to |
+
+Cluster coloring reads the `dbGroup`s that
+[`rtl_macro_placer -keep_clustering_data`](../mpl/README.md) writes into the
+database, so it is only useful after MPL has run with that option. Each
+cluster gets its own palette color, and a cluster whose subtree is not
+expanded lends its color to all of its descendants — the same default the
+viewer's Instance Groups view shows. When the design has no groups the option
+warns and the image is rendered as if it were off.
+
+In the viewer both of the Hierarchy panel's views drive this coloring — Verilog
+Modules through `module_view`, Instance Groups through `cluster_view`. A row's
+checkbox decides whether that module or cluster paints, and in the Instance
+Groups view a double click takes the view to the cluster. The colors show only
+while the matching overlay is on, and the view's status line says so when it is
+off. One "Hierarchy view" checkbox in Display Controls turns on whichever
+overlay goes with the source the tab is showing; the two flags above are how the
+headless `save_image` path asks for either one directly.
 
 #### Examples
 
@@ -111,6 +130,12 @@ save_image -web -display_option {routing false} \
 
 # Save with RUDY congestion heatmap overlay
 save_image -web -display_option {rudy true} layout_rudy.png
+
+# Plot the MPL clustering result (one color per cluster)
+rtl_macro_placer -keep_clustering_data
+save_image -web -width 1200 \
+                -display_option {cluster_view true} \
+                clusters.png
 ```
 
 ### Save Animated GIF
@@ -450,7 +475,8 @@ them — something the single-window Qt GUI cannot do.
   paths, and view per-level statistics.
 - **Hierarchy browser** — Navigate the module tree with instance counts and area
   statistics. Toggle visibility and assign colors per module using a 31-color
-  palette.
+  palette. The same panel's Instance Groups view does this for the `dbGroup`s
+  MPL writes with `-keep_clustering_data`.
 - **Display controls** — Toggle visibility of cell types (stdcells, macros,
   pads), net types (signal, power, clock), and shapes (routing, pins, blockages,
   rows, tracks). The panel state can be saved to and restored from a file with

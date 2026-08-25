@@ -7,7 +7,10 @@
 // Split out of websocket-tile-layer.js so both layer types share one definition
 // of the payload and cannot drift on the wire — a divergence would give the two
 // paths different server-side tile-cache keys, and one of them would miss the
-// cache entirely.
+// cache entirely.  The flag columns come from buildVisibilityFlags for the same
+// reason, shared with click-select and the Save export.
+
+import { buildVisibilityFlags } from './ui-utils.js';
 
 // Normalize the display's device pixel ratio into the value sent on the wire.
 //
@@ -151,15 +154,7 @@ export function buildTileRequestFor(coords, layerName, ctx, dpr,
                                     tileSize = tileSizeCss()) {
     const { visibility, selectability, visibleLayers, selectableLayers, app }
         = ctx;
-    const vf = {};
-    for (const [k, v] of Object.entries(visibility || {})) {
-        vf[k] = !!v;
-    }
-    if (selectability) {
-        for (const [k, v] of Object.entries(selectability)) {
-            vf['s_' + k] = !!v;
-        }
-    }
+    const vf = buildVisibilityFlags(visibility, selectability);
     const req = {
         type: 'tile',
         layer: layerName,

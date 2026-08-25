@@ -3,11 +3,26 @@
 
 // Shared UI utilities.
 
+import { dbuRectToBounds } from './coordinates.js';
+
 // True when the app was bootstrapped from a saved/static report
 // (i.e. there is no live WebSocket backend).
 export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
+
+// Visibility keys that drive other keys here and never reach the wire, marked
+// by name the way selectability keys are marked with `s_`.  A list of them
+// would be a fourth place to remember a new one, and forgetting is silent:
+// the tile cache is keyed on the request JSON minus the flags the server
+// recognizes (request_handler.cpp), so a key it has never heard of survives
+// that subtraction and turns its own toggle into a full-screen cache miss.
+const CLIENT_ONLY_PREFIX = 'ui_';
+
+// The one message both hierarchy views show when their overlay is switched
+// off, so the two cannot drift apart on the name of the control to blame.
+export const HIERARCHY_OFF_HINT
+    = 'Hierarchy view is off — enable it in Display Controls';
 
 // Serialize the layer/selectability visibility flags the way the server
 // parses them: each visibility key as a boolean, each selectability key with
@@ -17,6 +32,7 @@ export function isStaticMode(app) {
 export function buildVisibilityFlags(visibility, selectability) {
     const vf = {};
     for (const [k, v] of Object.entries(visibility || {})) {
+        if (k.startsWith(CLIENT_ONLY_PREFIX)) continue;
         vf[k] = !!v;
     }
     for (const [k, v] of Object.entries(selectability || {})) {
@@ -171,6 +187,17 @@ export function onSelectionReset(app, fn) {
         app.selectionResetters = [];
     }
     app.selectionResetters.push(fn);
+}
+
+// Fit the map to a DBU rectangle [xMin, yMin, xMax, yMax].  Shared by the
+// Inspector's "Zoom to", the Clusters panel's double-click and the DRC widget.
+export function zoomToBBox(app, bbox, padding = 20) {
+    if (!bbox || !app || !app.map || !app.designScale) return;
+    const [x1, y1, x2, y2] = bbox;
+    app.map.fitBounds(
+        dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+                        app.designOriginX, app.designOriginY),
+        { padding: [padding, padding] });
 }
 
 // Leaflet map options for the 2D layout viewer.
@@ -466,9 +493,14 @@ export function makeResizableHeaders(table, widths) {
         headers.forEach((th) => th.style.width = '');
         widths = Array.from(headers, (th) => th.offsetWidth + 'px');
     }
-    // Lock in widths and switch to fixed layout
-    headers.forEach((th, i) => th.style.width = widths[i] || '');
-    table.style.tableLayout = 'fixed';
+    // Lock in widths and switch to fixed layout.  A table that is not laid out
+    // — one rendered inside a hidden view — measures every column at zero;
+    // locking that in collapses them.  Stay on auto and let the next render,
+    // with the table visible, lock the real widths.
+    if (!widths.every((w) => w === '0px')) {
+        headers.forEach((th, i) => th.style.width = widths[i] || '');
+        table.style.tableLayout = 'fixed';
+    }
 
     headers.forEach((th, idx) => {
         if (idx === headers.length - 1) return; // skip last column

@@ -4,7 +4,7 @@
 import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { showFindDialog, showGotoDialog } from '../../src/search-nav.js';
+import { showGotoDialog } from '../../src/search-nav.js';
 import { dbuToLatLng, dbuRectToBounds } from '../../src/coordinates.js';
 import { formatDbu, parseDbu, unitLabel } from '../../src/ui-utils.js';
 
@@ -158,62 +158,5 @@ describe('Go to Position dialog', () => {
         clickOk();
         assert.equal(calls.length, 0);
         assert.match(errorText(), /must be numbers/i);
-    });
-});
-
-describe('Find dialog', () => {
-    function findApp(response) {
-        const sent = [];
-        const { app, calls } = makeApp({
-            websocketManager: { request(m) { sent.push(m); return Promise.resolve(response); } },
-            updateInspector() {},
-            redrawAllLayers() {},
-        });
-        return { app, calls, sent };
-    }
-
-    it('sends a find request and auto-zooms to the result bbox', async () => {
-        document.body.innerHTML = '';
-        const { app, calls, sent } = findApp(
-            { count: 2, selection_count: 2, bbox: [0, 0, 3000, 4000] });
-        showFindDialog(app);
-        setInput('.sn-pattern', '_4*');
-        document.querySelector('.sn-type').value = 'inst';
-        clickOk();
-        await wait();
-        assert.deepEqual(sent, [{ type: 'find', obj_type: 'inst',
-            pattern: '_4*', match_case: false }]);
-        const expected = dbuRectToBounds(0, 0, 3000, 4000, 1, 0, 0, 0);
-        assert.deepEqual(calls, [['fitBounds', expected]]);
-        assert.match(errorText(), /2 found/);
-    });
-
-    it('reports when nothing is found and does not zoom', async () => {
-        document.body.innerHTML = '';
-        const { app, calls } = findApp({ count: 0, selection_count: 0 });
-        showFindDialog(app);
-        setInput('.sn-pattern', 'nope*');
-        clickOk();
-        await wait();
-        assert.equal(calls.length, 0);
-        assert.match(errorText(), /No objects found/i);
-    });
-
-    it('requires a pattern', () => {
-        document.body.innerHTML = '';
-        const { app, sent } = findApp({ count: 0 });
-        showFindDialog(app);
-        clickOk();
-        assert.equal(sent.length, 0);
-        assert.match(errorText(), /pattern/i);
-    });
-
-    it('closes via the X button', () => {
-        document.body.innerHTML = '';
-        const { app } = findApp({ count: 0 });
-        showFindDialog(app);
-        assert.ok(document.querySelector('.modal-overlay'), 'dialog open');
-        document.querySelector('.modal-close').click();
-        assert.equal(document.querySelector('.modal-overlay'), null, 'dialog closed');
     });
 });

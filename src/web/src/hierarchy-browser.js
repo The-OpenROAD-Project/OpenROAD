@@ -4,7 +4,13 @@
 // Hierarchy browser widget — module tree with coloring.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import {
+    buildTreeIndex, computeEffectiveColors, fmtArea, fmtInt, isHidden,
+    serializeColorMap,
+} from './color-tree.js';
+import {
+    HIERARCHY_OFF_HINT, isStaticMode, makeResizableHeaders,
+} from './ui-utils.js';
 
 const COLS = [
     'Instance', 'Module', 'Instances', 'Macros', 'Modules',
@@ -15,12 +21,18 @@ const COLS = [
 const NODE_KIND = { MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3 };
 
 export class HierarchyBrowser {
-    constructor(container, app, redrawAllLayers) {
+    // `gate` is the visibility flag this view's overlay draws under, handed
+    // down by HierarchyPanel so the source↔flag pairing lives only in its
+    // VIEWS table.
+    constructor(container, app, redrawAllLayers, gate = 'module_view') {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._gate = gate;
+        this._loaded = false;
         this._nodes = [];      // flat server response
         this._rows = [];       // DFS-ordered rows with depth
         this._childrenMap = new Map();  // id → [child ids]
+        this._nodeMap = new Map();      // id → node
         this._collapsed = new Set();   // collapsed node ids
 
         // Module coloring state: odb_id → {color, effectiveColor, visible}
@@ -31,9 +43,6 @@ export class HierarchyBrowser {
 
         this._build(container);
 
-        // Expose on app so display-controls can interact
-        app.hierarchyBrowser = this;
-
         // Auto-load in static mode (data is already cached).
         if (isStaticMode(app)) {
             this.update();
@@ -43,10 +52,14 @@ export class HierarchyBrowser {
     _build(container) {
         const el = document.createElement('div');
         el.className = 'hierarchy-widget';
+        // Kept so HierarchyPanel can show/hide this view and drop its view
+        // selector into the toolbar, next to Update.
+        this.element = el;
 
         // Toolbar
         const toolbar = document.createElement('div');
         toolbar.className = 'timing-toolbar';
+        this.toolbar = toolbar;
 
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';
@@ -72,6 +85,10 @@ export class HierarchyBrowser {
 
         container.element.appendChild(el);
         this._bindEvents();
+        // Draw the empty state now: _render() otherwise runs for the first time
+        // inside update(), so a freshly opened panel was a blank rectangle with
+        // no column headers and no sign that Update was what it wanted.
+        this._render();
     }
 
     _bindEvents() {
@@ -87,13 +104,12 @@ export class HierarchyBrowser {
                 type: 'module_hierarchy',
             });
             this._nodes = data.nodes || [];
+            this._loaded = true;
             this._buildTree();
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
-            const nMods = this._nodes.filter(
-                n => (n.node_kind || 0) === NODE_KIND.MODULE).length;
-            this._statusLabel.textContent = nMods + ' modules';
+            this.refreshStatus();
             await this._sendModuleColors();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
@@ -103,24 +119,14 @@ export class HierarchyBrowser {
     }
 
     _buildTree() {
-        this._childrenMap.clear();
         this._collapsed.clear();
-
-        // Initialize children lists
-        for (const n of this._nodes) {
-            this._childrenMap.set(n.id, []);
-        }
-        for (const n of this._nodes) {
-            if (n.parent_id >= 0 && this._childrenMap.has(n.parent_id)) {
-                this._childrenMap.get(n.parent_id).push(n.id);
-            }
-        }
-
-        // Build id → node lookup
-        this._nodeMap = new Map();
-        for (const n of this._nodes) {
-            this._nodeMap.set(n.id, n);
-        }
+        // Tree indexing, the collapse→color rule, the color-map wire format and
+        // the number formatting are shared with the Clusters panel and with the
+        // server's save-image path; see color-tree.js.
+        const index = buildTreeIndex(this._nodes);
+        this._childrenMap = index.childrenMap;
+        this._nodeMap = index.nodeMap;
+        this._rows = index.rows;
 
         // Default collapse state:
         // - Modules at depth > 1 are collapsed
@@ -134,13 +140,6 @@ export class HierarchyBrowser {
             } else if (kind === NODE_KIND.MODULE && n.parent_id >= 0) {
                 this._collapsed.add(n.id);
             }
-        }
-
-        // Build DFS-ordered rows
-        this._rows = [];
-        const roots = this._nodes.filter(n => n.parent_id < 0);
-        for (const root of roots) {
-            this._dfs(root.id, 0);
         }
 
         // Build checkbox model for module visibility.
@@ -163,6 +162,22 @@ export class HierarchyBrowser {
         })));
     }
 
+    // The status line: the overlay warning, else the module count.  Mirrors
+    // ClustersWidget — with one checkbox for both overlays, a user on this
+    // view is the likeliest to tick a module and see nothing happen, so this
+    // is the view that most needs to say why.  HierarchyPanel calls it when
+    // the Hierarchy view checkbox or the source moves.
+    refreshStatus() {
+        if (!this._loaded) return;
+        const modules = this._nodes.filter(
+            n => (n.node_kind || 0) === NODE_KIND.MODULE).length;
+        this._statusLabel.textContent
+            = this._app.visibility
+              && this._app.visibility[this._gate] === false
+                ? HIERARCHY_OFF_HINT
+                : modules + ' modules';
+    }
+
     // Read server-assigned colors for each MODULE node.
     _readServerColors() {
         this._moduleState.clear();
@@ -180,65 +195,44 @@ export class HierarchyBrowser {
         }
     }
 
-    // DFS to compute effective colors based on collapse state.
-    // When a MODULE is collapsed, all descendant MODULEs inherit its effective color.
+    // When a MODULE is collapsed, all descendant MODULEs inherit its effective
+    // color (highest collapsed ancestor wins).  Structural rows (leaf/type
+    // folders) carry no color and are simply absent from _moduleState.
     _computeEffectiveColors() {
-        for (const row of this._rows) {
-            const node = this._nodeMap.get(row.id);
-            if (!node || (node.node_kind || 0) !== NODE_KIND.MODULE) continue;
-            const st = this._moduleState.get(node.odb_id);
-            if (!st) continue;
+        computeEffectiveColors(this._rows, this._nodeMap, this._moduleState,
+                               this._collapsed);
+    }
 
-            // Find nearest ancestor MODULE that is collapsed
-            let parentId = node.parent_id;
-            let inheritedColor = null;
-            while (parentId >= 0) {
-                const parent = this._nodeMap.get(parentId);
-                if (!parent) break;
-                if ((parent.node_kind || 0) === NODE_KIND.MODULE) {
-                    const pst = this._moduleState.get(parent.odb_id);
-                    if (pst && this._collapsed.has(parent.id)) {
-                        inheritedColor = pst.effectiveColor;
-                        // Don't break — keep walking up, the highest
-                        // collapsed ancestor's effective color wins.
-                    }
-                }
-                parentId = parent.parent_id;
-            }
-            st.effectiveColor = inheritedColor || st.color;
-        }
+    // Drop this view's colors from the session, on the way out.  The overlay
+    // only draws while its flag is on AND the session holds a map, so an empty
+    // map stops it without touching the flag -- which stays a plain derivation
+    // of the Hierarchy view checkbox and the remembered source.
+    clearOverlay() {
+        this._moduleState.clear();
+        // Nothing to clear on a static report: there is no session.
+        if (isStaticMode(this._app)) return Promise.resolve();
+        return this._sendModuleColors();
     }
 
     // Send the current effective color map to the server.
     async _sendModuleColors() {
-        const parts = [];
-        for (const [odbId, st] of this._moduleState) {
-            if (!st.visible) continue;
-            const [r, g, b] = st.effectiveColor;
-            parts.push(`${odbId}:${r},${g},${b},100`);
-        }
-        const colors = parts.join(';');
+        const colors = serializeColorMap(this._moduleState);
         try {
-            const resp = await this._app.websocketManager.request({
+            await this._app.websocketManager.request({
                 type: 'set_module_colors',
                 colors,
             });
-            console.log('set_module_colors:', resp.count, 'modules,',
-                         parts.length, 'sent');
         } catch (err) {
             console.error('set_module_colors failed:', err);
+            return;
         }
-
-        // Redraw all layers so the module overlay picks up the new
-        // colors.  This matches what the vis-tree toggle does.
-        this._redrawAllLayers();
-    }
-
-    _dfs(id, depth) {
-        this._rows.push({ id, depth });
-        const children = this._childrenMap.get(id) || [];
-        for (const childId of children) {
-            this._dfs(childId, depth + 1);
+        // Only the module overlay reads these colors, so refresh that layer
+        // instead of every mounted one — a full redraw re-requests every metal
+        // layer's grid for a color they ignore.
+        if (this._app.modulesLayer) {
+            this._app.modulesLayer.refreshTiles();
+        } else {
+            this._redrawAllLayers();
         }
     }
 
@@ -263,7 +257,7 @@ export class HierarchyBrowser {
             if (!node) continue;
 
             // Check if any ancestor is collapsed
-            if (this._isHidden(node)) continue;
+            if (isHidden(node, this._nodeMap, this._collapsed)) continue;
 
             const tr = document.createElement('tr');
             const kind = node.node_kind || 0;
@@ -295,6 +289,9 @@ export class HierarchyBrowser {
                     cb.checked = modelNode.checked;
                     cb.indeterminate = modelNode.indeterminate;
                     cb.className = 'hierarchy-module-cb';
+                    cb.setAttribute('aria-label',
+                                    'Show module colors: '
+                                    + node.inst_name);
                     modelNode.cb = cb;
                     cb.addEventListener('change', (e) => {
                         e.stopPropagation();
@@ -339,7 +336,7 @@ export class HierarchyBrowser {
                 fmtInt(node.insts),
                 fmtInt(node.macros),
                 fmtInt(node.modules),
-                this._fmtArea(node.area),
+                fmtArea(this._app, node.area),
                 fmtInt(node.local_insts),
                 fmtInt(node.local_macros),
                 fmtInt(node.local_modules),
@@ -373,18 +370,6 @@ export class HierarchyBrowser {
         makeResizableHeaders(this._table);
     }
 
-    _isHidden(node) {
-        // Walk up parents; if any ancestor is collapsed, this node is hidden
-        let parentId = node.parent_id;
-        while (parentId >= 0) {
-            if (this._collapsed.has(parentId)) return true;
-            const parent = this._nodeMap.get(parentId);
-            if (!parent) break;
-            parentId = parent.parent_id;
-        }
-        return false;
-    }
-
     _toggleNode(id) {
         if (this._collapsed.has(id)) {
             this._collapsed.delete(id);
@@ -397,18 +382,4 @@ export class HierarchyBrowser {
         this._sendModuleColors();
     }
 
-    _fmtArea(v) {
-        if (v == null) return '';
-        if (this._app.showDbu) {
-            // Convert μm² back to DBU².
-            const dbu = this._app.getDbuPerMicron();
-            return String(Math.round(v * dbu * dbu));
-        }
-        if (v >= 1e6) return (v / 1e6).toFixed(3) + ' mm²';
-        return v.toFixed(3) + ' μm²';
-    }
-}
-
-function fmtInt(v) {
-    return v != null ? String(v) : '';
 }

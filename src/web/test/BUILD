@@ -11,6 +11,7 @@ package(features = ["layering_check"])
 npm_link_all_packages(name = "node_modules")
 
 TESTS = [
+    "save_image_cluster_view",
 ]
 
 filegroup(
@@ -33,6 +34,10 @@ filegroup(
 
 [regression_test(
     name = test_name,
+    # Passfail, like the CMake registration: the log carries absolute paths
+    # and image sizes, so there is no golden file to diff it against.
+    check_log = False,
+    check_passfail = True,
     data = [":test_resources"],
 ) for test_name in TESTS]
 
@@ -57,13 +62,6 @@ js_test(
     name = "coordinates_test",
     data = JS_FILES,
     entry_point = "js/test-coordinates.js",
-    no_copy_to_bin = JS_FILES,
-)
-
-js_test(
-    name = "ui_utils_test",
-    data = JS_FILES,
-    entry_point = "js/test-ui-utils.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -118,8 +116,15 @@ js_test(
 
 js_test(
     name = "websocket_tile_layer_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-websocket-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "color_tree_test",
+    data = JS_FILES,
+    entry_point = "js/test-color-tree.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -134,6 +139,27 @@ js_test(
     name = "display_controls_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "clusters_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-clusters-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "hierarchy_panel_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-hierarchy-panel.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "ui_utils_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-ui-utils.js",
     no_copy_to_bin = JS_FILES,
 )
 

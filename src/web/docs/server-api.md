@@ -110,7 +110,7 @@ Render a single 256×256 PNG tile of the layout.
 
 | Field            | Type     | Required | Description |
 | ---------------- | -------- | :------: | ----------- |
-| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_pins`, or `_overlay`. |
+| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_clusters`, `_pins`, or `_overlay`. |
 | `z`              | `int`    |    ✓     | Leaflet tile zoom level (0 = whole design). |
 | `x`              | `int`    |    ✓     | Tile column at zoom `z`. |
 | `y`              | `int`    |    ✓     | Tile row at zoom `z`. |
@@ -119,6 +119,17 @@ Render a single 256×256 PNG tile of the layout.
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
 
 **Response:** PNG image (frame type `1`).
+
+The `_modules` and `_clusters` layers color each instance by its `dbModule` /
+`dbGroup`, and each draws only while its own flag (`module_view` /
+`cluster_view`) is true and the session holds a color map (`set_module_colors` /
+`set_group_colors`); otherwise the tile comes back fully transparent.  Clients
+should therefore keep both layers mounted and toggle the flag, not the layer:
+making the map's layer set a second record of the flag is what let the viewer's
+hierarchy coloring checkbox get stuck until a page reload.  The viewer drives
+both flags from one "Hierarchy view" checkbox and the Hierarchy tab's active
+source, so at most one of them is ever true there; a Tcl or test client is free
+to set both.
 
 ### `bounds`
 
@@ -514,11 +525,11 @@ Highlight a single clock-tree node's instance in the layout.
 
 ---
 
-## Module hierarchy
+## Module and cluster hierarchy
 
 ### `module_hierarchy`
 
-Return the module hierarchy tree (left sidebar).
+Return the `dbModule` tree (Verilog Modules view of the Hierarchy panel).
 
 No request fields.
 
@@ -551,6 +562,102 @@ layer).
 | `colors` | `string` |    ✓     | Custom delimited form: `<id>:<r>,<g>,<b>,<a>;<id>:<r>,<g>,<b>,<a>;...`. Empty = clear all. |
 
 **Response (JSON):** `{"ok": 1, "count": <updated module count>}`.
+
+### `group_hierarchy`
+
+Return the `dbGroup` tree (Instance Groups view of the Hierarchy panel).  MPL writes its clustering
+hierarchy here as nested groups of type `VISUAL_DEBUG` when run as
+`rtl_macro_placer -keep_clustering_data`; power/voltage-domain groups appear
+too, distinguished by `type`.  Nodes are in DFS order, so a parent always
+precedes its children.
+
+No request fields.
+
+**Response (JSON):**
+```json
+{
+  "nodes": [
+    {
+      "id": 0, "parent_id": -1,
+      "name":  "root", "type": "VISUAL_DEBUG",
+      "odb_id": 42,
+      "insts": 1234, "macros": 2, "groups": 7,   // hierarchical
+      "area":  1.23,                              // μm², hierarchical
+      "local_insts": 100, "local_macros": 0, "local_groups": 3,
+      "bbox":  [xMin, yMin, xMax, yMax],          // members, recursive; zeros when empty
+      "color": [r, g, b]
+    },
+    ...
+  ]
+}
+```
+
+### `set_group_colors`
+
+Update the per-cluster color override map (for the `_clusters` tile layer).
+Same payload shape as `set_module_colors`, keyed by `dbGroup` id.
+
+| Field    | Type     | Required | Description                                                                                  |
+| -------- | -------- | :------: | -------------------------------------------------------------------------------------------- |
+| `colors` | `string` |    ✓     | Custom delimited form: `<id>:<r>,<g>,<b>,<a>;<id>:<r>,<g>,<b>,<a>;...`. Empty = clear all. |
+
+**Response (JSON):** `{"ok": 1, "count": <updated cluster count>}`.
+
+### `select_group`
+
+Select a cluster by `dbGroup` id, highlighting every member instance
+(including those of nested clusters), or drop it from the selection again.
+
+| Field              | Type   | Required | Description                                        |
+| ------------------ | ------ | :------: | -------------------------------------------------- |
+| `odb_id`           | `int`  |    ✓     | `dbGroup::getId()`, as returned by `group_hierarchy`. |
+| `add_to_selection` | `bool` |    —     | Default `false` (replace the selection).            |
+| `deselect`         | `bool` |    —     | Default `false`. When true, removes this group from the selection instead of selecting it; whatever else is selected keeps its highlight. Deselecting a group that is not selected is a no-op, so a client can fire it whenever a cluster is hidden. The response then carries no `name`/`properties` (nothing is being described — this is not an error). |
+| `no_highlight`     | `bool` |    —     | Default `false`. When true the group is selected (so it can be inspected) without pushing any highlight shapes onto the overlay, and `highlight_truncated` comes back `false`. For a client that shows the cluster through `set_group_colors` instead: the `_clusters` layer paints it in its own color, which the yellow selection veil would only cover. Nothing in the viewer sends this — neither of the Hierarchy panel's views selects anything, and there is no module equivalent of this request for the Verilog Modules one to use. The callers are Tcl and test clients. |
+| `use_dbu`          | `bool` |    —     | Same as `inspect`.                                  |
+
+**Response (JSON):** the inspect payload plus `selection_count`,
+`selection_index` and `highlight_truncated`.  The last is `true` when the
+cluster held too many shapes for the overlay and bounding boxes were used
+instead; the `_clusters` tile layer is the scalable way to see such a cluster
+(and what `no_highlight` clients rely on).  Errors when the id is not a group
+in the current block.
+
+### `find_objects`
+
+Batch select (and optionally highlight) every object of one type whose name
+matches a pattern — the counterpart of the Qt GUI's Find dialog and of
+`select -type ... -name ... -highlight`.
+
+| Field              | Type     | Required | Description                                                     |
+| ------------------ | -------- | :------: | --------------------------------------------------------------- |
+| `object_type`      | `string` |    ✓     | Descriptor type name: `Inst`, `Net`, `BTerm`, `Group`, ... Note it is *not* `type`, which the envelope uses. |
+| `pattern`          | `string` |    ✓     | Anchored glob (or Tcl regexp). Empty matches everything.         |
+| `is_regexp`        | `bool`   |    —     | Default `false` (glob).                                          |
+| `case_sensitive`   | `bool`   |    —     | Default `false`.                                                 |
+| `highlight_group`  | `int`    |    —     | `0..15` to also add the matches to that colored highlight group; `-1` (default) selects only. Any other value is an error, including negatives below `-1` — they are not a second spelling of `-1`. |
+| `add_to_selection` | `bool`   |    —     | Default `false` (replace the selection and the highlight group). |
+| `use_dbu`          | `bool`   |    —     | Same as `inspect`.                                               |
+
+**Response (JSON):** the inspect payload of the first match plus `found`,
+`found_truncated`, `selection_count`, `selection_index`,
+`highlight_truncated`, and `match_bbox` — the `[x0, y0, x1, y1]` union of the
+matches in DBU, for the client to zoom to.  It is absent when nothing matched
+or no match reports a box.  Note it is *not* the inspect payload's own `bbox`,
+which is the first match's box and is what the selection outline is drawn from.
+Errors on an unknown `object_type`, an out-of-range `highlight_group`, or a
+malformed regexp.
+
+### `clear_highlights`
+
+Drop the members of the colored highlight groups.  The selection is separate
+state and is left alone.
+
+| Field   | Type  | Required | Description                                                     |
+| ------- | ----- | :------: | --------------------------------------------------------------- |
+| `group` | `int` |    —     | `0..15` to clear just that group; `-1` (default) clears them all. |
+
+**Response (JSON):** `{"ok": 1, "cleared": <members removed>}`.
 
 ### `set_focus_nets`
 
