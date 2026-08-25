@@ -20,15 +20,17 @@ set net [odb::dbNet_create $block "VDD"]
 $net setSpecial
 $net setSigType POWER
 set swire [odb::dbSWire_create $net "ROUTED"]
+set via_xs {}
 for { set x 98000 } { $x <= 106000 } { incr x 380 } {
   odb::dbSBox_create $swire $via $x 295790 "STRIPE"
+  lappend via_xs $x
 }
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
   -min_distance 0.12
 
 set via_rects {}
-for { set x 98000 } { $x <= 106000 } { incr x 380 } {
+foreach x $via_xs {
   lappend via_rects [list [expr { $x - 140 }] 295650 [expr { $x + 140 }] 295930]
 }
 puts "pin to via pad violations: [count_rect_violations metal2 $via_rects spacing]"

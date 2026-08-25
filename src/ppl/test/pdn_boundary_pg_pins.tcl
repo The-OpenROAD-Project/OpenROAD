@@ -26,5 +26,4 @@ $pin setPlacementStatus FIRM
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
   -min_distance 0.12 -exclude left:* -exclude right:* -exclude bottom:*
 
-set pg_rect [list [list 22140 295440 273640 296000]]
-puts "pin violations against PG pins: [count_rect_violations metal2 $pg_rect spacing]"
+puts "pin violations against PG pins: [count_pg_pin_violations spacing]"

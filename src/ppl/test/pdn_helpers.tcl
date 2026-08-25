@@ -33,8 +33,9 @@ proc report_pin_violation { bterm box what } {
     too close to $what"
 }
 
-# count signal pin shapes too close to same layer special net wires
-proc count_pdn_shape_violations { mode } {
+# count signal pin shapes too close to the given shapes, a list of
+# {layer_name llx lly urx ury label} entries
+proc count_violations_against { shapes mode } {
   set block [ord::get_db_block]
   set violations 0
   foreach bterm [$block getBTerms] {
@@ -44,26 +45,16 @@ proc count_pdn_shape_violations { mode } {
     foreach bpin [$bterm getBPins] {
       foreach box [$bpin getBoxes] {
         set layer [$box getTechLayer]
-        foreach net [$block getNets] {
-          if { ![$net isSpecial] } {
+        foreach shape $shapes {
+          lassign $shape layer_name llx lly urx ury label
+          if { [$layer getName] != $layer_name } {
             continue
           }
-          foreach swire [$net getSWires] {
-            foreach sbox [$swire getWires] {
-              set slayer [$sbox getTechLayer]
-              if { $slayer == "NULL" || $slayer != $layer } {
-                continue
-              }
-              set required [get_required_spacing $layer $box [$sbox xMin] \
-                [$sbox yMin] [$sbox xMax] [$sbox yMax] $mode]
-              if {
-                [is_pin_shape_violation $box [$sbox xMin] [$sbox yMin] \
-                  [$sbox xMax] [$sbox yMax] $required]
-              } {
-                report_pin_violation $bterm $box "[$net getName] wire"
-                incr violations
-              }
-            }
+          set required \
+            [get_required_spacing $layer $box $llx $lly $urx $ury $mode]
+          if { [is_pin_shape_violation $box $llx $lly $urx $ury $required] } {
+            report_pin_violation $bterm $box $label
+            incr violations
           }
         }
       }
@@ -72,31 +63,53 @@ proc count_pdn_shape_violations { mode } {
   return $violations
 }
 
+# count signal pin shapes too close to same layer special net wires
+proc count_pdn_shape_violations { mode } {
+  set block [ord::get_db_block]
+  set shapes {}
+  foreach net [$block getNets] {
+    if { ![$net isSpecial] } {
+      continue
+    }
+    foreach swire [$net getSWires] {
+      foreach sbox [$swire getWires] {
+        set slayer [$sbox getTechLayer]
+        if { $slayer == "NULL" } {
+          continue
+        }
+        lappend shapes [list [$slayer getName] [$sbox xMin] [$sbox yMin] \
+          [$sbox xMax] [$sbox yMax] "[$net getName] wire"]
+      }
+    }
+  }
+  return [count_violations_against $shapes $mode]
+}
+
 # count signal pin shapes on the given layer too close to the given rects
 proc count_rect_violations { layer_name rects mode } {
+  set shapes {}
+  foreach rect $rects {
+    lassign $rect llx lly urx ury
+    lappend shapes \
+      [list $layer_name $llx $lly $urx $ury "shape ($llx $lly) ($urx $ury)"]
+  }
+  return [count_violations_against $shapes $mode]
+}
+
+# count signal pin shapes too close to fixed power/ground pins
+proc count_pg_pin_violations { mode } {
   set block [ord::get_db_block]
-  set violations 0
+  set shapes {}
   foreach bterm [$block getBTerms] {
-    if { [$bterm getSigType] == "POWER" || [$bterm getSigType] == "GROUND" } {
+    if { [$bterm getSigType] != "POWER" && [$bterm getSigType] != "GROUND" } {
       continue
     }
     foreach bpin [$bterm getBPins] {
       foreach box [$bpin getBoxes] {
-        set layer [$box getTechLayer]
-        if { [$layer getName] != $layer_name } {
-          continue
-        }
-        foreach rect $rects {
-          lassign $rect llx lly urx ury
-          set required \
-            [get_required_spacing $layer $box $llx $lly $urx $ury $mode]
-          if { [is_pin_shape_violation $box $llx $lly $urx $ury $required] } {
-            report_pin_violation $bterm $box "shape ($llx $lly) ($urx $ury)"
-            incr violations
-          }
-        }
+        lappend shapes [list [[$box getTechLayer] getName] [$box xMin] \
+          [$box yMin] [$box xMax] [$box yMax] "[$bterm getName] pin"]
       }
     }
   }
-  return $violations
+  return [count_violations_against $shapes $mode]
 }
