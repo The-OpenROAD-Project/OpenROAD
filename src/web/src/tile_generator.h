@@ -611,12 +611,26 @@ class TileGenerator
                                                  double dpr = 1.0,
                                                  int tile_px = 0) const;
 
-  // Render full design (or region) to PNG bytes.  Works without a running
-  // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
-  // Returns an empty vector on error (no design / invalid dimensions).
-  // `out_width`/`out_height` receive the encoded image's pixel dimensions,
-  // which the caller cannot predict: they follow from the region and the
-  // 16k clamp, not from `width_px` alone.
+  // Composite the design (or region) into a top-down RGBA8 pixel buffer.
+  // Works without a running web server.  region in DBU; if zero-area,
+  // defaults to die + 5% margin.  Each pixel starts at `bg` and the
+  // (possibly semi-transparent) tiles are composited on top.  This is the
+  // shared core of renderImagePng (which then PNG-encodes) and animated-GIF
+  // frame capture (which feeds the buffer to the GIF encoder).  Returns an
+  // empty buffer on error (no design / invalid dimensions).
+  // `out_width`/`out_height` receive the buffer's pixel dimensions, which
+  // the caller cannot predict: they follow from the region and the 16k
+  // clamp, not from `width_px` alone.
+  std::vector<unsigned char> renderImageBuffer(const odb::Rect& region,
+                                               int width_px,
+                                               double dbu_per_pixel,
+                                               const TileVisibility& vis,
+                                               const Color& bg = {},
+                                               int* out_width = nullptr,
+                                               int* out_height = nullptr) const;
+
+  // Render full design (or region) to PNG bytes, as renderImageBuffer does
+  // to raw pixels.  Returns an empty vector on error.
   std::vector<unsigned char> renderImagePng(const odb::Rect& region,
                                             int width_px,
                                             double dbu_per_pixel,

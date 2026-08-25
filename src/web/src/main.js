@@ -29,6 +29,8 @@ import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
+import { createToolbar } from './toolbar.js';
+import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
 import { RulerManager } from './ruler.js';
 import { LabelManager } from './label-manager.js';
 import { SchematicWidget } from './schematic-widget.js';
@@ -1115,11 +1117,20 @@ app.goldenLayout.on('stateChanged', () => {
     localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
 });
 
-// Handle window resize
-window.addEventListener('resize', () => {
-    const menuBarHeight = document.getElementById('menu-bar').offsetHeight;
-    app.goldenLayout.setSize(window.innerWidth, window.innerHeight - menuBarHeight);
-});
+// Resize GoldenLayout to the space #gl-container actually has.  The container
+// is flex-sized (see style.css), so its height also moves when the toolbar
+// appears or collapses -- and GoldenLayout does not track its container on its
+// own, so every cause has to come through here.  Measuring the element beats
+// subtracting the chrome's height from window.innerHeight: that arithmetic has
+// to be kept in step with the chrome, and missing the toolbar pushed the
+// bottom of the panels (the Tcl console's prompt) off screen.
+function syncLayoutSize() {
+    const el = document.getElementById('gl-container');
+    app.goldenLayout.setSize(el.clientWidth, el.clientHeight);
+}
+app.syncLayoutSize = syncLayoutSize;
+
+window.addEventListener('resize', syncLayoutSize);
 
 // componentType → display title (must match defaultLayoutConfig).
 const componentTitles = {
@@ -1193,9 +1204,51 @@ app.toggleRulerStyle = function() {
     setCookie('or_ruler_style', app.rulerStyle);
 };
 
-// ─── Menu Bar ────────────────────────────────────────────────────────────────
+// ─── Menu Bar & Toolbar ──────────────────────────────────────────────────────
+
+// Shared entry point for running a Tcl script from a custom menu item or
+// toolbar button: optionally echo the command to the console (like the Qt
+// GUI's -echo), run it, and surface the result/errors in the console.
+app.echoTcl = (cmd) => tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
+app.runTclScript = (script, echo) => {
+    if (!script) return Promise.resolve();
+    if (echo) app.echoTcl(script);
+    return app.websocketManager.request({ type: 'tcl_eval', cmd: script })
+        .then(data => {
+            if (data && data.result) {
+                tclAppend(data.result + '\n',
+                          data.is_error ? 'tcl-error' : '');
+            }
+            return data;
+        })
+        .catch(err => { tclAppend(`Error: ${err}\n`, 'tcl-error'); });
+};
+
+// Apply a custom-UI registry snapshot (from the custom_ui request on connect
+// or a live server push) and re-render the menu bar and toolbar.
+function applyCustomUi(data) {
+    if (!data) return;
+    app.customMenu = data.menu || [];
+    app.customToolbar = data.toolbar || [];
+    if (app.rebuildMenuBar) app.rebuildMenuBar();
+    if (app.rebuildToolbar) app.rebuildToolbar();
+    // The toolbar may have just appeared or collapsed, changing how much room
+    // is left for the panels.
+    syncLayoutSize();
+}
+
+app.customMenu = [];
+app.customToolbar = [];
+
+// Editing-utility dialogs (Global Connect / Insert Buffer). Exposed so the
+// Tools menu and the inspector's per-net action button can open them; both
+// need scheduleRedrawAllLayers to refresh the layout after a DB edit.
+app.scheduleRedrawAllLayers = scheduleRedrawAllLayers;
+app.showGlobalConnectDialog = () => showGlobalConnectDialog(app);
+app.showInsertBufferDialog = (netName) => showInsertBufferDialog(app, netName);
 
 createMenuBar(app);
+createToolbar(app);
 
 // Canvas right-click context menu ("Select →" connected objects).
 app.contextMenu = new ContextMenu(app);
@@ -1368,6 +1421,10 @@ app.websocketManager.onPush = (msg) => {
     } else if (msg.type === 'restore_display_state') {
         // restore_display_controls (Tcl) broadcast a saved state — apply it.
         applyDisplayState(msg.state);
+    } else if (msg.type === 'custom_ui') {
+        // Tcl-registered menu items / toolbar buttons changed (e.g. a
+        // create_toolbar_button typed in any client's console). Re-render.
+        applyCustomUi(msg);
     } else if (msg.type === 'shutdown') {
         // Server is stopping intentionally (web_server -stop).
         // Disable auto-reconnect and show a clear message. Note that
@@ -1391,6 +1448,12 @@ app.websocketManager.readyPromise.then(async () => {
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
         updateDocumentTitle(techData.block_name);
+
+        // Fetch any Tcl-registered custom menu items / toolbar buttons so
+        // they survive a page reload and appear for late-connecting clients.
+        app.websocketManager.request({ type: 'custom_ui' })
+            .then(applyCustomUi)
+            .catch(() => {});
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;

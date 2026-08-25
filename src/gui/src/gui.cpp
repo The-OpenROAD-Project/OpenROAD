@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"
+#include "bufferTreeDescriptor.h"
 #include "chartsWidget.h"
 #include "clockWidget.h"
 #include "displayControls.h"
@@ -1763,6 +1764,21 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   auto* registry = DescriptorRegistry::instance();
   registry->setLogger(logger);
   registry->initDescriptors(db, sta);
+
+  // BufferTreeDescriptor cannot go in initDescriptors(): that is compiled
+  // into the CLI-only gui library too, where bufferTreeDescriptor.cpp is
+  // absent (it needs QColor) and stub.cpp answers isAggregate() with false.
+  // Registering it here instead of only in MainWindow::init() covers a Qt
+  // binary that never opens a window -- serving the web viewer, say -- where
+  // isAggregate() is the real one, so DbNetDescriptor offers a "Buffer tree"
+  // property on any buffered net and makeSelected() had nothing to build it
+  // with (GUI-33).  The empty sets are the same compromise initDescriptors()
+  // makes for DbNetDescriptor; MainWindow::init() re-registers both with the
+  // real widget-owned sets when a window does open.
+  static const odb::PtrSet<odb::dbNet> empty_net_set;
+  registry->registerDescriptor<BufferTree>(new BufferTreeDescriptor(
+      db, sta, empty_net_set, empty_net_set, empty_net_set));
+
   registerBuiltinHeatMapSources(sta, logger);
   for (const auto& source : getRegisteredHeatMapSources()) {
     const bool already_registered = std::ranges::any_of(

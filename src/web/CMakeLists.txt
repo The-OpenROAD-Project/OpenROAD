@@ -37,6 +37,9 @@ set(WEB_ASSET_FILES
     src/context-menu.js
     src/search-nav.js
     src/capture.js
+    src/toolbar.js
+    src/image-export.js
+    src/edit-dialogs.js
     src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
@@ -83,6 +86,9 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/context-menu.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/search-nav.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/capture.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/toolbar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/image-export.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/edit-dialogs.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
@@ -124,6 +130,7 @@ target_sources(web
     src/web.cpp
     src/web_serve.cpp
     src/web_chart.cpp
+    src/web_gif.cpp
     src/web_painter.cpp
     src/web_viewer_hook.cpp
     src/MakeWeb.cpp

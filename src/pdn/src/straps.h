@@ -115,9 +115,12 @@ class FollowPins : public Straps
   void checkLayerSpecifications() const override;
 
  private:
+  int row_height_;
+
   // search for the shape of the power pins in the standard cells to determine
   // the width if possible
   void determineWidth();
+  void determinePitch();
 };
 
 class PadDirectConnectionStraps : public Straps
@@ -126,13 +129,16 @@ class PadDirectConnectionStraps : public Straps
   PadDirectConnectionStraps(
       Grid* grid,
       odb::dbITerm* iterm,
-      const std::vector<odb::dbTechLayer*>& connect_pad_layers);
+      const std::vector<odb::dbTechLayer*>& connect_pad_layers,
+      std::shared_ptr<odb::PtrMap<odb::dbNet, int>>& net_to_pin_count);
 
   // true if the iterm can be connected to a ring
   bool canConnect() const;
 
   void setTargetType(odb::dbWireShapeType type) { target_shapes_type_ = type; }
 
+  bool make(Shape::ShapeTreeMap& shapes,
+            Shape::ObstructionTreeMap& obstructions) override;
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
   bool refineShapes(Shape::ShapeTreeMap& all_shapes,
                     Shape::ObstructionTreeMap& all_obstructions) override;
@@ -153,6 +159,10 @@ class PadDirectConnectionStraps : public Straps
   static void unifyConnectionTypes(
       const std::vector<PadDirectConnectionStraps*>& straps);
 
+  // report how the connections made to the pads are distributed over the nets
+  static void reportConnectionBalance(
+      const std::vector<GridComponent*>& components);
+
  private:
   enum class ConnectionType
   {
@@ -171,6 +181,17 @@ class PadDirectConnectionStraps : public Straps
 
   std::vector<odb::dbBox*> pins_;
 
+  std::shared_ptr<odb::PtrMap<odb::dbNet, int>> net_to_pin_count_;
+
+  // shape this strap is currently attempting to reach and the pin it
+  // originated from, used to check if the strap survived cutting
+  ShapePtr target_;
+  odb::Rect target_pin_;
+
+  // number of times the connections on this pad have been built
+  static constexpr int kMaxGroupBuildAttempts = 2;
+  int group_attempts_ = 0;
+
   std::string getName() const;
 
   // find all the dbBox's to attempt to connect to
@@ -184,7 +205,34 @@ class PadDirectConnectionStraps : public Straps
       const;
 
   void makeShapesFacingCore(const Shape::ShapeTreeMap& other_shapes);
-  void makeShapesOverPads(const Shape::ShapeTreeMap& other_shapes);
+
+  // the connections on a pad are built together so that they can be placed
+  // with knowledge of each other and balanced across the nets
+  bool buildGroup(Shape::ShapeTreeMap& shapes,
+                  Shape::ObstructionTreeMap& obstructions);
+  // build this strap at a given position on the pad, returns true if the
+  // strap survives cutting and still reaches the shape it is targeting
+  bool buildOverPadAt(int offset,
+                      const Shape::ShapeTreeMap& other_shapes,
+                      const Shape::ObstructionTreeMap& obstructions);
+  bool makeShapeOverPad(int offset, const Shape::ShapeTreeMap& other_shapes);
+  // find a position on the pad where this strap can reach the ring
+  bool buildOverPad(int index,
+                    const Shape::ShapeTreeMap& other_shapes,
+                    const Shape::ObstructionTreeMap& obstructions);
+  // determine the width and spacing shared by the straps on this pad
+  bool computeOverPadLanes(int group_size, int& width, int& spacing) const;
+  // position the strap at index would historically have been built at
+  int getDefaultLaneOffset(int index, int width, int spacing) const;
+  odb::Rect getMergedPinShape() const;
+  void clearOverPadShapes();
+  // discard the shapes that no longer reach anything on the net after cutting
+  bool keepShapesReachingTarget(const Shape::ShapeTreeMap& other_shapes);
+  Shape* findConnectableShape(const odb::Rect& rect,
+                              const Shape::ShapeTreeMap& other_shapes) const;
+
+  int getNetConnectionCount() const;
+  void addNetConnection();
 
   std::vector<PadDirectConnectionStraps*> getAssociatedStraps() const;
   const std::vector<odb::dbBox*>& getPins() const { return pins_; }

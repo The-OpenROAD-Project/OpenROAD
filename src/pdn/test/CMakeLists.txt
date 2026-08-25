@@ -40,6 +40,10 @@ or_integration_tests(
     core_grid_extend_to_boundary_no_pins
     core_grid_failed_via_report
     core_grid_min_width_layers
+    core_grid_mirrored_rows
+    core_grid_multiheight_rows
+    core_grid_multiheight_rows_pitch
+    core_grid_multiheight_site_order
     core_grid_no_trim
     core_grid_obstruction
     core_grid_offset_strap
@@ -121,6 +125,7 @@ or_integration_tests(
     pads_black_parrot_offset
     pads_black_parrot_straps
     pads_connect_from_non_pref_edge
+    pads_ihp_sg13g2_balance
     power_switch
     power_switch_cut_rows
     power_switch_daisy
