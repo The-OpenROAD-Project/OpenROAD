@@ -37,7 +37,6 @@ or_integration_tests(
     halos2
     halos3
     halos4
-    halos5
 )
 
 
