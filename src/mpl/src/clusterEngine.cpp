@@ -84,10 +84,10 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-void ClusteringEngine::setHalos(const HardMacro::Halo& base_halo,
-                                const bool use_full_channel)
+void ClusteringEngine::setChannel(const std::pair<int, int> min_channel,
+                                  const bool use_full_channel)
 {
-  base_halo_ = base_halo;
+  min_channel_ = min_channel;
   use_full_channel_ = use_full_channel;
 }
 
@@ -308,7 +308,7 @@ void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
       "\tNumber of macros: {}\n"
       "\tMacros to be placed: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
+      "\tMinimum channel (Width, Height): ({:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -320,10 +320,8 @@ void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
       design_metrics_->getNumMacro(),
       num_macros_to_place,
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(base_halo_.left),
-      block_->dbuToMicrons(base_halo_.bottom),
-      block_->dbuToMicrons(base_halo_.right),
-      block_->dbuToMicrons(base_halo_.top),
+      block_->dbuToMicrons(min_channel_.first),
+      block_->dbuToMicrons(min_channel_.second),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -2063,6 +2061,7 @@ void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
   const int minimum_spacing = getMinimumSpacing();
+  const HardMacro::Halo base_halo(min_channel_);
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isBlock()) {
@@ -2082,7 +2081,7 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo = buildMacroHalo(inst, minimum_spacing);
+      HardMacro::Halo halo = buildMacroHalo(inst, base_halo, minimum_spacing);
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
@@ -2152,8 +2151,10 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
   return number_of_ios;
 }
 
-HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
-                                                 int minimum_spacing) const
+HardMacro::Halo ClusteringEngine::buildMacroHalo(
+    odb::dbInst* inst,
+    const HardMacro::Halo& base_halo,
+    int minimum_spacing) const
 {
   HardMacro::Halo full_halo;
   if (inst->getHalo() != nullptr) {
@@ -2161,13 +2162,13 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
     if (inst->getHalo()->isSoft()) {
       full_halo = HardMacro::Halo(inst->getHalo());
     } else {
-      full_halo = {std::max(inst_halo.xMin(), base_halo_.left),
-                   std::max(inst_halo.yMin(), base_halo_.bottom),
-                   std::max(inst_halo.xMax(), base_halo_.right),
-                   std::max(inst_halo.yMax(), base_halo_.top)};
+      full_halo = {std::max(inst_halo.xMin(), base_halo.left),
+                   std::max(inst_halo.yMin(), base_halo.bottom),
+                   std::max(inst_halo.xMax(), base_halo.right),
+                   std::max(inst_halo.yMax(), base_halo.top)};
     }
   } else {
-    full_halo = base_halo_;
+    full_halo = base_halo;
   }
 
   if (use_full_channel_) {

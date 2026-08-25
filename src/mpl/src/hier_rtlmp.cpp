@@ -116,7 +116,7 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
 
 void HierRTLMP::setMinChannelSize(int width, int height)
 {
-  base_halo_ = {width / 2, height / 2, width / 2, height / 2};
+  min_channel_ = {width, height};
 }
 
 void HierRTLMP::setGuidanceRegions(
@@ -266,11 +266,13 @@ void HierRTLMP::blockMacroChannels()
     }
 
     HardMacro::Halo halo;
+    HardMacro::Halo base_halo(min_channel_);
+
     if (inst->getHalo() != nullptr) {
       const HardMacro::Halo inst_halo(inst->getHalo());
-      halo = inst_halo.floorTo(base_halo_);
+      halo = inst_halo.floorTo(base_halo);
     } else {
-      halo = base_halo_;
+      halo = base_halo;
     }
 
     HardMacro hard_macro(inst, halo);
@@ -311,7 +313,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setHalos(base_halo_, use_full_channel_);
+  clustering_engine_->setChannel(min_channel_, use_full_channel_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {

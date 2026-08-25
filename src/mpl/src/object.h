@@ -259,6 +259,14 @@ class HardMacro
     {
     }
 
+    Halo(std::pair<int, int> channel)
+    {
+      left = channel.first / 2;
+      bottom = channel.second / 2;
+      right = channel.first - left;
+      top = channel.second - top;
+    }
+
     Halo(int left, int bottom, int right, int top)
         : left(left), bottom(bottom), right(right), top(top)
     {
