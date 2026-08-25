@@ -196,12 +196,12 @@ std::optional<ICeWall::InstPin> ICeWall::findTopPin(odb::dbInst* inst) const
 
         if (!top_layer
             || top_layer->getRoutingLevel() <= layer->getRoutingLevel()) {
-          top_layer = layer;
-
-          if (top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+          if (top_layer
+              && top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
             top_shapes.clear();
           }
 
+          top_layer = layer;
           top_shapes.insert(box->getBox());
         }
       }
