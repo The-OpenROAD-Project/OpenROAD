@@ -2870,15 +2870,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
     // thread_local (renders run one-per-thread) so the large buffer is reused
-    // across tiles; super_buffer_dirty tracks if it needs re-zeroing.
+    // across tiles without reallocating.
     static thread_local std::vector<unsigned char> super_buffer;
-    static thread_local bool super_buffer_dirty = false;
     if (super_buffer.size() != static_cast<size_t>(super_buffer_size)) {
-      super_buffer.assign(super_buffer_size, 0);
-    } else if (super_buffer_dirty) {
-      std::memset(super_buffer.data(), 0, super_buffer_size);
+      super_buffer.resize(super_buffer_size);
     }
-    super_buffer_dirty = true;
+    std::memset(super_buffer.data(), 0, super_buffer_size);
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
     // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
