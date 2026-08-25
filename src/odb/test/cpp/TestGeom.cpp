@@ -2,8 +2,10 @@
 #include <cstddef>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "gtest/gtest.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 
 namespace odb {
@@ -152,102 +154,6 @@ TEST(geom, test_polygon_is_rect)
   EXPECT_TRUE(merged[0].isRect());
   EXPECT_EQ(merged[0].getEnclosingRect(), Rect(0, 0, 100, 100));
 }
-TEST(geom, test_polygon_difference)
-{
-  const Polygon rect(Rect(0, 0, 100, 100));
-
-  // subtracting a collection removes the union of its shapes
-  std::vector<Polygon> slices = rect.difference(
-      std::vector<Rect>{Rect(-10, 20, 110, 40), Rect(-10, 60, 110, 80)});
-  ASSERT_EQ(slices.size(), 3);
-  std::sort(
-      slices.begin(), slices.end(), [](const Polygon& lhs, const Polygon& rhs) {
-        return lhs.getEnclosingRect().yMin() < rhs.getEnclosingRect().yMin();
-      });
-  EXPECT_EQ(slices[0].getEnclosingRect(), Rect(0, 0, 100, 20));
-  EXPECT_EQ(slices[1].getEnclosingRect(), Rect(0, 40, 100, 60));
-  EXPECT_EQ(slices[2].getEnclosingRect(), Rect(0, 80, 100, 100));
-
-  // overlapping shapes in the collection are handled as one region
-  const std::vector<Polygon> overlapping = rect.difference(std::vector<Polygon>{
-      Polygon(Rect(-10, 20, 110, 60)), Polygon(Rect(-10, 40, 110, 80))});
-  ASSERT_EQ(overlapping.size(), 2);
-
-  // subtracting everything leaves nothing, subtracting nothing changes nothing
-  EXPECT_TRUE(rect.difference(std::vector<Rect>{Rect(0, 0, 100, 100)}).empty());
-  const std::vector<Polygon> untouched = rect.difference(std::vector<Rect>{});
-  ASSERT_EQ(untouched.size(), 1);
-  EXPECT_EQ(untouched[0].getEnclosingRect(), Rect(0, 0, 100, 100));
-
-  // a single shape gives the same result as a collection of one
-  EXPECT_EQ(rect.difference(Rect(50, 0, 100, 100)),
-            rect.difference(std::vector<Rect>{Rect(50, 0, 100, 100)}));
-}
-TEST(geom, test_polygon_intersection)
-{
-  const Polygon rect(Rect(0, 0, 100, 100));
-
-  // overlapping shapes produce the shared area
-  const std::vector<Polygon> overlap
-      = rect.intersection(Rect(50, 50, 150, 150));
-  ASSERT_EQ(overlap.size(), 1);
-  EXPECT_TRUE(overlap[0].isRect());
-  EXPECT_EQ(overlap[0].getEnclosingRect(), Rect(50, 50, 100, 100));
-
-  // abutting and disjoint shapes do not
-  EXPECT_TRUE(rect.intersection(Rect(100, 0, 200, 100)).empty());
-  EXPECT_TRUE(rect.intersection(Rect(200, 200, 300, 300)).empty());
-
-  // a single intersection can yield more than one polygon
-  const Polygon u_shape({Point(0, 0),
-                         Point(100, 0),
-                         Point(100, 100),
-                         Point(70, 100),
-                         Point(70, 30),
-                         Point(30, 30),
-                         Point(30, 100),
-                         Point(0, 100)});
-  std::vector<Polygon> legs = u_shape.intersection(Rect(0, 50, 100, 100));
-  ASSERT_EQ(legs.size(), 2);
-  std::sort(
-      legs.begin(), legs.end(), [](const Polygon& lhs, const Polygon& rhs) {
-        return lhs.getEnclosingRect().xMin() < rhs.getEnclosingRect().xMin();
-      });
-  EXPECT_EQ(legs[0].getEnclosingRect(), Rect(0, 50, 30, 100));
-  EXPECT_EQ(legs[1].getEnclosingRect(), Rect(70, 50, 100, 100));
-
-  // intersecting against a collection uses the union of its shapes
-  std::vector<Polygon> pieces = rect.intersection(
-      std::vector<Rect>{Rect(-10, 10, 110, 30), Rect(-10, 70, 110, 90)});
-  ASSERT_EQ(pieces.size(), 2);
-  std::sort(
-      pieces.begin(), pieces.end(), [](const Polygon& lhs, const Polygon& rhs) {
-        return lhs.getEnclosingRect().yMin() < rhs.getEnclosingRect().yMin();
-      });
-  EXPECT_EQ(pieces[0].getEnclosingRect(), Rect(0, 10, 100, 30));
-  EXPECT_EQ(pieces[1].getEnclosingRect(), Rect(0, 70, 100, 90));
-
-  // overlapping shapes in the collection are handled as one region
-  const std::vector<Polygon> unioned = rect.intersection(std::vector<Polygon>{
-      Polygon(Rect(-10, 10, 110, 50)), Polygon(Rect(-10, 30, 110, 90))});
-  ASSERT_EQ(unioned.size(), 1);
-  EXPECT_EQ(unioned[0].getEnclosingRect(), Rect(0, 10, 100, 90));
-
-  // an empty collection has nothing to intersect with
-  EXPECT_TRUE(rect.intersection(std::vector<Rect>{}).empty());
-
-  // a single shape gives the same result as a collection of one
-  EXPECT_EQ(rect.intersection(Rect(50, 50, 150, 150)),
-            rect.intersection(std::vector<Rect>{Rect(50, 50, 150, 150)}));
-
-  // 45 degree edges are kept
-  const Polygon diamond(
-      {Point(0, 50), Point(50, 0), Point(100, 50), Point(50, 100)});
-  const std::vector<Polygon> half = diamond.intersection(Rect(0, 0, 50, 100));
-  ASSERT_EQ(half.size(), 1);
-  EXPECT_FALSE(half[0].isRect());
-  EXPECT_EQ(half[0].getEnclosingRect(), Rect(0, 0, 50, 100));
-}
 TEST(geom, test_isotropy)
 {
   EXPECT_NE(low, high);
@@ -301,6 +207,211 @@ TEST(geom, test_isotropy)
   test[high] = 2;
   EXPECT_EQ(test[low], 1);
   EXPECT_EQ(test[high], 2);
+}
+
+// The helpers in geom_boost.h come in two flavors: an arbitrary angle set
+// that can hold the 45 degree edges of an Oct, and a Manhattan only
+// polygon_90 set that cannot.  Both are covered below.
+
+TEST(geom, test_boost_to_polygon_set)
+{
+  const Rect rect(0, 0, 100, 50);
+  const Oct oct(Point(0, 0), Point(400, 400), 40);
+  const Polygon polygon(
+      {Point(0, 0), Point(100, 0), Point(100, 50), Point(0, 50)});
+
+  // the same template accepts every odb shape that encloses an area
+  EXPECT_EQ(geom::extractPolygons(geom::toPolygonSet(rect)).size(), 1);
+  EXPECT_EQ(geom::extractPolygons(geom::toPolygonSet(oct)).size(), 1);
+  EXPECT_EQ(geom::extractPolygons(geom::toPolygonSet(polygon)).size(), 1);
+
+  // a rect survives the round trip as a rect
+  const std::vector<Polygon> from_rect
+      = geom::extractPolygons(geom::toPolygonSet(rect));
+  ASSERT_EQ(from_rect.size(), 1);
+  EXPECT_TRUE(from_rect[0].isRect());
+  EXPECT_EQ(from_rect[0].getEnclosingRect(), rect);
+
+  // the collection overload unions touching shapes together
+  const std::vector<Polygon> merged = geom::extractPolygons(geom::toPolygonSet(
+      std::vector<Rect>{Rect(0, 0, 50, 100), Rect(50, 0, 100, 100)}));
+  ASSERT_EQ(merged.size(), 1);
+  EXPECT_TRUE(merged[0].isRect());
+  EXPECT_EQ(merged[0].getEnclosingRect(), Rect(0, 0, 100, 100));
+
+  // and leaves disjoint shapes apart
+  EXPECT_EQ(
+      geom::extractPolygons(geom::toPolygonSet(std::vector<Rect>{
+                                Rect(0, 0, 10, 10), Rect(90, 90, 100, 100)}))
+          .size(),
+      2);
+
+  // an empty collection gives an empty set, for any shape type
+  EXPECT_TRUE(
+      geom::extractPolygons(geom::toPolygonSet(std::vector<Rect>{})).empty());
+  EXPECT_TRUE(
+      geom::extractPolygons(geom::toPolygonSet(std::vector<Oct>{})).empty());
+  EXPECT_TRUE(geom::extractPolygons(geom::toPolygonSet(std::vector<Polygon>{}))
+                  .empty());
+}
+
+TEST(geom, test_boost_oct_keeps_45_degree_edges)
+{
+  const Oct oct(Point(0, 0), Point(400, 400), 40);
+
+  const std::vector<Polygon> polys
+      = geom::extractPolygons(geom::toPolygonSet(oct));
+  ASSERT_EQ(polys.size(), 1);
+  EXPECT_FALSE(polys[0].isRect());
+  EXPECT_EQ(polys[0].getEnclosingRect(), Rect(-20, -20, 420, 420));
+
+  // all eight corners of the octagon come back, so no 45 degree edge was
+  // collapsed on the way through boost
+  auto corners = [](const Polygon& polygon) {
+    std::vector<Point> points = polygon.getPoints();
+    std::sort(points.begin(), points.end());
+    points.erase(std::unique(points.begin(), points.end()), points.end());
+    return points;
+  };
+  const Polygon as_polygon(oct);
+  EXPECT_EQ(corners(polys[0]).size(), 8);
+  EXPECT_EQ(corners(polys[0]), corners(as_polygon));
+
+  // converting the Oct directly matches converting it through a Polygon,
+  // which is what Polygon::merge(std::vector<Oct>) does
+  EXPECT_EQ(polys, geom::extractPolygons(geom::toPolygonSet(as_polygon)));
+
+  // an Oct can take part in a boolean op without losing its shape.  The
+  // upper left edge of this octagon runs (391, 420) -> (-20, 9), so y = x + 29
+  // along it.  Clipping everything at or above x = 200 therefore caps the
+  // result at y = 229, not at the octagon's yMax of 420 - which is only true
+  // if the 45 degree edge survived the trip through boost.
+  using boost::polygon::operators::operator-;
+  const std::vector<Polygon> clipped = geom::extractPolygons(
+      geom::toPolygonSet(oct) - geom::toPolygonSet(Rect(200, -20, 420, 420)));
+  ASSERT_EQ(clipped.size(), 1);
+  EXPECT_FALSE(clipped[0].isRect());
+  EXPECT_EQ(clipped[0].getEnclosingRect(), Rect(-20, -20, 200, 229));
+}
+
+TEST(geom, test_boost_to_polygon_90)
+{
+  const Rect rect(0, 0, 100, 50);
+
+  // a single rect converts to one polygon and back unchanged
+  EXPECT_EQ(geom::extractRectangles(geom::toPolygonSet90(rect)),
+            std::vector<Rect>{rect});
+
+  // toPolygon90 and toPolygonSet90 describe the same shape
+  using boost::polygon::operators::operator+=;
+  geom::BoostPolygon90Set from_polygon;
+  from_polygon += geom::toPolygon90(rect);
+  EXPECT_EQ(geom::extractRectangles(from_polygon),
+            geom::extractRectangles(geom::toPolygonSet90(rect)));
+
+  // the 90 set also hands back odb polygons
+  const std::vector<Polygon> polys
+      = geom::extractPolygons(geom::toPolygonSet90(rect));
+  ASSERT_EQ(polys.size(), 1);
+  EXPECT_TRUE(polys[0].isRect());
+  EXPECT_EQ(polys[0].getEnclosingRect(), rect);
+
+  // the collection overload unions touching shapes together
+  EXPECT_EQ(geom::extractRectangles(geom::toPolygonSet90(
+                std::vector<Rect>{Rect(0, 0, 50, 100), Rect(50, 0, 100, 100)})),
+            std::vector<Rect>{Rect(0, 0, 100, 100)});
+
+  // an empty collection gives an empty set
+  EXPECT_TRUE(geom::extractRectangles(geom::toPolygonSet90(std::vector<Rect>{}))
+                  .empty());
+
+  // a Manhattan Polygon is accepted and decomposed back to rectangles
+  const Polygon l_shape({Point(0, 0),
+                         Point(100, 0),
+                         Point(100, 50),
+                         Point(50, 50),
+                         Point(50, 100),
+                         Point(0, 100)});
+  std::vector<Rect> l_rects
+      = geom::extractRectangles(geom::toPolygonSet90(l_shape));
+  std::sort(l_rects.begin(), l_rects.end());
+  EXPECT_EQ(l_rects,
+            (std::vector<Rect>{Rect(0, 0, 100, 50), Rect(0, 50, 50, 100)}));
+
+  // for a Manhattan shape the two flavors agree
+  const std::vector<Polygon> arbitrary_angle
+      = geom::extractPolygons(geom::toPolygonSet(l_shape));
+  const std::vector<Polygon> manhattan
+      = geom::extractPolygons(geom::toPolygonSet90(l_shape));
+  ASSERT_EQ(arbitrary_angle.size(), 1);
+  ASSERT_EQ(manhattan.size(), 1);
+  EXPECT_EQ(arbitrary_angle[0].getEnclosingRect(),
+            manhattan[0].getEnclosingRect());
+}
+
+TEST(geom, test_boost_extract_rectangles)
+{
+  // cutting a notch out of a shape splits it, the pattern pdn uses to
+  // trim straps around obstructions
+  using boost::polygon::operators::operator-;
+  std::vector<Rect> cut
+      = geom::extractRectangles(geom::toPolygonSet90(Rect(0, 0, 300, 100))
+                                - geom::toPolygonSet90(Rect(100, 0, 200, 100)));
+  std::sort(cut.begin(), cut.end());
+  EXPECT_EQ(cut,
+            (std::vector<Rect>{Rect(0, 0, 100, 100), Rect(200, 0, 300, 100)}));
+
+  // the slicing orientation decides which way a shape is carved up
+  const geom::BoostPolygon90Set plus = geom::toPolygonSet90(
+      std::vector<Rect>{Rect(0, 40, 120, 80), Rect(40, 0, 80, 120)});
+
+  std::vector<Rect> horizontal_slices
+      = geom::extractRectangles(plus, boost::polygon::HORIZONTAL);
+  std::sort(horizontal_slices.begin(), horizontal_slices.end());
+  EXPECT_EQ(
+      horizontal_slices,
+      (std::vector<Rect>{
+          Rect(0, 40, 120, 80), Rect(40, 0, 80, 40), Rect(40, 80, 80, 120)}));
+
+  std::vector<Rect> vertical_slices
+      = geom::extractRectangles(plus, boost::polygon::VERTICAL);
+  std::sort(vertical_slices.begin(), vertical_slices.end());
+  EXPECT_EQ(
+      vertical_slices,
+      (std::vector<Rect>{
+          Rect(0, 40, 40, 80), Rect(40, 0, 80, 120), Rect(80, 40, 120, 80)}));
+
+  EXPECT_NE(horizontal_slices, vertical_slices);
+}
+
+TEST(geom, test_boost_to_rect)
+{
+  EXPECT_EQ(geom::toRect(geom::BoostRectangle(5, 6, 7, 8)), Rect(5, 6, 7, 8));
+  EXPECT_EQ(geom::toRect(geom::BoostRectangle(-10, -20, 0, 0)),
+            Rect(-10, -20, 0, 0));
+
+  // a zero area rect is preserved rather than normalized away
+  EXPECT_EQ(geom::toRect(geom::BoostRectangle(5, 5, 5, 5)), Rect(5, 5, 5, 5));
+}
+
+TEST(geom, test_boost_enclosing_rect)
+{
+  // works on either flavor of set
+  EXPECT_EQ(geom::getEnclosingRect(geom::toPolygonSet90(
+                std::vector<Rect>{Rect(0, 0, 10, 10), Rect(90, 90, 100, 100)})),
+            Rect(0, 0, 100, 100));
+  EXPECT_EQ(geom::getEnclosingRect(
+                geom::toPolygonSet(Oct(Point(0, 0), Point(400, 400), 40))),
+            Rect(-20, -20, 420, 420));
+
+  // and on a bare polygon
+  EXPECT_EQ(geom::getEnclosingRect(geom::toPolygon90(Rect(0, 0, 100, 50))),
+            Rect(0, 0, 100, 50));
+
+  // an empty set has no extents, and leaves the Rect default constructed
+  EXPECT_EQ(geom::getEnclosingRect(geom::BoostPolygon90Set()),
+            Rect(0, 0, 0, 0));
+  EXPECT_EQ(geom::getEnclosingRect(geom::BoostPolygonSet()), Rect(0, 0, 0, 0));
 }
 
 }  // namespace

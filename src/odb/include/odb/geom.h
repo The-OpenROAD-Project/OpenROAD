@@ -492,23 +492,7 @@ class Polygon
 
   // Returns the geometric difference between this polygon "a" and polygon "b"
   // results in a vector of polygons.
-  std::vector<Polygon> difference(const Polygon& b) const;
-
-  // Returns the geometric difference between this polygon "a" and the union
-  // of the shapes in "b", results in a vector of polygons.
-  std::vector<Polygon> difference(const std::vector<Polygon>& b) const;
-  std::vector<Polygon> difference(const std::vector<Rect>& b) const;
-  std::vector<Polygon> difference(const std::vector<Oct>& b) const;
-
-  // Returns the geometric intersection between this polygon "a" and polygon
-  // "b", results in a vector of polygons.
-  std::vector<Polygon> intersection(const Polygon& b) const;
-
-  // Returns the geometric intersection between this polygon "a" and the union
-  // of the shapes in "b", results in a vector of polygons.
-  std::vector<Polygon> intersection(const std::vector<Polygon>& b) const;
-  std::vector<Polygon> intersection(const std::vector<Rect>& b) const;
-  std::vector<Polygon> intersection(const std::vector<Oct>& b) const;
+  std::vector<Polygon> difference(Polygon b) const;
 
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
