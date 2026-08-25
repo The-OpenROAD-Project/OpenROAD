@@ -3,5 +3,5 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
-[ERROR DPL-0052] Row CORE_ROW_0 has site spacing (140) smaller than the site width (380); the row's sites overlap.
+[ERROR DPL-0052] Row ROW_BAD has site spacing (140) smaller than the site width (380); the row's sites overlap.
 DPL-0052
