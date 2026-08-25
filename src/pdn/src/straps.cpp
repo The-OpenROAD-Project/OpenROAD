@@ -419,7 +419,7 @@ std::string Straps::getNetString() const
 ////
 
 FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
-    : Straps(grid, layer, width, 0)
+    : Straps(grid, layer, width, 0), row_height_(0)
 {
   if (getWidth() == 0) {
     // width not specified, so attempt to find it
@@ -427,22 +427,37 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
   }
 
   // set the pitch of the straps
-  auto rows = getDomain()->getRows();
-  if (!rows.empty()) {
-    auto* row = *rows.begin();
-    odb::Rect bbox = row->getBBox();
-    setPitch(2 * bbox.dy());
+  determinePitch();
+  if (getPitch() == 0 || row_height_ == 0) {
+    getLogger()->error(
+        utl::PDN, 190, "Unable to determine the pitch of the rows.");
+  }
+}
 
-    if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
-      setDirection(odb::dbTechLayerDir::HORIZONTAL);
-    } else {
-      setDirection(odb::dbTechLayerDir::VERTICAL);
-    }
+void FollowPins::determinePitch()
+{
+  auto rows = getDomain()->getRows();
+  if (rows.empty()) {
+    return;
+  }
+
+  // find the row with the smallest height, as that is the pitch of the rows
+  const auto min_row = std::min_element(
+      rows.begin(), rows.end(), [](odb::dbRow* a, odb::dbRow* b) {
+        odb::dbSite* a_site = a->getSite();
+        odb::dbSite* b_site = b->getSite();
+        return a_site->getHeight() < b_site->getHeight();
+      });
+
+  auto* row = *min_row;
+  odb::Rect bbox = row->getBBox();
+  row_height_ = bbox.dy();
+  setPitch(2 * row_height_);
+
+  if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
+    setDirection(odb::dbTechLayerDir::HORIZONTAL);
   } else {
-    if (getPitch() == 0) {
-      getLogger()->error(
-          utl::PDN, 190, "Unable to determine the pitch of the rows.");
-    }
+    setDirection(odb::dbTechLayerDir::VERTICAL);
   }
 }
 
@@ -479,12 +494,23 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   odb::dbNet* power = getDomain()->getPower();
   odb::dbNet* ground = getDomain()->getGround();
 
+  const int double_height = 2 * row_height_;
+
   const int x_start = boundary.xMin();
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
-    odb::Rect bbox = row->getBBox();
-    const bool power_on_top = row->getOrient() == odb::dbOrientType::R0;
+    const bool even_height_row
+        = (row->getSite()->getHeight() % double_height) == 0;
+
+    // Only MX ("FS") and R180 ("S") invert the master's y-axis and therefore
+    // swap the power and ground rails; R0 ("N") and MY ("FN") leave them alone.
+    const odb::dbOrientType orient = row->getOrient();
+    const bool is_right_side_up
+        = orient == odb::dbOrientType::R0 || orient == odb::dbOrientType::MY;
+    const bool start_with_power = even_height_row ? false : !is_right_side_up;
+
+    const odb::Rect bbox = row->getBBox();
 
     int x0 = bbox.xMin();
     if (x0 == core.xMin()) {
@@ -495,20 +521,17 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       x1 = x_end;
     }
 
-    const int power_y_bot
-        = (power_on_top ? bbox.yMax() : bbox.yMin()) - width / 2;
-    const int ground_y_bot
-        = (power_on_top ? bbox.yMin() : bbox.yMax()) - width / 2;
-
-    auto power_strap = std::make_unique<FollowPinShape>(
-        layer, power, odb::Rect(x0, power_y_bot, x1, power_y_bot + width));
-    power_strap->addRow(row);
-    addShape(std::move(power_strap));
-
-    auto ground_strap = std::make_unique<FollowPinShape>(
-        layer, ground, odb::Rect(x0, ground_y_bot, x1, ground_y_bot + width));
-    ground_strap->addRow(row);
-    addShape(std::move(ground_strap));
+    bool do_power = start_with_power;
+    for (int y = bbox.yMin(); y <= bbox.yMax(); y += row_height_) {
+      const int y_start = y - width / 2;
+      auto strap = std::make_unique<FollowPinShape>(
+          layer,
+          do_power ? power : ground,
+          odb::Rect(x0, y_start, x1, y_start + width));
+      strap->addRow(row);
+      addShape(std::move(strap));
+      do_power = !do_power;
+    }
   }
 }
 
