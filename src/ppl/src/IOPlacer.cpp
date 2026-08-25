@@ -69,6 +69,7 @@ void IOPlacer::clear()
   top_layer_slots_.clear();
   assignment_.clear();
   excluded_intervals_.clear();
+  pin_size_cache_.clear();
   *parms_ = Parameters();
 }
 
@@ -426,15 +427,16 @@ bool IOPlacer::checkBlocked(Edge edge,
   const auto fixed_shapes = layer_fixed_pins_shapes_.find(layer);
   if (fixed_shapes != layer_fixed_pins_shapes_.end()) {
     // pad fixed shapes so the new pin geometry keeps min spacing to them
-    int half_width, height;
-    computePinSize(layer, vertical_pin, half_width, height);
+    const PinSize pin_size = computePinSize(layer);
     for (const odb::Rect& fixed_pin_shape : fixed_shapes->second) {
       const int shape_width
           = std::min(fixed_pin_shape.dx(), fixed_pin_shape.dy());
-      const int spacing = computeLayerSpacing(
-          layer, std::max(shape_width, 2 * half_width), height);
-      const int edge_pad = half_width + spacing;
-      const int depth_pad = height + spacing;
+      const int spacing
+          = computeLayerSpacing(layer,
+                                std::max(shape_width, 2 * pin_size.half_width),
+                                pin_size.height);
+      const int edge_pad = pin_size.half_width + spacing;
+      const int depth_pad = pin_size.height + spacing;
       const odb::Rect padded_shape
           = vertical_pin
                 ? fixed_pin_shape
@@ -490,12 +492,16 @@ std::vector<Interval> IOPlacer::findBlockedIntervals(const odb::Rect& die_area,
   return intervals;
 }
 
-void IOPlacer::computePinSize(const int layer,
-                              const bool vertical_pin,
-                              int& half_width,
-                              int& height)
+PinSize IOPlacer::computePinSize(const int layer)
 {
+  const auto cached = pin_size_cache_.find(layer);
+  if (cached != pin_size_cache_.end()) {
+    return cached->second;
+  }
+  int half_width, height;
   odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+  const bool vertical_pin
+      = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
   const std::map<int, int>& min_widths
       = vertical_pin ? core_->getMinWidthX() : core_->getMinWidthY();
   const std::map<int, int>& min_areas
@@ -522,6 +528,9 @@ void IOPlacer::computePinSize(const int layer,
   if (mfg_grid > 0 && height % mfg_grid != 0) {
     height = mfg_grid * std::ceil(static_cast<float>(height) / mfg_grid);
   }
+  const PinSize pin_size{half_width, height};
+  pin_size_cache_[layer] = pin_size;
+  return pin_size;
 }
 
 int IOPlacer::computeLayerSpacing(const int layer,
@@ -575,22 +584,23 @@ void IOPlacer::getBlockedRegionsFromPDN()
           if (vertical_pin ? !vertical : !horizontal) {
             continue;
           }
-          int half_width, height;
-          computePinSize(layer, vertical_pin, half_width, height);
+          const PinSize pin_size = computePinSize(layer);
           const int shape_width = std::min(box.dx(), box.dy());
           const int spacing = computeLayerSpacing(
-              layer, std::max(shape_width, 2 * half_width), height);
+              layer,
+              std::max(shape_width, 2 * pin_size.half_width),
+              pin_size.height);
           // extend the shape by the pin reach into the die, so shapes close
           // to the boundary also block the nearby slots
           const odb::Rect reach_box
-              = box.bloat(height + spacing,
+              = box.bloat(pin_size.height + spacing,
                           vertical_pin ? odb::Orientation2D::Vertical
                                        : odb::Orientation2D::Horizontal);
           if (!die_area.intersects(reach_box)) {
             continue;
           }
           const odb::Rect intersect = die_area.intersect(reach_box);
-          const int pad = half_width + spacing;
+          const int pad = pin_size.half_width + spacing;
           for (const Interval& interval :
                findBlockedIntervals(die_area, intersect)) {
             const bool vertical_edge = interval.getEdge() == Edge::top
@@ -3278,6 +3288,7 @@ void IOPlacer::initNetlist()
 {
   netlist_->reset();
   layer_fixed_pins_shapes_.clear();
+  pin_size_cache_.clear();
   const odb::Rect& coreBoundary = core_->getBoundary();
   int x_center = (coreBoundary.xMin() + coreBoundary.xMax()) / 2;
   int y_center = (coreBoundary.yMin() + coreBoundary.yMax()) / 2;

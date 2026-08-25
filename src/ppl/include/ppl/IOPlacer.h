@@ -47,6 +47,13 @@ struct PinGroupByIndex
   bool order;
 };
 
+// the width along the die edge and the length into the die of a pin
+struct PinSize
+{
+  int half_width = 0;
+  int height = 0;
+};
+
 struct FallbackPins
 {
   std::vector<std::pair<std::vector<int>, bool>> groups;
@@ -218,10 +225,7 @@ class IOPlacer
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
-  void computePinSize(int layer,
-                      bool vertical_pin,
-                      int& half_width,
-                      int& height);
+  PinSize computePinSize(int layer);
   int computeLayerSpacing(int layer, int shape_width, int parallel_length);
   void getBlockedRegionsFromPDN();
   void getBlockedRegionsFromMacros();
@@ -268,6 +272,8 @@ class IOPlacer
   std::vector<Constraint> constraints_;
   FallbackPins fallback_pins_;
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
+  // a pin size only depends on its layer, wrong way pins are rejected
+  std::map<int, PinSize> pin_size_cache_;
 
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<utl::Validator> validator_;
