@@ -287,12 +287,26 @@ void ICeWall::assignBump(odb::dbInst* inst,
 
 void ICeWall::makeBTermPinsFromBumps(odb::dbBlock* block) const
 {
+  if (!block) {
+    logger_->error(
+        utl::PAD, 123, "Block must be specified to make bterm pins on it.");
+  }
+
   for (odb::dbBTerm* bterm : block->getBTerms()) {
     if (!bterm->getBPins().empty()) {
       continue;
     }
 
     odb::dbNet* net = bterm->getNet();
+
+    if (!net) {
+      logger_->warn(utl::PAD,
+                    124,
+                    "Could not make a pin for terminal {}. It is not "
+                    "connected to a net.",
+                    bterm->getName());
+      continue;
+    }
 
     if (net->getSigType().isSupply()) {
       continue;
