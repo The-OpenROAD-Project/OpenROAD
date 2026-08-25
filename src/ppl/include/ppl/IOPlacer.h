@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -70,6 +71,12 @@ enum class Edge
   invalid,
   polygonEdge,
 };
+
+// the top and bottom edges hold vertical pins on the vertical layers
+inline bool isVerticalEdge(Edge edge)
+{
+  return edge == Edge::top || edge == Edge::bottom;
+}
 
 enum class Direction
 {
@@ -228,7 +235,13 @@ class IOPlacer
                                              const odb::Rect& box);
   PinSize computePinSize(int layer);
   int computeLayerSpacing(int layer, int shape_width, int parallel_length);
-  odb::Rect padShapeForPin(const odb::Rect& box, int layer, bool vertical_pin);
+  int computeShapeSpacing(int layer,
+                          const odb::Rect& shape,
+                          int pin_width,
+                          int pin_length);
+  odb::Rect padShapeForPin(const odb::Rect& box, int layer);
+  void forEachSpecialNetShape(
+      const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback);
   void excludeBoundaryShape(const odb::Rect& box,
                             odb::dbTechLayer* tech_layer,
                             const odb::Rect& die_area);
@@ -278,9 +291,10 @@ class IOPlacer
   std::vector<Constraint> constraints_;
   FallbackPins fallback_pins_;
   // fixed pin shapes padded by the pin size and spacing, per layer
-  std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
+  std::map<int, std::vector<odb::Rect>> layer_fixed_pins_keepouts_;
   // a pin size only depends on its layer, wrong way pins are rejected
   std::map<int, PinSize> pin_size_cache_;
+  // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
   std::map<std::tuple<int, int, int>, int> spacing_cache_;
 
   utl::Logger* logger_ = nullptr;
