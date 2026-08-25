@@ -84,14 +84,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-void ClusteringEngine::setHalos(
-    const HardMacro::Halo& base_halo,
-    const bool use_full_channel,
-    const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
+void ClusteringEngine::setHalos(const HardMacro::Halo& base_halo,
+                                const bool use_full_channel)
 {
   base_halo_ = base_halo;
   use_full_channel_ = use_full_channel;
-  macro_to_halo_ = macro_to_halo;
 }
 
 // Check if macro placement is both needed and feasible.
@@ -2158,10 +2155,6 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
 HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
                                                  int minimum_spacing) const
 {
-  if (macro_to_halo_.contains(inst)) {
-    return macro_to_halo_.at(inst);
-  }
-
   HardMacro::Halo full_halo;
   if (inst->getHalo() != nullptr) {
     odb::Rect inst_halo = inst->getHalo()->getBox();

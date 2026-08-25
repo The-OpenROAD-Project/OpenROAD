@@ -298,7 +298,6 @@ class HierRTLMP
   odb::PtrMap<odb::dbInst, odb::Rect> guides_;  // Macro -> Guidance Region
 
   HardMacro::Halo base_halo_;
-  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
 
   std::vector<odb::Rect> placement_blockages_;
   std::vector<odb::Rect> io_blockages_;

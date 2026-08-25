@@ -266,9 +266,7 @@ void HierRTLMP::blockMacroChannels()
     }
 
     HardMacro::Halo halo;
-    if (macro_to_halo_.contains(inst)) {
-      halo = macro_to_halo_.at(inst);
-    } else if (inst->getHalo() != nullptr) {
+    if (inst->getHalo() != nullptr) {
       const HardMacro::Halo inst_halo(inst->getHalo());
       halo = inst_halo.floorTo(base_halo_);
     } else {
@@ -313,7 +311,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setHalos(base_halo_, use_full_channel_, macro_to_halo_);
+  clustering_engine_->setHalos(base_halo_, use_full_channel_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {

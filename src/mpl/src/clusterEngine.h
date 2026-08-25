@@ -105,9 +105,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(const HardMacro::Halo& base_halo,
-                bool use_full_channel,
-                const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
+  void setHalos(const HardMacro::Halo& base_halo, bool use_full_channel);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -263,7 +261,6 @@ class ClusteringEngine
 
   HardMacro::Halo base_halo_;
   bool use_full_channel_{false};
-  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
 };
 
 }  // namespace mpl
