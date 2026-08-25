@@ -645,6 +645,10 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
   const odb::Rect die_area = getBlock()->getDieArea();
 
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
+    // system reserved obstructions only mark the outside of polygon dies
+    if (obstruction->isSystemReserved()) {
+      continue;
+    }
     odb::dbBox* obstruct_box = obstruction->getBBox();
     odb::dbTechLayer* tech_layer = obstruct_box->getTechLayer();
     if (tech_layer == nullptr) {
