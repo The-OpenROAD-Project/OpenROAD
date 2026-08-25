@@ -86,11 +86,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 
 void ClusteringEngine::setHalos(
     const HardMacro::Halo& base_halo,
-    const bool use_full_halo,
+    const bool use_full_channel,
     const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
 {
   base_halo_ = base_halo;
-  use_full_halo_ = use_full_halo;
+  use_full_channel_ = use_full_channel;
   macro_to_halo_ = macro_to_halo;
 }
 
@@ -2177,7 +2177,7 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
     full_halo = base_halo_;
   }
 
-  if (use_full_halo_) {
+  if (use_full_channel_) {
     return full_halo;
   }
 
