@@ -221,18 +221,9 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
   guidance_regions_[macro] = region;
 }
 
-void MacroPlacer::setBaseHalo(int left, int bottom, int right, int top)
+void MacroPlacer::setMinChannelSize(int width, int height)
 {
-  hier_rtlmp_->setBaseHalo(left, bottom, right, top);
-}
-
-void MacroPlacer::setMacroHalo(odb::dbInst* macro,
-                               int left,
-                               int bottom,
-                               int right,
-                               int top)
-{
-  hier_rtlmp_->setMacroHalo(macro, left, bottom, right, top);
+  hier_rtlmp_->setMinChannelSize(width, height);
 }
 
 void MacroPlacer::blockMacroChannels()

@@ -134,33 +134,12 @@ add_guidance_region(odb::dbInst* macro,
 }
 
 void
-set_base_halo(float left,
-              float bottom,
-              float right,
-              float top)
+set_min_channel(float width,
+                float height)
 {
   odb::dbBlock* block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
-  getMacroPlacer()->setBaseHalo(block->micronsToDbu(left),
-                                block->micronsToDbu(bottom),
-                                block->micronsToDbu(right),
-                                block->micronsToDbu(top));
-}
-
-void
-set_macro_halo(odb::dbInst* macro,
-               float left,
-               float bottom,
-               float right,
-               float top) 
-{
-  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
-  int left_dbu = block->micronsToDbu(left);
-  int bottom_dbu = block->micronsToDbu(bottom);
-  int right_dbu = block->micronsToDbu(right);
-  int top_dbu = block->micronsToDbu(top);
-
-
-  getMacroPlacer()->setMacroHalo(macro, left_dbu, bottom_dbu, right_dbu, top_dbu);
+  getMacroPlacer()->setMinChannelSize(block->micronsToDbu(width),
+                                block->micronsToDbu(height));
 }
 
 void

@@ -78,12 +78,7 @@ class MacroPlacer
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
-  void setBaseHalo(int left, int bottom, int right, int top);
-  void setMacroHalo(odb::dbInst* macro,
-                    int left,
-                    int bottom,
-                    int right,
-                    int top);
+  void setMinChannelSize(int width, int height);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

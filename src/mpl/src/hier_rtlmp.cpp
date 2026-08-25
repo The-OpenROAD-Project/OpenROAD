@@ -114,28 +114,15 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)
+void HierRTLMP::setMinChannelSize(int width, int height)
 {
-  if (!base_halo_.isZero()) {
-    logger_->warn(MPL, 71, "Overwriting base macro halo.");
-  }
-
-  base_halo_ = {left, bottom, right, top};
+  base_halo_ = {width / 2, height / 2, width / 2, height / 2};
 }
 
 void HierRTLMP::setGuidanceRegions(
     const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
-}
-
-void HierRTLMP::setMacroHalo(odb::dbInst* macro,
-                             int left,
-                             int bottom,
-                             int right,
-                             int top)
-{
-  macro_to_halo_[macro] = {left, bottom, right, top};
 }
 
 // Options related to clustering
