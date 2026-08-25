@@ -86,9 +86,9 @@ class WebServer
   // the network threads racing the main thread's db construction.
   void initLogger();
 
-  // Sets the number of thread workers for the server's I/O context.
-  // Must be called before serve() to take effect.
-  void setThreadCount(int num_threads) { num_threads_ = num_threads; }
+  // Sets the number of thread workers for the server's I/O context and tile
+  // generator.
+  void setThreadCount(int num_threads);
 
   // Start the web server on the given port.  Launches background
   // I/O threads and returns immediately.  A second call is a no-op if

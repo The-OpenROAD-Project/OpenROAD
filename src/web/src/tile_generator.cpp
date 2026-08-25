@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -16,6 +17,7 @@
 #include <numbers>
 #include <random>
 #include <set>
+#include <span>  // NOLINT(build/c++20)
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -43,6 +45,7 @@
 #include "third-party/lodepng/lodepng.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "utl/ThreadPool.h"
 #include "utl/algorithms.h"
 #include "web_painter.h"
 
@@ -73,6 +76,119 @@ std::string dbuToMicronString(const int dbu, const double dbu_per_micron)
 }
 
 namespace {
+
+__attribute__((always_inline)) void copyRGBA(unsigned char* dst,
+                                             const unsigned char* src)
+{
+  std::memcpy(dst, src, sizeof(uint32_t));
+}
+
+__attribute__((always_inline)) void copyRGBA(unsigned char* dst,
+                                             const Color& src)
+{
+  std::memcpy(dst, &src, sizeof(uint32_t));
+}
+
+__attribute__((always_inline)) void zeroRGBA(unsigned char* dst)
+{
+  std::memset(dst, 0, 4);
+}
+
+bool anyNonZero(std::span<const unsigned char> data)
+{
+  // 1. Fast SIMD path: 64-byte blocks (cache-line width)
+  while (data.size() >= 64) {
+    std::array<uint64_t, 8> chunk;
+    std::memcpy(chunk.data(), data.data(), 64);
+    if ((chunk[0] | chunk[1] | chunk[2] | chunk[3] | chunk[4] | chunk[5]
+         | chunk[6] | chunk[7])
+        != 0) {
+      return true;
+    }
+    data = data.subspan(64);
+  }
+
+  // 2. Clean-up: 0 to 63 bytes remaining
+  return std::any_of(
+      data.begin(), data.end(), [](unsigned char b) { return b != 0; });
+}
+
+// Fast division by 255 with proper rounding: (v + 128 + ((v + 128) >> 8)) >> 8
+constexpr int div255(int v)
+{
+  return (v + 128 + ((v + 128) >> 8)) >> 8;
+}
+
+// Alpha-composite src onto dst (Porter-Duff "over") using pure fixed-point
+// arithmetic.
+__attribute__((always_inline)) void compositePixel(unsigned char* dst,
+                                                   const unsigned char* src)
+{
+  const uint32_t sa = src[3];
+  if (sa == 0) {
+    return;
+  }
+
+  const uint32_t da = dst[3];
+  if (sa == 255 || da == 0) {
+    copyRGBA(dst, src);
+    return;
+  }
+
+  // Porter-Duff Over: out_a = sa + da * (255 - sa) / 255
+  const uint32_t da_contrib = div255(da * (255 - sa));
+  const uint32_t out_a = sa + da_contrib;
+
+  if (out_a == 0) {
+    zeroRGBA(dst);
+    return;
+  }
+
+  // Blend weight: t = src_a / out_a in 16.16 fixed-point (single integer
+  // division)
+  const uint32_t t_fp = (sa << 16) / out_a;
+
+  auto blend_ch = [t_fp](uint32_t d, uint32_t s) -> unsigned char {
+    int32_t diff = static_cast<int32_t>(s) - static_cast<int32_t>(d);
+    int32_t res = static_cast<int32_t>(d)
+                  + ((diff * static_cast<int32_t>(t_fp) + 0x8000) >> 16);
+    return static_cast<unsigned char>(std::clamp(res, 0, 255));
+  };
+
+  dst[0] = blend_ch(dst[0], src[0]);
+  dst[1] = blend_ch(dst[1], src[1]);
+  dst[2] = blend_ch(dst[2], src[2]);
+  dst[3] = static_cast<unsigned char>(out_a);
+}
+
+__attribute__((always_inline)) void compositePixel(unsigned char* dst,
+                                                   const Color& src)
+{
+  unsigned char src_bytes[4];
+  copyRGBA(src_bytes, src);
+  compositePixel(dst, src_bytes);
+}
+
+// Fills a contiguous row of RGBA pixels with a solid color.
+void fillSpan(std::span<unsigned char> dst, const Color& color)
+{
+  uint32_t c = 0;
+  std::memcpy(&c, &color, sizeof(uint32_t));
+
+  std::array<uint32_t, 16> block;
+  block.fill(c);
+
+  while (dst.size() >= 64) {
+    std::memcpy(dst.data(), block.data(), 64);
+    dst = dst.subspan(64);
+  }
+
+  // 2. Trailing pixel remainder (4-byte chunks)
+  while (dst.size() >= sizeof(uint32_t)) {
+    std::memcpy(dst.data(), &c, sizeof(uint32_t));
+    dst = dst.subspan(sizeof(uint32_t));
+  }
+}
 
 // Supersample factor for band-limited tile rasterization (anti-moiré).  The
 // tile is rendered at kCoverageSupersample x the output resolution and then
@@ -2555,6 +2671,9 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
   }
   int layer_z = kTechLayerZBase;
   for (const std::string& name : tech_layers) {
+    if (vis.has_visible_layers && !vis.visible_layers.contains(name)) {
+      continue;
+    }
     ordered.emplace_back(layer_z++, name);
   }
   for (const PseudoLayerDef& def : pseudoLayerDefs()) {
@@ -2749,10 +2868,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
     // thread_local (renders run one-per-thread) so the large buffer is reused
-    // across tiles; assign() re-zeroes it (drawing is sparse, so it must start
-    // transparent).
+    // across tiles; super_buffer_dirty tracks if it needs re-zeroing.
     static thread_local std::vector<unsigned char> super_buffer;
-    super_buffer.assign(super_buffer_size, 0);
+    static thread_local bool super_buffer_dirty = false;
+    if (super_buffer.size() != static_cast<size_t>(super_buffer_size)) {
+      super_buffer.assign(super_buffer_size, 0);
+      super_buffer_dirty = false;
+    } else if (super_buffer_dirty) {
+      std::memset(super_buffer.data(), 0, super_buffer_size);
+      super_buffer_dirty = false;
+    }
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
     // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
@@ -3290,15 +3415,21 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
             }
             if (dbu_y_min <= yl && yl <= dbu_y_max) {
-              for (int ix = loop_xl; ix < loop_xh; ++ix) {
-                const int draw_y = (super - 1 - draw_yl);
-                setPixel(image_buffer, ix, draw_y, gray);
+              const int draw_y = (super - 1 - draw_yl);
+              const int width = loop_xh - loop_xl;
+              if (width > 0) {
+                unsigned char* row
+                    = &image_buffer[(draw_y * super + loop_xl) * 4];
+                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
               }
             }
             if (dbu_y_min <= yh && yh <= dbu_y_max) {
-              for (int ix = loop_xl; ix < loop_xh; ++ix) {
-                const int draw_y = (super - 1 - draw_yh);
-                setPixel(image_buffer, ix, draw_y, gray);
+              const int draw_y = (super - 1 - draw_yh);
+              const int width = loop_xh - loop_xl;
+              if (width > 0) {
+                unsigned char* row
+                    = &image_buffer[(draw_y * super + loop_xl) * 4];
+                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
               }
             }
 
@@ -4088,7 +4219,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
       }  // end if (!pseudo_layer)
 
-      if (use_local) {
+      if (use_local && anyNonZero(local_image_buffer)) {
         // Slow-path compositing for chiplets with non-R0 orientations.
         // Forward-mapping (iterate the local buffer, write to world)
         // leaves gaps when the rotation is non-identity because some
@@ -4135,11 +4266,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // geometry so no beat survives at the output (physical) pixel grid.
     // Empty tiles (common while panning) skip the decimation entirely:
     // world_image_buffer already holds a transparent tile_px buffer, and a
-    // transparent super buffer cannot alias.  any_of early-exits as soon as it
-    // hits drawn content, so non-empty tiles pay almost nothing for the check.
-    const bool any_drawn = std::ranges::any_of(
-        super_buffer, [](const unsigned char b) { return b != 0; });
-    if (any_drawn) {
+    // transparent super buffer cannot alias.
+    if (anyNonZero(super_buffer)) {
+      super_buffer_dirty = true;
       world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
     }
 
@@ -4354,28 +4483,6 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   return png_data;
 }
 
-// Alpha-composite src onto dst (Porter-Duff "over").
-static void compositePixel(unsigned char* dst, const unsigned char* src)
-{
-  const int sa = src[3];
-  if (sa == 0) {
-    return;
-  }
-  if (sa == 255 || dst[3] == 0) {
-    std::memcpy(dst, src, 4);
-    return;
-  }
-  const int da = dst[3];
-  const int out_a = sa + da * (255 - sa) / 255;
-  if (out_a == 0) {
-    return;
-  }
-  for (int c = 0; c < 3; ++c) {
-    dst[c] = (src[c] * sa + dst[c] * da * (255 - sa) / 255) / out_a;
-  }
-  dst[3] = out_a;
-}
-
 // ---------------------------------------------------------------------------
 // Band-limited decimation (anti-moiré).
 //
@@ -4493,19 +4600,36 @@ static std::vector<unsigned char> lanczos2Downsample(
   // every element is overwritten below, so no re-zeroing is needed.
   static thread_local std::vector<float> inter;
   inter.resize(static_cast<size_t>(src_dim) * dst_dim * 4);
+  const size_t src_row_bytes = static_cast<size_t>(src_dim) * 4;
+
   for (int sy = 0; sy < src_dim; ++sy) {
-    const unsigned char* srow = &src[static_cast<size_t>(sy) * src_dim * 4];
+    const unsigned char* srow = &src[static_cast<size_t>(sy) * src_row_bytes];
+    float* inter_row = &inter[static_cast<size_t>(sy) * dst_dim * 4];
+
+    // Fast path: if the entire source row is transparent (common in sparse
+    // layers), write zeros to the intermediate row and continue.
+    const bool row_empty = !anyNonZero({srow, src_row_bytes});
+    if (row_empty) {
+      std::memset(
+          inter_row, 0, static_cast<size_t>(dst_dim) * 4 * sizeof(float));
+      continue;
+    }
+
     for (int ox = 0; ox < dst_dim; ++ox) {
       float r = 0, g = 0, b = 0, a = 0;
       for (const auto& [sx, w] : taps[ox]) {
         const unsigned char* p = &srow[static_cast<size_t>(sx) * 4];
-        const float pa = p[3];
-        r += w * (p[0] * pa / 255.0f);
-        g += w * (p[1] * pa / 255.0f);
-        b += w * (p[2] * pa / 255.0f);
-        a += w * pa;
+        const unsigned char pa = p[3];
+        if (pa == 0) {
+          continue;
+        }
+        const float scale_w = (w * static_cast<float>(pa)) * (1.0f / 255.0f);
+        r += p[0] * scale_w;
+        g += p[1] * scale_w;
+        b += p[2] * scale_w;
+        a += w * static_cast<float>(pa);
       }
-      float* out = &inter[(static_cast<size_t>(sy) * dst_dim + ox) * 4];
+      float* out = &inter_row[ox * 4];
       out[0] = r;
       out[1] = g;
       out[2] = b;
@@ -4520,10 +4644,14 @@ static std::vector<unsigned char> lanczos2Downsample(
       float r = 0, g = 0, b = 0, a = 0;
       for (const auto& [sy, w] : taps[oy]) {
         const float* p = &inter[(static_cast<size_t>(sy) * dst_dim + ox) * 4];
+        const float pa = p[3];
+        if (pa == 0.0f) {
+          continue;
+        }
         r += w * p[0];
         g += w * p[1];
         b += w * p[2];
-        a += w * p[3];
+        a += w * pa;
       }
       unsigned char* d = &dst[(static_cast<size_t>(oy) * dst_dim + ox) * 4];
       const float ai = std::clamp(a, 0.0f, 255.0f);
@@ -4531,13 +4659,14 @@ static std::vector<unsigned char> lanczos2Downsample(
         d[0] = d[1] = d[2] = d[3] = 0;
         continue;
       }
-      const auto unpremult = [&](const float ch) {
+      const float inv_ai = 255.0f / ai;
+      const auto blend_ch = [&](const float ch) {
         return static_cast<unsigned char>(
-            std::lround(std::clamp(ch * 255.0f / ai, 0.0f, 255.0f)));
+            std::lround(std::clamp(ch * inv_ai, 0.0f, 255.0f)));
       };
-      d[0] = unpremult(r);
-      d[1] = unpremult(g);
-      d[2] = unpremult(b);
+      d[0] = blend_ch(r);
+      d[1] = blend_ch(g);
+      d[2] = blend_ch(b);
       d[3] = static_cast<unsigned char>(std::lround(ai));
     }
   }
@@ -4634,8 +4763,11 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
                      std::ceil((area.yMax() - bounds.yMin()) / tile_dbu_size)));
 
   // Allocate output buffer (RGBA).
-  const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
-  const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
+  const int total_tiles_x = tx_max - tx_min + 1;
+  const int total_tiles_y = ty_max - ty_min + 1;
+  const int total_tiles = total_tiles_x * total_tiles_y;
+  const int tile_span_w = total_tiles_x * kTileSizeInPixel;
+  const int tile_span_h = total_tiles_y * kTileSizeInPixel;
   std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
   const std::vector<std::string> layers_to_render
@@ -4648,31 +4780,53 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   const std::vector<TextLabel> labels
       = vis.labels ? labelsForDraw() : std::vector<TextLabel>{};
 
-  // Render each tile, compositing all layers.
-  for (int ty = ty_min; ty <= ty_max; ++ty) {
-    for (int tx = tx_min; tx <= tx_max; ++tx) {
-      // Tile position in the output buffer.
-      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
-      // Y is flipped: tile_y in generateTile is bottom-up, output is top-down.
-      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
+  // Render each tile. Each (tx, ty) tile maps to a completely disjoint
+  // rectangular region in output, allowing lock-free concurrent rendering
+  // across threads.
+  const int hw_threads
+      = num_threads_ > 0 ? num_threads_ : (sta_ ? sta_->threadCount() : 1);
+  std::unique_ptr<utl::ThreadPool> thread_pool;
+  if (hw_threads > 1) {
+    thread_pool = std::make_unique<utl::ThreadPool>(hw_threads);
+  }
 
-      // Leaflet-style y coordinate (before the flip in renderTileBuffer).
+  const int num_render_threads = std::min<int>(total_tiles, hw_threads);
+
+  auto render_tile_range = [&](const int start_tile, const int end_tile) {
+    for (int tile_idx = start_tile; tile_idx < end_tile; ++tile_idx) {
+      const int tx = tx_min + (tile_idx % total_tiles_x);
+      const int ty = ty_min + (tile_idx / total_tiles_x);
+      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
       const int leaflet_y = num_tiles - 1 - ty;
 
       for (const auto& layer : layers_to_render) {
         auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
 
-        // Composite tile onto output at (out_ox, out_oy).
+        // Fast check: if the tile buffer is empty, skip compositing entirely.
+        if (!anyNonZero(tile_buf)) {
+          continue;
+        }
+
+        // Composite non-empty tile onto output at (out_ox, out_oy).
         for (int py = 0; py < kTileSizeInPixel; ++py) {
+          const unsigned char* srow = &tile_buf[py * kTileSizeInPixel * 4];
+          if (!anyNonZero({srow, static_cast<size_t>(kTileSizeInPixel * 4)})) {
+            continue;
+          }
+          unsigned char* drow
+              = &output[(out_oy + py) * tile_span_w * 4 + out_ox * 4];
           for (int px = 0; px < kTileSizeInPixel; ++px) {
-            const int src_idx = (py * kTileSizeInPixel + px) * 4;
-            const int dst_x = out_ox + px;
-            const int dst_y = out_oy + py;
-            if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+            const unsigned char* sp = &srow[px * 4];
+            if (sp[3] == 0) {
               continue;
             }
-            const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
-            compositePixel(&output[dst_idx], &tile_buf[src_idx]);
+            unsigned char* dp = &drow[px * 4];
+            if (sp[3] == 255 || dp[3] == 0) {
+              copyRGBA(dp, sp);
+            } else {
+              compositePixel(dp, sp);
+            }
           }
         }
       }
@@ -4682,20 +4836,45 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       auto label_buf = labels.empty()
                            ? std::vector<unsigned char>()
                            : renderLabelTile(z, tx, leaflet_y, labels);
-      if (!label_buf.empty()) {
+      if (!label_buf.empty() && anyNonZero(label_buf)) {
         for (int py = 0; py < kTileSizeInPixel; ++py) {
+          const unsigned char* srow = &label_buf[py * kTileSizeInPixel * 4];
+          if (!anyNonZero({srow, static_cast<size_t>(kTileSizeInPixel * 4)})) {
+            continue;
+          }
+          unsigned char* drow
+              = &output[(out_oy + py) * tile_span_w * 4 + out_ox * 4];
           for (int px = 0; px < kTileSizeInPixel; ++px) {
-            const int src_idx = (py * kTileSizeInPixel + px) * 4;
-            const int dst_x = out_ox + px;
-            const int dst_y = out_oy + py;
-            if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+            const unsigned char* sp = &srow[px * 4];
+            if (sp[3] == 0) {
               continue;
             }
-            const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
-            compositePixel(&output[dst_idx], &label_buf[src_idx]);
+            unsigned char* dp = &drow[px * 4];
+            if (sp[3] == 255 || dp[3] == 0) {
+              copyRGBA(dp, sp);
+            } else {
+              compositePixel(dp, sp);
+            }
           }
         }
       }
+    }
+  };
+
+  if (!thread_pool || num_render_threads <= 1) {
+    render_tile_range(0, total_tiles);
+  } else {
+    std::vector<utl::ThreadPoolFuture<void>> futures;
+    futures.reserve(num_render_threads);
+    for (int t = 0; t < num_render_threads; ++t) {
+      const int start_tile = (t * total_tiles) / num_render_threads;
+      const int end_tile = ((t + 1) * total_tiles) / num_render_threads;
+      futures.push_back(thread_pool->submit([=, &render_tile_range]() {
+        render_tile_range(start_tile, end_tile);
+      }));
+    }
+    for (auto& f : futures) {
+      f.wait();
     }
   }
 
@@ -4711,26 +4890,65 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   const int crop_y
       = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
 
-  // Resample to exact requested dimensions (nearest-neighbor from tile_scale
-  // to target scale).  Start from the requested background color and composite
-  // the (possibly semi-transparent) tiles on top, so the saved image matches
-  // the viewer's background instead of coming out transparent.
-  std::vector<unsigned char> final_buf(4UL * final_w * final_h);
+  // Precompute 1D coordinate maps for nearest-neighbor resampling.
+  std::vector<int> map_x(final_w);
+  for (int fx = 0; fx < final_w; ++fx) {
+    map_x[fx] = crop_x + static_cast<int>(fx * tile_scale / scale);
+  }
+  std::vector<int> map_y(final_h);
   for (int fy = 0; fy < final_h; ++fy) {
-    for (int fx = 0; fx < final_w; ++fx) {
-      const int dst_idx = (fy * final_w + fx) * 4;
-      // Start each pixel at the background, then composite the tile on top.
-      final_buf[dst_idx + 0] = bg.r;
-      final_buf[dst_idx + 1] = bg.g;
-      final_buf[dst_idx + 2] = bg.b;
-      final_buf[dst_idx + 3] = bg.a;
-      // Map final pixel to tile-span pixel.
-      const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
-      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
-      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
-        const int src_idx = (sy * tile_span_w + sx) * 4;
-        compositePixel(&final_buf[dst_idx], &output[src_idx]);
+    map_y[fy] = crop_y + static_cast<int>(fy * tile_scale / scale);
+  }
+
+  // Resample to exact requested dimensions (nearest-neighbor from tile_scale
+  // to target scale) in parallel.  Start from the requested background color
+  // and composite the (possibly semi-transparent) tiles on top, so the saved
+  // image matches the viewer's background instead of coming out transparent.
+  std::vector<unsigned char> final_buf(4UL * final_w * final_h);
+  const int num_resample_threads = std::min<int>(final_h, hw_threads);
+
+  auto resample_row_range = [&](const int start_y, const int end_y) {
+    for (int fy = start_y; fy < end_y; ++fy) {
+      unsigned char* dst_row = &final_buf[fy * final_w * 4];
+      const int sy = map_y[fy];
+      if (sy < 0 || sy >= tile_span_h) {
+        fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
+        continue;
       }
+      const unsigned char* src_row = &output[sy * tile_span_w * 4];
+      if (!anyNonZero({src_row, static_cast<size_t>(tile_span_w * 4)})) {
+        fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
+        continue;
+      }
+      for (int fx = 0; fx < final_w; ++fx) {
+        const int sx = map_x[fx];
+        unsigned char* dp = &dst_row[fx * 4];
+        copyRGBA(dp, bg);
+        if (sx >= 0 && sx < tile_span_w) {
+          const unsigned char* sp = &src_row[sx * 4];
+          if (sp[3] == 255 || dp[3] == 0) {
+            copyRGBA(dp, sp);
+          } else if (sp[3] > 0) {
+            compositePixel(dp, sp);
+          }
+        }
+      }
+    }
+  };
+
+  if (!thread_pool || num_resample_threads <= 1) {
+    resample_row_range(0, final_h);
+  } else {
+    std::vector<utl::ThreadPoolFuture<void>> futures;
+    futures.reserve(num_resample_threads);
+    for (int t = 0; t < num_resample_threads; ++t) {
+      const int start_y = (t * final_h) / num_resample_threads;
+      const int end_y = ((t + 1) * final_h) / num_resample_threads;
+      futures.push_back(thread_pool->submit(
+          [=, &resample_row_range]() { resample_row_range(start_y, end_y); }));
+    }
+    for (auto& f : futures) {
+      f.wait();
     }
   }
 
@@ -4924,13 +5142,16 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
 
   std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
   for (int fy = 0; fy < final_h; ++fy) {
+    const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
+    if (sy < 0 || sy >= tile_span_h) {
+      continue;
+    }
+    const unsigned char* src_row = &output[sy * tile_span_w * 4];
+    unsigned char* dst_row = &final_buf[fy * final_w * 4];
     for (int fx = 0; fx < final_w; ++fx) {
       const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
-      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
-      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
-        const int src_idx = (sy * tile_span_w + sx) * 4;
-        const int dst_idx = (fy * final_w + fx) * 4;
-        std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
+      if (sx >= 0 && sx < tile_span_w) {
+        copyRGBA(&dst_row[fx * 4], &src_row[sx * 4]);
       }
     }
   }
@@ -5299,27 +5520,7 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
     return;
   }
   const int i = (y * dim + x) * 4;
-  const float src_a = c.a / 255.0f;
-  const float dst_a = image[i + 3] / 255.0f;
-  const float out_a = src_a + dst_a * (1.0f - src_a);
-
-  if (out_a <= 0.0f) {
-    image[i + 0] = 0;
-    image[i + 1] = 0;
-    image[i + 2] = 0;
-    image[i + 3] = 0;
-    return;
-  }
-
-  const auto blend_channel = [&](const int src, const int dst) {
-    const float out = (src * src_a + dst * dst_a * (1.0f - src_a)) / out_a;
-    return static_cast<unsigned char>(std::lround(out));
-  };
-
-  image[i + 0] = blend_channel(c.r, image[i + 0]);
-  image[i + 1] = blend_channel(c.g, image[i + 1]);
-  image[i + 2] = blend_channel(c.b, image[i + 2]);
-  image[i + 3] = static_cast<unsigned char>(std::lround(out_a * 255.0f));
+  compositePixel(&image[i], c);
 }
 
 void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
@@ -5337,11 +5538,29 @@ void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
   if (dim < 0) {
     dim = bufferDim(buffer);
   }
-  for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+  const int x_start = std::max(0, rect.xMin());
+  const int x_end = std::min(dim, rect.xMax());
+  const int y_start = std::max(0, rect.yMin());
+  const int y_end = std::min(dim, rect.yMax());
+  if (x_start >= x_end || y_start >= y_end) {
+    return;
+  }
+
+  if (pattern == FillPattern::kSolid) {
+    const int width = x_end - x_start;
+    const size_t span_bytes = static_cast<size_t>(width) * 4;
+    for (int iy = y_start; iy < y_end; ++iy) {
+      const int draw_y = dim - 1 - iy;
+      unsigned char* row = &buffer[(draw_y * dim + x_start) * 4];
+      fillSpan({row, span_bytes}, color);
+    }
+    return;
+  }
+
+  for (int iy = y_start; iy < y_end; ++iy) {
     const int draw_y = dim - 1 - iy;
-    for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
-      if (pattern != FillPattern::kSolid
-          && !patternCovers(pattern, ix + ox, iy + oy)) {
+    for (int ix = x_start; ix < x_end; ++ix) {
+      if (!patternCovers(pattern, ix + ox, iy + oy)) {
         continue;
       }
       setPixel(buffer, ix, draw_y, color, dim);

@@ -1303,6 +1303,14 @@ WebServer::WebServer(odb::dbDatabase* db,
 {
 }
 
+void WebServer::setThreadCount(int num_threads)
+{
+  num_threads_ = num_threads;
+  if (generator_) {
+    generator_->setThreadCount(num_threads);
+  }
+}
+
 // Defined here (not in web_serve.cpp) so the destructor's TU does not
 // pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
 // usable from tests that don't link the full gui library.
@@ -1712,6 +1720,7 @@ void WebServer::saveImage(const std::string& filename,
   if (!generator_) {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
   }
+  generator_->setThreadCount(num_threads_);
   generator_->eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
@@ -2010,6 +2019,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
   if (!generator_) {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
   }
+  generator_->setThreadCount(num_threads_);
   if (gif->frame_count == 0) {
     generator_->eagerInit();
   }
