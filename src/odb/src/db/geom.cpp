@@ -82,7 +82,11 @@ Polygon Polygon::bloat(int margin) const
   const BoostPolygonSet poly_out_set = toPolygonSet(*this) + margin;
 
   // extract new polygon
-  return extractPolygons(poly_out_set)[0];
+  const auto polygons = extractPolygons(poly_out_set);
+  if (polygons.empty()) {
+    return Polygon();
+  }
+  return polygons[0];
 }
 
 std::vector<Polygon> Polygon::merge(const std::vector<Oct>& octs)
