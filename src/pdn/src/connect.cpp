@@ -649,6 +649,9 @@ void Connect::makeVia(odb::dbSWire* wire,
 
   shapes = via->generate(
       wire->getBlock(), wire, type, x, y, ongrid_, grid_->getLogger());
+  if (!via->canCache()) {
+    skip_caching = true;
+  }
 
   if (skip_caching) {
     via = nullptr;

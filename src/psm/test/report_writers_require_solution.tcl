@@ -16,6 +16,11 @@ set spice_file [make_result_file report_writers_require_solution.sp]
 set voltage_file [make_result_file report_writers_require_solution-voltage.rpt]
 set em_file [make_result_file report_writers_require_solution-em.rpt]
 
+# make_result_file only builds a path, so output from an earlier run in the same
+# results/ is still present. The checks below report whether each writer created
+# its file, which only means anything when the files start out absent.
+file delete -force $spice_file $voltage_file $em_file
+
 catch { write_pg_spice -net VDD -vsrc Vsrc_gcd_vdd.loc $spice_file } err
 puts $err
 puts "spice file written before analysis: [file exists $spice_file]"

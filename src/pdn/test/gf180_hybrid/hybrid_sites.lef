@@ -1,0 +1,41 @@
+VERSION 5.7 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# Introduces the SITEs needed for hybrid rows, after
+# OpenROAD-flow-scripts/flow/designs/gf180/aes-hybrid/hybrid_sites.lef.
+#
+# gf180 has no hybrid rows of its own; ORFS uses it as a public proxy for an
+# advanced process by alternating 9-track (5.04um) and 7-track (3.92um) rows.
+#
+# ORFS reads the 9t tech LEF and so has to repeat the 7t site here.  This test
+# reads gf180/gf180mcu_6LM_1TM_9K_7t_tech.lef instead -- it is the gf180 tech
+# LEF already checked in under test/ and it carries Metal1 through MetalTop --
+# so the copied site is the 9t one, GF018hv5v_green_sc9.
+
+UNITS
+    DATABASE MICRONS 2000  ;
+    CAPACITANCE PICOFARADS 1 ;
+    CURRENT MILLIAMPS 1 ;
+    RESISTANCE OHMS 1 ;
+END UNITS
+
+# Copied from gf180mcu_5LM_1TM_9K_9t_tech.lef since we can't read two tech LEFs
+SITE GF018hv5v_green_sc9
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.56 BY 5.04 ;
+END GF018hv5v_green_sc9
+
+# The hybrid site: one 9t row (N) stacked under one 7t row (FS), so the two
+# rows share a VDD rail at +5.04um and the tile abuts its neighbours on VSS.
+# Rail-to-rail spacing therefore alternates 5.04um / 3.92um and never settles
+# on a single pitch.
+SITE sc9sc7
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.56 BY 8.96 ;
+  ROWPATTERN GF018hv5v_green_sc9 N GF018hv5v_mcu_sc7 FS ;
+END sc9sc7
+
+END LIBRARY
