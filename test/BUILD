@@ -117,6 +117,24 @@ filegroup(
 )
 
 filegroup(
+    name = "asap7_data",
+    srcs = [
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# CCS (current source model) liberty. Required by delay calculators that need
+# output current waveforms, e.g. prima; the asap7 libs above are NLDM only.
+# Holds four cells: AND2x2, BUFx2, DFFHQx4, INVx2.
+filegroup(
+    name = "asap7_ccs_data",
+    srcs = ["asap7/asap7_small_ccs.lib.gz"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "regression_resources",
     # TODO Refine glob later.
     #
