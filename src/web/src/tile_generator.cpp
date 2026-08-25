@@ -77,19 +77,17 @@ std::string dbuToMicronString(const int dbu, const double dbu_per_micron)
 
 namespace {
 
-__attribute__((always_inline)) void copyRGBA(unsigned char* dst,
-                                             const unsigned char* src)
+inline void copyRGBA(unsigned char* dst, const unsigned char* src)
 {
   std::memcpy(dst, src, sizeof(uint32_t));
 }
 
-__attribute__((always_inline)) void copyRGBA(unsigned char* dst,
-                                             const Color& src)
+inline void copyRGBA(unsigned char* dst, const Color& src)
 {
   std::memcpy(dst, &src, sizeof(uint32_t));
 }
 
-__attribute__((always_inline)) void zeroRGBA(unsigned char* dst)
+inline void zeroRGBA(unsigned char* dst)
 {
   std::memset(dst, 0, 4);
 }
@@ -121,8 +119,7 @@ constexpr int div255(int v)
 
 // Alpha-composite src onto dst (Porter-Duff "over") using pure fixed-point
 // arithmetic.
-__attribute__((always_inline)) void compositePixel(unsigned char* dst,
-                                                   const unsigned char* src)
+inline void compositePixel(unsigned char* dst, const unsigned char* src)
 {
   const uint32_t sa = src[3];
   if (sa == 0) {
@@ -161,8 +158,7 @@ __attribute__((always_inline)) void compositePixel(unsigned char* dst,
   dst[3] = static_cast<unsigned char>(out_a);
 }
 
-__attribute__((always_inline)) void compositePixel(unsigned char* dst,
-                                                   const Color& src)
+inline void compositePixel(unsigned char* dst, const Color& src)
 {
   unsigned char src_bytes[4];
   copyRGBA(src_bytes, src);
@@ -187,6 +183,11 @@ void fillSpan(std::span<unsigned char> dst, const Color& color)
   while (dst.size() >= sizeof(uint32_t)) {
     std::memcpy(dst.data(), &c, sizeof(uint32_t));
     dst = dst.subspan(sizeof(uint32_t));
+  }
+
+  // 3. Trailing byte remainder (less than 4 bytes)
+  if (!dst.empty()) {
+    std::memcpy(dst.data(), &c, dst.size());
   }
 }
 
@@ -2671,10 +2672,11 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
   }
   int layer_z = kTechLayerZBase;
   for (const std::string& name : tech_layers) {
+    const int current_z = layer_z++;
     if (vis.has_visible_layers && !vis.visible_layers.contains(name)) {
       continue;
     }
-    ordered.emplace_back(layer_z++, name);
+    ordered.emplace_back(current_z, name);
   }
   for (const PseudoLayerDef& def : pseudoLayerDefs()) {
     if (vis.*def.flag) {
@@ -2873,11 +2875,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     static thread_local bool super_buffer_dirty = false;
     if (super_buffer.size() != static_cast<size_t>(super_buffer_size)) {
       super_buffer.assign(super_buffer_size, 0);
-      super_buffer_dirty = false;
     } else if (super_buffer_dirty) {
       std::memset(super_buffer.data(), 0, super_buffer_size);
-      super_buffer_dirty = false;
     }
+    super_buffer_dirty = true;
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
     // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
@@ -4268,7 +4269,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // world_image_buffer already holds a transparent tile_px buffer, and a
     // transparent super buffer cannot alias.
     if (anyNonZero(super_buffer)) {
-      super_buffer_dirty = true;
       world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
     }
 
@@ -4655,7 +4655,7 @@ static std::vector<unsigned char> lanczos2Downsample(
       }
       unsigned char* d = &dst[(static_cast<size_t>(oy) * dst_dim + ox) * 4];
       const float ai = std::clamp(a, 0.0f, 255.0f);
-      if (ai <= 0.0f) {
+      if (ai < 0.001f) {
         d[0] = d[1] = d[2] = d[3] = 0;
         continue;
       }
