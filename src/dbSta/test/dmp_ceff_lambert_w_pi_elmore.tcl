@@ -44,9 +44,11 @@ set elmore_input_slew [get_property $input_load slew_max_rise]
 set elmore_input_delay [wire_delay $input_port $input_load]
 set elmore_internal_delay [wire_delay $internal_driver $internal_load]
 
-if { $elmore_input_slew <= 0.0
-     || $elmore_input_delay <= 0.0
-     || $elmore_internal_delay <= 0.0 } {
+if {
+  $elmore_input_slew <= 0.0
+  || $elmore_input_delay <= 0.0
+  || $elmore_internal_delay <= 0.0
+} {
   error "Elmore control did not produce positive slew and net delays"
 }
 
