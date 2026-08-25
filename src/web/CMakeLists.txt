@@ -50,12 +50,44 @@ set(WEB_ASSET_FILES
     src/3d-viewer-widget.js
     src/selection-browser.js
     src/main.js
+    # The vendored browser libraries.  They are served from the binary like any
+    # other asset so the viewer never loads code from a CDN (issue #11065); see
+    # third-party/README.md.  Their directory layout is part of the contract:
+    # the stylesheets reach their icons through relative urls.
+    third-party/leaflet/leaflet.js
+    third-party/leaflet/leaflet.css
+    third-party/leaflet/images/layers.png
+    third-party/leaflet/images/layers-2x.png
+    third-party/leaflet/images/marker-icon.png
+    third-party/leaflet/images/marker-icon-2x.png
+    third-party/leaflet/images/marker-shadow.png
+    third-party/golden-layout/golden-layout.esm.js
+    third-party/golden-layout/css/goldenlayout-base.css
+    third-party/golden-layout/css/themes/goldenlayout-dark-theme.css
+    third-party/golden-layout/css/themes/goldenlayout-light-theme.css
+    third-party/golden-layout/img/lm_close_black.png
+    third-party/golden-layout/img/lm_close_tab_white.png
+    third-party/golden-layout/img/lm_close_white.png
+    third-party/golden-layout/img/lm_maximise_black.png
+    third-party/golden-layout/img/lm_maximise_white.png
+    third-party/golden-layout/img/lm_minimize_black.png
+    third-party/golden-layout/img/lm_minimize_white.png
+    third-party/golden-layout/img/lm_popin_black.png
+    third-party/golden-layout/img/lm_popin_white.png
+    third-party/golden-layout/img/lm_popout_black.png
+    third-party/golden-layout/img/lm_popout_white.png
+    third-party/three/three.module.min.js
+    third-party/elkjs/elk.bundled.js
+    third-party/netlistsvg/netlistsvg.bundle.js
 )
 
-# Prepend CMAKE_CURRENT_SOURCE_DIR to each asset file.
-set(WEB_ASSET_PATHS "")
+# Each asset is passed as <served path>=<file path>.  Assets under src/ are
+# served flat ("/main.js"); everything else keeps its path
+# ("/third-party/leaflet/images/layers.png").
+set(WEB_ASSET_ARGS "")
 foreach(f ${WEB_ASSET_FILES})
-  list(APPEND WEB_ASSET_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/${f})
+  string(REGEX REPLACE "^src/" "" served ${f})
+  list(APPEND WEB_ASSET_ARGS /${served}=${CMAKE_CURRENT_SOURCE_DIR}/${f})
 endforeach()
 
 set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
@@ -64,8 +96,11 @@ add_custom_command(
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_report_assets.py
     --output ${REPORT_ASSETS_CPP}
     --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
+    # Same order as the report_assets genrule in BUILD: the files are
+    # concatenated into one scope, so the order is what runs.
     --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-state.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
@@ -95,7 +130,6 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/selection-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
@@ -109,7 +143,7 @@ add_custom_command(
   OUTPUT ${WEB_ASSETS_CPP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_web_assets.py
     --output ${WEB_ASSETS_CPP}
-    ${WEB_ASSET_PATHS}
+    ${WEB_ASSET_ARGS}
   DEPENDS
     src/embed_web_assets.py
     ${WEB_ASSET_FILES}

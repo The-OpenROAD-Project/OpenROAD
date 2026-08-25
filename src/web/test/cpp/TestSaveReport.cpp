@@ -3,25 +3,44 @@
 
 #include <unistd.h>
 
+#include <cctype>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include "boost/json/serialize.hpp"
+#include "css_inliner.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
+#include "utl/decode.h"
 #include "web/web.h"
 
 namespace web {
 namespace {
+
+// Does the line start with this keyword, as a keyword?  "importantly" and
+// "exports" are identifiers, not module syntax.
+bool isKeyword(const std::string_view line, const std::string_view keyword)
+{
+  if (!line.starts_with(keyword)) {
+    return false;
+  }
+  if (line.size() == keyword.size()) {
+    return true;
+  }
+  const char next = line[keyword.size()];
+  return std::isalnum(static_cast<unsigned char>(next)) == 0 && next != '_'
+         && next != '$';
+}
 
 // ─── Fixture ────────────────────────────────────────────────────────────────
 
@@ -134,8 +153,12 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-container\""));
   EXPECT_TRUE(contains(html, "id=\"menu-bar\""));
   EXPECT_TRUE(contains(html, "id=\"loading-overlay\""));
-  EXPECT_TRUE(contains(html, "leaflet.css"));
-  EXPECT_TRUE(contains(html, "goldenlayout-base.css"));
+  // The stylesheets are inlined, so their file names are gone; what has to
+  // survive is the <link> element, which theme.js toggles by id.
+  EXPECT_TRUE(
+      contains(html, "<link rel=\"stylesheet\" href=\"data:text/css;base64,"));
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-dark\""));
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-light\""));
 }
 
 TEST_F(SaveReportTest, ContainsStaticCache)
@@ -162,20 +185,138 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   EXPECT_TRUE(contains(html, "ChartsWidget"));
 }
 
-TEST_F(SaveReportTest, GoldenLayoutFromCDN)
+// The widget sources share one <script type="module">, with their import/export
+// statements stripped: one that survives costs every widget in the report.
+TEST_F(SaveReportTest, InlinedScriptHasNoModuleSyntaxLeft)
 {
-  const std::string path = tempHtml("gl_cdn");
+  const std::string path = tempHtml("module_syntax");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // GoldenLayout loaded via ES module import from CDN.
-  EXPECT_TRUE(contains(html, "type=\"module\""));
-  EXPECT_TRUE(contains(html, "esm.sh/golden-layout"));
-  // No vendored golden-layout bundle in the HTML.
-  EXPECT_FALSE(contains(html, "goldenlayout.umd"));
+  const std::string opening = "<script type=\"module\">";
+  const size_t begin = html.find(opening);
+  ASSERT_NE(begin, std::string::npos);
+  const size_t end = html.find("</script>", begin);
+  ASSERT_NE(end, std::string::npos);
+  const std::string module
+      = html.substr(begin + opening.size(), end - begin - opening.size());
+
+  // The generator marks every source, so the first marker is the boundary:
+  // before it the header's imports, after it code with no module syntax.
+  const size_t body = module.find("// ── ");
+  ASSERT_NE(body, std::string::npos);
+
+  int header_imports = 0;
+  for (size_t at = 0; at < module.size();) {
+    const size_t eol = std::min(module.find('\n', at), module.size());
+    std::string_view line(module.data() + at, eol - at);
+    const bool in_header = at < body;
+    at = eol + 1;
+
+    const size_t indent = line.find_first_not_of(" \t");
+    if (indent == std::string_view::npos) {
+      continue;
+    }
+    line.remove_prefix(indent);
+    if (!isKeyword(line, "import") && !isKeyword(line, "export")) {
+      continue;
+    }
+    if (in_header && isKeyword(line, "import")) {
+      ++header_imports;
+      continue;
+    }
+    ADD_FAILURE() << "leftover module syntax: " << line;
+  }
+  // GoldenLayout and THREE, however they are resolved.
+  EXPECT_EQ(header_imports, 2);
 }
 
-// ─── Cache JSON Responses ───────────────────────────────────────────────────
+// The report opens from file:// with nothing behind it, so nothing in it may
+// point at a remote host (issue #11065).
+TEST_F(SaveReportTest, IsSelfContained)
+{
+  const std::string path = tempHtml("self_contained");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  // No attribute, url() or specifier may name a remote origin.  Bare "http://"
+  // is left alone: the widgets carry XML namespaces, which are identifiers.
+  for (const char* fetch : {"src=\"http",
+                            "src='http",
+                            "href=\"http",
+                            "href='http",
+                            "url(http",
+                            "url(\"http",
+                            "url('http",
+                            "from 'http",
+                            "from \"http"}) {
+    EXPECT_FALSE(contains(html, fetch)) << fetch;
+  }
+  // leaflet as a classic script, three and golden-layout as ES modules the
+  // import map redirects to their inlined copies.
+  EXPECT_TRUE(
+      contains(html, "<script src=\"data:application/javascript;base64,"));
+  EXPECT_TRUE(contains(html, "type=\"importmap\""));
+  EXPECT_TRUE(
+      contains(html, "\"three\": \"data:application/javascript;base64,"));
+  EXPECT_TRUE(contains(
+      html, "\"golden-layout\": \"data:application/javascript;base64,"));
+  EXPECT_TRUE(contains(html, "type=\"module\""));
+  EXPECT_TRUE(contains(html, "from 'golden-layout'"));
+  EXPECT_TRUE(contains(html, "from 'three'"));
+}
+
+// A relative icon url resolves against the saved file's directory, so every
+// stylesheet in the report -- the <style> block included -- has to be
+// rewritten.
+TEST_F(SaveReportTest, StylesheetIconsAreInlined)
+{
+  const std::string path = tempHtml("css_icons");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  const auto expectNoRelativeUrl = [](const std::string& css,
+                                      const std::string& what) {
+    // Through the production scanner, so the rule this asserts is the one
+    // the report was written with.
+    for (size_t open = 0;
+         (open = findUrlToken(css, open)) != std::string::npos;) {
+      const size_t close = css.find(')', open);
+      ASSERT_NE(close, std::string::npos) << what;
+      const std::string reference = css.substr(open + 4, close - (open + 4));
+      EXPECT_TRUE(reference.find("data:") != std::string::npos
+                  || reference.find('#') != std::string::npos)
+          << what << " has an unresolved url(" << reference << ")";
+      open = close;
+    }
+  };
+
+  // The vendored stylesheets travel as data: URIs.
+  const std::string marker = "href=\"data:text/css;base64,";
+  int stylesheets = 0;
+  for (size_t at = 0; (at = html.find(marker, at)) != std::string::npos;) {
+    const size_t start = at + marker.size();
+    const size_t end = html.find('"', start);
+    ASSERT_NE(end, std::string::npos);
+    expectNoRelativeUrl(utl::base64_decode(html.substr(start, end - start)),
+                        "a vendored stylesheet");
+    ++stylesheets;
+    at = end;
+  }
+  // leaflet, goldenlayout-base and the two themes.
+  EXPECT_EQ(stylesheets, 4);
+
+  // The viewer's own style.css is inlined as a <style> block, and goes through
+  // the same rewriting.
+  const std::string opening = "<style>";
+  const size_t begin = html.find(opening);
+  ASSERT_NE(begin, std::string::npos);
+  const size_t end = html.find("</style>", begin);
+  ASSERT_NE(end, std::string::npos);
+  expectNoRelativeUrl(
+      html.substr(begin + opening.size(), end - begin - opening.size()),
+      "the inlined style.css");
+}
 
 TEST_F(SaveReportTest, CachesValidTechResponse)
 {
