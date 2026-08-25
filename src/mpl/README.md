@@ -126,7 +126,7 @@ set_macro_guidance_region
 
 
 ### Set Macro Base Halo
-
+**Deprecated: use odb::set_halo or -min_channel_width/-min_channel_height instead.**
 Command for setting the base halo around all macros. Per-macro halos set with `set_macro_halo` take precedence.
 
 ```tcl
@@ -137,23 +137,6 @@ set_macro_base_halo width height
 #### Arguments
 
 The left, bottom, right and top halo, or the width (sets both left and right) and height (sets both bottom and top), in microns.
-
-### Set Macro Halo
-
-Command for setting a halo for specific macros. If unset, the macro will use the default halo.
-
-```tcl
-set_macro_halo
-    -macro_name macro_name
-    -halo {left bottom right top | width height}
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-macro_name` | The name of a macro of the design. |
-| `-halo` | The left, bottom, right and top halo or the width (sets both left and right) and height (sets both bottom and top), in microns. Consider the macro orientation as R0 when setting the halo. |
 
 ### Block Macro Channels
 
