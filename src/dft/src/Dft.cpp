@@ -3,6 +3,10 @@
 
 #include "dft/Dft.hh"
 
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -23,6 +27,7 @@
 #include "boost/property_tree/ptree.hpp"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace {
@@ -210,16 +215,16 @@ void Dft::scanOpt()
                     14,
                     "Cannot optimize: source/sink pins don't exist or have no "
                     "placement.");
-      return;
+      continue;
     }
 
     odb::Point src = odb::Point(src_x, src_y);
     odb::Point sink = odb::Point(sink_x, sink_y);
 
-    int64_t twl_internal = chain->estimateInternalTWL();
+    int64_t twl_internal = chain->estimateInternalTotalWireLength();
     int64_t twl = twl_internal;
     const auto& scan_cells = chain->getScanCells();
-    if (scan_cells.size() > 0) {
+    if (!scan_cells.empty()) {
       twl += odb::Point::manhattanDistance(src, scan_cells[0]->getOrigin());
       twl += odb::Point::manhattanDistance(
           scan_cells[scan_cells.size() - 1]->getOrigin(), sink);
@@ -243,14 +248,14 @@ void Dft::scanOpt()
           // Sort to reduce wire length
           odb::Point f_src(src_x, src_y);
           odb::Point f_sink(sink_x, sink_y);
-          if (rising.size() > 0) {
+          if (!rising.empty()) {
             f_sink = rising[0]->getOrigin();
           }
           auto falling_wire_length
               = OptimizeScanWirelength2Opt(f_src, f_sink, falling, logger_);
 
           odb::Point r_src(src_x, src_y);
-          if (falling.size() > 0) {
+          if (!falling.empty()) {
             r_src = falling[falling.size() - 1]->getOrigin();
           }
           odb::Point r_sink(sink_x, sink_y);
@@ -258,7 +263,7 @@ void Dft::scanOpt()
               = OptimizeScanWirelength2Opt(r_src, r_sink, rising, logger_);
 
           int64_t distance_between_falling_and_rising = 0;
-          if (rising.size() > 0 && falling.size() > 0) {
+          if (!rising.empty() && !falling.empty()) {
             distance_between_falling_and_rising = odb::Point::manhattanDistance(
                 falling[falling.size() - 1]->getOrigin(),
                 rising[0]->getOrigin());
@@ -278,14 +283,14 @@ void Dft::scanOpt()
                   "Concluded 2-Opt with total chain wire length {}.",
                   twl_opt);
 
-    int64_t twl_internal_opt = chain->estimateInternalTWL();
+    int64_t twl_internal_opt = chain->estimateInternalTotalWireLength();
     logger_->metric(fmt::format("dft__chain_twl_internal__post_opt__chain:{}",
                                 chain->getName()),
                     twl_internal_opt);
 
     const auto& scan_cells_opt = chain->getScanCells();
     int64_t twl_opt_confirm = twl_internal_opt;
-    if (scan_cells_opt.size() > 0) {
+    if (!scan_cells_opt.empty()) {
       twl_opt_confirm
           += odb::Point::manhattanDistance(src, scan_cells_opt[0]->getOrigin());
       twl_opt_confirm += odb::Point::manhattanDistance(

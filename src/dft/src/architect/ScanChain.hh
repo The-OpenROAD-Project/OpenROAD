@@ -52,7 +52,7 @@ class ScanChain
                                   std::vector<std::unique_ptr<ScanCell>>&)>&
           sort_fn);
 
-  int64_t estimateInternalTWL();
+  int64_t estimateInternalTotalWireLength();
 
   // Returns a reference to a vector containing all the scan cells of the chain
   const std::vector<std::unique_ptr<ScanCell>>& getScanCells() const;

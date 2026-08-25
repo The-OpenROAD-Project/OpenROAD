@@ -3,9 +3,8 @@
 
 #include "Opt.hh"
 
-#include <cinttypes>
-#include <cstddef>
-#include <cstdint>
+#include <cassert>
+#include <cstdlib>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -16,6 +15,7 @@
 #include "boost/geometry/geometries/register/point.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -106,18 +106,18 @@ int64_t OptimizeScanWirelength2Opt(
     const odb::Point sink,
     std::vector<std::unique_ptr<ScanCell>>& cells,
     utl::Logger* logger,
-    size_t max_iters)
+    const size_t max_iters)
 {
   // Nothing to order
   if (cells.empty()) {
     return 0;
   }
 
-  size_t N = cells.size() + 2;
+  size_t node_count = cells.size() + 2;
 
-  std::vector<odb::Point> points(N);
-  size_t i = -1;
-  points[++i] = source;
+  std::vector<odb::Point> points(node_count);
+  size_t i = 0;
+  points[i++] = source;
 
   int64_t score = 0;
   odb::Point last = points[i];
@@ -133,14 +133,12 @@ int64_t OptimizeScanWirelength2Opt(
   }
   points[++i] = sink;
   score += odb::Point::manhattanDistance(last, sink);
-  assert(++i == N);
+
+  // Awkward but avoid side effect in assert
+  ++i;
+  assert(i == node_count);
 
   int64_t best_score = score;
-
-  // Already "optimal" (unplaced)
-  if (best_score == 0) {
-    return 0;
-  }
 
   size_t iters = 0;
   bool improved_last_iter = true;
@@ -154,8 +152,8 @@ int64_t OptimizeScanWirelength2Opt(
                iters,
                best_score);
     improved_last_iter = false;
-    for (size_t i = 0; i < N - 2; i += 1) {
-      for (size_t j = i + 2; j < N - 1; j += 1) {
+    for (size_t i = 0; i < node_count - 2; i += 1) {
+      for (size_t j = i + 2; j < node_count - 1; j += 1) {
         auto&& x = points[i];
         auto&& y = points[j];
         auto&& u = points[i + 1];

@@ -58,7 +58,7 @@ void ScanArchitectHeuristic::architect()
                 = OptimizeScanWirelengthNN(falling, logger_);
             auto rising_wire_length = OptimizeScanWirelengthNN(rising, logger_);
             int64_t distance_between_falling_and_rising = 0;
-            if (rising.size() && falling.size()) {
+            if (!rising.empty() && !falling.empty()) {
               distance_between_falling_and_rising
                   = odb::Point::manhattanDistance(
                       falling[falling.size() - 1]->getOrigin(),

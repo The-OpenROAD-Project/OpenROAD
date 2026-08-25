@@ -75,7 +75,7 @@ int64_t ScanChain::sortScanCells(
   return total_wire_length;
 }
 
-int64_t ScanChain::estimateInternalTWL()
+int64_t ScanChain::estimateInternalTotalWireLength()
 {
   if (scan_cells_.size() == 0) {
     return 0;
