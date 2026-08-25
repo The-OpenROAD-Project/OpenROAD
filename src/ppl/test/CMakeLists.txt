@@ -51,6 +51,8 @@ or_integration_tests(
     annealing_mirrored4
     annealing_mirrored5
     annealing_mirrored_hang
+    annealing_pdn_boundary
+    annealing_polygon
     blocked_region
     cells_not_placed
     exclude1
