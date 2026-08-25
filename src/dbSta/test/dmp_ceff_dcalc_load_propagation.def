@@ -1,7 +1,7 @@
 VERSION 5.8 ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-DESIGN lambert_w_pi_elmore ;
+DESIGN dmp_ceff_dcalc_load_propagation ;
 UNITS DISTANCE MICRONS 1000 ;
 DIEAREA ( 0 0 ) ( 400000 100000 ) ;
 

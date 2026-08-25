@@ -108,7 +108,7 @@ ALL_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    "dmp_ceff_lambert_w_pi_elmore",
+    "dmp_ceff_dcalc_load_propagation",
 ]
 
 ALL_TESTS += PASSFAIL_TESTS
