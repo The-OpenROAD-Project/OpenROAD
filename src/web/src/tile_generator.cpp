@@ -20,6 +20,7 @@
 #include <span>  // NOLINT(build/c++20)
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -77,6 +78,9 @@ std::string dbuToMicronString(const int dbu, const double dbu_per_micron)
 
 namespace {
 
+// The pixel helpers below move Color as a 4-byte word.
+static_assert(sizeof(Color) == 4 && std::is_trivially_copyable_v<Color>);
+
 inline void copyRGBA(unsigned char* dst, const unsigned char* src)
 {
   std::memcpy(dst, src, sizeof(uint32_t));
@@ -94,7 +98,8 @@ inline void zeroRGBA(unsigned char* dst)
 
 bool anyNonZero(std::span<const unsigned char> data)
 {
-  // 1. Fast SIMD path: 64-byte blocks (cache-line width)
+  // OR-reduce 64-byte (cache-line) blocks eight u64 at a time; the compiler
+  // vectorizes this where it can.
   while (data.size() >= 64) {
     std::array<uint64_t, 8> chunk;
     std::memcpy(chunk.data(), data.data(), 64);
@@ -106,7 +111,7 @@ bool anyNonZero(std::span<const unsigned char> data)
     data = data.subspan(64);
   }
 
-  // 2. Clean-up: 0 to 63 bytes remaining
+  // Remaining 0-63 bytes.
   return std::any_of(
       data.begin(), data.end(), [](unsigned char b) { return b != 0; });
 }
@@ -140,7 +145,7 @@ inline void compositePixel(unsigned char* dst, const unsigned char* src)
   // division)
   const uint32_t t_fp = (sa << 16) / out_a;
 
-  auto blend_ch = [t_fp](uint32_t d, uint32_t s) -> unsigned char {
+  auto lerp_ch = [t_fp](uint32_t d, uint32_t s) -> unsigned char {
     int32_t diff = static_cast<int32_t>(s) - static_cast<int32_t>(d);
     // t_fp <= 1.0 so the result lies between d and s: no clamp needed.
     const int32_t res = static_cast<int32_t>(d)
@@ -148,9 +153,9 @@ inline void compositePixel(unsigned char* dst, const unsigned char* src)
     return static_cast<unsigned char>(res);
   };
 
-  dst[0] = blend_ch(dst[0], src[0]);
-  dst[1] = blend_ch(dst[1], src[1]);
-  dst[2] = blend_ch(dst[2], src[2]);
+  dst[0] = lerp_ch(dst[0], src[0]);
+  dst[1] = lerp_ch(dst[1], src[1]);
+  dst[2] = lerp_ch(dst[2], src[2]);
   dst[3] = static_cast<unsigned char>(out_a);
 }
 
@@ -180,6 +185,61 @@ void fillSpan(std::span<unsigned char> dst, const Color& color)
   while (dst.size() >= sizeof(uint32_t)) {
     std::memcpy(dst.data(), &c, sizeof(uint32_t));
     dst = dst.subspan(sizeof(uint32_t));
+  }
+}
+
+// Alpha-composites a dim x dim RGBA tile onto `dst` (row stride
+// `dst_stride_px` pixels) with its top-left corner at (ox, oy).  Transparent
+// rows and pixels are skipped, which is most of a sparse layer tile.  The
+// caller guarantees the tile lies inside dst.
+void compositeTile(std::span<const unsigned char> tile,
+                   const int dim,
+                   unsigned char* dst,
+                   const size_t dst_stride_px,
+                   const int ox,
+                   const int oy)
+{
+  const size_t row_bytes = static_cast<size_t>(dim) * 4;
+  for (int py = 0; py < dim; ++py) {
+    const unsigned char* srow = &tile[py * row_bytes];
+    if (!anyNonZero({srow, row_bytes})) {
+      continue;
+    }
+    unsigned char* drow = &dst[(static_cast<size_t>(oy + py) * dst_stride_px
+                                + static_cast<size_t>(ox))
+                               * 4];
+    for (int px = 0; px < dim; ++px) {
+      compositePixel(&drow[px * 4], &srow[px * 4]);
+    }
+  }
+}
+
+// Splits [0, n) into up to `threads` contiguous ranges and runs
+// fn(begin, end) on each, on `pool` when given and on the calling thread
+// otherwise.  The first exception thrown by a worker is rethrown here.
+template <typename F>
+void parallelRanges(utl::ThreadPool* pool,
+                    const int threads,
+                    const int n,
+                    const F& fn)
+{
+  const int chunks = std::min(n, threads);
+  if (pool == nullptr || chunks <= 1) {
+    fn(0, n);
+    return;
+  }
+  std::vector<utl::ThreadPoolFuture<void>> futures;
+  futures.reserve(chunks);
+  for (int t = 0; t < chunks; ++t) {
+    const int begin = static_cast<int>((static_cast<int64_t>(t) * n) / chunks);
+    const int end
+        = static_cast<int>((static_cast<int64_t>(t + 1) * n) / chunks);
+    futures.push_back(pool->submit([&fn, begin, end]() { fn(begin, end); }));
+  }
+  // get() (not wait()) so an exception thrown in a worker propagates to the
+  // caller instead of silently yielding a partial image.
+  for (auto& f : futures) {
+    f.get();
   }
 }
 
@@ -2861,8 +2921,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // Supersampled render buffer (RGBA, super x super).  The per-chiplet loop
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
-    // thread_local (renders run one-per-thread) so the large buffer is reused
-    // across tiles without reallocating.
+    // thread_local so the large buffer is reused across the tiles a thread
+    // renders without reallocating.
     static thread_local std::vector<unsigned char> super_buffer;
     if (super_buffer.size() != static_cast<size_t>(super_buffer_size)) {
       super_buffer.resize(super_buffer_size);
@@ -4256,7 +4316,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // geometry so no beat survives at the output (physical) pixel grid.
     // Empty tiles (common while panning) skip the decimation entirely:
     // world_image_buffer already holds a transparent tile_px buffer, and a
-    // transparent super buffer cannot alias.
+    // transparent super buffer cannot alias.  anyNonZero early-exits on the
+    // first drawn byte, so non-empty tiles pay almost nothing for the check.
     if (anyNonZero(super_buffer)) {
       world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
     }
@@ -4652,13 +4713,13 @@ static std::vector<unsigned char> lanczos2Downsample(
         continue;
       }
       const float inv_ai = 255.0f / ai;
-      const auto blend_ch = [&](const float ch) {
+      const auto unpremult = [&](const float ch) {
         return static_cast<unsigned char>(
             std::lround(std::clamp(ch * inv_ai, 0.0f, 255.0f)));
       };
-      d[0] = blend_ch(r);
-      d[1] = blend_ch(g);
-      d[2] = blend_ch(b);
+      d[0] = unpremult(r);
+      d[1] = unpremult(g);
+      d[2] = unpremult(b);
       d[3] = static_cast<unsigned char>(std::lround(ai));
     }
   }
@@ -4772,109 +4833,51 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   const std::vector<TextLabel> labels
       = vis.labels ? labelsForDraw() : std::vector<TextLabel>{};
 
-  // Render each tile. Each (tx, ty) tile maps to a completely disjoint
-  // rectangular region in output, allowing lock-free concurrent rendering
-  // across threads.
-  const int hw_threads
+  // Render each tile.  Each (tx, ty) tile maps to a disjoint rectangle of
+  // `output`, so tiles render concurrently without locking.
+  const int num_threads
       = num_threads_ > 0 ? num_threads_ : (sta_ ? sta_->threadCount() : 1);
   std::unique_ptr<utl::ThreadPool> thread_pool;
-  if (hw_threads > 1) {
-    thread_pool = std::make_unique<utl::ThreadPool>(hw_threads);
+  if (num_threads > 1 && total_tiles > 1) {
+    thread_pool = std::make_unique<utl::ThreadPool>(num_threads);
   }
 
-  const int num_render_threads = std::min<int>(total_tiles, hw_threads);
-
-  auto render_tile_range = [&](const int start_tile, const int end_tile) {
+  auto render_tiles = [&](const int start_tile, const int end_tile) {
     for (int tile_idx = start_tile; tile_idx < end_tile; ++tile_idx) {
       const int tx = tx_min + (tile_idx % total_tiles_x);
       const int ty = ty_min + (tile_idx / total_tiles_x);
       const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+      // Y is flipped: ty is bottom-up, output is top-down.
       const int out_oy = (ty_max - ty) * kTileSizeInPixel;
+      // Leaflet-style y coordinate (before the flip in renderTileBuffer).
       const int leaflet_y = num_tiles - 1 - ty;
 
       for (const auto& layer : layers_to_render) {
-        auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
-
-        // Fast check: if the tile buffer is empty, skip compositing entirely.
-        if (!anyNonZero(tile_buf)) {
-          continue;
-        }
-
-        // Composite non-empty tile onto output at (out_ox, out_oy).
-        for (int py = 0; py < kTileSizeInPixel; ++py) {
-          const unsigned char* srow = &tile_buf[py * kTileSizeInPixel * 4];
-          if (!anyNonZero({srow, static_cast<size_t>(kTileSizeInPixel * 4)})) {
-            continue;
-          }
-          unsigned char* drow
-              = &output[(static_cast<size_t>(out_oy + py) * tile_span_w
-                         + out_ox)
-                        * 4];
-          for (int px = 0; px < kTileSizeInPixel; ++px) {
-            const unsigned char* sp = &srow[px * 4];
-            if (sp[3] == 0) {
-              continue;
-            }
-            unsigned char* dp = &drow[px * 4];
-            if (sp[3] == 255 || dp[3] == 0) {
-              copyRGBA(dp, sp);
-            } else {
-              compositePixel(dp, sp);
-            }
-          }
-        }
+        const auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
+        compositeTile(tile_buf,
+                      kTileSizeInPixel,
+                      output.data(),
+                      tile_span_w,
+                      out_ox,
+                      out_oy);
       }
 
-      // Composite user text labels on top of all layers (Qt-parity: labels
-      // appear in save_image).
-      auto label_buf = labels.empty()
-                           ? std::vector<unsigned char>()
-                           : renderLabelTile(z, tx, leaflet_y, labels);
-      if (!label_buf.empty() && anyNonZero(label_buf)) {
-        for (int py = 0; py < kTileSizeInPixel; ++py) {
-          const unsigned char* srow = &label_buf[py * kTileSizeInPixel * 4];
-          if (!anyNonZero({srow, static_cast<size_t>(kTileSizeInPixel * 4)})) {
-            continue;
-          }
-          unsigned char* drow
-              = &output[(static_cast<size_t>(out_oy + py) * tile_span_w
-                         + out_ox)
-                        * 4];
-          for (int px = 0; px < kTileSizeInPixel; ++px) {
-            const unsigned char* sp = &srow[px * 4];
-            if (sp[3] == 0) {
-              continue;
-            }
-            unsigned char* dp = &drow[px * 4];
-            if (sp[3] == 255 || dp[3] == 0) {
-              copyRGBA(dp, sp);
-            } else {
-              compositePixel(dp, sp);
-            }
-          }
+      // User text labels go on top of all layers (Qt parity: labels appear
+      // in save_image).
+      if (!labels.empty()) {
+        const auto label_buf = renderLabelTile(z, tx, leaflet_y, labels);
+        if (!label_buf.empty()) {
+          compositeTile(label_buf,
+                        kTileSizeInPixel,
+                        output.data(),
+                        tile_span_w,
+                        out_ox,
+                        out_oy);
         }
       }
     }
   };
-
-  if (!thread_pool || num_render_threads <= 1) {
-    render_tile_range(0, total_tiles);
-  } else {
-    std::vector<utl::ThreadPoolFuture<void>> futures;
-    futures.reserve(num_render_threads);
-    for (int t = 0; t < num_render_threads; ++t) {
-      const int start_tile = (t * total_tiles) / num_render_threads;
-      const int end_tile = ((t + 1) * total_tiles) / num_render_threads;
-      futures.push_back(thread_pool->submit([=, &render_tile_range]() {
-        render_tile_range(start_tile, end_tile);
-      }));
-    }
-    // get() (not wait()) so an exception thrown in a worker propagates to
-    // the caller instead of silently yielding a partial image.
-    for (auto& f : futures) {
-      f.get();
-    }
-  }
+  parallelRanges(thread_pool.get(), num_threads, total_tiles, render_tiles);
 
   // Crop to the exact requested area.
   // The tile span covers a larger region; compute the pixel offset of the
@@ -4903,9 +4906,8 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   // and composite the (possibly semi-transparent) tiles on top, so the saved
   // image matches the viewer's background instead of coming out transparent.
   std::vector<unsigned char> final_buf(4UL * final_w * final_h);
-  const int num_resample_threads = std::min<int>(final_h, hw_threads);
 
-  auto resample_row_range = [&](const int start_y, const int end_y) {
+  auto resample_rows = [&](const int start_y, const int end_y) {
     for (int fy = start_y; fy < end_y; ++fy) {
       unsigned char* dst_row
           = &final_buf[static_cast<size_t>(fy) * final_w * 4];
@@ -4925,34 +4927,13 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
         unsigned char* dp = &dst_row[fx * 4];
         copyRGBA(dp, bg);
         if (sx >= 0 && sx < tile_span_w) {
-          const unsigned char* sp = &src_row[sx * 4];
-          if (sp[3] == 255 || dp[3] == 0) {
-            copyRGBA(dp, sp);
-          } else if (sp[3] > 0) {
-            compositePixel(dp, sp);
-          }
+          compositePixel(dp, &src_row[sx * 4]);
         }
       }
     }
   };
 
-  if (!thread_pool || num_resample_threads <= 1) {
-    resample_row_range(0, final_h);
-  } else {
-    std::vector<utl::ThreadPoolFuture<void>> futures;
-    futures.reserve(num_resample_threads);
-    for (int t = 0; t < num_resample_threads; ++t) {
-      const int start_y = (t * final_h) / num_resample_threads;
-      const int end_y = ((t + 1) * final_h) / num_resample_threads;
-      futures.push_back(thread_pool->submit(
-          [=, &resample_row_range]() { resample_row_range(start_y, end_y); }));
-    }
-    // get() (not wait()) so an exception thrown in a worker propagates to
-    // the caller instead of silently yielding a partial image.
-    for (auto& f : futures) {
-      f.get();
-    }
-  }
+  parallelRanges(thread_pool.get(), num_threads, final_h, resample_rows);
 
   if (out_width) {
     *out_width = final_w;

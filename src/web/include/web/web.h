@@ -209,6 +209,10 @@ class WebServer
   utl::Logger* logger_ = nullptr;
   Tcl_Interp* interp_ = nullptr;
   int num_threads_ = 0;
+  // Creates the tile generator on first use (the server need not be running)
+  // and hands it the configured thread count.
+  TileGenerator& ensureGenerator();
+
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;
 
