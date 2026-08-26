@@ -12,6 +12,7 @@ proc wire_delay { from_pin to_pin } {
 proc report_model { label calculator } {
   puts "\n=== $label ==="
   set_delay_calculator $calculator
+  estimate_parasitics -placement
   sta::find_requireds
   report_checks \
     -unconstrained \
@@ -26,12 +27,10 @@ read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def dmp_ceff_dcalc_load_propagation.def
 
-# Build PiElmore parasitics with nonzero resistance and capacitance.
+# Configure placement parasitics with nonzero resistance and capacitance.
 set_input_transition 0 [get_ports in]
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
-set_delay_calculator dmp_ceff_elmore
-estimate_parasitics -placement
 
 set input_port [get_ports in]
 set input_load [get_pins u1/A]
@@ -52,7 +51,7 @@ if {
   error "Elmore control did not produce positive slew and net delays"
 }
 
-# Capture the missing propagation under TwoPole.
+# Verify physical propagation with TwoPole.
 set failures {}
 report_model "TwoPole (dmp_ceff_two_pole)" dmp_ceff_two_pole
 set two_pole_input_slew [get_property $input_load slew_max_rise]
@@ -74,7 +73,7 @@ if { $two_pole_driver_slew == $two_pole_load_slew } {
   lappend failures "TwoPole: u2/A load slew equals u1/Z driver slew"
 }
 
-# Capture the same missing propagation under Lambert-W.
+# Verify physical propagation with Lambert-W.
 report_model "Lambert-W (dmp_ceff_lambert_w)" dmp_ceff_lambert_w
 set lambert_input_slew [get_property $input_load slew_max_rise]
 set lambert_input_delay [wire_delay $input_port $input_load]
@@ -95,10 +94,10 @@ if { $lambert_driver_slew == $lambert_load_slew } {
   lappend failures "Lambert-W: u2/A load slew equals u1/Z driver slew"
 }
 
-# Fail until both models propagate input-port and internal-net RC effects.
+# Verify both models propagate input-port and internal-net RC effects.
 if { [llength $failures] > 0 } {
   set failure_details [join $failures "\n  - "]
-  error "PiElmore propagation failed:\n  - $failure_details"
+  error "DMP Ceff load propagation failed:\n  - $failure_details"
 }
 
 puts "pass"

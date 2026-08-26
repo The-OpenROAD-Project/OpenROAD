@@ -33,6 +33,11 @@ class DmpCeffTwoPoleDelayCalc : public DmpCeffDelayCalc
                            const RiseFall* rf,
                            const Scene* scene,
                            const MinMax* min_max) override;
+  Parasitic* reduceParasitic(const Parasitic* parasitic_network,
+                             const Pin* drvr_pin,
+                             const RiseFall* rf,
+                             const Scene* scene,
+                             const MinMax* min_max) override;
   ArcDcalcResult inputPortDelay(const Pin* port_pin,
                                 float in_slew,
                                 const RiseFall* rf,
@@ -50,6 +55,8 @@ class DmpCeffTwoPoleDelayCalc : public DmpCeffDelayCalc
                            const MinMax* min_max) override;
 
  protected:
+  using ArcDelayCalc::reduceParasitic;
+
   void loadDelaySlew(const Pin* load_pin,
                      double drvr_slew,
                      const RiseFall* rf,

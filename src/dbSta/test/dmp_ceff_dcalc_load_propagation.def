@@ -5,9 +5,10 @@ DESIGN dmp_ceff_dcalc_load_propagation ;
 UNITS DISTANCE MICRONS 1000 ;
 DIEAREA ( 0 0 ) ( 400000 100000 ) ;
 
-COMPONENTS 2 ;
+COMPONENTS 3 ;
 - u1 BUF_X1 + PLACED ( 100000 40000 ) N ;
 - u2 BUF_X1 + PLACED ( 200000 40000 ) N ;
+- u3 BUF_X1 + PLACED ( 200000 80000 ) N ;
 END COMPONENTS
 
 PINS 2 ;
@@ -19,7 +20,7 @@ END PINS
 
 NETS 3 ;
 - in ( PIN in ) ( u1 A ) + USE SIGNAL ;
-- n1 ( u1 Z ) ( u2 A ) + USE SIGNAL ;
+- n1 ( u1 Z ) ( u2 A ) ( u3 A ) + USE SIGNAL ;
 - out ( u2 Z ) ( PIN out ) + USE SIGNAL ;
 END NETS
 
