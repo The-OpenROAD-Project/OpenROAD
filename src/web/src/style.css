@@ -1,127 +1,250 @@
 /* ─── Theme Variables ─────────────────────────────────────────────────────── */
 
-/* --bg-map is black in both themes to match the Qt GUI's default background
-   (displayControls.cpp, background_color_ = Qt::black).  Layer shapes are drawn
-   semi-transparent (alpha 180/255), so the background shows through them and
-   any difference here shifts every rendered color away from the Qt GUI's.  It
-   remains user-settable through the Background control. */
+/* Colors live in two layers.
+ *
+ * The scales -- --surface-*, --line-*, --ink-*, --accent-*, --sem-* -- are the
+ * palette, and each theme block below defines the whole set.  The role names
+ * after them (--bg-*, --fg-*, --border*, --accent, --canvas-*, ...) are what
+ * every component rule uses, and each is an alias for a scale step.  A palette
+ * change is therefore a scale edit, not a sweep through the component rules.
+ *
+ * Two constraints on the aliases:
+ *
+ *   - Anything paired with --fg-white in a component rule (--bg-selected,
+ *     --accent) has to stay a solid step dark enough to carry white text in
+ *     BOTH themes, so those alias --accent-solid rather than a tint.  Row
+ *     highlights that carry --fg-primary instead (--bg-selected-row) are the
+ *     tints.
+ *   - getThemeColors() in theme.js reads --canvas-*, --fg-primary, --fg-muted,
+ *     --bg-panel and --bg-map off the computed style and hands them to Canvas
+ *     2D.  var() in a custom property is substituted at computed-value time,
+ *     so aliasing them is safe; a raw `var(...)` string reaching fillStyle
+ *     would be silently ignored, so keep them resolving to a color.
+ *
+ * --bg-map is black in both themes to match the Qt GUI's default background
+ * (displayControls.cpp, background_color_ = Qt::black).  Layer shapes are drawn
+ * semi-transparent (alpha 180/255), so the background shows through them and
+ * any difference here shifts every rendered color away from the Qt GUI's.  It
+ * remains user-settable through the Background control, so it is a literal
+ * rather than an alias -- an inline override replaces this declaration. */
+
+/* Theme-independent scales.  Corner radii were picked per rule -- five values
+ * across 46 declarations -- so they are collapsed to three steps chosen by
+ * what the element is, not by how big it happens to be. */
+:root {
+    --radius-xs: 2px;   /* color swatches, chips, badges */
+    --radius-sm: 4px;   /* controls: buttons, inputs, list rows */
+    --radius-md: 7px;   /* panels, dialogs, floating surfaces */
+
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
 
 html[data-theme="dark"] {
-    --bg-main: #1e1e1e;
-    --bg-panel: #252525;
-    --bg-input: #1a1a1a;
-    --bg-input-deep: #111;
-    --bg-header: #2d2d2d;
-    --bg-hover: #3c3c3c;
-    --bg-selected: #094771;
-    --bg-selected-row: #1a3a5c;
-    --bg-selected-alt: #3a3a1c;
-    --bg-context: #2a2a2a;
-    --bg-overlay: rgba(0, 0, 0, 0.5);
-    --bg-status: rgba(0, 0, 0, 0.7);
-    --bg-tooltip: rgba(30, 30, 30, 0.95);
-    --bg-heatmap-legend: rgba(18, 20, 24, 0.88);
-    --bg-rubber-band: rgba(255, 255, 255, 0.1);
+    /* Native scrollbars, <select> popups and other UA-drawn chrome follow
+     * color-scheme; accent-color points checkboxes at the palette. */
+    color-scheme: dark;
+
+    /* Scales.  Surfaces are three deliberate elevation steps plus a sunken
+     * pair for inputs, all biased cool so they sit with the accent. */
+    --surface-ground: #0a0d11;
+    --surface-panel: #11171d;
+    --surface-raised: #182027;
+    --surface-float: #1c252d;
+    --surface-sunken: #0c1115;
+    --surface-deep: #080b0e;
+    --surface-hover: #232d35;
+    --surface-tint: #16272f;      /* accent at ~9% over --surface-panel */
+    --surface-tint-warm: #363323; /* second highlight, distinct from tint */
+
+    --line-1: #1b242c;
+    --line-2: #29343d;
+    --line-3: #3a4753;
+
+    --ink-0: #f1f6f9;
+    --ink-1: #dce5eb;
+    --ink-2: #9cadba;
+    --ink-3: #7a8d9b;
+    --ink-4: #4f606c;
+
+    --accent-solid: #0b6d84;   /* carries --fg-white at 5.5:1 */
+    --accent-solid-hover: #0d7f99;
+    --accent-bright: #46c9e0;  /* strokes and underlines on dark */
+    --accent-on-surface: #7ddcee;  /* accent as text */
+    --accent-alpha-strong: rgba(70, 201, 224, 0.22);
+    --accent-alpha: rgba(70, 201, 224, 0.16);
+
+    --sem-error: #f0616a;
+    --sem-error-text: #ff7d84;
+    --sem-danger: #7a2226;         /* destructive action */
+    --sem-danger-line: #a33338;
+    --sem-danger-hover: #94282d;
+    --sem-warn: #f2c000;           /* debug pause, deliberately loud */
+    --sem-warn-ink: #0a0d11;
+
+    /* Roles. */
+    --bg-main: var(--surface-ground);
+    --bg-panel: var(--surface-panel);
+    --bg-input: var(--surface-sunken);
+    --bg-input-deep: var(--surface-deep);
+    --bg-header: var(--surface-raised);
+    --bg-hover: var(--surface-hover);
+    --bg-selected: var(--accent-solid);
+    --bg-selected-row: var(--surface-tint);
+    --bg-selected-alt: var(--surface-tint-warm);
+    --bg-context: var(--surface-float);
+    --bg-overlay: rgba(4, 7, 10, 0.58);
+    --bg-status: rgba(10, 14, 18, 0.76);
+    --bg-tooltip: rgba(24, 32, 39, 0.96);
+    --bg-heatmap-legend: rgba(12, 18, 24, 0.88);
+    --bg-rubber-band: var(--accent-alpha);
     --bg-map: #000;
 
-    --fg-primary: #ccc;
-    --fg-secondary: #aaa;
-    --fg-muted: #888;
-    --fg-disabled: #666;
-    --fg-bright: #eee;
+    --fg-primary: var(--ink-1);
+    --fg-secondary: var(--ink-2);
+    --fg-muted: var(--ink-3);
+    --fg-disabled: var(--ink-4);
+    --fg-bright: var(--ink-0);
     --fg-white: #fff;
-    --fg-heatmap-title: #f2f2f2;
-    --fg-heatmap-units: #9ca3af;
+    --fg-heatmap-title: var(--ink-0);
+    --fg-heatmap-units: var(--ink-3);
 
-    --border: #444;
-    --border-subtle: #333;
-    --border-strong: #555;
+    --border: var(--line-2);
+    --border-subtle: var(--line-1);
+    --border-strong: var(--line-3);
     --border-heatmap-legend: rgba(255, 255, 255, 0.14);
 
-    --accent: #094771;
-    --accent-hover: #0b5a8f;
-    --accent-link: #4fc3f7;
-    --accent-text: #87cfff;
-    --accent-breadcrumb: #6cb0f6;
-    --accent-tab: #4fc3f7;
+    --accent: var(--accent-solid);
+    --accent-hover: var(--accent-solid-hover);
+    --accent-link: var(--accent-on-surface);
+    --accent-text: var(--accent-on-surface);
+    --accent-breadcrumb: var(--accent-on-surface);
+    --accent-tab: var(--accent-bright);
 
-    --error: #f88;
-    --error-text: #f55;
+    --error: var(--sem-error);
+    --error-text: var(--sem-error-text);
 
-    --shadow: rgba(0, 0, 0, 0.5);
-    --shadow-strong: rgba(0, 0, 0, 0.35);
-    --col-resize: rgba(255, 255, 255, 0.15);
+    --shadow: rgba(0, 0, 0, 0.55);
+    --shadow-strong: rgba(0, 0, 0, 0.4);
+    --col-resize: var(--accent-alpha-strong);
 
-    --canvas-bg: #1a1a1a;
-    --canvas-text: #666;
-    --canvas-axis: #555;
-    --canvas-label: #aaa;
-    --canvas-grid: #333;
-    --canvas-title: #888;
+    /* --canvas-bg matches the panel so a canvas widget has no visible seam
+     * against the panel it is docked in. */
+    --canvas-bg: var(--surface-panel);
+    --canvas-text: var(--ink-3);
+    --canvas-axis: var(--ink-4);
+    --canvas-label: var(--ink-2);
+    --canvas-grid: var(--line-2);
+    --canvas-title: var(--ink-3);
 
-    --spinner-track: #555;
-    --spinner-head: #ccc;
+    --spinner-track: var(--line-3);
+    --spinner-head: var(--ink-1);
 
-    --ruler-label-bg: rgba(0, 0, 0, 0.75);
+    --ruler-label-bg: rgba(10, 14, 18, 0.78);
+
+    accent-color: var(--accent);
 }
 
 html[data-theme="light"] {
-    --bg-main: #ffffff;
-    --bg-panel: #f5f5f5;
-    --bg-input: #ffffff;
-    --bg-input-deep: #f0f0f0;
-    --bg-header: #e8e8e8;
-    --bg-hover: #d0d0d0;
-    --bg-selected: #0078d4;
-    --bg-selected-row: #cce5ff;
-    --bg-selected-alt: #fff8dc;
-    --bg-context: #f0f0f0;
-    --bg-overlay: rgba(0, 0, 0, 0.3);
-    --bg-status: rgba(255, 255, 255, 0.85);
-    --bg-tooltip: rgba(255, 255, 255, 0.95);
-    --bg-heatmap-legend: rgba(255, 255, 255, 0.92);
-    --bg-rubber-band: rgba(0, 120, 212, 0.15);
+    color-scheme: light;
+
+    /* Light is picked against its own ground, not derived from the dark set.
+     * Note --surface-ground is the lightest step here and the darkest one in
+     * dark mode: the roles keep their meaning, the ordering does not carry
+     * over. */
+    --surface-ground: #ffffff;
+    --surface-panel: #f4f7f9;
+    --surface-raised: #e9eff3;
+    --surface-float: #ffffff;
+    --surface-sunken: #ffffff;
+    --surface-deep: #f1f5f7;
+    --surface-hover: #e2eaee;
+    --surface-tint: #e4eff2;
+    --surface-tint-warm: #faf0d5;
+
+    --line-1: #e4eaee;
+    --line-2: #d5dfe4;
+    --line-3: #b9c7ce;
+
+    --ink-0: #0b1218;
+    --ink-1: #16212a;
+    --ink-2: #40525e;
+    --ink-3: #5b6f7b;
+    --ink-4: #93a4ae;
+
+    --accent-solid: #0b7089;   /* carries --fg-white at 5.4:1 */
+    --accent-solid-hover: #095b70;
+    --accent-bright: #0b7089;
+    --accent-on-surface: #075c70;
+    --accent-alpha-strong: rgba(11, 112, 137, 0.2);
+    --accent-alpha: rgba(11, 112, 137, 0.15);
+
+    --sem-error: #c8332f;
+    --sem-error-text: #a8271f;
+    --sem-danger: #b3282d;         /* destructive action */
+    --sem-danger-line: #98211f;
+    --sem-danger-hover: #9c2126;
+    --sem-warn: #e8b100;           /* debug pause, deliberately loud */
+    --sem-warn-ink: #101a21;
+
+    /* Roles. */
+    --bg-main: var(--surface-ground);
+    --bg-panel: var(--surface-panel);
+    --bg-input: var(--surface-sunken);
+    --bg-input-deep: var(--surface-deep);
+    --bg-header: var(--surface-raised);
+    --bg-hover: var(--surface-hover);
+    --bg-selected: var(--accent-solid);
+    --bg-selected-row: var(--surface-tint);
+    --bg-selected-alt: var(--surface-tint-warm);
+    --bg-context: var(--surface-float);
+    --bg-overlay: rgba(16, 26, 33, 0.32);
+    --bg-status: rgba(255, 255, 255, 0.88);
+    --bg-tooltip: rgba(255, 255, 255, 0.97);
+    --bg-heatmap-legend: rgba(255, 255, 255, 0.93);
+    --bg-rubber-band: var(--accent-alpha);
     --bg-map: #000;
 
-    --fg-primary: #1e1e1e;
-    --fg-secondary: #444;
-    --fg-muted: #666;
-    --fg-disabled: #999;
-    --fg-bright: #111;
+    --fg-primary: var(--ink-1);
+    --fg-secondary: var(--ink-2);
+    --fg-muted: var(--ink-3);
+    --fg-disabled: var(--ink-4);
+    --fg-bright: var(--ink-0);
     --fg-white: #fff;
-    --fg-heatmap-title: #222;
-    --fg-heatmap-units: #666;
+    --fg-heatmap-title: var(--ink-0);
+    --fg-heatmap-units: var(--ink-3);
 
-    --border: #d0d0d0;
-    --border-subtle: #e0e0e0;
-    --border-strong: #bbb;
+    --border: var(--line-2);
+    --border-subtle: var(--line-1);
+    --border-strong: var(--line-3);
     --border-heatmap-legend: rgba(0, 0, 0, 0.12);
 
-    --accent: #0078d4;
-    --accent-hover: #106ebe;
-    --accent-link: #0058a3;
-    --accent-text: #0058a3;
-    --accent-breadcrumb: #0058a3;
-    --accent-tab: #0078d4;
+    --accent: var(--accent-solid);
+    --accent-hover: var(--accent-solid-hover);
+    --accent-link: var(--accent-on-surface);
+    --accent-text: var(--accent-on-surface);
+    --accent-breadcrumb: var(--accent-on-surface);
+    --accent-tab: var(--accent-bright);
 
-    --error: #d32f2f;
-    --error-text: #c62828;
+    --error: var(--sem-error);
+    --error-text: var(--sem-error-text);
 
-    --shadow: rgba(0, 0, 0, 0.15);
-    --shadow-strong: rgba(0, 0, 0, 0.12);
-    --col-resize: rgba(0, 0, 0, 0.1);
+    --shadow: rgba(16, 26, 33, 0.16);
+    --shadow-strong: rgba(16, 26, 33, 0.13);
+    --col-resize: var(--accent-alpha-strong);
 
-    --canvas-bg: #ffffff;
-    --canvas-text: #999;
-    --canvas-axis: #999;
-    --canvas-label: #555;
-    --canvas-grid: #e0e0e0;
-    --canvas-title: #666;
+    --canvas-bg: var(--surface-panel);
+    --canvas-text: var(--ink-3);
+    --canvas-axis: var(--ink-4);
+    --canvas-label: var(--ink-2);
+    --canvas-grid: var(--line-1);
+    --canvas-title: var(--ink-3);
 
-    --spinner-track: #ccc;
-    --spinner-head: #333;
+    --spinner-track: var(--line-3);
+    --spinner-head: var(--ink-1);
 
-    --ruler-label-bg: rgba(255, 255, 255, 0.85);
+    --ruler-label-bg: rgba(255, 255, 255, 0.9);
+
+    accent-color: var(--accent);
 }
 
 /* ─── Ruler overlay ──────────────────────────────────────────────────────── */
@@ -139,7 +262,7 @@ html[data-theme="light"] {
     background: var(--ruler-label-bg);
     color: var(--fg-bright);
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font: 12px monospace;
     white-space: nowrap;
     pointer-events: none;
@@ -177,7 +300,7 @@ html, body {
     margin: 0;
     overflow: hidden;
     background: var(--bg-main);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-sans);
     color: var(--fg-primary);
 }
 
@@ -211,7 +334,7 @@ body {
     height: 24px;
     background: var(--bg-header);
     border-bottom: 1px solid var(--bg-input);
-    font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font: 13px var(--font-sans);
     color: var(--fg-primary);
     user-select: none;
     z-index: 10001;
@@ -318,8 +441,8 @@ body {
     background: var(--bg-input);
     color: var(--fg-primary);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    border-radius: var(--radius-sm);
+    font: 12px var(--font-sans);
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
@@ -356,7 +479,7 @@ body {
     position: relative;
     background: var(--bg-header);
     border: 1px solid var(--border-strong);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     padding: 16px 20px;
     min-width: 400px;
     color: var(--fg-primary);
@@ -390,7 +513,7 @@ body {
     padding: 6px 8px;
     background: var(--bg-main);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-primary);
     font: 13px monospace;
     box-sizing: border-box;
@@ -408,7 +531,7 @@ body {
 .modal-dialog button {
     padding: 5px 14px;
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     background: var(--bg-hover);
     color: var(--fg-primary);
     font: 13px sans-serif;
@@ -507,7 +630,7 @@ body {
     background: var(--bg-main);
     padding: 4px 8px;
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     margin-bottom: 8px;
     font-size: 12px;
     white-space: nowrap;
@@ -526,7 +649,7 @@ body {
 .fb-file-list {
     background: var(--bg-main);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     max-height: 320px;
     min-height: 160px;
     overflow-y: auto;
@@ -544,6 +667,13 @@ body {
 }
 .fb-entry.fb-selected {
     background: var(--bg-selected);
+    color: var(--fg-white);
+}
+/* The size column is muted against the panel; on the selected row it has to
+ * come off --fg-white instead or it drops out against the accent. */
+.fb-entry.fb-selected .fb-size {
+    color: var(--fg-white);
+    opacity: 0.75;
 }
 .fb-icon {
     flex-shrink: 0;
@@ -606,7 +736,7 @@ body {
     overflow-y: auto !important;
     overflow-x: hidden;
     padding: 2px 0;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 .lm_header .lm_tabdropdown_list .lm_tab {
     display: flex;
@@ -669,7 +799,7 @@ body {
 .leaflet-popup-content-wrapper {
     background: var(--bg-context);
     color: var(--fg-bright);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 .leaflet-popup-content {
     font-family: monospace;
@@ -691,10 +821,10 @@ body {
     top: 40px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, var(--error) 0%, #cc3333 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--error) 0%, var(--sem-danger-hover) 100%);
+    color: var(--fg-white);
     padding: 16px 24px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 16px;
     font-weight: bold;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -711,7 +841,7 @@ body {
     color: var(--fg-secondary);
     padding: 4px 10px;
     font: 12px monospace;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     display: inline-block;
 }
 
@@ -747,7 +877,7 @@ body {
     color: var(--fg-secondary);
     padding: 2px 8px;
     font: 12px monospace;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     pointer-events: none;
 }
 
@@ -760,7 +890,7 @@ body {
     z-index: 900;
     background: var(--bg-status);
     color: var(--fg-secondary);  /* SVG strokes use currentColor */
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 1px 4px;
     line-height: 0;  /* wrap the inline SVG snugly */
     pointer-events: none;
@@ -918,7 +1048,7 @@ body {
     display: inline-block;
     width: 12px;
     height: 12px;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     margin-right: 6px;
     vertical-align: middle;
     border: 1px solid var(--border-strong);
@@ -1007,7 +1137,7 @@ body {
     position: fixed;
     background: var(--bg-context);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     min-width: 180px;
     z-index: 10000;
     padding: 4px 0;
@@ -1056,7 +1186,7 @@ body {
     display: none;
     background: var(--bg-context);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     min-width: 160px;
     padding: 4px 0;
     box-shadow: 0 2px 8px var(--shadow);
@@ -1186,7 +1316,7 @@ body {
 .help-panel kbd {
     background: var(--border-subtle);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 1px 6px;
     font-family: monospace;
     font-size: 12px;
@@ -1248,7 +1378,7 @@ body {
 .inspector-prop-value::-webkit-scrollbar-thumb,
 .inspector-table-scroll::-webkit-scrollbar-thumb {
     background: var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
 }
 .inspector-editable {
     cursor: text;
@@ -1272,7 +1402,7 @@ body {
     background: var(--bg-input);
     color: var(--fg-primary);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font: inherit;
     max-width: 100%;
 }
@@ -1289,14 +1419,14 @@ body {
     color: var(--fg-bright);
 }
 .inspector-btn-danger:hover {
-    background: #7a2020;
-    border-color: #a03030;
-    color: #fff;
+    background: var(--sem-danger);
+    border-color: var(--sem-danger-line);
+    color: var(--fg-white);
 }
 .or-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--bg-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1306,11 +1436,11 @@ body {
     background: var(--bg-panel);
     color: var(--fg-primary);
     border: 1px solid var(--border-strong);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     min-width: 280px;
     max-width: 420px;
     padding: 14px 16px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 8px 30px var(--shadow);
 }
 .or-modal-title {
     font-weight: 600;
@@ -1331,7 +1461,7 @@ body {
     padding: 5px 14px;
     background: var(--border-subtle);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-primary);
     cursor: pointer;
 }
@@ -1339,12 +1469,12 @@ body {
     background: var(--border);
 }
 .or-modal-btn-danger {
-    background: #7a2020;
-    border-color: #a03030;
-    color: #fff;
+    background: var(--sem-danger);
+    border-color: var(--sem-danger-line);
+    color: var(--fg-white);
 }
 .or-modal-btn-danger:hover {
-    background: #942828;
+    background: var(--sem-danger-hover);
 }
 .selection-browser {
     display: flex;
@@ -1364,20 +1494,20 @@ body {
     padding: 3px 10px;
     background: var(--bg-panel);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-secondary);
     cursor: pointer;
 }
 .sb-tab.active {
     background: var(--accent);
-    color: #fff;
+    color: var(--fg-white);
 }
 .sb-tool {
     margin-left: auto;
     padding: 3px 8px;
     background: var(--border-subtle);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-primary);
     cursor: pointer;
 }
@@ -1389,7 +1519,7 @@ body {
     padding: 3px 6px;
     background: var(--bg-input);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-primary);
 }
 .sb-truncated {
@@ -1435,7 +1565,7 @@ body {
     width: 10px;
     height: 10px;
     border: 1px solid var(--border-strong);
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     vertical-align: middle;
 }
 .sb-actions {
@@ -1459,10 +1589,10 @@ body {
     position: fixed;
     background: var(--bg-panel);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 6px;
     z-index: 3000;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 16px var(--shadow);
 }
 .highlight-swatch-grid {
     display: grid;
@@ -1473,7 +1603,7 @@ body {
     width: 22px;
     height: 22px;
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     padding: 0;
 }
@@ -1491,7 +1621,7 @@ body {
     padding: 3px 6px;
     background: var(--border-subtle);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-primary);
     cursor: pointer;
     font-size: 11px;
@@ -1509,7 +1639,7 @@ body {
     background: var(--bg-status);
     color: var(--fg-primary);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
     z-index: 3000;
     opacity: 0;
@@ -1623,7 +1753,7 @@ body {
     padding: 0;
     background: var(--border-subtle);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-primary);
     cursor: pointer;
 }
@@ -1659,9 +1789,9 @@ body {
     right: 12px;
     z-index: 10000;
     padding: 8px 16px;
-    background: #fc0;
-    color: #000;
-    border: 1px solid #000;
+    background: var(--sem-warn);
+    color: var(--sem-warn-ink);
+    border: 1px solid var(--sem-warn-ink);
     font-weight: bold;
     display: none;
     cursor: pointer;
@@ -1733,7 +1863,7 @@ body {
 .timing-btn {
     background: var(--border-subtle);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     color: var(--fg-primary);
     padding: 4px 12px;
     cursor: pointer;
@@ -1824,7 +1954,7 @@ body {
     position: fixed;
     background: var(--bg-tooltip);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 6px 10px;
     font-size: 12px;
     color: var(--fg-primary);
@@ -1922,7 +2052,7 @@ body {
     display: inline-block;
     width: 12px;
     height: 12px;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     border: 1px solid var(--border-strong);
     margin-right: 4px;
     vertical-align: middle;
@@ -1964,7 +2094,7 @@ body {
     position: absolute;
     background: var(--bg-tooltip);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 6px 10px;
     font-size: 12px;
     color: var(--fg-primary);
@@ -1993,7 +2123,7 @@ body {
     position: absolute;
     background: var(--bg-tooltip);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 6px 10px;
     font-size: 12px;
     color: var(--fg-primary);
@@ -2010,7 +2140,7 @@ body {
     z-index: 100;
     background: var(--bg-tooltip);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 4px 8px;
     font-size: 12px;
     color: var(--fg-primary);
@@ -2049,7 +2179,7 @@ body {
     background: var(--bg-context);
     color: var(--fg-primary);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 3px 6px;
     font-family: monospace;
     font-size: 12px;
@@ -2070,7 +2200,7 @@ body {
     position: absolute;
     background: var(--bg-tooltip);
     border: 1px solid var(--border-strong);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 6px 10px;
     font-size: 12px;
     color: var(--fg-primary);
@@ -2118,7 +2248,7 @@ body {
     background: var(--bg-input);
     color: var(--fg-bright);
     border: 1px solid var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 2px 4px;
     font-family: monospace;
     font-size: 12px;
@@ -2129,7 +2259,7 @@ body {
     background: var(--bg-context);
     color: var(--fg-bright);
     border: 1px solid var(--fg-disabled);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 4px 8px;
     cursor: pointer;
 }
@@ -2145,7 +2275,7 @@ body {
     width: 14px;
     height: 14px;
     border: 1px solid var(--fg-disabled);
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     flex: 0 0 auto;
 }
 
@@ -2159,7 +2289,7 @@ body {
     padding: 10px 12px;
     background: var(--bg-heatmap-legend);
     border: 1px solid var(--border-heatmap-legend);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     box-shadow: 0 6px 20px var(--shadow-strong);
     color: var(--fg-bright);
     font-family: monospace;
@@ -2219,7 +2349,7 @@ html[data-theme="dark"] .schematic-widget svg {
     background: var(--bg-input);
     color: var(--fg-primary);
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 3px 4px;
     font-size: 12px;
 }
@@ -2228,7 +2358,7 @@ html[data-theme="dark"] .schematic-widget svg {
     background: var(--bg-input);
     color: var(--fg-secondary);
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 3px 8px;
     cursor: pointer;
     font-size: 12px;
@@ -2263,7 +2393,7 @@ html[data-theme="dark"] .schematic-widget svg {
     align-items: center;
     gap: 4px;
     padding: 2px 4px;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
 }
 .drc-tree-header:hover {
     background: var(--bg-hover);
@@ -2307,7 +2437,7 @@ html[data-theme="dark"] .schematic-widget svg {
     align-items: center;
     gap: 4px;
     padding: 2px 4px;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     cursor: pointer;
 }
 .drc-marker-row:hover {
@@ -2339,7 +2469,7 @@ html[data-theme="dark"] .schematic-widget svg {
     background: var(--bg-input);
     color: var(--fg-secondary);
     border: 1px solid var(--border);
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
     padding: 0 4px;
     font-size: 10px;
     flex-shrink: 0;
