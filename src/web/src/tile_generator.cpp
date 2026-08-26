@@ -5,7 +5,7 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -134,12 +134,7 @@ inline void compositePixel(unsigned char* dst, const unsigned char* src)
 
   // Porter-Duff Over: out_a = sa + da * (255 - sa) / 255
   const uint32_t da_contrib = div255(da * (255 - sa));
-  const uint32_t out_a = sa + da_contrib;
-
-  if (out_a == 0) {
-    zeroRGBA(dst);
-    return;
-  }
+  const uint32_t out_a = sa + da_contrib;  // >= sa >= 1, never 0
 
   // Blend weight: t = src_a / out_a in 16.16 fixed-point (single integer
   // division)
@@ -147,9 +142,10 @@ inline void compositePixel(unsigned char* dst, const unsigned char* src)
 
   auto blend_ch = [t_fp](uint32_t d, uint32_t s) -> unsigned char {
     int32_t diff = static_cast<int32_t>(s) - static_cast<int32_t>(d);
-    int32_t res = static_cast<int32_t>(d)
-                  + ((diff * static_cast<int32_t>(t_fp) + 0x8000) >> 16);
-    return static_cast<unsigned char>(std::clamp(res, 0, 255));
+    // t_fp <= 1.0 so the result lies between d and s: no clamp needed.
+    const int32_t res = static_cast<int32_t>(d)
+                        + ((diff * static_cast<int32_t>(t_fp) + 0x8000) >> 16);
+    return static_cast<unsigned char>(res);
   };
 
   dst[0] = blend_ch(dst[0], src[0]);
@@ -168,6 +164,7 @@ inline void compositePixel(unsigned char* dst, const Color& src)
 // Fills a contiguous row of RGBA pixels with a solid color.
 void fillSpan(std::span<unsigned char> dst, const Color& color)
 {
+  assert(dst.size() % sizeof(uint32_t) == 0);  // whole RGBA pixels only
   uint32_t c = 0;
   std::memcpy(&c, &color, sizeof(uint32_t));
 
@@ -179,15 +176,10 @@ void fillSpan(std::span<unsigned char> dst, const Color& color)
     dst = dst.subspan(64);
   }
 
-  // 2. Trailing pixel remainder (4-byte chunks)
+  // Trailing pixels (fewer than 16).
   while (dst.size() >= sizeof(uint32_t)) {
     std::memcpy(dst.data(), &c, sizeof(uint32_t));
     dst = dst.subspan(sizeof(uint32_t));
-  }
-
-  // 3. Trailing byte remainder (less than 4 bytes)
-  if (!dst.empty()) {
-    std::memcpy(dst.data(), &c, dst.size());
   }
 }
 
@@ -4652,7 +4644,10 @@ static std::vector<unsigned char> lanczos2Downsample(
       }
       unsigned char* d = &dst[(static_cast<size_t>(oy) * dst_dim + ox) * 4];
       const float ai = std::clamp(a, 0.0f, 255.0f);
-      if (ai < 0.001f) {
+      // Alpha below 0.5 rounds to 0 below; emit a fully-zero pixel rather
+      // than (255/ai)-amplified colour under a zero alpha, which would defeat
+      // the transparent-buffer early exits downstream.
+      if (ai < 0.5f) {
         d[0] = d[1] = d[2] = d[3] = 0;
         continue;
       }
@@ -4812,7 +4807,9 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
             continue;
           }
           unsigned char* drow
-              = &output[(out_oy + py) * tile_span_w * 4 + out_ox * 4];
+              = &output[(static_cast<size_t>(out_oy + py) * tile_span_w
+                         + out_ox)
+                        * 4];
           for (int px = 0; px < kTileSizeInPixel; ++px) {
             const unsigned char* sp = &srow[px * 4];
             if (sp[3] == 0) {
@@ -4840,7 +4837,9 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
             continue;
           }
           unsigned char* drow
-              = &output[(out_oy + py) * tile_span_w * 4 + out_ox * 4];
+              = &output[(static_cast<size_t>(out_oy + py) * tile_span_w
+                         + out_ox)
+                        * 4];
           for (int px = 0; px < kTileSizeInPixel; ++px) {
             const unsigned char* sp = &srow[px * 4];
             if (sp[3] == 0) {
@@ -4870,8 +4869,10 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
         render_tile_range(start_tile, end_tile);
       }));
     }
+    // get() (not wait()) so an exception thrown in a worker propagates to
+    // the caller instead of silently yielding a partial image.
     for (auto& f : futures) {
-      f.wait();
+      f.get();
     }
   }
 
@@ -4906,13 +4907,15 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
 
   auto resample_row_range = [&](const int start_y, const int end_y) {
     for (int fy = start_y; fy < end_y; ++fy) {
-      unsigned char* dst_row = &final_buf[fy * final_w * 4];
+      unsigned char* dst_row
+          = &final_buf[static_cast<size_t>(fy) * final_w * 4];
       const int sy = map_y[fy];
       if (sy < 0 || sy >= tile_span_h) {
         fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
         continue;
       }
-      const unsigned char* src_row = &output[sy * tile_span_w * 4];
+      const unsigned char* src_row
+          = &output[static_cast<size_t>(sy) * tile_span_w * 4];
       if (!anyNonZero({src_row, static_cast<size_t>(tile_span_w * 4)})) {
         fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
         continue;
@@ -4944,8 +4947,10 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       futures.push_back(thread_pool->submit(
           [=, &resample_row_range]() { resample_row_range(start_y, end_y); }));
     }
+    // get() (not wait()) so an exception thrown in a worker propagates to
+    // the caller instead of silently yielding a partial image.
     for (auto& f : futures) {
-      f.wait();
+      f.get();
     }
   }
 
@@ -5143,8 +5148,9 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
     if (sy < 0 || sy >= tile_span_h) {
       continue;
     }
-    const unsigned char* src_row = &output[sy * tile_span_w * 4];
-    unsigned char* dst_row = &final_buf[fy * final_w * 4];
+    const unsigned char* src_row
+        = &output[static_cast<size_t>(sy) * tile_span_w * 4];
+    unsigned char* dst_row = &final_buf[static_cast<size_t>(fy) * final_w * 4];
     for (int fx = 0; fx < final_w; ++fx) {
       const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
       if (sx >= 0 && sx < tile_span_w) {
