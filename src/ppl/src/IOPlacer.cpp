@@ -589,6 +589,10 @@ void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
                                     const odb::Rect& die_area)
 {
   const int layer = tech_layer->getRoutingLevel();
+  // cut and masterslice shapes never conflict with routing layer pins
+  if (layer == 0) {
+    return;
+  }
   // the layer sets only filter which layers have slots: the Tcl/Python
   // wrappers reject layers whose preferred direction disagrees with the set
   // (PPL-45/46). Empty sets mean standalone place_pin, where every layer
