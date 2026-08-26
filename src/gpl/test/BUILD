@@ -223,7 +223,7 @@ cc_test(
         "//src/gpl",
         "//src/gpl:gpl_private_hdrs",
         "//src/odb/src/db",
-        "//src/tst",
+        "//src/tst:db_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
