@@ -235,12 +235,11 @@ class IOPlacer
                                              const odb::Rect& box);
   int roundUpToEvenMfgGrid(int dim);
   PinSize computePinSize(int layer);
-  int computeLayerSpacing(int layer, int shape_width, int parallel_length);
-  int computeShapeSpacing(int layer,
+  int computeShapeSpacing(odb::dbTechLayer* tech_layer,
                           const odb::Rect& shape,
                           int pin_width,
                           int pin_length);
-  odb::Rect padShapeForPin(const odb::Rect& box, int layer);
+  odb::Rect padShapeForPin(const odb::Rect& box, odb::dbTechLayer* tech_layer);
   void forEachSpecialNetShape(
       const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback);
   void excludeBoundaryShape(const odb::Rect& box,
