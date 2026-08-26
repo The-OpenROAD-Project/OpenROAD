@@ -1324,6 +1324,21 @@ void EstimateParasitics::setParasiticsSrc(ParasiticsSrc src)
 
 void EstimateParasitics::eraseParasitics(const sta::Net* net)
 {
+  // Deleting a dbNet only disconnects its parasitic network's pin nodes, and
+  // sta::Net* is the dbNet pointer, so once odb recycles the slot the next net
+  // inherits a driver-less network. Delete it, not just the invalid marker.
+  //
+  // deleteParasiticNetwork() and not deleteParasitics(): the latter resolves
+  // drivers(net), which by now has no driver and would cache an empty entry
+  // keyed on a dbNet about to be freed.
+  for (Scene* scene : scenes_) {
+    for (const sta::MinMax* mm : sta::MinMax::range()) {
+      Parasitics* parasitics = scene->parasitics(mm);
+      if (parasitics) {
+        parasitics->deleteParasiticNetwork(net);
+      }
+    }
+  }
   parasitics_invalid_.erase(net);
 }
 

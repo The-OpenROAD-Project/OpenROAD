@@ -79,13 +79,14 @@ export function resetBackgroundColor(app) {
 }
 
 // The active theme's own --bg-map value in the "#rrggbb" form an
-// <input type="color"> requires (currently #111 in both themes).
+// <input type="color"> requires (#000 in both themes, matching the Qt GUI's
+// default background so the same layer alpha composites to the same color).
 // Must be read with no inline override active — resetBackgroundColor
 // removes it — otherwise the override value is returned instead.
 export function getThemeDefaultBgColor() {
     return cssColorToHex(
         getComputedStyle(document.documentElement)
-            .getPropertyValue('--bg-map')) ?? '#111111';
+            .getPropertyValue('--bg-map')) ?? '#000000';
 }
 
 // The layout container reads --bg-map live via CSS, but the 3D viewer
