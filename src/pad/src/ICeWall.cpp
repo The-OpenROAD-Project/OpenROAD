@@ -317,13 +317,30 @@ void ICeWall::makeBTermPinsFromBumps(odb::dbBlock* block) const
     }
 
     odb::dbInst* bump_inst = nullptr;
+    bool multiple_bumps = false;
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbMaster* master = iterm->getInst()->getMaster();
 
-      if (master->getType() == odb::dbMasterType::COVER_BUMP) {
-        bump_inst = iterm->getInst();
+      if (master->getType() != odb::dbMasterType::COVER_BUMP) {
+        continue;
+      }
+
+      if (bump_inst && bump_inst != iterm->getInst()) {
+        multiple_bumps = true;
         break;
       }
+
+      bump_inst = iterm->getInst();
+    }
+
+    if (multiple_bumps) {
+      logger_->warn(utl::PAD,
+                    125,
+                    "Could not make a pin for terminal {}. Net {} connects "
+                    "more than one bump.",
+                    bterm->getName(),
+                    net->getName());
+      continue;
     }
 
     if (!bump_inst) {

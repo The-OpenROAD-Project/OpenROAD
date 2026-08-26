@@ -1,6 +1,7 @@
 # Test for making bterm pins from the pad shapes of connected bumps.
 # The port in0 has no geometry and its net reaches a bump: it receives the
-# bump pad shape. The port out0 has no bump on its net and stays bare.
+# bump pad shape. The port in1 has two bumps on its net and the port out0 has
+# no bump on its net: both stay bare.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_lef Nangate45_io/dummy_pads.lef
