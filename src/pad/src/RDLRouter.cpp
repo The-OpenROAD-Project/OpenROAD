@@ -1958,16 +1958,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
             polys_to_subtract.begin(), polys_to_subtract.end());
       }
 
-      std::vector<odb::geom::BoostPolygon> output_polygons;
-      master_obstruction.get(output_polygons);
-      for (const auto& polygon_out : output_polygons) {
-        std::vector<odb::Point> new_coord;
-        new_coord.reserve(polygon_out.coords_.size());
-        for (const auto& pt : polygon_out.coords_) {
-          new_coord.emplace_back(pt.x(), pt.y());
-        }
-        master_obs.emplace_back(new_coord);
-      }
+      master_obs = odb::geom::extractPolygons(master_obstruction);
     }
     for (const auto& poly : master_obs) {
       if (poly.isRect()) {
