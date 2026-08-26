@@ -56,6 +56,20 @@ struct PinSize
   int height = 0;
 };
 
+// the arguments that select a spacing value in a layer spacing table
+struct SpacingKey
+{
+  int layer = 0;
+  int shape_width = 0;
+  int parallel_length = 0;
+
+  bool operator<(const SpacingKey& other) const
+  {
+    return std::tie(layer, shape_width, parallel_length)
+           < std::tie(other.layer, other.shape_width, other.parallel_length);
+  }
+};
+
 struct FallbackPins
 {
   std::vector<std::pair<std::vector<int>, bool>> groups;
@@ -72,8 +86,7 @@ enum class Edge
   polygonEdge,
 };
 
-// the top and bottom edges hold vertical pins on the vertical layers
-inline bool isVerticalEdge(Edge edge)
+inline bool hasVerticalPins(Edge edge)
 {
   return edge == Edge::top || edge == Edge::bottom;
 }
@@ -240,7 +253,8 @@ class IOPlacer
                           const odb::Rect& shape,
                           int pin_width,
                           int pin_length);
-  odb::Rect padShapeForPin(const odb::Rect& box, odb::dbTechLayer* tech_layer);
+  odb::Rect computePinKeepout(const odb::Rect& box,
+                              odb::dbTechLayer* tech_layer);
   void forEachSpecialNetShape(
       const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback);
   void excludeBoundaryShape(const odb::Rect& box,
@@ -296,7 +310,7 @@ class IOPlacer
   // a pin size only depends on its layer, wrong way pins are rejected
   std::map<int, PinSize> pin_size_cache_;
   // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
-  std::map<std::tuple<int, int, int>, int> spacing_cache_;
+  std::map<SpacingKey, int> spacing_cache_;
 
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<utl::Validator> validator_;

@@ -436,7 +436,7 @@ bool IOPlacer::checkBlocked(Edge edge,
   }
   bool vertical_pin = (edge == Edge::polygonEdge)
                           ? line.pt0().getY() == line.pt1().getY()
-                          : isVerticalEdge(edge);
+                          : hasVerticalPins(edge);
   int coord = vertical_pin ? pos.getX() : pos.getY();
   for (const Interval& blocked_interval : excluded_intervals_) {
     // check if the blocked interval blocks all layers (== -1) or if it blocks
@@ -447,7 +447,7 @@ bool IOPlacer::checkBlocked(Edge edge,
       // over-blocking parallel edges until intervals carry their source edge
       if ((blocked_interval.getEdge() == edge
            || (edge == Edge::polygonEdge
-               && isVerticalEdge(blocked_interval.getEdge()) == vertical_pin))
+               && hasVerticalPins(blocked_interval.getEdge()) == vertical_pin))
           && coord > blocked_interval.getBegin()
           && coord < blocked_interval.getEnd()) {
         return true;
@@ -548,8 +548,8 @@ int IOPlacer::computeShapeSpacing(odb::dbTechLayer* tech_layer,
   // the spacing rules use the width of the widest shape and the parallel
   // run length between the shapes
   const int shape_width = std::max(std::min(shape.dx(), shape.dy()), pin_width);
-  const auto cache_key
-      = std::make_tuple(tech_layer->getRoutingLevel(), shape_width, pin_length);
+  const SpacingKey cache_key{
+      tech_layer->getRoutingLevel(), shape_width, pin_length};
   const auto cached = spacing_cache_.find(cache_key);
   if (cached != spacing_cache_.end()) {
     return cached->second;
@@ -563,8 +563,8 @@ int IOPlacer::computeShapeSpacing(odb::dbTechLayer* tech_layer,
   return spacing;
 }
 
-odb::Rect IOPlacer::padShapeForPin(const odb::Rect& box,
-                                   odb::dbTechLayer* tech_layer)
+odb::Rect IOPlacer::computePinKeepout(const odb::Rect& box,
+                                      odb::dbTechLayer* tech_layer)
 {
   const PinSize pin_size = computePinSize(tech_layer->getRoutingLevel());
   const int spacing = computeShapeSpacing(
@@ -597,13 +597,13 @@ void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
       return;
     }
   }
-  const odb::Rect padded_box = padShapeForPin(box, tech_layer);
+  const odb::Rect padded_box = computePinKeepout(box, tech_layer);
   if (!die_area.intersects(padded_box)) {
     return;
   }
   const odb::Rect intersect = die_area.intersect(padded_box);
   for (const Interval& interval : findBlockedIntervals(die_area, intersect)) {
-    if (isVerticalEdge(interval.getEdge()) != vertical_pin) {
+    if (hasVerticalPins(interval.getEdge()) != vertical_pin) {
       continue;
     }
     excludeInterval(Interval(
@@ -790,7 +790,7 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
                                      int& new_begin,
                                      int& new_end)
 {
-  const bool vertical_pin = isVerticalEdge(interval.getEdge());
+  const bool vertical_pin = hasVerticalPins(interval.getEdge());
 
   int interval_length = std::abs(interval.getEnd() - interval.getBegin());
   int interval_begin = std::min(interval.getBegin(), interval.getEnd());
@@ -823,7 +823,7 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
 
 int IOPlacer::getMinDistanceForInterval(const Interval& interval)
 {
-  const bool vertical_pin = isVerticalEdge(interval.getEdge());
+  const bool vertical_pin = hasVerticalPins(interval.getEdge());
   int min_dist = std::numeric_limits<int>::min();
 
   if (interval.getLayer() != -1) {
@@ -960,7 +960,7 @@ std::vector<odb::Point> IOPlacer::findLayerSlots(const int layer,
     max = vertical_pin ? std::max(edge_start.getX(), edge_end.getX())
                        : std::max(edge_start.getY(), edge_end.getY());
   } else {
-    vertical_pin = isVerticalEdge(edge);
+    vertical_pin = hasVerticalPins(edge);
     min = vertical_pin ? lb_x : lb_y;
     max = vertical_pin ? ub_x : ub_y;
   }
@@ -2640,7 +2640,7 @@ bool IOPlacer::checkPinConstraints()
       if (constraint_interval.getEdge() != Edge::invalid) {
         const int constraint_begin = constraint_interval.getBegin();
         const int constraint_end = constraint_interval.getEnd();
-        const int pin_coord = isVerticalEdge(constraint_interval.getEdge())
+        const int pin_coord = hasVerticalPins(constraint_interval.getEdge())
                                   ? pin.getPosition().getX()
                                   : pin.getPosition().getY();
         if (pin_coord < constraint_begin || pin_coord > constraint_end) {
@@ -3281,7 +3281,7 @@ void IOPlacer::initNetlist()
           // store the shapes padded, so the pins created near them keep the
           // min spacing
           layer_fixed_pins_keepouts_[tech_layer->getRoutingLevel()].push_back(
-              padShapeForPin(bpin_box->getBox(), tech_layer));
+              computePinKeepout(bpin_box->getBox(), tech_layer));
         }
       }
       continue;
