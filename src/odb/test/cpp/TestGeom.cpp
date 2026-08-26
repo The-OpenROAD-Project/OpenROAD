@@ -140,19 +140,6 @@ TEST(geom, test_polygon_is_rect)
   // too few points to close a shape
   const std::vector<Point> line_points = {Point(0, 0), Point(100, 0)};
   EXPECT_FALSE(Polygon(line_points).isRect());
-
-  // rects recovered from set operations do not start at a predictable corner
-  const std::vector<Polygon> cut
-      = Polygon(Rect(0, 0, 100, 100)).difference(Rect(50, 0, 100, 100));
-  ASSERT_EQ(cut.size(), 1);
-  EXPECT_TRUE(cut[0].isRect());
-  EXPECT_EQ(cut[0].getEnclosingRect(), Rect(0, 0, 50, 100));
-
-  const std::vector<Polygon> merged = Polygon::merge(
-      std::vector<Rect>{Rect(0, 0, 50, 100), Rect(50, 0, 100, 100)});
-  ASSERT_EQ(merged.size(), 1);
-  EXPECT_TRUE(merged[0].isRect());
-  EXPECT_EQ(merged[0].getEnclosingRect(), Rect(0, 0, 100, 100));
 }
 TEST(geom, test_isotropy)
 {
@@ -213,6 +200,30 @@ TEST(geom, test_isotropy)
 // that can hold the 45 degree edges of an Oct, and a Manhattan only
 // polygon_90 set that cannot.  Both are covered below.
 
+// The distinct corners of a polygon, sorted so that two descriptions of the
+// same shape compare equal whichever vertex they start from.
+std::vector<Point> corners(const Polygon& polygon)
+{
+  std::vector<Point> points = polygon.getPoints();
+  std::sort(points.begin(), points.end());
+  points.erase(std::unique(points.begin(), points.end()), points.end());
+  return points;
+}
+
+// The bounding boxes of a set of polygons, sorted so that checks do not
+// depend on the order boost hands the polygons back in.
+std::vector<Rect> enclosingRects(const std::vector<Polygon>& polygons)
+{
+  std::vector<Rect> rects;
+  rects.reserve(polygons.size());
+  for (const Polygon& polygon : polygons) {
+    rects.push_back(polygon.getEnclosingRect());
+  }
+  std::sort(rects.begin(), rects.end());
+
+  return rects;
+}
+
 TEST(geom, test_boost_to_polygon_set)
 {
   const Rect rect(0, 0, 100, 50);
@@ -267,12 +278,6 @@ TEST(geom, test_boost_oct_keeps_45_degree_edges)
 
   // all eight corners of the octagon come back, so no 45 degree edge was
   // collapsed on the way through boost
-  auto corners = [](const Polygon& polygon) {
-    std::vector<Point> points = polygon.getPoints();
-    std::sort(points.begin(), points.end());
-    points.erase(std::unique(points.begin(), points.end()), points.end());
-    return points;
-  };
   const Polygon as_polygon(oct);
   EXPECT_EQ(corners(polys[0]).size(), 8);
   EXPECT_EQ(corners(polys[0]), corners(as_polygon));
@@ -412,6 +417,160 @@ TEST(geom, test_boost_enclosing_rect)
   EXPECT_EQ(geom::getEnclosingRect(geom::BoostPolygon90Set()),
             Rect(0, 0, 0, 0));
   EXPECT_EQ(geom::getEnclosingRect(geom::BoostPolygonSet()), Rect(0, 0, 0, 0));
+}
+
+// mergePolygons is the one entry point that takes any of the three odb area
+// shapes, so each of Rect, Oct and Polygon is exercised through it below.
+
+TEST(geom, test_boost_merge_polygons_rects)
+{
+  // abutting rects come back as a single shape
+  const std::vector<Polygon> abutting = geom::mergePolygons(
+      std::vector<Rect>{Rect(0, 0, 50, 100), Rect(50, 0, 100, 100)});
+  ASSERT_EQ(abutting.size(), 1);
+  EXPECT_TRUE(abutting[0].isRect());
+  EXPECT_EQ(abutting[0].getEnclosingRect(), Rect(0, 0, 100, 100));
+
+  // as do overlapping ones, with the overlap counted once
+  const std::vector<Polygon> overlapping = geom::mergePolygons(
+      std::vector<Rect>{Rect(0, 0, 60, 100), Rect(40, 0, 100, 100)});
+  ASSERT_EQ(overlapping.size(), 1);
+  EXPECT_TRUE(overlapping[0].isRect());
+  EXPECT_EQ(overlapping[0].getEnclosingRect(), Rect(0, 0, 100, 100));
+  // the seams where the inputs met survive as collinear vertices, so a
+  // merged rect carries more than four points
+  EXPECT_EQ(corners(overlapping[0]),
+            (std::vector<Point>{Point(0, 0),
+                                Point(0, 100),
+                                Point(40, 0),
+                                Point(40, 100),
+                                Point(60, 0),
+                                Point(60, 100),
+                                Point(100, 0),
+                                Point(100, 100)}));
+
+  // a union that is not itself a rect keeps its outline rather than
+  // collapsing to the bounding box
+  const std::vector<Polygon> l_shape = geom::mergePolygons(
+      std::vector<Rect>{Rect(0, 0, 100, 50), Rect(0, 50, 50, 100)});
+  ASSERT_EQ(l_shape.size(), 1);
+  EXPECT_FALSE(l_shape[0].isRect());
+  EXPECT_EQ(l_shape[0].getEnclosingRect(), Rect(0, 0, 100, 100));
+  EXPECT_EQ(corners(l_shape[0]),
+            (std::vector<Point>{Point(0, 0),
+                                Point(0, 50),
+                                Point(0, 100),
+                                Point(50, 50),
+                                Point(50, 100),
+                                Point(100, 0),
+                                Point(100, 50)}));
+
+  // disjoint rects stay apart
+  EXPECT_EQ(enclosingRects(geom::mergePolygons(
+                std::vector<Rect>{Rect(90, 90, 100, 100), Rect(0, 0, 10, 10)})),
+            (std::vector<Rect>{Rect(0, 0, 10, 10), Rect(90, 90, 100, 100)}));
+
+  // a lone rect survives the round trip as a rect
+  const std::vector<Polygon> single
+      = geom::mergePolygons(std::vector<Rect>{Rect(0, 0, 100, 50)});
+  ASSERT_EQ(single.size(), 1);
+  EXPECT_TRUE(single[0].isRect());
+  EXPECT_EQ(single[0].getEnclosingRect(), Rect(0, 0, 100, 50));
+
+  // and a repeated rect does not grow the result
+  EXPECT_EQ(geom::mergePolygons(
+                std::vector<Rect>{Rect(0, 0, 100, 50), Rect(0, 0, 100, 50)}),
+            single);
+
+  // an empty collection merges to nothing
+  EXPECT_TRUE(geom::mergePolygons(std::vector<Rect>{}).empty());
+}
+
+TEST(geom, test_boost_merge_polygons_octs)
+{
+  const Oct oct(Point(0, 0), Point(400, 400), 40);
+
+  // a lone oct passes through with all eight corners intact, so merging
+  // never quietly squares off a 45 degree edge
+  const std::vector<Polygon> single
+      = geom::mergePolygons(std::vector<Oct>{oct});
+  ASSERT_EQ(single.size(), 1);
+  EXPECT_FALSE(single[0].isRect());
+  EXPECT_EQ(single[0].getEnclosingRect(), Rect(-20, -20, 420, 420));
+  EXPECT_EQ(corners(single[0]).size(), 8);
+  EXPECT_EQ(corners(single[0]), corners(Polygon(oct)));
+
+  // octs overlapping along their diagonal union into one shape that still
+  // reaches past the corners of either
+  const std::vector<Polygon> merged = geom::mergePolygons(
+      std::vector<Oct>{oct, Oct(Point(200, 200), Point(600, 600), 40)});
+  ASSERT_EQ(merged.size(), 1);
+  EXPECT_FALSE(merged[0].isRect());
+  EXPECT_EQ(merged[0].getEnclosingRect(), Rect(-20, -20, 620, 620));
+
+  // disjoint octs stay apart, each keeping its own eight corners
+  const std::vector<Polygon> apart = geom::mergePolygons(
+      std::vector<Oct>{oct, Oct(Point(1000, 1000), Point(1400, 1400), 40)});
+  ASSERT_EQ(apart.size(), 2);
+  EXPECT_EQ(enclosingRects(apart),
+            (std::vector<Rect>{Rect(-20, -20, 420, 420),
+                               Rect(980, 980, 1420, 1420)}));
+  for (const Polygon& polygon : apart) {
+    EXPECT_FALSE(polygon.isRect());
+    EXPECT_EQ(corners(polygon).size(), 8);
+  }
+
+  EXPECT_TRUE(geom::mergePolygons(std::vector<Oct>{}).empty());
+}
+
+TEST(geom, test_boost_merge_polygons_polygons)
+{
+  const Polygon l_shape({Point(0, 0),
+                         Point(100, 0),
+                         Point(100, 50),
+                         Point(50, 50),
+                         Point(50, 100),
+                         Point(0, 100)});
+
+  // an L and the rect that fills its notch merge back into a full square
+  const std::vector<Polygon> filled = geom::mergePolygons(
+      std::vector<Polygon>{l_shape, Polygon(Rect(50, 50, 100, 100))});
+  ASSERT_EQ(filled.size(), 1);
+  EXPECT_TRUE(filled[0].isRect());
+  EXPECT_EQ(filled[0].getEnclosingRect(), Rect(0, 0, 100, 100));
+
+  // 45 degree edges survive a merge of arbitrary angle polygons
+  const Polygon diamond(
+      {Point(0, 50), Point(50, 0), Point(100, 50), Point(50, 100)});
+  const std::vector<Polygon> diamonds
+      = geom::mergePolygons(std::vector<Polygon>{diamond,
+                                                 Polygon({Point(50, 50),
+                                                          Point(100, 0),
+                                                          Point(150, 50),
+                                                          Point(100, 100)})});
+  ASSERT_EQ(diamonds.size(), 1);
+  EXPECT_FALSE(diamonds[0].isRect());
+  EXPECT_EQ(diamonds[0].getEnclosingRect(), Rect(0, 0, 150, 100));
+
+  // a repeated polygon comes back as the one shape it describes
+  const std::vector<Polygon> duplicate
+      = geom::mergePolygons(std::vector<Polygon>{diamond, diamond});
+  ASSERT_EQ(duplicate.size(), 1);
+  EXPECT_EQ(corners(duplicate[0]), corners(diamond));
+
+  // disjoint polygons stay apart
+  EXPECT_EQ(enclosingRects(geom::mergePolygons(std::vector<Polygon>{
+                Polygon(Rect(90, 90, 100, 100)), l_shape})),
+            (std::vector<Rect>{Rect(0, 0, 100, 100), Rect(90, 90, 100, 100)}));
+
+  // the same shapes merge the same way whether they arrive as Rects or as
+  // Polygons
+  const std::vector<Rect> rects{Rect(0, 0, 100, 50), Rect(0, 50, 50, 100)};
+  EXPECT_EQ(geom::mergePolygons(rects),
+            geom::mergePolygons(
+                std::vector<Polygon>{Polygon(rects[0]), Polygon(rects[1])}));
+
+  EXPECT_TRUE(geom::mergePolygons(std::vector<Polygon>{}).empty());
 }
 
 }  // namespace
