@@ -36,6 +36,21 @@
     --radius-sm: 4px;   /* controls: buttons, inputs, list rows */
     --radius-md: 7px;   /* panels, dialogs, floating surfaces */
 
+    --space-sm: 6px;
+    --space-md: 8px;
+    --space-lg: 12px;
+    --space-xl: 16px;
+
+    /* Floating overlays on the layout canvas -- scale bar, coordinate
+     * readout, heat-map legend, Leaflet's zoom and Fit controls.  These do
+     * not flip with the theme: they sit on --bg-map, which is black in both
+     * themes for Qt parity, so a light surface here would be a bright block
+     * on black and light-theme ink on it would be unreadable. */
+    --bg-hud: rgba(12, 18, 24, 0.88);
+    --border-hud: rgba(255, 255, 255, 0.14);
+    --fg-hud: #eef4f8;
+    --fg-hud-muted: #9fb0bc;
+
     --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -93,9 +108,7 @@ html[data-theme="dark"] {
     --bg-selected-alt: var(--surface-tint-warm);
     --bg-context: var(--surface-float);
     --bg-overlay: rgba(4, 7, 10, 0.58);
-    --bg-status: rgba(10, 14, 18, 0.76);
     --bg-tooltip: rgba(24, 32, 39, 0.96);
-    --bg-heatmap-legend: rgba(12, 18, 24, 0.88);
     --bg-rubber-band: var(--accent-alpha);
     --bg-map: #000;
 
@@ -105,13 +118,10 @@ html[data-theme="dark"] {
     --fg-disabled: var(--ink-4);
     --fg-bright: var(--ink-0);
     --fg-white: #fff;
-    --fg-heatmap-title: var(--ink-0);
-    --fg-heatmap-units: var(--ink-3);
 
     --border: var(--line-2);
     --border-subtle: var(--line-1);
     --border-strong: var(--line-3);
-    --border-heatmap-legend: rgba(255, 255, 255, 0.14);
 
     --accent: var(--accent-solid);
     --accent-hover: var(--accent-solid-hover);
@@ -139,7 +149,6 @@ html[data-theme="dark"] {
     --spinner-track: var(--line-3);
     --spinner-head: var(--ink-1);
 
-    --ruler-label-bg: rgba(10, 14, 18, 0.78);
 
     accent-color: var(--accent);
 }
@@ -198,9 +207,7 @@ html[data-theme="light"] {
     --bg-selected-alt: var(--surface-tint-warm);
     --bg-context: var(--surface-float);
     --bg-overlay: rgba(16, 26, 33, 0.32);
-    --bg-status: rgba(255, 255, 255, 0.88);
     --bg-tooltip: rgba(255, 255, 255, 0.97);
-    --bg-heatmap-legend: rgba(255, 255, 255, 0.93);
     --bg-rubber-band: var(--accent-alpha);
     --bg-map: #000;
 
@@ -210,13 +217,10 @@ html[data-theme="light"] {
     --fg-disabled: var(--ink-4);
     --fg-bright: var(--ink-0);
     --fg-white: #fff;
-    --fg-heatmap-title: var(--ink-0);
-    --fg-heatmap-units: var(--ink-3);
 
     --border: var(--line-2);
     --border-subtle: var(--line-1);
     --border-strong: var(--line-3);
-    --border-heatmap-legend: rgba(0, 0, 0, 0.12);
 
     --accent: var(--accent-solid);
     --accent-hover: var(--accent-solid-hover);
@@ -242,7 +246,6 @@ html[data-theme="light"] {
     --spinner-track: var(--line-3);
     --spinner-head: var(--ink-1);
 
-    --ruler-label-bg: rgba(255, 255, 255, 0.9);
 
     accent-color: var(--accent);
 }
@@ -259,8 +262,8 @@ html[data-theme="light"] {
     cursor: crosshair !important;
 }
 .ruler-label {
-    background: var(--ruler-label-bg);
-    color: var(--fg-bright);
+    background: var(--bg-hud);
+    color: var(--fg-hud);
     padding: 2px 6px;
     border-radius: var(--radius-sm);
     font: 12px monospace;
@@ -275,8 +278,8 @@ html[data-theme="light"] {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--ruler-label-bg, #00ffff);
-    border: 1px solid var(--fg-bright, #fff);
+    background: var(--bg-hud);
+    border: 1px solid var(--fg-hud);
     box-sizing: border-box;
     cursor: move;
 }
@@ -432,37 +435,194 @@ body {
 #toolbar:empty {
     display: none;
 }
-#toolbar .toolbar-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    height: 22px;
-    padding: 0 10px;
-    background: var(--bg-input);
-    color: var(--fg-primary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font: 12px var(--font-sans);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-}
-#toolbar .toolbar-button:hover {
-    background: var(--bg-hover);
-}
-#toolbar .toolbar-button.active {
-    background: var(--bg-selected);
-    color: var(--fg-white);
-    border-color: var(--bg-selected);
-}
-#toolbar .toolbar-button .toolbar-icon {
+/* A Tcl-registered button carries an icon slot ahead of its label; the button
+ * itself is a plain .or-btn. */
+#toolbar .toolbar-icon {
     font-size: 13px;
     line-height: 1;
 }
-#toolbar .toolbar-button .toolbar-icon img {
+/* Unlike the inline SVGs elsewhere, this is a user-supplied image of unknown
+   size, so it is constrained rather than left at its intrinsic size. */
+#toolbar .toolbar-icon img {
     width: 14px;
     height: 14px;
     display: block;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+
+/* One rule for every push button in the viewer.  It replaces eight
+ * near-identical blocks that differed only by a pixel of padding or radius --
+ * .toolbar-button, .timing-btn, .drc-btn, .inspector-btn, .sb-tool,
+ * .heatmap-rebuild, .or-modal-btn and a bare `.modal-dialog button` -- so a
+ * new control picks a variant instead of adding a ninth.  Size is a variant
+ * (.or-btn-sm, .or-btn-icon), emphasis is a variant (.or-btn-primary,
+ * .or-btn-danger), and toggle state is .active.
+ *
+ * Deliberately not part of this: controls that are shaped like something else
+ * and only happen to be <button> elements -- .timing-tab and .sb-tab (tabs),
+ * .sb-row-btn and .inspector-edit-btn (bare glyph affordances inside a row),
+ * .modal-close, .highlight-swatch, .bg-color-reset and .debug-continue-btn.
+ *
+ * Ordering matters here: the variants and states are all one class plus one
+ * pseudo-class, so they tie on specificity with .or-btn:hover and win only by
+ * coming after it.  Keep :disabled last. */
+.or-btn {
+    --or-btn-h: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    flex: none;
+    box-sizing: border-box;
+    height: var(--or-btn-h);
+    padding: 0 var(--space-lg);
+    background: var(--bg-header);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font: 12px var(--font-sans);
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 120ms ease, border-color 120ms ease,
+                color 120ms ease;
+}
+.or-btn:hover {
+    background: var(--bg-hover);
+    color: var(--fg-bright);
+}
+.or-btn:active {
+    background: var(--bg-context);
+}
+.or-btn-sm {
+    --or-btn-h: 22px;
+    padding: 0 var(--space-md);
+    font-size: 11px;
+}
+/* Square, for a button whose whole label is one glyph or icon. */
+.or-btn-icon {
+    width: var(--or-btn-h);
+    padding: 0;
+}
+.or-btn-primary,
+.or-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--fg-white);
+}
+.or-btn-primary:hover,
+.or-btn.active:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: var(--fg-white);
+}
+/* Always red: a destructive action the user is being asked to confirm, where
+ * the button is the point of the dialog. */
+.or-btn-danger {
+    background: var(--sem-danger);
+    border-color: var(--sem-danger-line);
+    color: var(--fg-white);
+}
+.or-btn-danger:hover,
+/* Red on hover only: a destructive action sitting in a row of neutral icon
+ * buttons.  The inspector's toolbar is on screen the whole session, and one
+ * permanently red icon among six would read as an alert rather than an
+ * action. */
+.or-btn-danger-hover:hover {
+    background: var(--sem-danger-hover);
+    border-color: var(--sem-danger-line);
+    color: var(--fg-white);
+}
+.or-btn:disabled {
+    background: var(--bg-header);
+    border-color: var(--border);
+    color: var(--fg-muted);
+    opacity: 0.55;
+    cursor: default;
+}
+.or-btn svg {
+    display: block;  /* no inline baseline gap under the glyph */
+    flex: none;
+}
+
+/* ─── Tooltips ────────────────────────────────────────────────────────────── */
+
+/* Replaces four identical blocks (.timing-header-tooltip, .clock-tree-tooltip,
+ * .three-d-tooltip, .charts-tooltip).  Hidden by default; each widget toggles
+ * display between 'block' and 'none' explicitly, never ''. */
+.or-tooltip {
+    position: absolute;
+    z-index: 100;
+    display: none;
+    max-width: 420px;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-tooltip);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 14px var(--shadow);
+    color: var(--fg-primary);
+    font-size: 12px;
+    /* `pre`, not `nowrap`: the timing column help arrives as a multi-line
+     * string and has to keep its newlines.  Single-line content renders the
+     * same under either. */
+    white-space: pre;
+    pointer-events: none;
+}
+/* For a tooltip positioned in viewport coordinates rather than inside its
+ * widget's box. */
+.or-tooltip-fixed {
+    position: fixed;
+}
+
+/* ─── Floating overlays on the canvas ─────────────────────────────────────── */
+
+/* The scale bar, coordinate readout, heat-map legend and pending-request
+ * indicator were four separately styled chips.  They share one surface now:
+ * translucent over the layout, hairline border, and enough blur to stay
+ * legible over dense routing. */
+.or-hud {
+    position: absolute;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-hud);
+    border: 1px solid var(--border-hud);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 20px var(--shadow-strong);
+    backdrop-filter: blur(3px);
+    color: var(--fg-hud);
+    font: 12px monospace;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+.or-hud-bottom-left {
+    left: var(--space-lg);
+    bottom: var(--space-lg);
+}
+.or-hud-bottom-right {
+    right: var(--space-lg);
+    bottom: var(--space-lg);
+}
+/* Fixed rather than absolute: the request indicator lives in #websocket-status,
+ * which is not inside the layout viewer. */
+.or-hud-top-right {
+    position: fixed;
+    top: var(--space-md);
+    right: var(--space-md);
+}
+/* Separator between two readouts sharing one HUD. */
+.or-hud-divider {
+    flex: none;
+    align-self: stretch;
+    width: 1px;
+    background: var(--border-hud);
+}
+.or-hud.hidden {
+    display: none;
 }
 
 /* Modal dialog (Open/Save DB) */
@@ -528,34 +688,10 @@ body {
     gap: 8px;
     margin-top: 12px;
 }
-.modal-dialog button {
-    padding: 5px 14px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    background: var(--bg-hover);
-    color: var(--fg-primary);
-    font: 13px sans-serif;
-    cursor: pointer;
-}
-.modal-dialog button:hover {
-    background: var(--bg-context);
-}
-.modal-dialog button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--fg-white);
-}
-.modal-dialog button.primary:hover {
-    background: var(--accent-hover);
-}
 .modal-dialog .modal-error {
     color: var(--error);
     margin-top: 8px;
     font-size: 12px;
-}
-.modal-dialog button:disabled {
-    opacity: 0.5;
-    cursor: default;
 }
 
 /* Search & navigation dialogs (Find / Go to) */
@@ -611,7 +747,11 @@ body {
 .gc-row.gc-head { background: var(--bg-header); color: var(--fg-muted); font-weight: bold; }
 .gc-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gc-form { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--bg-input); padding-top: 8px; }
-.gc-invalid { outline: 1px solid var(--error); }
+/* A ring rather than an outline: the focus ring added at the end of this file
+   is an outline too, and while the field is focused one would replace the
+   other -- an invalid field would stop looking invalid exactly when the user
+   is fixing it. */
+.gc-invalid { box-shadow: 0 0 0 1px var(--error); }
 .buf-pins {
     flex: 1;
     max-height: 180px;
@@ -771,6 +911,31 @@ body {
 .leaflet-container {
     cursor: default !important;
 }
+/* Leaflet draws its own control chrome (white background, dark border), which
+   is the app's theme only by coincidence.  Restyle the bar rather than each
+   control, so the zoom buttons and the Fit button below them match. */
+.leaflet-bar {
+    border: 1px solid var(--border-hud);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 14px var(--shadow-strong);
+    overflow: hidden;
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+    background: var(--bg-hud);
+    color: var(--fg-hud);
+    border-bottom-color: var(--border-hud);
+    backdrop-filter: blur(3px);
+    transition: background-color 120ms ease, color 120ms ease;
+}
+.leaflet-bar a:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+}
+.leaflet-bar a.leaflet-disabled {
+    background: var(--bg-hud);
+    color: rgba(238, 244, 248, 0.4);
+}
 /* "Fit" control button — inherits .leaflet-bar sizing from Leaflet's CSS. */
 .leaflet-control-fit a {
     font-size: 16px;
@@ -834,15 +999,7 @@ body {
 }
 
 #websocket-status .pending-indicator {
-    position: fixed;
-    top: 8px;
-    right: 8px;
-    background: var(--bg-status);
-    color: var(--fg-secondary);
-    padding: 4px 10px;
-    font: 12px monospace;
-    border-radius: var(--radius-sm);
-    display: inline-block;
+    color: var(--fg-hud-muted);
 }
 
 @keyframes slideDown {
@@ -867,33 +1024,14 @@ body {
     }
 }
 
-/* Coordinate readout (bottom-left of layout viewer) */
-#coord-bar {
-    position: absolute;
-    bottom: 4px;
-    left: 4px;
-    z-index: 900;
-    background: var(--bg-status);
-    color: var(--fg-secondary);
-    padding: 2px 8px;
-    font: 12px monospace;
-    border-radius: var(--radius-sm);
-    pointer-events: none;
-}
-
-/* Scale bar (bottom-left, above coord bar).  Content is an inline SVG
-   (bracket + ticks + 0/total labels) rebuilt by updateScaleBar. */
+/* Scale bar and coordinate readout share one HUD at the bottom-left of the
+   layout viewer (see .or-hud).  The scale bar's content is an inline SVG
+   (bracket + ticks + 0/total labels) rebuilt by updateScaleBar; the scale bar
+   hides on its own -- it is a display option -- so the divider beside it goes
+   with it. */
 #scale-bar {
-    position: absolute;
-    bottom: 26px;
-    left: 4px;
-    z-index: 900;
-    background: var(--bg-status);
-    color: var(--fg-secondary);  /* SVG strokes use currentColor */
-    border-radius: var(--radius-sm);
-    padding: 1px 4px;
     line-height: 0;  /* wrap the inline SVG snugly */
-    pointer-events: none;
+    color: var(--fg-hud-muted);  /* SVG strokes use currentColor */
 }
 /* Tick/label text drawn inside the scale-bar SVG. */
 .scale-bar-text {
@@ -1418,11 +1556,6 @@ body {
 .inspector-edit-btn:hover {
     color: var(--fg-bright);
 }
-.inspector-btn-danger:hover {
-    background: var(--sem-danger);
-    border-color: var(--sem-danger-line);
-    color: var(--fg-white);
-}
 .or-modal-overlay {
     position: fixed;
     inset: 0;
@@ -1457,25 +1590,6 @@ body {
     justify-content: flex-end;
     gap: 8px;
 }
-.or-modal-btn {
-    padding: 5px 14px;
-    background: var(--border-subtle);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    color: var(--fg-primary);
-    cursor: pointer;
-}
-.or-modal-btn:hover {
-    background: var(--border);
-}
-.or-modal-btn-danger {
-    background: var(--sem-danger);
-    border-color: var(--sem-danger-line);
-    color: var(--fg-white);
-}
-.or-modal-btn-danger:hover {
-    background: var(--sem-danger-hover);
-}
 .selection-browser {
     display: flex;
     flex-direction: column;
@@ -1504,12 +1618,6 @@ body {
 }
 .sb-tool {
     margin-left: auto;
-    padding: 3px 8px;
-    background: var(--border-subtle);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    color: var(--fg-primary);
-    cursor: pointer;
 }
 .sb-tool + .sb-tool {
     margin-left: 4px;
@@ -1635,11 +1743,12 @@ body {
     left: 50%;
     transform: translateX(-50%);
     max-width: 60%;
-    padding: 8px 14px;
-    background: var(--bg-status);
+    padding: var(--space-md) var(--space-xl);
+    background: var(--bg-context);
     color: var(--fg-primary);
     border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 20px var(--shadow-strong);
     font-size: 12px;
     z-index: 3000;
     opacity: 0;
@@ -1744,29 +1853,6 @@ body {
     border-bottom: 1px solid var(--border-subtle);
     margin-bottom: 4px;
 }
-.inspector-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    background: var(--border-subtle);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    color: var(--fg-primary);
-    cursor: pointer;
-}
-.inspector-btn:hover {
-    background: var(--border);
-    color: var(--fg-bright);
-}
-.inspector-btn:disabled {
-    opacity: 0.45;
-    cursor: default;
-    background: var(--bg-context);
-    color: var(--fg-muted);
-}
 .inspector-selection-nav {
     display: flex;
     align-items: center;
@@ -1860,18 +1946,6 @@ body {
     flex-shrink: 0;
 }
 
-.timing-btn {
-    background: var(--border-subtle);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    color: var(--fg-primary);
-    padding: 4px 12px;
-    cursor: pointer;
-    font-size: 12px;
-}
-.timing-btn:hover { background: var(--border); color: var(--fg-bright); }
-.timing-btn:disabled { opacity: 0.5; cursor: default; }
-
 .timing-path-count {
     color: var(--fg-muted);
     font-size: 12px;
@@ -1948,20 +2022,6 @@ body {
     border-bottom: 1px solid var(--border);
     font-weight: 600;
     white-space: nowrap;
-}
-
-.timing-header-tooltip {
-    position: fixed;
-    background: var(--bg-tooltip);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 12px;
-    color: var(--fg-primary);
-    pointer-events: none;
-    white-space: pre;
-    z-index: 100;
-    display: none;
 }
 
 .timing-table thead th.sortable {
@@ -2090,20 +2150,6 @@ body {
     display: block;
 }
 
-.clock-tree-tooltip {
-    position: absolute;
-    background: var(--bg-tooltip);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 12px;
-    color: var(--fg-primary);
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 100;
-    display: none;
-}
-
 /* ─── 3D Viewer Widget ───────────────────────────────────────────────── */
 
 .three-d-viewer-widget {
@@ -2117,20 +2163,6 @@ body {
     width: 100%;
     height: 100%;
     position: relative;
-}
-
-.three-d-tooltip {
-    position: absolute;
-    background: var(--bg-tooltip);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 12px;
-    color: var(--fg-primary);
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 100;
-    display: none;
 }
 
 .three-d-options {
@@ -2196,20 +2228,6 @@ body {
     display: block;
 }
 
-.charts-tooltip {
-    position: absolute;
-    background: var(--bg-tooltip);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 12px;
-    color: var(--fg-primary);
-    pointer-events: none;
-    white-space: pre;
-    z-index: 100;
-    display: none;
-}
-
 .heatmap-controls {
     margin-top: 12px;
     padding-top: 8px;
@@ -2255,20 +2273,20 @@ body {
 }
 
 .heatmap-rebuild {
-    margin-top: 6px;
-    background: var(--bg-context);
-    color: var(--fg-bright);
-    border: 1px solid var(--fg-disabled);
-    border-radius: var(--radius-sm);
-    padding: 4px 8px;
-    cursor: pointer;
+    margin-top: var(--space-sm);
 }
 
 .heatmap-legend-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-md);
     color: var(--fg-secondary);
+}
+/* The same row appears in two places on two different grounds: in the Display
+   Controls panel, where it takes the panel's ink, and inside the legend on the
+   canvas, where it has to take the HUD's. */
+.heatmap-map-legend .heatmap-legend-row {
+    color: var(--fg-hud-muted);
 }
 
 .heatmap-legend-swatch {
@@ -2279,37 +2297,24 @@ body {
     flex: 0 0 auto;
 }
 
+/* An .or-hud, but a stacked one: title over units over the swatch list. */
 .heatmap-map-legend {
-    position: absolute;
-    right: 14px;
-    bottom: 14px;
-    z-index: 900;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
     min-width: 140px;
     max-width: 220px;
-    padding: 10px 12px;
-    background: var(--bg-heatmap-legend);
-    border: 1px solid var(--border-heatmap-legend);
-    border-radius: var(--radius-md);
-    box-shadow: 0 6px 20px var(--shadow-strong);
-    color: var(--fg-bright);
-    font-family: monospace;
-    font-size: 12px;
-    pointer-events: none;
-    backdrop-filter: blur(2px);
-}
-
-.heatmap-map-legend.hidden {
-    display: none;
+    padding: var(--space-md) var(--space-lg);
 }
 
 .heatmap-map-legend-title {
-    color: var(--fg-heatmap-title);
+    color: var(--fg-hud);
     font-weight: 700;
     margin-bottom: 2px;
 }
 
 .heatmap-map-legend-units {
-    color: var(--fg-heatmap-units);
+    color: var(--fg-hud-muted);
     margin-bottom: 8px;
 }
 
@@ -2353,18 +2358,6 @@ html[data-theme="dark"] .schematic-widget svg {
     padding: 3px 4px;
     font-size: 12px;
 }
-
-.drc-btn {
-    background: var(--bg-input);
-    color: var(--fg-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 3px 8px;
-    cursor: pointer;
-    font-size: 12px;
-    white-space: nowrap;
-}
-.drc-btn:hover { background: var(--border); color: var(--fg-bright); }
 
 .drc-info-bar {
     padding: 2px 6px;
@@ -2492,4 +2485,60 @@ html[data-theme="dark"] .schematic-widget svg {
 }
 .drc-flashing .leaflet-tile-pane {
     animation: drc-pulse 0.4s ease-in-out 3;
+}
+
+/* ─── Focus and motion ────────────────────────────────────────────────────── */
+
+/* :focus-visible rather than :focus, so the ring appears for keyboard
+ * navigation and not after a mouse click.  The offset is 1px: several of these
+ * sit in dense rows where 2px would overlap the neighbouring row. */
+:focus-visible {
+    outline: 2px solid var(--accent-tab);
+    outline-offset: 1px;
+}
+/* An input already marks focus by its border; a ring on top of that reads as
+ * a double border. */
+.modal-dialog input[type="text"]:focus-visible,
+.tcl-input:focus-visible,
+.sb-filter:focus-visible {
+    outline: none;
+}
+.tcl-input-row:focus-within {
+    border-top-color: var(--accent);
+    box-shadow: inset 0 1px 0 var(--accent);
+}
+
+/* Hover feedback on the dense list rows.  Backgrounds only -- these rows are
+ * built and torn down in bulk, so nothing here should animate layout. */
+.display-controls .vis-leaf,
+.display-controls .vis-group-header,
+.fb-entry,
+.drc-tree-header,
+.drc-marker-row,
+.sb-row,
+.cm-item,
+.context-menu-item,
+.tcl-complete-item,
+#menu-bar .menu-item,
+#menu-bar .menu-label {
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+/* Every animation in this file is decoration over a state the UI already
+ * shows some other way (a banner, a spinner, a highlighted shape), so all of
+ * them can stop for a viewer who asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    #loading-overlay .spinner {
+        /* The spinner is the only one whose whole job is the motion; leave it
+         * turning, just slowly enough not to flicker. */
+        animation-duration: 2.4s !important;
+        animation-iteration-count: infinite !important;
+    }
 }

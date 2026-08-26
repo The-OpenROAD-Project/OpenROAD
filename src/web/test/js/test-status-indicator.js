@@ -69,9 +69,10 @@ describe('Status Indicator (updateStatus)', () => {
                 if (pendingCount === 0) {
                     statusDiv.style.display = 'none';
                 } else {
-                    statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+                    statusDiv.innerHTML = `<div class="or-hud or-hud-top-right pending-indicator">pending: ${pendingCount}</div>`;
                     statusDiv.style.display = 'block';
-                    const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
+                    const color = pendingCount > 20
+                        ? 'var(--sem-error)' : 'var(--fg-hud)';
                     statusDiv.querySelector('.pending-indicator').style.color = color;
                 }
             }
@@ -129,7 +130,7 @@ describe('Status Indicator (updateStatus)', () => {
 
             const indicator = statusDiv.querySelector('.pending-indicator');
             assert.ok(indicator);
-            assert.equal(indicator.style.color, 'var(--fg-bright)');
+            assert.equal(indicator.style.color, 'var(--fg-hud)');
         });
 
         it('shows pending indicator with error color when count > 20', () => {
@@ -142,7 +143,7 @@ describe('Status Indicator (updateStatus)', () => {
 
             const indicator = statusDiv.querySelector('.pending-indicator');
             assert.ok(indicator);
-            assert.equal(indicator.style.color, 'var(--error)');
+            assert.equal(indicator.style.color, 'var(--sem-error)');
         });
 
         it('updates pending count on repeated calls', () => {

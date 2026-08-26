@@ -79,9 +79,12 @@ function updateStatus() {
         if (pendingCount === 0) {
             statusDiv.style.display = 'none';
         } else {
-            statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+            statusDiv.innerHTML = `<div class="or-hud or-hud-top-right pending-indicator">pending: ${pendingCount}</div>`;
             statusDiv.style.display = 'block';
-            const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
+            // The indicator is an .or-hud, so its ink comes from the HUD
+            // tokens rather than the panel's -- see style.css.
+            const color = pendingCount > 20
+                ? 'var(--sem-error)' : 'var(--fg-hud)';
             statusDiv.querySelector('.pending-indicator').style.color = color;
         }
     }
@@ -631,7 +634,7 @@ function createLayoutViewer(container) {
     container.element.appendChild(mapDiv);
 
     const heatMapLegend = document.createElement('div');
-    heatMapLegend.className = 'heatmap-map-legend hidden';
+    heatMapLegend.className = 'or-hud or-hud-bottom-right heatmap-map-legend hidden';
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
@@ -673,10 +676,35 @@ function createLayoutViewer(container) {
         app.map.invalidateSize({ animate: false });
     }).observe(mapDiv);
 
-    // Coordinate readout overlay (bottom-left of the layout viewer).
+    // Scale bar and coordinate readout share one HUD at the bottom-left of
+    // the viewer.  The scale bar is a display option and hides on its own, so
+    // the divider beside it goes when it does, and the HUD itself disappears
+    // when neither readout has anything to show -- otherwise an empty chip
+    // sits on the layout before the pointer has ever entered it.
+    const hud = document.createElement('div');
+    hud.className = 'or-hud or-hud-bottom-left hidden';
+    const scaleBar = document.createElement('div');
+    scaleBar.id = 'scale-bar';
+    const hudDivider = document.createElement('span');
+    hudDivider.className = 'or-hud-divider';
     const coordBar = document.createElement('div');
     coordBar.id = 'coord-bar';
-    mapDiv.appendChild(coordBar);
+    hud.appendChild(scaleBar);
+    hud.appendChild(hudDivider);
+    hud.appendChild(coordBar);
+    mapDiv.appendChild(hud);
+
+    function syncHud() {
+        // Content, not just the display property: the scale bar starts out
+        // display:'' but empty -- updateScaleBar has not run yet -- and an
+        // empty div would otherwise count as a visible readout.
+        const scale = scaleBar.style.display !== 'none'
+            && scaleBar.childElementCount > 0;
+        const coord = coordBar.textContent !== '';
+        hudDivider.style.display = (scale && coord) ? '' : 'none';
+        hud.classList.toggle('hidden', !scale && !coord);
+    }
+    syncHud();
 
     app.map.on('mousemove', (e) => {
         app.lastMouseLatLng = e.latlng;
@@ -685,14 +713,9 @@ function createLayoutViewer(container) {
             e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
             app.designOriginX, app.designOriginY);
         coordBar.textContent = `X: ${app.formatDbu(dbuX)}  Y: ${app.formatDbu(dbuY)}`;
+        syncHud();
     });
     app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
-
-    // Scale bar overlay (bottom-left, above coord bar).  Content is an
-    // inline SVG rebuilt on each update (bracket + ticks + 0/total labels).
-    const scaleBar = document.createElement('div');
-    scaleBar.id = 'scale-bar';
-    mapDiv.appendChild(scaleBar);
 
     const SB_H = 22;       // svg height
     const SB_BAR_H = 8;    // bracket height
@@ -731,6 +754,7 @@ function createLayoutViewer(container) {
     function updateScaleBar() {
         if (!app.designScale || !visibility.scale_bar) {
             scaleBar.style.display = 'none';
+            syncHud();
             return;
         }
         // Pixels per DBU at current zoom: designScale * 2^zoom.
@@ -745,10 +769,12 @@ function createLayoutViewer(container) {
         });
         if (!sb) {
             scaleBar.style.display = 'none';
+            syncHud();
             return;
         }
         scaleBar.style.display = '';
         renderScaleBar(sb.barPx, sb.label, sb.segments);
+        syncHud();
     }
 
     // Coalesce updates during continuous zoom gestures so the bar tracks

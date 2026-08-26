@@ -217,7 +217,7 @@ export class ChartsWidget {
         toolbar.className = 'charts-toolbar';
 
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
         if (isStaticMode(this._app)) {
             this._updateBtn.style.display = 'none';
@@ -228,12 +228,12 @@ export class ChartsWidget {
         this._chartSelect.className = 'charts-select';
 
         this._csvBtn = document.createElement('button');
-        this._csvBtn.className = 'timing-btn';
+        this._csvBtn.className = 'or-btn';
         this._csvBtn.textContent = 'CSV';
         this._csvBtn.title = 'Export the current chart data as CSV';
 
         this._pngBtn = document.createElement('button');
-        this._pngBtn.className = 'timing-btn';
+        this._pngBtn.className = 'or-btn';
         this._pngBtn.textContent = 'PNG';
         this._pngBtn.title = 'Export the current chart as a PNG image';
 
@@ -283,7 +283,7 @@ export class ChartsWidget {
 
         // Tooltip
         this._tooltip = document.createElement('div');
-        this._tooltip.className = 'charts-tooltip';
+        this._tooltip.className = 'or-tooltip';
         this._tooltip.style.display = 'none';
         el.appendChild(this._tooltip);
 

@@ -73,11 +73,10 @@ export function showConfirmModal({ title, message, confirmLabel = 'OK',
         const buttons = document.createElement('div');
         buttons.className = 'or-modal-buttons';
         const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'or-modal-btn';
+        cancelBtn.className = 'or-btn';
         cancelBtn.textContent = 'Cancel';
         const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'or-modal-btn'
-            + (danger ? ' or-modal-btn-danger' : '');
+        confirmBtn.className = 'or-btn' + (danger ? ' or-btn-danger' : '');
         confirmBtn.textContent = confirmLabel;
 
         const close = (result) => {

@@ -33,7 +33,7 @@ export class TimingWidget {
         toolbar.className = 'timing-toolbar';
 
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
         if (isStaticMode(this._app)) {
             this._updateBtn.style.display = 'none';
@@ -87,7 +87,7 @@ export class TimingWidget {
         // Column-header tooltip (custom div, like the charts/clock-tree
         // tooltips, rather than the easy-to-miss native title tooltip).
         this._headerTooltip = document.createElement('div');
-        this._headerTooltip.className = 'timing-header-tooltip';
+        this._headerTooltip.className = 'or-tooltip or-tooltip-fixed';
         el.appendChild(this._headerTooltip);
 
         this.element = el;
@@ -245,11 +245,11 @@ export class TimingWidget {
         panel.append(sync.input, sync.lbl);
 
         this._coneApplyBtn = document.createElement('button');
-        this._coneApplyBtn.className = 'timing-btn';
+        this._coneApplyBtn.className = 'or-btn';
         this._coneApplyBtn.textContent = 'Cone';
         this._coneApplyBtn.title = 'Show the timing cone for the selected instance';
         this._coneClearBtn = document.createElement('button');
-        this._coneClearBtn.className = 'timing-btn';
+        this._coneClearBtn.className = 'or-btn';
         this._coneClearBtn.textContent = 'Clear';
         panel.append(this._coneApplyBtn, this._coneClearBtn);
 

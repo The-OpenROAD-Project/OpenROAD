@@ -200,16 +200,16 @@ export class ClockTreeWidget {
         const toolbar = document.createElement('div');
         toolbar.className = 'clock-tree-toolbar';
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
         if (isStaticMode(this._app)) {
             this._updateBtn.style.display = 'none';
         }
         this._fitBtn = document.createElement('button');
-        this._fitBtn.className = 'timing-btn';
+        this._fitBtn.className = 'or-btn';
         this._fitBtn.textContent = 'Fit';
         this._pngBtn = document.createElement('button');
-        this._pngBtn.className = 'timing-btn';
+        this._pngBtn.className = 'or-btn';
         this._pngBtn.textContent = 'PNG';
         this._pngBtn.title = 'Export the clock tree as a PNG image';
         this._statusLabel = document.createElement('span');
@@ -232,7 +232,7 @@ export class ClockTreeWidget {
 
         // Tooltip
         this._tooltip = document.createElement('div');
-        this._tooltip.className = 'clock-tree-tooltip';
+        this._tooltip.className = 'or-tooltip';
         this._tooltip.style.display = 'none';
         el.appendChild(this._tooltip);
 

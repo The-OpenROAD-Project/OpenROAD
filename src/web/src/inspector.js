@@ -1009,7 +1009,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             toolbar.className = 'inspector-toolbar';
 
             const backBtn = document.createElement('button');
-            backBtn.className = 'inspector-btn';
+            backBtn.className = 'or-btn or-btn-icon';
             backBtn.title = 'Back';
             backBtn.innerHTML = BACK_SVG;
             backBtn.disabled = !data.can_navigate_back;
@@ -1018,7 +1018,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
 
             if (data.bbox) {
                 const zoomBtn = document.createElement('button');
-                zoomBtn.className = 'inspector-btn';
+                zoomBtn.className = 'or-btn or-btn-icon';
                 zoomBtn.title = 'Zoom to';
                 zoomBtn.innerHTML = ZOOM_TO_SVG;
                 zoomBtn.addEventListener('click', () => zoomToBBox(data.bbox));
@@ -1029,7 +1029,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             if (data.type === 'Net' && data.name) {
                 const isFocused = app.focusNets.has(data.name);
                 const focusBtn = document.createElement('button');
-                focusBtn.className = 'inspector-btn';
+                focusBtn.className = 'or-btn or-btn-icon';
                 focusBtn.title = isFocused ? 'De-focus net' : 'Focus net';
                 focusBtn.innerHTML = isFocused ? DEFOCUS_SVG : FOCUS_SVG;
                 focusBtn.addEventListener('click', () => toggleFocusNet(data.name));
@@ -1040,7 +1040,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             if (data.type === 'Net' && data.name && data.has_guides) {
                 const isShowing = app.routeGuideNets.has(data.name);
                 const guideBtn = document.createElement('button');
-                guideBtn.className = 'inspector-btn';
+                guideBtn.className = 'or-btn or-btn-icon';
                 guideBtn.title = isShowing ? 'Hide route guides' : 'Show route guides';
                 guideBtn.innerHTML = isShowing ? HIDE_ROUTE_GUIDE_SVG : ROUTE_GUIDE_SVG;
                 guideBtn.addEventListener('click', () => toggleRouteGuides(data.name));
@@ -1052,7 +1052,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             // itself (drivers<=1), so it is always offered for a Net here.
             if (data.type === 'Net' && data.name && app.showInsertBufferDialog) {
                 const bufBtn = document.createElement('button');
-                bufBtn.className = 'inspector-btn';
+                bufBtn.className = 'or-btn or-btn-icon';
                 bufBtn.title = 'Insert buffer';
                 bufBtn.innerHTML = BUFFER_SVG;
                 bufBtn.addEventListener('click', () => app.showInsertBufferDialog(data.name));
@@ -1062,7 +1062,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             // Clear all focus nets button
             if (app.focusNets.size > 0) {
                 const clearBtn = document.createElement('button');
-                clearBtn.className = 'inspector-btn';
+                clearBtn.className = 'or-btn or-btn-icon';
                 clearBtn.title = 'Clear focus nets';
                 clearBtn.innerHTML = CLEAR_FOCUS_SVG;
                 clearBtn.addEventListener('click', () => clearFocusNets());
@@ -1075,7 +1075,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             if (typeof data.highlight_group === 'number' && !isStaticMode(app)
                 && (app.techData?.highlight_colors || []).length) {
                 const hlBtn = document.createElement('button');
-                hlBtn.className = 'inspector-btn inspector-highlight-btn';
+                hlBtn.className = 'or-btn or-btn-icon inspector-highlight-btn';
                 const group = data.highlight_group;
                 hlBtn.title = group >= 0
                     ? 'Highlight group ' + (group + 1)
@@ -1096,11 +1096,11 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             if (Array.isArray(data.actions) && !isStaticMode(app)) {
                 for (const name of data.actions) {
                     const btn = document.createElement('button');
-                    btn.className = 'inspector-btn inspector-action-btn';
+                    btn.className = 'or-btn or-btn-icon inspector-action-btn';
                     btn.title = name;
                     if (name === 'Delete') {
                         btn.innerHTML = DELETE_SVG;
-                        btn.classList.add('inspector-btn-danger');
+                        btn.classList.add('or-btn-danger-hover');
                     } else {
                         btn.textContent = name;
                     }
@@ -1121,7 +1121,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             nav.className = 'inspector-selection-nav';
 
             const prevBtn = document.createElement('button');
-            prevBtn.className = 'inspector-btn';
+            prevBtn.className = 'or-btn or-btn-icon';
             prevBtn.title = 'Previous (Shift+click to multi-select)';
             prevBtn.innerHTML = CHEVRON_LEFT_SVG;
             prevBtn.addEventListener('click', () => cycleSelection(-1));
@@ -1131,7 +1131,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             label.textContent = (selIndex + 1) + ' / ' + selCount;
 
             const nextBtn = document.createElement('button');
-            nextBtn.className = 'inspector-btn';
+            nextBtn.className = 'or-btn or-btn-icon';
             nextBtn.title = 'Next';
             nextBtn.innerHTML = CHEVRON_RIGHT_SVG;
             nextBtn.addEventListener('click', () => cycleSelection(+1));

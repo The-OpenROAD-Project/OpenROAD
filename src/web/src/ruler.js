@@ -577,7 +577,7 @@ export class RulerManager {
             if (!toolbar) return;
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'inspector-btn';
+            deleteBtn.className = 'or-btn or-btn-icon';
             deleteBtn.title = 'Delete ruler';
             deleteBtn.innerHTML =
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
