@@ -623,6 +623,7 @@ void IOPlacer::getBlockedRegions()
 void IOPlacer::forEachSpecialNetShape(
     const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback)
 {
+  // reused across all vias, getViaBoxes clears it on every call
   std::vector<odb::dbShape> via_shapes;
   for (odb::dbNet* net : getBlock()->getNets()) {
     if (!net->isSpecial()) {
@@ -3188,7 +3189,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   // check for slots that overlap with obstructions
   const int pin_min_dim = std::min(pin_width, pin_height);
   const int pin_max_dim = std::max(pin_width, pin_height);
-  for (odb::Rect& rect : obstructions) {
+  for (const odb::Rect& rect : obstructions) {
     // floor the keepout at the layer spacing required by the obstruction
     const int spacing
         = computeShapeSpacing(top_grid_->layer, rect, pin_min_dim, pin_max_dim);
