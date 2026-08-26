@@ -4353,33 +4353,17 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(is_setup);
       if (path_index < static_cast<int>(paths.size())) {
+        // chiplets() covers both cases: for a single-die design its root node
+        // carries the top block with an identity transform.
         const std::vector<ChipletNode>& chiplets = gen_->chiplets();
-        odb::dbBlock* block = gen_->getBlock();
-        if (block) {
-          collectTimingPathShapes(
-              block, paths[path_index], new_rects, new_lines);
-        } else {
-          collectTimingPathShapes(
-              chiplets, paths[path_index], new_rects, new_lines);
-        }
+        collectTimingPathShapes(
+            chiplets, paths[path_index], new_rects, new_lines);
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          odb::dbITerm* iterm = nullptr;
-          odb::dbBTerm* bterm = nullptr;
-          const ChipletNode* node = nullptr;
-          if (block) {
-            auto pin_res = resolvePin(block, pin_name);
-            iterm = pin_res.first;
-            bterm = pin_res.second;
-          } else {
-            auto pin_res = resolvePin(chiplets, pin_name);
-            iterm = std::get<0>(pin_res);
-            bterm = std::get<1>(pin_res);
-            node = std::get<2>(pin_res);
-          }
+          auto [iterm, bterm, node] = resolvePin(chiplets, pin_name);
 
           odb::dbNet* net = nullptr;
           if (iterm) {
@@ -4389,7 +4373,6 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
           }
 
           if (net) {
-            odb::dbTransform xfm = node ? node->world_xfm : odb::dbTransform{};
             collectNetShapes(net,
                              iterm,
                              bterm,
@@ -4398,7 +4381,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
                              kStageColor,
                              new_rects,
                              new_lines,
-                             xfm);
+                             node->world_xfm);
           }
         }
       }
@@ -4640,8 +4623,7 @@ WebSocketResponse TimingHandler::handleFanoutHistogram(
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    odb::dbBlock* block = gen_->getBlock();
-    auto histogram = computeFanoutHistogram(block);
+    auto histogram = computeFanoutHistogram(gen_->blocks());
     writePayload(resp, serializeFanoutHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;

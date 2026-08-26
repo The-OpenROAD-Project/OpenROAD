@@ -1418,7 +1418,8 @@ void WebServer::saveReport(const std::string& filename,
   ensureGenerator().eagerInit();
 
   odb::dbBlock* block = generator_->getBlock();
-  if (!block && generator_->chiplets().size() <= 1) {
+  const std::vector<odb::dbBlock*> design_blocks = generator_->blocks();
+  if (design_blocks.empty()) {
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
   }
@@ -1455,7 +1456,7 @@ void WebServer::saveReport(const std::string& filename,
   }
   // Net fanout histogram depends only on odb, so it's always populated.
   const std::string hist_fanout = boost::json::serialize(
-      serializeFanoutHistogram(computeFanoutHistogram(block)));
+      serializeFanoutHistogram(computeFanoutHistogram(design_blocks)));
   const std::string tech_json
       = boost::json::serialize(serializeTechResponse(*generator_));
   const std::string bounds_json
@@ -1464,6 +1465,13 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Serialize module hierarchy ──
 
+  // HierarchyReport walks one block's module tree, which a 3DBlox top lacks.
+  if (!block) {
+    logger_->warn(utl::WEB,
+                  77,
+                  "Multi-die design: the module hierarchy section will be "
+                  "empty, it is not aggregated across chiplets yet.");
+  }
   HierarchyReport hier_report(block, sta_);
   auto hier_result = hier_report.getReport();
 
@@ -1517,16 +1525,13 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Render per-path overlay images ──
 
+  const std::vector<ChipletNode>& chiplets = generator_->chiplets();
   auto render_path_overlays = [&](const std::vector<TimingPathSummary>& paths) {
     std::vector<std::string> overlays;
     for (const auto& path : paths) {
       std::vector<ColoredRect> rects;
       std::vector<FlightLine> lines;
-      if (block) {
-        collectTimingPathShapes(block, path, rects, lines);
-      } else {
-        collectTimingPathShapes(generator_->chiplets(), path, rects, lines);
-      }
+      collectTimingPathShapes(chiplets, path, rects, lines);
       const int overlay_px = 256 * (1 << kZ);
       auto png = generator_->renderOverlayPng(overlay_px, rects, lines);
       if (png.size() > kEmptyPngSize) {
@@ -1540,11 +1545,17 @@ void WebServer::saveReport(const std::string& filename,
   const auto setup_overlays = render_path_overlays(setup_paths);
   const auto hold_overlays = render_path_overlays(hold_paths);
 
+  // Entries stay index-aligned with the paths, so an unrenderable path leaves
+  // an empty slot; only count the ones that actually carry an image.
+  auto count_rendered = [](const std::vector<std::string>& overlays) {
+    return std::ranges::count_if(
+        overlays, [](const std::string& png) { return !png.empty(); });
+  };
   logger_->info(utl::WEB,
                 34,
                 "Rendered {} setup + {} hold path overlays.",
-                setup_overlays.size(),
-                hold_overlays.size());
+                count_rendered(setup_overlays),
+                count_rendered(hold_overlays));
 
   // ── Write the HTML ──
 
