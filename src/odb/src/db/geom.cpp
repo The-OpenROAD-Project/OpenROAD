@@ -32,33 +32,4 @@ Polygon Polygon::bloat(int margin) const
   return polygons[0];
 }
 
-std::vector<Polygon> Polygon::merge(const std::vector<Oct>& octs)
-{
-  std::vector<Polygon> polys(octs.begin(), octs.end());
-  return Polygon::merge(polys);
-}
-
-std::vector<Polygon> Polygon::merge(const std::vector<Rect>& rects)
-{
-  std::vector<Polygon> polys(rects.begin(), rects.end());
-  return Polygon::merge(polys);
-}
-
-std::vector<Polygon> Polygon::merge(const std::vector<Polygon>& polys)
-{
-  // extract the merged polygons
-  return geom::extractPolygons(geom::toPolygonSet(polys));
-}
-
-std::vector<Polygon> Polygon::difference(Polygon b) const
-{
-  using boost::polygon::operators::operator-;
-
-  const geom::BoostPolygonSet difference_set
-      = geom::toPolygonSet(*this) - geom::toPolygonSet(b);
-
-  // extract new polygons
-  return geom::extractPolygons(difference_set);
-}
-
 }  // namespace odb

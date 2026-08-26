@@ -140,19 +140,6 @@ TEST(geom, test_polygon_is_rect)
   // too few points to close a shape
   const std::vector<Point> line_points = {Point(0, 0), Point(100, 0)};
   EXPECT_FALSE(Polygon(line_points).isRect());
-
-  // rects recovered from set operations do not start at a predictable corner
-  const std::vector<Polygon> cut
-      = Polygon(Rect(0, 0, 100, 100)).difference(Rect(50, 0, 100, 100));
-  ASSERT_EQ(cut.size(), 1);
-  EXPECT_TRUE(cut[0].isRect());
-  EXPECT_EQ(cut[0].getEnclosingRect(), Rect(0, 0, 50, 100));
-
-  const std::vector<Polygon> merged = Polygon::merge(
-      std::vector<Rect>{Rect(0, 0, 50, 100), Rect(50, 0, 100, 100)});
-  ASSERT_EQ(merged.size(), 1);
-  EXPECT_TRUE(merged[0].isRect());
-  EXPECT_EQ(merged[0].getEnclosingRect(), Rect(0, 0, 100, 100));
 }
 TEST(geom, test_isotropy)
 {
