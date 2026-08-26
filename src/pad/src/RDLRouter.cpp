@@ -1891,20 +1891,19 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
     auto* master = inst->getMaster();
     auto& master_obs = master_obstruction_map[master];
     if (master_obs.empty()) {
-      odb::geom::BoostPolygonSet master_obstruction;
-
-      // Collect all polygons to add (obstructions)
+      // Collect all polygons to add (obstructions).  Each shape is bloated on
+      // its own, since bloating the union would miter the merged outline
+      // instead.  get() appends, so everything lands in one vector that is
+      // normalized once below.
       std::vector<odb::geom::BoostPolygon> polys_to_add;
       for (auto* obs : master->getPolygonObstructions()) {
         if (obs->getTechLayer() != layer_) {
           continue;
         }
 
-        for (const auto& bloat_poly : odb::geom::extractPolygons(
-                 odb::geom::toPolygonSet(obs->getPolygon()) + bloat)) {
-          const auto pts = bloat_poly.getPoints();
-          polys_to_add.emplace_back(pts.begin(), pts.end());
-        }
+        const odb::geom::BoostPolygonSet bloated_obs
+            = odb::geom::toPolygonSet(obs->getPolygon()) + bloat;
+        bloated_obs.get(polys_to_add);
       }
       for (auto* obs : master->getObstructions(false)) {
         if (obs->getTechLayer() != layer_) {
@@ -1917,12 +1916,8 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
         polys_to_add.emplace_back(pts.begin(), pts.end());
       }
 
-      // Build temporary set for all additions, then assign to
-      // master_obstruction
-      if (!polys_to_add.empty()) {
-        master_obstruction = odb::geom::BoostPolygonSet(polys_to_add.begin(),
-                                                        polys_to_add.end());
-      }
+      odb::geom::BoostPolygonSet master_obstruction(polys_to_add.begin(),
+                                                    polys_to_add.end());
 
       // Collect all polygons to subtract (iterm shapes)
       std::vector<odb::geom::BoostPolygon> polys_to_subtract;
@@ -1933,11 +1928,9 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
               continue;
             }
 
-            for (const auto& bloat_poly : odb::geom::extractPolygons(
-                     odb::geom::toPolygonSet(geom->getPolygon()) + bloat)) {
-              const auto pts = bloat_poly.getPoints();
-              polys_to_subtract.emplace_back(pts.begin(), pts.end());
-            }
+            const odb::geom::BoostPolygonSet bloated_pin
+                = odb::geom::toPolygonSet(geom->getPolygon()) + bloat;
+            bloated_pin.get(polys_to_subtract);
           }
           for (auto* geom : mpin->getGeometry(false)) {
             if (geom->getTechLayer() != layer_) {
