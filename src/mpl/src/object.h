@@ -264,7 +264,7 @@ class HardMacro
       left = channel.first / 2;
       bottom = channel.second / 2;
       right = channel.first - left;
-      top = channel.second - top;
+      top = channel.second - bottom;
     }
 
     Halo(int left, int bottom, int right, int top)
