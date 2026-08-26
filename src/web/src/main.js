@@ -661,6 +661,23 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(progress);
     app.tileProgressEl = progress;
 
+    // Closing the panel discards this DOM, so drop the references to it.  Both
+    // readers null-check (setTileProgress here, updateHeatMapLegend in
+    // display-controls.js), and createLayoutViewer sets them again if the panel
+    // is reopened.
+    //
+    // app.map is deliberately left alone.  Calling map.remove() and nulling it
+    // would be the matching cleanup, but ~140 call sites across eleven modules
+    // reach app.map, many of them unguarded -- the View menu's zoom items, the
+    // inspector's zoom-to, the rulers, the display controls -- so nulling it
+    // turns a detached-but-harmless map into a dozen ways to throw while the
+    // panel is closed.  Guarding those is a lifecycle change, not a styling
+    // one.
+    container.on('destroy', () => {
+        app.tileProgressEl = null;
+        app.heatMapLegendEl = null;
+    });
+
     app.map = L.map(mapDiv, buildMapOptions());
     // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
     // boundaries mid-device-pixel and they show as dark hairlines; this nudges
@@ -738,7 +755,19 @@ function createLayoutViewer(container) {
         coordBar.textContent = `X: ${app.formatDbu(dbuX)}  Y: ${app.formatDbu(dbuY)}`;
         syncHud();
     });
-    app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
+    app.map.on('mouseout', (e) => {
+        app.lastMouseLatLng = null;
+        // Leaflet raises mouseout for a move onto anything inside the
+        // container too -- a zoom control, a marker, the HUD itself -- and the
+        // readout should hold its value for those.  Only a move that actually
+        // leaves the viewer clears it.
+        const to = e.originalEvent && e.originalEvent.relatedTarget;
+        if (to && mapDiv.contains(to)) {
+            return;
+        }
+        coordBar.textContent = '';
+        syncHud();
+    });
 
     const SB_H = 22;       // svg height
     const SB_BAR_H = 8;    // bracket height

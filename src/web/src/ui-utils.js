@@ -564,10 +564,15 @@ export function decorateTabIcons(root = document) {
     for (const tab of root.querySelectorAll('.lm_tab:not([data-or-icon])')) {
         const titleEl = tab.querySelector('.lm_title');
         if (!titleEl) continue;
-        // Mark before the lookup, so a title with no icon is not re-examined
-        // on every subsequent layout change.
+        const title = titleEl.textContent.trim();
+        // An empty title means the tab is not built yet.  Marking it now would
+        // spend its one chance at an icon on a title we cannot match, so leave
+        // it for the next layout change.
+        if (!title) continue;
+        // Mark before the lookup, so a title with no icon of its own is not
+        // re-examined on every subsequent layout change.
         tab.setAttribute('data-or-icon', '');
-        const icon = panelTabIcon(titleEl.textContent.trim());
+        const icon = panelTabIcon(title);
         if (icon) {
             tab.insertBefore(icon, titleEl);
             added++;

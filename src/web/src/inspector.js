@@ -1096,12 +1096,18 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             if (Array.isArray(data.actions) && !isStaticMode(app)) {
                 for (const name of data.actions) {
                     const btn = document.createElement('button');
-                    btn.className = 'or-btn or-btn-icon inspector-action-btn';
+                    btn.className = 'or-btn inspector-action-btn';
                     btn.title = name;
                     if (name === 'Delete') {
+                        // The only action drawn as a glyph, so the only one
+                        // that gets the square icon variant.
+                        btn.classList.add('or-btn-icon', 'or-btn-danger-hover');
                         btn.innerHTML = DELETE_SVG;
-                        btn.classList.add('or-btn-danger-hover');
                     } else {
+                        // Any action the server does not suppress arrives here
+                        // by name ("Change color", "Report Path", ...), so this
+                        // has to size to its label.
+                        btn.classList.add('or-btn-sm');
                         btn.textContent = name;
                     }
                     btn.addEventListener('click', () => triggerAction(name, data));
