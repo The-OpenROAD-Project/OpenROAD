@@ -445,8 +445,7 @@ std::optional<odb::Polygon> PadPlacer::getMasterOutline(
     return odb::Polygon(master_obs.front());
   }
 
-  const auto overlaps
-      = odb::geom::extractPolygons(odb::geom::toPolygonSet(master_obs));
+  const auto overlaps = odb::geom::mergePolygons(master_obs);
   if (overlaps.size() == 1) {
     return overlaps.front();
   }

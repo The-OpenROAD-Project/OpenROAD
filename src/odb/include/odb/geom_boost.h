@@ -546,4 +546,12 @@ Rect getEnclosingRect(const BoostShapeType& shape)
   return rect;
 }
 
+// Merge a collection of shapes into a single set of polygons.  Overlapping
+// shapes are unioned together, and the result is decomposed back into polygons.
+template <AreaShape T>
+std::vector<Polygon> mergePolygons(const std::vector<T>& shapes)
+{
+  return extractPolygons(toPolygonSet(shapes));
+}
+
 }  // namespace odb::geom

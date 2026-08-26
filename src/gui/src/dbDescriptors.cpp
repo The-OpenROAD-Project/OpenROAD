@@ -1737,8 +1737,8 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
           }
           painter.saveState();
           painter.setBrush(painter.getPenColor(), gui::Painter::Brush::kNone);
-          for (const odb::Polygon& outline : odb::geom::extractPolygons(
-                   odb::geom::toPolygonSet(guide_rects))) {
+          for (const odb::Polygon& outline :
+               odb::geom::mergePolygons(guide_rects)) {
             painter.drawPolygon(outline);
           }
           painter.restoreState();
