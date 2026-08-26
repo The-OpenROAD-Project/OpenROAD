@@ -52,6 +52,19 @@
     --fg-hud-muted: #9fb0bc;
 
     --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Bare `monospace` is whatever the UA picked, which on several systems is
+     * Courier -- wide, and thin at the 11-12px this UI uses.  Name the faces
+     * that ship with each platform first and keep `monospace` as the floor. */
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono',
+                 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+
+    /* Violated and met slack.  These are the Qt GUI's histogram colours
+     * (chartsWidget.cpp:1052-1062, lightgreen/lightcoral), which
+     * charts-widget.js also carries, so the slack bars in the timing table
+     * read as the same measure as the bars in the charts panel.  Not
+     * theme-dependent, for the same reason. */
+    --slack-neg: #f08080;
+    --slack-pos: #90ee90;
 }
 
 html[data-theme="dark"] {
@@ -266,7 +279,7 @@ html[data-theme="light"] {
     color: var(--fg-hud);
     padding: 2px 6px;
     border-radius: var(--radius-sm);
-    font: 12px monospace;
+    font: 12px var(--font-mono);
     white-space: nowrap;
     pointer-events: none;
     border: none;
@@ -595,7 +608,7 @@ body {
     box-shadow: 0 6px 20px var(--shadow-strong);
     backdrop-filter: blur(3px);
     color: var(--fg-hud);
-    font: 12px monospace;
+    font: 12px var(--font-mono);
     font-variant-numeric: tabular-nums;
     pointer-events: none;
 }
@@ -643,7 +656,7 @@ body {
     padding: 16px 20px;
     min-width: 400px;
     color: var(--fg-primary);
-    font: 13px monospace;
+    font: 13px var(--font-sans);
 }
 .modal-dialog .modal-close {
     position: absolute;
@@ -675,7 +688,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     color: var(--fg-primary);
-    font: 13px monospace;
+    font: 13px var(--font-mono);
     box-sizing: border-box;
 }
 .modal-dialog input[type="text"]:focus {
@@ -967,7 +980,7 @@ body {
     border-radius: var(--radius-sm);
 }
 .leaflet-popup-content {
-    font-family: monospace;
+    font-family: var(--font-mono);
 }
 .leaflet-popup-content strong {
     color: var(--accent-text);
@@ -1036,7 +1049,7 @@ body {
 /* Tick/label text drawn inside the scale-bar SVG. */
 .scale-bar-text {
     fill: currentColor;
-    font: 11px monospace;
+    font: 11px var(--font-mono);
 }
 
 /* Background color control in the Display Controls panel. */
@@ -1078,7 +1091,7 @@ body {
     align-items: center;
     gap: 12px;
     color: var(--fg-primary);
-    font: 16px monospace;
+    font: 16px var(--font-sans);
 }
 #loading-overlay .spinner {
     width: 20px;
@@ -1350,7 +1363,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
 }
 .tcl-output {
@@ -1394,7 +1407,7 @@ body {
     border: none;
     outline: none;
     padding: 6px 8px 6px 0;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
 }
 
@@ -1409,7 +1422,7 @@ body {
     border: 1px solid var(--border-strong);
     box-shadow: 0 -4px 12px var(--shadow);
     z-index: 10003;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
     color: var(--fg-primary);
     min-width: 200px;
@@ -1456,7 +1469,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     padding: 1px 6px;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     color: var(--fg-bright);
 }
@@ -1467,7 +1480,7 @@ body {
     overflow-y: auto;
     height: 100%;
     font-size: 13px;
-    font-family: monospace;
+    font-family: var(--font-sans);
 }
 .inspector-prop {
     display: flex;
@@ -1482,6 +1495,7 @@ body {
  * itself is draggable via .inspector-col-resizer. */
 .inspector-prop-name {
     color: var(--accent-text);
+    font-family: var(--font-mono);
     box-sizing: border-box;
     flex: 0 0 var(--inspector-name-w, 140px);
     padding-right: 8px;
@@ -1500,6 +1514,8 @@ body {
  * lets the cell shrink to the row instead of stretching it. */
 .inspector-prop-value {
     color: var(--fg-primary);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
@@ -1647,20 +1663,24 @@ body {
     position: sticky;
     top: 0;
     background: var(--bg-panel);
+    color: var(--fg-muted);
     text-align: left;
-    padding: 3px 6px;
-    border-bottom: 1px solid var(--border-strong);
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
 }
 .sb-table th.sb-sortable {
     cursor: pointer;
 }
 .sb-table td {
-    padding: 2px 6px;
-    border-bottom: 1px solid var(--border-subtle);
+    padding: 2px var(--space-sm);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 220px;
+    font-family: var(--font-mono);
 }
 .sb-row {
     cursor: pointer;
@@ -1819,6 +1839,8 @@ body {
 }
 .inspector-table {
     border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     font-size: 12px;
 }
 .inspector-table th,
@@ -1933,7 +1955,7 @@ body {
     flex-direction: column;
     height: 100%;
     font-size: 13px;
-    font-family: monospace;
+    font-family: var(--font-sans);
     overflow: hidden;
 }
 
@@ -2015,13 +2037,27 @@ body {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--bg-context);
-    color: var(--fg-secondary);
-    padding: 4px 8px;
+    background: var(--bg-panel);
+    color: var(--fg-muted);
+    padding: var(--space-sm) var(--space-md);
     text-align: left;
     border-bottom: 1px solid var(--border);
+    font-family: var(--font-sans);
+    font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
+}
+/* The header is sticky, so once the body scrolls under it there is nothing but
+   this to separate the two. */
+.timing-table thead th::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -4px;
+    height: 4px;
+    background: linear-gradient(var(--shadow-strong), transparent);
+    pointer-events: none;
 }
 
 .timing-table thead th.sortable {
@@ -2034,10 +2070,10 @@ body {
 }
 
 .timing-table tbody td {
-    padding: 3px 8px;
-    border-bottom: 1px solid var(--bg-context);
+    padding: 3px var(--space-md);
     white-space: nowrap;
     color: var(--fg-primary);
+    font-family: var(--font-mono);
 }
 
 .timing-table tbody tr:hover {
@@ -2046,6 +2082,9 @@ body {
 
 .timing-table tbody tr.selected {
     background: var(--bg-selected-row);
+}
+.timing-table tbody tr.selected td:first-child {
+    box-shadow: inset 2px 0 0 var(--accent-tab);
 }
 
 .timing-table tbody tr.timing-selected-row {
@@ -2059,6 +2098,44 @@ body {
 
 .timing-table tbody td.slack-negative {
     color: var(--error-text);
+}
+
+/* --slack-frac is set per cell by the widget: |slack| over the largest
+   |slack| in the table, so the bar is relative to the worst path shown.  It
+   grows from the cell's midpoint, left for negative and right for positive,
+   which puts every zero crossing on the same vertical line. */
+.timing-table tbody td.slack-cell {
+    position: relative;
+}
+.timing-table tbody td.slack-cell::after {
+    content: '';
+    position: absolute;
+    bottom: 1px;
+    height: 3px;
+    border-radius: 1px;
+    /* min() rather than a bare calc: the widget normalizes --slack-frac to
+       0..1, and the clamp keeps a bar inside its own cell even if some future
+       caller does not. */
+    width: min(calc(var(--slack-frac, 0) * 50%), 50%);
+    pointer-events: none;
+}
+.timing-table tbody td.slack-cell.slack-under::after {
+    right: 50%;
+    background: var(--slack-neg);
+}
+.timing-table tbody td.slack-cell.slack-over::after {
+    left: 50%;
+    background: var(--slack-pos);
+}
+
+/* A numeric cell: right-aligned with tabular figures, so a column of values
+   lines up on the decimal point and does not jitter as digits change. */
+.timing-table th.num,
+.timing-table td.num,
+.sb-table th.num,
+.sb-table td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .col-resize-grip {
@@ -2087,7 +2164,7 @@ body {
     flex-direction: column;
     height: 100%;
     font-size: 13px;
-    font-family: monospace;
+    font-family: var(--font-sans);
     overflow: hidden;
 }
 
@@ -2129,7 +2206,7 @@ body {
     flex-direction: column;
     height: 100%;
     font-size: 13px;
-    font-family: monospace;
+    font-family: var(--font-sans);
     overflow: hidden;
     position: relative;
 }
@@ -2193,7 +2270,7 @@ body {
     flex-direction: column;
     height: 100%;
     font-size: 13px;
-    font-family: monospace;
+    font-family: var(--font-sans);
     overflow: hidden;
     position: relative;
 }
@@ -2213,7 +2290,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     padding: 3px 6px;
-    font-family: monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     cursor: pointer;
 }
@@ -2236,7 +2313,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-family: monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
 }
 
@@ -2268,7 +2345,7 @@ body {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     padding: 2px 4px;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
 }
 

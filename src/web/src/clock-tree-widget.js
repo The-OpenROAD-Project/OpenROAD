@@ -435,7 +435,7 @@ export class ClockTreeWidget {
 
         if (!this._layout.length) {
             ctx.fillStyle = tc.canvasText;
-            ctx.font = '14px monospace';
+            ctx.font = '14px ' + tc.fontSans;
             ctx.textAlign = 'center';
             const msg = isStaticMode(this._app)
                 ? 'No clock tree data available'
@@ -631,7 +631,7 @@ export class ClockTreeWidget {
         ctx.save();
         ctx.fillStyle = tc.canvasLabel;
         ctx.strokeStyle = tc.canvasAxis;
-        ctx.font = '11px monospace';
+        ctx.font = '11px ' + tc.fontMono;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
 

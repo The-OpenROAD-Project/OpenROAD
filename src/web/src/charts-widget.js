@@ -531,7 +531,7 @@ export class ChartsWidget {
 
         if (!this._bars || this._bars.length === 0) {
             ctx.fillStyle = tc.canvasText;
-            ctx.font = '14px monospace';
+            ctx.font = '14px ' + tc.fontSans;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const msg = isStaticMode(this._app)
@@ -566,7 +566,7 @@ export class ChartsWidget {
 
         // Y axis ticks and labels
         ctx.fillStyle = tc.canvasLabel;
-        ctx.font = '11px monospace';
+        ctx.font = '11px ' + tc.fontMono;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         const chartHeight = ca.bottom - ca.top;
@@ -596,7 +596,7 @@ export class ChartsWidget {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = tc.canvasTitle;
-        ctx.font = '11px monospace';
+        ctx.font = '11px ' + tc.fontMono;
         ctx.fillText(this._logY ? 'Nets (log)'
                                 : (netCount ? 'Nets' : 'Endpoints'), 0, 0);
         ctx.restore();
@@ -605,7 +605,7 @@ export class ChartsWidget {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = tc.canvasLabel;
-        ctx.font = '10px monospace';
+        ctx.font = '10px ' + tc.fontMono;
 
         const bins = this._histogramData.bins;
         const unit = this._histogramData.time_unit
@@ -627,7 +627,7 @@ export class ChartsWidget {
 
         // X axis title
         ctx.fillStyle = tc.canvasTitle;
-        ctx.font = '11px monospace';
+        ctx.font = '11px ' + tc.fontMono;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         let xTitle;
@@ -686,7 +686,7 @@ export class ChartsWidget {
         const series = this._stackedSeries();
         const ca = this._chartArea;
         if (!series || !ca) return;
-        ctx.font = '10px monospace';
+        ctx.font = '10px ' + tc.fontMono;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         const lx = ca.right - 120;
@@ -708,7 +708,7 @@ export class ChartsWidget {
             title = `${mode} Endpoint Slack`;
         }
         ctx.fillStyle = tc.fgPrimary;
-        ctx.font = '13px monospace';
+        ctx.font = '13px ' + tc.fontSans;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillText(title, canvasWidth / 2, 8);
@@ -949,7 +949,7 @@ export class ChartsWidget {
         const pts = chart.points;
         if (!pts || pts.length === 0) {
             ctx.fillStyle = tc.canvasText;
-            ctx.font = '14px monospace';
+            ctx.font = '14px ' + tc.fontSans;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('No data points yet', w / 2, h / 2);
@@ -993,7 +993,7 @@ export class ChartsWidget {
         ctx.stroke();
 
         ctx.fillStyle = tc.canvasLabel;
-        ctx.font = '10px monospace';
+        ctx.font = '10px ' + tc.fontMono;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         const nYTicks = 5;
@@ -1026,12 +1026,12 @@ export class ChartsWidget {
         }
 
         ctx.fillStyle = tc.canvasTitle;
-        ctx.font = '11px monospace';
+        ctx.font = '11px ' + tc.fontMono;
         ctx.textAlign = 'center';
         ctx.fillText(chart.x_label || '', (cLeft + cRight) / 2, cBottom + 22);
 
         ctx.fillStyle = tc.fgPrimary;
-        ctx.font = '13px monospace';
+        ctx.font = '13px ' + tc.fontSans;
         ctx.textBaseline = 'top';
         ctx.fillText(chart.name, w / 2, 4);
 
@@ -1050,7 +1050,7 @@ export class ChartsWidget {
         }
 
         if (numSeries > 1 && chart.y_labels) {
-            ctx.font = '10px monospace';
+            ctx.font = '10px ' + tc.fontMono;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             const lx = cLeft + 8;
