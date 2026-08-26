@@ -4,23 +4,16 @@ BUSBITCHARS "[]" ;
 DESIGN top ;
 UNITS DISTANCE MICRONS 2000 ;
 DIEAREA ( 0 0 ) ( 400000 400000 ) ;
-COMPONENTS 4 ;
+COMPONENTS 1 ;
     - bump0 DUMMY_BUMP + PLACED ( 100000 100000 ) N ;
-    - bump1a DUMMY_BUMP + PLACED ( 200000 100000 ) N ;
-    - bump1b DUMMY_BUMP + PLACED ( 300000 100000 ) N ;
-    - drv0 INV_X1 + PLACED ( 20000 20000 ) N ;
 END COMPONENTS
-PINS 3 ;
+PINS 1 ;
     - in0 + NET in0 + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal10 ( -45000 -45000 ) ( 45000 45000 )
         + FIXED ( 145000 145000 ) N ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
-    - out0 + NET out0 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-NETS 3 ;
+NETS 1 ;
     - in0 ( PIN in0 ) ( bump0 PAD ) + USE SIGNAL ;
-    - in1 ( PIN in1 ) ( bump1a PAD ) ( bump1b PAD ) + USE SIGNAL ;
-    - out0 ( PIN out0 ) ( drv0 ZN ) + USE SIGNAL ;
 END NETS
 END DESIGN
