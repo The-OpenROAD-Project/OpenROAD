@@ -95,6 +95,20 @@ void EstimateParasitics::estimateAllGlobalRouteParasitics()
   }
 }
 
+void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
+                                                     grt::GRoute& route)
+{
+  if (route.empty()) {
+    return;
+  }
+  estimateGlobalRouteParasitics(db_net, route);
+  // Annotating parasitics does not invalidate the timer's cached delays;
+  // without this, slack queries would keep returning pre-reroute values.
+  if (const sta::Net* net = db_network_->dbToSta(db_net)) {
+    sta_->delaysInvalidFromFanin(net);
+  }
+}
+
 void EstimateParasitics::initSteinerRenderer(
     std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer)
 {

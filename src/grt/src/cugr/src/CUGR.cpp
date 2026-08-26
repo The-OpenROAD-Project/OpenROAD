@@ -157,6 +157,22 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
     refreshNetSlacks(net_indices);
     return;
   }
+  if (full_slack_update_done_) {
+    // Later stages: re-estimate parasitics only for the rerouted nets;
+    // untouched nets keep the RC from the initial full estimate.
+    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+      for (const int net_index : net_indices) {
+        GRNet* net = gr_nets_[net_index].get();
+        if (net == nullptr) {
+          continue;
+        }
+        GRoute route = getNetRoute(net->getDbNet());
+        estimator->updateGlobalRouteParasitics(net->getDbNet(), route);
+      }
+    }
+    refreshNetSlacks(net_indices);
+    return;
+  }
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
     estimator->estimateAllGlobalRouteParasitics();
   }
@@ -166,6 +182,7 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
     }
     net->setSlack(getNetSlack(net->getDbNet()));
   }
+  full_slack_update_done_ = true;
 }
 
 float CUGR::criticalSlackThreshold() const
@@ -683,6 +700,10 @@ void CUGR::route(bool incremental)
       net_indices.push_back(net->getIndex());
     }
   }
+
+  // Each route() call gets one full parasitics estimate + slack sweep; the
+  // stages after it refresh only the nets they touch.
+  full_slack_update_done_ = false;
 
   // Incremental re-optimizes every dirty net each stage: the congested-set
   // narrowing between the stages below is skipped, so net_indices stays the
