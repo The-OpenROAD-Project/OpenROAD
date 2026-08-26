@@ -1303,6 +1303,23 @@ WebServer::WebServer(odb::dbDatabase* db,
 {
 }
 
+void WebServer::setThreadCount(int num_threads)
+{
+  num_threads_ = num_threads;
+  if (generator_) {
+    generator_->setThreadCount(num_threads);
+  }
+}
+
+TileGenerator& WebServer::ensureGenerator()
+{
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+    generator_->setThreadCount(num_threads_);
+  }
+  return *generator_;
+}
+
 // Defined here (not in web_serve.cpp) so the destructor's TU does not
 // pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
 // usable from tests that don't link the full gui library.
@@ -1398,10 +1415,7 @@ void WebServer::saveReport(const std::string& filename,
                            const int max_hold)
 {
   // Create/init the tile generator.
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
-  generator_->eagerInit();
+  ensureGenerator().eagerInit();
 
   odb::dbBlock* block = generator_->getBlock();
   if (!block) {
@@ -1709,10 +1723,7 @@ void WebServer::saveImage(const std::string& filename,
                           const std::string& vis_json)
 {
   // Create generator on demand (server may not be running).
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
-  generator_->eagerInit();
+  ensureGenerator().eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
@@ -1791,9 +1802,7 @@ std::string WebServer::addLabel(const int x,
                                 const int size,
                                 const std::string& name)
 {
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
+  ensureGenerator();
   // Reject an unknown anchor rather than silently centring the label, which
   // reads as "the option did nothing".  Qt's add_label errors the same way
   // (GUI-45); listing the choices saves a trip to the manual over a typo.
@@ -2007,9 +2016,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
   // Create generator on demand (server may not be running).  eagerInit()
   // rebuilds the spatial index, so run it only once per stream (first frame);
   // the design is static across a GIF's frames.
-  if (!generator_) {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-  }
+  ensureGenerator();
   if (gif->frame_count == 0) {
     generator_->eagerInit();
   }
