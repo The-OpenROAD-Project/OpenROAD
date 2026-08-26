@@ -11,7 +11,11 @@ describe('Status Indicator (updateStatus)', () => {
     let app;
     let updateStatus;
     let disconnectTimeout;
+    let progressEl;
     const DISCONNECT_DELAY_MS = 2000;
+    // Keep in step with main.js: past this many outstanding requests the count
+    // is shown as well as the progress line.
+    const PENDING_BACKLOG = 20;
 
     beforeEach(async () => {
         // Setup DOM
@@ -20,12 +24,14 @@ describe('Status Indicator (updateStatus)', () => {
             <html>
             <body>
                 <div id="websocket-status" style="display: none;"></div>
+                <div id="tile-progress" class="or-progress"></div>
             </body>
             </html>
         `);
         globalThis.document = dom.window.document;
 
         statusDiv = document.getElementById('websocket-status');
+        progressEl = document.getElementById('tile-progress');
 
         // Mock app object
         app = {
@@ -66,16 +72,18 @@ describe('Status Indicator (updateStatus)', () => {
                     disconnectTimeout = null;
                 }
                 
-                if (pendingCount === 0) {
-                    statusDiv.style.display = 'none';
-                } else {
-                    statusDiv.innerHTML = `<div class="or-hud or-hud-top-right pending-indicator">pending: ${pendingCount}</div>`;
+                if (pendingCount > PENDING_BACKLOG) {
+                    statusDiv.innerHTML = '<div class="or-hud or-hud-top-right '
+                        + `pending-indicator">pending: ${pendingCount}</div>`;
                     statusDiv.style.display = 'block';
-                    const color = pendingCount > 20
-                        ? 'var(--sem-error)' : 'var(--fg-hud)';
-                    statusDiv.querySelector('.pending-indicator').style.color = color;
+                } else {
+                    statusDiv.style.display = 'none';
                 }
             }
+            // setTileProgress
+            progressEl.classList.toggle('active', pendingCount > 0);
+            progressEl.title = pendingCount > 0
+                ? `${pendingCount} tile requests pending` : '';
         };
 
         // Expose helper to trigger scheduled callbacks
@@ -104,7 +112,7 @@ describe('Status Indicator (updateStatus)', () => {
             assert.equal(statusDiv.style.display, 'none');
         });
 
-        it('shows pending count when connected with pending requests', () => {
+        it('shows only the progress line for ordinary tile traffic', () => {
             app.websocketManager = {
                 isConnected: true,
                 pending: new Map([
@@ -116,24 +124,27 @@ describe('Status Indicator (updateStatus)', () => {
 
             updateStatus();
 
-            assert.equal(statusDiv.style.display, 'block');
-            assert.ok(statusDiv.innerHTML.includes('pending: 3'));
+            // A handful of outstanding requests is normal while panning: the
+            // line says the server is working, and no count takes up space.
+            assert.ok(progressEl.classList.contains('active'));
+            assert.equal(statusDiv.style.display, 'none');
+            assert.equal(statusDiv.querySelector('.pending-indicator'), null);
+            assert.equal(progressEl.title, '3 tile requests pending');
         });
 
-        it('shows pending indicator with normal color when count <= 20', () => {
+        it('shows no count at the backlog threshold', () => {
             app.websocketManager = {
                 isConnected: true,
-                pending: new Map(Array.from({ length: 15 }, (_, i) => [i + 1, {}])),
+                pending: new Map(Array.from({ length: 20 }, (_, i) => [i + 1, {}])),
             };
 
             updateStatus();
 
-            const indicator = statusDiv.querySelector('.pending-indicator');
-            assert.ok(indicator);
-            assert.equal(indicator.style.color, 'var(--fg-hud)');
+            assert.ok(progressEl.classList.contains('active'));
+            assert.equal(statusDiv.querySelector('.pending-indicator'), null);
         });
 
-        it('shows pending indicator with error color when count > 20', () => {
+        it('shows the count once the backlog threshold is passed', () => {
             app.websocketManager = {
                 isConnected: true,
                 pending: new Map(Array.from({ length: 25 }, (_, i) => [i + 1, {}])),
@@ -143,27 +154,33 @@ describe('Status Indicator (updateStatus)', () => {
 
             const indicator = statusDiv.querySelector('.pending-indicator');
             assert.ok(indicator);
-            assert.equal(indicator.style.color, 'var(--sem-error)');
+            assert.equal(indicator.textContent, 'pending: 25');
+            assert.equal(statusDiv.style.display, 'block');
         });
 
-        it('updates pending count on repeated calls', () => {
+        it('clears the progress line when the queue drains', () => {
             app.websocketManager = {
                 isConnected: true,
-                pending: new Map([[1, {}]]),
+                pending: new Map(Array.from({ length: 25 }, (_, i) => [i + 1, {}])),
             };
 
             updateStatus();
-            assert.ok(statusDiv.innerHTML.includes('pending: 1'));
+            assert.ok(statusDiv.innerHTML.includes('pending: 25'));
+            assert.ok(progressEl.classList.contains('active'));
 
             // Simulate request completion
             app.websocketManager.pending.clear();
             updateStatus();
             assert.equal(statusDiv.style.display, 'none');
+            assert.equal(progressEl.classList.contains('active'), false);
+            assert.equal(progressEl.title, '');
 
             // Add more requests
-            app.websocketManager.pending = new Map(Array.from({ length: 5 }, (_, i) => [i + 1, {}]));
+            app.websocketManager.pending
+                = new Map(Array.from({ length: 30 }, (_, i) => [i + 1, {}]));
             updateStatus();
-            assert.ok(statusDiv.innerHTML.includes('pending: 5'));
+            assert.ok(statusDiv.innerHTML.includes('pending: 30'));
+            assert.ok(progressEl.classList.contains('active'));
         });
     });
 
@@ -213,7 +230,7 @@ describe('Status Indicator (updateStatus)', () => {
             assert.equal(statusDiv.style.display, 'none');
         });
 
-        it('shows pending count after reconnecting with pending requests', () => {
+        it('shows a backlog count after reconnecting with a long queue', () => {
             app.websocketManager = {
                 isConnected: false,
                 pending: new Map(),
@@ -221,13 +238,14 @@ describe('Status Indicator (updateStatus)', () => {
 
             updateStatus();
 
-            // Reconnect with pending requests
+            // Reconnect with a queue long enough to be worth a number
             app.websocketManager.isConnected = true;
-            app.websocketManager.pending = new Map(Array.from({ length: 3 }, (_, i) => [i + 1, {}]));
+            app.websocketManager.pending
+                = new Map(Array.from({ length: 25 }, (_, i) => [i + 1, {}]));
             updateStatus();
 
             assert.equal(statusDiv.style.display, 'block');
-            assert.ok(statusDiv.innerHTML.includes('pending: 3'));
+            assert.ok(statusDiv.innerHTML.includes('pending: 25'));
         });
 
         it('does not schedule multiple timeouts on repeated disconnect calls', () => {
@@ -283,7 +301,7 @@ describe('Status Indicator (updateStatus)', () => {
         it('does not show stale banner content after state changes', () => {
             app.websocketManager = {
                 isConnected: true,
-                pending: new Map([[1, {}]]),
+                pending: new Map(Array.from({ length: 25 }, (_, i) => [i + 1, {}])),
             };
 
             updateStatus();
@@ -300,14 +318,14 @@ describe('Status Indicator (updateStatus)', () => {
         it('displays correct HTML structure for pending indicator', () => {
             app.websocketManager = {
                 isConnected: true,
-                pending: new Map([[1, {}], [2, {}]]),
+                pending: new Map(Array.from({ length: 22 }, (_, i) => [i + 1, {}])),
             };
 
             updateStatus();
 
             const indicator = statusDiv.querySelector('.pending-indicator');
             assert.ok(indicator);
-            assert.equal(indicator.textContent, 'pending: 2');
+            assert.equal(indicator.textContent, 'pending: 22');
         });
 
         it('displays correct HTML structure for disconnected banner', () => {

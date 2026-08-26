@@ -24,8 +24,9 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
          buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
-         formatDbu, formatDistance, isCurrentSelection, isStaticMode,
-         maxUsefulZoom, parseDbu, rafCoalesce, showToast, unitLabel }
+         decorateTabIcons, formatDbu, formatDistance, isCurrentSelection,
+         isStaticMode, maxUsefulZoom, parseDbu, rafCoalesce, showToast,
+         unitLabel }
     from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
@@ -49,6 +50,10 @@ import { captureLayout } from './capture.js';
 const statusDiv = document.getElementById('websocket-status');
 let disconnectTimeout = null;
 const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnection
+// Outstanding tile requests are normal while panning; this many at once means
+// the server is not keeping up, which is worth a number rather than just the
+// progress line.
+const PENDING_BACKLOG = 20;
 
 function updateStatus() {
     const isConnected = app.websocketManager && app.websocketManager.isConnected;
@@ -70,24 +75,33 @@ function updateStatus() {
             }, DISCONNECT_DELAY_MS);
         }
     } else {
-        // Connected - clear timeout and show pending indicator if needed
         if (disconnectTimeout) {
             clearTimeout(disconnectTimeout);
             disconnectTimeout = null;
         }
-        
-        if (pendingCount === 0) {
-            statusDiv.style.display = 'none';
-        } else {
-            statusDiv.innerHTML = `<div class="or-hud or-hud-top-right pending-indicator">pending: ${pendingCount}</div>`;
+        // Ordinary tile traffic is the progress line's job.  The count only
+        // earns space on screen once the queue is long enough to be the
+        // explanation for a viewer that feels stuck.
+        if (pendingCount > PENDING_BACKLOG) {
+            statusDiv.innerHTML = '<div class="or-hud or-hud-top-right '
+                + `pending-indicator">pending: ${pendingCount}</div>`;
             statusDiv.style.display = 'block';
-            // The indicator is an .or-hud, so its ink comes from the HUD
-            // tokens rather than the panel's -- see style.css.
-            const color = pendingCount > 20
-                ? 'var(--sem-error)' : 'var(--fg-hud)';
-            statusDiv.querySelector('.pending-indicator').style.color = color;
+        } else {
+            statusDiv.style.display = 'none';
         }
     }
+    setTileProgress(pendingCount);
+}
+
+// Show the tile-request line while requests are outstanding.  A no-op when the
+// Layout panel is closed, which is the only place the line lives.
+function setTileProgress(pendingCount) {
+    const el = app.tileProgressEl;
+    if (!el) return;
+    el.classList.toggle('active', pendingCount > 0);
+    // The count is worth keeping for anyone diagnosing a slow server, just not
+    // worth a chip on screen.
+    el.title = pendingCount > 0 ? `${pendingCount} tile requests pending` : '';
 }
 
 // ─── Component Factories ────────────────────────────────────────────────────
@@ -638,6 +652,15 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
+    // Tile requests in flight, as a line along the top of the canvas.  Held on
+    // app because updateStatus runs from the socket callbacks, which know
+    // nothing about this panel -- and the panel can be closed, so every write
+    // to it goes through setTileProgress below.
+    const progress = document.createElement('div');
+    progress.className = 'or-progress';
+    mapDiv.appendChild(progress);
+    app.tileProgressEl = progress;
+
     app.map = L.map(mapDiv, buildMapOptions());
     // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
     // boundaries mid-device-pixel and they show as dark hairlines; this nudges
@@ -983,7 +1006,10 @@ function createStubPanel(container, title, description) {
 
 // ─── Layout Configuration ───────────────────────────────────────────────────
 
+const kHeaderHeight = 28;
+
 const defaultLayoutConfig = {
+    dimensions: { headerHeight: kHeaderHeight },
     root: {
         type: 'row',
         content: [
@@ -1129,7 +1155,11 @@ const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
 if (savedLayout && savedVersion === LAYOUT_VERSION) {
     try {
         const resolved = JSON.parse(savedLayout);
-        app.goldenLayout.loadLayout(LayoutConfig.fromResolved(resolved));
+        const restored = LayoutConfig.fromResolved(resolved);
+        restored.dimensions = {
+            ...restored.dimensions, headerHeight: kHeaderHeight,
+        };
+        app.goldenLayout.loadLayout(restored);
     } catch (e) {
         app.goldenLayout.loadLayout(defaultLayoutConfig);
     }
@@ -1137,10 +1167,22 @@ if (savedLayout && savedVersion === LAYOUT_VERSION) {
     app.goldenLayout.loadLayout(defaultLayoutConfig);
 }
 localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
+addTabIcons();
+
+// Add the per-panel tab icons and, if any were added, make Golden Layout
+// measure the headers again -- it chose which tabs fit before the icons
+// widened them, so without this the tabs that no longer fit overlap the
+// stack's controls instead of moving into the overflow dropdown.
+function addTabIcons() {
+    if (decorateTabIcons() > 0) {
+        app.goldenLayout.updateSize();
+    }
+}
 
 // Persist layout on changes (drag, resize, close, etc.)
 app.goldenLayout.on('stateChanged', () => {
     localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
+    addTabIcons();
 });
 
 // Resize GoldenLayout to the space #gl-container actually has.  The container

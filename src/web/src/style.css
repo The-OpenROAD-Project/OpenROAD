@@ -864,13 +864,86 @@ body {
     background: var(--bg-panel);
     overflow: hidden;
 }
+/* Golden Layout's own tabs are distinguished only by a slightly different
+   background, which at these surface steps is nearly invisible.  The active
+   tab gets the accent underline the timing widget already uses on its own tab
+   bar, so the two tab bars in a stacked panel read the same way.  The height
+   comes from the layout config (dimensions.headerHeight in main.js), not from
+   here -- Golden Layout measures it in JS. */
 .lm_header .lm_tab {
-    background: var(--bg-header);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    /* Golden Layout gives the tab a 14px content height plus its own drop
+       shadows, which in a 28px header leaves it floating in the strip.  The
+       height has to be stated rather than stretched: .lm_tabs is absolutely
+       positioned and shrink-wraps its content, so `align-self: stretch` has
+       nothing to stretch against.  And it is a content-box height -- the
+       header forces `box-sizing: content-box !important` on every lm_ element
+       inside it -- so 26 + the 2px underline is the 28px header. */
+    height: 26px;
+    margin-top: 0;
+    padding: 0 25px 0 var(--space-md);
+    background: transparent;
+    box-shadow: none;
+    color: var(--fg-muted);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+.lm_header .lm_tab:hover {
+    background: var(--bg-hover);
     color: var(--fg-secondary);
 }
+/* The full border-bottom, not just its colour: Golden Layout's theme sets
+   `border-bottom: none` on the active tab at this same specificity, so a
+   colour alone would apply to a zero-width border. */
 .lm_header .lm_tab.lm_active {
     background: var(--bg-panel);
+    box-shadow: none;
     color: var(--fg-bright);
+    border-bottom: 2px solid var(--accent-tab);
+    padding-bottom: 0;
+}
+/* The close button and the stack controls are positioned against the old
+   header height, so they sit high in a taller one. */
+/* The light theme pads .lm_title by 1px, which content-box adds to the tab's
+   height and pushes it past the header. */
+.lm_header .lm_tab .lm_title {
+    padding-top: 0;
+}
+.lm_header .lm_tab .lm_close_tab {
+    top: 50%;
+    transform: translateY(-50%);
+}
+.lm_header .lm_controls {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* The per-panel icon, prepended by decorateTabIcons (ui-utils.js).  It is the
+   fastest way to find a panel in a stack of six similarly-worded titles. */
+.lm_header .lm_tab .or-tab-icon {
+    display: flex;
+    flex: none;
+    width: 13px;
+    height: 13px;
+    opacity: 0.7;
+}
+.lm_header .lm_tab.lm_active .or-tab-icon {
+    color: var(--accent-tab);
+    opacity: 1;
+}
+.lm_header .lm_tab .or-tab-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+/* Same icon, in the overflow dropdown. */
+.lm_header .lm_tabdropdown_list .lm_tab .or-tab-icon {
+    margin-right: var(--space-sm);
 }
 .lm_splitter {
     background: var(--border-subtle);
@@ -972,6 +1045,55 @@ body {
 .layout-viewer {
     position: relative;
 }
+/* Drawn as an overlay rather than a border, for two reasons: a border on this
+   element would change the size Leaflet measures for the map, and an inset
+   box-shadow would be painted under the tile panes and never seen.  z-index
+   800 puts it over the panes (Leaflet's go up to 700) but under the HUD (900)
+   and Leaflet's own controls (1000), so it frames the canvas without drawing
+   a line across either.  The inner shadow is invisible against the default
+   black and does its work when the Background control is set to something
+   light. */
+.layout-viewer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 800;
+    pointer-events: none;
+    border: 1px solid var(--border-strong);
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
+}
+
+/* Tile requests in flight: a 2px indeterminate line along the top of the
+   canvas.  It replaces a grey "pending: N" chip, which said the same thing in
+   a corner nobody watches -- the count survives as the element's tooltip. */
+.or-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 850;
+    overflow: hidden;
+    pointer-events: none;
+    display: none;
+}
+.or-progress.active {
+    display: block;
+}
+.or-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 34%;
+    background: linear-gradient(90deg, transparent, var(--accent-tab),
+                                transparent);
+    animation: or-progress-sweep 1.9s linear infinite;
+}
+@keyframes or-progress-sweep {
+    from { left: -34%; }
+    to { left: 100%; }
+}
 
 /* Leaflet popups */
 .leaflet-popup-content-wrapper {
@@ -1007,12 +1129,14 @@ body {
     font-weight: bold;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     text-align: center;
-    animation: slideDown 0.3s ease-out, pulse 2s ease-in-out infinite 0.5s;
+    animation: slideDown 0.3s ease-out, pulse 2s ease-in-out 3 0.5s;
     letter-spacing: 0.5px;
 }
 
+/* Only shown once the request queue is backed up (PENDING_BACKLOG in
+   main.js), so it is coloured as a warning rather than as a neutral readout. */
 #websocket-status .pending-indicator {
-    color: var(--fg-hud-muted);
+    color: var(--sem-error);
 }
 
 @keyframes slideDown {
