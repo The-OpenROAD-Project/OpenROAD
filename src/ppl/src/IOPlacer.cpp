@@ -72,6 +72,7 @@ void IOPlacer::clear()
   top_layer_slots_.clear();
   assignment_.clear();
   excluded_intervals_.clear();
+  layer_fixed_pins_keepouts_.clear();
   pin_size_cache_.clear();
   spacing_cache_.clear();
   *parms_ = Parameters();
