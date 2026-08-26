@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <functional>
 #include <iterator>
 #include <map>
@@ -216,7 +217,8 @@ void compositeTile(std::span<const unsigned char> tile,
 
 // Splits [0, n) into up to `threads` contiguous ranges and runs
 // fn(begin, end) on each, on `pool` when given and on the calling thread
-// otherwise.  The first exception thrown by a worker is rethrown here.
+// otherwise.  The first exception thrown by a worker is rethrown after all
+// chunks finish.
 template <typename F>
 void parallelRanges(utl::ThreadPool* pool,
                     const int threads,
@@ -236,10 +238,21 @@ void parallelRanges(utl::ThreadPool* pool,
         = static_cast<int>((static_cast<int64_t>(t + 1) * n) / chunks);
     futures.push_back(pool->submit([&fn, begin, end]() { fn(begin, end); }));
   }
-  // get() (not wait()) so an exception thrown in a worker propagates to the
-  // caller instead of silently yielding a partial image.
+  // Collect the first exception while still calling get() on every future to
+  // join all chunks before returning or rethrowing. This prevents outstanding
+  // tasks from invoking a destroyed stack lambda during stack unwinding.
+  std::exception_ptr first_exception;
   for (auto& f : futures) {
-    f.get();
+    try {
+      f.get();
+    } catch (...) {
+      if (first_exception == nullptr) {
+        first_exception = std::current_exception();
+      }
+    }
+  }
+  if (first_exception != nullptr) {
+    std::rethrow_exception(first_exception);
   }
 }
 
