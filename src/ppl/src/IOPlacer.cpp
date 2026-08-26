@@ -481,6 +481,21 @@ std::vector<Interval> IOPlacer::findBlockedIntervals(const odb::Rect& die_area,
   return intervals;
 }
 
+int IOPlacer::roundUpToEvenMfgGrid(const int dim)
+{
+  const int mfg_grid = getTech()->getManufacturingGrid();
+  int rounded = dim;
+  if (mfg_grid > 0 && rounded % mfg_grid != 0) {
+    rounded = mfg_grid * std::ceil(static_cast<float>(rounded) / mfg_grid);
+  }
+  // ensure the dimension is an even multiple of the manufacturing grid,
+  // since it is divided by 2 when the pin shape is created
+  if (rounded % 2 != 0) {
+    rounded += mfg_grid;
+  }
+  return rounded;
+}
+
 PinSize IOPlacer::computePinSize(const int layer)
 {
   const auto cached = pin_size_cache_.find(layer);
@@ -1878,28 +1893,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
                      getBlock()->dbuAreaToMicrons(required_min_area));
     }
   } else {
-    int pin_width = top_grid_->pin_width;
-    int pin_height = top_grid_->pin_height;
-
-    if (pin_width % mfg_grid != 0) {
-      pin_width
-          = mfg_grid * std::ceil(static_cast<float>(pin_width) / mfg_grid);
-    }
-    if (pin_width % 2 != 0) {
-      // ensure pin_width is a even multiple of mfg_grid since its divided by 2
-      // later
-      pin_width += mfg_grid;
-    }
-
-    if (pin_height % mfg_grid != 0) {
-      pin_height
-          = mfg_grid * std::ceil(static_cast<float>(pin_height) / mfg_grid);
-    }
-    if (pin_height % 2 != 0) {
-      // ensure pin_height is a even multiple of mfg_grid since its divided by 2
-      // later
-      pin_height += mfg_grid;
-    }
+    const int pin_width = roundUpToEvenMfgGrid(top_grid_->pin_width);
+    const int pin_height = roundUpToEvenMfgGrid(top_grid_->pin_height);
 
     pin.setLowerBound(pin.getX() - pin_width / 2, pin.getY() - pin_height / 2);
     pin.setUpperBound(pin.getX() + pin_width / 2, pin.getY() + pin_height / 2);
@@ -3178,35 +3173,37 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     }
   }
 
+  // use the committed pin size, which is rounded up to the mfg grid
+  const int pin_width = roundUpToEvenMfgGrid(top_grid_->pin_width);
+  const int pin_height = roundUpToEvenMfgGrid(top_grid_->pin_height);
+
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
   for (auto& slot : top_layer_slots_) {
     odb::Point& point = slot.pos;
-    if (point.x() - top_grid_->pin_width / 2 < die_area.xMin()
-        || point.y() - top_grid_->pin_height / 2 < die_area.yMin()
-        || point.x() + top_grid_->pin_width / 2 > die_area.xMax()
-        || point.y() + top_grid_->pin_height / 2 > die_area.yMax()) {
+    if (point.x() - pin_width / 2 < die_area.xMin()
+        || point.y() - pin_height / 2 < die_area.yMin()
+        || point.x() + pin_width / 2 > die_area.xMax()
+        || point.y() + pin_height / 2 > die_area.yMax()) {
       // mark slot as blocked since it extends beyond the die area
       slot.blocked = true;
     }
   }
 
   // check for slots that overlap with obstructions
-  const int pin_min_dim = std::min(top_grid_->pin_width, top_grid_->pin_height);
-  const int pin_max_dim = std::max(top_grid_->pin_width, top_grid_->pin_height);
+  const int pin_min_dim = std::min(pin_width, pin_height);
+  const int pin_max_dim = std::max(pin_width, pin_height);
   for (odb::Rect& rect : obstructions) {
     // floor the keepout at the layer spacing required by the obstruction
     const int spacing
         = computeShapeSpacing(top_layer_level, rect, pin_min_dim, pin_max_dim);
     const int keepout = std::max(top_grid_->keepout, spacing);
+    // pad the obstruction by the pin footprint instead of one rect per slot
+    const odb::Rect keepout_rect
+        = rect.bloat(pin_width / 2 + keepout, odb::Orientation2D::Horizontal)
+              .bloat(pin_height / 2 + keepout, odb::Orientation2D::Vertical);
     for (auto& slot : top_layer_slots_) {
-      odb::Point& point = slot.pos;
-      // mock slot with keepout
-      odb::Rect pin_rect(point.x() - top_grid_->pin_width / 2 - keepout,
-                         point.y() - top_grid_->pin_height / 2 - keepout,
-                         point.x() + top_grid_->pin_width / 2 + keepout,
-                         point.y() + top_grid_->pin_height / 2 + keepout);
-      if (rect.intersects(pin_rect)) {  // mark slot as blocked
+      if (keepout_rect.intersects(slot.pos)) {
         slot.blocked = true;
       }
     }

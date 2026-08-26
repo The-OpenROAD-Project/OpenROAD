@@ -233,6 +233,7 @@ class IOPlacer
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
                                              const odb::Rect& box);
+  int roundUpToEvenMfgGrid(int dim);
   PinSize computePinSize(int layer);
   int computeLayerSpacing(int layer, int shape_width, int parallel_length);
   int computeShapeSpacing(int layer,
