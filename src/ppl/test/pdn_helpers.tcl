@@ -8,7 +8,11 @@ proc get_required_spacing { layer pin_box llx lly urx ury mode } {
     return 0
   }
   if { $mode == "table" } {
-    set shape_width [expr { min($urx - $llx, $ury - $lly) }]
+    # like the placer, use the width of the widest shape, pin included
+    set pin_width [expr {
+      min([$pin_box xMax] - [$pin_box xMin], [$pin_box yMax] - [$pin_box yMin])
+    }]
+    set shape_width [expr { max(min($urx - $llx, $ury - $lly), $pin_width) }]
     set pin_length [expr {
       max([$pin_box xMax] - [$pin_box xMin], [$pin_box yMax] - [$pin_box yMin])
     }]
