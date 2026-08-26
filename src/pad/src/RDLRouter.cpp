@@ -1843,6 +1843,10 @@ std::set<odb::Polygon> RDLRouter::getITermShapes(odb::dbITerm* iterm) const
 
 void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
 {
+  using boost::polygon::operators::operator+;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+
   std::vector<ObsValue> obstructions;
 
   const int bloat = getBloatFactor();
@@ -1867,16 +1871,13 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
                                                  odb::dbNet* net,
                                                  odb::dbObject* src,
                                                  int bloat) {
-    const odb::Polygon bloat_poly = poly.bloat(bloat);
-
-    obstructions.emplace_back(
-        bloat_poly.getEnclosingRect(), bloat_poly, net, src);
+    for (const auto& bloat_poly :
+         odb::geom::extractPolygons(odb::geom::toPolygonSet(poly) + bloat)) {
+      obstructions.emplace_back(
+          bloat_poly.getEnclosingRect(), bloat_poly, net, src);
+    }
   };
 
-  using BoostPolygon = boost::polygon::polygon_data<int>;
-  using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
-  using boost::polygon::operators::operator+=;
-  using boost::polygon::operators::operator-=;
   odb::PtrMap<odb::dbMaster, std::vector<odb::Polygon>> master_obstruction_map;
 
   // Get placed instanced obstructions
@@ -1890,18 +1891,20 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
     auto* master = inst->getMaster();
     auto& master_obs = master_obstruction_map[master];
     if (master_obs.empty()) {
-      BoostPolygonSet master_obstruction;
+      odb::geom::BoostPolygonSet master_obstruction;
 
       // Collect all polygons to add (obstructions)
-      std::vector<BoostPolygon> polys_to_add;
+      std::vector<odb::geom::BoostPolygon> polys_to_add;
       for (auto* obs : master->getPolygonObstructions()) {
         if (obs->getTechLayer() != layer_) {
           continue;
         }
 
-        const odb::Polygon bloat_poly = obs->getPolygon().bloat(bloat);
-        const auto pts = bloat_poly.getPoints();
-        polys_to_add.emplace_back(pts.begin(), pts.end());
+        for (const auto& bloat_poly : odb::geom::extractPolygons(
+                 odb::geom::toPolygonSet(obs->getPolygon()) + bloat)) {
+          const auto pts = bloat_poly.getPoints();
+          polys_to_add.emplace_back(pts.begin(), pts.end());
+        }
       }
       for (auto* obs : master->getObstructions(false)) {
         if (obs->getTechLayer() != layer_) {
@@ -1917,12 +1920,12 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
       // Build temporary set for all additions, then assign to
       // master_obstruction
       if (!polys_to_add.empty()) {
-        master_obstruction
-            = BoostPolygonSet(polys_to_add.begin(), polys_to_add.end());
+        master_obstruction = odb::geom::BoostPolygonSet(polys_to_add.begin(),
+                                                        polys_to_add.end());
       }
 
       // Collect all polygons to subtract (iterm shapes)
-      std::vector<BoostPolygon> polys_to_subtract;
+      std::vector<odb::geom::BoostPolygon> polys_to_subtract;
       for (auto* mterm : master->getMTerms()) {
         for (auto* mpin : mterm->getMPins()) {
           for (auto* geom : mpin->getPolygonGeometry()) {
@@ -1930,9 +1933,11 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
               continue;
             }
 
-            const odb::Polygon bloat_poly = geom->getPolygon().bloat(bloat);
-            const auto pts = bloat_poly.getPoints();
-            polys_to_subtract.emplace_back(pts.begin(), pts.end());
+            for (const auto& bloat_poly : odb::geom::extractPolygons(
+                     odb::geom::toPolygonSet(geom->getPolygon()) + bloat)) {
+              const auto pts = bloat_poly.getPoints();
+              polys_to_subtract.emplace_back(pts.begin(), pts.end());
+            }
           }
           for (auto* geom : mpin->getGeometry(false)) {
             if (geom->getTechLayer() != layer_) {
@@ -1949,11 +1954,11 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
       // Build temporary set for all subtractions, then subtract from
       // master_obstruction
       if (!polys_to_subtract.empty()) {
-        master_obstruction -= BoostPolygonSet(polys_to_subtract.begin(),
-                                              polys_to_subtract.end());
+        master_obstruction -= odb::geom::BoostPolygonSet(
+            polys_to_subtract.begin(), polys_to_subtract.end());
       }
 
-      std::vector<BoostPolygon> output_polygons;
+      std::vector<odb::geom::BoostPolygon> output_polygons;
       master_obstruction.get(output_polygons);
       for (const auto& polygon_out : output_polygons) {
         std::vector<odb::Point> new_coord;
@@ -2067,6 +2072,8 @@ odb::dbTechLayer* RDLRouter::getOtherLayer(odb::dbTechVia* via) const
 odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>>
 RDLRouter::generateRoutingTargets(odb::dbNet* net) const
 {
+  using boost::polygon::operators::operator-;
+
   odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>> targets;
   odb::dbTechLayer* bump_pin_layer = getOtherLayer(bump_accessvia_);
   odb::dbTechLayer* pad_pin_layer = getOtherLayer(pad_accessvia_);
@@ -2129,10 +2136,6 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
           targets[iterm].push_back(
               {via_rect.center(), via_rect, iterm, found_layer, {}});
         } else {
-          // find rectangles that make suitable targets
-          const odb::Polygon small_poly = box.bloat(-width_ / 2);
-          const auto points = small_poly.getPoints();
-
           auto make_rect = [this](const odb::Point& pt0,
                                   const odb::Point& pt1) -> odb::Rect {
             const odb::Point center((pt0.x() + pt1.x()) / 2,
@@ -2145,27 +2148,32 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
             return rect;
           };
 
-          // first try and add only rects that abut the 90degree egdes
-          bool targets_added = false;
-          for (std::size_t i = 1; i < points.size(); i++) {
-            const auto& pt0 = points[i - 1];
-            const auto& pt1 = points[i];
-            if (pt0.x() == pt1.x() || pt0.y() == pt1.y()) {
-              const odb::Rect rect = make_rect(pt0, pt1);
-              targets[iterm].push_back(
-                  {rect.center(), rect, iterm, found_layer, {}});
-              targets_added = true;
-            }
-          }
-
-          if (!targets_added) {
-            // go ahead and add all if no targets could be added
+          // find rectangles that make suitable targets
+          for (const auto& small_poly : odb::geom::extractPolygons(
+                   odb::geom::toPolygonSet(box) - width_ / 2)) {
+            const auto points = small_poly.getPoints();
+            // first try and add only rects that abut the 90degree egdes
+            bool targets_added = false;
             for (std::size_t i = 1; i < points.size(); i++) {
               const auto& pt0 = points[i - 1];
               const auto& pt1 = points[i];
-              const odb::Rect rect = make_rect(pt0, pt1);
-              targets[iterm].push_back(
-                  {rect.center(), rect, iterm, found_layer, {}});
+              if (pt0.x() == pt1.x() || pt0.y() == pt1.y()) {
+                const odb::Rect rect = make_rect(pt0, pt1);
+                targets[iterm].push_back(
+                    {rect.center(), rect, iterm, found_layer, {}});
+                targets_added = true;
+              }
+            }
+
+            if (!targets_added) {
+              // go ahead and add all if no targets could be added
+              for (std::size_t i = 1; i < points.size(); i++) {
+                const auto& pt0 = points[i - 1];
+                const auto& pt1 = points[i];
+                const odb::Rect rect = make_rect(pt0, pt1);
+                targets[iterm].push_back(
+                    {rect.center(), rect, iterm, found_layer, {}});
+              }
             }
           }
         }

@@ -121,20 +121,24 @@ export function populateDisplayControls(app, visibility, selectability,
     // A routing layer, as the tree sees it.  In legacy mode this IS the Leaflet
     // layer; in merged mode it is an adapter over one entry of a pane's draw
     // list, exposing the same three things the tree uses.
+    //
+    // Routing layers are drawn at full pane opacity.  The layer transparency is
+    // already baked into the tile: the server paints layer shapes with the
+    // palette alpha of 180/255 (tile_generator.cpp buildLayerColorMap), the same
+    // alpha displayControls.cpp gives the Qt GUI's brush.  Dimming the pane on
+    // top of that would apply the transparency a second time and render the
+    // layout darker than the Qt GUI.
     function makeRoutingLayer(name, zIndex) {
         if (!mergedLayerClass) {
             const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                opacity: 0.7,
+                opacity: 1,
                 zIndex,
             });
             layer._orShow = () => layer.addTo(app.map);
             layer._orHide = () => app.map.removeLayer(layer);
             return layer;
         }
-        // 0.7 matches the legacy per-layer pane opacity.  It is applied inside
-        // the merged canvas; the pane itself must stay opaque or every layer
-        // gets multiplied by 0.7 twice (see MERGED_PANE_OPACITY).
-        const item = { layer: name, opacity: 0.7, visible: false };
+        const item = { layer: name, opacity: 1, visible: false };
         return {
             _orItem: item,
             _orPane: null,

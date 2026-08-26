@@ -421,3 +421,98 @@ describe('layer row selection', () => {
            assert.equal(m1.classList.contains('vis-row-selected'), false);
        });
 });
+
+describe('routing layer opacity', () => {
+    // Layer transparency is baked into the tile pixels: the server paints
+    // layer shapes at the palette alpha of 180/255, the same alpha the Qt GUI
+    // brush carries (displayControls.cpp).  A pane opacity below 1 would apply
+    // that transparency a second time — 0.7 * 180/255 = 0.49 instead of 0.71 —
+    // and the browser would render the layout ~30% darker than the Qt GUI.
+    // Pinned on both paths because the legacy panes and the merged draw list
+    // set the value independently.
+    let created, mergedItems, app, techData;
+
+    class RecordingTileLayer {
+        constructor(wm, name, opts) {
+            created.push({ name, opts: opts || {} });
+            this.name = name;
+            this.options = opts || {};
+        }
+        addTo() { return this; }
+        refreshTiles() {}
+    }
+    class RecordingMergedLayer {
+        constructor(wm, items, opts) {
+            mergedItems.push(...items);
+            this.options = opts || {};
+        }
+        addTo() { return this; }
+        refreshTiles() {}
+        setItems() {}
+    }
+
+    beforeEach(() => {
+        created = [];
+        mergedItems = [];
+        window.sessionStorage.clear();
+        app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            map: {
+                hasLayer: () => false,
+                removeLayer() {},
+                getContainer: () => document.createElement('div'),
+                on() {},
+            },
+            websocketManager: { request: () => Promise.resolve({}) },
+            updateInspector: () => {},
+            focusComponent: () => {},
+            refreshOverlay: () => {},
+        };
+        techData = {
+            layers: ['metal1', 'metal2'],
+            sites: [],
+            chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            layer_hierarchy: {
+                name: 'top',
+                type: 'block',
+                path: 'top',
+                layers: [
+                    { name: 'metal1', color: [1, 2, 3] },
+                    { name: 'metal2', color: [4, 5, 6] },
+                ],
+                instances: [],
+            },
+        };
+    });
+
+    const render = () => populateDisplayControls(
+        app, {}, {}, RecordingTileLayer, techData, () => {}, class {});
+
+    it('creates legacy per-layer panes fully opaque', () => {
+        render();
+        const routing = created.filter(l => l.name.startsWith('metal'));
+        assert.ok(routing.length >= 2, 'metal layers should get panes');
+        for (const layer of routing) {
+            assert.equal(layer.opts.opacity, 1, layer.name);
+        }
+    });
+
+    it('gives merged draw items an opacity of 1', () => {
+        app.mergeTiles = true;
+        app.MergedTileLayer = RecordingMergedLayer;
+        render();
+        const routing = mergedItems.filter(i => i.layer.startsWith('metal'));
+        assert.ok(routing.length >= 2, 'metal layers should reach the merge');
+        for (const item of routing) {
+            assert.equal(item.opacity, 1, item.layer);
+        }
+    });
+});

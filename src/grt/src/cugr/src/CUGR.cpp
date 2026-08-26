@@ -846,7 +846,8 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   // gradient information, and the maze starts thrashing.
   constexpr double kMultiplierStep = 1.0;
   constexpr double kMultiplierCap = 6.0;
-  constexpr double kCongestionThreshold = 0.9;
+  // Only rip up nets crossing genuinely over-capacity edges.
+  constexpr double kCongestionThreshold = 1.0;
   // Iterations in the congested set before an NDR net is demoted.
   constexpr int kSoftNdrStreakThreshold = 2;
 

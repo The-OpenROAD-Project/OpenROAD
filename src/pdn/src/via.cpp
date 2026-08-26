@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -912,17 +913,15 @@ ViaReport DbSplitCutVia::getViaReport() const
 
 /////////////
 
-DbGenerateStackedVia::DbGenerateStackedVia(const std::vector<DbVia*>& vias,
-                                           odb::dbTechLayer* bottom,
-                                           odb::dbBlock* block)
+DbGenerateStackedVia::DbGenerateStackedVia(
+    std::vector<std::unique_ptr<DbVia>> vias,
+    odb::dbTechLayer* bottom,
+    odb::dbBlock* block)
+    : vias_(std::move(vias))
 {
-  for (auto* via : vias) {
-    vias_.push_back(std::unique_ptr<DbVia>(via));
-  }
-
-  int bottom_layer = bottom->getRoutingLevel();
+  const int bottom_layer = bottom->getRoutingLevel();
   auto* tech = bottom->getTech();
-  for (int i = 0; i < vias.size() + 1; i++) {
+  for (size_t i = 0; i <= vias_.size(); i++) {
     auto layer
         = std::make_unique<TechLayer>(tech->findRoutingLayer(bottom_layer + i));
     layers_.push_back(std::move(layer));
@@ -2366,9 +2365,25 @@ int ViaGenerator::getRectSize(const odb::Rect& rect,
   return rect.maxDXDY();
 }
 
+std::optional<int> ViaGenerator::getSharedLayerWidth(bool bottom) const
+{
+  // split cuts leave separate islands of metal on the layer, so there is no
+  // merged shape to widen the rule lookup.
+  if (isSplitCutArray()) {
+    return {};
+  }
+  return bottom ? lower_constraint_.shared_width
+                : upper_constraint_.shared_width;
+}
+
 int ViaGenerator::getLowerWidth(bool only_real) const
 {
-  return getRectSize(lower_rect_, true, only_real);
+  const int width = getRectSize(lower_rect_, true, only_real);
+  const std::optional<int> shared = getSharedLayerWidth(true);
+  if (!shared.has_value()) {
+    return width;
+  }
+  return std::max(width, shared.value());
 }
 
 int ViaGenerator::getLowerHeight(bool only_real) const
@@ -2378,7 +2393,12 @@ int ViaGenerator::getLowerHeight(bool only_real) const
 
 int ViaGenerator::getUpperWidth(bool only_real) const
 {
-  return getRectSize(upper_rect_, true, only_real);
+  const int width = getRectSize(upper_rect_, true, only_real);
+  const std::optional<int> shared = getSharedLayerWidth(false);
+  if (!shared.has_value()) {
+    return width;
+  }
+  return std::max(width, shared.value());
 }
 
 int ViaGenerator::getUpperHeight(bool only_real) const

@@ -85,6 +85,9 @@ COMPULSORY_TESTS = [
     "core_grid_with_single_layer_rings",
     "design_width",
     "existing",
+    "gf180_hybrid_followpins",
+    "gf180_hybrid_followpins_pitch",
+    "gf180_hybrid_followpins_rowpattern",
     "global_connect_with_dont_touch",
     "global_connect_with_dont_touch_warning",
     "macros",
@@ -151,6 +154,7 @@ COMPULSORY_TESTS = [
     "sky130_spm_floating_bpin",
     "sky130_spm_halo_too_big",
     "sroute_test",
+    "stacked_via_merged_enclosure",
     "widthtable",
 ]
 
@@ -210,6 +214,10 @@ filegroup(
         "gf180/gf180mcu_fd_io.lef",
         "gf180/gf180mcu_fd_sc_mcu7t5v0.lef",
         "gf180_data/floorplan.def",
+        "gf180_hybrid/adjusted_sc9.lef",
+        "gf180_hybrid/floorplan.def",
+        "gf180_hybrid/floorplan_rowpattern.def",
+        "gf180_hybrid/hybrid_sites.lef",
         "helpers.py",
         "helpers.tcl",
         "nangate_bsg_black_parrot/Nangate45_maxwidth.lef",
@@ -287,6 +295,8 @@ filegroup(
         "sky130hd/work_around_yosys/formal_pdk.v",
         "sky130hvl/sky130_fd_sc_hvl.tlef",
         "sky130hvl/sky130_fd_sc_hvl_merged.lef",
+        "via_stack_enclosure/floorplan.def",
+        "via_stack_enclosure/tech.lef",
     ],
 )
 

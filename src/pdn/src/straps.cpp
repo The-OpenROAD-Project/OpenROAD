@@ -436,12 +436,17 @@ FollowPins::FollowPins(Grid* grid, odb::dbTechLayer* layer, int width)
 
 void FollowPins::determinePitch()
 {
-  auto rows = getDomain()->getRows();
+  std::vector<odb::dbRow*> rows;
+  for (auto* row : getDomain()->getRows()) {
+    if (!row->getSite()->hasRowPattern()) {
+      rows.push_back(row);
+    }
+  }
   if (rows.empty()) {
     return;
   }
 
-  // find the row with the smallest height, as that is the pitch of the rows
+  // find the row with the smallest height, as that is the standard cell row
   const auto min_row = std::min_element(
       rows.begin(), rows.end(), [](odb::dbRow* a, odb::dbRow* b) {
         odb::dbSite* a_site = a->getSite();
@@ -500,17 +505,54 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const int x_end = boundary.xMax();
   odb::dbTechLayer* layer = getLayer();
   for (auto* row : getDomain()->getRows()) {
-    const bool even_height_row
-        = (row->getSite()->getHeight() % double_height) == 0;
+    if (row->getSite()->hasRowPattern()) {
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Followpin",
+                 1,
+                 "Skipping row {} of hybrid site {}, its row pattern holds the "
+                 "rails",
+                 row->getName(),
+                 row->getSite()->getName());
+      continue;
+    }
+
+    const int site_height = row->getSite()->getHeight();
+
+    // A row a whole number of standard cell rows tall has a rail at each of
+    // those internal boundaries as well as at its own two edges.  A row whose
+    // height is not a multiple of the standard cell row -- the 9-track row of
+    // a 9-track/7-track hybrid pattern, say -- has no internal boundary, so
+    // stepping through it would put rails over the cells and never reach its
+    // upper edge.
+    const bool spans_whole_rows = site_height % row_height_ == 0;
+    const int rail_pitch = spans_whole_rows ? row_height_ : site_height;
 
     // Only MX ("FS") and R180 ("S") invert the master's y-axis and therefore
-    // swap the power and ground rails; R0 ("N") and MY ("FN") leave them alone.
+    // swap the power and ground rails; R0 ("N") and MY ("FN") leave them
+    // alone.  A row spanning an even number of standard cell rows carries the
+    // same net at both of its edges, so its orientation says nothing about
+    // which net that is.
     const odb::dbOrientType orient = row->getOrient();
     const bool is_right_side_up
         = orient == odb::dbOrientType::R0 || orient == odb::dbOrientType::MY;
+    const bool even_height_row = (site_height % double_height) == 0;
     const bool start_with_power = even_height_row ? false : !is_right_side_up;
 
     const odb::Rect bbox = row->getBBox();
+
+    debugPrint(getLogger(),
+               utl::PDN,
+               "Followpin",
+               1,
+               "Row {} ({}): {:.3f} to {:.3f}um, rail pitch {:.3f}um, starting "
+               "with {}",
+               row->getName(),
+               row->getSite()->getName(),
+               getBlock()->dbuToMicrons(bbox.yMin()),
+               getBlock()->dbuToMicrons(bbox.yMax()),
+               getBlock()->dbuToMicrons(rail_pitch),
+               start_with_power ? "power" : "ground");
 
     int x0 = bbox.xMin();
     if (x0 == core.xMin()) {
@@ -522,7 +564,7 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
     }
 
     bool do_power = start_with_power;
-    for (int y = bbox.yMin(); y <= bbox.yMax(); y += row_height_) {
+    for (int y = bbox.yMin(); y <= bbox.yMax(); y += rail_pitch) {
       const int y_start = y - width / 2;
       auto strap = std::make_unique<FollowPinShape>(
           layer,
