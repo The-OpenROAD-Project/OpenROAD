@@ -482,9 +482,6 @@ class Polygon
   int dx() const { return getEnclosingRect().dx(); }
   int dy() const { return getEnclosingRect().dy(); }
 
-  // returns a corrected Polygon with a closed form and counter-clockwise points
-  Polygon bloat(int margin) const;
-
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
 
