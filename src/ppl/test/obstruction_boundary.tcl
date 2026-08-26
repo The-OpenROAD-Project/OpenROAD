@@ -17,11 +17,10 @@ set obstruction_rect {100000 292000 104000 296000}
 odb::dbObstruction_create $block $metal2 {*}$obstruction_rect
 
 # fill and slot only blockages allow routing metal, so pins may use them
-set fill_rect {110000 292000 200000 296000}
-set fill_obs [odb::dbObstruction_create $block $metal2 {*}$fill_rect]
+set blockage_rect {110000 292000 200000 296000}
+set fill_obs [odb::dbObstruction_create $block $metal2 {*}$blockage_rect]
 $fill_obs setFillObstruction
-set slot_rect {110000 292000 200000 296000}
-set slot_obs [odb::dbObstruction_create $block $metal2 {*}$slot_rect]
+set slot_obs [odb::dbObstruction_create $block $metal2 {*}$blockage_rect]
 $slot_obs setSlotObstruction
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
@@ -46,5 +45,5 @@ proc count_pins_in_rect { llx lly urx ury } {
 
 puts "pin to obstruction violations:\
   [count_rect_violations metal2 [list $obstruction_rect] spacing]"
-puts "pins over fill blockage: [count_pins_in_rect {*}$fill_rect]"
-puts "pins over slot blockage: [count_pins_in_rect {*}$slot_rect]"
+puts "pins over the fill and slot blockages:\
+  [count_pins_in_rect {*}$blockage_rect]"

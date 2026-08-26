@@ -483,17 +483,22 @@ std::vector<Interval> IOPlacer::findBlockedIntervals(const odb::Rect& die_area,
   return intervals;
 }
 
-int IOPlacer::roundUpToEvenMfgGrid(const int dim)
+int IOPlacer::roundUpToMfgGrid(const int dim)
 {
   const int mfg_grid = getTech()->getManufacturingGrid();
-  int rounded = dim;
-  if (mfg_grid > 0 && rounded % mfg_grid != 0) {
-    rounded = mfg_grid * std::ceil(static_cast<float>(rounded) / mfg_grid);
+  if (mfg_grid > 0 && dim % mfg_grid != 0) {
+    return mfg_grid * std::ceil(static_cast<float>(dim) / mfg_grid);
   }
+  return dim;
+}
+
+int IOPlacer::roundUpToEvenMfgGrid(const int dim)
+{
+  int rounded = roundUpToMfgGrid(dim);
   // ensure the dimension is an even multiple of the manufacturing grid,
   // since it is divided by 2 when the pin shape is created
   if (rounded % 2 != 0) {
-    rounded += mfg_grid;
+    rounded += getTech()->getManufacturingGrid();
   }
   return rounded;
 }
@@ -529,11 +534,7 @@ PinSize IOPlacer::computePinSize(const int layer)
   if (user_length != -1) {
     height = user_length;
   }
-  // round up to the manufacturing grid
-  const int mfg_grid = getTech()->getManufacturingGrid();
-  if (mfg_grid > 0 && height % mfg_grid != 0) {
-    height = mfg_grid * std::ceil(static_cast<float>(height) / mfg_grid);
-  }
+  height = roundUpToMfgGrid(height);
   const PinSize pin_size{half_width, height};
   pin_size_cache_[layer] = pin_size;
   return pin_size;
@@ -587,10 +588,7 @@ void IOPlacer::excludeBoundaryShape(const odb::Rect& box,
   if (layer == 0) {
     return;
   }
-  // the layer sets only filter which layers have slots: the Tcl/Python
-  // wrappers reject layers whose preferred direction disagrees with the set
-  // (PPL-45/46). Empty sets mean standalone place_pin, where every layer
-  // participates
+
   const bool vertical_pin
       = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
   if (!ver_layers_.empty() || !hor_layers_.empty()) {
@@ -636,7 +634,7 @@ void IOPlacer::forEachSpecialNetShape(
           sbox->getViaBoxes(via_shapes);
           for (const odb::dbShape& via_shape : via_shapes) {
             odb::dbTechLayer* tech_layer = via_shape.getTechLayer();
-            if (tech_layer != nullptr && tech_layer->getRoutingLevel() != 0) {
+            if (tech_layer != nullptr) {
               callback(tech_layer, via_shape.getBox());
             }
           }
@@ -1895,8 +1893,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
                      getBlock()->dbuAreaToMicrons(required_min_area));
     }
   } else {
-    const int pin_width = roundUpToEvenMfgGrid(top_grid_->pin_width);
-    const int pin_height = roundUpToEvenMfgGrid(top_grid_->pin_height);
+    const int pin_width = top_grid_->pin_width;
+    const int pin_height = top_grid_->pin_height;
 
     pin.setLowerBound(pin.getX() - pin_width / 2, pin.getY() - pin_height / 2);
     pin.setUpperBound(pin.getX() + pin_width / 2, pin.getY() + pin_height / 2);
@@ -2729,22 +2727,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
           = int(std::max(static_cast<double>(height), ceil(min_area / height)));
     }
   }
-  const int mfg_grid = getTech()->getManufacturingGrid();
-  if (width % mfg_grid != 0) {
-    width = mfg_grid * std::ceil(static_cast<float>(width) / mfg_grid);
-  }
-  if (width % 2 != 0) {
-    // ensure width is a even multiple of mfg_grid since its divided by 2 later
-    width += mfg_grid;
-  }
-
-  if (height % mfg_grid != 0) {
-    height = mfg_grid * std::ceil(static_cast<float>(height) / mfg_grid);
-  }
-  if (height % 2 != 0) {
-    // ensure height is a even multiple of mfg_grid since its divided by 2 later
-    height += mfg_grid;
-  }
+  width = roundUpToEvenMfgGrid(width);
+  height = roundUpToEvenMfgGrid(height);
 
   odb::Point pos = odb::Point(x, y);
 
@@ -3092,6 +3076,9 @@ void IOPlacer::initTopLayerGrid()
   if (top_layer_grid) {
     top_grid_ = std::make_unique<odb::dbBlock::dbBTermTopLayerGrid>(
         top_layer_grid.value());
+    // commit the rounded pin size, so every consumer sees the placed shape
+    top_grid_->pin_width = roundUpToEvenMfgGrid(top_grid_->pin_width);
+    top_grid_->pin_height = roundUpToEvenMfgGrid(top_grid_->pin_height);
   }
 }
 
@@ -3146,6 +3133,10 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   // Get routing obstructions. The system reserved ones are not skipped here,
   // since they are the only filter for slots outside of polygon dies
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
+    // fill and slot only blockages still allow routing metal over them
+    if (obstruction->isFillObstruction() || obstruction->isSlotObstruction()) {
+      continue;
+    }
     odb::dbBox* box = obstruction->getBBox();
     if (box->getTechLayer()->getRoutingLevel() == top_layer_level) {
       obstructions.push_back(box->getBox());
@@ -3173,9 +3164,8 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     }
   }
 
-  // use the committed pin size, which is rounded up to the mfg grid
-  const int pin_width = roundUpToEvenMfgGrid(top_grid_->pin_width);
-  const int pin_height = roundUpToEvenMfgGrid(top_grid_->pin_height);
+  const int pin_width = top_grid_->pin_width;
+  const int pin_height = top_grid_->pin_height;
 
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
