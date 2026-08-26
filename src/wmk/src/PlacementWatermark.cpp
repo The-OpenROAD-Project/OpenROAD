@@ -259,69 +259,69 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   // Both passes run against the untouched design, so widening the gates cannot
   // be confused by swaps the first pass already made.
   bool counting = true;
-  auto enumerate = [&](size_t max_neighbours,
-                       int hpwl_eps,
-                       std::vector<Candidate>& out) {
-    for (auto& [bkey, bucket] : buckets) {
-      if (bucket.insts.size() < 2) {
-        continue;
-      }
-      for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
-        dbInst* a = bucket.insts[i];
-        if (sta != nullptr && worstSlack(a) < opts.slack_threshold_ns * 1e-9) {
-          if (counting) {
-            ++rejected_slack;
-          }
-          continue;
-        }
-        const int ax = a->getBBox()->xMin();
-        const size_t last
-            = std::min(bucket.insts.size(), i + 1 + max_neighbours);
-        for (size_t j = i + 1; j < last; ++j) {
-          dbInst* cand = bucket.insts[j];
-          if (cand->getBBox()->xMin() - ax > pair_dist) {
-            break;
-          }
-          if (sta != nullptr
-              && worstSlack(cand) < opts.slack_threshold_ns * 1e-9) {
-            continue;
-          }
-          if (counting) {
-            ++n_eligible_pairs;
-          }
-          if (hpwlDeltaOfSwap(a, cand) > hpwl_eps) {
-            if (counting) {
-              ++rejected_hpwl;
+  auto enumerate
+      = [&](size_t max_neighbours, int hpwl_eps, std::vector<Candidate>& out) {
+          for (auto& [bkey, bucket] : buckets) {
+            if (bucket.insts.size() < 2) {
+              continue;
             }
-            continue;
+            for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
+              dbInst* a = bucket.insts[i];
+              if (sta != nullptr
+                  && worstSlack(a) < opts.slack_threshold_ns * 1e-9) {
+                if (counting) {
+                  ++rejected_slack;
+                }
+                continue;
+              }
+              const int ax = a->getBBox()->xMin();
+              const size_t last
+                  = std::min(bucket.insts.size(), i + 1 + max_neighbours);
+              for (size_t j = i + 1; j < last; ++j) {
+                dbInst* cand = bucket.insts[j];
+                if (cand->getBBox()->xMin() - ax > pair_dist) {
+                  break;
+                }
+                if (sta != nullptr
+                    && worstSlack(cand) < opts.slack_threshold_ns * 1e-9) {
+                  continue;
+                }
+                if (counting) {
+                  ++n_eligible_pairs;
+                }
+                if (hpwlDeltaOfSwap(a, cand) > hpwl_eps) {
+                  if (counting) {
+                    ++rejected_hpwl;
+                  }
+                  continue;
+                }
+                const std::string name_a = a->getName();
+                const std::string name_b = cand->getName();
+                Candidate c;
+                c.a = a;
+                c.b = cand;
+                c.tx = bucket.tx;
+                c.ty = bucket.ty;
+                c.first = std::min(name_a, name_b);
+                c.second = std::max(name_a, name_b);
+                c.sort_key = hmac_digest(key,
+                                         {"pair_sort",
+                                          tileBytes(bucket.tx, bucket.ty),
+                                          c.first,
+                                          c.second});
+                out.push_back(std::move(c));
+              }
+            }
           }
-          const std::string name_a = a->getName();
-          const std::string name_b = cand->getName();
-          Candidate c;
-          c.a = a;
-          c.b = cand;
-          c.tx = bucket.tx;
-          c.ty = bucket.ty;
-          c.first = std::min(name_a, name_b);
-          c.second = std::max(name_a, name_b);
-          c.sort_key = hmac_digest(key,
-                                   {"pair_sort",
-                                    tileBytes(bucket.tx, bucket.ty),
-                                    c.first,
-                                    c.second});
-          out.push_back(std::move(c));
-        }
-      }
-    }
-    // The keyed order.  Ties would be a 256-bit collision, so the identifier is
-    // only a formality; it keeps the sort total either way.
-    std::ranges::sort(out, [](const Candidate& x, const Candidate& y) {
-      if (x.sort_key != y.sort_key) {
-        return x.sort_key < y.sort_key;
-      }
-      return std::tie(x.first, x.second) < std::tie(y.first, y.second);
-    });
-  };
+          // The keyed order.  Ties would be a 256-bit collision, so the
+          // identifier is only a formality; it keeps the sort total either way.
+          std::ranges::sort(out, [](const Candidate& x, const Candidate& y) {
+            if (x.sort_key != y.sort_key) {
+              return x.sort_key < y.sort_key;
+            }
+            return std::tie(x.first, x.second) < std::tie(y.first, y.second);
+          });
+        };
 
   for (auto& [bkey, bucket] : buckets) {
     std::ranges::sort(bucket.insts, [](dbInst* a, dbInst* b) {
