@@ -2424,7 +2424,7 @@ Polygon dbBlock::computeCoreArea()
   }
 
   if (!rows.empty()) {
-    const auto polys = geom::extractPolygons(geom::toPolygonSet(rows));
+    const auto polys = geom::mergePolygons(rows);
 
     if (polys.size() > 1) {
       odb::Rect area;
