@@ -154,6 +154,7 @@ COMPULSORY_TESTS = [
     "sky130_spm_floating_bpin",
     "sky130_spm_halo_too_big",
     "sroute_test",
+    "stacked_via_merged_enclosure",
     "widthtable",
 ]
 
@@ -294,6 +295,8 @@ filegroup(
         "sky130hd/work_around_yosys/formal_pdk.v",
         "sky130hvl/sky130_fd_sc_hvl.tlef",
         "sky130hvl/sky130_fd_sc_hvl_merged.lef",
+        "via_stack_enclosure/floorplan.def",
+        "via_stack_enclosure/tech.lef",
     ],
 )
 

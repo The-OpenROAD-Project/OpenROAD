@@ -55,6 +55,7 @@ class ICeWall
                   odb::dbNet* net,
                   odb::dbITerm* terminal = nullptr,
                   bool dont_route = false);
+  void makeBTermPinsFromBumps(odb::dbBlock* block) const;
 
   void makeFakeSite(const std::string& name, int width, int height);
   odb::dbRow* findRow(const std::string& name) const;
@@ -113,6 +114,12 @@ class ICeWall
       odb::dbInst* inst1);
 
  private:
+  struct InstPin
+  {
+    odb::dbTechLayer* layer{nullptr};
+    odb::Rect shape;
+  };
+
   odb::dbBlock* getBlock() const;
 
   std::vector<odb::dbRow*> getRows() const;
@@ -122,6 +129,10 @@ class ICeWall
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
                  const odb::Rect& shape) const;
+  void makeBTermPin(odb::dbBTerm* bterm,
+                    odb::dbTechLayer* layer,
+                    const odb::Rect& shape) const;
+  std::optional<InstPin> findTopPin(odb::dbInst* inst) const;
 
   odb::PtrSet<odb::dbNet> connectByAbutment(
       const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
