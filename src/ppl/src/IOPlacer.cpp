@@ -685,6 +685,10 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
     if (obstruction->isSystemReserved()) {
       continue;
     }
+    // fill and slot only blockages still allow routing metal over them
+    if (obstruction->isFillObstruction() || obstruction->isSlotObstruction()) {
+      continue;
+    }
     odb::dbBox* obstruct_box = obstruction->getBBox();
     odb::dbTechLayer* tech_layer = obstruct_box->getTechLayer();
     if (tech_layer == nullptr) {

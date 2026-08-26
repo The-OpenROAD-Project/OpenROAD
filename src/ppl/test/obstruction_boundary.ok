@@ -10,3 +10,5 @@ Found 0 macro blocks.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 pin to obstruction violations: 0
+pins over fill blockage: 19
+pins over slot blockage: 19

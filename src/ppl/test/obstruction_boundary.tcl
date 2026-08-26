@@ -16,8 +16,35 @@ set metal2 [[ord::get_db_tech] findLayer metal2]
 set obstruction_rect {100000 292000 104000 296000}
 odb::dbObstruction_create $block $metal2 {*}$obstruction_rect
 
+# fill and slot only blockages allow routing metal, so pins may use them
+set fill_rect {110000 292000 200000 296000}
+set fill_obs [odb::dbObstruction_create $block $metal2 {*}$fill_rect]
+$fill_obs setFillObstruction
+set slot_rect {110000 292000 200000 296000}
+set slot_obs [odb::dbObstruction_create $block $metal2 {*}$slot_rect]
+$slot_obs setSlotObstruction
+
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 \
   -min_distance 0.12
 
+proc count_pins_in_rect { llx lly urx ury } {
+  set count 0
+  foreach bterm [[ord::get_db_block] getBTerms] {
+    foreach bpin [$bterm getBPins] {
+      foreach box [$bpin getBoxes] {
+        if {
+          [$box xMin] < $urx && $llx < [$box xMax]
+          && [$box yMin] < $ury && $lly < [$box yMax]
+        } {
+          incr count
+        }
+      }
+    }
+  }
+  return $count
+}
+
 puts "pin to obstruction violations:\
   [count_rect_violations metal2 [list $obstruction_rect] spacing]"
+puts "pins over fill blockage: [count_pins_in_rect {*}$fill_rect]"
+puts "pins over slot blockage: [count_pins_in_rect {*}$slot_rect]"
