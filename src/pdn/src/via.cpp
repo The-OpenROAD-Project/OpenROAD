@@ -27,6 +27,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
@@ -946,18 +947,15 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator+;
   using boost::polygon::operators::operator^;
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
 
-  auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {
-    std::array<Pt, 4> pts = {Pt(rect.xMin(), rect.yMin()),
-                             Pt(rect.xMax(), rect.yMin()),
-                             Pt(rect.xMax(), rect.yMax()),
-                             Pt(rect.xMin(), rect.yMax())};
+  auto rect_to_poly
+      = [](const odb::Rect& rect) -> odb::geom::BoostPolygon90WithHoles {
+    std::array<odb::Point, 4> pts = {odb::Point(rect.xMin(), rect.yMin()),
+                                     odb::Point(rect.xMax(), rect.yMin()),
+                                     odb::Point(rect.xMax(), rect.yMax()),
+                                     odb::Point(rect.xMin(), rect.yMax())};
 
-    Polygon90 poly;
+    odb::geom::BoostPolygon90WithHoles poly;
     poly.set(pts.begin(), pts.end());
     return poly;
   };
@@ -965,7 +963,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
   ViaLayerShape via_shapes;
 
   DbVia* prev_via = nullptr;
-  Polygon90Set top_of_previous;
+  odb::geom::BoostPolygon90Set top_of_previous;
   for (size_t i = 0; i < vias_.size(); i++) {
     const auto& via = vias_[i];
     const auto& layer_lower = layers_[i];
@@ -991,20 +989,21 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
     via_shapes.middle.insert(via_shapes.top.begin(), via_shapes.top.end());
     via_shapes.top = shapes.top;
 
-    Polygon90Set patch_shapes;
-    Polygon90Set total_shape;
+    odb::geom::BoostPolygon90Set patch_shapes;
+    odb::geom::BoostPolygon90Set total_shape;
     odb::dbTechLayer* add_to_layer = layer_lower->getLayer();
     if (prev_via != nullptr) {
-      Polygon90Set bottom_of_current;
+      odb::geom::BoostPolygon90Set bottom_of_current;
       for (const auto& [shape, box] : shapes.bottom) {
         bottom_of_current += rect_to_poly(shape);
       }
 
       // create a single set of shapes for the layer
-      Polygon90Set combine_layer = top_of_previous + bottom_of_current;
+      odb::geom::BoostPolygon90Set combine_layer
+          = top_of_previous + bottom_of_current;
 
       if (prev_via->requiresPatch() || via->requiresPatch()) {
-        Rectangle patch_shape;
+        odb::geom::BoostRectangle patch_shape;
         combine_layer.extents(patch_shape);
         patch_shapes.clear();
         patch_shapes += patch_shape;
@@ -1012,19 +1011,19 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
         patch_shapes = combine_layer;
       }
 
-      std::vector<Polygon90> patches;
+      std::vector<odb::geom::BoostPolygon90WithHoles> patches;
       combine_layer.get_polygons(patches);
 
       // extract the rectangles that will patch the layer
       for (const auto& patch : patches) {
-        Rectangle patch_shape;
+        odb::geom::BoostRectangle patch_shape;
         extents(patch_shape, patch);
 
         patch_shapes += patch_shape;
       }
 
       // ensure patches are minimum area
-      std::vector<Rectangle> patch_rects;
+      std::vector<odb::geom::BoostRectangle> patch_rects;
       patch_shapes.get_rectangles(patch_rects);
       patch_shapes.clear();
       for (const auto& patch : patch_rects) {
@@ -1040,7 +1039,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
 
     if (!patch_shapes.empty()) {
       if (via->hasGenerator()) {
-        Rectangle complete_shape;
+        odb::geom::BoostRectangle complete_shape;
         extents(complete_shape, total_shape);
         const odb::Rect patch_shape_rect(xl(complete_shape),
                                          yl(complete_shape),
@@ -1078,7 +1077,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
         }
       }
 
-      std::vector<Rectangle> patches;
+      std::vector<odb::geom::BoostRectangle> patches;
       patch_shapes.get_rectangles(patches);
       for (const auto& patch : patches) {
         // add patch metal on layers between the bottom and top of the via stack

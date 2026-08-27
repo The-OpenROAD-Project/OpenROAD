@@ -25,6 +25,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom_boost.h"
 #include "pdn/PdnGen.hh"
 #include "renderer.h"
 #include "shape.h"
@@ -2528,15 +2529,10 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
     return {};
   }
 
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
   const auto grid_core = grid->getDomainBoundary();
 
   std::vector<Shape*> shapes_used;
-  Polygon90Set shape_set;
+  odb::geom::BoostPolygon90Set shape_set;
   for (const auto& shape : shapes) {
     if (shape->getNumberOfConnectionsAbove() != 0) {
       // shape already connected to something
@@ -2569,12 +2565,12 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
     const auto& min_corner = shape->getRect().ll();
     const auto& max_corner = shape->getRect().ur();
-    std::array<Pt, 4> pts
-        = {Pt(min_corner.x() - bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, min_corner.y() - bloat_y),
-           Pt(max_corner.x() + bloat_x, max_corner.y() + bloat_y),
-           Pt(min_corner.x() - bloat_x, max_corner.y() + bloat_y)};
-    Polygon90 poly;
+    std::array<odb::Point, 4> pts
+        = {odb::Point(min_corner.x() - bloat_x, min_corner.y() - bloat_y),
+           odb::Point(max_corner.x() + bloat_x, min_corner.y() - bloat_y),
+           odb::Point(max_corner.x() + bloat_x, max_corner.y() + bloat_y),
+           odb::Point(min_corner.x() - bloat_x, max_corner.y() + bloat_y)};
+    odb::geom::BoostPolygon90WithHoles poly;
     poly.set(pts.begin(), pts.end());
 
     shapes_used.push_back(shape.get());
@@ -2583,7 +2579,7 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
 
   // get all possible channel rects
   std::set<odb::Rect> channels_rects;
-  std::vector<Rectangle> channel_set;
+  std::vector<odb::geom::BoostRectangle> channel_set;
   shape_set.get_rectangles(channel_set);
   for (const auto& channel : channel_set) {
     const odb::Rect area(xl(channel), yl(channel), xh(channel), yh(channel));

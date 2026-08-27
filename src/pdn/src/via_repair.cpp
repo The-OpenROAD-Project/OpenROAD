@@ -17,6 +17,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "utl/Logger.h"
 #include "via.h"
 
@@ -53,27 +54,22 @@ void ViaRepair::repair()
   }
 
   // find via violations
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbSBox>> tech_vias_to_remove;
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbSBox>> block_vias_to_remove;
   for (const auto& [layer, layer_obs] : combined_obs) {
-    Polygon90Set layer_obstructions;
+    odb::geom::BoostPolygon90Set layer_obstructions;
     for (const auto& obs : layer_obs) {
-      std::array<Pt, 4> pts = {Pt(obs.xMin(), obs.yMin()),
-                               Pt(obs.xMax(), obs.yMin()),
-                               Pt(obs.xMax(), obs.yMax()),
-                               Pt(obs.xMin(), obs.yMax())};
+      std::array<odb::Point, 4> pts = {odb::Point(obs.xMin(), obs.yMin()),
+                                       odb::Point(obs.xMax(), obs.yMin()),
+                                       odb::Point(obs.xMax(), obs.yMax()),
+                                       odb::Point(obs.xMin(), obs.yMax())};
 
-      Polygon90 poly;
+      odb::geom::BoostPolygon90WithHoles poly;
       poly.set(pts.begin(), pts.end());
       layer_obstructions.insert(poly);
     }
 
-    std::vector<Rectangle> layer_obstructions_rect;
+    std::vector<odb::geom::BoostRectangle> layer_obstructions_rect;
     layer_obstructions.get_rectangles(layer_obstructions_rect);
 
     const auto& layer_vias = vias[layer];
