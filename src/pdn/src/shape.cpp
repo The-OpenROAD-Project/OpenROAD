@@ -278,12 +278,17 @@ bool Shape::cut(const ObstructionTree& obstructions,
     return false;
   }
 
-  odb::geom::BoostPolygon90Set new_shape = odb::geom::toPolygonSet90(obs_);
+  // Gather the violations with insert(), which defers normalization, and
+  // remove them in a single boolean op.  Subtracting one at a time would run
+  // a scanline pass per violation.
+  odb::geom::BoostPolygon90Set violations;
+  for (const auto& violation : shape_violations) {
+    violations.insert(violation);
+  }
 
   // remove all violations from the shape
-  for (const auto& violation : shape_violations) {
-    new_shape -= violation;
-  }
+  odb::geom::BoostPolygon90Set new_shape = odb::geom::toPolygonSet90(obs_);
+  new_shape -= violations;
 
   for (const odb::Rect& new_obs_rect :
        odb::geom::extractRectangles(new_shape)) {

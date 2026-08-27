@@ -982,7 +982,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
     if (prev_via != nullptr) {
       odb::geom::BoostPolygon90Set bottom_of_current;
       for (const auto& [shape, box] : shapes.bottom) {
-        bottom_of_current += odb::geom::toPolygon90(shape);
+        bottom_of_current.insert(odb::geom::toPolygon90(shape));
       }
 
       // create a single set of shapes for the layer
@@ -1001,7 +1001,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
 
       // extract the rectangles that will patch the layer
       for (const auto& patch : patches) {
-        patch_shapes += odb::geom::getEnclosingRect(patch);
+        patch_shapes.insert(odb::geom::getEnclosingRect(patch));
       }
 
       // ensure patches are minimum area
@@ -1009,8 +1009,8 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
           = odb::geom::extractRectangles(patch_shapes);
       patch_shapes.clear();
       for (const odb::Rect& patch_rect : patch_rects) {
-        patch_shapes += odb::geom::toPolygon90(
-            adjustToMinArea(add_to_layer, patch_rect));
+        patch_shapes.insert(
+            odb::geom::toPolygon90(adjustToMinArea(add_to_layer, patch_rect)));
       }
 
       // find shapes that touch "left-over" shapes from the xor
@@ -1071,7 +1071,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
     prev_via = via.get();
     top_of_previous.clear();
     for (const auto& [shape, box] : shapes.top) {
-      top_of_previous += odb::geom::toPolygon90(shape);
+      top_of_previous.insert(odb::geom::toPolygon90(shape));
     }
   }
 

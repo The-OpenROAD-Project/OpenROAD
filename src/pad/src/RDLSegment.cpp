@@ -318,7 +318,7 @@ void RDLSegment::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
   for (const auto& [iterm_layer, iterm_rect] : iterm_->getGeometries()) {
     if (iterm_layer == layer) {
       has_layer = true;
-      source_iterms += odb::geom::toPolygon90(iterm_rect);
+      source_iterms.insert(odb::geom::toPolygon90(iterm_rect));
     }
   }
   if (!has_layer) {
@@ -333,7 +333,7 @@ void RDLSegment::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
     for (const auto& [iterm_layer, iterm_rect] : iterm->getGeometries()) {
       if (iterm_layer == layer) {
         iterm_has_layer = true;
-        iterms_geoms[iterm] += odb::geom::toPolygon90(iterm_rect);
+        iterms_geoms[iterm].insert(odb::geom::toPolygon90(iterm_rect));
       }
     }
     if (!iterm_has_layer) {
