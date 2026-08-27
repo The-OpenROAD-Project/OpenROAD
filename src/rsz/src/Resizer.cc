@@ -272,58 +272,6 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
   }
 }
 
-bool isInputOrInoutPort(const odb::dbIoType& io_type)
-{
-  return io_type != odb::dbIoType::OUTPUT;
-}
-
-bool isOutputOrInoutPort(const odb::dbIoType& io_type)
-{
-  return io_type != odb::dbIoType::INPUT;
-}
-
-bool modNetHasInputOrInoutPort(odb::dbModNet* modnet)
-{
-  if (modnet == nullptr) {
-    return false;
-  }
-
-  for (odb::dbBTerm* bterm : modnet->getBTerms()) {
-    if (isInputOrInoutPort(bterm->getIoType())) {
-      return true;
-    }
-  }
-
-  for (odb::dbModBTerm* mod_bterm : modnet->getModBTerms()) {
-    if (isInputOrInoutPort(mod_bterm->getIoType())) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool modNetHasOutputOrInoutPort(odb::dbModNet* modnet)
-{
-  if (modnet == nullptr) {
-    return false;
-  }
-
-  for (odb::dbBTerm* bterm : modnet->getBTerms()) {
-    if (isOutputOrInoutPort(bterm->getIoType())) {
-      return true;
-    }
-  }
-
-  for (odb::dbModBTerm* mod_bterm : modnet->getModBTerms()) {
-    if (isOutputOrInoutPort(mod_bterm->getIoType())) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
                                      odb::dbModNet* output_modnet)
 {
@@ -332,8 +280,8 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
     return false;
   }
 
-  return modNetHasInputOrInoutPort(input_modnet)
-         && modNetHasOutputOrInoutPort(output_modnet);
+  return input_modnet->isConnectedToInputPort()
+         && output_modnet->isConnectedToOutputPort();
 }
 
 float inputPinCapacitance(sta::Network* network,
@@ -3025,7 +2973,9 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   std::optional<std::string> new_net_name;
   std::optional<std::string> new_modnet_name;
   if (db_survivor->isDeeperThan(db_removed)) {
-    const bool preserve_port_name = modNetHasInputOrInoutPort(survivor_modnet);
+    const bool preserve_port_name
+        = survivor_modnet != nullptr
+          && survivor_modnet->isConnectedToInputPort();
     if (!preserve_port_name) {
       // Normally both names follow the shallower removed net.
       new_net_name = db_removed->getName();
