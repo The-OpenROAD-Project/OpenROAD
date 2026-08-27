@@ -431,31 +431,29 @@ BoostPolygon90 toPolygon90(const T& shape)
   return polygon;
 }
 
-// Collect the shape into a polygon set
+// Collect the shape into a polygon set.  insert() adds the shape without
+// running a boolean op; the set unions and normalizes lazily on first read.
 template <AreaShape T>
 BoostPolygonSet toPolygonSet(const T& shape)
 {
-  using boost::polygon::operators::operator+=;
-
   const std::vector<Point> points = shape.getPoints();
 
   BoostPolygonSet polygon_set;
-  polygon_set += BoostPolygon(points.begin(), points.end());
+  polygon_set.insert(BoostPolygon(points.begin(), points.end()));
 
   return polygon_set;
 }
 
 // Collect the shapes into a single polygon set, which unions overlapping
-// shapes together
+// shapes together.  insert() keeps this linear in the shape count; operator+=
+// would run a scanline boolean op per shape, making the build quadratic.
 template <AreaShape T>
 BoostPolygonSet toPolygonSet(const std::vector<T>& shapes)
 {
-  using boost::polygon::operators::operator+=;
-
   BoostPolygonSet polygon_set;
   for (const T& shape : shapes) {
     const std::vector<Point> points = shape.getPoints();
-    polygon_set += BoostPolygon(points.begin(), points.end());
+    polygon_set.insert(BoostPolygon(points.begin(), points.end()));
   }
 
   return polygon_set;
