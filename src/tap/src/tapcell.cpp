@@ -4,7 +4,6 @@
 #include "tap/tapcell.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstddef>
 #include <map>
@@ -20,6 +19,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -536,53 +536,46 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori)
   }
 }
 
-std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
+std::vector<odb::geom::BoostPolygon90WithHoles> Tapcell::getBoundaryAreas()
+    const
 {
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator-=;
   using boost::polygon::operators::operator&;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
-  auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {
-    using Pt = Polygon90::point_type;
-    std::array<Pt, 4> pts = {Pt(rect.xMin(), rect.yMin()),
-                             Pt(rect.xMax(), rect.yMin()),
-                             Pt(rect.xMax(), rect.yMax()),
-                             Pt(rect.xMin(), rect.yMax())};
+  const odb::geom::BoostPolygon90 core_area
+      = odb::geom::toPolygon90(db_->getChip()->getBlock()->getCoreArea());
 
-    Polygon90 poly;
-    poly.set(pts.begin(), pts.end());
-    return poly;
-  };
-
-  const Polygon90 core_area
-      = rect_to_poly(db_->getChip()->getBlock()->getCoreArea());
-
-  // Generate mask of areas without rows
-  Polygon90Set core_mask;
-  core_mask += core_area;
-
+  // Generate mask of areas without rows.  The rows are gathered with insert(),
+  // which defers normalization, and then subtracted in a single boolean op.
+  // Subtracting row by row would run a scanline pass per row instead.
+  odb::geom::BoostPolygon90Set rows_set;
   for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    core_mask -= rect_to_poly(row->getBBox());
+    rows_set.insert(odb::geom::toPolygon90(row->getBBox()));
   }
 
+  odb::geom::BoostPolygon90Set core_mask;
+  core_mask += core_area;
+  core_mask -= rows_set;
+
   // Generate set of core areas as polygons
-  Polygon90Set core_area_set;
+  odb::geom::BoostPolygon90Set core_area_set;
   core_area_set += core_area;
   core_area_set -= core_mask;
 
-  std::vector<Polygon90> core_areas;
+  std::vector<odb::geom::BoostPolygon90WithHoles> core_areas;
   core_area_set.get_polygons(core_areas);
 
   // build list of core outlines
-  std::vector<Polygon90> core_outlines;
+  std::vector<odb::geom::BoostPolygon90WithHoles> core_outlines;
   for (const auto& core : core_areas) {
-    std::vector<Polygon90::point_type> outline;
+    std::vector<odb::Point> outline;
 
-    for (const auto& pt : core) {
+    for (const auto& boost_pt : core) {
+      const odb::Point pt(boost_pt.x(), boost_pt.y());
       auto check = std::ranges::find(outline, pt);
       if (check == outline.end()) {
         outline.push_back(pt);
@@ -592,14 +585,14 @@ std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
       }
     }
 
-    Polygon90 core_p;
+    odb::geom::BoostPolygon90WithHoles core_p;
     core_p.set(outline.begin(), outline.end());
     core_outlines.push_back(core_p);
   }
 
   for (auto& core : core_outlines) {
-    const Polygon90Set core_holes = core_mask & core;
-    std::vector<Polygon90> holes;
+    const odb::geom::BoostPolygon90Set core_holes = core_mask & core;
+    std::vector<odb::geom::BoostPolygon90WithHoles> holes;
     core_holes.get_polygons(holes);
 
     core.set_holes(holes.begin(), holes.end());
@@ -658,37 +651,35 @@ void Tapcell::placeEndcaps(const EndcapCellOptions& options)
   placed_corners_.clear();
 }
 
-std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon& area,
-                                                     bool outer) const
+std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(
+    const odb::geom::BoostPolygon90& area,
+    bool outer) const
 {
-  Polygon90 area90;
+  odb::geom::BoostPolygon90WithHoles area90;
   area90.set(area.begin(), area.end());
   return getBoundaryEdges(area90, outer);
 }
 
-std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon90& area,
-                                                     bool outer) const
+std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(
+    const odb::geom::BoostPolygon90WithHoles& area,
+    bool outer) const
 {
   std::vector<Edge> edges;
 
-  Polygon90::point_type prev_pt = *area.begin();
+  const odb::Point first_pt((*area.begin()).x(), (*area.begin()).y());
+  odb::Point prev_pt = first_pt;
   auto itr = area.begin();
   itr++;
   for (; itr != area.end(); itr++) {
-    const Polygon90::point_type pt = *itr;
+    const odb::Point pt((*itr).x(), (*itr).y());
 
-    const odb::Point pt0(prev_pt.x(), prev_pt.y());
-    const odb::Point pt1(pt.x(), pt.y());
+    edges.push_back(Edge{EdgeType::kUnknown, prev_pt, pt});
 
     prev_pt = pt;
-
-    edges.push_back(Edge{EdgeType::kUnknown, pt0, pt1});
   }
 
   // complete the polygon
-  const odb::Point pt0(prev_pt.x(), prev_pt.y());
-  const odb::Point pt1((*area.begin()).x(), (*area.begin()).y());
-  edges.push_back(Edge{EdgeType::kUnknown, pt0, pt1});
+  edges.push_back(Edge{EdgeType::kUnknown, prev_pt, first_pt});
 
   // Assign edge types
   for (size_t i = 0; i < edges.size(); i++) {
@@ -756,8 +747,9 @@ std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon90& area,
   return edges;
 }
 
-std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
-                                                         bool outer) const
+std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(
+    const odb::geom::BoostPolygon90WithHoles& area,
+    bool outer) const
 {
   std::vector<Corner> corners;
 
@@ -989,11 +981,11 @@ odb::dbRow* Tapcell::getRow(const Tapcell::Corner& corner,
   return nullptr;
 }
 
-std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon& area,
+std::pair<int, int> Tapcell::placeEndcaps(const odb::geom::BoostPolygon90& area,
                                           bool outer,
                                           const EndcapCellOptions& options)
 {
-  Polygon90 area90;
+  odb::geom::BoostPolygon90WithHoles area90;
   area90.set(area.begin(), area.end());
   return placeEndcaps(area90, outer, options);
 }
@@ -1044,9 +1036,10 @@ std::vector<std::pair<int, int>> Tapcell::occupiedSpans(odb::dbRow* row) const
   return spans;
 }
 
-std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
-                                          bool outer,
-                                          const EndcapCellOptions& options)
+std::pair<int, int> Tapcell::placeEndcaps(
+    const odb::geom::BoostPolygon90WithHoles& area,
+    bool outer,
+    const EndcapCellOptions& options)
 {
   int endcaps = 0;
 
