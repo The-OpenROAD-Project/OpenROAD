@@ -230,6 +230,7 @@ class Shapes:
 
 # TODO: Handle comment lines #
 
+
 def safeDielEpsilon(index):
     # nothing is modeled above/below the top/bottom dielectric, so reuse
     # its own epsilon rather than base_epsilon (the true open-air region,
