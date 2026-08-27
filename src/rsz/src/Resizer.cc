@@ -272,6 +272,58 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
   }
 }
 
+bool isInputOrInoutPort(const odb::dbIoType& io_type)
+{
+  return io_type != odb::dbIoType::OUTPUT;
+}
+
+bool isOutputOrInoutPort(const odb::dbIoType& io_type)
+{
+  return io_type != odb::dbIoType::INPUT;
+}
+
+bool modNetHasInputOrInoutPort(odb::dbModNet* modnet)
+{
+  if (modnet == nullptr) {
+    return false;
+  }
+
+  for (odb::dbBTerm* bterm : modnet->getBTerms()) {
+    if (isInputOrInoutPort(bterm->getIoType())) {
+      return true;
+    }
+  }
+
+  for (odb::dbModBTerm* mod_bterm : modnet->getModBTerms()) {
+    if (isInputOrInoutPort(mod_bterm->getIoType())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool modNetHasOutputOrInoutPort(odb::dbModNet* modnet)
+{
+  if (modnet == nullptr) {
+    return false;
+  }
+
+  for (odb::dbBTerm* bterm : modnet->getBTerms()) {
+    if (isOutputOrInoutPort(bterm->getIoType())) {
+      return true;
+    }
+  }
+
+  for (odb::dbModBTerm* mod_bterm : modnet->getModBTerms()) {
+    if (isOutputOrInoutPort(mod_bterm->getIoType())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
                                      odb::dbModNet* output_modnet)
 {
@@ -280,17 +332,8 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
     return false;
   }
 
-  const bool input_modnet_has_input_port = std::ranges::any_of(
-      input_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::INPUT;
-      });
-
-  const bool output_modnet_has_output_port = std::ranges::any_of(
-      output_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::OUTPUT;
-      });
-
-  return input_modnet_has_input_port && output_modnet_has_output_port;
+  return modNetHasInputOrInoutPort(input_modnet)
+         && modNetHasOutputOrInoutPort(output_modnet);
 }
 
 float inputPinCapacitance(sta::Network* network,
@@ -2982,14 +3025,23 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   std::optional<std::string> new_net_name;
   std::optional<std::string> new_modnet_name;
   if (db_survivor->isDeeperThan(db_removed)) {
-    new_net_name = db_removed->getName();
-    // The rename exists to keep the ModNet name in sync with the flat net
-    // name.  Feedthrough is the exception: removed_modnet is the output
-    // ModNet, so syncing would name the ModNet after the output port and
-    // write_verilog would then drop the assign statement.  On a feedthrough
-    // the ModNet name must always stay the input port name.
-    if (removed_modnet != nullptr && !creates_feedthrough) {
-      new_modnet_name = removed_modnet->getName();
+    const bool preserve_port_name = modNetHasInputOrInoutPort(survivor_modnet);
+    if (!preserve_port_name) {
+      // Normally both names follow the shallower removed net.
+      new_net_name = db_removed->getName();
+      if (removed_modnet != nullptr) {
+        new_modnet_name = removed_modnet->getName();
+      }
+    } else {
+      // Keep input/inout port names so write_verilog retains required
+      // feedthrough assigns. Use the shallower flat name only if it remains
+      // represented after the ModNet merge.
+      const bool shallower_name_survives
+          = removed_modnet == nullptr
+            || removed_modnet->getHierarchicalName() != db_removed->getName();
+      if (shallower_name_survives) {
+        new_net_name = db_removed->getName();
+      }
     }
   }
 
