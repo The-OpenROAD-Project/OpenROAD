@@ -23,7 +23,6 @@
 #include "RDLNet.h"
 #include "RDLSegment.h"
 #include "Utilities.h"
-#include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/graph/astar_search.hpp"
 #include "boost/graph/lookup_edge.hpp"
