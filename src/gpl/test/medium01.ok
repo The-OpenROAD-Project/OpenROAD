@@ -8,7 +8,6 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 440.230 439.600 ) um
-[INFO GPL-0016] Core area:                  184280.544 um^2
 [INFO GPL-0036] Movable instances area:      29267.448 um^2
 [INFO GPL-0037] Total instances area:        29553.132 um^2
 [INFO GPL-0035] Pin density area adjust:      1876.602 um^2
@@ -19,8 +18,9 @@
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                  19320
 [INFO GPL-0011] Number of pins:                  54012
-[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 450.170 450.000 ) um
-[INFO GPL-0013] Placement BBox: ( 10.070 11.200 ) ( 440.230 439.600 ) um
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 450.170 450.000 ) um
+[INFO GPL-0013] Core BBox: ( 10.070 11.200 ) ( 440.230 439.600 ) um
+[INFO GPL-0016] Core area:                  184280.544 um^2
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                184280.544 um^2
 [INFO GPL-0017] Fixed instances area:          285.684 um^2
