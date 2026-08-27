@@ -4,7 +4,6 @@
 #include "via.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -948,18 +947,6 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
   using boost::polygon::operators::operator+;
   using boost::polygon::operators::operator^;
 
-  auto rect_to_poly
-      = [](const odb::Rect& rect) -> odb::geom::BoostPolygon90WithHoles {
-    std::array<odb::Point, 4> pts = {odb::Point(rect.xMin(), rect.yMin()),
-                                     odb::Point(rect.xMax(), rect.yMin()),
-                                     odb::Point(rect.xMax(), rect.yMax()),
-                                     odb::Point(rect.xMin(), rect.yMax())};
-
-    odb::geom::BoostPolygon90WithHoles poly;
-    poly.set(pts.begin(), pts.end());
-    return poly;
-  };
-
   ViaLayerShape via_shapes;
 
   DbVia* prev_via = nullptr;
@@ -995,7 +982,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
     if (prev_via != nullptr) {
       odb::geom::BoostPolygon90Set bottom_of_current;
       for (const auto& [shape, box] : shapes.bottom) {
-        bottom_of_current += rect_to_poly(shape);
+        bottom_of_current += odb::geom::toPolygon90(shape);
       }
 
       // create a single set of shapes for the layer
@@ -1003,10 +990,8 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
           = top_of_previous + bottom_of_current;
 
       if (prev_via->requiresPatch() || via->requiresPatch()) {
-        odb::geom::BoostRectangle patch_shape;
-        combine_layer.extents(patch_shape);
         patch_shapes.clear();
-        patch_shapes += patch_shape;
+        patch_shapes += odb::geom::getEnclosingRect(combine_layer);
       } else {
         patch_shapes = combine_layer;
       }
@@ -1016,20 +1001,16 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
 
       // extract the rectangles that will patch the layer
       for (const auto& patch : patches) {
-        odb::geom::BoostRectangle patch_shape;
-        extents(patch_shape, patch);
-
-        patch_shapes += patch_shape;
+        patch_shapes += odb::geom::getEnclosingRect(patch);
       }
 
       // ensure patches are minimum area
-      std::vector<odb::geom::BoostRectangle> patch_rects;
-      patch_shapes.get_rectangles(patch_rects);
+      const std::vector<odb::Rect> patch_rects
+          = odb::geom::extractRectangles(patch_shapes);
       patch_shapes.clear();
-      for (const auto& patch : patch_rects) {
-        const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
-        odb::Rect min_area_shape = adjustToMinArea(add_to_layer, patch_rect);
-        patch_shapes += rect_to_poly(min_area_shape);
+      for (const odb::Rect& patch_rect : patch_rects) {
+        patch_shapes += odb::geom::toPolygon90(
+            adjustToMinArea(add_to_layer, patch_rect));
       }
 
       // find shapes that touch "left-over" shapes from the xor
@@ -1039,12 +1020,8 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
 
     if (!patch_shapes.empty()) {
       if (via->hasGenerator()) {
-        odb::geom::BoostRectangle complete_shape;
-        extents(complete_shape, total_shape);
-        const odb::Rect patch_shape_rect(xl(complete_shape),
-                                         yl(complete_shape),
-                                         xh(complete_shape),
-                                         yh(complete_shape));
+        const odb::Rect patch_shape_rect
+            = odb::geom::getEnclosingRect(total_shape);
 
         auto* generator = via->getGenerator();
         if (!generator->recheckConstraints(patch_shape_rect, true)) {
@@ -1077,11 +1054,9 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
         }
       }
 
-      std::vector<odb::geom::BoostRectangle> patches;
-      patch_shapes.get_rectangles(patches);
-      for (const auto& patch : patches) {
+      for (const odb::Rect& patch_rect :
+           odb::geom::extractRectangles(patch_shapes)) {
         // add patch metal on layers between the bottom and top of the via stack
-        const odb::Rect patch_rect(xl(patch), yl(patch), xh(patch), yh(patch));
         auto* patch_box = odb::dbSBox::create(wire,
                                               add_to_layer,
                                               patch_rect.xMin(),
@@ -1096,7 +1071,7 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
     prev_via = via.get();
     top_of_previous.clear();
     for (const auto& [shape, box] : shapes.top) {
-      top_of_previous += rect_to_poly(shape);
+      top_of_previous += odb::geom::toPolygon90(shape);
     }
   }
 

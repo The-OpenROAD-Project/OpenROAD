@@ -3,14 +3,12 @@
 
 #include "via_repair.h"
 
-#include <array>
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "grid.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -58,26 +56,16 @@ void ViaRepair::repair()
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbSBox>> block_vias_to_remove;
   for (const auto& [layer, layer_obs] : combined_obs) {
     odb::geom::BoostPolygon90Set layer_obstructions;
-    for (const auto& obs : layer_obs) {
-      std::array<odb::Point, 4> pts = {odb::Point(obs.xMin(), obs.yMin()),
-                                       odb::Point(obs.xMax(), obs.yMin()),
-                                       odb::Point(obs.xMax(), obs.yMax()),
-                                       odb::Point(obs.xMin(), obs.yMax())};
-
-      odb::geom::BoostPolygon90WithHoles poly;
-      poly.set(pts.begin(), pts.end());
-      layer_obstructions.insert(poly);
+    for (const odb::Rect& obs : layer_obs) {
+      layer_obstructions.insert(odb::geom::toPolygon90(obs));
     }
-
-    std::vector<odb::geom::BoostRectangle> layer_obstructions_rect;
-    layer_obstructions.get_rectangles(layer_obstructions_rect);
 
     const auto& layer_vias = vias[layer];
     auto& tech_vias = tech_vias_to_remove[layer];
     auto& block_vias = block_vias_to_remove[layer];
 
-    for (const auto& obs : layer_obstructions_rect) {
-      const odb::Rect obs_rect(xl(obs), yl(obs), xh(obs), yh(obs));
+    for (const odb::Rect& obs_rect :
+         odb::geom::extractRectangles(layer_obstructions)) {
       for (auto itr = layer_vias.qbegin(bgi::intersects(obs_rect));
            itr != layer_vias.qend();
            itr++) {

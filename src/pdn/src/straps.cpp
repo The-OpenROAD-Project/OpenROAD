@@ -4,7 +4,6 @@
 #include "straps.h"
 
 #include <algorithm>
-#include <array>
 #include <cstdlib>
 #include <functional>
 #include <iterator>
@@ -17,7 +16,6 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
@@ -2558,32 +2556,19 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
 
-    // determine bloat factor
-    const int bloat = grid_strap->getPitch();
-    const int bloat_x = grid_strap->isHorizontal() ? 0 : bloat;
-    const int bloat_y = grid_strap->isHorizontal() ? bloat : 0;
-
-    const auto& min_corner = shape->getRect().ll();
-    const auto& max_corner = shape->getRect().ur();
-    std::array<odb::Point, 4> pts
-        = {odb::Point(min_corner.x() - bloat_x, min_corner.y() - bloat_y),
-           odb::Point(max_corner.x() + bloat_x, min_corner.y() - bloat_y),
-           odb::Point(max_corner.x() + bloat_x, max_corner.y() + bloat_y),
-           odb::Point(min_corner.x() - bloat_x, max_corner.y() + bloat_y)};
-    odb::geom::BoostPolygon90WithHoles poly;
-    poly.set(pts.begin(), pts.end());
+    // bloat by the strap pitch across the strap, so neighboring straps merge
+    // and the gaps left between them are the channels
+    const odb::Rect bloated_shape = shape->getRect().bloat(
+        grid_strap->getPitch(),
+        grid_strap->isHorizontal() ? odb::vertical : odb::horizontal);
 
     shapes_used.push_back(shape.get());
-    shape_set.insert(poly);
+    shape_set.insert(odb::geom::toPolygon90(bloated_shape));
   }
 
   // get all possible channel rects
   std::set<odb::Rect> channels_rects;
-  std::vector<odb::geom::BoostRectangle> channel_set;
-  shape_set.get_rectangles(channel_set);
-  for (const auto& channel : channel_set) {
-    const odb::Rect area(xl(channel), yl(channel), xh(channel), yh(channel));
-
+  for (const odb::Rect& area : odb::geom::extractRectangles(shape_set)) {
     if (area.intersects(grid_core)) {
       channels_rects.insert(area.intersect(grid_core));
     }
