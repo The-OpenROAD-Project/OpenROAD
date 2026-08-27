@@ -205,6 +205,8 @@ std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect()
 
 void Dft::scanOpt()
 {
+  odb::dbBlock* db_block = db_->getChip()->getBlock();
+
   for (const auto& chain : scan_chains_) {
     auto src_pin = chain->getScanIn();
     auto sink_pin = chain->getScanOut();
@@ -231,14 +233,15 @@ void Dft::scanOpt()
     }
     logger_->info(utl::DFT,
                   15,
-                  "Starting 2-Opt with initial total chain wire length {}",
-                  twl);
+                  "Starting 2-Opt with initial total chain wire length {}um",
+                  db_block->dbuToMicrons(twl));
 
     logger_->metric(fmt::format("dft__chain_twl_internal__init__chain:{}",
                                 chain->getName()),
-                    twl_internal);
+                    db_block->dbuToMicrons(twl));
     logger_->metric(
-        fmt::format("dft__chain_twl__init__chain:{}", chain->getName()), twl);
+        fmt::format("dft__chain_twl__init__chain:{}", chain->getName()),
+        db_block->dbuToMicrons(twl));
 
     auto twl_opt = chain->sortScanCells(
         [&](std::vector<std::unique_ptr<ScanCell>>& falling,
@@ -280,13 +283,13 @@ void Dft::scanOpt()
 
     logger_->info(utl::DFT,
                   16,
-                  "Concluded 2-Opt with total chain wire length {}.",
-                  twl_opt);
+                  "Concluded 2-Opt with total chain wire length {}um.",
+                  db_block->dbuToMicrons(twl_opt));
 
     int64_t twl_internal_opt = chain->estimateInternalTotalWireLength();
     logger_->metric(fmt::format("dft__chain_twl_internal__post_opt__chain:{}",
                                 chain->getName()),
-                    twl_internal_opt);
+                    db_block->dbuToMicrons(twl_internal_opt));
 
     const auto& scan_cells_opt = chain->getScanCells();
     int64_t twl_opt_confirm = twl_internal_opt;
@@ -300,7 +303,7 @@ void Dft::scanOpt()
 
     logger_->metric(
         fmt::format("dft__chain_twl__post_opt__chain:{}", chain->getName()),
-        twl_opt);
+        db_block->dbuToMicrons(twl_opt));
   }
 
   ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());

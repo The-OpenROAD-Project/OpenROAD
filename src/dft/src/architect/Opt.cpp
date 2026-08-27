@@ -117,7 +117,7 @@ int64_t OptimizeScanWirelength2Opt(
 
   std::vector<odb::Point> points(node_count);
   size_t i = 0;
-  points[i++] = source;
+  points[i] = source;
 
   int64_t score = 0;
   odb::Point last = points[i];
