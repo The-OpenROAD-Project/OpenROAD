@@ -2,7 +2,7 @@ source "helpers.tcl"
 # Regression test for a segfault in dpl::Grid::markHopeless().
 #
 # A row whose site spacing (STEP) is smaller than the site width declares
-# overlapping sites.  The DEF reader now rejects such rows (ODB-0478), so to
+# overlapping sites.  The DEF reader now warns about such rows (ODB-0478), so to
 # exercise the DPL guard here the malformed row is created programmatically
 # after reading a valid floorplan.  DPL must report DPL-0052 instead of
 # crashing with Signal 11.

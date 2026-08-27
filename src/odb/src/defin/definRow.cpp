@@ -86,22 +86,19 @@ void definRow::begin(const char* name,
     return;
   }
 
-  // Rows with a site spacing smaller than the site extent declare
-  // overlapping sites. Reject them here so the error is surfaced
-  // at read time instead of later.
+  // Rows with a site spacing smaller than the site width declare
+  // overlapping sites.  Warn here so the issue is surfaced at read time;
+  // detailed placement rejects it with DPL-0052.
   if (num_sites > 1) {
-    const bool is_vertical = direction == DEF_VERTICAL;
-    const int site_extent = is_vertical ? site->getHeight() : site->getWidth();
     const int site_spacing = dbdist(spacing);
-    if (site_spacing < site_extent) {
-      _logger->error(utl::ODB,
-                     478,
-                     "Row {} has site spacing ({}) smaller than the site {} "
-                     "({}); the row's sites overlap.",
-                     name,
-                     site_spacing,
-                     is_vertical ? "height" : "width",
-                     site_extent);
+    if (site_spacing < site->getWidth()) {
+      _logger->warn(utl::ODB,
+                    478,
+                    "Row {} has site spacing ({}) smaller than the site "
+                    "width ({}); the row's sites overlap.",
+                    name,
+                    site_spacing,
+                    site->getWidth());
     }
   }
 
