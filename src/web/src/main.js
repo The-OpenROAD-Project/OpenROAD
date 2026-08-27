@@ -756,15 +756,15 @@ function createLayoutViewer(container) {
         syncHud();
     });
     app.map.on('mouseout', (e) => {
-        app.lastMouseLatLng = null;
         // Leaflet raises mouseout for a move onto anything inside the
-        // container too -- a zoom control, a marker, the HUD itself -- and the
-        // readout should hold its value for those.  Only a move that actually
-        // leaves the viewer clears it.
+        // container too -- a zoom control, a marker, the HUD itself -- and
+        // both the readout and the zoom anchor should hold their values for
+        // those.  Only a move that actually leaves the viewer clears them.
         const to = e.originalEvent && e.originalEvent.relatedTarget;
         if (to && mapDiv.contains(to)) {
             return;
         }
+        app.lastMouseLatLng = null;
         coordBar.textContent = '';
         syncHud();
     });
