@@ -1,0 +1,27 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN dmp_ceff_dcalc_load_propagation ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 400000 100000 ) ;
+
+COMPONENTS 3 ;
+- u1 BUF_X1 + PLACED ( 100000 40000 ) N ;
+- u2 BUF_X1 + PLACED ( 200000 40000 ) N ;
+- u3 BUF_X1 + PLACED ( 200000 80000 ) N ;
+END COMPONENTS
+
+PINS 2 ;
+- in + NET in + DIRECTION INPUT + USE SIGNAL
+  + FIXED ( 0 40000 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+- out + NET out + DIRECTION OUTPUT + USE SIGNAL
+  + FIXED ( 300000 40000 ) N + LAYER metal1 ( 0 0 ) ( 0 0 ) ;
+END PINS
+
+NETS 3 ;
+- in ( PIN in ) ( u1 A ) + USE SIGNAL ;
+- n1 ( u1 Z ) ( u2 A ) ( u3 A ) + USE SIGNAL ;
+- out ( u2 Z ) ( PIN out ) + USE SIGNAL ;
+END NETS
+
+END DESIGN

@@ -106,6 +106,13 @@ ALL_TESTS = [
     "write_verilog9_hier",
 ]
 
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+    "dmp_ceff_dcalc_load_propagation",
+]
+
+ALL_TESTS += PASSFAIL_TESTS
+
 filegroup(
     name = "regression_resources",
     srcs = [
@@ -346,6 +353,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],
     )
