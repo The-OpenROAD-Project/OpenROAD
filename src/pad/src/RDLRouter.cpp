@@ -1888,8 +1888,13 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
     const odb::dbTransform xform = inst->getTransform();
 
     auto* master = inst->getMaster();
-    auto& master_obs = master_obstruction_map[master];
-    if (master_obs.empty()) {
+    // Keyed on presence, not emptiness: a master with no obstructions on this
+    // layer yields an empty vector, and rechecking emptiness would recompute
+    // it for every instance of that master.
+    const auto [master_it, is_new_master]
+        = master_obstruction_map.try_emplace(master);
+    auto& master_obs = master_it->second;
+    if (is_new_master) {
       // Collect all polygons to add (obstructions).  Each shape is bloated on
       // its own, since bloating the union would miter the merged outline
       // instead.  get() appends, so everything lands in one vector that is
@@ -1918,7 +1923,9 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
       odb::geom::BoostPolygonSet master_obstruction(polys_to_add.begin(),
                                                     polys_to_add.end());
 
-      // Collect all polygons to subtract (iterm shapes)
+      // Collect all polygons to subtract (iterm shapes).  As above, get()
+      // appends to the vector rather than overwriting it, so every pin
+      // accumulates here and the whole set is normalized once below.
       std::vector<odb::geom::BoostPolygon> polys_to_subtract;
       for (auto* mterm : master->getMTerms()) {
         for (auto* mpin : mterm->getMPins()) {
