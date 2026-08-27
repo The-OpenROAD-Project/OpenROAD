@@ -372,10 +372,18 @@ CONFORMANCE_EXPECTED_FAIL = [
             "bx_sequential_probe_clkgate.v",
         ],
     ),
+    # OpenSTA d2c508dd (parallaxsw/OpenSTA#489) replaced the std::stol that threw
+    # on an unsized constant with STA-2724/2725 warnings and a 1-bit default, so
+    # read_verilog no longer errors out. The constant is dropped instead, the
+    # emitted netlist carries a term with no net, and kepler-formal refuses to
+    # load it: "setTermsNets only supported when terms (size: 1 [A2]) and nets
+    # share same size (size: 0)". Dropping the connection silently rather than
+    # stopping is a behaviour change worth raising upstream; recording the new
+    # mode here does not endorse it.
     xfail(
         path = "flat",
-        mode = "or-error",
-        symptom = "Error - out_flat.tcl, 3 stol - no conversion",
+        mode = "tool-error",
+        symptom = "unsized constant warned about (STA-2724) instead of rejected, then dropped, leaving an unconnected term kepler-formal cannot load",
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
@@ -399,10 +407,13 @@ CONFORMANCE_EXPECTED_FAIL = [
             "wb_sta_reader_attr_src_line_overflow.v",
         ],
     ),
+    # Same as the flat entry above: OpenSTA d2c508dd turned the throwing
+    # std::stol into an STA-2724/2725 warning, so the unsized constant is
+    # dropped and kepler-formal cannot load the emitted netlist.
     xfail(
         path = "hier",
-        mode = "or-error",
-        symptom = "Error - out_hier.tcl, 3 stol - no conversion",
+        mode = "tool-error",
+        symptom = "unsized constant warned about (STA-2724) instead of rejected, then dropped, leaving an unconnected term kepler-formal cannot load",
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
@@ -1529,14 +1540,15 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_dbsta_link_attr_impl_oper_unused.v",
         ],
     ),
+    # The three constant-width cases that used to live here now round-trip:
+    # OpenSTA d2c508dd (parallaxsw/OpenSTA#489) replaced the throwing std::stol
+    # with STA-2724/2725 warnings, so read_verilog accepts them. The entries
+    # below still throw, from the stoi in the attribute parser.
     structural_xfail(
         path = "flat",
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "bx_constants_unsized_b0.v",
-            "bx_constants_unsized_d1.v",
-            "structural/wb_sta_reader_const_negative_width.v",
             "wb_dbsta_link_attr_dont_touch_string.v",
             "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
@@ -1624,14 +1636,14 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_dbsta_link_attr_impl_oper_unused.v",
         ],
     ),
+    # Same as the flat entry above: the three constant-width cases round-trip
+    # since OpenSTA d2c508dd. What is left still throws, from the attribute
+    # parser's stoi.
     structural_xfail(
         path = "hier",
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "bx_constants_unsized_b0.v",
-            "bx_constants_unsized_d1.v",
-            "structural/wb_sta_reader_const_negative_width.v",
             "wb_dbsta_link_attr_dont_touch_string.v",
             "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
