@@ -242,7 +242,12 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                    const std::vector<double>& net_costs = {});
+                    const std::vector<double>& net_costs = {},
+                    bool adopted = false);
+  // Net-aware forms: the tree, NDR costs and adopted mark all
+  // travel with the net, so adopt/release sites cannot disagree.
+  void addTreeUsage(const GRNet& net);
+  void removeTreeUsage(const GRNet& net);
 
   /**
    * @brief Removes the demand previously added for a routing tree.
@@ -254,7 +259,8 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                       const std::vector<double>& net_costs = {});
+                       const std::vector<double>& net_costs = {},
+                       bool adopted = false);
 
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
@@ -279,6 +285,13 @@ class GridGraph
       PointT loc,
       const std::vector<double>& net_costs,
       const std::function<void(int, PointT, CapacityT, double)>& fn) const;
+
+  // Enumerate the lower cells of the preferred-direction edges a wire from
+  // u to v occupies on `layer_index` — the cells commitWire charges.
+  void forEachWireEdge(int layer_index,
+                       PointT u,
+                       PointT v,
+                       const std::function<void(PointT)>& fn) const;
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -373,7 +386,14 @@ class GridGraph
                  const std::vector<double>& net_costs = {});
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
-                  const std::vector<double>& net_costs = {});
+                  const std::vector<double>& net_costs = {},
+                  bool adopted = false);
+  // Demand of an adopted wrong-way wire crossing the gcell at `loc`,
+  // deposited on the layer's flanking edges like a via stub.
+  void commitWrongWayWire(int layer_index,
+                          PointT loc,
+                          bool rip_up,
+                          double layer_factor);
   // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
   CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
   // Enumerates the flanking edges a via at `loc` (between `layer_index` and
@@ -381,10 +401,14 @@ class GridGraph
   // fn(l, edge_lower_point, demand, layer_factor).
   // Defined in GridGraph.cpp; all instantiations live there.
   template <typename F>
+  void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
+  template <typename F>
   void forEachViaFlankEdgeImpl(int layer_index,
                                PointT loc,
                                const std::vector<double>& net_costs,
                                F&& fn) const;
+  template <typename F>
+  void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;

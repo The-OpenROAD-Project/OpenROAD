@@ -64,6 +64,7 @@ swap_prefix(
 )
 
 # create a patch file
+os.makedirs("misc", exist_ok=True)
 _ = os.popen("git add ../include/ord/OpenRoad.hh").read()
 _ = os.popen("git add ../src/CMakeLists.txt").read()
 _ = os.popen("git add ../src/OpenRoad.cc").read()

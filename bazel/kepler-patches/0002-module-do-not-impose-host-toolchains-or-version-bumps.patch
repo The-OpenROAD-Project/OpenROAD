@@ -1,0 +1,29 @@
+--- a/MODULE.bazel	2026-08-14 13:26:26.600015197 -0400
++++ b/MODULE.bazel	2026-08-14 13:26:26.615734987 -0400
+@@ -13,8 +13,8 @@
+ bazel_dep(name = "yaml-cpp", version = "0.9.0")
+ bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
+ bazel_dep(name = "capnp-cpp", version = "1.4.0")
+-bazel_dep(name = "zlib", version = "1.3.2")
+-bazel_dep(name = "fmt", version = "12.2.0")
++bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
++bazel_dep(name = "fmt", version = "12.1.0")
+ bazel_dep(name = "spdlog", version = "1.17.0")
+ # TBB comes from the cmake-built @onetbb repo (bazel/deps.bzl), not the BCR
+ # onetbb module: Naja's native targets and the kepler-formal binary must
+@@ -54,15 +54,6 @@
+     dev_dependency = True,
+ )
+ 
+-# Use preinstalled cmake/make/pkg-config instead of bootstrapping.
+-# The bundled glib in rules_foreign_cc pkg-config bootstrap fails
+-# with modern GCC 15 (C23 bool keyword collision in glib source).
+-register_toolchains(
+-    "@rules_foreign_cc//toolchains:preinstalled_cmake_toolchain",
+-    "@rules_foreign_cc//toolchains:preinstalled_make_toolchain",
+-    "@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain",
+-)
+-
+ # Third-party dependencies fetched via http_archive for BCR compatibility.
+ # BUILD file overlays live in bazel/*.BUILD.bazel.
+ # The cmake flow uses git submodules (thirdparty/) directly.

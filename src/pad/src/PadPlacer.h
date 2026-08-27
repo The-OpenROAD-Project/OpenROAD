@@ -79,6 +79,10 @@ class PadPlacer
                                       boost::geometry::index::quadratic<16>>;
   using LayerTermObsTree = odb::PtrMap<odb::dbTechLayer, TermObsTree>;
 
+  // Halt the flow so the current state can be inspected in the GUI.  The
+  // reason is reported so the pause is actionable.
+  void guiPause(const std::string& reason) const;
+
   int placeInstance(int index,
                     odb::dbInst* inst,
                     const odb::dbOrientType& base_orient,

@@ -117,6 +117,24 @@ filegroup(
 )
 
 filegroup(
+    name = "asap7_data",
+    srcs = [
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# CCS (current source model) liberty. Required by delay calculators that need
+# output current waveforms, e.g. prima; the asap7 libs above are NLDM only.
+# Holds four cells: AND2x2, BUFx2, DFFHQx4, INVx2.
+filegroup(
+    name = "asap7_ccs_data",
+    srcs = ["asap7/asap7_small_ccs.lib.gz"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "regression_resources",
     # TODO Refine glob later.
     #
@@ -181,11 +199,16 @@ BIG_TESTS = [
     "tinyRocket_nangate45",
 ]
 
+# BIG_TESTS produce no golden log, so their QoR is what there is to check, and
+# every one of them is metric checked. A new design has to save a
+# <design>.metrics_limits file; without one the check fails with "missing metrics
+# limits file" rather than quietly running the flow and asserting nothing.
 [
     regression_test(
         name = test_name,
         size = "enormous" if test_name in BIG_TESTS else "medium",
         check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS else True,
+        check_metrics = True if test_name in BIG_TESTS else False,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
         tags = ["manual"] if test_name in BIG_TESTS else [],

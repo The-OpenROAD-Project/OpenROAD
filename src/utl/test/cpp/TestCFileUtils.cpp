@@ -160,6 +160,51 @@ TEST(Utl, stream_handler_write_and_read_gzip)
   std::filesystem::remove(filename);
 }
 
+TEST(Utl, stream_handler_gzip_compression_levels)
+{
+  const char* filename_l1 = "test_l1.txt.gz";
+  const char* filename_l9 = "test_l9.txt.gz";
+
+  std::string kTestData;
+  kTestData.reserve(100000 * 27);
+  for (int i = 0; i < 100000; ++i) {
+    kTestData.append("abcdefghijklmnopqrstuvwxyz\n");
+  }
+
+  {
+    OutStreamHandler sh(filename_l1, true, 1);
+    std::ostream& os = sh.getStream();
+    os.write(kTestData.c_str(), kTestData.size());
+  }
+
+  {
+    OutStreamHandler sh(filename_l9, true, 9);
+    std::ostream& os = sh.getStream();
+    os.write(kTestData.c_str(), kTestData.size());
+  }
+
+  {
+    InStreamHandler ish(filename_l1);
+    std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
+                         std::istreambuf_iterator<char>());
+    EXPECT_EQ(contents, kTestData);
+  }
+  {
+    InStreamHandler ish(filename_l9);
+    std::string contents((std::istreambuf_iterator<char>(ish.getStream())),
+                         std::istreambuf_iterator<char>());
+    EXPECT_EQ(contents, kTestData);
+  }
+
+  std::uintmax_t size_l1 = std::filesystem::file_size(filename_l1);
+  std::uintmax_t size_l9 = std::filesystem::file_size(filename_l9);
+
+  EXPECT_LE(size_l9, size_l1);
+
+  std::filesystem::remove(filename_l1);
+  std::filesystem::remove(filename_l9);
+}
+
 TEST(Utl, stream_handler_temp_file_handling)
 {
   const char* filename = "test_temp_file_handling.txt";

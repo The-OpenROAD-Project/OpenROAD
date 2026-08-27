@@ -271,6 +271,15 @@ PASSFAIL_TESTS = [
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
 
+# Hierarchical Verilog netlists reused as corpus input by
+# //src/dbSta/test:dbsta_hier_conformance. They stay owned by the tests here;
+# the conformance suite references them by relative path from its manifest.
+filegroup(
+    name = "hier_corpus_netlists",
+    srcs = glob(["cpp/*.v"]),
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "test_resources",
     # overly broad glob, could be refined later, but
@@ -488,6 +497,7 @@ cc_test(
         "cpp/TestResizer*.lib",
         "cpp/TestResizer*.v",
     ]) + [
+        "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
     ],

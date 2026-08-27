@@ -119,4 +119,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1011] Original area (um^2): 619.73
 [INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
 [INFO GPL-1014] Final placement area: 619.73 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 2599.69
 No differences found.

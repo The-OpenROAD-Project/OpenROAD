@@ -1020,12 +1020,19 @@ int TritonRoute::main()
   }
   initDesign();
   bool has_routable_nets = false;
-  for (auto net : db_->getChip()->getBlock()->getNets()) {
+  bool has_grt_guides = false;
+  for (auto* net : db_->getChip()->getBlock()->getNets()) {
     auto iterms = net->getITerms();
     auto bterms = net->getBTerms();
-    if (iterms.hasMoreThan(1) || bterms.hasMoreThan(1)
-        || (!iterms.empty() && !bterms.empty())) {
+    if (!has_routable_nets
+        && (iterms.hasMoreThan(1) || bterms.hasMoreThan(1)
+            || (!iterms.empty() && !bterms.empty()))) {
       has_routable_nets = true;
+    }
+    if (!has_grt_guides && !net->getGuides().empty()) {
+      has_grt_guides = true;
+    }
+    if (has_routable_nets && has_grt_guides) {
       break;
     }
   }
@@ -1035,6 +1042,12 @@ int TritonRoute::main()
                   "Design does not have any routable net "
                   "(with at least 2 terms)");
     return 0;
+  }
+  if (!has_grt_guides) {
+    logger_->error(DRT,
+                   47,
+                   "Design has no global routing guides. Global routing must "
+                   "be run before detailed routing.");
   }
   if (router_cfg_->DO_PA) {
     pa_ = std::make_unique<FlexPA>(

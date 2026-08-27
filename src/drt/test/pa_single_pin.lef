@@ -1,0 +1,33 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+SITE gf180mcu_osu_sc_gp12t3v3
+  CLASS CORE ;
+  SIZE 0.1 BY 8.3 ;
+END gf180mcu_osu_sc_gp12t3v3
+
+MACRO gf180mcu_osu_sc_gp12t3v3__tieh
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 2.2 BY 8.3 ;
+  SITE gf180mcu_osu_sc_gp12t3v3 ;
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER Metal1 ;
+        RECT 1.3 4.9 1.8 5.2 ;
+        RECT 1.4 4.85 1.65 7.25 ;
+      LAYER Metal2 ;
+        RECT 1.3 4.85 1.8 5.25 ;
+      LAYER Via1 ;
+        RECT 1.42 4.92 1.68 5.18 ;
+    END
+  END Y
+  OBS
+    LAYER Metal1 ;
+      RECT 1.15 2.3 1.65 2.55 ;
+      RECT 1.4 1.05 1.65 2.55 ;
+  END
+END gf180mcu_osu_sc_gp12t3v3__tieh

@@ -1,0 +1,46 @@
+diff -u -r base4/bazel/naja.BUILD.bazel mod4/bazel/naja.BUILD.bazel
+--- a/bazel/naja.BUILD.bazel	2026-08-14 13:54:11.704932039 -0400
++++ b/bazel/naja.BUILD.bazel	2026-08-14 13:54:11.767693437 -0400
+@@ -13,7 +13,6 @@
+         "//src/nl/netlist:naja_nl",
+         "//src/nl/netlist:naja_snl_visual",
+         "//src/nl/netlist/serialization/capnp:naja_nl_dump",
+-        "//src/nl/python/pyloader:naja_snl_pyloader",
+         "//src/optimization:naja_opt",
+     ],
+ )
+diff -u -r base4/src/bin/KeplerFormal.cpp mod4/src/bin/KeplerFormal.cpp
+--- a/src/bin/KeplerFormal.cpp	2026-08-14 13:54:11.724631349 -0400
++++ b/src/bin/KeplerFormal.cpp	2026-08-14 13:54:11.768225786 -0400
+@@ -28,7 +28,6 @@
+ #include "MiterStrategy.h"
+ #include "SNLCapnP.h"
+ #include "SNLLibertyConstructor.h"
+-#include "SNLPyLoader.h"
+ #include "SNLSVConstructor.h"
+ #include "SNLVRLConstructor.h"
+ #include "SNLVRLDumper.h"
+@@ -2176,13 +2175,18 @@
+         SNLLibertyConstructor constructor(primitivesLibrary);
+         constructor.construct(libraryPath);
+       }
+-      for (const auto& pythonFile : pythonFiles) {
++      if (!pythonFiles.empty()) {
+         // LCOV_EXCL_START
+-        std::filesystem::path pythonPath(pythonFile);
+-        SPDLOG_INFO("Loading python primitive file: {}", pythonFile);
+-        SNLPyLoader::loadPrimitives(primitivesLibrary, pythonPath);
++        // Python primitive loading is compiled out of this build: it is the
++        // only thing that links libpython, which would make the binary demand
++        // a version-exact libpython on every machine that runs it. Refusing is
++        // deliberate -- silently ignoring py_tech_files would let a config ask
++        // for primitives it never gets and still report a verdict.
++        SPDLOG_CRITICAL(
++            "py_tech_files is not supported by this build of kepler-formal");
++        return false;
++        // LCOV_EXCL_STOP
+       }
+-      // LCOV_EXCL_STOP
+       return true;
+     };
+ 

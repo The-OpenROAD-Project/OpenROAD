@@ -185,7 +185,6 @@ class PatternRoute
   std::vector<std::vector<int>> gridlines_;
 
   Constants constants_;
-  const int flute_accuracy_ = 3;
   utl::Logger* logger_;
 };
 

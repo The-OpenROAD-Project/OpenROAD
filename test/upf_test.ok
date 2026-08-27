@@ -142,6 +142,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0664
 [INFO GPL-1009]     - For 50% usage of free space: 0.1063
 [INFO GPL-1014] Final placement area: 175.05 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 1041.24
 [INFO DPL-0006] Core area: 11467.25 um^2
 [INFO DPL-0007] Movable instances area: 158.90 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -138,7 +139,8 @@ class Design
   void readDb(std::istream& stream);
   void readDb(const std::string& file_name);
   void writeDb(std::ostream& stream);
-  void writeDb(const std::string& file_name);
+  void writeDb(const std::string& file_name,
+               std::optional<int> compression_level = std::nullopt);
   void writeDef(const std::string& file_name);
 
   odb::dbBlock* getBlock();

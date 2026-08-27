@@ -89,6 +89,7 @@ bazel_dep(name = "boost.iterator", version = BOOST_VERSION)
 bazel_dep(name = "boost.json", version = BOOST_VERSION)
 bazel_dep(name = "boost.lambda", version = BOOST_VERSION)
 bazel_dep(name = "boost.lexical_cast", version = BOOST_VERSION)
+bazel_dep(name = "boost.math", version = BOOST_VERSION)
 bazel_dep(name = "boost.multi_array", version = BOOST_VERSION)
 bazel_dep(name = "boost.optional", version = BOOST_VERSION)
 bazel_dep(name = "boost.phoenix", version = BOOST_VERSION)
@@ -208,10 +209,67 @@ bazel_dep(name = "llvm", version = "0.8.14", dev_dependency = True)
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
-bazel_dep(name = "bant", version = "0.3.4", dev_dependency = True)
+bazel_dep(name = "bant", version = "0.3.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
+
+# kepler-formal: the LEC engine the hierarchy conformance tests shell out to.
+# Never linked (GPL-3.0 vs BSD-3-Clause); built here only so the tests get the
+# binary as a runfile instead of requiring a locally installed one.
+#
+# Its @onetbb dep is built with rules_foreign_cc cmake(), which reuses
+# CMAKE_CXX_FLAGS at link time; OpenROAD's global `-xc++` (.bazelrc) would then
+# make clang parse .o files as source. //bazel:kepler.bzl wraps the binary in a
+# transition that strips that one flag for this subgraph only.
+bazel_dep(name = "kepler-formal", version = "1.0.0", dev_dependency = True)
+
+# Patch 0001 stops naja's Python-embedding target from exporting
+# `-L/usr/lib/<multiarch>` as a linkopt: it precedes bazel's own -L entries, so
+# @onetbb's `-l:libtbb.so.12` / `-l:libtbbmalloc.so.2` resolve to the host's
+# system TBB (link failure under the hermetic toolchain; two TBB runtimes in
+# one process where it does link).
+#
+# Patch 0002 keeps kepler from imposing three things on this build that a
+# test-only dependency has no business changing. All three are things kepler
+# chose for its OWN builds, where they are reasonable; they are only wrong when
+# inherited. Overrides are applied before bazel reads the dependency's
+# MODULE.bazel, so they can be corrected here rather than waiting upstream.
+#
+#   - Three unguarded register_toolchains lines that select rules_foreign_cc's
+#     *preinstalled* cmake/make/pkg-config -- bare $PATH lookups. Registration
+#     from a dependency is global, and kepler sits closer to the root than
+#     rules_foreign_cc, so those outrank rules_foreign_cc's own defaults
+#     (downloaded cmake 3.31.8, make built from @gnumake_src) and turn a
+#     hermetic build into one that needs host tools. Deleting them restores the
+#     defaults. kepler guards its llvm registration this way already, with a
+#     comment explaining exactly why, so this looks like an oversight.
+#   - fmt 12.2.0, which minimal version selection would apply to the WHOLE
+#     graph. slang does not compile against it ("no member named 'format' in
+#     namespace 'fmt'" in slang/util/CommandLine.h). Corrected at the request
+#     rather than with a root-level single_version_override, which would also
+#     silently pin every other consumer of fmt.
+#   - zlib 1.3.2, likewise graph-wide, and into the shipped binaries.
+#
+# archive_override rather than git_override for the reason given for @orfs
+# below: a non-registry override is fetched during resolution of every bazel
+# command, so git_override makes every build need git access to github.com.
+archive_override(
+    module_name = "kepler-formal",
+    integrity = "sha256-1ap3fiGjlWaZSG/kHAdxFpmgrTcMhqEmg6i1+1zssZY=",
+    patch_strip = 1,
+    patches = [
+        "//bazel/kepler-patches:0001-python-embed-do-not-export-a-system-library-search-di.patch",
+        "//bazel/kepler-patches:0002-module-do-not-impose-host-toolchains-or-version-bumps.patch",
+        "//bazel/kepler-patches:0003-tbb-use-the-bcr-module-instead-of-a-cmake-build.patch",
+        "//bazel/kepler-patches:0004-drop-the-python-primitive-loader-from-the-binary.patch",
+        "//bazel/kepler-patches:0005-verilog-codegen-use-bazel-built-bison-flex-m4.patch",
+        "//bazel/kepler-patches:0006-slang-codegen-use-the-builds-python-not-the-hosts.patch",
+        "//bazel/kepler-patches:0007-naja-version-header-without-host-sed.patch",
+    ],
+    strip_prefix = "kepler-formal-5eced47bf5d4330b60dcaadc7babdfdc092b0c3b",
+    urls = ["https://github.com/keplertech/kepler-formal/archive/5eced47bf5d4330b60dcaadc7babdfdc092b0c3b.tar.gz"],
+)
 
 # JavaScript / web UI — only used for JS unit tests in src/web/test
 bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
@@ -333,6 +391,9 @@ use_repo(python, "python_3_13")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
+    extra_pip_args = [
+        "--index-url=https://pypi.org/simple",
+    ],
     hub_name = "openroad-pip",
     python_version = "3.13",
     quiet = True,

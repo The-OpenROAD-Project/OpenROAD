@@ -24,12 +24,14 @@ or_integration_tests(
     boundary_push1
     centralization1
     clocked_macro
-    keep_clustering_data
+    keep_clustering_data1
+    keep_clustering_data2
     fixed_macros1
     fixed_macros2
     fixed_covers
     macros_without_pins1
     unfixed_cells_dont_fit_in_core
+    place_macro_right_angle_rotation
     placement_blockages1
     halos1
     halos2

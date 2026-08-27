@@ -23,28 +23,33 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |      10002 |       756 |      7506
-        1 |       8501 |       563 |      6147
-        2 |       6161 |       438 |      4906
-        3 |       4346 |       338 |      3652
-        4 |       3080 |       263 |      2673
-        5 |       2089 |       187 |      1851
-        6 |       1688 |       146 |      1542
-        7 |       1119 |       107 |      1006
-        8 |        810 |        84 |       726
-        9 |        623 |        63 |       560
-       10 |        354 |        44 |       295
-       20 |        139 |        15 |       124
-       30 |         51 |         7 |        44
-       34 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 34.
+        0 |       3643 |       831 |      2410
+        1 |       3642 |       870 |      2637
+        2 |       2624 |       738 |      1781
+        3 |       1978 |       678 |      1300
+        4 |       1702 |       638 |      1040
+        5 |       1363 |       527 |       836
+        6 |       1327 |       485 |       842
+        7 |        901 |       403 |       498
+        8 |        813 |       351 |       462
+        9 |        782 |       308 |       465
+       10 |        586 |       250 |       336
+       20 |        180 |        78 |       102
+       30 |         17 |        11 |         6
+       40 |         13 |         9 |         4
+       50 |          5 |         5 |         0
+       60 |         21 |         5 |        16
+       70 |          8 |         2 |         6
+       80 |          1 |         1 |         0
+       83 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 83.
 Placement Analysis
 ---------------------------------
-total displacement     295763.0 u
-average displacement       25.1 u
-max displacement         1397.2 u
+total displacement     300806.6 u
+average displacement       25.6 u
+max displacement         1402.7 u
 original HPWL         1353118.6 u
-legalized HPWL        1391930.2 u
+legalized HPWL        1395741.9 u
 delta HPWL                    3 %
 
 No differences found.

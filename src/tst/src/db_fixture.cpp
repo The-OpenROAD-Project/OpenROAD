@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <filesystem>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -21,15 +22,6 @@ namespace tst {
 
 DbFixture::DbFixture()
 {
-#ifdef BAZEL_BUILD
-  std::string error;
-  runfiles_.reset(bazel::tools::cpp::runfiles::Runfiles::CreateForTest(&error));
-
-  if (runfiles_ == nullptr) {
-    throw std::runtime_error("Could not create Runfiles object: " + error);
-  }
-#endif
-
   db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
                                                    odb::dbDatabase::destroy);
   db_->setLogger(&logger_);
@@ -63,13 +55,32 @@ std::filesystem::path findValidPath(const std::filesystem::path& relative_path)
   throw std::runtime_error("Could not find: " + relative_path.string());
 }
 
-std::string DbFixture::getFilePath(const std::string& file_path) const
+std::string getRunfilePath(const std::string& file_path)
 {
 #ifdef BAZEL_BUILD
-  return runfiles_->Rlocation(file_path);
+  // Created once per process. Runfiles resolution depends only on the
+  // environment bazel sets up for the test, so there is nothing per-fixture
+  // about it.
+  static const std::unique_ptr<bazel::tools::cpp::runfiles::Runfiles> runfiles
+      = []() {
+          std::string error;
+          std::unique_ptr<bazel::tools::cpp::runfiles::Runfiles> created(
+              bazel::tools::cpp::runfiles::Runfiles::CreateForTest(&error));
+          if (created == nullptr) {
+            throw std::runtime_error("Could not create Runfiles object: "
+                                     + error);
+          }
+          return created;
+        }();
+  return runfiles->Rlocation(file_path);
 #else
   return std::filesystem::canonical(findValidPath(file_path));
 #endif
+}
+
+std::string DbFixture::getFilePath(const std::string& file_path) const
+{
+  return getRunfilePath(file_path);
 }
 
 odb::dbTech* DbFixture::loadTechLef(const char* name,

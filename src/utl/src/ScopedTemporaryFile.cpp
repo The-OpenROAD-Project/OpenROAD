@@ -66,7 +66,9 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
   }
 }
 
-OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
+OutStreamHandler::OutStreamHandler(const char* filename,
+                                   bool binary,
+                                   std::optional<int> compression_level)
     : filename_(filename)
 {
   if (filename_.empty()) {
@@ -89,7 +91,11 @@ OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
   if (boost::ends_with(filename_, ".gz")) {
     buf_ = std::make_unique<boost::iostreams::filtering_ostreambuf>();
 
-    buf_->push(boost::iostreams::gzip_compressor());
+    boost::iostreams::gzip_params params;
+    if (compression_level.has_value()) {
+      params.level = compression_level.value();
+    }
+    buf_->push(boost::iostreams::gzip_compressor(params));
     buf_->push(os_);
 
     stream_ = std::make_unique<std::ostream>(buf_.get());

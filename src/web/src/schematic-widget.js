@@ -5,6 +5,13 @@
 // It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
 
 import { beginSelection, isCurrentSelection } from './ui-utils.js';
+import {
+    downloadBlob,
+    svgToString,
+    rasterizeSvg,
+    downloadUrl,
+    copyPngToClipboard,
+} from './image-export.js';
 
 export class SchematicWidget {
     constructor(container, appState) {
@@ -31,6 +38,9 @@ export class SchematicWidget {
             '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
             '<button id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
             '<button id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
+            '<button id="schematic-save-svg" title="Save schematic as SVG (vector)">SVG</button>' +
+            '<button id="schematic-save-png" title="Save schematic as PNG (2x)">PNG</button>' +
+            '<button id="schematic-copy" title="Copy schematic image to clipboard">Copy</button>' +
             '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>';
         this.element.appendChild(this.controls);
 
@@ -49,6 +59,9 @@ export class SchematicWidget {
         this.controls.querySelector('#schematic-zoom-out').addEventListener('click', () => this._zoomStep(1 / 1.5));
         this.controls.querySelector('#schematic-select').addEventListener('click', () => this._toggleSelectMode());
         this.controls.querySelector('#schematic-zoom-to').addEventListener('click', () => this._zoomToSelected());
+        this.controls.querySelector('#schematic-save-svg').addEventListener('click', () => this._exportSvg());
+        this.controls.querySelector('#schematic-save-png').addEventListener('click', () => this._exportPng());
+        this.controls.querySelector('#schematic-copy').addEventListener('click', () => this._copyImage());
 
         this.appState.schematicWidget = this;
 
@@ -303,6 +316,38 @@ export class SchematicWidget {
         }
     }
 
+    // Web-only: mirror the layout timing cone here when the timing widget asks
+    // to sync (see TimingWidget._applyCone).  Matches the schematic depth
+    // inputs to the cone request and re-renders for the same target.  Called
+    // from a single 'openroad-cone-sync' listener registered in main.js — kept
+    // out of the constructor so listeners don't accumulate across designs.
+    syncCone(detail = {}) {
+        const faninEl = this.controls.querySelector('#schematic-fanin-depth');
+        const fanoutEl = this.controls.querySelector('#schematic-fanout-depth');
+        // The two views read a depth differently: the timing cone treats 0 as
+        // unlimited and can have a direction switched off entirely, while
+        // handleSchematicCone expands while d < depth, so 0 means "no
+        // expansion".  Copying the number across verbatim turns the default
+        // full cone into a target-only schematic.  Translate instead: a
+        // disabled direction is 0, and unlimited becomes this control's
+        // maximum — the server caps the cone at kMaxConeInsts regardless.
+        const apply = (el, enabled, depth) => {
+            if (!el) return;
+            const max = parseInt(el.max, 10) || 10;
+            if (enabled === false) {
+                el.value = 0;
+            } else if (depth !== undefined) {
+                el.value = depth > 0 ? Math.min(depth, max) : max;
+            }
+        };
+        apply(faninEl, detail.fanin, detail.fanin_depth);
+        apply(fanoutEl, detail.fanout, detail.fanout_depth);
+        this.refresh();
+        if (this.appState.focusComponent) {
+            this.appState.focusComponent('SchematicWidget');
+        }
+    }
+
     // ── Refresh ──────────────────────────────────────────────────────────────
 
     refresh() {
@@ -349,6 +394,37 @@ export class SchematicWidget {
 
     setStatus(msg) {
         this.controls.querySelector('#schematic-status').textContent = msg;
+    }
+
+    // ── Image export ───────────────────────────────────────────────────────────
+
+    _exportSvg() {
+        if (!this._svgEl) { this.setStatus('No schematic to export.'); return; }
+        const svg = svgToString(this._svgEl);
+        downloadBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }),
+                     'schematic.svg');
+    }
+
+    async _exportPng() {
+        if (!this._svgEl) { this.setStatus('No schematic to export.'); return; }
+        try {
+            const url = await rasterizeSvg(this._svgEl, 2);
+            downloadUrl(url, 'schematic.png');
+        } catch (e) {
+            this.setStatus('PNG export failed.');
+        }
+    }
+
+    async _copyImage() {
+        if (!this._svgEl) { this.setStatus('No schematic to export.'); return; }
+        try {
+            const url = await rasterizeSvg(this._svgEl, 2);
+            const ok = await copyPngToClipboard(url);
+            this.setStatus(ok ? 'Schematic copied to clipboard.'
+                              : 'Clipboard not available.');
+        } catch (e) {
+            this.setStatus('Copy failed.');
+        }
     }
 
     // ── Render ───────────────────────────────────────────────────────────────

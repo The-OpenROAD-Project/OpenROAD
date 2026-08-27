@@ -416,10 +416,14 @@ read_db_cmd(const char *filename, bool hierarchy)
 }
 
 void
-write_db_cmd(const char *filename)
+write_db_cmd(const char *filename, int compression_level = -1)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeDb(filename);
+  std::optional<int> comp_level;
+  if (compression_level != -1) {
+    comp_level = compression_level;
+  }
+  ord->writeDb(filename, comp_level);
 }
 
 void

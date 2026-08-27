@@ -15,6 +15,10 @@ namespace odb {
 class Rect;
 }  // namespace odb
 
+namespace utl {
+class Logger;
+}  // namespace utl
+
 namespace pdn {
 
 class PdnGen;
@@ -23,7 +27,7 @@ class PdnGen;
 class PDNRenderer : public gui::Renderer
 {
  public:
-  explicit PDNRenderer(PdnGen* pdn);
+  PDNRenderer(PdnGen* pdn, utl::Logger* logger);
 
   void update();
 
@@ -38,10 +42,13 @@ class PDNRenderer : public gui::Renderer
     initial_obstructions_ = initial_obstructions;
   }
 
-  void pause();
+  // Halt the flow so the current state can be inspected in the GUI.  The
+  // reason is reported so the pause is actionable.
+  void pause(const std::string& reason);
 
  private:
   PdnGen* pdn_;
+  utl::Logger* logger_;
   Shape::ShapeTreeMap shapes_;
   Shape::ObstructionTreeMap grid_obstructions_;
   Shape::ObstructionTreeMap initial_obstructions_;
