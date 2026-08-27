@@ -780,9 +780,9 @@ class FastRouteCore
   float critical_nets_percentage_;
   float res_aware_nets_percentage_ = 15;
   bool is_fixed_nets_percentage_ = false;
-  static constexpr int kInitialResAwareNetsPercentage = 15;
-  static constexpr int kMidResAwareNetsPercentage = 30;
-  static constexpr int kFinalResAwareNetsPercentage = 100;
+  static constexpr float kInitialResAwareNetsPercentage = 15.0f;
+  static constexpr float kMidResAwareNetsPercentage = 30.0f;
+  static constexpr float kFinalResAwareNetsPercentage = 100.0f;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;
