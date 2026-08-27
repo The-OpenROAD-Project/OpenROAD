@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -128,6 +129,8 @@ class DbVia
   }
   bool hasGenerator() const { return generator_ != nullptr; }
   ViaGenerator* getGenerator() const { return generator_.get(); }
+
+  bool canCache() const;
 
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;
@@ -368,7 +371,7 @@ class DbArrayVia : public DbVia
 class DbGenerateStackedVia : public DbVia
 {
  public:
-  DbGenerateStackedVia(const std::vector<DbVia*>& vias,
+  DbGenerateStackedVia(std::vector<std::unique_ptr<DbVia>> vias,
                        odb::dbTechLayer* bottom,
                        odb::dbBlock* block);
 
@@ -427,6 +430,12 @@ class ViaGenerator
     bool must_fit_x;
     bool must_fit_y;
     bool intersection_only;
+    // Width of the metal actually drawn on this side when the layer is shared
+    // with the adjacent via of a stack: the union of the pads landing on it
+    // from the cut layer below and the cut layer above.  Width-conditioned
+    // rules are looked up against it, since that merged shape is what a DRC
+    // deck measures.  Unset when nothing else lands on the layer.
+    std::optional<int> shared_width;
   };
 
   ViaGenerator(utl::Logger* logger,
@@ -500,6 +509,8 @@ class ViaGenerator
   int getGeneratorHeight(bool bottom) const;
 
   bool recheckConstraints(const odb::Rect& rect, bool bottom);
+
+  bool canCache() const { return can_cache_; }
 
  protected:
   int getMaxRows() const { return max_rows_; }
@@ -585,12 +596,16 @@ class ViaGenerator
   std::unique_ptr<Enclosure> bottom_enclosure_;
   std::unique_ptr<Enclosure> top_enclosure_;
 
+  bool can_cache_ = true;
+
+  std::optional<int> getSharedLayerWidth(bool bottom) const;
+
   void determineCutClass();
   bool checkMinCuts() const;
   bool checkMinCuts(odb::dbTechLayer* layer, int width) const;
   bool appliesToLayers(odb::dbTechLayer* lower, odb::dbTechLayer* upper) const;
 
-  bool checkMinEnclosure() const;
+  bool checkMinEnclosure(bool check_bottom = true, bool check_top = true) const;
 
   std::vector<odb::dbTechLayerCutEnclosureRule*> getCutMinimumEnclosureRules(
       int width,

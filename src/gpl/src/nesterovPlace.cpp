@@ -1266,6 +1266,9 @@ void NesterovPlace::updateDb()
     nb->pullCoordsFromDevice();
   }
   nbc_->updateDbGCells();
+  for (auto& nb : nbVec_) {
+    nb->updateDbIoPins();
+  }
 }
 
 // divergence detection on

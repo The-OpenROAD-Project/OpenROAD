@@ -568,6 +568,10 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         rows.push_back(row);
       }
 
+      if (rows.empty()) {
+        continue;
+      }
+
       int total_row_count = rows.size();
 
       // Search the minimum site width & height as base unit for snapping and

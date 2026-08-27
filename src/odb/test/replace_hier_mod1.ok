@@ -226,6 +226,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       290 |   0.3980 |  1.150865e+02 |   +6.41% |  2.15e-07 |      
 [WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 125.13
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
       310 |   0.1280 |  2.494715e+02 | +116.77% |  5.28e-07 |      
@@ -240,6 +241,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 260.25
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 59.85 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2
@@ -391,6 +393,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 256.45
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
        10 |   0.4167 |  3.478000e+01 |  -86.42% |  1.11e-12 |      
@@ -450,6 +453,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 133.54
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 60.38 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2
@@ -606,6 +610,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 149.51
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
        10 |   0.3890 |  3.681500e+01 |  -75.38% |  1.07e-12 |      
@@ -665,6 +670,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 145.67
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 59.85 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2

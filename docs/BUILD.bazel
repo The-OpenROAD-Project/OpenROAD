@@ -10,18 +10,30 @@ man_pages(
     docs_srcs = [
         "Makefile",
         "src/man_fontfix.tmac",
-    ] + glob(["md/**/*.md"]),
+        # md/man1 holds the only checked-in markdown. md/man2 and md/man3 are
+        # written by this rule's own preprocess step, so globbing them would
+        # declare the action's outputs as its inputs: the input set would vary
+        # with leftover files from previous builds, and rewriting them trips
+        # --guard_against_concurrent_changes ("modified during execution").
+    ] + glob(["md/man1/**/*.md"]),
     messages = [
+        # The ORD messages, from src/ itself.
+        "//:messages_txt",
         "//src/ant:messages_txt",
+        "//src/cgt:messages_txt",
         "//src/cts:messages_txt",
+        "//src/cut:messages_txt",
         "//src/dbSta:messages_txt",
         "//src/dft:messages_txt",
         "//src/dpl:messages_txt",
         "//src/drt:messages_txt",
         "//src/dst:messages_txt",
+        "//src/est:messages_txt",
+        "//src/exa:messages_txt",
         "//src/fin:messages_txt",
         "//src/gpl:messages_txt",
         "//src/grt:messages_txt",
+        "//src/gui:messages_txt",
         "//src/ifp:messages_txt",
         "//src/mpl:messages_txt",
         "//src/odb:messages_txt",
@@ -30,20 +42,27 @@ man_pages(
         "//src/pdn:messages_txt",
         "//src/ppl:messages_txt",
         "//src/psm:messages_txt",
+        "//src/ram:messages_txt",
         "//src/rcx:messages_txt",
         "//src/rmp:messages_txt",
         "//src/rsz:messages_txt",
         "//src/stt:messages_txt",
+        "//src/syn:messages_txt",
         "//src/tap:messages_txt",
+        "//src/tst:messages_txt",
         "//src/upf:messages_txt",
         "//src/utl:messages_txt",
+        "//src/web:messages_txt",
     ],
     readmes = [
         "//src/ant:README.md",
+        "//src/cgt:README.md",
         "//src/cts:README.md",
         "//src/dft:README.md",
         "//src/dpl:README.md",
         "//src/drt:README.md",
+        "//src/est:README.md",
+        "//src/exa:README.md",
         "//src/fin:README.md",
         "//src/gpl:README.md",
         "//src/grt:README.md",
@@ -56,13 +75,16 @@ man_pages(
         "//src/pdn:README.md",
         "//src/ppl:README.md",
         "//src/psm:README.md",
+        "//src/ram:README.md",
         "//src/rcx:README.md",
         "//src/rmp:README.md",
         "//src/rsz:README.md",
         "//src/stt:README.md",
+        "//src/syn:README.md",
         "//src/tap:README.md",
         "//src/upf:README.md",
         "//src/utl:README.md",
+        "//src/web:README.md",
     ],
     scripts = [
         "//docs/src/scripts:link_readmes.sh",
@@ -90,6 +112,19 @@ py_test(
             "_build/**",
             "_readthedocs/**",
             "main/**",
+            # Everything docs/.gitignore lists as intermediate output: the man
+            # page build (//docs:man_pages) writes these into the source tree,
+            # so globbing them would make this test's inputs -- and so its
+            # cache key and result -- depend on whether man pages happen to
+            # have been built here. conf.py excludes all four from the Sphinx
+            # build anyway.
+            "cat/**",
+            "html/**",
+            "man/**",
+            "md/man2/**",
+            "md/man3/**",
+            "build/**",
+            "src/test/results/**",
         ],
     ) + [
         # Staged at the runfiles workspace root so conf.py's setup(app)

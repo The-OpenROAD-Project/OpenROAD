@@ -107,6 +107,8 @@ filegroup(
     visibility = ["//src/odb/test:__pkg__"],
 )
 
+# Every directory under src/ is its own package, so the sources come in through
+# extra_srcs and src_patterns only has to cover the public headers.
 messages_txt(
     extra_srcs = [
         "//src/odb/src/3dblox:message_srcs",

@@ -2546,13 +2546,15 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
   cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
 
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
-    assert(inst->getGroup() == nullptr);
-    cluster_group->addInst(inst);
+    if (inst->getGroup() == nullptr) {
+      cluster_group->addInst(inst);
+    }
   }
 
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
-    assert(macro->getGroup() == nullptr);
-    cluster_group->addInst(macro);
+    if (macro->getGroup() == nullptr) {
+      cluster_group->addInst(macro);
+    }
   }
 
   for (const auto& child : cluster->getChildren()) {
@@ -2565,6 +2567,11 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
         // Skip if it is part of a child cluster
         continue;
       }
+
+      if (inst->isBlock() && cluster->getClusterType() == StdCellCluster) {
+        continue;
+      }
+
       cluster_group->addInst(inst);
     }
   }

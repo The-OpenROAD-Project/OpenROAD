@@ -18,22 +18,23 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |        489 |       101 |       376
-        1 |        331 |        57 |       271
-        2 |         57 |        11 |        46
-        3 |         10 |         2 |         8
-        4 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 4.
+        0 |        222 |       120 |       102
+        1 |        205 |        89 |       116
+        2 |         79 |        37 |        42
+        3 |         29 |         7 |        22
+        4 |         27 |         7 |        20
+        5 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 5.
 Placement Analysis
 ---------------------------------
-total displacement       1126.5 u
-average displacement        2.1 u
-max displacement           17.6 u
+total displacement       1226.4 u
+average displacement        2.2 u
+max displacement           20.8 u
 original HPWL            6950.8 u
-legalized HPWL           8655.6 u
+legalized HPWL           8658.0 u
 delta HPWL                   25 %
 
-[INFO DPL-0020] Mirrored 134 instances
-[INFO DPL-0021] HPWL before            8655.6 u
-[INFO DPL-0022] HPWL after             8576.9 u
+[INFO DPL-0020] Mirrored 137 instances
+[INFO DPL-0021] HPWL before            8658.0 u
+[INFO DPL-0022] HPWL after             8582.9 u
 [INFO DPL-0023] HPWL delta               -0.9 %

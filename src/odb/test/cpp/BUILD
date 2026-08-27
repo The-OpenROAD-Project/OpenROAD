@@ -125,6 +125,7 @@ cc_test(
     srcs = ["TestGeom.cpp"],
     deps = [
         "//src/odb/src/db",
+        "@boost.polygon",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -375,6 +376,17 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDbStream",
+    srcs = ["TestDbStream.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

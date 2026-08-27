@@ -32,6 +32,7 @@ export REGRESSION_TEST={REGRESSION_TEST}
 export TEST_GOLDEN_FILE={TEST_GOLDEN_FILE}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
 export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
+export TEST_CHECK_METRICS={TEST_CHECK_METRICS}
 export TEST_EXPECTED_EXIT_CODE={TEST_EXPECTED_EXIT_CODE}
 exec "{bazel_test_sh}" "$@"
 """.format(
@@ -44,6 +45,7 @@ exec "{bazel_test_sh}" "$@"
             TEST_GOLDEN_FILE = ctx.file.golden_file.short_path if ctx.file.golden_file else "",
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
             TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
+            TEST_CHECK_METRICS = "True" if ctx.attr.check_metrics else "False",
             TEST_EXPECTED_EXIT_CODE = str(ctx.attr.expected_exit_code),
         ),
         is_executable = True,
@@ -82,6 +84,10 @@ regression_rule_test = rule(
         "check_log": attr.bool(
             doc = "Diff the output log against <test_name>.ok",
             default = True,
+        ),
+        "check_metrics": attr.bool(
+            doc = "Compare the flow result metrics against <test_name>.metrics_limits",
+            default = False,
         ),
         "check_passfail": attr.bool(
             doc = "Check the output log contains pass or OK in the last line",
@@ -253,41 +259,72 @@ def doc_check_test(name, **kwargs):
         **kwargs
     )
 
-def messages_txt(name = "messages_txt", src_patterns = None, extra_srcs = None, visibility = None):
+# Extensions find_messages.py scans for logger calls. Keep in sync with the
+# regex in etc/find_messages.py: an extension missing here means every message
+# in those files is missing from messages.txt, and so from its man3 page.
+_MESSAGE_SRC_EXTENSIONS = [
+    "c",
+    "cc",
+    "cpp",
+    "cxx",
+    "h",
+    "hh",
+    "i",
+    "ll",
+    "tcl",
+    "yy",
+]
+
+def message_srcs(name = "message_srcs", visibility = None):
+    """Expose a sub-package's sources to its module's messages_txt target.
+
+    glob() never crosses a package boundary, so a module whose sources live in
+    sub-packages has to collect them through filegroups listed in its
+    messages_txt extra_srcs.
+
+    Args:
+        name: Target name (default: "message_srcs").
+        visibility: Bazel visibility; the owning module's package.
+    """
+    native.filegroup(
+        name = name,
+        srcs = native.glob(
+            ["**/*." + ext for ext in _MESSAGE_SRC_EXTENSIONS],
+            allow_empty = True,
+        ),
+        visibility = visibility,
+    )
+
+def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, extra_srcs = None, visibility = None):
     """Generate messages.txt from source files using find_messages.py.
 
     Replaces per-module genrule boilerplate with a single macro call.
 
     Args:
         name: Target name (default: "messages_txt").
-        src_patterns: Glob patterns for source files. Defaults to all
-            common C++/Tcl extensions. Override for modules with
-            non-standard layouts (e.g., recursive globs for odb).
-        extra_srcs: Additional source labels from other packages (e.g.,
-            filegroups in sub-packages). When provided, files are passed
-            directly to find_messages.py instead of directory walking.
+        src_patterns: Glob patterns for source files. Defaults to every
+            scanned extension under src/. Override for modules that keep
+            messages elsewhere, e.g. odb's public headers.
+        recursive: Whether the default patterns descend into src/
+            subdirectories. Several modules keep logger calls there, so this
+            is on by default; the top-level ORD messages turn it off to avoid
+            swallowing the modules, which have their own messages_txt.
+        extra_srcs: Additional source labels from other packages, i.e.
+            message_srcs filegroups in sub-packages, which glob() cannot reach.
         visibility: Bazel visibility.
     """
     if src_patterns == None:
-        src_patterns = [
-            "src/*.cc",
-            "src/*.cpp",
-            "src/*.h",
-            "src/*.hh",
-            "src/*.tcl",
-        ]
+        prefix = "src/**/*." if recursive else "src/*."
+        src_patterns = [prefix + ext for ext in _MESSAGE_SRC_EXTENSIONS]
 
     srcs = native.glob(src_patterns, allow_empty = True)
     if extra_srcs:
         srcs = srcs + extra_srcs
 
-    # When extra_srcs are present, sources span multiple directories so
-    # the dirname-of-first-src trick doesn't work.  Pass every file
-    # path as a positional arg to find_messages.py instead.
-    if extra_srcs:
-        cmd = "$(PYTHON3) $(location //etc:find_messages.py) $(SRCS) > $@"
-    else:
-        cmd = "$(PYTHON3) $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@"
+    # Scan exactly the declared srcs. find_messages.py can also walk a
+    # directory, but the sources span several directories and the walk root
+    # would have to be guessed from them.
+    cmd = "$(PYTHON3) $(location //etc:find_messages.py) $(SRCS) > $@"
 
     native.genrule(
         name = name,

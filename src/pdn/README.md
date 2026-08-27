@@ -404,7 +404,7 @@ repair_pdn_vias
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](../src/PdnGen.cc) or the [swig file](PdnGen.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/PdnGen.cc) or the [swig file](./src/PdnGen.i).
 
 | Command Name | Description |
 | ----- | ----- |
