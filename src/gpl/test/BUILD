@@ -216,6 +216,20 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "placer_base_test",
+    srcs = ["placer_base_test.cpp"],
+    deps = [
+        "//src/gpl",
+        "//src/gpl:gpl_private_hdrs",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "gpl_man_tcl_check",
     srcs = ["gpl_man_tcl_check.py"],
