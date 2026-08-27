@@ -35,12 +35,13 @@
 
 // ─── Opacity ────────────────────────────────────────────────────────────────
 //
-// Today each layer's opacity is applied by Leaflet to the layer's CONTAINER div,
-// not to the individual tile images: GridLayer._updateOpacity() calls
-// setOpacity(this._container, this.options.opacity).  The values differ per
-// layer — routing layers are created at 0.7, while _instances, _pins and
-// _modules are left at the default 1 — so the merge has to carry opacity
-// per item and cannot assume a single value.
+// Each layer's opacity is applied by Leaflet to the layer's CONTAINER div, not
+// to the individual tile images: GridLayer._updateOpacity() calls
+// setOpacity(this._container, this.options.opacity).  Every layer is created at
+// 1 — layer transparency lives in the tile pixels themselves, painted with the
+// palette alpha the Qt GUI uses — but the merge still carries opacity per item
+// rather than assuming one value, so a pane that does want partial opacity
+// composites correctly.
 //
 // Group opacity on a container is NOT generally the same thing as per-image
 // alpha: a group is rasterized at full alpha and then blended once, so anywhere
@@ -55,10 +56,10 @@
 // DO overlap.  That is pre-existing behaviour at the layer level and applies
 // equally to a merged pane, so it is not made worse here.)
 //
-// The trap: the merged result is itself a tile inside a pane.  If that pane also
-// carried opacity 0.7, every source would be multiplied by 0.7 twice — 0.49 —
-// and the view would wash out.  The per-layer opacities now live INSIDE the
-// canvas, so the pane holding it must be fully opaque.
+// The trap: the merged result is itself a tile inside a pane.  If that pane
+// carried a source's opacity too, every source would be multiplied by it twice
+// — 0.7 becomes 0.49 — and the view would wash out.  The per-layer opacities
+// live INSIDE the canvas, so the pane holding it must be fully opaque.
 export const MERGED_PANE_OPACITY = 1;
 
 // Build the Leaflet options for a merged pane, so a caller cannot forget the

@@ -846,7 +846,8 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   // gradient information, and the maze starts thrashing.
   constexpr double kMultiplierStep = 1.0;
   constexpr double kMultiplierCap = 6.0;
-  constexpr double kCongestionThreshold = 0.9;
+  // Only rip up nets crossing genuinely over-capacity edges.
+  constexpr double kCongestionThreshold = 1.0;
   // Iterations in the congested set before an NDR net is demoted.
   constexpr int kSoftNdrStreakThreshold = 2;
 
@@ -1623,9 +1624,15 @@ std::shared_ptr<GRTreeNode> CUGR::buildTreeFromRoute(const GRoute& route) const
   };
 
   for (const GSegment& segment : route) {
-    const int init_layer = segment.init_layer - 1;
-    const int final_layer = segment.final_layer - 1;
+    int init_layer = segment.init_layer - 1;
+    int final_layer = segment.final_layer - 1;
     const int num_layers = grid_graph_->getNumLayers();
+    if (segment.isVia()) {
+      // connectTopLevelPins stacks vias above the ceiling for top-metal pins;
+      // clamp to a bare node instead of rejecting the whole tree.
+      init_layer = std::min(init_layer, num_layers - 1);
+      final_layer = std::min(final_layer, num_layers - 1);
+    }
     if (init_layer < 0 || init_layer >= num_layers || final_layer < 0
         || final_layer >= num_layers) {
       // Malformed/out-of-range segment; fall back to a reroute.

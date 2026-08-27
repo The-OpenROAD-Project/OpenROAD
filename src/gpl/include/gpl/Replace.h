@@ -167,6 +167,7 @@ class Replace
                          bool check_density);
   void checkHasCoreRows();
   void checkPlaceIosSupported(const PlaceOptions& options);
+  void reportHpwlMetric();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

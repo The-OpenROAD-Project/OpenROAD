@@ -1715,7 +1715,11 @@ void GlobalRouter::updatePinAccessPoints(Net* net, odb::dbNet* db_net)
   auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
     if (auto it = ap_map.find(term); it != ap_map.end()) {
       const auto& ap = it->second;
-      pin.setConnectionLayer(ap.z());
+      // CUGR clamps its APs to the ceiling; keep a top-metal pin's real layer
+      // so connectTopLevelPins still stacks the vias above it.
+      if (pin.getConnectionLayer() <= getMaxRoutingLayer()) {
+        pin.setConnectionLayer(ap.z());
+      }
       pin.setOnGridPosition(
           grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
     }

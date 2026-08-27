@@ -517,6 +517,15 @@ class Selected
 
   Descriptor::Actions getActions() const;
 
+  // The descriptor's own actions, without the "Zoom to" entry that
+  // getActions() appends.  Unlike getActions() (defined in the full gui
+  // library because "Zoom to" needs Gui::get()), this is usable from
+  // code that only links the lightweight gui_descriptors library.
+  Descriptor::Actions getDescriptorActions() const
+  {
+    return descriptor_->getActions(object_);
+  }
+
   Descriptor::Editors getEditors() const
   {
     return descriptor_->getEditors(object_);

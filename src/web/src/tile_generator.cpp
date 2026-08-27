@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <functional>
 #include <iterator>
 #include <map>
@@ -16,8 +18,10 @@
 #include <numbers>
 #include <random>
 #include <set>
+#include <span>  // NOLINT(build/c++20)
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -43,6 +47,7 @@
 #include "third-party/lodepng/lodepng.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "utl/ThreadPool.h"
 #include "utl/algorithms.h"
 #include "web_painter.h"
 
@@ -73,6 +78,183 @@ std::string dbuToMicronString(const int dbu, const double dbu_per_micron)
 }
 
 namespace {
+
+// The pixel helpers below move Color as a 4-byte word.
+static_assert(sizeof(Color) == 4 && std::is_trivially_copyable_v<Color>);
+
+inline void copyRGBA(unsigned char* dst, const unsigned char* src)
+{
+  std::memcpy(dst, src, sizeof(uint32_t));
+}
+
+inline void copyRGBA(unsigned char* dst, const Color& src)
+{
+  std::memcpy(dst, &src, sizeof(uint32_t));
+}
+
+inline void zeroRGBA(unsigned char* dst)
+{
+  std::memset(dst, 0, 4);
+}
+
+bool anyNonZero(std::span<const unsigned char> data)
+{
+  // OR-reduce 64-byte (cache-line) blocks eight u64 at a time; the compiler
+  // vectorizes this where it can.
+  while (data.size() >= 64) {
+    std::array<uint64_t, 8> chunk;
+    std::memcpy(chunk.data(), data.data(), 64);
+    if ((chunk[0] | chunk[1] | chunk[2] | chunk[3] | chunk[4] | chunk[5]
+         | chunk[6] | chunk[7])
+        != 0) {
+      return true;
+    }
+    data = data.subspan(64);
+  }
+
+  // Remaining 0-63 bytes.
+  return std::any_of(
+      data.begin(), data.end(), [](unsigned char b) { return b != 0; });
+}
+
+// Fast division by 255 with proper rounding: (v + 128 + ((v + 128) >> 8)) >> 8
+constexpr int div255(int v)
+{
+  return (v + 128 + ((v + 128) >> 8)) >> 8;
+}
+
+// Alpha-composite src onto dst (Porter-Duff "over") using pure fixed-point
+// arithmetic.
+inline void compositePixel(unsigned char* dst, const unsigned char* src)
+{
+  const uint32_t sa = src[3];
+  if (sa == 0) {
+    return;
+  }
+
+  const uint32_t da = dst[3];
+  if (sa == 255 || da == 0) {
+    copyRGBA(dst, src);
+    return;
+  }
+
+  // Porter-Duff Over: out_a = sa + da * (255 - sa) / 255
+  const uint32_t da_contrib = div255(da * (255 - sa));
+  const uint32_t out_a = sa + da_contrib;  // >= sa >= 1, never 0
+
+  // Blend weight: t = src_a / out_a in 16.16 fixed-point (single integer
+  // division)
+  const uint32_t t_fp = (sa << 16) / out_a;
+
+  auto lerp_ch = [t_fp](uint32_t d, uint32_t s) -> unsigned char {
+    int32_t diff = static_cast<int32_t>(s) - static_cast<int32_t>(d);
+    // t_fp <= 1.0 so the result lies between d and s: no clamp needed.
+    const int32_t res = static_cast<int32_t>(d)
+                        + ((diff * static_cast<int32_t>(t_fp) + 0x8000) >> 16);
+    return static_cast<unsigned char>(res);
+  };
+
+  dst[0] = lerp_ch(dst[0], src[0]);
+  dst[1] = lerp_ch(dst[1], src[1]);
+  dst[2] = lerp_ch(dst[2], src[2]);
+  dst[3] = static_cast<unsigned char>(out_a);
+}
+
+inline void compositePixel(unsigned char* dst, const Color& src)
+{
+  unsigned char src_bytes[4];
+  copyRGBA(src_bytes, src);
+  compositePixel(dst, src_bytes);
+}
+
+// Fills a contiguous row of RGBA pixels with a solid color.
+void fillSpan(std::span<unsigned char> dst, const Color& color)
+{
+  assert(dst.size() % sizeof(uint32_t) == 0);  // whole RGBA pixels only
+  uint32_t c = 0;
+  std::memcpy(&c, &color, sizeof(uint32_t));
+
+  std::array<uint32_t, 16> block;
+  block.fill(c);
+
+  while (dst.size() >= 64) {
+    std::memcpy(dst.data(), block.data(), 64);
+    dst = dst.subspan(64);
+  }
+
+  // Trailing pixels (fewer than 16).
+  while (dst.size() >= sizeof(uint32_t)) {
+    std::memcpy(dst.data(), &c, sizeof(uint32_t));
+    dst = dst.subspan(sizeof(uint32_t));
+  }
+}
+
+// Alpha-composites a dim x dim RGBA tile onto `dst` (row stride
+// `dst_stride_px` pixels) with its top-left corner at (ox, oy).  Transparent
+// rows and pixels are skipped, which is most of a sparse layer tile.  The
+// caller guarantees the tile lies inside dst.
+void compositeTile(std::span<const unsigned char> tile,
+                   const int dim,
+                   unsigned char* dst,
+                   const size_t dst_stride_px,
+                   const int ox,
+                   const int oy)
+{
+  const size_t row_bytes = static_cast<size_t>(dim) * 4;
+  for (int py = 0; py < dim; ++py) {
+    const unsigned char* srow = &tile[py * row_bytes];
+    if (!anyNonZero({srow, row_bytes})) {
+      continue;
+    }
+    unsigned char* drow = &dst[(static_cast<size_t>(oy + py) * dst_stride_px
+                                + static_cast<size_t>(ox))
+                               * 4];
+    for (int px = 0; px < dim; ++px) {
+      compositePixel(&drow[px * 4], &srow[px * 4]);
+    }
+  }
+}
+
+// Splits [0, n) into up to `threads` contiguous ranges and runs
+// fn(begin, end) on each, on `pool` when given and on the calling thread
+// otherwise.  The first exception thrown by a worker is rethrown after all
+// chunks finish.
+template <typename F>
+void parallelRanges(utl::ThreadPool* pool,
+                    const int threads,
+                    const int n,
+                    const F& fn)
+{
+  const int chunks = std::min(n, threads);
+  if (pool == nullptr || chunks <= 1) {
+    fn(0, n);
+    return;
+  }
+  std::vector<utl::ThreadPoolFuture<void>> futures;
+  futures.reserve(chunks);
+  for (int t = 0; t < chunks; ++t) {
+    const int begin = static_cast<int>((static_cast<int64_t>(t) * n) / chunks);
+    const int end
+        = static_cast<int>((static_cast<int64_t>(t + 1) * n) / chunks);
+    futures.push_back(pool->submit([&fn, begin, end]() { fn(begin, end); }));
+  }
+  // Collect the first exception while still calling get() on every future to
+  // join all chunks before returning or rethrowing. This prevents outstanding
+  // tasks from invoking a destroyed stack lambda during stack unwinding.
+  std::exception_ptr first_exception;
+  for (auto& f : futures) {
+    try {
+      f.get();
+    } catch (...) {
+      if (first_exception == nullptr) {
+        first_exception = std::current_exception();
+      }
+    }
+  }
+  if (first_exception != nullptr) {
+    std::rethrow_exception(first_exception);
+  }
+}
 
 // Supersample factor for band-limited tile rasterization (anti-moiré).  The
 // tile is rendered at kCoverageSupersample x the output resolution and then
@@ -226,6 +408,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"special_nets",       &TileVisibility::special_nets,       true},
     {"srouting_segments",  &TileVisibility::srouting_segments,  true},
     {"srouting_vias",      &TileVisibility::srouting_vias,      true},
+    {"labels",             &TileVisibility::labels,             true},
     {"pins",               &TileVisibility::pins,               true},
     {"pin_markers",        &TileVisibility::pin_markers,        true},
     {"pin_names",          &TileVisibility::pin_names,          true},
@@ -2047,7 +2230,9 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const bool has_visible_layers,
     const std::set<std::string>& visible_layers,
     const double dpr,
-    const int requested_tile_px) const
+    const int requested_tile_px,
+    const std::vector<ColoredPolygon>& colored_polys,
+    const std::vector<TextLabel>& labels) const
 {
   // Same contract as renderTileBuffer: the client states the device-pixel
   // square it will display this tile in, because an overlay drawn at a
@@ -2070,7 +2255,8 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
 
   // Short-circuit: if there's nothing to draw, return a blank tile.
   if (highlight_rects.empty() && highlight_polys.empty()
-      && colored_rects.empty() && flight_lines.empty()
+      && colored_rects.empty() && colored_polys.empty() && flight_lines.empty()
+      && labels.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
     std::vector<unsigned char> png;
     lodepng::encode(png, image, dim, dim);
@@ -2101,8 +2287,14 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     // their per-layer tag (the overlay sits above all base layers).
     drawColoredHighlight(image, colored_rects, "", frame);
   }
+  if (!colored_polys.empty()) {
+    drawColoredPolygons(image, colored_polys, frame);
+  }
   if (!flight_lines.empty()) {
     drawFlightLines(image, flight_lines, frame);
+  }
+  if (!labels.empty()) {
+    drawTextLabels(image, labels, frame);
   }
   if (route_guide_net_ids && !route_guide_net_ids->empty()) {
     // Draw route guides only for visible tech layers.
@@ -2545,7 +2737,11 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
   }
   int layer_z = kTechLayerZBase;
   for (const std::string& name : tech_layers) {
-    ordered.emplace_back(layer_z++, name);
+    const int current_z = layer_z++;
+    if (vis.has_visible_layers && !vis.visible_layers.contains(name)) {
+      continue;
+    }
+    ordered.emplace_back(current_z, name);
   }
   for (const PseudoLayerDef& def : pseudoLayerDefs()) {
     if (vis.*def.flag) {
@@ -2738,11 +2934,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // Supersampled render buffer (RGBA, super x super).  The per-chiplet loop
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
-    // thread_local (renders run one-per-thread) so the large buffer is reused
-    // across tiles; assign() re-zeroes it (drawing is sparse, so it must start
-    // transparent).
+    // thread_local so the large buffer is reused across the tiles a thread
+    // renders without reallocating.
     static thread_local std::vector<unsigned char> super_buffer;
-    super_buffer.assign(super_buffer_size, 0);
+    if (super_buffer.size() != static_cast<size_t>(super_buffer_size)) {
+      super_buffer.resize(super_buffer_size);
+    }
+    std::memset(super_buffer.data(), 0, super_buffer_size);
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
     // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
@@ -3280,15 +3478,21 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
             }
             if (dbu_y_min <= yl && yl <= dbu_y_max) {
-              for (int ix = loop_xl; ix < loop_xh; ++ix) {
-                const int draw_y = (super - 1 - draw_yl);
-                setPixel(image_buffer, ix, draw_y, gray);
+              const int draw_y = (super - 1 - draw_yl);
+              const int width = loop_xh - loop_xl;
+              if (width > 0) {
+                unsigned char* row
+                    = &image_buffer[(draw_y * super + loop_xl) * 4];
+                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
               }
             }
             if (dbu_y_min <= yh && yh <= dbu_y_max) {
-              for (int ix = loop_xl; ix < loop_xh; ++ix) {
-                const int draw_y = (super - 1 - draw_yh);
-                setPixel(image_buffer, ix, draw_y, gray);
+              const int draw_y = (super - 1 - draw_yh);
+              const int width = loop_xh - loop_xl;
+              if (width > 0) {
+                unsigned char* row
+                    = &image_buffer[(draw_y * super + loop_xl) * 4];
+                fillSpan({row, static_cast<size_t>(width) * 4}, gray);
               }
             }
 
@@ -3975,19 +4179,57 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                      grid != nullptr,
                      vis.tracks_pref,
                      vis.tracks_non_pref);
-          if (grid) {
+          // Clip the tracks to the die area, as the Qt GUI does
+          // (RenderThread::drawTracks: draw_bounds = die.intersect(bounds)).
+          // A track line drawn to the tile edge runs past the chip in any
+          // design whose block bbox reaches beyond the die area — and the
+          // viewport follows that bbox (see getBounds) — leaving tracks
+          // floating outside the die.  Same shape as drawGCellGridLayer.
+          const odb::Rect die_area = block->getDieArea();
+          if (grid && dbu_tile.intersects(die_area)) {
+            const odb::Rect draw_bounds = dbu_tile.intersect(die_area);
+            // Span of the clipped region in buffer pixels (Y flipped).  Shared
+            // by every track of this tile, so neighbouring tiles agree on where
+            // the lines stop and the seams stay aligned.
+            const int pxl = toPxX(draw_bounds.xMin(), frame);
+            const int pxh = toPxX(draw_bounds.xMax(), frame);
+            const int pyl = toPxY(draw_bounds.yMin(), frame, super);
+            const int pyh = toPxY(draw_bounds.yMax(), frame, super);
+
             Color track_color = color;
             track_color.a = 150;
             const bool is_horizontal
                 = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+            // One buffer pixel, as before this clip existed: hairlineCss()
+            // would read as a thickness change rather than the intended
+            // geometry fix.  drawLine composites with blendPixel, so the
+            // 150-alpha blend is unchanged too.
+            constexpr int kTrackWidth = 1;
+
+            // Walk only the lines inside `draw_bounds`, over odb's own
+            // (memoized, sorted) grid vector.  dbTrackGrid offers a
+            // const-ref accessor next to the out-parameter one, so neither
+            // the copy nor the full scan is needed: metal1 of bp_quad has
+            // 18 947 x-tracks, and the copy alone was ~178 KB per layer-tile.
+            // drawGCellGridLayer keeps a cache of its own only because
+            // dbGCellGrid lacks this accessor.
+            const auto draw_clipped = [&](const std::vector<int>& lines,
+                                          const int lo,
+                                          const int hi,
+                                          const auto& draw_one) {
+              for (auto it = std::ranges::lower_bound(lines, lo);
+                   it != lines.end() && *it <= hi;
+                   ++it) {
+                draw_one(*it);
+              }
+            };
 
             // X-direction tracks (vertical lines on screen)
             // Preferred for vertical layers, non-preferred for horizontal
             // layers
             if ((!is_horizontal && vis.tracks_pref)
                 || (is_horizontal && vis.tracks_non_pref)) {
-              std::vector<int> x_grid;
-              grid->getGridX(x_grid);
+              const std::vector<int>& x_grid = grid->getGridX();
               debugPrint(logger_,
                          utl::WEB,
                          "tile",
@@ -3998,17 +4240,17 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                          dbu_tile.yMin(),
                          dbu_tile.xMax(),
                          dbu_tile.yMax());
-              for (int tx : x_grid) {
-                if (tx < dbu_x_min || tx > dbu_x_max) {
-                  continue;
-                }
-                const int px = static_cast<int>((tx - dbu_x_min) * scale);
-                if (px >= 0 && px < super) {
-                  for (int py = 0; py < super; ++py) {
-                    blendPixel(image_buffer, px, py, track_color);
-                  }
-                }
-              }
+              draw_clipped(
+                  x_grid, draw_bounds.xMin(), draw_bounds.xMax(), [&](int tx) {
+                    const int px = toPxX(tx, frame);
+                    drawLine(image_buffer,
+                             px,
+                             pyl,
+                             px,
+                             pyh,
+                             track_color,
+                             kTrackWidth);
+                  });
             }
 
             // Y-direction tracks (horizontal lines on screen)
@@ -4016,33 +4258,31 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // layers
             if ((is_horizontal && vis.tracks_pref)
                 || (!is_horizontal && vis.tracks_non_pref)) {
-              std::vector<int> y_grid;
-              grid->getGridY(y_grid);
+              const std::vector<int>& y_grid = grid->getGridY();
               debugPrint(logger_,
                          utl::WEB,
                          "tile",
                          1,
                          "  y_tracks: count={}",
                          y_grid.size());
-              for (int ty : y_grid) {
-                if (ty < dbu_y_min || ty > dbu_y_max) {
-                  continue;
-                }
-                const int py
-                    = super - 1 - static_cast<int>((ty - dbu_y_min) * scale);
-                if (py >= 0 && py < super) {
-                  for (int px = 0; px < super; ++px) {
-                    blendPixel(image_buffer, px, py, track_color);
-                  }
-                }
-              }
+              draw_clipped(
+                  y_grid, draw_bounds.yMin(), draw_bounds.yMax(), [&](int ty) {
+                    const int py = toPxY(ty, frame, super);
+                    drawLine(image_buffer,
+                             pxl,
+                             py,
+                             pxh,
+                             py,
+                             track_color,
+                             kTrackWidth);
+                  });
             }
           }
         }
 
       }  // end if (!pseudo_layer)
 
-      if (use_local) {
+      if (use_local && anyNonZero(local_image_buffer)) {
         // Slow-path compositing for chiplets with non-R0 orientations.
         // Forward-mapping (iterate the local buffer, write to world)
         // leaves gaps when the rotation is non-identity because some
@@ -4089,11 +4329,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // geometry so no beat survives at the output (physical) pixel grid.
     // Empty tiles (common while panning) skip the decimation entirely:
     // world_image_buffer already holds a transparent tile_px buffer, and a
-    // transparent super buffer cannot alias.  any_of early-exits as soon as it
-    // hits drawn content, so non-empty tiles pay almost nothing for the check.
-    const bool any_drawn = std::ranges::any_of(
-        super_buffer, [](const unsigned char b) { return b != 0; });
-    if (any_drawn) {
+    // transparent super buffer cannot alias.  anyNonZero early-exits on the
+    // first drawn byte, so non-empty tiles pay almost nothing for the check.
+    if (anyNonZero(super_buffer)) {
       world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
     }
 
@@ -4308,28 +4546,6 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   return png_data;
 }
 
-// Alpha-composite src onto dst (Porter-Duff "over").
-static void compositePixel(unsigned char* dst, const unsigned char* src)
-{
-  const int sa = src[3];
-  if (sa == 0) {
-    return;
-  }
-  if (sa == 255 || dst[3] == 0) {
-    std::memcpy(dst, src, 4);
-    return;
-  }
-  const int da = dst[3];
-  const int out_a = sa + da * (255 - sa) / 255;
-  if (out_a == 0) {
-    return;
-  }
-  for (int c = 0; c < 3; ++c) {
-    dst[c] = (src[c] * sa + dst[c] * da * (255 - sa) / 255) / out_a;
-  }
-  dst[3] = out_a;
-}
-
 // ---------------------------------------------------------------------------
 // Band-limited decimation (anti-moiré).
 //
@@ -4447,19 +4663,36 @@ static std::vector<unsigned char> lanczos2Downsample(
   // every element is overwritten below, so no re-zeroing is needed.
   static thread_local std::vector<float> inter;
   inter.resize(static_cast<size_t>(src_dim) * dst_dim * 4);
+  const size_t src_row_bytes = static_cast<size_t>(src_dim) * 4;
+
   for (int sy = 0; sy < src_dim; ++sy) {
-    const unsigned char* srow = &src[static_cast<size_t>(sy) * src_dim * 4];
+    const unsigned char* srow = &src[static_cast<size_t>(sy) * src_row_bytes];
+    float* inter_row = &inter[static_cast<size_t>(sy) * dst_dim * 4];
+
+    // Fast path: if the entire source row is transparent (common in sparse
+    // layers), write zeros to the intermediate row and continue.
+    const bool row_empty = !anyNonZero({srow, src_row_bytes});
+    if (row_empty) {
+      std::memset(
+          inter_row, 0, static_cast<size_t>(dst_dim) * 4 * sizeof(float));
+      continue;
+    }
+
     for (int ox = 0; ox < dst_dim; ++ox) {
       float r = 0, g = 0, b = 0, a = 0;
       for (const auto& [sx, w] : taps[ox]) {
         const unsigned char* p = &srow[static_cast<size_t>(sx) * 4];
-        const float pa = p[3];
-        r += w * (p[0] * pa / 255.0f);
-        g += w * (p[1] * pa / 255.0f);
-        b += w * (p[2] * pa / 255.0f);
-        a += w * pa;
+        const unsigned char pa = p[3];
+        if (pa == 0) {
+          continue;
+        }
+        const float scale_w = (w * static_cast<float>(pa)) * (1.0f / 255.0f);
+        r += p[0] * scale_w;
+        g += p[1] * scale_w;
+        b += p[2] * scale_w;
+        a += w * static_cast<float>(pa);
       }
-      float* out = &inter[(static_cast<size_t>(sy) * dst_dim + ox) * 4];
+      float* out = &inter_row[ox * 4];
       out[0] = r;
       out[1] = g;
       out[2] = b;
@@ -4474,20 +4707,28 @@ static std::vector<unsigned char> lanczos2Downsample(
       float r = 0, g = 0, b = 0, a = 0;
       for (const auto& [sy, w] : taps[oy]) {
         const float* p = &inter[(static_cast<size_t>(sy) * dst_dim + ox) * 4];
+        const float pa = p[3];
+        if (pa == 0.0f) {
+          continue;
+        }
         r += w * p[0];
         g += w * p[1];
         b += w * p[2];
-        a += w * p[3];
+        a += w * pa;
       }
       unsigned char* d = &dst[(static_cast<size_t>(oy) * dst_dim + ox) * 4];
       const float ai = std::clamp(a, 0.0f, 255.0f);
-      if (ai <= 0.0f) {
+      // Alpha below 0.5 rounds to 0 below; emit a fully-zero pixel rather
+      // than (255/ai)-amplified colour under a zero alpha, which would defeat
+      // the transparent-buffer early exits downstream.
+      if (ai < 0.5f) {
         d[0] = d[1] = d[2] = d[3] = 0;
         continue;
       }
+      const float inv_ai = 255.0f / ai;
       const auto unpremult = [&](const float ch) {
         return static_cast<unsigned char>(
-            std::lround(std::clamp(ch * 255.0f / ai, 0.0f, 255.0f)));
+            std::lround(std::clamp(ch * inv_ai, 0.0f, 255.0f)));
       };
       d[0] = unpremult(r);
       d[1] = unpremult(g);
@@ -4498,16 +4739,19 @@ static std::vector<unsigned char> lanczos2Downsample(
   return dst;
 }
 
-void TileGenerator::saveImage(const std::string& filename,
-                              const odb::Rect& region,
-                              const int width_px,
-                              const double dbu_per_pixel,
-                              const TileVisibility& vis) const
+std::vector<unsigned char> TileGenerator::renderImageBuffer(
+    const odb::Rect& region,
+    const int width_px,
+    const double dbu_per_pixel,
+    const TileVisibility& vis,
+    const Color& bg,
+    int* out_width,
+    int* out_height) const
 {
   odb::dbBlock* block = getBlock();
   if (!block) {
     logger_->error(utl::WEB, 20, "No design loaded.");
-    return;
+    return {};
   }
 
   // Determine rendering region (DBU).
@@ -4539,7 +4783,7 @@ void TileGenerator::saveImage(const std::string& filename,
 
   if (img_w <= 0 || img_h <= 0) {
     logger_->error(utl::WEB, 21, "Invalid image dimensions.");
-    return;
+    return {};
   }
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
@@ -4585,43 +4829,68 @@ void TileGenerator::saveImage(const std::string& filename,
                      std::ceil((area.yMax() - bounds.yMin()) / tile_dbu_size)));
 
   // Allocate output buffer (RGBA).
-  const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
-  const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
+  const int total_tiles_x = tx_max - tx_min + 1;
+  const int total_tiles_y = ty_max - ty_min + 1;
+  const int total_tiles = total_tiles_x * total_tiles_y;
+  const int tile_span_w = total_tiles_x * kTileSizeInPixel;
+  const int tile_span_h = total_tiles_y * kTileSizeInPixel;
   std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
   const std::vector<std::string> layers_to_render
       = saveImageLayerOrder(vis, getLayers());
 
-  // Render each tile, compositing all layers.
-  for (int ty = ty_min; ty <= ty_max; ++ty) {
-    for (int tx = tx_min; tx <= tx_max; ++tx) {
-      // Tile position in the output buffer.
-      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
-      // Y is flipped: tile_y in generateTile is bottom-up, output is top-down.
-      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
+  // Snapshot the user labels once (locks labels_mutex_ + copies) instead of
+  // per tile — the set is identical for every tile in the image.  Skipped
+  // when Labels is off, so a saved image can reproduce a view with them
+  // hidden; Qt gates its own drawLabels the same way.
+  const std::vector<TextLabel> labels
+      = vis.labels ? labelsForDraw() : std::vector<TextLabel>{};
 
+  // Render each tile.  Each (tx, ty) tile maps to a disjoint rectangle of
+  // `output`, so tiles render concurrently without locking.
+  const int num_threads
+      = num_threads_ > 0 ? num_threads_ : (sta_ ? sta_->threadCount() : 1);
+  std::unique_ptr<utl::ThreadPool> thread_pool;
+  if (num_threads > 1 && total_tiles > 1) {
+    thread_pool = std::make_unique<utl::ThreadPool>(num_threads);
+  }
+
+  auto render_tiles = [&](const int start_tile, const int end_tile) {
+    for (int tile_idx = start_tile; tile_idx < end_tile; ++tile_idx) {
+      const int tx = tx_min + (tile_idx % total_tiles_x);
+      const int ty = ty_min + (tile_idx / total_tiles_x);
+      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+      // Y is flipped: ty is bottom-up, output is top-down.
+      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
       // Leaflet-style y coordinate (before the flip in renderTileBuffer).
       const int leaflet_y = num_tiles - 1 - ty;
 
       for (const auto& layer : layers_to_render) {
-        auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
+        const auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
+        compositeTile(tile_buf,
+                      kTileSizeInPixel,
+                      output.data(),
+                      tile_span_w,
+                      out_ox,
+                      out_oy);
+      }
 
-        // Composite tile onto output at (out_ox, out_oy).
-        for (int py = 0; py < kTileSizeInPixel; ++py) {
-          for (int px = 0; px < kTileSizeInPixel; ++px) {
-            const int src_idx = (py * kTileSizeInPixel + px) * 4;
-            const int dst_x = out_ox + px;
-            const int dst_y = out_oy + py;
-            if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
-              continue;
-            }
-            const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
-            compositePixel(&output[dst_idx], &tile_buf[src_idx]);
-          }
+      // User text labels go on top of all layers (Qt parity: labels appear
+      // in save_image).
+      if (!labels.empty()) {
+        const auto label_buf = renderLabelTile(z, tx, leaflet_y, labels);
+        if (!label_buf.empty()) {
+          compositeTile(label_buf,
+                        kTileSizeInPixel,
+                        output.data(),
+                        tile_span_w,
+                        out_ox,
+                        out_oy);
         }
       }
     }
-  }
+  };
+  parallelRanges(thread_pool.get(), num_threads, total_tiles, render_tiles);
 
   // Crop to the exact requested area.
   // The tile span covers a larger region; compute the pixel offset of the
@@ -4635,28 +4904,104 @@ void TileGenerator::saveImage(const std::string& filename,
   const int crop_y
       = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
 
-  // Resample to exact requested dimensions (nearest-neighbor from tile_scale
-  // to target scale).
-  std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
+  // Precompute 1D coordinate maps for nearest-neighbor resampling.
+  std::vector<int> map_x(final_w);
+  for (int fx = 0; fx < final_w; ++fx) {
+    map_x[fx] = crop_x + static_cast<int>(fx * tile_scale / scale);
+  }
+  std::vector<int> map_y(final_h);
   for (int fy = 0; fy < final_h; ++fy) {
-    for (int fx = 0; fx < final_w; ++fx) {
-      // Map final pixel to tile-span pixel.
-      const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
-      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
-      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
-        const int src_idx = (sy * tile_span_w + sx) * 4;
-        const int dst_idx = (fy * final_w + fx) * 4;
-        std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
-      }
-    }
+    map_y[fy] = crop_y + static_cast<int>(fy * tile_scale / scale);
   }
 
-  // Encode to PNG and save.
+  // Resample to exact requested dimensions (nearest-neighbor from tile_scale
+  // to target scale) in parallel.  Start from the requested background color
+  // and composite the (possibly semi-transparent) tiles on top, so the saved
+  // image matches the viewer's background instead of coming out transparent.
+  std::vector<unsigned char> final_buf(4UL * final_w * final_h);
+
+  auto resample_rows = [&](const int start_y, const int end_y) {
+    for (int fy = start_y; fy < end_y; ++fy) {
+      unsigned char* dst_row
+          = &final_buf[static_cast<size_t>(fy) * final_w * 4];
+      const int sy = map_y[fy];
+      if (sy < 0 || sy >= tile_span_h) {
+        fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
+        continue;
+      }
+      const unsigned char* src_row
+          = &output[static_cast<size_t>(sy) * tile_span_w * 4];
+      if (!anyNonZero({src_row, static_cast<size_t>(tile_span_w * 4)})) {
+        fillSpan({dst_row, static_cast<size_t>(final_w * 4)}, bg);
+        continue;
+      }
+      for (int fx = 0; fx < final_w; ++fx) {
+        const int sx = map_x[fx];
+        unsigned char* dp = &dst_row[fx * 4];
+        copyRGBA(dp, bg);
+        if (sx >= 0 && sx < tile_span_w) {
+          compositePixel(dp, &src_row[sx * 4]);
+        }
+      }
+    }
+  };
+
+  parallelRanges(thread_pool.get(), num_threads, final_h, resample_rows);
+
+  if (out_width) {
+    *out_width = final_w;
+  }
+  if (out_height) {
+    *out_height = final_h;
+  }
+  return final_buf;
+}
+
+std::vector<unsigned char> TileGenerator::renderImagePng(
+    const odb::Rect& region,
+    const int width_px,
+    const double dbu_per_pixel,
+    const TileVisibility& vis,
+    const Color& bg,
+    int* out_width,
+    int* out_height) const
+{
+  int final_w = 0;
+  int final_h = 0;
+  const std::vector<unsigned char> final_buf = renderImageBuffer(
+      region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h);
+  if (final_buf.empty()) {
+    return {};  // renderImageBuffer already logged the error.
+  }
+
+  // Encode to PNG.
   std::vector<unsigned char> png_data;
   const unsigned error = lodepng::encode(png_data, final_buf, final_w, final_h);
   if (error) {
     logger_->error(
         utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(error));
+    return {};
+  }
+  if (out_width) {
+    *out_width = final_w;
+  }
+  if (out_height) {
+    *out_height = final_h;
+  }
+  return png_data;
+}
+
+void TileGenerator::saveImage(const std::string& filename,
+                              const odb::Rect& region,
+                              const int width_px,
+                              const double dbu_per_pixel,
+                              const TileVisibility& vis) const
+{
+  int final_w = 0;
+  int final_h = 0;
+  const std::vector<unsigned char> png_data = renderImagePng(
+      region, width_px, dbu_per_pixel, vis, /*bg=*/{}, &final_w, &final_h);
+  if (png_data.empty()) {
     return;
   }
   lodepng::save_file(png_data, filename);
@@ -4793,13 +5138,17 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
 
   std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
   for (int fy = 0; fy < final_h; ++fy) {
+    const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
+    if (sy < 0 || sy >= tile_span_h) {
+      continue;
+    }
+    const unsigned char* src_row
+        = &output[static_cast<size_t>(sy) * tile_span_w * 4];
+    unsigned char* dst_row = &final_buf[static_cast<size_t>(fy) * final_w * 4];
     for (int fx = 0; fx < final_w; ++fx) {
       const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
-      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
-      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
-        const int src_idx = (sy * tile_span_w + sx) * 4;
-        const int dst_idx = (fy * final_w + fx) * 4;
-        std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
+      if (sx >= 0 && sx < tile_span_w) {
+        copyRGBA(&dst_row[fx * 4], &src_row[sx * 4]);
       }
     }
   }
@@ -5168,27 +5517,7 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
     return;
   }
   const int i = (y * dim + x) * 4;
-  const float src_a = c.a / 255.0f;
-  const float dst_a = image[i + 3] / 255.0f;
-  const float out_a = src_a + dst_a * (1.0f - src_a);
-
-  if (out_a <= 0.0f) {
-    image[i + 0] = 0;
-    image[i + 1] = 0;
-    image[i + 2] = 0;
-    image[i + 3] = 0;
-    return;
-  }
-
-  const auto blend_channel = [&](const int src, const int dst) {
-    const float out = (src * src_a + dst * dst_a * (1.0f - src_a)) / out_a;
-    return static_cast<unsigned char>(std::lround(out));
-  };
-
-  image[i + 0] = blend_channel(c.r, image[i + 0]);
-  image[i + 1] = blend_channel(c.g, image[i + 1]);
-  image[i + 2] = blend_channel(c.b, image[i + 2]);
-  image[i + 3] = static_cast<unsigned char>(std::lround(out_a * 255.0f));
+  compositePixel(&image[i], c);
 }
 
 void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
@@ -5206,11 +5535,29 @@ void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
   if (dim < 0) {
     dim = bufferDim(buffer);
   }
-  for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+  const int x_start = std::max(0, rect.xMin());
+  const int x_end = std::min(dim, rect.xMax());
+  const int y_start = std::max(0, rect.yMin());
+  const int y_end = std::min(dim, rect.yMax());
+  if (x_start >= x_end || y_start >= y_end) {
+    return;
+  }
+
+  if (pattern == FillPattern::kSolid) {
+    const int width = x_end - x_start;
+    const size_t span_bytes = static_cast<size_t>(width) * 4;
+    for (int iy = y_start; iy < y_end; ++iy) {
+      const int draw_y = dim - 1 - iy;
+      unsigned char* row = &buffer[(draw_y * dim + x_start) * 4];
+      fillSpan({row, span_bytes}, color);
+    }
+    return;
+  }
+
+  for (int iy = y_start; iy < y_end; ++iy) {
     const int draw_y = dim - 1 - iy;
-    for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
-      if (pattern != FillPattern::kSolid
-          && !patternCovers(pattern, ix + ox, iy + oy)) {
+    for (int ix = x_start; ix < x_end; ++ix) {
+      if (!patternCovers(pattern, ix + ox, iy + oy)) {
         continue;
       }
       setPixel(buffer, ix, draw_y, color, dim);
@@ -5290,6 +5637,44 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
                toPxYd(points[i].y(), frame, dim),
                toPxXd(points[i + 1].x(), frame),
                toPxYd(points[i + 1].y(), frame, dim),
+               border,
+               penWidthCss(frame));
+    }
+  }
+}
+
+void TileGenerator::drawColoredPolygons(
+    std::vector<unsigned char>& image,
+    const std::vector<ColoredPolygon>& polys,
+    const TileFrame& frame) const
+{
+  const odb::Rect& dbu_tile = frame.cull;
+  const int dim = bufferDim(image);
+  for (const ColoredPolygon& cp : polys) {
+    const odb::Polygon& poly = cp.poly;
+    if (!dbu_tile.overlaps(poly.getEnclosingRect())) {
+      continue;
+    }
+    Color border = cp.color;
+    border.a = 255;
+
+    // Semi-transparent fill in the group's color.
+    fillPolygon(image, poly, frame, cp.color, /*blend=*/true);
+
+    // Solid outline in the group's color — draw each edge, wrapping the last
+    // point back to the first so the outline is closed even if the point list
+    // is open.  Octilinear by nature, so convert in double and let drawLine
+    // clip (see drawHighlight): saturating each axis would tilt the edge.
+    const auto& points = poly.getPoints();
+    const int n = static_cast<int>(points.size());
+    for (int i = 0; i < n; ++i) {
+      const odb::Point& p0 = points[i];
+      const odb::Point& p1 = points[(i + 1) % n];
+      drawLine(image,
+               toPxXd(p0.x(), frame),
+               toPxYd(p0.y(), frame, dim),
+               toPxXd(p1.x(), frame),
+               toPxYd(p1.y(), frame, dim),
                border,
                penWidthCss(frame));
     }
@@ -5498,6 +5883,280 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
     c.a = 220;
     drawLine(image, px0, py0, px1, py1, c, penWidthCss(frame));
   }
+}
+
+namespace {
+
+// One anchor name and where it puts the text box relative to the anchor
+// point, as an edge to pin per axis.  kMin is the low-coordinate edge in
+// PIXEL space, so vertically it is the box's top (pixel rows grow downward
+// while DBU grow up).
+struct AnchorEntry
+{
+  enum Edge
+  {
+    kMin,
+    kMid,
+    kMax
+  };
+  const char* name;
+  Edge h;
+  Edge v;
+};
+
+// The one table behind anchorNames(), isValidAnchor() and the placement in
+// drawTextLabels, so a name can never be accepted and then not drawn.  The
+// spellings must match gui::Painter::anchors(); the order is only that of the
+// literal in painter.cpp and means nothing (anchors() is a std::map, so it
+// iterates alphabetically).  The edges reproduce the switch over
+// gui::Painter::Anchor in drawPainterOps.
+constexpr AnchorEntry kAnchors[] = {
+    {"bottom left", AnchorEntry::kMin, AnchorEntry::kMax},
+    {"bottom right", AnchorEntry::kMax, AnchorEntry::kMax},
+    {"top left", AnchorEntry::kMin, AnchorEntry::kMin},
+    {"top right", AnchorEntry::kMax, AnchorEntry::kMin},
+    {"center", AnchorEntry::kMid, AnchorEntry::kMid},
+    {"bottom center", AnchorEntry::kMid, AnchorEntry::kMax},
+    {"top center", AnchorEntry::kMid, AnchorEntry::kMin},
+    {"left center", AnchorEntry::kMin, AnchorEntry::kMid},
+    {"right center", AnchorEntry::kMax, AnchorEntry::kMid},
+};
+
+// "center" is both the documented default and the unrecognized-name
+// fallback; pin its slot so reordering kAnchors cannot quietly change either.
+constexpr size_t kCenterAnchor = 4;
+static_assert(std::string_view(kAnchors[kCenterAnchor].name) == "center");
+
+// The entry for `anchor`, or the "center" entry when it names nothing.
+const AnchorEntry& anchorEntry(const std::string& anchor)
+{
+  for (const AnchorEntry& a : kAnchors) {
+    if (anchor == a.name) {
+      return a;
+    }
+  }
+  return kAnchors[kCenterAnchor];
+}
+
+}  // namespace
+
+const std::vector<std::string>& anchorNames()
+{
+  static const std::vector<std::string> names = [] {
+    std::vector<std::string> out;
+    out.reserve(std::size(kAnchors));
+    for (const AnchorEntry& a : kAnchors) {
+      out.emplace_back(a.name);
+    }
+    return out;
+  }();
+  return names;
+}
+
+bool isValidAnchor(const std::string& anchor)
+{
+  return std::any_of(
+      std::begin(kAnchors),
+      std::end(kAnchors),
+      [&anchor](const AnchorEntry& a) { return anchor == a.name; });
+}
+
+void TileGenerator::drawTextLabels(std::vector<unsigned char>& image,
+                                   const std::vector<TextLabel>& labels,
+                                   const TileFrame& frame) const
+{
+  const int dim = bufferDim(image);
+  for (const auto& label : labels) {
+    if (label.text.empty()) {
+      continue;
+    }
+    // The label's size is authored in CSS px, so it scales with the display
+    // like every other pixel-specified size; a fixed value would shrink as
+    // the ratio rises.
+    constexpr int kDefaultLabelFontHeightCss = 14;
+    const int font_px = std::max(
+        1,
+        static_cast<int>(std::lround(
+            (label.size > 0 ? label.size : kDefaultLabelFontHeightCss)
+            * frame.px_per_css)));
+    const GlyphCache::FontSize& font = fontAtlasGetFont(font_px);
+    const int text_width = getTextWidth(label.text, font);
+    const int text_height = getTextHeight(font);
+    const int pixel_x = toPxX(label.pos.x(), frame);
+    const int pixel_y = toPxY(label.pos.y(), frame, dim);
+
+    // Position the text box relative to the anchor point.  An unrecognized
+    // name centres, matching Painter::stringToAnchor's fallback; the API
+    // layers reject one before it gets here, so this is only the last word.
+    // The box may straddle a tile seam; skip only when it is fully off-tile so
+    // each tile draws its slice (drawText clips per-pixel).
+    const AnchorEntry& a = anchorEntry(label.anchor);
+    int text_px_min = pixel_x - text_width / 2;
+    if (a.h == AnchorEntry::kMin) {
+      text_px_min = pixel_x;
+    } else if (a.h == AnchorEntry::kMax) {
+      text_px_min = pixel_x - text_width;
+    }
+    int text_py_min = pixel_y - text_height / 2;
+    if (a.v == AnchorEntry::kMin) {
+      text_py_min = pixel_y;
+    } else if (a.v == AnchorEntry::kMax) {
+      text_py_min = pixel_y - text_height;
+    }
+
+    if (text_px_min + text_width <= 0 || text_px_min >= dim
+        || text_py_min + text_height <= 0 || text_py_min >= dim) {
+      continue;
+    }
+    drawText(image, text_px_min, text_py_min, label.text, font, label.color);
+  }
+}
+
+std::vector<unsigned char> TileGenerator::renderLabelTile(
+    const int z,
+    const int x,
+    int y,
+    const std::vector<TextLabel>& labels,
+    const double dpr,
+    const int requested_tile_px) const
+{
+  if (labels.empty()) {
+    return {};
+  }
+  // Same contract as generateOverlayTile: the caller states the device-pixel
+  // square it will composite this tile into, so the glyphs land at the same
+  // size and registration as the tiles beneath.
+  const double effective_dpr = dpr > 0.0 ? dpr : 1.0;
+  const int dim
+      = requested_tile_px > 0
+            ? requested_tile_px
+            : static_cast<int>(std::lround(kTileSizeInPixel * effective_dpr));
+  std::vector<unsigned char> image(static_cast<size_t>(dim) * dim * 4,
+                                   0);  // transparent
+
+  // Tile bounding box in DBU (same math as generateOverlayTile).
+  const double num_tiles_at_zoom = pow(2, z);
+  y = num_tiles_at_zoom - 1 - y;  // flip Y
+  const odb::Rect full_bounds = getBounds();
+  if (full_bounds.maxDXDY() <= 0) {
+    return {};
+  }
+  const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+  const TileFrame frame = tileFrame(
+      full_bounds, x, y, tile_dbu_size, dim / tile_dbu_size, effective_dpr);
+
+  drawTextLabels(image, labels, frame);
+  return image;
+}
+
+//------------------------------------------------------------------------------
+// User text labels (2.12) — global design annotations
+//------------------------------------------------------------------------------
+
+std::string TileGenerator::addLabel(const odb::Point& pos,
+                                    const std::string& text,
+                                    const Color& color,
+                                    const int size,
+                                    const std::string& anchor,
+                                    const std::string& name)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  auto name_in_use = [this](const std::string& n) {
+    for (const auto& l : labels_) {
+      if (l.name == n) {
+        return true;
+      }
+    }
+    return false;
+  };
+  std::string label_name = name;
+  if (label_name.empty()) {
+    // Auto-generate; skip ids already taken by a user-named label.
+    do {
+      label_name = "label" + std::to_string(next_label_id_++);
+    } while (name_in_use(label_name));
+  } else if (name_in_use(label_name)) {
+    // Reject a duplicate explicit name (mirrors the Qt GUI, which warns
+    // GUI-44).
+    return "";
+  }
+  labels_.push_back(
+      {pos, text, color, size, anchor.empty() ? "center" : anchor, label_name});
+  return label_name;
+}
+
+bool TileGenerator::deleteLabel(const std::string& name)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  for (auto it = labels_.begin(); it != labels_.end(); ++it) {
+    if (it->name == name) {
+      labels_.erase(it);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TileGenerator::updateLabel(const std::string& name,
+                                const odb::Point& pos,
+                                const std::string& text,
+                                const Color& color,
+                                const int size,
+                                const std::string& anchor)
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  for (auto& l : labels_) {
+    if (l.name == name) {
+      l.pos = pos;
+      l.text = text;
+      l.color = color;
+      l.size = size;
+      l.anchor = anchor.empty() ? "center" : anchor;
+      return true;
+    }
+  }
+  return false;
+}
+
+void TileGenerator::clearLabels()
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  labels_.clear();
+}
+
+std::vector<TextLabel> TileGenerator::labelsForDraw() const
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  std::vector<TextLabel> out;
+  out.reserve(labels_.size());
+  for (const auto& l : labels_) {
+    out.push_back({l.pos, l.text, l.color, l.size, l.anchor});
+  }
+  return out;
+}
+
+boost::json::array TileGenerator::labelsJson() const
+{
+  std::lock_guard<std::mutex> lock(labels_mutex_);
+  boost::json::array arr;
+  arr.reserve(labels_.size());
+  for (const auto& l : labels_) {
+    boost::json::object o;
+    o["name"] = l.name;
+    o["x"] = l.pos.x();
+    o["y"] = l.pos.y();
+    o["text"] = l.text;
+    o["size"] = l.size;
+    o["anchor"] = l.anchor;
+    boost::json::object c;
+    c["r"] = static_cast<int>(l.color.r);
+    c["g"] = static_cast<int>(l.color.g);
+    c["b"] = static_cast<int>(l.color.b);
+    c["a"] = static_cast<int>(l.color.a);
+    o["color"] = std::move(c);
+    arr.emplace_back(std::move(o));
+  }
+  return arr;
 }
 
 void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
@@ -5823,6 +6482,14 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
         static_cast<int>(c.r), static_cast<int>(c.g), static_cast<int>(c.b)});
   }
   out["layer_colors"] = std::move(layer_color_arr);
+
+  // The 16 highlight-group colors, straight from the Qt GUI's palette so
+  // the client swatches can never drift from what the overlay renders.
+  boost::json::array highlight_colors;
+  for (const auto& c : gui::Painter::kHighlightColors) {
+    highlight_colors.emplace_back(boost::json::array{c.r, c.g, c.b, c.a});
+  }
+  out["highlight_colors"] = std::move(highlight_colors);
 
   boost::json::array sites;
   for (const auto& name : gen.getSites()) {

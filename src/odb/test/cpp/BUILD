@@ -125,6 +125,7 @@ cc_test(
     srcs = ["TestGeom.cpp"],
     deps = [
         "//src/odb/src/db",
+        "@boost.polygon",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
