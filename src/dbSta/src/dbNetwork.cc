@@ -61,6 +61,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "dbEditHierarchy.hh"
+#include "odb/3dblox.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -299,6 +300,10 @@ enum class PinPointerTags : std::uintptr_t
   kDbIterm = 1U,
   kDbBterm = 2U,
   kDbModIterm = 3U,
+  // Top-level port pin on a 3DIC design: a tagged dbChipNet*.
+  // staToDb(pin, iterm, bterm, moditerm) returns all-null for it; decode
+  // with stackPortChipNet() instead.
+  kDbChipPortPin = 4U,
 };
 
 //
@@ -630,10 +635,17 @@ class DbInstancePinIterator : public InstancePinIterator
   Pin* next_ = nullptr;
   dbInst* db_inst_;
   odb::dbModInst* mod_inst_;
-  // 3DIC: true for the pin-less top chip / chip-inst walks. The
-  // ITerm/BTerm/ModITerm iterators are then default-constructed and unsafe
-  // to compare, so hasNext must short-circuit on chip_inst_ first.
+  // 3DIC: true for the pin-less top-chip walk. The ITerm/BTerm/ModITerm
+  // iterators are then default-constructed and unsafe to compare, so
+  // hasNext must short-circuit on chip_inst_ first.
   bool chip_inst_ = false;
+  // 3DIC: chip-inst walk -- yields the master block's bterms that have a
+  // bump.
+  bool chip_bterm_walk_ = false;
+  // 3DIC: top-instance walk -- yields the top-level port pins.
+  bool stack_port_walk_ = false;
+  odb::PtrMap<odb::dbChipNet, Port*>::const_iterator stack_port_itr_;
+  odb::PtrMap<odb::dbChipNet, Port*>::const_iterator stack_port_end_;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
@@ -645,11 +657,14 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
   mod_inst_ = nullptr;
 
   if (top_) {
-    // 3DIC top has no block; route through the chip path so hasNext
-    // short-circuits without touching default-constructed BTerm iterators.
+    // 3DIC top has no block; its pins are the top-level port pins. The
+    // dbSet iterators stay default-constructed (unsafe to compare), so
+    // hasNext checks stack_port_walk_ first.
     if (network->has3DicChip()) {
       top_ = false;
-      chip_inst_ = true;
+      stack_port_walk_ = true;
+      stack_port_itr_ = network->chipNetTopPorts().begin();
+      stack_port_end_ = network->chipNetTopPorts().end();
       return;
     }
     dbBlock* block = network->block();
@@ -662,12 +677,17 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
     return;
   }
 
-  // A chip-inst has no pins of its own: a bump's pin is its pad inst's
-  // iterm, and the pad inst is a leaf of the chiplet block, so the pin is
-  // enumerated there (and only there -- a pin listed under two instances
-  // would be seeded twice by Graph::makeWireEdges, duplicating wire edges).
-  if (network_->staToDbChipInst(inst) != nullptr) {
-    chip_inst_ = true;
+  // A chip-inst's pins are its master block's bterms that are bound to a
+  // bump. The graph never walks these (isLeaf(chip_inst) is false); timing
+  // pins stay on the bump pad iterms.
+  if (odb::dbChipInst* chip_inst = network_->staToDbChipInst(inst)) {
+    if (odb::dbBlock* chiplet_block = network_->blockOf(chip_inst)) {
+      chip_bterm_walk_ = true;
+      bitr_ = chiplet_block->getBTerms().begin();
+      bitr_end_ = chiplet_block->getBTerms().end();
+    } else {
+      chip_inst_ = true;
+    }
     return;
   }
 
@@ -687,9 +707,27 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
 
 bool DbInstancePinIterator::hasNext()
 {
+  if (stack_port_walk_) {
+    if (stack_port_itr_ != stack_port_end_) {
+      next_ = network_->stackPortPin(stack_port_itr_->first);
+      ++stack_port_itr_;
+      return true;
+    }
+    return false;
+  }
+  if (chip_bterm_walk_) {
+    while (bitr_ != bitr_end_) {
+      dbBTerm* bterm = *bitr_;
+      ++bitr_;
+      if (bterm->getChipBump() != nullptr) {
+        next_ = network_->dbToSta(bterm);
+        return true;
+      }
+    }
+    return false;
+  }
   if (chip_inst_) {
-    // Pin-less: the 3DIC top has no block, and a chip-inst's bumps expose
-    // their pins through the pad leaf insts instead.
+    // A chip-inst whose master has no block has no pins.
     return false;
   }
   if (top_) {
@@ -745,12 +783,16 @@ class DbNetPinIterator : public NetPinIterator
   dbSet<dbModITerm>::iterator mitr_end_;
   Pin* next_;
   const dbNetwork* network_;
-  // 3DIC chip-net mode: bump pad iterms pre-collected (flat model); the
-  // ITerm/ModITerm iterators stay default-constructed (unsafe to compare), so
-  // hasNext must short-circuit on chip_walk_ first.
+  // 3DIC chip-net mode: the net's pins are its top-level port pin (if
+  // any), the bump pad iterms, and boundary bterms connected without a
+  // bump. The ITerm/ModITerm iterators stay default-constructed (unsafe
+  // to compare), so hasNext checks chip_walk_ first.
   std::vector<odb::dbITerm*> chip_bumps_;
   size_t chip_bumps_idx_ = 0;
   bool chip_walk_ = false;
+  Pin* stack_port_pin_ = nullptr;
+  std::vector<odb::dbBTerm*> chip_die_bterms_;
+  size_t chip_die_bterms_idx_ = 0;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
@@ -758,16 +800,21 @@ DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
   network_ = network;
   next_ = nullptr;
 
-  // A chip-net's pins are the pad iterms of the bumps attached to it -- the
-  // real on-arc leaf pins (so e.g. report_checks -through a chip-net works).
+  // A chip-net's pins are the pad iterms of the bumps attached to it,
+  // plus its top-level port pin when it has one.
   if (odb::dbChipNet* chip_net = network_->staToDbChipNet(net)) {
     chip_walk_ = true;
+    stack_port_pin_ = network_->stackPortPin(chip_net);
     if (odb::dbUnfoldedChipNet* ucn = network_->unfoldedChipNet(chip_net)) {
       for (odb::dbUnfoldedChipBumpInst* bump : ucn->getConnectedBumps()) {
         if (odb::dbITerm* pad_iterm = network_->bumpPadITerm(bump)) {
           chip_bumps_.push_back(pad_iterm);
         }
       }
+    }
+    if (const std::vector<odb::dbBTerm*>* die_bterms
+        = network_->dieBTermsOf(chip_net)) {
+      chip_die_bterms_ = *die_bterms;
     }
     return;
   }
@@ -790,8 +837,17 @@ DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
 bool DbNetPinIterator::hasNext()
 {
   if (chip_walk_) {
+    if (stack_port_pin_ != nullptr) {
+      next_ = stack_port_pin_;
+      stack_port_pin_ = nullptr;
+      return true;
+    }
     if (chip_bumps_idx_ < chip_bumps_.size()) {
       next_ = network_->dbToSta(chip_bumps_[chip_bumps_idx_++]);
+      return true;
+    }
+    if (chip_die_bterms_idx_ < chip_die_bterms_.size()) {
+      next_ = network_->dbToSta(chip_die_bterms_[chip_die_bterms_idx_++]);
       return true;
     }
     return false;
@@ -924,7 +980,12 @@ void dbNetwork::clear()
   // drop our handles so we don't double-free or dangle.
   chip_master_cells_.clear();
   chip_master_lib_ = nullptr;
+  chip_net_top_port_.clear();
+  stack_port_name_to_net_.clear();
+  chip_port_vertex_id_.clear();
   bump_to_chip_net_.clear();
+  chip_net_die_bterms_.clear();
+  boundary_bterm_to_chip_net_.clear();
   chip_inst_to_unfolded_.clear();
   chip_net_to_unfolded_.clear();
 }
@@ -1137,6 +1198,33 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
   Library* top_lib = makeLibrary(design_name, "");
   top_cell_ = makeCell(top_lib, design_name, /*is_leaf=*/false, "");
 
+  // One Port on top_cell_ per chip net that has a top_port property
+  // (written by buildChipNetsFromVerilog from the top Verilog ports), so
+  // get_ports / create_clock / set_input_delay work on a 3DIC design.
+  chip_net_top_port_.clear();
+  stack_port_name_to_net_.clear();
+  chip_port_vertex_id_.clear();
+  for (odb::dbChipNet* chip_net : chip->getChipNets()) {
+    auto* name_prop = odb::dbStringProperty::find(chip_net, odb::kTopPortProp);
+    if (name_prop == nullptr) {
+      continue;
+    }
+    const std::string port_name = name_prop->getValue();
+    PortDirection* dir = PortDirection::unknown();
+    if (auto* dir_prop
+        = odb::dbStringProperty::find(chip_net, odb::kTopPortDirProp)) {
+      if (PortDirection* found
+          = PortDirection::find(dir_prop->getValue().c_str())) {
+        dir = found;
+      }
+    }
+    Port* port = makePort(top_cell_, port_name);
+    setDirection(port, dir);
+    registerConcretePort(port);
+    chip_net_top_port_[chip_net] = port;
+    stack_port_name_to_net_[port_name] = chip_net;
+  }
+
   // One plain Cell per unique chiplet master (names the chip-insts; the
   // binding point for a vendor ETM LibertyCell later), with a descriptive
   // Port per bound chip-bump bterm. Bump timing pins are the pad iterms,
@@ -1150,15 +1238,11 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
     Cell* master_cell
         = makeCell(chip_master_lib_, master->getName(), /*is_leaf=*/false, "");
     chip_master_cells_[master] = master_cell;
-    for (odb::dbChipRegion* region : master->getChipRegions()) {
-      for (odb::dbChipBump* bump : region->getChipBumps()) {
-        odb::dbBTerm* bterm = bump->getBTerm();
-        if (bterm == nullptr) {
-          // Spare bump (no port/net binding): not a logical endpoint, no
-          // Port to synthesize. Connected bumps are guaranteed a bterm by
-          // STA-3005; spares are likewise filtered out of pin enumeration.
-          continue;
-        }
+    // One Port per bterm of the master block -- with or without a bump --
+    // so port() resolves for every boundary bterm pin. (Spare bumps have
+    // no bterm and get no Port.)
+    if (odb::dbBlock* master_block = master->getBlock()) {
+      for (odb::dbBTerm* bterm : master_block->getBTerms()) {
         Port* port = makePort(master_cell, bterm->getConstName());
         setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
         registerConcretePort(port);
@@ -1208,11 +1292,48 @@ odb::dbITerm* dbNetwork::bumpPadITerm(odb::dbUnfoldedChipBumpInst* bump) const
   return iterms.empty() ? nullptr : *iterms.begin();
 }
 
+const std::vector<odb::dbBTerm*>* dbNetwork::dieBTermsOf(
+    odb::dbChipNet* chip_net) const
+{
+  if (chip_net == nullptr) {
+    return nullptr;
+  }
+  ensureUnfoldedMapsFresh();
+  auto it = chip_net_die_bterms_.find(chip_net);
+  return it == chip_net_die_bterms_.end() ? nullptr : &it->second;
+}
+
+odb::dbChipNet* dbNetwork::chipNetAboveBTerm(odb::dbBTerm* bterm) const
+{
+  if (bterm == nullptr) {
+    return nullptr;
+  }
+  ensureUnfoldedMapsFresh();
+  auto it = boundary_bterm_to_chip_net_.find(bterm);
+  return it == boundary_bterm_to_chip_net_.end() ? nullptr : it->second;
+}
+
 void dbNetwork::buildUnfoldedMaps() const
 {
   chip_inst_to_unfolded_.clear();
   chip_net_to_unfolded_.clear();
   bump_to_chip_net_.clear();
+  chip_net_die_bterms_.clear();
+  boundary_bterm_to_chip_net_.clear();
+  // Boundary bterms connected without a bump, decoded from the die_ports
+  // property by its owner (odb).
+  if (top_chip_ != nullptr) {
+    for (odb::dbChipNet* chip_net : top_chip_->getChipNets()) {
+      std::vector<odb::dbBTerm*> bterms = odb::diePortBTerms(chip_net);
+      if (bterms.empty()) {
+        continue;
+      }
+      for (odb::dbBTerm* bterm : bterms) {
+        boundary_bterm_to_chip_net_[bterm] = chip_net;
+      }
+      chip_net_die_bterms_[chip_net] = std::move(bterms);
+    }
+  }
   //   raw chip-inst -> unfolded chip-inst (single-level: path is one element)
   for (odb::dbUnfoldedChipInst* uci : db_->getUnfoldedChipInsts()) {
     std::vector<odb::dbChipInst*> path = uci->getChipInstPath();
@@ -1309,6 +1430,30 @@ odb::dbChipNet* dbNetwork::staToDbChipNet(const Net* net) const
     return nullptr;
   }
   return static_cast<odb::dbChipNet*>(obj);
+}
+
+// ---- Top-level (stack) ports ----
+
+Pin* dbNetwork::stackPortPin(odb::dbChipNet* chip_net) const
+{
+  if (chip_net == nullptr || !chip_net_top_port_.contains(chip_net)) {
+    return nullptr;
+  }
+  char* addr = reinterpret_cast<char*>(chip_net);
+  return reinterpret_cast<Pin*>(
+      addr + static_cast<std::uintptr_t>(PinPointerTags::kDbChipPortPin));
+}
+
+odb::dbChipNet* dbNetwork::stackPortChipNet(const Pin* pin) const
+{
+  const std::uintptr_t with_tag = reinterpret_cast<std::uintptr_t>(pin);
+  if (static_cast<PinPointerTags>(with_tag & kPointerTagMask)
+      != PinPointerTags::kDbChipPortPin) {
+    return nullptr;
+  }
+  const char* addr = reinterpret_cast<const char*>(pin);
+  return reinterpret_cast<odb::dbChipNet*>(const_cast<char*>(
+      addr - static_cast<std::uintptr_t>(PinPointerTags::kDbChipPortPin)));
 }
 
 Instance* dbNetwork::topInstance() const
@@ -1853,15 +1998,20 @@ Pin* dbNetwork::findPin(const Instance* instance,
   std::string port_name_str(port_name);
   const char* port_name_cstr = port_name_str.c_str();
   if (instance == top_instance_) {
-    // 3DIC top has no block and no ports of its own.
+    // 3DIC top: look up the top-level ports made in makeTopCellForChip.
     if (has3DicChip()) {
-      return nullptr;
+      auto it = stack_port_name_to_net_.find(port_name_str);
+      return it != stack_port_name_to_net_.end() ? stackPortPin(it->second)
+                                                 : nullptr;
     }
     dbBTerm* bterm = block_->findBTerm(port_name_cstr);
     return dbToSta(bterm);
   }
-  // 3DIC: a chip-inst's named "port" is a chiplet boundary bterm; its pin is
-  // the bound bump's pad iterm (the bump's timing pin in the flat model).
+  // 3DIC: a chip-inst port name resolves to the bound bump's pad iterm --
+  // the pin that carries the graph vertex. This differs on purpose from
+  // pinIterator(chip_inst), which returns the bterm pins: clocks are still
+  // created on bump pins in existing scripts, and that needs a pin with a
+  // vertex.
   if (odb::dbChipInst* chip_inst = staToDbChipInst(instance)) {
     odb::dbBlock* chiplet_block = blockOf(chip_inst);
     if (chiplet_block == nullptr) {
@@ -2095,6 +2245,13 @@ ObjectId dbNetwork::id(const Pin* pin) const
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
 
+  // Top-level port pin: own nibble, so its id differs from the same chip
+  // net's Net id.
+  if (odb::dbChipNet* chip_net = stackPortChipNet(pin)) {
+    return (static_cast<ObjectId>(chip_net->getId()) << DBIDTAG_WIDTH)
+           | DBCHIPPORT_ID;
+  }
+
   staToDb(pin, iterm, bterm, moditerm);
 
   if (hasHierarchy() || has3DicChip()) {
@@ -2123,6 +2280,11 @@ Instance* dbNetwork::instance(const Pin* pin) const
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
+
+  // A top-level port pin belongs to the top instance.
+  if (stackPortChipNet(pin) != nullptr) {
+    return top_instance_;
+  }
 
   staToDb(pin, iterm, bterm, moditerm);
   if (iterm) {
@@ -2153,6 +2315,11 @@ Net* dbNetwork::net(const Pin* pin) const
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
+
+  // A top-level port pin's net is its chip net.
+  if (odb::dbChipNet* chip_net = stackPortChipNet(pin)) {
+    return dbToSta(chip_net);
+  }
 
   staToDb(pin, iterm, bterm, moditerm);
   if (iterm) {
@@ -2271,6 +2438,13 @@ Port* dbNetwork::port(const Pin* pin) const
   dbBTerm* bterm;
   dbModITerm* moditerm;
   Port* ret = nullptr;
+
+  // Top-level port pin: return the Port made in makeTopCellForChip.
+  if (odb::dbChipNet* chip_net = stackPortChipNet(pin)) {
+    auto it = chip_net_top_port_.find(chip_net);
+    return it != chip_net_top_port_.end() ? it->second : nullptr;
+  }
+
   // Will return the bterm for a top level pin
   staToDb(pin, iterm, bterm, moditerm);
 
@@ -2279,6 +2453,15 @@ Port* dbNetwork::port(const Pin* pin) const
     ret = dbToSta(mterm);
   } else if (bterm) {
     const char* port_name = bterm->getConstName();
+    // 3DIC: a chiplet boundary bterm's Port is on its master chip's cell
+    // (made in makeTopCellForChip), not on top_cell_.
+    if (has3DicChip()) {
+      auto it = block_to_chip_inst_.find(bterm->getBlock());
+      if (it != block_to_chip_inst_.end()) {
+        Cell* master_cell = cell(dbToSta(it->second));
+        return master_cell ? findPort(master_cell, port_name) : nullptr;
+      }
+    }
     ret = findPort(top_cell_, port_name);
   } else if (moditerm) {
     std::string port_sname = moditerm->getName();
@@ -2325,6 +2508,13 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     return lib_port->direction();
   }
 
+  // Top-level port pin: use its Port's direction (set from the top
+  // Verilog port declaration). The Port always exists: stackPortPin only
+  // makes pins for nets in chip_net_top_port_.
+  if (stackPortChipNet(pin) != nullptr) {
+    return direction(port(pin));
+  }
+
   dbITerm* iterm;
   dbBTerm* bterm;
   dbModITerm* moditerm;
@@ -2364,6 +2554,12 @@ VertexId dbNetwork::vertexId(const Pin* pin) const
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* miterm = nullptr;
+  // Top-level port pin: vertex id kept in a map until there is a schema
+  // object to hold it. Runtime only; the graph rebuilds it.
+  if (odb::dbChipNet* chip_net = stackPortChipNet(pin)) {
+    auto it = chip_port_vertex_id_.find(chip_net);
+    return it != chip_port_vertex_id_.end() ? it->second : object_id_null;
+  }
   staToDb(pin, iterm, bterm, miterm);
   if (iterm) {
     return iterm->staVertexId();
@@ -2379,6 +2575,10 @@ void dbNetwork::setVertexId(Pin* pin, VertexId id)
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
+  if (odb::dbChipNet* chip_net = stackPortChipNet(pin)) {
+    chip_port_vertex_id_[chip_net] = id;
+    return;
+  }
   staToDb(pin, iterm, bterm, moditerm);
   // timing arcs only set on leaf level iterm/bterm.
   if (iterm) {
@@ -2719,15 +2919,34 @@ void dbNetwork::visitConnectedPins(const Net* net,
   // pad iterm itself is visited by its inner net's iterm loop (visiting it
   // here too would double-list it and duplicate its wire edges).
   if (odb::dbChipNet* chip_net = staToDbChipNet(net)) {
-    odb::dbUnfoldedChipNet* ucn = unfoldedChipNet(chip_net);
-    if (ucn != nullptr) {
-      for (odb::dbUnfoldedChipBumpInst* bump : ucn->getConnectedBumps()) {
+    // The top-level port pin is part of the net: the driver for an input
+    // port, a load for an output port.
+    if (Pin* port_pin = stackPortPin(chip_net)) {
+      visitor(port_pin);
+    }
+    // One freshness check, then direct map reads: this runs per net during
+    // graph construction.
+    ensureUnfoldedMapsFresh();
+    auto ucn_it = chip_net_to_unfolded_.find(chip_net);
+    if (ucn_it != chip_net_to_unfolded_.end()) {
+      for (odb::dbUnfoldedChipBumpInst* bump :
+           ucn_it->second->getConnectedBumps()) {
         odb::dbITerm* pad_iterm = bumpPadITerm(bump);
         if (pad_iterm == nullptr) {
           continue;
         }
         // The pad iterm may be unconnected inside the chiplet.
         if (dbNet* inner_net = pad_iterm->getNet()) {
+          visitConnectedPins(dbToSta(inner_net), visitor, visited_nets);
+        }
+      }
+    }
+    // Boundary bterms connected without a bump: continue into the bterm's
+    // net inside the die.
+    auto die_it = chip_net_die_bterms_.find(chip_net);
+    if (die_it != chip_net_die_bterms_.end()) {
+      for (odb::dbBTerm* bterm : die_it->second) {
+        if (dbNet* inner_net = bterm->getNet()) {
           visitConnectedPins(dbToSta(inner_net), visitor, visited_nets);
         }
       }
@@ -2810,6 +3029,15 @@ void dbNetwork::visitConnectedPins(const Net* net,
       for (dbITerm* iterm : db_net->getITerms()) {
         auto it = bump_to_chip_net_.find(iterm);
         if (it != bump_to_chip_net_.end()) {
+          visitConnectedPins(dbToSta(it->second), visitor, visited_nets);
+        }
+      }
+      // A boundary bterm on this net that is connected to a chip net
+      // without a bump: continue into the chip net. (Maps already fresh
+      // from the ensureUnfoldedMapsFresh call above.)
+      for (dbBTerm* bterm : db_net->getBTerms()) {
+        auto it = boundary_bterm_to_chip_net_.find(bterm);
+        if (it != boundary_bterm_to_chip_net_.end()) {
           visitConnectedPins(dbToSta(it->second), visitor, visited_nets);
         }
       }
@@ -3702,7 +3930,9 @@ Port* dbNetwork::makePort(Cell* cell, std::string_view name)
 {
   const std::string name_str(name);
   const char* name_c = name_str.c_str();
-  if (cell == top_cell_ && !block_->findBTerm(name_c)) {
+  // A block-less top (3DIC) has no bterms behind its ports; make a plain
+  // ConcretePort below.
+  if (cell == top_cell_ && block_ != nullptr && !block_->findBTerm(name_c)) {
     odb::dbNet* net = block_->findNet(name_c);
     if (!net) {
       // a bterm must have a net
@@ -3960,6 +4190,10 @@ void dbNetwork::staToDb(const Pin* pin,
       case PinPointerTags::kDbModIterm:
         moditerm = reinterpret_cast<dbModITerm*>(pointer_without_tag);
         break;
+      case PinPointerTags::kDbChipPortPin:
+        // Top-level port pin: none of the three out-params apply. Decode
+        // with stackPortChipNet() instead.
+        break;
       case PinPointerTags::kNone:
         logger_->error(ORD, 2018, "Pin is not ITerm or BTerm or modITerm.");
         break;
@@ -3969,6 +4203,10 @@ void dbNetwork::staToDb(const Pin* pin,
 
 dbObject* dbNetwork::staToDb(const Pin* pin) const
 {
+  // Top-level port pin: the underlying object is its chip net.
+  if (odb::dbChipNet* chip_net = stackPortChipNet(pin)) {
+    return chip_net;
+  }
   dbITerm* iterm;
   dbBTerm* bterm;
   dbModITerm* moditerm;

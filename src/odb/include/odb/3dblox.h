@@ -33,6 +33,22 @@ struct Connection;
 struct DesignDef;
 struct BumpMapEntry;
 struct DbxData;
+class dbChipNet;
+
+// Names of the dbChipNet string properties that carry the top-level port
+// data written by ThreeDBlox::buildChipNetsFromVerilog, until a schema
+// object exists to hold it:
+//   kTopPortProp    - the top Verilog port name bound to the net
+//   kTopPortDirProp - that port's direction ("input"/"output"/"bidirect")
+//   kDiePortsProp   - "<chip_inst>:<port>" entries, space separated, for
+//                     chiplet ports connected to the net without a bump
+inline constexpr char kTopPortProp[] = "top_port";
+inline constexpr char kTopPortDirProp[] = "top_port_dir";
+inline constexpr char kDiePortsProp[] = "die_ports";
+
+// Decode a chip net's kDiePortsProp property into the boundary bterms it
+// names. Entries that no longer resolve are skipped.
+std::vector<dbBTerm*> diePortBTerms(dbChipNet* chip_net);
 
 class ThreeDBlox
 {

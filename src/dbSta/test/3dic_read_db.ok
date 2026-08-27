@@ -2,6 +2,7 @@
 [INFO ODB-0227] LEF file: ../../odb/test/Nangate45/Nangate45_stdcell.lef, created 135 library cells
 [INFO ODB-0227] LEF file: ../../odb/test/Nangate45/fake_bumps.lef, created 1 library cells
 [INFO ODB-0128] Design: flop_chip_a
+[INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0252]     Updated 3 pins.
 [INFO ODB-0131]     Created 3 components and 14 component-terminals.
 [INFO ODB-0133]     Created 5 nets and 7 connections.
@@ -12,12 +13,41 @@
 [INFO ODB-0133]     Created 5 nets and 7 connections.
 3DIC summary for chip top:
   chiplets        : 2
-  top-level nets  : 4
+  top-level nets  : 5
   3D bond regions : 2
   bump pads       : 6 (6 connected)
   chiplet instances:
     chipB (reference: flop_chip_b)
     chipA (reference: flop_chip_a)
+ports: clk_top in_top out_top raw_top
+clk_top direction: input
+raw_top direction: output
+Startpoint: chipB/ff (rising edge-triggered flip-flop clocked by clk)
+Endpoint: out_top (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ chipB/ff/CK (DFF_X1)
+   0.08    0.08 ^ chipB/ff/Q (DFF_X1)
+   0.00    0.08 ^ out_top (out)
+           0.08   data arrival time
+
+   1.00    1.00   clock clk (rise edge)
+   0.00    1.00   clock network delay (ideal)
+   0.00    1.00   clock reconvergence pessimism
+  -0.10    0.90   output external delay
+           0.90   data required time
+---------------------------------------------------------
+           0.90   data required time
+          -0.08   data arrival time
+---------------------------------------------------------
+           0.82   slack (MET)
+
+
 Startpoint: chipA/ff (rising edge-triggered flip-flop clocked by clk)
 Endpoint: chipB/ff (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -47,5 +77,32 @@ Path Type: max
           -0.15   data arrival time
 ---------------------------------------------------------
            0.82   slack (MET)
+
+
+Startpoint: in_top (input port clocked by clk)
+Endpoint: chipA/ff (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.10    0.10 v input external delay
+   0.00    0.10 v in_top (in)
+   0.00    0.10 v chipA/ff/D (DFF_X1)
+           0.10   data arrival time
+
+   1.00    1.00   clock clk (rise edge)
+   0.00    1.00   clock network delay (ideal)
+   0.00    1.00   clock reconvergence pessimism
+           1.00 ^ chipA/ff/CK (DFF_X1)
+  -0.04    0.96   library setup time
+           0.96   data required time
+---------------------------------------------------------
+           0.96   data required time
+          -0.10   data arrival time
+---------------------------------------------------------
+           0.86   slack (MET)
 
 

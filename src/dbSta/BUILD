@@ -139,6 +139,7 @@ cc_library(
         "include",
     ],
     deps = [
+        "//src/odb/src/3dblox",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",

@@ -34,6 +34,7 @@
 #include "odb/lefout.h"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
@@ -54,6 +55,36 @@ static std::map<std::string, std::string> dup_orient_map
 ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
     : logger_(logger), db_(db), sta_(sta)
 {
+}
+
+std::vector<dbBTerm*> diePortBTerms(dbChipNet* chip_net)
+{
+  std::vector<dbBTerm*> bterms;
+  auto* prop = dbStringProperty::find(chip_net, kDiePortsProp);
+  if (prop == nullptr) {
+    return bterms;
+  }
+  dbChip* chip = chip_net->getChip();
+  std::istringstream entries(prop->getValue());
+  std::string entry;
+  while (entries >> entry) {
+    const size_t sep = entry.find(':');
+    if (sep == std::string::npos) {
+      continue;
+    }
+    dbChipInst* chip_inst = chip->findChipInst(entry.substr(0, sep));
+    if (chip_inst == nullptr) {
+      continue;
+    }
+    dbBlock* block = chip_inst->getMasterChip()->getBlock();
+    if (block == nullptr) {
+      continue;
+    }
+    if (dbBTerm* bterm = block->findBTerm(entry.substr(sep + 1).c_str())) {
+      bterms.push_back(bterm);
+    }
+  }
+  return bterms;
 }
 
 void ThreeDBlox::readDbv(const std::string& dbv_file)
@@ -132,6 +163,40 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
                net_name,
                chip->getName());
 
+    // A top-level port shows up as a Term on the net (linkNetwork connects
+    // top ports with makeTerm, so they are not in the net's pin list).
+    // Save its name and direction as properties; dbSta uses them to create
+    // a port for the 3DIC top.
+    bool has_top_port = false;
+    std::unique_ptr<sta::NetTermIterator> term_iter(
+        temp_network.termIterator(net));
+    while (term_iter->hasNext()) {
+      sta::Term* term = term_iter->next();
+      const sta::Pin* term_pin = temp_network.pin(term);
+      if (term_pin == nullptr) {
+        continue;
+      }
+      const sta::Port* top_port = temp_network.port(term_pin);
+      if (top_port == nullptr) {
+        continue;
+      }
+      if (has_top_port) {
+        logger_->warn(utl::ODB,
+                      556,
+                      "Chip net {} is bound to more than one top-level "
+                      "port; keeping the first.",
+                      net_name);
+        break;
+      }
+      has_top_port = true;
+      const std::string dir_name(temp_network.direction(top_port)->name());
+      odb::dbStringProperty::create(
+          chip_net, kTopPortProp, temp_network.name(top_port).c_str());
+      odb::dbStringProperty::create(
+          chip_net, kTopPortDirProp, dir_name.c_str());
+    }
+
+    std::string die_ports;
     std::unique_ptr<sta::NetPinIterator> pin_iter(
         temp_network.pinIterator(net));
     while (pin_iter->hasNext()) {
@@ -156,6 +221,15 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
       }
       dbChipBump* bump = bterm->getChipBump();
       if (!bump) {
+        // Chiplet port with no bump (e.g. not in the bmap). dbChipNet can
+        // only hold bump insts, so save the connection as a property;
+        // dbSta uses it to connect across the boundary.
+        if (!die_ports.empty()) {
+          die_ports += ' ';
+        }
+        die_ports += chip_inst->getName();
+        die_ports += ':';
+        die_ports += port_name;
         continue;
       }
       auto* region_inst = chip_inst->findChipRegionInst(bump->getChipRegion());
@@ -169,6 +243,9 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
           break;
         }
       }
+    }
+    if (!die_ports.empty()) {
+      odb::dbStringProperty::create(chip_net, kDiePortsProp, die_ports.c_str());
     }
   }
 }

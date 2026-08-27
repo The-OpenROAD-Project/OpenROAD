@@ -200,6 +200,25 @@ class dbNetwork : public ConcreteNetwork
   odb::dbUnfoldedChipInst* unfoldedChipInst(odb::dbChipInst* chip_inst) const;
   odb::dbUnfoldedChipNet* unfoldedChipNet(odb::dbChipNet* chip_net) const;
 
+  // ---- Top-level (stack) ports. Prototype: stored as "top_port" /
+  // "top_port_dir" properties on dbChipNet until a schema object exists ----
+  // The pin of a top-level port is its chip-net pointer with the
+  // kDbChipPortPin tag. Null if the net has no top-level port.
+  Pin* stackPortPin(odb::dbChipNet* chip_net) const;
+  // Reverse of stackPortPin; null if pin is not a top-level port pin.
+  odb::dbChipNet* stackPortChipNet(const Pin* pin) const;
+  // Chip net -> its top-level Port (backs pinIterator on the top
+  // instance; ordered by db id, so iteration is deterministic).
+  const odb::PtrMap<odb::dbChipNet, Port*>& chipNetTopPorts() const
+  {
+    return chip_net_top_port_;
+  }
+  // Boundary bterms connected to this chip net without a bump (from its
+  // die_ports property, e.g. pins missing from the bmap). Null if none.
+  const std::vector<odb::dbBTerm*>* dieBTermsOf(odb::dbChipNet* chip_net) const;
+  // Chip net a boundary bterm is connected to without a bump; null if none.
+  odb::dbChipNet* chipNetAboveBTerm(odb::dbBTerm* bterm) const;
+
   // Synthesize the top Cell for a hierarchical chip plus one plain Cell per
   // chiplet master (a descriptive Port per bound chip-bump bterm), so
   // cell(chip_inst) is non-null for naming, and as the binding point for a
@@ -566,6 +585,9 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBCHIPINST_ID = 0x9;
   static constexpr unsigned DBCHIPBUMP_INST_ID = 0xA;
   static constexpr unsigned DBCHIPNET_ID = 0xB;
+  // Top-level port pin (a tagged dbChipNet). Own nibble so the pin id
+  // differs from the same chip net's Net id.
+  static constexpr unsigned DBCHIPPORT_ID = 0xC;
   static constexpr unsigned CONCRETE_OBJECT_ID = 0xF;
   // Number of lower bits used
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
@@ -614,6 +636,12 @@ class dbNetwork : public ConcreteNetwork
   // owning libraries).
   odb::PtrMap<odb::dbChip, Cell*> chip_master_cells_;
   Library* chip_master_lib_ = nullptr;
+  // Top-level ports, built in makeTopCellForChip from the chip nets'
+  // top_port properties. The vertex-id map is runtime only; the graph
+  // rebuilds it.
+  odb::PtrMap<odb::dbChipNet, Port*> chip_net_top_port_;
+  std::map<std::string, odb::dbChipNet*> stack_port_name_to_net_;
+  mutable odb::PtrMap<odb::dbChipNet, VertexId> chip_port_vertex_id_;
   // Reverse lookups derived from the unfolded model (lazily refreshed by
   // ensureUnfoldedMapsFresh when the top chip-net count changes — picks up
   // Tcl-created chip-nets after read_3dbx):
@@ -622,6 +650,12 @@ class dbNetwork : public ConcreteNetwork
   //   raw chip-inst -> its unfolded chip-inst (for the pin iterator)
   //   raw chip-net  -> its unfolded chip-net  (for the net-pin iterator)
   mutable odb::PtrMap<odb::dbITerm, odb::dbChipNet*> bump_to_chip_net_;
+  // Boundary bterms connected to chip nets without a bump (from die_ports
+  // properties), and the reverse lookup.
+  mutable odb::PtrMap<odb::dbChipNet, std::vector<odb::dbBTerm*>>
+      chip_net_die_bterms_;
+  mutable odb::PtrMap<odb::dbBTerm, odb::dbChipNet*>
+      boundary_bterm_to_chip_net_;
   mutable odb::PtrMap<odb::dbChipInst, odb::dbUnfoldedChipInst*>
       chip_inst_to_unfolded_;
   mutable odb::PtrMap<odb::dbChipNet, odb::dbUnfoldedChipNet*>

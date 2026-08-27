@@ -80,7 +80,33 @@ proc chip_net_names { } {
   }
   return [lsort $names]
 }
-check "chip-net set" { chip_net_names } {bridge clk_top in_top out_top}
+check "chip-net set" { chip_net_names } {bridge clk_top in_top out_top raw_top}
+
+# Top-level ports, created from the top Verilog module's port list.
+check "port names" {
+  lsort [lmap p [get_ports *] { get_full_name $p }]
+} {clk_top in_top out_top raw_top}
+check "clk_top direction" { get_property [get_ports clk_top] direction } input
+check "raw_top direction" { get_property [get_ports raw_top] direction } output
+check "input ports" {
+  lsort [lmap p [all_inputs] { get_full_name $p }]
+} {clk_top in_top}
+check "output ports" {
+  lsort [lmap p [all_outputs] { get_full_name $p }]
+} {out_top raw_top}
+
+# A chip-inst's own pins are its boundary bterms that have a bump.
+check "chipA boundary pins" {
+  lsort [lmap p [get_pins -of_objects [get_cells chipA]] { get_full_name $p }]
+} {chipA/clk chipA/d chipA/q}
+check "boundary pin owner" {
+  get_full_name [[lindex [get_pins -of_objects [get_cells chipA]] 0] instance]
+} chipA
+# raw has no bump, so it is not one of chipA's pins; its net still reaches
+# the top through the bterm.
+check "raw_top spans port and boundary" {
+  lsort [lmap p [get_pins -of_objects [get_nets raw_top]] { get_full_name $p }]
+} {chipA/raw raw_top}
 # A chip-net's pins are the bump pad iterms; each pad inst belongs to its
 # chiplet, so the net provably spans BOTH chiplets.
 check "bridge spans both chiplets" {
@@ -100,5 +126,10 @@ check "bridge spans both chiplets" {
 create_clock -name clk -period 1.0 \
   [get_pins -of_objects [get_nets clk_top]]
 report_checks -path_delay max -group_path_count 4
+
+# Timing to a top-level port, through the bump-less raw connection:
+# chipA/ff/Q drives n1, which reaches raw_top through the raw bterm.
+set_output_delay 0.1 -clock clk [get_ports raw_top]
+report_checks -path_delay max -to [get_ports raw_top]
 
 exit_summary

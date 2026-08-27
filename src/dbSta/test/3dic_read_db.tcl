@@ -12,7 +12,15 @@ read_db $db_file
 # Structural model restored.
 report_3dic_summary
 
-# Timing network restored: the same cross-chiplet constrained path forms.
-create_clock -name clk -period 1.0 \
-  [get_pins -of_objects [get_nets clk_top]]
-report_checks -path_delay max
+# Top-level ports restored: the port names and directions are stored as
+# properties on the chip nets and must survive the .odb round trip.
+puts "ports: [lsort [lmap p [get_ports *] { get_full_name $p }]]"
+puts "clk_top direction: [get_property [get_ports clk_top] direction]"
+puts "raw_top direction: [get_property [get_ports raw_top] direction]"
+
+# Timing network restored, with the clock anchored on the top-level port:
+# it must reach the flops of both dies from outside.
+create_clock -name clk -period 1.0 [get_ports clk_top]
+set_input_delay 0.1 -clock clk [get_ports in_top]
+set_output_delay 0.1 -clock clk [get_ports out_top]
+report_checks -path_delay max -group_path_count 3
