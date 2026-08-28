@@ -11,6 +11,7 @@ or_integration_tests(
     select
     strength
     verify
+    via_layer
   # These run a placer, a clock tree synthesizer or a router, and would
   # otherwise pin those tools' logs into a watermarking golden.  They check
   # their own numbers instead.

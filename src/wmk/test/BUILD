@@ -36,6 +36,7 @@ TESTS = [
     "select",
     "strength",
     "verify",
+    "via_layer",
 ]
 
 filegroup(

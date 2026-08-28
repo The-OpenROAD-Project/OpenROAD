@@ -17,11 +17,13 @@
 #include <vector>
 
 #include "HmacSha256.h"
+#include "Wirelength.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "odb/dbWireCodec.h"
+#include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -34,115 +36,8 @@ namespace wmk {
 using odb::dbBlock;
 using odb::dbBoolProperty;
 using odb::dbNet;
-using odb::dbSigType;
-using odb::dbTechLayer;
-using odb::dbTechLayerDir;
-using odb::dbWire;
-using odb::dbWireDecoder;
 
 namespace {
-
-// A signal net we are allowed to watermark.  Matches the paper: we
-// skip special / supply / clock nets.
-bool isRoutableSignal(dbNet* net)
-{
-  if (net->isSpecial()) {
-    return false;
-  }
-  const dbSigType sig = net->getSigType();
-  if (sig.isSupply()) {
-    return false;
-  }
-  if (sig == dbSigType::CLOCK) {
-    return false;
-  }
-  return true;
-}
-
-// Sum the preferred- and non-preferred-direction wirelengths of the
-// given routed net, in DBU.  Vias contribute nothing (zero-length in
-// the plane); PATH/POINT/POINT_EXT give rectilinear segments on the
-// current layer.
-void measureNetWirelength(dbNet* net,
-                          std::int64_t& wl_tot,
-                          std::int64_t& wl_way)
-{
-  wl_tot = 0;
-  wl_way = 0;
-  dbWire* wire = net->getWire();
-  if (wire == nullptr) {
-    return;
-  }
-  dbWireDecoder dec;
-  dec.begin(wire);
-  int prev_x = 0;
-  int prev_y = 0;
-  bool have_prev = false;
-  dbTechLayer* layer = nullptr;
-  for (;;) {
-    dbWireDecoder::OpCode op = dec.next();
-    if (op == dbWireDecoder::END_DECODE) {
-      break;
-    }
-    switch (op) {
-      case dbWireDecoder::PATH:
-      case dbWireDecoder::JUNCTION:
-      case dbWireDecoder::SHORT:
-      case dbWireDecoder::VWIRE:
-        layer = dec.getLayer();
-        have_prev = false;  // fresh path: next POINT is the anchor
-        break;
-      case dbWireDecoder::POINT:
-      case dbWireDecoder::POINT_EXT: {
-        int x = 0;
-        int y = 0;
-        if (op == dbWireDecoder::POINT) {
-          dec.getPoint(x, y);
-        } else {
-          int ext = 0;
-          dec.getPoint(x, y, ext);
-        }
-        if (have_prev && layer != nullptr) {
-          const int dx = std::abs(x - prev_x);
-          const int dy = std::abs(y - prev_y);
-          const std::int64_t seg = dx + dy;  // rectilinear
-          if (seg > 0) {
-            const dbTechLayerDir dir = layer->getDirection();
-            bool seg_is_way = false;
-            if (dir == dbTechLayerDir::HORIZONTAL) {
-              // Preferred axis is X; any Y movement is wrong-way.
-              seg_is_way = (dy > 0);
-            } else if (dir == dbTechLayerDir::VERTICAL) {
-              seg_is_way = (dx > 0);
-            } else {
-              // NONE -> no preferred axis; count as preferred.
-              seg_is_way = false;
-            }
-            wl_tot += seg;
-            if (seg_is_way) {
-              wl_way += seg;
-            }
-          }
-        }
-        prev_x = x;
-        prev_y = y;
-        have_prev = true;
-        break;
-      }
-      case dbWireDecoder::VIA:
-      case dbWireDecoder::TECH_VIA:
-        // Via changes the layer but occupies the same (x,y); do NOT
-        // advance the "previous point" because the next POINT on the
-        // new layer starts a fresh segment anchor.
-        layer = dec.getLayer();
-        have_prev = true;  // keep anchor at current (prev_x, prev_y)
-        break;
-      default:
-        // RECT, ITERM, BTERM, RULE -- no wirelength contribution.
-        break;
-    }
-  }
-}
 
 // log(C(n, k)) = lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1)
 double logChoose(int n, int k)
@@ -276,6 +171,60 @@ bool Watermark::driverHeadroomOk(odb::dbInst* inst,
          || cap <= static_cast<float>(1.0 - cap_frac) * cap_limit;
 }
 
+std::vector<int> Watermark::clockIndicesAt(odb::dbInst* inst) const
+{
+  std::vector<int> clocks;
+  if (sta_ == nullptr || inst == nullptr) {
+    return clocks;
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  if (network == nullptr || network->defaultLibertyLibrary() == nullptr) {
+    return clocks;
+  }
+
+  odb::dbITerm* driver = nullptr;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if (driver != nullptr) {
+        return clocks;  // more than one output: not a buffer we understand
+      }
+      driver = iterm;
+    }
+  }
+  if (driver == nullptr) {
+    return clocks;
+  }
+  sta::Pin* pin = network->dbToSta(driver);
+  if (pin == nullptr) {
+    return clocks;
+  }
+
+  for (const sta::Clock* clock : sta_->clocks(pin, sta_->cmdMode())) {
+    clocks.push_back(clock->index());
+  }
+  std::ranges::sort(clocks);
+  return clocks;
+}
+
+void Watermark::reestimateNetParasitics(odb::dbNet* a, odb::dbNet* b) const
+{
+  if (estimate_parasitics_ == nullptr || sta_ == nullptr) {
+    return;
+  }
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  if (network == nullptr || network->defaultLibertyLibrary() == nullptr) {
+    return;
+  }
+  for (odb::dbNet* net : {a, b}) {
+    if (net == nullptr) {
+      continue;
+    }
+    if (sta::Net* sta_net = network->dbToSta(net)) {
+      estimate_parasitics_->estimateWireParasitic(sta_net);
+    }
+  }
+}
+
 float Watermark::worstSlack(odb::dbInst* inst) const
 {
   if (sta_ == nullptr) {
@@ -350,7 +299,7 @@ int Watermark::selectNetsKeyed(const std::array<std::uint8_t, 32>& key,
   std::vector<dbNet*> nets;
   nets.reserve(block->getNets().size());
   for (dbNet* net : block->getNets()) {
-    if (isRoutableSignal(net)) {
+    if (isRoutableSignalNet(net)) {
       nets.push_back(net);
     }
   }
@@ -415,20 +364,20 @@ double Watermark::reportWatermark(double p)
   rows.reserve(block->getNets().size());
   std::int64_t total_wl = 0;
   std::int64_t total_way = 0;
+  int diagonal_segments = 0;
   for (dbNet* net : block->getNets()) {
-    if (!isRoutableSignal(net)) {
+    if (!isRoutableSignalNet(net)) {
       continue;
     }
-    std::int64_t wl_tot = 0;
-    std::int64_t wl_way = 0;
-    measureNetWirelength(net, wl_tot, wl_way);
-    if (wl_tot <= 0) {
+    std::int64_t l_ww = 0;
+    std::int64_t l_tot = 0;
+    canonicalWirelength(net, l_ww, l_tot, diagonal_segments);
+    if (l_tot <= 0) {
       continue;  // unrouted or empty
     }
-    total_wl += wl_tot;
-    total_way += wl_way;
-    const double ratio
-        = static_cast<double>(wl_way) / static_cast<double>(wl_tot);
+    total_wl += l_tot;
+    total_way += l_ww;
+    const double ratio = static_cast<double>(l_ww) / static_cast<double>(l_tot);
     const bool is_wm = (dbBoolProperty::find(net, "watermark") != nullptr);
     rows.push_back({.net = net, .ratio = ratio, .is_watermark = is_wm});
   }

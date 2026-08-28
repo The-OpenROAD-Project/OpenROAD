@@ -12,6 +12,7 @@ swig_lib(NAME      wmk
 target_sources(wmk
   PRIVATE
     src/Watermark.cpp
+    src/Wirelength.cpp
     src/PlacementWatermark.cpp
     src/CtsWatermark.cpp
     src/RoutingStat.cpp

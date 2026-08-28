@@ -20,6 +20,7 @@ cc_library(
         "src/ClockTree.h",
         "src/HmacSha256.h",
         "src/Keys.h",
+        "src/Wirelength.h",
     ],
     includes = [
         "src",
@@ -40,6 +41,7 @@ cc_library(
         "src/RoutingStat.cpp",
         "src/Verify.cpp",
         "src/Watermark.cpp",
+        "src/Wirelength.cpp",
     ],
     hdrs = [
         "include/wmk/Watermark.h",
@@ -59,6 +61,7 @@ cc_library(
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@boost.algorithm",
     ],
 )
 
