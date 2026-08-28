@@ -232,6 +232,11 @@ bool parse_hex_key32(const std::string& hex,
   return true;
 }
 
+std::string bytesPart(const std::array<std::uint8_t, 8>& value)
+{
+  return std::string(reinterpret_cast<const char*>(value.data()), value.size());
+}
+
 std::array<std::uint8_t, 32> hmac_digest(
     const std::array<std::uint8_t, 32>& key,
     const std::vector<std::string>& parts)

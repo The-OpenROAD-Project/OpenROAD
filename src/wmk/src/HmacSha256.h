@@ -51,4 +51,10 @@ std::array<std::uint8_t, 32> hmac_digest(
     const std::array<std::uint8_t, 32>& key,
     const std::vector<std::string>& parts);
 
+// The tile a placement candidate sits in, as the PRF sees it: two big-endian
+// int32.  Returned as bytes rather than a string because that is what it is --
+// a fixed-width value, not text -- and the conversion to a hashed part happens
+// at the call site.
+std::string bytesPart(const std::array<std::uint8_t, 8>& value);
+
 }  // namespace wmk

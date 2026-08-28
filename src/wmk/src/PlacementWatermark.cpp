@@ -154,12 +154,15 @@ constexpr size_t kMaxNeighbours = 8;
 constexpr size_t kRelaxedNeighbours = 24;
 
 // The tile a candidate sits in, as the PRF sees it: two big-endian int32.
-std::string tileBytes(int tx, int ty)
+// Eight fixed-width bytes, not text, so it is typed as bytes; bytesPart turns
+// it into a hashed part at the call site, and the bytes fed to the PRF are
+// unchanged from when this returned a string.
+std::array<std::uint8_t, 8> tileBytes(int tx, int ty)
 {
-  std::string out(8, '\0');
+  std::array<std::uint8_t, 8> out{};
   for (int k = 0; k < 4; ++k) {
-    out[k] = static_cast<char>((tx >> (24 - 8 * k)) & 0xff);
-    out[4 + k] = static_cast<char>((ty >> (24 - 8 * k)) & 0xff);
+    out[k] = static_cast<std::uint8_t>((tx >> (24 - 8 * k)) & 0xff);
+    out[4 + k] = static_cast<std::uint8_t>((ty >> (24 - 8 * k)) & 0xff);
   }
   return out;
 }
@@ -342,7 +345,7 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
           c.second = std::max(name_a, name_b);
           c.sort_key = hmac_digest(key,
                                    {"pair_sort",
-                                    tileBytes(bucket.tx, bucket.ty),
+                                    bytesPart(tileBytes(bucket.tx, bucket.ty)),
                                     c.first,
                                     c.second});
           out.push_back(std::move(c));
@@ -413,8 +416,8 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
     const bool a_is_left = c.a->getBBox()->xMin() < c.b->getBBox()->xMin();
     const bool a_is_first = c.a->getName() == c.first;
     const int observed = (a_is_left == a_is_first) ? 0 : 1;
-    const std::array<std::uint8_t, 32> d
-        = hmac_digest(key, {"bit", tileBytes(c.tx, c.ty), c.first, c.second});
+    const std::array<std::uint8_t, 32> d = hmac_digest(
+        key, {"bit", bytesPart(tileBytes(c.tx, c.ty)), c.first, c.second});
     const int target = d[0] & 1;
 
     PlacementClaim claim;
