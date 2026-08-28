@@ -31,6 +31,15 @@ target_link_libraries(dbSta_lib
     utl_lib
 )
 
+# Enable analysis_corner support only when the OpenSTA submodule has it,
+# so stock (parallaxsw) OpenSTA still builds.
+if(EXISTS ${OPENSTA_HOME}/search/AnalysisCorner.i)
+  list(APPEND CMAKE_SWIG_FLAGS -DSTA_HAS_ANALYSIS_CORNER)
+  set(STA_ANALYSIS_CORNER_TCL ${OPENSTA_HOME}/tcl/AnalysisCorner.tcl)
+else()
+  set(STA_ANALYSIS_CORNER_TCL "")
+endif()
+
 swig_lib(NAME          dbSta
          NAMESPACE     sta
          I_FILE        dbSta.i
@@ -56,6 +65,8 @@ swig_lib(NAME          dbSta
                        ${OPENSTA_HOME}/sdf/Sdf.tcl
                        ${OPENSTA_HOME}/search/Search.tcl
                        ${OPENSTA_HOME}/tcl/Util.tcl
+                       # Empty for stock OpenSTA; must follow Sta.tcl.
+                       ${STA_ANALYSIS_CORNER_TCL}
                        ${DBSTA_HOME}/src/dbReadVerilog.tcl
                        ${DBSTA_HOME}/src/dbSta.tcl
 )

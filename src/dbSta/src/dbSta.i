@@ -41,6 +41,10 @@ using sta::Instance;
 %include "sdc/Sdc.i"
 %include "sdf/Sdf.i"
 %include "search/Property.i"
+// Set by CMakeLists.txt/BUILD when the OpenSTA submodule provides it.
+#ifdef STA_HAS_ANALYSIS_CORNER
+%include "search/AnalysisCorner.i"
+#endif
 %include "search/Search.i"
 %include "spice/WriteSpice.i"
 %include "util/Util.i"

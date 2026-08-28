@@ -203,6 +203,8 @@ tcl_wrap_cc(
         "../../src/sta",
         "src",
     ],
+    # Remove when building against stock (parallaxsw) OpenSTA.
+    swig_options = ["-DSTA_HAS_ANALYSIS_CORNER"],
     deps = [
         "//src/odb:swig",
     ],
