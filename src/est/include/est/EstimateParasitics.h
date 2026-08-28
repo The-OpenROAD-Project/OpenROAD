@@ -235,8 +235,8 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   template <typename T>
   const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
   void ensureParasitics();
-  bool isIdealClockPin(const sta::Pin* pin) const;
-  bool isIdealClockNet(const sta::Net* net) const;
+  bool isSkipPin(const sta::Pin* pin) const;
+  bool isSkipNet(const sta::Net* net) const;
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
                                     sta::SpefWriter* spef_writer);

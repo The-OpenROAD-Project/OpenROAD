@@ -1,0 +1,40 @@
+diff -urN base7/bazel/deps.bzl mod7/bazel/deps.bzl
+--- a/bazel/deps.bzl	2026-08-14 14:39:51.984383240 -0400
++++ b/bazel/deps.bzl	2026-08-14 14:39:52.054815412 -0400
+@@ -151,7 +151,10 @@
+         strip_prefix = "naja-{}".format(_NAJA_COMMIT),
+         build_file = Label("//bazel:naja.BUILD.bazel"),
+         patch_args = ["-p0", "-f"],
+-        patches = [Label("//bazel:naja_ff_scan.patch")],
++        patches = [
++            Label("//bazel:naja_ff_scan.patch"),
++            Label("//bazel:naja_version_no_sed.patch"),
++        ],
+     )
+ 
+ deps = module_extension(
+diff -urN base7/bazel/naja_version_no_sed.patch mod7/bazel/naja_version_no_sed.patch
+--- a/bazel/naja_version_no_sed.patch	1969-12-31 19:00:00.000000000 -0500
++++ b/bazel/naja_version_no_sed.patch	2026-08-14 14:39:52.044289111 -0400
+@@ -0,0 +1,21 @@
++--- src/core/BUILD.bazel	2026-08-14 14:39:40.625800045 -0400
+++++ src/core/BUILD.bazel	2026-08-14 14:39:40.640850905 -0400
++@@ -15,13 +15,14 @@
++ # defined anywhere in the CMake tree (a no-op variable expansion) --
++ # neither is ported either.
++ 
+++load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
++ load("@naja_git_version//:git_version.bzl", "NAJA_GIT_HASH")
++ 
++-genrule(
+++expand_template(
++     name = "naja_version_h",
++-    srcs = ["NajaVersion.h.in"],
++-    outs = ["NajaVersion.h"],
++-    cmd = "sed 's/@NAJA_GIT_HASH@/%s/' $< > $@" % NAJA_GIT_HASH,
+++    out = "NajaVersion.h",
+++    substitutions = {"@NAJA_GIT_HASH@": NAJA_GIT_HASH},
+++    template = "NajaVersion.h.in",
++ )
++ 
++ cc_library(

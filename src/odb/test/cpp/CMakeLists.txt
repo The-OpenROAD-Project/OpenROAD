@@ -30,6 +30,7 @@ add_executable(TestSwapMaster TestSwapMaster.cpp)
 add_executable(TestSwapMasterUnusedPort TestSwapMasterUnusedPort.cpp)
 add_executable(TestWriteReadDbHier TestWriteReadDbHier.cpp)
 add_executable(TestObjectType TestObjectType.cpp)
+add_executable(TestDbStream TestDbStream.cpp)
 
 target_link_libraries(OdbGTests
         db
@@ -51,6 +52,7 @@ target_link_libraries(TestCallBacks
 )
 target_link_libraries(TestGeom
         db
+        Boost::boost
         ${GTEST_LIBS}
 )
 target_link_libraries(TestModule
@@ -157,6 +159,11 @@ target_link_libraries(TestWriteReadDbHier
         tst_integrated_fixture
         ${GTEST_LIBS}
 )
+target_link_libraries(TestDbStream
+        db
+        tst_base
+        ${GTEST_LIBS}
+)
 target_link_libraries(TestObjectType
         db
         tst_base
@@ -194,6 +201,7 @@ add_dependencies(build_and_test
         TestWriteReadDbHier
         OdbGTests
         TestObjectType
+        TestDbStream
 )
 add_subdirectory(helper)
 add_subdirectory(scan)

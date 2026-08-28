@@ -354,7 +354,7 @@ and targets tagged `no-lint` are skipped automatically.
 OpenROAD uses Doxygen style comments to generate documentation.
 See the generated documentation <a href="../doxygen_output/html/index.html">here</a>.
 Our preferred syntax for Doxygen comments can be found in this
-[file](../../src/odb/include/odb/odb.h). Also, do refer to the official Doxygen
+[file](../main/src/odb/include/odb/db.h). Also, do refer to the official Doxygen
 documentation for more information on what you can include in your Doxygen
 comments [here](https://www.doxygen.nl/manual/docblocks.html).
 

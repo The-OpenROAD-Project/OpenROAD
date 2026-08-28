@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -755,6 +756,7 @@ class extRCModel
                  const char* suffix,
                  const char* permissions);
   void mkNet_prefix(extMeasure* m, const char* wiresNameSuffix);
+  bool isNewPattern(extMeasure* m, std::set<std::string>& pattern_names);
   void mkFileNames(extMeasure* m, char* wiresNameSuffix);
   void writeWires2(FILE* fp, extMeasure* measure, uint32_t wireCnt);
   int writeBenchWires(FILE* fp, extMeasure* measure);

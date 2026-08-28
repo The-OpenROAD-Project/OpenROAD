@@ -45,8 +45,8 @@ metal10    Vertical         2142          2142          0.00%
 
 Stage 1: Pattern routing.
 Routing statistics
-Wire length:           36727
-Total via count:       2478
+Wire length:           36832
+Total via count:       2465
 Total congestion:      0.00
 Min resource:          1.00
 Bottleneck:            (8, 0, 4)
@@ -54,8 +54,8 @@ Bottleneck:            (8, 0, 4)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V     17918.00      1169.00       177.67      1346.67       7.52
-metal3    H     24480.00      1224.00       109.87      1333.87       5.45
+metal2    V     17918.00      1170.00       177.03      1347.03       7.52
+metal3    H     24480.00      1230.00       108.59      1338.59       5.47
 metal4    V     12172.00         2.00        10.20        12.20       0.10
 metal5    H     12240.00        39.00         7.98        46.98       0.38
 metal6    V     12172.00        11.00         2.55        13.55       0.11
@@ -64,7 +64,7 @@ metal8    V      4284.00         0.00         0.00         0.00       0.00
 metal9    H      2142.00         0.00         0.00         0.00       0.00
 metal10   V      2142.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           91834.00      2445.00       308.27      2753.27       3.00
+Total           91834.00      2452.00       306.35      2758.35       3.00
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -123,18 +123,18 @@ delta HPWL                    0 %
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.317 |       -9.2 |       -8.6 |     32 | _881_/D
-     351* |      57 |     135 |       44 |      0 |    22 |   +16.9% |   -0.149 |       -4.4 |       -4.0 |     32 | _875_/D
-    final |      57 |     141 |       44 |      0 |    22 |   +17.3% |   -0.149 |       -4.4 |       -3.9 |     32 | _875_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.318 |       -9.3 |       -8.6 |     32 | _881_/D
+     355* |      57 |     132 |       44 |      0 |    22 |   +16.5% |   -0.149 |       -4.4 |       -4.0 |     32 | _875_/D
+    final |      57 |     138 |       44 |      0 |    22 |   +16.9% |   -0.149 |       -4.4 |       -3.9 |     32 | _875_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 57 buffers.
 [INFO RSZ-0040] Inserted 44 buffers.
-[INFO RSZ-0051] Resized 141 instances: 141 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 138 instances: 138 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 22 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 6286.11 um^2
-[INFO DPL-0007] Movable instances area: 844.02 um^2
+[INFO DPL-0007] Movable instances area: 840.83 um^2
 [INFO DPL-0008] Fixed instances area within core: 44.69 um^2
 [INFO DPL-0009] Utilization: 14.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
@@ -152,11 +152,11 @@ Iteration | Violations |    Cells |    Sites
 Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         83.5 u
+total displacement         76.7 u
 average displacement        0.1 u
-max displacement            3.2 u
-original HPWL            7037.5 u
-legalized HPWL           7090.4 u
+max displacement            4.2 u
+original HPWL            7026.0 u
+legalized HPWL           7077.5 u
 delta HPWL                    1 %
 
 [INFO ANT-0002] Found 0 net violations.

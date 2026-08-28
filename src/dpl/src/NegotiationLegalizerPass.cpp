@@ -350,8 +350,8 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
       continue;
     }
     const NegCell& cell = cells_[idx];
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
+    const int xBegin = cell.x;
+    const int xEnd = cell.x + cell.width;
     for (int dy = 0; dy < cell.height; ++dy) {
       for (int gx = xBegin; gx < xEnd; ++gx) {
         if (gridExists(gx, cell.y + dy)) {
@@ -909,10 +909,8 @@ double NegotiationLegalizer::negotiationCost(int cell_idx,
     return cost;
   }
 
-  const int xBegin = std::max(0, x - cell.pad_left);
-  const int xEnd = std::min(grid_w_, x + cell.width + cell.pad_right);
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int gx = xBegin; gx < xEnd; ++gx) {
+    for (int gx = x; gx < x + cell.width; ++gx) {
       const int gy = y + dy;
       if (!gridExists(gx, gy)) {
         return cost + kInfCost;
@@ -984,8 +982,8 @@ void NegotiationLegalizer::updateHistoryCosts(
     if (cell.fixed) {
       continue;
     }
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
+    const int xBegin = cell.x;
+    const int xEnd = cell.x + cell.width;
     for (int dy = 0; dy < cell.height; ++dy) {
       const int gy = cell.y + dy;
       for (int gx = xBegin; gx < xEnd; ++gx) {
@@ -1040,8 +1038,8 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
     const int drcCount = opendp_->drc_engine_->countDRCViolations(
         node, GridX{cell.x}, GridY{cell.y}, orient);
     if (drcCount > 0) {
-      const int xBegin = effXBegin(cell);
-      const int xEnd = effXEnd(cell);
+      const int xBegin = cell.x;
+      const int xEnd = cell.x + cell.width;
       for (int dy = 0; dy < cell.height; ++dy) {
         for (int gx = xBegin; gx < xEnd; ++gx) {
           if (gridExists(gx, cell.y + dy)) {
@@ -1066,8 +1064,8 @@ void NegotiationLegalizer::sortByNegotiationOrder(
   auto cellOveruse = [this](int idx) {
     const NegCell& cell = cells_[idx];
     int ov = 0;
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
+    const int xBegin = cell.x;
+    const int xEnd = cell.x + cell.width;
     for (int dy = 0; dy < cell.height; ++dy) {
       for (int gx = xBegin; gx < xEnd; ++gx) {
         if (gridExists(gx, cell.y + dy)) {

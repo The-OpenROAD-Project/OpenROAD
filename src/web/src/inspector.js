@@ -1,10 +1,24 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Inspector panel — property tree, hover highlights, bbox display.
+// Inspector panel — property tree, hover highlights, bbox display,
+// property editing (server descriptor editors).
 
 import { dbuRectToBounds } from './coordinates.js';
-import { beginSelection, isCurrentSelection } from './ui-utils.js';
+import { beginSelection, isCurrentSelection, isStaticMode, showConfirmModal,
+         showToast } from './ui-utils.js';
+
+// Delete: trash can (Material "delete")
+const DELETE_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>' +
+    '</svg>';
+
+// Highlight group: color palette (Material "palette")
+const HIGHLIGHT_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>' +
+    '</svg>';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -63,12 +77,201 @@ const CHEVRON_RIGHT_SVG =
     '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>' +
     '</svg>';
 
+// Insert-buffer: buffer gate triangle + "+", matching the Qt GUI's buffer.png.
+const BUFFER_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M4 4 L4 20 L17 12 Z"/>' +
+    '<path d="M19 3 h2 v2 h2 v2 h-2 v2 h-2 v-2 h-2 v-2 h2 z"/>' +
+    '</svg>';
+
 export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
     let pendingInspectId = null;
     let pendingHoverId = null;
+    let editInFlight = false;
     const kMinHoverBoxPixels = 10;
+
+    // Commit a server-backed property edit.  payload is {value} for
+    // string/number/bool editors or {option_index, option_name} for list
+    // editors (the server passes the indexed option's exact value to the
+    // descriptor callback).  The response always carries the authoritative
+    // inspect payload — re-render from it, and surface the reason when the
+    // edit is rejected (the Qt GUI reverts silently).  A refresh push from
+    // the server redraws the tiles for every client, including this one.
+    function sendSetProperty(name, payload) {
+        if (editInFlight) return Promise.resolve();
+        editInFlight = true;
+        return app.websocketManager.request({
+            type: 'set_property', name, use_dbu: app.showDbu, ...payload,
+        }).then(data => {
+            if (!data.ok && data.error) showToast(data.error);
+            updateInspector(data);
+            if (data.ok && data.bbox) pulseHighlight(data.bbox);
+        }).catch(err => {
+            console.error('set_property failed:', err);
+            showToast('Edit failed: ' + err);
+            if (lastInspectData) updateInspector(lastInspectData);
+        }).finally(() => { editInFlight = false; });
+    }
+
+    // Build the <select> for a list/bool editor.  Bool editors mirror the
+    // Qt delegate's synthesized True/False choices and commit the boolean
+    // itself; list editors commit by option index.
+    function buildEditorSelect(prop, data) {
+        const select = document.createElement('select');
+        select.className = 'inspector-editor-select';
+        const options = prop.editor.type === 'bool'
+            ? ['True', 'False'] : (prop.editor.options || []);
+        for (const name of options) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (name === prop.value) opt.selected = true;
+            select.appendChild(opt);
+        }
+        if (!options.includes(prop.value)) {
+            // Current value is not among the choices (e.g. unset); show it
+            // as a disabled placeholder so the select reflects reality.
+            const opt = document.createElement('option');
+            opt.value = prop.value || '';
+            opt.textContent = prop.value || '';
+            opt.selected = true;
+            opt.disabled = true;
+            select.insertBefore(opt, select.firstChild);
+        }
+        select.addEventListener('change', () => {
+            if (data.onPropertyChange) {
+                // Client-side (ruler, label): same string contract as the
+                // contentEditable path, so the handler needs no select-specific
+                // case.
+                data.onPropertyChange(prop.name, select.value);
+                return;
+            }
+            if (prop.editor.type === 'bool') {
+                data.onPropertyEdit(prop, { value: select.value === 'True' });
+            } else {
+                const idx = (prop.editor.options || []).indexOf(select.value);
+                data.onPropertyEdit(prop, {
+                    option_index: idx, option_name: select.value,
+                });
+            }
+        });
+        return select;
+    }
+
+    // Run a descriptor action (e.g. Delete) on the inspected object.
+    // Destructive actions confirm first — there is no undo.
+    async function triggerAction(name, data) {
+        if (editInFlight) return;
+        if (name === 'Delete') {
+            const confirmed = await showConfirmModal({
+                title: 'Delete ' + (data.type || 'object'),
+                message: 'Delete ' + (data.type || 'object') + ' "'
+                    + (data.name || '') + '"? This cannot be undone.',
+                confirmLabel: 'Delete',
+                danger: true,
+            });
+            if (!confirmed) return;
+        }
+        editInFlight = true;
+        try {
+            const resp = await app.websocketManager.request({
+                type: 'trigger_action', name, use_dbu: app.showDbu,
+            });
+            if (!resp.ok && resp.error) showToast(resp.error);
+            updateInspector(resp.properties ? resp : null);
+            if (resp.deleted && app.highlightRect && app.map) {
+                app.map.removeLayer(app.highlightRect);
+                app.highlightRect = null;
+            }
+            clearClientHoverHighlight();
+            refreshOverlay();
+        } catch (err) {
+            console.error('trigger_action failed:', err);
+            showToast('Action failed: ' + err);
+        } finally {
+            editInFlight = false;
+        }
+    }
+
+    // Put/remove the inspected object in a color-coded highlight group
+    // (Qt GUI parity: 16 fixed groups, palette served by the backend).
+    // The response is a refreshed inspect payload, so the group badge
+    // updates in place.
+    function sendHighlight(msg) {
+        app.websocketManager.request({ ...msg, use_dbu: app.showDbu })
+            .then(data => {
+                if (!data.ok && data.error) showToast(data.error);
+                updateInspector(data);
+                refreshOverlay();
+            })
+            .catch(err => {
+                console.error(msg.type + ' failed:', err);
+            });
+    }
+
+    function closeHighlightPicker() {
+        const el = document.getElementById('highlight-picker');
+        if (el) el.remove();
+    }
+
+    // 4x4 swatch popover anchored to the toolbar button — a one-click
+    // group choice (the Qt GUI opens a modal 16-radio dialog instead).
+    function openHighlightPicker(anchor, data) {
+        closeHighlightPicker();
+        const colors = app.techData?.highlight_colors || [];
+        if (!colors.length) return;
+
+        const picker = document.createElement('div');
+        picker.id = 'highlight-picker';
+        const grid = document.createElement('div');
+        grid.className = 'highlight-swatch-grid';
+        colors.forEach((c, group) => {
+            const swatch = document.createElement('button');
+            swatch.className = 'highlight-swatch';
+            swatch.title = 'Group ' + (group + 1);
+            swatch.style.backgroundColor = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+            if (group === data.highlight_group) {
+                swatch.classList.add('active');
+            }
+            swatch.addEventListener('click', () => {
+                closeHighlightPicker();
+                sendHighlight({ type: 'highlight', group });
+            });
+            grid.appendChild(swatch);
+        });
+        picker.appendChild(grid);
+
+        if (data.highlight_group >= 0) {
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'highlight-remove';
+            removeBtn.textContent = 'Remove highlight';
+            removeBtn.addEventListener('click', () => {
+                closeHighlightPicker();
+                sendHighlight({ type: 'unhighlight' });
+            });
+            picker.appendChild(removeBtn);
+        }
+
+        document.body.appendChild(picker);
+        const rect = anchor.getBoundingClientRect();
+        picker.style.left = rect.left + 'px';
+        picker.style.top = (rect.bottom + 4) + 'px';
+
+        const dismiss = (e) => {
+            if (e.type === 'keydown' && e.key !== 'Escape') return;
+            if (e.type === 'mousedown' && picker.contains(e.target)) return;
+            closeHighlightPicker();
+            document.removeEventListener('mousedown', dismiss, true);
+            document.removeEventListener('keydown', dismiss, true);
+        };
+        // Defer so the opening click doesn't immediately dismiss.
+        setTimeout(() => {
+            document.addEventListener('mousedown', dismiss, true);
+            document.addEventListener('keydown', dismiss, true);
+        }, 0);
+    }
 
     function showLoading() {
         if (!app.inspectorEl) return;
@@ -271,9 +474,13 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 if (data.bbox && app.map && app.designScale) {
                     const [x1, y1, x2, y2] = data.bbox;
                     if (data.type !== 'Inst') {
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    if (data.selection_count > 1) {
+                        animateSelection(data.bbox);
+                    } else {
+                        pulseHighlight(data.bbox, data.type);
+                    }
                 }
                 // Redraw tiles to restore selection-set highlights.
                 redrawAllLayers();
@@ -321,9 +528,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                     // For non-instance objects, show dashed bbox outline
                     // (instances get the yellow tile-based highlight instead)
                     if (data.type !== 'Inst') {
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    pulseHighlight(data.bbox, data.type);
                 }
                 // Refresh overlay to update instance highlight
                 refreshOverlay();
@@ -365,9 +572,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 if (data.bbox && app.map && app.designScale) {
                     if (data.type !== 'Inst') {
                         const [x1, y1, x2, y2] = data.bbox;
-                        highlightBBox(x1, y1, x2, y2);
+                        highlightBBox(x1, y1, x2, y2, data.type);
                     }
-                    pulseHighlight(data.bbox);
+                    pulseHighlight(data.bbox, data.type);
                 }
                 refreshOverlay();
             })
@@ -377,14 +584,26 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             });
     }
 
-    function highlightBBox(x1, y1, x2, y2) {
+    function highlightBBox(x1, y1, x2, y2, type) {
         if (app.highlightRect) {
             app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        // A net's bbox spans its whole extent, which is distracting; the net's
+        // trace is already highlighted via the overlay, so skip the rectangle.
+        if (type === 'Net') {
+            return;
         }
         const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY);
+        // Always build the outline; only attach it while the "Highlight
+        // selected" toggle (Misc) is on, so toggling it back on can
+        // re-attach the current selection's outline (redrawAllLayers).
         app.highlightRect = L.rectangle(bounds, {
             color: '#ff0', weight: 2, fill: false, dashArray: '6,4',
-        }).addTo(app.map);
+        });
+        if (!(app.visibility && app.visibility.highlight_selected === false)) {
+            app.highlightRect.addTo(app.map);
+        }
     }
 
     // Briefly pulse the object's bbox so the user can see which object
@@ -392,12 +611,21 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     // animation.  The pulse is a filled rectangle that fades in and out
     // several times, then removes itself.
     let pulseLayer = null;
-    function pulseHighlight(bbox) {
+    function pulseHighlight(bbox, type) {
         if (!bbox || !app.map || !app.designScale) return;
+        // Clear any pulse in flight before honoring the toggle, so a call
+        // while highlighting is off doesn't leave a stale pulse behind.
+        if (animTimer !== null) stopSelectionAnimation();
         if (pulseLayer) {
             app.map.removeLayer(pulseLayer);
             pulseLayer = null;
         }
+        // Honor the "Highlight selected" toggle (Misc).
+        if (app.visibility && app.visibility.highlight_selected === false) {
+            return;
+        }
+        // A net's bbox spans the whole net; don't pulse a giant rectangle.
+        if (type === 'Net') return;
         const [x1, y1, x2, y2] = bbox;
         const bounds = dbuRectToBounds(
             x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
@@ -424,6 +652,72 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             }
         }, 1100);
     }
+
+    // Qt-style selection animation (layoutViewer.cpp selectionAnimation):
+    // every tick the outline weight cycles 1→2→3 px with a yellow brush
+    // flash on the weight-1 tick.  Unlike Qt, only this Leaflet path
+    // repaints — the layout tiles are untouched.  repeats=0 animates
+    // until stopSelectionAnimation() or a new animation replaces it.
+    let animLayer = null;
+    let animTimer = null;
+    function stopSelectionAnimation() {
+        if (animTimer !== null) {
+            clearInterval(animTimer);
+            animTimer = null;
+        }
+        if (animLayer) {
+            if (app.map && app.map.hasLayer(animLayer)) {
+                app.map.removeLayer(animLayer);
+            }
+            animLayer = null;
+        }
+    }
+    function animateSelection(bbox, { repeats = 6, intervalMs = 300 } = {}) {
+        if (!bbox || !app.map || !app.designScale) return;
+        stopSelectionAnimation();
+        if (typeof matchMedia === 'function'
+            && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            pulseHighlight(bbox);
+            return;
+        }
+        const [x1, y1, x2, y2] = bbox;
+        const bounds = dbuRectToBounds(
+            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
+        animLayer = L.rectangle(bounds, {
+            color: '#ff0',
+            weight: 1,
+            fill: true,
+            fillColor: '#ff0',
+            fillOpacity: 0.39,  // ≈ Qt kHighlight brush alpha 100/255
+            opacity: 1,
+            interactive: false,
+            pane: app.hoverHighlightPane,
+        }).addTo(app.map);
+        let state = 0;
+        const maxState = repeats > 0 ? repeats * 3 : Infinity;
+        animTimer = setInterval(() => {
+            state += 1;
+            if (state >= maxState) {
+                stopSelectionAnimation();
+                return;
+            }
+            const weight = (state % 3) + 1;
+            animLayer.setStyle({
+                weight,
+                fillOpacity: weight === 1 ? 0.39 : 0,
+            });
+        }, intervalMs);
+    }
+
+    // Let redrawAllLayers cancel an in-flight pulse when the "Highlight
+    // selected" toggle is turned off (pulseLayer is private to this closure).
+    app.clearSelectionPulse = function() {
+        if (pulseLayer) {
+            app.map.removeLayer(pulseLayer);
+            pulseLayer = null;
+        }
+    };
 
     // Build the collapsible shell (header row + body) shared by the group and
     // table property renderers.  `count` is the parenthesised badge after the
@@ -558,15 +852,55 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         row.appendChild(nameEl);
         row.appendChild(valEl);
 
-        // Editable property: make value contentEditable with Enter/Escape keys.
-        if (prop.editable && data && data.onPropertyChange) {
+        // Editable property.  Choice editors (list/bool) render a select;
+        // string/number editors make the value contentEditable with
+        // Enter/Escape keys.  Client-side properties (rulers, labels) route
+        // through onPropertyChange and server-backed ones through
+        // onPropertyEdit, but either can offer a choice list.
+        const isChoice = prop.editable && data
+            && (data.onPropertyEdit || data.onPropertyChange)
+            && prop.editor
+            && (prop.editor.type === 'list' || prop.editor.type === 'bool');
+        if (isChoice && prop.value_select_id === undefined) {
+            row.replaceChild(buildEditorSelect(prop, data), valEl);
+        } else if (isChoice) {
+            // The value doubles as a navigation link (e.g. an instance's
+            // Master); keep it clickable and swap in the choice list only
+            // when the pencil button is pressed.
+            const pencil = document.createElement('button');
+            pencil.className = 'inspector-edit-btn';
+            pencil.title = 'Edit ' + prop.name;
+            pencil.textContent = '✎';
+            pencil.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const select = buildEditorSelect(prop, data);
+                row.replaceChild(select, valEl);
+                pencil.remove();
+                select.focus();
+            });
+            row.appendChild(pencil);
+        } else if (prop.editable && data
+                   && (data.onPropertyChange || data.onPropertyEdit)) {
             valEl.contentEditable = true;
             valEl.classList.add('inspector-editable');
             valEl.addEventListener('blur', () => {
                 const newVal = valEl.textContent;
-                if (newVal !== prop.value) {
+                if (newVal === prop.value) return;
+                if (data.onPropertyChange) {  // client-side (ruler)
                     data.onPropertyChange(prop.name, newVal);
+                    return;
                 }
+                if (prop.editor && prop.editor.type === 'number') {
+                    const num = Number(newVal);
+                    if (newVal.trim() === '' || Number.isNaN(num)) {
+                        showToast('Not a number: ' + newVal);
+                        valEl.textContent = prop.value;
+                        return;
+                    }
+                    data.onPropertyEdit(prop, { value: num });
+                    return;
+                }
+                data.onPropertyEdit(prop, { value: newVal });
             });
             valEl.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') { e.preventDefault(); valEl.blur(); }
@@ -648,6 +982,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         app.inspectorEl.innerHTML = '';
 
         if (!data || !data.properties || data.properties.length === 0) {
+            // No object inspected: kill any lingering selection animation so
+            // it can't flash over a since-cleared/destroyed object.
+            stopSelectionAnimation();
             const placeholder = document.createElement('div');
             placeholder.className = 'stub-panel';
             placeholder.innerHTML =
@@ -655,6 +992,15 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 '<div class="stub-desc">Select an object in the layout to inspect its properties.</div>';
             app.inspectorEl.appendChild(placeholder);
             return;
+        }
+
+        // Server-backed objects get the set_property edit dispatcher;
+        // client-side panels (ruler) supply their own onPropertyChange
+        // and are left alone.
+        if (!data.onPropertyChange && !data.onPropertyEdit
+            && !isStaticMode(app)) {
+            data.onPropertyEdit
+                = (prop, payload) => sendSetProperty(prop.name, payload);
         }
 
         // Toolbar with action buttons
@@ -701,6 +1047,18 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 toolbar.appendChild(guideBtn);
             }
 
+            // Insert Buffer button for Net objects (mirrors the Qt dbNet
+            // descriptor action). The dialog fetches buffer_info and gates
+            // itself (drivers<=1), so it is always offered for a Net here.
+            if (data.type === 'Net' && data.name && app.showInsertBufferDialog) {
+                const bufBtn = document.createElement('button');
+                bufBtn.className = 'inspector-btn';
+                bufBtn.title = 'Insert buffer';
+                bufBtn.innerHTML = BUFFER_SVG;
+                bufBtn.addEventListener('click', () => app.showInsertBufferDialog(data.name));
+                toolbar.appendChild(bufBtn);
+            }
+
             // Clear all focus nets button
             if (app.focusNets.size > 0) {
                 const clearBtn = document.createElement('button');
@@ -709,6 +1067,46 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 clearBtn.innerHTML = CLEAR_FOCUS_SVG;
                 clearBtn.addEventListener('click', () => clearFocusNets());
                 toolbar.appendChild(clearBtn);
+            }
+
+            // Highlight-group button (server-backed objects carry a
+            // highlight_group field; client-side panels like the ruler
+            // don't).  The badge shows the current group's color.
+            if (typeof data.highlight_group === 'number' && !isStaticMode(app)
+                && (app.techData?.highlight_colors || []).length) {
+                const hlBtn = document.createElement('button');
+                hlBtn.className = 'inspector-btn inspector-highlight-btn';
+                const group = data.highlight_group;
+                hlBtn.title = group >= 0
+                    ? 'Highlight group ' + (group + 1)
+                    : 'Add to highlight group';
+                hlBtn.innerHTML = HIGHLIGHT_SVG;
+                if (group >= 0) {
+                    const c = app.techData.highlight_colors[group];
+                    hlBtn.style.backgroundColor
+                        = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.45)`;
+                    hlBtn.style.borderColor = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+                }
+                hlBtn.addEventListener('click',
+                                       () => openHighlightPicker(hlBtn, data));
+                toolbar.appendChild(hlBtn);
+            }
+
+            // Descriptor actions (server-provided, e.g. Delete).
+            if (Array.isArray(data.actions) && !isStaticMode(app)) {
+                for (const name of data.actions) {
+                    const btn = document.createElement('button');
+                    btn.className = 'inspector-btn inspector-action-btn';
+                    btn.title = name;
+                    if (name === 'Delete') {
+                        btn.innerHTML = DELETE_SVG;
+                        btn.classList.add('inspector-btn-danger');
+                    } else {
+                        btn.textContent = name;
+                    }
+                    btn.addEventListener('click', () => triggerAction(name, data));
+                    toolbar.appendChild(btn);
+                }
             }
 
             app.inspectorEl.appendChild(toolbar);
@@ -779,5 +1177,5 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         navigateInspector(-1);
     }
 
-    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector, refreshInspector };
+    return { createInspector, updateInspector, highlightBBox, pulseHighlight, animateSelection, stopSelectionAnimation, navigateInspector, refreshInspector };
 }

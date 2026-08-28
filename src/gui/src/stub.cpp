@@ -248,6 +248,15 @@ void initGui(Tcl_Interp* interp,
       "  }"
       "}");
   Tcl_Eval(interp, enabled_supported.c_str());
+  // Counterpart of gui.i's has_ui: commands shared with a non-Qt viewer
+  // dispatch on it, so it has to answer in a build with no Qt at all.
+  std::string cmd_has_ui(
+      "namespace eval gui {"
+      "  proc has_ui {} {"
+      "    return 0"
+      "  }"
+      "}");
+  Tcl_Eval(interp, cmd_has_ui.c_str());
 }
 
 int Gui::gifStart(const std::string& filename)

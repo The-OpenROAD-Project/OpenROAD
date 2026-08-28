@@ -3,17 +3,20 @@
 
 #pragma once
 
-#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
-
 #include <array>
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <istream>
 #include <map>
 #include <ostream>
+#include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -34,97 +37,86 @@ class dbOStream
   using Position = std::ostream::pos_type;
 
   dbOStream(_dbDatabase* db, std::ostream& f);
+  ~dbOStream()
+  {
+    try {
+      flush();
+    } catch (...) {
+      // Ignore exceptions in destructor
+    }
+  }
+
+  template <typename T>
+    requires(std::is_trivially_copyable_v<T>)
+  void writeValueAsBytes(const T& val)
+  {
+    writeBytes(
+        std::span<const char>(reinterpret_cast<const char*>(&val), sizeof(T)));
+  }
+
+  void flush()
+  {
+    if (buffer_pos_ > 0) {
+      f_.write(buffer_.data(), static_cast<std::streamsize>(buffer_pos_));
+      buffer_pos_ = 0;
+    }
+  }
 
   _dbDatabase* getDatabase() { return db_; }
 
+  void writeBytes(std::span<const char> bytes)
+  {
+    const char* data = bytes.data();
+    const size_t len = bytes.size();
+
+    if (len == 0) {
+      return;
+    }
+
+    // Flush buffer if new data won't fit
+    if (buffer_pos_ + len > kBufferSize) {
+      flush();
+    }
+
+    // If payload exceeds entire buffer size, bypass buffering
+    if (len > kBufferSize) {
+      f_.write(data, static_cast<std::streamsize>(len));
+    } else {
+      std::memcpy(buffer_.data() + buffer_pos_, data, len);
+      buffer_pos_ += len;
+    }
+  }
+
+  template <typename T>
+    requires(std::is_arithmetic_v<T>
+             && !std::is_same_v<std::remove_cvref_t<T>, bool>)
+  dbOStream& operator<<(const T& val)
+  {
+    writeValueAsBytes(val);
+    return *this;
+  }
+
   dbOStream& operator<<(bool c)
   {
-    unsigned char b = (c ? 1 : 0);
+    const unsigned char b = (c ? 1 : 0);
     return *this << b;
   }
 
-  dbOStream& operator<<(char c)
+  dbOStream& operator<<(std::string_view s)
   {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(unsigned char c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int16_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(uint16_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int64_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(uint64_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(unsigned int c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(int8_t c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(float c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(double c)
-  {
-    writeValueAsBytes(c);
-    return *this;
-  }
-
-  dbOStream& operator<<(long double c)
-  {
-    writeValueAsBytes(c);
+    *this << static_cast<uint32_t>(s.size() + 1);
+    writeBytes(s);
+    writeBytes({"\0", 1});
     return *this;
   }
 
   dbOStream& operator<<(const char* c)
   {
     if (c == nullptr) {
-      *this << 0;
+      *this << 0u;
     } else {
-      int l = strlen(c) + 1;
-      *this << l;
-      f_.write(c, l);
+      *this << std::string_view(c);
     }
-
     return *this;
   }
 
@@ -191,7 +183,7 @@ class dbOStream
   {
     uint32_t sz = m.size();
     *this << sz;
-    for (auto val : m) {
+    for (const auto& val : m) {
       *this << val;
     }
     return *this;
@@ -208,10 +200,7 @@ class dbOStream
 
   dbOStream& operator<<(const std::string& s)
   {
-    char* tmp = strdup(s.c_str());
-    *this << tmp;
-    free((void*) tmp);
-    return *this;
+    return *this << std::string_view(s);
   }
 
   template <uint32_t I = 0, typename... Ts>
@@ -234,7 +223,11 @@ class dbOStream
   double lefarea(int value) { return ((double) value * lef_area_factor_); }
   double lefdist(int value) { return ((double) value * lef_dist_factor_); }
 
-  Position pos() const { return f_.tellp(); }
+  Position pos()
+  {
+    flush();
+    return f_.tellp();
+  }
 
   void pushScope(const std::string& name);
   void popScope();
@@ -246,20 +239,14 @@ class dbOStream
     Position start_pos;
   };
 
-  // By default values are written as their string ("255" vs 0xFF)
-  // representations when using the << stream method. In dbOstream we are
-  // primarly writing the byte representation which the below accomplishes.
-  template <typename T>
-  void writeValueAsBytes(T type)
-  {
-    f_.write(reinterpret_cast<char*>(&type), sizeof(T));
-  }
-
   _dbDatabase* db_;
   std::ostream& f_;
   double lef_area_factor_;
   double lef_dist_factor_;
   std::vector<Scope> scopes_;
+  static constexpr size_t kBufferSize = 65536;
+  std::array<char, kBufferSize> buffer_;
+  size_t buffer_pos_ = 0;
 };
 
 // RAII class for scoping ostream operations
@@ -292,75 +279,12 @@ class dbIStream
     return *this;
   }
 
-  dbIStream& operator>>(char& c)
+  template <typename T>
+    requires(std::is_arithmetic_v<T>
+             && !std::is_same_v<std::remove_cvref_t<T>, bool>)
+  dbIStream& operator>>(T& val)
   {
-    f_.read(&c, sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(unsigned char& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int16_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(uint16_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int64_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(uint64_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(unsigned int& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(int8_t& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(float& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(double& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
-    return *this;
-  }
-
-  dbIStream& operator>>(long double& c)
-  {
-    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
+    readValueAsBytes(val);
     return *this;
   }
 
@@ -472,14 +396,15 @@ class dbIStream
 
   dbIStream& operator>>(std::string& s)
   {
-    char* tmp;
-    *this >> tmp;
-    if (!tmp) {
-      s = "";
+    uint32_t len = 0;
+    *this >> len;
+    if (len == 0) {
+      s.clear();
       return *this;
     }
-    s = std::string(tmp);
-    free((void*) tmp);
+    s.resize(len);
+    f_.read(s.data(), static_cast<std::streamsize>(len));
+    s.pop_back();  // Strip trailing '\0'
     return *this;
   }
 
@@ -496,6 +421,13 @@ class dbIStream
   double lefdist(int value) { return ((double) value * lef_dist_factor_); }
 
  private:
+  template <typename T>
+    requires(std::is_trivially_copyable_v<T>)
+  void readValueAsBytes(T& val)
+  {
+    f_.read(reinterpret_cast<char*>(&val), sizeof(T));
+  }
+
   template <uint32_t I = 0, typename... Ts>
   dbIStream& variantHelper(uint32_t index, std::variant<Ts...>& v)
   {

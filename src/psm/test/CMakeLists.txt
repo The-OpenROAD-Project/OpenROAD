@@ -23,6 +23,8 @@ or_integration_tests(
     gcd_all_vss_source_res
     gcd_all_vss
     gcd_em_test_vdd
+    gcd_gt2n_backside
+    gcd_gt2n_backside_wo_pins
     gcd_no_vsrc
     gcd_no_vsrc_reuse
     gcd_sky130_vdd

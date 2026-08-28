@@ -12,9 +12,42 @@ import os
 import tempfile
 
 
+def page_date(source=None):
+    """
+    Date stamped into a page's footer, as yy/mm/dd.
+
+    Stamping the build date made every generated page differ from one day to
+    the next, so the man page build never hit its Bazel cache across a date
+    boundary even with unchanged sources. Prefer SOURCE_DATE_EPOCH (the
+    reproducible-builds convention -- set it to pin output exactly), then the
+    modification time of the document the page is generated from, which is
+    what the footer date is meant to convey. `now` remains the fallback for
+    callers that construct a page from no file at all.
+    """
+    epoch = os.environ.get("SOURCE_DATE_EPOCH", "").strip()
+    if epoch:
+        # Reject a malformed pin rather than falling through to a date that
+        # varies per machine: the caller asked for reproducible output, and
+        # silently not delivering it is worse than stopping.
+        if not epoch.isdigit():
+            raise ValueError(
+                f"SOURCE_DATE_EPOCH must be a Unix timestamp, got {epoch!r}"
+            )
+        stamp = datetime.datetime.fromtimestamp(int(epoch), datetime.timezone.utc)
+    elif source and os.path.exists(source):
+        stamp = datetime.datetime.fromtimestamp(
+            os.path.getmtime(source), datetime.timezone.utc
+        )
+    else:
+        # UTC like the two branches above, so the stamp does not depend on the
+        # builder's timezone.
+        stamp = datetime.datetime.now(datetime.timezone.utc)
+    return stamp.strftime("%y/%m/%d")
+
+
 # identify key section and stored in ManPage class.
 class ManPage:
-    def __init__(self, man_level=2):
+    def __init__(self, man_level=2, source=None):
         assert man_level in [2, 3], "only writable for man2/man3"
         self.name = ""
         self.desc = ""
@@ -23,7 +56,7 @@ class ManPage:
         self.args = {}
         self.examples = []  # List of example dictionaries
         self.see_also = []  # List of related commands/functions
-        self.datetime = datetime.datetime.now().strftime("%y/%m/%d")
+        self.datetime = page_date(source)
         self.man_level = f"man{man_level}"
 
     def add_example(self, description: str, code: str, output: str | None = None):

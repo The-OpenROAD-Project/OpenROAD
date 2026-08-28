@@ -179,6 +179,10 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
       local_obstructions,
       allow_repair_channels_,
       domain_->getPDNGen()->getDebugRenderer());
+
+  if (logger->debugCheck(utl::PDN, "Pad", 1)) {
+    PadDirectConnectionStraps::reportConnectionBalance(getGridComponents());
+  }
 }
 
 void Grid::makeRoutingObstructions(odb::dbBlock* block) const
@@ -1322,9 +1326,11 @@ odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
+  auto net_map = std::make_shared<odb::PtrMap<odb::dbNet, int>>();
   std::vector<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
+    (*net_map)[net] = 0;
     std::vector<odb::dbITerm*> iterms;
     for (auto* iterm : net->getITerms()) {
       auto* inst = iterm->getInst();
@@ -1341,7 +1347,7 @@ void CoreGrid::setupDirectConnect(
 
     for (auto* iterm : iterms) {
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
-          this, iterm, connect_pad_layers);
+          this, iterm, connect_pad_layers, net_map);
       if (pad_connect->canConnect()) {
         straps.push_back(pad_connect.get());
         addStrap(std::move(pad_connect));

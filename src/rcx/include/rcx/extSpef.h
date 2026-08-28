@@ -36,6 +36,13 @@ struct SpefHeader
   std::string inductance_unit_word{"HENRY"};
 };
 
+// For converting db values (FF and OHM) to the declared units.
+struct ScaleFactors
+{
+  double capacitance{1.0};
+  double resistance{1.0};
+};
+
 class extSpef
 {
  public:
@@ -45,6 +52,9 @@ class extSpef
           const char* version,
           extMain* extmain);
   ~extSpef();
+
+  static ScaleFactors computeScaleFactors(const std::string& capacitance_unit,
+                                          const std::string& resistance_unit);
 
   void reinit();
   bool setOutSpef(const char* filename);
@@ -346,10 +356,7 @@ class extSpef
   uint32_t _blockId = 0;
 
   SpefHeader spef_header_;
-
-  // Scale factors derived from the header units, not header text.
-  double _res_unit = 1.0;
-  double _cap_unit = 1.0;
+  ScaleFactors scale_factors_;
 
   uint32_t _cornerCnt = 0;
   uint32_t _cornersPerBlock;

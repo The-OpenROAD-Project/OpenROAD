@@ -1,9 +1,70 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
+import { showFindDialog, showGotoDialog } from './search-nav.js';
+import { runTclScript } from './ui-utils.js';
+
+// The menu bar in #menu-bar: static menus merged with the custom items
+// registered from Tcl (`create_menu_item`, delivered in app.customMenu).
+//
+// A static item's `shortcut` is display text only -- the built-in keys are
+// hand-written in main.js's keydown listener, which does not consult this
+// tree.  A custom item's is bound here, by bindCustomShortcuts: the Tcl side
+// has no other way to reach the keyboard.
+
+// Canonical form of a Qt-style accelerator ("Ctrl+Shift+K", "F", "Escape"):
+// modifiers lowercased into a fixed order, then the key.  Returns null when
+// there is no key left to bind, so a stray "Ctrl+" cannot swallow every
+// Ctrl press.  The key is compared against KeyboardEvent.key lowercased, so
+// name it as the browser reports it ("escape", "arrowup", "f5").
+const kModifierAliases = {
+    ctrl: 'ctrl',
+    control: 'ctrl',
+    shift: 'shift',
+    alt: 'alt',
+    // "cmd" is what a macOS user writes for the key Qt calls Meta.
+    meta: 'meta',
+    cmd: 'meta',
+    command: 'meta',
+    super: 'meta',
+};
+
+export function canonicalShortcut(spec) {
+    if (typeof spec !== 'string') return null;
+    const parts = spec.split('+').map(p => p.trim().toLowerCase())
+        .filter(Boolean);
+    if (parts.length === 0) return null;
+    const key = parts.pop();
+    // The last token has to be a key, not a modifier: "Ctrl+" and
+    // "Ctrl+Shift" name no key, and binding them to the bare modifier would
+    // fire on a chord the author never asked for.
+    if (kModifierAliases[key] !== undefined) return null;
+    const mods = new Set();
+    for (const p of parts) {
+        const mod = kModifierAliases[p];
+        if (mod === undefined) {
+            return null;  // an unknown modifier would bind the wrong chord
+        }
+        mods.add(mod);
+    }
+    const order = ['ctrl', 'alt', 'shift', 'meta'];
+    return [...order.filter(m => mods.has(m)), key].join('+');
+}
+
+// The same canonical form for a live KeyboardEvent.
+export function eventShortcut(e) {
+    const mods = [];
+    if (e.ctrlKey) mods.push('ctrl');
+    if (e.altKey) mods.push('alt');
+    if (e.shiftKey) mods.push('shift');
+    if (e.metaKey) mods.push('meta');
+    return [...mods, String(e.key).toLowerCase()].join('+');
+}
+
+// Builds the bar and returns nothing; call app.rebuildMenuBar() after
+// updating app.customMenu to re-render live.
 export function createMenuBar(app) {
-    const menus = [
+    const staticMenus = [
         { label: 'File', items: [
             { label: 'Open DB...', action: () => showPathDialog(app, 'Open DB', 'read_db'),
               enabledWhen: () => !app.designScale },
@@ -19,20 +80,48 @@ export function createMenuBar(app) {
             { label: 'Show DBU', action: () => app.toggleShowDbu(),
               checked: () => app.showDbu },
             { type: 'separator' },
-            { label: 'Find...', shortcut: 'Ctrl+F', disabled: true },
-            { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
+            { label: 'Find...', shortcut: 'Ctrl+F',
+              action: () => showFindDialog(app),
+              enabledWhen: () => !!app.designScale },
+            { label: 'Go to Position...', shortcut: 'Shift+G',
+              action: () => showGotoDialog(app),
+              enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Tools', items: [
             { label: 'Ruler', shortcut: 'K',
               action: () => { if (app.rulerManager) app.rulerManager.toggleRulerMode(); } },
             { label: 'Clear Rulers', shortcut: 'Shift+K',
               action: () => { if (app.rulerManager) app.rulerManager.clearAllRulers(); } },
+            { label: 'Euclidian rulers', action: () => app.toggleRulerStyle(),
+              checked: () => app.rulerStyle !== 'manhattan' },
+            { type: 'separator' },
+            { label: 'Add Label', shortcut: 'L',
+              action: () => { if (app.labelManager) app.labelManager.toggleLabelMode(); } },
+            { label: 'Clear Labels',
+              action: () => { if (app.labelManager) app.labelManager.clearAllLabels(); } },
+            { type: 'separator' },
+            { label: 'Clear Highlights',
+              action: () => {
+                  app.websocketManager.request(
+                      { type: 'clear_highlights', group: -1 })
+                      .then(() => {
+                          if (app.refreshOverlay) app.refreshOverlay();
+                          if (app.refreshInspector) app.refreshInspector();
+                      })
+                      .catch(() => {});
+              } },
+            { type: 'separator' },
+            { label: 'Global Connect...',
+              action: () => { if (app.showGlobalConnectDialog) app.showGlobalConnectDialog(); },
+              enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },
             { label: '3D Viewer', action: () => app.focusComponent('3DViewer') },
             { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
+            { label: 'Selection Browser',
+              action: () => app.focusComponent('SelectHighlight') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
             { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
@@ -48,6 +137,9 @@ export function createMenuBar(app) {
 
     const bar = document.getElementById('menu-bar');
     let openMenu = null;
+    // Canonical chord -> action, for the custom items only.  Repopulated by
+    // render() (see buildMenuTree).
+    const customShortcuts = new Map();
 
     function closeAll() {
         if (openMenu) {
@@ -56,15 +148,67 @@ export function createMenuBar(app) {
         }
     }
 
-    for (const menu of menus) {
-        const label = document.createElement('div');
-        label.className = 'menu-label';
-        label.textContent = menu.label;
+    // \u2500\u2500 Merge static menus with Tcl-registered custom items \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // A menu node is { label, items: [...] }; an item is a leaf (with action)
+    // a separator, or a submenu (with its own `submenu` node).  `-path` from
+    // create_menu_item is '/'-separated; the first segment maps to a
+    // top-level menu (created on demand), deeper segments nest as submenus \u2014
+    // the client mirror of gui::MainWindow::findMenu.
+    function buildMenuTree() {
+        // Deep-ish clone of the static menus so a rebuild starts fresh.
+        const tree = staticMenus.map(m => ({
+            label: m.label,
+            items: m.items.slice(),
+        }));
 
-        const dropdown = document.createElement('div');
-        dropdown.className = 'menu-dropdown';
+        const topByLabel = new Map(tree.map(m => [m.label, m]));
+        function getOrCreateTop(label) {
+            let node = topByLabel.get(label);
+            if (!node) {
+                node = { label, items: [] };
+                topByLabel.set(label, node);
+                tree.push(node);
+            }
+            return node;
+        }
+        function getOrCreateSub(parent, label) {
+            let entry = parent.items.find(
+                it => it.submenu && it.label === label);
+            if (!entry) {
+                entry = { label, submenu: { label, items: [] } };
+                parent.items.push(entry);
+            }
+            return entry.submenu;
+        }
 
-        for (const item of menu.items) {
+        for (const item of (app.customMenu || [])) {
+            const segments = String(item.path || 'Custom Scripts')
+                .split('/').map(s => s.trim()).filter(Boolean);
+            if (segments.length === 0) segments.push('Custom Scripts');
+            let node = getOrCreateTop(segments[0]);
+            for (let i = 1; i < segments.length; i++) {
+                node = getOrCreateSub(node, segments[i]);
+            }
+            const action = () => runTclScript(app, item.script, item.echo);
+            node.items.push({
+                label: item.text,
+                shortcut: item.shortcut,
+                action,
+            });
+            const chord = canonicalShortcut(item.shortcut);
+            if (chord) {
+                // Last registration wins, matching the menu order: two items
+                // asking for one chord is the author's bug, and firing both
+                // would run a script they did not mean to.
+                customShortcuts.set(chord, action);
+            }
+        }
+        return tree;
+    }
+
+    // Build one dropdown's rows (recursing into submenus).
+    function renderItems(dropdown, items) {
+        for (const item of items) {
             if (item.type === 'separator') {
                 const sep = document.createElement('div');
                 sep.className = 'menu-separator';
@@ -74,14 +218,33 @@ export function createMenuBar(app) {
 
             const row = document.createElement('div');
             row.className = 'menu-item';
+
+            // Submenu: a row that opens a nested dropdown on hover (CSS).
+            if (item.submenu) {
+                row.classList.add('submenu-item');
+                const text = document.createElement('span');
+                text.textContent = item.label;
+                row.appendChild(text);
+                const arrow = document.createElement('span');
+                arrow.className = 'submenu-arrow';
+                arrow.textContent = '\u25b8';  // \u25b8
+                row.appendChild(arrow);
+
+                const sub = document.createElement('div');
+                sub.className = 'menu-dropdown submenu';
+                renderItems(sub, item.submenu.items);
+                row.appendChild(sub);
+                dropdown.appendChild(row);
+                continue;
+            }
+
             if (item.disabled) row.classList.add('disabled');
             // Track items with dynamic enabled state for refresh on open.
             if (item.enabledWhen) row._enabledWhen = item.enabledWhen;
 
             // Checkmark indicator for toggle items.
-            let checkEl = null;
             if (item.checked) {
-                checkEl = document.createElement('span');
+                const checkEl = document.createElement('span');
                 checkEl.className = 'menu-check';
                 checkEl.textContent = item.checked() ? '\u2713' : '';
                 row.appendChild(checkEl);
@@ -110,47 +273,96 @@ export function createMenuBar(app) {
 
             dropdown.appendChild(row);
         }
-
-        label.appendChild(dropdown);
-
-        function refreshDynamicItems() {
-            for (const row of dropdown.querySelectorAll('.menu-item')) {
-                if (row._enabledWhen) {
-                    row.classList.toggle('disabled', !row._enabledWhen());
-                }
-                if (row._checkedFn) {
-                    const check = row.querySelector('.menu-check');
-                    if (check) check.textContent = row._checkedFn() ? '\u2713' : '';
-                }
-            }
-        }
-
-        label.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (openMenu === label) {
-                closeAll();
-            } else {
-                closeAll();
-                refreshDynamicItems();
-                label.classList.add('open');
-                openMenu = label;
-            }
-        });
-
-        // Hover-open when another menu is already open
-        label.addEventListener('mouseenter', () => {
-            if (openMenu && openMenu !== label) {
-                closeAll();
-                refreshDynamicItems();
-                label.classList.add('open');
-                openMenu = label;
-            }
-        });
-
-        bar.appendChild(label);
     }
 
+    function render() {
+        bar.innerHTML = '';
+        openMenu = null;
+        // Rebuilt from scratch: a button removed from the registry must lose
+        // its key too.
+        customShortcuts.clear();
+
+        for (const menu of buildMenuTree()) {
+            const label = document.createElement('div');
+            label.className = 'menu-label';
+            label.textContent = menu.label;
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'menu-dropdown';
+            renderItems(dropdown, menu.items);
+            label.appendChild(dropdown);
+
+            // Refresh dynamic (checked/enabledWhen) rows across the whole
+            // subtree \u2014 querySelectorAll finds hidden submenu rows too.
+            function refreshDynamicItems() {
+                for (const row of dropdown.querySelectorAll('.menu-item')) {
+                    if (row._enabledWhen) {
+                        row.classList.toggle('disabled', !row._enabledWhen());
+                    }
+                    if (row._checkedFn) {
+                        const check = row.querySelector('.menu-check');
+                        if (check) check.textContent = row._checkedFn() ? '\u2713' : '';
+                    }
+                }
+            }
+
+            label.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (openMenu === label) {
+                    closeAll();
+                } else {
+                    closeAll();
+                    refreshDynamicItems();
+                    label.classList.add('open');
+                    openMenu = label;
+                }
+            });
+
+            // Hover-open when another menu is already open
+            label.addEventListener('mouseenter', () => {
+                if (openMenu && openMenu !== label) {
+                    closeAll();
+                    refreshDynamicItems();
+                    label.classList.add('open');
+                    openMenu = label;
+                }
+            });
+
+            bar.appendChild(label);
+        }
+    }
+
+    render();
+    // Exposed so main.js can re-render when a custom_ui push arrives.
+    app.rebuildMenuBar = render;
+
     document.addEventListener('click', closeAll);
+    bindCustomShortcuts(customShortcuts);
+}
+
+// One capture-phase listener for the custom items' accelerators.  Registered
+// once per menu bar and reading the live map, so a rebuild does not stack up
+// listeners.
+//
+// createMenuBar runs before main.js installs its own keydown handler, so this
+// sees the event first and stopImmediatePropagation() keeps the built-in from
+// also firing: a custom item that claims an already-used key overrides it
+// rather than triggering both.
+function bindCustomShortcuts(customShortcuts) {
+    document.addEventListener('keydown', (e) => {
+        if (customShortcuts.size === 0) return;
+        // Never steal a keystroke aimed at a text field (same guard main.js
+        // applies), or the Tcl console would be unusable.
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) {
+            return;
+        }
+        const action = customShortcuts.get(eventShortcut(e));
+        if (!action) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        action();
+    }, true);
 }
 
 // ─── File Browser Dialog (Open/Save DB) ─────────────────────────────────────

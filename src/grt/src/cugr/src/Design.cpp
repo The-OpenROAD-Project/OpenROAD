@@ -1,5 +1,6 @@
 #include "Design.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -115,6 +116,13 @@ void Design::readNetlist()
   }
 }
 
+// Pin shapes may sit above the max routing layer (bumps, top-metal ports);
+// connectTopLevelPins re-stacks the vias above the ceiling on guide export.
+int Design::clampPinLayerIdx(int layer_idx) const
+{
+  return std::min(layer_idx, getNumLayers() - 1);
+}
+
 std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
 {
   std::vector<CUGRPin> pins;
@@ -126,8 +134,13 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
       odb::Point position(x, y);
       for (odb::dbBPin* bpin : db_bterm->getBPins()) {
         for (odb::dbBox* bpin_box : bpin->getBoxes()) {
+          odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
+          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+            continue;
+          }
           // adjust layer idx to start with zero
-          int layer_idx = bpin_box->getTechLayer()->getRoutingLevel() - 1;
+          const int layer_idx
+              = clampPinLayerIdx(tech_layer->getRoutingLevel() - 1);
           pin_shapes.emplace_back(layer_idx,
                                   getBoxFromRect(bpin_box->getBox()));
         }
@@ -151,7 +164,8 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
         odb::Rect rect = box->getBox();
         xform.apply(rect);
 
-        int layer_index = tech_layer->getRoutingLevel() - 1;
+        const int layer_index
+            = clampPinLayerIdx(tech_layer->getRoutingLevel() - 1);
         pin_shapes.emplace_back(
             layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
       }

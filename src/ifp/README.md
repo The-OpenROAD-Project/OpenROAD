@@ -177,7 +177,7 @@ insert_tiecells
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/InitFloorplan.cc) or the [swig file](./src/InitFloorPlan.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/InitFloorplan.cc) or the [swig file](./src/InitFloorplan.i).
 
 | Command Name | Description |
 | ----- | ----- |

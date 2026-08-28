@@ -14,6 +14,7 @@ TESTS = [
     "make_parasitics5",
     "make_parasitics6",
     "make_parasitics7",
+    "prima_net_recycle",
     "set_wire_rc_tech",
     "set_wire_rc_tech_errors",
     "set_wire_rc_rdl_ignored",
@@ -41,7 +42,11 @@ filegroup(
 
 [regression_test(
     name = test_name,
-    data = [":test_resources"],
+    data = [
+        ":test_resources",
+        "//test:asap7_ccs_data",
+        "//test:asap7_data",
+    ],
 ) for test_name in TESTS]
 
 cc_test(

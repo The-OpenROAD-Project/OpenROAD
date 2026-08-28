@@ -197,7 +197,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
       bool repaired_net = false;
-      if (max_fanout <= 0) {
+      if (max_fanout <= 0 || max_fanout > 1e9) {
         max_fanout = 1e9;
       }
 
@@ -351,19 +351,7 @@ void RepairDesign::repairDesign(
                   repaired_net_count,
                   static_cast<int>(driver_vertices.size()));
     int max_length = resizer_->metersToDbu(max_wire_length);
-    // Zero-config futility guard: stop buffer insertion when count exceeds
-    // limit
-    const int max_allowed_buffers
-        = std::max(5000, static_cast<int>(driver_vertices.size() * 0.05));
     for (int i = driver_vertices.size() - 1; i >= 0; i--) {
-      if (inserted_buffer_count_ > max_allowed_buffers) {
-        logger_->warn(
-            RSZ,
-            3310,
-            "Buffer limit reached ({}); stopping repair pass on doomed run.",
-            inserted_buffer_count_);
-        break;
-      }
       print_iteration++;
       if (verbose || (print_iteration == 1)) {
         printProgress(print_iteration,

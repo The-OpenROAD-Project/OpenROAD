@@ -5,6 +5,17 @@
 
 import { getThemeColors } from './theme.js';
 import { isStaticMode } from './ui-utils.js';
+import { downloadUrl } from './image-export.js';
+
+// Export filename for the clock on show, so exporting several tabs in a row
+// does not overwrite one file.  Anything a file name cannot carry becomes '_'
+// -- a hierarchical clock name holds '/', and Windows rejects more besides --
+// and a clock with no usable name still gets a file.
+export function clockTreePngName(clockName) {
+    const cleaned = String(clockName || '').replace(/[^A-Za-z0-9._-]/g, '_')
+        .replace(/^_+|_+$/g, '');
+    return (cleaned || 'clock_tree') + '.png';
+}
 
 export const kNodeSpacing = 24;    // pixels between adjacent leaf bins
 export const kNodeSize = 10;       // base node shape size in pixels
@@ -197,10 +208,15 @@ export class ClockTreeWidget {
         this._fitBtn = document.createElement('button');
         this._fitBtn.className = 'timing-btn';
         this._fitBtn.textContent = 'Fit';
+        this._pngBtn = document.createElement('button');
+        this._pngBtn.className = 'timing-btn';
+        this._pngBtn.textContent = 'PNG';
+        this._pngBtn.title = 'Export the clock tree as a PNG image';
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
         toolbar.appendChild(this._updateBtn);
         toolbar.appendChild(this._fitBtn);
+        toolbar.appendChild(this._pngBtn);
         toolbar.appendChild(this._statusLabel);
         el.appendChild(toolbar);
 
@@ -237,9 +253,28 @@ export class ClockTreeWidget {
         this._render();
     }
 
+    _pngFileName() {
+        const clock = this._clockData[this._selectedClockIdx];
+        return clockTreePngName(clock && clock.name);
+    }
+
+    // The clock tree is drawn in the browser, so the image is taken from the
+    // canvas rather than re-rendered server-side the way the Qt GUI's
+    // save_clocktree_image does.  _render() paints an opaque background
+    // first, so the PNG is not transparent.  The canvas is sized in device
+    // pixels (see _sizeCanvas), so this exports at the display's resolution.
+    _exportPng() {
+        try {
+            downloadUrl(this._canvas.toDataURL('image/png'), this._pngFileName());
+        } catch (err) {
+            console.error('PNG export failed:', err);
+        }
+    }
+
     _bindEvents() {
         this._updateBtn.addEventListener('click', () => this.update());
         this._fitBtn.addEventListener('click', () => this._fit());
+        this._pngBtn.addEventListener('click', () => this._exportPng());
 
         this._canvas.addEventListener('keydown', (e) => {
             if (e.key === 'f') {

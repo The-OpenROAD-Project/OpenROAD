@@ -892,14 +892,29 @@ _install_or_tools() {
 _install_bazel() {
     local bazel_prefix=${PREFIX:-"/usr/local"}
     log "Checking Bazel (via bazelisk)"
+    # bazelisk and the libraries a Bazel build needs are installed
+    # independently: something else may already have put bazelisk on PATH (the
+    # -ci package set does), and skipping the libraries in that case would leave
+    # a system that has bazelisk but cannot link.
     if _command_exists "bazelisk"; then
         log "bazelisk already installed, skipping."
         INSTALL_SUMMARY+=("Bazel: system=found, required=any, status=skipped")
-        return
-    fi
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
         _execute "Installing bazelisk via Homebrew..." brew install bazelisk
+        INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
     else
+        # curl fetches bazelisk below but is not in every base image, and
+        # nothing else here guarantees it: the -ci package set installs it, but
+        # -ci only applies to Ubuntu.
+        if ! _command_exists "curl"; then
+            if _command_exists "apt-get"; then
+                _execute "Updating package lists..." apt-get -y update
+                _execute "Installing curl..." \
+                    apt-get -y install --no-install-recommends curl ca-certificates
+            elif _command_exists "yum"; then
+                _execute "Installing curl..." yum install -y curl ca-certificates
+            fi
+        fi
         local arch
         arch=$(uname -m)
         local bazelisk_arch="amd64"
@@ -918,6 +933,12 @@ _install_bazel() {
             chmod +x bazelisk
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
+        INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
+    fi
+
+    # Runtime libraries for the prebuilt LLVM toolchain and, unless -no-gui, for
+    # the Qt GUI binary. Homebrew resolves these itself on macOS.
+    if [[ "$OSTYPE" != "darwin"* ]]; then
         if _command_exists "apt-get"; then
             # Ubuntu 26.04 ships the libxml2 runtime with soname
             # libxml2.so.16, but the prebuilt LLVM toolchain (lld) pulled in
@@ -932,6 +953,9 @@ _install_bazel() {
             if [[ -n "${ubuntu_version}" ]] && _version_compare "${ubuntu_version}" -ge "26.04"; then
                 libxml2_pkg="libxml2-dev"
             fi
+            # -bazel can be the only mode a user runs, so refresh the lists
+            # here rather than relying on -base having already done it.
+            _execute "Updating package lists..." apt-get -y update
             _execute "Installing bazel required libraries..." \
                 apt-get -y install --no-install-recommends \
                 libc6-dev "${libxml2_pkg}" libtinfo6 zlib1g libstdc++6
@@ -954,29 +978,41 @@ _install_bazel() {
                 glibc-devel libxml2 ncurses-libs zlib libstdc++
         fi
         if [[ "${NO_GUI}" != "yes" ]]; then
-            # Install xcb libraries needed for GUI support with Bazel builds
+            # Runtime xcb libraries only, no -dev/-devel: Qt comes from the
+            # qt-bazel prebuilts, so nothing compiles against system xcb
+            # headers. The GUI binary resolves these at load time, which is the
+            # whole reason they are here. The -devel variants also live in
+            # PowerTools/CRB on RHEL-likes, which is not enabled by default.
             if _command_exists "apt-get"; then
                 _execute "Installing xcb libraries for GUI support..." \
                     apt-get -y install --no-install-recommends \
-                    libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
-                    libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
-                    libxcb-xinerama0-dev libxcb-xkb-dev \
-                    libx11-xcb1 libx11-6 libsm6 libice6 \
-                    libxcb-cursor0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
+                    libx11-6 libx11-xcb1 libsm6 libice6 \
+                    libxcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+                    libxcb-keysyms1 libxcb-randr0 libxcb-render0 \
+                    libxcb-render-util0 libxcb-shape0 libxcb-shm0 libxcb-sync1 \
+                    libxcb-util1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1 \
                     libdbus-1-3 libfontconfig1 libxkbcommon0 libxkbcommon-x11-0
             elif _command_exists "yum"; then
                 _execute "Installing xcb libraries for GUI support..." \
                     yum install -y \
-                    libxcb-devel xcb-util-devel xcb-util-image-devel \
-                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel \
+                    libxcb xcb-util xcb-util-image xcb-util-keysyms \
+                    xcb-util-renderutil xcb-util-wm \
                     libX11-xcb libX11 libSM libICE \
-                    xcb-util-cursor libxcb \
                     dbus-libs fontconfig \
                     libxkbcommon libxkbcommon-x11
+                # On RHEL 8 xcb-util-cursor comes from EPEL rather than the
+                # default repositories (9 ships it in AppStream), so it is there
+                # after -base but not for a standalone -bazel on a bare image.
+                # Probe rather than hard-fail: without it the GUI binary cannot
+                # open a window, but the cli binary links and runs fine.
+                if yum -q info xcb-util-cursor > /dev/null 2>&1; then
+                    _execute "Installing xcb-util-cursor..." yum install -y xcb-util-cursor
+                else
+                    log "xcb-util-cursor unavailable on this release; skipping (the GUI binary will not run here)."
+                fi
             fi
         fi
     fi
-    INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
 }
 
 # ------------------------------------------------------------------------------
