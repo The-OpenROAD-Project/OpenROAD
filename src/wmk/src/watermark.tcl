@@ -74,10 +74,25 @@ proc generate_watermark_key { args } {
 
   if { [info exists keys(-file)] } {
     set path $keys(-file)
-    set fh [open $path w]
-    # The file holds the secret key, so no one but its owner should be able to
-    # read it.  Set the mode before anything is written to it.
-    catch { file attributes $path -permissions 0600 }
+    # The file holds the secret key, so create it owner-only rather than
+    # creating it and then narrowing it: between those two steps another local
+    # user can open it and keep that handle across every later write.  A umask
+    # can only clear bits, never add them, so 0600 is an upper bound.
+    if { [catch { open $path {WRONLY CREAT TRUNC} 0600 } fh] } {
+      utl::error WMK 103 "Could not create $path: $fh"
+    }
+    # A filesystem that does not carry permissions would leave the key readable
+    # while this command reported otherwise.  Refuse rather than misreport.
+    if { [catch { file attributes $path -permissions } mode] } {
+      close $fh
+      utl::error WMK 104 "Could not read back the permissions of $path, so it\
+                          cannot be confirmed owner-only: $mode"
+    }
+    if { $mode & 0o077 } {
+      close $fh
+      utl::error WMK 105 "$path is readable by others (mode [format 0%o $mode]);\
+                          refusing to write the secret key to it."
+    }
     foreach name { design_id nonce_hex key_hex placement cts routing } {
       puts $fh "$name [dict get $result $name]"
     }
@@ -169,7 +184,7 @@ sta::define_cmd_args "place_watermark" {-claims_file file \
                                        [-pair_dist_um dist] \
                                        [-pairs_per_tile n] \
                                        [-slack_threshold_ns slack] \
-                                       [-hpwl_eps_dbu eps] \
+                                       [-hpwl_eps_um eps] \
                                        [-max_disp_um disp] \
                                        [-min_pairs_total n] \
                                        [-guard_degrade_ns ns]}
@@ -181,7 +196,7 @@ sta::define_cmd_args "place_watermark" {-claims_file file \
 proc place_watermark { args } {
   sta::parse_key_args "place_watermark" args \
     keys {-key_hex -claims_file -grid_nx -grid_ny -pair_dist_um \
-          -pairs_per_tile -slack_threshold_ns -hpwl_eps_dbu -max_disp_um \
+          -pairs_per_tile -slack_threshold_ns -hpwl_eps_um -max_disp_um \
           -min_pairs_total -guard_degrade_ns} \
     flags {}
 
@@ -201,7 +216,7 @@ proc place_watermark { args } {
   set pair_dist 1.0
   set per_tile 4
   set slack 0.20
-  set hpwl_eps 100
+  set hpwl_eps 0.05
   set max_disp 5
   set min_pairs 64
   set guard_degrade 0.02
@@ -210,7 +225,7 @@ proc place_watermark { args } {
   if { [info exists keys(-pair_dist_um)] } { set pair_dist $keys(-pair_dist_um) }
   if { [info exists keys(-pairs_per_tile)] } { set per_tile $keys(-pairs_per_tile) }
   if { [info exists keys(-slack_threshold_ns)] } { set slack $keys(-slack_threshold_ns) }
-  if { [info exists keys(-hpwl_eps_dbu)] } { set hpwl_eps $keys(-hpwl_eps_dbu) }
+  if { [info exists keys(-hpwl_eps_um)] } { set hpwl_eps $keys(-hpwl_eps_um) }
   if { [info exists keys(-max_disp_um)] } { set max_disp $keys(-max_disp_um) }
   if { [info exists keys(-min_pairs_total)] } { set min_pairs $keys(-min_pairs_total) }
   if { [info exists keys(-guard_degrade_ns)] } { set guard_degrade $keys(-guard_degrade_ns) }

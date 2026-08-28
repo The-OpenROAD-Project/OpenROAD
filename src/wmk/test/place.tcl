@@ -41,7 +41,7 @@ set key 0011223344556677889900aabbccddeeff00112233445566778899aabbccddee
 set claims [make_result_file place.csv]
 
 set committed [place_watermark -key_hex $key -claims_file $claims \
-  -hpwl_eps_dbu 2000 -pair_dist_um 3.0 -pairs_per_tile 64]
+  -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 64]
 puts "committed $committed pairs"
 # Pinned rather than merely non-zero: capacity quietly collapsing to a handful
 # of pairs would leave a design with too few bits to prove anything, and every
@@ -74,7 +74,7 @@ check "and some of them were pairs the embedder had to reorder" \
 # the row, and the first run moved some of them -- but everything it does is
 # already in this key's order, so nothing it touches can fall out of it.
 place_watermark -key_hex $key -claims_file [make_result_file place_again.csv] \
-  -hpwl_eps_dbu 2000 -pair_dist_um 3.0 -pairs_per_tile 64
+  -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 64
 check "re-embedding the same key leaves the first mark intact" \
   { verify_watermark -placement_claims $claims -min_stages 1 } 1
 

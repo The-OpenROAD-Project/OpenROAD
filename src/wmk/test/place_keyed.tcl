@@ -48,9 +48,9 @@ proc pairs_in { path } {
 set claims_a [make_result_file place_keyed_a.csv]
 set claims_b [make_result_file place_keyed_b.csv]
 place_watermark -key_hex $key_a -claims_file $claims_a \
-  -hpwl_eps_dbu 2000 -pair_dist_um 3.0 -pairs_per_tile 1
+  -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 1
 place_watermark -key_hex $key_b -claims_file $claims_b \
-  -hpwl_eps_dbu 2000 -pair_dist_um 3.0 -pairs_per_tile 1
+  -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 1
 
 set a [pairs_in $claims_a]
 set b [pairs_in $claims_b]

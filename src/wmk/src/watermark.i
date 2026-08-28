@@ -94,7 +94,7 @@ place_watermark_cmd(const char* key_hex,
                     double pair_dist_um,
                     int pairs_per_tile,
                     double slack_threshold_ns,
-                    int hpwl_eps_dbu,
+                    double hpwl_eps_um,
                     int max_disp_um,
                     int min_pairs_total,
                     double guard_degrade_ns)
@@ -109,7 +109,7 @@ place_watermark_cmd(const char* key_hex,
   opts.pair_dist_um = pair_dist_um;
   opts.pairs_per_tile = pairs_per_tile;
   opts.slack_threshold_ns = slack_threshold_ns;
-  opts.hpwl_eps_dbu = hpwl_eps_dbu;
+  opts.hpwl_eps_um = hpwl_eps_um;
   opts.max_disp_um = max_disp_um;
   opts.min_pairs_total = min_pairs_total;
   opts.guard_degrade_ns = guard_degrade_ns;

@@ -25,7 +25,7 @@ design.readDef("gcd_placed.def")
 watermark = design.getWatermark()
 
 options = wmk.PlacementOptions()
-options.hpwl_eps_dbu = 2000
+options.hpwl_eps_um = 1.0
 options.pair_dist_um = 3.0
 options.pairs_per_tile = 64
 # The slack screen is switched off deliberately.  What is being tested is that

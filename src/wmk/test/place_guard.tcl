@@ -33,7 +33,7 @@ set claims [make_result_file place_guard.csv]
 
 # 24 pairs are committed; the guard puts 2 of them back, so 22 are claimed.
 set kept [place_watermark -key_hex $key -claims_file $claims \
-  -hpwl_eps_dbu 2000 -pair_dist_um 3.0 -pairs_per_tile 64 \
+  -hpwl_eps_um 1.0 -pair_dist_um 3.0 -pairs_per_tile 64 \
   -guard_degrade_ns 0.001]
 puts "kept $kept pairs"
 check "the pairs that cost timing are not claimed" { set kept } 22

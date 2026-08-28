@@ -108,7 +108,7 @@ place_watermark
     [-grid_nx n]
     [-grid_ny n]
     [-guard_degrade_ns ns]
-    [-hpwl_eps_dbu eps]
+    [-hpwl_eps_um eps]
     [-max_disp_um disp]
     [-min_pairs_total n]
     [-pair_dist_um dist]
@@ -124,7 +124,7 @@ place_watermark
 | `-key_hex` | 64-character hex placement key. |
 | `-grid_nx`, `-grid_ny` | Tiles across and down the core, so marks are spread rather than clustered. Both default to `8`. |
 | `-guard_degrade_ns` | Slack a pair may cost before it is put back. Defaults to `0.02`. `0` disables the check. |
-| `-hpwl_eps_dbu` | Largest half-perimeter wirelength change a swap may cost, in database units. Defaults to `100`. |
+| `-hpwl_eps_um` | Largest half-perimeter wirelength change a swap may cost, in microns. Defaults to `0.05`. |
 | `-max_disp_um` | Displacement allowed during re-legalization, in microns. Defaults to `5`. |
 | `-min_pairs_total` | Below this many pairs, search again with a wider neighbourhood and twice the wirelength budget. Defaults to `64`. |
 | `-pair_dist_um` | How far along the row to look for a partner, in microns. Defaults to `1.0`. |
@@ -399,9 +399,6 @@ Simply run the following script:
 -   Capacity is a property of the design. A sparse or timing-tight design may
     yield few placement pairs or none, and a shallow clock tree too few leaf
     buffers to pair.
--   Database units differ between platforms, so `-hpwl_eps_dbu` is not the same
-    physical size everywhere: 100 units is 0.05 um on NanGate45 and 1.0 um on
-    ASAP7.
 -   Certificate sealing and the timestamped key commitment are not part of this
     module. Their guarantee comes from an independent timestamping authority
     rather than from anything the tool can check.

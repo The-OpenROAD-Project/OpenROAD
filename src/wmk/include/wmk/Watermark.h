@@ -59,7 +59,7 @@ struct PlacementOptions
   // between platforms, so this is 0.05 um on NanGate45 and 1.0 um on ASAP7;
   // it is inherited from the reference implementation rather than chosen per
   // platform, and is worth setting deliberately on a new one.
-  int hpwl_eps_dbu = 100;
+  double hpwl_eps_um = 0.05;
   // How far legalization may move a cell afterwards, in microns.
   int max_disp_um = 5;
   // Below this many pairs the design is searched again with the gates widened,
