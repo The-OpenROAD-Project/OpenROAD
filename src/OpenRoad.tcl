@@ -238,13 +238,13 @@ proc check_3dblox { args } {
 
 sta::define_cmd_args "write_db" {filename}
 
-sta::define_cmd_args "read_db" {[-hier] filename}
+sta::define_cmd_args "read_db" {[-hier] [-sdc] filename}
 
 proc read_db { args } {
   # TODO: -hier is not needed anymore.
   # - It will be removed in a future release.
   # - It is currently retained for backward compatibility.
-  sta::parse_key_args "read_db" args keys {} flags {-hier}
+  sta::parse_key_args "read_db" args keys {} flags {-hier -sdc}
   sta::check_argc_eq1or2 "read_db" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
@@ -254,7 +254,10 @@ proc read_db { args } {
   if { ![file readable $filename] } {
     utl::error "ORD" 8 "$filename is not readable."
   }
-  ord::read_db_cmd $filename $hierarchy
+  # -sdc replays the timing constraints stored in the .odb by write_db,
+  # rather than requiring a separate .sdc file to be read alongside it.
+  set restore_sdc [info exists flags(-sdc)]
+  ord::read_db_cmd $filename $hierarchy $restore_sdc
 }
 
 sta::define_cmd_args "write_db" {[-compression level] filename}

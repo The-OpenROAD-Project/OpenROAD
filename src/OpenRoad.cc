@@ -555,13 +555,16 @@ void OpenRoad::write3Dbx(const std::string& filename)
 
 // TODO: bool hierarchy should be removed in the future.
 // It is retained for a while for backward compatibility.
-void OpenRoad::readDb(const char* filename, bool hierarchy)
+void OpenRoad::readDb(const char* filename, bool hierarchy, bool restore_sdc)
 {
   try {
     utl::InStreamHandler handler(filename, true);
     readDb(handler.getStream());
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
+  if (restore_sdc) {
+    restoreSdcFromDb();
   }
   // treat this as a hierarchical network.
   if (hierarchy || db_->hasHierarchy()) {
@@ -593,8 +596,16 @@ void OpenRoad::readDb(std::istream& stream)
 
 void OpenRoad::writeDb(std::ostream& stream)
 {
+  // Store the timing constraints in the block so the .odb is
+  // self-describing and does not have to be paired with a .sdc by name.
+  getSta()->saveSdcToDb();
   stream.exceptions(std::ofstream::failbit | std::ofstream::badbit);
   db_->write(stream);
+}
+
+bool OpenRoad::restoreSdcFromDb()
+{
+  return getSta()->restoreSdcFromDb();
 }
 
 void OpenRoad::writeDb(const char* filename,

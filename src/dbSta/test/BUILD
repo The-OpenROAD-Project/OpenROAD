@@ -91,6 +91,9 @@ ALL_TESTS = [
     "sta3",
     "sta4",
     "sta5",
+    "sdc_in_db1",
+    "sdc_in_db2",
+    "sdc_in_db3",
     "sta_to_db1",
     "sta_to_db1_hier",
     "write_sdc1",
@@ -265,6 +268,16 @@ filegroup(
                 "example1_slow.lib",
                 "example1.def",
                 "example1.lef",
+            ],
+            "sdc_in_db1": [
+                "hier1.sdc",
+                "hier1.v",
+            ],
+            "sdc_in_db2": [
+                "sdc_in_db.odb",
+            ],
+            "sdc_in_db3": [
+                "sdc_in_db.odb",
             ],
             "sdc_names1": [
                 "hier1.def",
