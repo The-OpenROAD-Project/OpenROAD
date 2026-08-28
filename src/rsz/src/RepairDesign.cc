@@ -193,7 +193,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                  "  Net {} is eligible for repair.",
                  network_->pathName(net));
       float fanout, max_fanout, fanout_slack;
-      sta_->checkFanout(
+      resizer_->checkFanout(
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
       bool repaired_net = false;
@@ -1013,7 +1013,7 @@ void RepairDesign::repairNet(sta::Net* net,
     // Fanout is addressed by creating region repeaters
     if (check_fanout) {
       float fanout, max_fanout, fanout_slack;
-      sta_->checkFanout(
+      resizer_->checkFanout(
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
       if (max_fanout > 0.0 && fanout_slack < 0.0) {
