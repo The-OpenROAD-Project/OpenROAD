@@ -8,6 +8,7 @@ or_integration_tests(
     clust03
     cluster_place01
     mbff_hier
+    mt_invariance01
     mbff_orig_name
     mbff_clock_power_off
     mbff_clock_power_on

@@ -18,6 +18,7 @@ TESTS = [
     "error01",
     "incremental01",
     "mbff_hier",
+    "mt_invariance01",
     "mbff_orig_name",
     "mbff_clock_power_off",
     "mbff_clock_power_on",

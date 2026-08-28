@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -697,21 +698,24 @@ inline void Bin::addFillerArea(int64_t area)
   fillerArea_ += area;
 }
 
-// The accumulators are integers and each addend is truncated by the implicit
-// conversion before it is added, so the total is a sum over a fixed multiset
-// of integers: associative and commutative, and therefore independent of the
-// order threads reach it. That is what lets the per-cell scatter run in
-// parallel in place and still match the serial loop bit for bit.
+// For the threaded density scatter. The accumulators are integers and each
+// addend is truncated before it is added, so the sum is over a fixed multiset
+// of integers -- associative and commutative, hence independent of the order
+// threads reach it. Relaxed suffices: we need atomicity, not ordering, and the
+// result is consumed only after the parallel region's implicit barrier.
+// atomic_ref rather than an atomic member so the field stays a plain int64_t:
+// Bin remains trivially copyable for its vector, and the serial path keeps its
+// non-atomic add.
 inline void Bin::atomicAddInstPlacedAreaUnscaled(int64_t area)
 {
-#pragma omp atomic
-  instPlacedAreaUnscaled_ += area;
+  std::atomic_ref<int64_t> ref(instPlacedAreaUnscaled_);
+  ref.fetch_add(area, std::memory_order_relaxed);
 }
 
 inline void Bin::atomicAddFillerArea(int64_t area)
 {
-#pragma omp atomic
-  fillerArea_ += area;
+  std::atomic_ref<int64_t> ref(fillerArea_);
+  ref.fetch_add(area, std::memory_order_relaxed);
 }
 
 //
@@ -731,6 +735,8 @@ class BinGrid
   void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                   int parallel_threads = 1);
+  void scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
+                                 int parallel_threads);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();

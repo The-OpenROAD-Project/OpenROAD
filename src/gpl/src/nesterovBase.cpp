@@ -963,6 +963,49 @@ void BinGrid::updateBinsNonPlaceArea()
   }
 }
 
+// The per-cell density scatter, in place. The bin accumulators are int64_t and
+// each addend is truncated before it is added, so the total is a sum over a
+// fixed multiset of integers -- associative and commutative, hence independent
+// of the order threads reach it, and bit-identical at any thread count.
+//
+// schedule(dynamic) because per-cell cost is its bin-overlap count, which
+// varies by an order of magnitude between a std cell and a macro.
+void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
+                                        int parallel_threads)
+{
+#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
+  for (const GCellHandle& cell : cells) {
+    const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+    const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+
+    if (cell->isInstance()) {
+      const bool macro = cell->isMacroInstance();
+      if (!macro && !cell->isStdInstance()) {
+        continue;
+      }
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
+          float scaledArea
+              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+          if (macro) {
+            scaledArea *= bin.getTargetDensity();
+          }
+          bin.atomicAddInstPlacedAreaUnscaled(static_cast<int64_t>(scaledArea));
+        }
+      }
+    } else if (cell->isFiller()) {
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
+          bin.atomicAddFillerArea(static_cast<int64_t>(
+              getOverlapDensityArea(bin, cell) * cell->getDensityScale()));
+        }
+      }
+    }
+  }
+}
+
 // Core Part
 void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                          int parallel_threads)
@@ -973,13 +1016,12 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     bin.setFillerArea(0);
   }
 
+  // A single scatter implementation for every CPU case, threaded or not, so
+  // that every existing test exercises the code that threaded runs use.
 #ifdef ENABLE_GPU
-  // The per-cell scatter below is the dominant host hotspot of the global
-  // placer. On the GPU path it dwarfs everything else (the device sits idle
-  // while this runs serially), and that path already tolerates a few-ULP,
-  // thread-order-dependent result. So parallelize it there, accumulating
-  // per-bin areas into flat buffers with atomics. The CPU-only path keeps the
-  // serial branch for bit-stable regression goldens.
+  // The device build keeps its pre-existing flat-buffer scatter for threaded
+  // runs: that one is thread-order-dependent, and this change cannot
+  // re-verify the device path.
   if (parallel_threads > 1) {
     const int nbins = static_cast<int>(bins_.size());
     std::vector<float> inst_area(nbins, 0.0f);
@@ -1024,92 +1066,10 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
       bins_[b].setFillerArea(filler_area[b]);
     }
   } else {
-    for (auto& cell : cells) {
-      std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-      std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
-
-      // The following function is critical runtime hotspot
-      // for global placer.
-      //
-      if (cell->isInstance()) {
-        // macro should have
-        // scale-down with target-density
-        if (cell->isMacroInstance()) {
-          for (int y = pairY.first; y < pairY.second; y++) {
-            for (int x = pairX.first; x < pairX.second; x++) {
-              Bin& bin = bins_[y * binCntX_ + x];
-
-              const float scaledAvea = getOverlapDensityArea(bin, cell)
-                                       * cell->getDensityScale()
-                                       * bin.getTargetDensity();
-              bin.addInstPlacedAreaUnscaled(scaledAvea);
-            }
-          }
-        }
-        // normal cells
-        else if (cell->isStdInstance()) {
-          for (int y = pairY.first; y < pairY.second; y++) {
-            for (int x = pairX.first; x < pairX.second; x++) {
-              Bin& bin = bins_[y * binCntX_ + x];
-              const float scaledArea
-                  = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-              bin.addInstPlacedAreaUnscaled(scaledArea);
-            }
-          }
-        }
-      } else if (cell->isFiller()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-            bin.addFillerArea(getOverlapDensityArea(bin, cell)
-                              * cell->getDensityScale());
-          }
-        }
-      }
-    }
+    scatterDensityAreaInPlace(cells, 1);
   }
-
 #else
-  // CPU: scatter in place. The bin accumulators are int64_t and each addend is
-  // truncated by the implicit conversion before it is added, so the total is a
-  // sum over a fixed multiset of integers -- associative and commutative, and
-  // therefore independent of the order threads reach it. The result matches the
-  // serial loop bit for bit, at any thread count.
-  //
-  // schedule(dynamic) because per-cell cost is its bin-overlap count, which
-  // varies by an order of magnitude between a std cell and a macro.
-#pragma omp parallel for num_threads( \
-        parallel_threads) if (parallel_threads > 1) schedule(dynamic, 128)
-  for (const GCellHandle& cell : cells) {
-    const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
-
-    if (cell->isInstance()) {
-      const bool macro = cell->isMacroInstance();
-      if (!macro && !cell->isStdInstance()) {
-        continue;
-      }
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          float scaledArea
-              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-          if (macro) {
-            scaledArea *= bin.getTargetDensity();
-          }
-          bin.atomicAddInstPlacedAreaUnscaled(scaledArea);
-        }
-      }
-    } else if (cell->isFiller()) {
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.atomicAddFillerArea(getOverlapDensityArea(bin, cell)
-                                  * cell->getDensityScale());
-        }
-      }
-    }
-  }
+  scatterDensityAreaInPlace(cells, parallel_threads);
 #endif
 
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
@@ -3194,15 +3154,16 @@ void NesterovBase::updateGCellDensityCenterLocation(
   if (nbc_->getDeviceState()) {
     nbc_->getDeviceState()->invalidateCoords();
   }
-  // GPU path tolerates non-deterministic float ordering; parallelize the
-  // density scatter (the dominant host cost) there. CPU-only stays serial
-  // (scatter_threads == 1) so its regression goldens stay bit-stable.
+  // Only the device build takes the flat-buffer scatter, which is
+  // thread-order-dependent; without a device it stays serial.
   if (nb_device_ctx_ != nullptr) {
     scatter_threads = static_cast<int>(nbc_->getNumThreads());
   }
 #else
-  // The scatter is order-independent (integer accumulators, truncated addends),
-  // so it runs threaded without changing the result.
+  // Order-independent in place (integer accumulators, truncated addends), so
+  // threading it does not change the result. nbc_ is the thread count every
+  // other parallel loop in gpl uses; BinGrid::num_threads_ is not it --
+  // BinGrid::setNumThreads() has no callers, so it is always 1.
   const int scatter_threads = static_cast<int>(nbc_->getNumThreads());
 #endif
   bg_.updateBinsGCellDensityArea(nb_gcells_, scatter_threads);
