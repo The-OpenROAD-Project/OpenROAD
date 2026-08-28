@@ -962,8 +962,14 @@ class FlexGridGraph
   // edges and off-track preferred-direction edges alike.  This approximates
   // the IC Craftsman "limit way = 1" rule.  A value of 1.0 (the default)
   // leaves the router's behavior unchanged.
-  void setWrongWayMultiplier(float m) { wrong_way_multiplier_ = m; }
-  float getWrongWayMultiplier() const { return wrong_way_multiplier_; }
+  void setWrongWayWatermarkMultiplier(float m)
+  {
+    wrong_way_watermark_multiplier_ = m;
+  }
+  float getWrongWayWatermarkMultiplier() const
+  {
+    return wrong_way_watermark_multiplier_;
+  }
 
   void setDstTaperBox(frBox3D* t) { dstTaperBox_ = t; }
 
@@ -1156,8 +1162,8 @@ class FlexGridGraph
   // ndr related
   frNonDefaultRule* ndr_ = nullptr;
   // Watermark: multiplier for the grid cost on the net currently being
-  // routed.  1.0 = no change.  See setWrongWayMultiplier().
-  float wrong_way_multiplier_ = 1.0f;
+  // routed.  1.0 = no change.  See setWrongWayWatermarkMultiplier().
+  float wrong_way_watermark_multiplier_ = 1.0f;
   const frBox3D* dstTaperBox_
       = nullptr;  // taper box for the current dest pin in the search
 

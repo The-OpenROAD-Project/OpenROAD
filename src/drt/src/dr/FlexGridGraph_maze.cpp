@@ -557,8 +557,8 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
   frUInt4 jumper_cost = route_with_jumpers ? 10 : 1;
 
   // Routing watermark: scale the grid cost of the net currently being routed
-  // by wrong_way_multiplier_, so the maze avoids the edges the watermark is
-  // measured on.
+  // by wrong_way_watermark_multiplier_, so the maze avoids the edges the
+  // watermark is measured on.
   //
   // Note what this actually gates on.  hasGridCost is set both for
   // non-preferred-direction edges and for preferred-direction edges that are
@@ -574,9 +574,9 @@ frCost FlexGridGraph::getCosts(frMIdx gridX,
   // net, so the guard keeps this innermost loop on the integer-only path.
   frCost gridCostVal
       = (gridCost || apCost) ? router_cfg_->GRIDCOST * edgeLength : 0;
-  if (gridCost && wrong_way_multiplier_ != 1.0f) {
-    gridCostVal = static_cast<frCost>(router_cfg_->GRIDCOST * edgeLength
-                                      * wrong_way_multiplier_);
+  if (gridCost && wrong_way_watermark_multiplier_ != 1.0f) {
+    gridCostVal
+        = static_cast<frCost>(gridCostVal * wrong_way_watermark_multiplier_);
   }
 
   // temporarily disable guideCost

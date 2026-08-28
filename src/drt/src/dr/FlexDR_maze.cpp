@@ -1648,9 +1648,10 @@ void FlexDRWorker::mazeNetInit(drNet* net)
   // strongly prefers preferred-direction edges, approximating the
   // IC Craftsman "limit way = 1" rule used in Kahng et al. (ISPD'98).
   if (net->getFrNet() && net->getFrNet()->isWatermark()) {
-    gridGraph_.setWrongWayMultiplier(router_cfg_->WATERMARK_WRONGWAY_MULT);
+    gridGraph_.setWrongWayWatermarkMultiplier(
+        router_cfg_->WATERMARK_WRONGWAY_MULT);
   } else {
-    gridGraph_.setWrongWayMultiplier(1.0f);
+    gridGraph_.setWrongWayWatermarkMultiplier(1.0f);
   }
   // sub term / instterm cost when net is about to route
   initMazeCost_terms(net->getFrNetTerms(), false, true);
@@ -1680,7 +1681,7 @@ void FlexDRWorker::mazeNetEnd(drNet* net)
   gridGraph_.setDstTaperBox(nullptr);
   // Reset watermark multiplier so subsequent non-watermark nets route
   // with the router's default non-preferred-direction cost.
-  gridGraph_.setWrongWayMultiplier(1.0f);
+  gridGraph_.setWrongWayWatermarkMultiplier(1.0f);
 }
 
 void FlexDRWorker::writeGCPatchesToDRWorker(
