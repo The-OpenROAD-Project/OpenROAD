@@ -173,11 +173,15 @@ class CUGR
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
   void updateCriticalNets(const std::vector<int>& net_indices);
-  // Refresh net slacks for the next stage. The global parasitics
-  // re-estimate and full-design slack sweep run at most once per route();
-  // later calls re-estimate parasitics and refresh slacks only for the
-  // given (congested/rerouted) nets.
+  // Refresh net slacks for the next stage. The global parasitics re-estimate
+  // runs at most once per route(); later calls rely on the per-stage
+  // updateReroutedParasitics() below and only re-query slacks.
   void updateNetSlacks(const std::vector<int>& net_indices);
+  // Re-estimate parasitics for nets whose route just changed, using the new
+  // route. Must be called *after* a stage's reroute loop: the critical-net
+  // update runs before it, so doing the estimate there would use the old
+  // route and permanently miss nets that leave the congested set.
+  void updateReroutedParasitics(const std::vector<int>& net_indices);
   // Refresh the slack of the given nets from STA, without re-extracting
   // parasitics (incremental scope).
   void refreshNetSlacks(const std::vector<int>& net_indices);
@@ -327,8 +331,8 @@ class CUGR
 
   // Suppresses the global parasitics re-estimate during incremental routing.
   bool incremental_routing_ = false;
-  // Set once the per-route() full parasitics estimate + slack sweep has run;
-  // subsequent updateNetSlacks calls downgrade to a subset refresh.
+  // Set once the per-route() full parasitics estimate has run; later calls
+  // rely on per-stage incremental updates instead.
   bool full_slack_update_done_ = false;
   // Dirty-net set for the current incremental pass; scopes congestion checks.
   std::vector<int> incremental_candidates_;

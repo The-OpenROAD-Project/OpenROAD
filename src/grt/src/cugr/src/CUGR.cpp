@@ -157,32 +157,42 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
     refreshNetSlacks(net_indices);
     return;
   }
-  if (full_slack_update_done_) {
-    // Later stages: re-estimate parasitics only for the rerouted nets;
-    // untouched nets keep the RC from the initial full estimate.
+  if (!full_slack_update_done_) {
     if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-      for (const int net_index : net_indices) {
-        GRNet* net = gr_nets_[net_index].get();
-        if (net == nullptr) {
-          continue;
-        }
-        GRoute route = getNetRoute(net->getDbNet());
-        estimator->updateGlobalRouteParasitics(net->getDbNet(), route);
-      }
+      estimator->estimateAllGlobalRouteParasitics();
     }
-    refreshNetSlacks(net_indices);
-    return;
+    full_slack_update_done_ = true;
   }
-  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-    estimator->estimateAllGlobalRouteParasitics();
-  }
+  // Query every net, not just the rerouted ones: rerouting a net moves slack
+  // on every path it shares, and criticalSlackThreshold() takes a percentile
+  // over all nets. Parasitics are already current -- each stage refreshes the
+  // nets it rerouted via updateReroutedParasitics() -- so this is one lazy STA
+  // propagation plus cached reads, not a re-extraction.
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
     }
     net->setSlack(getNetSlack(net->getDbNet()));
   }
-  full_slack_update_done_ = true;
+}
+
+void CUGR::updateReroutedParasitics(const std::vector<int>& net_indices)
+{
+  if (incremental_routing_ || !full_slack_update_done_) {
+    return;
+  }
+  auto* estimator = service_registry_->find<est::ParasiticsService>();
+  if (estimator == nullptr) {
+    return;
+  }
+  for (const int net_index : net_indices) {
+    GRNet* net = gr_nets_[net_index].get();
+    if (net == nullptr || net->getRoutingTree() == nullptr) {
+      continue;
+    }
+    GRoute route = getNetRoute(net->getDbNet());
+    estimator->updateGlobalRouteParasitics(net->getDbNet(), route);
+  }
 }
 
 float CUGR::criticalSlackThreshold() const
@@ -568,6 +578,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
+  updateReroutedParasitics(res_aware_nets);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -606,6 +617,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
+  updateReroutedParasitics(net_indices);
 }
 
 void CUGR::mazeRoute(std::vector<int>& net_indices)
@@ -667,6 +679,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid_graph_->updateWireCostView(wire_cost_view, net->getRoutingTree());
     grid.step();
   }
+  updateReroutedParasitics(net_indices);
 }
 
 void CUGR::route(bool incremental)
