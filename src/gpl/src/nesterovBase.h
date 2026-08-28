@@ -588,9 +588,11 @@ class Bin
   void addNonPlaceArea(int64_t area);
   void addInstPlacedArea(int64_t area);
   void addFillerArea(int64_t area);
+  void atomicAddFillerArea(int64_t area);
 
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
+  void atomicAddInstPlacedAreaUnscaled(int64_t area);
 
   int64_t getBinArea() const;
   int64_t getNonPlaceArea() const { return nonPlaceArea_; }
@@ -692,6 +694,23 @@ inline void Bin::addInstPlacedAreaUnscaled(int64_t area)
 
 inline void Bin::addFillerArea(int64_t area)
 {
+  fillerArea_ += area;
+}
+
+// The accumulators are integers and each addend is truncated by the implicit
+// conversion before it is added, so the total is a sum over a fixed multiset
+// of integers: associative and commutative, and therefore independent of the
+// order threads reach it. That is what lets the per-cell scatter run in
+// parallel in place and still match the serial loop bit for bit.
+inline void Bin::atomicAddInstPlacedAreaUnscaled(int64_t area)
+{
+#pragma omp atomic
+  instPlacedAreaUnscaled_ += area;
+}
+
+inline void Bin::atomicAddFillerArea(int64_t area)
+{
+#pragma omp atomic
   fillerArea_ += area;
 }
 

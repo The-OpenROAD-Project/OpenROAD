@@ -973,6 +973,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     bin.setFillerArea(0);
   }
 
+#ifdef ENABLE_GPU
   // The per-cell scatter below is the dominant host hotspot of the global
   // placer. On the GPU path it dwarfs everything else (the device sits idle
   // while this runs serially), and that path already tolerates a few-ULP,
@@ -1067,6 +1068,49 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
       }
     }
   }
+
+#else
+  // CPU: scatter in place. The bin accumulators are int64_t and each addend is
+  // truncated by the implicit conversion before it is added, so the total is a
+  // sum over a fixed multiset of integers -- associative and commutative, and
+  // therefore independent of the order threads reach it. The result matches the
+  // serial loop bit for bit, at any thread count.
+  //
+  // schedule(dynamic) because per-cell cost is its bin-overlap count, which
+  // varies by an order of magnitude between a std cell and a macro.
+#pragma omp parallel for num_threads( \
+        parallel_threads) if (parallel_threads > 1) schedule(dynamic, 128)
+  for (const GCellHandle& cell : cells) {
+    const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+    const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+
+    if (cell->isInstance()) {
+      const bool macro = cell->isMacroInstance();
+      if (!macro && !cell->isStdInstance()) {
+        continue;
+      }
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
+          float scaledArea
+              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+          if (macro) {
+            scaledArea *= bin.getTargetDensity();
+          }
+          bin.atomicAddInstPlacedAreaUnscaled(scaledArea);
+        }
+      }
+    } else if (cell->isFiller()) {
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
+          bin.atomicAddFillerArea(getOverlapDensityArea(bin, cell)
+                                  * cell->getDensityScale());
+        }
+      }
+    }
+  }
+#endif
 
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
   sumOverflowArea_ = 0;
@@ -3143,8 +3187,8 @@ void NesterovBase::updateGCellDensityCenterLocation(
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
-  int scatter_threads = 1;
 #ifdef ENABLE_GPU
+  int scatter_threads = 1;
   // Host coords changed — the device copy is no longer authoritative until
   // the next commitCoordsToDeviceState (sticky-freshness contract).
   if (nbc_->getDeviceState()) {
@@ -3156,6 +3200,10 @@ void NesterovBase::updateGCellDensityCenterLocation(
   if (nb_device_ctx_ != nullptr) {
     scatter_threads = static_cast<int>(nbc_->getNumThreads());
   }
+#else
+  // The scatter is order-independent (integer accumulators, truncated addends),
+  // so it runs threaded without changing the result.
+  const int scatter_threads = static_cast<int>(nbc_->getNumThreads());
 #endif
   bg_.updateBinsGCellDensityArea(nb_gcells_, scatter_threads);
 }
