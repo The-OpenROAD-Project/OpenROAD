@@ -139,13 +139,13 @@ void Graph2D::rebuildUsedGrids()
 void Graph2D::clearNDRnets()
 {
   for (auto row : v_ndr_nets_) {
-    for (auto& ndr_set : row) {
-      ndr_set.clear();
+    for (auto& ndr_nets : row) {
+      ndr_nets.clear();
     }
   }
   for (auto row : h_ndr_nets_) {
-    for (auto& ndr_set : row) {
-      ndr_set.clear();
+    for (auto& ndr_nets : row) {
+      ndr_nets.clear();
     }
   }
 }
@@ -662,7 +662,8 @@ double Graph2D::getCostNDRAware(FrNet* net,
                                                             : v_ndr_nets_[x][y];
 
   const std::string& net_name = net->getName();
-  bool is_net_present = ndr_nets.find(net) != ndr_nets.end();
+  auto net_it = ndr_nets.find(net);
+  const bool is_net_present = net_it != ndr_nets.end();
   double final_edge_cost = 0;
 
   if (edge_cost < 0) {  // Rip-up: remove resource
@@ -671,10 +672,13 @@ double Graph2D::getCostNDRAware(FrNet* net,
     // half the edge cost a second time in the initial routing steps. But we
     // only need to count once to avoid problems when managing 3D capacity
     if (is_net_present) {
-      ndr_nets.erase(net);
-      // If the edge already has an overflow caused by NDR net we need to remove
-      // the big edge cost value
-      if (edge.ndr_overflow > 0) {
+      // The cost to remove is the cost that was added for this net. It cannot
+      // be decided from edge.ndr_overflow, since the nets are not ripped up in
+      // the same order they were routed: refunding a cost the net never paid
+      // makes the edge usage drift and eventually underflow.
+      const bool charged_overflow = net_it->second;
+      ndr_nets.erase(net_it);
+      if (charged_overflow) {
         edge.ndr_overflow--;
         final_edge_cost = -OVERFLOW_COST_MULTIPLIER * edgeCost;
       } else {
@@ -691,13 +695,15 @@ double Graph2D::getCostNDRAware(FrNet* net,
       // If the edge already has an overflow caused by NDR net or it will have
       // an overflow due to lack of capacity in a single layer, we need to add
       // the big edge cost value
-      if (edge.ndr_overflow > 0 || !hasNDRCapacity(net, x, y, direction)) {
+      const bool charge_overflow
+          = edge.ndr_overflow > 0 || !hasNDRCapacity(net, x, y, direction);
+      if (charge_overflow) {
         edge.ndr_overflow++;
         final_edge_cost = OVERFLOW_COST_MULTIPLIER * edgeCost;
       } else {
         final_edge_cost = edgeCost;
       }
-      ndr_nets.insert(net);
+      ndr_nets.emplace(net, charge_overflow);
       updateNDRCapLayer(x, y, net, direction, edge_cost);
     }
   }

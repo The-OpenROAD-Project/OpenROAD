@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <set>
 #include <string>
 #include <utility>
@@ -150,9 +151,13 @@ class Graph2D
   multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
   multi_array<Cap3D, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
   multi_array<Cap3D, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
-  multi_array<std::set<FrNet*>, 2>
+  // NDR nets currently using each edge, mapped to whether they were charged
+  // the overflow cost. The charged cost must be stored per net so that a
+  // rip-up refunds exactly what was added, otherwise the edge usage drifts
+  // and can underflow (see getCostNDRAware).
+  multi_array<std::map<FrNet*, bool>, 2>
       v_ndr_nets_;  // The way it is indexed is (X, Y)
-  multi_array<std::set<FrNet*>, 2>
+  multi_array<std::map<FrNet*, bool>, 2>
       h_ndr_nets_;  // The way it is indexed is (X, Y)
   std::vector<NDRCongestion> congested_ndrs_;
 
