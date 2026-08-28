@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iterator>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -54,19 +55,31 @@ using odb::dbNet;
 
 namespace {
 
-std::int64_t manhattan(dbInst* a, dbInst* b)
+// A buffer's centre in database units.  Held rather than re-read: the distance
+// test below runs once per nearby pair, and getBBox is a database lookup.
+struct Centre
 {
-  odb::dbBox* ba = a->getBBox();
-  odb::dbBox* bb = b->getBBox();
-  const std::int64_t ax
-      = (static_cast<std::int64_t>(ba->xMin()) + ba->xMax()) / 2;
-  const std::int64_t ay
-      = (static_cast<std::int64_t>(ba->yMin()) + ba->yMax()) / 2;
-  const std::int64_t bx
-      = (static_cast<std::int64_t>(bb->xMin()) + bb->xMax()) / 2;
-  const std::int64_t by
-      = (static_cast<std::int64_t>(bb->yMin()) + bb->yMax()) / 2;
-  return std::llabs(ax - bx) + std::llabs(ay - by);
+  std::int64_t x, y;
+};
+
+Centre centreOf(dbInst* inst)
+{
+  odb::dbBox* box = inst->getBBox();
+  return {.x = (static_cast<std::int64_t>(box->xMin()) + box->xMax()) / 2,
+          .y = (static_cast<std::int64_t>(box->yMin()) + box->yMax()) / 2};
+}
+
+std::int64_t manhattan(const Centre& a, const Centre& b)
+{
+  return std::llabs(a.x - b.x) + std::llabs(a.y - b.y);
+}
+
+// The cell a coordinate falls in, flooring rather than truncating: a core that
+// starts left of the origin has negative coordinates, and truncation toward
+// zero would fold the cells either side of it together.
+std::int64_t cellOf(std::int64_t v, std::int64_t cell)
+{
+  return v >= 0 ? v / cell : -((-v + cell - 1) / cell);
 }
 
 // Do these two sorted clock-index lists have an entry in common?  Empty lists
@@ -196,28 +209,64 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
   }
   int rejected_cross_clock = 0;
 
+  std::vector<Centre> centres;
+  centres.reserve(lcbs.size());
+  for (dbInst* lcb : lcbs) {
+    centres.push_back(centreOf(lcb));
+  }
+
+  // Only buffers within max_dist of each other can be paired, so the search
+  // does not have to look at every pair.  Two buffers that close differ by at
+  // most max_dist on each axis, so on a grid of cells one max_dist on a side
+  // every pair worth considering lies in the same cell or in one of the eight
+  // around it.  Testing those nine cells finds exactly the pairs the full
+  // sweep found, in time proportional to the number of buffers that really are
+  // near one another instead of to the square of the buffer count.  Where a
+  // design packs every buffer inside one max_dist the two are the same amount
+  // of work, because then every pair genuinely is a candidate.
+  const std::int64_t cell = std::max<std::int64_t>(max_dist, 1);
+  std::map<std::pair<std::int64_t, std::int64_t>, std::vector<size_t>> grid;
+  for (size_t i = 0; i < lcbs.size(); ++i) {
+    grid[{cellOf(centres[i].x, cell), cellOf(centres[i].y, cell)}].push_back(i);
+  }
+
   std::vector<Candidate> candidates;
   for (size_t i = 0; i < lcbs.size(); ++i) {
-    for (size_t j = i + 1; j < lcbs.size(); ++j) {
-      if (manhattan(lcbs[i], lcbs[j]) > max_dist) {
-        continue;
+    const std::int64_t cx = cellOf(centres[i].x, cell);
+    const std::int64_t cy = cellOf(centres[i].y, cell);
+    for (std::int64_t dx = -1; dx <= 1; ++dx) {
+      for (std::int64_t dy = -1; dy <= 1; ++dy) {
+        const auto cell_it = grid.find({cx + dx, cy + dy});
+        if (cell_it == grid.end()) {
+          continue;
+        }
+        // Indices went into each cell in increasing order, so taking only
+        // those above i visits each pair once and keeps i < j.
+        for (size_t j : cell_it->second) {
+          if (j <= i) {
+            continue;
+          }
+          if (manhattan(centres[i], centres[j]) > max_dist) {
+            continue;
+          }
+          // Both sets are sorted, so a shared clock is a set intersection.  An
+          // empty set means the question could not be answered -- no timing, or
+          // a cell with no single output -- and an unanswered question is not a
+          // licence to move a sink.
+          if (!shareAClock(lcb_clocks[i], lcb_clocks[j])) {
+            ++rejected_cross_clock;
+            continue;
+          }
+          Candidate c;
+          c.i = i;
+          c.j = j;
+          // findLeafClockBuffers returns them in name order, so i < j already
+          // means the identifier is built from the sorted names.
+          c.pair_key = lcbs[i]->getName() + "+" + lcbs[j]->getName();
+          c.sort_key = hmac_digest(key, {"pair_sort", c.pair_key});
+          candidates.push_back(std::move(c));
+        }
       }
-      // Both sets are sorted, so a shared clock is a set intersection.  An
-      // empty set means the question could not be answered -- no timing, or a
-      // cell with no single output -- and an unanswered question is not a
-      // licence to move a sink.
-      if (!shareAClock(lcb_clocks[i], lcb_clocks[j])) {
-        ++rejected_cross_clock;
-        continue;
-      }
-      Candidate c;
-      c.i = i;
-      c.j = j;
-      // findLeafClockBuffers returns them in name order, so i < j already means
-      // the identifier is built from the sorted names.
-      c.pair_key = lcbs[i]->getName() + "+" + lcbs[j]->getName();
-      c.sort_key = hmac_digest(key, {"pair_sort", c.pair_key});
-      candidates.push_back(std::move(c));
     }
   }
   std::ranges::sort(candidates, [](const Candidate& x, const Candidate& y) {
