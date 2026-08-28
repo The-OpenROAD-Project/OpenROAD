@@ -5,40 +5,30 @@
 
 #include <cstddef>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "boost/algorithm/string.hpp"
 
 namespace wmk {
 
 namespace {
 
 // Split one line on commas.  The claim writers emit instance and net names,
-// which do not contain commas, so quoted fields are not supported.
+// which do not contain commas, so quoted fields are not supported.  A trailing
+// comma yields a final empty field, which is how an empty skipped_reason is
+// written.
 std::vector<std::string> splitFields(const std::string& line)
 {
   std::vector<std::string> out;
-  std::string field;
-  std::istringstream ss(line);
-  while (std::getline(ss, field, ',')) {
-    out.push_back(field);
-  }
-  // A trailing comma means a final empty field, which getline does not yield.
-  if (!line.empty() && line.back() == ',') {
-    out.emplace_back();
-  }
+  boost::split(out, line, boost::is_any_of(","));
   return out;
 }
 
 std::string trim(const std::string& s)
 {
-  const auto begin = s.find_first_not_of(" \t\r\n");
-  if (begin == std::string::npos) {
-    return "";
-  }
-  const auto end = s.find_last_not_of(" \t\r\n");
-  return s.substr(begin, end - begin + 1);
+  return boost::trim_copy_if(s, boost::is_any_of(" \t\r\n"));
 }
 
 }  // namespace

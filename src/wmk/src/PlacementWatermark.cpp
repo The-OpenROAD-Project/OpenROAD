@@ -37,6 +37,7 @@
 #include <map>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -68,7 +69,11 @@ bool isEligibleInst(dbInst* inst, int row_height)
     return false;
   }
   odb::dbMaster* master = inst->getMaster();
-  if (master->isBlock() || master->isPad() || master->isCover()) {
+  // isCoreAutoPlaceable rules out pads, covers, rings and corner endcaps in a
+  // single call, and rules out more than naming them one by one did.  It is
+  // true for macros and for ordinary endcaps though, and neither of those may
+  // be swapped, so the block test stays alongside it.
+  if (!master->isCoreAutoPlaceable() || master->isBlock()) {
     return false;
   }
   if (std::cmp_not_equal(master->getHeight(), row_height)) {
@@ -86,7 +91,37 @@ bool isEligibleInst(dbInst* inst, int row_height)
 // Half-perimeter wirelength of every net the instance touches.  Used to reject
 // swaps that would lengthen wires: the watermark should not be visible as a
 // wirelength anomaly, and should not cost routability.
-std::int64_t instHpwl(dbInst* inst)
+std::int64_t netHpwl(dbNet* net)
+{
+  odb::Rect bbox;
+  bbox.mergeInit();
+  for (dbITerm* iterm : net->getITerms()) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      bbox.merge({x, y});
+    }
+  }
+  for (odb::dbBTerm* bterm : net->getBTerms()) {
+    int x, y;
+    if (bterm->getFirstPinLocation(x, y)) {
+      bbox.merge({x, y});
+    }
+  }
+  // mergeInit leaves the rectangle inverted, so an untouched box is one that
+  // no pin location could be read from.
+  return bbox.isInverted() ? 0 : bbox.dx() + bbox.dy();
+}
+
+// Cache of net wirelength for one placement state.
+//
+// A net is shared by every instance on it, and a cell appears in many
+// candidate pairs, so the same net would otherwise be re-measured once per
+// pin per candidate.  The cache is only ever consulted while the design is
+// untouched -- every swap is applied after enumeration finishes -- so a hit
+// describes the placement it was taken from.
+using HpwlCache = std::unordered_map<dbNet*, std::int64_t>;
+
+std::int64_t instHpwl(dbInst* inst, HpwlCache* cache)
 {
   std::int64_t total = 0;
   for (dbITerm* iterm : inst->getITerms()) {
@@ -94,26 +129,18 @@ std::int64_t instHpwl(dbInst* inst)
     if (net == nullptr || net->isSpecial()) {
       continue;
     }
-    odb::Rect bbox;
-    bbox.mergeInit();
-    bool any = false;
-    for (dbITerm* other : net->getITerms()) {
-      int x, y;
-      if (other->getAvgXY(&x, &y)) {
-        bbox.merge(odb::Rect(x, y, x, y));
-        any = true;
+    if (cache != nullptr) {
+      auto it = cache->find(net);
+      if (it != cache->end()) {
+        total += it->second;
+        continue;
       }
     }
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      int x, y;
-      if (bterm->getFirstPinLocation(x, y)) {
-        bbox.merge(odb::Rect(x, y, x, y));
-        any = true;
-      }
+    const std::int64_t wl = netHpwl(net);
+    if (cache != nullptr) {
+      cache->emplace(net, wl);
     }
-    if (any) {
-      total += bbox.dx() + bbox.dy();
-    }
+    total += wl;
   }
   return total;
 }
@@ -140,14 +167,16 @@ std::string tileBytes(int tx, int ty)
 // What swapping the two cells would cost in half-perimeter wirelength.  The
 // swap is symmetric, so this does not depend on which way round the pair ends
 // up, and the key is not consulted.
-std::int64_t hpwlDeltaOfSwap(dbInst* a, dbInst* b)
+std::int64_t hpwlDeltaOfSwap(dbInst* a, dbInst* b, HpwlCache* cache)
 {
-  const std::int64_t before = instHpwl(a) + instHpwl(b);
+  // The design is untouched here, so the cache answers.  After the cells move
+  // it cannot, and the second measurement is taken fresh.
+  const std::int64_t before = instHpwl(a, cache) + instHpwl(b, cache);
   const odb::Point a_loc = a->getLocation();
   const odb::Point b_loc = b->getLocation();
   a->setLocation(b_loc.x(), a_loc.y());
   b->setLocation(a_loc.x(), b_loc.y());
-  const std::int64_t after = instHpwl(a) + instHpwl(b);
+  const std::int64_t after = instHpwl(a, nullptr) + instHpwl(b, nullptr);
   a->setLocation(a_loc.x(), a_loc.y());
   b->setLocation(b_loc.x(), b_loc.y());
   return std::llabs(after - before);
@@ -204,6 +233,9 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   const int row_height = (*block->getRows().begin())->getSite()->getHeight();
   const int dbu = block->getDbUnitsPerMicron();
   const int pair_dist = static_cast<int>(opts.pair_dist_um * dbu);
+  // The bound is given in microns so that it means the same length on
+  // every platform; database units do not.
+  const int hpwl_eps = static_cast<int>(opts.hpwl_eps_um * dbu);
   const int nx = std::max(1, opts.grid_nx);
   const int ny = std::max(1, opts.grid_ny);
   const int tile_w = std::max(1, static_cast<int>(core.dx() / nx));
@@ -255,73 +287,77 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   int n_eligible_pairs = 0;
   int rejected_slack = 0;
   int rejected_hpwl = 0;
+  // Shared by both passes: they both measure the same untouched placement.
+  HpwlCache hpwl_cache;
 
   // Both passes run against the untouched design, so widening the gates cannot
-  // be confused by swaps the first pass already made.
-  bool counting = true;
-  auto enumerate
-      = [&](size_t max_neighbours, int hpwl_eps, std::vector<Candidate>& out) {
-          for (auto& [bkey, bucket] : buckets) {
-            if (bucket.insts.size() < 2) {
-              continue;
-            }
-            for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
-              dbInst* a = bucket.insts[i];
-              if (sta != nullptr
-                  && worstSlack(a) < opts.slack_threshold_ns * 1e-9) {
-                if (counting) {
-                  ++rejected_slack;
-                }
-                continue;
-              }
-              const int ax = a->getBBox()->xMin();
-              const size_t last
-                  = std::min(bucket.insts.size(), i + 1 + max_neighbours);
-              for (size_t j = i + 1; j < last; ++j) {
-                dbInst* cand = bucket.insts[j];
-                if (cand->getBBox()->xMin() - ax > pair_dist) {
-                  break;
-                }
-                if (sta != nullptr
-                    && worstSlack(cand) < opts.slack_threshold_ns * 1e-9) {
-                  continue;
-                }
-                if (counting) {
-                  ++n_eligible_pairs;
-                }
-                if (hpwlDeltaOfSwap(a, cand) > hpwl_eps) {
-                  if (counting) {
-                    ++rejected_hpwl;
-                  }
-                  continue;
-                }
-                const std::string name_a = a->getName();
-                const std::string name_b = cand->getName();
-                Candidate c;
-                c.a = a;
-                c.b = cand;
-                c.tx = bucket.tx;
-                c.ty = bucket.ty;
-                c.first = std::min(name_a, name_b);
-                c.second = std::max(name_a, name_b);
-                c.sort_key = hmac_digest(key,
-                                         {"pair_sort",
-                                          tileBytes(bucket.tx, bucket.ty),
-                                          c.first,
-                                          c.second});
-                out.push_back(std::move(c));
-              }
-            }
+  // be confused by swaps the first pass already made.  Only the strict pass
+  // counts rejections: the relaxed pass re-walks the same candidates, and
+  // counting them twice would report more rejections than there were pairs.
+  auto enumerate = [&](size_t max_neighbours,
+                       int hpwl_eps,
+                       bool counting,
+                       std::vector<Candidate>& out) {
+    for (auto& [bkey, bucket] : buckets) {
+      if (bucket.insts.size() < 2) {
+        continue;
+      }
+      for (size_t i = 0; i + 1 < bucket.insts.size(); ++i) {
+        dbInst* a = bucket.insts[i];
+        if (sta != nullptr && worstSlack(a) < opts.slack_threshold_ns * 1e-9) {
+          if (counting) {
+            ++rejected_slack;
           }
-          // The keyed order.  Ties would be a 256-bit collision, so the
-          // identifier is only a formality; it keeps the sort total either way.
-          std::ranges::sort(out, [](const Candidate& x, const Candidate& y) {
-            if (x.sort_key != y.sort_key) {
-              return x.sort_key < y.sort_key;
+          continue;
+        }
+        const int ax = a->getBBox()->xMin();
+        const size_t last
+            = std::min(bucket.insts.size(), i + 1 + max_neighbours);
+        for (size_t j = i + 1; j < last; ++j) {
+          dbInst* cand = bucket.insts[j];
+          if (cand->getBBox()->xMin() - ax > pair_dist) {
+            break;
+          }
+          if (sta != nullptr
+              && worstSlack(cand) < opts.slack_threshold_ns * 1e-9) {
+            continue;
+          }
+          if (counting) {
+            ++n_eligible_pairs;
+          }
+          if (hpwlDeltaOfSwap(a, cand, &hpwl_cache) > hpwl_eps) {
+            if (counting) {
+              ++rejected_hpwl;
             }
-            return std::tie(x.first, x.second) < std::tie(y.first, y.second);
-          });
-        };
+            continue;
+          }
+          const std::string name_a = a->getName();
+          const std::string name_b = cand->getName();
+          Candidate c;
+          c.a = a;
+          c.b = cand;
+          c.tx = bucket.tx;
+          c.ty = bucket.ty;
+          c.first = std::min(name_a, name_b);
+          c.second = std::max(name_a, name_b);
+          c.sort_key = hmac_digest(key,
+                                   {"pair_sort",
+                                    tileBytes(bucket.tx, bucket.ty),
+                                    c.first,
+                                    c.second});
+          out.push_back(std::move(c));
+        }
+      }
+    }
+    // The keyed order.  Ties would be a 256-bit collision, so the
+    // identifier is only a formality; it keeps the sort total either way.
+    std::ranges::sort(out, [](const Candidate& x, const Candidate& y) {
+      if (x.sort_key != y.sort_key) {
+        return x.sort_key < y.sort_key;
+      }
+      return std::tie(x.first, x.second) < std::tie(y.first, y.second);
+    });
+  };
 
   for (auto& [bkey, bucket] : buckets) {
     std::ranges::sort(bucket.insts, [](dbInst* a, dbInst* b) {
@@ -354,7 +390,7 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   };
 
   std::vector<Candidate> pool;
-  enumerate(kMaxNeighbours, opts.hpwl_eps_dbu, pool);
+  enumerate(kMaxNeighbours, hpwl_eps, /* counting */ true, pool);
   select_from(pool);
 
   // A design that yields only a handful of pairs cannot prove much, so look
@@ -366,8 +402,7 @@ int Watermark::embedPlacementEdits(const std::array<std::uint8_t, 32>& key,
   if (strict_pairs < opts.min_pairs_total) {
     relaxed = true;
     std::vector<Candidate> wider;
-    counting = false;
-    enumerate(kRelaxedNeighbours, opts.hpwl_eps_dbu * 2, wider);
+    enumerate(kRelaxedNeighbours, hpwl_eps * 2, /* counting */ false, wider);
     select_from(wider);
   }
 
