@@ -90,13 +90,16 @@ OpenROAD binary.
 
   - Write Verilog (.v) file based on current database.
 
-- read_db filename
+- read_db [-sdc] filename
 
-  - Read OpenDB (.odb) database files.
+  - Read OpenDB (.odb) database files. With -sdc, also replay the timing
+    constraints stored in the database by write_db, so the design arrives
+    constrained without reading a separate .sdc file.
 
 - write_db filename
 
-  - Write OpenDB (.odb) database files.
+  - Write OpenDB (.odb) database files. The timing constraints, if any, are
+    stored in the database alongside the design.
 
 - write_abstract_lef filename
 

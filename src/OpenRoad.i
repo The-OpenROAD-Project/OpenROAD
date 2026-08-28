@@ -409,10 +409,10 @@ write_3dbx_cmd(const char *filename)
 }
 
 void
-read_db_cmd(const char *filename, bool hierarchy)
+read_db_cmd(const char *filename, bool hierarchy, bool restore_sdc)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDb(filename, hierarchy);
+  ord->readDb(filename, hierarchy, restore_sdc);
 }
 
 void
