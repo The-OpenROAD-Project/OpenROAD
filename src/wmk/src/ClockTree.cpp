@@ -23,7 +23,9 @@ odb::dbNet* singleOutputNet(dbInst* inst)
   int count = 0;
   for (dbITerm* iterm : inst->getITerms()) {
     if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-      ++count;
+      if (++count > 1) {
+        break;
+      }
       out = iterm->getNet();
     }
   }

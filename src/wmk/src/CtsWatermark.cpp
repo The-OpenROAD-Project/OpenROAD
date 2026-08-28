@@ -34,6 +34,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <utility>
 #include <vector>
@@ -57,11 +58,25 @@ std::int64_t manhattan(dbInst* a, dbInst* b)
 {
   odb::dbBox* ba = a->getBBox();
   odb::dbBox* bb = b->getBBox();
-  const std::int64_t ax = (ba->xMin() + ba->xMax()) / 2;
-  const std::int64_t ay = (ba->yMin() + ba->yMax()) / 2;
-  const std::int64_t bx = (bb->xMin() + bb->xMax()) / 2;
-  const std::int64_t by = (bb->yMin() + bb->yMax()) / 2;
+  const std::int64_t ax
+      = (static_cast<std::int64_t>(ba->xMin()) + ba->xMax()) / 2;
+  const std::int64_t ay
+      = (static_cast<std::int64_t>(ba->yMin()) + ba->yMax()) / 2;
+  const std::int64_t bx
+      = (static_cast<std::int64_t>(bb->xMin()) + bb->xMax()) / 2;
+  const std::int64_t by
+      = (static_cast<std::int64_t>(bb->yMin()) + bb->yMax()) / 2;
   return std::llabs(ax - bx) + std::llabs(ay - by);
+}
+
+// Do these two sorted clock-index lists have an entry in common?  Empty lists
+// never do, which is what makes an unanswerable clock question reject the pair
+// rather than wave it through.
+bool shareAClock(const std::vector<int>& a, const std::vector<int>& b)
+{
+  std::vector<int> both;
+  std::ranges::set_intersection(a, b, std::back_inserter(both));
+  return !both.empty();
 }
 
 // A sink that can be moved between two buffers without changing what the
@@ -78,7 +93,7 @@ dbITerm* movableSink(dbInst* lcb)
       continue;
     }
     dbInst* inst = iterm->getInst();
-    if (inst == nullptr || inst->isDoNotTouch() || inst->isFixed()) {
+    if (inst->isDoNotTouch() || inst->isFixed()) {
       continue;
     }
     return iterm;
@@ -127,7 +142,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
 
   const int dbu = block->getDbUnitsPerMicron();
   const std::int64_t max_dist
-      = static_cast<std::int64_t>(opts.sibling_dist_um) * dbu;
+      = static_cast<std::int64_t>(opts.sibling_dist_um * dbu);
   // Whether skew can be evaluated at all decides whether the guard below has
   // any force.  Reading a design from a database restores no liberty and no
   // constraints, so a caller who has not set timing up would otherwise get the
@@ -152,10 +167,47 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
     std::string pair_key;
     std::array<std::uint8_t, 32> sort_key;
   };
+  // Which clocks reach each buffer, computed once.  A sink may only move
+  // between two buffers that share a clock: findLeafClockBuffers returns the
+  // leaves of every clock tree in the design, and two trees can run alongside
+  // each other, so distance alone would let a move reconnect a flop to a
+  // different clock and change what the design does.
+  std::vector<std::vector<int>> lcb_clocks;
+  lcb_clocks.reserve(lcbs.size());
+  int with_a_clock = 0;
+  for (dbInst* lcb : lcbs) {
+    lcb_clocks.push_back(clockIndicesAt(lcb));
+    if (!lcb_clocks.back().empty()) {
+      ++with_a_clock;
+    }
+  }
+  // Rejecting every pair because the question could not be asked is a very
+  // different situation from rejecting the few that really do span two trees,
+  // and it looks identical in the counts.  A database read back without
+  // constraints has a clock tree but no clock, and would otherwise report that
+  // every pair spanned two clocks and quietly mark nothing.
+  if (with_a_clock == 0) {
+    logger_->warn(utl::WMK,
+                  106,
+                  "No clock reaches any of the {} leaf clock buffers, so no "
+                  "pair can be shown to stay on one clock and none will be "
+                  "marked.  Read constraints (create_clock) before embedding.",
+                  static_cast<int>(lcbs.size()));
+  }
+  int rejected_cross_clock = 0;
+
   std::vector<Candidate> candidates;
   for (size_t i = 0; i < lcbs.size(); ++i) {
     for (size_t j = i + 1; j < lcbs.size(); ++j) {
       if (manhattan(lcbs[i], lcbs[j]) > max_dist) {
+        continue;
+      }
+      // Both sets are sorted, so a shared clock is a set intersection.  An
+      // empty set means the question could not be answered -- no timing, or a
+      // cell with no single output -- and an unanswered question is not a
+      // licence to move a sink.
+      if (!shareAClock(lcb_clocks[i], lcb_clocks[j])) {
+        ++rejected_cross_clock;
         continue;
       }
       Candidate c;
@@ -239,6 +291,9 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
         dbNet* origin = sink->getNet();
         sink->disconnect();
         sink->connect(dest);
+        // Both nets now drive a different load.  Re-estimate before asking
+        // timing anything, or the answers describe the tree as it was.
+        reestimateNetParasitics(origin, dest);
         const bool skew_ok
             = !skew_known
               || worstClockSkew() <= skew_before + opts.skew_margin_ns * 1e-9f;
@@ -255,6 +310,7 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
           // back.
           sink->disconnect();
           sink->connect(origin);
+          reestimateNetParasitics(origin, dest);
           if (!skew_ok) {
             ++rejected_skew;
           } else {
@@ -284,14 +340,16 @@ int Watermark::ctsWatermark(const std::array<std::uint8_t, 32>& key,
                 73,
                 "CTS watermark: {} pairs claimed from {} leaf clock buffers, "
                 "{} at the keyed parity ({} sinks moved, {} rejected on skew, "
-                "{} with no movable sink, {} on drive strength).",
+                "{} with no movable sink, {} on drive strength, "
+                "{} not on a shared clock).",
                 static_cast<int>(claims.size()),
                 static_cast<int>(lcbs.size()),
                 held,
                 moved,
                 rejected_skew,
                 rejected_no_sink,
-                rejected_drive);
+                rejected_drive,
+                rejected_cross_clock);
   return static_cast<int>(claims.size());
 }
 

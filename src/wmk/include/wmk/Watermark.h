@@ -268,6 +268,24 @@ class Watermark
   // from it is otherwise indistinguishable from a design with no skew.
   bool clockSkewAvailable() const;
 
+  // The clocks reaching an instance's output pin, as sorted clock indices.
+  //
+  // Two leaf buffers may only be paired when a sink can move between them
+  // without changing which clock it is on.  Distance alone does not establish
+  // that: two trees can run alongside each other, and a move across them
+  // reconnects a flop to a different clock, which changes what the design
+  // does.  Empty when there is no timing to ask, or when the instance is not
+  // a single-output cell -- in either case the caller must not pair it.
+  std::vector<int> clockIndicesAt(odb::dbInst* inst) const;
+
+  // Re-estimate the parasitics of the two nets a sink was moved between.
+  //
+  // Rewiring changes what each net drives, and nothing recomputes the RC until
+  // something asks.  Without this the skew and drive checks would read the
+  // values cached before the move, and every move would look free.  Only the
+  // two nets that changed are touched, not the whole design.
+  void reestimateNetParasitics(odb::dbNet* a, odb::dbNet* b) const;
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   dpl::Opendp* opendp_ = nullptr;

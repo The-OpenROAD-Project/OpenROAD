@@ -18,6 +18,11 @@ namespace wmk {
 
 // The net an instance's single output drives, or null when the instance does
 // not have exactly one output.
+//
+// Exactly one is the point, not an incidental bound.  It is what keeps
+// multi-output cells out of the clock-buffer set: a flop presenting Q and QB
+// is not a buffer, and a divider driving the tree from Q is not one either.
+// Neither may lend or receive a sink, so both must answer null here.
 odb::dbNet* singleOutputNet(odb::dbInst* inst);
 
 // Is this the clock pin of a sequential instance?
