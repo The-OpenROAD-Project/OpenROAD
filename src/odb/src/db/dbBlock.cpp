@@ -2542,7 +2542,13 @@ int dbBlock::getGCellTileSize()
           utl::ODB,
           358,
           "Track grid for routing layer {} not found.",
-          tech_layer->getName());
+          tech_layer != nullptr
+              ? tech_layer->getName()
+              : fmt::format(
+                    "<frontside routing layer #{} -- only {} exist in the "
+                    "technology>",
+                    layer_idx,
+                    count));
     }
 
     int track_spacing, track_init, num_tracks;
