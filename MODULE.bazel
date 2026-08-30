@@ -36,7 +36,7 @@ bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_go", version = "0.61.1")
 bazel_dep(name = "rules_pkg", version = "1.2.0")
 bazel_dep(name = "rules_pycross", version = "0.8.1")
-bazel_dep(name = "rules_python", version = "1.8.5")
+bazel_dep(name = "rules_python", version = "2.3.2")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
@@ -382,6 +382,9 @@ osx.frameworks(names = [
     "UniformTypeIdentifiers",
 ])
 
+rules_python_config = use_extension("@rules_python//python/extensions:config.bzl", "config")
+rules_python_config.explicit_init_py(default = True)
+
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     ignore_root_user_error = True,
@@ -396,7 +399,6 @@ pip.parse(
     ],
     hub_name = "openroad-pip",
     python_version = "3.13",
-    quiet = True,
     requirements_lock = "//bazel:requirements_lock_3_13.txt",
 )
 use_repo(pip, "openroad-pip")
