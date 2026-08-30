@@ -43,6 +43,7 @@ or_integration_tests(
     read_def_virtual
     read_def58
     read_lef
+    read_lef_dup_macro
     read_lef_minwidth_wrongdirection
     read_zipped
     replace_hier_mod1
