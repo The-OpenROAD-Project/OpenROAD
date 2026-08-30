@@ -93,6 +93,7 @@ ALL_TESTS = [
     "sta5",
     "sta_to_db1",
     "sta_to_db1_hier",
+    "supply_port_graph",
     "write_sdc1",
     "write_verilog1",
     "write_verilog10",
@@ -321,9 +322,6 @@ filegroup(
             ],
             "write_verilog1": [
                 "reg1.def",
-            ],
-            "write_verilog10": [
-                "write_verilog10.def",
             ],
             "write_verilog2": [
                 "reg4.def",
