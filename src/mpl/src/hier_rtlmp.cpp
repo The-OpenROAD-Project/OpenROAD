@@ -329,7 +329,9 @@ void HierRTLMP::runMultilevelAutoclustering()
   clustering_engine_->setHalos(base_halo_, use_full_halo_, macro_to_halo_);
   clustering_engine_->run();
 
-  if (!tree_->has_unfixed_macros) {
+  // Without a tree there is nothing to place or to seed: the design
+  // has neither unfixed macros nor standard cells.
+  if (!tree_->root) {
     skip_macro_placement_ = true;
     return;
   }

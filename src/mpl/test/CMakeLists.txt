@@ -1,6 +1,7 @@
 or_integration_tests(
   "mpl"
   TESTS
+    all_fixed_macros1
     macro_only
     no_unfixed_macros
     guides1

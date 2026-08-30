@@ -48,7 +48,12 @@ void ClusteringEngine::run()
 {
   init();
 
-  if (!tree_->has_unfixed_macros) {
+  // With no unfixed macros there is nothing to place, but a design with
+  // standard cells still goes through clustering so that the temporary
+  // standard-cell placement matches the one a run with unfixed macros
+  // would produce - e.g. when a full run's placement is re-injected
+  // with locked macros through place_macro.
+  if (!tree_->has_unfixed_macros && design_metrics_->getNumStdCell() == 0) {
     return;
   }
 
@@ -114,7 +119,6 @@ void ClusteringEngine::init()
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
-    return;
   }
 
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
