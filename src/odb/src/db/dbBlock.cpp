@@ -2535,8 +2535,17 @@ int dbBlock::getGCellTileSize()
         break;
       }
     }
-    odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+    if (tech_layer == nullptr) {
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          1219,
+          "No frontside routing layer #{} found -- only {} exist in the "
+          "technology.",
+          layer_idx,
+          count);
+    }
 
+    odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
     if (track_grid == nullptr) {
       getImpl()->getLogger()->error(
           utl::ODB,
