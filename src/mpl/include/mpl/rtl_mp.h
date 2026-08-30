@@ -77,6 +77,7 @@ class MacroPlacer
   std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void setMacroPlacementFile(const std::string& file_name);
+  void setRandomSeed(int seed);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
   void setBaseHalo(int left, int bottom, int right, int top);
   void setMacroHalo(odb::dbInst* macro,

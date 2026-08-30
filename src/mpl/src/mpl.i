@@ -170,6 +170,12 @@ set_macro_placement_file(std::string file_name)
 }
 
 void
+set_random_seed(int seed)
+{
+  getMacroPlacer()->setRandomSeed(seed);
+}
+
+void
 block_macro_channels()
 {
   getMacroPlacer()->blockMacroChannels();

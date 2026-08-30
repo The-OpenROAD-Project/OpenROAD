@@ -118,6 +118,7 @@ class HierRTLMP
   void setDebugTargetClusterId(int target_cluster_id);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
+  void setRandomSeed(int seed) { random_seed_ = seed; }
   void setMacroPlacementFile(const std::string& file_name);
   void writeMacroPlacement(const std::string& file_name);
 
@@ -278,9 +279,9 @@ class HierRTLMP
   std::string report_directory_;
   std::string macro_placement_file_;
 
-  const int num_runs_ = 10;    // number of runs for SA
-  int num_threads_ = 10;       // number of threads
-  const int random_seed_ = 0;  // random seed for deterministic
+  const int num_runs_ = 10;  // number of runs for SA
+  int num_threads_ = 10;     // number of threads
+  int random_seed_ = 0;      // random seed for deterministic
 
   float target_utilization_{0.0};
   float min_ar_ = 0.3;  // the aspect ratio range for StdCellCluster (min_ar_, 1

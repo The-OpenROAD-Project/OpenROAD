@@ -26,6 +26,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -soft_blockage_weight soft_blockage_weight \
                                           -target_util   target_util \
                                           -min_ar  min_ar \
+                                          -random_seed random_seed \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
@@ -42,6 +43,7 @@ proc rtl_macro_placer { args } {
          -macro_blockage_weight \
          -soft_blockage_weight -target_util \
          -min_ar \
+         -random_seed \
          -report_directory \
          -write_macro_placement } \
     flags {-keep_clustering_data -use_full_halo}
@@ -79,6 +81,7 @@ proc rtl_macro_placer { args } {
   set soft_blockage_weight 10.0
   set target_util 0.25
   set min_ar 0.33
+  set random_seed 0
   set report_directory "hier_rtlmp"
 
   if { [info exists keys(-max_num_macro)] } {
@@ -181,6 +184,11 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-min_ar)] } {
     set min_ar $keys(-min_ar)
   }
+  if { [info exists keys(-random_seed)] } {
+    set random_seed $keys(-random_seed)
+    sta::check_integer "-random_seed" $random_seed
+  }
+  mpl::set_random_seed $random_seed
   if { [info exists keys(-report_directory)] } {
     set report_directory $keys(-report_directory)
   }

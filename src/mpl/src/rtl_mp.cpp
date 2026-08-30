@@ -245,6 +245,11 @@ void MacroPlacer::setMacroPlacementFile(const std::string& file_name)
   hier_rtlmp_->setMacroPlacementFile(file_name);
 }
 
+void MacroPlacer::setRandomSeed(const int seed)
+{
+  hier_rtlmp_->setRandomSeed(seed);
+}
+
 void MacroPlacer::setDebug(std::unique_ptr<MplObserver>& graphics)
 {
   hier_rtlmp_->setDebug(graphics);

@@ -48,6 +48,7 @@ COMPULSORY_TESTS = [
     "orientation_improve3",
     "place_macro_right_angle_rotation",
     "placement_blockages1",
+    "random_seed1",
     "unfixed_cells_dont_fit_in_core",
 ]
 
@@ -242,6 +243,10 @@ filegroup(
                 "placement_blockages1": [
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
+                ],
+                "random_seed1": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",

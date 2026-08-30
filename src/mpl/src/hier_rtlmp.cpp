@@ -216,6 +216,13 @@ void HierRTLMP::setUseFullHalo(bool use_full_halo)
 //      Attempts macro flipping to improve WR.
 void HierRTLMP::run()
 {
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Random seed: {}",
+             random_seed_);
+
   runMultilevelAutoclustering();
   if (skip_macro_placement_) {
     logger_->info(MPL, 13, "Skipping macro placement.");
