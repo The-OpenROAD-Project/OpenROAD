@@ -29,6 +29,7 @@ or_integration_tests(
     fixed_macros1
     fixed_macros2
     fixed_covers
+    macro_placement_round_trip1
     macros_without_pins1
     unfixed_cells_dont_fit_in_core
     place_macro_right_angle_rotation

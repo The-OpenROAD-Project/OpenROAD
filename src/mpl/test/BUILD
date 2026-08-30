@@ -40,6 +40,7 @@ COMPULSORY_TESTS = [
     "keep_clustering_data1",
     "keep_clustering_data2",
     "macro_only",
+    "macro_placement_round_trip1",
     "macros_without_pins1",
     "mixed_ios1",
     "no_unfixed_macros",
@@ -205,6 +206,10 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                     "testcases/macro_only.v",
+                ],
+                "macro_placement_round_trip1": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
                 "macros_without_pins1": [
                     "Nangate45_io/dummy_pads.lef",

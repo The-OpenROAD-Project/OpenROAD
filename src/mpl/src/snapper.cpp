@@ -42,6 +42,9 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
   if (layers_data_list.empty()) {
     alignWithManufacturingGrid(origin);
     setOrigin(origin, target_direction);
+    if (!macroStaysInCore(target_direction)) {
+      nudgeMacroIntoCore(target_direction);
+    }
     return;
   }
 
@@ -217,8 +220,8 @@ void Snapper::attemptSnapToExtraPatterns(
   odb::dbITerm* snap_pin = layers_data_list[0].pins[0];
   const std::vector<int>& positions = layers_data_list[0].available_positions;
 
-  int best_index = start_index;
-  int best_snapped_pins = 0;
+  int best_index = -1;
+  int best_snapped_pins = -1;
 
   for (int i = 0; i <= total_attempts; i++) {
     int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
@@ -231,6 +234,13 @@ void Snapper::attemptSnapToExtraPatterns(
     }
     snapPinToPosition(snap_pin, positions[current_index], target_direction);
 
+    // A position that moves the macro outside the core is rejected by
+    // place_macro, so the placement wouldn't survive a round-trip
+    // through the file written by -write_macro_placement.
+    if (!macroStaysInCore(target_direction)) {
+      continue;
+    }
+
     int snapped_pins = totalAlignedPins(layers_data_list, target_direction);
 
     if (snapped_pins > best_snapped_pins) {
@@ -240,6 +250,19 @@ void Snapper::attemptSnapToExtraPatterns(
         break;
       }
     }
+  }
+
+  if (best_index == -1) {
+    // No track-aligned position keeps the macro inside the core.
+    snapPinToPosition(snap_pin, positions[start_index], target_direction);
+    nudgeMacroIntoCore(target_direction);
+
+    logger_->warn(utl::MPL,
+                  78,
+                  "Couldn't align the pins of the macro {} to the track-grid "
+                  "while keeping it inside the core.",
+                  inst_->getName());
+    return;
   }
 
   snapPinToPosition(snap_pin, positions[best_index], target_direction);
@@ -296,6 +319,62 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
     }
   }
   return pins_aligned;
+}
+
+// A degenerate core (no rows created yet) imposes no constraint.
+bool Snapper::macroStaysInCore(
+    const odb::dbTechLayerDir& target_direction) const
+{
+  const odb::Rect core = inst_->getBlock()->getCoreArea();
+  if (core.dx() == 0 || core.dy() == 0) {
+    return true;
+  }
+
+  const odb::Rect bbox = inst_->getBBox()->getBox();
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+    return bbox.xMin() >= core.xMin() && bbox.xMax() <= core.xMax();
+  }
+  return bbox.yMin() >= core.yMin() && bbox.yMax() <= core.yMax();
+}
+
+// Move the macro the minimum amount of manufacturing-grid units that
+// brings it back inside the core. A macro larger than the core is
+// left untouched.
+void Snapper::nudgeMacroIntoCore(const odb::dbTechLayerDir& target_direction)
+{
+  const odb::Rect core = inst_->getBlock()->getCoreArea();
+  const odb::Rect bbox = inst_->getBBox()->getBox();
+  const int manufacturing_grid
+      = inst_->getDb()->getTech()->getManufacturingGrid();
+
+  const bool vertical = target_direction == odb::dbTechLayerDir::VERTICAL;
+  const int macro_min = vertical ? bbox.xMin() : bbox.yMin();
+  const int macro_max = vertical ? bbox.xMax() : bbox.yMax();
+  const int core_min = vertical ? core.xMin() : core.yMin();
+  const int core_max = vertical ? core.xMax() : core.yMax();
+
+  if (macro_max - macro_min > core_max - core_min) {
+    return;
+  }
+
+  int shift = 0;
+  if (macro_max > core_max) {
+    // Align the inward shift to the manufacturing grid, rounding up so
+    // that the macro ends up inside the core.
+    const int overshoot = macro_max - core_max;
+    shift = -((overshoot + manufacturing_grid - 1) / manufacturing_grid)
+            * manufacturing_grid;
+  } else if (macro_min < core_min) {
+    const int overshoot = core_min - macro_min;
+    shift = ((overshoot + manufacturing_grid - 1) / manufacturing_grid)
+            * manufacturing_grid;
+  }
+
+  if (shift != 0) {
+    const int origin
+        = (vertical ? inst_->getOrigin().x() : inst_->getOrigin().y()) + shift;
+    setOrigin(origin, target_direction);
+  }
 }
 
 void Snapper::alignWithManufacturingGrid(int& origin)

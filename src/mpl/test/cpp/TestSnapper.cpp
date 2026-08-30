@@ -490,5 +490,87 @@ TEST_F(TestSnapper, SingleLayerWithUnalignablePinThrowsException)
   }
 }
 
+// The snap to the manufacturing grid must not move the macro outside
+// the core: rounding up at the top/right core edge is compensated by
+// an inward nudge.
+TEST_F(TestSnapper, StaysInCoreManufacturingGrid)
+{
+  db_->getTech()->setManufacturingGrid(10);
+  db_->getChip()->getBlock()->setCoreArea(odb::Rect(0, 0, 1000, 1000));
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setWidth(200);
+  macro_master->setHeight(300);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(814, 719);
+  snapper_->setMacro(macro);
+  snapper_->snapMacro();
+
+  // Rounding 814 to 810 leaves the right edge at 1010, outside the
+  // core, so the macro is nudged one manufacturing-grid step inward.
+  EXPECT_EQ(macro->getOrigin().x(), 800);
+  // Rounding 719 to 720 leaves the top edge at 1020, outside the
+  // core, so the macro is nudged two manufacturing-grid steps inward.
+  EXPECT_EQ(macro->getOrigin().y(), 700);
+}
+
+// The track-aligned snap must choose a position that keeps the macro
+// inside the core even when a closer track position exists outside.
+TEST_F(TestSnapper, StaysInCoreTrackAligned)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  db_->getChip()->getBlock()->setCoreArea(odb::Rect(0, 0, 20000, 11500));
+
+  const int track_pitch = 36;
+  odb::dbTechLayer* horizontal_layer = odb::dbTechLayer::create(
+      db_->getTech(), "H1", odb::dbTechLayerType::DEFAULT);
+  horizontal_layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(db_->getChip()->getBlock(), horizontal_layer);
+  track->addGridPatternY(0, die_height_ / track_pitch, track_pitch);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+
+  const int pin_height = 20;
+  const int pin_width = 50;
+
+  const int pin_x = 0;
+  const int pin_y = 0;
+  odb::dbMTerm* mterm = odb::dbMTerm::create(
+      macro_master, "pin", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin = odb::dbMPin::create(mterm);
+  odb::dbBox::create(mpin,
+                     horizontal_layer,
+                     pin_x,
+                     pin_y,
+                     pin_x + pin_height,
+                     pin_y + pin_width);
+
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1500, 1495);
+
+  snapper_->setMacro(macro);
+  snapper_->snapMacro();
+
+  EXPECT_EQ(macro->getOrigin().x(), 1500);
+  // The nearest track position for the pin center (1520) is 1548,
+  // which puts the origin at 1523 and the top edge at 11523, outside
+  // the core. The track position below (1512, origin 1487) is the
+  // best aligned position that keeps the macro inside the core.
+  EXPECT_EQ(macro->getOrigin().y(), 1487);
+}
+
 }  // namespace
 }  // namespace mpl
