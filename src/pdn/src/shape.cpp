@@ -244,6 +244,12 @@ bool Shape::cut(const ObstructionTree& obstructions,
 
     if (other_shape->net_ != nullptr && net_ == other_shape->net_
         && other_shape->shapeType() != ShapeType::kShape) {
+      if (other_shape->shapeType() == ShapeType::kPadObs) {
+        // Pad metal on this shape's own net: a connection is meant to land on
+        // it, and overlapping it merges rather than shorts, so it is not a
+        // violation no matter how the two overlap.
+        continue;
+      }
       // obstruction is of the same net, so see if the violation is completely
       // inside the new strap and therefore is okay
       if (is_horizontal) {

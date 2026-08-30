@@ -3,7 +3,7 @@ source "helpers.tcl"
 
 read_lef gf180/gf180mcu_6LM_1TM_9K_7t_tech.lef
 read_lef gf180/gf180mcu_fd_sc_mcu7t5v0.lef
-read_lef gf180/gf180mcu_fd_io.lef
+read_lef gf180_data/gf180mcu_fd_io.lef
 
 read_def gf180_data/floorplan.def
 

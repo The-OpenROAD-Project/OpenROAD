@@ -22,6 +22,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom_boost.h"
 #include "odb/isotropy.h"
 #include "power_cells.h"
 #include "rings.h"
@@ -873,19 +874,26 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
       const auto& search_obs = search_obstructions[layer];
       if (search_obs.qbegin(
               bgi::intersects(via->getArea())
-              && bgi::satisfies([this, layer](const ShapePtr& other) -> bool {
-                   if (other->shapeType() != Shape::kGridObs) {
-                     return true;
-                   }
-                   // only consider obstructions on routing layers as blocking
-                   // for grid obstructions
-                   if (layer->getType() != odb::dbTechLayerType::ROUTING) {
-                     return false;
-                   }
-                   const GridObsShape* shape
-                       = static_cast<GridObsShape*>(other.get());
-                   return !shape->belongsTo(this);
-                 }))
+              && bgi::satisfies(
+                  [this, layer, &via](const ShapePtr& other) -> bool {
+                    if (other->shapeType() == Shape::kPadObs
+                        && other->getNet() != nullptr
+                        && other->getNet() == via->getNet()) {
+                      // the pad metal this via is landing on
+                      return false;
+                    }
+                    if (other->shapeType() != Shape::kGridObs) {
+                      return true;
+                    }
+                    // only consider obstructions on routing layers as blocking
+                    // for grid obstructions
+                    if (layer->getType() != odb::dbTechLayerType::ROUTING) {
+                      return false;
+                    }
+                    const GridObsShape* shape
+                        = static_cast<GridObsShape*>(other.get());
+                    return !shape->belongsTo(this);
+                  }))
           != search_obs.qend()) {
         remove_vias.insert(via);
         via->markFailed(FailedViaReason::kObstructed);
@@ -1162,14 +1170,12 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
 
   // placed instances obs
   for (auto* inst : block->getInsts()) {
-    if (!inst->isFixed()) {
-      continue;
-    }
-
     auto* master = inst->getMaster();
+
     if (master->isCore()) {
       continue;
     }
+    bool is_padframe = master->isPad();
     if (master->isEndCap()) {
       switch (master->getType()) {
         case odb::dbMasterType::ENDCAP_TOPLEFT:
@@ -1177,11 +1183,21 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
         case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
         case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
           // Master is a pad corner
+          is_padframe = true;
           break;
         default:
           // Master is a std cell endcap
           continue;
       }
+    }
+
+    // A padring is routinely handed over PLACED rather than FIXED, and
+    // CoreGrid::setupDirectConnect will happily connect to it, so a padframe
+    // cell must obstruct as soon as it has a location.
+    const bool is_positioned
+        = is_padframe ? inst->getPlacementStatus().isPlaced() : inst->isFixed();
+    if (!is_positioned) {
+      continue;
     }
 
     if (skip_insts.find(inst) != skip_insts.end()) {
@@ -1195,8 +1211,14 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
                "Get instance {} obstructions",
                inst->getName());
 
-    for (const auto& [layer, shapes] :
-         InstanceGrid::getInstanceObstructions(inst)) {
+    // A pad is the one cell the grid is expected to reach into, so its
+    // obstructions are described honestly - real metal in the rect and the
+    // spacing in the obstruction box - and the metal that sits under one of the
+    // pad's own pins is attributed to that pin's net.
+    const ShapeVectorMap inst_obs
+        = is_padframe ? InstanceGrid::getPadObstructions(inst)
+                      : InstanceGrid::getInstanceObstructions(inst);
+    for (const auto& [layer, shapes] : inst_obs) {
       obs[layer].insert(obs[layer].end(), shapes.begin(), shapes.end());
     }
   }
@@ -1531,6 +1553,119 @@ odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
 odb::Rect InstanceGrid::getGridBoundary() const
 {
   return getDomainBoundary();
+}
+
+ShapeVectorMap InstanceGrid::getPadObstructions(odb::dbInst* inst)
+{
+  using boost::polygon::operators::operator&=;
+  using boost::polygon::operators::operator-=;
+
+  ShapeVectorMap obs;
+
+  const odb::dbTransform transform = inst->getTransform();
+  auto* master = inst->getMaster();
+
+  // Pin metal of the pad, in master coordinates, kept per net and as a union.
+  // Only routing geometry is considered: an obstruction on a cut layer is never
+  // coincident with a pin in any useful sense.
+  odb::PtrMap<odb::dbTechLayer,
+              odb::PtrMap<odb::dbNet, odb::geom::BoostPolygon90Set>>
+      pin_metal;
+  odb::PtrMap<odb::dbTechLayer, odb::geom::BoostPolygon90Set> all_pin_metal;
+  for (auto* iterm : inst->getITerms()) {
+    auto* net = iterm->getNet();
+    if (net == nullptr) {
+      // metal that belongs to nothing the grid can claim stays opaque
+      continue;
+    }
+    auto add_pin_metal
+        = [&pin_metal, &all_pin_metal, net](odb::dbTechLayer* pin_layer,
+                                            const odb::Rect& rect) {
+            if (pin_layer == nullptr) {
+              return;
+            }
+            const auto pin_poly = odb::geom::toPolygon90(rect);
+            pin_metal[pin_layer][net].insert(pin_poly);
+            all_pin_metal[pin_layer].insert(pin_poly);
+          };
+
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        if (box->isVia()) {
+          // a pin drawn as a via still puts metal on the routing layers
+          auto* tech_via = box->getTechVia();
+          if (tech_via == nullptr) {
+            continue;
+          }
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : tech_via->getBoxes()) {
+            odb::Rect via_rect = via_box->getBox();
+            via_transform.apply(via_rect);
+            add_pin_metal(via_box->getTechLayer(), via_rect);
+          }
+          continue;
+        }
+        add_pin_metal(box->getTechLayer(), box->getBox());
+      }
+    }
+  }
+
+  auto add_shape = [&obs, &transform](odb::dbTechLayer* layer,
+                                      const odb::Rect& rect,
+                                      odb::dbNet* net) {
+    odb::Rect placed = rect;
+    transform.apply(placed);
+    auto shape = net == nullptr
+                     ? std::make_shared<Shape>(layer, placed, Shape::kPadObs)
+                     : std::make_shared<Shape>(layer, net, placed);
+    shape->setShapeType(Shape::kPadObs);
+    // rect_ stays the real metal and obs_ carries one spacing, so a shape
+    // tested against this obstruction is charged the spacing once rather than
+    // twice.
+    shape->generateObstruction();
+    obs[layer].push_back(std::move(shape));
+  };
+
+  for (auto* ob : master->getObstructions()) {
+    auto* layer = ob->getTechLayer();
+    if (layer == nullptr) {
+      continue;
+    }
+    const odb::Rect obs_rect = ob->getBox();
+
+    const auto pins = all_pin_metal.find(layer);
+    if (pins == all_pin_metal.end()) {
+      add_shape(layer, obs_rect, nullptr);
+      continue;
+    }
+
+    // the part of the obstruction that no pin covers blocks every net
+    odb::geom::BoostPolygon90Set blocking = odb::geom::toPolygonSet90(obs_rect);
+    blocking -= pins->second;
+    for (const odb::Rect& rect : odb::geom::extractRectangles(blocking)) {
+      add_shape(layer, rect, nullptr);
+    }
+
+    // the part coincident with a pin is that net's own metal
+    for (const auto& [net, net_pins] : pin_metal[layer]) {
+      odb::geom::BoostPolygon90Set owned = odb::geom::toPolygonSet90(obs_rect);
+      owned &= net_pins;
+      for (const odb::Rect& rect : odb::geom::extractRectangles(owned)) {
+        add_shape(layer, rect, net);
+      }
+    }
+  }
+
+  // the pins themselves obstruct every net but their own
+  for (const auto& [layer, pin_shapes] : getInstancePins(inst)) {
+    for (const auto& pin_shape : pin_shapes) {
+      pin_shape->setShapeType(Shape::kPadObs);
+      pin_shape->generateObstruction();
+      obs[layer].push_back(pin_shape);
+    }
+  }
+
+  return obs;
 }
 
 ShapeVectorMap InstanceGrid::getInstanceObstructions(
