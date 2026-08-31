@@ -1353,23 +1353,12 @@ void Renderer::redraw()
 
 bool Renderer::checkDisplayControl(const std::string& name)
 {
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    return Gui::get()->checkDisplayControlsVisible(name);
-  }
-  return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
+  return Gui::get()->checkDisplayControlsVisible(displayControlPath(name));
 }
 
 void Renderer::setDisplayControl(const std::string& name, bool value)
 {
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    Gui::get()->setDisplayControlsVisible(name, value);
-  } else {
-    Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
-  }
+  Gui::get()->setDisplayControlsVisible(displayControlPath(name), value);
 }
 
 void Renderer::addDisplayControl(
