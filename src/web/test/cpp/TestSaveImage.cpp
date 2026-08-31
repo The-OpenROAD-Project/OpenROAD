@@ -456,6 +456,64 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
       << "Enabling rudy heatmap should render additional heatmap pixels";
 }
 
+TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)
+{
+  const std::vector<std::string> tech_layers = {"metal1", "metal2", "metal3"};
+  TileVisibility vis;
+  vis.has_visible_layers = true;
+  vis.visible_layers = {"metal2"};
+  vis.pins = false;
+  vis.regions = false;
+  vis.mfg_grid = false;
+  vis.access_points = false;
+  vis.gcell_grid = false;
+  vis.rudy = false;
+
+  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+            (std::vector<std::string>{"_instances", "metal2"}))
+      << "tech layers hidden via visible_layers must not be composited";
+}
+
+TEST_F(SaveImageTest, HiddenTechLayerIsNotDrawn)
+{
+  placeInst("BUF_X16", "buf2", 50000, 50000);
+  makeTileGen();
+  const odb::Rect region = tile_gen_->getBounds();
+
+  TileVisibility all;
+  const auto with_all = tile_gen_->renderImageBuffer(region, 512, 0, all);
+  TileVisibility none;
+  none.has_visible_layers = true;  // visible_layers empty: hide every one
+  const auto with_none = tile_gen_->renderImageBuffer(region, 512, 0, none);
+
+  ASSERT_FALSE(with_all.empty());
+  ASSERT_EQ(with_all.size(), with_none.size());
+  EXPECT_LT(countNonTransparentPixels(with_none),
+            countNonTransparentPixels(with_all))
+      << "hiding all tech layers must remove their pixels";
+}
+
+// Tiles are rendered concurrently into disjoint output rectangles, so the
+// result must not depend on the thread count.  This is the test that catches
+// a shared-state race in the render path.
+TEST_F(SaveImageTest, ThreadCountDoesNotChangeOutput)
+{
+  for (int i = 0; i < 40; ++i) {
+    placeInst("BUF_X16", ("b" + std::to_string(i)).c_str(), 2000 * i, 3000 * i);
+  }
+  makeTileGen();
+  const odb::Rect region = tile_gen_->getBounds();
+  TileVisibility vis;
+
+  tile_gen_->setThreadCount(1);
+  const auto one = tile_gen_->renderImageBuffer(region, 1024, 0, vis);
+  tile_gen_->setThreadCount(8);
+  const auto eight = tile_gen_->renderImageBuffer(region, 1024, 0, vis);
+
+  ASSERT_FALSE(one.empty());
+  EXPECT_EQ(one, eight);
+}
+
 // Qt gates drawLabels on the Misc/"Labels" control, and its save_image goes
 // through the same painter, so a saved image reproduces a view with labels
 // hidden.  save_image -display_option {labels false} has to do the same here.

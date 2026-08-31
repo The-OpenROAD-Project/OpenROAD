@@ -81,6 +81,9 @@ or_integration_tests(
     core_grid_with_single_layer_rings
     design_width
     existing
+    gf180_hybrid_followpins
+    gf180_hybrid_followpins_pitch
+    gf180_hybrid_followpins_rowpattern
     global_connect_with_dont_touch
     global_connect_with_dont_touch_warning
     macros
@@ -147,6 +150,7 @@ or_integration_tests(
     sky130_spm_floating_bpin
     sky130_spm_halo_too_big
     sroute_test
+    stacked_via_merged_enclosure
     widthtable
 )
 

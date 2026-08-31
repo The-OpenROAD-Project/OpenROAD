@@ -33,9 +33,9 @@ Negotiation phase 2: isolation point active, 1000 iterations.
 Negotiation phase 2 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         64.3 u
-average displacement       12.9 u
-max displacement           17.1 u
+total displacement         66.6 u
+average displacement       13.3 u
+max displacement           17.8 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

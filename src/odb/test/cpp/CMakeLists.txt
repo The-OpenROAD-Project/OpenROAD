@@ -16,6 +16,7 @@ add_executable(TestLef58Properties TestLef58Properties.cpp)
 add_executable(TestGroup TestGroup.cpp)
 add_executable(TestDbSet TestDbSet.cpp)
 add_executable(TestGCellGrid TestGCellGrid.cpp)
+add_executable(TestGCellTileSize TestGCellTileSize.cpp)
 add_executable(TestJournal TestJournal.cpp)
 add_executable(TestAccessPoint TestAccessPoint.cpp)
 add_executable(TestGuide TestGuide.cpp)
@@ -52,6 +53,7 @@ target_link_libraries(TestCallBacks
 )
 target_link_libraries(TestGeom
         db
+        Boost::boost
         ${GTEST_LIBS}
 )
 target_link_libraries(TestModule
@@ -79,6 +81,11 @@ target_link_libraries(TestDbSet
         ${GTEST_LIBS}
 )
 target_link_libraries(TestGCellGrid
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestGCellTileSize
         db
         odb_test_helper
         ${GTEST_LIBS}
@@ -187,7 +194,8 @@ add_dependencies(build_and_test
         TestModule
         TestGroup
         TestDbSet
-        TestGCellGrid 
+        TestGCellGrid
+        TestGCellTileSize
         TestGuide
         TestNetTrack
         TestMaster

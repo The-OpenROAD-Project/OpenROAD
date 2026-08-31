@@ -229,6 +229,16 @@ class Shapes:
 
 
 # TODO: Handle comment lines #
+
+
+def safeDielEpsilon(index):
+    # nothing is modeled above/below the top/bottom dielectric, so reuse
+    # its own epsilon rather than base_epsilon (the true open-air region,
+    # used only where a wire has no dielectric neighbor at all) #
+    idx = max(0, min(index, len(processDielectrics) - 1))
+    return float(processDielectrics[idx].epsilon)
+
+
 def processTechFile(filename: str):
 
     f = open(filename)
@@ -259,7 +269,10 @@ def processTechFile(filename: str):
         elif conductorblock == 1:
             linesplits = line.split()
 
-            if "distance" in line:
+            # process.out puts the conductor's name on its own line #
+            if len(linesplits) >= 2 and linesplits[0] == "name":
+                conductorname = linesplits[1]
+            elif "distance" in line:
                 conductordistance = linesplits[1]
             elif "thickness" in line:
                 conductorthickness = linesplits[1]
@@ -285,7 +298,10 @@ def processTechFile(filename: str):
         elif dielectricblock == 1:
             linesplits = line.split()
 
-            if "epsilon" in line:
+            # process.out puts the dielectric's name on its own line #
+            if len(linesplits) >= 2 and linesplits[0] == "name":
+                dielectricname = linesplits[1]
+            elif "epsilon" in line:
                 dielectricepsilon = linesplits[1]
             elif "thickness" in line:
                 dielectricthickness = linesplits[1]
@@ -320,6 +336,13 @@ def TranslateUniversalFile(Universalfilename: str, FasterCapfilename: str):
         tempuniversalfilename = Universalfilename + "/"
     else:
         tempuniversalfilename = Universalfilename
+
+    # shapeorder is each dielectric's index in processDielectrics, found by name #
+    dielNameToGlobalIndex = {}
+    for i, d in enumerate(processDielectrics):
+        if d.name in dielNameToGlobalIndex:
+            raise ValueError(f"duplicate dielectric name in process file: {d.name}")
+        dielNameToGlobalIndex[d.name] = i
 
     # walk each directory tree for specified Universalfilename #
     for root, dirs, files in os.walk(tempuniversalfilename):
@@ -490,11 +513,13 @@ def TranslateUniversalFile(Universalfilename: str, FasterCapfilename: str):
 
                 # map Universal Format Data Structures to Shapes #
                 # NOTE: height == length (y-axis) #
-                dielorder = 0
                 for dielectric in tempdielectrics:
                     shapetype = 0  # Dielectric
-                    shapeorder = dielorder
-                    dielorder += 1
+                    if dielectric.name not in dielNameToGlobalIndex:
+                        raise ValueError(
+                            f"dielectric {dielectric.name!r} not found in process file"
+                        )
+                    shapeorder = dielNameToGlobalIndex[dielectric.name]
                     shapename = dielectric.name
                     shapeheight = round(patternswindowheight, 6)
                     shapethickness = round(dielectric.thickness, 6)
@@ -1191,11 +1216,11 @@ def extractFasterCapfile(filename: str):
                         conductorfile,
                         round(
                             float(
-                                processDielectrics[
+                                safeDielEpsilon(
                                     PatternShapes[
                                         dielindexlist[intersection]
                                     ].shapeorder
-                                ].epsilon
+                                )
                             )
                             * float(1.0e-6),
                             8,
@@ -1229,9 +1254,9 @@ def extractFasterCapfile(filename: str):
                     conductorfile,
                     round(
                         float(
-                            processDielectrics[
+                            safeDielEpsilon(
                                 PatternShapes[dielindexlist[intersection]].shapeorder
-                            ].epsilon
+                            )
                         )
                         * float(1.0e-6),
                         8,
@@ -1272,12 +1297,12 @@ def extractFasterCapfile(filename: str):
                         conductorfile,
                         round(
                             float(
-                                processDielectrics[
+                                safeDielEpsilon(
                                     PatternShapes[
                                         dielindexlist[intersection]
                                     ].shapeorder
                                     + 1
-                                ].epsilon
+                                )
                             )
                             * float(1.0e-6),
                             8,
@@ -1337,11 +1362,11 @@ def extractFasterCapfile(filename: str):
                             float(1.0e-6),
                             round(
                                 float(
-                                    processDielectrics[
+                                    safeDielEpsilon(
                                         PatternShapes[
                                             dielindexlist[dielindex]
                                         ].shapeorder
-                                    ].epsilon
+                                    )
                                 )
                                 * float(1.0e-6),
                                 8,
@@ -1383,23 +1408,23 @@ def extractFasterCapfile(filename: str):
                             dielectricfile,
                             round(
                                 float(
-                                    processDielectrics[
+                                    safeDielEpsilon(
                                         PatternShapes[
                                             dielindexlist[dielindex]
                                         ].shapeorder
                                         - 1
-                                    ].epsilon
+                                    )
                                 )
                                 * float(1.0e-6),
                                 8,
                             ),
                             round(
                                 float(
-                                    processDielectrics[
+                                    safeDielEpsilon(
                                         PatternShapes[
                                             dielindexlist[dielindex]
                                         ].shapeorder
-                                    ].epsilon
+                                    )
                                 )
                                 * float(1.0e-6),
                                 8,
@@ -1440,9 +1465,9 @@ def extractFasterCapfile(filename: str):
                     1.0e-6,
                     round(
                         float(
-                            processDielectrics[
+                            safeDielEpsilon(
                                 PatternShapes[dielindexlist[dielindex]].shapeorder
-                            ].epsilon
+                            )
                         )
                         * float(1.0e-6),
                         8,
@@ -1479,19 +1504,19 @@ def extractFasterCapfile(filename: str):
                         dielectricfile,
                         round(
                             float(
-                                processDielectrics[
+                                safeDielEpsilon(
                                     PatternShapes[dielindexlist[dielindex]].shapeorder
                                     + 1
-                                ].epsilon
+                                )
                             )
                             * float(1.0e-6),
                             8,
                         ),
                         round(
                             float(
-                                processDielectrics[
+                                safeDielEpsilon(
                                     PatternShapes[dielindexlist[dielindex]].shapeorder
-                                ].epsilon
+                                )
                             )
                             * float(1.0e-6),
                             8,
@@ -1629,23 +1654,23 @@ def extractFasterCapfile(filename: str):
                             dielectricfile,
                             round(
                                 float(
-                                    processDielectrics[
+                                    safeDielEpsilon(
                                         PatternShapes[
                                             dielindexlist[dielindex]
                                         ].shapeorder
                                         - 1
-                                    ].epsilon
+                                    )
                                 )
                                 * float(1.0e-6),
                                 8,
                             ),
                             round(
                                 float(
-                                    processDielectrics[
+                                    safeDielEpsilon(
                                         PatternShapes[
                                             dielindexlist[dielindex]
                                         ].shapeorder
-                                    ].epsilon
+                                    )
                                 )
                                 * float(1.0e-6),
                                 8,
@@ -1682,9 +1707,9 @@ def extractFasterCapfile(filename: str):
                         1.0e-6,
                         round(
                             float(
-                                processDielectrics[
+                                safeDielEpsilon(
                                     PatternShapes[dielindexlist[dielindex]].shapeorder
-                                ].epsilon
+                                )
                             )
                             * float(1.0e-6),
                             8,
@@ -1721,23 +1746,23 @@ def extractFasterCapfile(filename: str):
                             dielectricfile,
                             round(
                                 float(
-                                    processDielectrics[
+                                    safeDielEpsilon(
                                         PatternShapes[
                                             dielindexlist[dielindex]
                                         ].shapeorder
                                         + 1
-                                    ].epsilon
+                                    )
                                 )
                                 * float(1.0e-6),
                                 8,
                             ),
                             round(
                                 float(
-                                    processDielectrics[
+                                    safeDielEpsilon(
                                         PatternShapes[
                                             dielindexlist[dielindex]
                                         ].shapeorder
-                                    ].epsilon
+                                    )
                                 )
                                 * float(1.0e-6),
                                 8,
