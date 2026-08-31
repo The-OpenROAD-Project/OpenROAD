@@ -180,6 +180,8 @@ class TechChar
                                    double load_cap);
 
  private:
+  friend class DelayBufListTest;
+
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
   struct SolutionData
