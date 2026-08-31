@@ -29,6 +29,7 @@ genrule(
     srcs = [
         "src/style.css",
         "src/theme.js",
+        "src/display-state.js",
         "src/3d-viewer-widget.js",
         "src/coordinates.js",
         "src/ui-utils.js",
@@ -43,15 +44,23 @@ genrule(
         "src/display-controls.js",
         "src/inspector.js",
         "src/ruler.js",
+        "src/label-manager.js",
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
+        "src/context-menu.js",
+        "src/search-nav.js",
+        "src/capture.js",
+        "src/toolbar.js",
+        "src/image-export.js",
+        "src/edit-dialogs.js",
         "src/title.js",
         "src/clock-tree-widget.js",
         "src/schematic-widget.js",
         "src/charts-widget.js",
         "src/timing-widget.js",
         "src/drc-widget.js",
+        "src/selection-browser.js",
         "src/main.js",
     ],
     outs = ["src/report_assets.cpp"],
@@ -59,6 +68,7 @@ genrule(
           " --output $@" +
           " --css $(location src/style.css)" +
           " --js $(location src/theme.js)" +
+          " $(location src/display-state.js)" +
           " $(location src/3d-viewer-widget.js)" +
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +
@@ -73,15 +83,23 @@ genrule(
           " $(location src/display-controls.js)" +
           " $(location src/inspector.js)" +
           " $(location src/ruler.js)" +
+          " $(location src/label-manager.js)" +
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/context-menu.js)" +
+          " $(location src/search-nav.js)" +
+          " $(location src/capture.js)" +
+          " $(location src/toolbar.js)" +
+          " $(location src/image-export.js)" +
+          " $(location src/edit-dialogs.js)" +
           " $(location src/title.js)" +
           " $(location src/clock-tree-widget.js)" +
           " $(location src/schematic-widget.js)" +
           " $(location src/charts-widget.js)" +
           " $(location src/timing-widget.js)" +
           " $(location src/drc-widget.js)" +
+          " $(location src/selection-browser.js)" +
           " $(location src/main.js)",
     tools = [":embed_report_assets"],
 )
@@ -94,6 +112,7 @@ _WEB_ASSET_FILES = [
     "src/tile-request.js",
     "src/device-pixels.js",
     "src/merged-tile-layer.js",
+    "src/display-state.js",
     "src/3d-viewer-widget.js",
     "src/coordinates.js",
     "src/ui-utils.js",
@@ -104,9 +123,16 @@ _WEB_ASSET_FILES = [
     "src/display-controls.js",
     "src/inspector.js",
     "src/ruler.js",
+    "src/label-manager.js",
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/menu-bar.js",
+    "src/context-menu.js",
+    "src/search-nav.js",
+    "src/capture.js",
+    "src/toolbar.js",
+    "src/image-export.js",
+    "src/edit-dialogs.js",
     "src/title.js",
     "src/clock-tree-widget.js",
     "src/schematic-widget.js",
@@ -114,6 +140,7 @@ _WEB_ASSET_FILES = [
     "src/charts-widget.js",
     "src/timing-widget.js",
     "src/drc-widget.js",
+    "src/selection-browser.js",
     "src/main.js",
 ]
 
@@ -154,6 +181,8 @@ cc_library(
         "src/web.cpp",
         "src/web_assets.h",
         "src/web_chart.cpp",
+        "src/web_gif.cpp",
+        "src/web_gif.h",
         "src/web_painter.cpp",
         "src/web_serve.cpp",
         "src/web_viewer_hook.cpp",
@@ -194,6 +223,7 @@ cc_library(
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party/gif-h:gif_h",
         "//third-party/lodepng",
         "//third-party/stb_truetype",
         "@boost.asio",

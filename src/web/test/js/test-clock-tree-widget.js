@@ -5,6 +5,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     computeClockTreeLayout,
+    clockTreePngName,
     kNodeSpacing, kTopMargin, kBottomMargin, kLeftMargin, kRightMargin,
 } from '../../src/clock-tree-widget.js';
 
@@ -238,5 +239,23 @@ describe('computeClockTreeLayout', () => {
         assert.equal(result.layout.length, 2);
         // Both nodes have same arrival → same y
         assert.equal(result.layout[0].y, result.layout[1].y);
+    });
+});
+
+describe('clockTreePngName', () => {
+    it('names the file after the clock on show', () => {
+        assert.equal(clockTreePngName('core_clock'), 'core_clock.png');
+    });
+
+    it('replaces characters a file name cannot carry', () => {
+        // A hierarchical clock name is the common case.
+        assert.equal(clockTreePngName('top/cpu/clk'), 'top_cpu_clk.png');
+        assert.equal(clockTreePngName('clk:1 *'), 'clk_1.png');
+    });
+
+    it('falls back when the clock has no usable name', () => {
+        for (const name of [undefined, null, '', '///', '   ']) {
+            assert.equal(clockTreePngName(name), 'clock_tree.png');
+        }
     });
 });

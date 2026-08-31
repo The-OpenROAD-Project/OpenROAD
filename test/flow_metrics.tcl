@@ -107,32 +107,138 @@ define_metric "DRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
 
 ################################################################
 
+# Read a flat json object of scalar values into a dict.
+#
+# The metrics and metrics limits files are machine written, by utl::metric and
+# by save_metric_limits below, so they are always one object of string or
+# number values. Reading them here rather than with tcllib's json package keeps
+# the metrics check working under the bazel-built openroad, whose Tcl carries no
+# tcllib. Nested objects and arrays are rejected instead of guessed at, so a
+# format change fails loudly rather than comparing the wrong numbers.
+proc read_flat_json { file_name } {
+  set stream [open $file_name r]
+  set text [read $stream]
+  close $stream
+
+  set result {}
+  set len [string length $text]
+  set i [skip_json_space $text 0 $len]
+  if { $i >= $len || [string index $text $i] != "\{" } {
+    error "expected a json object at the start of $file_name"
+  }
+  incr i
+
+  while { 1 } {
+    set i [skip_json_space $text $i $len]
+    if { $i >= $len } {
+      error "unterminated json object in $file_name"
+    }
+    set c [string index $text $i]
+    if { $c == "\}" } {
+      return $result
+    }
+    if { $c == "," } {
+      incr i
+      continue
+    }
+    if { $c != "\"" } {
+      error "expected a key string at offset $i of $file_name"
+    }
+    lassign [parse_json_string $text $i $len] key i
+
+    set i [skip_json_space $text $i $len]
+    if { [string index $text $i] != ":" } {
+      error "expected ':' after key $key in $file_name"
+    }
+    incr i
+
+    set i [skip_json_space $text $i $len]
+    set c [string index $text $i]
+    if { $c == "\{" || $c == "\[" } {
+      error "nested json is not supported, at key $key in $file_name"
+    }
+    if { $c == "\"" } {
+      lassign [parse_json_string $text $i $len] value i
+    } else {
+      # A bare number, true, false or null.
+      set start $i
+      while {
+        $i < $len
+        && [string first [string index $text $i] " \t\n\r,\}"] == -1
+      } {
+        incr i
+      }
+      set value [string range $text $start [expr { $i - 1 }]]
+    }
+    dict set result $key $value
+  }
+}
+
+proc skip_json_space { text i len } {
+  while { $i < $len && [string is space [string index $text $i]] } {
+    incr i
+  }
+  return $i
+}
+
+# text[i] is the opening quote. Returns the string and the offset past it.
+proc parse_json_string { text i len } {
+  incr i
+  set value ""
+  while { $i < $len } {
+    set c [string index $text $i]
+    if { $c == "\"" } {
+      return [list $value [expr { $i + 1 }]]
+    }
+    if { $c == "\\" } {
+      incr i
+      set escape [string index $text $i]
+      switch -- $escape {
+        "n" { append value "\n" }
+        "t" { append value "\t" }
+        "r" { append value "\r" }
+        "b" { append value "\b" }
+        "f" { append value "\f" }
+        "/" { append value "/" }
+        "\\" { append value "\\" }
+        "\"" { append value "\"" }
+        default { error "unsupported json escape \\$escape" }
+      }
+      incr i
+      continue
+    }
+    append value $c
+    incr i
+  }
+  error "unterminated json string"
+}
+
+################################################################
+
 # Used by regression.tcl to check pass/fail metrics test.
 # Returns "pass" or failing metric comparison string.
 proc check_test_metrics { test lang } {
-  # Don't require json until it is really needed.
-  package require json
+  return [compare_metrics_files [test_metrics_result_file $test $lang] \
+    [test_metrics_limits_file $test]]
+}
 
-  set metrics_file [test_metrics_result_file $test $lang]
-  set metrics_limits_file [test_metrics_limits_file $test]
+# Compare a metrics json file against a metrics limits json file.
+# Returns "pass" or failing metric comparison string.
+# Used by check_test_metrics and by check_metrics.tcl, which regression_test.sh
+# runs so bazel checks flow metrics too.
+proc compare_metrics_files { metrics_file metrics_limits_file } {
   if { ![file exists $metrics_file] } {
     return "missing metrics file"
   }
-  set stream [open $metrics_file r]
-  set json_string [read $stream]
-  close $stream
-  if { [catch { json::json2dict $json_string } metrics_dict] } {
-    return "error parsing metrics json"
+  if { [catch { read_flat_json $metrics_file } metrics_dict] } {
+    return "error parsing metrics json: $metrics_dict"
   }
 
   if { ![file exists $metrics_limits_file] } {
     return "missing metrics limits file"
   }
-  set stream [open $metrics_limits_file r]
-  set json_string [read $stream]
-  close $stream
-  if { [catch { json::json2dict $json_string } metrics_limits_dict] } {
-    return "error parsing metrics limits json"
+  if { [catch { read_flat_json $metrics_limits_file } metrics_limits_dict] } {
+    return "error parsing metrics limits json: $metrics_limits_dict"
   }
 
   set failures ""

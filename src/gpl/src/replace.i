@@ -100,6 +100,7 @@ static gpl::PlaceOptions getOptions(
     options.binGridCntY = options.binGridCntX;
   }
   checkFlag(flags, "-skip_io", [&](bool) { options.skipIo(); });
+  checkFlag(flags, "-place_ios", options.placeIosMode);
   return options;
 }
 

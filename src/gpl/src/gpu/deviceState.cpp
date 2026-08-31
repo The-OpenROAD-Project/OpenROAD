@@ -5,6 +5,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <cstddef>
+#include <functional>
 #include <vector>
 
 #include "deviceState_kokkos.h"
@@ -15,11 +16,14 @@ namespace gpl {
 
 namespace {
 
-// Resolve a GPin's owning GCell to its index in gCellStor by pointer
-// arithmetic; gCell must point into the contiguous storage vector.
+// Return the GCell index in gCellStor, or -1 if it belongs to another pool.
 int indexOfGCell(const std::vector<GCell>& gCellStor, const GCell* gCell)
 {
   const GCell* base = gCellStor.data();
+  const std::less<const GCell*> before;
+  if (before(gCell, base) || !before(gCell, base + gCellStor.size())) {
+    return -1;
+  }
   return static_cast<int>(gCell - base);
 }
 
@@ -102,10 +106,12 @@ void DeviceState::buildTopology(const std::vector<GCell>& gCellStor,
   s.h_inst_wl_grad_y = Kokkos::create_mirror_view(s.d_inst_wl_grad_y);
 
   // ---- Build host CSR + static pin attributes ----
-  // I/O pins (BTerm) have no owning GCell — their absolute coords come from
-  // the DB pin position and never move during placement. Mark them with
-  // inst_id = -1 so updatePinLocations() leaves d_pin_cx/d_pin_cy alone and
-  // the initial absolute coord we seed below stands forever.
+  // I/O pins (BTerm) are not part of this device-side GCell pool. They either
+  // have no owning GCell or, under concurrent IO placement, own one in
+  // NesterovBase's ioPinStor_, which this pool does not model. Both resolve to
+  // inst_id = -1, so updatePinLocations() leaves d_pin_cx/d_pin_cy unchanged
+  // after the initial absolute coordinates are seeded below. This is why
+  // concurrent IO placement uses the CPU wirelength and HPWL backends.
   std::vector<int> h_pin_offset_cx(num_pins_);
   std::vector<int> h_pin_offset_cy(num_pins_);
   std::vector<int> h_pin_inst_id(num_pins_);

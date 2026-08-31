@@ -11,6 +11,7 @@ sta::define_cmd_args "global_placement" {\
     [-virtual_cts]\
     [-incremental]\
     [-skip_io]\
+    [-place_ios]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -77,12 +78,31 @@ proc global_placement { args } {
       -virtual_cts \
       -routability_use_grt \
       -skip_io \
+      -place_ios \
       -incremental \
       -disable_revert_if_diverge \
       -disable_pin_density_adjust \
       -enable_routing_congestion}
 
   sta::check_argc_eq0 "global_placement" $args
+
+  if { [info exists flags(-place_ios)] } {
+    if { [info exists flags(-skip_io)] } {
+      utl::error GPL 169 "-place_ios cannot be used with -skip_io placement."
+    }
+    if { [info exists flags(-incremental)] } {
+      utl::error GPL 170 "-place_ios cannot be used with -incremental placement."
+    }
+    if { [info exists flags(-skip_nesterov_place)] } {
+      utl::error GPL 182 "-place_ios cannot be used with -skip_nesterov_place placement."
+    }
+    if { [info exists flags(-timing_driven)] } {
+      utl::error GPL 179 "-place_ios cannot be used with -timing_driven placement."
+    }
+    if { [info exists flags(-routability_driven)] } {
+      utl::error GPL 181 "-place_ios cannot be used with -routability_driven placement."
+    }
+  }
 
   if { [info exists flags(-incremental)] } {
     gpl::replace_incremental_place_cmd [array get keys] [array get flags]

@@ -64,6 +64,7 @@ tools = [
     "ant",
     "cgt",
     "cts",
+    "cut",
     "dbSta",
     "dft",
     "dpl",
@@ -91,6 +92,7 @@ tools = [
     "stt",
     "syn",
     "tap",
+    "tst",
     "upf",
     "utl",
     "web",
@@ -98,19 +100,30 @@ tools = [
 
 # Process man2. The excluded modules contribute man3 message pages but no
 # command pages: odb and sta are documented elsewhere (doxygen / upstream),
-# while dbSta and dst ship no README for link_readmes.sh to symlink.
+# dbSta and dst ship no README for link_readmes.sh to symlink, and cut and tst
+# expose no Tcl commands (cut is internal, tst is unit-test infrastructure not
+# linked into the application), so their READMEs have no command section to
+# parse.
 DEST_DIR2 = SRC_DIR = "./md/man2"
-exclude2 = ["dbSta", "dst", "odb", "sta"]
+exclude2 = ["cut", "dbSta", "dst", "odb", "sta", "tst"]
 docs2 = [f"{SRC_DIR}/{tool}.md" for tool in tools if tool not in exclude2]
 
-# Process man3 (add extra path for ORD messages)
-SRC_DIR = "../src"
+# Process man3. The pages come from the generated messages.txt files, laid out
+# as <root>/src/<module>/messages.txt plus <root>/messages.txt for the ORD
+# messages. The CMake build writes them into the source tree, so the default
+# root is the repository root. Bazel writes them under bazel-out, so
+# //docs:man_pages sets MESSAGES_ROOT_DIR to its generated tree instead.
+MESSAGES_ROOT_DIR = os.environ.get("MESSAGES_ROOT_DIR", "..")
 DEST_DIR3 = "./md/man3"
 exclude = [
     "sta"
 ]  # sta excluded because its format is different, and no severity level.
-docs3 = [f"{SRC_DIR}/{tool}/messages.txt" for tool in tools if tool not in exclude]
-docs3.append("../messages.txt")
+docs3 = [
+    f"{MESSAGES_ROOT_DIR}/src/{tool}/messages.txt"
+    for tool in tools
+    if tool not in exclude
+]
+docs3.append(f"{MESSAGES_ROOT_DIR}/messages.txt")
 
 
 def man2(path=DEST_DIR2):

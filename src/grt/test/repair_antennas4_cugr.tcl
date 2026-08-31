@@ -1,6 +1,6 @@
 # repair_antennas with CUGR routing under the harsh antenna rules of
-# repair_antennas4.tlef: many diodes per net, and diode-only repair cannot
-# clear every violation (jumpers pending — see GRT-0310).
+# repair_antennas4.tlef: jumpers clear every violation that diode-only
+# repair could not.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "repair_antennas4.tlef"

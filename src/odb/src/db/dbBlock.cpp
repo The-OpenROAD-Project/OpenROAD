@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "dbAccessPoint.h"
 #include "dbBPin.h"
 #include "dbBPinItr.h"
@@ -2320,6 +2321,8 @@ void dbBlock::setDieArea(const Rect& new_area)
 
 void dbBlock::setDieArea(const Polygon& new_area)
 {
+  using boost::polygon::operators::operator-;
+
   _dbBlock* block = (_dbBlock*) this;
   block->die_area_ = new_area;
   for (auto callback : block->callbacks_) {
@@ -2342,9 +2345,10 @@ void dbBlock::setDieArea(const Polygon& new_area)
   // into rectangles. Which are then used to create obstructions and
   // placement blockages.
 
-  Polygon bounding_rect = block->die_area_.getEnclosingRect();
-  std::vector<Polygon> results = bounding_rect.difference(block->die_area_);
-  for (odb::Polygon& blockage_area : results) {
+  const Polygon bounding_rect = block->die_area_.getEnclosingRect();
+  const std::vector<Polygon> results = geom::extractPolygons(
+      geom::toPolygonSet(bounding_rect) - geom::toPolygonSet(block->die_area_));
+  for (const odb::Polygon& blockage_area : results) {
     std::vector<Rect> blockages;
     decompose_polygon(blockage_area.getPoints(), blockages);
     for (odb::Rect& blockage_rect : blockages) {
@@ -2420,7 +2424,7 @@ Polygon dbBlock::computeCoreArea()
   }
 
   if (!rows.empty()) {
-    const auto polys = Polygon::merge(rows);
+    const auto polys = geom::mergePolygons(rows);
 
     if (polys.size() > 1) {
       odb::Rect area;
@@ -2531,8 +2535,17 @@ int dbBlock::getGCellTileSize()
         break;
       }
     }
-    odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+    if (tech_layer == nullptr) {
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          1219,
+          "No frontside routing layer #{} found -- only {} exist in the "
+          "technology.",
+          layer_idx,
+          count);
+    }
 
+    odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
     if (track_grid == nullptr) {
       getImpl()->getLogger()->error(
           utl::ODB,

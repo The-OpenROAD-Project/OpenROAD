@@ -250,12 +250,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     }
     logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
 
-    NegotiationLegalizer negotiation(this,
-                                     db_,
-                                     logger_,
-                                     padding_.get(),
-                                     debug_observer_.get(),
-                                     network_.get());
+    NegotiationLegalizer negotiation(
+        this, db_, logger_, debug_observer_.get(), network_.get());
     negotiation.setDisableWindowExtension(disable_window_extension);
     if (site_search_window >= 0) {
       negotiation.setSiteSearchWindow(site_search_window);

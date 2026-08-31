@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright (c) 2024-2026, The OpenROAD Authors
 
-#include "RDLRoute.h"
+#include "RDLSegment.h"
 
 #include <algorithm>
-#include <array>
 #include <map>
 #include <memory>
 #include <set>
@@ -12,12 +11,10 @@
 #include <utility>
 #include <vector>
 
+#include "RDLNet.h"
 #include "RDLRouter.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon_90_set_data.hpp"
-#include "boost/polygon/polygon_90_with_holes_data.hpp"
-#include "boost/polygon/rectangle_concept.hpp"
-#include "boost/polygon/rectangle_data.hpp"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -25,9 +22,11 @@
 
 namespace pad {
 
-RDLRoute::RDLRoute(odb::dbITerm* source,
-                   const std::vector<odb::dbITerm*>& dests)
-    : iterm_(source),
+RDLSegment::RDLSegment(RDLNet* net,
+                       odb::dbITerm* source,
+                       const std::vector<odb::dbITerm*>& dests)
+    : net_(net),
+      iterm_(source),
       priority_(0),
       route_pending_(false),
       locked_(false),
@@ -61,12 +60,17 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
   resetRoute();
 }
 
-odb::dbITerm* RDLRoute::peakNextTerminal() const
+odb::dbNet* RDLSegment::getNet() const
+{
+  return net_->getNet();
+}
+
+odb::dbITerm* RDLSegment::peakNextTerminal() const
 {
   return *next_;
 }
 
-odb::dbITerm* RDLRoute::getNextTerminal()
+odb::dbITerm* RDLSegment::getNextTerminal()
 {
   odb::dbITerm* iterm = peakNextTerminal();
 
@@ -75,7 +79,23 @@ odb::dbITerm* RDLRoute::getNextTerminal()
   return iterm;
 }
 
-bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
+odb::dbITerm* RDLSegment::getNextDestinationTerminal()
+{
+  if (!hasNextTerminal()) {
+    return nullptr;
+  }
+
+  odb::dbITerm* dst = nullptr;
+  do {
+    if (!hasNextTerminal()) {
+      return nullptr;
+    }
+    dst = getNextTerminal();
+  } while (net_->isNonCoverRouted(dst) || net_->isRouted(iterm_, dst));
+  return dst;
+}
+
+bool RDLSegment::compare(const RDLSegment* other) const
 {
   const auto lhs_priority = -getPriority();
   const auto rhs_priority = -other->getPriority();
@@ -100,7 +120,7 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
   return lhs_dist > rhs_dist;
 }
 
-void RDLRoute::setRoute(
+void RDLSegment::setRoute(
     const std::unordered_map<GridGraphVertex, odb::Point>& vertex_point_map,
     const std::vector<GridGraphVertex>& vertex,
     const std::vector<RDLRouter::GridEdge>& removed_edges,
@@ -132,15 +152,17 @@ void RDLRoute::setRoute(
   }
 
   setRouted();
+  net_->updateRoute(this);
 }
 
-void RDLRoute::resetRoute()
+void RDLSegment::resetRoute()
 {
   if (locked_) {
     return;
   }
 
   routed_ = false;
+  net_->updateRoute(this);
 
   route_vertex_.clear();
   route_pts_.clear();
@@ -154,7 +176,7 @@ void RDLRoute::resetRoute()
   next_ = terminals_.begin();
 }
 
-bool RDLRoute::isIntersecting(RDLRoute* other, int extent) const
+bool RDLSegment::isIntersecting(RDLSegment* other, int extent) const
 {
   // check current next_
   // if at end of next, select begin + priority offset (modulo)
@@ -174,7 +196,7 @@ bool RDLRoute::isIntersecting(RDLRoute* other, int extent) const
   // check intersection with routed other
   for (const auto& pt : other->getRoutePoints()) {
     if (boost::geometry::intersects(
-            line_segment, RDLRoute::getPointObstruction(pt, margin))) {
+            line_segment, RDLSegment::getPointObstruction(pt, margin))) {
       return true;
     }
   }
@@ -182,7 +204,7 @@ bool RDLRoute::isIntersecting(RDLRoute* other, int extent) const
   return false;
 }
 
-bool RDLRoute::isIntersecting(const odb::Line& line, int extent) const
+bool RDLSegment::isIntersecting(const odb::Line& line, int extent) const
 {
   if (!isRouted()) {
     return false;
@@ -192,7 +214,7 @@ bool RDLRoute::isIntersecting(const odb::Line& line, int extent) const
 
   for (const auto& pt : route_pts_) {
     if (boost::geometry::intersects(
-            line_segment, RDLRoute::getPointObstruction(pt, extent))) {
+            line_segment, RDLSegment::getPointObstruction(pt, extent))) {
       return true;
     }
   }
@@ -200,16 +222,17 @@ bool RDLRoute::isIntersecting(const odb::Line& line, int extent) const
   return false;
 }
 
-bool RDLRoute::isIntersecting(const odb::Point& point,
-                              int width,
-                              int spacing) const
+bool RDLSegment::isIntersecting(const odb::Point& point,
+                                int width,
+                                int spacing) const
 {
   if (!isRouted()) {
     return false;
   }
 
   const int sq_extect = (width + spacing) / 2;
-  const odb::Rect point_rect = RDLRoute::getPointObstruction(point, sq_extect);
+  const odb::Rect point_rect
+      = RDLSegment::getPointObstruction(point, sq_extect);
 
   if (!getBBox(sq_extect).intersects(point_rect)) {
     return false;
@@ -218,13 +241,13 @@ bool RDLRoute::isIntersecting(const odb::Point& point,
   std::vector<std::pair<odb::Point, odb::Point>> edges45;
   for (int i = 0; i < route_pts_.size(); i++) {
     const auto& pt = route_pts_[i];
-    if (point_rect.intersects(RDLRoute::getPointObstruction(pt, sq_extect))) {
+    if (point_rect.intersects(RDLSegment::getPointObstruction(pt, sq_extect))) {
       return true;
     }
 
     if (i > 0) {
       const auto& prev_pt = route_pts_[i - 1];
-      if (RDLRoute::is45DegreeEdge(prev_pt, pt)) {
+      if (RDLSegment::is45DegreeEdge(prev_pt, pt)) {
         edges45.emplace_back(prev_pt, pt);
       }
     }
@@ -237,7 +260,7 @@ bool RDLRoute::isIntersecting(const odb::Point& point,
   const int oct_extent = width / 2 + spacing + 1;
   for (const auto& [prev_pt, pt] : edges45) {
     if (boost::geometry::covered_by(
-            point, RDLRoute::getEdgeObstruction(prev_pt, pt, oct_extent))) {
+            point, RDLSegment::getEdgeObstruction(prev_pt, pt, oct_extent))) {
       return true;
     }
   }
@@ -245,14 +268,14 @@ bool RDLRoute::isIntersecting(const odb::Point& point,
   return false;
 }
 
-odb::Rect RDLRoute::getPointObstruction(const odb::Point& pt, int dist)
+odb::Rect RDLSegment::getPointObstruction(const odb::Point& pt, int dist)
 {
   return odb::Rect(pt.x() - dist, pt.y() - dist, pt.x() + dist, pt.y() + dist);
 }
 
-odb::Polygon RDLRoute::getEdgeObstruction(const odb::Point& pt0,
-                                          const odb::Point& pt1,
-                                          int dist)
+odb::Polygon RDLSegment::getEdgeObstruction(const odb::Point& pt0,
+                                            const odb::Point& pt1,
+                                            int dist)
 {
   const odb::Oct check_oct(pt0, pt1, 2 * dist);
 
@@ -274,51 +297,35 @@ odb::Polygon RDLRoute::getEdgeObstruction(const odb::Point& pt0,
   return points;
 }
 
-bool RDLRoute::is45DegreeEdge(const odb::Point& pt0, const odb::Point& pt1)
+bool RDLSegment::is45DegreeEdge(const odb::Point& pt0, const odb::Point& pt1)
 {
   return pt0.x() != pt1.x() && pt0.y() != pt1.y();
 }
 
-bool RDLRoute::contains(const odb::Point& pt) const
+bool RDLSegment::contains(const odb::Point& pt) const
 {
   return std::ranges::find(route_pts_, pt) != route_pts_.end();
 }
 
-void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
+void RDLSegment::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
 {
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator-=;
 
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
-  auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {
-    std::array<Pt, 4> pts = {Pt(rect.xMin(), rect.yMin()),
-                             Pt(rect.xMax(), rect.yMin()),
-                             Pt(rect.xMax(), rect.yMax()),
-                             Pt(rect.xMin(), rect.yMax())};
-
-    Polygon90 poly;
-    poly.set(pts.begin(), pts.end());
-    return poly;
-  };
-
-  Polygon90Set source_iterms;
+  odb::geom::BoostPolygon90Set source_iterms;
 
   bool has_layer = false;
   for (const auto& [iterm_layer, iterm_rect] : iterm_->getGeometries()) {
     if (iterm_layer == layer) {
       has_layer = true;
-      source_iterms += rect_to_poly(iterm_rect);
+      source_iterms.insert(odb::geom::toPolygon90(iterm_rect));
     }
   }
   if (!has_layer) {
     return;
   }
 
-  odb::PtrMap<odb::dbITerm, Polygon90Set> iterms_geoms;
+  odb::PtrMap<odb::dbITerm, odb::geom::BoostPolygon90Set> iterms_geoms;
 
   // Create geom of all shapes
   for (odb::dbITerm* iterm : terminals_) {
@@ -326,7 +333,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
     for (const auto& [iterm_layer, iterm_rect] : iterm->getGeometries()) {
       if (iterm_layer == layer) {
         iterm_has_layer = true;
-        iterms_geoms[iterm] += rect_to_poly(iterm_rect);
+        iterms_geoms[iterm].insert(odb::geom::toPolygon90(iterm_rect));
       }
     }
     if (!iterm_has_layer) {
@@ -336,7 +343,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
 
   // check if route is even needed, ie, shapes overlap
   for (const auto& [iterm, polys] : iterms_geoms) {
-    Polygon90Set check = polys;
+    odb::geom::BoostPolygon90Set check = polys;
     check.interact(source_iterms);
     if (!check.empty()) {
       // There is nothing to do
@@ -354,20 +361,18 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
   const int min_dist = layer->getSpacing();
 
   for (const auto& [iterm, polys] : iterms_geoms) {
-    Polygon90Set check = polys;
+    odb::geom::BoostPolygon90Set check = polys;
     check.bloat(min_dist, min_dist, min_dist, min_dist);
     check.interact(source_iterms);
     if (!check.empty()) {
-      Polygon90Set source_bloat = source_iterms;
+      odb::geom::BoostPolygon90Set source_bloat = source_iterms;
       source_bloat.bloat(min_dist, min_dist, min_dist, min_dist);
       check += source_bloat;
       check.shrink(min_dist, min_dist, min_dist, min_dist);
       check -= source_iterms;
 
-      std::vector<Rectangle> combined_rects;
-      check.get_rectangles(combined_rects);
-      for (const auto& rect : combined_rects) {
-        stubs_.emplace(xl(rect), yl(rect), xh(rect), yh(rect));
+      for (const odb::Rect& rect : odb::geom::extractRectangles(check)) {
+        stubs_.insert(rect);
       }
       // There is nothing to do
       locked_ = true;
@@ -381,7 +386,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
   }
 }
 
-odb::PtrSet<odb::dbITerm> RDLRoute::getRoutedTerminals() const
+odb::PtrSet<odb::dbITerm> RDLSegment::getRoutedTerminals() const
 {
   if (!routed_terminals_.empty()) {
     return routed_terminals_;
@@ -398,7 +403,7 @@ odb::PtrSet<odb::dbITerm> RDLRoute::getRoutedTerminals() const
   return terms;
 }
 
-void RDLRoute::setRouted()
+void RDLSegment::setRouted()
 {
   routed_ = true;
 
@@ -416,7 +421,7 @@ void RDLRoute::setRouted()
   }
 }
 
-odb::Rect RDLRoute::getBBox(int bloat) const
+odb::Rect RDLSegment::getBBox(int bloat) const
 {
   if (bloat == 0) {
     return bbox_;
@@ -424,6 +429,29 @@ odb::Rect RDLRoute::getBBox(int bloat) const
   odb::Rect bloated_bbox;
   bbox_.bloat(bloat, bloated_bbox);
   return bloated_bbox;
+}
+
+void RDLSegment::reportRoutePairs(utl::Logger* logger) const
+{
+  std::string pairs;
+  for (const auto& iterm : terminals_) {
+    if (!pairs.empty()) {
+      pairs += ", ";
+    }
+    pairs += iterm->getName();
+  }
+  logger->report("Route {} -> {}", iterm_->getName(), pairs);
+}
+
+std::vector<odb::dbITerm*> RDLSegment::getUnroutedTerminals() const
+{
+  std::vector<odb::dbITerm*> unrouted;
+  for (const auto& iterm : terminals_) {
+    if (!net_->isRouted(iterm_, iterm)) {
+      unrouted.push_back(iterm);
+    }
+  }
+  return unrouted;
 }
 
 }  // namespace pad

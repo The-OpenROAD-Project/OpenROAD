@@ -4,7 +4,6 @@
 #include "shape.h"
 
 #include <algorithm>
-#include <array>
 #include <functional>
 #include <memory>
 #include <set>
@@ -22,6 +21,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 #include "via.h"
@@ -225,16 +225,12 @@ bool Shape::cut(const ObstructionTree& obstructions,
                 const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
   using boost::polygon::operators::operator-=;
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
 
   const bool is_horizontal = isHorizontal();
 
   const ObstructionHalo obs_halo = getObstructionHalo();
 
-  std::vector<Polygon90> shape_violations;
+  std::vector<odb::geom::BoostPolygon90> shape_violations;
   for (auto it = obstructions.qbegin(bgi::intersects(getObstruction())
                                      && bgi::satisfies([&](const auto& other) {
                                           return layer_ == other->getLayer()
@@ -273,16 +269,8 @@ bool Shape::cut(const ObstructionTree& obstructions,
       vio_rect.set_xlo(std::min(obs_.xMin(), vio_rect.xMin()));
       vio_rect.set_xhi(std::max(obs_.xMax(), vio_rect.xMax()));
     }
-    std::array<Pt, 4> pts = {Pt(vio_rect.xMin(), vio_rect.yMin()),
-                             Pt(vio_rect.xMax(), vio_rect.yMin()),
-                             Pt(vio_rect.xMax(), vio_rect.yMax()),
-                             Pt(vio_rect.xMin(), vio_rect.yMax())};
-
-    Polygon90 poly;
-    poly.set(pts.begin(), pts.end());
-
     // save violating polygon
-    shape_violations.push_back(poly);
+    shape_violations.push_back(odb::geom::toPolygon90(vio_rect));
   }
 
   // check if violations is empty and return no new shapes
@@ -290,27 +278,20 @@ bool Shape::cut(const ObstructionTree& obstructions,
     return false;
   }
 
-  const std::array<Pt, 4> pts = {Pt(obs_.xMin(), obs_.yMin()),
-                                 Pt(obs_.xMax(), obs_.yMin()),
-                                 Pt(obs_.xMax(), obs_.yMax()),
-                                 Pt(obs_.xMin(), obs_.yMax())};
-
-  Polygon90 poly;
-  poly.set(pts.begin(), pts.end());
-  std::array<Polygon90, 1> arr{poly};
-
-  Polygon90Set new_shape(boost::polygon::HORIZONTAL, arr.begin(), arr.end());
-
-  // remove all violations from the shape
+  // Gather the violations with insert(), which defers normalization, and
+  // remove them in a single boolean op.  Subtracting one at a time would run
+  // a scanline pass per violation.
+  odb::geom::BoostPolygon90Set violations;
   for (const auto& violation : shape_violations) {
-    new_shape -= violation;
+    violations.insert(violation);
   }
 
-  std::vector<Rectangle> rects;
-  new_shape.get_rectangles(rects);
+  // remove all violations from the shape
+  odb::geom::BoostPolygon90Set new_shape = odb::geom::toPolygonSet90(obs_);
+  new_shape -= violations;
 
-  for (auto& r : rects) {
-    const odb::Rect new_obs_rect(xl(r), yl(r), xh(r), yh(r));
+  for (const odb::Rect& new_obs_rect :
+       odb::geom::extractRectangles(new_shape)) {
     if (!new_obs_rect.overlaps(rect_)) {
       // New shape will exceed original
       continue;

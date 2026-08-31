@@ -26,6 +26,11 @@ def _man_pages_impl(ctx):
 set -euo pipefail
 CAT_OUT="$PWD/{cat_out}"
 HTML_OUT="$PWD/{html_out}"
+# The messages.txt files that man3 is built from are generated, so they live
+# under bazel-out rather than in the source tree the execroot symlinks in.
+# md_roff_compat.py looks for <root>/src/<module>/messages.txt and
+# <root>/messages.txt, which is exactly the bin dir's layout.
+export MESSAGES_ROOT_DIR="$PWD/{bin_dir}"
 # Two phases: 'preprocess' (serial) generates the md/man*/*.md sources, then
 # 'cat web' fan out pandoc/nroff in parallel. They cannot share one -j make
 # invocation: cat/web read the md files preprocess produces, and a parallel
@@ -44,6 +49,7 @@ make -s --no-print-directory -C docs -f Makefile preprocess \\
 make -s --no-print-directory -j"$JOBS" -C docs -f Makefile cat web \\
     CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
 """.format(
+        bin_dir = ctx.bin_dir.path,
         cat_out = cat_dir.path,
         html_out = html_dir.path,
     )
