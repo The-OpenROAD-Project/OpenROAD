@@ -163,11 +163,7 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
     }
     full_slack_update_done_ = true;
   }
-  // Query every net, not just the rerouted ones: rerouting a net moves slack
-  // on every path it shares, and criticalSlackThreshold() takes a percentile
-  // over all nets. Parasitics are already current -- each stage refreshes the
-  // nets it rerouted via updateReroutedParasitics() -- so this is one lazy STA
-  // propagation plus cached reads, not a re-extraction.
+  // Query every net: the critical threshold is a percentile over all nets.
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
@@ -714,8 +710,7 @@ void CUGR::route(bool incremental)
     }
   }
 
-  // Each route() call gets one full parasitics estimate + slack sweep; the
-  // stages after it refresh only the nets they touch.
+  // One full parasitics estimate + slack sweep per route().
   full_slack_update_done_ = false;
 
   // Incremental re-optimizes every dirty net each stage: the congested-set

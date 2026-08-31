@@ -23,9 +23,7 @@ class ParasiticsService
   // current global routing state (partial routes).
   virtual void estimateAllGlobalRouteParasitics() = 0;
 
-  // Re-estimate one net's parasitics from the given route, replacing its
-  // previous annotation, and invalidate the timer's cached delays around
-  // it. A no-op for an empty route.
+  // Re-estimate one net's parasitics from the given route; no-op if empty.
   virtual void updateGlobalRouteParasitics(odb::dbNet* net, grt::GRoute& route)
       = 0;
 };

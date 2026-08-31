@@ -102,8 +102,7 @@ void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
     return;
   }
   estimateGlobalRouteParasitics(db_net, route);
-  // Annotating parasitics does not invalidate the timer's cached delays;
-  // without this, slack queries would keep returning pre-reroute values.
+  // Annotating parasitics alone leaves stale cached delays in the timer.
   if (const sta::Net* net = db_network_->dbToSta(db_net)) {
     sta_->delaysInvalidFromFanin(net);
   }
