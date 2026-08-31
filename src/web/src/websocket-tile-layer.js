@@ -165,7 +165,16 @@ export function createOverlayTileLayer(visibility, app) {
             // and no longer sits exactly on the shape it highlights.
             ...tileSizeFields(currentDpr(), tileSize),
             debug_renderers: !!visibility.debug_renderers,
+            // The overlay tile carries the layer-independent
+            // Renderer::drawObjects pass, so it needs the same pause/live gate
+            // the layer tiles get through TileVisibility.
+            debug_live: !!visibility.debug_live,
             flywires_only: !!visibility.flywires_only,
+            // Options > "Show polygon decomposition" (2.15).  Not a display
+            // control: the server owns the value and hands it to every client,
+            // and echoing it back is how a session learns its highlight shapes
+            // were derived under the previous setting.
+            poly_decomp: !!(app && app.polyDecomp),
             focused_nets_guides: !!visibility.focused_nets_guides,
             highlight_selected: visibility.highlight_selected !== false,
             // User labels (2.12) are server-drawn; honor the "Labels" toggle.

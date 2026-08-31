@@ -592,6 +592,10 @@ class TileGenerator
   // route guides, flight lines) on a fully transparent background.  Used
   // by the overlay tile layer so base tiles can stay cached when only
   // highlights change.
+  //
+  // Also home to the layer-independent Renderer::drawObjects pass, which
+  // belongs on a tile that is rendered once rather than once per layer;
+  // see DebugOverlayCallback.
   std::vector<unsigned char> generateOverlayTile(
       int z,
       int x,
@@ -606,7 +610,9 @@ class TileGenerator
       double dpr = 1.0,
       int tile_px = 0,
       const std::vector<ColoredPolygon>& colored_polys = {},
-      const std::vector<TextLabel>& labels = {}) const;
+      const std::vector<TextLabel>& labels = {},
+      bool debug_renderers = false,
+      bool debug_live = false) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
@@ -663,23 +669,43 @@ class TileGenerator
       const std::vector<ColoredRect>& rects,
       const std::vector<FlightLine>& lines) const;
 
-  // ─── Debug-graphics overlay ──────────────────────────────────────────
+  // ─── Renderer bridge ─────────────────────────────────────────────────
   //
-  // When `vis.debug_renderers` is on, renderTileBuffer invokes the
-  // installed DebugOverlayCallback (if any).  The callback is
-  // responsible for iterating any registered gui::Renderer instances
-  // and drawing their output onto the image buffer.  Kept as a
-  // callback rather than a direct gui::Gui::get() call so that
-  // libweb.a has no undefined references to the gui/SWIG library —
-  // test executables that link libweb don't need to pull in ord.
-  using DebugOverlayCallback
-      = std::function<void(std::vector<unsigned char>& image,
-                           const TileFrame& frame,
-                           bool debug_live)>;
-  // Install (or clear with `{}`) the debug-overlay callback.  Global
-  // process state; installed by WebServer on serve() and cleared on
-  // shutdown.
-  static void setDebugOverlayCallback(DebugOverlayCallback callback);
+  // The registered gui::Renderer instances are reached through one installed
+  // struct rather than a direct gui::Gui::get() call, so that libweb.a has no
+  // undefined references to the gui/SWIG library — test binaries can link
+  // libweb without pulling in ord.  One struct with one setter, because the
+  // two halves are installed and torn down by the same owner: when they were
+  // two callbacks, stop() cleared one and left the other holding a stale hook.
+  struct RendererHooks
+  {
+    // Draw.  `layer` mirrors the Qt GUI's two call sites: renderTileBuffer
+    // passes the tile's tech layer, for which the hook runs
+    // Renderer::drawLayer (RenderThread::drawLayer), and generateOverlayTile
+    // passes nullptr for the single layer-independent Renderer::drawObjects
+    // pass.  Splitting them is what keeps drawObjects from being composited
+    // once per visible layer.  Only called when vis.debug_renderers is on.
+    std::function<void(std::vector<unsigned char>& image,
+                       const TileFrame& frame,
+                       bool debug_live,
+                       odb::dbTechLayer* layer)>
+        draw;
+
+    // Renderer::select: a renderer can answer a click with objects of its own
+    // (the placer's gcells, the DRC markers, psm's nodes).  Same `layer`
+    // convention: selectAt calls it once per visible, selectable tech layer
+    // and then once with nullptr, the order Qt uses (LayoutViewer::selectAt)
+    // — psm::DebugGui resets its selection state on the nullptr pass, so it
+    // has to come last.
+    std::function<void(odb::dbTechLayer* layer,
+                       const odb::Rect& region,
+                       std::vector<SelectionResult>& out)>
+        select;
+  };
+
+  // Install (or clear with `{}`) the renderer bridge.  Global process state;
+  // installed by WebServer on serve() and cleared on stop().
+  static void setRendererHooks(RendererHooks hooks);
 
   // Rasterize a WebPainter's recorded DrawOps into the tile's pixel
   // buffer.  Public so that the debug-overlay callback (living in
@@ -800,12 +826,28 @@ class TileGenerator
       double dpr = 1.0,
       int tile_px = 0) const;
 
-  // Private counterpart of setDebugOverlayCallback: invokes the
-  // installed callback (if any) for this tile.  See the public API
-  // above for rationale.
+  // Objects the registered renderers claim for a click, via the installed
+  // RendererSelectCallback.  Empty when no callback is installed.
+  std::vector<SelectionResult> selectFromRenderers(
+      const odb::Rect& region,
+      const TileVisibility& vis,
+      const std::set<std::string>& visible_layers) const;
+
+  // The same, for the layer-independent Renderer::drawObjects pass, so
+  // save_image composites it once per tile instead of once per layer.  The
+  // interactive path gets it from generateOverlayTile.
+  std::vector<unsigned char> renderDebugRendererTile(int z,
+                                                     int x,
+                                                     int y,
+                                                     bool debug_live) const;
+
+  // Private counterpart of setRendererHooks: invokes the installed draw hook
+  // (if any) for this tile.  See RendererHooks above for the `layer`
+  // convention.
   void drawRendererOverlay(std::vector<unsigned char>& image,
                            const TileFrame& frame,
-                           bool debug_live) const;
+                           bool debug_live,
+                           odb::dbTechLayer* layer) const;
 
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,

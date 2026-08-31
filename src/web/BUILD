@@ -48,6 +48,7 @@ genrule(
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
+        "src/options-dialogs.js",
         "src/context-menu.js",
         "src/search-nav.js",
         "src/capture.js",
@@ -87,6 +88,7 @@ genrule(
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/options-dialogs.js)" +
           " $(location src/context-menu.js)" +
           " $(location src/search-nav.js)" +
           " $(location src/capture.js)" +
@@ -127,6 +129,7 @@ _WEB_ASSET_FILES = [
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/menu-bar.js",
+    "src/options-dialogs.js",
     "src/context-menu.js",
     "src/search-nav.js",
     "src/capture.js",

@@ -17,6 +17,7 @@
 #include <mutex>
 #include <numbers>
 #include <random>
+#include <ranges>
 #include <set>
 #include <span>  // NOLINT(build/c++20)
 #include <string>
@@ -52,6 +53,28 @@
 #include "web_painter.h"
 
 namespace web {
+
+namespace {
+// Process-wide renderer bridge installed by WebServer at serve() time.  Both
+// halves may be empty, in which case the calls below are no-ops.  This
+// indirection keeps gui::Gui::get() out of tile_generator.cpp so that libweb.a
+// has no undefined references to the full gui/SWIG library — test binaries can
+// link libweb without pulling in ord::OpenRoad::openRoad.
+TileGenerator::RendererHooks& rendererHooks()
+{
+  static TileGenerator::RendererHooks hooks;
+  return hooks;
+}
+
+// Serializes the hook calls: they run tool code (drt, pdn, psm, gpl) that Qt
+// only ever enters from its single RenderThread, while save_image renders
+// tiles on a thread pool.
+std::mutex& rendererHooksMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+}  // namespace
 
 int dbuPrecision(const double dbu_per_micron)
 {
@@ -1863,6 +1886,55 @@ TileGenerator::SnapResult TileGenerator::snapAt(
   return result;
 }
 
+std::vector<SelectionResult> TileGenerator::selectFromRenderers(
+    const odb::Rect& region,
+    const TileVisibility& vis,
+    const std::set<std::string>& visible_layers) const
+{
+  const auto& select = rendererHooks().select;
+  std::vector<SelectionResult> results;
+  if (!select) {
+    return results;
+  }
+  // Held across the whole walk: Qt issues the per-layer calls and the final
+  // nullptr one as one sequence, and gpl::select mutates renderer state, so
+  // two clients picking at once must not interleave.
+  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
+
+  // Reverse layer order, and only layers that are both visible and
+  // selectable: LayoutViewer::selectAt walks `rev_layers` under exactly those
+  // two conditions.  Names are deduplicated across techs the way getLayers()
+  // merges them, so a layer name shared by two chiplet techs is offered once.
+  std::set<std::string> asked;
+  for (odb::dbTech* tech : db_->getTechs()) {
+    // dbSet has no reverse iterator, so materialize and walk backwards.
+    std::vector<odb::dbTechLayer*> layers;
+    for (odb::dbTechLayer* layer : tech->getLayers()) {
+      layers.push_back(layer);
+    }
+    for (odb::dbTechLayer* layer : std::ranges::reverse_view(layers)) {
+      const std::string name = layer->getName();
+      if (!asked.insert(name).second) {
+        continue;
+      }
+      // An empty visible_layers set means the client sent no layer list, in
+      // which case nothing is filtered (same reading as the searches below).
+      if (!visible_layers.empty() && !visible_layers.contains(name)) {
+        continue;
+      }
+      if (!vis.isLayerSelectable(name)) {
+        continue;
+      }
+      select(layer, region, results);
+    }
+  }
+  // The layer-independent pass, last: psm::DebugGui::select clears its
+  // selection state here, so anything it collected per layer must already be
+  // in `results`.
+  select(nullptr, region, results);
+  return results;
+}
+
 std::vector<SelectionResult> TileGenerator::selectAt(
     const int dbu_x,
     const int dbu_y,
@@ -1893,6 +1965,15 @@ std::vector<SelectionResult> TileGenerator::selectAt(
              dbuToMicronString(margin, dbu_per_micron));
 
   odb::PtrSet<odb::dbNet> seen_nets;
+
+  // Renderer::select, before the odb searches — the order Qt uses, so a
+  // renderer's own object wins a click over whatever geometry lies under it.
+  // Kept in its own vector because the sort at the end of this function
+  // deliberately promotes instances, which would bury these.
+  const odb::Rect click_region(
+      dbu_x - margin, dbu_y - margin, dbu_x + margin, dbu_y + margin);
+  std::vector<SelectionResult> renderer_results
+      = selectFromRenderers(click_region, vis, visible_layers);
 
   // Iterate every chiplet so clicks inside a translated/rotated
   // dbChipInst land on the right object.  We map the world click into
@@ -2054,6 +2135,13 @@ std::vector<SelectionResult> TileGenerator::selectAt(
     }
     return a.bbox.area() > b.bbox.area();
   });
+
+  // Renderer hits go in front of the sorted design objects, as in Qt.
+  if (!renderer_results.empty()) {
+    results.insert(results.begin(),
+                   std::make_move_iterator(renderer_results.begin()),
+                   std::make_move_iterator(renderer_results.end()));
+  }
 
   debugPrint(
       logger_,
@@ -2232,7 +2320,9 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const double dpr,
     const int requested_tile_px,
     const std::vector<ColoredPolygon>& colored_polys,
-    const std::vector<TextLabel>& labels) const
+    const std::vector<TextLabel>& labels,
+    const bool debug_renderers,
+    const bool debug_live) const
 {
   // Same contract as renderTileBuffer: the client states the device-pixel
   // square it will display this tile in, because an overlay drawn at a
@@ -2253,8 +2343,10 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     return png;
   }
 
-  // Short-circuit: if there's nothing to draw, return a blank tile.
-  if (highlight_rects.empty() && highlight_polys.empty()
+  // Short-circuit: if there's nothing to draw, return a blank tile.  The
+  // debug-renderer pass counts as something to draw even with no shapes:
+  // it is the only thing on the tile while a tool is paused mid-run.
+  if (!debug_renderers && highlight_rects.empty() && highlight_polys.empty()
       && colored_rects.empty() && colored_polys.empty() && flight_lines.empty()
       && labels.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
@@ -2314,6 +2406,12 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
             image, *route_guide_net_ids, layer->getName(), it->second, frame);
       }
     }
+  }
+  // The layer-independent Renderer::drawObjects pass, drawn last so debug
+  // graphics sit above the highlights.  Once per tile: the layer tiles below
+  // only carry the per-layer drawLayer half, so nothing is composited twice.
+  if (debug_renderers) {
+    drawRendererOverlay(image, frame, debug_live, /*layer=*/nullptr);
   }
 
   std::vector<unsigned char> png;
@@ -4356,13 +4454,17 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // search every tech for the requested layer name and use that tech's
     // color map.
     Color world_color{.r = 200, .g = 200, .b = 200, .a = 180};
-    bool world_layer_found = false;
+    // Kept past the colour lookup: the debug-renderer overlay below hands it
+    // to Renderer::drawLayer, which is per tech layer.  Null for the pseudo
+    // layers ("_instances", "_modules", the grid overlays), which have no
+    // tech layer and so take no part in that pass.
+    odb::dbTechLayer* world_layer = nullptr;
     for (odb::dbTech* world_tech : db_->getTechs()) {
       odb::dbTechLayer* world_tech_layer = world_tech->findLayer(layer.c_str());
       if (!world_tech_layer) {
         continue;
       }
-      world_layer_found = true;
+      world_layer = world_tech_layer;
       const auto& world_layer_colors = getLayerColorMap(world_tech);
       const auto it = world_layer_colors.find(world_tech_layer);
       if (it != world_layer_colors.end()) {
@@ -4381,20 +4483,26 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       drawFlightLines(world_image_buffer, flight_lines, out_frame);
     }
     if (route_guide_net_ids && !route_guide_net_ids->empty()
-        && world_layer_found) {
+        && world_layer != nullptr) {
       drawRouteGuides(world_image_buffer,
                       *route_guide_net_ids,
                       layer,
                       world_color,
                       out_frame);
     }
-    if (vis.debug_renderers) {
+    if (vis.debug_renderers && world_layer != nullptr) {
       // The callback (installed by WebServer at startup) decides
       // whether to draw (honoring pause/live semantics) and handles
       // the gui::Gui::get() access itself.  Keeping Gui:: references
       // out of tile_generator means test executables that link libweb
       // don't transitively need gui.a / ord.a.
-      drawRendererOverlay(world_image_buffer, out_frame, vis.debug_live);
+      //
+      // Per-layer only: this is the Renderer::drawLayer half.  The
+      // layer-independent drawObjects pass runs once per tile, in
+      // generateOverlayTile (and in renderImageBuffer for save_image),
+      // rather than once per visible layer.
+      drawRendererOverlay(
+          world_image_buffer, out_frame, vis.debug_live, world_layer);
     }
   }
 
@@ -4892,6 +5000,27 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   };
   parallelRanges(thread_pool.get(), num_threads, total_tiles, render_tiles);
 
+  // The layer-independent debug-renderer pass, once per tile — the layer loop
+  // above only carried the per-layer drawLayer half.  This is what the
+  // interactive view gets from generateOverlayTile.  Outside the parallel
+  // section because the hook serializes anyway, so workers would only contend.
+  if (vis.debug_renderers) {
+    for (int tile_idx = 0; tile_idx < total_tiles; ++tile_idx) {
+      const int tx = tx_min + (tile_idx % total_tiles_x);
+      const int ty = ty_min + (tile_idx / total_tiles_x);
+      const auto debug_buf
+          = renderDebugRendererTile(z, tx, num_tiles - 1 - ty, vis.debug_live);
+      if (!debug_buf.empty()) {
+        compositeTile(debug_buf,
+                      kTileSizeInPixel,
+                      output.data(),
+                      tile_span_w,
+                      (tx - tx_min) * kTileSizeInPixel,
+                      (ty_max - ty) * kTileSizeInPixel);
+      }
+    }
+  }
+
   // Crop to the exact requested area.
   // The tile span covers a larger region; compute the pixel offset of the
   // area's origin within the tile span.
@@ -5197,17 +5326,6 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
 
 namespace {
 
-// Process-wide debug-overlay callback installed by WebServer at serve()
-// time.  Nullable; when not set, drawRendererOverlay is a no-op.  This
-// indirection keeps gui::Gui::get() out of tile_generator.cpp so that
-// libweb.a has no undefined references to the full gui/SWIG library —
-// test binaries can link libweb without pulling in ord::OpenRoad::openRoad.
-TileGenerator::DebugOverlayCallback& getDebugOverlayCallback()
-{
-  static TileGenerator::DebugOverlayCallback callback;
-  return callback;
-}
-
 // Convert a gui::Painter::Color to our internal Color (same RGBA layout).
 Color toTileColor(const gui::Painter::Color& c)
 {
@@ -5222,20 +5340,22 @@ Color toTileColor(const gui::Painter::Color& c)
 }  // namespace
 
 /* static */
-void TileGenerator::setDebugOverlayCallback(DebugOverlayCallback callback)
+void TileGenerator::setRendererHooks(RendererHooks hooks)
 {
-  getDebugOverlayCallback() = std::move(callback);
+  rendererHooks() = std::move(hooks);
 }
 
 void TileGenerator::drawRendererOverlay(std::vector<unsigned char>& image,
                                         const TileFrame& frame,
-                                        const bool debug_live) const
+                                        const bool debug_live,
+                                        odb::dbTechLayer* layer) const
 {
-  auto& callback = getDebugOverlayCallback();
-  if (!callback) {
+  const auto& draw = rendererHooks().draw;
+  if (!draw) {
     return;
   }
-  callback(image, frame, debug_live);
+  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
+  draw(image, frame, debug_live, layer);
 }
 
 // Convert a PenState width to pixel width for rasterization.
@@ -6046,6 +6166,32 @@ std::vector<unsigned char> TileGenerator::renderLabelTile(
       full_bounds, x, y, tile_dbu_size, dim / tile_dbu_size, effective_dpr);
 
   drawTextLabels(image, labels, frame);
+  return image;
+}
+
+std::vector<unsigned char> TileGenerator::renderDebugRendererTile(
+    const int z,
+    const int x,
+    int y,
+    const bool debug_live) const
+{
+  // Composited into save_image, which works at the unscaled tile size.
+  constexpr double effective_dpr = 1.0;
+  constexpr int dim = kTileSizeInPixel;
+  std::vector<unsigned char> image(static_cast<size_t>(dim) * dim * 4,
+                                   0);  // transparent
+
+  const double num_tiles_at_zoom = pow(2, z);
+  y = num_tiles_at_zoom - 1 - y;  // flip Y
+  const odb::Rect full_bounds = getBounds();
+  if (full_bounds.maxDXDY() <= 0) {
+    return {};
+  }
+  const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+  const TileFrame frame = tileFrame(
+      full_bounds, x, y, tile_dbu_size, dim / tile_dbu_size, effective_dpr);
+
+  drawRendererOverlay(image, frame, debug_live, /*layer=*/nullptr);
   return image;
 }
 

@@ -183,8 +183,11 @@ export function onSelectionReset(app, fn) {
 // guarantees the pane is only ever upscaled) prevents that.
 //
 // `crs` is parameterized so this is unit-testable without the Leaflet global.
+// `prefs` carries the two Options-menu preferences the map itself owns
+// (see kArrowStepDefault and installWheelPanning).
 export function buildMapOptions(
-    crs = (typeof L !== 'undefined' ? L.CRS.Simple : undefined)) {
+    crs = (typeof L !== 'undefined' ? L.CRS.Simple : undefined),
+    prefs = {}) {
     return {
         crs,
         zoom: 1,
@@ -192,7 +195,37 @@ export function buildMapOptions(
         zoomDelta: 1,
         fadeAnimation: false,
         attributionControl: false,
+        // Qt Options > "Mouse wheel mapped to zoom by default".  The live
+        // viewer never reads this: installWheelPanning turns Leaflet's own
+        // wheel handler off and implements both directions itself, because
+        // Leaflet cannot pan on the wheel.  Kept so the option carries the
+        // preference for a consumer that does not install that handler, and
+        // absent preference keeps the wheel zooming, which is what shipped.
+        scrollWheelZoom: prefs.wheelZoom !== false,
+        keyboardPanDelta: clampArrowStep(prefs.arrowStep),
     };
+}
+
+// Qt Options > "Arrow keys scroll step": how far one arrow press pans, in CSS
+// px.  Qt's dialog accepts 10..1000 with a default of 20; the default here
+// stays at Leaflet's 80 because that is what the web viewer has always done
+// and dropping to 20 would quietly make every arrow press a quarter as far.
+export const kArrowStepDefault = 80;
+export const kArrowStepMin = 10;
+export const kArrowStepMax = 1000;
+
+// Coerce a stored or user-typed step to a usable number.  Anything
+// unparseable falls back to the default rather than to NaN, which Leaflet
+// would turn into a map that ignores the arrow keys entirely.
+export function clampArrowStep(value) {
+    // Number('') and Number(null) are both 0, which would clamp to the
+    // minimum; an unset cookie has to read as absent, not as "10 px".
+    const step = (value === '' || value === null)
+        ? NaN : Math.round(Number(value));
+    if (!Number.isFinite(step)) {
+        return kArrowStepDefault;
+    }
+    return Math.min(kArrowStepMax, Math.max(kArrowStepMin, step));
 }
 
 // Build a display-controls group header row: an expand/collapse triangle and
@@ -505,4 +538,78 @@ export function makeResizableHeaders(table, widths) {
             document.addEventListener('mouseup', onMouseUp);
         });
     });
+}
+
+// Qt's LayoutScroll::wheelEvent, ported.  The preference and the Ctrl modifier
+// pick between panning and zooming, so Ctrl always does whichever one the
+// preference did not: with the preference off (Qt's default) the wheel pans and
+// Ctrl+wheel zooms, and with it on they swap.
+//
+// Both branches live here and Leaflet's own scrollWheelZoom is left disabled:
+// Leaflet has no pan-on-wheel option, and leaving its handler on would zoom in
+// addition to whatever this one did.  Zooming goes through setZoomAround so the
+// point under the cursor stays put, matching Qt's zoomIn(mouse_pos, true) and
+// the viewer's own Z / Shift+Z keys.
+export function installWheelPanning(map, wheelZoomEnabled) {
+    map.scrollWheelZoom.disable();
+    map.getContainer().addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (wheelZoomEnabled() === e.ctrlKey) {
+            const [dx, dy] = wheelDeltaPx(e, map.getContainer());
+            map.panBy([dx, dy], { animate: false });
+            return;
+        }
+        // A wheel notch is one zoom level, like the Z / Shift+Z keys.
+        const step = e.deltaY < 0 ? 1 : -1;
+        map.setZoomAround(map.mouseEventToLatLng(e), map.getZoom() + step);
+    }, { passive: false });
+}
+
+// A wheel event's scroll amount in CSS pixels.  deltaMode is not always pixels:
+// Firefox reports lines, and a page-mode event (rare, but produced by some
+// remote-desktop stacks) means a viewport at a time.  Treating either as pixels
+// would make one notch pan by a couple of pixels.
+function wheelDeltaPx(e, container) {
+    const kLineHeightPx = 16;
+    let scale = 1;
+    if (e.deltaMode === 1) {
+        scale = kLineHeightPx;
+    } else if (e.deltaMode === 2) {
+        scale = container.clientHeight || kLineHeightPx;
+    }
+    return [e.deltaX * scale, e.deltaY * scale];
+}
+
+// A modal dialog shell: title, caller-supplied body, an error line and
+// Cancel/OK.  Closes on the X, Cancel, Escape and a click on the backdrop.
+// `dialogClass` selects the per-dialog CSS (width, row layout).
+export function buildModal(title, bodyHtml, okLabel, dialogClass) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-dialog ${dialogClass}">
+            <button class="modal-close" title="Close" aria-label="Close">&times;</button>
+            <h3>${title}</h3>
+            ${bodyHtml}
+            <div class="modal-error" style="display:none"></div>
+            <div class="modal-buttons">
+                <button class="cancel">Cancel</button>
+                <button class="primary ok">${okLabel}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    overlay.querySelector('.cancel').addEventListener('click', close);
+    overlay.querySelector('.modal-close').addEventListener('click', close);
+
+    const errorDiv = overlay.querySelector('.modal-error');
+    const showError = (msg, isInfo) => {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = msg ? 'block' : 'none';
+        errorDiv.classList.toggle('info', !!isInfo);
+    };
+    return { overlay, close, okBtn: overlay.querySelector('.ok'), showError };
 }

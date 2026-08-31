@@ -39,6 +39,13 @@ const DISPLAY_STATE_KEYS = [
     { key: 'or_show_dbu', store: 'cookie' },
     { key: 'or_theme', store: 'theme' },
     { key: 'or_use_true_z', store: 'cookie' },
+    // Options-menu preferences (2.15).  or_ruler_style predates them (2.12)
+    // and was missing here, so a saved state silently dropped it.
+    { key: 'or_ruler_style', store: 'cookie' },
+    { key: 'or_wheel_zoom', store: 'cookie' },
+    { key: 'or_arrow_step', store: 'cookie' },
+    { key: 'or_font_family', store: 'cookie' },
+    { key: 'or_font_scale', store: 'cookie' },
 ];
 
 // Storage accessors, tolerant of a browser with Web Storage disabled (the

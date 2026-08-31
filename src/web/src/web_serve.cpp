@@ -215,30 +215,85 @@ void WebServer::serve(int port)
     tcl_eval->drain_output
         = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
 
-    TileGenerator::setDebugOverlayCallback(
-        [weak_gen = std::weak_ptr<TileGenerator>(generator_),
-         hook = viewer_hook_.get()](std::vector<unsigned char>& image,
-                                    const TileFrame& frame,
-                                    bool debug_live) {
-          if (hook == nullptr) {
-            return;
+    // The renderer bridge: one struct so both halves are installed and, in
+    // stop(), cleared together.
+    TileGenerator::RendererHooks hooks;
+
+    hooks.draw = [weak_gen = std::weak_ptr<TileGenerator>(generator_),
+                  hook = viewer_hook_.get()](std::vector<unsigned char>& image,
+                                             const TileFrame& frame,
+                                             bool debug_live,
+                                             odb::dbTechLayer* layer) {
+      if (hook == nullptr) {
+        return;
+      }
+      auto gen = weak_gen.lock();
+      if (!gen) {
+        return;
+      }
+      if (!debug_live && !hook->isPaused()) {
+        return;
+      }
+      seedRendererControls(hook);
+      for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+        // A Renderer sees the tile as a whole-DBU window (Painter's API is
+        // integer DBU); only the rasterization below needs the exact
+        // origin, which it takes from the frame.
+        WebPainter painter(frame.cull, frame.scale);
+        // The Qt GUI's two passes: drawLayer once per tech layer
+        // (RenderThread::drawLayer) and drawObjects once, after the
+        // layers.  A renderer may implement either or both -- four of the
+        // six that draw per layer implement no drawObjects at all, so
+        // skipping the layer pass made them invisible here.  saveState /
+        // restoreState around it mirrors Qt, so a renderer that leaves a
+        // pen set cannot bleed into the next one.
+        painter.saveState();
+        if (layer != nullptr) {
+          renderer->drawLayer(layer, painter);
+        } else {
+          renderer->drawObjects(painter);
+        }
+        painter.restoreState();
+        gen->rasterizeWebPainterOps(image, painter.ops(), frame);
+      }
+    };
+
+    // Answered only while the run is paused — a stricter gate than the
+    // drawing above, which also honours "Live".  These implementations read
+    // live algorithm state AND write their own (GraphicsImpl::select walks
+    // nbc_->getGCells(), indexes it, and sets selected_; DebugGui::select
+    // queries the solver's rtrees and fills selected_shapes_), and the Qt GUI
+    // only ever reaches them from inside gui::pause(), which spins the event
+    // loop while the algorithm is blocked.  Reading a torn frame is a garbled
+    // overlay; indexing a vector mid-reallocation is a crash, and clicking a
+    // gcell that is still moving buys nothing — so Live does not extend here.
+    hooks.select = [hook = viewer_hook_.get()](
+                       odb::dbTechLayer* layer,
+                       const odb::Rect& region,
+                       std::vector<SelectionResult>& out) {
+      if (hook == nullptr || !hook->isPaused()) {
+        return;
+      }
+      for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
+        for (const gui::Selected& selected : renderer->select(layer, region)) {
+          odb::Rect bbox;
+          if (!selected.getBBox(bbox)) {
+            // Nothing to zoom to or highlight; the client keys its
+            // selection off the bbox, so skip rather than send a degenerate
+            // rectangle.
+            continue;
           }
-          auto gen = weak_gen.lock();
-          if (!gen) {
-            return;
-          }
-          if (!debug_live && !hook->isPaused()) {
-            return;
-          }
-          for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
-            // A Renderer sees the tile as a whole-DBU window (Painter's API is
-            // integer DBU); only the rasterization below needs the exact
-            // origin, which it takes from the frame.
-            WebPainter painter(frame.cull, frame.scale);
-            renderer->drawObjects(painter);
-            gen->rasterizeWebPainterOps(image, painter.ops(), frame);
-          }
-        });
+          out.push_back({selected.getObject(),
+                         selected.getName(),
+                         selected.getTypeName(),
+                         bbox,
+                         odb::dbTransform(),
+                         /*is_inst=*/false});
+        }
+      }
+    };
+
+    TileGenerator::setRendererHooks(std::move(hooks));
 
     // After a design edit invalidates the tile cache, push a refresh so every
     // connected client re-requests its tiles (mirrors the Qt GUI's repaint on
@@ -405,7 +460,7 @@ void WebServer::stop()
   }
 
   if (viewer_hook_) {
-    TileGenerator::setDebugOverlayCallback({});
+    TileGenerator::setRendererHooks({});
     if (generator_) {
       generator_->setDesignChangedCallback({});
     }

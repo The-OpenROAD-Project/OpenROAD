@@ -3394,6 +3394,135 @@ TEST_F(TileGeneratorTest, SelectAtGatesInstancesByLayerSelectability)
 }
 
 //------------------------------------------------------------------------------
+// Renderer::select — a click can hit an object a renderer owns.  Qt walks the
+// layers in reverse, visible AND selectable only, then makes one pass with a
+// null layer (LayoutViewer::selectAt).
+//------------------------------------------------------------------------------
+
+// Records the layers it is asked about and can claim the click.
+struct RendererSelectRecorder
+{
+  std::vector<std::string> asked;   // "" for the layer-independent pass
+  bool claim_on_null_pass = false;  // return an object on that pass
+
+  void install()
+  {
+    TileGenerator::setRendererHooks(
+        {.select = [this](odb::dbTechLayer* layer,
+                          const odb::Rect& region,
+                          std::vector<SelectionResult>& out) {
+          asked.emplace_back(layer != nullptr ? layer->getName() : "");
+          if (layer == nullptr && claim_on_null_pass) {
+            out.push_back({std::any{},
+                           "renderer-object",
+                           "GCell",
+                           region,
+                           odb::dbTransform(),
+                           /*is_inst=*/false});
+          }
+        }});
+  }
+
+  static void clear() { TileGenerator::setRendererHooks({}); }
+};
+
+TEST_F(TileGeneratorTest, RendererSelectAsksEveryLayerThenTheNullPassLast)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  RendererSelectRecorder recorder;
+  recorder.install();
+  TileVisibility vis;
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis);
+  RendererSelectRecorder::clear();
+
+  ASSERT_FALSE(recorder.asked.empty());
+  // psm::DebugGui::select clears its state on the null pass, so it has to be
+  // the last thing asked.
+  EXPECT_EQ(recorder.asked.back(), "")
+      << "the layer-independent pass must come after every layer";
+  EXPECT_EQ(std::ranges::count(recorder.asked, std::string()), 1)
+      << "and it must happen exactly once";
+  // Reverse layer order, as in Qt: metal2 is asked before metal1.
+  const auto m1 = std::ranges::find(recorder.asked, std::string("metal1"));
+  const auto m2 = std::ranges::find(recorder.asked, std::string("metal2"));
+  ASSERT_NE(m1, recorder.asked.end());
+  ASSERT_NE(m2, recorder.asked.end());
+  EXPECT_LT(m2 - recorder.asked.begin(), m1 - recorder.asked.begin());
+}
+
+TEST_F(TileGeneratorTest, RendererSelectSkipsHiddenAndUnselectableLayers)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  // Only metal1 visible.
+  RendererSelectRecorder hidden;
+  hidden.install();
+  TileVisibility vis;
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis, {"metal1"});
+  RendererSelectRecorder::clear();
+  EXPECT_EQ(hidden.asked, (std::vector<std::string>{"metal1", ""}));
+
+  // Visible but not selectable ⇒ not asked at all.
+  RendererSelectRecorder unselectable;
+  unselectable.install();
+  TileVisibility vis_no_sel;
+  vis_no_sel.parseFromJson(parseObj(R"({"selectable_layers":[]})"));
+  tile_gen_->selectAt(20000, 20000, /*zoom=*/0, vis_no_sel, {"metal1"});
+  RendererSelectRecorder::clear();
+  EXPECT_EQ(unselectable.asked, (std::vector<std::string>{""}))
+      << "only the layer-independent pass survives";
+}
+
+// Qt pushes renderer hits before searching the design, so a renderer's object
+// wins the click.  Here the sort that promotes instances must not bury it.
+TEST_F(TileGeneratorTest, RendererSelectResultsComeBeforeDesignObjects)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  const int cx = (bbox.xMin() + bbox.xMax()) / 2;
+  const int cy = (bbox.yMin() + bbox.yMax()) / 2;
+
+  RendererSelectRecorder recorder;
+  recorder.claim_on_null_pass = true;
+  recorder.install();
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  RendererSelectRecorder::clear();
+
+  ASSERT_GE(results.size(), 2u) << "the instance and the renderer object";
+  EXPECT_EQ(results.front().name, "renderer-object");
+  EXPECT_EQ(results.front().type_name, "GCell");
+  EXPECT_TRUE(std::ranges::any_of(results, [](const SelectionResult& r) {
+    return r.is_inst;
+  })) << "the instance is still picked, just behind";
+}
+
+// With no callback installed nothing changes: the plain openroad binary with
+// no web server never installs one.
+TEST_F(TileGeneratorTest, RendererSelectIsANoOpWithoutACallback)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt((bbox.xMin() + bbox.xMax()) / 2,
+                                     (bbox.yMin() + bbox.yMax()) / 2,
+                                     /*zoom=*/0,
+                                     vis);
+  EXPECT_EQ(results.size(), 1u);
+}
+
+//------------------------------------------------------------------------------
 
 TEST_F(TileGeneratorTest, SerializeTechResponseContainsBlockName)
 {
@@ -4077,6 +4206,169 @@ TEST_F(TileGeneratorTest, NangateScaleIsTheOneModelledAbove)
 {
   EXPECT_EQ(getDb()->getDbuPerMicron(), 2000u);
   EXPECT_EQ(dbuPrecision(getDb()->getDbuPerMicron()), 4);
+}
+
+//------------------------------------------------------------------------------
+// Debug-graphics overlay: the two halves of the gui::Renderer API.  Qt calls
+// drawLayer once per tech layer and drawObjects once after the layers; the web
+// used to call only drawObjects, and once per layer tile at that.
+//------------------------------------------------------------------------------
+
+// Records which layer each debug-overlay invocation was for.  nullptr stands
+// for the layer-independent drawObjects pass.
+struct DebugOverlayRecorder
+{
+  std::vector<std::string> layer_calls;  // one entry per drawLayer pass
+  int object_calls = 0;                  // drawObjects passes
+
+  void install()
+  {
+    TileGenerator::setRendererHooks({.draw = [this](std::vector<unsigned char>&,
+                                                    const TileFrame&,
+                                                    bool,
+                                                    odb::dbTechLayer* layer) {
+      if (layer != nullptr) {
+        layer_calls.emplace_back(layer->getName());
+      } else {
+        ++object_calls;
+      }
+    }});
+  }
+
+  static void clear() { TileGenerator::setRendererHooks({}); }
+};
+
+TEST_F(TileGeneratorTest, DebugOverlayPassesTheTileTechLayer)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  tile_gen_->generateTile("metal3", 0, 0, 0, vis);
+  DebugOverlayRecorder::clear();
+
+  // Each layer tile drives Renderer::drawLayer for its OWN layer, so a
+  // renderer that draws per layer lands on the right tile.
+  EXPECT_EQ(recorder.layer_calls,
+            (std::vector<std::string>{"metal1", "metal3"}));
+  EXPECT_EQ(recorder.object_calls, 0)
+      << "the layer tiles must not carry the drawObjects pass";
+}
+
+TEST_F(TileGeneratorTest, DebugOverlayObjectsPassRunsOncePerTile)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  // What a client does for one tile: a tile per visible layer, plus one
+  // overlay tile.  drawObjects used to run once per layer here.
+  for (const char* layer : {"metal1", "metal2", "metal3", "metal4"}) {
+    tile_gen_->generateTile(layer, 0, 0, 0, vis);
+  }
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 /*highlight_rects=*/{},
+                                 /*highlight_polys=*/{},
+                                 /*colored_rects=*/{},
+                                 /*flight_lines=*/{},
+                                 /*route_guide_net_ids=*/nullptr,
+                                 /*has_visible_layers=*/false,
+                                 /*visible_layers=*/{},
+                                 /*dpr=*/1.0,
+                                 /*tile_px=*/0,
+                                 /*colored_polys=*/{},
+                                 /*labels=*/{},
+                                 /*debug_renderers=*/true,
+                                 /*debug_live=*/true);
+  DebugOverlayRecorder::clear();
+
+  EXPECT_EQ(recorder.object_calls, 1)
+      << "drawObjects belongs to the overlay tile, not to every layer";
+  EXPECT_EQ(recorder.layer_calls.size(), 4u);
+}
+
+// The pseudo layers ("_instances", the grid overlays) have no tech layer, so
+// they take no part in the per-layer pass -- otherwise a renderer would be
+// asked to draw a layer that does not exist.
+TEST_F(TileGeneratorTest, DebugOverlaySkipsPseudoLayers)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+  tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  tile_gen_->generateTile("_mfg_grid", 0, 0, 0, vis);
+  DebugOverlayRecorder::clear();
+
+  EXPECT_TRUE(recorder.layer_calls.empty());
+  EXPECT_EQ(recorder.object_calls, 0);
+}
+
+// An overlay tile with no shapes at all still has to render: while a tool is
+// paused mid-run the debug graphics are the only thing on it.
+TEST_F(TileGeneratorTest, DebugOverlayDefeatsTheEmptyOverlayShortCircuit)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  DebugOverlayRecorder recorder;
+  recorder.install();
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 {},
+                                 {},
+                                 {},
+                                 {},
+                                 nullptr,
+                                 false,
+                                 {},
+                                 1.0,
+                                 0,
+                                 {},
+                                 {},
+                                 /*debug_renderers=*/true,
+                                 /*debug_live=*/true);
+  EXPECT_EQ(recorder.object_calls, 1);
+
+  // And with the toggle off the short-circuit still applies.
+  recorder.object_calls = 0;
+  tile_gen_->generateOverlayTile(0,
+                                 0,
+                                 0,
+                                 {},
+                                 {},
+                                 {},
+                                 {},
+                                 nullptr,
+                                 false,
+                                 {},
+                                 1.0,
+                                 0,
+                                 {},
+                                 {},
+                                 /*debug_renderers=*/false,
+                                 /*debug_live=*/false);
+  DebugOverlayRecorder::clear();
+  EXPECT_EQ(recorder.object_calls, 0);
 }
 
 }  // namespace

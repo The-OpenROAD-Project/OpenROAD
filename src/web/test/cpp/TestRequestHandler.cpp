@@ -940,6 +940,79 @@ TEST_F(TileHandlerTest, GeometryChangeRebuildsHighlightGroupShapes)
       << "the flag is consumed so the next overlay does not rebuild again";
 }
 
+//------------------------------------------------------------------------------
+// Options > "Show polygon decomposition" (2.15) — a server-global setting that
+// travels on the request, so a session has to notice the value moved and
+// re-derive its highlight shapes.
+//------------------------------------------------------------------------------
+
+// An overlay-tile request carrying the polygon-decomposition setting, with
+// "Flywires only" held off so only this toggle can trigger a re-derivation.
+WebSocketRequest polyDecompRequest(uint32_t id, bool poly_decomp)
+{
+  WebSocketRequest req;
+  req.id = id;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json
+      = parseObj(poly_decomp ? R"({"z":0,"x":0,"y":0,"poly_decomp":true})"
+                             : R"({"z":0,"x":0,"y":0,"poly_decomp":false})");
+  return req;
+}
+
+TEST_F(TileHandlerTest, PolyDecompFlipRederivesHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("poly");
+  ASSERT_NE(net, nullptr);
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Nothing moved yet, so this request must not derive anything: it is the
+  // control for the assertion below.
+  WebSocketRequest req = polyDecompRequest(40, /*poly_decomp=*/false);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_TRUE(state_.highlight_rects.empty())
+        << "an unchanged setting must not re-derive on every tile";
+    EXPECT_FALSE(state_.poly_decomp);
+  }
+
+  // Flip it the way another client's toggle would, then ask for the same
+  // tile: the handler has to spot the change on its own.
+  req = polyDecompRequest(41, /*poly_decomp=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "the highlight shapes must be re-derived under the new setting";
+  EXPECT_TRUE(state_.poly_decomp)
+      << "the session records what it derived under, so the next tile is a "
+         "no-op";
+}
+
+TEST_F(TileHandlerTest, PolyDecompFlipDoesNotResurrectClearedHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("poly2");
+  ASSERT_NE(net, nullptr);
+  static FakeNetDescriptor net_descriptor;
+  {
+    // An explicit "clear highlights" keeps the inspected object but leaves
+    // the source at kNone.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+  }
+
+  WebSocketRequest req = polyDecompRequest(42, /*poly_decomp=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty())
+      << "a toggle must not bring back highlights the user cleared";
+}
+
 TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
 {
   odb::dbNet* net = makeConnectedNet("sig2");
@@ -1502,6 +1575,41 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
     ASSERT_TRUE(state_.heatmaps.count("Pin"));
     EXPECT_TRUE(state_.heatmaps.at("Pin")->getShowNumbers());
   }
+}
+
+// Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources
+// that name one.  It is not one of getSettings()' entries, so the handler has
+// to special-case it the way Qt's dialog wires the setter directly.
+TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
+{
+  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest meta_req;
+  meta_req.id = 20;
+  meta_req.type = WebSocketRequest::kHeatmaps;
+  const std::string before
+      = payloadStr(handler_->handleHeatMaps(meta_req, state_));
+  EXPECT_NE(before.find("\"selection_filter_label\""), std::string::npos)
+      << "the client needs the label to know whether to offer the control";
+  EXPECT_NE(before.find("\"use_selected_only\":false"), std::string::npos);
+
+  WebSocketRequest set_req;
+  set_req.id = 21;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json
+      = parseObj(R"({"name":"Pin","option":"use_selected_only","value":true})");
+  EXPECT_EQ(handler_->handleSetHeatMap(set_req, state_).type,
+            WebSocketResponse::kJson);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_TRUE(state_.heatmaps.at("Pin")->useSelectedOnly());
+  }
+  const std::string after
+      = payloadStr(handler_->handleHeatMaps(meta_req, state_));
+  EXPECT_NE(after.find("\"use_selected_only\":true"), std::string::npos);
 }
 
 // The browser's number input runs every value through parseFloat, so an

@@ -23,10 +23,13 @@ import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual, buildMapOptions,
-         buildVisibilityFlags, computeBoundsTransforms, computeScaleBar,
-         formatDbu, formatDistance, isCurrentSelection, isStaticMode,
-         maxUsefulZoom, parseDbu, rafCoalesce, showToast, unitLabel }
+         buildVisibilityFlags, clampArrowStep, computeBoundsTransforms,
+         computeScaleBar, formatDbu, formatDistance, installWheelPanning,
+         isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
+         rafCoalesce, showToast, unitLabel }
     from './ui-utils.js';
+import { clampFontScale, showAppFontDialog, showArrowStepDialog }
+    from './options-dialogs.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
@@ -89,6 +92,21 @@ function updateStatus() {
 
 // ─── Component Factories ────────────────────────────────────────────────────
 
+// Cookies hold values verbatim (their writers encode), and a CSS font stack
+// carries commas, quotes and spaces, so the font family round-trips
+// URI-encoded.  A malformed percent escape would throw out of the app's
+// initialization, so a corrupt cookie falls back to the default instead.
+function decodeCookie(value) {
+    if (!value) {
+        return '';
+    }
+    try {
+        return decodeURIComponent(value);
+    } catch (_) {
+        return '';
+    }
+}
+
 // Shared application state — replaces scattered module-level globals.
 // Components receive this via closure now; when extracted to separate files
 // they'll receive it as an explicit parameter.
@@ -142,6 +160,21 @@ const app = {
     // Default style for NEW rulers (2.12): 'euclidian' | 'manhattan'.
     rulerStyle: getCookie('or_ruler_style') === 'manhattan'
         ? 'manhattan' : 'euclidian',
+    // ── Options-menu preferences (2.15) ──
+    // Qt's "Mouse wheel mapped to zoom by default".  Qt defaults it off (wheel
+    // pans); the web viewer has always zoomed, so absent cookie means on.
+    wheelZoom: getCookie('or_wheel_zoom') !== '0',
+    // Qt's "Arrow keys scroll step", in CSS px.
+    arrowStep: clampArrowStep(getCookie('or_arrow_step')),
+    // Qt's "Application font", split into the CSS family and a percentage
+    // scale over the stylesheet's authored sizes.  Empty family = the
+    // stylesheet default.
+    fontFamily: decodeCookie(getCookie('or_font_family')),
+    fontScale: clampFontScale(getCookie('or_font_scale')),
+    // Qt's "Show polygon decomposition".  Server-global (the ITerm/MTerm
+    // descriptors read it), so it is fetched on connect rather than stored in
+    // a cookie, and a change from another client arrives as a push.
+    polyDecomp: false,
     labelManager: null,
     selectableLayers: new Set(),
     heatMapData: null,
@@ -635,7 +668,16 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(heatMapLegend);
     app.heatMapLegendEl = heatMapLegend;
 
-    app.map = L.map(mapDiv, buildMapOptions());
+    app.map = L.map(mapDiv, buildMapOptions(undefined, {
+        wheelZoom: app.wheelZoom,
+        arrowStep: app.arrowStep,
+    }));
+    // Wheel pan/zoom per the Options preference (2.15).  Skipped in a static
+    // report, which deliberately locks the zoom to the one pre-rendered level
+    // and turns Leaflet's own wheel zoom off.
+    if (!isStaticMode(app)) {
+        installWheelPanning(app.map, () => app.wheelZoom);
+    }
     // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
     // boundaries mid-device-pixel and they show as dark hairlines; this nudges
     // each tile container back onto the grid after every move.
@@ -1202,7 +1244,82 @@ app.toggleShowDbu = function() {
 app.toggleRulerStyle = function() {
     app.rulerStyle = app.rulerStyle === 'manhattan' ? 'euclidian' : 'manhattan';
     setCookie('or_ruler_style', app.rulerStyle);
+    scheduleSyncDisplayState();
 };
+
+// ─── Options-menu preferences (2.15) ────────────────────────────────────────
+
+// Qt's Options > "Mouse wheel mapped to zoom by default".  The wheel handler
+// reads app.wheelZoom on every event, so nothing has to be re-installed.
+app.toggleWheelZoom = function() {
+    app.wheelZoom = !app.wheelZoom;
+    setCookie('or_wheel_zoom', app.wheelZoom ? '1' : '0');
+    scheduleSyncDisplayState();
+};
+
+// Qt's Options > "Arrow keys scroll step".  Leaflet caches the pan distance in
+// its keyboard handler's key map, so the new step has to be pushed into it;
+// _setPanDelta is private, hence the guard, and buildMapOptions carries the
+// value for the next page load either way.
+app.setArrowStep = function(step) {
+    app.arrowStep = clampArrowStep(step);
+    setCookie('or_arrow_step', String(app.arrowStep));
+    app.map?.keyboard?._setPanDelta?.(app.arrowStep);
+    scheduleSyncDisplayState();
+};
+
+// Qt's Options > "Application font" (QApplication::setFont).  Only the chrome:
+// layout text is drawn server-side from the font atlas.
+app.setAppFont = function({ family, scale }) {
+    app.fontFamily = family ?? app.fontFamily;
+    app.fontScale = clampFontScale(scale ?? app.fontScale);
+    setCookie('or_font_family', encodeURIComponent(app.fontFamily));
+    setCookie('or_font_scale', String(app.fontScale));
+    app.applyAppFont();
+    scheduleSyncDisplayState();
+};
+
+// Push the stored font preference into the two CSS custom properties the
+// stylesheet reads.  An empty family removes the override so the stylesheet's
+// own default applies, rather than pinning it to a copy that would drift.
+app.applyAppFont = function() {
+    const root = document.documentElement;
+    if (app.fontFamily) {
+        root.style.setProperty('--or-font-family', app.fontFamily);
+    } else {
+        root.style.removeProperty('--or-font-family');
+    }
+    root.style.setProperty('--or-font-scale', String(app.fontScale / 100));
+    // Canvas widgets measure text themselves, so they need a re-render.
+    if (app.chartsWidget) app.chartsWidget.render();
+    if (app.clockTreeWidget) app.clockTreeWidget.render();
+};
+
+app.showArrowStepDialog = () => showArrowStepDialog(app);
+app.showAppFontDialog = () => showAppFontDialog(app);
+
+// Qt's Options > "Show polygon decomposition".  The server owns the value, so
+// the local flag and the menu tick only move once it has confirmed; every
+// other client learns about it from the broadcast the handler sends.
+app.togglePolyDecomp = function() {
+    if (!app.websocketManager) return;
+    app.websocketManager
+        .request({ type: 'poly_decomp', value: !app.polyDecomp })
+        .then((resp) => applyPolyDecomp(resp.value))
+        .catch(() => {});
+};
+
+function applyPolyDecomp(value) {
+    app.polyDecomp = !!value;
+    if (app.rebuildMenuBar) app.rebuildMenuBar();
+    // The highlight shapes are derived server-side; the overlay handler
+    // re-derives them when it sees the flag has moved.
+    if (app.refreshOverlay) app.refreshOverlay();
+}
+
+// Apply the persisted font before the panels are built so nothing renders at
+// the default size first and then jumps.
+app.applyAppFont();
 
 // ─── Menu Bar & Toolbar ──────────────────────────────────────────────────────
 
@@ -1361,6 +1478,13 @@ app.websocketManager.onPush = (msg) => {
         // The design may have been edited by another session's
         // set_property; refresh the inspected object's properties.
         if (app.refreshInspector) app.refreshInspector();
+    } else if (msg.type === 'renderer_controls_changed') {
+        // A control was toggled — by this client or another one.  This is the
+        // single trigger for both halves, so the sender does not also
+        // re-read.  scheduleRedrawAllLayers, not redrawAllLayers: a group
+        // toggle sends one message per row and the echoes must coalesce.
+        if (app.refreshRendererControls) app.refreshRendererControls();
+        scheduleRedrawAllLayers();
     } else if (msg.type === 'selection_invalidated') {
         // A design object was destroyed (trigger_action or Tcl); the
         // server dropped this session's selection state.  Clear the
@@ -1389,6 +1513,12 @@ app.websocketManager.onPush = (msg) => {
             }
         }, 500);
     } else if (msg.type === 'debug_paused') {
+        // A paused run is when the renderer set is stable and when the user
+        // can act on it, so this is where the control list is picked up.
+        // Renderer::redraw() broadcasts debug_refresh many times a second
+        // during a run; the design-mutation `refresh` is not about renderers
+        // at all.
+        if (app.refreshRendererControls) app.refreshRendererControls();
         ensureDebugContinueButton().style.display = 'block';
         // Refetch tiles so the user sees the current paused state.
         // Use the debounced version so that a debug_refresh arriving
@@ -1425,6 +1555,9 @@ app.websocketManager.onPush = (msg) => {
         // Tcl-registered menu items / toolbar buttons changed (e.g. a
         // create_toolbar_button typed in any client's console). Re-render.
         applyCustomUi(msg);
+    } else if (msg.type === 'poly_decomp') {
+        // Another client toggled the server-global setting.
+        applyPolyDecomp(msg.value);
     } else if (msg.type === 'shutdown') {
         // Server is stopping intentionally (web_server -stop).
         // Disable auto-reconnect and show a clear message. Note that
@@ -1453,6 +1586,12 @@ app.websocketManager.readyPromise.then(async () => {
         // they survive a page reload and appear for late-connecting clients.
         app.websocketManager.request({ type: 'custom_ui' })
             .then(applyCustomUi)
+            .catch(() => {});
+
+        // Options > "Show polygon decomposition" is server-global; read it so
+        // this client's menu tick matches what the server is drawing.
+        app.websocketManager.request({ type: 'poly_decomp' })
+            .then((resp) => applyPolyDecomp(resp.value))
             .catch(() => {});
 
         // --- Set Bounds ---

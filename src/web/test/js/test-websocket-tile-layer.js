@@ -219,6 +219,28 @@ describe('buildMapOptions', () => {
         assert.equal(opts.fadeAnimation, false);
         assert.equal(opts.attributionControl, false);
     });
+
+    // Options-menu preferences (2.15).  With none supplied the map must keep
+    // behaving as it always has: wheel zooms, arrows pan by Leaflet's 80 px.
+    it('defaults to wheel-zoom on and the default arrow step', () => {
+        const opts = buildMapOptions(null);
+        assert.equal(opts.scrollWheelZoom, true);
+        assert.equal(opts.keyboardPanDelta, 80);
+    });
+
+    it('carries the wheel-zoom preference through', () => {
+        assert.equal(buildMapOptions(null, { wheelZoom: false })
+                         .scrollWheelZoom, false);
+        assert.equal(buildMapOptions(null, { wheelZoom: true })
+                         .scrollWheelZoom, true);
+    });
+
+    it('clamps the arrow step it is given', () => {
+        assert.equal(buildMapOptions(null, { arrowStep: 250 })
+                         .keyboardPanDelta, 250);
+        assert.equal(buildMapOptions(null, { arrowStep: 1 })
+                         .keyboardPanDelta, 10);
+    });
 });
 
 describe('floorClampZoom (upscale-only invariant)', () => {
