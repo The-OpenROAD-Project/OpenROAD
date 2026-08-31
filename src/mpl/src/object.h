@@ -259,14 +259,6 @@ class HardMacro
     {
     }
 
-    Halo(std::pair<int, int> channel)
-    {
-      left = channel.first / 2;
-      bottom = channel.second / 2;
-      right = channel.first - left;
-      top = channel.second - bottom;
-    }
-
     Halo(int left, int bottom, int right, int top)
         : left(left), bottom(bottom), right(right), top(top)
     {
@@ -280,12 +272,12 @@ class HardMacro
       top = halo->yMax();
     }
 
-    Halo floorTo(const Halo& minimum) const
+    Halo flooredToChannel(const Channel& minimum) const
     {
-      return {std::max(left, minimum.left),
-              std::max(bottom, minimum.bottom),
-              std::max(right, minimum.right),
-              std::max(top, minimum.top)};
+      return {std::max(left, minimum.width / 2),
+              std::max(bottom, minimum.height / 2),
+              std::max(right, minimum.width / 2),
+              std::max(top, minimum.height / 2)};
     }
 
     bool isZero() const

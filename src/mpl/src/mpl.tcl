@@ -301,13 +301,13 @@ proc set_macro_guidance_region { args } {
 sta::define_cmd_args "set_macro_base_halo" { halo }
 proc set_macro_base_halo { args } {
   utl::warn MPL 75 "set_macro_base_halo is deprecated, use\
-                  odb::set_halo or -min_channel_width/-min_channel_height instead."
+                  -min_channel_width/-min_channel_height instead."
   sta::parse_key_args "set_macro_base_halo" args \
     keys {} flags {}
 
   lassign [mpl::parse_halo $args] left bottom right top
-  set width [expr {$left + $right}]
-  set height [expr {$bottom + $top}]
+  set width [expr { $left + $right }]
+  set height [expr { $bottom + $top }]
 
   mpl::set_min_channel $width $height
 }

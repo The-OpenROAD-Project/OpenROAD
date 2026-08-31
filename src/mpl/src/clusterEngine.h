@@ -105,7 +105,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setChannel(const std::pair<int, int> min_channel, bool use_full_channel);
+  void setChannel(Channel min_channel, bool use_full_channel);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -226,9 +226,7 @@ class ClusteringEngine
 
   bool isValidNet(odb::dbNet* net);
 
-  HardMacro::Halo buildMacroHalo(odb::dbInst* inst,
-                                 const HardMacro::Halo& base_halo,
-                                 int minimum_spacing) const;
+  HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
   int getMinimumSpacing() const;
   bool isEquidistantDifferentDirections(
       std::pair<int, Boundary> candidate,
@@ -261,7 +259,7 @@ class ClusteringEngine
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
 
-  std::pair<int, int> min_channel_;
+  Channel min_channel_;
   bool use_full_channel_{false};
 };
 

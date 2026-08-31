@@ -266,13 +266,12 @@ void HierRTLMP::blockMacroChannels()
     }
 
     HardMacro::Halo halo;
-    HardMacro::Halo base_halo(min_channel_);
 
     if (inst->getHalo() != nullptr) {
       const HardMacro::Halo inst_halo(inst->getHalo());
-      halo = inst_halo.floorTo(base_halo);
+      halo = inst_halo.flooredToChannel(min_channel_);
     } else {
-      halo = base_halo;
+      halo = halo.flooredToChannel(min_channel_);
     }
 
     HardMacro hard_macro(inst, halo);

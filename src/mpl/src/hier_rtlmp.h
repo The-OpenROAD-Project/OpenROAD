@@ -297,7 +297,7 @@ class HierRTLMP
   std::map<std::string, odb::Rect> fences_;     // macro_name, fence
   odb::PtrMap<odb::dbInst, odb::Rect> guides_;  // Macro -> Guidance Region
 
-  std::pair<int, int> min_channel_;
+  Channel min_channel_;
 
   std::vector<odb::Rect> placement_blockages_;
   std::vector<odb::Rect> io_blockages_;
