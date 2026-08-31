@@ -157,11 +157,15 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
     refreshNetSlacks(net_indices);
     return;
   }
-  if (!full_slack_update_done_) {
-    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+    if (!full_slack_update_done_) {
       estimator->estimateAllGlobalRouteParasitics();
+      full_slack_update_done_ = true;
+      // The full estimate covers any nets marked before it ran.
+      parasitics_dirty_nets_.clear();
+    } else {
+      updateReroutedParasitics(*estimator);
     }
-    full_slack_update_done_ = true;
   }
   // Query every net: the critical threshold is a percentile over all nets.
   for (const auto& net : gr_nets_) {
@@ -172,23 +176,33 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
   }
 }
 
-void CUGR::updateReroutedParasitics(const std::vector<int>& net_indices)
+void CUGR::markReroutedNets(const std::vector<int>& net_indices)
 {
-  if (incremental_routing_ || !full_slack_update_done_) {
+  // Incremental routing refreshes slacks without re-estimating parasitics.
+  if (incremental_routing_) {
     return;
   }
-  auto* estimator = service_registry_->find<est::ParasiticsService>();
-  if (estimator == nullptr) {
-    return;
-  }
-  for (const int net_index : net_indices) {
-    GRNet* net = gr_nets_[net_index].get();
-    if (net == nullptr || net->getRoutingTree() == nullptr) {
+  parasitics_dirty_nets_.insert(
+      parasitics_dirty_nets_.end(), net_indices.begin(), net_indices.end());
+}
+
+void CUGR::updateReroutedParasitics(est::ParasiticsService& estimator)
+{
+  std::ranges::sort(parasitics_dirty_nets_);
+  const auto duplicates = std::ranges::unique(parasitics_dirty_nets_);
+  parasitics_dirty_nets_.erase(duplicates.begin(), duplicates.end());
+  // Hoisted so its capacity is reused across nets.
+  GRoute route;
+  for (const int net_index : parasitics_dirty_nets_) {
+    const GRNet* net = gr_nets_[net_index].get();
+    if (net == nullptr || net->getNumPins() < 2 || net->isLocal()) {
       continue;
     }
-    GRoute route = getNetRoute(net->getDbNet());
-    estimator->updateGlobalRouteParasitics(net->getDbNet(), route);
+    route.clear();
+    buildNetRoute(net, route);
+    estimator.updateGlobalRouteParasitics(net->getDbNet(), route);
   }
+  parasitics_dirty_nets_.clear();
 }
 
 float CUGR::criticalSlackThreshold() const
@@ -574,7 +588,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
-  updateReroutedParasitics(res_aware_nets);
+  markReroutedNets(res_aware_nets);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -613,7 +627,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
-  updateReroutedParasitics(net_indices);
+  markReroutedNets(net_indices);
 }
 
 void CUGR::mazeRoute(std::vector<int>& net_indices)
@@ -675,7 +689,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid_graph_->updateWireCostView(wire_cost_view, net->getRoutingTree());
     grid.step();
   }
-  updateReroutedParasitics(net_indices);
+  markReroutedNets(net_indices);
 }
 
 void CUGR::route(bool incremental)
@@ -710,8 +724,10 @@ void CUGR::route(bool incremental)
     }
   }
 
-  // One full parasitics estimate + slack sweep per route().
+  // One full parasitics estimate per route(); stages then mark rerouted
+  // nets and the next slack sweep re-estimates only those.
   full_slack_update_done_ = false;
+  parasitics_dirty_nets_.clear();
 
   // Incremental re-optimizes every dirty net each stage: the congested-set
   // narrowing between the stages below is skipped, so net_indices stays the

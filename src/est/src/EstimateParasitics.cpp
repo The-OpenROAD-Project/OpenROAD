@@ -103,9 +103,7 @@ void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
   }
   estimateGlobalRouteParasitics(db_net, route);
   // Annotating parasitics alone leaves stale cached delays in the timer.
-  if (const sta::Net* net = db_network_->dbToSta(db_net)) {
-    sta_->delaysInvalidFromFanin(net);
-  }
+  sta_->delaysInvalidFromFanin(db_network_->dbToSta(db_net));
 }
 
 void EstimateParasitics::initSteinerRenderer(
@@ -659,6 +657,9 @@ void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
 void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
                                                        grt::GRoute& route)
 {
+  if (route.empty()) {
+    return;
+  }
   initBlock();
   MakeWireParasitics builder(
       logger_, this, sta_, block_->getTech(), block_, global_router_);

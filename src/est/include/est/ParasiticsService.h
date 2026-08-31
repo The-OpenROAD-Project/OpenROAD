@@ -5,10 +5,6 @@
 
 #include "grt/GRoute.h"
 
-namespace odb {
-class dbNet;
-}
-
 namespace est {
 
 // Service interface published by the parasitics estimator. Consumers
