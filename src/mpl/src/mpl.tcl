@@ -9,8 +9,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -max_num_level  max_num_level \
                                           -coarsening_ratio coarsening_ratio \
                                           -large_net_threshold large_net_threshold \
-                                          -min_channel_width min_channel_width \
-                                          -min_channel_height min_channel_height \
+                                          -min_channel_size min_channel_size \
                                           -fence_lx   fence_lx \
                                           -fence_ly   fence_ly \
                                           -fence_ux   fence_ux \
@@ -35,7 +34,7 @@ proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
     keys {-max_num_macro -min_num_macro -max_num_inst -min_num_inst -tolerance \
          -max_num_level -coarsening_ratio -large_net_threshold \
-         -min_channel_width -min_channel_height \
+         -min_channel_size \
          -fence_lx -fence_ly -fence_ux -fence_uy \
          -area_weight -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight \
@@ -108,20 +107,19 @@ proc rtl_macro_placer { args } {
     set large_net_threshold $keys(-large_net_threshold)
   }
 
-  if { [info exists keys(-min_channel_width)] || [info exists keys(-min_channel_height)] } {
-    set min_channel_width 0.0
-    set min_channel_height 0.0
+  if { [info exists keys(-min_channel_size)] } {
+    set min_channel_size $keys(-min_channel_size)
+    set length [llength $min_channel_size]
 
-    if { [info exists keys(-min_channel_width)] } {
-      set min_channel_width $keys(-min_channel_width)
-      set min_channel_height $min_channel_width
+    if { $length != 1 && $length != 2 } {
+      utl::error MPL 78 "-min_channel_size must have 1 or 2 values."
     }
 
-    if { [info exists keys(-min_channel_height)] } {
-      set min_channel_height $keys(-min_channel_height)
-      if { ![info exists keys(-min_channel_width)] } {
-        set min_channel_width $min_channel_height
-      }
+    if { $length == 1 } {
+      set min_channel_width [lindex $min_channel_size 0]
+      set min_channel_height $min_channel_width
+    } else {
+      lassign $min_channel_size min_channel_width min_channel_height
     }
 
     mpl::set_min_channel $min_channel_width $min_channel_height
@@ -301,7 +299,7 @@ proc set_macro_guidance_region { args } {
 sta::define_cmd_args "set_macro_base_halo" { halo }
 proc set_macro_base_halo { args } {
   utl::warn MPL 75 "set_macro_base_halo is deprecated, use\
-                  -min_channel_width/-min_channel_height instead."
+                  -min_channel_size instead."
   sta::parse_key_args "set_macro_base_halo" args \
     keys {} flags {}
 
