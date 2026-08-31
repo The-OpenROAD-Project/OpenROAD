@@ -6238,28 +6238,43 @@ std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
     const std::string& pin_name)
 {
   const std::string_view pin_view(pin_name);
+
+  // Prefixed pass first.  Hierarchical instance names contain '/' too, so an
+  // earlier chiplet can match the whole name and claim a pin that names a
+  // later one.
+  bool prefix_matched = false;
   for (const ChipletNode& node : chiplets) {
-    if (!node.block) {
-      continue;
-    }
     // Only a chip-inst contributes a path component: the root node's name is
     // its block's, which never prefixes a pin name.
-    const bool prefixed = node.inst != nullptr
-                          && pin_view.size() > node.name.size()
-                          && pin_view.starts_with(node.name)
-                          && pin_view[node.name.size()] == '/';
-    const char* local
-        = prefixed ? pin_name.c_str() + node.name.size() + 1 : pin_name.c_str();
-
+    if (node.inst == nullptr || !node.block
+        || pin_view.size() <= node.name.size()
+        || !pin_view.starts_with(node.name)
+        || pin_view[node.name.size()] != '/') {
+      continue;
+    }
+    prefix_matched = true;
+    const char* local = pin_name.c_str() + node.name.size() + 1;
     if (odb::dbITerm* iterm = node.block->findITerm(local)) {
       return {iterm, nullptr, &node};
     }
     if (odb::dbBTerm* bterm = node.block->findBTerm(local)) {
       return {nullptr, bterm, &node};
     }
-    if (prefixed) {
-      // The prefix named this chiplet; do not let another one claim the pin.
-      return {nullptr, nullptr, nullptr};
+  }
+  if (prefix_matched) {
+    // The prefix named a chiplet; do not let another one claim the pin.
+    return {nullptr, nullptr, nullptr};
+  }
+
+  for (const ChipletNode& node : chiplets) {
+    if (!node.block) {
+      continue;
+    }
+    if (odb::dbITerm* iterm = node.block->findITerm(pin_name.c_str())) {
+      return {iterm, nullptr, &node};
+    }
+    if (odb::dbBTerm* bterm = node.block->findBTerm(pin_name.c_str())) {
+      return {nullptr, bterm, &node};
     }
     // Unprefixed: first match wins, so it is ambiguous between chiplets
     // holding same-named instances.
@@ -6278,29 +6293,36 @@ static odb::dbNet* getNetFromPin(odb::dbITerm* iterm, odb::dbBTerm* bterm)
   return nullptr;
 }
 
-static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
+// False when the pin has no location at all: a null terminal, or a bterm with
+// no dbBPin (an unplaced port).
+static bool getPinLocation(odb::dbITerm* iterm,
+                           odb::dbBTerm* bterm,
+                           odb::Point& out)
 {
   if (iterm) {
     int x, y;
     if (iterm->getAvgXY(&x, &y)) {
-      return {x, y};
+      out = {x, y};
+      return true;
     }
     // Fallback to instance center
     odb::Rect bbox = iterm->getInst()->getBBox()->getBox();
-    return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
+    out = {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
+    return true;
   }
   if (bterm) {
     for (odb::dbBPin* bpin : bterm->getBPins()) {
       odb::Rect r = bpin->getBBox();
-      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+      out = {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+      return true;
     }
   }
-  return {0, 0};
+  return false;
 }
 
 // Flight line between two pins, each transformed by its own chiplet.  Both ends
-// must resolve to a real pin: getPinLocation falls back to the origin, which
-// would draw a line off to the die corner.
+// must have a location: drawing from a pin that has none would put the line off
+// at the die corner.
 static void addFlightLine(odb::dbITerm* a_iterm,
                           odb::dbBTerm* a_bterm,
                           const odb::dbTransform& a_xfm,
@@ -6310,12 +6332,13 @@ static void addFlightLine(odb::dbITerm* a_iterm,
                           const Color& color,
                           std::vector<FlightLine>& lines)
 {
-  if ((!a_iterm && !a_bterm) || (!b_iterm && !b_bterm)) {
+  odb::Point p1;
+  odb::Point p2;
+  if (!getPinLocation(a_iterm, a_bterm, p1)
+      || !getPinLocation(b_iterm, b_bterm, p2)) {
     return;
   }
-  odb::Point p1 = getPinLocation(a_iterm, a_bterm);
   a_xfm.apply(p1);
-  odb::Point p2 = getPinLocation(b_iterm, b_bterm);
   b_xfm.apply(p2);
   lines.push_back({p1, p2, color});
 }
@@ -6371,6 +6394,8 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
 
   // Track nets already collected to avoid duplicates
   odb::PtrSet<odb::dbNet> seen_nets;
+  // Same, for flight lines: the common clock is walked by both passes below.
+  std::set<std::pair<const void*, const void*>> seen_pin_pairs;
 
   auto process_nodes = [&](const std::vector<TimingNode>& nodes,
                            const Color& clk_color,
@@ -6398,16 +6423,27 @@ void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                            lines,
                            a_node->world_xfm);
         }
-      } else if (a_node && b_node) {
-        // Crosses chiplets, or one side has no physical net.
-        addFlightLine(a_iterm,
-                      a_bterm,
-                      a_node->world_xfm,
-                      b_iterm,
-                      b_bterm,
-                      b_node->world_xfm,
-                      c,
-                      lines);
+      } else if (a_node && b_node && a_node != b_node) {
+        // Crosses chiplets: no net holds the connection, so draw it directly.
+        // Within one chiplet a net-less pair is just a cell's own input to
+        // output arc, which is not a connection to draw.
+        const void* a_key = a_iterm ? static_cast<const void*>(a_iterm)
+                                    : static_cast<const void*>(a_bterm);
+        const void* b_key = b_iterm ? static_cast<const void*>(b_iterm)
+                                    : static_cast<const void*>(b_bterm);
+        const std::less<const void*> ptr_less;
+        const auto key = ptr_less(a_key, b_key) ? std::pair(a_key, b_key)
+                                                : std::pair(b_key, a_key);
+        if (seen_pin_pairs.insert(key).second) {
+          addFlightLine(a_iterm,
+                        a_bterm,
+                        a_node->world_xfm,
+                        b_iterm,
+                        b_bterm,
+                        b_node->world_xfm,
+                        c,
+                        lines);
+        }
       }
     }
   };
