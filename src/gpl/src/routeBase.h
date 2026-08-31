@@ -212,6 +212,10 @@ class RouteBase
   void resetRoutabilityResources();
   void revertToMinCongestion();
 
+  // debug reports on the tiles' inflation ratios
+  void debugInflationRatioStats() const;
+  void debugInflatedTiles() const;
+
   // update revert_count_
   void increaseCounter();
 };

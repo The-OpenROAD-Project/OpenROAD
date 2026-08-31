@@ -415,84 +415,102 @@ void RouteBase::calculateRudyTiles()
     }
   }
 
-  // Calculate statistics for inflation ratios
-  if (log_->debugCheck(GPL, "rudy", 1)) {
-    std::vector<float> inflation_ratios;
-    inflation_ratios.reserve(tg_->tiles().size());
-    for (auto& tile : tg_->tiles()) {
-      inflation_ratios.push_back(tile->inflationRatio());
-    }
+  debugInflationRatioStats();
+  debugInflatedTiles();
+}
 
-    if (!inflation_ratios.empty()) {
-      std::ranges::sort(inflation_ratios.begin(), inflation_ratios.end());
-      float sum = 0.0f;
-      for (float val : inflation_ratios) {
-        sum += val;
-      }
-      float mean = sum / inflation_ratios.size();
-      float median = inflation_ratios[inflation_ratios.size() / 2];
-      float variance = 0.0f;
-      for (float val : inflation_ratios) {
-        variance += (val - mean) * (val - mean);
-      }
-      float stddev = std::sqrt(variance / inflation_ratios.size());
-      log_->report(
-          "RUDY Inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
-          "Dev: "
-          "{:.4f}",
-          mean,
-          median,
-          stddev);
-
-      // Histogram (10 buckets)
-      float min_val = inflation_ratios.front();
-      float max_val = inflation_ratios.back();
-
-      if (max_val - min_val < 1e-6) {
-        log_->report(
-            "RUDY Inflation ratio statistics - All tiles have inflation ratio: "
-            "{:.4f}",
-            min_val);
-      } else {
-        const int num_buckets = 10;
-        float step = (max_val - min_val) / num_buckets;
-        std::vector<int> bucket_counts(num_buckets, 0);
-
-        for (float val : inflation_ratios) {
-          int bucket = static_cast<int>((val - min_val) / step);
-          if (bucket >= num_buckets) {
-            bucket = num_buckets - 1;
-          }
-          bucket_counts[bucket]++;
-        }
-
-        log_->report("RUDY Inflation ratio distribution:");
-        for (int i = 0; i < num_buckets; i++) {
-          float range_start = min_val + i * step;
-          float range_end = min_val + (i + 1) * step;
-          float percentage = static_cast<float>(bucket_counts[i])
-                             / inflation_ratios.size() * 100.0f;
-          log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
-                       range_start,
-                       range_end,
-                       bucket_counts[i],
-                       percentage);
-        }
-      }
-    }
+// Report mean/median/stddev and a 10-bucket histogram of the tiles'
+// inflation ratios.
+void RouteBase::debugInflationRatioStats() const
+{
+  if (!log_->debugCheck(GPL, "rudy", 1)) {
+    return;
   }
 
-  if (log_->debugCheck(GPL, "updateInflationRatio", 1)) {
-    auto log = [this](auto... param) {
-      log_->debug(GPL, "updateInflationRatio", param...);
-    };
-    for (auto& tile : tg_->tiles()) {
-      if (tile->inflationRatio() > 1.0) {
-        log("xy: {} {}", tile->x(), tile->y());
-        log("minxy: {} {}", tile->lx(), tile->ly());
-        log("maxxy: {} {}", tile->ux(), tile->uy());
-        log("calcInflationRatio: {}", tile->inflationRatio());
-      }
+  std::vector<float> inflation_ratios;
+  inflation_ratios.reserve(tg_->tiles().size());
+  for (auto& tile : tg_->tiles()) {
+    inflation_ratios.push_back(tile->inflationRatio());
+  }
+
+  if (inflation_ratios.empty()) {
+    return;
+  }
+
+  std::ranges::sort(inflation_ratios);
+  float sum = 0.0f;
+  for (float val : inflation_ratios) {
+    sum += val;
+  }
+  float mean = sum / inflation_ratios.size();
+  float median = inflation_ratios[inflation_ratios.size() / 2];
+  float variance = 0.0f;
+  for (float val : inflation_ratios) {
+    variance += (val - mean) * (val - mean);
+  }
+  float stddev = std::sqrt(variance / inflation_ratios.size());
+  log_->report(
+      "RUDY Inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
+      "Dev: "
+      "{:.4f}",
+      mean,
+      median,
+      stddev);
+
+  // Histogram (10 buckets)
+  float min_val = inflation_ratios.front();
+  float max_val = inflation_ratios.back();
+
+  if (max_val - min_val < 1e-6) {
+    log_->report(
+        "RUDY Inflation ratio statistics - All tiles have inflation ratio: "
+        "{:.4f}",
+        min_val);
+    return;
+  }
+
+  const int num_buckets = 10;
+  float step = (max_val - min_val) / num_buckets;
+  std::vector<int> bucket_counts(num_buckets, 0);
+
+  for (float val : inflation_ratios) {
+    int bucket = static_cast<int>((val - min_val) / step);
+    if (bucket >= num_buckets) {
+      bucket = num_buckets - 1;
+    }
+    bucket_counts[bucket]++;
+  }
+
+  log_->report("RUDY Inflation ratio distribution:");
+  for (int i = 0; i < num_buckets; i++) {
+    float range_start = min_val + i * step;
+    float range_end = min_val + (i + 1) * step;
+    float percentage = static_cast<float>(bucket_counts[i])
+                       / inflation_ratios.size() * 100.0f;
+    log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
+                 range_start,
+                 range_end,
+                 bucket_counts[i],
+                 percentage);
+  }
+}
+
+// Dump the coordinates and inflation ratio of every inflated tile.
+void RouteBase::debugInflatedTiles() const
+{
+  if (!log_->debugCheck(GPL, "updateInflationRatio", 1)) {
+    return;
+  }
+
+  auto log = [this](auto... param) {
+    log_->debug(GPL, "updateInflationRatio", param...);
+  };
+  for (auto& tile : tg_->tiles()) {
+    if (tile->inflationRatio() > 1.0) {
+      log("xy: {} {}", tile->x(), tile->y());
+      log("minxy: {} {}", tile->lx(), tile->ly());
+      log("maxxy: {} {}", tile->ux(), tile->uy());
+      log("calcInflationRatio: {}", tile->inflationRatio());
     }
   }
 }
@@ -579,38 +597,7 @@ void RouteBase::updateGrtRoute()
     }
   }
 
-  // debug print
-  for (auto& tile : tg_->tiles()) {
-    if (tile->inflationRatio() > 1.0) {
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "xy: {} {}",
-                 tile->x(),
-                 tile->y());
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "minxy: {} {}",
-                 tile->lx(),
-                 tile->ly());
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "maxxy: {} {}",
-                 tile->ux(),
-                 tile->uy());
-      debugPrint(log_,
-                 GPL,
-                 "updateInflationRatio",
-                 1,
-                 "calcInflationRatio: {}",
-                 tile->inflationRatio());
-    }
-  }
+  debugInflatedTiles();
 }
 
 // first: is Routability Need
