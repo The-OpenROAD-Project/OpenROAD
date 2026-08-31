@@ -212,6 +212,8 @@ class RouteBase
   void resetRoutabilityResources();
   void revertToMinCongestion();
 
+  void updateTileInflationRatio(Tile* tile, float ratio) const;
+
   // debug reports on the tiles' inflation ratios
   void debugInflationRatioStats() const;
   void debugInflatedTiles() const;

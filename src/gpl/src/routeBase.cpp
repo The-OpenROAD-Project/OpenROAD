@@ -386,6 +386,19 @@ static float getUsageCapacityRatio(Tile* tile,
   return static_cast<float>(curUse) / curCap;
 }
 
+// Set the tile's inflation ratio from its congestion 'ratio', if the tile is
+// congested enough.
+void RouteBase::updateTileInflationRatio(Tile* tile, float ratio) const
+{
+  if (rbVars_.minCongestionForInflation > 0.0f
+      && ratio >= rbVars_.minCongestionForInflation) {
+    float inflationRatio = std::pow(ratio / rbVars_.minCongestionForInflation,
+                                    rbVars_.inflationRatioCoef);
+    inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
+    tile->setInflationRatio(inflationRatio);
+  }
+}
+
 void RouteBase::calculateRudyTiles()
 {
   nbc_->updateDbGCells();
@@ -404,15 +417,7 @@ void RouteBase::calculateRudyTiles()
 
   for (auto& tile : tg_->tiles()) {
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
-
-    // update inflation Ratio
-    if (rbVars_.minCongestionForInflation > 0.0f
-        && ratio >= rbVars_.minCongestionForInflation) {
-      float inflationRatio = std::pow(ratio / rbVars_.minCongestionForInflation,
-                                      rbVars_.inflationRatioCoef);
-      inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
-      tile->setInflationRatio(inflationRatio);
-    }
+    updateTileInflationRatio(tile, ratio);
   }
 
   debugInflationRatioStats();
@@ -585,15 +590,7 @@ void RouteBase::updateGrtRoute()
       } else {
         ratio = 0.0;
       }
-      //  update inflation Ratio
-      if (rbVars_.minCongestionForInflation > 0.0f
-          && ratio >= rbVars_.minCongestionForInflation) {
-        float inflationRatio
-            = std::pow(ratio / rbVars_.minCongestionForInflation,
-                       rbVars_.inflationRatioCoef);
-        inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
-        tile->setInflationRatio(inflationRatio);
-      }
+      updateTileInflationRatio(tile, ratio);
     }
   }
 
