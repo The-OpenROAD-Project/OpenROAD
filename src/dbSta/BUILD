@@ -203,8 +203,9 @@ tcl_wrap_cc(
         "../../src/sta",
         "src",
     ],
-    # Remove when building against stock (parallaxsw) OpenSTA.
-    swig_options = ["-DSTA_HAS_ANALYSIS_CORNER"],
+    # Bazel builds require the fork OpenSTA submodule (stock OpenSTA has
+    # no bazel support); CMake auto-detects via file probe instead.
+    swig_options = ["-DSTA_OPENROAD_FORK"],
     deps = [
         "//src/odb:swig",
     ],

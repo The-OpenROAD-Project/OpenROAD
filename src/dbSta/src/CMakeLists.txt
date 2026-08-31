@@ -31,10 +31,10 @@ target_link_libraries(dbSta_lib
     utl_lib
 )
 
-# Enable analysis_corner support only when the OpenSTA submodule has it,
-# so stock (parallaxsw) OpenSTA still builds.
+# Enable fork-only OpenSTA extensions (analysis_corner, ...) when the
+# submodule provides them, so stock (parallaxsw) OpenSTA still builds.
 if(EXISTS ${OPENSTA_HOME}/search/AnalysisCorner.i)
-  list(APPEND CMAKE_SWIG_FLAGS -DSTA_HAS_ANALYSIS_CORNER)
+  list(APPEND CMAKE_SWIG_FLAGS -DSTA_OPENROAD_FORK)
   set(STA_ANALYSIS_CORNER_TCL ${OPENSTA_HOME}/tcl/AnalysisCorner.tcl)
 else()
   set(STA_ANALYSIS_CORNER_TCL "")
