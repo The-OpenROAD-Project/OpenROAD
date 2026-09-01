@@ -2,6 +2,7 @@ or_integration_tests(
   "odb"
   TESTS
     abstract_origin
+    abstract_polygon
     all_pins_placed1
     all_pins_placed2
     bterm_hier_create

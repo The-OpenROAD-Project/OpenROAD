@@ -1,0 +1,53 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+UNITS
+    DATABASE MICRONS 2000 ;
+END UNITS
+
+MACRO polygon_block
+  FOREIGN polygon_block 0 0 ;
+  CLASS BLOCK ;
+  SIZE 100 BY 100 ;
+  PIN VDD
+    USE POWER ;
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal1 ;
+        RECT  1 24.915 49 25.085 ;
+        RECT  1 74.915 99 75.085 ;
+    END
+  END VDD
+  PIN VSS
+    USE GROUND ;
+    DIRECTION INOUT ;
+    PORT
+      LAYER metal1 ;
+        RECT  1 9.915 49 10.085 ;
+        RECT  1 89.915 99 90.085 ;
+    END
+  END VSS
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  4.5 94.95 5.5 95.05 ;
+    END
+  END clk
+  PIN out
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  94.5 54.95 95.5 55.05 ;
+    END
+  END out
+  OBS
+    LAYER OVERLAP ;
+     POLYGON  0 0 0 100 100 100 100 50 50 50 50 0 0 0 ;
+    LAYER metal1 ;
+     POLYGON  0 0 0 100 100 100 100 50 50 50 50 0 0 0 ;
+  END
+END polygon_block
+END LIBRARY

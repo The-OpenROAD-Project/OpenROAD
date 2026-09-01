@@ -152,7 +152,7 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
       cur_layer = layer;
     }
 
-    writePolygon(out, indent, box);
+    writeBox(out, indent, box);
   }
 
   return {};
@@ -174,18 +174,23 @@ void lefout::writeBox(std::ostream& out, const std::string& indent, dbBox* box)
              lefdist(y2));
 }
 
+void lefout::writeBox(std::ostream& out,
+                      const std::string& indent,
+                      dbPolygon* polygon)
+{
+  writePolygon(out, indent, polygon->getPolygon());
+}
+
 void lefout::writePolygon(std::ostream& out,
                           const std::string& indent,
-                          dbPolygon* polygon)
+                          const Polygon& polygon)
 {
   fmt::print(out, "{}  POLYGON  ", indent.c_str());
-
-  for (const Point& pt : polygon->getPolygon().getPoints()) {
+  for (const Point& pt : polygon.getPoints()) {
     int x = pt.x();
     int y = pt.y();
     fmt::print(out, "{:.11g} {:.11g} ", lefdist(x), lefdist(y));
   }
-
   fmt::print(out, ";\n");
 }
 
@@ -233,13 +238,39 @@ void lefout::writeObstructions(std::ostream& out, dbBlock* db_block)
   ObstructionMap obstructions;
   getObstructions(db_block, obstructions);
 
-  fmt::print(out, "{}", "  OBS\n");
+  dbTechLayer* overlap = nullptr;
+  const Polygon die_area = db_block->getDieAreaPolygon();
   dbBox* block_bounding_box = db_block->getBBox();
+  bool is_polygon_floorplan = !die_area.isRect();
+  if (is_polygon_floorplan) {
+    // find overlap layer
+    for (dbTechLayer* layer : db_block->getTech()->getLayers()) {
+      if (layer->getType() == odb::dbTechLayerType::OVERLAP) {
+        overlap = layer;
+        break;
+      }
+    }
+
+    if (overlap == nullptr) {
+      logger_->warn(utl::ODB, 33, "No overlap layer found for obstructions.");
+      is_polygon_floorplan = false;
+    }
+  }
+
+  fmt::print(out, "{}", "  OBS\n");
+  if (is_polygon_floorplan) {
+    fmt::print(out, "    LAYER {} ;\n", overlap->getName());
+    writePolygon(out, "   ", die_area);
+  }
   for (const auto& [tech_layer, polySet] : obstructions) {
     fmt::print(out, "    LAYER {} ;\n", tech_layer->getName().c_str());
 
     if (bloat_occupied_layers_) {
-      writeBox(out, "   ", block_bounding_box);
+      if (is_polygon_floorplan) {
+        writePolygon(out, "   ", die_area);
+      } else {
+        writeBox(out, "   ", block_bounding_box);
+      }
     } else {
       const int bloat = determineBloat(tech_layer);
       boost::polygon::polygon_90_set_data<int> shrink_poly = polySet;
@@ -267,6 +298,9 @@ void lefout::getObstructions(dbBlock* db_block,
                              ObstructionMap& obstructions) const
 {
   for (dbObstruction* obs : db_block->getObstructions()) {
+    if (obs->isSystemReserved()) {
+      continue;
+    }
     insertObstruction(obs->getBBox(), obstructions);
   }
 
