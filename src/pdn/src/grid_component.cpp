@@ -18,6 +18,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "polygon.h"
 #include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
@@ -160,33 +161,41 @@ ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
   shape_ptr->generateObstruction();
   shapes.insert(shape_ptr);
 
-  // add bpins that touch edges
-  odb::Rect die_area = getBlock()->getDieArea();
+  // Add bpins where the shape reaches an edge of the die.  The wall of a notch
+  // counts as an edge: a shape extended to one and left without a pin is a
+  // dangling shape, so the trim pass takes the extension straight back off
+  // again.  The bounding-box comparison is kept as it was and the wall case
+  // added beside it, which is why a rectangular die is untouched.
+  const odb::Rect die_area = getBlock()->getDieArea();
+  const Region die_region = Region(getBlock()->getDieAreaPolygon());
   const odb::Rect& final_shape_rect = shape_ptr->getRect();
   const int min_width = shape_ptr->getLayer()->getMinWidth();
-  if (final_shape_rect.xMin() == die_area.xMin()) {
-    const int x = std::min(static_cast<int>(die_area.xMin() + min_width),
+  const auto at_edge = [&](const odb::Point& normal, int face, int box) {
+    return face == box || die_region.isOnInteriorWall(final_shape_rect, normal);
+  };
+  if (at_edge(odb::Point(-1, 0), final_shape_rect.xMin(), die_area.xMin())) {
+    const int x = std::min(final_shape_rect.xMin() + min_width,
                            final_shape_rect.xMax());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_xhi(x);
     shape_ptr->addBTermConnection(pin_rect);
   }
-  if (final_shape_rect.xMax() == die_area.xMax()) {
-    const int x = std::max(static_cast<int>(die_area.xMax() - min_width),
+  if (at_edge(odb::Point(1, 0), final_shape_rect.xMax(), die_area.xMax())) {
+    const int x = std::max(final_shape_rect.xMax() - min_width,
                            final_shape_rect.xMin());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_xlo(x);
     shape_ptr->addBTermConnection(pin_rect);
   }
-  if (final_shape_rect.yMin() == die_area.yMin()) {
-    const int y = std::min(static_cast<int>(die_area.yMin() + min_width),
+  if (at_edge(odb::Point(0, -1), final_shape_rect.yMin(), die_area.yMin())) {
+    const int y = std::min(final_shape_rect.yMin() + min_width,
                            final_shape_rect.yMax());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_yhi(y);
     shape_ptr->addBTermConnection(pin_rect);
   }
-  if (final_shape_rect.yMax() == die_area.yMax()) {
-    const int y = std::max(static_cast<int>(die_area.yMax() - min_width),
+  if (at_edge(odb::Point(0, 1), final_shape_rect.yMax(), die_area.yMax())) {
+    const int y = std::max(final_shape_rect.yMax() - min_width,
                            final_shape_rect.yMin());
     odb::Rect pin_rect = final_shape_rect;
     pin_rect.set_ylo(y);

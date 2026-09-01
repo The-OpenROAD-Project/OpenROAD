@@ -29,6 +29,8 @@ cc_library(
         "src/power_cells.h",
         "src/renderer.cpp",
         "src/renderer.h",
+        "src/polygon.cpp",
+        "src/polygon.h",
         "src/rings.cpp",
         "src/rings.h",
         "src/shape.cpp",

@@ -127,6 +127,17 @@ class Shape
   odb::Rect getRectWithLargestObstructionHalo(
       const ObstructionHalo& halo) const;
 
+  // True when this obstruction stands for an absence of die rather than for
+  // metal.  odb creates one over every part of its bounding box that a polygon
+  // die does not cover, and marks it system-reserved.
+  //
+  // Nothing keeps a spacing from one: there is no neighbouring metal to be
+  // clear of, and metal may abut a die edge -- on a rectangular die it does,
+  // because no obstruction is created there at all.  Applying a spacing here
+  // would stop a shape short of the wall of a notch, which is the same edge.
+  bool isDieAbsence() const { return die_absence_; }
+  void setIsDieAbsence() { die_absence_ = true; }
+
   bool isHorizontal() const { return rect_.dx() > rect_.dy(); }
   bool isSquare() const { return rect_.dx() == rect_.dy(); }
   bool isVertical() const { return rect_.dx() < rect_.dy(); }
@@ -244,6 +255,7 @@ class Shape
   ShapeType shape_type_;
   bool allow_non_preferred_change_;
   bool is_locked_;
+  bool die_absence_{false};
 
   odb::Rect obs_;
 

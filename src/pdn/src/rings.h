@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <utility>
 #include <vector>
 
 #include "grid.h"
@@ -66,8 +67,14 @@ class Rings : public GridComponent
   bool allow_outside_die_ = false;
 
   void checkDieArea() const;
+  // X and Y overrun of the ring past the die, per side of the core
+  std::pair<int, int> getDieAreaDeficit(const Region& die_area) const;
 
-  odb::Rect getInnerRingOutline() const;
+  // The inner boundary of the ring: the domain outline pushed out by the
+  // offsets.  getInnerRingRect() is its bounding box, which is what the
+  // rectangular shape builder works from.
+  Region getInnerRingOutline() const;
+  odb::Rect getInnerRingRect() const;
 };
 
 }  // namespace pdn
