@@ -56,6 +56,14 @@ struct PinSize
   int height = 0;
 };
 
+// a shape blocking pins, with the spacing rules it carries
+struct BlockingShape
+{
+  odb::Rect rect;
+  int min_spacing = 0;
+  int effective_width = 0;
+};
+
 // the arguments that select a spacing value in a layer spacing table
 struct SpacingKey
 {
@@ -250,14 +258,15 @@ class IOPlacer
   int roundUpToEvenMfgGrid(int dim);
   PinSize computePinSize(int layer);
   int computeShapeSpacing(odb::dbTechLayer* tech_layer,
-                          const odb::Rect& shape,
+                          const BlockingShape& shape,
                           int pin_width,
                           int pin_length);
-  odb::Rect computePinKeepout(const odb::Rect& box,
+  odb::Rect computePinKeepout(const BlockingShape& shape,
                               odb::dbTechLayer* tech_layer);
+  void addFixedPinKeepouts(odb::dbBTerm* bterm);
   void forEachSpecialNetShape(
       const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback);
-  void excludeBoundaryShape(const odb::Rect& box,
+  void excludeBoundaryShape(const BlockingShape& shape,
                             odb::dbTechLayer* tech_layer,
                             const odb::Rect& die_area);
   void getBlockedRegions();
