@@ -564,6 +564,13 @@ GridX Grid::gridX(DbuX x) const
   return GridX{x.v / getSiteWidth().v};
 }
 
+// Snap to the nearest site column, unlike gridX() which snaps down.
+// The X counterpart of gridRoundY().
+GridX Grid::gridRoundX(DbuX x) const
+{
+  return GridX{divRound(x.v, getSiteWidth().v)};
+}
+
 GridX Grid::gridX(const Node* cell) const
 {
   return gridX(cell->getLeft());
