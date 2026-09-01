@@ -1129,7 +1129,7 @@ proc set_halo { args } {
   set top_dbu [ord::microns_to_dbu $top]
   set is_soft [info exists flags(-soft)]
 
-  set block [get_block]
+  set block [odb::get_block]
 
   if { [info exists keys(-instance)] } {
     set name $keys(-instance)
