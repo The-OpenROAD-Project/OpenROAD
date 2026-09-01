@@ -3592,6 +3592,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // solid object rather than an empty frame.  Painted over the
             // border, as Qt does.
             if (vis.placement_blockages) {
+              // Despite the name, getTransformedHalo() returns non-negative
+              // MARGINS -- setHalo()'s left/bottom/right/top, oriented -- and
+              // not a rect in world space, so they grow the bbox rather than
+              // replace it.  Same arithmetic as RenderThread::drawBlockages.
               const odb::Rect halo = inst->getTransformedHalo();
               hatch_box_in_tile(odb::Rect{xl - halo.xMin(),
                                           yl - halo.yMin(),
