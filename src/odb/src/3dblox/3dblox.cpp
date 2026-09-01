@@ -60,6 +60,9 @@ ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
 std::vector<dbBTerm*> diePortBTerms(dbChipNet* chip_net)
 {
   std::vector<dbBTerm*> bterms;
+  if (chip_net == nullptr) {
+    return bterms;
+  }
   auto* prop = dbStringProperty::find(chip_net, kDiePortsProp);
   if (prop == nullptr) {
     return bterms;
@@ -76,7 +79,11 @@ std::vector<dbBTerm*> diePortBTerms(dbChipNet* chip_net)
     if (chip_inst == nullptr) {
       continue;
     }
-    dbBlock* block = chip_inst->getMasterChip()->getBlock();
+    dbChip* master_chip = chip_inst->getMasterChip();
+    if (master_chip == nullptr) {
+      continue;
+    }
+    dbBlock* block = master_chip->getBlock();
     if (block == nullptr) {
       continue;
     }
