@@ -256,6 +256,7 @@ class IOPlacer
                                              const odb::Rect& box);
   int roundUpToMfgGrid(int dim);
   int roundUpToEvenMfgGrid(int dim);
+  void refreshPinSizeCache();
   PinSize computePinSize(int layer);
   int computeShapeSpacing(odb::dbTechLayer* tech_layer,
                           const BlockingShape& shape,
@@ -320,6 +321,8 @@ class IOPlacer
   std::map<int, std::vector<odb::Rect>> layer_blocked_shapes_;
   // a pin size only depends on its layer, wrong way pins are rejected
   std::map<int, PinSize> pin_size_cache_;
+  // parameter revision the pin size cache was computed against
+  int cached_pin_size_revision_ = 0;
   // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
   std::map<SpacingKey, int> spacing_cache_;
 

@@ -514,8 +514,18 @@ int IOPlacer::roundUpToEvenMfgGrid(const int dim)
   return rounded;
 }
 
+void IOPlacer::refreshPinSizeCache()
+{
+  // parameter changes invalidate the cached pin sizes
+  if (cached_pin_size_revision_ != parms_->getPinSizeRevision()) {
+    pin_size_cache_.clear();
+    cached_pin_size_revision_ = parms_->getPinSizeRevision();
+  }
+}
+
 PinSize IOPlacer::computePinSize(const int layer)
 {
+  refreshPinSizeCache();
   const auto cached = pin_size_cache_.find(layer);
   if (cached != pin_size_cache_.end()) {
     return cached->second;
