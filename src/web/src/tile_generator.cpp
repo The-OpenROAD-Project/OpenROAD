@@ -66,9 +66,12 @@ TileGenerator::RendererHooks& rendererHooks()
   return hooks;
 }
 
-// Serializes the hook calls: they run tool code (drt, pdn, psm, gpl) that Qt
-// only ever enters from its single RenderThread, while save_image renders
-// tiles on a thread pool.
+// Guards both the struct above and the calls through it.  The calls run tool
+// code (drt, pdn, psm, gpl) that Qt only ever enters from its single
+// RenderThread, while save_image renders tiles on a thread pool; and
+// WebServer::stop() clears the hooks from the Tcl thread while the io threads
+// may still be serving a tile, so a reader must hold this across the whole
+// call, not just around it.
 std::mutex& rendererHooksMutex()
 {
   static std::mutex mutex;
@@ -1891,15 +1894,15 @@ std::vector<SelectionResult> TileGenerator::selectFromRenderers(
     const TileVisibility& vis,
     const std::set<std::string>& visible_layers) const
 {
-  const auto& select = rendererHooks().select;
   std::vector<SelectionResult> results;
-  if (!select) {
-    return results;
-  }
   // Held across the whole walk: Qt issues the per-layer calls and the final
   // nullptr one as one sequence, and gpl::select mutates renderer state, so
   // two clients picking at once must not interleave.
   const std::lock_guard<std::mutex> lock(rendererHooksMutex());
+  const auto& select = rendererHooks().select;
+  if (!select) {
+    return results;
+  }
 
   // Reverse layer order, and only layers that are both visible and
   // selectable: LayoutViewer::selectAt walks `rev_layers` under exactly those
@@ -5342,6 +5345,10 @@ Color toTileColor(const gui::Painter::Color& c)
 /* static */
 void TileGenerator::setRendererHooks(RendererHooks hooks)
 {
+  // Blocks until any in-flight hook call returns, which is what lets
+  // WebServer::stop() clear the hooks before destroying the WebViewerHook
+  // they capture.
+  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
   rendererHooks() = std::move(hooks);
 }
 
@@ -5350,11 +5357,11 @@ void TileGenerator::drawRendererOverlay(std::vector<unsigned char>& image,
                                         const bool debug_live,
                                         odb::dbTechLayer* layer) const
 {
+  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
   const auto& draw = rendererHooks().draw;
   if (!draw) {
     return;
   }
-  const std::lock_guard<std::mutex> lock(rendererHooksMutex());
   draw(image, frame, debug_live, layer);
 }
 

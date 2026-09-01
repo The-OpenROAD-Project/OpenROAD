@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -12,6 +13,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include "boost/json/object.hpp"
@@ -4369,6 +4371,46 @@ TEST_F(TileGeneratorTest, DebugOverlayDefeatsTheEmptyOverlayShortCircuit)
                                  /*debug_live=*/false);
   DebugOverlayRecorder::clear();
   EXPECT_EQ(recorder.object_calls, 0);
+}
+
+// WebServer::stop() clears the hooks from the Tcl thread while the io threads
+// may still be serving a tile, so installing and calling must be serialized.
+// This passes either way without a sanitizer; its job is to give TSan the
+// interleaving to catch (configure a build with -DTSAN=ON to check).
+TEST_F(TileGeneratorTest, RendererHooksSurviveConcurrentInstallAndCall)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.debug_renderers = true;
+  vis.debug_live = true;
+
+  constexpr int kIterations = 200;
+  std::atomic<bool> stop{false};
+  std::atomic<int> draws{0};
+
+  std::thread installer([&] {
+    for (int i = 0; i < kIterations && !stop.load(); ++i) {
+      TileGenerator::setRendererHooks(
+          {.draw = [&draws](std::vector<unsigned char>&,
+                            const TileFrame&,
+                            bool,
+                            odb::dbTechLayer*) { ++draws; }});
+      TileGenerator::setRendererHooks({});
+    }
+  });
+
+  for (int i = 0; i < kIterations; ++i) {
+    tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  }
+  stop.store(true);
+  installer.join();
+  TileGenerator::setRendererHooks({});
+
+  // The count is racy by nature — the point is that neither thread tore the
+  // other's std::function out from under it.
+  SUCCEED();
 }
 
 }  // namespace
