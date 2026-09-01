@@ -178,7 +178,7 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
   }
 }
 
-void CUGR::markReroutedNets(const std::vector<int>& net_indices)
+void CUGR::collectReroutedNets(const std::vector<int>& net_indices)
 {
   // Incremental routing refreshes slacks without re-estimating parasitics.
   if (incremental_routing_) {
@@ -590,7 +590,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
-  markReroutedNets(res_aware_nets);
+  collectReroutedNets(res_aware_nets);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -629,7 +629,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     pattern_route.run();
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
-  markReroutedNets(net_indices);
+  collectReroutedNets(net_indices);
 }
 
 void CUGR::mazeRoute(std::vector<int>& net_indices)
@@ -691,7 +691,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid_graph_->updateWireCostView(wire_cost_view, net->getRoutingTree());
     grid.step();
   }
-  markReroutedNets(net_indices);
+  collectReroutedNets(net_indices);
 }
 
 void CUGR::route(bool incremental)

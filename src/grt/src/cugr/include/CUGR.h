@@ -178,12 +178,13 @@ class CUGR
   // non-critical nets so the next stage routes critical nets first.
   void updateCriticalNets(const std::vector<int>& net_indices);
   // Refresh every net's slack; runs the full parasitics estimate once per
-  // route(), then re-estimates only the marked rerouted nets.
+  // route(), then re-estimates only the collected rerouted nets.
   void updateNetSlacks(const std::vector<int>& net_indices);
-  // Record nets a stage rerouted so the next slack sweep re-estimates
+  // Collect nets a stage rerouted so the next slack sweep re-estimates
   // their parasitics; call after the stage's reroute loop.
-  void markReroutedNets(const std::vector<int>& net_indices);
-  // Re-estimate parasitics for the marked rerouted nets, then clear the set.
+  void collectReroutedNets(const std::vector<int>& net_indices);
+  // Re-estimate parasitics for the collected rerouted nets, then clear the
+  // set.
   void updateReroutedParasitics(est::ParasiticsService& estimator);
   // Refresh the slack of the given nets from STA, without re-extracting
   // parasitics (incremental scope).
