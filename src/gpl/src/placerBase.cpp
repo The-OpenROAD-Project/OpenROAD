@@ -810,8 +810,8 @@ void PlacerBaseCommon::init()
   instStor_.reserve(db_insts.size());
   insts_.reserve(instStor_.size());
   for (dbInst* db_inst : db_insts) {
-    auto type = db_inst->getMaster()->getType();
-    if (!type.isCore() && !type.isBlock()) {
+    // Same ignore criteria as DPL
+    if (!db_inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
 

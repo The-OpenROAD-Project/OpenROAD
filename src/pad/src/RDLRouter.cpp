@@ -23,7 +23,6 @@
 #include "RDLNet.h"
 #include "RDLSegment.h"
 #include "Utilities.h"
-#include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/graph/astar_search.hpp"
 #include "boost/graph/lookup_edge.hpp"
@@ -1889,22 +1888,26 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
     const odb::dbTransform xform = inst->getTransform();
 
     auto* master = inst->getMaster();
-    auto& master_obs = master_obstruction_map[master];
-    if (master_obs.empty()) {
-      odb::geom::BoostPolygonSet master_obstruction;
-
-      // Collect all polygons to add (obstructions)
+    // Keyed on presence, not emptiness: a master with no obstructions on this
+    // layer yields an empty vector, and rechecking emptiness would recompute
+    // it for every instance of that master.
+    const auto [master_it, is_new_master]
+        = master_obstruction_map.try_emplace(master);
+    auto& master_obs = master_it->second;
+    if (is_new_master) {
+      // Collect all polygons to add (obstructions).  Each shape is bloated on
+      // its own, since bloating the union would miter the merged outline
+      // instead.  get() appends, so everything lands in one vector that is
+      // normalized once below.
       std::vector<odb::geom::BoostPolygon> polys_to_add;
       for (auto* obs : master->getPolygonObstructions()) {
         if (obs->getTechLayer() != layer_) {
           continue;
         }
 
-        for (const auto& bloat_poly : odb::geom::extractPolygons(
-                 odb::geom::toPolygonSet(obs->getPolygon()) + bloat)) {
-          const auto pts = bloat_poly.getPoints();
-          polys_to_add.emplace_back(pts.begin(), pts.end());
-        }
+        const odb::geom::BoostPolygonSet bloated_obs
+            = odb::geom::toPolygonSet(obs->getPolygon()) + bloat;
+        bloated_obs.get(polys_to_add);
       }
       for (auto* obs : master->getObstructions(false)) {
         if (obs->getTechLayer() != layer_) {
@@ -1917,14 +1920,12 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
         polys_to_add.emplace_back(pts.begin(), pts.end());
       }
 
-      // Build temporary set for all additions, then assign to
-      // master_obstruction
-      if (!polys_to_add.empty()) {
-        master_obstruction = odb::geom::BoostPolygonSet(polys_to_add.begin(),
-                                                        polys_to_add.end());
-      }
+      odb::geom::BoostPolygonSet master_obstruction(polys_to_add.begin(),
+                                                    polys_to_add.end());
 
-      // Collect all polygons to subtract (iterm shapes)
+      // Collect all polygons to subtract (iterm shapes).  As above, get()
+      // appends to the vector rather than overwriting it, so every pin
+      // accumulates here and the whole set is normalized once below.
       std::vector<odb::geom::BoostPolygon> polys_to_subtract;
       for (auto* mterm : master->getMTerms()) {
         for (auto* mpin : mterm->getMPins()) {
@@ -1933,11 +1934,9 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
               continue;
             }
 
-            for (const auto& bloat_poly : odb::geom::extractPolygons(
-                     odb::geom::toPolygonSet(geom->getPolygon()) + bloat)) {
-              const auto pts = bloat_poly.getPoints();
-              polys_to_subtract.emplace_back(pts.begin(), pts.end());
-            }
+            const odb::geom::BoostPolygonSet bloated_pin
+                = odb::geom::toPolygonSet(geom->getPolygon()) + bloat;
+            bloated_pin.get(polys_to_subtract);
           }
           for (auto* geom : mpin->getGeometry(false)) {
             if (geom->getTechLayer() != layer_) {
@@ -1958,16 +1957,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
             polys_to_subtract.begin(), polys_to_subtract.end());
       }
 
-      std::vector<odb::geom::BoostPolygon> output_polygons;
-      master_obstruction.get(output_polygons);
-      for (const auto& polygon_out : output_polygons) {
-        std::vector<odb::Point> new_coord;
-        new_coord.reserve(polygon_out.coords_.size());
-        for (const auto& pt : polygon_out.coords_) {
-          new_coord.emplace_back(pt.x(), pt.y());
-        }
-        master_obs.emplace_back(new_coord);
-      }
+      master_obs = odb::geom::extractPolygons(master_obstruction);
     }
     for (const auto& poly : master_obs) {
       if (poly.isRect()) {
