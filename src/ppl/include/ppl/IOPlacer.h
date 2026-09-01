@@ -323,6 +323,8 @@ class IOPlacer
   std::map<int, PinSize> pin_size_cache_;
   // parameter revision the pin size cache was computed against
   int cached_pin_size_revision_ = 0;
+  // width of the pin being placed by place_pin, for the spacing rules
+  int manual_pin_width_ = 0;
   // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
   std::map<SpacingKey, int> spacing_cache_;
 

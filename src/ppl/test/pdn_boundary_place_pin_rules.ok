@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 53 components and 333 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 54 connections.
+[INFO PPL-0070] Pin req_msg\[0\] placed at (52.48um, 145.50um) instead of (51.00um, 148.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin req_msg\[1\] placed at (99.78um, 147.97um) instead of (105.00um, 148.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+pin to stripe violations: 0
+pin violations against PG pins: 0
