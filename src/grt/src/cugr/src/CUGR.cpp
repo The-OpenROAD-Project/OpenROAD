@@ -93,6 +93,8 @@ void CUGR::clear()
   nets_to_route_.clear();
   incremental_candidates_.clear();
   incremental_routing_ = false;
+  full_slack_update_done_ = false;
+  parasitics_dirty_nets_.clear();
 }
 
 void CUGR::init(const int min_routing_layer,
