@@ -272,6 +272,14 @@ class HardMacro
       top = halo->yMax();
     }
 
+    Halo flooredToHalo(const Halo& halo) const
+    {
+      return {std::max(left, halo.left),
+              std::max(bottom, halo.bottom),
+              std::max(right, halo.right),
+              std::max(top, halo.top)};
+    }
+
     Halo flooredToChannel(const Channel& minimum) const
     {
       return {std::max(left, minimum.width / 2),

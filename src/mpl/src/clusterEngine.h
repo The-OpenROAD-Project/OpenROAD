@@ -105,7 +105,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setChannel(Channel min_channel, bool use_full_channel);
+  void setChannel(Channel min_channel, bool pin_aware_channels);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -260,7 +260,7 @@ class ClusteringEngine
   std::unordered_set<odb::dbInst*> ignorable_macros_;
 
   Channel min_channel_;
-  bool use_full_channel_{false};
+  bool pin_aware_channels_{false};
 };
 
 }  // namespace mpl

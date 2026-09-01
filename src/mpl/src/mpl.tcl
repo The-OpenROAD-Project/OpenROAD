@@ -28,7 +28,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
-                                          -use_full_channel \
+                                          -pin_aware_channels \
                                         }
 proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
@@ -43,7 +43,7 @@ proc rtl_macro_placer { args } {
          -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-keep_clustering_data -use_full_channel}
+    flags {-keep_clustering_data -pin_aware_channels}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -125,6 +125,13 @@ proc rtl_macro_placer { args } {
     mpl::set_min_channel $min_channel_width $min_channel_height
   }
 
+  if {
+    [info exists flags(-pin_aware_channels)]
+    && ![info exists keys(-min_channel_size)]
+  } {
+    utl::error MPL 79 "-pin_aware_channels requires -min_channel_size to be set."
+  }
+
   if { [info exists keys(-fence_lx)] } {
     set fence_lx $keys(-fence_lx)
   }
@@ -204,7 +211,7 @@ proc rtl_macro_placer { args } {
       $min_ar \
       $report_directory \
       [info exists flags(-keep_clustering_data)] \
-      [info exists flags(-use_full_channel)]]
+      [info exists flags(-pin_aware_channels)]]
   } {
     return false
   }

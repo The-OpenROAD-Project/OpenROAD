@@ -178,9 +178,9 @@ void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
   keep_clustering_data_ = keep_clustering_data;
 }
 
-void HierRTLMP::setUseFullChannel(bool use_full_channel)
+void HierRTLMP::setPinAwareChannels(bool pin_aware_channels)
 {
-  use_full_channel_ = use_full_channel;
+  pin_aware_channels_ = pin_aware_channels;
 }
 
 // Top Level Function
@@ -312,7 +312,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setChannel(min_channel_, use_full_channel_);
+  clustering_engine_->setChannel(min_channel_, pin_aware_channels_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -2431,7 +2431,7 @@ void HierRTLMP::correctMacroOrientationByCluster()
 
 void HierRTLMP::correctAllMacrosOrientation()
 {
-  if (!use_full_channel_) {
+  if (pin_aware_channels_) {
     // With pin-aware channels, restrict flips to column and row wise since
     // flipping single macros could lead to unaccesible regions inside
     // a cluster

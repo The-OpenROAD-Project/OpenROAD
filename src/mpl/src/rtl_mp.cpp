@@ -56,7 +56,7 @@ bool MacroPlacer::place(const int num_threads,
                         const float min_ar,
                         const char* report_directory,
                         const bool keep_clustering_data,
-                        const bool use_full_channel)
+                        const bool pin_aware_channels)
 {
   utl::Timer timer;
   hier_rtlmp_->init();
@@ -80,7 +80,7 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
-  hier_rtlmp_->setUseFullChannel(use_full_channel);
+  hier_rtlmp_->setPinAwareChannels(pin_aware_channels);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
   hier_rtlmp_->run();

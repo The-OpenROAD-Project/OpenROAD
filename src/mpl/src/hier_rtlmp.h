@@ -103,7 +103,7 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
   void setKeepClusteringData(bool keep_clustering_data);
-  void setUseFullChannel(bool use_full_channel);
+  void setPinAwareChannels(bool pin_aware_channels);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -319,7 +319,7 @@ class HierRTLMP
 
   bool skip_macro_placement_{false};
   bool keep_clustering_data_{false};
-  bool use_full_channel_{false};
+  bool pin_aware_channels_{false};
 
   std::unique_ptr<MplObserver> graphics_;
   bool is_debug_only_final_result_{false};
