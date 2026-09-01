@@ -1088,6 +1088,71 @@ proc create_obstruction { args } {
   return $obstruction
 }
 
+sta::define_cmd_args "set_halo" { [-instance instance] \
+-halo halo \
+[-soft] }
+
+proc set_halo { args } {
+  sta::parse_key_args "set_halo" args \
+    keys {-instance -halo} flags {-soft -apply_to_all_macros}
+
+  sta::check_argc_eq0 "set_halo" $args
+
+  if { [info exists keys(-halo)] } {
+    set halo $keys(-halo)
+  } else {
+    utl::error ODB 556 "-halo is required."
+  }
+
+  set length [llength $halo]
+  if { $length != 2 && $length != 4 } {
+    utl::error ODB 557 "Halo must have 2 or 4 values."
+  }
+
+  if { $length == 2 } {
+    lassign $halo left bottom
+    set right $left
+    set top $bottom
+  } else {
+    lassign $halo left bottom right top
+  }
+
+  foreach value [list $left $bottom $right $top] {
+    if { $value < 0 } {
+      utl::error ODB 558 "Halo values must be non-negative."
+    }
+  }
+
+  set left_dbu [ord::microns_to_dbu $left]
+  set bottom_dbu [ord::microns_to_dbu $bottom]
+  set right_dbu [ord::microns_to_dbu $right]
+  set top_dbu [ord::microns_to_dbu $top]
+  set is_soft [info exists flags(-soft)]
+
+  set block [get_block]
+
+  if { [info exists keys(-instance)] } {
+    set name $keys(-instance)
+    set inst [$block findInst "$name"]
+
+    if { $inst == "NULL" } {
+      utl::error ODB 559 "Couldn't find a macro named $name."
+    } elseif { ![$inst isBlock] } {
+      utl::error ODB 560 "[$inst getName] is not a macro."
+    }
+
+    $inst setHalo $left_dbu $bottom_dbu $right_dbu $top_dbu $is_soft
+  } elseif { [info exists $flags(-apply_to_all_macros)] } {
+    foreach inst [$block getInsts] {
+      if { [$inst isBlock] } {
+        $inst setHalo $left_dbu $bottom_dbu $right_dbu $top_dbu $is_soft
+      }
+    }
+  } else {
+    utl::error ODB 561 "Requires -instance of -apply_to_all_macros."
+  }
+}
+
 sta::define_cmd_args "clear_io_pin_constraints" {} ;# checker off
 
 proc clear_io_pin_constraints { args } {
@@ -1370,68 +1435,4 @@ proc destroy_routes { } {
   set block [ord::get_db_block]
   $block destroyRoutes
 }
-
-sta::define_cmd_args "set_halo" { [-instance instance] \
--halo halo \
-[-soft] }
-
-proc set_halo { args } {
-  sta::parse_key_args "set_halo" args \
-    keys {-instance -halo} flags {-soft}
-
-  sta::check_argc_eq0 "set_halo" $args
-
-  if { [info exists keys(-halo)] } {
-    set halo $keys(-halo)
-  } else {
-    utl::error ODB 556 "-halo is required."
-  }
-
-  set length [llength $halo]
-  if { $length != 2 && $length != 4 } {
-    utl::error ODB 557 "Halo must have 2 or 4 values."
-  }
-
-  if { $length == 2 } {
-    lassign $halo left bottom
-    set right $left
-    set top $bottom
-  } else {
-    lassign $halo left bottom right top
-  }
-
-  foreach value [list $left $bottom $right $top] {
-    if { $value < 0 } {
-      utl::error ODB 558 "Halo values must be non-negative."
-    }
-  }
-
-  set left_dbu [ord::microns_to_dbu $left]
-  set bottom_dbu [ord::microns_to_dbu $bottom]
-  set right_dbu [ord::microns_to_dbu $right]
-  set top_dbu [ord::microns_to_dbu $top]
-  set is_soft [info exists flags(-soft)]
-
-  set block [get_block]
-
-  if { [info exists keys(-instance)] } {
-    set name $keys(-instance)
-    set inst [$block findInst "$name"]
-
-    if { $inst == "NULL" } {
-      utl::error ODB 559 "Couldn't find a macro named $name."
-    } elseif { ![$inst isBlock] } {
-      utl::error ODB 560 "[$inst getName] is not a macro."
-    }
-
-    $inst setHalo $left_dbu $bottom_dbu $right_dbu $top_dbu $is_soft
-  } else {
-    foreach inst [$block getInsts] {
-      if { [$inst isBlock] } {
-        $inst setHalo $left_dbu $bottom_dbu $right_dbu $top_dbu $is_soft
-      }
-    }
-  }
-}
-
 }
