@@ -316,6 +316,8 @@ class IOPlacer
   FallbackPins fallback_pins_;
   // fixed pin shapes padded by the pin size and spacing, per layer
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_keepouts_;
+  // padded boundary shapes blocking polygon die slots, per layer
+  std::map<int, std::vector<odb::Rect>> layer_blocked_shapes_;
   // a pin size only depends on its layer, wrong way pins are rejected
   std::map<int, PinSize> pin_size_cache_;
   // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
