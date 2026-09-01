@@ -988,6 +988,7 @@ void NesterovPlace::reportResults(int nesterov_iter,
                1011,
                "Original area (um^2): {:.2f}",
                block->dbuAreaToMicrons(original_area));
+    log_->metric("gpl__area__original", block->dbuAreaToMicrons(original_area));
   }
 
   if (npVars_.routability_driven_mode) {
@@ -999,6 +1000,9 @@ void NesterovPlace::reportResults(int nesterov_iter,
                "Total routability artificial inflation: {:.2f} ({:+.2f}%)",
                block->dbuAreaToMicrons(routability_inflation_area),
                routability_diff);
+    log_->metric("gpl__area__routability_inflation",
+                 block->dbuAreaToMicrons(routability_inflation_area));
+    log_->metric("gpl__area__routability_inflation__percent", routability_diff);
   }
 
   if (npVars_.timingDrivenMode) {
@@ -1008,6 +1012,9 @@ void NesterovPlace::reportResults(int nesterov_iter,
                "Total timing-driven delta area: {:.2f} ({:+.2f}%)",
                block->dbuAreaToMicrons(td_accumulated_delta_area),
                td_diff);
+    log_->metric("gpl__area__timing_delta",
+                 block->dbuAreaToMicrons(td_accumulated_delta_area));
+    log_->metric("gpl__area__timing_delta__percent", td_diff);
   }
 
   int64_t new_area = 0;
@@ -1021,6 +1028,8 @@ void NesterovPlace::reportResults(int nesterov_iter,
              "Final placement area: {:.2f} ({:+.2f}%)",
              block->dbuAreaToMicrons(new_area),
              placement_diff);
+  log_->metric("gpl__area__final", block->dbuAreaToMicrons(new_area));
+  log_->metric("gpl__area__final__percent", placement_diff);
 }
 
 int NesterovPlace::doNesterovPlace(int start_iter)
