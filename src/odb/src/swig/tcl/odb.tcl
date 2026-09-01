@@ -1142,7 +1142,7 @@ proc set_halo { args } {
     }
 
     $inst setHalo $left_dbu $bottom_dbu $right_dbu $top_dbu $is_soft
-  } elseif { [info exists $flags(-apply_to_all_macros)] } {
+  } elseif { [info exists flags(-apply_to_all_macros)] } {
     foreach inst [$block getInsts] {
       if { [$inst isBlock] } {
         $inst setHalo $left_dbu $bottom_dbu $right_dbu $top_dbu $is_soft
