@@ -64,7 +64,7 @@ class MacroPlacer
              float min_ar,
              const char* report_directory,
              bool keep_clustering_data,
-             bool use_full_channel);
+             bool pin_aware_channels);
 
   void blockMacroChannels();
 
