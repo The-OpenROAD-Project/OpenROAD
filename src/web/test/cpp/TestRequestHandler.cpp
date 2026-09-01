@@ -495,6 +495,54 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
 }
 
+// Origin validation for the WebSocket handshake (issue #11167, anti-CSWSH).
+TEST(WebSocketOriginAllowed, AbsentOriginIsAllowed)
+{
+  // Non-browser clients (local tooling, tests) send no Origin.
+  EXPECT_TRUE(webSocketOriginAllowed("", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginIsAllowed)
+{
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://localhost:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, DifferentLoopbackSpellingIsRejected)
+{
+  // Strict same-origin: a loopback Origin whose spelling differs from the Host
+  // the request targeted is rejected (closes the cross-port-localhost vector).
+  EXPECT_FALSE(
+      webSocketOriginAllowed("http://127.0.0.1:8080", "localhost:8080"));
+  EXPECT_FALSE(webSocketOriginAllowed("http://[::1]:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginWorksForAnyLoopbackSpelling)
+{
+  // Any spelling is fine as long as Origin authority and Host match exactly.
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://127.0.0.1:8080", "127.0.0.1:8080"));
+}
+
+TEST(WebSocketOriginAllowed, CrossOriginIsRejected)
+{
+  // The F-01 vector: a foreign page opening the loopback socket.
+  EXPECT_FALSE(
+      webSocketOriginAllowed("https://evil.example", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, LoopbackSuffixIsNotConfusedForLoopback)
+{
+  EXPECT_FALSE(
+      webSocketOriginAllowed("http://localhost.evil.com", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, OpaqueOriginIsRejected)
+{
+  // A sandboxed iframe / file:// page serializes its Origin as "null".
+  EXPECT_FALSE(webSocketOriginAllowed("null", "localhost:8080"));
+}
+
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
 {
   struct Case
