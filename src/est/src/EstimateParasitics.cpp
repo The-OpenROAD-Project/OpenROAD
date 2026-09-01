@@ -98,7 +98,7 @@ void EstimateParasitics::estimateAllGlobalRouteParasitics()
 void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
                                                      grt::GRoute& route)
 {
-  if (route.empty()) {
+  if (db_net == nullptr || route.empty()) {
     return;
   }
   estimateGlobalRouteParasitics(db_net, route);
