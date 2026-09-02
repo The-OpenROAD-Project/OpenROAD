@@ -46,6 +46,7 @@ class Snapper
       = odb::PtrMap<odb::dbTrackGrid, std::vector<odb::dbITerm*>>;
 
   void snap(const odb::dbTechLayerDir& target_direction);
+  void snapInsideCore();
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
   int totalAlignedPins(const LayerDataList& layers_data_list,
