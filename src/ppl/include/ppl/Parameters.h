@@ -28,22 +28,11 @@ class Parameters
   void setVerticalLengthExtend(int length) { vertical_length_extend_ = length; }
   int getVerticalLengthExtend() const { return vertical_length_extend_; }
 
-  void setHorizontalLength(int length)
-  {
-    horizontal_length_ = length;
-    pin_size_revision_++;
-  }
+  void setHorizontalLength(int length) { horizontal_length_ = length; }
   int getHorizontalLength() const { return horizontal_length_; }
 
-  void setVerticalLength(int length)
-  {
-    vertical_length_ = length;
-    pin_size_revision_++;
-  }
+  void setVerticalLength(int length) { vertical_length_ = length; }
   int getVerticalLength() const { return vertical_length_; }
-
-  // bumped by the setters the cached pin sizes depend on
-  int getPinSizeRevision() const { return pin_size_revision_; }
 
   void setRandSeed(unsigned int seed) { rand_seed_ = seed; }
   unsigned int getRandSeed() const { return rand_seed_; }
@@ -51,7 +40,6 @@ class Parameters
   void setHorizontalThicknessMultiplier(float length)
   {
     horizontal_thickness_multiplier_ = length;
-    pin_size_revision_++;
   }
 
   float getHorizontalThicknessMultiplier() const
@@ -62,7 +50,6 @@ class Parameters
   void setVerticalThicknessMultiplier(float length)
   {
     vertical_thickness_multiplier_ = length;
-    pin_size_revision_++;
   }
   float getVerticalThicknessMultiplier() const
   {
@@ -100,7 +87,6 @@ class Parameters
   int corner_avoidance_ = -1;
   int min_dist_ = 0;
   bool distance_in_tracks_ = false;
-  int pin_size_revision_ = 0;
   std::string pin_placement_file_;
 };
 
