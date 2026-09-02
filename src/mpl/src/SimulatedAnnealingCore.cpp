@@ -468,7 +468,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
       macro.setX(accumulated_length[neg_seq_pos]);
     }
 
-    const int current_length = macro.getX() + macro.getWidth();
+    const int current_length = block_->dbuToMicrons(macro.getX()) + block_->dbuToMicrons(macro.getWidth());
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_length > accumulated_length[j]) {
@@ -505,7 +505,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
       macro.setY(accumulated_length[neg_seq_pos]);
     }
 
-    const int current_height = macro.getY() + macro.getHeight();
+    const int current_height = block_->dbuToMicrons(macro.getY()) + block_->dbuToMicrons(macro.getHeight());
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_height > accumulated_length[j]) {
@@ -685,26 +685,26 @@ void SimulatedAnnealingCore<T>::reportLocations() const
     const T& macro = macros_[macro_id];
     logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
                     display_id,
-                    macro.getX(),
-                    macro.getY(),
-                    macro.getWidth(),
-                    macro.getHeight());
+                    block_->dbuToMicrons(macro.getX()),
+                    block_->dbuToMicrons(macro.getY()),
+                    block_->dbuToMicrons(macro.getWidth()),
+                    block_->dbuToMicrons(macro.getHeight()));
   }
 
   // Then, the fixed terminals.
   const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
   for (int i = 0; i < macros_.size(); ++i) {
-    if (i <= number_of_moveable_macros) {
+    if (i < number_of_moveable_macros) {
       continue;
     }
 
     const T& macro = macros_[i];
     logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
                     "fixed",
-                    macro.getX(),
-                    macro.getY(),
-                    macro.getWidth(),
-                    macro.getHeight());
+                    block_->dbuToMicrons(macro.getX()),
+                    block_->dbuToMicrons(macro.getY()),
+                    block_->dbuToMicrons(macro.getWidth()),
+                    block_->dbuToMicrons(macro.getHeight()));
   }
   logger_->report("");
 }
@@ -791,7 +791,7 @@ void SimulatedAnnealingCore<T>::updateBestResult(const float cost)
   if constexpr (std::is_same_v<T, SoftMacro>) {
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      best_result_.macro_id_to_width[macro_id] = macro.getWidth();
+      best_result_.macro_id_to_width[macro_id] = block_->dbuToMicrons(macro.getWidth());
     }
   }
 
