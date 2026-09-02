@@ -369,19 +369,20 @@ void Opendp::findDisplacementStats()
 
 void Opendp::optimizeMirroring()
 {
+  // Read the PDN-aware state before importDb() reassigns block_.
+  const bool pdn_aware = isPdnAwareForCurrentBlock();
   // Mirroring swaps the left/right cell edges, so the cell edge spacing rules
   // have to be rechecked for every candidate, which needs the grid and the
-  // DRC engine.
+  // DRC engine. When PDN aware, the fixed supply vias have to be in the grid
+  // too, so the legal predicate below can check the mirrored orientation.
   importDb();
   adjustNodesOrient();
-  initGrid();
+  initGrid(pdn_aware);
   setGridCells();
+  // Constructed after the setup above: importDb() reseats drc_engine_.
   OptimizeMirroring opt(
       logger_, db_, network_.get(), grid_.get(), drc_engine_.get());
-  if (isPdnAwareForCurrentBlock()) {
-    importDb();
-    adjustNodesOrient();
-    initGrid(true);
+  if (pdn_aware) {
     opt.setLegalPredicate(
         [this](odb::dbInst* inst, const odb::dbOrientType& orient) {
           Node* cell = network_->getNode(inst);

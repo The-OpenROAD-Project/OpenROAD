@@ -65,6 +65,9 @@ void Opendp::improvePlacement(const int seed,
     return;
   }
 
+  // Read the PDN-aware state before importDb() reassigns block_.
+  const bool pdn_aware = isPdnAwareForCurrentBlock();
+
   // Get needed information from DB.
   importDb();
 
@@ -81,7 +84,10 @@ void Opendp::improvePlacement(const int seed,
     }
   }
 
-  initGrid();
+  // Inherit the PDN-aware state from detailed_placement: without the fixed
+  // supply vias in the grid, checkFixedSupplyVias() passes vacuously and the
+  // optimizer below would move cells onto vias the legalizer avoided.
+  initGrid(pdn_aware);
 
   // Paint fixed cells into the grid before ShiftLegalizer runs.
   // initGrid() resets all pixels.  Without setFixedGridCells(), fixed cells

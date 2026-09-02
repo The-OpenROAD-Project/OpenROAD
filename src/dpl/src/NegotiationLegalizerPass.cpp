@@ -651,12 +651,13 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     odb::dbOrientType targetOrient = default_orient;
     if (site != nullptr) {
       targetOrient
-          = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site)
+          = opendp_->grid_
+                ->getSiteOrientation(GridX{target_x}, GridY{target_y}, site)
                 .value_or(default_orient);
     }
     if (node != nullptr
         && !opendp_->drc_engine_->checkFixedSupplyVias(
-            node, GridX{tx}, GridY{ty}, targetOrient)) {
+            node, GridX{target_x}, GridY{target_y}, targetOrient)) {
       return;
     }
 
@@ -674,12 +675,8 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      odb::dbOrientType targetOrient = default_orient;
-      if (site != nullptr) {
-        auto orient = opendp_->grid_->getSiteOrientation(
-            GridX{target_x}, GridY{target_y}, site);
-        targetOrient = orient.has_value() ? orient.value() : default_orient;
-      }
+      // targetOrient is computed above, where the fixed supply via check
+      // needs it.
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
           node,
           GridX{target_x},
