@@ -54,6 +54,7 @@ target_link_libraries(TestCallBacks
 target_link_libraries(TestGeom
         db
         Boost::boost
+        GTest::gmock
         ${GTEST_LIBS}
 )
 target_link_libraries(TestModule
