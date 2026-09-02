@@ -19,6 +19,7 @@ or_integration_tests(
     cut_rows_min_step_top_left
     cut_rows_min_step_top_right
     cut_rows_min_width
+    cut_rows_short_core
     cut_rows_with_endcaps
     disallow_one_site_gaps
     disallow_one_site_gaps2
