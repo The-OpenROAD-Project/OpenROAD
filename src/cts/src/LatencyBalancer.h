@@ -46,7 +46,8 @@ struct GraphNode
   odb::dbITerm* inputTerm = nullptr;
 };
 
-struct DPResult {
+struct DPResult
+{
   std::vector<std::string> buffers;  // selected buffers, left → right
   int64_t achievedDelay = 0;
 };
@@ -83,8 +84,13 @@ class LatencyBalancer
   void findLeafBuilders(TreeBuilder* builder);
   // Fills dlyBuffers_ and buffersDelay_, skipping cells with no usable delay.
   void computeBuffersDelay(double extra_out_cap);
-  int64_t computeWireLumpedDelay(const std::string& load, double wl, double& wireCap);
-  int64_t computeWireLumpedDelay(const std::vector<odb::dbITerm*>& loads, double extraLoadCap, double wl, double& wireCap);
+  int64_t computeWireLumpedDelay(const std::string& load,
+                                 double wl,
+                                 double& wireCap);
+  int64_t computeWireLumpedDelay(const std::vector<odb::dbITerm*>& loads,
+                                 double extraLoadCap,
+                                 double wl,
+                                 double& wireCap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -99,7 +105,11 @@ class LatencyBalancer
   static int backtrackCount(const std::vector<int>& dp_elements,
                             const std::vector<int64_t>& bufDelays,
                             int64_t target);
-  DPResult solveDP(int64_t target, double wl, const std::vector<odb::dbITerm*>& sinks, const std::vector<std::string>& dlyBuffers, double loadPinsHwpl);
+  DPResult solveDP(int64_t target,
+                   double wl,
+                   const std::vector<odb::dbITerm*>& sinks,
+                   const std::vector<std::string>& dlyBuffers,
+                   double loadPinsHwpl);
   std::vector<std::string> computeNumberOfDelayBuffers(
       double delayNeeded,
       int srcX,
