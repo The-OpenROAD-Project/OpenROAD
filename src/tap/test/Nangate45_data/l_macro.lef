@@ -1,0 +1,23 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO l_macro
+  CLASS BLOCK ;
+  FOREIGN l_macro 0 0 ;
+  ORIGIN 0 0 ;
+  SIZE 20 BY 14 ;
+  SYMMETRY X Y R90 ;
+  OBS
+    LAYER OVERLAP ;
+      POLYGON 0 0 10 0 10 7 20 7 20 14 0 14 ;
+    LAYER metal1 ;
+      POLYGON 0 0 10 0 10 7 20 7 20 14 0 14 ;
+    LAYER metal2 ;
+      POLYGON 0 0 10 0 10 7 20 7 20 14 0 14 ;
+    LAYER metal3 ;
+      POLYGON 0 0 10 0 10 7 20 7 20 14 0 14 ;
+  END
+END l_macro
+
+END LIBRARY

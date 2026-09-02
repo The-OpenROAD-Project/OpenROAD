@@ -220,33 +220,60 @@ void cutRows(dbBlock* block,
     }
   }
 
+  odb::dbTechLayer* overlap = nullptr;
+  for (odb::dbTechLayer* layer : block->getTech()->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::OVERLAP) {
+      overlap = layer;
+      break;
+    }
+  }
+
   vector<Rect> effective_blockages;
   effective_blockages.reserve(blockages.size());
+  auto insert_blockage
+      = [&effective_blockages](const Rect& blockage, int halo_x, int halo_y) {
+          const Rect effective_blockage(blockage.xMin() - halo_x,
+                                        blockage.yMin() - halo_y,
+                                        blockage.xMax() + halo_x,
+                                        blockage.yMax() + halo_y);
+          effective_blockages.push_back(effective_blockage);
+        };
   for (auto blockage : blockages) {
-    odb::dbBox* halo = nullptr;
-    odb::Rect transformed_halo;
-    if (blockage->getOwnerType() == odb::dbBoxOwner::INST) {
-      halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())->getHalo();
-      transformed_halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())
-                             ->getTransformedHalo();
-    }
+    const bool is_inst = blockage->getOwnerType() == dbBoxOwner::INST;
+    if (is_inst) {
+      dbInst* inst = static_cast<dbInst*>(blockage->getBoxOwner());
+      odb::dbBox* halo = inst->getHalo();
+      const odb::Rect transformed_halo = inst->getTransformedHalo();
+      const bool use_inst_halo = halo != nullptr && !halo->isSoft();
+      int use_halo_x_min = halo_x;
+      int use_halo_x_max = halo_x;
+      int use_halo_y_min = halo_y;
+      int use_halo_y_max = halo_y;
 
-    Rect effective_blockage;
-    const bool use_inst_halo = halo != nullptr && !halo->isSoft();
+      if (use_inst_halo) {
+        use_halo_x_min = transformed_halo.xMin();
+        use_halo_x_max = transformed_halo.xMax();
+        use_halo_y_min = transformed_halo.yMin();
+        use_halo_y_max = transformed_halo.yMax();
+      }
 
-    if (use_inst_halo) {
-      effective_blockage.init(blockage->xMin() - transformed_halo.xMin(),
-                              blockage->yMin() - transformed_halo.yMin(),
-                              blockage->xMax() + transformed_halo.xMax(),
-                              blockage->yMax() + transformed_halo.yMax());
-
+      bool has_overlap = false;
+      const auto xform = inst->getTransform();
+      for (auto* box : inst->getMaster()->getObstructions()) {
+        if (box->getTechLayer() == overlap) {
+          has_overlap = true;
+          Rect box_rect = box->getBox();
+          xform.apply(box_rect);
+          insert_blockage(box_rect, use_halo_x_min, use_halo_y_min);
+        }
+      }
+      if (!has_overlap) {
+        insert_blockage(
+            inst->getBBox()->getBox(), use_halo_x_min, use_halo_y_min);
+      }
     } else {
-      effective_blockage.init(blockage->xMin() - halo_x,
-                              blockage->yMin() - halo_y,
-                              blockage->xMax() + halo_x,
-                              blockage->yMax() + halo_y);
+      insert_blockage(blockage->getBox(), halo_x, halo_y);
     }
-    effective_blockages.push_back(effective_blockage);
   }
 
   // Regions between two vertically stacked blockages that are too narrow to

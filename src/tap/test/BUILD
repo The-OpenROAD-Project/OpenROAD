@@ -20,6 +20,7 @@ COMPULSORY_TESTS = [
     "boundary_macros_tapcell",
     "cut_rows",
     "cut_rows_halo",
+    "cut_rows_l_macro",
     "cut_rows_min_step_bottom_left",
     "cut_rows_min_step_bottom_right",
     "cut_rows_min_step_top_left",
@@ -154,6 +155,10 @@ filegroup(
             "abutting_macros_step_no_corners": ["abutting_macros_step.def"],
             "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
+            "cut_rows_l_macro": [
+                "Nangate45_data/l_macro.lef",
+                "cut_rows_min_step.def",
+            ],
             "cut_rows_min_step_bottom_left": ["cut_rows_min_step.def"],
             "cut_rows_min_step_bottom_right": ["cut_rows_min_step.def"],
             "cut_rows_min_step_top_left": ["cut_rows_min_step.def"],
