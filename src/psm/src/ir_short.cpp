@@ -62,7 +62,9 @@ IRShortBPin::IRShortBPin(odb::dbTechLayer* layer,
 
 std::string IRShortBPin::describe() const
 {
-  std::string netname = bpin_->getBTerm()->getNet() ? bpin_->getBTerm()->getNet()->getName() : "unconnected";
+  std::string netname = bpin_->getBTerm()->getNet()
+                            ? bpin_->getBTerm()->getNet()->getName()
+                            : "unconnected";
   return "terminal " + bpin_->getBTerm()->getName() + " (net " + netname + ")";
 }
 
@@ -77,8 +79,8 @@ void IRShortBPin::addSources(odb::dbMarker* marker) const
 ////////////////////
 
 IRShortInst::IRShortInst(odb::dbTechLayer* layer,
-                           const odb::Polygon& shape,
-                           odb::dbInst* inst)
+                         const odb::Polygon& shape,
+                         odb::dbInst* inst)
     : IRShort(layer, shape), inst_(inst)
 {
 }
@@ -104,7 +106,8 @@ IRShortITerm::IRShortITerm(odb::dbTechLayer* layer,
 
 std::string IRShortITerm::describe() const
 {
-  std::string netname = iterm_->getNet() ? iterm_->getNet()->getName() : "unconnected";
+  std::string netname
+      = iterm_->getNet() ? iterm_->getNet()->getName() : "unconnected";
   return "terminal " + iterm_->getName() + " (net " + netname + ")";
 }
 
@@ -141,8 +144,7 @@ void IRShortObstruction::addSources(odb::dbMarker* marker) const
 
 ////////////////////
 
-IRShortFill::IRShortFill(const odb::Polygon& shape,
-                         odb::dbFill* fill)
+IRShortFill::IRShortFill(const odb::Polygon& shape, odb::dbFill* fill)
     : IRShort(fill->getTechLayer(), shape), fill_(fill)
 {
 }

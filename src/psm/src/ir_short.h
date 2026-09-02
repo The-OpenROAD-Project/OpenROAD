@@ -114,8 +114,7 @@ class IRShortObstruction : public IRShort
 class IRShortFill : public IRShort
 {
  public:
-  IRShortFill(const odb::Polygon& shape,
-              odb::dbFill* fill);
+  IRShortFill(const odb::Polygon& shape, odb::dbFill* fill);
 
  protected:
   std::string describe() const override;
