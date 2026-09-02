@@ -154,6 +154,7 @@ TESTS = [
     "repair_setup_wns_guard",
     "repair_setup_wns_last_gasp_noop",
     "repair_setup_size_down_fanout",
+    "repair_setup_size_down_fanout_before_sizeup",
     "repair_setup_size_down_fanout_legacy_basic",
     "repair_setup_sizeup_match",
     "repair_setup_sizeup_legacy_basic",
