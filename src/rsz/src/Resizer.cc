@@ -3632,15 +3632,19 @@ bool Resizer::dontTouch(const sta::Instance* inst) const
 
 void Resizer::setDontTouch(const sta::Net* net, bool dont_touch)
 {
-  odb::dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
+  if (db_net == nullptr) {
+    logger_->error(RSZ,
+                   224,
+                   "Cannot find the flat net associated with {}.",
+                   db_network_->pathName(net));
+  }
   db_net->setDoNotTouch(dont_touch);
 }
 
 bool Resizer::dontTouch(const sta::Net* net) const
 {
-  odb::dbNet* db_net = nullptr;
-  odb::dbModNet* db_mod_net = nullptr;
-  db_network_->staToDb(net, db_net, db_mod_net);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
   if (db_net == nullptr) {
     return false;
   }

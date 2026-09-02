@@ -60,6 +60,7 @@ class HungarianMatching
   void createMatrixForGroups();
   void assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
+  bool isMirroredSlotBlocked(const odb::Point& pos, int layer) const;
   bool groupHasMirroredPin(const std::vector<int>& group);
   int getMirroredPinCost(IOPin& io_pin, const odb::Point& position);
   Edge getMirroredEdge(const Edge& edge);

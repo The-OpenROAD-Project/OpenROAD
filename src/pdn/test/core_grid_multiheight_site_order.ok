@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130_multiheight_rows/multiheight_sites.lef
+[INFO ODB-0128] Design: multiheight_site_order
+[INFO PDN-0001] Inserting grid: Core
+No differences found.

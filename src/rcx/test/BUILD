@@ -26,6 +26,7 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
+    "test_dielectric_epsilon",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -99,6 +100,11 @@ filegroup(
                 "gcd.def",
             ],
             "short_resover": ["gcd.def"],
+            "test_dielectric_epsilon": [
+                "//src/rcx:rule_scripts/UniversalFormat2FasterCap_923.py",
+                "//src/rcx:calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
+                "rcx_v2/FasterCapModel/scripts/UniversalFormat2FasterCap_923.py",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -107,6 +113,7 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],

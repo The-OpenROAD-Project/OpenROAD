@@ -93,6 +93,7 @@ struct PlaceOptions
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
+  float routabilityMinCongestionForInflation = 0.95;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
@@ -167,6 +168,7 @@ class Replace
                          bool check_density);
   void checkHasCoreRows();
   void checkPlaceIosSupported(const PlaceOptions& options);
+  void reportHpwlMetric();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

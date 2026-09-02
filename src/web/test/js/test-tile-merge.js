@@ -340,9 +340,11 @@ describe('describePlan', () => {
 });
 
 describe('opacity semantics (Leaflet applies it to the container div)', () => {
-    // The layer opacities in play today: routing layers are created at 0.7,
-    // while _instances / _pins / _modules keep the default 1.
-    const ROUTING = 0.7;
+    // Every layer is created opaque today (transparency lives in the tile
+    // pixels), so a partial opacity is exercised here as a stand-in: the
+    // associativity these tests pin down is what keeps the merge honest if a
+    // pane ever does carry one.
+    const PARTIAL = 0.7;
 
     const A = [200, 40, 40, 255];    // opaque red-ish layer
     const B = [40, 200, 40, 180];    // partly transparent green-ish layer
@@ -362,9 +364,9 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
         // associative, so rasterizing a contiguous run into one image and
         // drawing that image is identical to drawing the run's members in order.
         const stack = [
-            { rgba: A, opacity: ROUTING },
-            { rgba: B, opacity: ROUTING },
-            { rgba: C, opacity: ROUTING },
+            { rgba: A, opacity: PARTIAL },
+            { rgba: B, opacity: PARTIAL },
+            { rgba: C, opacity: PARTIAL },
         ];
         const direct = compositeStack(stack, BG);
 
@@ -376,13 +378,13 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
         near(viaGroup, direct, 1e-9, 'grouped vs direct');
     });
 
-    it('holds when the group mixes opacities, as the real stack does', () => {
-        // _instances at 1 underneath routing layers at 0.7 — grouping those
+    it('holds when the group mixes opacities', () => {
+        // An opaque pane under two partly transparent ones — grouping those
         // together must not change the result.
         const stack = [
             { rgba: C, opacity: 1 },        // _instances
-            { rgba: A, opacity: ROUTING },  // metal1
-            { rgba: B, opacity: ROUTING },  // metal2
+            { rgba: A, opacity: PARTIAL },  // metal1
+            { rgba: B, opacity: PARTIAL },  // metal2
         ];
         const direct = compositeStack(stack, BG);
         const merged = compositeStack(stack, [0, 0, 0, 0]);
@@ -394,8 +396,8 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
         // must give the same answer — otherwise the choice of N would change
         // what the user sees.
         const stack = [
-            { rgba: A, opacity: ROUTING },
-            { rgba: B, opacity: ROUTING },
+            { rgba: A, opacity: PARTIAL },
+            { rgba: B, opacity: PARTIAL },
             { rgba: C, opacity: 1 },
             { rgba: A, opacity: 0.5 },
         ];
@@ -410,16 +412,17 @@ describe('opacity semantics (Leaflet applies it to the container div)', () => {
     });
 
     it('DOUBLE-APPLIES if the merged pane keeps the layer opacity', () => {
-        // The trap: leaving the merged pane at 0.7 multiplies every source by
-        // 0.7 twice (0.49) and washes the view out. Pinned as a real numeric
+        // The trap: leaving the merged pane at a source's opacity multiplies
+        // every source by it twice (0.7 -> 0.49) and washes the view out. Pinned
+        // as a real numeric
         // difference so the guard cannot be quietly dropped.
-        const stack = [{ rgba: A, opacity: ROUTING },
-                       { rgba: B, opacity: ROUTING }];
+        const stack = [{ rgba: A, opacity: PARTIAL },
+                       { rgba: B, opacity: PARTIAL }];
         const direct = compositeStack(stack, BG);
         const merged = compositeStack(stack, [0, 0, 0, 0]);
 
         const correct = blendOver(BG, merged, MERGED_PANE_OPACITY);
-        const doubled = blendOver(BG, merged, ROUTING);
+        const doubled = blendOver(BG, merged, PARTIAL);
         near(correct, direct, 1e-9);
         assert.ok(Math.abs(doubled[3] - direct[3]) > 1,
                   'a pane opacity of 0.7 must visibly differ — it is the bug');

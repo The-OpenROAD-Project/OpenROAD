@@ -170,6 +170,12 @@ set_use_cugr(bool use_cugr)
   getGlobalRouter()->setUseCUGR(use_cugr);
 }
 
+bool
+is_use_cugr()
+{
+  return getGlobalRouter()->isUseCUGR();
+}
+
 void
 set_skip_large_fanout(int skip_large_fanout)
 {

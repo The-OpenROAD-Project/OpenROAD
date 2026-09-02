@@ -100,6 +100,11 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
 
   const int x1 = block->micronsToDbu(x_origin);
   const int y1 = block->micronsToDbu(y_origin);
+
+  // Orientation must be set before checking if the macro fits in the core and
+  // before setting its location.
+  inst->setOrient(orientation);
+
   const int x2 = x1 + inst->getBBox()->getDX();
   const int y2 = y1 + inst->getBBox()->getDY();
 
@@ -122,9 +127,6 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
                    block->dbuToMicrons(core_area.yMax()));
   }
 
-  // Orientation must be set before location so we don't end up flipping
-  // and misplacing the macro.
-  inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
   if (orientation.isRightAngleRotation()) {

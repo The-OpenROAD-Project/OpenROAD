@@ -25,12 +25,12 @@
 [INFO DPL-0393]   height 1 row(s): 21 cells
 Placement Analysis
 ---------------------------------
-total displacement         19.6 u
+total displacement         18.6 u
 average displacement        0.9 u
-max displacement            2.0 u
+max displacement            1.9 u
 original HPWL              70.6 u
-legalized HPWL             69.4 u
-delta HPWL                   -2 %
+legalized HPWL             69.8 u
+delta HPWL                   -1 %
 
 max slew
 
@@ -42,7 +42,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-drvr/Q                                 60.73   32.06   28.67 (MET)
+drvr/Q                                 60.73   32.17   28.56 (MET)
 
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------

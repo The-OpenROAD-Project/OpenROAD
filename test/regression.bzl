@@ -32,6 +32,7 @@ export REGRESSION_TEST={REGRESSION_TEST}
 export TEST_GOLDEN_FILE={TEST_GOLDEN_FILE}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
 export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
+export TEST_CHECK_METRICS={TEST_CHECK_METRICS}
 export TEST_EXPECTED_EXIT_CODE={TEST_EXPECTED_EXIT_CODE}
 exec "{bazel_test_sh}" "$@"
 """.format(
@@ -44,6 +45,7 @@ exec "{bazel_test_sh}" "$@"
             TEST_GOLDEN_FILE = ctx.file.golden_file.short_path if ctx.file.golden_file else "",
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
             TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
+            TEST_CHECK_METRICS = "True" if ctx.attr.check_metrics else "False",
             TEST_EXPECTED_EXIT_CODE = str(ctx.attr.expected_exit_code),
         ),
         is_executable = True,
@@ -82,6 +84,10 @@ regression_rule_test = rule(
         "check_log": attr.bool(
             doc = "Diff the output log against <test_name>.ok",
             default = True,
+        ),
+        "check_metrics": attr.bool(
+            doc = "Compare the flow result metrics against <test_name>.metrics_limits",
+            default = False,
         ),
         "check_passfail": attr.bool(
             doc = "Check the output log contains pass or OK in the last line",

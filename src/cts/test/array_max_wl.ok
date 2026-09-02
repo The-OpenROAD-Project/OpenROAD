@@ -671,16 +671,16 @@ TritonCTS forced slew degradation on these wires.
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |         40 |         4 |        36
+        0 |        157 |        23 |       134
         1 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
-total displacement       7944.3 u
-average displacement        2.1 u
-max displacement          122.8 u
+total displacement       7241.2 u
+average displacement        1.9 u
+max displacement          122.6 u
 original HPWL          286637.4 u
-legalized HPWL         287053.5 u
+legalized HPWL         287029.9 u
 delta HPWL                    0 %
 
 Clock clk

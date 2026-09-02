@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright (c) 2024-2026, The OpenROAD Authors
 
 #pragma once
 
@@ -19,10 +19,17 @@ class dbNet;
 
 namespace pad {
 
-class RDLRoute
+class RDLNet;
+
+class RDLSegment
 {
  public:
-  RDLRoute(odb::dbITerm* source, const std::vector<odb::dbITerm*>& dests);
+  RDLSegment(RDLNet* net,
+             odb::dbITerm* source,
+             const std::vector<odb::dbITerm*>& dests);
+
+  RDLNet* getRDLNet() const { return net_; }
+  odb::dbNet* getNet() const;
 
   void setRoute(
       const std::unordered_map<GridGraphVertex, odb::Point>& vertex_point_map,
@@ -33,6 +40,8 @@ class RDLRoute
       const RDLRouter::TerminalAccess& access_source,
       const RDLRouter::TerminalAccess& access_dest);
   void resetRoute();
+
+  void reportRoutePairs(utl::Logger* logger) const;
 
   bool isRouted() const { return routed_; }
   bool isFailed() const
@@ -50,20 +59,21 @@ class RDLRoute
 
   int getPriority() const { return priority_; }
   odb::dbITerm* getTerminal() const { return iterm_; }
-  odb::dbNet* getNet() const { return iterm_->getNet(); }
 
   const std::vector<odb::dbITerm*>& getTerminals() const { return terminals_; }
   odb::PtrSet<odb::dbITerm> getRoutedTerminals() const;
   const std::set<odb::Rect>& getStubs() const { return stubs_; }
+  std::vector<odb::dbITerm*> getUnroutedTerminals() const;
 
   void increasePriority() { priority_++; }
 
   bool hasNextTerminal() const { return next_ != terminals_.end(); }
   odb::dbITerm* getNextTerminal();
   odb::dbITerm* peakNextTerminal() const;
+  odb::dbITerm* getNextDestinationTerminal();
   void moveNextTerminalToEnd() { next_ = terminals_.end(); }
 
-  bool compare(const std::shared_ptr<RDLRoute>& other) const;
+  bool compare(const RDLSegment* other) const;
 
   const std::vector<GridGraphVertex>& getRouteVerticies() const
   {
@@ -93,12 +103,14 @@ class RDLRoute
                                          int dist);
   static bool is45DegreeEdge(const odb::Point& pt0, const odb::Point& pt1);
 
-  bool isIntersecting(RDLRoute* other, int extent) const;
+  bool isIntersecting(RDLSegment* other, int extent) const;
   bool isIntersecting(const odb::Line& line, int extent) const;
   bool isIntersecting(const odb::Point& point, int width, int spacing) const;
 
  private:
+  RDLNet* net_;
   odb::dbITerm* iterm_;
+
   int priority_;
 
   bool route_pending_;

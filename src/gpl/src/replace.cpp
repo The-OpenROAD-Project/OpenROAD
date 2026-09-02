@@ -412,6 +412,8 @@ int Replace::doNesterovPlace(const int threads,
 
   int return_do_nesterov = np_->doNesterovPlace(start_iter);
 
+  reportHpwlMetric();
+
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
   debugPrint(log_,
@@ -428,6 +430,16 @@ int Replace::doNesterovPlace(const int threads,
     fr_->globalRoute();
   }
   return return_do_nesterov;
+}
+
+// Same evaluator dpl reports route__wirelength__estimated with, so the
+// global and detailed placement numbers are directly comparable.
+void Replace::reportHpwlMetric()
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  const int64_t hpwl = odb::WireLengthEvaluator(block).hpwl();
+  log_->info(GPL, 1018, "Final HPWL (um): {:.2f}", block->dbuToMicrons(hpwl));
+  log_->metric("route__wirelength__estimated", block->dbuToMicrons(hpwl));
 }
 
 float Replace::getUniformTargetDensity(const PlaceOptions& options,

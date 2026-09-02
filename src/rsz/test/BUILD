@@ -497,6 +497,7 @@ cc_test(
         "cpp/TestResizer*.lib",
         "cpp/TestResizer*.v",
     ]) + [
+        "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
     ],
